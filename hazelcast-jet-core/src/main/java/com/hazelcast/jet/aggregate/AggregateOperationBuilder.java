@@ -26,6 +26,7 @@ import com.hazelcast.jet.impl.aggregate.AggregateOperationImpl;
 import com.hazelcast.jet.datamodel.Tag;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -57,6 +58,8 @@ public final class AggregateOperationBuilder<A> {
      * This method is synonymous with {@link #andAccumulate0(
      * DistributedBiConsumer)}, but makes more sense when defining a
      * simple, arity-1 aggregate operation.
+     * <p>
+     * Parameters of the {@code accumulateFn} are {@code (accumulator, item)}.
      *
      * @param accumulateFn the {@code accumulate} primitive
      * @param <T> the expected type of input item
@@ -135,7 +138,7 @@ public final class AggregateOperationBuilder<A> {
          * Registers the {@code combine} primitive.
          */
         @Nonnull
-        public Arity1<T0, A> andCombine(DistributedBiConsumer<? super A, ? super A> combineFn) {
+        public Arity1<T0, A> andCombine(@Nullable DistributedBiConsumer<? super A, ? super A> combineFn) {
             this.combineFn = combineFn;
             return this;
         }
@@ -144,7 +147,7 @@ public final class AggregateOperationBuilder<A> {
          * Registers the {@code deduct} primitive.
          */
         @Nonnull
-        public Arity1<T0, A> andDeduct(DistributedBiConsumer<? super A, ? super A> deductFn) {
+        public Arity1<T0, A> andDeduct(@Nullable DistributedBiConsumer<? super A, ? super A> deductFn) {
             this.deductFn = deductFn;
             return this;
         }
@@ -212,7 +215,7 @@ public final class AggregateOperationBuilder<A> {
          * Registers the {@code combine} primitive.
          */
         @Nonnull
-        public Arity2<T0, T1, A> andCombine(DistributedBiConsumer<? super A, ? super A> combineFn) {
+        public Arity2<T0, T1, A> andCombine(@Nullable DistributedBiConsumer<? super A, ? super A> combineFn) {
             this.combineFn = combineFn;
             return this;
         }
@@ -221,7 +224,7 @@ public final class AggregateOperationBuilder<A> {
          * Registers the {@code deduct} primitive.
          */
         @Nonnull
-        public Arity2<T0, T1, A> andDeduct(DistributedBiConsumer<? super A, ? super A> deductFn) {
+        public Arity2<T0, T1, A> andDeduct(@Nullable DistributedBiConsumer<? super A, ? super A> deductFn) {
             this.deductFn = deductFn;
             return this;
         }
@@ -283,7 +286,7 @@ public final class AggregateOperationBuilder<A> {
          * Registers the {@code combine} primitive.
          */
         @Nonnull
-        public Arity3<T0, T1, T2, A> andCombine(DistributedBiConsumer<? super A, ? super A> combineFn) {
+        public Arity3<T0, T1, T2, A> andCombine(@Nullable DistributedBiConsumer<? super A, ? super A> combineFn) {
             this.combineFn = combineFn;
             return this;
         }
@@ -292,7 +295,7 @@ public final class AggregateOperationBuilder<A> {
          * Registers the {@code deduct} primitive.
          */
         @Nonnull
-        public Arity3<T0, T1, T2, A> andDeduct(DistributedBiConsumer<? super A, ? super A> deductFn) {
+        public Arity3<T0, T1, T2, A> andDeduct(@Nullable DistributedBiConsumer<? super A, ? super A> deductFn) {
             this.deductFn = deductFn;
             return this;
         }
@@ -360,9 +363,9 @@ public final class AggregateOperationBuilder<A> {
         public <T> VarArity<A> andAccumulate(
                 @Nonnull Tag<T> tag, @Nonnull DistributedBiConsumer<? super A, T> accumulateFn
         ) {
-            accumulateFnsByTag.merge(tag.index(), accumulateFn, (x, y) -> {
+            if (accumulateFnsByTag.putIfAbsent(tag.index(), accumulateFn) != null) {
                 throw new IllegalArgumentException("Tag with index " + tag.index() + " already registered");
-            });
+            }
             return this;
         }
 
@@ -370,7 +373,7 @@ public final class AggregateOperationBuilder<A> {
          * Registers the {@code combine} primitive.
          */
         @Nonnull
-        public VarArity<A> andCombine(DistributedBiConsumer<? super A, ? super A> combineFn) {
+        public VarArity<A> andCombine(@Nullable DistributedBiConsumer<? super A, ? super A> combineFn) {
             this.combineFn = combineFn;
             return this;
         }
@@ -379,7 +382,7 @@ public final class AggregateOperationBuilder<A> {
          * Registers the {@code deduct} primitive.
          */
         @Nonnull
-        public VarArity<A> andDeduct(DistributedBiConsumer<? super A, ? super A> deductFn) {
+        public VarArity<A> andDeduct(@Nullable DistributedBiConsumer<? super A, ? super A> deductFn) {
             this.deductFn = deductFn;
             return this;
         }

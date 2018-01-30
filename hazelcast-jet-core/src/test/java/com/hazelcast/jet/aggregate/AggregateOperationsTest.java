@@ -22,6 +22,9 @@ import com.hazelcast.jet.accumulator.LongAccumulator;
 import com.hazelcast.jet.accumulator.LongDoubleAccumulator;
 import com.hazelcast.jet.accumulator.LongLongAccumulator;
 import com.hazelcast.jet.accumulator.MutableReference;
+import com.hazelcast.jet.datamodel.ItemsByTag;
+import com.hazelcast.jet.datamodel.Tag;
+import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.function.DistributedFunctions;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import org.junit.Rule;
@@ -32,7 +35,6 @@ import org.junit.runner.RunWith;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
@@ -42,6 +44,7 @@ import java.util.function.Supplier;
 
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.aggregate.AggregateOperations.allOf;
+import static com.hazelcast.jet.aggregate.AggregateOperations.allOfBuilder;
 import static com.hazelcast.jet.aggregate.AggregateOperations.averagingDouble;
 import static com.hazelcast.jet.aggregate.AggregateOperations.averagingLong;
 import static com.hazelcast.jet.aggregate.AggregateOperations.concatenating;
@@ -57,6 +60,8 @@ import static com.hazelcast.jet.aggregate.AggregateOperations.summingLong;
 import static com.hazelcast.jet.aggregate.AggregateOperations.toList;
 import static com.hazelcast.jet.aggregate.AggregateOperations.toMap;
 import static com.hazelcast.jet.aggregate.AggregateOperations.toSet;
+import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
+import static com.hazelcast.jet.datamodel.Tuple3.tuple3;
 import static com.hazelcast.jet.function.DistributedComparator.naturalOrder;
 import static com.hazelcast.jet.function.DistributedFunctions.entryKey;
 import static com.hazelcast.jet.function.DistributedFunctions.entryValue;
@@ -65,6 +70,7 @@ import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
 import static java.util.function.Function.identity;
 import static org.hamcrest.Matchers.instanceOf;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -142,30 +148,56 @@ public class AggregateOperationsTest {
     }
 
     @Test
-    public void when_allOf() {
+    public void when_allOf2() {
         validateOp(
                 allOf(counting(), summingLong(Long::longValue)),
                 identity(), 10L, 11L,
-                asList(longAcc(1), longAcc(10)),
-                asList(longAcc(2), longAcc(21)),
-                asList(2L, 21L)
+                tuple2(longAcc(1), longAcc(10)),
+                tuple2(longAcc(2), longAcc(21)),
+                tuple2(2L, 21L)
         );
     }
 
     @Test
     public void when_allOfWithoutDeduct_then_noDeduct() {
         validateOpWithoutDeduct(
-                allOf(counting(), maxBy(naturalOrder())),
+                allOf(counting(), AggregateOperations.<Long>maxBy(naturalOrder())),
                 identity(), 10L, 11L,
-                asList(longAcc(1), new MutableReference<>(10L)),
-                asList(longAcc(2), new MutableReference<>(11L)),
-                asList(2L, 11L)
+                tuple2(longAcc(1), new MutableReference<>(10L)),
+                tuple2(longAcc(2), new MutableReference<>(11L)),
+                tuple2(2L, 11L)
+        );
+    }
+
+    @Test
+    public void when_allOf3() {
+        validateOp(
+                allOf(counting(), summingLong(Long::longValue), averagingLong(Long::longValue)),
+                identity(), 10L, 11L,
+                tuple3(longAcc(1), longAcc(10), longLongAcc(1, 10)),
+                tuple3(longAcc(2), longAcc(21), longLongAcc(2, 21)),
+                tuple3(2L, 21L, 10.5)
+        );
+    }
+
+    @Test
+    public void when_allOfN() {
+        AllOfAggregationBuilder<Long> builder = allOfBuilder();
+        Tag<Long> tagSum = builder.add(summingLong(Long::longValue));
+        Tag<Long> tagCount = builder.add(counting());
+        AggregateOperationsTest.validateOp(
+                builder.build(),
+                identity(),
+                10L, 11L,
+                new Object[]{longAcc(10L), longAcc(1L)},
+                new Object[]{longAcc(21L), longAcc(2L)},
+                ItemsByTag.itemsByTag(tagCount, 2L, tagSum, 21L)
         );
     }
 
     @Test
     public void when_allOfWithoutCombine_then_noCombine() {
-        AggregateOperation1<Long, List<Object>, List<Object>> composite =
+        AggregateOperation1<Long, ?, Tuple2<Long, Long>> composite =
                 allOf(AggregateOperation
                                 .withCreate(LongAccumulator::new)
                                 .<Long>andAccumulate(LongAccumulator::add)
@@ -442,7 +474,7 @@ public class AggregateOperationsTest {
     public void when_groupingBy_withDownstreamOperation() {
         Entry<String, Integer> entryA = entry("a", 1);
         validateOpWithoutDeduct(
-                groupingBy(entryKey(), AggregateOperations.counting()),
+                groupingBy(entryKey(), counting()),
                 identity(),
                 entryA,
                 entryA,
@@ -457,7 +489,7 @@ public class AggregateOperationsTest {
         Entry<String, Integer> entryA = entry("a", 1);
         Entry<String, Integer> entryB = entry("b", 1);
         validateOpWithoutDeduct(
-                groupingBy(entryKey(), TreeMap::new, AggregateOperations.counting()),
+                groupingBy(entryKey(), TreeMap::new, counting()),
                 a -> {
                     assertThat(a, instanceOf(TreeMap.class));
                     return a;
@@ -495,29 +527,37 @@ public class AggregateOperationsTest {
         // are allowed to be destructive ops
 
         // Then
-        assertEquals("accumulated", expectAcced1, getAccValFn.apply(acc1));
+        assertEqualsOrArrayEquals("accumulated", expectAcced1, getAccValFn.apply(acc1));
 
         // When
         op.combineFn().accept(acc1, acc2);
         // Then
-        assertEquals("combined", expectCombined, getAccValFn.apply(acc1));
+        assertEqualsOrArrayEquals("combined", expectCombined, getAccValFn.apply(acc1));
 
         // When
         R finished = op.finishFn().apply(acc1);
         // Then
-        assertEquals("finished", expectFinished, finished);
+        assertEqualsOrArrayEquals("finished", expectFinished, finished);
 
         // When
         deductAccFn.accept(acc1, acc2);
         // Then
-        assertEquals("deducted", expectAcced1, getAccValFn.apply(acc1));
+        assertEqualsOrArrayEquals("deducted", expectAcced1, getAccValFn.apply(acc1));
 
         // When - accumulate both items into single accumulator
         acc1 = op.createFn().get();
         op.accumulateFn().accept(acc1, item1);
         op.accumulateFn().accept(acc1, item2);
         // Then
-        assertEquals("accumulated", expectCombined, getAccValFn.apply(acc1));
+        assertEqualsOrArrayEquals("accumulated", expectCombined, getAccValFn.apply(acc1));
+    }
+
+    private static void assertEqualsOrArrayEquals(String msg, Object expected, Object actual) {
+        if (expected instanceof Object[]) {
+            assertArrayEquals(msg, (Object[]) expected, (Object[]) actual);
+        } else {
+            assertEquals(msg, expected, actual);
+        }
     }
 
     private static <T, A, X, R> void validateOpWithoutDeduct(
@@ -575,4 +615,7 @@ public class AggregateOperationsTest {
         return new LongAccumulator(val);
     }
 
+    private static LongLongAccumulator longLongAcc(long val1, long val2) {
+        return new LongLongAccumulator(val1, val2);
+    }
 }

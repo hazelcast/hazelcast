@@ -50,7 +50,7 @@ public class WatermarkSourceUtilTest {
     }
 
     @Test
-    public void smokeTest_disabledTimeout() {
+    public void smokeTest_disabledIdleTimeout() {
         WatermarkSourceUtil<Long> wsu = new WatermarkSourceUtil<>(wmGenParams(Long::longValue, withFixedLag(LAG),
                 suppressDuplicates(), -1));
         wsu.increasePartitionCount(2);

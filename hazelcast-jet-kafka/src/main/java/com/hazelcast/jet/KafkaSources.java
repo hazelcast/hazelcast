@@ -54,7 +54,8 @@ public final class KafkaSources {
      * com.hazelcast.jet.core.Processor processor} instance using the supplied
      * {@code properties}. It assigns a subset of Kafka partitions to each of
      * them using manual partition assignment (it ignores the {@code group.id}
-     * property).
+     * property). Default local parallelism for this processor is 2 (or less
+     * if less CPUs are available).
      * <p>
      * If snapshotting is enabled, partition offsets are saved to the snapshot.
      * After restart, the source emits the events from the same offset.

@@ -19,7 +19,7 @@ package com.hazelcast.jet.datamodel;
 import java.util.Objects;
 
 /**
- * A 3-tuple (triple) of statically typed fields.
+ * An immutable 3-tuple (triple) of statically typed fields.
  *
  * @param <E0> the type of the field 0
  * @param <E1> the type of the field 1

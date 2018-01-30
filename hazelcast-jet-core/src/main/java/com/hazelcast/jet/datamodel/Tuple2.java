@@ -20,7 +20,7 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * A 2-tuple (pair) of statically typed fields. Also implements
+ * An immutable 2-tuple (pair) of statically typed fields. Also implements
  * {@link Map.Entry}.
  *
  * @param <E0> the type of the field 0
@@ -76,8 +76,6 @@ public final class Tuple2<E0, E1> implements Map.Entry<E0, E1> {
     public E1 setValue(E1 value) {
         throw new UnsupportedOperationException("Tuple2 is immutable");
     }
-
-
 
     @Override
     public boolean equals(Object obj) {
