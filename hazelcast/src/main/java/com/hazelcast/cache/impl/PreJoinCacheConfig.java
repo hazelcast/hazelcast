@@ -18,9 +18,11 @@ package com.hazelcast.cache.impl;
 
 import com.hazelcast.config.AbstractCacheConfig;
 import com.hazelcast.config.CacheConfig;
+import com.hazelcast.internal.serialization.impl.ObjectDataOutputStream;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import java.io.ByteArrayOutputStream;
 
 import java.io.IOException;
 
@@ -37,7 +39,6 @@ import java.io.IOException;
  * @since 3.9
  */
 public class PreJoinCacheConfig<K, V> extends CacheConfig<K, V> implements IdentifiedDataSerializable {
-
     public PreJoinCacheConfig() {
         super();
     }
@@ -67,6 +68,44 @@ public class PreJoinCacheConfig<K, V> extends CacheConfig<K, V> implements Ident
             throws IOException {
         setKeyClassName(in.readUTF());
         setValueClassName(in.readUTF());
+    }
+
+    @Override
+    protected void writeFactories(ObjectDataOutput out) throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ObjectDataOutputStream strm = new ObjectDataOutputStream(baos, out.getSerializationService());
+        try {
+            super.writeFactories(strm);
+            strm.flush();
+            out.writeByteArray(baos.toByteArray());
+        }
+        finally {
+            strm.close();
+        }
+    }
+
+    @Override
+    protected void readFactories(ObjectDataInput in) throws IOException {
+        serializedFactories = in.readByteArray();
+    }
+
+    @Override
+    protected void writeListenerConfigurations(ObjectDataOutput out) throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ObjectDataOutputStream strm = new ObjectDataOutputStream(baos, out.getSerializationService());
+        try {
+            super.writeListenerConfigurations(strm);
+            strm.flush();
+            out.writeByteArray(baos.toByteArray());
+        }
+        finally {
+            strm.close();
+        }
+    }
+
+    @Override
+    protected void readListenerConfigurations(ObjectDataInput in) throws IOException {
+        serializedListenerConfigurations = in.readByteArray();
     }
 
     @Override
@@ -117,5 +156,14 @@ public class PreJoinCacheConfig<K, V> extends CacheConfig<K, V> implements Ident
         } else {
             return new PreJoinCacheConfig(cacheConfig, resolved);
         }
+    }
+
+    /**
+     * Used for testing
+     *
+     * @return true if factories or listener configurations are delayed in deserialization
+     */
+    boolean isFactorySerializationDelayed() {
+        return serializedFactories != null;
     }
 }

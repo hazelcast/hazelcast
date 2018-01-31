@@ -16,6 +16,10 @@
 
 package com.hazelcast.cache.impl;
 
+import classloading.domain.Person;
+import classloading.domain.PersonCacheEntryListenerConfiguration;
+import classloading.domain.PersonCacheLoaderFactory;
+import classloading.domain.PersonCacheWriterFactory;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.CacheConfigTest;
 import com.hazelcast.core.HazelcastException;
@@ -35,7 +39,11 @@ import static com.hazelcast.config.helpers.CacheConfigHelper.getEvictionConfigBy
 import static com.hazelcast.config.helpers.CacheConfigHelper.getEvictionConfigByPolicy;
 import static com.hazelcast.config.helpers.CacheConfigHelper.newCompleteCacheConfig;
 import static com.hazelcast.config.helpers.CacheConfigHelper.newDefaultCacheConfig;
+import javax.cache.configuration.Factory;
+import javax.cache.expiry.ExpiryPolicy;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -168,4 +176,67 @@ public class PreJoinCacheConfigTest {
         }
     }
 
+    @Test
+    public void serializationSucceeds_cacheLoaderFactory() {
+        CacheConfig<String, Person> cacheConfig = newDefaultCacheConfig("test");
+        cacheConfig.setCacheLoaderFactory(new PersonCacheLoaderFactory());
+        PreJoinCacheConfig preJoinCacheConfig = new PreJoinCacheConfig(cacheConfig);
+        Data data  = serializationService.toData(preJoinCacheConfig);
+        PreJoinCacheConfig deserialized = serializationService.toObject(data);
+        assertTrue("Serialization Not Delayed", deserialized.isFactorySerializationDelayed());
+        assertEquals(preJoinCacheConfig, deserialized);
+        assertEquals(cacheConfig, deserialized.asCacheConfig());
+        assertTrue("Invalid Factory Class", deserialized.getCacheLoaderFactory() instanceof PersonCacheLoaderFactory);
+    }
+
+    @Test
+    public void serializationSucceeds_cacheWriterFactory() {
+        CacheConfig<String, Person> cacheConfig = newDefaultCacheConfig("test");
+        cacheConfig.setCacheWriterFactory(new PersonCacheWriterFactory());
+        PreJoinCacheConfig preJoinCacheConfig = new PreJoinCacheConfig(cacheConfig);
+        Data data  = serializationService.toData(preJoinCacheConfig);
+        PreJoinCacheConfig deserialized = serializationService.toObject(data);
+        assertTrue("Serialization Not Delayed", deserialized.isFactorySerializationDelayed());
+        assertEquals(preJoinCacheConfig, deserialized);
+        assertEquals(cacheConfig, deserialized.asCacheConfig());
+        assertNull(deserialized.getCacheLoaderFactory());
+        assertTrue("Invalid Factory Class", deserialized.getCacheWriterFactory() instanceof PersonCacheWriterFactory);
+    }
+
+    @Test
+    public void serializationSucceeds_cacheExpiryFactory() {
+        CacheConfig<String, Person> cacheConfig = newDefaultCacheConfig("test");
+        cacheConfig.setExpiryPolicyFactory(new ExpiryFactoryImpl());
+        PreJoinCacheConfig preJoinCacheConfig = new PreJoinCacheConfig(cacheConfig);
+        Data data  = serializationService.toData(preJoinCacheConfig);
+        PreJoinCacheConfig deserialized = serializationService.toObject(data);
+        assertTrue("Serialization Not Delayed", deserialized.isFactorySerializationDelayed());
+        assertEquals(preJoinCacheConfig, deserialized);
+        assertEquals(cacheConfig, deserialized.asCacheConfig());
+        assertNull(deserialized.getCacheWriterFactory());
+        assertTrue("Invalid Factory Class", deserialized.getExpiryPolicyFactory() instanceof ExpiryFactoryImpl);
+    }
+
+    @Test
+    public void serializationSucceeds_cacheListeners() {
+        CacheConfig<String, Person> cacheConfig = newDefaultCacheConfig("test");
+        cacheConfig.getListenerConfigurations().add(new PersonCacheEntryListenerConfiguration());
+        PreJoinCacheConfig preJoinCacheConfig = new PreJoinCacheConfig(cacheConfig);
+        Data data  = serializationService.toData(preJoinCacheConfig);
+        PreJoinCacheConfig deserialized = serializationService.toObject(data);
+        assertTrue("Serialization Not Delayed", deserialized.isFactorySerializationDelayed());
+        assertEquals(preJoinCacheConfig, deserialized);
+        assertEquals(cacheConfig, deserialized.asCacheConfig());
+        assertNull(deserialized.getCacheWriterFactory());
+        assertEquals(1, deserialized.getListenerConfigurations().size());
+        assertTrue("Invalid Factory Class", deserialized.getCacheEntryListenerConfigurations().iterator().next() instanceof PersonCacheEntryListenerConfiguration);
+    }
+
+    private static class ExpiryFactoryImpl implements Factory<ExpiryPolicy> {
+        @Override
+        public ExpiryPolicy create() {
+            return null;
+        }
+        private static final long serialVersionUID = 1L;
+    }
 }
