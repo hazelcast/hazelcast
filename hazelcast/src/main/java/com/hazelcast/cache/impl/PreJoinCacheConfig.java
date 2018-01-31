@@ -83,14 +83,16 @@ public class PreJoinCacheConfig<K, V> extends CacheConfig<K, V> implements Ident
 
     @Override
     protected void writeFactories(ObjectDataOutput out) throws IOException {
-        ObjectDataOutputStream strm = new ObjectDataOutputStream(new ByteArrayOutputStream(), iss);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ObjectDataOutputStream strm = new ObjectDataOutputStream(baos, iss);
         try {
             super.writeFactories(strm);
+            strm.flush();
+            out.writeByteArray(baos.toByteArray());
         }
         finally {
             strm.close();
         }
-        out.writeByteArray(strm.toByteArray());
     }
 
     @Override
@@ -100,14 +102,16 @@ public class PreJoinCacheConfig<K, V> extends CacheConfig<K, V> implements Ident
 
     @Override
     protected void writeListenerConfigurations(ObjectDataOutput out) throws IOException {
-        ObjectDataOutputStream strm = new ObjectDataOutputStream(new ByteArrayOutputStream(), iss);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ObjectDataOutputStream strm = new ObjectDataOutputStream(baos, iss);
         try {
             super.writeListenerConfigurations(strm);
+            strm.flush();
+            out.writeByteArray(baos.toByteArray());
         }
         finally {
             strm.close();
         }
-        out.writeByteArray(strm.toByteArray());
     }
 
     @Override
@@ -119,19 +123,20 @@ public class PreJoinCacheConfig<K, V> extends CacheConfig<K, V> implements Ident
     protected void resolveDelayedLoadingClasses() {
         if(serializedFactories != null) {
             // TODO set tenant so the classes resolve
-            ObjectDataInputStream factoriesStrm;
-            ObjectDataInputStream listenersStrm;
+            ObjectDataInputStream factoriesStrm = null;
+            ObjectDataInputStream listenersStrm = null;
             try {
                 factoriesStrm = new ObjectDataInputStream(new ByteArrayInputStream(serializedFactories), iss);
                 super.readFactories(factoriesStrm);
                 listenersStrm = new ObjectDataInputStream(new ByteArrayInputStream(serializedListenerConfigurations), iss);
                 super.readListenerConfigurations(listenersStrm);
+                factoriesStrm.close();
+                listenersStrm.close();
             } catch (IOException ex) {
                 Logger.getLogger(PreJoinCacheConfig.class.getName()).log(Level.SEVERE, "Cannot resolve delayed-loading classes", ex);
             } finally {
                 serializedFactories = null;
                 serializedListenerConfigurations = null;
-
             }
         }
     }
