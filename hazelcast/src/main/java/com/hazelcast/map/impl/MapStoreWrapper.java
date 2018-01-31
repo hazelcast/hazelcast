@@ -25,6 +25,7 @@ import com.hazelcast.core.MapStore;
 import com.hazelcast.core.PostProcessingMapStore;
 import com.hazelcast.internal.diagnostics.Diagnostics;
 import com.hazelcast.internal.diagnostics.StoreLatencyPlugin;
+import com.hazelcast.nio.serialization.BinaryInterface;
 import com.hazelcast.query.impl.getters.ReflectionHelper;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -203,7 +204,11 @@ public class MapStoreWrapper implements MapStore, MapLoaderLifecycleSupport {
                 + ", mapStore=" + mapStore + ", mapLoader=" + mapLoader + '}';
     }
 
+    @BinaryInterface
     private static class DestroyEventImpl implements TenantControl.DestroyEventContext {
+        private final String mapName;
+
+
         public DestroyEventImpl(String mapName) {
             this.mapName = mapName;
         }
@@ -224,7 +229,6 @@ public class MapStoreWrapper implements MapStore, MapLoaderLifecycleSupport {
             return HazelcastInstance.class;
         }
 
-        private final String mapName;
         private static final long serialVersionUID = 1L;
     }
 }

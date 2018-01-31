@@ -15,6 +15,7 @@
  */
 package com.hazelcast.config;
 
+import com.hazelcast.nio.serialization.BinaryInterface;
 import java.io.Serializable;
 
 /**
@@ -105,7 +106,8 @@ public interface TenantControl extends Serializable {
      * Default no-op implementation of TenantControl
      * This is so the code doesn't have to do any null checks
      */
-    class NoTenantControl implements TenantControl {
+    @BinaryInterface
+    static class NoTenantControl implements TenantControl {
         @Override
         public TenantControl saveCurrentTenant(DestroyEventContext event) {
             return this;
