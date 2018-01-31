@@ -16,10 +16,12 @@
 
 package com.hazelcast.spi.merge;
 
+import com.hazelcast.cache.CacheEntryView;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.cardinality.impl.hyperloglog.HyperLogLog;
 import com.hazelcast.collection.impl.collection.CollectionItem;
 import com.hazelcast.collection.impl.queue.QueueItem;
+import com.hazelcast.core.EntryView;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapMergeContainer;
@@ -32,6 +34,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecord;
 import com.hazelcast.scheduledexecutor.impl.ScheduledTaskDescriptor;
 import com.hazelcast.spi.SplitBrainMergeEntryView;
+import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 
@@ -48,7 +51,30 @@ public final class SplitBrainEntryViews {
     public static <K, V> SplitBrainMergeEntryView<K, V> createSplitBrainMergeEntryView(K key, V value) {
         return new SimpleSplitBrainEntryView<K, V>()
                 .setKey(key)
-                .setValue(value);
+                .setValue(value)
+                .setCreationTime(Clock.currentTimeMillis());
+    }
+
+    public static <K, V> SplitBrainMergeEntryView<K, V> createSplitBrainMergeEntryView(EntryView<K, V> entryView) {
+        return new SimpleSplitBrainEntryView<K, V>()
+                .setKey(entryView.getKey())
+                .setValue(entryView.getValue())
+                .setCreationTime(entryView.getCreationTime())
+                .setLastUpdateTime(entryView.getLastUpdateTime())
+                .setLastAccessTime(entryView.getLastAccessTime())
+                .setHits(entryView.getHits())
+                .setTtl(entryView.getTtl())
+                .setVersion(entryView.getVersion())
+                .setCost(entryView.getCost());
+    }
+
+    public static <K, V> SplitBrainMergeEntryView<K, V> createSplitBrainMergeEntryView(CacheEntryView<K, V> entryView) {
+        return new SimpleSplitBrainEntryView<K, V>()
+                .setKey(entryView.getKey())
+                .setValue(entryView.getValue())
+                .setCreationTime(entryView.getCreationTime())
+                .setLastAccessTime(entryView.getLastAccessTime())
+                .setHits(entryView.getAccessHit());
     }
 
     public static SplitBrainMergeEntryView<Long, Data> createSplitBrainMergeEntryView(CollectionItem item) {

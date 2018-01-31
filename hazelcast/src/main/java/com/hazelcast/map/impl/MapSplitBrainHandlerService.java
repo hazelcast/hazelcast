@@ -240,7 +240,7 @@ class MapSplitBrainHandlerService implements SplitBrainHandlerService {
                 Data value = mapServiceContext.toData(record.getValue());
                 EntryView<Data, Data> entryView = createSimpleEntryView(key, value, record);
 
-                Operation operation = operationProvider.createMergeOperation(name, entryView, mergePolicy, false);
+                Operation operation = operationProvider.createLegacyMergeOperation(name, entryView, mergePolicy, false);
                 try {
                     int partitionId = partitionService.getPartitionId(key);
                     operationService

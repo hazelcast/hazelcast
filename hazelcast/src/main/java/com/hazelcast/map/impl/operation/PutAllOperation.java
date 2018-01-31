@@ -69,7 +69,7 @@ public class PutAllOperation extends MapOperation implements PartitionAwareOpera
     @Override
     public void run() {
         hasMapListener = mapEventPublisher.hasEventListener(name);
-        hasWanReplication = hasWanReplication();
+        hasWanReplication = mapContainer.isWanReplicationEnabled();
         hasBackups = hasBackups();
         hasInvalidation = mapContainer.hasInvalidationListener();
 
@@ -83,10 +83,6 @@ public class PutAllOperation extends MapOperation implements PartitionAwareOpera
         for (int i = 0; i < mapEntries.size(); i++) {
             put(mapEntries.getKey(i), mapEntries.getValue(i));
         }
-    }
-
-    private boolean hasWanReplication() {
-        return (mapContainer.getWanReplicationPublisher() != null && mapContainer.getWanMergePolicy() != null);
     }
 
     private boolean hasBackups() {

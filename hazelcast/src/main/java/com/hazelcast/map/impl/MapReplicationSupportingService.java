@@ -25,12 +25,15 @@ import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ReplicationSupportingService;
-import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.spi.SplitBrainMergeEntryView;
+import com.hazelcast.spi.SplitBrainMergePolicy;
 import com.hazelcast.wan.WanReplicationEvent;
 
 import java.util.concurrent.Future;
 
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
+import static com.hazelcast.spi.merge.SplitBrainEntryViews.createSplitBrainMergeEntryView;
+import static com.hazelcast.util.ExceptionUtil.rethrow;
 
 class MapReplicationSupportingService implements ReplicationSupportingService {
 
@@ -60,27 +63,34 @@ class MapReplicationSupportingService implements ReplicationSupportingService {
 
         try {
             int partitionId = nodeEngine.getPartitionService().getPartitionId(replicationRemove.getKey());
-            Future f = nodeEngine.getOperationService()
+            Future future = nodeEngine.getOperationService()
                     .invokeOnPartition(SERVICE_NAME, operation, partitionId);
-            f.get();
+            future.get();
         } catch (Throwable t) {
-            throw ExceptionUtil.rethrow(t);
+            throw rethrow(t);
         }
     }
 
     private void handleUpdate(MapReplicationUpdate replicationUpdate) {
-        EntryView<Data, Data> entryView = replicationUpdate.getEntryView();
-        MapMergePolicy mergePolicy = replicationUpdate.getMergePolicy();
+        Object mergePolicy = replicationUpdate.getMergePolicy();
         String mapName = replicationUpdate.getMapName();
         MapOperationProvider operationProvider = mapServiceContext.getMapOperationProvider(mapName);
-        MapOperation operation = operationProvider.createMergeOperation(mapName, entryView, mergePolicy, true);
+
+        MapOperation operation;
+        if (mergePolicy instanceof SplitBrainMergePolicy) {
+            SplitBrainMergeEntryView<Data, Data> entryView = createSplitBrainMergeEntryView(replicationUpdate.getEntryView());
+            operation = operationProvider.createMergeOperation(mapName, entryView, (SplitBrainMergePolicy) mergePolicy, true);
+        } else {
+            EntryView<Data, Data> entryView = replicationUpdate.getEntryView();
+            operation = operationProvider.createLegacyMergeOperation(mapName, entryView, (MapMergePolicy) mergePolicy, true);
+        }
         try {
-            int partitionId = nodeEngine.getPartitionService().getPartitionId(entryView.getKey());
-            Future f = nodeEngine.getOperationService()
+            int partitionId = nodeEngine.getPartitionService().getPartitionId(replicationUpdate.getEntryView().getKey());
+            Future future = nodeEngine.getOperationService()
                     .invokeOnPartition(SERVICE_NAME, operation, partitionId);
-            f.get();
+            future.get();
         } catch (Throwable t) {
-            throw ExceptionUtil.rethrow(t);
+            throw rethrow(t);
         }
     }
 }

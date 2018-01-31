@@ -80,7 +80,7 @@ public class MergePolicyProviderTest extends HazelcastTestSupport {
     }
 
     private void assertMergePolicyCorrectlyInitialised(String mergePolicyName) {
-        MapMergePolicy mergePolicy = mergePolicyProvider.getLegacyMergePolicy(mergePolicyName);
+        Object mergePolicy = mergePolicyProvider.getMergePolicy(mergePolicyName);
 
         assertNotNull(mergePolicy);
         assertEquals(mergePolicyName, mergePolicy.getClass().getName());

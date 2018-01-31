@@ -33,7 +33,6 @@ import com.hazelcast.map.impl.query.QueryEntryFactory;
 import com.hazelcast.map.impl.record.DataRecordFactory;
 import com.hazelcast.map.impl.record.ObjectRecordFactory;
 import com.hazelcast.map.impl.record.RecordFactory;
-import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializableByConvention;
@@ -93,7 +92,7 @@ public class MapContainer {
     protected final ObjectNamespace objectNamespace;
 
     protected WanReplicationPublisher wanReplicationPublisher;
-    protected MapMergePolicy wanMergePolicy;
+    protected Object wanMergePolicy;
 
     protected volatile Evictor evictor;
     protected volatile MapConfig mapConfig;
@@ -192,7 +191,7 @@ public class MapContainer {
         String wanReplicationRefName = wanReplicationRef.getName();
         WanReplicationService wanReplicationService = nodeEngine.getWanReplicationService();
         wanReplicationPublisher = wanReplicationService.getWanReplicationPublisher(wanReplicationRefName);
-        wanMergePolicy = mapServiceContext.getMergePolicyProvider().getLegacyMergePolicy(wanReplicationRef.getMergePolicy());
+        wanMergePolicy = mapServiceContext.getMergePolicyProvider().getMergePolicy(wanReplicationRef.getMergePolicy());
     }
 
     private PartitioningStrategy createPartitioningStrategy() {
@@ -224,12 +223,16 @@ public class MapContainer {
         return wanReplicationPublisher;
     }
 
-    public MapMergePolicy getWanMergePolicy() {
+    public Object getWanMergePolicy() {
         return wanMergePolicy;
     }
 
     public boolean isWanReplicationEnabled() {
         return wanReplicationPublisher != null && wanMergePolicy != null;
+    }
+
+    public boolean isWanRepublishingEnabled() {
+        return isWanReplicationEnabled() && mapConfig.getWanReplicationRef().isRepublishingEnabled();
     }
 
     /**

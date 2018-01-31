@@ -34,20 +34,20 @@ public final class ExpirationTimeSetter {
      * Sets expiration time if statistics are enabled.
      */
     public static void setExpirationTime(Record record, long maxIdleMillis) {
-        final long expirationTime = calculateExpirationTime(record, maxIdleMillis);
+        long expirationTime = calculateExpirationTime(record, maxIdleMillis);
         record.setExpirationTime(expirationTime);
     }
 
     private static long calculateExpirationTime(Record record, long maxIdleMillis) {
-        // 1. Calculate TTL expiration time.
-        final long ttl = checkedTime(record.getTtl());
-        final long ttlExpirationTime = sumForExpiration(ttl, getLifeStartTime(record));
+        // calculate TTL expiration time
+        long ttl = checkedTime(record.getTtl());
+        long ttlExpirationTime = sumForExpiration(ttl, getLifeStartTime(record));
 
-        // 2. Calculate idle expiration time.
+        // calculate idle expiration time
         maxIdleMillis = checkedTime(maxIdleMillis);
-        final long idleExpirationTime = sumForExpiration(maxIdleMillis, getIdlenessStartTime(record));
+        long idleExpirationTime = sumForExpiration(maxIdleMillis, getIdlenessStartTime(record));
 
-        // 3. Select most nearest expiration time.
+        // select most nearest expiration time
         return Math.min(ttlExpirationTime, idleExpirationTime);
     }
 
@@ -59,7 +59,7 @@ public final class ExpirationTimeSetter {
      */
     public static long getIdlenessStartTime(Record record) {
         long lastAccessTime = record.getLastAccessTime();
-        return lastAccessTime == 0L ? record.getCreationTime() : lastAccessTime;
+        return lastAccessTime <= 0 ? record.getCreationTime() : lastAccessTime;
     }
 
     /**
@@ -69,11 +69,11 @@ public final class ExpirationTimeSetter {
      */
     public static long getLifeStartTime(Record record) {
         long lastUpdateTime = record.getLastUpdateTime();
-        return lastUpdateTime == 0L ? record.getCreationTime() : lastUpdateTime;
+        return lastUpdateTime <= 0 ? record.getCreationTime() : lastUpdateTime;
     }
 
     private static long checkedTime(long time) {
-        return time <= 0L ? Long.MAX_VALUE : time;
+        return time <= 0 ? Long.MAX_VALUE : time;
     }
 
     private static long sumForExpiration(long criteriaTime, long now) {
@@ -83,16 +83,16 @@ public final class ExpirationTimeSetter {
         if (criteriaTime == 0) {
             return Long.MAX_VALUE;
         }
-        final long expirationTime = criteriaTime + now;
-        // detect potential overflow.
-        if (expirationTime < 0L) {
+        long expirationTime = criteriaTime + now;
+        // detect potential overflow
+        if (expirationTime < 0) {
             return Long.MAX_VALUE;
         }
         return expirationTime;
     }
 
     public static long calculateMaxIdleMillis(MapConfig mapConfig) {
-        final int maxIdleSeconds = mapConfig.getMaxIdleSeconds();
+        int maxIdleSeconds = mapConfig.getMaxIdleSeconds();
         if (maxIdleSeconds == 0) {
             return Long.MAX_VALUE;
         }
@@ -102,14 +102,14 @@ public final class ExpirationTimeSetter {
     /**
      * Updates records TTL and expiration time.
      *
-     * @param operationTTLMillis user provided ttl during operation call like put with ttl
+     * @param operationTTLMillis user provided TTL during operation call like put with TTL
      * @param record             record to be updated
      * @param mapConfig          map config object
      * @param entryCreated       give {@code true} if this is the first creation of entry,
-     *                           otherwise give {@code false} to indicate update.
+     *                           otherwise give {@code false} to indicate update
      */
-    public static void setTTLAndUpdateExpiryTime(long operationTTLMillis, Record record,
-                                                 MapConfig mapConfig, boolean entryCreated) {
+    public static void setTTLAndUpdateExpiryTime(long operationTTLMillis, Record record, MapConfig mapConfig,
+                                                 boolean entryCreated) {
         long ttlMillis = pickTTLMillis(operationTTLMillis, record.getTtl(), mapConfig, entryCreated);
         record.setTtl(ttlMillis);
 
@@ -118,46 +118,46 @@ public final class ExpirationTimeSetter {
     }
 
     /**
-     * Decides ttl millis to be set on record
+     * Decides if TTL millis should to be set on record.
      *
-     * @param existingTTLMillis  existing ttl on record
-     * @param operationTTLMillis user provided ttl during operation call like put with ttl
-     * @param mapConfig          used to get configured ttl
+     * @param existingTTLMillis  existing TTL on record
+     * @param operationTTLMillis user provided TTL during operation call like put with TTL
+     * @param mapConfig          used to get configured TTL
      * @param entryCreated       give {@code true} if this is the first creation of entry,
-     *                           otherwise give {@code false} to indicate update.
-     * @return tll value in millis to set to record
+     *                           otherwise give {@code false} to indicate update
+     * @return TTL value in millis to set to record
      */
-    private static long pickTTLMillis(long operationTTLMillis, long existingTTLMillis,
-                                      MapConfig mapConfig, boolean entryCreated) {
-        // 1. If user set operationTTLMillis when calling operation, use it
+    private static long pickTTLMillis(long operationTTLMillis, long existingTTLMillis, MapConfig mapConfig,
+                                      boolean entryCreated) {
+        // if user set operationTTLMillis when calling operation, use it
         if (operationTTLMillis > 0) {
             return checkedTime(operationTTLMillis);
         }
 
-        // 2. If this is the first creation of entry, try to get ttl from mapConfig
+        // if this is the first creation of entry, try to get TTL from mapConfig
         if (entryCreated && operationTTLMillis < 0 && mapConfig.getTimeToLiveSeconds() > 0) {
             return checkedTime(SECONDS.toMillis(mapConfig.getTimeToLiveSeconds()));
         }
 
-        // 3. If operationTTLMillis < 0, keep previously set ttl on record
+        // if operationTTLMillis < 0, keep previously set TTL on record
         if (operationTTLMillis < 0) {
             return checkedTime(existingTTLMillis);
         }
 
-        // 4. If we are here, entry should live forever
+        // if we are here, entry should live forever
         return Long.MAX_VALUE;
     }
 
     /**
-     * On backup partitions, this method delays key`s expiration.
+     * On backup partitions, this method delays key's expiration.
      */
     public static long calculateExpirationWithDelay(long timeInMillis, long delayMillis, boolean backup) {
         checkNotNegative(timeInMillis, "timeInMillis can't be negative");
 
         if (backup) {
-            final long delayedTime = timeInMillis + delayMillis;
-            // check for a potential long overflow.
-            if (delayedTime < 0L) {
+            long delayedTime = timeInMillis + delayMillis;
+            // check for a potential long overflow
+            if (delayedTime < 0) {
                 return Long.MAX_VALUE;
             } else {
                 return delayedTime;

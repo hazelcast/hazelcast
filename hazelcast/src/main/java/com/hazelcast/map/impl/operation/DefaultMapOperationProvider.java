@@ -35,6 +35,8 @@ import com.hazelcast.spi.SplitBrainMergePolicy;
 import java.util.List;
 import java.util.Set;
 
+import static java.util.Collections.singletonList;
+
 /**
  * Creates map operations.
  */
@@ -186,9 +188,15 @@ public class DefaultMapOperationProvider implements MapOperationProvider {
     }
 
     @Override
-    public MapOperation createMergeOperation(String name, EntryView<Data, Data> mergingEntry,
-                                             MapMergePolicy policy, boolean disableWanReplicationEvent) {
+    public MapOperation createLegacyMergeOperation(String name, EntryView<Data, Data> mergingEntry,
+                                                   MapMergePolicy policy, boolean disableWanReplicationEvent) {
         return new LegacyMergeOperation(name, mergingEntry, policy, disableWanReplicationEvent);
+    }
+
+    @Override
+    public MapOperation createMergeOperation(String name, SplitBrainMergeEntryView<Data, Data> entryView,
+                                             SplitBrainMergePolicy policy, boolean disableWanReplicationEvent) {
+        return new MergeOperation(name, singletonList(entryView), policy, disableWanReplicationEvent);
     }
 
     @Override

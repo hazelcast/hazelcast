@@ -84,19 +84,4 @@ public final class MergePolicyProvider {
             return getOrPutIfAbsent(mergePolicyMap, className, policyConstructorFunction);
         }
     }
-
-    /**
-     * Returns an instance of a merge policy by its classname.
-     * <p>
-     * Tries to resolve the classname as {@link com.hazelcast.map.merge.MapMergePolicy}.
-     * <p>
-     * If no merge policy matches an exception is thrown.
-     *
-     * @param className the classname of the given merge policy
-     * @return an instance of the merge policy class
-     */
-    public MapMergePolicy getLegacyMergePolicy(String className) {
-        checkNotNull(className, "Class name is mandatory!");
-        return getOrPutIfAbsent(mergePolicyMap, className, policyConstructorFunction);
-    }
 }
