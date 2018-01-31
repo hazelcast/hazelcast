@@ -77,7 +77,8 @@ public class PreJoinCacheConfig<K, V> extends CacheConfig<K, V> implements Ident
 
     @Override
     protected void readTenant(ObjectDataInput in) throws IOException {
-        setTenantControl((TenantControl)in.readObject());
+        TenantControl tc = in.readObject();
+        setTenantControl(tc);
     }
 
     @Override
