@@ -29,14 +29,14 @@ import java.util.concurrent.TimeoutException;
 import static com.hazelcast.util.ExceptionUtil.sneakyThrow;
 
 /**
- * Wraps a java.util.concurrent.Future to make it a com.hazelcast.core.ICompletableFuture.
+ * Wraps a {@code java.util.concurrent.Future} to make it a {@code com.hazelcast.core.ICompletableFuture}.
  * <p>
- * Ensures two-directional binding when it comes to cancellation:
- * - if delegate future cancelled - this future may be done or cancelled
- * - if this future cancelled - delegate future may be done or cancelled
- * <p>
+ * Ensures two-directional binding when it comes to cancellation:<ul>
+ *     <li>if delegate future cancelled - this future may be done or cancelled
+ *     <li>if this future cancelled - delegate future may be done or cancelled
+ * </ul>
  * Ensures the transfer of the result from the delegate future to this future
- * on execution of get() and isDone() methods.
+ * on execution of {@link #get()} and {@link #isDone()} methods.
  */
 class BasicCompletableFuture<V> extends AbstractCompletableFuture<V> {
 

@@ -47,7 +47,6 @@ public class FlakeIdGenerator_MemberIntegrationTest extends HazelcastTestSupport
     @Before
     public void before() {
         factory = createHazelcastInstanceFactory();
-
     }
 
     @After

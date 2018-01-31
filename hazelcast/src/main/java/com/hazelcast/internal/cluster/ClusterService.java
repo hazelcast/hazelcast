@@ -43,7 +43,7 @@ public interface ClusterService extends CoreService, Cluster {
     /**
      * Gets the member with the given UUID.
      *
-     * @param UUID the UUID of the member
+     * @param uuid the UUID of the member
      * @return the found member, or {@code null} if not found (if the UUID is {@code null}, {@code null} is returned)
      */
     MemberImpl getMember(String uuid);
@@ -162,8 +162,8 @@ public interface ClusterService extends CoreService, Cluster {
      *    <li>When there is a split-brain issue, if further splits occur in the already split sub-clusters, the
      *    uniqueness guarantee can be lost.
      * </ul>
-     * The value returned from this method can be cached. Even though it can change later, both values are
-     * unique.
+     * When duplicate member list join version is assigned during network split, the returned value can
+     * change to make it unique again. Therefore the caller should call this method repeatedly.
      *
      * @throws IllegalStateException if the local instance is not joined or the cluster just upgraded to 3.10,
      *      but local member has not yet learned its join version from the master node.

@@ -654,7 +654,7 @@
                 <xs:annotation>
                     <xs:documentation>
                         How many IDs are pre-fetched on the background when one call to newId() is made.
-                        Value must be >= 1, default is 100.
+                        Value must be in the range 1..100,000, default is 100.
                     </xs:documentation>
                 </xs:annotation>
                 <xs:simpleType>

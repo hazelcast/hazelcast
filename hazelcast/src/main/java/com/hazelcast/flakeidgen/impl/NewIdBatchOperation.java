@@ -16,24 +16,25 @@
 
 package com.hazelcast.flakeidgen.impl;
 
+import com.hazelcast.flakeidgen.impl.FlakeIdGeneratorProxy.IdBatchAndWaitTime;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 
 class NewIdBatchOperation extends Operation implements IdentifiedDataSerializable {
 
     private String flakeIdGenName;
     private int batchSize;
-    private long returnValue;
 
     // for deserialization
     NewIdBatchOperation() {
     }
 
-    public NewIdBatchOperation(String genName, int batchSize) {
+    NewIdBatchOperation(String genName, int batchSize) {
         this.flakeIdGenName = genName;
         this.batchSize = batchSize;
     }
@@ -42,12 +43,22 @@ class NewIdBatchOperation extends Operation implements IdentifiedDataSerializabl
     public void run() throws Exception {
         FlakeIdGeneratorProxy proxy = (FlakeIdGeneratorProxy) getNodeEngine().getProxyService()
                 .getDistributedObject(getServiceName(), flakeIdGenName);
-        returnValue = proxy.newIdBaseLocal(batchSize);
+        final IdBatchAndWaitTime result = proxy.newIdBaseLocal(batchSize);
+        if (result.waitTimeMillis == 0) {
+            sendResponse(result.idBatch.base());
+        } else {
+            getNodeEngine().getExecutionService().schedule(new Runnable() {
+                @Override
+                public void run() {
+                    sendResponse(result.idBatch.base());
+                }
+            }, result.waitTimeMillis, TimeUnit.MILLISECONDS);
+        }
     }
 
     @Override
-    public Object getResponse() {
-        return returnValue;
+    public boolean returnsResponse() {
+        return false;
     }
 
     @Override
