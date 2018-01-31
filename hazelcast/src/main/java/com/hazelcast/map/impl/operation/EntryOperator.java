@@ -302,7 +302,7 @@ public final class EntryOperator {
         if (backup) {
             recordStore.putBackup(dataKey, newValue);
         } else {
-            recordStore.set(dataKey, newValue, DEFAULT_TTL);
+            recordStore.setWithUncountedAccess(dataKey, newValue, DEFAULT_TTL);
             if (mapOperation.isPostProcessing(recordStore)) {
                 Record record = recordStore.getRecord(dataKey);
                 newValue = record == null ? null : record.getValue();

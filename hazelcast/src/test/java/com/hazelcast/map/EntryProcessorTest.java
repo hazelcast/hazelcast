@@ -981,6 +981,37 @@ public class EntryProcessorTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testHitsAreIncrementedOnceOnEntryUpdate() {
+
+        class UpdatingEntryProcessor extends AbstractEntryProcessor<String, String> {
+
+            private final String value;
+
+            public UpdatingEntryProcessor(String value) {
+                this.value = value;
+            }
+
+            @Override
+            public Object process(Map.Entry<String, String> entry) {
+                entry.setValue(value);
+                return null;
+            }
+        }
+
+        final Config config = getConfig();
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        final HazelcastInstance instance = factory.newHazelcastInstance(config);
+
+        final IMap<Object, Object> map = instance.getMap(MAP_NAME);
+        map.put("key", "value");
+
+        final long hitsBefore = map.getLocalMapStats().getHits();
+        map.executeOnKey("key", new UpdatingEntryProcessor("new value"));
+        assertEquals(1, map.getLocalMapStats().getHits() - hitsBefore);
+        assertEquals("new value", map.get("key"));
+    }
+
+    @Test
     public void testMapEntryProcessorPartitionAware() {
         String mapName1 = "default";
         String mapName2 = "default-2";

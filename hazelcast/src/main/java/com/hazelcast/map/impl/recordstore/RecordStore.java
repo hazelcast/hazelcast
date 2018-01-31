@@ -66,11 +66,21 @@ public interface RecordStore<R extends Record> extends SplitBrainAwareDataContai
     R putBackup(Data key, Object value, long ttl, boolean putTransient);
 
     /**
-     * Returns {@code true} if key doesn't exist previously, otherwise returns {@code false}.
+     * Sets a value associated with the given {@code dataKey} to the new given {@code value}.
      *
+     * @param dataKey the key to set the value of.
+     * @param value   the new value to store.
+     * @param ttl     the TTL for the new value.
+     * @return {@code true} if the key wasn't existent before the operation, {@code false} otherwise.
      * @see com.hazelcast.core.IMap#set(Object, Object)
      */
     boolean set(Data dataKey, Object value, long ttl);
+
+    /**
+     * Does exactly the same thing as {@link #set(Data, Object, long)} except the invocation is not counted as
+     * a read access while updating the access statics.
+     */
+    boolean setWithUncountedAccess(Data dataKey, Object value, long ttl);
 
     Object remove(Data dataKey);
 
@@ -395,7 +405,8 @@ public interface RecordStore<R extends Record> extends SplitBrainAwareDataContai
      */
     boolean isLoaded();
 
-    void checkIfLoaded() throws RetryableHazelcastException;
+    void checkIfLoaded()
+            throws RetryableHazelcastException;
 
     /**
      * Triggers key and value loading if there is no ongoing or completed
