@@ -227,6 +227,13 @@ public class JobRepository {
     }
 
     /**
+     * Returns how many execution ids are present for the given job id
+     */
+    long getExecutionIdCount(long jobId) {
+        return randomIds.values(new FilterExecutionIdByJobIdPredicate(jobId)).size();
+    }
+
+    /**
      * Puts a JobResult for the given job and deletes the JobRecord.
      * @throws JobNotFoundException if the JobRecord is not found
      * @throws IllegalStateException if the JobResult is already present

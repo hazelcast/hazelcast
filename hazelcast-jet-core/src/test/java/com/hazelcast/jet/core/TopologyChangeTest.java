@@ -301,7 +301,7 @@ public class TopologyChangeTest extends JetTestSupport {
         Job job = client.newJob(dag, config);
         StuckProcessor.executionStarted.await();
 
-        instances[2].getHazelcastInstance().getLifecycleService().terminate();
+        instances[0].getHazelcastInstance().getLifecycleService().terminate();
         StuckProcessor.proceedLatch.countDown();
 
         Throwable ex = job.getFuture().handle((r, e) -> e).get();
@@ -343,7 +343,7 @@ public class TopologyChangeTest extends JetTestSupport {
     }
 
     @Test
-    public void when_jobParticipantHasStaleMemberList_then_jobInitRetries() throws Throwable {
+    public void when_jobParticipantHasStaleMemberList_then_jobInitRetries() {
         // Given
         dropOperationsBetween(instances[0].getHazelcastInstance(), instances[2].getHazelcastInstance(),
                 ClusterDataSerializerHook.F_ID, singletonList(MEMBER_INFO_UPDATE));
@@ -365,7 +365,7 @@ public class TopologyChangeTest extends JetTestSupport {
     }
 
     @Test
-    public void when_jobParticipantReceivesStaleInitOperation_then_jobRestarts() throws Throwable {
+    public void when_jobParticipantReceivesStaleInitOperation_then_jobRestarts() {
         // Given
         JetInstance newInstance = factory.newMember(config);
         for (JetInstance instance : instances) {
@@ -405,7 +405,7 @@ public class TopologyChangeTest extends JetTestSupport {
     }
 
     @Test
-    public void when_nodeIsShuttingDownDuringInit_then_jobRestarts() throws Throwable {
+    public void when_nodeIsShuttingDownDuringInit_then_jobRestarts() {
         // Given that newInstance will have a long shutdown process
         for (JetInstance instance : instances) {
             warmUpPartitions(instance.getHazelcastInstance());
@@ -437,7 +437,7 @@ public class TopologyChangeTest extends JetTestSupport {
     }
 
     @Test
-    public void when_nodeIsShuttingDownAfterInit_then_jobRestarts() throws Throwable {
+    public void when_nodeIsShuttingDownAfterInit_then_jobRestarts() {
         // Given that the second node has not received ExecuteOperation yet
         for (JetInstance instance : instances) {
             warmUpPartitions(instance.getHazelcastInstance());

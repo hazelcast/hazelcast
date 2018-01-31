@@ -25,6 +25,7 @@ import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JobNotFoundException;
 import com.hazelcast.jet.core.JobStatus;
+import com.hazelcast.jet.core.TopologyChangedException;
 import com.hazelcast.jet.impl.deployment.JetClassLoader;
 import com.hazelcast.jet.impl.execution.SnapshotRecord.SnapshotStatus;
 import com.hazelcast.logging.ILogger;
@@ -233,7 +234,7 @@ public class JobCoordinationService {
             return;
         }
 
-        logger.info("Starting job " + idToString(masterContext.getJobId()) + " discovered by scanning of JobRecord-s");
+        logger.info("Starting job " + idToString(masterContext.getJobId()) + " discovered by scanning of JobRecords");
         tryStartJob(masterContext);
     }
 
@@ -245,6 +246,17 @@ public class JobCoordinationService {
             logger.fine("Completing master context " + idToString(jobId) + " since already completed with result: " +
                     jobResult);
             masterContext.setFinalResult(jobResult.getFailure());
+            return masterContexts.remove(jobId, masterContext);
+        }
+
+        if (!masterContext.getJobConfig().isAutoRestartOnMemberFailureEnabled()
+                && jobRepository.getExecutionIdCount(jobId) > 0) {
+            String coordinator = nodeEngine.getNode().getThisUuid();
+            Throwable result = new TopologyChangedException();
+            logger.info("Completing Job " + idToString(jobId) + " with " + result
+                    + " since auto-restart is disabled and the job has been executed before");
+            jobRepository.completeJob(jobId, coordinator, System.currentTimeMillis(), result);
+            masterContext.setFinalResult(result);
             return masterContexts.remove(jobId, masterContext);
         }
 
@@ -569,7 +581,6 @@ public class JobCoordinationService {
     }
 
     private void performCleanup() {
-        // order is important
         Set<Long> runningJobIds = masterContexts.keySet();
         jobRepository.cleanup(runningJobIds);
     }
