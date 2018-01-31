@@ -88,6 +88,25 @@ public class MemberGroupConfig {
     }
 
     @Override
+    public final boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || !(o instanceof MemberGroupConfig)) {
+            return false;
+        }
+
+        MemberGroupConfig that = (MemberGroupConfig) o;
+
+        return interfaces.equals(that.interfaces);
+    }
+
+    @Override
+    public final int hashCode() {
+        return interfaces.hashCode();
+    }
+
+    @Override
     public String toString() {
         return "MemberGroupConfig{interfaces=" + interfaces + '}';
     }

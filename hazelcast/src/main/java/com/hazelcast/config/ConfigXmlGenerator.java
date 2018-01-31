@@ -424,15 +424,7 @@ public class ConfigXmlGenerator {
                     .node("quorum-ref", mm.getQuorumName())
                     .node("value-collection-type", mm.getValueCollectionType());
 
-            if (!mm.getEntryListenerConfigs().isEmpty()) {
-                gen.open("entry-listeners");
-                for (EntryListenerConfig lc : mm.getEntryListenerConfigs()) {
-                    gen.node("entry-listener", classNameOrImplClass(lc.getClassName(), lc.getImplementation()),
-                            "include-value", lc.isIncludeValue(),
-                            "local", lc.isLocal());
-                }
-                gen.close();
-            }
+            entryListenerConfigXmlGenerator(gen, mm.getEntryListenerConfigs());
             MergePolicyConfig mergePolicyConfig = mm.getMergePolicyConfig();
             gen.node("merge-policy", mergePolicyConfig.getPolicy(), "batch-size", mergePolicyConfig.getBatchSize())
                     .close();
@@ -610,9 +602,10 @@ public class ConfigXmlGenerator {
             wanReplicationConfigXmlGenerator(gen, m.getWanReplicationRef());
             mapIndexConfigXmlGenerator(gen, m);
             mapAttributeConfigXmlGenerator(gen, m);
-            mapEntryListenerConfigXmlGenerator(gen, m);
+            entryListenerConfigXmlGenerator(gen, m);
             mapPartitionLostListenerConfigXmlGenerator(gen, m);
             mapPartitionStrategyConfigXmlGenerator(gen, m);
+            mapQueryCachesConfigXmlGenerator(gen, m);
             gen.close();
         }
     }
@@ -740,10 +733,50 @@ public class ConfigXmlGenerator {
         }
     }
 
-    private static void mapEntryListenerConfigXmlGenerator(XmlGenerator gen, MapConfig m) {
-        if (!m.getEntryListenerConfigs().isEmpty()) {
+    private static void mapQueryCachesConfigXmlGenerator(XmlGenerator gen, MapConfig mapConfig) {
+        List<QueryCacheConfig> queryCacheConfigs = mapConfig.getQueryCacheConfigs();
+        if (queryCacheConfigs != null && !queryCacheConfigs.isEmpty()) {
+            gen.open("query-caches");
+            for (QueryCacheConfig queryCacheConfig : queryCacheConfigs) {
+                gen.open("query-cache", "name", queryCacheConfig.getName());
+                gen.node("include-value", queryCacheConfig.isIncludeValue());
+                gen.node("in-memory-format", queryCacheConfig.getInMemoryFormat());
+                gen.node("populate", queryCacheConfig.isPopulate());
+                gen.node("coalesce", queryCacheConfig.isCoalesce());
+                gen.node("delay-seconds", queryCacheConfig.getDelaySeconds());
+                gen.node("batch-size", queryCacheConfig.getBatchSize());
+                gen.node("buffer-size", queryCacheConfig.getBufferSize());
+
+                evictionConfigXmlGenerator(gen, queryCacheConfig.getEvictionConfig());
+                mapIndexConfigXmlGenerator(gen, queryCacheConfig.getIndexConfigs());
+                mapQueryCachePredicateConfigXmlGenerator(gen, queryCacheConfig);
+
+                entryListenerConfigXmlGenerator(gen, queryCacheConfig.getEntryListenerConfigs());
+                gen.close();
+            }
+            gen.close();
+        }
+    }
+
+    private static void mapQueryCachePredicateConfigXmlGenerator(XmlGenerator gen,
+                                                                 QueryCacheConfig queryCacheConfig) {
+        PredicateConfig predicateConfig = queryCacheConfig.getPredicateConfig();
+
+        String type = predicateConfig.getClassName() != null ? "class-name" : "sql";
+        String content = predicateConfig.getClassName() != null ? predicateConfig.getClassName() : predicateConfig
+                .getSql();
+        gen.node("predicate", content, "type", type);
+    }
+
+    private static void entryListenerConfigXmlGenerator(XmlGenerator gen, MapConfig m) {
+        entryListenerConfigXmlGenerator(gen, m.getEntryListenerConfigs());
+    }
+
+    private static void entryListenerConfigXmlGenerator(XmlGenerator gen,
+                                                        List<EntryListenerConfig> entryListenerConfigs) {
+        if (!entryListenerConfigs.isEmpty()) {
             gen.open("entry-listeners");
-            for (EntryListenerConfig lc : m.getEntryListenerConfigs()) {
+            for (EntryListenerConfig lc : entryListenerConfigs) {
                 gen.node("entry-listener", classNameOrImplClass(lc.getClassName(), lc.getImplementation()),
                         "include-value", lc.isIncludeValue(), "local", lc.isLocal());
             }
@@ -763,9 +796,13 @@ public class ConfigXmlGenerator {
     }
 
     private static void mapIndexConfigXmlGenerator(XmlGenerator gen, MapConfig m) {
-        if (!m.getMapIndexConfigs().isEmpty()) {
+        mapIndexConfigXmlGenerator(gen, m.getMapIndexConfigs());
+    }
+
+    private static void mapIndexConfigXmlGenerator(XmlGenerator gen, List<MapIndexConfig> mapIndexConfigs) {
+        if (!mapIndexConfigs.isEmpty()) {
             gen.open("indexes");
-            for (MapIndexConfig indexCfg : m.getMapIndexConfigs()) {
+            for (MapIndexConfig indexCfg : mapIndexConfigs) {
                 gen.node("index", indexCfg.getAttribute(), "ordered", indexCfg.isOrdered());
             }
             gen.close();
@@ -808,30 +845,37 @@ public class ConfigXmlGenerator {
             String factoryClass = s.getFactoryImplementation() != null
                     ? s.getFactoryImplementation().getClass().getName()
                     : s.getFactoryClassName();
+            MapStoreConfig.InitialLoadMode initialMode = s.getInitialLoadMode();
 
-            gen.open("map-store", "enabled", s.isEnabled())
-                    .node("class-name", clazz)
-                    .node("factory-class-name", factoryClass)
-                    .node("write-delay-seconds", s.getWriteDelaySeconds())
-                    .node("write-batch-size", s.getWriteBatchSize())
-                    .appendProperties(s.getProperties())
-                    .close();
+            gen.open("map-store", "enabled", s.isEnabled(), "initial-mode", initialMode.toString())
+               .node("class-name", clazz)
+               .node("factory-class-name", factoryClass)
+               .node("write-delay-seconds", s.getWriteDelaySeconds())
+               .node("write-batch-size", s.getWriteBatchSize())
+               .appendProperties(s.getProperties())
+               .close();
         }
     }
 
     @SuppressWarnings("deprecation")
     private static void mapNearCacheConfigXmlGenerator(XmlGenerator gen, NearCacheConfig n) {
         if (n != null) {
-            gen.open("near-cache")
-                    .node("in-memory-format", n.getInMemoryFormat())
-                    .node("invalidate-on-change", n.isInvalidateOnChange())
-                    .node("time-to-live-seconds", n.getTimeToLiveSeconds())
-                    .node("max-idle-seconds", n.getMaxIdleSeconds());
+            if (n.getName() != null) {
+                gen.open("near-cache", "name", n.getName());
+            } else {
+                gen.open("near-cache");
+            }
+
+            gen.node("in-memory-format", n.getInMemoryFormat())
+               .node("invalidate-on-change", n.isInvalidateOnChange())
+               .node("time-to-live-seconds", n.getTimeToLiveSeconds())
+               .node("max-idle-seconds", n.getMaxIdleSeconds())
+               .node("serialize-keys", n.isSerializeKeys())
+               .node("cache-local-entries", n.isCacheLocalEntries())
+               .node("max-size", n.getMaxSize())
+               .node("eviction-policy", n.getEvictionPolicy());
+
             evictionConfigXmlGenerator(gen, n.getEvictionConfig());
-            gen
-                    .node("eviction-policy", n.getEvictionPolicy())
-                    .node("max-size", n.getMaxSize())
-                    .node("cache-local-entries", n.isCacheLocalEntries());
             gen.close();
         }
     }

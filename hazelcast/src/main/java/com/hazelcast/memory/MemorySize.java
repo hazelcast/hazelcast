@@ -209,4 +209,28 @@ public final class MemorySize {
         }
         return size + " bytes";
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        MemorySize that = (MemorySize) o;
+
+        if (value != that.value) {
+            return false;
+        }
+        return unit == that.unit;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = (int) (value ^ (value >>> 32));
+        result = 31 * result + (unit != null ? unit.hashCode() : 0);
+        return result;
+    }
 }

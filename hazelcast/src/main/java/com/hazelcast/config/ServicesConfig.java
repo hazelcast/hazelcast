@@ -69,6 +69,30 @@ public class ServicesConfig {
     }
 
     @Override
+    public final boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || !(o instanceof ServicesConfig)) {
+            return false;
+        }
+
+        ServicesConfig that = (ServicesConfig) o;
+
+        if (enableDefaults != that.enableDefaults) {
+            return false;
+        }
+        return services.equals(that.services);
+    }
+
+    @Override
+    public final int hashCode() {
+        int result = (enableDefaults ? 1 : 0);
+        result = 31 * result + services.hashCode();
+        return result;
+    }
+
+    @Override
     public String toString() {
         return "ServicesConfig{enableDefaults=" + enableDefaults + ", services=" + services + '}';
     }

@@ -133,6 +133,39 @@ public class SerializerConfig {
     }
 
     @Override
+    @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
+    public final boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || !(o instanceof SerializerConfig)) {
+            return false;
+        }
+
+        SerializerConfig that = (SerializerConfig) o;
+
+        if (className != null ? !className.equals(that.className) : that.className != null) {
+            return false;
+        }
+        if (implementation != null ? !implementation.equals(that.implementation) : that.implementation != null) {
+            return false;
+        }
+        if (typeClass != null ? !typeClass.equals(that.typeClass) : that.typeClass != null) {
+            return false;
+        }
+        return typeClassName != null ? typeClassName.equals(that.typeClassName) : that.typeClassName == null;
+    }
+
+    @Override
+    public final int hashCode() {
+        int result = className != null ? className.hashCode() : 0;
+        result = 31 * result + (implementation != null ? implementation.hashCode() : 0);
+        result = 31 * result + (typeClass != null ? typeClass.hashCode() : 0);
+        result = 31 * result + (typeClassName != null ? typeClassName.hashCode() : 0);
+        return result;
+    }
+
+    @Override
     public String toString() {
         return "SerializerConfig{"
                 + "className='" + className + '\''

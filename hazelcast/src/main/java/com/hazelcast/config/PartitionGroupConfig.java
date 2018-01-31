@@ -256,6 +256,34 @@ public class PartitionGroupConfig {
     }
 
     @Override
+    public final boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || !(o instanceof PartitionGroupConfig)) {
+            return false;
+        }
+
+        PartitionGroupConfig that = (PartitionGroupConfig) o;
+
+        if (enabled != that.enabled) {
+            return false;
+        }
+        if (groupType != that.groupType) {
+            return false;
+        }
+        return memberGroupConfigs.equals(that.memberGroupConfigs);
+    }
+
+    @Override
+    public final int hashCode() {
+        int result = (enabled ? 1 : 0);
+        result = 31 * result + (groupType != null ? groupType.hashCode() : 0);
+        result = 31 * result + memberGroupConfigs.hashCode();
+        return result;
+    }
+
+    @Override
     public String toString() {
         return "PartitionGroupConfig{"
                 + "enabled=" + enabled
