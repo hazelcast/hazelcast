@@ -49,22 +49,22 @@ public abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K,
     /**
      * The {@link CacheEntryListenerConfiguration}s for the {@link javax.cache.configuration.Configuration}.
      */
-    protected Set<CacheEntryListenerConfiguration<K, V>> listenerConfigurations;
+    protected Set<CacheEntryListenerConfiguration<K, V>> _listenerConfigurations;
 
     /**
      * The {@link javax.cache.configuration.Factory} for the {@link javax.cache.integration.CacheLoader}.
      */
-    protected Factory<CacheLoader<K, V>> cacheLoaderFactory;
+    protected Factory<CacheLoader<K, V>> _cacheLoaderFactory;
 
     /**
      * The {@link Factory} for the {@link javax.cache.integration.CacheWriter}.
      */
-    protected Factory<CacheWriter<? super K, ? super V>> cacheWriterFactory;
+    protected Factory<CacheWriter<? super K, ? super V>> _cacheWriterFactory;
 
     /**
      * The {@link Factory} for the {@link javax.cache.expiry.ExpiryPolicy}.
      */
-    protected Factory<ExpiryPolicy> expiryPolicyFactory;
+    protected Factory<ExpiryPolicy> _expiryPolicyFactory;
 
     /**
      * A flag indicating if "read-through" mode is required.
@@ -113,10 +113,10 @@ public abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K,
     private transient ClassLoader classLoader;
 
     public AbstractCacheConfig() {
-        this.listenerConfigurations = createConcurrentSet();
-        this.cacheLoaderFactory = null;
-        this.cacheWriterFactory = null;
-        this.expiryPolicyFactory = EternalExpiryPolicy.factoryOf();
+        this._listenerConfigurations = createConcurrentSet();
+        this._cacheLoaderFactory = null;
+        this._cacheWriterFactory = null;
+        this._expiryPolicyFactory = EternalExpiryPolicy.factoryOf();
         this.isReadThrough = false;
         this.isWriteThrough = false;
         this.isStatisticsEnabled = false;
@@ -127,16 +127,16 @@ public abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K,
     public AbstractCacheConfig(CompleteConfiguration<K, V> configuration) {
         setKeyType(configuration.getKeyType());
         setValueType(configuration.getValueType());
-        this.listenerConfigurations = createConcurrentSet();
+        this._listenerConfigurations = createConcurrentSet();
         for (CacheEntryListenerConfiguration<K, V> listenerConf : configuration.getCacheEntryListenerConfigurations()) {
-            listenerConfigurations.add(listenerConf);
+            _listenerConfigurations.add(listenerConf);
         }
-        this.cacheLoaderFactory = configuration.getCacheLoaderFactory();
-        this.cacheWriterFactory = configuration.getCacheWriterFactory();
+        this._cacheLoaderFactory = configuration.getCacheLoaderFactory();
+        this._cacheWriterFactory = configuration.getCacheWriterFactory();
 
 
         Factory<ExpiryPolicy> factory = configuration.getExpiryPolicyFactory();
-        this.expiryPolicyFactory = factory == null ? EternalExpiryPolicy.factoryOf() : factory;
+        this._expiryPolicyFactory = factory == null ? EternalExpiryPolicy.factoryOf() : factory;
 
         this.isReadThrough = configuration.isReadThrough();
         this.isWriteThrough = configuration.isWriteThrough();
@@ -158,7 +158,7 @@ public abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K,
             CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
 
         checkNotNull(cacheEntryListenerConfiguration, "CacheEntryListenerConfiguration can't be null");
-        if (!listenerConfigurations.add(cacheEntryListenerConfiguration)) {
+        if (!getListenerConfigurations().add(cacheEntryListenerConfiguration)) {
             throw new IllegalArgumentException("A CacheEntryListenerConfiguration can "
                     + "be registered only once");
         }
@@ -175,13 +175,13 @@ public abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K,
     public CacheConfiguration<K, V> removeCacheEntryListenerConfiguration(
             CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
         checkNotNull(cacheEntryListenerConfiguration, "CacheEntryListenerConfiguration can't be null");
-        listenerConfigurations.remove(cacheEntryListenerConfiguration);
+        getListenerConfigurations().remove(cacheEntryListenerConfiguration);
         return this;
     }
 
     @Override
     public Iterable<CacheEntryListenerConfiguration<K, V>> getCacheEntryListenerConfigurations() {
-        return listenerConfigurations;
+        return getListenerConfigurations();
     }
 
     @Override
@@ -266,36 +266,39 @@ public abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K,
 
     @Override
     public Factory<CacheLoader<K, V>> getCacheLoaderFactory() {
-        return cacheLoaderFactory;
+        resolveDelayedLoadingClasses();
+        return _cacheLoaderFactory;
     }
 
     @Override
     public CacheConfiguration<K, V> setCacheLoaderFactory(Factory<? extends CacheLoader<K, V>> cacheLoaderFactory) {
-        this.cacheLoaderFactory = (Factory<CacheLoader<K, V>>) cacheLoaderFactory;
+        this._cacheLoaderFactory = (Factory<CacheLoader<K, V>>) cacheLoaderFactory;
         return this;
     }
 
     @Override
     public CacheConfiguration<K, V> setExpiryPolicyFactory(Factory<? extends ExpiryPolicy> expiryPolicyFactory) {
-        this.expiryPolicyFactory = (Factory<ExpiryPolicy>) expiryPolicyFactory;
+        this._expiryPolicyFactory = (Factory<ExpiryPolicy>) expiryPolicyFactory;
         return this;
     }
 
     @Override
     public CacheConfiguration<K, V> setCacheWriterFactory(
             Factory<? extends CacheWriter<? super K, ? super V>> cacheWriterFactory) {
-        this.cacheWriterFactory = (Factory<CacheWriter<? super K, ? super V>>) cacheWriterFactory;
+        this._cacheWriterFactory = (Factory<CacheWriter<? super K, ? super V>>) cacheWriterFactory;
         return this;
     }
 
     @Override
     public Factory<CacheWriter<? super K, ? super V>> getCacheWriterFactory() {
-        return cacheWriterFactory;
+        resolveDelayedLoadingClasses();
+        return _cacheWriterFactory;
     }
 
     @Override
     public Factory<ExpiryPolicy> getExpiryPolicyFactory() {
-        return expiryPolicyFactory;
+        resolveDelayedLoadingClasses();
+        return _expiryPolicyFactory;
     }
 
     @Override
@@ -419,18 +422,22 @@ public abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K,
     }
 
     public CacheConfiguration<K, V> setListenerConfigurations() {
-        this.listenerConfigurations = createConcurrentSet();
+        this._listenerConfigurations = createConcurrentSet();
         return this;
+    }
+
+    public Set<CacheEntryListenerConfiguration<K,V>> getListenerConfigurations() {
+        resolveDelayedLoadingClasses();
+        return _listenerConfigurations;
+    }
+
+    protected void resolveDelayedLoadingClasses() {
     }
 
     @Override
     public int hashCode() {
-        int result = cacheLoaderFactory != null ? cacheLoaderFactory.hashCode() : 0;
-        result = 31 * result + listenerConfigurations.hashCode();
-        result = 31 * result + keyType.hashCode();
-        result = 31 * result + valueType.hashCode();
-        result = 31 * result + (cacheWriterFactory != null ? cacheWriterFactory.hashCode() : 0);
-        result = 31 * result + (expiryPolicyFactory != null ? expiryPolicyFactory.hashCode() : 0);
+        int result = getKeyType().hashCode();
+        result = 31 * result + getValueType().hashCode();
         result = 31 * result + (isReadThrough ? 1 : 0);
         result = 31 * result + (isWriteThrough ? 1 : 0);
         result = 31 * result + (isStatisticsEnabled ? 1 : 0);
@@ -462,19 +469,6 @@ public abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K,
             return false;
         }
         if (isWriteThrough != that.isWriteThrough) {
-            return false;
-        }
-        if (cacheLoaderFactory != null ? !cacheLoaderFactory.equals(that.cacheLoaderFactory) : that.cacheLoaderFactory != null) {
-            return false;
-        }
-        if (cacheWriterFactory != null ? !cacheWriterFactory.equals(that.cacheWriterFactory) : that.cacheWriterFactory != null) {
-            return false;
-        }
-        if (expiryPolicyFactory != null
-                ? !expiryPolicyFactory.equals(that.expiryPolicyFactory) : that.expiryPolicyFactory != null) {
-            return false;
-        }
-        if (!listenerConfigurations.equals(that.listenerConfigurations)) {
             return false;
         }
 
