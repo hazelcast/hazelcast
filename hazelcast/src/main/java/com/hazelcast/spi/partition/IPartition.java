@@ -36,7 +36,7 @@ public interface IPartition {
 
     /**
      * Checks if the partition is local.
-     *
+     * <p>
      * A partition is local if and only if the {@link #getOwnerOrNull()} returns the same address as 'this' address of the
      * {@link ClusterService#getThisAddress()}. If the address is {@code null} or a different address, {@code false}
      * is returned.
@@ -72,8 +72,16 @@ public interface IPartition {
      * The returned value could be stale when it is returned.
      *
      * @return {@code true} if there is a migration going on, {@code false} otherwise
+     * @see #getMigrationEndpoint()
      */
     boolean isMigrating();
+
+    /**
+     * @return the migration endpoint of this partition or {@code null} if this partition is not migrating at the moment.
+     * The returned value could be stale when it is returned.
+     * @see #isMigrating()
+     */
+    MigrationEndpoint getMigrationEndpoint();
 
     /**
      * Returns the address of the replica.

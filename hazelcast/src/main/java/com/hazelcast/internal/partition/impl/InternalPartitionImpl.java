@@ -19,6 +19,8 @@ package com.hazelcast.internal.partition.impl;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.PartitionListener;
 import com.hazelcast.nio.Address;
+import com.hazelcast.spi.partition.IPartition;
+import com.hazelcast.spi.partition.MigrationEndpoint;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.Arrays;
@@ -33,7 +35,7 @@ public class InternalPartitionImpl implements InternalPartition {
     private final int partitionId;
     private final PartitionListener partitionListener;
     private final Address thisAddress;
-    private volatile boolean isMigrating;
+    private volatile MigrationEndpoint migrationEndpoint = null;
 
     InternalPartitionImpl(int partitionId, PartitionListener partitionListener, Address thisAddress) {
         this.partitionId = partitionId;
@@ -55,11 +57,32 @@ public class InternalPartitionImpl implements InternalPartition {
 
     @Override
     public boolean isMigrating() {
-        return isMigrating;
+        return migrationEndpoint != null;
     }
 
-    public void setMigrating(boolean isMigrating) {
-        this.isMigrating = isMigrating;
+    @Override
+    public MigrationEndpoint getMigrationEndpoint() {
+        return migrationEndpoint;
+    }
+
+    /**
+     * Sets migrating flag on this partition.
+     *
+     * @param endpoint tells on which side the migration is going on.
+     * @see IPartition#isMigrating()
+     */
+    public void setMigratingFlag(MigrationEndpoint endpoint) {
+        assert endpoint != null;
+        this.migrationEndpoint = endpoint;
+    }
+
+    /**
+     * Clears migrating flag on this partition.
+     *
+     * @see IPartition#isMigrating()
+     */
+    public void clearMigratingFlag() {
+        this.migrationEndpoint = null;
     }
 
     @Override
@@ -203,7 +226,7 @@ public class InternalPartitionImpl implements InternalPartition {
 
     void reset() {
         addresses = new Address[MAX_REPLICA_COUNT];
-        setMigrating(false);
+        clearMigratingFlag();
     }
 
     @Override

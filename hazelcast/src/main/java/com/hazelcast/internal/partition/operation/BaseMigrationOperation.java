@@ -37,6 +37,7 @@ import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.partition.MigrationEndpoint;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.io.IOException;
@@ -135,8 +136,12 @@ abstract class BaseMigrationOperation extends AbstractPartitionOperation
         }
     }
 
-    /** Sets the active migration and the partition migration flag. */
-    void setActiveMigration() {
+    /**
+     * Sets the active migration and the partition migration flag.
+     *
+     * @param endpoint tells on which side the migration is going on.
+     */
+    void setActiveMigration(MigrationEndpoint endpoint) {
         InternalPartitionServiceImpl partitionService = getService();
         MigrationManager migrationManager = partitionService.getMigrationManager();
         MigrationInfo currentActiveMigration = migrationManager.setActiveMigration(migrationInfo);
@@ -150,7 +155,7 @@ abstract class BaseMigrationOperation extends AbstractPartitionOperation
                     + ". Current active migration is " + currentActiveMigration);
         }
         PartitionStateManager partitionStateManager = partitionService.getPartitionStateManager();
-        partitionStateManager.setMigratingFlag(migrationInfo.getPartitionId());
+        partitionStateManager.setMigratingFlag(migrationInfo.getPartitionId(), endpoint);
     }
 
     void onMigrationStart() {

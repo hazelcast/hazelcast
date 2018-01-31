@@ -41,6 +41,7 @@ import com.hazelcast.spi.impl.SimpleExecutionCallback;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
+import com.hazelcast.spi.partition.MigrationEndpoint;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -92,7 +93,7 @@ public class MigrationRequestOperation extends BaseMigrationSourceOperation {
         InternalPartition partition = getPartition();
         verifySource(nodeEngine.getThisAddress(), partition);
 
-        setActiveMigration();
+        setActiveMigration(MigrationEndpoint.SOURCE);
 
         if (!migrationInfo.startProcessing()) {
             getLogger().warning("Migration is cancelled -> " + migrationInfo);
