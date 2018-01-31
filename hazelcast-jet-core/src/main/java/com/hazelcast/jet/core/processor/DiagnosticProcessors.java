@@ -85,8 +85,11 @@ public final class DiagnosticProcessors {
      *     if the item passed, uses {@code toStringFn} to get a string
      *     representation of the item
      * </li><li>
-     *     logs the string at the INFO level, the category being
-     *     {@code com.hazelcast.jet.impl.processor.PeekWrappedP.<vertexName>#<processorIndex>}
+     *     logs the string at the INFO level, the logger is
+     *     {@code com.hazelcast.jet.impl.processor.PeekWrappedP.<vertexName>#<processorIndex>}.
+     *     The text is prefixed with "Input from X: ", where X is the edge
+     *     ordinal the item is received from. Received watermarks are prefixed
+     *     with just "Input: ".
      * </ol>
      * <p>
      * Note: Watermarks are always logged. {@link Watermark} objects are not
@@ -189,8 +192,10 @@ public final class DiagnosticProcessors {
      *     if the item passed, uses {@code toStringFn} to get a string
      *     representation of the item
      * </li><li>
-     *     logs the string at the INFO level, the category being
-     *     {@code com.hazelcast.jet.impl.processor.PeekWrappedP.<vertexName>#<processorIndex>}
+     *     logs the string at the INFO level, the logger is
+     *     {@code com.hazelcast.jet.impl.processor.PeekWrappedP.<vertexName>#<processorIndex>}.
+     *     The logged text is prefixed with "Output to X: ", where X is the edge
+     *     ordinal the item is sent to
      * </ol>
      * <p>
      * Technically speaking, snapshot data is emitted to the same outbox as regular
