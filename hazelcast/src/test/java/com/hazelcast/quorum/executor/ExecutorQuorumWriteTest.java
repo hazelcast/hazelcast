@@ -25,8 +25,9 @@ import com.hazelcast.core.MultiExecutionCallback;
 import com.hazelcast.quorum.AbstractQuorumTest;
 import com.hazelcast.quorum.QuorumException;
 import com.hazelcast.quorum.QuorumType;
-import com.hazelcast.test.HazelcastParametersRunnerFactory;
+import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -36,6 +37,9 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.io.Serializable;
 import java.util.Arrays;
@@ -62,20 +66,20 @@ import static org.hamcrest.CoreMatchers.isA;
 import static org.junit.Assert.fail;
 
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
-@Category({QuickTest.class})
+@UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class ExecutorQuorumWriteTest extends AbstractQuorumTest {
 
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
-
-    @Parameterized.Parameter
-    public static QuorumType quorumType;
-
-    @Parameterized.Parameters(name = "quorumType:{0}")
+    @Parameters(name = "quorumType:{0}")
     public static Iterable<Object[]> parameters() {
         return asList(new Object[][]{{QuorumType.WRITE}, {QuorumType.READ_WRITE}});
     }
+
+    @Parameter
+    public static QuorumType quorumType;
+
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
 
     @BeforeClass
     public static void setUp() {
@@ -88,72 +92,72 @@ public class ExecutorQuorumWriteTest extends AbstractQuorumTest {
     }
 
     @Test
-    public void executeOnAllMembers_quorum() throws Exception {
+    public void executeOnAllMembers_quorum() {
         exec(0).executeOnAllMembers(runnable());
     }
 
     @Test
-    public void executeOnAllMembers_noQuorum() throws Exception {
+    public void executeOnAllMembers_noQuorum() {
         // fire and forget operation, no quorum exception propagation
         // expectedException.expectCause(isA(QuorumException.class));
         exec(3).executeOnAllMembers(runnable());
     }
 
     @Test
-    public void executeOnKeyOwner_quorum() throws Exception {
+    public void executeOnKeyOwner_quorum() {
         exec(0).executeOnKeyOwner(runnable(), key(0));
     }
 
     @Test
-    public void executeOnKeyOwner_noQuorum() throws Exception {
+    public void executeOnKeyOwner_noQuorum() {
         // fire and forget operation, no quorum exception propagation
         // expectedException.expectCause(isA(QuorumException.class));
         exec(3).executeOnKeyOwner(runnable(), key(3));
     }
 
     @Test
-    public void executeOnMember_quorum() throws Exception {
+    public void executeOnMember_quorum() {
         exec(0).executeOnMember(runnable(), member(0));
     }
 
     @Test
-    public void executeOnMember_noQuorum() throws Exception {
+    public void executeOnMember_noQuorum() {
         // fire and forget operation, no quorum exception propagation
         // expectedException.expectCause(isA(QuorumException.class));
         exec(3).executeOnMember(runnable(), member(3));
     }
 
     @Test
-    public void executeOnMembers_collection_quorum() throws Exception {
+    public void executeOnMembers_collection_quorum() {
         exec(0).executeOnMembers(runnable(), asList(member(0)));
     }
 
     @Test
-    public void executeOnMembers_collection_noQuorum() throws Exception {
+    public void executeOnMembers_collection_noQuorum() {
         // fire and forget operation, no quorum exception propagation
         // expectedException.expectCause(isA(QuorumException.class));
         exec(3).executeOnMembers(runnable(), asList(member(3)));
     }
 
     @Test
-    public void executeOnMembers_selector_quorum() throws Exception {
+    public void executeOnMembers_selector_quorum() {
         exec(0).executeOnMembers(runnable(), selector(0));
     }
 
     @Test
-    public void executeOnMembers_selector_noQuorum() throws Exception {
+    public void executeOnMembers_selector_noQuorum() {
         // fire and forget operation, no quorum exception propagation
         // expectedException.expectCause(isA(QuorumException.class));
         exec(3).executeOnMembers(runnable(), selector(3));
     }
 
     @Test
-    public void execute_quorum() throws Exception {
+    public void execute_quorum() {
         exec(0).execute(runnable());
     }
 
     @Test
-    public void execute_noQuorum() throws Exception {
+    public void execute_noQuorum() {
         // fire and forget operation, no quorum exception propagation
         // expectedException.expectCause(isA(QuorumException.class));
         exec(3).execute(runnable());
@@ -193,14 +197,14 @@ public class ExecutorQuorumWriteTest extends AbstractQuorumTest {
     }
 
     @Test
-    public void submit_runnable_selector_callback_quorum() throws Exception {
+    public void submit_runnable_selector_callback_quorum() {
         Callback callback = callback();
         exec(0).submit(runnable(), selector(0), callback);
         callback.get();
     }
 
     @Test
-    public void submit_runnable_selector_callback_noQuorum() throws Exception {
+    public void submit_runnable_selector_callback_noQuorum() {
         Callback callback = callback();
         exec(3).submit(runnable(), selector(3), callback());
         expectQuorumException(callback);
@@ -229,14 +233,14 @@ public class ExecutorQuorumWriteTest extends AbstractQuorumTest {
     }
 
     @Test
-    public void submit_callable_selector_callback_quorum() throws Exception {
+    public void submit_callable_selector_callback_quorum() {
         Callback callback = callback();
         exec(0).submit(callable(), selector(0), callback);
         callback.get();
     }
 
     @Test
-    public void submit_callable_selector_callback_noQuorum() throws Exception {
+    public void submit_callable_selector_callback_noQuorum() {
         Callback callback = callback();
         exec(3).submit(callable(), selector(3), callback());
         expectQuorumException(callback);
@@ -254,28 +258,28 @@ public class ExecutorQuorumWriteTest extends AbstractQuorumTest {
     }
 
     @Test
-    public void submitToAllMembers_callable_multiCallback_quorum() throws Exception {
+    public void submitToAllMembers_callable_multiCallback_quorum() {
         MultiCallback multiCallback = multiCallback();
         exec(0).submitToAllMembers(callable(), multiCallback);
         multiCallback.get();
     }
 
     @Test
-    public void submitToAllMembers_callable_multiCallback_noQuorum() throws Exception {
+    public void submitToAllMembers_callable_multiCallback_noQuorum() {
         MultiCallback multiCallback = multiCallback();
         exec(3).submitToAllMembers(callable(), multiCallback);
         expectQuorumException(multiCallback);
     }
 
     @Test
-    public void submitToAllMembers_runnable_multiCallback_quorum() throws Exception {
+    public void submitToAllMembers_runnable_multiCallback_quorum() {
         MultiCallback multiCallback = multiCallback();
         exec(0).submitToAllMembers(runnable(), multiCallback);
         multiCallback.get();
     }
 
     @Test
-    public void submitToAllMembers_runnable_multiCallback_noQuorum() throws Exception {
+    public void submitToAllMembers_runnable_multiCallback_noQuorum() {
         MultiCallback multiCallback = multiCallback();
         exec(3).submitToAllMembers(runnable(), multiCallback);
         expectQuorumException(multiCallback);
@@ -293,28 +297,28 @@ public class ExecutorQuorumWriteTest extends AbstractQuorumTest {
     }
 
     @Test
-    public void submitToKeyOwner_runnable_callback_quorum() throws Exception {
+    public void submitToKeyOwner_runnable_callback_quorum() {
         Callback callback = callback();
         exec(0).submitToKeyOwner(runnable(), key(0), callback);
         callback.get();
     }
 
     @Test
-    public void submitToKeyOwner_runnable_callback_noQuorum() throws Exception {
+    public void submitToKeyOwner_runnable_callback_noQuorum() {
         Callback callback = callback();
         exec(3).submitToKeyOwner(runnable(), key(3), callback);
         expectQuorumException(callback);
     }
 
     @Test
-    public void submitToKeyOwner_callable_callback_quorum() throws Exception {
+    public void submitToKeyOwner_callable_callback_quorum() {
         Callback callback = callback();
         exec(0).submitToKeyOwner(callable(), key(0), callback);
         callback.get();
     }
 
     @Test
-    public void submitToKeyOwner_callable_callback_noQuorum() throws Exception {
+    public void submitToKeyOwner_callable_callback_noQuorum() {
         Callback callback = callback();
         exec(3).submitToKeyOwner(callable(), key(3), callback);
         expectQuorumException(callback);
@@ -332,28 +336,28 @@ public class ExecutorQuorumWriteTest extends AbstractQuorumTest {
     }
 
     @Test
-    public void submitToMember_runnable_callback_quorum() throws Exception {
+    public void submitToMember_runnable_callback_quorum() {
         Callback callback = callback();
         exec(0).submitToMember(runnable(), member(0), callback);
         callback.get();
     }
 
     @Test
-    public void submitToMember_runnable_callback_noQuorum() throws Exception {
+    public void submitToMember_runnable_callback_noQuorum() {
         Callback callback = callback();
         exec(3).submitToMember(runnable(), member(3), callback);
         expectQuorumException(callback);
     }
 
     @Test
-    public void submitToMember_callable_callback_quorum() throws Exception {
+    public void submitToMember_callable_callback_quorum() {
         Callback callback = callback();
         exec(0).submitToMember(callable(), member(0), callback);
         callback.get();
     }
 
     @Test
-    public void submitToMember_callable_callback_noQuorum() throws Exception {
+    public void submitToMember_callable_callback_noQuorum() {
         Callback callback = callback();
         exec(3).submitToMember(callable(), member(3), callback);
         expectQuorumException(callback);
@@ -371,14 +375,14 @@ public class ExecutorQuorumWriteTest extends AbstractQuorumTest {
     }
 
     @Test
-    public void submitToMembers_callable_member_callback_quorum() throws Exception {
+    public void submitToMembers_callable_member_callback_quorum() {
         MultiCallback multiCallback = multiCallback();
         exec(0).submitToMembers(callable(), asList(member(0)), multiCallback);
         multiCallback.get();
     }
 
     @Test
-    public void submitToMembers_callable_member_callback_noQuorum() throws Exception {
+    public void submitToMembers_callable_member_callback_noQuorum() {
         MultiCallback multiCallback = multiCallback();
         exec(3).submitToMembers(callable(), asList(member(3)), multiCallback);
         expectQuorumException(multiCallback);
@@ -396,7 +400,7 @@ public class ExecutorQuorumWriteTest extends AbstractQuorumTest {
     }
 
     @Test
-    public void submitToMembers_callable_selector_callback_quorum() throws Exception {
+    public void submitToMembers_callable_selector_callback_quorum() {
         MultiCallback multiCallback = multiCallback();
         exec(0).submitToMembers(callable(), selector(0), multiCallback);
         multiCallback.get();
@@ -404,35 +408,35 @@ public class ExecutorQuorumWriteTest extends AbstractQuorumTest {
     }
 
     @Test
-    public void submitToMembers_callable_selector_callback_noQuorum() throws Exception {
+    public void submitToMembers_callable_selector_callback_noQuorum() {
         MultiCallback multiCallback = multiCallback();
         exec(3).submitToMembers(callable(), selector(3), multiCallback);
         expectQuorumException(multiCallback);
     }
 
     @Test
-    public void submitToMembers_runnable_selector_callback_quorum() throws Exception {
+    public void submitToMembers_runnable_selector_callback_quorum() {
         MultiCallback multiCallback = multiCallback();
         exec(0).submitToMembers(runnable(), selector(0), multiCallback);
         multiCallback.get();
     }
 
     @Test
-    public void submitToMembers_runnable_selector_callback_noQuorum() throws Exception {
+    public void submitToMembers_runnable_selector_callback_noQuorum() {
         MultiCallback multiCallback = multiCallback();
         exec(3).submitToMembers(runnable(), selector(3), multiCallback);
         expectQuorumException(multiCallback);
     }
 
     @Test
-    public void submitToMembers_runnable_member_callback_quorum() throws Exception {
+    public void submitToMembers_runnable_member_callback_quorum() {
         MultiCallback multiCallback = multiCallback();
         exec(0).submitToMembers(runnable(), asList(member(0)), multiCallback);
         multiCallback.get();
     }
 
     @Test
-    public void submitToMembers_runnable_member_callback_noQuorum() throws Exception {
+    public void submitToMembers_runnable_member_callback_noQuorum() {
         MultiCallback multiCallback = multiCallback();
         exec(3).submitToMembers(runnable(), asList(member(3)), multiCallback);
         expectQuorumException(multiCallback);
@@ -485,12 +489,12 @@ public class ExecutorQuorumWriteTest extends AbstractQuorumTest {
     }
 
     @Test
-    public void shutdown_quorum() throws Exception {
+    public void shutdown_quorum() {
         exec(0, "shutdown").shutdown();
     }
 
     @Test
-    public void shutdown_noQuorum() throws Exception {
+    public void shutdown_noQuorum() {
         try {
             exec(3, "shutdown").shutdown();
         } catch(QuorumException ex) {
@@ -499,12 +503,12 @@ public class ExecutorQuorumWriteTest extends AbstractQuorumTest {
     }
 
     @Test
-    public void shutdownNow_quorum() throws Exception {
+    public void shutdownNow_quorum() {
         exec(0, "shutdownNow").shutdownNow();
     }
 
     @Test
-    public void shutdownNow_noQuorum() throws Exception {
+    public void shutdownNow_noQuorum() {
         try {
             exec(3, "shutdownNow").shutdownNow();
         } catch(QuorumException ex) {
@@ -518,116 +522,6 @@ public class ExecutorQuorumWriteTest extends AbstractQuorumTest {
 
     protected IExecutorService exec(int index, String postfix) {
         return exec(index, quorumType, postfix);
-    }
-
-    public static class ExecRunnable implements Runnable, Callable, Serializable {
-        @Override
-        public Object call() throws Exception {
-            return "response";
-        }
-
-        public void run() {
-        }
-
-        public static Runnable runnable() {
-            return new ExecRunnable();
-        }
-
-        public static Callable callable() {
-            return new ExecRunnable();
-        }
-    }
-
-    static class Selector implements MemberSelector {
-
-        private int index;
-
-        public Selector(int index) {
-            this.index = index;
-        }
-
-        @Override
-        public boolean select(Member member) {
-            return member.getAddress().getPort() % (getNode(cluster.getInstance(0)).getThisAddress().getPort() + index) == 0;
-        }
-
-        public static MemberSelector selector(int index) {
-            return new Selector(index);
-        }
-    }
-
-    static class Callback implements ExecutionCallback {
-        static Semaphore finished;
-        static Throwable throwable;
-
-        public Callback() {
-            finished = new Semaphore(0);
-            throwable = null;
-        }
-
-        @Override
-        public void onResponse(Object response) {
-            finished.release();
-        }
-
-        @Override
-        public void onFailure(Throwable t) {
-            finished.release();
-            throwable = t;
-        }
-
-        public void get() {
-            while (true) {
-                try {
-                    finished.tryAcquire(5, TimeUnit.SECONDS);
-                    if (throwable != null) {
-                        sneakyThrow(throwable);
-                    }
-                    return;
-                } catch (InterruptedException e) {
-                }
-            }
-        }
-
-        public static Callback callback() {
-            return new Callback();
-        }
-    }
-
-    static class MultiCallback implements MultiExecutionCallback {
-        Semaphore finished = new Semaphore(0);
-        Throwable throwable;
-
-        @Override
-        public void onResponse(Member member, Object response) {
-            if (response instanceof Throwable) {
-                throwable = (Throwable) response;
-            }
-        }
-
-        @Override
-        public void onComplete(Map<Member, Object> values) {
-            finished.release();
-        }
-
-        public void get() {
-            while (true) {
-                try {
-                    if (finished.tryAcquire(5, TimeUnit.SECONDS) == false) {
-                        sneakyThrow(new TimeoutException());
-                    }
-                    if (throwable != null) {
-                        sneakyThrow(throwable);
-                    }
-                    return;
-                } catch (InterruptedException e) {
-                }
-            }
-        }
-
-        public static MultiCallback multiCallback() {
-            return new MultiCallback();
-        }
     }
 
     private void wait(Map<Member, Future<?>> futures) throws Exception {
@@ -676,6 +570,118 @@ public class ExecutorQuorumWriteTest extends AbstractQuorumTest {
     private void wait(Collection<Future<?>> futures) throws ExecutionException, InterruptedException {
         for (Future f : futures) {
             f.get();
+        }
+    }
+
+    public static class ExecRunnable implements Runnable, Callable, Serializable {
+
+        @Override
+        public Object call() throws Exception {
+            return "response";
+        }
+
+        public void run() {
+        }
+
+        public static Runnable runnable() {
+            return new ExecRunnable();
+        }
+
+        public static Callable callable() {
+            return new ExecRunnable();
+        }
+    }
+
+    static class Selector implements MemberSelector {
+
+        private int index;
+
+        Selector(int index) {
+            this.index = index;
+        }
+
+        @Override
+        public boolean select(Member member) {
+            return member.getAddress().getPort() % (getNode(cluster.getInstance(0)).getThisAddress().getPort() + index) == 0;
+        }
+
+        public static MemberSelector selector(int index) {
+            return new Selector(index);
+        }
+    }
+
+    static class Callback implements ExecutionCallback {
+        static Semaphore finished;
+        static Throwable throwable;
+
+        Callback() {
+            finished = new Semaphore(0);
+            throwable = null;
+        }
+
+        @Override
+        public void onResponse(Object response) {
+            finished.release();
+        }
+
+        @Override
+        public void onFailure(Throwable t) {
+            finished.release();
+            throwable = t;
+        }
+
+        public void get() {
+            while (true) {
+                try {
+                    finished.tryAcquire(5, TimeUnit.SECONDS);
+                    if (throwable != null) {
+                        sneakyThrow(throwable);
+                    }
+                    return;
+                } catch (InterruptedException ignored) {
+                }
+            }
+        }
+
+        public static Callback callback() {
+            return new Callback();
+        }
+    }
+
+    static class MultiCallback implements MultiExecutionCallback {
+
+        Semaphore finished = new Semaphore(0);
+        Throwable throwable;
+
+        @Override
+        public void onResponse(Member member, Object response) {
+            if (response instanceof Throwable) {
+                throwable = (Throwable) response;
+            }
+        }
+
+        @Override
+        public void onComplete(Map<Member, Object> values) {
+            finished.release();
+        }
+
+        public void get() {
+            while (true) {
+                try {
+                    if (finished.tryAcquire(5, TimeUnit.SECONDS) == false) {
+                        sneakyThrow(new TimeoutException());
+                    }
+                    if (throwable != null) {
+                        sneakyThrow(throwable);
+                    }
+                    return;
+                } catch (InterruptedException ignored) {
+                }
+            }
+        }
+
+        static MultiCallback multiCallback() {
+            return new MultiCallback();
         }
     }
 }

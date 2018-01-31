@@ -22,8 +22,9 @@ import com.hazelcast.durableexecutor.StaleTaskIdException;
 import com.hazelcast.quorum.AbstractQuorumTest;
 import com.hazelcast.quorum.QuorumException;
 import com.hazelcast.quorum.QuorumType;
-import com.hazelcast.test.HazelcastParametersRunnerFactory;
+import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -33,6 +34,9 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.io.Serializable;
 import java.util.Arrays;
@@ -49,20 +53,20 @@ import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.isA;
 
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
-@Category({QuickTest.class})
+@UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class DurableExecutorQuorumWriteTest extends AbstractQuorumTest {
 
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
-
-    @Parameterized.Parameter
-    public static QuorumType quorumType;
-
-    @Parameterized.Parameters(name = "quorumType:{0}")
+    @Parameters(name = "quorumType:{0}")
     public static Iterable<Object[]> parameters() {
         return asList(new Object[][]{{QuorumType.WRITE}, {QuorumType.READ_WRITE}});
     }
+    
+    @Parameter
+    public static QuorumType quorumType;
+
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
 
     @BeforeClass
     public static void setUp() {
@@ -75,24 +79,24 @@ public class DurableExecutorQuorumWriteTest extends AbstractQuorumTest {
     }
 
     @Test
-    public void disposeResult_quorum() throws Exception {
+    public void disposeResult_quorum() {
         try {
-            exec(0).disposeResult(123l);
+            exec(0).disposeResult(123L);
         } catch (StaleTaskIdException ex) {
             // expected & meaningless since not a real taskId
         }
     }
 
     @Test
-    public void disposeResult_noQuorum() throws Exception {
+    public void disposeResult_noQuorum() {
         expectedException.expect(isA(QuorumException.class));
-        exec(3).disposeResult(125l);
+        exec(3).disposeResult(125L);
     }
 
     @Test
     public void retrieveAndDisposeResult_quorum() throws Exception {
         try {
-            exec(0).retrieveAndDisposeResult(123l).get();
+            exec(0).retrieveAndDisposeResult(123L).get();
         } catch (ExecutionException ex) {
             if (ex.getCause() instanceof StaleTaskIdException) {
                 // expected & meaningless since not a real taskId
@@ -103,29 +107,29 @@ public class DurableExecutorQuorumWriteTest extends AbstractQuorumTest {
     @Test
     public void retrieveAndDisposeResult_noQuorum() throws Exception {
         expectedException.expectCause(isA(QuorumException.class));
-        exec(3).retrieveAndDisposeResult(125l).get();
+        exec(3).retrieveAndDisposeResult(125L).get();
     }
 
 
     @Test
-    public void executeOnKeyOwner_quorum() throws Exception {
+    public void executeOnKeyOwner_quorum() {
         exec(0).executeOnKeyOwner(runnable(), key(0));
     }
 
     @Test
-    public void executeOnKeyOwner_noQuorum() throws Exception {
+    public void executeOnKeyOwner_noQuorum() {
         // fire and forget operation, no quorum exception propagation
         // expectedException.expectCause(isA(QuorumException.class));
         exec(3).executeOnKeyOwner(runnable(), key(3));
     }
 
     @Test
-    public void execute_quorum() throws Exception {
+    public void execute_quorum() {
         exec(0).execute(runnable());
     }
 
     @Test
-    public void execute_noQuorum() throws Exception {
+    public void execute_noQuorum() {
         // fire and forget operation, no quorum exception propagation
         // expectedException.expectCause(isA(QuorumException.class));
         exec(3).execute(runnable());
@@ -227,22 +231,22 @@ public class DurableExecutorQuorumWriteTest extends AbstractQuorumTest {
     }
 
     @Test
-    public void shutdown_quorum() throws Exception {
+    public void shutdown_quorum() {
         exec(0, "shutdown").shutdown();
     }
 
     @Test(expected = QuorumException.class)
-    public void shutdown_noQuorum() throws Exception {
+    public void shutdown_noQuorum() {
         exec(3, "shutdown").shutdown();
     }
 
     @Test
-    public void shutdownNow_quorum() throws Exception {
+    public void shutdownNow_quorum() {
         exec(0, "shutdownNow").shutdownNow();
     }
 
     @Test(expected = QuorumException.class)
-    public void shutdownNow_noQuorum() throws Exception {
+    public void shutdownNow_noQuorum() {
         exec(3, "shutdownNow").shutdownNow();
     }
 
@@ -254,7 +258,18 @@ public class DurableExecutorQuorumWriteTest extends AbstractQuorumTest {
         return durableExec(index, quorumType, postfix);
     }
 
+    private Object key(int index) {
+        return generateKeyOwnedBy(cluster.getInstance(index), true);
+    }
+
+    private void wait(Collection<Future<?>> futures) throws ExecutionException, InterruptedException {
+        for (Future f : futures) {
+            f.get();
+        }
+    }
+
     static class ExecRunnable implements Runnable, Callable, Serializable {
+
         @Override
         public Object call() throws Exception {
             return "response";
@@ -269,16 +284,6 @@ public class DurableExecutorQuorumWriteTest extends AbstractQuorumTest {
 
         public static Callable callable() {
             return new ExecRunnable();
-        }
-    }
-
-    private Object key(int index) {
-        return generateKeyOwnedBy(cluster.getInstance(index), true);
-    }
-
-    private void wait(Collection<Future<?>> futures) throws ExecutionException, InterruptedException {
-        for (Future f : futures) {
-            f.get();
         }
     }
 }

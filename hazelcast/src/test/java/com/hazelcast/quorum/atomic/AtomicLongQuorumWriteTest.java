@@ -21,8 +21,9 @@ import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.quorum.AbstractQuorumTest;
 import com.hazelcast.quorum.QuorumException;
 import com.hazelcast.quorum.QuorumType;
-import com.hazelcast.test.HazelcastParametersRunnerFactory;
+import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -32,6 +33,9 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import static com.hazelcast.quorum.QuorumType.READ_WRITE;
 import static com.hazelcast.quorum.QuorumType.WRITE;
@@ -39,17 +43,17 @@ import static java.util.Arrays.asList;
 import static org.hamcrest.core.Is.isA;
 
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
-@Category({QuickTest.class})
+@UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class AtomicLongQuorumWriteTest extends AbstractQuorumTest {
 
-    @Parameterized.Parameter
-    public static QuorumType quorumType;
-
-    @Parameterized.Parameters(name = "quorumType:{0}")
+    @Parameters(name = "quorumType:{0}")
     public static Iterable<Object[]> parameters() {
         return asList(new Object[][]{{WRITE}, {READ_WRITE}});
     }
+
+    @Parameter
+    public static QuorumType quorumType;
 
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
@@ -65,12 +69,12 @@ public class AtomicLongQuorumWriteTest extends AbstractQuorumTest {
     }
 
     @Test
-    public void addAndGet() throws Exception {
+    public void addAndGet() {
         along(0).addAndGet(1);
     }
 
     @Test(expected = QuorumException.class)
-    public void addAndGet_noQuorum() throws Exception {
+    public void addAndGet_noQuorum() {
         along(3).addAndGet(1);
     }
 
@@ -86,12 +90,12 @@ public class AtomicLongQuorumWriteTest extends AbstractQuorumTest {
     }
 
     @Test
-    public void alter() throws Exception {
+    public void alter() {
         along(0).alter(function());
     }
 
     @Test(expected = QuorumException.class)
-    public void alter_noQuorum() throws Exception {
+    public void alter_noQuorum() {
         along(3).alter(function());
     }
 
@@ -107,12 +111,12 @@ public class AtomicLongQuorumWriteTest extends AbstractQuorumTest {
     }
 
     @Test
-    public void alterAndGet() throws Exception {
+    public void alterAndGet() {
         along(0).alterAndGet(function());
     }
 
     @Test(expected = QuorumException.class)
-    public void alterAndGet_noQuorum() throws Exception {
+    public void alterAndGet_noQuorum() {
         along(3).alterAndGet(function());
     }
 
@@ -128,12 +132,12 @@ public class AtomicLongQuorumWriteTest extends AbstractQuorumTest {
     }
 
     @Test
-    public void apply() throws Exception {
+    public void apply() {
         along(0).apply(function());
     }
 
     @Test(expected = QuorumException.class)
-    public void apply_noQuorum() throws Exception {
+    public void apply_noQuorum() {
         along(3).apply(function());
     }
 
@@ -149,12 +153,12 @@ public class AtomicLongQuorumWriteTest extends AbstractQuorumTest {
     }
 
     @Test
-    public void compareAndSet() throws Exception {
+    public void compareAndSet() {
         along(0).compareAndSet(1L, 2L);
     }
 
     @Test(expected = QuorumException.class)
-    public void compareAndSet_noQuorum() throws Exception {
+    public void compareAndSet_noQuorum() {
         along(3).compareAndSet(1L, 2L);
     }
 
@@ -170,12 +174,12 @@ public class AtomicLongQuorumWriteTest extends AbstractQuorumTest {
     }
 
     @Test
-    public void decrementAndGet() throws Exception {
+    public void decrementAndGet() {
         along(0).decrementAndGet();
     }
 
     @Test(expected = QuorumException.class)
-    public void decrementAndGet_noQuorum() throws Exception {
+    public void decrementAndGet_noQuorum() {
         along(3).decrementAndGet();
     }
 
@@ -191,12 +195,12 @@ public class AtomicLongQuorumWriteTest extends AbstractQuorumTest {
     }
 
     @Test
-    public void getAndAdd() throws Exception {
+    public void getAndAdd() {
         along(0).getAndAdd(1L);
     }
 
     @Test(expected = QuorumException.class)
-    public void getAndAdd_noQuorum() throws Exception {
+    public void getAndAdd_noQuorum() {
         along(3).getAndAdd(1L);
     }
 
@@ -212,12 +216,12 @@ public class AtomicLongQuorumWriteTest extends AbstractQuorumTest {
     }
 
     @Test
-    public void getAndAlter() throws Exception {
+    public void getAndAlter() {
         along(0).getAndAlter(function());
     }
 
     @Test(expected = QuorumException.class)
-    public void getAndAlter_noQuorum() throws Exception {
+    public void getAndAlter_noQuorum() {
         along(3).getAndAlter(function());
     }
 
@@ -233,12 +237,12 @@ public class AtomicLongQuorumWriteTest extends AbstractQuorumTest {
     }
 
     @Test
-    public void getAndIncrement() throws Exception {
+    public void getAndIncrement() {
         along(0).getAndIncrement();
     }
 
     @Test(expected = QuorumException.class)
-    public void getAndIncrement_noQuorum() throws Exception {
+    public void getAndIncrement_noQuorum() {
         along(3).getAndIncrement();
     }
 
@@ -254,12 +258,12 @@ public class AtomicLongQuorumWriteTest extends AbstractQuorumTest {
     }
 
     @Test
-    public void getAndSet() throws Exception {
+    public void getAndSet() {
         along(0).getAndSet(2L);
     }
 
     @Test(expected = QuorumException.class)
-    public void getAndSet_noQuorum() throws Exception {
+    public void getAndSet_noQuorum() {
         along(3).getAndSet(2L);
     }
 
@@ -275,12 +279,12 @@ public class AtomicLongQuorumWriteTest extends AbstractQuorumTest {
     }
 
     @Test
-    public void incrementAndGet() throws Exception {
+    public void incrementAndGet() {
         along(0).incrementAndGet();
     }
 
     @Test(expected = QuorumException.class)
-    public void incrementAndGet_noQuorum() throws Exception {
+    public void incrementAndGet_noQuorum() {
         along(3).incrementAndGet();
     }
 
@@ -296,12 +300,12 @@ public class AtomicLongQuorumWriteTest extends AbstractQuorumTest {
     }
 
     @Test
-    public void set() throws Exception {
+    public void set() {
         along(0).set(2L);
     }
 
     @Test(expected = QuorumException.class)
-    public void set_noQuorum() throws Exception {
+    public void set_noQuorum() {
         along(3).set(2L);
     }
 
@@ -316,8 +320,7 @@ public class AtomicLongQuorumWriteTest extends AbstractQuorumTest {
         along(3).setAsync(2L).get();
     }
 
-    protected IAtomicLong along(int index) {
+    private IAtomicLong along(int index) {
         return along(index, quorumType);
     }
-
 }

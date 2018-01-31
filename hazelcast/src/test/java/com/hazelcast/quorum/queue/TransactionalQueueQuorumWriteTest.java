@@ -20,8 +20,9 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.TransactionalQueue;
 import com.hazelcast.quorum.AbstractQuorumTest;
 import com.hazelcast.quorum.QuorumType;
-import com.hazelcast.test.HazelcastParametersRunnerFactory;
+import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
@@ -32,6 +33,9 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -43,17 +47,11 @@ import static com.hazelcast.transaction.TransactionOptions.TransactionType.ONE_P
 import static com.hazelcast.transaction.TransactionOptions.TransactionType.TWO_PHASE;
 
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
-@Category({QuickTest.class})
+@UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class TransactionalQueueQuorumWriteTest extends AbstractQuorumTest {
 
-    @Parameterized.Parameter(0)
-    public static TransactionOptions options;
-
-    @Parameterized.Parameter(1)
-    public static QuorumType quorumType;
-
-    @Parameterized.Parameters(name = "Executing: {0} {1}")
+    @Parameters(name = "Executing: {0} {1}")
     public static Collection<Object[]> parameters() {
 
         TransactionOptions onePhaseOption = TransactionOptions.getDefault();
@@ -69,6 +67,12 @@ public class TransactionalQueueQuorumWriteTest extends AbstractQuorumTest {
                 new Object[]{twoPhaseOption, READ_WRITE}
         );
     }
+
+    @Parameter(0)
+    public static TransactionOptions options;
+
+    @Parameter(1)
+    public static QuorumType quorumType;
 
     @BeforeClass
     public static void setUp() {
@@ -103,7 +107,7 @@ public class TransactionalQueueQuorumWriteTest extends AbstractQuorumTest {
         TransactionContext transactionContext = newTransactionContext(0);
         transactionContext.beginTransaction();
         TransactionalQueue<Object> q = transactionContext.getQueue(QUEUE_NAME + quorumType.name());
-        q.offer("object", 10l, TimeUnit.MILLISECONDS);
+        q.offer("object", 10L, TimeUnit.MILLISECONDS);
         transactionContext.commitTransaction();
     }
 
@@ -112,7 +116,7 @@ public class TransactionalQueueQuorumWriteTest extends AbstractQuorumTest {
         TransactionContext transactionContext = newTransactionContext(3);
         transactionContext.beginTransaction();
         TransactionalQueue<Object> q = transactionContext.getQueue(QUEUE_NAME + quorumType.name());
-        q.offer("object", 10l, TimeUnit.MILLISECONDS);
+        q.offer("object", 10L, TimeUnit.MILLISECONDS);
         transactionContext.commitTransaction();
     }
 
@@ -139,7 +143,7 @@ public class TransactionalQueueQuorumWriteTest extends AbstractQuorumTest {
         TransactionContext transactionContext = newTransactionContext(0);
         transactionContext.beginTransaction();
         TransactionalQueue<Object> q = transactionContext.getQueue(QUEUE_NAME + quorumType.name());
-        q.poll(10l, TimeUnit.MILLISECONDS);
+        q.poll(10L, TimeUnit.MILLISECONDS);
         transactionContext.commitTransaction();
     }
 
@@ -148,7 +152,7 @@ public class TransactionalQueueQuorumWriteTest extends AbstractQuorumTest {
         TransactionContext transactionContext = newTransactionContext(3);
         transactionContext.beginTransaction();
         TransactionalQueue<Object> q = transactionContext.getQueue(QUEUE_NAME + quorumType.name());
-        q.poll(10l, TimeUnit.MILLISECONDS);
+        q.poll(10L, TimeUnit.MILLISECONDS);
         transactionContext.commitTransaction();
     }
 

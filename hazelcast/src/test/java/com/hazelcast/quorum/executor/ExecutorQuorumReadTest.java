@@ -20,8 +20,9 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.quorum.AbstractQuorumTest;
 import com.hazelcast.quorum.QuorumType;
-import com.hazelcast.test.HazelcastParametersRunnerFactory;
+import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -31,26 +32,29 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.util.concurrent.TimeUnit;
 
 import static java.util.Arrays.asList;
 
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
-@Category({QuickTest.class})
+@UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class ExecutorQuorumReadTest extends AbstractQuorumTest {
 
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
-
-    @Parameterized.Parameter
-    public static QuorumType quorumType;
-
-    @Parameterized.Parameters(name = "quorumType:{0}")
+    @Parameters(name = "quorumType:{0}")
     public static Iterable<Object[]> parameters() {
         return asList(new Object[][]{{QuorumType.READ}, {QuorumType.READ_WRITE}});
     }
+
+    @Parameter
+    public static QuorumType quorumType;
+
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
 
     @BeforeClass
     public static void setUp() {
@@ -63,22 +67,22 @@ public class ExecutorQuorumReadTest extends AbstractQuorumTest {
     }
 
     @Test
-    public void isShutdown_quorum() throws Exception {
+    public void isShutdown_quorum() {
         exec(0).isShutdown();
     }
 
     @Test
-    public void isShutdown_noQuorum() throws Exception {
+    public void isShutdown_noQuorum() {
         exec(3).isShutdown();
     }
 
     @Test
-    public void isTerminated_quorum() throws Exception {
+    public void isTerminated_quorum() {
         exec(0).isTerminated();
     }
 
     @Test
-    public void isTerminated_noQuorum() throws Exception {
+    public void isTerminated_noQuorum() {
         exec(3).isTerminated();
     }
 
@@ -95,6 +99,4 @@ public class ExecutorQuorumReadTest extends AbstractQuorumTest {
     protected IExecutorService exec(int index) {
         return exec(index, quorumType);
     }
-
-
 }

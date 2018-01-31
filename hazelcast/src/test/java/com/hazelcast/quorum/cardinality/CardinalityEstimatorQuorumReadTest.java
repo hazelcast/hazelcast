@@ -21,8 +21,9 @@ import com.hazelcast.config.Config;
 import com.hazelcast.quorum.AbstractQuorumTest;
 import com.hazelcast.quorum.QuorumException;
 import com.hazelcast.quorum.QuorumType;
-import com.hazelcast.test.HazelcastParametersRunnerFactory;
+import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -32,25 +33,28 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.isA;
 
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
-@Category({QuickTest.class})
+@UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class CardinalityEstimatorQuorumReadTest extends AbstractQuorumTest {
 
-    @Parameterized.Parameter
+    @Parameters(name = "quorumType:{0}")
+    public static Iterable<Object[]> parameters() {
+        return asList(new Object[][]{{QuorumType.READ}, {QuorumType.READ_WRITE}});
+    }
+
+    @Parameter
     public static QuorumType quorumType;
 
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
-
-    @Parameterized.Parameters(name = "quorumType:{0}")
-    public static Iterable<Object[]> parameters() {
-        return asList(new Object[][]{{QuorumType.READ}, {QuorumType.READ_WRITE}});
-    }
 
     @BeforeClass
     public static void setUp() {
@@ -63,12 +67,12 @@ public class CardinalityEstimatorQuorumReadTest extends AbstractQuorumTest {
     }
 
     @Test
-    public void estimate_quorum() throws Exception {
+    public void estimate_quorum() {
         estimator(0).estimate();
     }
 
     @Test(expected = QuorumException.class)
-    public void estimate_noQuorum() throws Exception {
+    public void estimate_noQuorum() {
         estimator(3).estimate();
     }
 

@@ -22,10 +22,10 @@ import static com.hazelcast.quorum.executor.ExecutorQuorumWriteTest.ExecRunnable
 import static com.hazelcast.transaction.TransactionOptions.TransactionType.ONE_PHASE;
 
 /**
- * Quorum test proving that newly supported quorum-aware structures do not respect quorum below version 3.10
+ * Quorum test proving that newly supported quorum-aware structures do not respect quorum below version 3.10.
  */
-@Category({QuickTest.class})
 @RunWith(HazelcastSerialClassRunner.class)
+@Category({QuickTest.class})
 public class QuorumRollingUpgradeTest extends AbstractQuorumTest {
 
     private static final int NO_QUORUM_CLUSTER = 3;
@@ -157,5 +157,4 @@ public class QuorumRollingUpgradeTest extends AbstractQuorumTest {
     public void map() {
         map(NO_QUORUM_CLUSTER, TYPE).put("foo", "bar");
     }
-
 }
