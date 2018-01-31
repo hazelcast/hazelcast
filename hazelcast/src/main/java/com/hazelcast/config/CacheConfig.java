@@ -574,14 +574,14 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
         // SUPER
         readKeyValueTypes(in);
         readTenant(in);
-        TenantControl.Closeable tenant = tenantControl.setTenant(false);
+        TenantControl.Closeable tenantContext = tenantControl.setTenant(false);
         try {
             cacheLoaderFactory = in.readObject();
             cacheWriterFactory = in.readObject();
             expiryPolicyFactory = in.readObject();
         }
         finally {
-            tenant.close();
+            tenantContext.close();
         }
 
         isReadThrough = in.readBoolean();
@@ -599,7 +599,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
         // set the thread-context and class loading context for this cache's tenant application
         // This way keyType/valueType/ loader factories and listeners can be CDI / EJB / JPA objects
         // and class loading is guaranteed to work
-        tenant = tenantControl.setTenant(false);
+        tenantContext = tenantControl.setTenant(false);
         try {
             if (listNotEmpty) {
                 final int size = in.readInt();
@@ -609,7 +609,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
                 }
             }
         } finally {
-            tenant.close();
+            tenantContext.close();
         }
 
         mergePolicy = in.readUTF();

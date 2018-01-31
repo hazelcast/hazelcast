@@ -45,6 +45,14 @@ public interface TenantControl extends Serializable {
 
     /**
      * Establish this tenant's thread-local context
+     * Particular TenantControl implementation will control the details of how
+     * createRequestScope parameter is handled, but in general,
+     * if createRequestScope = false, only ClassLoader is set up,
+     * if createRequestScope = true, in addition to ClassLoader,
+     * other things like invocation, EJB/JPA/CDI context should be set up as well
+     *
+     * In other words, if only app class needs to be resolved, set createRequestScope to false
+     * If actually calling into user's code, set createRequestScope to true
      *
      * @param createRequestScope whether to create CDI request scope for this context
      * @return handle to be able to close the tenant's scope.
