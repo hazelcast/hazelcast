@@ -19,7 +19,6 @@ package com.hazelcast.jet.impl;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
-import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -30,8 +29,10 @@ import java.util.concurrent.CompletableFuture;
 
 import static com.hazelcast.jet.core.JobStatus.COMPLETED;
 import static com.hazelcast.jet.core.JobStatus.FAILED;
+import static com.hazelcast.jet.impl.util.Util.exceptionallyCompletedFuture;
 import static com.hazelcast.jet.impl.util.Util.idToString;
 import static com.hazelcast.jet.impl.util.Util.toLocalDateTime;
+import static java.util.concurrent.CompletableFuture.completedFuture;
 
 public class JobResult implements IdentifiedDataSerializable {
 
@@ -92,7 +93,7 @@ public class JobResult implements IdentifiedDataSerializable {
     }
 
     public CompletableFuture<Void> asCompletableFuture() {
-        return failure == null ? Util.completedVoidFuture() : Util.completedVoidFuture(failure);
+        return failure == null ? completedFuture(null) : exceptionallyCompletedFuture(failure);
     }
 
     @Override

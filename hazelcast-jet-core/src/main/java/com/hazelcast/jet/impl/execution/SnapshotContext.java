@@ -24,9 +24,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.hazelcast.jet.impl.util.Util.completeVoidFuture;
-import static com.hazelcast.jet.impl.util.Util.completedVoidFuture;
 import static com.hazelcast.jet.impl.util.Util.jobAndExecutionId;
+import static java.util.concurrent.CompletableFuture.completedFuture;
 
 public class SnapshotContext {
 
@@ -145,7 +144,7 @@ public class SnapshotContext {
         }
         if (numTasklets == 0) {
             // member is already done with the job and master didn't know it yet - we are immediately done.
-            return completedVoidFuture();
+            return completedFuture(null);
         }
         CompletableFuture<Void> res = future = new CompletableFuture<>();
         if (newNumRemainingTasklets == 0) {
@@ -205,7 +204,7 @@ public class SnapshotContext {
     private void handleSnapshotDone() {
         Throwable t = snapshotError.get();
         if (t == null) {
-            completeVoidFuture(future);
+            future.complete(null);
         } else {
             future.completeExceptionally(t);
         }

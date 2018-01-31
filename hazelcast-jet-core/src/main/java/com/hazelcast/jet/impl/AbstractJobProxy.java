@@ -39,7 +39,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
-import static com.hazelcast.jet.impl.util.Util.completeVoidFuture;
 import static com.hazelcast.jet.impl.util.Util.idToString;
 import static com.hazelcast.jet.impl.util.Util.memoizeConcurrent;
 import static com.hazelcast.jet.impl.util.Util.toLocalDateTime;
@@ -192,7 +191,7 @@ public abstract class AbstractJobProxy<T> implements Job {
 
         @Override
         public void onResponse(Void response) {
-            completeVoidFuture(future);
+            future.complete(null);
         }
 
         @Override

@@ -49,7 +49,6 @@ import java.util.stream.Collectors;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.impl.util.Util.tryIncrement;
 import static com.hazelcast.jet.impl.util.Util.callbackOf;
-import static com.hazelcast.jet.impl.util.Util.completeVoidFuture;
 import static com.hazelcast.util.CollectionUtil.toIntArray;
 
 /**
@@ -194,7 +193,7 @@ public class AsyncMapWriter {
                                     CompletableFuture<Void> completionFuture,
                                     boolean shouldRetry) {
         if (opBuilders.isEmpty()) {
-            completeVoidFuture(completionFuture);
+            completionFuture.complete(null);
             return true;
         }
 

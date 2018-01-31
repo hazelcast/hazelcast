@@ -34,7 +34,6 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
 import java.io.ByteArrayOutputStream;
@@ -355,27 +354,12 @@ public final class Util {
     }
 
     /**
-     * Util method to get around findbugs issue https://github.com/findbugsproject/findbugs/issues/79
+     * Returns a future which is already completed with the supplied exception
      */
-    @SuppressFBWarnings("NP_NONNULL_PARAM_VIOLATION")
-    public static CompletableFuture<Void> completedVoidFuture() {
-        return CompletableFuture.completedFuture(null);
-    }
-
-    /**
-     * Returns a void future which is already completed with the supplied exception
-     */
-    public static CompletableFuture<Void> completedVoidFuture(@Nonnull Throwable exception) {
-        CompletableFuture<Void> future = new CompletableFuture<>();
+    public static <T> CompletableFuture<T> exceptionallyCompletedFuture(@Nonnull Throwable exception) {
+        CompletableFuture<T> future = new CompletableFuture<>();
         future.completeExceptionally(exception);
         return future;
     }
 
-    /**
-     * Util method to get around findbugs issue https://github.com/findbugsproject/findbugs/issues/79
-     */
-    @SuppressFBWarnings("NP_NONNULL_PARAM_VIOLATION")
-    public static void completeVoidFuture(CompletableFuture<Void> future) {
-        future.complete(null);
-    }
 }
