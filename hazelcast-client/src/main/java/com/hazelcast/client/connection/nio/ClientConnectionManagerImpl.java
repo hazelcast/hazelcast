@@ -353,9 +353,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
         if (!asOwner) {
             connectionStrategy.beforeGetConnection(target);
         }
-        if (!asOwner && getOwnerConnection() == null) {
-            throw new IOException("Owner connection is not available!");
-        }
         if (target == null) {
             throw new IllegalStateException("Address can not be null");
         }
