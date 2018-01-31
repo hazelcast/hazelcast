@@ -60,7 +60,7 @@ public class CacheLegacyMergeOperation
     public void afterRun() {
         if (backupRecord != null) {
             if (cache.isWanReplicationEnabled()) {
-                final Data valueData = getNodeEngine().toData(backupRecord.getValue());
+                Data valueData = getNodeEngine().toData(backupRecord.getValue());
                 CacheEntryView<Data, Data> entryView = CacheEntryViews.createDefaultEntryView(key, valueData, backupRecord);
                 CacheWanEventPublisher publisher = cacheService.getCacheWanEventPublisher();
                 publisher.publishWanReplicationUpdate(name, entryView);

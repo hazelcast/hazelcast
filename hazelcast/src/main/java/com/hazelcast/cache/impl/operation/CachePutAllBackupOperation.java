@@ -60,8 +60,7 @@ public class CachePutAllBackupOperation
     }
 
     @Override
-    public void beforeRun()
-            throws Exception {
+    public void beforeRun() throws Exception {
         ICacheService service = getService();
         try {
             cache = service.getOrCreateRecordStore(name, getPartitionId());
@@ -88,10 +87,9 @@ public class CachePutAllBackupOperation
     private void publishWanEvent(Data key, CacheRecord record) {
         if (cache.isWanReplicationEnabled()) {
             ICacheService service = getService();
-            final CacheWanEventPublisher publisher = service.getCacheWanEventPublisher();
-            final CacheEntryView<Data, Data> view = CacheEntryViews.createDefaultEntryView(
-                    key, toData(record.getValue()), record);
-            publisher.publishWanReplicationUpdate(name, view);
+            CacheWanEventPublisher publisher = service.getCacheWanEventPublisher();
+            CacheEntryView<Data, Data> view = CacheEntryViews.createDefaultEntryView(key, toData(record.getValue()), record);
+            publisher.publishWanReplicationUpdateBackup(name, view);
         }
     }
 
@@ -110,15 +108,14 @@ public class CachePutAllBackupOperation
     }
 
     @Override
-    protected void writeInternal(ObjectDataOutput out)
-            throws IOException {
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeBoolean(cacheRecords != null);
         if (cacheRecords != null) {
             out.writeInt(cacheRecords.size());
             for (Map.Entry<Data, CacheRecord> entry : cacheRecords.entrySet()) {
-                final Data key = entry.getKey();
-                final CacheRecord record = entry.getValue();
+                Data key = entry.getKey();
+                CacheRecord record = entry.getValue();
                 out.writeData(key);
                 out.writeObject(record);
             }
@@ -126,16 +123,15 @@ public class CachePutAllBackupOperation
     }
 
     @Override
-    protected void readInternal(ObjectDataInput in)
-            throws IOException {
+    protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        final boolean recordNotNull = in.readBoolean();
+        boolean recordNotNull = in.readBoolean();
         if (recordNotNull) {
             int size = in.readInt();
             cacheRecords = createHashMap(size);
             for (int i = 0; i < size; i++) {
-                final Data key = in.readData();
-                final CacheRecord record = in.readObject();
+                Data key = in.readData();
+                CacheRecord record = in.readObject();
                 cacheRecords.put(key, record);
             }
         }
@@ -150,5 +146,4 @@ public class CachePutAllBackupOperation
     public int getFactoryId() {
         return CacheDataSerializerHook.F_ID;
     }
-
 }

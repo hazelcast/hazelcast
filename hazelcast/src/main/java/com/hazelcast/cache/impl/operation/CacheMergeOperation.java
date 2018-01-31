@@ -18,7 +18,6 @@ package com.hazelcast.cache.impl.operation;
 
 import com.hazelcast.cache.CacheEntryView;
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
-import com.hazelcast.cache.impl.CacheRecordStore;
 import com.hazelcast.cache.impl.ICacheRecordStore;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.cache.impl.event.CacheWanEventPublisher;
@@ -93,7 +92,7 @@ public class CacheMergeOperation extends AbstractNamedOperation implements Backu
     private void merge(SplitBrainMergeEntryView<Data, Data> mergingEntry) {
         Data dataKey = mergingEntry.getKey();
 
-        CacheRecord backupRecord = ((CacheRecordStore) cache).merge(mergingEntry, mergePolicy);
+        CacheRecord backupRecord = cache.merge(mergingEntry, mergePolicy);
         if (backupRecord != null) {
             backupRecords.put(dataKey, backupRecord);
         }

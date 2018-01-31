@@ -59,7 +59,7 @@ public class MergeOperationFactory extends PartitionAwareOperationFactory {
     public Operation createPartitionOperation(int partitionId) {
         for (int i = 0; i < partitions.length; i++) {
             if (partitions[i] == partitionId) {
-                return new MergeOperation(name, mergeEntries[i], policy);
+                return new MergeOperation(name, mergeEntries[i], policy, false);
             }
         }
         throw new IllegalArgumentException("Unknown partitionId " + partitionId + " (" + Arrays.toString(partitions) + ")");

@@ -43,7 +43,6 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ObjectNamespace;
-import com.hazelcast.spi.SplitBrainAwareDataContainer;
 import com.hazelcast.spi.SplitBrainMergeEntryView;
 import com.hazelcast.spi.SplitBrainMergePolicy;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -86,7 +85,7 @@ import static java.util.Collections.emptySet;
 
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity"})
 public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extends SampleableCacheRecordMap<Data, R>>
-        implements ICacheRecordStore, EvictionListener<Data, R>, SplitBrainAwareDataContainer<Data, Data, CacheRecord> {
+        implements ICacheRecordStore, EvictionListener<Data, R> {
 
     public static final String SOURCE_NOT_AVAILABLE = "<NA>";
     protected static final int DEFAULT_INITIAL_CAPACITY = 256;

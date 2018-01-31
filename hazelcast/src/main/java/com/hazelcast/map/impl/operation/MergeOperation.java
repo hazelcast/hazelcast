@@ -47,6 +47,7 @@ public class MergeOperation extends MapOperation implements PartitionAwareOperat
 
     private List<SplitBrainMergeEntryView<Data, Data>> mergeEntries;
     private SplitBrainMergePolicy mergePolicy;
+    private boolean disableWanReplicationEvent;
 
     private transient boolean hasMapListener;
     private transient boolean hasWanReplication;
@@ -61,16 +62,18 @@ public class MergeOperation extends MapOperation implements PartitionAwareOperat
     public MergeOperation() {
     }
 
-    MergeOperation(String name, List<SplitBrainMergeEntryView<Data, Data>> mergeEntries, SplitBrainMergePolicy policy) {
+    MergeOperation(String name, List<SplitBrainMergeEntryView<Data, Data>> mergeEntries, SplitBrainMergePolicy policy,
+                   boolean disableWanReplicationEvent) {
         super(name);
         this.mergeEntries = mergeEntries;
         this.mergePolicy = policy;
+        this.disableWanReplicationEvent = disableWanReplicationEvent;
     }
 
     @Override
     public void run() {
         hasMapListener = mapEventPublisher.hasEventListener(name);
-        hasWanReplication = mapContainer.getWanReplicationPublisher() != null && mapContainer.getWanMergePolicy() != null;
+        hasWanReplication = mapContainer.isWanReplicationEnabled() && !disableWanReplicationEvent;
         hasBackups = mapContainer.getTotalBackupCount() > 0;
         hasInvalidation = mapContainer.hasInvalidationListener();
 
@@ -171,6 +174,7 @@ public class MergeOperation extends MapOperation implements PartitionAwareOperat
             out.writeObject(mergeEntry);
         }
         out.writeObject(mergePolicy);
+        out.writeBoolean(disableWanReplicationEvent);
     }
 
     @Override
@@ -183,6 +187,7 @@ public class MergeOperation extends MapOperation implements PartitionAwareOperat
             mergeEntries.add(mergeEntry);
         }
         mergePolicy = in.readObject();
+        disableWanReplicationEvent = in.readBoolean();
     }
 
     @Override

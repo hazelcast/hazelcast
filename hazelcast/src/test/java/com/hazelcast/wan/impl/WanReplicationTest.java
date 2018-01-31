@@ -17,6 +17,7 @@
 package com.hazelcast.wan.impl;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.WanPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
@@ -32,11 +33,15 @@ import com.hazelcast.map.impl.SimpleEntryView;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
+import com.hazelcast.map.merge.MergePolicyProvider;
 import com.hazelcast.map.merge.PassThroughMergePolicy;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.spi.SplitBrainMergeEntryView;
+import com.hazelcast.spi.SplitBrainMergePolicy;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.merge.SplitBrainEntryViews;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -207,17 +212,31 @@ public class WanReplicationTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void merge_operation_generates_wan_replication_event() {
+    @SuppressWarnings("ConstantConditions")
+    public void mergeOperationGeneratesWanReplicationEvent_withLegacyMergePolicy() {
         boolean enableWANReplicationEvent = true;
-        runMergeOpForWAN(enableWANReplicationEvent);
+        boolean useLegacyMergePolicy = true;
+        runMergeOpForWAN(enableWANReplicationEvent, useLegacyMergePolicy);
 
         assertTotalQueueSize(1);
     }
 
     @Test
-    public void merge_operation_does_not_generate_wan_replication_event_when_disabled() {
+    @SuppressWarnings("ConstantConditions")
+    public void mergeOperationGeneratesWanReplicationEvent() {
+        boolean enableWANReplicationEvent = true;
+        boolean useLegacyMergePolicy = false;
+        runMergeOpForWAN(enableWANReplicationEvent, useLegacyMergePolicy);
+
+        assertTotalQueueSize(1);
+    }
+
+    @Test
+    @SuppressWarnings("ConstantConditions")
+    public void mergeOperationDoesNotGenerateWanReplicationEventWhenDisabled_withLegacyMergePolicy() {
         boolean enableWANReplicationEvent = false;
-        runMergeOpForWAN(enableWANReplicationEvent);
+        boolean useLegacyMergePolicy = true;
+        runMergeOpForWAN(enableWANReplicationEvent, useLegacyMergePolicy);
 
         assertTrueAllTheTime(new AssertTask() {
             @Override
@@ -227,7 +246,22 @@ public class WanReplicationTest extends HazelcastTestSupport {
         }, 3);
     }
 
-    private void runMergeOpForWAN(boolean enableWANReplicationEvent) {
+    @Test
+    @SuppressWarnings("ConstantConditions")
+    public void mergeOperationDoesNotGenerateWanReplicationEventWhenDisabled() {
+        boolean enableWANReplicationEvent = false;
+        boolean useLegacyMergePolicy = false;
+        runMergeOpForWAN(enableWANReplicationEvent, useLegacyMergePolicy);
+
+        assertTrueAllTheTime(new AssertTask() {
+            @Override
+            public void run() {
+                assertTotalQueueSize(0);
+            }
+        }, 3);
+    }
+
+    private void runMergeOpForWAN(boolean enableWANReplicationEvent, boolean useLegacyMergePolicy) {
         // init hazelcast instances
         String mapName = "merge_operation_generates_wan_replication_event";
         initInstancesAndMap(mapName);
@@ -237,14 +271,25 @@ public class WanReplicationTest extends HazelcastTestSupport {
         NodeEngineImpl nodeEngineImpl = getNodeEngineImpl(node);
         InternalPartitionService partitionService = nodeEngineImpl.getPartitionService();
         InternalOperationService operationService = nodeEngineImpl.getOperationService();
-        SerializationService ss = nodeEngineImpl.getSerializationService();
+        SerializationService serializationService = nodeEngineImpl.getSerializationService();
         MapService mapService = nodeEngineImpl.getService(MapService.SERVICE_NAME);
-        MapOperationProvider operationProvider = mapService.getMapServiceContext().getMapOperationProvider(mapName);
+        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        MergePolicyProvider mergePolicyProvider = mapServiceContext.getMergePolicyProvider();
+        MapOperationProvider operationProvider = mapServiceContext.getMapOperationProvider(mapName);
 
         // prepare and send one merge operation
-        Data data = ss.toData(1);
-        SimpleEntryView<Data, Data> entryView = new SimpleEntryView<Data, Data>().withKey(data).withValue(data);
-        MapOperation op = operationProvider.createMergeOperation(mapName, entryView, new PassThroughMergePolicy(), !enableWANReplicationEvent);
+        Data data = serializationService.toData(1);
+        MapOperation op;
+        if (useLegacyMergePolicy) {
+            SimpleEntryView<Data, Data> entryView = new SimpleEntryView<Data, Data>().withKey(data).withValue(data);
+            op = operationProvider.createLegacyMergeOperation(mapName, entryView, new PassThroughMergePolicy(),
+                    !enableWANReplicationEvent);
+        } else {
+            SplitBrainMergeEntryView<Data, Data> entryView = SplitBrainEntryViews.createSplitBrainMergeEntryView(data, data);
+            SplitBrainMergePolicy mergePolicy = (SplitBrainMergePolicy)
+                    mergePolicyProvider.getMergePolicy("com.hazelcast.spi.merge.PassThroughMergePolicy");
+            op = operationProvider.createMergeOperation(mapName, entryView, mergePolicy, !enableWANReplicationEvent);
+        }
         operationService.createInvocationBuilder(MapService.SERVICE_NAME, op, partitionService.getPartitionId(data)).invoke();
     }
 
@@ -256,19 +301,20 @@ public class WanReplicationTest extends HazelcastTestSupport {
 
     @Override
     protected Config getConfig() {
-        Config config = new Config();
-        WanReplicationConfig wanConfig = new WanReplicationConfig();
-        wanConfig.setName("dummyWan");
+        WanReplicationConfig wanConfig = new WanReplicationConfig()
+                .setName("dummyWan")
+                .addWanPublisherConfig(getPublisherConfig());
 
-        wanConfig.addWanPublisherConfig(getPublisherConfig());
+        WanReplicationRef wanRef = new WanReplicationRef()
+                .setName("dummyWan")
+                .setMergePolicy(PassThroughMergePolicy.class.getName());
 
-        WanReplicationRef wanRef = new WanReplicationRef();
-        wanRef.setName("dummyWan");
-        wanRef.setMergePolicy(PassThroughMergePolicy.class.getName());
+        MapConfig mapConfig = new MapConfig("default")
+                .setWanReplicationRef(wanRef);
 
-        config.addWanReplicationConfig(wanConfig);
-        config.getMapConfig("default").setWanReplicationRef(wanRef);
-        return config;
+        return new Config()
+                .addWanReplicationConfig(wanConfig)
+                .addMapConfig(mapConfig);
     }
 
     private WanPublisherConfig getPublisherConfig() {
@@ -279,7 +325,8 @@ public class WanReplicationTest extends HazelcastTestSupport {
 
     private DummyWanReplication getWanReplicationImpl(HazelcastInstance instance) {
         WanReplicationService service = getNodeEngineImpl(instance).getWanReplicationService();
-        WanReplicationPublisherDelegate delegate = (WanReplicationPublisherDelegate) service.getWanReplicationPublisher("dummyWan");
+        WanReplicationPublisherDelegate delegate
+                = (WanReplicationPublisherDelegate) service.getWanReplicationPublisher("dummyWan");
         return (DummyWanReplication) delegate.getEndpoints()[0];
     }
 
@@ -299,7 +346,7 @@ public class WanReplicationTest extends HazelcastTestSupport {
         final Queue<WanReplicationEvent> eventQueue2 = impl2.eventQueue;
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(expectedQueueSize, eventQueue1.size() + eventQueue2.size());
             }
         });
