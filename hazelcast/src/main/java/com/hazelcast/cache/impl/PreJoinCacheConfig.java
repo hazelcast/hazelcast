@@ -18,6 +18,7 @@ package com.hazelcast.cache.impl;
 
 import com.hazelcast.config.AbstractCacheConfig;
 import com.hazelcast.config.CacheConfig;
+import com.hazelcast.config.TenantControl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -67,6 +68,16 @@ public class PreJoinCacheConfig<K, V> extends CacheConfig<K, V> implements Ident
             throws IOException {
         setKeyClassName(in.readUTF());
         setValueClassName(in.readUTF());
+    }
+
+    @Override
+    protected void writeTenant(ObjectDataOutput out) throws IOException {
+        out.writeObject(getTenantControl());
+    }
+
+    @Override
+    protected void readTenant(ObjectDataInput in) throws IOException {
+        setTenantControl((TenantControl)in.readObject());
     }
 
     @Override

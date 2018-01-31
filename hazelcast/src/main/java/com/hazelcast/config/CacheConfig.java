@@ -517,7 +517,6 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeObject(tenantControl);
         out.writeUTF(name);
         out.writeUTF(managerPrefix);
         out.writeUTF(uriString);
@@ -528,6 +527,12 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
         out.writeObject(evictionConfig);
 
         out.writeObject(wanReplicationRef);
+        // SUPER
+        writeKeyValueTypes(out);
+        writeTenant(out);
+        out.writeObject(cacheLoaderFactory);
+        out.writeObject(cacheWriterFactory);
+        out.writeObject(expiryPolicyFactory);
 
         out.writeBoolean(isReadThrough);
         out.writeBoolean(isWriteThrough);
@@ -541,13 +546,6 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
 
         final boolean listNotEmpty = listenerConfigurations != null && !listenerConfigurations.isEmpty();
         out.writeBoolean(listNotEmpty);
-
-        //SUPER
-        writeKeyValueTypes(out);
-        out.writeObject(cacheLoaderFactory);
-        out.writeObject(cacheWriterFactory);
-        out.writeObject(expiryPolicyFactory);
-
         if (listNotEmpty) {
             out.writeInt(listenerConfigurations.size());
             for (CacheEntryListenerConfiguration<K, V> cc : listenerConfigurations) {
@@ -561,7 +559,6 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        tenantControl = in.readObject();
         name = in.readUTF();
         managerPrefix = in.readUTF();
         uriString = in.readUTF();
@@ -574,6 +571,19 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
 
         wanReplicationRef = in.readObject();
 
+        // SUPER
+        readKeyValueTypes(in);
+        readTenant(in);
+        TenantControl.Closeable tenant = tenantControl.setTenant(false);
+        try {
+            cacheLoaderFactory = in.readObject();
+            cacheWriterFactory = in.readObject();
+            expiryPolicyFactory = in.readObject();
+        }
+        finally {
+            tenant.close();
+        }
+
         isReadThrough = in.readBoolean();
         isWriteThrough = in.readBoolean();
         isStoreByValue = in.readBoolean();
@@ -585,17 +595,12 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
         quorumName = in.readUTF();
 
         final boolean listNotEmpty = in.readBoolean();
-        
+
         // set the thread-context and class loading context for this cache's tenant application
         // This way keyType/valueType/ loader factories and listeners can be CDI / EJB / JPA objects
         // and class loading is guaranteed to work
-        TenantControl.Closeable tenant = tenantControl.setTenant(false);
+        tenant = tenantControl.setTenant(false);
         try {
-            //SUPER
-            readKeyValueTypes(in);
-            cacheLoaderFactory = in.readObject();
-            cacheWriterFactory = in.readObject();
-            expiryPolicyFactory = in.readObject();
             if (listNotEmpty) {
                 final int size = in.readInt();
                 listenerConfigurations = createConcurrentSet();
@@ -603,8 +608,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
                     listenerConfigurations.add((CacheEntryListenerConfiguration<K, V>) in.readObject());
                 }
             }
-        }
-        finally {
+        } finally {
             tenant.close();
         }
 
@@ -675,6 +679,10 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
         setKeyType((Class<K>) in.readObject());
         setValueType((Class<V>) in.readObject());
     }
+
+
+    protected void writeTenant(ObjectDataOutput out) throws IOException { }
+    protected void readTenant(ObjectDataInput in) throws IOException { }
 
     /**
      * Copy this CacheConfig to given {@code target} object whose type extends CacheConfig.
