@@ -356,6 +356,10 @@ public class ObjectDataInputStream extends VersionedObjectDataInput implements C
         return serializationService.getClassLoader();
     }
 
+    public InternalSerializationService getSerializationService() {
+        return serializationService;
+    }
+
     @Override
     public ByteOrder getByteOrder() {
         return byteOrder;
@@ -364,5 +368,4 @@ public class ObjectDataInputStream extends VersionedObjectDataInput implements C
     private boolean bigEndian() {
         return byteOrder == ByteOrder.BIG_ENDIAN;
     }
-
 }
