@@ -20,10 +20,9 @@ import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 
 import javax.annotation.Nonnull;
-
-import static com.hazelcast.jet.core.test.TestSupport.getLogger;
 
 /**
  * Simple implementation of {@link Processor.Context}.
@@ -40,7 +39,6 @@ public class TestProcessorContext implements Processor.Context {
      */
     public TestProcessorContext() {
         globalProcessorIndex = 0;
-        logger = getLogger(vertexName + "#" + globalProcessorIndex);
     }
 
     @Nonnull @Override
@@ -58,6 +56,9 @@ public class TestProcessorContext implements Processor.Context {
 
     @Nonnull @Override
     public ILogger logger() {
+        if (logger == null) {
+            logger = Logger.getLogger(vertexName + "#" + globalProcessorIndex);
+        }
         return logger;
     }
 

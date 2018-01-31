@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.Charset;
+import java.nio.file.DirectoryStream;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -83,8 +84,13 @@ public class StreamFilesP extends AbstractProcessor implements Closeable {
     private static final WatchEvent.Kind[] WATCH_EVENT_KINDS = {ENTRY_CREATE, ENTRY_MODIFY, ENTRY_DELETE};
     private static final WatchEvent.Modifier[] WATCH_EVENT_MODIFIERS = getHighSensitivityModifiers();
 
+    /**
+     * Map from file to offset. Initially we store (-fileSize): if the offset is negative when we
+     * receive the first watcher event, we skip up to the next newline to avoid partial reading
+     * of the first line.
+     */
     // exposed for testing
-    final Map<Path, Long> fileOffsets = new HashMap<>();
+    final Map<Path, FileOffset> fileOffsets = new HashMap<>();
 
     private final Path watchedDirectory;
     private final Charset charset;
@@ -96,6 +102,7 @@ public class StreamFilesP extends AbstractProcessor implements Closeable {
 
     private WatchService watcher;
     private StringBuilder lineBuilder = new StringBuilder();
+    private String pendingLine;
     private Path currentFile;
     private FileInputStream currentInputStream;
     private Reader currentReader;
@@ -113,10 +120,12 @@ public class StreamFilesP extends AbstractProcessor implements Closeable {
 
     @Override
     protected void init(@Nonnull Context context) throws Exception {
-        for (Path file : Files.newDirectoryStream(watchedDirectory)) {
-            if (Files.isRegularFile(file)) {
-                // Negative offset means "initial offset", needed to skip the first line
-                fileOffsets.put(file, -Files.size(file));
+        try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(watchedDirectory)) {
+            for (Path file : directoryStream) {
+                if (Files.isRegularFile(file)) {
+                    // Negative offset means "initial offset", needed to skip the first line
+                    fileOffsets.put(file, new FileOffset(-Files.size(file), ""));
+                }
             }
         }
         watcher = FileSystems.getDefault().newWatchService();
@@ -131,7 +140,7 @@ public class StreamFilesP extends AbstractProcessor implements Closeable {
             if (isClosed()) {
                 return;
             }
-            getLogger().info("Closing StreamFilesP. Any pending watch events will be processed.");
+            getLogger().fine("Closing StreamFilesP");
             watcher.close();
         } catch (IOException e) {
             getLogger().severe("Failed to close StreamFilesP", e);
@@ -142,12 +151,11 @@ public class StreamFilesP extends AbstractProcessor implements Closeable {
 
     @Override
     public boolean complete() {
+        if (isClosed()) {
+            return true;
+        }
         try {
-            if (!isClosed()) {
-                drainWatcherEvents();
-            } else if (eventQueue.isEmpty()) {
-                return true;
-            }
+            drainWatcherEvents();
             if (currentFile == null) {
                 currentFile = eventQueue.poll();
             }
@@ -208,13 +216,19 @@ public class StreamFilesP extends AbstractProcessor implements Closeable {
                 return;
             }
             for (int i = 0; i < LINES_IN_ONE_BATCH; i++) {
-                String line = readCompleteLine(currentReader);
-                if (line == null) {
-                    fileOffsets.put(currentFile, currentInputStream.getChannel().position());
+                if (pendingLine == null) {
+                    pendingLine = readCompleteLine(currentReader);
+                }
+                if (pendingLine == null) {
+                    fileOffsets.put(currentFile,
+                            new FileOffset(currentInputStream.getChannel().position(), lineBuilder.toString()));
+                    lineBuilder.setLength(0);
                     closeCurrentFile();
                     break;
                 }
-                if (!tryEmit(line)) {
+                if (tryEmit(pendingLine)) {
+                    pendingLine = null;
+                } else {
                     break;
                 }
             }
@@ -228,21 +242,19 @@ public class StreamFilesP extends AbstractProcessor implements Closeable {
         if (currentReader != null) {
             return true;
         }
-        long offset = fileOffsets.getOrDefault(currentFile, 0L);
-        logFinest(getLogger(), "Processing file %s, previous offset: %,d", currentFile, offset);
+        FileOffset offset = fileOffsets.getOrDefault(currentFile, FileOffset.ZERO);
+        logFine(getLogger(), "Processing file %s, previous offset: %s", currentFile, offset);
         try {
             FileInputStream fis = new FileInputStream(currentFile.toFile());
-            // Negative offset means we're reading the file for the first time.
-            // We recover the actual offset by negating, then we subtract one
-            // so as not to miss a preceding newline.
-            fis.getChannel().position(offset >= 0 ? offset : -offset - 1);
+            fis.getChannel().position(offset.positiveOffset());
             BufferedReader r = new BufferedReader(new InputStreamReader(fis, charset));
-            if (offset < 0 && !findNextLine(r, offset)) {
+            if (offset.offset < 0 && !findEndOfLine(r)) {
                 closeCurrentFile();
                 return false;
             }
             currentReader = r;
             currentInputStream = fis;
+            lineBuilder.append(offset.pendingLine);
             return true;
         } catch (FileNotFoundException ignored) {
             // This could be caused by ENTRY_MODIFY emitted on file deletion
@@ -252,12 +264,16 @@ public class StreamFilesP extends AbstractProcessor implements Closeable {
         }
     }
 
-    private boolean findNextLine(Reader in, long offset) throws IOException {
+    /**
+     * Reads the file until the end of line is found.
+     *
+     * @return whether it was found
+     */
+    private boolean findEndOfLine(Reader in) throws IOException {
         while (true) {
             int ch = in.read();
             if (ch < 0) {
                 // we've hit EOF before finding the end of current line
-                fileOffsets.put(currentFile, offset);
                 return false;
             }
             if (ch == '\n' || ch == '\r') {
@@ -278,9 +294,6 @@ public class StreamFilesP extends AbstractProcessor implements Closeable {
     String readCompleteLine(Reader reader) throws IOException {
         int ch;
         while ((ch = reader.read()) >= 0) {
-            if (ch < 0) {
-                break;
-            }
             if (ch == '\r' || ch == '\n') {
                 maybeSkipLF(reader, ch);
                 try {
@@ -352,5 +365,31 @@ public class StreamFilesP extends AbstractProcessor implements Closeable {
         }
         //bad luck, we did not find the modifier
         return new WatchEvent.Modifier[0];
+    }
+
+    private static final class FileOffset {
+        private static final FileOffset ZERO = new FileOffset(0, "");
+
+        private final long offset;
+        private final String pendingLine;
+
+        private FileOffset(long offset, @Nonnull String pendingLine) {
+            this.offset = offset;
+            this.pendingLine = pendingLine;
+        }
+
+        /**
+         * Negative offset means we're reading the file for the first time.
+         * We recover the actual offset by negating, then we subtract one
+         * so that we don't skip the first line if we started right after a newline.
+         */
+        private long positiveOffset() {
+            return offset >= 0 ? offset : -offset - 1;
+        }
+
+        @Override
+        public String toString() {
+            return "FileOffset{offset=" + offset + ", pendingLine='" + pendingLine + '\'' + '}';
+        }
     }
 }
