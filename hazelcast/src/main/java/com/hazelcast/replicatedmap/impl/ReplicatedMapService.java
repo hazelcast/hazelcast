@@ -249,7 +249,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
 
 
     public ReplicatedMapConfig getReplicatedMapConfig(String name) {
-        return config.getReplicatedMapConfig(name).getAsReadOnly();
+        return config.findReplicatedMapConfig(name);
     }
 
     public ReplicatedRecordStore getReplicatedRecordStore(String name, boolean create, Object key) {
@@ -295,7 +295,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
     }
 
     public void initializeListeners(String name) {
-        List<ListenerConfig> listenerConfigs = config.getReplicatedMapConfig(name).getListenerConfigs();
+        List<ListenerConfig> listenerConfigs = getReplicatedMapConfig(name).getListenerConfigs();
         for (ListenerConfig listenerConfig : listenerConfigs) {
             EntryListener listener = null;
             if (listenerConfig.getImplementation() != null) {

@@ -88,7 +88,8 @@ public class ReplicatedMapConfig implements IdentifiedDataSerializable {
         this.concurrencyLevel = replicatedMapConfig.concurrencyLevel;
         this.replicationDelayMillis = replicatedMapConfig.replicationDelayMillis;
         this.replicatorExecutorService = replicatedMapConfig.replicatorExecutorService;
-        this.listenerConfigs = new ArrayList<ListenerConfig>(replicatedMapConfig.getListenerConfigs());
+        this.listenerConfigs = replicatedMapConfig.listenerConfigs == null ? null
+                : new ArrayList<ListenerConfig>(replicatedMapConfig.getListenerConfigs());
         this.asyncFillup = replicatedMapConfig.asyncFillup;
         this.statisticsEnabled = replicatedMapConfig.statisticsEnabled;
         this.mergePolicy = replicatedMapConfig.mergePolicy;
