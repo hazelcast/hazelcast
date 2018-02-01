@@ -58,10 +58,13 @@ public class PostJoinProxyOperation extends Operation implements IdentifiedDataS
             try {
                 executionService.execute(ExecutionService.SYSTEM_EXECUTOR, new CreateProxyTask(registry, proxy));
             } catch (Throwable t) {
-                getLogger().warning("Cannot create proxy [" + proxy.getServiceName() + ":"
-                        + proxy.getObjectName() + "]!", t);
+                logProxyCreationFailure(proxy, t);
             }
         }
+    }
+
+    private void logProxyCreationFailure(ProxyInfo proxy, Throwable t) {
+        getLogger().severe("Cannot create proxy [" + proxy.getServiceName() + ":" + proxy.getObjectName() + "]!", t);
     }
 
     @Override
@@ -130,6 +133,8 @@ public class PostJoinProxyOperation extends Operation implements IdentifiedDataS
                 // but before cache proxy is created (post-join).
                 getLogger().fine("Could not create Cache[" + proxyInfo.getObjectName()
                         + "]. It is already destroyed.", e);
+            } catch (Exception e) {
+                logProxyCreationFailure(proxyInfo, e);
             }
         }
     }
