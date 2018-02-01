@@ -18,8 +18,6 @@ package com.hazelcast.config;
 
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.serialization.SerializationServiceBuilder;
-import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.ObjectDataInputStream;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.ObjectDataInput;
@@ -118,6 +116,7 @@ public abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K,
      * The ClassLoader to be used to resolve key & value types, if set
      */
     protected transient ClassLoader classLoader;
+    protected transient InternalSerializationService serializationService;
 
     protected byte[] serializedFactories;
     protected byte[] serializedListenerConfigurations;
@@ -460,11 +459,11 @@ public abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K,
             ObjectDataInputStream listenersStrm = null;
             ClassLoader oldThrClassLoader = Thread.currentThread().getContextClassLoader();
             try {
-                factoriesStrm = new ObjectDataInputStream(new ByteArrayInputStream(serializedFactories), buildSerializationService());
+                factoriesStrm = new ObjectDataInputStream(new ByteArrayInputStream(serializedFactories), serializationService);
                 doReadFactories(factoriesStrm);
                 factoriesStrm.close();
                 if(serializedListenerConfigurations != null) {
-                    listenersStrm = new ObjectDataInputStream(new ByteArrayInputStream(serializedListenerConfigurations), buildSerializationService());
+                    listenersStrm = new ObjectDataInputStream(new ByteArrayInputStream(serializedListenerConfigurations), serializationService);
                     doReadListenerConfigurations(listenersStrm);
                     listenersStrm.close();
                 }
@@ -480,14 +479,6 @@ public abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K,
                 }
             }
         }
-    }
-
-    protected InternalSerializationService buildSerializationService() {
-        SerializationServiceBuilder builder = new DefaultSerializationServiceBuilder();
-        if(classLoader != null) {
-            builder.setClassLoader(classLoader);
-        }
-        return builder.build();
     }
 
     protected boolean hasListenerConfiguration() {

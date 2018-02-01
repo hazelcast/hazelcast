@@ -73,7 +73,7 @@ public class PreJoinCacheConfig<K, V> extends CacheConfig<K, V> implements Ident
     @Override
     protected void writeFactories(ObjectDataOutput out) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ObjectDataOutputStream strm = new ObjectDataOutputStream(baos, buildSerializationService());
+        ObjectDataOutputStream strm = new ObjectDataOutputStream(baos, out.getSerializationService());
         try {
             super.writeFactories(strm);
             strm.flush();
@@ -92,7 +92,7 @@ public class PreJoinCacheConfig<K, V> extends CacheConfig<K, V> implements Ident
     @Override
     protected void writeListenerConfigurations(ObjectDataOutput out) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ObjectDataOutputStream strm = new ObjectDataOutputStream(baos, buildSerializationService());
+        ObjectDataOutputStream strm = new ObjectDataOutputStream(baos, out.getSerializationService());
         try {
             super.writeListenerConfigurations(strm);
             strm.flush();

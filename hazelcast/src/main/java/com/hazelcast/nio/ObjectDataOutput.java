@@ -16,6 +16,7 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.serialization.Data;
 
 import java.io.DataOutput;
@@ -109,4 +110,8 @@ public interface ObjectDataOutput extends DataOutput, VersionAware {
      */
     ByteOrder getByteOrder();
 
+    /**
+     * @return serialization service for this object
+     */
+    InternalSerializationService getSerializationService();
 }

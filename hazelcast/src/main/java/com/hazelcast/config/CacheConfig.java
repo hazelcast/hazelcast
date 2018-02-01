@@ -589,6 +589,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
         disablePerEntryInvalidationEvents = in.readBoolean();
 
         setClassLoader(in.getClassLoader());
+        this.serializationService = in.getSerializationService();
     }
 
     @Override
@@ -732,6 +733,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
         target.setWanReplicationRef(getWanReplicationRef());
         target.setWriteThrough(isWriteThrough());
         target.setClassLoader(classLoader);
+        target.serializationService = serializationService;
         return target;
     }
 }
