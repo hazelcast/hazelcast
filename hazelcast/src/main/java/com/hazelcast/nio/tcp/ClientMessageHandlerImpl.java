@@ -18,21 +18,19 @@ package com.hazelcast.nio.tcp;
 
 import com.hazelcast.client.ClientEngine;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.util.ClientMessageChannelInboundHandler;
+import com.hazelcast.client.impl.protocol.util.ClientMessageDecoder;
 import com.hazelcast.nio.Connection;
 
-import java.io.IOException;
-
 /**
- * A {@link ClientMessageChannelInboundHandler.ClientMessageHandler} implementation
+ * A {@link ClientMessageDecoder.ClientMessageHandler} implementation
  * that passes the message to the {@link ClientEngine}.
  */
-public class ClientMessageHandlerImpl implements ClientMessageChannelInboundHandler.ClientMessageHandler {
+public class ClientMessageHandlerImpl implements ClientMessageDecoder.ClientMessageHandler {
 
     private final Connection connection;
     private final ClientEngine clientEngine;
 
-    public ClientMessageHandlerImpl(Connection connection, ClientEngine clientEngine) throws IOException {
+    public ClientMessageHandlerImpl(Connection connection, ClientEngine clientEngine) {
         this.connection = connection;
         this.clientEngine = clientEngine;
     }
