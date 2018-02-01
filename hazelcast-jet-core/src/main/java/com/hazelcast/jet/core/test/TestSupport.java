@@ -266,7 +266,7 @@ public final class TestSupport {
      */
     public void expectOutput(@Nonnull List<?> expectedOutput) {
         this.expectedOutput = expectedOutput;
-        runTest(doSnapshots, doSnapshots);
+        runTest(doSnapshots, doSnapshots ? 1 : 0);
     }
 
     /**
@@ -372,19 +372,34 @@ public final class TestSupport {
         return this;
     }
 
-    private void runTest(boolean doSnapshots, boolean doRestore) {
-        assert doSnapshots || !doRestore : "Illegal combination: don't do snapshots, but do restore";
+    private static String modeDescription(boolean doSnapshots, int doRestoreEvery) {
+        if (!doSnapshots && doRestoreEvery == 0) {
+            return "snapshots disabled";
+        } else if (doSnapshots && doRestoreEvery == 1) {
+            return "snapshots enabled, restoring every snapshot";
+        } else if (doSnapshots && doRestoreEvery == 2) {
+            return "snapshots enabled, restoring every other snapshot";
+        } else if (doSnapshots && doRestoreEvery == Integer.MAX_VALUE) {
+            return "snapshots enabled, never restoring them";
+        } else {
+            throw new IllegalArgumentException("Unknown mode, doSnapshots=" + doSnapshots + ", doRestoreEvery="
+                    + doRestoreEvery);
+        }
+    }
+
+    private void runTest(boolean doSnapshots, int doRestoreEvery) {
+        assert doSnapshots || doRestoreEvery == 0 : "Illegal combination: don't do snapshots, but do restore";
         IdleStrategy idler = new BackoffIdleStrategy(0, 0, MICROSECONDS.toNanos(1),
                 MILLISECONDS.toNanos(1));
         int idleCount = 0;
-        if (doSnapshots && doRestore) {
+        if (doSnapshots && doRestoreEvery == 1) {
             // we do all 3 possible combinations: no snapshot, only snapshots and snapshots+restore
-            System.out.println("### Running the test with doSnapshots=false");
-            runTest(false, false);
-            System.out.println("### Running the test with doSnapshots=true, doRestore=false");
-            runTest(true, false);
-            System.out.println("### Running the test with doSnapshots=true, doRestore=true");
+            runTest(false, 0);
+            runTest(true, Integer.MAX_VALUE);
+            runTest(true, 2);
         }
+
+        System.out.println("### Running the test, mode=" + modeDescription(doSnapshots, doRestoreEvery));
 
         TestInbox inbox = new TestInbox();
         Processor[] processor = {supplier.get()};
@@ -397,8 +412,10 @@ public final class TestSupport {
         // create instance of your processor and call the init() method
         initProcessor(processor[0], outbox);
 
+        int[] restoreCount = {0};
+
         // do snapshot+restore before processing any item. This will test saveToSnapshot() in this edge case
-        snapshotAndRestore(processor, outbox, actualOutput, doSnapshots, doRestore);
+        snapshotAndRestore(processor, outbox, actualOutput, doSnapshots, doRestoreEvery, restoreCount);
 
         // call the process() method
         Iterator<?> inputIterator = input.iterator();
@@ -430,7 +447,7 @@ public final class TestSupport {
             }
             drainOutbox(outbox.queueWithOrdinal(0), actualOutput, logInputOutput);
             if (inbox.isEmpty() && wmToProcess[0] == null) {
-                snapshotAndRestore(processor, outbox, actualOutput, doSnapshots, doRestore);
+                snapshotAndRestore(processor, outbox, actualOutput, doSnapshots, doRestoreEvery, restoreCount);
             }
         }
 
@@ -444,7 +461,8 @@ public final class TestSupport {
                 boolean madeProgress = done[0] || !outbox.queueWithOrdinal(0).isEmpty();
                 assertTrue("complete() call without progress", !assertProgress || madeProgress);
                 drainOutbox(outbox.queueWithOrdinal(0), actualOutput, logInputOutput);
-                snapshotAndRestore(processor, outbox, actualOutput, madeProgress && doSnapshots && !done[0], doRestore);
+                snapshotAndRestore(processor, outbox, actualOutput, madeProgress && doSnapshots && !done[0],
+                        doRestoreEvery, restoreCount);
                 idleCount = idle(idler, idleCount, madeProgress);
                 if (runUntilCompletedTimeout > 0) {
                     elapsed = toMillis(System.nanoTime() - completeStart);
@@ -458,8 +476,8 @@ public final class TestSupport {
 
         // assert the outbox
         if (!outputChecker.test(expectedOutput, actualOutput)) {
-            assertEquals("processor output with doSnapshots=" + doSnapshots + ", doRestore=" + doRestore
-                            + " doesn't match", listToString(expectedOutput), listToString(actualOutput));
+            assertEquals("processor output in mode \"" + modeDescription(doSnapshots, doRestoreEvery)
+                            + "\" doesn't match", listToString(expectedOutput), listToString(actualOutput));
         }
     }
 
@@ -493,7 +511,8 @@ public final class TestSupport {
             TestOutbox outbox,
             List<Object> actualOutput,
             boolean doSnapshot,
-            boolean doRestore) {
+            int doRestoreEvery,
+            int[] restoreCount) {
         if (!doSnapshot) {
             return;
         }
@@ -518,7 +537,9 @@ public final class TestSupport {
             outbox.snapshotQueue().clear();
         } while (!done[0]);
 
-        if (!doRestore) {
+        restoreCount[0]++;
+
+        if (restoreCount[0] % doRestoreEvery != 0) {
             return;
         }
 

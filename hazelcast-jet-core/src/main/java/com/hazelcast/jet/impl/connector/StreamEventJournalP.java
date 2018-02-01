@@ -190,6 +190,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
         boolean done = emitFromTraverserToSnapshot(snapshotTraverser);
         if (done) {
             logFinest(getLogger(), "Saved snapshot. Offsets: %s", emitOffsets);
+            snapshotTraverser = null;
         }
         return done;
     }
