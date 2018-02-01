@@ -45,7 +45,9 @@ public final class JCacheDetector {
     }
 
     public static boolean isJCacheAvailable(ClassLoader classLoader) {
-        return isJCacheAvailable(classLoader, null);
+        ClassLoader backupClassLoader = JCacheDetector.class.getClassLoader();
+        // try the current class loader if the thread-context class loader is too narrowly defined
+        return isJCacheAvailable(classLoader, null) || isJCacheAvailable(backupClassLoader, null);
     }
 
     /**

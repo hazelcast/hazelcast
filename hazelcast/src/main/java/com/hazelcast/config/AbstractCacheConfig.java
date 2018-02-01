@@ -17,7 +17,12 @@
 package com.hazelcast.config;
 
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.SerializationServiceBuilder;
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.internal.serialization.impl.ObjectDataInputStream;
 import com.hazelcast.nio.ClassLoaderUtil;
+import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.serialization.BinaryInterface;
 import com.hazelcast.nio.serialization.DataSerializable;
 
@@ -33,6 +38,8 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 
 /**
  * Base class for {@link CacheConfig}
@@ -110,7 +117,11 @@ public abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K,
     /**
      * The ClassLoader to be used to resolve key & value types, if set
      */
-    private transient ClassLoader classLoader;
+    protected transient ClassLoader classLoader;
+
+    protected byte[] serializedFactories;
+    protected byte[] serializedListenerConfigurations;
+
 
     public AbstractCacheConfig() {
         this._listenerConfigurations = createConcurrentSet();
@@ -431,7 +442,47 @@ public abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K,
         return _listenerConfigurations;
     }
 
-    protected void resolveDelayedLoadingClasses() {
+    abstract protected void doReadFactories(ObjectDataInput in) throws IOException;
+    abstract protected void doReadListenerConfigurations(ObjectDataInput in) throws IOException;
+
+    private void resolveDelayedLoadingClasses() {
+        if(serializedFactories != null) {
+            if (classLoader != null) {
+                Thread.currentThread().setContextClassLoader(classLoader);
+            }
+            // TODO set tenant so the classes resolve
+            ObjectDataInputStream factoriesStrm = null;
+            ObjectDataInputStream listenersStrm = null;
+            ClassLoader oldThrClassLoader = Thread.currentThread().getContextClassLoader();
+            try {
+                factoriesStrm = new ObjectDataInputStream(new ByteArrayInputStream(serializedFactories), buildSerializationService());
+                doReadFactories(factoriesStrm);
+                factoriesStrm.close();
+                if(serializedListenerConfigurations != null) {
+                    listenersStrm = new ObjectDataInputStream(new ByteArrayInputStream(serializedListenerConfigurations), buildSerializationService());
+                    doReadListenerConfigurations(listenersStrm);
+                    listenersStrm.close();
+                }
+            } catch (IOException ex) {
+                throw new IllegalStateException("Cannot de-serialize deferred factories or listener configurations", ex);
+            } finally {
+                serializedFactories = null;
+                serializedListenerConfigurations = null;
+
+                // TODO tenant close
+                if(classLoader != null) {
+                    Thread.currentThread().setContextClassLoader(oldThrClassLoader);
+                }
+            }
+        }
+    }
+
+    protected InternalSerializationService buildSerializationService() {
+        SerializationServiceBuilder builder = new DefaultSerializationServiceBuilder();
+        if(classLoader != null) {
+            builder.setClassLoader(classLoader);
+        }
+        return builder.build();
     }
 
     @Override

@@ -18,20 +18,13 @@ package com.hazelcast.cache.impl;
 
 import com.hazelcast.config.AbstractCacheConfig;
 import com.hazelcast.config.CacheConfig;
-import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.internal.serialization.impl.ObjectDataInputStream;
 import com.hazelcast.internal.serialization.impl.ObjectDataOutputStream;
-import com.hazelcast.internal.serialization.impl.SerializationServiceV1;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 
 import java.io.IOException;
-import java.util.logging.Level;
 
 /**
  * This subclass of {@link CacheConfig} is used to communicate cache configurations in pre-join cache operations when cluster
@@ -46,10 +39,6 @@ import java.util.logging.Level;
  * @since 3.9
  */
 public class PreJoinCacheConfig<K, V> extends CacheConfig<K, V> implements IdentifiedDataSerializable {
-    private final InternalSerializationService iss = new DefaultSerializationServiceBuilder()
-            .setVersion(SerializationServiceV1.VERSION_1).build();
-
-
     public PreJoinCacheConfig() {
         super();
     }
@@ -84,7 +73,7 @@ public class PreJoinCacheConfig<K, V> extends CacheConfig<K, V> implements Ident
     @Override
     protected void writeFactories(ObjectDataOutput out) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ObjectDataOutputStream strm = new ObjectDataOutputStream(baos, iss);
+        ObjectDataOutputStream strm = new ObjectDataOutputStream(baos, buildSerializationService());
         try {
             super.writeFactories(strm);
             strm.flush();
@@ -103,7 +92,7 @@ public class PreJoinCacheConfig<K, V> extends CacheConfig<K, V> implements Ident
     @Override
     protected void writeListenerConfigurations(ObjectDataOutput out) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ObjectDataOutputStream strm = new ObjectDataOutputStream(baos, iss);
+        ObjectDataOutputStream strm = new ObjectDataOutputStream(baos, buildSerializationService());
         try {
             super.writeListenerConfigurations(strm);
             strm.flush();
@@ -117,28 +106,6 @@ public class PreJoinCacheConfig<K, V> extends CacheConfig<K, V> implements Ident
     @Override
     protected void readListenerConfigurations(ObjectDataInput in) throws IOException {
         serializedListenerConfigurations = in.readByteArray();
-    }
-
-    @Override
-    protected void resolveDelayedLoadingClasses() {
-        if(serializedFactories != null) {
-            // TODO set tenant so the classes resolve
-            ObjectDataInputStream factoriesStrm = null;
-            ObjectDataInputStream listenersStrm = null;
-            try {
-                factoriesStrm = new ObjectDataInputStream(new ByteArrayInputStream(serializedFactories), iss);
-                super.readFactories(factoriesStrm);
-                listenersStrm = new ObjectDataInputStream(new ByteArrayInputStream(serializedListenerConfigurations), iss);
-                super.readListenerConfigurations(listenersStrm);
-                factoriesStrm.close();
-                listenersStrm.close();
-            } catch (IOException ex) {
-                Logger.getLogger(PreJoinCacheConfig.class.getName()).log(Level.SEVERE, "Cannot resolve delayed-loading classes", ex);
-            } finally {
-                serializedFactories = null;
-                serializedListenerConfigurations = null;
-            }
-        }
     }
 
     @Override

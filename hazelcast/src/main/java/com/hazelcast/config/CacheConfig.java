@@ -80,9 +80,6 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
      */
     private boolean disablePerEntryInvalidationEvents;
 
-    protected byte[] serializedFactories;
-    protected byte[] serializedListenerConfigurations;
-
 
     public CacheConfig() {
     }
@@ -653,6 +650,11 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
     }
 
     protected void readFactories(ObjectDataInput in) throws IOException {
+        doReadFactories(in);
+    }
+
+    @Override
+    protected void doReadFactories(ObjectDataInput in) throws IOException {
         _cacheLoaderFactory = in.readObject();
         _cacheWriterFactory = in.readObject();
         _expiryPolicyFactory = in.readObject();
@@ -666,12 +668,18 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
     }
 
     protected void readListenerConfigurations(ObjectDataInput in) throws IOException {
+        doReadListenerConfigurations(in);
+    }
+
+    @Override
+    protected void doReadListenerConfigurations(ObjectDataInput in) throws IOException {
         final int size = in.readInt();
         _listenerConfigurations = createConcurrentSet();
         for (int i = 0; i < size; i++) {
             _listenerConfigurations.add((CacheEntryListenerConfiguration<K, V>) in.readObject());
         }
     }
+
 
     /**
      * Copy this CacheConfig to given {@code target} object whose type extends CacheConfig.
@@ -720,6 +728,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
         target.setUriString(getUriString());
         target.setWanReplicationRef(getWanReplicationRef());
         target.setWriteThrough(isWriteThrough());
+        target.setClassLoader(classLoader);
         return target;
     }
 }
