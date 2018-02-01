@@ -33,7 +33,10 @@ import com.hazelcast.map.impl.querycache.publisher.PublisherRegistry;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
+import com.hazelcast.query.impl.MapIndexInfo;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.version.Version;
 
 import java.io.IOException;
 import java.util.AbstractMap;
@@ -43,9 +46,10 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import static com.hazelcast.internal.cluster.Versions.V3_9;
 import static com.hazelcast.util.MapUtil.createHashMap;
 
-public class PostJoinMapOperation extends Operation implements IdentifiedDataSerializable {
+public class PostJoinMapOperation extends Operation implements IdentifiedDataSerializable, Versioned {
 
     private List<InterceptorInfo> interceptorInfoList = new LinkedList<InterceptorInfo>();
     private List<AccumulatorInfo> infoList;
@@ -171,6 +175,12 @@ public class PostJoinMapOperation extends Operation implements IdentifiedDataSer
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
+        // RU_COMPAT_3_9
+        // fix for PostJoinMapOperation not being Versioned in 3.9.x: write 0 index info count
+        Version outputVersion = out.getVersion();
+        if (outputVersion.isUnknown() || outputVersion.isEqualTo(V3_9)) {
+            out.writeInt(0);
+        }
         out.writeInt(interceptorInfoList.size());
         for (InterceptorInfo interceptorInfo : interceptorInfoList) {
             interceptorInfo.writeData(out);
@@ -185,6 +195,18 @@ public class PostJoinMapOperation extends Operation implements IdentifiedDataSer
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
+        // RU_COMPAT_39
+        // Version 3.9.x still sends index info's because PostJoinMapOperation was not marked Versioned
+        Version inputversion = in.getVersion();
+        if (inputversion.isUnknown() || inputversion.isEqualTo(V3_9)) {
+            // just consume the bytes
+            int indexesCount = in.readInt();
+            for (int i = 0; i < indexesCount; i++) {
+                MapIndexInfo mapIndexInfo = new MapIndexInfo();
+                mapIndexInfo.readData(in);
+            }
+        }
+
         int interceptorsCount = in.readInt();
         for (int i = 0; i < interceptorsCount; i++) {
             InterceptorInfo info = new InterceptorInfo();
