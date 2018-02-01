@@ -88,6 +88,15 @@ public class Indexes {
         hasIndex = false;
     }
 
+    /**
+     * Clears contents of indexes managed by this instance.
+     */
+    public void clearContents() {
+        for (Index index : getIndexes()) {
+            index.clear();
+        }
+    }
+
     public void removeEntryIndex(Data key, Object value) throws QueryException {
         Index[] indexes = getIndexes();
         for (Index index : indexes) {

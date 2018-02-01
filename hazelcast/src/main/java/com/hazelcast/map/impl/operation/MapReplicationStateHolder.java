@@ -23,6 +23,7 @@ import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordReplicationInfo;
+import com.hazelcast.map.impl.record.Records;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -33,8 +34,10 @@ import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.IndexInfo;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.MapIndexInfo;
+import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.ServiceNamespace;
+import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ThreadUtil;
 
@@ -162,12 +165,29 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
                     indexes.addOrGetIndex(indexDefinition.getKey(), indexDefinition.getValue());
                 }
 
+                final Indexes indexes = mapContainer.getIndexes(partitionContainer.getPartitionId());
+                final SerializationService serializationService = mapContainer.getMapServiceContext().getNodeEngine()
+                                                                              .getSerializationService();
+                final boolean indexesMustBePopulated = indexesMustBePopulated(indexes, mapReplicationOperation);
+                if (indexesMustBePopulated) {
+                    // defensively clear possible stale leftovers in non-global indexes from the previous failed promotion attempt
+                    indexes.clearContents();
+                }
+
                 for (RecordReplicationInfo recordReplicationInfo : recordReplicationInfos) {
                     Data key = recordReplicationInfo.getKey();
                     final Data value = recordReplicationInfo.getValue();
                     Record newRecord = recordStore.createRecord(value, -1L, Clock.currentTimeMillis());
                     applyRecordInfo(newRecord, recordReplicationInfo);
                     recordStore.putRecord(key, newRecord);
+
+                    if (indexesMustBePopulated) {
+                        final Object valueToIndex = Records.getValueOrCachedValue(newRecord, serializationService);
+                        if (valueToIndex != null) {
+                            final QueryableEntry queryableEntry = mapContainer.newQueryEntry(newRecord.getKey(), valueToIndex);
+                            indexes.saveEntryIndex(queryableEntry, null);
+                        }
+                    }
                 }
             }
         }
@@ -257,5 +277,24 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
     @Override
     public int getId() {
         return MapDataSerializerHook.MAP_REPLICATION_STATE_HOLDER;
+    }
+
+    private static boolean indexesMustBePopulated(Indexes indexes, MapReplicationOperation operation) {
+        if (!indexes.hasIndex()) {
+            // no indexes to populate
+            return false;
+        }
+
+        if (indexes.isGlobal()) {
+            // global indexes are populated during migration finalization
+            return false;
+        }
+
+        if (operation.getReplicaIndex() != 0) {
+            // backup partitions have no indexes to populate
+            return false;
+        }
+
+        return true;
     }
 }
