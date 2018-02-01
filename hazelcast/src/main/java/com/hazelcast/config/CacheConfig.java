@@ -47,6 +47,10 @@ import static com.hazelcast.config.CacheSimpleConfig.MIN_BACKUP_COUNT;
 import static com.hazelcast.util.Preconditions.checkAsyncBackupCount;
 import static com.hazelcast.util.Preconditions.checkBackupCount;
 import static com.hazelcast.util.Preconditions.isNotNull;
+import java.util.Set;
+import javax.cache.expiry.ExpiryPolicy;
+import javax.cache.integration.CacheLoader;
+import javax.cache.integration.CacheWriter;
 
 /**
  * Contains all the configuration for the {@link com.hazelcast.cache.ICache}.
@@ -130,16 +134,16 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
         this.isReadThrough = simpleConfig.isReadThrough();
         this.isWriteThrough = simpleConfig.isWriteThrough();
         if (simpleConfig.getCacheLoaderFactory() != null) {
-            this._cacheLoaderFactory = ClassLoaderUtil.newInstance(null, simpleConfig.getCacheLoaderFactory());
+            setCacheLoaderFactory(ClassLoaderUtil.<Factory<? extends CacheLoader<K,V>>>newInstance(null, simpleConfig.getCacheLoaderFactory()));
         }
         if (simpleConfig.getCacheLoader() != null) {
-            this._cacheLoaderFactory = FactoryBuilder.factoryOf(simpleConfig.getCacheLoader());
+            setCacheLoaderFactory(FactoryBuilder.<CacheLoader<K,V>>factoryOf(simpleConfig.getCacheLoader()));
         }
         if (simpleConfig.getCacheWriterFactory() != null) {
-            this._cacheWriterFactory = ClassLoaderUtil.newInstance(null, simpleConfig.getCacheWriterFactory());
+            setCacheWriterFactory(ClassLoaderUtil.<Factory<? extends CacheWriter<K,V>>>newInstance(null, simpleConfig.getCacheWriterFactory()));
         }
         if (simpleConfig.getCacheWriter() != null) {
-            this._cacheWriterFactory = FactoryBuilder.factoryOf(simpleConfig.getCacheWriter());
+            setCacheWriterFactory(FactoryBuilder.<CacheWriter<K,V>>factoryOf(simpleConfig.getCacheWriter()));
         }
         initExpiryPolicyFactoryConfig(simpleConfig);
         this.asyncBackupCount = simpleConfig.getAsyncBackupCount();
@@ -182,8 +186,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
                 simpleConfig.getExpiryPolicyFactoryConfig();
         if (expiryPolicyFactoryConfig != null) {
             if (expiryPolicyFactoryConfig.getClassName() != null) {
-                this._expiryPolicyFactory =
-                        ClassLoaderUtil.newInstance(null, expiryPolicyFactoryConfig.getClassName());
+                setExpiryPolicyFactory(ClassLoaderUtil.<Factory<? extends ExpiryPolicy>>newInstance(null, expiryPolicyFactoryConfig.getClassName()));
             } else {
                 TimedExpiryPolicyFactoryConfig timedExpiryPolicyConfig =
                         expiryPolicyFactoryConfig.getTimedExpiryPolicyFactoryConfig();
@@ -192,31 +195,31 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
                     ExpiryPolicyType expiryPolicyType = timedExpiryPolicyConfig.getExpiryPolicyType();
                     switch (expiryPolicyType) {
                         case CREATED:
-                            this._expiryPolicyFactory =
+                            setExpiryPolicyFactory(
                                     CreatedExpiryPolicy.factoryOf(
                                             new Duration(durationConfig.getTimeUnit(),
-                                                    durationConfig.getDurationAmount()));
+                                                    durationConfig.getDurationAmount())));
                             break;
                         case MODIFIED:
-                            this._expiryPolicyFactory =
+                            setExpiryPolicyFactory(
                                     ModifiedExpiryPolicy.factoryOf(
                                             new Duration(durationConfig.getTimeUnit(),
-                                                    durationConfig.getDurationAmount()));
+                                                    durationConfig.getDurationAmount())));
                             break;
                         case ACCESSED:
-                            this._expiryPolicyFactory =
+                            setExpiryPolicyFactory(
                                     AccessedExpiryPolicy.factoryOf(
                                             new Duration(durationConfig.getTimeUnit(),
-                                                    durationConfig.getDurationAmount()));
+                                                    durationConfig.getDurationAmount())));
                             break;
                         case TOUCHED:
-                            this._expiryPolicyFactory =
+                            setExpiryPolicyFactory(
                                     TouchedExpiryPolicy.factoryOf(
                                             new Duration(durationConfig.getTimeUnit(),
-                                                    durationConfig.getDurationAmount()));
+                                                    durationConfig.getDurationAmount())));
                             break;
                         case ETERNAL:
-                            this._expiryPolicyFactory = EternalExpiryPolicy.factoryOf();
+                            setExpiryPolicyFactory(EternalExpiryPolicy.factoryOf());
                             break;
                         default:
                             throw new IllegalArgumentException("Unsupported expiry policy type: " + expiryPolicyType);
@@ -540,9 +543,8 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
 
         out.writeUTF(quorumName);
 
-        final boolean listNotEmpty = _listenerConfigurations != null && !_listenerConfigurations.isEmpty();
-        out.writeBoolean(listNotEmpty);
-        if (listNotEmpty) {
+        out.writeBoolean(hasListenerConfiguration());
+        if (hasListenerConfiguration()) {
             writeListenerConfigurations(out);
         }
 
@@ -655,9 +657,9 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
 
     @Override
     protected void doReadFactories(ObjectDataInput in) throws IOException {
-        _cacheLoaderFactory = in.readObject();
-        _cacheWriterFactory = in.readObject();
-        _expiryPolicyFactory = in.readObject();
+        setCacheLoaderFactory(in.<Factory<? extends CacheLoader<K,V>>>readObject());
+        setCacheWriterFactory(in.<Factory<? extends CacheWriter<? super K,? super V>>>readObject());
+        setExpiryPolicyFactory(in.<Factory<? extends ExpiryPolicy>>readObject());
     }
 
     protected void writeListenerConfigurations(ObjectDataOutput out) throws IOException {
@@ -674,10 +676,11 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
     @Override
     protected void doReadListenerConfigurations(ObjectDataInput in) throws IOException {
         final int size = in.readInt();
-        _listenerConfigurations = createConcurrentSet();
+        Set<CacheEntryListenerConfiguration<K,V>> lc = createConcurrentSet();
         for (int i = 0; i < size; i++) {
-            _listenerConfigurations.add((CacheEntryListenerConfiguration<K, V>) in.readObject());
+            lc.add((CacheEntryListenerConfiguration<K, V>) in.readObject());
         }
+        setListenerConfigurations(lc);
     }
 
 
