@@ -30,6 +30,9 @@ import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.predicates.QueryOptimizer;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.partition.IPartition;
+import com.hazelcast.spi.partition.IPartitionService;
+import com.hazelcast.spi.partition.MigrationEndpoint;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -55,6 +58,7 @@ public class QueryRunner {
     protected final LocalMapStatsProvider localMapStatsProvider;
     protected final PartitionScanExecutor partitionScanExecutor;
     protected final ResultProcessorRegistry resultProcessorRegistry;
+    protected final IPartitionService partitionService;
 
     public QueryRunner(MapServiceContext mapServiceContext, QueryOptimizer optimizer,
                        PartitionScanExecutor partitionScanExecutor, ResultProcessorRegistry resultProcessorRegistry) {
@@ -69,6 +73,7 @@ public class QueryRunner {
         this.localMapStatsProvider = mapServiceContext.getLocalMapStatsProvider();
         this.partitionScanExecutor = partitionScanExecutor;
         this.resultProcessorRegistry = resultProcessorRegistry;
+        this.partitionService = nodeEngine.getPartitionService();
     }
 
     /**
@@ -125,6 +130,7 @@ public class QueryRunner {
     // MIGRATION UNSAFE QUERYING - MIGRATION STAMPS ARE NOT VALIDATED, so assumes a run on partition-thread
     // for a single partition. If the index is global it won't be asked
     public Result runPartitionIndexOrPartitionScanQueryOnGivenOwnedPartition(Query query, int partitionId) {
+        final IPartition partition = partitionService.getPartition(partitionId);
         MapContainer mapContainer = mapServiceContext.getMapContainer(query.getMapName());
         List<Integer> partitions = Collections.singletonList(partitionId);
 
@@ -132,9 +138,14 @@ public class QueryRunner {
         Predicate predicate = queryOptimizer.optimize(query.getPredicate(), mapContainer.getIndexes(partitionId));
 
         Collection<QueryableEntry> entries = null;
-        Indexes indexes = mapContainer.getIndexes(partitionId);
-        if (indexes != null && !indexes.isGlobal()) {
-            entries = indexes.query(predicate);
+        if (partition.getMigrationEndpoint() != MigrationEndpoint.DESTINATION) {
+            // It is safe to use indexes on the partition if it's migration source or
+            // not participating in the migration at all. See #8385.
+
+            Indexes indexes = mapContainer.getIndexes(partitionId);
+            if (indexes != null && !indexes.isGlobal()) {
+                entries = indexes.query(predicate);
+            }
         }
         if (entries == null) {
             entries = partitionScanExecutor.execute(query.getMapName(), predicate, partitions);

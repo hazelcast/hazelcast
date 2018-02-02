@@ -21,6 +21,7 @@ import com.hazelcast.core.ILock;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.impl.InternalPartitionImpl;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
+import com.hazelcast.spi.partition.MigrationEndpoint;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -328,7 +329,7 @@ public abstract class LockBasicTest extends HazelcastTestSupport {
         final int leaseTime = 1000;
 
         lock.lock(leaseTime, TimeUnit.MILLISECONDS);
-        partition.setMigrating(true);
+        partition.setMigratingFlag(MigrationEndpoint.SOURCE);
 
         spawn(new Runnable() {
             @Override
@@ -338,7 +339,7 @@ public abstract class LockBasicTest extends HazelcastTestSupport {
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-                partition.setMigrating(false);
+                partition.clearMigratingFlag();
             }
         });
 

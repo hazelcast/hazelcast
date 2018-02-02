@@ -18,6 +18,7 @@ package com.hazelcast.internal.partition.impl;
 
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.nio.Address;
+import com.hazelcast.spi.partition.MigrationEndpoint;
 
 public class DummyInternalPartition implements InternalPartition {
     private Address[] replicas;
@@ -45,6 +46,11 @@ public class DummyInternalPartition implements InternalPartition {
 
     @Override
     public boolean isMigrating() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public MigrationEndpoint getMigrationEndpoint() {
         throw new UnsupportedOperationException();
     }
 

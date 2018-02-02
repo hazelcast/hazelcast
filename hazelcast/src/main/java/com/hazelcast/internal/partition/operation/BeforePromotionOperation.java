@@ -23,6 +23,7 @@ import com.hazelcast.internal.partition.impl.PartitionStateManager;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.PartitionMigrationEvent;
+import com.hazelcast.spi.partition.MigrationEndpoint;
 
 import static com.hazelcast.core.MigrationEvent.MigrationStatus.STARTED;
 
@@ -54,7 +55,7 @@ final class BeforePromotionOperation extends AbstractPromotionOperation {
 
         InternalPartitionServiceImpl service = getService();
         PartitionStateManager partitionStateManager = service.getPartitionStateManager();
-        partitionStateManager.setMigratingFlag(getPartitionId());
+        partitionStateManager.setMigratingFlag(getPartitionId(), MigrationEndpoint.DESTINATION);
     }
 
     @Override

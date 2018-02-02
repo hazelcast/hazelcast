@@ -36,6 +36,8 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.partition.membergroup.MemberGroup;
 import com.hazelcast.partition.membergroup.MemberGroupFactory;
 import com.hazelcast.partition.membergroup.MemberGroupFactoryFactory;
+import com.hazelcast.spi.partition.IPartition;
+import com.hazelcast.spi.partition.MigrationEndpoint;
 
 import java.util.Collection;
 import java.util.Set;
@@ -310,18 +312,31 @@ public class PartitionStateManager {
         return newState;
     }
 
-    public void setMigratingFlag(int partitionId) {
+    /**
+     * Sets migrating flag for the partition with the given {@code partitionId}.
+     *
+     * @param partitionId the partition ID to set the flag of.
+     * @param endpoint    tells on which side the migration is going on.
+     * @see IPartition#isMigrating()
+     */
+    public void setMigratingFlag(int partitionId, MigrationEndpoint endpoint) {
         if (logger.isFinestEnabled()) {
             logger.finest("Setting partition-migrating flag. partitionId=" + partitionId);
         }
-        partitions[partitionId].setMigrating(true);
+        partitions[partitionId].setMigratingFlag(endpoint);
     }
 
+    /**
+     * Clears migrating flag for the partition with the given {@code partitionId}.
+     *
+     * @param partitionId the partition ID to set the flag for.
+     * @see IPartition#isMigrating()
+     */
     public void clearMigratingFlag(int partitionId) {
         if (logger.isFinestEnabled()) {
             logger.finest("Clearing partition-migrating flag. partitionId=" + partitionId);
         }
-        partitions[partitionId].setMigrating(false);
+        partitions[partitionId].clearMigratingFlag();
     }
 
     /** Sets the replica addresses for the {@code partitionId}. */

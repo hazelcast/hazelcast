@@ -24,6 +24,7 @@ import com.hazelcast.spi.impl.operationexecutor.impl.PartitionOperationThread;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.spi.partition.IPartitionService;
+import com.hazelcast.spi.partition.MigrationEndpoint;
 import com.hazelcast.util.ThreadUtil;
 
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -108,7 +109,7 @@ public class PartitionAwareCallableBatchingRunnable implements Runnable {
                 break;
             }
             PartitionAwareCallable task = factory.create();
-            if (partition.isLocal() && !partition.isMigrating()) {
+            if (queriesAreAllowedOn(partition)) {
                 try {
                     results.add(task.call(currentPartitionId));
                 } catch (Exception ex) {
@@ -122,6 +123,13 @@ public class PartitionAwareCallableBatchingRunnable implements Runnable {
 
     public ICompletableFuture getFuture() {
         return future;
+    }
+
+    private static boolean queriesAreAllowedOn(IPartition partition) {
+        // Queries are allowed only on local/owned partitions which are migration sources or
+        // not participating in the migration at all. See #8385.
+
+        return partition.isLocal() && partition.getMigrationEndpoint() != MigrationEndpoint.DESTINATION;
     }
 
     private static class ResultFuture extends AbstractCompletableFuture {

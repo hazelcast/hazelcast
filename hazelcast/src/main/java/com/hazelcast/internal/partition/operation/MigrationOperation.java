@@ -27,6 +27,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.ServiceNamespace;
+import com.hazelcast.spi.partition.MigrationEndpoint;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -69,7 +70,7 @@ public class MigrationOperation extends BaseMigrationDestinationOperation {
     @Override
     public void run() throws Exception {
         verifyMasterOnMigrationDestination();
-        setActiveMigration();
+        setActiveMigration(MigrationEndpoint.DESTINATION);
 
         try {
             doRun();
