@@ -31,22 +31,22 @@ public class PersonCacheWriterFactory implements Factory<CacheWriter<String, Per
         return new CacheWriter<String, Person>() {
             @Override
             public void write(Cache.Entry<? extends String, ? extends Person> entry) throws CacheWriterException {
-                throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+                throw new UnsupportedOperationException("Not supported");
             }
 
             @Override
             public void writeAll(Collection<Cache.Entry<? extends String, ? extends Person>> clctn) throws CacheWriterException {
-                throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+                throw new UnsupportedOperationException("Not supported");
             }
 
             @Override
             public void delete(Object o) throws CacheWriterException {
-                throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+                throw new UnsupportedOperationException("Not supported");
             }
 
             @Override
             public void deleteAll(Collection<?> clctn) throws CacheWriterException {
-                throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+                throw new UnsupportedOperationException("Not supported");
             }
         };
     }
