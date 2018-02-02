@@ -138,4 +138,13 @@ public class PreJoinCacheConfig<K, V> extends CacheConfig<K, V> implements Ident
 
         return true;
     }
+
+    /**
+     * Used for testing
+     *
+     * @return true if factories or listener configurations are delayed in deserialization
+     */
+    boolean isFactorySerializationDelayed() {
+        return serializedFactories != null;
+    }
 }

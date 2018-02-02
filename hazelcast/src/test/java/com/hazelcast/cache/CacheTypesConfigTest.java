@@ -17,6 +17,7 @@
 package com.hazelcast.cache;
 
 import classloading.domain.Person;
+import classloading.domain.PersonCacheEntryListenerConfiguration;
 import classloading.domain.PersonCacheLoaderFactory;
 import classloading.domain.PersonEntryProcessor;
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
@@ -45,11 +46,6 @@ import java.util.List;
 import static com.hazelcast.config.UserCodeDeploymentConfig.ClassCacheMode.OFF;
 import java.util.Set;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
-import javax.cache.configuration.Factory;
-import javax.cache.event.CacheEntryEvent;
-import javax.cache.event.CacheEntryEventFilter;
-import javax.cache.event.CacheEntryListener;
-import javax.cache.event.CacheEntryListenerException;
 import org.junit.Assert;
 import static org.junit.Assert.assertNotNull;
 
@@ -158,7 +154,7 @@ public class CacheTypesConfigTest extends HazelcastTestSupport {
         HazelcastInstance hz1 = factory.newHazelcastInstance(getConfig());
         CachingProvider cachingProvider = HazelcastServerCachingProvider.createCachingProvider(hz1);
         cachingProvider.getCacheManager().createCache(cacheName, createCacheConfig()
-                .addCacheEntryListenerConfiguration(new CacheEntryListenerConfigurationImpl()));
+                .addCacheEntryListenerConfiguration(new PersonCacheEntryListenerConfiguration()));
 
         HazelcastInstance hz2 = factory.newHazelcastInstance(getConfig());
         assertClusterSize(2, hz1, hz2);
@@ -178,46 +174,5 @@ public class CacheTypesConfigTest extends HazelcastTestSupport {
         CacheConfig<String, Person> cacheConfig = new CacheConfig<String, Person>();
         cacheConfig.setTypes(String.class, Person.class).setManagementEnabled(true);
         return cacheConfig;
-    }
-
-
-    private static class CacheEntryListenerConfigurationImpl implements CacheEntryListenerConfiguration<String, Person> {
-        @Override
-        public Factory<CacheEntryListener<? super String, ? super Person>> getCacheEntryListenerFactory() {
-            return new Factory<CacheEntryListener<? super String, ? super Person>>() {
-                @Override
-                public CacheEntryListener<? super String, ? super Person> create() {
-                    return new CacheEntryListener<String, Person>() {};
-                }
-                private static final long serialVersionUID = 1L;
-            };
-        }
-
-        @Override
-        public boolean isOldValueRequired() {
-            return false;
-        }
-
-        @Override
-        public Factory<CacheEntryEventFilter<? super String, ? super Person>> getCacheEntryEventFilterFactory() {
-            return new Factory<CacheEntryEventFilter<? super String, ? super Person>>() {
-                @Override
-                public CacheEntryEventFilter<? super String, ? super Person> create() {
-                    return new CacheEntryEventFilter<String, Person>() {
-                        @Override
-                        public boolean evaluate(CacheEntryEvent<? extends String, ? extends Person> cee) throws CacheEntryListenerException {
-                            throw new UnsupportedOperationException("Not supported yet.");
-                        }
-                    };
-                }
-                private static final long serialVersionUID = 1L;
-            };
-        }
-
-        @Override
-        public boolean isSynchronous() {
-            return false;
-        }
-        private static final long serialVersionUID = 1L;
     }
 }
