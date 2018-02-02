@@ -1491,7 +1491,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V>, Eve
     private QueryCache<K, V> createQueryCache(QueryCacheRequest request) {
         SubscriberContext subscriberContext = queryCacheContext.getSubscriberContext();
         QueryCacheEndToEndProvider queryCacheEndToEndProvider = subscriberContext.getEndToEndQueryCacheProvider();
-        return queryCacheEndToEndProvider.getOrCreateQueryCache(request.getMapName(), request.getCacheName(),
+        return queryCacheEndToEndProvider.getOrCreateQueryCache(request.getMapName(), request.getCacheId(),
                 new ClientQueryCacheEndToEndConstructor(request));
     }
 
