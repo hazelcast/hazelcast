@@ -100,7 +100,7 @@ public abstract class AbstractClientListenerService implements ClientListenerSer
 
     public void shutdown() {
         eventExecutor.shutdown();
-        ClientExecutionServiceImpl.shutdownExecutor("registrationExecutor", registrationExecutor, logger);
+        ClientExecutionServiceImpl.shutdownExecutor("registrationExecutor", registrationExecutor, logger, true);
     }
 
     public void start() {

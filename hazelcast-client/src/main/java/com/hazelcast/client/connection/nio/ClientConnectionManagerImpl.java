@@ -305,7 +305,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
         for (Connection connection : activeConnections.values()) {
             connection.close("Hazelcast client is shutting down", null);
         }
-        ClientExecutionServiceImpl.shutdownExecutor("cluster", clusterConnectionExecutor, logger);
+        ClientExecutionServiceImpl.shutdownExecutor("cluster", clusterConnectionExecutor, logger, true);
         stopEventLoopGroup();
         connectionListeners.clear();
         heartbeat.shutdown();
