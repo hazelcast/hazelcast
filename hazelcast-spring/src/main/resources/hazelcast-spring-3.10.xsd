@@ -1890,6 +1890,18 @@
             </xs:appinfo>
         </xs:annotation>
     </xs:element>
+    <xs:element name="reliableTopic" type="hazelcast-type">
+        <xs:annotation>
+            <xs:documentation>
+                Retrieve a Hazelcast ITopic instance
+            </xs:documentation>
+            <xs:appinfo>
+                <tool:annotation>
+                    <tool:exports type="com.hazelcast.core.ITopic"/>
+                </tool:annotation>
+            </xs:appinfo>
+        </xs:annotation>
+    </xs:element>
     <xs:element name="set" type="hazelcast-type">
         <xs:annotation>
             <xs:documentation>
@@ -1977,23 +1989,11 @@
     <xs:element name="cardinalityEstimator" type="hazelcast-type">
         <xs:annotation>
             <xs:documentation>
-                Retrieve a Hazelcast CardinalityEstimartor instance
+                Retrieve a Hazelcast CardinalityEstimator instance
             </xs:documentation>
             <xs:appinfo>
                 <tool:annotation>
                     <tool:exports type="com.hazelcast.cardinality.CardinalityEstimator"/>
-                </tool:annotation>
-            </xs:appinfo>
-        </xs:annotation>
-    </xs:element>
-    <xs:element name="ringBuffer" type="hazelcast-type">
-        <xs:annotation>
-            <xs:documentation>
-                Retrieve a Hazelcast CardinalityEstimartor instance
-            </xs:documentation>
-            <xs:appinfo>
-                <tool:annotation>
-                    <tool:exports type="com.hazelcast.ringbuffer.Ringbuffer"/>
                 </tool:annotation>
             </xs:appinfo>
         </xs:annotation>
