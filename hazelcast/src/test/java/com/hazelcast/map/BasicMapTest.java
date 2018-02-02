@@ -668,6 +668,7 @@ public class BasicMapTest extends HazelcastTestSupport {
     }
 
     @Test
+    @SuppressWarnings("OverwrittenKey")
     public void testEntryView() {
         Config config = new Config();
         config.getMapConfig("default").setStatisticsEnabled(true);
@@ -693,33 +694,33 @@ public class BasicMapTest extends HazelcastTestSupport {
         EntryView<Integer, Integer> entryView2 = map.getEntryView(2);
         EntryView<Integer, Integer> entryView3 = map.getEntryView(3);
 
-        assertEquals((Integer) 1, entryView1.getKey());
-        assertEquals((Integer) 2, entryView2.getKey());
-        assertEquals((Integer) 3, entryView3.getKey());
+        assertEqualsStringFormat("Expected entryView1.getKey() to be %d, but was %d", 1, entryView1.getKey());
+        assertEqualsStringFormat("Expected entryView2.getKey() to be %d, but was %d", 2, entryView2.getKey());
+        assertEqualsStringFormat("Expected entryView3.getKey() to be %d, but was %d", 3, entryView3.getKey());
 
-        assertEquals((Integer) 1, entryView1.getValue());
-        assertEquals((Integer) 22, entryView2.getValue());
-        assertEquals((Integer) 3, entryView3.getValue());
+        assertEqualsStringFormat("Expected entryView1.getValue() to be %d, but was %d", 1, entryView1.getValue());
+        assertEqualsStringFormat("Expected entryView2.getValue() to be %d, but was %d", 22, entryView2.getValue());
+        assertEqualsStringFormat("Expected entryView3.getValue() to be %d, but was %d", 3, entryView3.getValue());
 
-        assertEquals(2, entryView1.getHits());
-        assertEquals(3, entryView2.getHits());
-        assertEquals(3, entryView3.getHits());
+        assertEqualsStringFormat("Expected entryView1.getHits() to be %d, but were %d", 2L, entryView1.getHits());
+        assertEqualsStringFormat("Expected entryView2.getHits() to be %d, but were %d", 3L, entryView2.getHits());
+        assertEqualsStringFormat("Expected entryView3.getHits() to be %d, but were %d", 3L, entryView3.getHits());
 
-        assertEquals(1, entryView1.getVersion());
-        assertEquals(2, entryView2.getVersion());
-        assertEquals(1, entryView3.getVersion());
+        assertEqualsStringFormat("Expected entryView1.getVersion() to be %d, but was %d", 1L, entryView1.getVersion());
+        assertEqualsStringFormat("Expected entryView2.getVersion() to be %d, but was %d", 2L, entryView2.getVersion());
+        assertEqualsStringFormat("Expected entryView3.getVersion() to be %d, but was %d", 1L, entryView3.getVersion());
 
-        assertTrue(entryView1.getCreationTime() >= time1 && entryView1.getCreationTime() <= time2);
-        assertTrue(entryView2.getCreationTime() >= time1 && entryView2.getCreationTime() <= time2);
-        assertTrue(entryView3.getCreationTime() >= time1 && entryView3.getCreationTime() <= time2);
+        assertBetween("entryView1.getCreationTime()", entryView1.getCreationTime(), time1, time2);
+        assertBetween("entryView2.getCreationTime()", entryView2.getCreationTime(), time1, time2);
+        assertBetween("entryView3.getCreationTime()", entryView3.getCreationTime(), time1, time2);
 
-        assertTrue(entryView1.getLastAccessTime() >= time1 && entryView1.getLastAccessTime() <= time2);
-        assertTrue(entryView2.getLastAccessTime() >= time3);
-        assertTrue(entryView3.getLastAccessTime() >= time2 && entryView3.getLastAccessTime() <= time3);
+        assertBetween("entryView1.getLastAccessTime()", entryView1.getLastAccessTime(), time1, time2);
+        assertGreaterOrEquals("entryView2.getLastAccessTime()", entryView2.getLastAccessTime(), time3);
+        assertBetween("entryView3.getLastAccessTime()", entryView3.getLastAccessTime(), time2, time3);
 
-        assertTrue(entryView1.getLastUpdateTime() >= time1 && entryView1.getLastUpdateTime() <= time2);
-        assertTrue(entryView2.getLastUpdateTime() >= time3);
-        assertTrue(entryView3.getLastUpdateTime() >= time1 && entryView3.getLastUpdateTime() <= time2);
+        assertBetween("entryView1.getLastUpdateTime()", entryView1.getLastUpdateTime(), time1, time2);
+        assertGreaterOrEquals("entryView2.getLastUpdateTime()", entryView2.getLastUpdateTime(), time3);
+        assertBetween("entryView3.getLastUpdateTime()", entryView3.getLastUpdateTime(), time1, time2);
     }
 
     @Test
@@ -1693,13 +1694,15 @@ public class BasicMapTest extends HazelcastTestSupport {
         Preconditions.checkNotNull(remappingFunction);
 
         V oldValue;
-        while((oldValue = map.get(key)) != null) {
+        while ((oldValue = map.get(key)) != null) {
             V newValue = remappingFunction.apply(key, oldValue);
             if (newValue != null) {
-                if (map.replace(key, oldValue, newValue))
+                if (map.replace(key, oldValue, newValue)) {
                     return newValue;
-            } else if (map.remove(key, oldValue))
+                }
+            } else if (map.remove(key, oldValue)) {
                 return null;
+            }
         }
 
         return null;

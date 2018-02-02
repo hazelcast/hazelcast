@@ -1191,6 +1191,16 @@ public abstract class HazelcastTestSupport {
         assertEquals(format(message, expected, actual), expected, actual);
     }
 
+    public static void assertBetween(String label, long actualValue, long lowerBound, long upperBound) {
+        assertTrue(format("Expected %s between %d and %d, but was %d", label, lowerBound, upperBound, actualValue),
+                actualValue >= lowerBound && actualValue <= upperBound);
+    }
+
+    public static void assertGreaterOrEquals(String label, long actualValue, long lowerBound) {
+        assertTrue(format("Expected %s greater or equals %d, but was %d", label, lowerBound, actualValue),
+                actualValue >= lowerBound);
+    }
+
     public static void assertExactlyOneSuccessfulRun(AssertTask task) {
         assertExactlyOneSuccessfulRun(task, ASSERT_TRUE_EVENTUALLY_TIMEOUT, TimeUnit.SECONDS);
     }
