@@ -48,6 +48,7 @@ import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.SplitBrainMergeEntryView;
 import com.hazelcast.spi.SplitBrainMergePolicy;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
+import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.CollectionUtil;
 import com.hazelcast.util.ExceptionUtil;
@@ -79,6 +80,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     protected final ILogger logger;
     protected final RecordStoreLoader recordStoreLoader;
     protected final MapKeyLoader keyLoader;
+
     /**
      * A collection of futures representing pending completion of the key and
      * value loading tasks.
@@ -103,6 +105,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
      */
     private boolean loadedOnPreMigration;
 
+    private final IPartitionService partitionService;
+
     public DefaultRecordStore(MapContainer mapContainer, int partitionId,
                               MapKeyLoader keyLoader, ILogger logger) {
         super(mapContainer, partitionId);
@@ -110,6 +114,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         this.logger = logger;
         this.keyLoader = keyLoader;
         this.recordStoreLoader = createRecordStoreLoader(mapStoreContext);
+        this.partitionService = mapServiceContext.getNodeEngine().getPartitionService();
     }
 
     @Override
@@ -948,6 +953,10 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         if (value == null) {
             logger.warning("Found an attempt to load a null value from map-store, ignoring it.");
             return false;
+        }
+
+        if (partitionService.getPartitionId(key) != partitionId) {
+            throw new IllegalStateException("MapLoader loaded an item belongs to a different partition");
         }
 
         return true;
