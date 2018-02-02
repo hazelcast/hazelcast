@@ -23,6 +23,11 @@ import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 
+/**
+ * Contains a backup {@link HyperLogLog} for split-brain healing with a {@link com.hazelcast.spi.SplitBrainMergePolicy}.
+ *
+ * @since 3.10
+ */
 public class MergeBackupOperation
         extends AbstractCardinalityEstimatorOperation {
 

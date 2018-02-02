@@ -33,6 +33,11 @@ import java.util.Map;
 
 import static com.hazelcast.util.MapUtil.createHashMap;
 
+/**
+ * Contains multiple merge entries for split-brain healing with a {@link SplitBrainMergePolicy}.
+ *
+ * @since 3.10
+ */
 public class CollectionMergeOperation extends CollectionBackupAwareOperation {
 
     private SplitBrainMergePolicy mergePolicy;

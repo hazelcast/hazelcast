@@ -32,6 +32,11 @@ import java.util.Map;
 
 import static com.hazelcast.util.MapUtil.createHashMap;
 
+/**
+ * Contains multiple backup entries for split-brain healing with a {@link com.hazelcast.spi.SplitBrainMergePolicy}.
+ *
+ * @since 3.10
+ */
 public class MergeBackupOperation extends MultiMapOperation implements BackupOperation {
 
     private Map<Data, Collection<MultiMapRecord>> backupEntries;

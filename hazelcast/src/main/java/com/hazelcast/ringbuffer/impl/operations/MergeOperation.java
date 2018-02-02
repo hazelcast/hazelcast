@@ -48,7 +48,9 @@ import static com.hazelcast.ringbuffer.impl.RingbufferService.SERVICE_NAME;
 import static com.hazelcast.util.MapUtil.createHashMap;
 
 /**
- * Merges a batch of Ringbuffer items after a split-brain was healed.
+ * Contains multiple merge entries for split-brain healing with a {@link SplitBrainMergePolicy}.
+ *
+ * @since 3.10
  */
 public class MergeOperation extends Operation implements IdentifiedDataSerializable, BackupAwareOperation, ServiceNamespaceAware {
 

@@ -33,6 +33,8 @@ import java.util.List;
 
 /**
  * Inserts the merging entries for all partitions of a member via locally invoked {@link MergeOperation}.
+ *
+ * @since 3.10
  */
 @SuppressWarnings("WeakerAccess")
 public class MergeOperationFactory extends PartitionAwareOperationFactory {

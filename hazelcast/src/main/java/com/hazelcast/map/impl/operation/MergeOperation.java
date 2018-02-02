@@ -40,6 +40,8 @@ import static com.hazelcast.map.impl.record.Records.buildRecordInfo;
 
 /**
  * Contains multiple merge entries for split-brain healing with a {@link SplitBrainMergePolicy}.
+ *
+ * @since 3.10
  */
 public class MergeOperation extends MapOperation implements PartitionAwareOperation, BackupAwareOperation {
 

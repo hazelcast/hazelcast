@@ -29,7 +29,9 @@ import java.util.Map;
 import static com.hazelcast.ringbuffer.impl.RingbufferDataSerializerHook.MERGE_BACKUP_OPERATION;
 
 /**
- * Creates backups for merged Ringbuffer items after a split-brain was healed.
+ * Contains multiple backup entries for split-brain healing with a {@link com.hazelcast.spi.SplitBrainMergePolicy}.
+ *
+ * @since 3.10
  */
 public class MergeBackupOperation extends AbstractRingBufferOperation implements BackupOperation {
 

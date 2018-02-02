@@ -35,7 +35,9 @@ import java.util.Map;
 import static com.hazelcast.util.MapUtil.createHashMap;
 
 /**
- * Merges items to the queue.
+ * Contains multiple merge entries for split-brain healing with a {@link SplitBrainMergePolicy}.
+ *
+ * @since 3.10
  */
 public class QueueMergeOperation extends QueueBackupAwareOperation implements MutatingOperation {
 

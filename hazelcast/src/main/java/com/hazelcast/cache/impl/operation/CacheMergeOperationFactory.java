@@ -33,6 +33,8 @@ import java.util.List;
 
 /**
  * Inserts the merging entries for all partitions of a member via locally invoked {@link CacheMergeOperation}.
+ *
+ * @since 3.10
  */
 public class CacheMergeOperationFactory extends PartitionAwareOperationFactory {
 

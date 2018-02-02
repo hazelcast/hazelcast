@@ -45,6 +45,8 @@ import static com.hazelcast.util.MapUtil.createHashMap;
 
 /**
  * Contains multiple merging entries for split-brain healing with a {@link SplitBrainMergePolicy}.
+ *
+ * @since 3.10
  */
 public class CacheMergeOperation extends AbstractNamedOperation implements BackupAwareOperation, ServiceNamespaceAware {
 

@@ -39,6 +39,11 @@ import java.util.Map;
 import static com.hazelcast.spi.merge.SplitBrainEntryViews.createSplitBrainMergeEntryView;
 import static com.hazelcast.util.MapUtil.createHashMap;
 
+/**
+ * Contains multiple merge entries for split-brain healing with a {@link SplitBrainMergePolicy}.
+ *
+ * @since 3.10
+ */
 public class MergeOperation extends MultiMapOperation implements BackupAwareOperation {
 
     private List<MultiMapMergeContainer> mergeEntries;
