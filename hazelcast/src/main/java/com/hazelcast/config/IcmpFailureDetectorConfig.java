@@ -227,4 +227,49 @@ public class IcmpFailureDetectorConfig {
                 + ", parallelMode=" + parallelMode
                 + '}';
     }
+
+    @Override
+    @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
+    public final boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || !(o instanceof IcmpFailureDetectorConfig)) {
+            return false;
+        }
+
+        IcmpFailureDetectorConfig that = (IcmpFailureDetectorConfig) o;
+
+        if (timeoutMilliseconds != that.timeoutMilliseconds) {
+            return false;
+        }
+        if (intervalMilliseconds != that.intervalMilliseconds) {
+            return false;
+        }
+        if (failFastOnStartup != that.failFastOnStartup) {
+            return false;
+        }
+        if (ttl != that.ttl) {
+            return false;
+        }
+        if (maxAttempts != that.maxAttempts) {
+            return false;
+        }
+        if (enabled != that.enabled) {
+            return false;
+        }
+        return parallelMode == that.parallelMode;
+    }
+
+    @Override
+    public final int hashCode() {
+        int result = timeoutMilliseconds;
+        result = 31 * result + intervalMilliseconds;
+        result = 31 * result + (failFastOnStartup ? 1 : 0);
+        result = 31 * result + ttl;
+        result = 31 * result + maxAttempts;
+        result = 31 * result + (enabled ? 1 : 0);
+        result = 31 * result + (parallelMode ? 1 : 0);
+        return result;
+    }
 }

@@ -21,6 +21,8 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import nl.jqno.equalsverifier.EqualsVerifier;
+import nl.jqno.equalsverifier.Warning;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -62,6 +64,14 @@ public class ServiceConfigTest extends HazelcastTestSupport {
         factory.newHazelcastInstance(config);
 
         assertTrue(configObject == service.config);
+    }
+
+    @Test
+    public void testEqualsAndHashCode() {
+        EqualsVerifier.forClass(ServiceConfig.class)
+                      .allFieldsShouldBeUsed()
+                      .suppress(Warning.NONFINAL_FIELDS, Warning.NULL_FIELDS)
+                      .verify();
     }
 
 }

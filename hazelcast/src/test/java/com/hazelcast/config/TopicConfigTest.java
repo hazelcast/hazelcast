@@ -19,6 +19,8 @@ package com.hazelcast.config;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import nl.jqno.equalsverifier.EqualsVerifier;
+import nl.jqno.equalsverifier.Warning;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -101,5 +103,17 @@ public class TopicConfigTest {
             // anticipated..
         }
         assertFalse(topicConfig.isGlobalOrderingEnabled());
+    }
+
+    @Test
+    public void testEqualsAndHashCode() {
+        EqualsVerifier.forClass(TopicConfig.class)
+                      .withPrefabValues(TopicConfigReadOnly.class,
+                              new TopicConfigReadOnly(new TopicConfig("Topic1")),
+                              new TopicConfigReadOnly(new TopicConfig("Topic2")))
+                      .allFieldsShouldBeUsed()
+                      .suppress(Warning.NONFINAL_FIELDS)
+                      .verify();
+
     }
 }

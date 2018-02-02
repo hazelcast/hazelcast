@@ -16,9 +16,9 @@
 
 package com.hazelcast.config;
 
-import java.util.Properties;
-
 import com.hazelcast.nio.ssl.TlsHostVerifier;
+
+import java.util.Properties;
 
 /**
  * TLS host verification configuration holder.
@@ -116,4 +116,36 @@ public class HostVerificationConfig {
                 + ", properties=" + properties + "}";
     }
 
+    @Override
+    @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
+    public final boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || !(o instanceof HostVerificationConfig)) {
+            return false;
+        }
+
+        HostVerificationConfig that = (HostVerificationConfig) o;
+
+        if (enabledOnServer != that.enabledOnServer) {
+            return false;
+        }
+        if (policyClassName != null ? !policyClassName.equals(that.policyClassName) : that.policyClassName != null) {
+            return false;
+        }
+        if (implementation != null ? !implementation.equals(that.implementation) : that.implementation != null) {
+            return false;
+        }
+        return properties != null ? properties.equals(that.properties) : that.properties == null;
+    }
+
+    @Override
+    public final int hashCode() {
+        int result = policyClassName != null ? policyClassName.hashCode() : 0;
+        result = 31 * result + (implementation != null ? implementation.hashCode() : 0);
+        result = 31 * result + (enabledOnServer ? 1 : 0);
+        result = 31 * result + (properties != null ? properties.hashCode() : 0);
+        return result;
+    }
 }
