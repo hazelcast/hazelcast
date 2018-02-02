@@ -21,6 +21,7 @@ counters for sent and received WAN events. [[#12615]](https://github.com/hazelca
 
 Fixes:
 
+- CacheMergeOperation does not publish WAN events. [#12186]
 - Java serialization compression issue: Since GZipInputStream read more bytes than it needs, the fields coming after a compressed data is not able to be read. [#12104]
 - Setting the property hazelcast.mc.max.visible.instance.count to Integer.MAX or a huge value causes OOME. [#12095]
 - The Javadoc for SHUFFLE_MEMBER_LIST in the class ClientProperty is not correct. The shuffling is done when the related property (hazelcast.client.shuffle.member.list) is set to true. Also the description in the Hazelcast Reference Manual should be corrected accordingly. [#12082]
