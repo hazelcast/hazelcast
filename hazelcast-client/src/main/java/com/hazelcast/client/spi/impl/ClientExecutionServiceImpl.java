@@ -28,6 +28,7 @@ import com.hazelcast.spi.properties.HazelcastProperty;
 import com.hazelcast.util.executor.LoggingScheduledExecutor;
 import com.hazelcast.util.executor.PoolExecutorThreadFactory;
 
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -117,12 +118,19 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService,
     }
 
     public void shutdown() {
-        shutdownExecutor("user", userExecutor, logger);
-        shutdownExecutor("internal", internalExecutor, logger);
+        shutdownExecutor("user", userExecutor, logger, false);
+        shutdownExecutor("internal", internalExecutor, logger, true);
     }
 
-    public static void shutdownExecutor(String name, ExecutorService executor, ILogger logger) {
-        executor.shutdown();
+    public static void shutdownExecutor(String name, ExecutorService executor, ILogger logger, boolean internal) {
+        List<Runnable> runnables = executor.shutdownNow();
+        if (!runnables.isEmpty()) {
+            if (internal && logger.isFinestEnabled()) {
+                logger.finest("Tasks on " + name + " executor are cancelled because closing down: " + runnables);
+            } else {
+                logger.warning("Tasks on " + name + " executor are cancelled because closing down: " + runnables);
+            }
+        }
         try {
             boolean success = executor.awaitTermination(TERMINATE_TIMEOUT_SECONDS, TimeUnit.SECONDS);
             if (!success) {
