@@ -39,7 +39,7 @@ import static com.hazelcast.map.impl.EntryViews.createSimpleEntryView;
 import static com.hazelcast.map.impl.record.Records.buildRecordInfo;
 
 /**
- * Contains multiple merge entries for split-brain healing with with a {@link SplitBrainMergePolicy}.
+ * Contains multiple merge entries for split-brain healing with a {@link SplitBrainMergePolicy}.
  */
 public class MergeOperation extends MapOperation implements PartitionAwareOperation, BackupAwareOperation {
 

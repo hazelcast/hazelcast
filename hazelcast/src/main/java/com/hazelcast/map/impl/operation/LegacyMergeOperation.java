@@ -31,7 +31,7 @@ import com.hazelcast.spi.Operation;
 import java.io.IOException;
 
 /**
- * Contains a merging entry for split-brain healing with with a {@link MapMergePolicy}.
+ * Contains a merging entry for split-brain healing with a {@link MapMergePolicy}.
  */
 public class LegacyMergeOperation extends BasePutOperation {
 
