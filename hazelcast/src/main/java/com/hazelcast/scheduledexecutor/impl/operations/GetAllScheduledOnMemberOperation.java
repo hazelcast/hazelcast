@@ -25,7 +25,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class GetAllScheduledOnMemberOperation
-        extends AbstractGetAllScheduledOperation implements ReadonlyOperation {
+        extends AbstractGetAllScheduledOperation
+        implements ReadonlyOperation {
 
     private static final int MEMBER_BIN = -1;
 

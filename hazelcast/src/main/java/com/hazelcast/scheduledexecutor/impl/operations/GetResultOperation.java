@@ -27,12 +27,10 @@ import com.hazelcast.spi.ReadonlyOperation;
 import com.hazelcast.spi.WaitNotifyKey;
 
 import java.io.IOException;
-import java.util.concurrent.ExecutionException;
-
-import static com.hazelcast.util.ExceptionUtil.sneakyThrow;
 
 public class GetResultOperation<V>
-        extends AbstractSchedulerOperation implements BlockingOperation, ReadonlyOperation {
+        extends AbstractSchedulerOperation
+        implements BlockingOperation, ReadonlyOperation {
 
     private String taskName;
 
@@ -67,15 +65,7 @@ public class GetResultOperation<V>
 
     @Override
     public boolean shouldWait() {
-        try {
-            return getContainer().shouldParkGetResult(taskName);
-        } catch (ExecutionException e) {
-            sneakyThrow(e);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
-
-        return false;
+        return getContainer().shouldParkGetResult(taskName);
     }
 
     @Override

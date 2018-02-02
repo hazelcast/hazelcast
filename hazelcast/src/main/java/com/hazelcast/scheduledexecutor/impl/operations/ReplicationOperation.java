@@ -42,7 +42,8 @@ public class ReplicationOperation
     }
 
     @Override
-    public void run() throws Exception {
+    public void run()
+            throws Exception {
         DistributedScheduledExecutorService service = getService();
         ScheduledExecutorPartition partition = service.getPartition(getPartitionId());
         for (Map.Entry<String, Map<String, ScheduledTaskDescriptor>> entry : map.entrySet()) {
@@ -59,7 +60,8 @@ public class ReplicationOperation
     }
 
     @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
+    protected void writeInternal(ObjectDataOutput out)
+            throws IOException {
         out.writeInt(map.size());
         for (Map.Entry<String, Map<String, ScheduledTaskDescriptor>> entry : map.entrySet()) {
             out.writeUTF(entry.getKey());
@@ -72,7 +74,8 @@ public class ReplicationOperation
     }
 
     @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
+    protected void readInternal(ObjectDataInput in)
+            throws IOException {
         int size = in.readInt();
         map = createHashMap(size);
         for (int i = 0; i < size; i++) {

@@ -26,7 +26,8 @@ import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 public class GetDelayOperation
-        extends AbstractSchedulerOperation implements ReadonlyOperation {
+        extends AbstractSchedulerOperation
+        implements ReadonlyOperation {
 
     private String taskName;
 

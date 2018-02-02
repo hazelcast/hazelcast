@@ -15,8 +15,9 @@
  */
 
 /**
- * <p>This package contains ScheduledExecutorService functionality for Hazelcast.<br/>
- * The ScheduledExecutorService provides functionality similar to {@link java.util.concurrent.ExecutorService}
+ * <p>This package contains ScheduledExecutorService functionality for Hazelcast.
+ *
+ * <p>The ScheduledExecutorService provides functionality similar to {@link java.util.concurrent.ExecutorService}
  * and also additional methods like executing tasks on a member who is owner of a specific key.
  * ScheduledExecutorService also provides a way to find the {@link com.hazelcast.scheduledexecutor.IScheduledFuture}
  * at any point in time using the {@link com.hazelcast.scheduledexecutor.ScheduledTaskHandler} accessible through

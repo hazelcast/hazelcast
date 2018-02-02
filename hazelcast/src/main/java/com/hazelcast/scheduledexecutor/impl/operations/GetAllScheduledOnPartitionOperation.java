@@ -25,7 +25,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class GetAllScheduledOnPartitionOperation
-        extends AbstractGetAllScheduledOperation implements ReadonlyOperation {
+        extends AbstractGetAllScheduledOperation
+        implements ReadonlyOperation {
 
     private List<ScheduledTaskHandler> response;
 

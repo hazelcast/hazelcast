@@ -25,12 +25,12 @@ import java.util.Arrays;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
-public class TaskDefinition<V> implements IdentifiedDataSerializable {
+public class TaskDefinition<V>
+        implements IdentifiedDataSerializable {
 
     public enum Type {
 
-        SINGLE_RUN(0),
-        AT_FIXED_RATE(1);
+        SINGLE_RUN(0), AT_FIXED_RATE(1);
 
         private final byte id;
 
@@ -114,7 +114,8 @@ public class TaskDefinition<V> implements IdentifiedDataSerializable {
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out)
+            throws IOException {
         out.writeUTF(type.name());
         out.writeUTF(name);
         out.writeObject(command);
@@ -124,7 +125,8 @@ public class TaskDefinition<V> implements IdentifiedDataSerializable {
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
+    public void readData(ObjectDataInput in)
+            throws IOException {
         type = Type.valueOf(in.readUTF());
         name = in.readUTF();
         command = in.readObject();
@@ -142,10 +144,7 @@ public class TaskDefinition<V> implements IdentifiedDataSerializable {
             return false;
         }
         TaskDefinition<?> that = (TaskDefinition<?>) o;
-        return initialDelay == that.initialDelay
-                && period == that.period
-                && type == that.type
-                && name.equals(that.name)
+        return initialDelay == that.initialDelay && period == that.period && type == that.type && name.equals(that.name)
                 && unit == that.unit;
     }
 
@@ -156,7 +155,13 @@ public class TaskDefinition<V> implements IdentifiedDataSerializable {
 
     @Override
     public String toString() {
-        return "TaskDefinition{" + "type=" + type + ", name='" + name + '\'' + ", command=" + command + ", initialDelay="
-                + initialDelay + ", period=" + period + ", unit=" + unit + '}';
+        return "TaskDefinition{"
+                + "type=" + type
+                + ", name='" + name + '\''
+                + ", command=" + command
+                + ", initialDelay=" + initialDelay
+                + ", period=" + period
+                + ", unit=" + unit
+                + '}';
     }
 }

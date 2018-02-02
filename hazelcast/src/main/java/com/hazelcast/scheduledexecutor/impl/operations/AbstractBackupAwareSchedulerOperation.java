@@ -22,10 +22,11 @@ public abstract class AbstractBackupAwareSchedulerOperation
         extends AbstractSchedulerOperation
         implements BackupAwareOperation {
 
-    AbstractBackupAwareSchedulerOperation() { }
+    AbstractBackupAwareSchedulerOperation() {
+    }
 
     AbstractBackupAwareSchedulerOperation(String schedulerName) {
-       super(schedulerName);
+        super(schedulerName);
     }
 
     @Override

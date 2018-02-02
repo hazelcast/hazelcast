@@ -31,22 +31,21 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * Metadata holder for scheduled tasks.
- * Scheduled ones have a reference in their future in {@link #future}.
- * Stashed ones have this reference null.
+ * Metadata holder for scheduled tasks. Scheduled ones have a reference in their future in {@link #future}.
+ * Reserved ones have this reference null.
  */
-public class ScheduledTaskDescriptor implements IdentifiedDataSerializable {
+public class ScheduledTaskDescriptor
+        implements IdentifiedDataSerializable {
 
     private TaskDefinition definition;
 
     private ScheduledFuture<?> future;
 
     /**
-     * Only accessed through a member lock or partition threads
-     * Used to identify which replica of the task is the owner, to only return that instance
-     * when {@link GetAllScheduledOnMemberOperation} operation is triggered.
-     * This flag is set to true only on initial scheduling of a task, and on after a promotion (stashed or migration),
-     * in the latter case the other replicas get disposed.
+     * Only accessed through a member lock or partition threads Used to identify which replica of the task is the owner, to only
+     * return that instance when {@link GetAllScheduledOnMemberOperation} operation is triggered. This flag is set to true only on
+     * initial scheduling of a task, and on after a promotion (stashed or migration), in the latter case the other replicas get
+     * disposed.
      */
     private transient boolean isTaskOwner;
 
@@ -56,9 +55,8 @@ public class ScheduledTaskDescriptor implements IdentifiedDataSerializable {
     private volatile ScheduledTaskStatisticsImpl stats;
 
     /**
-     * MPMC (Multiple Producers Multiple Concumers)
-     * MP when cancelling, due to member owned tasks, all other writes are SP and through partition threads.
-     * Reads are MP for member owned tasks.
+     * MPMC (Multiple Producers Multiple Concumers) MP when cancelling, due to member owned tasks, all other writes are SP and
+     * through partition threads. Reads are MP for member owned tasks.
      */
     private AtomicReference<ScheduledTaskResult> resultRef = new AtomicReference<ScheduledTaskResult>(null);
 
@@ -76,8 +74,7 @@ public class ScheduledTaskDescriptor implements IdentifiedDataSerializable {
         this.stats = new ScheduledTaskStatisticsImpl();
     }
 
-    public ScheduledTaskDescriptor(TaskDefinition definition,
-                                   Map<?, ?> state, ScheduledTaskStatisticsImpl stats,
+    public ScheduledTaskDescriptor(TaskDefinition definition, Map<?, ?> state, ScheduledTaskStatisticsImpl stats,
                                    ScheduledTaskResult result) {
         this.definition = definition;
         this.stats = stats;
@@ -142,15 +139,13 @@ public class ScheduledTaskDescriptor implements IdentifiedDataSerializable {
     }
 
     /**
-     * Suspended is a task that either has never been scheduled before (aka. backups) or it got suspended
-     * (aka. temporarily stopped) during migration from one member to another.
-     * <p>
-     * When suspended, a task (if ever scheduled before), maintains its statistics and its actual runState,
+     * Suspended is a task that either has never been scheduled before (aka. backups) or it got suspended (aka. temporarily
+     * stopped) during migration from one member to another.
+     *
+     * <p> When suspended, a task (if ever scheduled before), maintains its statistics and its actual runState,
      * however its associated {@link java.util.concurrent.Future} is cancelled and nullified. Upon future, rescheduling,
-     * it will acquire be assigned on a different Future.
-     * <p>
-     * Task ownership is also restored to default, which will be fixed when migrations finish and a new master
-     * is selected.
+     * it will acquire be assigned on a different Future. <p> Task ownership is also restored to default,
+     * which will be fixed when migrations finish and a new master is selected.
      */
     void suspend() {
         // Result is not set, allowing task to get re-scheduled, if/when needed.
@@ -232,7 +227,7 @@ public class ScheduledTaskDescriptor implements IdentifiedDataSerializable {
             return false;
         }
         ScheduledTaskDescriptor that = (ScheduledTaskDescriptor) o;
-        return  (definition == that.definition) || (definition != null && definition.equals(that.definition));
+        return (definition == that.definition) || (definition != null && definition.equals(that.definition));
     }
 
     @Override
@@ -243,12 +238,12 @@ public class ScheduledTaskDescriptor implements IdentifiedDataSerializable {
     @Override
     public String toString() {
         return "ScheduledTaskDescriptor{"
-                + "definition=" + definition + ", "
-                + "future=" + future + ", "
-                + "stats=" + stats + ", "
-                + "state=" + state + ", "
-                + "isTaskOwner=" + isTaskOwner + ", "
-                + "result=" + resultRef.get()
+                + "definition=" + definition
+                + ", future=" + future
+                + ", isTaskOwner=" + isTaskOwner
+                + ", stats=" + stats
+                + ", resultRef=" + resultRef.get()
+                + ", state=" + state
                 + '}';
     }
 

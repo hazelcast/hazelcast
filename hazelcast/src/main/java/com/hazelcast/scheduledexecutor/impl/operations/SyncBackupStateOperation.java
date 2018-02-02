@@ -28,8 +28,8 @@ public class SyncBackupStateOperation
     public SyncBackupStateOperation() {
     }
 
-    public SyncBackupStateOperation(String schedulerName, String taskName, Map state,
-                                    ScheduledTaskStatisticsImpl stats, ScheduledTaskResult result) {
+    public SyncBackupStateOperation(String schedulerName, String taskName, Map state, ScheduledTaskStatisticsImpl stats,
+                                    ScheduledTaskResult result) {
         super(schedulerName, taskName, state, stats, result);
     }
 

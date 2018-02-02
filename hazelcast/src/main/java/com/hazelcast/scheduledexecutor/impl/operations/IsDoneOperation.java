@@ -25,7 +25,8 @@ import com.hazelcast.spi.ReadonlyOperation;
 import java.io.IOException;
 
 public class IsDoneOperation
-        extends AbstractSchedulerOperation implements ReadonlyOperation {
+        extends AbstractSchedulerOperation
+        implements ReadonlyOperation {
 
     private String taskName;
 
