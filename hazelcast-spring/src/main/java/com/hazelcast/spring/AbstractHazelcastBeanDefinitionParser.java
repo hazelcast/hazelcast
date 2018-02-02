@@ -117,8 +117,8 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
 
         @SuppressWarnings("SameParameterValue")
         protected BeanDefinitionBuilder createAndFillListedBean(Node node, Class clazz, String propertyName,
-                                                                ManagedMap<String, AbstractBeanDefinition> managedMap,
-                                                                String... excludeNames) {
+                                               ManagedMap<String, AbstractBeanDefinition> managedMap, String... excludeNames) {
+
             BeanDefinitionBuilder builder = createBeanBuilder(clazz);
             AbstractBeanDefinition beanDefinition = builder.getBeanDefinition();
             // "name"

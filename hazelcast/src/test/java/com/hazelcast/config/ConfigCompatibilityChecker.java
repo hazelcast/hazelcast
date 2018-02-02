@@ -472,6 +472,7 @@ class ConfigCompatibilityChecker {
                     && nullSafeEqual(c1.getName(), c2.getName())
                     && nullSafeEqual(c1.getDurability(), c2.getDurability())
                     && nullSafeEqual(c1.getQuorumName(), c2.getQuorumName())
+                    && isCompatible(c1.getMergePolicyConfig(), c2.getMergePolicyConfig())
                     && nullSafeEqual(c1.getPoolSize(), c2.getPoolSize());
         }
 

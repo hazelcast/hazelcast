@@ -43,6 +43,7 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.MapPartitionLostListenerConfig;
 import com.hazelcast.config.MaxSizeConfig;
+import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.config.PredicateConfig;
 import com.hazelcast.config.QueryCacheConfig;
@@ -206,7 +207,8 @@ public class DynamicConfigTest extends HazelcastTestSupport {
 
     @Test
     public void testScheduledExecutorConfig() {
-        ScheduledExecutorConfig config = new ScheduledExecutorConfig(name, 2, 3, 10);
+        ScheduledExecutorConfig config = new ScheduledExecutorConfig(name, 2, 3, 10, null,
+                new MergePolicyConfig());
 
         driver.getConfig().addScheduledExecutorConfig(config);
 

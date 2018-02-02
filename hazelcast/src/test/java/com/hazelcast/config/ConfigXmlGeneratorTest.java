@@ -578,24 +578,6 @@ public class ConfigXmlGeneratorTest {
     }
 
     @Test
-    public void testScheduledExecutor() {
-        ScheduledExecutorConfig expectedConfig = new ScheduledExecutorConfig()
-                .setName("testScheduledExecutor")
-                .setPoolSize(10)
-                .setCapacity(100)
-                .setDurability(2)
-                .setQuorumName("quorum");
-
-        Config config = new Config()
-                .addScheduledExecutorConfig(expectedConfig);
-
-        Config xmlConfig = getNewConfigViaXMLGenerator(config);
-
-        ScheduledExecutorConfig actualConfig = xmlConfig.getScheduledExecutorConfig(expectedConfig.getName());
-        assertEquals(expectedConfig, actualConfig);
-    }
-
-    @Test
     public void testMultiMap() {
         MultiMapConfig expectedConfig = new MultiMapConfig()
                 .setName("testMultiMap")
@@ -1069,13 +1051,12 @@ public class ConfigXmlGeneratorTest {
     @Test
     public void testCardinalityEstimator() {
         Config cfg = new Config();
-        CardinalityEstimatorConfig estimatorConfig =
-                new CardinalityEstimatorConfig()
-                        .setBackupCount(2)
-                        .setAsyncBackupCount(3)
-                        .setName("Existing")
-                        .setQuorumName("quorum")
-                        .setMergePolicyConfig(new MergePolicyConfig("DiscardMergePolicy", 14));
+        CardinalityEstimatorConfig estimatorConfig = new CardinalityEstimatorConfig()
+                .setBackupCount(2)
+                .setAsyncBackupCount(3)
+                .setName("Existing")
+                .setQuorumName("quorum")
+                .setMergePolicyConfig(new MergePolicyConfig("DiscardMergePolicy", 14));
         cfg.addCardinalityEstimatorConfig(estimatorConfig);
 
         CardinalityEstimatorConfig defaultCardinalityEstConfig = new CardinalityEstimatorConfig();
@@ -1149,15 +1130,40 @@ public class ConfigXmlGeneratorTest {
         String testLock = "TestLock";
         Config cfg = new Config();
 
-        LockConfig expectedConfig = new LockConfig()
-                .setName(testLock)
-                .setQuorumName("quorum");
+        LockConfig expectedConfig = new LockConfig().setName(testLock).setQuorumName("quorum");
 
         cfg.addLockConfig(expectedConfig);
 
         LockConfig actualConfig = getNewConfigViaXMLGenerator(cfg).getLockConfig(testLock);
 
         assertEquals(expectedConfig, actualConfig);
+    }
+
+    @Test
+    public void testScheduledExecutor() {
+        Config cfg = new Config();
+        ScheduledExecutorConfig scheduledExecutorConfig =
+                new ScheduledExecutorConfig()
+                        .setCapacity(1)
+                        .setDurability(2)
+                        .setName("Existing")
+                        .setPoolSize(3)
+                        .setQuorumName("quorum")
+                        .setMergePolicyConfig(new MergePolicyConfig("JediPolicy", 23));
+        cfg.addScheduledExecutorConfig(scheduledExecutorConfig);
+
+        ScheduledExecutorConfig defaultSchedExecConfig = new ScheduledExecutorConfig();
+        cfg.addScheduledExecutorConfig(defaultSchedExecConfig);
+
+        ScheduledExecutorConfig existing = getNewConfigViaXMLGenerator(cfg).getScheduledExecutorConfig("Existing");
+        assertEquals(scheduledExecutorConfig, existing);
+
+        ScheduledExecutorConfig fallsbackToDefault = getNewConfigViaXMLGenerator(cfg)
+                .getScheduledExecutorConfig("NotExisting/Default");
+        assertEquals(defaultSchedExecConfig.getMergePolicyConfig(), fallsbackToDefault.getMergePolicyConfig());
+        assertEquals(defaultSchedExecConfig.getCapacity(), fallsbackToDefault.getCapacity());
+        assertEquals(defaultSchedExecConfig.getPoolSize(), fallsbackToDefault.getPoolSize());
+        assertEquals(defaultSchedExecConfig.getDurability(), fallsbackToDefault.getDurability());
     }
 
     private DiscoveryConfig getDummyDiscoveryConfig() {

@@ -40,7 +40,7 @@ public class ScheduleTaskBackupOperation
     @Override
     public void run()
             throws Exception {
-        getContainer().stash(definition);
+        getContainer().enqueueSuspended(definition);
     }
 
     @Override

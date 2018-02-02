@@ -2013,6 +2013,7 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="merge-policy" type="merge-policy" minOccurs="0" maxOccurs="1"/>
         </xs:all>
         <xs:attribute name="name" type="xs:string" use="optional" default="default">
             <xs:annotation>

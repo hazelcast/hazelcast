@@ -25,6 +25,7 @@ import com.hazelcast.nio.serialization.impl.Versioned;
 import java.io.IOException;
 
 import static com.hazelcast.util.Preconditions.checkNotNegative;
+import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.Preconditions.checkPositive;
 
 /**
@@ -59,6 +60,8 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable, Vers
 
     private transient ScheduledExecutorConfig.ScheduledExecutorConfigReadOnly readOnly;
 
+    private MergePolicyConfig mergePolicyConfig = new MergePolicyConfig();
+
     public ScheduledExecutorConfig() {
     }
 
@@ -67,19 +70,22 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable, Vers
     }
 
     public ScheduledExecutorConfig(String name, int durability, int capacity, int poolSize) {
-        this(name, durability, capacity, poolSize, null);
+        this(name, durability, capacity, poolSize, null, new MergePolicyConfig());
     }
 
-    public ScheduledExecutorConfig(String name, int durability, int capacity, int poolSize, String quorumName) {
+    public ScheduledExecutorConfig(String name, int durability, int capacity, int poolSize, String quorumName,
+                                   MergePolicyConfig mergePolicyConfig) {
         this.name = name;
         this.durability = durability;
         this.poolSize = poolSize;
         this.capacity = capacity;
         this.quorumName = quorumName;
+        this.mergePolicyConfig = mergePolicyConfig;
     }
 
     public ScheduledExecutorConfig(ScheduledExecutorConfig config) {
-        this(config.getName(), config.getDurability(), config.getCapacity(), config.getPoolSize(), config.getQuorumName());
+        this(config.getName(), config.getDurability(), config.getCapacity(), config.getPoolSize(), config.getQuorumName(),
+                config.getMergePolicyConfig());
     }
 
     /**
@@ -188,14 +194,34 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable, Vers
     }
 
 
+    /**
+    * Gets the {@link MergePolicyConfig} for the scheduler.
+    *
+    * @return the {@link MergePolicyConfig} for the scheduler
+    */
+    public MergePolicyConfig getMergePolicyConfig() {
+        return mergePolicyConfig;
+    }
+
+    /**
+    * Sets the {@link MergePolicyConfig} for the scheduler.
+    *
+    * @return this executor config instance
+    */
+    public ScheduledExecutorConfig setMergePolicyConfig(MergePolicyConfig mergePolicyConfig) {
+        this.mergePolicyConfig = checkNotNull(mergePolicyConfig, "mergePolicyConfig cannot be null");
+        return this;
+    }
+
     @Override
     public String toString() {
         return "ScheduledExecutorConfig{"
                 + "name='" + name + '\''
                 + ", durability=" + durability
-                + ", poolSize-" + poolSize
-                + ", capacity-" + capacity
+                + ", poolSize=" + poolSize
+                + ", capacity=" + capacity
                 + ", quorumName=" + quorumName
+                + ", mergePolicyConfig=" + mergePolicyConfig
                 + '}';
     }
 
@@ -222,8 +248,10 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable, Vers
         out.writeInt(durability);
         out.writeInt(capacity);
         out.writeInt(poolSize);
+
         if (out.getVersion().isGreaterOrEqual(Versions.V3_10)) {
             out.writeUTF(quorumName);
+            out.writeObject(mergePolicyConfig);
         }
     }
 
@@ -233,21 +261,25 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable, Vers
         durability = in.readInt();
         capacity = in.readInt();
         poolSize = in.readInt();
+
         if (in.getVersion().isGreaterOrEqual(Versions.V3_10)) {
             quorumName = in.readUTF();
+            mergePolicyConfig = in.readObject();
         }
     }
 
+    @SuppressWarnings({"checkstyle:npathcomplexity"})
     @Override
     public final boolean equals(Object o) {
         if (this == o) {
             return true;
         }
+
         if (!(o instanceof ScheduledExecutorConfig)) {
             return false;
         }
-
         ScheduledExecutorConfig that = (ScheduledExecutorConfig) o;
+
         if (durability != that.durability) {
             return false;
         }
@@ -260,6 +292,9 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable, Vers
         if (quorumName != null ? !quorumName.equals(that.quorumName) : that.quorumName != null) {
             return false;
         }
+        if (mergePolicyConfig != null ? !mergePolicyConfig.equals(that.mergePolicyConfig) : that.mergePolicyConfig != null) {
+            return false;
+        }
         return name.equals(that.name);
     }
 
@@ -270,6 +305,7 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable, Vers
         result = 31 * result + capacity;
         result = 31 * result + poolSize;
         result = 31 * result + (quorumName != null ? quorumName.hashCode() : 0);
+        result = 31 * result + (mergePolicyConfig != null ? mergePolicyConfig.hashCode() : 0);
         return result;
     }
 
@@ -302,6 +338,10 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable, Vers
 
         @Override
         public ScheduledExecutorConfig setQuorumName(String quorumName) {
+            throw new UnsupportedOperationException("This config is read-only scheduled executor: " + getName());
+        }
+
+        public ScheduledExecutorConfig setMergePolicyConfig(MergePolicyConfig mergePolicyConfig) {
             throw new UnsupportedOperationException("This config is read-only scheduled executor: " + getName());
         }
     }

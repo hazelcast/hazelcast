@@ -42,8 +42,11 @@ public class AddScheduledExecutorConfigMessageTask
 
     @Override
     protected IdentifiedDataSerializable getConfig() {
-        ScheduledExecutorConfig config = new ScheduledExecutorConfig(parameters.name, parameters.durability,
-                parameters.capacity, parameters.poolSize);
+        ScheduledExecutorConfig config = new ScheduledExecutorConfig();
+        config.setPoolSize(parameters.poolSize);
+        config.setDurability(parameters.durability);
+        config.setCapacity(parameters.capacity);
+        config.setName(parameters.name);
         return config;
     }
 

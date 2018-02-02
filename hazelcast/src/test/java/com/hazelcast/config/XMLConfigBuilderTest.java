@@ -1554,6 +1554,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
                 + "        <pool-size>5</pool-size>\n"
                 + "        <capacity>2</capacity>\n"
                 + "        <quorum-ref>customQuorumRule</quorum-ref>"
+                + "        <merge-policy batch-size='99'>PutIfAbsent</merge-policy>"
                 + "    </scheduled-executor-service>\n"
                 + HAZELCAST_END_TAG;
 
@@ -1565,6 +1566,8 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         assertEquals(5, scheduledExecutorConfig.getPoolSize());
         assertEquals(2, scheduledExecutorConfig.getCapacity());
         assertEquals("customQuorumRule", scheduledExecutorConfig.getQuorumName());
+        assertEquals(99, scheduledExecutorConfig.getMergePolicyConfig().getBatchSize());
+        assertEquals("PutIfAbsent", scheduledExecutorConfig.getMergePolicyConfig().getPolicy());
     }
 
     @Test
