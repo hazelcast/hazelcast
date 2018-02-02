@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,18 +16,17 @@
 
 package com.hazelcast.config;
 
-import static org.junit.Assert.assertSame;
-
-import java.util.Locale;
-
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-
 import com.hazelcast.config.LoginModuleConfig.LoginModuleUsage;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+
+import java.util.Locale;
+
+import static org.junit.Assert.assertSame;
 
 /**
  * Tests for {@link LoginModuleConfig} class.
