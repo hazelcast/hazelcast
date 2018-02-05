@@ -71,8 +71,8 @@ public class RingbufferConfig implements IdentifiedDataSerializable, Versioned {
     private int timeToLiveSeconds = DEFAULT_TTL_SECONDS;
     private InMemoryFormat inMemoryFormat = DEFAULT_IN_MEMORY_FORMAT;
     private RingbufferStoreConfig ringbufferStoreConfig = new RingbufferStoreConfig().setEnabled(false);
-    private MergePolicyConfig mergePolicyConfig = new MergePolicyConfig();
     private String quorumName;
+    private MergePolicyConfig mergePolicyConfig = new MergePolicyConfig();
 
     public RingbufferConfig() {
     }
@@ -312,25 +312,6 @@ public class RingbufferConfig implements IdentifiedDataSerializable, Versioned {
     }
 
     /**
-     * Gets the {@link MergePolicyConfig} for this ringbuffer.
-     *
-     * @return the {@link MergePolicyConfig} for this ringbuffer
-     */
-    public MergePolicyConfig getMergePolicyConfig() {
-        return mergePolicyConfig;
-    }
-
-    /**
-     * Sets the {@link MergePolicyConfig} for this ringbuffer.
-     *
-     * @return the ringbuffer configuration
-     */
-    public RingbufferConfig setMergePolicyConfig(MergePolicyConfig mergePolicyConfig) {
-        this.mergePolicyConfig = mergePolicyConfig;
-        return this;
-    }
-
-    /**
      * Returns the quorum name for operations.
      *
      * @return the quorum name
@@ -350,6 +331,25 @@ public class RingbufferConfig implements IdentifiedDataSerializable, Versioned {
         return this;
     }
 
+    /**
+     * Gets the {@link MergePolicyConfig} for this ringbuffer.
+     *
+     * @return the {@link MergePolicyConfig} for this ringbuffer
+     */
+    public MergePolicyConfig getMergePolicyConfig() {
+        return mergePolicyConfig;
+    }
+
+    /**
+     * Sets the {@link MergePolicyConfig} for this ringbuffer.
+     *
+     * @return the ringbuffer configuration
+     */
+    public RingbufferConfig setMergePolicyConfig(MergePolicyConfig mergePolicyConfig) {
+        this.mergePolicyConfig = mergePolicyConfig;
+        return this;
+    }
+
     @Override
     public String toString() {
         return "RingbufferConfig{"
@@ -360,8 +360,8 @@ public class RingbufferConfig implements IdentifiedDataSerializable, Versioned {
                 + ", timeToLiveSeconds=" + timeToLiveSeconds
                 + ", inMemoryFormat=" + inMemoryFormat
                 + ", ringbufferStoreConfig=" + ringbufferStoreConfig
-                + ", mergePolicyConfig=" + mergePolicyConfig
                 + ", quorumName=" + quorumName
+                + ", mergePolicyConfig=" + mergePolicyConfig
                 + '}';
     }
 
@@ -384,9 +384,10 @@ public class RingbufferConfig implements IdentifiedDataSerializable, Versioned {
         out.writeInt(timeToLiveSeconds);
         out.writeUTF(inMemoryFormat.name());
         out.writeObject(ringbufferStoreConfig);
+        // RU_COMPAT_3_9
         if (out.getVersion().isGreaterOrEqual(Versions.V3_10)) {
-            out.writeObject(mergePolicyConfig);
             out.writeUTF(quorumName);
+            out.writeObject(mergePolicyConfig);
         }
     }
 
@@ -399,9 +400,10 @@ public class RingbufferConfig implements IdentifiedDataSerializable, Versioned {
         timeToLiveSeconds = in.readInt();
         inMemoryFormat = InMemoryFormat.valueOf(in.readUTF());
         ringbufferStoreConfig = in.readObject();
+        // RU_COMPAT_3_9
         if (in.getVersion().isGreaterOrEqual(Versions.V3_10)) {
-            mergePolicyConfig = in.readObject();
             quorumName = in.readUTF();
+            mergePolicyConfig = in.readObject();
         }
     }
 
@@ -434,11 +436,11 @@ public class RingbufferConfig implements IdentifiedDataSerializable, Versioned {
         if (inMemoryFormat != that.inMemoryFormat) {
             return false;
         }
-        if (quorumName != null ? !quorumName.equals(that.quorumName) : that.quorumName != null) {
-            return false;
-        }
         if (ringbufferStoreConfig != null ? !ringbufferStoreConfig.equals(that.ringbufferStoreConfig)
                 : that.ringbufferStoreConfig != null) {
+            return false;
+        }
+        if (quorumName != null ? !quorumName.equals(that.quorumName) : that.quorumName != null) {
             return false;
         }
         return mergePolicyConfig != null ? mergePolicyConfig.equals(that.mergePolicyConfig) : that.mergePolicyConfig == null;
@@ -453,8 +455,8 @@ public class RingbufferConfig implements IdentifiedDataSerializable, Versioned {
         result = 31 * result + timeToLiveSeconds;
         result = 31 * result + (inMemoryFormat != null ? inMemoryFormat.hashCode() : 0);
         result = 31 * result + (ringbufferStoreConfig != null ? ringbufferStoreConfig.hashCode() : 0);
-        result = 31 * result + (mergePolicyConfig != null ? mergePolicyConfig.hashCode() : 0);
         result = 31 * result + (quorumName != null ? quorumName.hashCode() : 0);
+        result = 31 * result + (mergePolicyConfig != null ? mergePolicyConfig.hashCode() : 0);
         return result;
     }
 
@@ -519,12 +521,12 @@ public class RingbufferConfig implements IdentifiedDataSerializable, Versioned {
         }
 
         @Override
-        public RingbufferConfig setMergePolicyConfig(MergePolicyConfig mergePolicyConfig) {
+        public RingbufferConfig setQuorumName(String quorumName) {
             throw throwReadOnly();
         }
 
         @Override
-        public RingbufferConfig setQuorumName(String quorumName) {
+        public RingbufferConfig setMergePolicyConfig(MergePolicyConfig mergePolicyConfig) {
             throw throwReadOnly();
         }
 
