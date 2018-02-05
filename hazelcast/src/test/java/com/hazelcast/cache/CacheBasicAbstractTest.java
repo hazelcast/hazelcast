@@ -10,6 +10,7 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.CacheConcurrentHashMap;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -302,6 +303,7 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
     }
 
     @Test
+    @Ignore
     public void testIteratorDuringInsertion() throws InterruptedException {
         final AtomicBoolean stop = new AtomicBoolean(false);
         final ICache cache = createCache();
