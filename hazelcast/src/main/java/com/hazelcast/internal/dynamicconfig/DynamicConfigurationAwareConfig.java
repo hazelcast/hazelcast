@@ -614,6 +614,7 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     @Override
     public Config addAtomicLongConfig(AtomicLongConfig atomicLongConfig) {
+        // RU_COMPAT_3_9
         if (clusterService.getClusterVersion().isLessThan(Versions.V3_10)) {
             throw new ConfigurationException("Cannot add AtomicLongConfig while the cluster is not running version "
                     + Versions.V3_10);
@@ -662,6 +663,7 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     @Override
     public Config addAtomicReferenceConfig(AtomicReferenceConfig atomicReferenceConfig) {
+        // RU_COMPAT_3_9
         if (clusterService.getClusterVersion().isLessThan(Versions.V3_10)) {
             throw new ConfigurationException("Cannot add AtomicReferenceConfig while the cluster is not running version "
                     + Versions.V3_10);
@@ -711,6 +713,7 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     @Override
     public Config addCountDownLatchConfig(CountDownLatchConfig countDownLatchConfig) {
+        // RU_COMPAT_3_9
         if (clusterService.getClusterVersion().isLessThan(Versions.V3_10)) {
             throw new ConfigurationException("Cannot add CountDownLatchConfig while the cluster is not running version "
                     + Versions.V3_10);

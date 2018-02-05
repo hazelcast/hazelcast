@@ -256,6 +256,7 @@ public class AtomicReferenceService
             };
 
             // we cannot merge into a 3.9 cluster, since not all members may understand the MergeOperation
+            // RU_COMPAT_3_9
             if (nodeEngine.getClusterService().getClusterVersion().isLessThan(Versions.V3_10)) {
                 logger.info("Cluster needs to run version " + Versions.V3_10 + " to merge AtomicReference instances");
                 return;

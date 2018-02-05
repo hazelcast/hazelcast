@@ -248,7 +248,7 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable, Vers
         out.writeInt(durability);
         out.writeInt(capacity);
         out.writeInt(poolSize);
-
+        // RU_COMPAT_3_9
         if (out.getVersion().isGreaterOrEqual(Versions.V3_10)) {
             out.writeUTF(quorumName);
             out.writeObject(mergePolicyConfig);
@@ -261,7 +261,7 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable, Vers
         durability = in.readInt();
         capacity = in.readInt();
         poolSize = in.readInt();
-
+        // RU_COMPAT_3_9
         if (in.getVersion().isGreaterOrEqual(Versions.V3_10)) {
             quorumName = in.readUTF();
             mergePolicyConfig = in.readObject();

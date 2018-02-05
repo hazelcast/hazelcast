@@ -370,6 +370,7 @@ public class QueueConfig implements IdentifiedDataSerializable {
         out.writeObject(queueStoreConfig);
         out.writeBoolean(statisticsEnabled);
         out.writeUTF(quorumName);
+        // RU_COMPAT_3_9
         if (out.getVersion().isGreaterOrEqual(Versions.V3_10)) {
             out.writeObject(mergePolicyConfig);
         }
@@ -386,6 +387,7 @@ public class QueueConfig implements IdentifiedDataSerializable {
         queueStoreConfig = in.readObject();
         statisticsEnabled = in.readBoolean();
         quorumName = in.readUTF();
+        // RU_COMPAT_3_9
         if (in.getVersion().isGreaterOrEqual(Versions.V3_10)) {
             mergePolicyConfig = in.readObject();
         }

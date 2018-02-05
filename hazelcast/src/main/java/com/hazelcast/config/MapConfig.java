@@ -1060,6 +1060,7 @@ public class MapConfig implements IdentifiedDataSerializable, Versioned {
         out.writeObject(nearCacheConfig);
         out.writeBoolean(readBackupData);
         out.writeUTF(cacheDeserializedValues.name());
+        // RU_COMPAT_3_9
         if (out.getVersion().isGreaterOrEqual(Versions.V3_10)) {
             out.writeObject(mergePolicyConfig);
         } else {
@@ -1092,6 +1093,7 @@ public class MapConfig implements IdentifiedDataSerializable, Versioned {
         nearCacheConfig = in.readObject();
         readBackupData = in.readBoolean();
         cacheDeserializedValues = CacheDeserializedValues.valueOf(in.readUTF());
+        // RU_COMPAT_3_9
         if (in.getVersion().isGreaterOrEqual(Versions.V3_10)) {
             mergePolicyConfig = in.readObject();
         } else {

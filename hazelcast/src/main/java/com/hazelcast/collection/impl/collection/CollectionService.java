@@ -259,6 +259,7 @@ public abstract class CollectionService implements ManagedService, RemoteService
             };
 
             // we cannot merge into a 3.9 cluster, since not all members may understand the CollectionMergeOperation
+            // RU_COMPAT_3_9
             if (nodeEngine.getClusterService().getClusterVersion().isLessThan(Versions.V3_10)) {
                 logger.info("Cluster needs to run version " + Versions.V3_10 + " to merge collection instances");
                 return;

@@ -278,6 +278,7 @@ public abstract class CollectionConfig<T extends CollectionConfig> implements Id
         out.writeInt(asyncBackupCount);
         out.writeInt(maxSize);
         out.writeBoolean(statisticsEnabled);
+        // RU_COMPAT_3_9
         if (out.getVersion().isGreaterOrEqual(Versions.V3_10)) {
             out.writeUTF(quorumName);
             out.writeObject(mergePolicyConfig);
@@ -292,6 +293,7 @@ public abstract class CollectionConfig<T extends CollectionConfig> implements Id
         asyncBackupCount = in.readInt();
         maxSize = in.readInt();
         statisticsEnabled = in.readBoolean();
+        // RU_COMPAT_3_9
         if (in.getVersion().isGreaterOrEqual(Versions.V3_10)) {
             quorumName = in.readUTF();
             mergePolicyConfig = in.readObject();

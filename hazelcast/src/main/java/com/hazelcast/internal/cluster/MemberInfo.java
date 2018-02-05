@@ -116,6 +116,7 @@ public class MemberInfo implements IdentifiedDataSerializable, Versioned {
             attributes.put(key, value);
         }
         version = in.readObject();
+        // RU_COMPAT_3_9
         if (in.getVersion().isGreaterOrEqual(V3_10)) {
             memberListJoinVersion = in.readInt();
         }
@@ -138,6 +139,7 @@ public class MemberInfo implements IdentifiedDataSerializable, Versioned {
             }
         }
         out.writeObject(version);
+        // RU_COMPAT_3_9
         if (out.getVersion().isGreaterOrEqual(V3_10)) {
             out.writeInt(memberListJoinVersion);
         }
