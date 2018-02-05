@@ -20,18 +20,17 @@ import com.hazelcast.cardinality.impl.hyperloglog.HyperLogLog;
 import com.hazelcast.spi.SplitBrainMergeEntryView;
 import com.hazelcast.spi.serialization.SerializationService;
 
-import static com.hazelcast.spi.merge.SplitBrainMergePolicyDataSerializerHook.HLL;
+import static com.hazelcast.spi.merge.SplitBrainMergePolicyDataSerializerHook.HYPER_LOG_LOG;
 
 /**
  * Only available for HyperLogLog backed {@link com.hazelcast.cardinality.CardinalityEstimator}.
- *
- * <p>Uses the default merge algorithm from HyperLogLog research, keeping the max register value of the two given
- * instances. The result should be the union to the two HyperLogLog estimations.
+ * <p>
+ * Uses the default merge algorithm from HyperLogLog research, keeping the max register value of the two given instances.
+ * The result should be the union to the two HyperLogLog estimations.
  *
  * @since 3.10
  */
-public class HyperLogLogMergePolicy
-        extends AbstractMergePolicy {
+public class HyperLogLogMergePolicy extends AbstractMergePolicy {
 
     public HyperLogLogMergePolicy() {
     }
@@ -40,6 +39,9 @@ public class HyperLogLogMergePolicy
     public <K, V> V merge(SplitBrainMergeEntryView<K, V> mergingEntry, SplitBrainMergeEntryView<K, V> existingEntry) {
         if (!(mergingEntry.getValue() instanceof HyperLogLog)) {
             throw new IllegalArgumentException("Unsupported merging entries");
+        }
+        if (existingEntry == null) {
+            return mergingEntry.getValue();
         }
 
         ((HyperLogLog) mergingEntry.getValue()).merge((HyperLogLog) existingEntry.getValue());
@@ -52,6 +54,6 @@ public class HyperLogLogMergePolicy
 
     @Override
     public int getId() {
-        return HLL;
+        return HYPER_LOG_LOG;
     }
 }

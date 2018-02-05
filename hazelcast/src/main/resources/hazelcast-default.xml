@@ -303,14 +303,14 @@
 
     <cardinality-estimator name="default">
         <backup-count>1</backup-count>
-        <merge-policy batch-size="100">HyperLogLogMergePolicy</merge-policy>
         <async-backup-count>0</async-backup-count>
+        <merge-policy batch-size="100">HyperLogLogMergePolicy</merge-policy>
     </cardinality-estimator>
 
     <scheduled-executor-service name="default">
-        <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
         <capacity>100</capacity>
         <durability>1</durability>
         <pool-size>16</pool-size>
+        <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
     </scheduled-executor-service>
 </hazelcast>

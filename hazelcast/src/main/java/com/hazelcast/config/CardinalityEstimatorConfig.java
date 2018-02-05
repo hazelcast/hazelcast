@@ -16,12 +16,12 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.spi.merge.HyperLogLogMergePolicy;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.impl.Versioned;
+import com.hazelcast.spi.merge.HyperLogLogMergePolicy;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -49,13 +49,14 @@ public class CardinalityEstimatorConfig implements IdentifiedDataSerializable, V
     /**
      * The default merge policy used for cardinality estimators
      */
-    public static final MergePolicyConfig DEFAULT_MERGE_POLICY_CONFIG =
-            new MergePolicyConfig(HyperLogLogMergePolicy.class.getSimpleName(), MergePolicyConfig.DEFAULT_BATCH_SIZE);
+    public static final MergePolicyConfig DEFAULT_MERGE_POLICY_CONFIG
+            = new MergePolicyConfig(HyperLogLogMergePolicy.class.getSimpleName(), MergePolicyConfig.DEFAULT_BATCH_SIZE);
 
     private static final String[] ALLOWED_POLICIES = {
-            "com.hazelcast.spi.merge.HyperLogLogMergePolicy", "HyperLogLogMergePolicy",
-            "com.hazelcast.spi.merge.PutIfAbsentMergePolicy", "PutIfAbsentMergePolicy",
             "com.hazelcast.spi.merge.DiscardMergePolicy", "DiscardMergePolicy",
+            "com.hazelcast.spi.merge.HyperLogLogMergePolicy", "HyperLogLogMergePolicy",
+            "com.hazelcast.spi.merge.PassThroughMergePolicy", "PassThroughMergePolicy",
+            "com.hazelcast.spi.merge.PutIfAbsentMergePolicy", "PutIfAbsentMergePolicy",
     };
 
     private String name = "default";
@@ -225,7 +226,7 @@ public class CardinalityEstimatorConfig implements IdentifiedDataSerializable, V
     @Override
     public String toString() {
         return "CardinalityEstimatorConfig{" + "name='" + name + '\'' + ", backupCount=" + backupCount + ", asyncBackupCount="
-                + asyncBackupCount + ", readOnly=" + readOnly + ", quorumName=" + quorumName +  ", mergePolicyConfig="
+                + asyncBackupCount + ", readOnly=" + readOnly + ", quorumName=" + quorumName + ", mergePolicyConfig="
                 + mergePolicyConfig + '}';
     }
 
@@ -251,6 +252,7 @@ public class CardinalityEstimatorConfig implements IdentifiedDataSerializable, V
         out.writeUTF(name);
         out.writeInt(backupCount);
         out.writeInt(asyncBackupCount);
+        // RU_COMPAT_3_9
         if (out.getVersion().isGreaterOrEqual(Versions.V3_10)) {
             out.writeUTF(quorumName);
             out.writeObject(mergePolicyConfig);
@@ -262,6 +264,7 @@ public class CardinalityEstimatorConfig implements IdentifiedDataSerializable, V
         name = in.readUTF();
         backupCount = in.readInt();
         asyncBackupCount = in.readInt();
+        // RU_COMPAT_3_9
         if (in.getVersion().isGreaterOrEqual(Versions.V3_10)) {
             quorumName = in.readUTF();
             mergePolicyConfig = in.readObject();

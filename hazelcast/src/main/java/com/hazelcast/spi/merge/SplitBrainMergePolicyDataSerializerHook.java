@@ -43,13 +43,13 @@ public final class SplitBrainMergePolicyDataSerializerHook implements DataSerial
     public static final int ENTRY_VIEW = 0;
     public static final int DISCARD = 1;
     public static final int HIGHER_HITS = 2;
-    public static final int LATEST_ACCESS = 3;
-    public static final int LATEST_UPDATE = 4;
-    public static final int PASS_THROUGH = 5;
-    public static final int PUT_IF_ABSENT = 6;
-    public static final int HLL = 7;
+    public static final int HYPER_LOG_LOG = 3;
+    public static final int LATEST_ACCESS = 4;
+    public static final int LATEST_UPDATE = 5;
+    public static final int PASS_THROUGH = 6;
+    public static final int PUT_IF_ABSENT = 7;
 
-    private static final int LEN = HLL + 1;
+    private static final int LEN = PUT_IF_ABSENT + 1;
 
     @Override
     public int getFactoryId() {
@@ -76,6 +76,12 @@ public final class SplitBrainMergePolicyDataSerializerHook implements DataSerial
                 return new HigherHitsMergePolicy();
             }
         };
+        constructors[HYPER_LOG_LOG] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            @Override
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new HyperLogLogMergePolicy();
+            }
+        };
         constructors[LATEST_ACCESS] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new LatestAccessMergePolicy();
@@ -94,12 +100,6 @@ public final class SplitBrainMergePolicyDataSerializerHook implements DataSerial
         constructors[PUT_IF_ABSENT] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new PutIfAbsentMergePolicy();
-            }
-        };
-        constructors[HLL] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new HyperLogLogMergePolicy();
             }
         };
 

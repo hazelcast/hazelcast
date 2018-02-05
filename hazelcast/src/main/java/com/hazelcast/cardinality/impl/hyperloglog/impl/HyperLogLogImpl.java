@@ -105,6 +105,7 @@ public class HyperLogLogImpl implements HyperLogLog {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeObject(encoder);
+        // RU_COMPAT_3_9
         if (out.getVersion().isGreaterOrEqual(Versions.V3_10)) {
             out.writeInt(m);
         }
@@ -113,14 +114,14 @@ public class HyperLogLogImpl implements HyperLogLog {
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         encoder = in.readObject();
+        // RU_COMPAT_3_9
         if (in.getVersion().isGreaterOrEqual(Versions.V3_10)) {
             m = in.readInt();
         }
     }
 
     private void convertToDenseIfNeeded() {
-        boolean shouldConvertToDense = SPARSE.equals(encoder.getEncodingType())
-                && encoder.getMemoryFootprint() >= m;
+        boolean shouldConvertToDense = SPARSE.equals(encoder.getEncodingType()) && encoder.getMemoryFootprint() >= m;
         if (shouldConvertToDense) {
             encoder = ((SparseHyperLogLogEncoder) encoder).asDense();
         }
