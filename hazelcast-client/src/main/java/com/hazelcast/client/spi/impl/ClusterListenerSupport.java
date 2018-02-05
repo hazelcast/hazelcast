@@ -144,12 +144,6 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
         }
     }
 
-    protected void connectToCluster() throws Exception {
-        connectToOne();
-        clientMembershipListener.listenMembershipEvents(ownerConnectionAddress);
-        clientListenerService.triggerFailedListeners();
-    }
-
     private Collection<InetSocketAddress> getSocketAddresses() {
         final List<InetSocketAddress> socketAddresses = new LinkedList<InetSocketAddress>();
 
@@ -173,7 +167,7 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
         return principal;
     }
 
-    private void connectToOne() throws Exception {
+    protected void connectToCluster() throws Exception {
         ownerConnectionAddress = null;
         final ClientNetworkConfig networkConfig = client.getClientConfig().getNetworkConfig();
         final int connAttemptLimit = networkConfig.getConnectionAttemptLimit();
@@ -230,8 +224,10 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
                 if (!connection.isAuthenticatedAsOwner()) {
                     managerAuthenticator.authenticate(connection);
                 }
-                fireConnectionEvent(LifecycleEvent.LifecycleState.CLIENT_CONNECTED);
                 ownerConnectionAddress = connection.getEndPoint();
+                clientMembershipListener.listenMembershipEvents(ownerConnectionAddress);
+                clientListenerService.triggerFailedListeners();
+                fireConnectionEvent(LifecycleEvent.LifecycleState.CLIENT_CONNECTED);
                 return true;
             } catch (Exception e) {
                 Level level = e instanceof AuthenticationException ? Level.WARNING : Level.FINEST;

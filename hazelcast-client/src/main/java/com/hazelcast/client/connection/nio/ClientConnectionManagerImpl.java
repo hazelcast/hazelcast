@@ -286,8 +286,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             }
 
         } else {
-            ClientInvocationService invocationService = client.getInvocationService();
-            invocationService.cleanConnectionResources((ClientConnection) connection);
+            connection.close();
         }
     }
 

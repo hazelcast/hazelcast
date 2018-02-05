@@ -195,7 +195,7 @@ public class ClientInvocation implements Runnable {
         notifyException(exception);
     }
 
-    private void notifyException(Exception exception) {
+    void notifyException(Exception exception) {
         if (exception instanceof IOException
                 || exception instanceof HazelcastInstanceNotActiveException
                 || exception instanceof AuthenticationException

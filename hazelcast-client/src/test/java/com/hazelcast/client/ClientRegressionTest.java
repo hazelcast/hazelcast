@@ -888,6 +888,55 @@ public class ClientRegressionTest
         hazelcastInstance.shutdown();
 
         assertOpenEventually("Put operations should not hang.", testFinishedLatch);
+    }
+
+
+    @Test
+    public void testClusterShutdown_thenCheckOperationsNotHanging_withGet() throws Exception {
+        HazelcastInstance hazelcastInstance = hazelcastFactory.newHazelcastInstance();
+
+        ClientConfig clientConfig = new ClientConfig();
+        //Retry all requests
+        clientConfig.getNetworkConfig().setRedoOperation(true);
+        //Retry all requests forever(until client is shutdown)
+        clientConfig.setProperty(ClientProperties.PROP_INVOCATION_TIMEOUT_SECONDS, String.valueOf(Integer.MAX_VALUE));
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
+
+        final IMap<Object, Object> map = client.getMap(randomMapName());
+        final int mapSize = 1000;
+
+        final CountDownLatch clientStartedDoingRequests = new CountDownLatch(1);
+        int threadCount = 100;
+
+        final CountDownLatch testFinishedLatch = new CountDownLatch(threadCount);
+
+        for (int i = 0; i < threadCount; i++) {
+            Thread thread = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        for (int i = 0; i < mapSize; i++) {
+                            if (i == mapSize / 4) {
+                                clientStartedDoingRequests.countDown();
+                            }
+
+                            map.get(i);
+
+                        }
+                    } catch (Throwable ignored) {
+                    } finally {
+                        testFinishedLatch.countDown();
+                    }
+                }
+            });
+            thread.start();
+        }
+
+        assertTrue(clientStartedDoingRequests.await(30, TimeUnit.SECONDS));
+
+        hazelcastInstance.shutdown();
+
+        assertOpenEventually("Put operations should not hang.", testFinishedLatch);
 
     }
 }

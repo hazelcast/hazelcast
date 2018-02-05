@@ -88,30 +88,19 @@ class ClientMembershipListener implements EventHandler<ClientInitialMembershipEv
 
     }
 
-    void listenMembershipEvents(Address ownerConnectionAddress) {
+    void listenMembershipEvents(Address ownerConnectionAddress) throws Exception {
         initialListFetchedLatch = new CountDownLatch(1);
-        try {
-            RegisterMembershipListenerRequest request = new RegisterMembershipListenerRequest();
+        RegisterMembershipListenerRequest request = new RegisterMembershipListenerRequest();
 
-            Connection connection = connectionManager.getConnection(ownerConnectionAddress);
-            if (connection == null) {
-                throw new IllegalStateException("Can not load initial members list because owner connection is null. "
-                        + "Address " + ownerConnectionAddress);
-            }
-            ClientInvocation invocation = new ClientInvocation(client, this, request, connection);
-            invocation.invoke().get();
-            waitInitialMemberListFetched();
-
-        } catch (Exception e) {
-            if (client.getLifecycleService().isRunning()) {
-                if (LOGGER.isFinestEnabled()) {
-                    LOGGER.warning("Error while registering to cluster events! -> " + ownerConnectionAddress, e);
-                } else {
-                    LOGGER.warning("Error while registering to cluster events! -> " + ownerConnectionAddress
-                            + ", Error: " + e.toString());
-                }
-            }
+        Connection connection = connectionManager.getConnection(ownerConnectionAddress);
+        if (connection == null) {
+            throw new IllegalStateException("Can not load initial members list because owner connection is null. "
+                    + "Address " + ownerConnectionAddress);
         }
+        ClientInvocation invocation = new ClientInvocation(client, this, request, connection);
+        invocation.invoke().get();
+        waitInitialMemberListFetched();
+
     }
 
     private void waitInitialMemberListFetched() throws InterruptedException {

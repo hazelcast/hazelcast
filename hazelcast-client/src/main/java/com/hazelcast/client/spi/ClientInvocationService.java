@@ -51,8 +51,6 @@ public interface ClientInvocationService {
 
     void handlePacket(Packet packet);
 
-    void cleanConnectionResources(ClientConnection connection);
-
     EventHandler getEventHandler(int callId);
 
     //TODO just to be called by stabilizer at the moment
