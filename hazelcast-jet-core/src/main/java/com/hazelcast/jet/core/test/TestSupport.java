@@ -404,11 +404,11 @@ public final class TestSupport {
         boolean isCooperative = processor[0].isCooperative();
 
         // we'll use 1-capacity outbox to test outbox rejection
-        TestOutbox outbox = new TestOutbox(new int[]{1}, 1);
+        TestOutbox[] outbox = {createOutbox()};
         List<Object> actualOutput = new ArrayList<>();
 
         // create instance of your processor and call the init() method
-        initProcessor(processor[0], outbox);
+        initProcessor(processor[0], outbox[0]);
 
         int[] restoreCount = {0};
 
@@ -428,23 +428,23 @@ public final class TestSupport {
             String methodName;
             if (wmToProcess[0] != null) {
                 methodName = "offer";
-                if (outbox.offer(wmToProcess[0])) {
+                if (outbox[0].offer(wmToProcess[0])) {
                     wmToProcess[0] = null;
                 }
             } else {
                 methodName = processInbox(inbox, isCooperative, processor, wmToProcess);
             }
-            boolean madeProgress = inbox.isEmpty() || !outbox.queue(0).isEmpty();
+            boolean madeProgress = inbox.isEmpty() || !outbox[0].queue(0).isEmpty();
             assertTrue(methodName + "() call without progress", !assertProgress || madeProgress);
             idleCount = idle(idler, idleCount, madeProgress);
-            if (outbox.queue(0).size() == 1 && !inbox.isEmpty()) {
+            if (outbox[0].queue(0).size() == 1 && !inbox.isEmpty()) {
                 // if the outbox is full, call the process() method again. Cooperative
                 // processor must be able to cope with this situation and not try to put
                 // more items to the outbox.
-                outbox.reset();
+                outbox[0].reset();
                 processInbox(inbox, isCooperative, processor, wmToProcess);
             }
-            outbox.drainQueueAndReset(0, actualOutput, logInputOutput);
+            outbox[0].drainQueueAndReset(0, actualOutput, logInputOutput);
             if (inbox.isEmpty() && wmToProcess[0] == null) {
                 snapshotAndRestore(processor, outbox, actualOutput, doSnapshots, doRestoreEvery, restoreCount);
             }
@@ -457,9 +457,9 @@ public final class TestSupport {
             double elapsed;
             do {
                 checkTime("complete", isCooperative, () -> done[0] = processor[0].complete());
-                boolean madeProgress = done[0] || !outbox.queue(0).isEmpty();
+                boolean madeProgress = done[0] || !outbox[0].queue(0).isEmpty();
                 assertTrue("complete() call without progress", !assertProgress || madeProgress);
-                outbox.drainQueueAndReset(0, actualOutput, logInputOutput);
+                outbox[0].drainQueueAndReset(0, actualOutput, logInputOutput);
                 snapshotAndRestore(processor, outbox, actualOutput, madeProgress && doSnapshots && !done[0],
                         doRestoreEvery, restoreCount);
                 idleCount = idle(idler, idleCount, madeProgress);
@@ -478,6 +478,10 @@ public final class TestSupport {
             assertEquals("processor output in mode \"" + modeDescription(doSnapshots, doRestoreEvery)
                             + "\" doesn't match", listToString(expectedOutput), listToString(actualOutput));
         }
+    }
+
+    private TestOutbox createOutbox() {
+        return new TestOutbox(new int[]{1}, 1);
     }
 
     private String processInbox(TestInbox inbox, boolean isCooperative, Processor[] processor, Watermark[] wmToEmit) {
@@ -507,7 +511,7 @@ public final class TestSupport {
 
     private void snapshotAndRestore(
             Processor[] processor,
-            TestOutbox outbox,
+            TestOutbox[] outbox,
             List<Object> actualOutput,
             boolean doSnapshot,
             int doRestoreEvery,
@@ -523,17 +527,17 @@ public final class TestSupport {
         Set<Object> keys = new HashSet<>();
         do {
             checkTime("saveSnapshot", isCooperative, () -> done[0] = processor[0].saveToSnapshot());
-            for (Entry<MockData, MockData> entry : outbox.snapshotQueue()) {
+            for (Entry<MockData, MockData> entry : outbox[0].snapshotQueue()) {
                 Object key = entry.getKey().getObject();
                 assertTrue("Duplicate key produced in saveToSnapshot()\n  " +
                         "Duplicate: " + key + "\n  Keys so far: " + keys, keys.add(key));
                 snapshotInbox.add(entry(key, entry.getValue().getObject()));
             }
             assertTrue("saveToSnapshot() call without progress",
-                    !assertProgress || done[0] || !outbox.snapshotQueue().isEmpty()
-                            || !outbox.queue(0).isEmpty());
-            outbox.drainQueueAndReset(0, actualOutput, logInputOutput);
-            outbox.snapshotQueue().clear();
+                    !assertProgress || done[0] || !outbox[0].snapshotQueue().isEmpty()
+                            || !outbox[0].queue(0).isEmpty());
+            outbox[0].drainQueueAndReset(0, actualOutput, logInputOutput);
+            outbox[0].snapshotQueue().clear();
         } while (!done[0]);
 
         restoreCount[0]++;
@@ -543,8 +547,11 @@ public final class TestSupport {
         }
 
         // restore state to new processor
+        assert outbox[0].queue(0).isEmpty();
+        assert outbox[0].snapshotQueue().isEmpty();
         processor[0] = supplier.get();
-        initProcessor(processor[0], outbox);
+        outbox[0] = createOutbox();
+        initProcessor(processor[0], outbox[0]);
 
         int lastInboxSize = snapshotInbox.size();
         while (!snapshotInbox.isEmpty()) {
@@ -553,16 +560,16 @@ public final class TestSupport {
             assertTrue("restoreFromSnapshot() call without progress",
                     !assertProgress
                             || lastInboxSize > snapshotInbox.size()
-                            || !outbox.queue(0).isEmpty());
-            outbox.drainQueueAndReset(0, actualOutput, logInputOutput);
+                            || !outbox[0].queue(0).isEmpty());
+            outbox[0].drainQueueAndReset(0, actualOutput, logInputOutput);
             lastInboxSize = snapshotInbox.size();
         }
         do {
             checkTime("finishSnapshotRestore", isCooperative,
                     () -> done[0] = processor[0].finishSnapshotRestore());
             assertTrue("finishSnapshotRestore() call without progress",
-                    !assertProgress || done[0] || !outbox.queue(0).isEmpty());
-            outbox.drainQueueAndReset(0, actualOutput, logInputOutput);
+                    !assertProgress || done[0] || !outbox[0].queue(0).isEmpty());
+            outbox[0].drainQueueAndReset(0, actualOutput, logInputOutput);
         } while (!done[0]);
     }
 

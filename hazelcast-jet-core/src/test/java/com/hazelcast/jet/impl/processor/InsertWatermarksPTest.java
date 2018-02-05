@@ -298,19 +298,19 @@ public class InsertWatermarksPTest {
 
         // let's process some event and expect real WM to be emitted
         resultToCheck.clear();
+        long start = System.nanoTime();
         doAndDrain(() -> p.tryProcess(0, item(10)));
         assertEquals(asList(wm(10 - LAG), item(10)), resultToCheck);
 
         // when no more activity occurs, IDLE_MESSAGE should be emitted again
         resultToCheck.clear();
 
-        long start = System.nanoTime();
         long elapsedMs;
         do {
             assertTrue(p.tryProcess());
             elapsedMs = NANOSECONDS.toMillis(System.nanoTime() - start);
             outbox.drainQueueAndReset(0, resultToCheck, false);
-            if (elapsedMs < 99) {
+            if (elapsedMs < 100) {
                 assertTrue("outbox should be empty, elapsedMs=" + elapsedMs, resultToCheck.isEmpty());
             } else if (!resultToCheck.isEmpty()) {
                 System.out.println("WM emitted after " + elapsedMs + "ms (shortly after 100 was expected)");
