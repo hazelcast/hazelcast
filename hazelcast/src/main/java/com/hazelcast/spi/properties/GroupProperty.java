@@ -414,18 +414,6 @@ public final class GroupProperty {
             = new HazelcastProperty("hazelcast.heartbeat.failuredetector.type", "deadline");
 
     /**
-     * The Hazelcast master node increments the member list version for each joining member. Then, member list versions
-     * are used to identify joined members with unique integers. For this algorithm to work under network partitioning scenarios
-     * without generating duplicate member list join versions for different members, a mastership-claiming node increments
-     * the member list version as specified by this parameter, multiplied by its position in the member list.
-     * The value of the parameter must be bigger than the cluster size.
-     * <p>
-     * Introduced in 3.10.
-     */
-    public static final HazelcastProperty MASTERSHIP_CLAIM_MEMBER_LIST_VERSION_INCREMENT =
-            new HazelcastProperty("hazelcast.mastership.claim.member.list.version.increment", 25);
-
-    /**
      * The interval at which the master sends the member lists are sent to other non-master members
      */
     public static final HazelcastProperty MEMBER_LIST_PUBLISH_INTERVAL_SECONDS

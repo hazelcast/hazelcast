@@ -66,8 +66,6 @@ import static com.hazelcast.internal.cluster.impl.ClusterServiceImpl.MEMBERSHIP_
 import static com.hazelcast.internal.cluster.impl.ClusterServiceImpl.SERVICE_NAME;
 import static com.hazelcast.spi.ExecutionService.SYSTEM_EXECUTOR;
 import static com.hazelcast.spi.properties.GroupProperty.MASTERSHIP_CLAIM_TIMEOUT_SECONDS;
-import static com.hazelcast.spi.properties.GroupProperty.MASTERSHIP_CLAIM_MEMBER_LIST_VERSION_INCREMENT;
-import static java.lang.Math.max;
 import static java.util.Collections.unmodifiableSet;
 
 /**
@@ -706,7 +704,7 @@ public class MembershipManager {
             }
         }
 
-        int finalVersion = getMastershipClaimMemberListVersion(localMemberMap, latestMembersView.getVersion());
+        int finalVersion = latestMembersView.getVersion() + 1;
         return new MembersView(finalVersion, finalMembers);
     }
 
@@ -791,14 +789,6 @@ public class MembershipManager {
                 .createInvocationBuilder(SERVICE_NAME, op, target)
                 .setTryCount(mastershipClaimTimeoutSeconds)
                 .setCallTimeout(TimeUnit.SECONDS.toMillis(mastershipClaimTimeoutSeconds)).invoke();
-    }
-
-    private int getMastershipClaimMemberListVersion(MemberMap localMemberMap, int latestMemberListVersion) {
-        int localMemberIndex = localMemberMap.getMemberIndex(nodeEngine.getLocalMember());
-        int inc = node.getProperties().getInteger(MASTERSHIP_CLAIM_MEMBER_LIST_VERSION_INCREMENT);
-        int versionIncPerMember = max(inc, localMemberMap.size());
-        int newMemberListVersion = latestMemberListVersion + localMemberIndex * versionIncPerMember;
-        return max(newMemberListVersion, localMemberMap.size());
     }
 
     private MembersView generateMissingMemberListJoinVersions(MembersView membersView) {

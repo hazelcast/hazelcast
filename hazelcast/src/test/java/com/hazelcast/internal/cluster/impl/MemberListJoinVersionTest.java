@@ -5,7 +5,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -24,18 +23,15 @@ import static com.hazelcast.instance.MemberImpl.NA_MEMBER_LIST_JOIN_VERSION;
 import static com.hazelcast.internal.cluster.Versions.V3_9;
 import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.F_ID;
 import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.HEARTBEAT;
-import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.MEMBER_INFO_UPDATE;
 import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.SPLIT_BRAIN_MERGE_VALIDATION;
 import static com.hazelcast.internal.cluster.impl.MemberMap.SINGLETON_MEMBER_LIST_VERSION;
 import static com.hazelcast.internal.cluster.impl.MembershipUpdateTest.assertMemberViewsAreSame;
 import static com.hazelcast.internal.cluster.impl.MembershipUpdateTest.getMemberMap;
 import static com.hazelcast.spi.properties.GroupProperty.HEARTBEAT_INTERVAL_SECONDS;
-import static com.hazelcast.spi.properties.GroupProperty.MASTERSHIP_CLAIM_MEMBER_LIST_VERSION_INCREMENT;
 import static com.hazelcast.spi.properties.GroupProperty.MAX_NO_HEARTBEAT_SECONDS;
 import static com.hazelcast.spi.properties.GroupProperty.MEMBER_LIST_PUBLISH_INTERVAL_SECONDS;
 import static com.hazelcast.spi.properties.GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS;
 import static com.hazelcast.spi.properties.GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS;
-import static com.hazelcast.test.PacketFiltersUtil.dropOperationsBetween;
 import static com.hazelcast.test.PacketFiltersUtil.dropOperationsFrom;
 import static com.hazelcast.test.PacketFiltersUtil.resetPacketFiltersFrom;
 import static java.util.Arrays.asList;
@@ -77,66 +73,6 @@ public class MemberListJoinVersionTest extends HazelcastTestSupport {
         assertClusterSizeEventually(4, slave1, slave2);
 
         assertJoinMemberListVersions(master, slave1, slave2, slave3);
-    }
-
-    @Test
-    public void when_masterShutsDown_then_memberListVersionShouldIncrementSufficiently() {
-        HazelcastInstance master = factory.newHazelcastInstance();
-        HazelcastInstance slave1 = factory.newHazelcastInstance();
-
-        ClusterService slave1ClusterService = getClusterService(slave1);
-        int memberListVersion = slave1ClusterService.getMemberListVersion();
-
-        master.shutdown();
-
-        assertClusterSizeEventually(1, slave1);
-
-        int newMemberListVersion = slave1ClusterService.getMemberListVersion();
-        int versionIncPerMember = getMastershipClaimMemberListVersionIncrementConfig(slave1);
-
-        assertTrue((newMemberListVersion - memberListVersion) >= versionIncPerMember);
-    }
-
-    @Test
-    public void when_masterTerminates_then_memberListVersionShouldIncrementSufficiently() {
-        HazelcastInstance master = factory.newHazelcastInstance();
-        HazelcastInstance slave1 = factory.newHazelcastInstance();
-
-        ClusterService slave1ClusterService = getClusterService(slave1);
-        int memberListVersion = slave1ClusterService.getMemberListVersion();
-
-        master.getLifecycleService().terminate();
-
-        assertClusterSizeEventually(1, slave1);
-
-        int newMemberListVersion = slave1ClusterService.getMemberListVersion();
-        int versionIncPerMember = getMastershipClaimMemberListVersionIncrementConfig(slave1);
-
-        assertTrue((newMemberListVersion - memberListVersion) >= versionIncPerMember);
-    }
-
-    @Test
-    public void when_masterAndNextMasterTerminates_then_memberListVersionShouldIncrementBasedOnMemberIndex() {
-        HazelcastInstance master = factory.newHazelcastInstance();
-        HazelcastInstance slave1 = factory.newHazelcastInstance();
-        HazelcastInstance slave2 = factory.newHazelcastInstance();
-
-        assertClusterSizeEventually(3, slave1);
-
-        ClusterService slave2ClusterService = getClusterService(slave2);
-        int memberListVersion = slave2ClusterService.getMemberListVersion();
-
-        dropOperationsBetween(master, slave2, F_ID, singletonList(MEMBER_INFO_UPDATE));
-
-        slave1.getLifecycleService().terminate();
-        master.getLifecycleService().terminate();
-
-        assertClusterSizeEventually(1, slave2);
-
-        int newMemberListVersion = slave2ClusterService.getMemberListVersion();
-        int versionIncPerMember = getMastershipClaimMemberListVersionIncrementConfig(slave2);
-
-        assertTrue((newMemberListVersion - memberListVersion) >= (versionIncPerMember * 2));
     }
 
     @Test
@@ -184,28 +120,6 @@ public class MemberListJoinVersionTest extends HazelcastTestSupport {
         assertEquals(memberListVersionAfterMerge, getNode(member3).getLocalMember().getMemberListJoinVersion());
 
         assertJoinMemberListVersions(member1, member2, member3);
-    }
-
-    @Test
-    public void when_memberListIncrementIsConfiguredTooLow_then_itShouldIncrementAtLeastAsMemberCount() {
-        int memberCount = 3;
-        Config config = new Config();
-        config.setProperty(MASTERSHIP_CLAIM_MEMBER_LIST_VERSION_INCREMENT.toString(), "1");
-        HazelcastInstance[] instances = factory.newInstances(config, memberCount);
-
-        HazelcastInstance slave1 = instances[1];
-        assertClusterSizeEventually(3, slave1);
-
-        ClusterService slave1ClusterService = getClusterService(slave1);
-        int memberListVersion = slave1ClusterService.getMemberListVersion();
-
-        instances[0].getLifecycleService().terminate();
-
-        assertClusterSizeEventually(2, slave1);
-
-        int newMemberListVersion = slave1ClusterService.getMemberListVersion();
-
-        assertTrue((newMemberListVersion - memberListVersion) >= memberCount);
     }
 
     @Test(expected = UnsupportedOperationException.class)
@@ -282,9 +196,5 @@ public class MemberListJoinVersionTest extends HazelcastTestSupport {
                 }
             }
         }
-    }
-
-    private int getMastershipClaimMemberListVersionIncrementConfig(HazelcastInstance instance) {
-        return getNode(instance).getProperties().getInteger(MASTERSHIP_CLAIM_MEMBER_LIST_VERSION_INCREMENT);
     }
 }
