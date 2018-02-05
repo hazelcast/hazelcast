@@ -10,9 +10,7 @@ import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.config.ClientProperties;
 import com.hazelcast.client.config.ClientSecurityConfig;
 import com.hazelcast.client.connection.AddressProvider;
-import com.hazelcast.client.connection.AddressTranslator;
 import com.hazelcast.client.connection.ClientConnectionManager;
-import com.hazelcast.client.connection.nio.ClientConnectionManagerImpl;
 import com.hazelcast.client.impl.client.DistributedObjectInfo;
 import com.hazelcast.client.impl.client.GetDistributedObjectsRequest;
 import com.hazelcast.client.proxy.ClientClusterProxy;
@@ -25,7 +23,6 @@ import com.hazelcast.client.spi.ClientPartitionService;
 import com.hazelcast.client.spi.ClientTransactionManagerService;
 import com.hazelcast.client.spi.ProxyManager;
 import com.hazelcast.client.spi.impl.AwsAddressProvider;
-import com.hazelcast.client.spi.impl.AwsAddressTranslator;
 import com.hazelcast.client.spi.impl.ClientClusterServiceImpl;
 import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.client.spi.impl.ClientInvocation;
@@ -35,7 +32,6 @@ import com.hazelcast.client.spi.impl.ClientPartitionServiceImpl;
 import com.hazelcast.client.spi.impl.ClientSmartInvocationServiceImpl;
 import com.hazelcast.client.spi.impl.ClientTransactionManagerServiceImpl;
 import com.hazelcast.client.spi.impl.DefaultAddressProvider;
-import com.hazelcast.client.spi.impl.DefaultAddressTranslator;
 import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.collection.impl.queue.QueueService;
@@ -539,11 +535,11 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
     public void doShutdown() {
         proxyManager.destroy();
+        connectionManager.shutdown();
         clusterService.shutdown();
         executionService.shutdown();
         partitionService.stop();
         transactionManager.shutdown();
-        connectionManager.shutdown();
         invocationService.shutdown();
         listenerService.shutdown();
         serializationService.destroy();
