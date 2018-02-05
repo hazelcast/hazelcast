@@ -247,6 +247,7 @@
         <backup-count>1</backup-count>
         <async-backup-count>0</async-backup-count>
         <quorum-ref>quorumRuleWithThreeNodes</quorum-ref>
+        <merge-policy batch-size="50">HyperLogLogMergePolicy</merge-policy>
     </cardinality-estimator>
 
     <queue name="default">

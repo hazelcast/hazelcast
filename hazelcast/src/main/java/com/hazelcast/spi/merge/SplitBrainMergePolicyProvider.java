@@ -44,11 +44,11 @@ public final class SplitBrainMergePolicyProvider {
         OUT_OF_THE_BOX_MERGE_POLICIES = new HashMap<String, SplitBrainMergePolicy>();
         addPolicy(DiscardMergePolicy.class, new DiscardMergePolicy());
         addPolicy(HigherHitsMergePolicy.class, new HigherHitsMergePolicy());
+        addPolicy(HyperLogLogMergePolicy.class, new HyperLogLogMergePolicy());
         addPolicy(LatestAccessMergePolicy.class, new LatestAccessMergePolicy());
         addPolicy(LatestUpdateMergePolicy.class, new LatestUpdateMergePolicy());
         addPolicy(PassThroughMergePolicy.class, new PassThroughMergePolicy());
         addPolicy(PutIfAbsentMergePolicy.class, new PutIfAbsentMergePolicy());
-        addPolicy(HyperLogLogMergePolicy.class, new HyperLogLogMergePolicy());
     }
 
     private final NodeEngine nodeEngine;

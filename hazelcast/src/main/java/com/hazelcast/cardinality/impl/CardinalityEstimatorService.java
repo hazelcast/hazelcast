@@ -230,11 +230,6 @@ public class CardinalityEstimatorService
         @Override
         @SuppressWarnings({"checkstyle:methodlength"})
         public void run() {
-            // we cannot merge into a 3.9 cluster, since not all members may understand the CollectionMergeOperation
-            if (nodeEngine.getClusterService().getClusterVersion().isLessThan(Versions.V3_10)) {
-                return;
-            }
-
             final ILogger logger = nodeEngine.getLogger(CardinalityEstimatorService.class);
             final Semaphore semaphore = new Semaphore(0);
 
@@ -250,6 +245,13 @@ public class CardinalityEstimatorService
                     semaphore.release(1);
                 }
             };
+
+            // we cannot merge into a 3.9 cluster, since not all members may understand the MergeOperation
+            // RU_COMPAT_3_9
+            if (nodeEngine.getClusterService().getClusterVersion().isLessThan(Versions.V3_10)) {
+                logger.info("Cluster needs to run version " + Versions.V3_10 + " to merge cardinality estimator instances");
+                return;
+            }
 
             int size = 0;
             int operationCount = 0;

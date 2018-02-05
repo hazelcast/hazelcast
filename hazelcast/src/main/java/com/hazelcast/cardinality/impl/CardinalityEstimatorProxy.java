@@ -27,7 +27,7 @@ import com.hazelcast.spi.Operation;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
-class CardinalityEstimatorProxy
+public class CardinalityEstimatorProxy
         extends AbstractDistributedObject<CardinalityEstimatorService>
         implements CardinalityEstimator {
 
@@ -38,6 +38,10 @@ class CardinalityEstimatorProxy
         super(nodeEngine, service);
         this.name = name;
         this.partitionId = nodeEngine.getPartitionService().getPartitionId(getNameAsPartitionAwareData());
+    }
+
+    public int getPartitionId() {
+        return partitionId;
     }
 
     @Override

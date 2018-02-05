@@ -2068,6 +2068,7 @@
                             The out-of-the-box policies are:
                             <br/>DiscardMergePolicy: the estimator from the smaller cluster will be discarded.
                             <br/>HyperLogLogMergePolicy: the estimator will merge with the existing one, using the algorithmic merge for HyperLogLog.
+                            <br/>PassThroughMergePolicy: the estimator from the smaller cluster wins.
                             <br/>PutIfAbsentMergePolicy: the estimator from the smaller cluster wins if it doesn't exist in the cluster.
                             <br/>The default policy is: HyperLogLogMergePolicy
                         </p>
