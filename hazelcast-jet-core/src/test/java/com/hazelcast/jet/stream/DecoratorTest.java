@@ -30,6 +30,7 @@ import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -111,6 +112,8 @@ public class DecoratorTest {
             return new Object[0];
         } else if (clazz == String.class) {
             return "";
+        } else if (clazz.equals(TimeUnit.class)) {
+           return TimeUnit.MILLISECONDS;
         } else {
             return Mockito.mock(clazz);
         }
