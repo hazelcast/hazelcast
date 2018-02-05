@@ -176,11 +176,11 @@ public class SessionWindowPTest {
                 long wm = timestampBase - wmLag;
                 int winCount = 0;
                 while (!lastSuppliedProcessor.tryProcessWatermark(new Watermark(wm))) {
-                    while (outbox.queueWithOrdinal(0).poll() != null) {
+                    while (outbox.queue(0).poll() != null) {
                         winCount++;
                     }
                 }
-                while (outbox.queueWithOrdinal(0).poll() != null) {
+                while (outbox.queue(0).poll() != null) {
                     winCount++;
                 }
             }

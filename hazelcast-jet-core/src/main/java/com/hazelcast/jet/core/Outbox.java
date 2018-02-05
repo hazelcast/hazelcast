@@ -45,14 +45,13 @@ public interface Outbox {
     int bucketCount();
 
     /**
-     * Offers the supplied item to the bucket with the supplied ordinal. If
-     * {@code ordinal == -1}, offers the supplied item to all buckets (behaves
-     * the same as {@link #offer(Object)}).
+     * Offers the supplied item to the bucket with the supplied ordinal.
      * <p>
      * Items offered to outbox should not be subsequently mutated because the
      * same instance might be used by a downstream processor in different
      * thread, causing concurrent access.
      *
+     * @param ordinal output ordinal number or -1 to offer to all ordinals
      * @return {@code true} if the outbox accepted the item
      */
     @CheckReturnValue

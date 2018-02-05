@@ -276,10 +276,7 @@ public class StreamFilesPTest extends JetTestSupport {
         try {
             while (!completedNormally && !interrupted()) {
                 completedNormally = processor.complete();
-                // drain the outbox
-                for (Object o; (o = outbox.queueWithOrdinal(0).poll()) != null; ) {
-                    outboxLines.add((String) o);
-                }
+                outbox.drainQueueAndReset(0, outboxLines, false);
                 updateFileOffsetsSize();
             }
         } catch (Throwable e) {

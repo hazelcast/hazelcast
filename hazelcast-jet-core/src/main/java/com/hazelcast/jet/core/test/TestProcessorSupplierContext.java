@@ -25,7 +25,7 @@ import javax.annotation.Nonnull;
 import static com.hazelcast.jet.core.test.TestSupport.getLogger;
 
 /**
- * Simple implementation of {@link ProcessorSupplier.Context}.
+ * {@link ProcessorSupplier.Context} implementation suitable to be used in tests.
  */
 public class TestProcessorSupplierContext implements ProcessorSupplier.Context {
 

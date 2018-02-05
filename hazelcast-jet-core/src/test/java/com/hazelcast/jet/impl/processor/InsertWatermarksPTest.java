@@ -42,6 +42,7 @@ import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.core.WatermarkEmissionPolicy.emitByFrame;
 import static com.hazelcast.jet.core.WatermarkEmissionPolicy.emitByMinStep;
+import static com.hazelcast.jet.core.WatermarkEmissionPolicy.suppressDuplicates;
 import static com.hazelcast.jet.core.WatermarkGenerationParams.wmGenParams;
 import static com.hazelcast.jet.core.WatermarkPolicies.withFixedLag;
 import static com.hazelcast.jet.core.WindowDefinition.tumblingWindowDef;
@@ -70,8 +71,7 @@ public class InsertWatermarksPTest {
     private List<Object> resultToCheck = new ArrayList<>();
     private Context context;
     private DistributedSupplier<WatermarkPolicy> wmPolicy = withFixedLag(LAG);
-    private WatermarkEmissionPolicy wmEmissionPolicy = (WatermarkEmissionPolicy) (currentWm, lastEmittedWm) ->
-            currentWm > lastEmittedWm;
+    private WatermarkEmissionPolicy wmEmissionPolicy = suppressDuplicates();
 
     @Parameters(name = "outboxCapacity={0}")
     public static Collection<Object> parameters() {
@@ -215,7 +215,25 @@ public class InsertWatermarksPTest {
                         item(14)
                 )
         );
+    }
 
+    @Test
+    public void emitByFrame_when_eventsNotAtTheVergeOfFrame_then_wmEmittedCorrectly() {
+        wmEmissionPolicy = emitByFrame(tumblingWindowDef(10));
+        doTest(
+                asList(
+                        item(14),
+                        item(15),
+                        item(24)
+                ),
+                asList(
+                        wm(11),
+                        item(14),
+                        item(15),
+                        wm(21),
+                        item(24)
+                )
+        );
     }
 
     @Test
@@ -291,7 +309,7 @@ public class InsertWatermarksPTest {
         do {
             assertTrue(p.tryProcess());
             elapsedMs = NANOSECONDS.toMillis(System.nanoTime() - start);
-            drainOutbox();
+            outbox.drainQueueAndReset(0, resultToCheck, false);
             if (elapsedMs < 99) {
                 assertTrue("outbox should be empty, elapsedMs=" + elapsedMs, resultToCheck.isEmpty());
             } else if (!resultToCheck.isEmpty()) {
@@ -332,14 +350,9 @@ public class InsertWatermarksPTest {
         int count = 0;
         do {
             done = action.getAsBoolean();
-            drainOutbox();
+            outbox.drainQueueAndReset(0, resultToCheck, false);
             assertTrue("action not done in " + count + " attempts", ++count < 10);
         } while (!done);
-    }
-
-    private void drainOutbox() {
-        resultToCheck.addAll(outbox.queueWithOrdinal(0));
-        outbox.queueWithOrdinal(0).clear();
     }
 
     private String myToString(Object o) {

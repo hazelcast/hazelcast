@@ -31,7 +31,6 @@ import com.hazelcast.jet.core.test.TestInbox;
 import com.hazelcast.jet.core.test.TestOutbox;
 import com.hazelcast.jet.core.test.TestOutbox.MockData;
 import com.hazelcast.jet.core.test.TestProcessorContext;
-import com.hazelcast.jet.core.test.TestSupport;
 import com.hazelcast.jet.function.DistributedBiFunction;
 import com.hazelcast.jet.impl.SnapshotRepository;
 import com.hazelcast.jet.impl.execution.SnapshotRecord;
@@ -356,7 +355,7 @@ public class StreamKafkaPTest extends KafkaTestSupport {
         processor.init(outbox, context);
         processor.complete();
 
-        assertEquals(IDLE_MESSAGE, outbox.queueWithOrdinal(0).poll());
+        assertEquals(IDLE_MESSAGE, outbox.queue(0).poll());
     }
 
     @Test
@@ -384,24 +383,24 @@ public class StreamKafkaPTest extends KafkaTestSupport {
         // Then
         assertTrueEventually(() -> {
             assertFalse(processor.complete());
-            assertFalse("no item in outbox", outbox.queueWithOrdinal(0).isEmpty());
+            assertFalse("no item in outbox", outbox.queue(0).isEmpty());
         }, 3);
-        assertEquals("1", outbox.queueWithOrdinal(0).poll());
-        assertNull(outbox.queueWithOrdinal(0).poll());
+        assertEquals("1", outbox.queue(0).poll());
+        assertNull(outbox.queue(0).poll());
     }
 
     private <T> T consumeEventually(Processor processor, TestOutbox outbox) {
         assertTrueEventually(() -> {
             assertFalse(processor.complete());
-            assertFalse("no item in outbox", outbox.queueWithOrdinal(0).isEmpty());
+            assertFalse("no item in outbox", outbox.queue(0).isEmpty());
         }, 12);
-        return (T) outbox.queueWithOrdinal(0).poll();
+        return (T) outbox.queue(0).poll();
     }
 
     private void assertNoMoreItems(StreamKafkaP processor, TestOutbox outbox) throws InterruptedException {
         Thread.sleep(1000);
         assertFalse(processor.complete());
-        assertTrue("unexpected items in outbox: " + outbox.queueWithOrdinal(0), outbox.queueWithOrdinal(0).isEmpty());
+        assertTrue("unexpected items in outbox: " + outbox.queue(0), outbox.queue(0).isEmpty());
     }
 
     private Set<Entry<TopicPartition, String>> unwrapBroadcastKey(Collection c) {
@@ -417,7 +416,7 @@ public class StreamKafkaPTest extends KafkaTestSupport {
     private TestInbox saveSnapshot(StreamKafkaP streamKafkaP, TestOutbox outbox) {
         TestInbox snapshot = new TestInbox();
         assertTrue(streamKafkaP.saveToSnapshot());
-        TestSupport.drainOutbox(outbox.snapshotQueue(), snapshot, false);
+        outbox.drainSnapshotQueueAndReset(snapshot, false);
         snapshot = snapshot.stream().map(e -> (Entry<MockData, MockData>) e)
                            .map(e -> entry(e.getKey().getObject(), e.getValue().getObject()))
                            .collect(toCollection(TestInbox::new));

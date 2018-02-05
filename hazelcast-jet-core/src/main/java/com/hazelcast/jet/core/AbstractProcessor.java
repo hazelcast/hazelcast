@@ -302,6 +302,10 @@ public abstract class AbstractProcessor implements Processor {
 
     /**
      * Offers the item to the outbox bucket at the supplied ordinal.
+     * <p>
+     * Emitted items should not be subsequently mutated because the same
+     * instance might be used by a downstream processor in a different thread,
+     * causing concurrent access.
      *
      * @return {@code true}, if the item was accepted. If {@code false} is
      * returned, the call must be retried later with the same (or equal) item.
@@ -313,6 +317,10 @@ public abstract class AbstractProcessor implements Processor {
 
     /**
      * Offers the item to all the outbox buckets (except the snapshot outbox).
+     * <p>
+     * Emitted items should not be subsequently mutated because the same
+     * instance might be used by a downstream processor in a different thread,
+     * causing concurrent access.
      *
      * @return {@code true}, if the item was accepted. If {@code false} is
      * returned, the call must be retried later with the same (or equal) item.
@@ -324,6 +332,10 @@ public abstract class AbstractProcessor implements Processor {
 
     /**
      * Offers the item to the outbox buckets identified in the supplied array.
+     * <p>
+     * Emitted items should not be subsequently mutated because the same
+     * instance might be used by a downstream processor in a different thread,
+     * causing concurrent access.
      *
      * @return {@code true}, if the item was accepted. If {@code false} is
      * returned, the call must be retried later with the same (or equal) item.
@@ -338,6 +350,10 @@ public abstract class AbstractProcessor implements Processor {
      * identified in the supplied array. Calls the {@code onEmit} callback (if
      * supplied) for each emitted item. If the outbox refuses an item, it backs
      * off and returns {@code false}.
+     * <p>
+     * Emitted items should not be subsequently mutated because the same
+     * instance might be used by a downstream processor in a different thread,
+     * causing concurrent access.
      * <p>
      * If this method returns {@code false}, then the caller must retain the
      * traverser and pass it again in the subsequent invocation of this method,
@@ -379,6 +395,10 @@ public abstract class AbstractProcessor implements Processor {
      * identified in the supplied array. Calls the {@code onEmit} callback (if
      * supplied) for each emitted item. If the outbox refuses an item, it backs
      * off and returns {@code false}.
+     * <p>
+     * Emitted items should not be subsequently mutated because the same
+     * instance might be used by a downstream processor in a different thread,
+     * causing concurrent access.
      * <p>
      * If this method returns {@code false}, then the caller must retain the
      * traverser and pass it again in the subsequent invocation of this method,
@@ -455,6 +475,9 @@ public abstract class AbstractProcessor implements Processor {
      * BroadcastKey}, the entry will be restored to all processor instances.
      * Otherwise, the key will be distributed according to default partitioning
      * and only a single processor instance will receive the key.
+     * <p>
+     * Keys and values offered to snapshot are serialized and can be further
+     * mutated as soon as this method returns.
      *
      * @return {@code true}, if the item was accepted. If {@code false} is
      * returned, the call must be retried later with the same (or equal) key
@@ -470,6 +493,9 @@ public abstract class AbstractProcessor implements Processor {
      * of the outbox. Each item is a {@code Map.Entry} and its key and value
      * are passed as the two arguments of {@link #tryEmitToSnapshot(Object, Object)}.
      * If the outbox refuses an item, it backs off and returns {@code false}.
+     * <p>
+     * Keys and values offered to snapshot are serialized and can be further
+     * mutated as soon as this method returns.
      * <p>
      * If this method returns {@code false}, then the caller must retain the
      * traverser and pass it again in the subsequent invocation of this method,

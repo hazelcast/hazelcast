@@ -41,7 +41,7 @@ import static java.util.stream.IntStream.rangeClosed;
 
 public final class ReadIListP extends AbstractProcessor {
 
-    private static final int FETCH_SIZE = 16384;
+    static final int FETCH_SIZE = 16384;
 
     private final Traverser<Object> traverser;
 

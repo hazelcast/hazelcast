@@ -123,7 +123,7 @@ public class SlidingWindowP_twoStageSnapshotTest {
         // process some events in the 1st stage
         assertTrue(stage1p1.tryProcess(0, entry(1L, 1L))); // entry key is time
         assertTrue(stage1p2.tryProcess(0, entry(2L, 2L)));
-        assertTrue(stage1p1Outbox.queueWithOrdinal(0).isEmpty() && stage2Outbox.queueWithOrdinal(0).isEmpty());
+        assertTrue(stage1p1Outbox.queue(0).isEmpty() && stage2Outbox.queue(0).isEmpty());
 
         // save state in stage1
         assertTrue(stage1p1.saveToSnapshot());
@@ -165,14 +165,14 @@ public class SlidingWindowP_twoStageSnapshotTest {
                         outboxFrame(7, 7),
                         outboxFrame(8, 4)
                 )),
-                collectionToString(stage2Outbox.queueWithOrdinal(0)));
+                collectionToString(stage2Outbox.queue(0)));
     }
 
     private void processStage2(SlidingWindowP p, TestOutbox stage1p1Outbox, TestOutbox stage1p2Outbox, TestInbox inbox) {
-        inbox.addAll(stage1p1Outbox.queueWithOrdinal(0));
-        inbox.addAll(stage1p2Outbox.queueWithOrdinal(0));
-        stage1p1Outbox.queueWithOrdinal(0).clear();
-        stage1p2Outbox.queueWithOrdinal(0).clear();
+        inbox.addAll(stage1p1Outbox.queue(0));
+        inbox.addAll(stage1p2Outbox.queue(0));
+        stage1p1Outbox.queue(0).clear();
+        stage1p2Outbox.queue(0).clear();
         p.process(0, inbox);
         assertTrue(inbox.isEmpty());
     }

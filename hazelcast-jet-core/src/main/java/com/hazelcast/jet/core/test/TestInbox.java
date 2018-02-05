@@ -21,7 +21,7 @@ import com.hazelcast.jet.core.Inbox;
 import java.util.ArrayDeque;
 
 /**
- * Extends {@link ArrayDeque} to implement {@link Inbox}.
+ * {@link Inbox} implementation suitable to be used in tests.
  */
 public final class TestInbox extends ArrayDeque<Object> implements Inbox {
 }

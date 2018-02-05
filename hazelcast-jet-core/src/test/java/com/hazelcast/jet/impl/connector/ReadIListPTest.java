@@ -16,55 +16,35 @@
 
 package com.hazelcast.jet.impl.connector;
 
-import com.hazelcast.jet.core.Processor;
-import com.hazelcast.jet.core.test.TestOutbox;
+import com.hazelcast.jet.core.test.TestSupport;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mockito;
 
-import java.util.Queue;
+import java.util.List;
+import java.util.stream.IntStream;
 
-import static java.util.Arrays.asList;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static java.util.stream.Collectors.toList;
 
 @RunWith(HazelcastParallelClassRunner.class)
 public class ReadIListPTest {
 
     @Test
     public void when_sizeLessThanFetchSize_then_readAll() {
-        testReader(13);
+        testReader(ReadIListP.FETCH_SIZE / 2);
     }
 
     @Test
     public void when_sizeMoreThanFetchSize_then_readAll() {
-        testReader(3);
+        testReader(ReadIListP.FETCH_SIZE * 3 / 2);
     }
 
-    private static void testReader(int fetchSize) {
-        final TestOutbox outbox = new TestOutbox(2);
-        final Queue<Object> bucket = outbox.queueWithOrdinal(0);
-        final ReadIListP r = new ReadIListP(asList(1, 2, 3, 4));
-        r.init(outbox, Mockito.mock(Processor.Context.class));
-
-        // When
-        assertFalse(r.complete());
-
-        // Then
-        assertEquals(1, bucket.poll());
-        assertEquals(2, bucket.poll());
-        assertNull(bucket.poll());
-
-        // When
-        assertTrue(r.complete());
-
-        // Then
-        assertEquals(3, bucket.poll());
-        assertEquals(4, bucket.poll());
-        assertNull(bucket.poll());
+    private static void testReader(int listLength) {
+        List<Object> data = IntStream.range(0, listLength).boxed().collect(toList());
+        TestSupport
+                .verifyProcessor(new ReadIListP(data))
+                .disableSnapshots()
+                .disableLogging()
+                .expectOutput(data);
     }
-
 }

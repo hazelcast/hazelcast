@@ -25,7 +25,7 @@ import com.hazelcast.logging.Logger;
 import javax.annotation.Nonnull;
 
 /**
- * Simple implementation of {@link Processor.Context}.
+ * {@link Processor.Context} implementation suitable to be used in tests.
  */
 public class TestProcessorContext implements Processor.Context {
     private JetInstance jetInstance;

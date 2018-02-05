@@ -33,7 +33,6 @@ import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 
 import javax.annotation.Nonnull;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map.Entry;
 import java.util.NoSuchElementException;
@@ -43,6 +42,7 @@ import static com.hazelcast.jet.core.processor.DiagnosticProcessors.peekOutputP;
 import static com.hazelcast.jet.core.processor.DiagnosticProcessors.peekSnapshotP;
 import static com.hazelcast.jet.core.test.TestSupport.supplierFrom;
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -56,35 +56,38 @@ import static org.mockito.Mockito.verifyZeroInteractions;
 public class PeekingWrapperTest {
 
     @Parameter
-    public DistributedFunction<Object, String> toStringFn;
+    public String mode;
 
-    @Parameter(1)
-    public DistributedPredicate<Object> shouldLogFn;
+    private DistributedFunction<Object, String> toStringFn;
+    private DistributedPredicate<Object> shouldLogFn;
 
     private TestProcessorContext context;
     private ILogger logger;
     private Processor peekP;
 
-    private final DistributedFunction<Entry<Integer, Integer>, String> snapshotToStringFn = e ->
-            toStringFn.apply(e.getKey()) + '=' + toStringFn.apply(e.getValue());
-    private final DistributedPredicate<Entry<Integer, Integer>> snapshotShouldLogFn = e ->
-            shouldLogFn.test(e.getKey());
+    private DistributedFunction<Entry<Integer, Integer>, String> snapshotToStringFn;
+    private DistributedPredicate<Entry<Integer, Integer>> snapshotShouldLogFn;
 
     @Parameters(name = "toStringFn={0}, shouldLogFn={1}")
-    public static Collection<Object[]> parameters() {
-        return Arrays.asList(
-                new Object[]{null, null},
-                new Object[]{
-                        (DistributedFunction<Object, String>) o -> "a" + o,
-                        (DistributedPredicate<Object>) o -> !(o instanceof Integer) || ((Integer) o) % 2 == 0,
-                }
-        );
+    public static Collection<Object> parameters() {
+        return asList("defaultFunctions", "customFunctions");
     }
 
     @Before
     public void before() {
         logger = mock(ILogger.class);
         context = new TestProcessorContext().setLogger(logger);
+        if (mode.equals("customFunctions")) {
+            toStringFn = (DistributedFunction<Object, String>) o -> "a" + o;
+            snapshotToStringFn = e -> toStringFn.apply(e.getKey()) + '=' + toStringFn.apply(e.getValue());
+            shouldLogFn = (DistributedPredicate<Object>) o -> !(o instanceof Integer) || ((Integer) o) % 2 == 0;
+            snapshotShouldLogFn = e -> shouldLogFn.test(e.getKey());
+        } else {
+            toStringFn = null;
+            snapshotToStringFn = null;
+            shouldLogFn = null;
+            snapshotShouldLogFn = null;
+        }
     }
 
     @Test
@@ -259,8 +262,9 @@ public class PeekingWrapperTest {
         verify(logger).info("Output to 0: " + format(0));
         verify(logger).info("Output to 1: " + format(0));
 
-        outbox.queueWithOrdinal(0).clear();
-        outbox.queueWithOrdinal(1).clear();
+        outbox.queue(0).clear();
+        outbox.queue(1).clear();
+        outbox.reset();
 
         // only one queue has available space, call complete() again to emit another object
         peekP.complete();
@@ -268,8 +272,9 @@ public class PeekingWrapperTest {
             verify(logger).info("Output to 1: " + format(1));
             verify(logger).info("Output to 0: " + format(1));
         }
-        outbox.queueWithOrdinal(0).clear();
-        outbox.queueWithOrdinal(1).clear();
+        outbox.queue(0).clear();
+        outbox.queue(1).clear();
+        outbox.reset();
         verifyZeroInteractions(logger);
 
         peekP.complete();

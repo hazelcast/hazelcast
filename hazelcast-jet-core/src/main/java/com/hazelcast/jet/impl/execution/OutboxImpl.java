@@ -52,7 +52,7 @@ public class OutboxImpl implements Outbox {
      * @param progTracker Tracker to track progress. Only madeProgress will be called,
      *                    done status won't be ever changed
      * @param batchSize Maximum number of items that will be allowed to offer until
-     *                  {@link #resetBatch()} is called.
+     *                  {@link #reset()} is called.
      */
     @SuppressFBWarnings("EI_EXPOSE_REP")
     public OutboxImpl(OutboundCollector[] outstreams, boolean hasSnapshot, ProgressTracker progTracker,
@@ -90,11 +90,13 @@ public class OutboxImpl implements Outbox {
 
     @Override
     public final boolean offer(int[] ordinals, @Nonnull Object item) {
-        if (numRemainingInBatch == 0) {
+        assert numRemainingInBatch != -1 : "Outbox.offer() called again after it returned false, without a " +
+                "call to reset(). You probably didn't return from Processor method after Outbox.offer() " +
+                "or AbstractProcessor.tryEmit() returned false";
+        numRemainingInBatch--;
+        if (numRemainingInBatch == -1) {
             return false;
         }
-        assert numRemainingInBatch > 0 : "numRemainingInBatch=" + numRemainingInBatch;
-        numRemainingInBatch--;
         boolean done = true;
         for (int i = 0; i < ordinals.length; i++) {
             if (broadcastTracker.get(i)) {
@@ -112,6 +114,8 @@ public class OutboxImpl implements Outbox {
         }
         if (done) {
             broadcastTracker.clear();
+        } else {
+            numRemainingInBatch = -1;
         }
         return done;
     }
@@ -143,7 +147,12 @@ public class OutboxImpl implements Outbox {
         return success;
     }
 
-    public void resetBatch() {
+    /**
+     * Resets the outbox so that it is available to receive another batch of
+     * items after any {@code offer()} method previously returned {@code
+     * false}.
+     */
+    public void reset() {
         numRemainingInBatch = batchSize;
     }
 

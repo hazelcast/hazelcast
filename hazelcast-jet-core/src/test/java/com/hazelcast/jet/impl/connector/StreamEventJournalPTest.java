@@ -38,7 +38,6 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map.Entry;
-import java.util.Queue;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -48,7 +47,6 @@ import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.WatermarkGenerationParams.wmGenParams;
 import static com.hazelcast.jet.core.WatermarkPolicies.withFixedLag;
 import static com.hazelcast.jet.core.test.TestSupport.SAME_ITEMS_ANY_ORDER;
-import static com.hazelcast.jet.core.test.TestSupport.drainOutbox;
 import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
@@ -106,7 +104,6 @@ public class StreamEventJournalPTest extends JetTestSupport {
     @Test
     public void when_newData() {
         TestOutbox outbox = new TestOutbox(new int[]{16}, 16);
-        Queue<Object> queue = outbox.queueWithOrdinal(0);
         List<Object> actual = new ArrayList<>();
         Processor p = supplier.get();
 
@@ -122,7 +119,7 @@ public class StreamEventJournalPTest extends JetTestSupport {
         // consume
         assertTrueEventually(() -> {
             assertFalse("Processor should never complete", p.complete());
-            drainOutbox(queue, actual, true);
+            outbox.drainQueueAndReset(0, actual, true);
             assertEquals("consumed more items than expected", batchSize, actual.size());
             assertEquals(IntStream.range(0, batchSize).boxed().collect(Collectors.toSet()), new HashSet<>(actual));
         }, 3);
@@ -134,7 +131,7 @@ public class StreamEventJournalPTest extends JetTestSupport {
         // consume again
         assertTrueEventually(() -> {
             assertFalse("Processor should never complete", p.complete());
-            drainOutbox(queue, actual, true);
+            outbox.drainQueueAndReset(0, actual, true);
             assertEquals("consumed more items than expected", JOURNAL_CAPACITY + 2, actual.size());
             assertEquals(IntStream.range(0, batchSize * 2).boxed().collect(Collectors.toSet()), new HashSet<>(actual));
         }, 3);
@@ -143,7 +140,6 @@ public class StreamEventJournalPTest extends JetTestSupport {
     @Test
     public void when_staleSequence() {
         TestOutbox outbox = new TestOutbox(new int[]{16}, 16);
-        Queue<Object> queue = outbox.queueWithOrdinal(0);
         Processor p = supplier.get();
         p.init(outbox, new TestProcessorContext());
 
@@ -156,7 +152,7 @@ public class StreamEventJournalPTest extends JetTestSupport {
         List<Object> actual = new ArrayList<>();
         assertTrueEventually(() -> {
             assertFalse("Processor should never complete", p.complete());
-            drainOutbox(queue, actual, true);
+            outbox.drainQueueAndReset(0, actual, true);
             assertTrue("consumed less items than expected", actual.size() >= JOURNAL_CAPACITY);
         }, 3);
 
@@ -174,7 +170,7 @@ public class StreamEventJournalPTest extends JetTestSupport {
 
         assertTrueEventually(() -> {
             assertFalse("Processor should never complete", p.complete());
-            drainOutbox(outbox.queueWithOrdinal(0), output, true);
+            outbox.drainQueueAndReset(0, output, true);
             assertTrue("consumed more items than expected", output.size() == 0);
         }, 3);
 
@@ -209,7 +205,7 @@ public class StreamEventJournalPTest extends JetTestSupport {
 
         assertTrueEventually(() -> {
             assertFalse("Processor should never complete", p.complete());
-            drainOutbox(newOutbox.queueWithOrdinal(0), output, true);
+            newOutbox.drainQueueAndReset(0, output, true);
             assertEquals("consumed different number of items than expected", JOURNAL_CAPACITY, output.size());
         }, 3);
     }

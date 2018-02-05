@@ -81,7 +81,7 @@ public class StreamSocketPTest extends JetTestSupport {
     public void before() {
         outbox = new TestOutbox(10);
         context = new TestProcessorContext();
-        bucket = outbox.queueWithOrdinal(0);
+        bucket = outbox.queue(0);
     }
 
     @Test

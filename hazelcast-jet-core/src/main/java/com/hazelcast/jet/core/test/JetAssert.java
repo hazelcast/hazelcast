@@ -32,10 +32,21 @@ final class JetAssert {
         }
     }
 
+    static void assertSame(String message, Object expected, Object actual) {
+        if (expected == actual) {
+            return;
+        }
+        throwNotEqual(message, expected, actual);
+    }
+
     static void assertEquals(String message, Object expected, Object actual) {
         if (Objects.equals(expected, actual)) {
             return;
         }
+        throwNotEqual(message, expected, actual);
+    }
+
+    private static void throwNotEqual(String message, Object expected, Object actual) {
         if (message != null && !message.equals("")) {
             message = message + " ";
         }

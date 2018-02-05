@@ -58,10 +58,9 @@ public final class AggregateOperationBuilder<A> {
      * This method is synonymous with {@link #andAccumulate0(
      * DistributedBiConsumer)}, but makes more sense when defining a
      * simple, arity-1 aggregate operation.
-     * <p>
-     * Parameters of the {@code accumulateFn} are {@code (accumulator, item)}.
      *
-     * @param accumulateFn the {@code accumulate} primitive
+     * @param accumulateFn the {@code accumulate} primitive, parameters are
+     *              {@code (accumulator, item)}
      * @param <T> the expected type of input item
      * @return a new builder object that captures the {@code T0} type parameter
      */

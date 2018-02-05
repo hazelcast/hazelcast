@@ -242,7 +242,6 @@ public final class PeekWrappedP<T> implements Processor {
         public boolean offer(int[] ordinals, @Nonnull Object item) {
             // use broadcast logic to be able to report accurately
             // which queue was pushed to when.
-            boolean done = true;
             for (int i = 0; i < ordinals.length; i++) {
                 if (broadcastTracker.get(i)) {
                     continue;
@@ -250,13 +249,11 @@ public final class PeekWrappedP<T> implements Processor {
                 if (offer(i, item)) {
                     broadcastTracker.set(i);
                 } else {
-                    done = false;
+                    return false;
                 }
             }
-            if (done) {
-                broadcastTracker.clear();
-            }
-            return done;
+            broadcastTracker.clear();
+            return true;
         }
 
         @Override

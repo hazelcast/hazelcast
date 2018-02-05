@@ -766,5 +766,4 @@ public final class AggregateOperations {
                         : null)
                 .andFinish(MutableReference::get);
     }
-
 }

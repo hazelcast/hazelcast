@@ -137,7 +137,7 @@ public class ProcessorTasklet implements Tasklet {
     // package-visible for testing
     ProgressState call(long now) {
         progTracker.reset();
-        outbox.resetBatch();
+        outbox.reset();
         stateMachineStep(now);
         return progTracker.toProgressState();
     }
