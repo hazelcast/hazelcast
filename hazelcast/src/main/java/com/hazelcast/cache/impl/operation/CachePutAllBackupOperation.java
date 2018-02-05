@@ -90,7 +90,7 @@ public class CachePutAllBackupOperation
             final CacheWanEventPublisher publisher = service.getCacheWanEventPublisher();
             final CacheEntryView<Data, Data> view = CacheEntryViews.createDefaultEntryView(
                     key, toData(record.getValue()), record);
-            publisher.publishWanReplicationUpdate(name, view);
+            publisher.publishWanReplicationUpdateBackup(name, view);
         }
     }
 
