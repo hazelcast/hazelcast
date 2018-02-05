@@ -62,7 +62,6 @@ import com.hazelcast.spi.StatisticsAwareService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
 import com.hazelcast.spi.partition.IPartition;
-import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.topic.impl.reliable.ReliableTopicService;
 import com.hazelcast.wan.WanReplicationService;
@@ -75,6 +74,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.spi.properties.GroupProperty.MC_MAX_VISIBLE_INSTANCE_COUNT;
 import static com.hazelcast.util.SetUtil.createHashSet;
 
 /**
@@ -93,8 +93,12 @@ public class TimedMemberStateFactory {
 
     public TimedMemberStateFactory(HazelcastInstanceImpl instance) {
         this.instance = instance;
-        Node node = instance.node;
-        maxVisibleInstanceCount = node.getProperties().getInteger(GroupProperty.MC_MAX_VISIBLE_INSTANCE_COUNT);
+
+        if (instance.node.getProperties().get(MC_MAX_VISIBLE_INSTANCE_COUNT.getName()) != null) {
+            instance.node.loggingService.getLogger(getClass()).warning(MC_MAX_VISIBLE_INSTANCE_COUNT.getName()
+                    + " property is deprecated and will be removed in a future release.");
+        }
+        maxVisibleInstanceCount = instance.node.getProperties().getInteger(MC_MAX_VISIBLE_INSTANCE_COUNT);
         cacheServiceEnabled = isCacheServiceEnabled();
     }
 

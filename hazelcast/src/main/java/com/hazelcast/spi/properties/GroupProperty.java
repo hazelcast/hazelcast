@@ -531,6 +531,11 @@ public final class GroupProperty {
     public static final HazelcastProperty JMX_UPDATE_INTERVAL_SECONDS
             = new HazelcastProperty("hazelcast.jmx.update.interval.seconds", 5, SECONDS);
 
+    /**
+     * @deprecated as of 3.10
+     * This will be removed in future versions.
+     */
+    @Deprecated
     public static final HazelcastProperty MC_MAX_VISIBLE_INSTANCE_COUNT
             = new HazelcastProperty("hazelcast.mc.max.visible.instance.count", Integer.MAX_VALUE);
     public static final HazelcastProperty MC_MAX_VISIBLE_SLOW_OPERATION_COUNT

@@ -2388,7 +2388,13 @@
             <xs:enumeration value="hazelcast.phone.home.enabled"/>
             <xs:enumeration value="hazelcast.map.max.backup.count"/>
             <xs:enumeration value="hazelcast.max.wait.seconds.before.join"/>
-            <xs:enumeration value="hazelcast.mc.max.visible.instance.count"/>
+            <xs:enumeration value="hazelcast.mc.max.visible.instance.count">
+                <xs:annotation>
+                    <xs:documentation>
+                        Deprecated as of version 3.10, subject to remove in a future release.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:enumeration>
             <xs:enumeration value="hazelcast.logging.type"/>
             <xs:enumeration value="hazelcast.compatibility.3.6.client"/>
         </xs:restriction>
