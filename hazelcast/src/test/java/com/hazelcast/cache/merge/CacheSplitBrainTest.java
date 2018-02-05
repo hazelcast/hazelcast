@@ -47,6 +47,7 @@ import static com.hazelcast.config.InMemoryFormat.OBJECT;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.fail;
 
 /**
  * Tests different split-brain scenarios for {@link com.hazelcast.cache.ICache}.
@@ -132,24 +133,20 @@ public class CacheSplitBrainTest extends SplitBrainTestSupport {
 
         if (mergePolicyClass == DiscardMergePolicy.class) {
             afterSplitDiscardMergePolicy();
-        }
-        if (mergePolicyClass == HigherHitsMergePolicy.class) {
+        } else if (mergePolicyClass == HigherHitsMergePolicy.class) {
             afterSplitHigherHitsMergePolicy();
-        }
-        if (mergePolicyClass == LatestAccessMergePolicy.class) {
+        } else if (mergePolicyClass == LatestAccessMergePolicy.class) {
             afterSplitLatestAccessMergePolicy();
-        }
-        if (mergePolicyClass == LatestUpdateMergePolicy.class) {
+        } else if (mergePolicyClass == LatestUpdateMergePolicy.class) {
             afterSplitLatestUpdateMergePolicy();
-        }
-        if (mergePolicyClass == PassThroughMergePolicy.class) {
+        } else if (mergePolicyClass == PassThroughMergePolicy.class) {
             afterSplitPassThroughMergePolicy();
-        }
-        if (mergePolicyClass == PutIfAbsentMergePolicy.class) {
+        } else if (mergePolicyClass == PutIfAbsentMergePolicy.class) {
             afterSplitPutIfAbsentMergePolicy();
-        }
-        if (mergePolicyClass == MergeIntegerValuesMergePolicy.class) {
+        } else if (mergePolicyClass == MergeIntegerValuesMergePolicy.class) {
             afterSplitCustomMergePolicy();
+        } else {
+            fail();
         }
     }
 
@@ -165,24 +162,20 @@ public class CacheSplitBrainTest extends SplitBrainTestSupport {
 
         if (mergePolicyClass == DiscardMergePolicy.class) {
             afterMergeDiscardMergePolicy();
-        }
-        if (mergePolicyClass == HigherHitsMergePolicy.class) {
+        } else if (mergePolicyClass == HigherHitsMergePolicy.class) {
             afterMergeHigherHitsMergePolicy();
-        }
-        if (mergePolicyClass == LatestAccessMergePolicy.class) {
+        } else if (mergePolicyClass == LatestAccessMergePolicy.class) {
             afterMergeLatestAccessMergePolicy();
-        }
-        if (mergePolicyClass == LatestUpdateMergePolicy.class) {
+        } else if (mergePolicyClass == LatestUpdateMergePolicy.class) {
             afterMergeLatestUpdateMergePolicy();
-        }
-        if (mergePolicyClass == PassThroughMergePolicy.class) {
+        } else if (mergePolicyClass == PassThroughMergePolicy.class) {
             afterMergePassThroughMergePolicy();
-        }
-        if (mergePolicyClass == PutIfAbsentMergePolicy.class) {
+        } else if (mergePolicyClass == PutIfAbsentMergePolicy.class) {
             afterMergePutIfAbsentMergePolicy();
-        }
-        if (mergePolicyClass == MergeIntegerValuesMergePolicy.class) {
+        } else if (mergePolicyClass == MergeIntegerValuesMergePolicy.class) {
             afterMergeCustomMergePolicy();
+        } else {
+            fail();
         }
     }
 

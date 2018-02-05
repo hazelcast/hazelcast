@@ -39,6 +39,7 @@ import java.util.Collection;
 
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 @RunWith(Parameterized.class)
 @UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
@@ -83,18 +84,16 @@ public class LegacyCacheSplitBrainTest extends SplitBrainTestSupport {
 
         if (mergePolicyClass == LatestAccessCacheMergePolicy.class) {
             afterSplitLatestAccessCacheMergePolicy();
-        }
-        if (mergePolicyClass == HigherHitsCacheMergePolicy.class) {
+        } else if (mergePolicyClass == HigherHitsCacheMergePolicy.class) {
             afterSplitHigherHitsCacheMergePolicy();
-        }
-        if (mergePolicyClass == PutIfAbsentCacheMergePolicy.class) {
+        } else if (mergePolicyClass == PutIfAbsentCacheMergePolicy.class) {
             afterSplitPutIfAbsentCacheMergePolicy();
-        }
-        if (mergePolicyClass == PassThroughCacheMergePolicy.class) {
+        } else if (mergePolicyClass == PassThroughCacheMergePolicy.class) {
             afterSplitPassThroughCacheMergePolicy();
-        }
-        if (mergePolicyClass == CustomCacheMergePolicy.class) {
+        } else if (mergePolicyClass == CustomCacheMergePolicy.class) {
             afterSplitCustomCacheMergePolicy();
+        } else {
+            fail();
         }
     }
 
@@ -105,18 +104,16 @@ public class LegacyCacheSplitBrainTest extends SplitBrainTestSupport {
 
         if (mergePolicyClass == LatestAccessCacheMergePolicy.class) {
             afterMergeLatestAccessCacheMergePolicy();
-        }
-        if (mergePolicyClass == HigherHitsCacheMergePolicy.class) {
+        } else if (mergePolicyClass == HigherHitsCacheMergePolicy.class) {
             afterMergeHigherHitsCacheMergePolicy();
-        }
-        if (mergePolicyClass == PutIfAbsentCacheMergePolicy.class) {
+        } else if (mergePolicyClass == PutIfAbsentCacheMergePolicy.class) {
             afterMergePutIfAbsentCacheMergePolicy();
-        }
-        if (mergePolicyClass == PassThroughCacheMergePolicy.class) {
+        } else if (mergePolicyClass == PassThroughCacheMergePolicy.class) {
             afterMergePassThroughCacheMergePolicy();
-        }
-        if (mergePolicyClass == CustomCacheMergePolicy.class) {
+        } else if (mergePolicyClass == CustomCacheMergePolicy.class) {
             afterMergeCustomCacheMergePolicy();
+        } else {
+            fail();
         }
     }
 

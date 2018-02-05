@@ -46,6 +46,7 @@ import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Tests different split-brain scenarios for {@link IMap}.
@@ -133,21 +134,18 @@ public class LegacyMapSplitBrainTest extends SplitBrainTestSupport {
 
         if (mergePolicyClass == IgnoreMergingEntryMapMergePolicy.class) {
             afterSplitDiscardMergePolicy();
-        }
-        if (mergePolicyClass == HigherHitsMapMergePolicy.class) {
+        } else if (mergePolicyClass == HigherHitsMapMergePolicy.class) {
             afterSplitHigherHitsMergePolicy();
-        }
-        if (mergePolicyClass == LatestUpdateMapMergePolicy.class) {
+        } else if (mergePolicyClass == LatestUpdateMapMergePolicy.class) {
             afterSplitLatestUpdateMergePolicy();
-        }
-        if (mergePolicyClass == PassThroughMergePolicy.class) {
+        } else if (mergePolicyClass == PassThroughMergePolicy.class) {
             afterSplitPassThroughMergePolicy();
-        }
-        if (mergePolicyClass == PutIfAbsentMapMergePolicy.class) {
+        } else if (mergePolicyClass == PutIfAbsentMapMergePolicy.class) {
             afterSplitPutIfAbsentMergePolicy();
-        }
-        if (mergePolicyClass == CustomLegacyMergePolicy.class) {
+        } else if (mergePolicyClass == CustomLegacyMergePolicy.class) {
             afterSplitCustomMergePolicy();
+        } else {
+            fail();
         }
     }
 
@@ -163,21 +161,18 @@ public class LegacyMapSplitBrainTest extends SplitBrainTestSupport {
 
         if (mergePolicyClass == IgnoreMergingEntryMapMergePolicy.class) {
             afterMergeDiscardMergePolicy();
-        }
-        if (mergePolicyClass == HigherHitsMapMergePolicy.class) {
+        } else if (mergePolicyClass == HigherHitsMapMergePolicy.class) {
             afterMergeHigherHitsMergePolicy();
-        }
-        if (mergePolicyClass == LatestUpdateMapMergePolicy.class) {
+        } else if (mergePolicyClass == LatestUpdateMapMergePolicy.class) {
             afterMergeLatestUpdateMergePolicy();
-        }
-        if (mergePolicyClass == PassThroughMergePolicy.class) {
+        } else if (mergePolicyClass == PassThroughMergePolicy.class) {
             afterMergePassThroughMergePolicy();
-        }
-        if (mergePolicyClass == PutIfAbsentMapMergePolicy.class) {
+        } else if (mergePolicyClass == PutIfAbsentMapMergePolicy.class) {
             afterMergePutIfAbsentMergePolicy();
-        }
-        if (mergePolicyClass == CustomLegacyMergePolicy.class) {
+        } else if (mergePolicyClass == CustomLegacyMergePolicy.class) {
             afterMergeCustomMergePolicy();
+        } else {
+            fail();
         }
     }
 

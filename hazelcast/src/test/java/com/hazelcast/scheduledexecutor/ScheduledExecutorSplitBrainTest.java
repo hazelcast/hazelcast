@@ -31,6 +31,9 @@ import org.junit.Ignore;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -41,7 +44,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.scheduledexecutor.TaskUtils.named;
 import static java.util.Arrays.asList;
@@ -55,11 +57,10 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
 
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
+@UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelTest.class})
 @Ignore(value = "https://github.com/hazelcast/hazelcast/issues/12255")
-public class ScheduledExecutorSplitBrainTest
-        extends SplitBrainTestSupport {
+public class ScheduledExecutorSplitBrainTest extends SplitBrainTestSupport {
 
     private final String name = randomString();
 
@@ -68,7 +69,7 @@ public class ScheduledExecutorSplitBrainTest
 
     private MergeLifecycleListener mergeLifecycleListener;
 
-    @Parameterized.Parameters(name = "mergePolicy:{0}")
+    @Parameters(name = "mergePolicy:{0}")
     public static Collection<Object> parameters() {
         return asList(new Object[]{
                 DiscardMergePolicy.class,
@@ -76,7 +77,7 @@ public class ScheduledExecutorSplitBrainTest
         });
     }
 
-    @Parameterized.Parameter
+    @Parameter
     public Class<? extends SplitBrainMergePolicy> mergePolicyClass;
 
     private Map<String, IScheduledFuture<Double>> allScheduledFutures = new HashMap<String, IScheduledFuture<Double>>();
@@ -89,15 +90,14 @@ public class ScheduledExecutorSplitBrainTest
 
         Config config = super.config();
         config.getScheduledExecutorConfig(name)
-              .setDurability(1)
-              .setMergePolicyConfig(mergePolicyConfig);
+                .setDurability(1)
+                .setMergePolicyConfig(mergePolicyConfig);
         return config;
     }
 
     @Override
     protected void onBeforeSplitBrainCreated(HazelcastInstance[] instances) {
         IScheduledExecutorService executorService = instances[0].getScheduledExecutorService(name);
-
         for (int i = 0; i < INITIAL_COUNT; i++) {
             schedule(executorService, i);
         }
@@ -122,8 +122,7 @@ public class ScheduledExecutorSplitBrainTest
     }
 
     @Override
-    protected void onAfterSplitBrainHealed(HazelcastInstance[] instances)
-            throws ExecutionException, InterruptedException {
+    protected void onAfterSplitBrainHealed(HazelcastInstance[] instances) throws Exception {
         // wait until merge completes
         mergeLifecycleListener.await();
 
@@ -141,18 +140,17 @@ public class ScheduledExecutorSplitBrainTest
         schedule(scheduledExecutorService, Integer.MAX_VALUE);
     }
 
-    private void onAfterMergeDiscardMergePolicy(HazelcastInstance[] instances)
-            throws ExecutionException, InterruptedException {
+    private void onAfterMergeDiscardMergePolicy(HazelcastInstance[] instances) throws Exception {
         IScheduledExecutorService executorService = instances[0].getScheduledExecutorService(name);
 
-        // Remove the task that was scheduled after the split
+        // remove the task that was scheduled after the split
         IScheduledFuture afterSplitScheduledTask = allScheduledFutures.remove(String.valueOf(Integer.MAX_VALUE));
 
-        // Assert everything else (ie. tasks created before split) is in order
+        // assert everything else (ie. tasks created before split) is in order
         assertContents(executorService.<Double>getAllScheduledFutures());
         assertHandlersAreStillCorrect();
 
-        // Attempting to access the task that was scheduled after the split should fail
+        // attempting to access the task that was scheduled after the split should fail
         try {
             afterSplitScheduledTask.isDone();
             fail();
@@ -173,23 +171,20 @@ public class ScheduledExecutorSplitBrainTest
         }
     }
 
-    private void onAfterMergePutAbsentMergePolicy(HazelcastInstance[] instances)
-            throws ExecutionException, InterruptedException {
+    private void onAfterMergePutAbsentMergePolicy(HazelcastInstance[] instances) throws Exception {
         IScheduledExecutorService executorService = instances[0].getScheduledExecutorService(name);
         assertContents(executorService.<Double>getAllScheduledFutures());
         assertHandlersAreStillCorrect();
     }
 
     private void schedule(IScheduledExecutorService scheduledExecutorService, int value) {
-        // Once task runs, all calls to `.get()` should return 30
+        // once a task runs, all calls to `.get()` should return 30
         String name = String.valueOf(value);
         allScheduledFutures.put(name, scheduledExecutorService.schedule(
                 named(name, new ScheduledExecutorServiceTestSupport.PlainCallableTask(5)), 0, SECONDS));
     }
 
-    private void assertContents(Map<Member, List<IScheduledFuture<Double>>> futuresPerMember)
-            throws ExecutionException, InterruptedException {
-
+    private void assertContents(Map<Member, List<IScheduledFuture<Double>>> futuresPerMember) throws Exception {
         int total = 0;
         for (List<IScheduledFuture<Double>> memberFutures : futuresPerMember.values()) {
             total += memberFutures.size();
@@ -212,8 +207,7 @@ public class ScheduledExecutorSplitBrainTest
         }
     }
 
-    private void assertHandlersAreStillCorrect()
-            throws ExecutionException, InterruptedException {
+    private void assertHandlersAreStillCorrect() throws Exception {
         List<IScheduledFuture<Double>> allFutures = new ArrayList<IScheduledFuture<Double>>(allScheduledFutures.values());
         Collections.sort(allFutures, new Comparator<IScheduledFuture<Double>>() {
             @Override
@@ -226,7 +220,7 @@ public class ScheduledExecutorSplitBrainTest
 
         int counter = 0;
         for (IScheduledFuture<Double> future : allFutures) {
-            // Make sure handler is still valid and no exceptions are thrown
+            // make sure handler is still valid and no exceptions are thrown
             assertEquals(counter++, Integer.parseInt(future.getHandler().getTaskName()));
             assertEquals(30, future.get(), 0);
         }
