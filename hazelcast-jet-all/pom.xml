@@ -30,6 +30,10 @@
 
     <properties>
         <main.basedir>${project.parent.basedir}</main.basedir>
+
+        <!-- optional dependencies of hazelcast, required for Javadoc plugin to work -->
+        <log4j2.version>2.3</log4j2.version>
+        <slf4j.api.version>1.6.6</slf4j.api.version>
     </properties>
 
     <build>
@@ -64,7 +68,8 @@
                     <createDependencyReducedPom>true</createDependencyReducedPom>
                     <promoteTransitiveDependencies>true</promoteTransitiveDependencies>
                     <transformers>
-                        <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                        <transformer
+                                implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
                     </transformers>
                 </configuration>
             </plugin>
@@ -78,6 +83,50 @@
                         <dependencySourceInclude>com.hazelcast</dependencySourceInclude>
                         <dependencySourceInclude>com.hazelcast.jet</dependencySourceInclude>
                     </dependencySourceIncludes>
+                    <additionalDependencies>
+                        <!-- these dependencies are required by Java 9 javadoc tool to build javadocs for shaded classes-->
+                        <additionalDependency>
+                            <groupId>com.hazelcast</groupId>
+                            <artifactId>hazelcast-code-generator</artifactId>
+                            <version>1.4.0</version>
+                        </additionalDependency>
+                        <additionalDependency>
+                            <groupId>com.hazelcast</groupId>
+                            <artifactId>hazelcast-aws</artifactId>
+                            <version>2.0.0</version>
+                        </additionalDependency>
+                        <additionalDependency>
+                            <groupId>log4j</groupId>
+                            <artifactId>log4j</artifactId>
+                            <version>${log4j.version}</version>
+                        </additionalDependency>
+                        <additionalDependency>
+                            <groupId>org.apache.logging.log4j</groupId>
+                            <artifactId>log4j-api</artifactId>
+                            <version>${log4j2.version}</version>
+                        </additionalDependency>
+                        <additionalDependency>
+                            <groupId>org.apache.logging.log4j</groupId>
+                            <artifactId>log4j-core</artifactId>
+                            <version>${log4j2.version}</version>
+                        </additionalDependency>
+                        <additionalDependency>
+                            <groupId>org.slf4j</groupId>
+                            <artifactId>slf4j-api</artifactId>
+                            <version>${slf4j.api.version}</version>
+                        </additionalDependency>
+                        <additionalDependency>
+                            <groupId>javax.annotation</groupId>
+                            <artifactId>javax.annotation-api</artifactId>
+                            <version>1.2</version>
+                        </additionalDependency>
+                        <additionalDependency>
+                            <groupId>org.osgi</groupId>
+                            <artifactId>org.osgi.core</artifactId>
+                            <version>4.2.0</version>
+                        </additionalDependency>
+
+                    </additionalDependencies>
                 </configuration>
             </plugin>
         </plugins>
@@ -136,6 +185,5 @@
             <scope>provided</scope>
             <optional>true</optional>
         </dependency>
-
     </dependencies>
 </project>
