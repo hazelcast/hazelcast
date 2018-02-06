@@ -887,6 +887,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
             if (!isJoined()) {
                 throw new IllegalStateException("Member list join version is not available when not joined");
             } else if (getClusterVersion().isLessThan(V3_10)) {
+                // RU_COMPAT_3_9
                 String msg = "Member list join version is not available with a cluster version less than 3.10";
                 throw new UnsupportedOperationException(msg);
             }

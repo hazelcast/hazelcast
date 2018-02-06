@@ -367,6 +367,7 @@ public class MultiMapConfig implements IdentifiedDataSerializable, Versioned {
         out.writeInt(backupCount);
         out.writeInt(asyncBackupCount);
         out.writeBoolean(statisticsEnabled);
+        // RU_COMPAT_3_9
         if (out.getVersion().isGreaterOrEqual(Versions.V3_10)) {
             out.writeUTF(quorumName);
             out.writeObject(mergePolicyConfig);
@@ -390,6 +391,7 @@ public class MultiMapConfig implements IdentifiedDataSerializable, Versioned {
         backupCount = in.readInt();
         asyncBackupCount = in.readInt();
         statisticsEnabled = in.readBoolean();
+        // RU_COMPAT_3_9
         if (in.getVersion().isGreaterOrEqual(Versions.V3_10)) {
             quorumName = in.readUTF();
             mergePolicyConfig = in.readObject();

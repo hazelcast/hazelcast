@@ -450,6 +450,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
             };
 
             // we cannot merge into a 3.9 cluster, since not all members may understand the QueueMergeOperation
+            // RU_COMPAT_3_9
             if (nodeEngine.getClusterService().getClusterVersion().isLessThan(Versions.V3_10)) {
                 logger.info("Cluster needs to run version " + Versions.V3_10 + " to merge queue instances");
                 return;

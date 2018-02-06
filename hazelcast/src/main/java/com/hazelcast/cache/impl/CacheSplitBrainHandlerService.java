@@ -162,6 +162,7 @@ class CacheSplitBrainHandlerService implements SplitBrainHandlerService {
                 Object mergePolicy = getCacheMergePolicy(cacheName);
                 if (mergePolicy instanceof SplitBrainMergePolicy) {
                     // we cannot merge into a 3.9 cluster, since not all members may understand the MergeOperationFactory
+                    // RU_COMPAT_3_9
                     if (nodeEngine.getClusterService().getClusterVersion().isLessThan(Versions.V3_10)) {
                         logger.info("Cannot merge cache '" + cacheName
                                 + "' with merge policy '" + mergePolicy.getClass().getName()

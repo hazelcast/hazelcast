@@ -218,6 +218,7 @@ public class DurableExecutorConfig implements IdentifiedDataSerializable, Versio
         out.writeInt(poolSize);
         out.writeInt(durability);
         out.writeInt(capacity);
+        // RU_COMPAT_3_9
         if (out.getVersion().isGreaterOrEqual(Versions.V3_10)) {
             out.writeUTF(quorumName);
         }
@@ -229,6 +230,7 @@ public class DurableExecutorConfig implements IdentifiedDataSerializable, Versio
         poolSize = in.readInt();
         durability = in.readInt();
         capacity = in.readInt();
+        // RU_COMPAT_3_9
         if (in.getVersion().isGreaterOrEqual(Versions.V3_10)) {
             quorumName = in.readUTF();
         }

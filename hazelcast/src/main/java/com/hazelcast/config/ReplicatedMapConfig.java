@@ -380,6 +380,7 @@ public class ReplicatedMapConfig implements IdentifiedDataSerializable, Versione
         out.writeBoolean(statisticsEnabled);
         out.writeUTF(mergePolicy);
         writeNullableList(listenerConfigs, out);
+        // RU_COMPAT_3_9
         if (out.getVersion().isGreaterOrEqual(Versions.V3_10)) {
             out.writeUTF(quorumName);
         }
@@ -393,6 +394,7 @@ public class ReplicatedMapConfig implements IdentifiedDataSerializable, Versione
         statisticsEnabled = in.readBoolean();
         mergePolicy = in.readUTF();
         listenerConfigs = readNullableList(in);
+        // RU_COMPAT_3_9
         if (in.getVersion().isGreaterOrEqual(Versions.V3_10)) {
             quorumName = in.readUTF();
         }

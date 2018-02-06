@@ -792,6 +792,7 @@ public class MembershipManager {
     }
 
     private MembersView generateMissingMemberListJoinVersions(MembersView membersView) {
+        // RU_COMPAT_3_9
         if (clusterService.getClusterVersion().isGreaterOrEqual(V3_10)) {
             return membersView;
         }
@@ -1019,6 +1020,7 @@ public class MembershipManager {
             throw new IllegalStateException("Cannot increment member list version since mastership claim is in progress!");
         }
 
+        // RU_COMPAT_3_9
         return clusterService.getClusterVersion().isEqualTo(V3_10);
     }
 

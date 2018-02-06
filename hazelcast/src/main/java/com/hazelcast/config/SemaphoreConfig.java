@@ -227,6 +227,7 @@ public class SemaphoreConfig implements IdentifiedDataSerializable, Versioned {
         out.writeInt(initialPermits);
         out.writeInt(backupCount);
         out.writeInt(asyncBackupCount);
+        // RU_COMPAT_3_9
         if (out.getVersion().isGreaterOrEqual(Versions.V3_10)) {
             out.writeUTF(quorumName);
         }
@@ -238,6 +239,7 @@ public class SemaphoreConfig implements IdentifiedDataSerializable, Versioned {
         initialPermits = in.readInt();
         backupCount = in.readInt();
         asyncBackupCount = in.readInt();
+        // RU_COMPAT_3_9
         if (in.getVersion().isGreaterOrEqual(Versions.V3_10)) {
             quorumName = in.readUTF();
         }

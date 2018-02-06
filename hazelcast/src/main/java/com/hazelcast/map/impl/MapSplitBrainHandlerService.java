@@ -150,6 +150,7 @@ class MapSplitBrainHandlerService implements SplitBrainHandlerService {
                 Object mergePolicy = getMergePolicy(mergePolicyConfig);
                 if (mergePolicy instanceof SplitBrainMergePolicy) {
                     // we cannot merge into a 3.9 cluster, since not all members may understand the MergeOperationFactory
+                    // RU_COMPAT_3_9
                     if (nodeEngine.getClusterService().getClusterVersion().isLessThan(Versions.V3_10)) {
                         logger.info("Cannot merge map '" + mapName + "' with merge policy '" + mergePolicyConfig.getPolicy()
                                 + "' until cluster is running version " + Versions.V3_10);
