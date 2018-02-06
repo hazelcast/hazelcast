@@ -19,8 +19,6 @@ package com.hazelcast.internal.diagnostics;
 import com.hazelcast.internal.networking.OutboundFrame;
 import com.hazelcast.internal.networking.nio.NioChannel;
 import com.hazelcast.internal.networking.nio.NioChannelWriter;
-import com.hazelcast.internal.networking.spinning.SpinningChannel;
-import com.hazelcast.internal.networking.spinning.SpinningChannelWriter;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.tcp.TcpIpConnection;
@@ -156,10 +154,6 @@ public class OverloadedConnectionsPlugin extends DiagnosticsPlugin {
         if (connection.getChannel() instanceof NioChannel) {
             NioChannel nioChannel = (NioChannel) connection.getChannel();
             NioChannelWriter writer = nioChannel.getWriter();
-            return priority ? writer.urgentWriteQueue : writer.writeQueue;
-        } else if (connection.getChannel() instanceof SpinningChannel) {
-            SpinningChannel spinningChannel = (SpinningChannel) connection.getChannel();
-            SpinningChannelWriter writer = spinningChannel.getWriter();
             return priority ? writer.urgentWriteQueue : writer.writeQueue;
         } else {
             return EMPTY_QUEUE;

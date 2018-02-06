@@ -58,7 +58,6 @@ import com.hazelcast.internal.networking.ChannelFactory;
 import com.hazelcast.internal.networking.ChannelInboundHandler;
 import com.hazelcast.internal.networking.ChannelOutboundHandler;
 import com.hazelcast.internal.networking.nio.NioChannelFactory;
-import com.hazelcast.internal.networking.spinning.SpinningChannelFactory;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
@@ -251,8 +250,7 @@ public class DefaultNodeExtension implements NodeExtension {
 
     @Override
     public ChannelFactory getChannelFactory() {
-        boolean spinning = Boolean.getBoolean("hazelcast.io.spinning");
-        return spinning ? new SpinningChannelFactory() : new NioChannelFactory();
+        return new NioChannelFactory();
     }
 
     @Override
