@@ -48,6 +48,9 @@ public interface IStreamMap<K, V> extends IMap<K, V> {
      * If the underlying map is being concurrently modified, there are no
      * guarantees given with respect to missing or duplicate items in a
      * stream operation.
+     * <p>
+     * To create a {@code Predicate} instance you might prefer to use Jet's
+     * {@link com.hazelcast.jet.GenericPredicates}.
      */
     <T> DistributedStream<T> stream(@Nonnull Predicate<K, V> predicate,
                                     @Nonnull DistributedFunction<Entry<K, V>, T> projectionFn);

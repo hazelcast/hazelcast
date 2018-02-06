@@ -126,7 +126,7 @@ public final class Sources {
      * Projections.singleAttribute()} and {@link
      *     com.hazelcast.projection.Projections#multiAttribute(String...)
      * Projections.multiAttribute()}) to create your projection instance and
-     * using the {@link com.hazelcast.query.Predicates Predicates} factory or
+     * using the {@link GenericPredicates} factory or
      * {@link com.hazelcast.query.PredicateBuilder PredicateBuilder} to create
      * the predicate. In this case Jet can test the predicate and apply the
      * projection without deserializing the whole object.
@@ -147,7 +147,7 @@ public final class Sources {
      *
      * @param mapName the name of the map
      * @param predicate the predicate to filter the events, you may use
-     *      {@link com.hazelcast.query.Predicates#alwaysTrue()} to pass all entries,
+     *      {@link GenericPredicates#alwaysTrue()} to pass all entries,
      *      if you want to use projection only
      * @param projection the projection to map the events, you may use
      *     {@link Projections#identity()} if you want just the predicate.
@@ -280,7 +280,7 @@ public final class Sources {
      * Projections.singleAttribute()} and {@link
      *     com.hazelcast.projection.Projections#multiAttribute(String...)
      * Projections.multiAttribute()}) to create your projection instance and
-     * using the {@link com.hazelcast.query.Predicates Predicates} factory or
+     * using the {@link GenericPredicates} factory or
      * {@link com.hazelcast.query.PredicateBuilder PredicateBuilder} to create
      * the predicate. In this case Jet can test the predicate and apply the
      * projection without deserializing the whole object.
@@ -296,7 +296,7 @@ public final class Sources {
      *
      * @param mapName the name of the map
      * @param predicate the predicate to filter the events, you may use
-     *      {@link com.hazelcast.query.Predicates#alwaysTrue()} to pass all entries,
+     *      {@link GenericPredicates#alwaysTrue()} to pass all entries,
      *      if you want to use projection only
      * @param projection the projection to map the events, you may use
      *     {@link Projections#identity()} if you want just the predicate.
