@@ -23,10 +23,13 @@ import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
+import com.hazelcast.core.IdGenerator;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.flakeidgen.impl.AutoBatcher;
+import com.hazelcast.flakeidgen.impl.FlakeIdGeneratorProxy;
 import com.hazelcast.flakeidgen.impl.IdBatch;
-import com.hazelcast.core.IdGenerator;
+
+import static java.util.concurrent.TimeUnit.HOURS;
 
 /**
  * Proxy implementation of {@link IdGenerator}.
@@ -59,6 +62,18 @@ public class ClientFlakeIdGeneratorProxy extends ClientProxy implements FlakeIdG
                 .invoke().join();
         ResponseParameters response = FlakeIdGeneratorNewIdBatchCodec.decodeResponse(responseMsg);
         return new IdBatch(response.base, response.increment, response.batchSize);
+    }
+
+    @Override
+    public boolean init(long id) {
+        // Add 1 hour worth of IDs as a reserve: due to long batch validity some clients might be still getting
+        // older IDs. 1 hour is just a safe enough value, not a real guarantee: some clients might have longer
+        // validity.
+        // The init method should normally be called before any client generated IDs: in this case no reserve is
+        // needed, so we don't want to increase the reserve excessively.
+        long reserve = HOURS.toMillis(1)
+                << (FlakeIdGeneratorProxy.BITS_NODE_ID + FlakeIdGeneratorProxy.BITS_SEQUENCE);
+        return newId() >= id + reserve;
     }
 
     @Override
