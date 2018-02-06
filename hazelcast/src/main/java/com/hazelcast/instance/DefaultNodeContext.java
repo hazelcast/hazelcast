@@ -17,9 +17,9 @@
 package com.hazelcast.instance;
 
 import com.hazelcast.cluster.Joiner;
-import com.hazelcast.config.MemberAddressProviderConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigurationException;
+import com.hazelcast.config.MemberAddressProviderConfig;
 import com.hazelcast.internal.networking.ChannelErrorHandler;
 import com.hazelcast.internal.networking.EventLoopGroup;
 import com.hazelcast.internal.networking.nio.NioEventLoopGroup;
@@ -150,26 +150,27 @@ public class DefaultNodeContext implements NodeContext {
         MemberChannelInitializer initializer
                 = new MemberChannelInitializer(loggingService.getLogger(MemberChannelInitializer.class), ioService);
 
-        ChannelErrorHandler exceptionHandler
+        ChannelErrorHandler errorHandler
                 = new TcpIpConnectionChannelErrorHandler(loggingService.getLogger(TcpIpConnectionChannelErrorHandler.class));
 
         if (spinning) {
             return new SpinningEventLoopGroup(
                     loggingService,
                     node.nodeEngine.getMetricsRegistry(),
-                    exceptionHandler,
+                    errorHandler,
                     initializer,
                     node.hazelcastInstance.getName());
         } else {
             return new NioEventLoopGroup(
-                    loggingService,
-                    node.nodeEngine.getMetricsRegistry(),
-                    node.hazelcastInstance.getName(),
-                    exceptionHandler,
-                    ioService.getInputSelectorThreadCount(),
-                    ioService.getOutputSelectorThreadCount(),
-                    ioService.getBalancerIntervalSeconds(),
-                    initializer);
+                    new NioEventLoopGroup.Context()
+                            .loggingService(loggingService)
+                            .metricsRegistry(node.nodeEngine.getMetricsRegistry())
+                            .threadNamePrefix(node.hazelcastInstance.getName())
+                            .errorHandler(errorHandler)
+                            .inputThreadCount(ioService.getInputSelectorThreadCount())
+                            .outputThreadCount(ioService.getOutputSelectorThreadCount())
+                            .balancerIntervalSeconds(ioService.getBalancerIntervalSeconds())
+                            .channelInitializer(initializer));
         }
     }
 

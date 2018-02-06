@@ -37,7 +37,6 @@ import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 import com.hazelcast.client.spi.impl.ConnectionHeartbeatListener;
-import com.hazelcast.client.spi.properties.ClientProperty;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.core.ExecutionCallback;
@@ -92,6 +91,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.client.config.SocketOptions.DEFAULT_BUFFER_SIZE_BYTE;
 import static com.hazelcast.client.config.SocketOptions.KILO_BYTE;
+import static com.hazelcast.client.spi.properties.ClientProperty.IO_BALANCER_INTERVAL_SECONDS;
+import static com.hazelcast.client.spi.properties.ClientProperty.IO_INPUT_THREAD_COUNT;
+import static com.hazelcast.client.spi.properties.ClientProperty.IO_OUTPUT_THREAD_COUNT;
 import static com.hazelcast.client.spi.properties.ClientProperty.SHUFFLE_MEMBER_LIST;
 import static com.hazelcast.spi.properties.GroupProperty.SOCKET_CLIENT_BUFFER_DIRECT;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
@@ -233,8 +235,8 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
         SSLConfig sslConfig = client.getClientConfig().getNetworkConfig().getSSLConfig();
         boolean sslEnabled = sslConfig != null && sslConfig.isEnabled();
 
-        int configuredInputThreads = properties.getInteger(ClientProperty.IO_INPUT_THREAD_COUNT);
-        int configuredOutputThreads = properties.getInteger(ClientProperty.IO_OUTPUT_THREAD_COUNT);
+        int configuredInputThreads = properties.getInteger(IO_INPUT_THREAD_COUNT);
+        int configuredOutputThreads = properties.getInteger(IO_OUTPUT_THREAD_COUNT);
 
         int inputThreads;
         if (configuredInputThreads == -1) {
@@ -251,14 +253,15 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
         }
 
         return new NioEventLoopGroup(
-                client.getLoggingService(),
-                client.getMetricsRegistry(),
-                client.getName(),
-                new ClientConnectionChannelErrorHandler(),
-                inputThreads,
-                outputThreads,
-                properties.getInteger(ClientProperty.IO_BALANCER_INTERVAL_SECONDS),
-                new ClientChannelInitializer(getBufferSize(), directBuffer));
+                new NioEventLoopGroup.Context()
+                        .loggingService(client.getLoggingService())
+                        .metricsRegistry(client.getMetricsRegistry())
+                        .threadNamePrefix(client.getName())
+                        .errorHandler(new ClientConnectionChannelErrorHandler())
+                        .inputThreadCount(inputThreads)
+                        .outputThreadCount(outputThreads)
+                        .balancerIntervalSeconds(properties.getInteger(IO_BALANCER_INTERVAL_SECONDS))
+                        .channelInitializer(new ClientChannelInitializer(getBufferSize(), directBuffer)));
     }
 
     private SocketInterceptor initSocketInterceptor(SocketInterceptorConfig sic) {
