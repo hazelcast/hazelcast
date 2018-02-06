@@ -29,6 +29,7 @@ import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.core.TopologyChangedException;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.impl.exception.JobRestartRequestedException;
 import com.hazelcast.jet.impl.execution.BroadcastEntry;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
 import com.hazelcast.jet.impl.operation.CancelExecutionOperation;
@@ -38,6 +39,7 @@ import com.hazelcast.jet.impl.operation.SnapshotOperation;
 import com.hazelcast.jet.impl.operation.StartExecutionOperation;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.jet.impl.util.NonCompletableFuture;
+import com.hazelcast.jet.impl.util.CompletionToken;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.ExecutionService;
@@ -99,7 +101,7 @@ public class MasterContext {
     private final JobRecord jobRecord;
     private final long jobId;
     private final NonCompletableFuture completionFuture = new NonCompletableFuture();
-    private final CompletableFuture<Void> cancellationFuture = new CompletableFuture<>();
+    private final CompletionToken cancellationToken;
     private final AtomicReference<JobStatus> jobStatus = new AtomicReference<>(NOT_STARTED);
     private final SnapshotRepository snapshotRepository;
     private volatile Set<Vertex> vertices;
@@ -107,6 +109,7 @@ public class MasterContext {
     private volatile long executionId;
     private volatile long jobStartTime;
     private volatile Map<MemberInfo, ExecutionPlan> executionPlanMap;
+    private volatile CompletionToken executionRestartToken;
 
     MasterContext(NodeEngineImpl nodeEngine, JobCoordinationService coordinationService, JobRecord jobRecord) {
         this.nodeEngine = nodeEngine;
@@ -115,6 +118,7 @@ public class MasterContext {
         this.logger = nodeEngine.getLogger(getClass());
         this.jobRecord = jobRecord;
         this.jobId = jobRecord.getJobId();
+        this.cancellationToken = new CompletionToken(logger);
     }
 
     public long getJobId() {
@@ -141,12 +145,12 @@ public class MasterContext {
         return completionFuture;
     }
 
-    boolean cancel() {
-        return cancellationFuture.cancel(true);
+    boolean cancelJob() {
+        return cancellationToken.complete();
     }
 
     boolean isCancelled() {
-        return cancellationFuture.isCancelled();
+        return cancellationToken.isCompleted();
     }
 
     /**
@@ -242,7 +246,7 @@ public class MasterContext {
             return false;
         }
 
-        if (cancellationFuture.isCancelled()) {
+        if (cancellationToken.isCompleted()) {
             logger.fine("Skipping init job " + idToString(jobId) + ": is already cancelled.");
             onCompleteStepCompleted(new CancellationException());
             return false;
@@ -329,7 +333,7 @@ public class MasterContext {
      * In that case, TopologyChangeException is returned so that the job will be restarted.
      */
     private Throwable getInitResult(Map<MemberInfo, Object> responses) {
-        if (cancellationFuture.isCancelled()) {
+        if (cancellationToken.isCompleted()) {
             logger.fine(jobIdString() + " to be cancelled after init");
             return new CancellationException();
         }
@@ -372,44 +376,53 @@ public class MasterContext {
     // If a participant leaves or the execution fails in a participant locally, executions are cancelled
     // on the remaining participants and the callback is completed after all invocations return.
     private void invokeStartExecution() {
-        jobStatus.set(RUNNING);
         logger.fine("Executing " + jobIdString());
 
         long executionId = this.executionId;
 
-        AtomicBoolean cancellation = new AtomicBoolean();
-        ExecutionCallback<Object> callback = new ExecutionCallback<Object>() {
-            @Override
-            public void onResponse(Object response) {
-            }
+        ExecutionInvocationCallback callback = new ExecutionInvocationCallback(executionId);
 
-            @Override
-            public void onFailure(Throwable t) {
-                if (cancellation.compareAndSet(false, true)) {
-                    cancelExecute(jobId, executionId);
-                }
-            }
-        };
+        cancellationToken.whenCompleted(callback::cancelInvocations);
 
-        cancellationFuture.whenComplete(withTryCatch(logger, (r, e) -> {
-            if (e instanceof CancellationException) {
-                callback.onFailure(e);
-            }
-        }));
+        CompletionToken executionRestartToken = new CompletionToken(logger);
+        executionRestartToken.whenCompleted(callback::cancelInvocations);
 
         Function<ExecutionPlan, Operation> operationCtor = plan -> new StartExecutionOperation(jobId, executionId);
-        invoke(operationCtor, this::onExecuteStepCompleted, callback);
+        Consumer<Map<MemberInfo, Object>> completionCallback = results -> {
+            this.executionRestartToken = null;
+            onExecuteStepCompleted(results, executionRestartToken.isCompleted());
+        };
+
+        // We must set executionRestartToken before we call invoke() method because once all invocations
+        // are done, executionRestartToken will be reset. Therefore, setting it after the invoke() call is racy.
+        this.executionRestartToken = executionRestartToken;
+        jobStatus.set(RUNNING);
+
+        invoke(operationCtor, completionCallback, callback);
 
         if (isSnapshottingEnabled()) {
             coordinationService.scheduleSnapshot(jobId, executionId);
         }
     }
 
-    private void cancelExecute(long jobId, long executionId) {
+    private void cancelExecutionInvocations(long jobId, long executionId) {
         nodeEngine.getExecutionService().execute(ExecutionService.ASYNC_EXECUTOR, () -> {
             Function<ExecutionPlan, Operation> operationCtor = plan -> new CancelExecutionOperation(jobId, executionId);
             invoke(operationCtor, responses -> { }, null);
         });
+    }
+
+    /**
+     * Cancels the job execution invocations in order to restart it afterwards if the job is currently being executed
+     */
+    boolean restartExecution() {
+        CompletionToken restartToken = this.executionRestartToken;
+        if (restartToken != null) {
+            restartToken.complete();
+            return true;
+        }
+
+        return false;
     }
 
     void beginSnapshot(long executionId) {
@@ -445,22 +458,26 @@ public class MasterContext {
     }
 
     // Called as callback when all ExecuteOperation invocations are done
-    private void onExecuteStepCompleted(Map<MemberInfo, Object> responses) {
-        invokeCompleteExecution(getExecuteResult(responses));
+    private void onExecuteStepCompleted(Map<MemberInfo, Object> responses, boolean isRestartRequested) {
+        invokeCompleteExecution(getExecuteResult(responses, isRestartRequested));
     }
 
     /**
-     * If there is no failure, then returns null. If the job is cancelled,
-     * then returns CancellationException.
-     * If there is at least one non-restartable failure, such as an exception in
-     * user code, then returns that failure.
-     * Otherwise, the failure is because a job participant has left the cluster.
-     * In that case, {@code TopologyChangeException} is returned so that the job will be restarted.
+     * <ul>
+     * <li>Returns null if there is no failure.
+     * <li>Returns CancellationException if the job is cancelled.
+     * <li>Returns JobRestartRequestedException if the current execution is cancelled
+     * <li>If there is at least one non-restartable failure, such as an exception in user code, then returns that failure.
+     * <li>Otherwise, the failure is because a job participant has left the cluster.
+     *   In that case, {@code TopologyChangeException} is returned so that the job will be restarted.
+     * </ul>
      */
-    private Throwable getExecuteResult(Map<MemberInfo, Object> responses) {
-        if (cancellationFuture.isCancelled()) {
+    private Throwable getExecuteResult(Map<MemberInfo, Object> responses, boolean isRestartRequested) {
+        if (cancellationToken.isCompleted()) {
             logger.fine(jobIdString() + " to be cancelled after execute");
             return new CancellationException();
+        } else if (isRestartRequested) {
+            return new JobRestartRequestedException();
         }
 
         Map<Boolean, List<Entry<MemberInfo, Object>>> grouped = groupResponses(responses);
@@ -517,7 +534,7 @@ public class MasterContext {
         completeVertices(failure);
 
         long completionTime = System.currentTimeMillis();
-        if (failure instanceof TopologyChangedException && jobRecord.getConfig().isAutoRestartOnMemberFailureEnabled()) {
+        if (shouldRestart(failure)) {
             scheduleRestart();
             return;
         }
@@ -565,6 +582,11 @@ public class MasterContext {
                 }
             }
         }
+    }
+
+    private boolean shouldRestart(Throwable t) {
+        return t instanceof JobRestartRequestedException ||
+                (t instanceof TopologyChangedException && jobRecord.getConfig().isAutoRestartOnMemberFailureEnabled());
     }
 
     void setFinalResult(Throwable failure) {
@@ -659,6 +681,36 @@ public class MasterContext {
         @Override
         public int getPriority() {
             return SNAPSHOT_RESTORE_EDGE_PRIORITY;
+        }
+    }
+
+    /**
+     * Registered to {@link StartExecutionOperation} invocations to cancel invocations in case of a failure or restart
+     */
+    private class ExecutionInvocationCallback implements ExecutionCallback<Object> {
+
+        private final AtomicBoolean invocationsCancelled = new AtomicBoolean();
+
+        private final long executionId;
+
+        ExecutionInvocationCallback(long executionId) {
+            this.executionId = executionId;
+        }
+
+        @Override
+        public void onResponse(Object response) {
+
+        }
+
+        @Override
+        public void onFailure(Throwable t) {
+            cancelInvocations();
+        }
+
+        void cancelInvocations() {
+            if (invocationsCancelled.compareAndSet(false, true)) {
+                cancelExecutionInvocations(jobId, executionId);
+            }
         }
     }
 

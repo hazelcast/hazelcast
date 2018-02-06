@@ -95,4 +95,14 @@ public interface Job {
         Util.uncheckRun(() -> getFuture().get());
     }
 
+    /**
+     * Cancels the current execution if the job is currently running and
+     * schedules a new execution with the current member list of the Jet cluster
+     *
+     * @throws IllegalStateException if the job has been already completed
+     *
+     * @return true if the current execution of the job is cancelled
+     */
+    boolean restart();
+
 }

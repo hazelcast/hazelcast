@@ -17,13 +17,12 @@
 package com.hazelcast.jet.impl.operation;
 
 import com.hazelcast.jet.impl.JetService;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.ExceptionAction;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.isTopologicalFailure;
 import static com.hazelcast.spi.ExceptionAction.THROW_EXCEPTION;
 
-public abstract class AsyncOperation extends AbstractJobOperation implements IdentifiedDataSerializable {
+public abstract class AsyncOperation extends AbstractJobOperation {
 
     protected AsyncOperation() {
     }

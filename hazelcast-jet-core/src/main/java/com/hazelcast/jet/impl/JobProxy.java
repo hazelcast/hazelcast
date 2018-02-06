@@ -26,6 +26,7 @@ import com.hazelcast.jet.impl.operation.GetJobStatusOperation;
 import com.hazelcast.jet.impl.operation.GetJobSubmissionTimeOperation;
 import com.hazelcast.jet.impl.operation.JoinSubmittedJobOperation;
 import com.hazelcast.jet.impl.operation.SubmitJobOperation;
+import com.hazelcast.jet.impl.operation.RestartJobOperation;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
@@ -34,7 +35,9 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.serialization.SerializationService;
 
 import javax.annotation.Nonnull;
+import java.util.concurrent.ExecutionException;
 
+import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 
 /**
@@ -57,6 +60,15 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl> {
                         new GetJobStatusOperation(getId())
                 ).get()
         );
+    }
+
+    @Override
+    public boolean restart() {
+        try {
+            return this.<Boolean>invokeOp(new RestartJobOperation(getId())).get();
+        } catch (ExecutionException | InterruptedException e) {
+            throw rethrow(e);
+        }
     }
 
     @Override

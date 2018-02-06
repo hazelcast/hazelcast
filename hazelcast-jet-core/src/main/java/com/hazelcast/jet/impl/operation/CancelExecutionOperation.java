@@ -23,9 +23,7 @@ import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.ExceptionAction;
-import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
@@ -36,9 +34,7 @@ import static com.hazelcast.spi.ExceptionAction.THROW_EXCEPTION;
  * Operation sent from master to members to cancel their execution.
  * See also {@link CancelJobOperation}.
  */
-public class CancelExecutionOperation extends Operation implements IdentifiedDataSerializable {
-
-    private long jobId;
+public class CancelExecutionOperation extends AbstractJobOperation {
 
     private long executionId;
 
@@ -46,7 +42,7 @@ public class CancelExecutionOperation extends Operation implements IdentifiedDat
     }
 
     public CancelExecutionOperation(long jobId, long executionId) {
-        this.jobId = jobId;
+        super(jobId);
         this.executionId = executionId;
     }
 
@@ -55,18 +51,13 @@ public class CancelExecutionOperation extends Operation implements IdentifiedDat
         JetService service = getService();
         JobExecutionService executionService = service.getJobExecutionService();
         Address callerAddress = getCallerAddress();
-        ExecutionContext ctx = executionService.assertExecutionContext(callerAddress, jobId, executionId, this);
+        ExecutionContext ctx = executionService.assertExecutionContext(callerAddress, jobId(), executionId, this);
         ctx.cancelExecution();
     }
 
     @Override
     public ExceptionAction onInvocationException(Throwable throwable) {
         return isTopologicalFailure(throwable) ? THROW_EXCEPTION : super.onInvocationException(throwable);
-    }
-
-    @Override
-    public int getFactoryId() {
-        return JetInitDataSerializerHook.FACTORY_ID;
     }
 
     @Override
@@ -77,14 +68,12 @@ public class CancelExecutionOperation extends Operation implements IdentifiedDat
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeLong(jobId);
         out.writeLong(executionId);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        jobId = in.readLong();
         executionId = in.readLong();
     }
 

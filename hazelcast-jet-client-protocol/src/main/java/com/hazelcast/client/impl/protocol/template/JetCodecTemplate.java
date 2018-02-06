@@ -47,4 +47,7 @@ public interface JetCodecTemplate {
 
     @Request(id = 8, retryable = false, response = ResponseMessageConst.DATA)
     Object getJobConfig(long jobId);
+
+    @Request(id = 9, retryable = false, response = ResponseMessageConst.BOOLEAN)
+    boolean restartJob(long jobId);
 }

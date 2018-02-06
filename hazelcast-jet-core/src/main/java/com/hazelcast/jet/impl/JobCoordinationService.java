@@ -97,7 +97,7 @@ public class JobCoordinationService {
     }
 
     public void reset() {
-        masterContexts.values().forEach(MasterContext::cancel);
+        masterContexts.values().forEach(MasterContext::cancelJob);
     }
 
     public ClassLoader getClassLoader(long jobId) {
@@ -298,7 +298,7 @@ public class JobCoordinationService {
 
         if (!masterContext.isCancelled()) {
             logger.info("Job " + idToString(jobId) + " cancellation is triggered");
-            masterContext.cancel();
+            masterContext.cancelJob();
         } else {
             logger.info("Job " + idToString(jobId) + " is already cancelling...");
         }
@@ -397,6 +397,41 @@ public class JobCoordinationService {
         }
 
         throw new JobNotFoundException(jobId);
+    }
+
+    /**
+     * Restarts execution of the given job.
+     *
+     * @throws IllegalStateException if the job is already completed or no job record is found
+     *
+     * @return true if the given job is currently being executed and its execution is cancelled, false otherwise.
+     */
+    public boolean restartJobExecution(long jobId) {
+        MasterContext masterContext = masterContexts.get(jobId);
+        if (masterContext == null) {
+            JobResult jobResult = jobRepository.getJobResult(jobId);
+            if (jobResult != null) {
+                throw new IllegalStateException("Cannot restart job " + idToString(jobId) + " because it is already "
+                        + jobResult.getJobStatus());
+            }
+
+            if (jobRepository.getJobRecord(jobId) != null) {
+                logger.warning("Cannot restart job " + idToString(jobId) + " because it is not initialized yet");
+                return false;
+            }
+
+            throw new IllegalStateException("Cannot restart job " + idToString(jobId) + " because JobRecord was not " +
+                    "found");
+        }
+
+        boolean cancelled = masterContext.restartExecution();
+        if (cancelled) {
+            logger.info("Job " + idToString(jobId) + " is going to be restarted");
+        } else {
+            logger.warning("Cannot restart job " + idToString(jobId) + " because it is not currently being executed");
+        }
+
+        return cancelled;
     }
 
     SnapshotRepository snapshotRepository() {
