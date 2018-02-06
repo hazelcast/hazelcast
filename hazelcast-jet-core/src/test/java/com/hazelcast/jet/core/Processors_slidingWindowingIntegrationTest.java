@@ -25,7 +25,6 @@ import com.hazelcast.jet.core.processor.SinkProcessors;
 import com.hazelcast.jet.datamodel.TimestampedEntry;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelTest;
-import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -76,11 +75,6 @@ public class Processors_slidingWindowingIntegrationTest extends JetTestSupport {
                 new Object[]{false, true},
                 new Object[]{false, false}
         );
-    }
-
-    @After
-    public void shutdownAll() {
-        shutdownFactory();
     }
 
     @Test

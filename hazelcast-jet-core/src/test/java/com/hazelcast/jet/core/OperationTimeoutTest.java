@@ -17,11 +17,9 @@
 package com.hazelcast.jet.core;
 
 import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.JetTestInstanceFactory;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -38,7 +36,6 @@ public class OperationTimeoutTest extends JetTestSupport {
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
-    private JetTestInstanceFactory factory;
     private JetConfig config;
 
     @Before
@@ -46,18 +43,12 @@ public class OperationTimeoutTest extends JetTestSupport {
         config = new JetConfig();
         config.getHazelcastConfig().getProperties().put(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(),
                 Integer.toString(TIMEOUT_MILLIS));
-        factory = new JetTestInstanceFactory();
-    }
-
-    @After
-    public void tearDown() {
-        factory.terminateAll();
     }
 
     @Test
     public void when_slowRunningOperationOnSingleNode_then_doesNotTimeout() throws Throwable {
         // Given
-        JetInstance instance = factory.newMember(config);
+        JetInstance instance = createJetMember(config);
         DAG dag = new DAG();
         dag.newVertex("slow", SlowProcessor::new);
 
@@ -68,8 +59,8 @@ public class OperationTimeoutTest extends JetTestSupport {
     @Test
     public void when_slowRunningOperationOnMultipleNodes_doesNotTimeout() throws Throwable {
         // Given
-        JetInstance instance = factory.newMember(config);
-        factory.newMember(config);
+        JetInstance instance = createJetMember(config);
+        createJetMember(config);
 
         DAG dag = new DAG();
         dag.newVertex("slow", SlowProcessor::new);

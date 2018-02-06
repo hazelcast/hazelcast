@@ -22,13 +22,11 @@ import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
 import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.JetTestInstanceFactory;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.TestProcessors.MockPS;
 import com.hazelcast.jet.core.TestProcessors.StuckProcessor;
-import com.hazelcast.jet.impl.JetClientInstanceImpl;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.JobRepository;
 import com.hazelcast.jet.impl.JobResult;
@@ -37,7 +35,6 @@ import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.jet.impl.operation.InitExecutionOperation;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -89,7 +86,6 @@ public class TopologyChangeTest extends JetTestSupport {
     private int nodeCount;
 
     private JetInstance[] instances;
-    private JetTestInstanceFactory factory;
     private JetConfig config;
 
     @Parameterized.Parameters
@@ -117,7 +113,6 @@ public class TopologyChangeTest extends JetTestSupport {
         StuckProcessor.proceedLatch = new CountDownLatch(1);
         StuckProcessor.executionStarted = new CountDownLatch(nodeCount * PARALLELISM);
 
-        factory = new JetTestInstanceFactory();
         config = new JetConfig();
         config.getInstanceConfig().setCooperativeThreadCount(PARALLELISM);
 
@@ -128,13 +123,8 @@ public class TopologyChangeTest extends JetTestSupport {
             config.getHazelcastConfig().setLiteMember(liteMemberFlags[i]);
             config.getInstanceConfig().setCooperativeThreadCount(PARALLELISM);
 
-            instances[i] = factory.newMember(config);
+            instances[i] = createJetMember(config);
         }
-    }
-
-    @After
-    public void tearDown() {
-        factory.shutdownAll();
     }
 
     @Test
@@ -145,7 +135,7 @@ public class TopologyChangeTest extends JetTestSupport {
         // When
         Job job = instances[0].newJob(dag);
         StuckProcessor.executionStarted.await();
-        factory.newMember();
+        createJetMember();
         StuckProcessor.proceedLatch.countDown();
         job.join();
 
@@ -166,7 +156,7 @@ public class TopologyChangeTest extends JetTestSupport {
         // When
         Job job = instances[0].newJob(dag);
         StuckProcessor.executionStarted.await();
-        JetInstance instance = factory.newMember();
+        JetInstance instance = createJetMember();
         instance.shutdown();
         StuckProcessor.proceedLatch.countDown();
         job.join();
@@ -229,7 +219,7 @@ public class TopologyChangeTest extends JetTestSupport {
     @Test
     public void when_nonCoordinatorLeavesDuringExecution_then_clientStillGetsJobResult() throws Throwable {
         // Given
-        JetClientInstanceImpl client = factory.newClient();
+        JetInstance client = createJetClient();
         DAG dag = new DAG().vertex(new Vertex("test", new MockPS(StuckProcessor::new, nodeCount)));
 
         // When
@@ -293,7 +283,7 @@ public class TopologyChangeTest extends JetTestSupport {
     @Test
     public void when_coordinatorLeavesDuringExecutionAndNoRestartConfigured_then_jobFails() throws Throwable {
         // Given
-        JetClientInstanceImpl client = factory.newClient();
+        JetInstance client = createJetClient();
         DAG dag = new DAG().vertex(new Vertex("test", new MockPS(StuckProcessor::new, nodeCount)));
         JobConfig config = new JobConfig().setAutoRestartOnMemberFailure(false);
 
@@ -328,7 +318,7 @@ public class TopologyChangeTest extends JetTestSupport {
     @Test
     public void when_coordinatorLeavesDuringExecution_then_clientStillGetsJobResult() throws Throwable {
         // Given
-        JetClientInstanceImpl client = factory.newClient();
+        JetInstance client = createJetClient();
         DAG dag = new DAG().vertex(new Vertex("test", new MockPS(StuckProcessor::new, nodeCount)));
 
         // When
@@ -351,7 +341,7 @@ public class TopologyChangeTest extends JetTestSupport {
 
 
         // When
-        factory.newMember(config);
+        createJetMember(config);
         Job job = instances[0].newJob(dag);
 
 
@@ -367,7 +357,7 @@ public class TopologyChangeTest extends JetTestSupport {
     @Test
     public void when_jobParticipantReceivesStaleInitOperation_then_jobRestarts() {
         // Given
-        JetInstance newInstance = factory.newMember(config);
+        JetInstance newInstance = createJetMember(config);
         for (JetInstance instance : instances) {
             assertClusterSizeEventually(NODE_COUNT + 1, instance.getHazelcastInstance());
         }

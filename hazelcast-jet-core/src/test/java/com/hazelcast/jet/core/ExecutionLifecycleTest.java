@@ -20,7 +20,6 @@ import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.MembersView;
 import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.JetTestInstanceFactory;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
@@ -39,7 +38,6 @@ import com.hazelcast.jet.impl.execution.init.ExecutionPlanBuilder;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -73,7 +71,6 @@ public class ExecutionLifecycleTest extends JetTestSupport {
     public ExpectedException expectedException = ExpectedException.none();
 
     private JetInstance instance;
-    private JetTestInstanceFactory factory;
 
 
     @Before
@@ -89,17 +86,10 @@ public class ExecutionLifecycleTest extends JetTestSupport {
         StuckProcessor.proceedLatch = new CountDownLatch(1);
         StuckProcessor.executionStarted = new CountDownLatch(NODE_COUNT * LOCAL_PARALLELISM);
 
-        factory = new JetTestInstanceFactory();
-
         JetConfig config = new JetConfig();
         config.getInstanceConfig().setCooperativeThreadCount(LOCAL_PARALLELISM);
-        instance = factory.newMember(config);
-        factory.newMember(config);
-    }
-
-    @After
-    public void tearDown() {
-        factory.terminateAll();
+        instance = createJetMember(config);
+        createJetMember(config);
     }
 
     @Test

@@ -17,7 +17,6 @@
 package com.hazelcast.jet.core;
 
 import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.JetTestInstanceFactory;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
@@ -26,10 +25,8 @@ import com.hazelcast.jet.core.TestProcessors.MockPS;
 import com.hazelcast.jet.core.TestProcessors.ProcessorThatFailsInComplete;
 import com.hazelcast.jet.core.TestProcessors.StuckProcessor;
 import com.hazelcast.jet.function.DistributedSupplier;
-import com.hazelcast.jet.impl.JetClientInstanceImpl;
 import com.hazelcast.test.ExpectedRuntimeException;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -69,7 +66,6 @@ public class JobTest extends JetTestSupport {
 
     private JetInstance instance1;
     private JetInstance instance2;
-    private JetTestInstanceFactory factory;
 
     @Before
     public void setup() {
@@ -80,17 +76,10 @@ public class JobTest extends JetTestSupport {
         StuckProcessor.proceedLatch = new CountDownLatch(1);
         StuckProcessor.executionStarted = new CountDownLatch(NODE_COUNT * LOCAL_PARALLELISM);
 
-        factory = new JetTestInstanceFactory();
-
         JetConfig config = new JetConfig();
         config.getInstanceConfig().setCooperativeThreadCount(LOCAL_PARALLELISM);
-        instance1 = factory.newMember(config);
-        instance2 = factory.newMember(config);
-    }
-
-    @After
-    public void tearDown() {
-        factory.terminateAll();
+        instance1 = createJetMember(config);
+        instance2 = createJetMember(config);
     }
 
     @Test
@@ -100,7 +89,7 @@ public class JobTest extends JetTestSupport {
 
     @Test
     public void when_jobIsSubmittedFromClient_then_jobStatusShouldBeStarting() {
-        testJobStatusDuringStart(factory.newClient());
+        testJobStatusDuringStart(createJetClient());
     }
 
     private void testJobStatusDuringStart(JetInstance submitter) {
@@ -272,7 +261,7 @@ public class JobTest extends JetTestSupport {
         instance1.newJob(dag);
         StuckProcessor.executionStarted.await();
 
-        JetClientInstanceImpl client = factory.newClient();
+        JetInstance client = createJetClient();
 
         Collection<Job> trackedJobs = client.getJobs();
         assertEquals(1, trackedJobs.size());
@@ -293,7 +282,7 @@ public class JobTest extends JetTestSupport {
 
     @Test
     public void when_jobIsRunning_then_itIsQueriedByNameFromClient() throws InterruptedException {
-        testGetJobByNameWhenJobIsRunning(factory.newClient());
+        testGetJobByNameWhenJobIsRunning(createJetClient());
     }
 
     private void testGetJobByNameWhenJobIsRunning(JetInstance instance) throws InterruptedException {
@@ -326,7 +315,7 @@ public class JobTest extends JetTestSupport {
 
     @Test
     public void when_jobIsRunning_then_itIsQueriedByIdFromClient() throws InterruptedException {
-        testGetJobByIdWhenJobIsRunning(factory.newClient());
+        testGetJobByIdWhenJobIsRunning(createJetClient());
     }
 
     private void testGetJobByIdWhenJobIsRunning(JetInstance instance) throws InterruptedException {
@@ -394,7 +383,7 @@ public class JobTest extends JetTestSupport {
 
     @Test
     public void when_jobIsQueriedByInvalidIdFromClient_then_noJobIsReturned() {
-        assertNull(factory.newClient().getJob(0));
+        assertNull(createJetClient().getJob(0));
     }
 
     @Test
@@ -405,7 +394,7 @@ public class JobTest extends JetTestSupport {
 
     @Test
     public void when_jobsAreRunning_then_lastSubmittedJobIsQueriedByNameFromClient() throws InterruptedException {
-        testGetJobByNameWhenMultipleJobsAreRunning(factory.newClient());
+        testGetJobByNameWhenMultipleJobsAreRunning(createJetClient());
     }
 
     private void testGetJobByNameWhenMultipleJobsAreRunning(JetInstance instance) throws InterruptedException {
@@ -494,7 +483,7 @@ public class JobTest extends JetTestSupport {
 
     @Test
     public void when_jobsAreRunning_then_theyAreQueriedByNameFromClient() throws InterruptedException {
-        testGetJobsByNameWhenJobsAreRunning(factory.newClient());
+        testGetJobsByNameWhenJobsAreRunning(createJetClient());
     }
 
     private void testGetJobsByNameWhenJobsAreRunning(JetInstance instance) throws InterruptedException {
@@ -595,7 +584,7 @@ public class JobTest extends JetTestSupport {
 
     @Test
     public void when_jobIsRunning_then_jobSubmissionTimeIsQueriedFromClient() throws InterruptedException {
-        testJobSubmissionTimeWhenJobIsRunning(factory.newClient());
+        testJobSubmissionTimeWhenJobIsRunning(createJetClient());
     }
 
     private void testJobSubmissionTimeWhenJobIsRunning(JetInstance instance) throws InterruptedException {

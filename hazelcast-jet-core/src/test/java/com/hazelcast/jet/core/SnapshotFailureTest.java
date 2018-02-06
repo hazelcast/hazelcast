@@ -21,7 +21,6 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.IMap;
 import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.JetTestInstanceFactory;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
@@ -32,7 +31,6 @@ import com.hazelcast.jet.impl.execution.SnapshotRecord;
 import com.hazelcast.jet.impl.execution.SnapshotRecord.SnapshotStatus;
 import com.hazelcast.jet.stream.IStreamMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -63,12 +61,9 @@ public class SnapshotFailureTest extends JetTestSupport {
     public ExpectedException expectedException = ExpectedException.none();
 
     private JetInstance instance1;
-    private JetTestInstanceFactory factory;
 
     @Before
     public void setup() {
-        factory = new JetTestInstanceFactory();
-
         JetConfig config = new JetConfig();
         config.getInstanceConfig().setCooperativeThreadCount(LOCAL_PARALLELISM);
 
@@ -79,13 +74,8 @@ public class SnapshotFailureTest extends JetTestSupport {
         mapStoreConfig.setImplementation(new FailingMapStore());
         config.getHazelcastConfig().addMapConfig(mapConfig);
 
-        JetInstance[] instances = factory.newMembers(config, 2);
+        JetInstance[] instances = createJetMembers(config, 2);
         instance1 = instances[0];
-    }
-
-    @After
-    public void tearDown() {
-        factory.shutdownAll();
     }
 
     @Test

@@ -17,14 +17,11 @@
 package com.hazelcast.jet.core;
 
 import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.JetTestInstanceFactory;
 import com.hazelcast.jet.core.TestProcessors.ProcessorThatFailsInComplete;
 import com.hazelcast.jet.core.TestProcessors.ProcessorThatFailsInInit;
 import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -41,21 +38,10 @@ public class ExceptionHandlingTest extends JetTestSupport {
     public ExpectedException expectedException = ExpectedException.none();
 
     private JetInstance instance;
-    private JetTestInstanceFactory factory;
-
-    @Before
-    public void setupFactory() {
-        factory = new JetTestInstanceFactory();
-    }
-
-    @After
-    public void tearDown() {
-        factory.terminateAll();
-    }
 
     @Test
     public void when_exceptionInProcessorSupplier_then_failJob() throws Throwable {
-        instance = factory.newMember();
+        instance = createJetMember();
 
         // Given
         RuntimeException e = new RuntimeException("mock error");
@@ -74,7 +60,7 @@ public class ExceptionHandlingTest extends JetTestSupport {
 
     @Test
     public void when_exceptionInProcessorMetaSupplier_then_failJob() throws Throwable {
-        instance = factory.newMember();
+        instance = createJetMember();
 
         // Given
         RuntimeException e = new RuntimeException("mock error");
@@ -92,8 +78,8 @@ public class ExceptionHandlingTest extends JetTestSupport {
 
     @Test
     public void when_exceptionInProcessorSupplierOnOtherNode_then_failJob() throws Throwable {
-        factory.newMember();
-        instance = factory.newMember();
+        createJetMember();
+        instance = createJetMember();
 
         // Given
         RuntimeException e = new RuntimeException("mock error");
@@ -117,7 +103,7 @@ public class ExceptionHandlingTest extends JetTestSupport {
 
     @Test
     public void when_exceptionInNonBlockingTasklet_then_failJob() throws Throwable {
-        instance = factory.newMember();
+        instance = createJetMember();
 
         // Given
         DAG dag = new DAG();
@@ -136,7 +122,7 @@ public class ExceptionHandlingTest extends JetTestSupport {
 
     @Test
     public void when_exceptionInBlockingTasklet_then_failJob() throws Throwable {
-        instance = factory.newMember();
+        instance = createJetMember();
 
         // Given
         DAG dag = new DAG();
@@ -155,7 +141,7 @@ public class ExceptionHandlingTest extends JetTestSupport {
 
     @Test
     public void when_exceptionInProcessorInit_then_failJob() throws Throwable {
-        instance = factory.newMember();
+        instance = createJetMember();
 
         // Given
         DAG dag = new DAG();

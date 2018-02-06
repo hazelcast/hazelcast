@@ -19,7 +19,6 @@ package com.hazelcast.jet.impl.util;
 import com.hazelcast.client.map.helpers.AMapStore;
 import com.hazelcast.config.Config;
 import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.JetTestInstanceFactory;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.impl.JetService;
@@ -28,7 +27,6 @@ import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -53,7 +51,6 @@ public class AsyncMapWriterTest extends JetTestSupport {
     private static final String ALWAYS_FAILING_MAP = "alwaysFailingMap";
     private static final String RETRYABLE_MAP = "retryableMap";
 
-    private JetTestInstanceFactory factory;
     private JetInstance instance1;
     private JetInstance instance2;
     private AsyncMapWriter writer;
@@ -63,7 +60,6 @@ public class AsyncMapWriterTest extends JetTestSupport {
 
     @Before
     public void setup() {
-        factory = new JetTestInstanceFactory();
         JetConfig jetConfig = new JetConfig();
         Config config = jetConfig.getHazelcastConfig();
 
@@ -84,18 +80,13 @@ public class AsyncMapWriterTest extends JetTestSupport {
               .setEnabled(true)
               .setImplementation(new RetryableMapStore());
 
-        JetInstance[] instances = factory.newMembers(jetConfig, NODE_COUNT);
+        JetInstance[] instances = createJetMembers(jetConfig, NODE_COUNT);
         instance1 = instances[0];
         instance2 = instances[1];
         nodeEngine = getNodeEngineImpl(instance1.getHazelcastInstance());
         writer = new AsyncMapWriter(nodeEngine);
         map = instance1.getMap("testMap");
         writer.setMapName(map.getName());
-    }
-
-    @After
-    public void tearDown() {
-        factory.shutdownAll();
     }
 
     @Test
@@ -205,7 +196,7 @@ public class AsyncMapWriterTest extends JetTestSupport {
         // When
         boolean flushed = writer.tryFlushAsync(future);
         assertTrue("tryFlushAsync returned false", flushed);
-        factory.terminate(instance2);
+        terminateInstance(instance2);
 
         // Then
         future.get();

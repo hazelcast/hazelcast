@@ -18,7 +18,6 @@ package com.hazelcast.jet.impl.execution.init;
 
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.JetTestInstanceFactory;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
@@ -28,7 +27,6 @@ import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -45,21 +43,14 @@ public class DetermineLocalParallelismTest extends JetTestSupport {
 
     private static final int DEFAULT_PARALLELISM = 2;
 
-    private JetTestInstanceFactory jetFactory;
     private NodeEngine nodeEngine;
 
     @Before
     public void before() {
-        jetFactory = new JetTestInstanceFactory();
         JetConfig cfg = new JetConfig();
         cfg.getInstanceConfig().setCooperativeThreadCount(DEFAULT_PARALLELISM);
-        JetInstance jet = jetFactory.newMember(cfg);
+        JetInstance jet = createJetMember(cfg);
         nodeEngine = getNode(jet.getHazelcastInstance()).getNodeEngine();
-    }
-
-    @After
-    public void after() {
-        jetFactory.terminateAll();
     }
 
     @Test

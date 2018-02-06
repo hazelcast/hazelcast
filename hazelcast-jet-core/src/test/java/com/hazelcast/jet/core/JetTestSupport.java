@@ -64,6 +64,13 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
         return instanceFactory.newMember(config);
     }
 
+    protected JetInstance[] createJetMembers(JetConfig config, int nodeCount) {
+        if (instanceFactory == null) {
+            instanceFactory = new JetTestInstanceFactory();
+        }
+        return instanceFactory.newMembers(config, nodeCount);
+    }
+
     protected JetInstance createJetMember(JetConfig config, Address[] blockedAddress) {
         if (instanceFactory == null) {
             instanceFactory = new JetTestInstanceFactory();
@@ -150,6 +157,10 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
 
     public Address nextAddress() {
         return instanceFactory.nextAddress();
+    }
+
+    protected void terminateInstance(JetInstance instance) {
+        instanceFactory.terminate(instance);
     }
 
     @FunctionalInterface

@@ -17,7 +17,6 @@
 package com.hazelcast.jet.core;
 
 import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.JetTestInstanceFactory;
 import com.hazelcast.jet.core.TestProcessors.ListSource;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.After;
@@ -51,19 +50,16 @@ public class RoutingPolicyTest extends JetTestSupport {
     private static final List<Integer> NUMBERS_HIGH = IntStream.range(4096, 8192).boxed().collect(toList());
 
     private JetInstance instance;
-    private JetTestInstanceFactory factory;
     private ListConsumerSup consumerSup;
 
     @Before
     public void setupEngine() {
-        factory = new JetTestInstanceFactory();
-        instance = factory.newMember();
+        instance = createJetMember();
         consumerSup = new ListConsumerSup();
     }
 
     @After
     public void tearDown() {
-        factory.terminateAll();
         ListConsumerSup.processors = null;
     }
 

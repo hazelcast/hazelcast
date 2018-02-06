@@ -17,7 +17,6 @@
 package com.hazelcast.jet.core;
 
 import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.JetTestInstanceFactory;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
@@ -26,7 +25,6 @@ import com.hazelcast.jet.core.TestProcessors.StuckForeverSourceP;
 import com.hazelcast.jet.core.TestProcessors.StuckProcessor;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -48,8 +46,6 @@ public class ManualRestartTest extends JetTestSupport {
     private static final int NODE_COUNT = 2;
     private static final int LOCAL_PARALLELISM = 1;
 
-
-    private JetTestInstanceFactory factory;
     private DAG dag;
     private JetInstance[] instances;
 
@@ -62,15 +58,8 @@ public class ManualRestartTest extends JetTestSupport {
         StuckProcessor.proceedLatch = new CountDownLatch(1);
         StuckProcessor.executionStarted = new CountDownLatch(NODE_COUNT * LOCAL_PARALLELISM);
 
-        factory = new JetTestInstanceFactory();
         dag = new DAG().vertex(new Vertex("test", new MockPS(StuckForeverSourceP::new, NODE_COUNT)));
-
-        instances = factory.newMembers(new JetConfig(), NODE_COUNT);
-    }
-
-    @After
-    public void tearDown() {
-        factory.terminateAll();
+        instances = createJetMembers(new JetConfig(), NODE_COUNT);
     }
 
     @Test
@@ -85,7 +74,7 @@ public class ManualRestartTest extends JetTestSupport {
 
     private void testJobRestartWhenJobIsRunning(boolean autoRestartOnMemberFailureEnabled) {
         // Given that the job is running
-        JetInstance client = factory.newClient();
+        JetInstance client = createJetClient();
         Job job = client.newJob(dag, new JobConfig().setAutoRestartOnMemberFailure(autoRestartOnMemberFailureEnabled));
 
         assertTrueEventually(() -> {
@@ -95,7 +84,7 @@ public class ManualRestartTest extends JetTestSupport {
         // When the job is restarted after new members join to the cluster
         int newMemberCount = 2;
         for (int i = 0; i < newMemberCount; i++) {
-            factory.newMember();
+            createJetMember();
         }
 
         job.restart();
@@ -113,7 +102,7 @@ public class ManualRestartTest extends JetTestSupport {
         dropOperationsBetween(instances[0].getHazelcastInstance(), instances[1].getHazelcastInstance(),
                 JetInitDataSerializerHook.FACTORY_ID, singletonList(JetInitDataSerializerHook.INIT_EXECUTION_OP));
 
-        JetInstance client = factory.newClient();
+        JetInstance client = createJetClient();
         Job job = client.newJob(dag);
 
         assertTrueEventually(() -> assertTrue(job.getStatus() == JobStatus.STARTING));
@@ -127,7 +116,7 @@ public class ManualRestartTest extends JetTestSupport {
     @Test(expected = IllegalStateException.class)
     public void when_jobIsCompleted_then_isCannotBeRestarted() {
         // Given that the job is completed
-        JetInstance client = factory.newClient();
+        JetInstance client = createJetClient();
         Job job = client.newJob(dag);
 
         job.cancel();

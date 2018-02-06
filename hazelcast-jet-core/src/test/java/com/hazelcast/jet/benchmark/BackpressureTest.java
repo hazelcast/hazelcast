@@ -19,7 +19,6 @@ package com.hazelcast.jet.benchmark;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.Partition;
 import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.JetTestInstanceFactory;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.core.AbstractProcessor;
@@ -32,7 +31,6 @@ import com.hazelcast.jet.core.processor.SinkProcessors;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -65,7 +63,6 @@ public class BackpressureTest extends JetTestSupport {
     private static final int DISTINCT = 1000;
     private static final int COUNT_PER_DISTINCT_AND_SLICE = 10_000;
 
-    private JetTestInstanceFactory factory;
     private JetInstance jet1;
     private JetInstance jet2;
 
@@ -73,14 +70,8 @@ public class BackpressureTest extends JetTestSupport {
     public void setUp() {
         JetConfig config = new JetConfig();
         config.getInstanceConfig().setCooperativeThreadCount(PARALLELISM_PER_MEMBER);
-        factory = new JetTestInstanceFactory();
-        jet1 = factory.newMember(config);
-        jet2 = factory.newMember(config);
-    }
-
-    @After
-    public void tearDown() {
-        factory.terminateAll();
+        jet1 = createJetMember(config);
+        jet2 = createJetMember(config);
     }
 
     @Test

@@ -28,7 +28,6 @@ import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelTest;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -83,11 +82,6 @@ public class WatermarkCoalescer_IntegrationTest extends JetTestSupport {
     public void before() {
         instance = super.createJetMember();
         sinkList = instance.getHazelcastInstance().getList("sinkList");
-    }
-
-    @After
-    public void after() {
-        super.shutdownFactory();
     }
 
     private static DAG createDag(Mode mode, List<Object> input1, List<Object> input2) {

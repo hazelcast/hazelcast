@@ -17,7 +17,6 @@
 package com.hazelcast.jet.core;
 
 import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.JetTestInstanceFactory;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
@@ -25,7 +24,6 @@ import com.hazelcast.jet.impl.SnapshotRepository;
 import com.hazelcast.jet.impl.execution.SnapshotRecord;
 import com.hazelcast.jet.impl.execution.SnapshotRecord.SnapshotStatus;
 import com.hazelcast.jet.stream.IStreamMap;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -33,30 +31,22 @@ import java.util.concurrent.atomic.AtomicIntegerArray;
 
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.Edge.from;
-import static com.hazelcast.jet.core.JetTestSupport.assertTrueEventually;
 import static com.hazelcast.jet.core.processor.DiagnosticProcessors.writeLoggerP;
 import static com.hazelcast.jet.impl.execution.SnapshotRecord.SnapshotStatus.ONGOING;
 import static com.hazelcast.jet.impl.execution.SnapshotRecord.SnapshotStatus.SUCCESSFUL;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-public class PostponedSnapshotTest {
+public class PostponedSnapshotTest extends JetTestSupport {
 
     private static volatile AtomicIntegerArray latches;
 
     private JetInstance instance;
-    private JetTestInstanceFactory factory;
 
     @Before
     public void setup() {
-        factory = new JetTestInstanceFactory();
-        instance = factory.newMember();
+        instance = createJetMember();
         latches = new AtomicIntegerArray(2);
-    }
-
-    @After
-    public void tearDown() {
-        factory.shutdownAll();
     }
 
     @Test

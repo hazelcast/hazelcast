@@ -25,7 +25,6 @@ import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.JetTestInstanceFactory;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.core.DAG;
@@ -79,7 +78,6 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
     private static final String SOURCE_NAME = "source";
     private static final String SINK_NAME = "sink";
 
-    private JetTestInstanceFactory factory;
     private JetInstance jet;
     private HazelcastInstance hz;
     private ClientConfig clientConfig;
@@ -89,9 +87,8 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
         JetConfig jetConfig = new JetConfig();
         Config hazelcastConfig = jetConfig.getHazelcastConfig();
         hazelcastConfig.addCacheConfig(new CacheSimpleConfig().setName("*"));
-        factory = new JetTestInstanceFactory();
-        jet = factory.newMember(jetConfig);
-        JetInstance jet2 = factory.newMember(jetConfig);
+        jet = createJetMember(jetConfig);
+        JetInstance jet2 = createJetMember(jetConfig);
 
         Config config = new Config();
         config.addCacheConfig(new CacheSimpleConfig().setName("*"));
@@ -115,7 +112,6 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
     @After
     public void after() throws Exception {
         Hazelcast.shutdownAll();
-        factory.terminateAll();
     }
 
     @Test

@@ -17,12 +17,10 @@
 package com.hazelcast.jet.core;
 
 import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.JetTestInstanceFactory;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -51,20 +49,12 @@ public class CancellationTest extends JetTestSupport {
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
-    private JetTestInstanceFactory factory;
-
     @Before
     public void setup() {
-        factory = new JetTestInstanceFactory();
         StuckSource.callCounter.set(0);
         FaultyProcessor.failNow = false;
         BlockingProcessor.hasStarted = false;
         BlockingProcessor.isDone = false;
-    }
-
-    @After
-    public void tearDown() {
-        factory.terminateAll();
     }
 
     @Test
@@ -131,7 +121,7 @@ public class CancellationTest extends JetTestSupport {
         // Given
         newInstance();
         newInstance();
-        JetInstance client = factory.newClient();
+        JetInstance client = createJetClient();
 
         DAG dag = new DAG();
         dag.newVertex("slow", StuckSource::new);
@@ -153,7 +143,7 @@ public class CancellationTest extends JetTestSupport {
         // Given
         newInstance();
         newInstance();
-        JetInstance client = factory.newClient();
+        JetInstance client = createJetClient();
 
         DAG dag = new DAG();
         dag.newVertex("slow", StuckSource::new);
@@ -293,7 +283,7 @@ public class CancellationTest extends JetTestSupport {
     }
 
     private JetInstance newInstance() {
-        return factory.newMember();
+        return createJetMember();
     }
 
     private static void assertExecutionStarted() {

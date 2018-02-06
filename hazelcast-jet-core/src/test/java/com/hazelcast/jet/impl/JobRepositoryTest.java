@@ -19,14 +19,12 @@ package com.hazelcast.jet.impl;
 import com.hazelcast.core.IMap;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.JetTestInstanceFactory;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -53,7 +51,6 @@ public class JobRepositoryTest extends JetTestSupport {
     private static final long JOB_SCAN_PERIOD_IN_MILLIS = HOURS.toMillis(1);
     private static final int QUORUM_SIZE = 2;
 
-    private JetTestInstanceFactory factory = new JetTestInstanceFactory();
     private JobConfig jobConfig = new JobConfig();
     private JetInstance instance;
     private JobRepository jobRepository;
@@ -65,16 +62,11 @@ public class JobRepositoryTest extends JetTestSupport {
         Properties properties = config.getProperties();
         properties.setProperty(JOB_SCAN_PERIOD.getName(), Long.toString(JOB_SCAN_PERIOD_IN_MILLIS));
 
-        instance = factory.newMember(config);
+        instance = createJetMember(config);
         jobRepository = new JobRepository(instance, null);
         jobRepository.setJobExpirationDurationInMillis(JOB_EXPIRATION_TIME_IN_MILLIS);
 
         jobIds = instance.getMap(RANDOM_IDS_MAP_NAME);
-    }
-
-    @After
-    public void tearDown() {
-        factory.terminateAll();
     }
 
     @Test

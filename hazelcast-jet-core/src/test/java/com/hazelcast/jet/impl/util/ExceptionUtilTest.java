@@ -18,7 +18,6 @@ package com.hazelcast.jet.impl.util;
 
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.JetTestInstanceFactory;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.TestProcessors.ProcessorThatFailsInComplete;
@@ -87,9 +86,8 @@ public class ExceptionUtilTest extends JetTestSupport {
 
     @Test
     public void test_serializationOnNode() {
-        JetTestInstanceFactory factory = new JetTestInstanceFactory();
         // create one member and one client
-        JetInstance client = factory.newMember();
+        JetInstance client = createJetMember();
 
         RuntimeException exc = new RuntimeException("myException");
         try {
@@ -99,8 +97,6 @@ public class ExceptionUtilTest extends JetTestSupport {
         } catch (Exception caught) {
             assertThat(caught.toString(), containsString(exc.toString()));
             TestUtil.assertExceptionInCauses(exc, caught);
-        } finally {
-            factory.terminateAll();
         }
     }
 }

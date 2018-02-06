@@ -24,7 +24,6 @@ import com.hazelcast.jet.stream.IStreamMap;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -52,11 +51,6 @@ public class StoreSnapshotTaskletTest extends JetTestSupport {
     @Before
     public void before() {
         instance = createJetMember();
-    }
-
-    @After
-    public void after() {
-        shutdownFactory();
     }
 
     private void init(List<Object> inputData) {

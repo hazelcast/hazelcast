@@ -25,7 +25,6 @@ import com.hazelcast.jet.core.TestProcessors.ListSource;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelTest;
-import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -58,11 +57,6 @@ public class Processors_globalAggregationIntegrationTest extends JetTestSupport 
     @Parameters(name = "singleStageProcessor={0}")
     public static Collection<Object> parameters() {
         return asList(true, false);
-    }
-
-    @After
-    public void shutdownAll() {
-        shutdownFactory();
     }
 
     @Test

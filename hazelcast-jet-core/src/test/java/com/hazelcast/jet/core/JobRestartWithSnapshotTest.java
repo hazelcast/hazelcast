@@ -17,7 +17,6 @@
 package com.hazelcast.jet.core;
 
 import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.JetTestInstanceFactory;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
@@ -38,7 +37,6 @@ import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.jet.stream.IStreamMap;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Rule;
@@ -95,22 +93,14 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
 
     private JetInstance instance1;
     private JetInstance instance2;
-    private JetTestInstanceFactory factory;
 
     @Before
     public void setup() {
-        factory = new JetTestInstanceFactory();
-
         JetConfig config = new JetConfig();
         config.getInstanceConfig().setCooperativeThreadCount(LOCAL_PARALLELISM);
 
-        instance1 = factory.newMember(config);
-        instance2 = factory.newMember(config);
-    }
-
-    @After
-    public void tearDown() {
-        factory.shutdownAll();
+        instance1 = createJetMember(config);
+        instance2 = createJetMember(config);
     }
 
     @Test
