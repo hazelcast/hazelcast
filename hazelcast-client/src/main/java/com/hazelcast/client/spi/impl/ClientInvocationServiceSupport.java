@@ -175,9 +175,9 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
 
         @Override
         public void run() {
-            Iterator<Map.Entry<Integer, ClientInvocation>> iter = invocations.entrySet().iterator();
-            while (iter.hasNext()) {
-                Map.Entry<Integer, ClientInvocation> entry = iter.next();
+            Iterator<Map.Entry<Integer, ClientInvocation>> invocationIterator = invocations.entrySet().iterator();
+            while (invocationIterator.hasNext()) {
+                Map.Entry<Integer, ClientInvocation> entry = invocationIterator.next();
                 ClientInvocation invocation = entry.getValue();
                 ClientConnection connection = invocation.getSendConnection();
                 if (connection == null) {
@@ -188,10 +188,27 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
                     continue;
                 }
 
-                iter.remove();
-
+                invocationIterator.remove();
+                eventHandlerMap.remove(entry.getKey());
                 notifyException(invocation, connection);
             }
+            Iterator<Map.Entry<Integer, ClientInvocation>> eventHandlerIter = eventHandlerMap.entrySet().iterator();
+            while (eventHandlerIter.hasNext()) {
+                Map.Entry<Integer, ClientInvocation> entry = eventHandlerIter.next();
+                ClientInvocation invocation = entry.getValue();
+                ClientConnection connection = invocation.getSendConnection();
+                if (connection == null) {
+                    continue;
+                }
+
+                if (connection.isHeartBeating()) {
+                    continue;
+                }
+
+                eventHandlerIter.remove();
+                notifyException(invocation, connection);
+            }
+
         }
 
         private void notifyException(ClientInvocation invocation, ClientConnection connection) {
