@@ -19,8 +19,6 @@ package com.hazelcast.nio.tcp;
 import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.nio.NioChannel;
 import com.hazelcast.internal.networking.nio.NioChannelReader;
-import com.hazelcast.internal.networking.spinning.SpinningChannel;
-import com.hazelcast.internal.networking.spinning.SpinningChannelReader;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.TestThread;
@@ -141,8 +139,6 @@ public abstract class TcpIpConnection_AbstractTransferStressTest extends TcpIpCo
         Channel channel = connection.getChannel();
         if (channel instanceof NioChannel) {
             return ((NioChannel) channel).getWriter().totalFramesPending();
-        } else if (channel instanceof SpinningChannel) {
-            return ((SpinningChannel) channel).getWriter().totalFramesPending();
         } else {
             throw new RuntimeException();
         }
@@ -152,9 +148,6 @@ public abstract class TcpIpConnection_AbstractTransferStressTest extends TcpIpCo
         Channel channel = connection.getChannel();
         if (channel instanceof NioChannel) {
             NioChannelReader reader = ((NioChannel) channel).getReader();
-            return priority ? reader.getPriorityFramesReadCounter().get() : reader.getNormalFramesReadCounter().get();
-        } else if (channel instanceof SpinningChannel) {
-            SpinningChannelReader reader = ((SpinningChannel) channel).getReader();
             return priority ? reader.getPriorityFramesReadCounter().get() : reader.getNormalFramesReadCounter().get();
         } else {
             throw new RuntimeException();

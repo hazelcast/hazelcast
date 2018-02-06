@@ -23,7 +23,6 @@ import com.hazelcast.config.MemberAddressProviderConfig;
 import com.hazelcast.internal.networking.ChannelErrorHandler;
 import com.hazelcast.internal.networking.EventLoopGroup;
 import com.hazelcast.internal.networking.nio.NioEventLoopGroup;
-import com.hazelcast.internal.networking.spinning.SpinningEventLoopGroup;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingServiceImpl;
 import com.hazelcast.nio.ClassLoaderUtil;
@@ -144,7 +143,6 @@ public class DefaultNodeContext implements NodeContext {
     }
 
     private EventLoopGroup createEventLoopGroup(Node node, NodeIOService ioService) {
-        boolean spinning = Boolean.getBoolean("hazelcast.io.spinning");
         LoggingServiceImpl loggingService = node.loggingService;
 
         MemberChannelInitializer initializer
@@ -153,25 +151,15 @@ public class DefaultNodeContext implements NodeContext {
         ChannelErrorHandler errorHandler
                 = new TcpIpConnectionChannelErrorHandler(loggingService.getLogger(TcpIpConnectionChannelErrorHandler.class));
 
-        if (spinning) {
-            return new SpinningEventLoopGroup(
-                    loggingService,
-                    node.nodeEngine.getMetricsRegistry(),
-                    errorHandler,
-                    initializer,
-                    node.hazelcastInstance.getName());
-        } else {
-            return new NioEventLoopGroup(
-                    new NioEventLoopGroup.Context()
-                            .loggingService(loggingService)
-                            .metricsRegistry(node.nodeEngine.getMetricsRegistry())
-                            .threadNamePrefix(node.hazelcastInstance.getName())
-                            .errorHandler(errorHandler)
-                            .inputThreadCount(ioService.getInputSelectorThreadCount())
-                            .outputThreadCount(ioService.getOutputSelectorThreadCount())
-                            .balancerIntervalSeconds(ioService.getBalancerIntervalSeconds())
-                            .channelInitializer(initializer));
-        }
+        return new NioEventLoopGroup(
+                new NioEventLoopGroup.Context()
+                        .loggingService(loggingService)
+                        .metricsRegistry(node.nodeEngine.getMetricsRegistry())
+                        .threadNamePrefix(node.hazelcastInstance.getName())
+                        .errorHandler(errorHandler)
+                        .inputThreadCount(ioService.getInputSelectorThreadCount())
+                        .outputThreadCount(ioService.getOutputSelectorThreadCount())
+                        .balancerIntervalSeconds(ioService.getBalancerIntervalSeconds())
+                        .channelInitializer(initializer));
     }
-
 }
