@@ -25,9 +25,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.ExceptionAction;
-import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -39,9 +37,8 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.isTopologicalFailure;
 import static com.hazelcast.jet.impl.util.Util.jobAndExecutionId;
 import static com.hazelcast.spi.ExceptionAction.THROW_EXCEPTION;
 
-public class InitExecutionOperation extends Operation implements IdentifiedDataSerializable {
+public class InitExecutionOperation extends AbstractJobOperation {
 
-    private long jobId;
     private long executionId;
     private int coordinatorMemberListVersion;
     private Set<MemberInfo> participants;
@@ -52,7 +49,7 @@ public class InitExecutionOperation extends Operation implements IdentifiedDataS
 
     public InitExecutionOperation(long jobId, long executionId, int coordinatorMemberListVersion,
                                   Set<MemberInfo> participants, ExecutionPlan plan) {
-        this.jobId = jobId;
+        super(jobId);
         this.executionId = executionId;
         this.coordinatorMemberListVersion = coordinatorMemberListVersion;
         this.participants = participants;
@@ -66,21 +63,16 @@ public class InitExecutionOperation extends Operation implements IdentifiedDataS
         JetService service = getService();
 
         Address caller = getCallerAddress();
-        logger.fine("Initializing execution plan for " + jobAndExecutionId(jobId, executionId) + " from " + caller);
+        logger.fine("Initializing execution plan for " + jobAndExecutionId(jobId(), executionId) + " from " + caller);
         ExecutionPlan plan = planSupplier.get();
         service.getJobExecutionService().initExecution(
-                jobId, executionId, caller, coordinatorMemberListVersion, participants, plan
+                jobId(), executionId, caller, coordinatorMemberListVersion, participants, plan
         );
     }
 
     @Override
     public ExceptionAction onInvocationException(Throwable throwable) {
         return isTopologicalFailure(throwable) ? THROW_EXCEPTION : super.onInvocationException(throwable);
-    }
-
-    @Override
-    public int getFactoryId() {
-        return JetInitDataSerializerHook.FACTORY_ID;
     }
 
     @Override
@@ -92,7 +84,6 @@ public class InitExecutionOperation extends Operation implements IdentifiedDataS
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
 
-        out.writeLong(jobId);
         out.writeLong(executionId);
         out.writeInt(coordinatorMemberListVersion);
         out.writeInt(participants.size());
@@ -107,7 +98,6 @@ public class InitExecutionOperation extends Operation implements IdentifiedDataS
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
 
-        jobId = in.readLong();
         executionId = in.readLong();
         coordinatorMemberListVersion = in.readInt();
         int count = in.readInt();
@@ -121,7 +111,7 @@ public class InitExecutionOperation extends Operation implements IdentifiedDataS
         final Data planBlob = in.readData();
         planSupplier = () -> {
             JetService service = getService();
-            ClassLoader cl = service.getClassLoader(jobId);
+            ClassLoader cl = service.getClassLoader(jobId());
             return deserializeWithCustomClassLoader(getNodeEngine().getSerializationService(), cl, planBlob);
         };
     }

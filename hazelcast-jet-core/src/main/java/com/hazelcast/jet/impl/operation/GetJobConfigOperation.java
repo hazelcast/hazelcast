@@ -19,9 +19,8 @@ package com.hazelcast.jet.impl.operation;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
-public class GetJobConfigOperation extends AbstractJobOperation implements IdentifiedDataSerializable {
+public class GetJobConfigOperation extends AbstractJobOperation {
 
     private JobConfig response;
 

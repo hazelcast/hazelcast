@@ -19,13 +19,12 @@ package com.hazelcast.jet.impl.operation;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.JobCoordinationService;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 /**
  * Operation sent from user to master member to cancel the job. Master then sends
  * {@link CancelExecutionOperation} to other members.
  */
-public class CancelJobOperation extends AbstractJobOperation implements IdentifiedDataSerializable {
+public class CancelJobOperation extends AbstractJobOperation {
 
     public CancelJobOperation() {
     }

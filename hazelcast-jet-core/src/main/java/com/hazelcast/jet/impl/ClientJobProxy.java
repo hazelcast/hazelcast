@@ -23,6 +23,7 @@ import com.hazelcast.client.impl.protocol.codec.JetGetJobConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobStatusCodec;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobSubmissionTimeCodec;
 import com.hazelcast.client.impl.protocol.codec.JetJoinSubmittedJobCodec;
+import com.hazelcast.client.impl.protocol.codec.JetRestartJobCodec;
 import com.hazelcast.client.impl.protocol.codec.JetSubmitJobCodec;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.core.ExecutionCallback;
@@ -43,6 +44,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.Util.idToString;
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 
@@ -67,6 +69,17 @@ public class ClientJobProxy extends AbstractJobProxy<HazelcastClientInstanceImpl
             Data statusData = JetGetJobStatusCodec.decodeResponse(response).response;
             return serializationService().toObject(statusData);
         });
+    }
+
+    @Override
+    public boolean restart() {
+        try {
+            ClientMessage request = JetRestartJobCodec.encodeRequest(getId());
+            ClientMessage response = invocation(request, masterAddress()).invoke().get();
+            return JetRestartJobCodec.decodeResponse(response).response;
+        } catch (ExecutionException | InterruptedException e) {
+            throw rethrow(e);
+        }
     }
 
     @Override

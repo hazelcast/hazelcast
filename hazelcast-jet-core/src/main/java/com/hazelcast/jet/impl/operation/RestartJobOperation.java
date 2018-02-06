@@ -17,35 +17,35 @@
 package com.hazelcast.jet.impl.operation;
 
 import com.hazelcast.jet.impl.JetService;
-import com.hazelcast.jet.impl.JobCoordinationService;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
-import java.util.concurrent.CompletableFuture;
+/**
+ * Cancels the current execution of the job and restarts it
+ */
+public class RestartJobOperation extends AbstractJobOperation implements IdentifiedDataSerializable {
+    private boolean response;
 
-import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
-
-public class JoinSubmittedJobOperation extends AsyncOperation {
-
-    public JoinSubmittedJobOperation() {
+    public RestartJobOperation() {
     }
 
-    public JoinSubmittedJobOperation(long jobId) {
+    public RestartJobOperation(long jobId) {
         super(jobId);
-
     }
 
     @Override
-    protected void doRun() {
+    public void run() throws Exception {
         JetService service = getService();
-        JobCoordinationService coordinationService = service.getJobCoordinationService();
-        CompletableFuture<Void> executionFuture = coordinationService.joinSubmittedJob(jobId());
-        executionFuture.whenComplete(withTryCatch(getLogger(), (r, t) -> doSendResponse(peel(t))));
+        response = service.getJobCoordinationService().restartJobExecution(jobId());
+    }
+
+    @Override
+    public Object getResponse() {
+        return response;
     }
 
     @Override
     public int getId() {
-        return JetInitDataSerializerHook.JOIN_SUBMITTED_JOB;
+        return JetInitDataSerializerHook.RESTART_JOB_OP;
     }
-
 }
