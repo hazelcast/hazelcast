@@ -36,6 +36,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.Preconditions.checkPositive;
 import static java.util.Collections.newSetFromMap;
+import static java.util.concurrent.TimeUnit.HOURS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class FlakeIdGeneratorProxy
@@ -113,6 +114,18 @@ public class FlakeIdGeneratorProxy
         // The cluster version is checked when ClusterService.getMemberListJoinVersion() is called. This always happens
         // before first ID is generated.
         return batcher.newId();
+    }
+
+    @Override
+    public boolean init(long id) {
+        // Add 1 hour worth of IDs as a reserve: due to long batch validity some clients might be still getting
+        // older IDs. 1 hour is just a safe enough value, not a real guarantee: some clients might have longer
+        // validity.
+        // The init method should normally be called before any client generated IDs: in this case no reserve is
+        // needed, so we don't want to increase the reserve excessively.
+        long reserve = HOURS.toMillis(1)
+                << (FlakeIdGeneratorProxy.BITS_NODE_ID + FlakeIdGeneratorProxy.BITS_SEQUENCE);
+        return newId() >= id + reserve;
     }
 
     public IdBatchAndWaitTime newIdBatch(int batchSize) {
