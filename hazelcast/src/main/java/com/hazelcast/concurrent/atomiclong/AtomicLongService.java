@@ -229,6 +229,21 @@ public class AtomicLongService
 
         private static final int TIMEOUT_FACTOR = 500;
 
+        private final ILogger logger = nodeEngine.getLogger(AtomicLongService.class);
+        private final Semaphore semaphore = new Semaphore(0);
+        private final ExecutionCallback<Object> mergeCallback = new ExecutionCallback<Object>() {
+            @Override
+            public void onResponse(Object response) {
+                semaphore.release(1);
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+                logger.warning("Error while running AtomicLong merge operation: " + t.getMessage());
+                semaphore.release(1);
+            }
+        };
+
         private final Map<Integer, List<AtomicLongContainer>> containerMap;
 
         Merger(Map<Integer, List<AtomicLongContainer>> containerMap) {
@@ -237,22 +252,6 @@ public class AtomicLongService
 
         @Override
         public void run() {
-            final ILogger logger = nodeEngine.getLogger(AtomicLongService.class);
-            final Semaphore semaphore = new Semaphore(0);
-
-            ExecutionCallback<Object> mergeCallback = new ExecutionCallback<Object>() {
-                @Override
-                public void onResponse(Object response) {
-                    semaphore.release(1);
-                }
-
-                @Override
-                public void onFailure(Throwable t) {
-                    logger.warning("Error while running merge operation: " + t.getMessage());
-                    semaphore.release(1);
-                }
-            };
-
             // we cannot merge into a 3.9 cluster, since not all members may understand the MergeOperation
             // RU_COMPAT_3_9
             if (nodeEngine.getClusterService().getClusterVersion().isLessThan(Versions.V3_10)) {
@@ -284,9 +283,12 @@ public class AtomicLongService
             containerMap.clear();
 
             try {
-                semaphore.tryAcquire(valueCount, valueCount * TIMEOUT_FACTOR, TimeUnit.MILLISECONDS);
+                if (!semaphore.tryAcquire(valueCount, valueCount * TIMEOUT_FACTOR, TimeUnit.MILLISECONDS)) {
+                    logger.warning("Split-brain healing for AtomicLong instances didn't finish within the timeout...");
+                }
             } catch (InterruptedException e) {
-                logger.finest("Interrupted while waiting for merge operation...");
+                logger.finest("Interrupted while waiting for split-brain healing of AtomicLong instances...");
+                Thread.currentThread().interrupt();
             }
         }
     }

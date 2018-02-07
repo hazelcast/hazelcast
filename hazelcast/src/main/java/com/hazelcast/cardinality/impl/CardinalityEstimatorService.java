@@ -221,31 +221,29 @@ public class CardinalityEstimatorService
 
         private static final int TIMEOUT_FACTOR = 500;
 
-        private Map<String, CardinalityEstimatorContainer> snapshot;
+        private final ILogger logger = nodeEngine.getLogger(CardinalityEstimatorService.class);
+        private final Semaphore semaphore = new Semaphore(0);
+        private final ExecutionCallback<Object> mergeCallback = new ExecutionCallback<Object>() {
+            @Override
+            public void onResponse(Object response) {
+                semaphore.release(1);
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+                logger.warning("Error while running cardinality estimator merge operation: " + t.getMessage());
+                semaphore.release(1);
+            }
+        };
+
+        private final Map<String, CardinalityEstimatorContainer> snapshot;
 
         Merger(Map<String, CardinalityEstimatorContainer> snapshot) {
             this.snapshot = snapshot;
         }
 
         @Override
-        @SuppressWarnings({"checkstyle:methodlength"})
         public void run() {
-            final ILogger logger = nodeEngine.getLogger(CardinalityEstimatorService.class);
-            final Semaphore semaphore = new Semaphore(0);
-
-            ExecutionCallback<Object> mergeCallback = new ExecutionCallback<Object>() {
-                @Override
-                public void onResponse(Object response) {
-                    semaphore.release(1);
-                }
-
-                @Override
-                public void onFailure(Throwable t) {
-                    logger.warning("Error while running merge operation: " + t.getMessage());
-                    semaphore.release(1);
-                }
-            };
-
             // we cannot merge into a 3.9 cluster, since not all members may understand the MergeOperation
             // RU_COMPAT_3_9
             if (nodeEngine.getClusterService().getClusterVersion().isLessThan(Versions.V3_10)) {
@@ -257,12 +255,11 @@ public class CardinalityEstimatorService
             int operationCount = 0;
 
             try {
-                // TODO: Batching support (tkountis)
+                // TODO: batching support (tkountis)
                 for (Map.Entry<String, CardinalityEstimatorContainer> entry : snapshot.entrySet()) {
                     String containerName = entry.getKey();
                     CardinalityEstimatorContainer container = entry.getValue();
                     int partitionId = getPartitionId(containerName);
-
                     operationCount++;
 
                     SplitBrainMergePolicy mergePolicy = getMergePolicy(containerName);
@@ -278,15 +275,18 @@ public class CardinalityEstimatorService
                 }
 
                 snapshot.clear();
-            } catch (Exception ex) {
-                logger.warning("CardinalityEstimatorService merging didn't complete successfully.", ex);
-                throw rethrow(ex);
+            } catch (Exception e) {
+                logger.warning("Split-brain healing of cardinality estimators didn't complete successfully...", e);
+                throw rethrow(e);
             }
 
             try {
-                semaphore.tryAcquire(operationCount, size * TIMEOUT_FACTOR, TimeUnit.MILLISECONDS);
+                if (!semaphore.tryAcquire(operationCount, size * TIMEOUT_FACTOR, TimeUnit.MILLISECONDS)) {
+                    logger.warning("Split-brain healing for cardinality estimators didn't finish within the timeout...");
+                }
             } catch (InterruptedException e) {
-                logger.finest("Interrupted while waiting for merge operation...");
+                logger.finest("Interrupted while waiting for split-brain healing of cardinality estimators...");
+                Thread.currentThread().interrupt();
             }
         }
     }

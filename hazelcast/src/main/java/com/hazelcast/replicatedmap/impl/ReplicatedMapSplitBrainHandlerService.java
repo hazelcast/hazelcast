@@ -106,8 +106,9 @@ class ReplicatedMapSplitBrainHandlerService implements SplitBrainHandlerService 
 
         private static final int TIMEOUT_FACTOR = 500;
 
-        private final Semaphore semaphore = new Semaphore(0);
         private final ILogger logger = nodeEngine.getLogger(ReplicatedMapSplitBrainHandlerService.class);
+        private final Semaphore semaphore = new Semaphore(0);
+
         private final Map<String, Collection<ReplicatedRecord>> recordMap;
 
         Merger(Map<String, Collection<ReplicatedRecord>> recordMap) {
@@ -136,11 +137,14 @@ class ReplicatedMapSplitBrainHandlerService implements SplitBrainHandlerService 
                     recordCount += handleMerge(name, entry.getValue(), (ReplicatedMapMergePolicy) mergePolicy);
                 }
             }
+
             try {
-                semaphore.tryAcquire(recordCount, recordCount * TIMEOUT_FACTOR, TimeUnit.MILLISECONDS);
+                if (!semaphore.tryAcquire(recordCount, recordCount * TIMEOUT_FACTOR, TimeUnit.MILLISECONDS)) {
+                    logger.warning("Split-brain healing for replicated maps didn't finish within the timeout...");
+                }
             } catch (InterruptedException e) {
+                logger.finest("Interrupted while waiting for split-brain healing of replicated maps...");
                 Thread.currentThread().interrupt();
-                logger.warning("Interrupted while waiting ReplicatedMap merge operation...");
             }
         }
 
@@ -236,7 +240,7 @@ class ReplicatedMapSplitBrainHandlerService implements SplitBrainHandlerService 
                 nodeEngine.getOperationService()
                         .invokeOnPartitions(ReplicatedMapService.SERVICE_NAME, factory, partitions);
             } catch (Throwable t) {
-                logger.warning("Error while running merge operation: " + t.getMessage());
+                logger.warning("Error while running replicated map merge operation: " + t.getMessage());
                 throw rethrow(t);
             } finally {
                 semaphore.release(totalSize);

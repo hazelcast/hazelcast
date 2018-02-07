@@ -144,13 +144,13 @@ class CacheSplitBrainHandlerService implements SplitBrainHandlerService {
 
         private static final int TIMEOUT_FACTOR = 500;
 
+        private final ILogger logger = nodeEngine.getLogger(CacheService.class);
         private final Semaphore semaphore = new Semaphore(0);
+
         private final Map<String, Map<Data, CacheRecord>> recordMap;
-        private final ILogger logger;
 
         CacheMerger(Map<String, Map<Data, CacheRecord>> recordMap) {
             this.recordMap = recordMap;
-            this.logger = nodeEngine.getLogger(CacheService.class);
         }
 
         @Override
@@ -177,9 +177,12 @@ class CacheSplitBrainHandlerService implements SplitBrainHandlerService {
             recordMap.clear();
 
             try {
-                semaphore.tryAcquire(recordCount, recordCount * TIMEOUT_FACTOR, TimeUnit.MILLISECONDS);
+                if (!semaphore.tryAcquire(recordCount, recordCount * TIMEOUT_FACTOR, TimeUnit.MILLISECONDS)) {
+                    logger.warning("Split-brain healing for caches didn't finish within the timeout...");
+                }
             } catch (InterruptedException e) {
-                logger.finest("Interrupted while waiting merge operation...");
+                logger.finest("Interrupted while waiting for split-brain healing of caches...");
+                Thread.currentThread().interrupt();
             }
         }
 
@@ -241,7 +244,7 @@ class CacheSplitBrainHandlerService implements SplitBrainHandlerService {
 
                 @Override
                 public void onFailure(Throwable t) {
-                    logger.warning("Error while running merge operation: " + t.getMessage());
+                    logger.warning("Error while running cache merge operation: " + t.getMessage());
                     semaphore.release(1);
                 }
             };
@@ -314,7 +317,7 @@ class CacheSplitBrainHandlerService implements SplitBrainHandlerService {
                 OperationFactory factory = new CacheMergeOperationFactory(name, partitions, entries, mergePolicy);
                 operationService.invokeOnPartitions(SERVICE_NAME, factory, partitions);
             } catch (Throwable t) {
-                logger.warning("Error while running merge operation: " + t.getMessage());
+                logger.warning("Error while running cache merge operation: " + t.getMessage());
                 throw rethrow(t);
             } finally {
                 semaphore.release(totalSize);
