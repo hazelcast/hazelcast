@@ -286,7 +286,6 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
         return true;
     }
 
-
     private void afterRun(Operation op) {
         try {
             op.afterRun();
