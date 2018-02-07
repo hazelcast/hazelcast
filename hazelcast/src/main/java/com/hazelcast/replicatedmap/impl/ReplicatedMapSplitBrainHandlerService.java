@@ -104,7 +104,7 @@ class ReplicatedMapSplitBrainHandlerService implements SplitBrainHandlerService 
 
     private class Merger implements Runnable {
 
-        private static final int TIMEOUT_FACTOR = 500;
+        private static final long TIMEOUT_FACTOR = 500;
 
         private final ILogger logger = nodeEngine.getLogger(ReplicatedMapSplitBrainHandlerService.class);
         private final Semaphore semaphore = new Semaphore(0);

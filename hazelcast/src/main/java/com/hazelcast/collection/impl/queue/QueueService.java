@@ -423,7 +423,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
 
     private class Merger implements Runnable {
 
-        private static final int TIMEOUT_FACTOR = 500;
+        private static final long TIMEOUT_FACTOR = 500;
 
         private final ILogger logger = nodeEngine.getLogger(CollectionService.class);
         private final Semaphore semaphore = new Semaphore(0);

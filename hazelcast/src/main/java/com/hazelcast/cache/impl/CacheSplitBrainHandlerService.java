@@ -142,7 +142,7 @@ class CacheSplitBrainHandlerService implements SplitBrainHandlerService {
 
     private class CacheMerger implements Runnable {
 
-        private static final int TIMEOUT_FACTOR = 500;
+        private static final long TIMEOUT_FACTOR = 500;
 
         private final ILogger logger = nodeEngine.getLogger(CacheService.class);
         private final Semaphore semaphore = new Semaphore(0);
