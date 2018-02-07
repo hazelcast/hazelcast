@@ -16,12 +16,10 @@
 
 package com.hazelcast.internal.cluster.impl.operations;
 
-import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.cluster.impl.ClusterHeartbeatManager;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.MembersViewMetadata;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.impl.Versioned;
@@ -49,27 +47,7 @@ public final class HeartbeatOp extends AbstractClusterOperation implements Versi
         ClusterServiceImpl service = getService();
         ClusterHeartbeatManager heartbeatManager = service.getClusterHeartbeatManager();
 
-        if (senderMembersViewMetadata != null) {
-            heartbeatManager.handleHeartbeat(senderMembersViewMetadata, targetUuid, timestamp);
-        } else {
-            // version 3.8
-            MemberImpl member = getHeartBeatingMember(service);
-            if (member != null) {
-                heartbeatManager.onHeartbeat(member, timestamp);
-            }
-        }
-    }
-
-    private MemberImpl getHeartBeatingMember(ClusterServiceImpl service) {
-        MemberImpl member = service.getMember(getCallerAddress());
-        ILogger logger = getLogger();
-        if (member == null) {
-            if (logger.isFineEnabled()) {
-                logger.fine("Heartbeat received from an unknown endpoint: " + getCallerAddress());
-            }
-            return null;
-        }
-        return member;
+        heartbeatManager.handleHeartbeat(senderMembersViewMetadata, targetUuid, timestamp);
     }
 
     @Override
