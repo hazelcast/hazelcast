@@ -326,6 +326,8 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
             handleMapGetMapEntry(args);
         } else if (first.equals("m.remove")) {
             handleMapRemove(args);
+        } else if (first.equals("m.delete")) {
+            handleMapDelete(args);
         } else if (first.equals("m.evict")) {
             handleMapEvict(args);
         } else if (first.equals("m.putmany") || first.equalsIgnoreCase("m.putAll")) {
@@ -707,6 +709,11 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
 
     protected void handleMapRemove(String[] args) {
         println(getMap().remove(args[1]));
+    }
+
+    protected void handleMapDelete(String[] args) {
+        getMap().delete(args[1]);
+        println("true");
     }
 
     protected void handleMapEvict(String[] args) {
