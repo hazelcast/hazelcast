@@ -29,8 +29,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * Simple adapter that unwraps the Future delegation done in
- * {@link com.hazelcast.spi.impl.executionservice.impl.DelegatingCallableTaskDecorator}
- * for single-run Callable tasks.
+ * {@link com.hazelcast.spi.impl.executionservice.impl.DelegatingCallableTaskDecorator} for single-run Callable tasks.
  *
  * @param <V>
  */

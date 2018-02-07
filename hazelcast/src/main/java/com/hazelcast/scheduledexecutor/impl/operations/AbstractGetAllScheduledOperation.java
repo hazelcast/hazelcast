@@ -25,7 +25,8 @@ import com.hazelcast.scheduledexecutor.impl.ScheduledTaskDescriptor;
 import java.util.Collection;
 import java.util.List;
 
-public abstract class AbstractGetAllScheduledOperation extends AbstractSchedulerOperation {
+public abstract class AbstractGetAllScheduledOperation
+        extends AbstractSchedulerOperation {
 
     public AbstractGetAllScheduledOperation() {
     }

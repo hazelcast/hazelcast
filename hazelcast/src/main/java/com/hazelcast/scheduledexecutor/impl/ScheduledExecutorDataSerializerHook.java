@@ -32,23 +32,23 @@ import com.hazelcast.scheduledexecutor.impl.operations.GetResultOperation;
 import com.hazelcast.scheduledexecutor.impl.operations.GetStatisticsOperation;
 import com.hazelcast.scheduledexecutor.impl.operations.IsCanceledOperation;
 import com.hazelcast.scheduledexecutor.impl.operations.IsDoneOperation;
+import com.hazelcast.scheduledexecutor.impl.operations.MergeBackupOperation;
+import com.hazelcast.scheduledexecutor.impl.operations.MergeOperation;
 import com.hazelcast.scheduledexecutor.impl.operations.ReplicationOperation;
 import com.hazelcast.scheduledexecutor.impl.operations.ResultReadyNotifyOperation;
 import com.hazelcast.scheduledexecutor.impl.operations.ScheduleTaskBackupOperation;
 import com.hazelcast.scheduledexecutor.impl.operations.ScheduleTaskOperation;
 import com.hazelcast.scheduledexecutor.impl.operations.ShutdownOperation;
-import com.hazelcast.scheduledexecutor.impl.operations.MergeOperation;
-import com.hazelcast.scheduledexecutor.impl.operations.MergeBackupOperation;
 import com.hazelcast.scheduledexecutor.impl.operations.SyncBackupStateOperation;
 import com.hazelcast.scheduledexecutor.impl.operations.SyncStateOperation;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.SCHEDULED_EXECUTOR_DS_FACTORY;
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.SCHEDULED_EXECUTOR_DS_FACTORY_ID;
 
-public class    ScheduledExecutorDataSerializerHook implements DataSerializerHook {
+public class ScheduledExecutorDataSerializerHook
+        implements DataSerializerHook {
 
-    public static final int F_ID = FactoryIdHelper.getFactoryId(
-            SCHEDULED_EXECUTOR_DS_FACTORY, SCHEDULED_EXECUTOR_DS_FACTORY_ID);
+    public static final int F_ID = FactoryIdHelper.getFactoryId(SCHEDULED_EXECUTOR_DS_FACTORY, SCHEDULED_EXECUTOR_DS_FACTORY_ID);
 
     public static final int TASK_HANDLER = 1;
     public static final int TASK_DESCRIPTOR = 2;

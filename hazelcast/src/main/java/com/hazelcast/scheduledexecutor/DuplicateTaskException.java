@@ -19,8 +19,8 @@ package com.hazelcast.scheduledexecutor;
 import com.hazelcast.core.HazelcastException;
 
 /**
- * An exception thrown when a task's name is already used before for another (or the same, if re-attempted) schedule.
- * Tasks under a scheduler must have unique names.
+ * An exception thrown when a task's name is already used before for another (or the same, if re-attempted) schedule. Tasks under
+ * a scheduler must have unique names.
  */
 public class DuplicateTaskException
         extends HazelcastException {

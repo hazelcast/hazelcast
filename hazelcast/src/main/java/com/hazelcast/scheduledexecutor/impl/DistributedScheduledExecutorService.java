@@ -86,8 +86,7 @@ public class DistributedScheduledExecutorService
 
     private SplitBrainMergePolicyProvider mergePolicyProvider;
 
-    private final ConcurrentMap<String, Boolean> shutdownExecutors
-            = new ConcurrentHashMap<String, Boolean>();
+    private final ConcurrentMap<String, Boolean> shutdownExecutors = new ConcurrentHashMap<String, Boolean>();
 
     private final Set<ScheduledFutureProxy> lossListeners =
             synchronizedSet(newSetFromMap(new WeakHashMap<ScheduledFutureProxy, Boolean>()));
@@ -277,8 +276,8 @@ public class DistributedScheduledExecutorService
     }
 
     private void registerPartitionListener() {
-        this.partitionLostRegistration = getNodeEngine().getPartitionService().addPartitionLostListener(
-                new PartitionLostListener() {
+        this.partitionLostRegistration =
+                getNodeEngine().getPartitionService().addPartitionLostListener(new PartitionLostListener() {
                     @Override
                     public void partitionLost(PartitionLostEvent event) {
                         // use toArray before iteration since it is done under mutex
@@ -287,8 +286,7 @@ public class DistributedScheduledExecutorService
                             future.notifyPartitionLost(event);
                         }
                     }
-                }
-        );
+                });
     }
 
     private void unRegisterPartitionListenerIfExists() {
@@ -299,8 +297,7 @@ public class DistributedScheduledExecutorService
         try {
             getNodeEngine().getPartitionService().removePartitionLostListener(this.partitionLostRegistration);
         } catch (Exception ex) {
-            if (peel(ex, HazelcastInstanceNotActiveException.class, null)
-                    instanceof HazelcastInstanceNotActiveException) {
+            if (peel(ex, HazelcastInstanceNotActiveException.class, null) instanceof HazelcastInstanceNotActiveException) {
                 throw rethrow(ex);
             }
         }
@@ -329,8 +326,7 @@ public class DistributedScheduledExecutorService
         try {
             getNodeEngine().getClusterService().removeMembershipListener(membershipListenerRegistration);
         } catch (Exception ex) {
-            if (peel(ex, HazelcastInstanceNotActiveException.class, null)
-                    instanceof HazelcastInstanceNotActiveException) {
+            if (peel(ex, HazelcastInstanceNotActiveException.class, null) instanceof HazelcastInstanceNotActiveException) {
                 throw rethrow(ex);
             }
         }
@@ -344,8 +340,7 @@ public class DistributedScheduledExecutorService
         if (nodeEngine.getClusterService().getClusterVersion().isLessThan(Versions.V3_10)) {
             return null;
         }
-        Object quorumName = getOrPutSynchronized(quorumConfigCache, name, quorumConfigCacheMutexFactory,
-                quorumConfigConstructor);
+        Object quorumName = getOrPutSynchronized(quorumConfigCache, name, quorumConfigCacheMutexFactory, quorumConfigConstructor);
         return quorumName == NULL_OBJECT ? null : (String) quorumName;
     }
 
@@ -355,11 +350,11 @@ public class DistributedScheduledExecutorService
     }
 
     private SplitBrainMergePolicy getMergePolicy(String name) {
-        return mergePolicyProvider.getMergePolicy(
-                getMergePolicyConfig(name).getPolicy());
+        return mergePolicyProvider.getMergePolicy(getMergePolicyConfig(name).getPolicy());
     }
 
-    private class Merger implements Runnable {
+    private class Merger
+            implements Runnable {
 
         private static final int TIMEOUT_FACTOR = 500;
 
@@ -398,8 +393,8 @@ public class DistributedScheduledExecutorService
             int operationCount = 0;
             List<SplitBrainMergeEntryView<String, ScheduledTaskDescriptor>> mergeEntries;
             try {
-                for (Map.Entry<Integer, Map<String, Collection<ScheduledTaskDescriptor>>> partition
-                        : partitionsSnapshot.entrySet()) {
+                for (Map.Entry<Integer, Map<String, Collection<ScheduledTaskDescriptor>>> partition : partitionsSnapshot
+                        .entrySet()) {
 
                     int partitionId = partition.getKey();
                     Map<String, Collection<ScheduledTaskDescriptor>> containers = partition.getValue();
@@ -413,8 +408,8 @@ public class DistributedScheduledExecutorService
 
                         mergeEntries = new ArrayList<SplitBrainMergeEntryView<String, ScheduledTaskDescriptor>>();
                         for (ScheduledTaskDescriptor descriptor : tasks) {
-                            SplitBrainMergeEntryView<String, ScheduledTaskDescriptor> entryView = createSplitBrainMergeEntryView(
-                                    descriptor);
+                            SplitBrainMergeEntryView<String, ScheduledTaskDescriptor> entryView =
+                                    createSplitBrainMergeEntryView(descriptor);
                             mergeEntries.add(entryView);
                             size++;
 

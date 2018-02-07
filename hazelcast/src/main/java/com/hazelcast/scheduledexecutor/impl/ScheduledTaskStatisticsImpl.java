@@ -23,7 +23,6 @@ import com.hazelcast.scheduledexecutor.ScheduledTaskStatistics;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
-
 public class ScheduledTaskStatisticsImpl
         implements ScheduledTaskStatistics, TaskLifecycleListener {
 
@@ -49,22 +48,20 @@ public class ScheduledTaskStatisticsImpl
     }
 
     public ScheduledTaskStatisticsImpl(ScheduledTaskStatisticsImpl copy) {
-        this(copy.createdAt, copy.getTotalRuns(), copy.firstRunStart, copy.lastRunStart,
-                copy.lastRunEnd, copy.getLastIdleTime(MEASUREMENT_UNIT), copy.getTotalRunTime(MEASUREMENT_UNIT),
+        this(copy.createdAt, copy.getTotalRuns(), copy.firstRunStart, copy.lastRunStart, copy.lastRunEnd,
+                copy.getLastIdleTime(MEASUREMENT_UNIT), copy.getTotalRunTime(MEASUREMENT_UNIT),
                 copy.getTotalIdleTime(MEASUREMENT_UNIT));
     }
 
-    public ScheduledTaskStatisticsImpl(long runs, long lastIdleTimeNanos, long totalRunTimeNanos,
-                                       long totalIdleTimeNanos) {
+    public ScheduledTaskStatisticsImpl(long runs, long lastIdleTimeNanos, long totalRunTimeNanos, long totalIdleTimeNanos) {
         this.runs = runs;
         this.lastIdleDuration = lastIdleTimeNanos;
         this.totalRunDuration = totalRunTimeNanos;
         this.totalIdleDuration = totalIdleTimeNanos;
     }
 
-    ScheduledTaskStatisticsImpl(long createdAt, long runs, long firstRunStartNanos, long lastRunStartNanos,
-                                       long lastRunEndNanos, long lastIdleTimeNanos, long totalRunTimeNanos,
-                                       long totalIdleTimeNanos) {
+    ScheduledTaskStatisticsImpl(long createdAt, long runs, long firstRunStartNanos, long lastRunStartNanos, long lastRunEndNanos,
+                                long lastIdleTimeNanos, long totalRunTimeNanos, long totalIdleTimeNanos) {
         this.createdAt = createdAt;
         this.runs = runs;
         this.firstRunStart = firstRunStartNanos;
@@ -131,7 +128,7 @@ public class ScheduledTaskStatisticsImpl
 
     @Override
     public void onInit() {
-        this.createdAt  = System.nanoTime();
+        this.createdAt = System.nanoTime();
     }
 
     @Override
@@ -164,7 +161,8 @@ public class ScheduledTaskStatisticsImpl
 
     @Override
     public String toString() {
-        return "ScheduledTaskStatisticsImpl{runs=" + runs
+        return "ScheduledTaskStatisticsImpl{"
+                + "runs=" + runs
                 + ", lastIdleDuration=" + lastIdleDuration
                 + ", totalRunDuration=" + totalRunDuration
                 + ", totalIdleDuration=" + totalIdleDuration

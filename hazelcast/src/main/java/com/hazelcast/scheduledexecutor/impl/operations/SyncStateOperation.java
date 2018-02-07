@@ -46,8 +46,8 @@ public class SyncStateOperation
     public SyncStateOperation() {
     }
 
-    public SyncStateOperation(String schedulerName, String taskName, Map state,
-                              ScheduledTaskStatisticsImpl stats, ScheduledTaskResult result) {
+    public SyncStateOperation(String schedulerName, String taskName, Map state, ScheduledTaskStatisticsImpl stats,
+                              ScheduledTaskResult result) {
         super(schedulerName);
         this.taskName = taskName;
         this.state = state;

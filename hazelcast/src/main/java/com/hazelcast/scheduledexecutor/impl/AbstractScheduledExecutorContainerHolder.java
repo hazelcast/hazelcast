@@ -28,7 +28,8 @@ import java.util.concurrent.ConcurrentMap;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
-public abstract class AbstractScheduledExecutorContainerHolder implements ScheduledExecutorContainerHolder {
+public abstract class AbstractScheduledExecutorContainerHolder
+        implements ScheduledExecutorContainerHolder {
 
     final NodeEngine nodeEngine;
 
@@ -56,8 +57,7 @@ public abstract class AbstractScheduledExecutorContainerHolder implements Schedu
 
     public void destroy() {
         for (ScheduledExecutorContainer container : containers.values()) {
-            ((InternalExecutionService) nodeEngine.getExecutionService())
-                    .shutdownScheduledDurableExecutor(container.getName());
+            ((InternalExecutionService) nodeEngine.getExecutionService()).shutdownScheduledDurableExecutor(container.getName());
         }
     }
 

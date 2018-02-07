@@ -33,7 +33,8 @@ import java.util.Map;
 
 import static com.hazelcast.util.MapUtil.createHashMap;
 
-public class ScheduledExecutorPartition extends AbstractScheduledExecutorContainerHolder {
+public class ScheduledExecutorPartition
+        extends AbstractScheduledExecutorContainerHolder {
 
     private final ILogger logger;
 
@@ -44,13 +45,12 @@ public class ScheduledExecutorPartition extends AbstractScheduledExecutorContain
                 @Override
                 public ScheduledExecutorContainer createNew(String name) {
                     if (logger.isFinestEnabled()) {
-                        logger.finest("[Partition: " + partitionId + "] "
-                                + "Create new scheduled executor container with name: " + name);
+                        logger.finest("[Partition:" + partitionId + "]Create new scheduled executor container with name:" + name);
                     }
 
                     ScheduledExecutorConfig config = nodeEngine.getConfig().findScheduledExecutorConfig(name);
-                    return new ScheduledExecutorContainer(name, partitionId, nodeEngine,
-                            config.getDurability(), config.getCapacity());
+                    return new ScheduledExecutorContainer(name, partitionId, nodeEngine, config.getDurability(),
+                            config.getCapacity());
                 }
             };
 
@@ -67,8 +67,8 @@ public class ScheduledExecutorPartition extends AbstractScheduledExecutorContain
         Map<String, Map<String, ScheduledTaskDescriptor>> map = createHashMap(containers.size());
 
         if (logger.isFinestEnabled()) {
-            logger.finest("[Partition: " + partitionId + "] "
-                    + "Prepare replication(migration: " + migrationMode + ") for index: " + replicaIndex);
+            logger.finest("[Partition: " + partitionId + "] Prepare replication(migration: " + migrationMode + ") "
+                    + "for index: " + replicaIndex);
         }
 
         for (ScheduledExecutorContainer container : containers.values()) {
@@ -110,8 +110,8 @@ public class ScheduledExecutorPartition extends AbstractScheduledExecutorContain
 
     void disposeObsoleteReplicas(int thresholdReplicaIndex) {
         if (logger.isFinestEnabled()) {
-            logger.finest("[Partition: " + partitionId + "] "
-                    + "Dispose obsolete replicas with thresholdReplicaIndex: " + thresholdReplicaIndex);
+            logger.finest("[Partition: " + partitionId + "] Dispose obsolete replicas with thresholdReplicaIndex: "
+                    + thresholdReplicaIndex);
         }
 
         if (thresholdReplicaIndex < 0) {
@@ -144,7 +144,6 @@ public class ScheduledExecutorPartition extends AbstractScheduledExecutorContain
 
     private SplitBrainMergePolicy getMergePolicy(String name) {
         ScheduledExecutorConfig config = nodeEngine.getConfig().findScheduledExecutorConfig(name);
-        return mergePolicyProvider.getMergePolicy(
-                config.getMergePolicyConfig().getPolicy());
+        return mergePolicyProvider.getMergePolicy(config.getMergePolicyConfig().getPolicy());
     }
 }
