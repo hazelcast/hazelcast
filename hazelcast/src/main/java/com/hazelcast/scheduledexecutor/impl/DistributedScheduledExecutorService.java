@@ -16,8 +16,8 @@
 
 package com.hazelcast.scheduledexecutor.impl;
 
-import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.config.MergePolicyConfig;
+import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
@@ -44,6 +44,7 @@ import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
 import com.hazelcast.spi.partition.MigrationEndpoint;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ContextMutexFactory;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -58,8 +59,8 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 import static com.hazelcast.spi.merge.SplitBrainEntryViews.createSplitBrainMergeEntryView;
+import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 import static com.hazelcast.util.ExceptionUtil.peel;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static java.util.Collections.newSetFromMap;
@@ -350,7 +351,7 @@ public class DistributedScheduledExecutorService
 
     private MergePolicyConfig getMergePolicyConfig(String name) {
         return getNodeEngine().getConfig().getScheduledExecutorConfig(name)
-                              .getMergePolicyConfig();
+                .getMergePolicyConfig();
     }
 
     private SplitBrainMergePolicy getMergePolicy(String name) {
@@ -362,31 +363,30 @@ public class DistributedScheduledExecutorService
 
         private static final int TIMEOUT_FACTOR = 500;
 
+        private final ILogger logger = nodeEngine.getLogger(DistributedScheduledExecutorService.class);
+        private final Semaphore semaphore = new Semaphore(0);
+        private final ExecutionCallback<Object> mergeCallback = new ExecutionCallback<Object>() {
+            @Override
+            public void onResponse(Object response) {
+                semaphore.release(1);
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+                logger.warning("Error while running scheduled executor merge operation: " + t.getMessage());
+                semaphore.release(1);
+            }
+        };
+
         private Map<Integer, Map<String, Collection<ScheduledTaskDescriptor>>> partitionsSnapshot;
 
         Merger(Map<Integer, Map<String, Collection<ScheduledTaskDescriptor>>> map) {
             this.partitionsSnapshot = map;
         }
 
-        @SuppressWarnings({"checkstyle:methodlength"})
         @Override
+        @SuppressWarnings("checkstyle:npathcomplexity")
         public void run() {
-            final ILogger logger = nodeEngine.getLogger(DistributedScheduledExecutorService.class);
-            final Semaphore semaphore = new Semaphore(0);
-
-            ExecutionCallback<Object> mergeCallback = new ExecutionCallback<Object>() {
-                @Override
-                public void onResponse(Object response) {
-                    semaphore.release(1);
-                }
-
-                @Override
-                public void onFailure(Throwable t) {
-                    logger.warning("Error while running merge operation: " + t.getMessage());
-                    semaphore.release(1);
-                }
-            };
-
             // we cannot merge into a 3.9 cluster, since not all members may understand the MergeOperation
             // RU_COMPAT_3_9
             if (nodeEngine.getClusterService().getClusterVersion().isLessThan(Versions.V3_10)) {
@@ -421,7 +421,7 @@ public class DistributedScheduledExecutorService
                             if (mergeEntries.size() == batchSize) {
                                 sendBatch(partitionId, containerName, mergePolicy, mergeEntries, mergeCallback);
                                 mergeEntries = new ArrayList<SplitBrainMergeEntryView<String,
-                                                             ScheduledTaskDescriptor>>(batchSize);
+                                        ScheduledTaskDescriptor>>(batchSize);
                                 operationCount++;
                             }
                         }
@@ -434,16 +434,18 @@ public class DistributedScheduledExecutorService
                     }
                 }
                 partitionsSnapshot.clear();
-
-            } catch (Exception ex) {
-                logger.warning("ScheduledExecutor merging didn't complete successfully.", ex);
-                throw rethrow(ex);
+            } catch (Exception e) {
+                logger.warning("Split-brain healing of scheduled executors didn't complete successfully...", e);
+                throw rethrow(e);
             }
 
             try {
-                semaphore.tryAcquire(operationCount, size * TIMEOUT_FACTOR, TimeUnit.MILLISECONDS);
+                if (!semaphore.tryAcquire(operationCount, size * TIMEOUT_FACTOR, TimeUnit.MILLISECONDS)) {
+                    logger.warning("Split-brain healing for scheduled executors didn't finish within the timeout...");
+                }
             } catch (InterruptedException e) {
-                logger.finest("Interrupted while waiting for merge operation...");
+                logger.finest("Interrupted while waiting for split-brain healing of scheduled executors...");
+                Thread.currentThread().interrupt();
             }
         }
 
@@ -453,8 +455,8 @@ public class DistributedScheduledExecutorService
             MergeOperation operation = new MergeOperation(name, mergePolicy, mergeEntries);
             try {
                 nodeEngine.getOperationService()
-                          .invokeOnPartition(SERVICE_NAME, operation, partitionId)
-                          .andThen(mergeCallback);
+                        .invokeOnPartition(SERVICE_NAME, operation, partitionId)
+                        .andThen(mergeCallback);
             } catch (Throwable t) {
                 throw rethrow(t);
             }

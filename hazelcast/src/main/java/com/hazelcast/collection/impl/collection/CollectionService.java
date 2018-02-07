@@ -234,6 +234,21 @@ public abstract class CollectionService implements ManagedService, RemoteService
 
         private static final int TIMEOUT_FACTOR = 500;
 
+        private final ILogger logger = nodeEngine.getLogger(CollectionService.class);
+        private final Semaphore semaphore = new Semaphore(0);
+        private final ExecutionCallback<Object> mergeCallback = new ExecutionCallback<Object>() {
+            @Override
+            public void onResponse(Object response) {
+                semaphore.release(1);
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+                logger.warning("Error while running collection merge operation: " + t.getMessage());
+                semaphore.release(1);
+            }
+        };
+
         private final Map<Integer, Map<CollectionContainer, List<CollectionItem>>> itemMap;
 
         Merger(Map<Integer, Map<CollectionContainer, List<CollectionItem>>> itemMap) {
@@ -242,22 +257,6 @@ public abstract class CollectionService implements ManagedService, RemoteService
 
         @Override
         public void run() {
-            final ILogger logger = nodeEngine.getLogger(CollectionService.class);
-            final Semaphore semaphore = new Semaphore(0);
-
-            ExecutionCallback<Object> mergeCallback = new ExecutionCallback<Object>() {
-                @Override
-                public void onResponse(Object response) {
-                    semaphore.release(1);
-                }
-
-                @Override
-                public void onFailure(Throwable t) {
-                    logger.warning("Error while running merge operation: " + t.getMessage());
-                    semaphore.release(1);
-                }
-            };
-
             // we cannot merge into a 3.9 cluster, since not all members may understand the CollectionMergeOperation
             // RU_COMPAT_3_9
             if (nodeEngine.getClusterService().getClusterVersion().isLessThan(Versions.V3_10)) {
@@ -301,9 +300,12 @@ public abstract class CollectionService implements ManagedService, RemoteService
             itemMap.clear();
 
             try {
-                semaphore.tryAcquire(operationCount, itemCount * TIMEOUT_FACTOR, TimeUnit.MILLISECONDS);
+                if (!semaphore.tryAcquire(operationCount, itemCount * TIMEOUT_FACTOR, TimeUnit.MILLISECONDS)) {
+                    logger.warning("Split-brain healing for collections didn't finish within the timeout...");
+                }
             } catch (InterruptedException e) {
-                logger.finest("Interrupted while waiting for merge operation...");
+                logger.finest("Interrupted while waiting for split-brain healing of collections...");
+                Thread.currentThread().interrupt();
             }
         }
 

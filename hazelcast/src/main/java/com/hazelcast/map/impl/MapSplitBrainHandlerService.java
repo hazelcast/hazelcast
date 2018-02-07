@@ -129,13 +129,13 @@ class MapSplitBrainHandlerService implements SplitBrainHandlerService {
 
         private static final int TIMEOUT_FACTOR = 500;
 
+        private final ILogger logger = nodeEngine.getLogger(MapSplitBrainHandlerService.class);
         private final Semaphore semaphore = new Semaphore(0);
+
         private final Map<MapContainer, Collection<Record>> recordMap;
-        private final ILogger logger;
 
         Merger(Map<MapContainer, Collection<Record>> recordMap) {
             this.recordMap = recordMap;
-            this.logger = nodeEngine.getLogger(MapSplitBrainHandlerService.class);
         }
 
         @Override
@@ -165,9 +165,12 @@ class MapSplitBrainHandlerService implements SplitBrainHandlerService {
             recordMap.clear();
 
             try {
-                semaphore.tryAcquire(recordCount, recordCount * TIMEOUT_FACTOR, TimeUnit.MILLISECONDS);
+                if (!semaphore.tryAcquire(recordCount, recordCount * TIMEOUT_FACTOR, TimeUnit.MILLISECONDS)) {
+                    logger.warning("Split-brain healing for maps didn't finish within the timeout...");
+                }
             } catch (InterruptedException e) {
-                logger.finest("Interrupted while waiting for merge operation...");
+                logger.finest("Interrupted while waiting for split-brain healing of maps...");
+                Thread.currentThread().interrupt();
             }
         }
 
@@ -227,7 +230,7 @@ class MapSplitBrainHandlerService implements SplitBrainHandlerService {
 
                 @Override
                 public void onFailure(Throwable t) {
-                    logger.warning("Error while running merge operation: " + t.getMessage());
+                    logger.warning("Error while running map merge operation: " + t.getMessage());
                     semaphore.release(1);
                 }
             };
@@ -297,7 +300,7 @@ class MapSplitBrainHandlerService implements SplitBrainHandlerService {
                 OperationFactory factory = operationProvider.createMergeOperationFactory(name, partitions, entries, mergePolicy);
                 operationService.invokeOnPartitions(SERVICE_NAME, factory, partitions);
             } catch (Throwable t) {
-                logger.warning("Error while running merge operation: " + t.getMessage());
+                logger.warning("Error while running map merge operation: " + t.getMessage());
                 throw rethrow(t);
             } finally {
                 semaphore.release(totalSize);
