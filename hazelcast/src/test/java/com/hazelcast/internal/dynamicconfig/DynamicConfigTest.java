@@ -849,6 +849,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
                 .setInMemoryFormat(InMemoryFormat.OBJECT)
                 .setMergePolicy("com.hazelcast.SomeMergePolicy")
                 .setMaxSizeConfig(new MaxSizeConfig(4096, MaxSizeConfig.MaxSizePolicy.PER_NODE))
+                .setTimeToLiveSeconds(220)
                 .setMaxIdleSeconds(110)
                 .setQuorumName(randomString())
                 .addMapAttributeConfig(new MapAttributeConfig("attributeName", "com.attribute.extractor"))
