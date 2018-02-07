@@ -22,6 +22,7 @@ import com.hazelcast.client.config.ClientAwsConfig;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientConnectionStrategyConfig;
 import com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode;
+import com.hazelcast.client.config.ClientFlakeIdGeneratorConfig;
 import com.hazelcast.client.config.ClientIcmpPingConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.config.ClientUserCodeDeploymentConfig;
@@ -31,7 +32,6 @@ import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
-import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.NearCachePreloaderConfig;
@@ -381,9 +381,9 @@ public class TestClientApplicationContext {
 
     @Test
     public void testFlakeIdGeneratorConfig() {
-        Map<String, FlakeIdGeneratorConfig> configMap = client10.getClientConfig().getFlakeIdGeneratorConfigMap();
+        Map<String, ClientFlakeIdGeneratorConfig> configMap = client10.getClientConfig().getFlakeIdGeneratorConfigMap();
         assertEquals(1, configMap.size());
-        FlakeIdGeneratorConfig config = configMap.values().iterator().next();
+        ClientFlakeIdGeneratorConfig config = configMap.values().iterator().next();
         assertEquals("gen1", config.getName());
         assertEquals(3, config.getPrefetchCount());
         assertEquals(3000L, config.getPrefetchValidityMillis());

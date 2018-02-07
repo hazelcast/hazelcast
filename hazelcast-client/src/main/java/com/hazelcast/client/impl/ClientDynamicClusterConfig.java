@@ -25,12 +25,12 @@ import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddCountDownLatchCo
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddDurableExecutorConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddEventJournalConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddExecutorConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddFlakeIdGeneratorConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddListConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddLockConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddMapConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddMultiMapConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddQueueConfigCodec;
-import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddFlakeIdGeneratorConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddReliableTopicConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddReplicatedMapConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddRingbufferConfigCodec;
@@ -386,8 +386,11 @@ public class ClientDynamicClusterConfig extends Config {
 
     @Override
     public Config addFlakeIdGeneratorConfig(FlakeIdGeneratorConfig flakeIdGeneratorConfig) {
-        ClientMessage request = DynamicConfigAddFlakeIdGeneratorConfigCodec.encodeRequest(flakeIdGeneratorConfig.getName(),
-                flakeIdGeneratorConfig.getPrefetchCount(), flakeIdGeneratorConfig.getPrefetchValidityMillis());
+        ClientMessage request = DynamicConfigAddFlakeIdGeneratorConfigCodec.encodeRequest(
+                flakeIdGeneratorConfig.getName(),
+                flakeIdGeneratorConfig.getPrefetchCount(),
+                flakeIdGeneratorConfig.getPrefetchValidityMillis(),
+                flakeIdGeneratorConfig.getIdOffset());
         invoke(request);
         return this;
     }

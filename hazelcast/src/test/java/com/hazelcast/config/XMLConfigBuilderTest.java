@@ -1173,6 +1173,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
                 + "<flake-id-generator name='gen'>"
                 + "  <prefetch-count>3</prefetch-count>"
                 + "  <prefetch-validity-millis>10</prefetch-validity-millis>"
+                + "  <id-offset>20</id-offset>"
                 + "</flake-id-generator>"
                 + HAZELCAST_END_TAG;
         Config config = buildConfig(xml);
@@ -1180,6 +1181,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         assertEquals("gen", fConfig.getName());
         assertEquals(3, fConfig.getPrefetchCount());
         assertEquals(10L, fConfig.getPrefetchValidityMillis());
+        assertEquals(20L, fConfig.getIdOffset());
     }
 
     @Test(expected = InvalidConfigurationException.class)

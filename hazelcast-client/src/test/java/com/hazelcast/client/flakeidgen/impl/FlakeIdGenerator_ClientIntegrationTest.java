@@ -17,6 +17,7 @@
 package com.hazelcast.client.flakeidgen.impl;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.config.ClientFlakeIdGeneratorConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.core.HazelcastInstance;
@@ -69,7 +70,7 @@ public class FlakeIdGenerator_ClientIntegrationTest {
     @Test
     public void configTest() throws Exception {
         int myBatchSize = 3;
-        before(new ClientConfig().addFlakeIdGeneratorConfig(new FlakeIdGeneratorConfig("gen")
+        before(new ClientConfig().addFlakeIdGeneratorConfig(new ClientFlakeIdGeneratorConfig("gen")
                 .setPrefetchCount(myBatchSize)
                 .setPrefetchValidityMillis(3000)));
         final FlakeIdGenerator generator = instance.getFlakeIdGenerator("gen");

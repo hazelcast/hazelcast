@@ -593,7 +593,8 @@ class ConfigCompatibilityChecker {
             }
             return nullSafeEqual(c1.getName(), c2.getName())
                     && c1.getPrefetchCount() == c2.getPrefetchCount()
-                    && c1.getPrefetchValidityMillis() == c2.getPrefetchValidityMillis();
+                    && c1.getPrefetchValidityMillis() == c2.getPrefetchValidityMillis()
+                    && c1.getIdOffset() == c2.getIdOffset();
         }
 
         @Override

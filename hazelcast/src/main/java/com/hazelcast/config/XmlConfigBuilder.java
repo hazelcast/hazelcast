@@ -698,6 +698,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 generatorConfig.setPrefetchCount(Integer.parseInt(value));
             } else if ("prefetch-validity-millis".equalsIgnoreCase(nodeName)) {
                 generatorConfig.setPrefetchValidityMillis(Long.parseLong(value));
+            } else if ("id-offset".equalsIgnoreCase(nodeName)) {
+                generatorConfig.setIdOffset(Long.parseLong(value));
             }
         }
         config.addFlakeIdGeneratorConfig(generatorConfig);

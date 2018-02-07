@@ -22,17 +22,15 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
+import java.util.Arrays;
 
+import static com.hazelcast.util.Preconditions.checkNotNegative;
 import static com.hazelcast.util.Preconditions.checkTrue;
 
 /**
  * The {@code FlakeIdGeneratorConfig} contains the configuration for the member
  * regarding {@link com.hazelcast.core.HazelcastInstance#getFlakeIdGenerator(String)
  * Flake ID Generator}.
- * <p>
- * Settings here only apply when ID generator is used from member, not when clients
- * connect to this member to generate IDs - each client has its own settings in {@code
- * ClientConfig}.
  */
 public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable {
 
@@ -50,15 +48,16 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable {
      * Maximum value for prefetch count. The limit is ~10% of the time we allow the IDs to be from the future
      * (see {@link com.hazelcast.flakeidgen.impl.FlakeIdGeneratorProxy#ALLOWED_FUTURE_MILLIS}).
      * <p>
-     * The reason to limit is that a single call to {@link FlakeIdGenerator#newId()} might be blocked if the
-     * future allowance is exceeded. There can be multiple calls from multiple clients to single member, that's
-     * why it's only 10% of the allowance.
+     * The reason to limit the prefetch count is that a single call to {@link FlakeIdGenerator#newId()} might
+     * be blocked if the future allowance is exceeded: we want to avoid a single call for large batch to block
+     * another call for small batch.
      */
-    private static final int MAXIMUM_PREFETCH_COUNT = 100000;
+    public static final int MAXIMUM_PREFETCH_COUNT = 100000;
 
     private String name;
     private int prefetchCount = DEFAULT_PREFETCH_COUNT;
     private long prefetchValidityMillis = DEFAULT_PREFETCH_VALIDITY_MILLIS;
+    private long idOffset;
 
     private transient FlakeIdGeneratorConfigReadOnly readOnly;
 
@@ -77,6 +76,7 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable {
         this.name = other.name;
         this.prefetchCount = other.prefetchCount;
         this.prefetchValidityMillis = other.prefetchValidityMillis;
+        this.idOffset = other.idOffset;
     }
 
     /**
@@ -91,7 +91,6 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable {
         }
         return readOnly;
     }
-
 
     /**
      * Returns the configuration name. This can be actual object name or pattern.
@@ -116,11 +115,13 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * How many IDs are pre-fetched on the background when one call to
-     * {@link FlakeIdGenerator#newId()} is made.
+     * Sets how many IDs are pre-fetched on the background when one call to
+     * {@link FlakeIdGenerator#newId()} is made. Default is 100.
      * <p>
-     * Value must be in the range 1..100,000, default is 100.
+     * This setting pertains only to {@link FlakeIdGenerator#newId newId} calls made on the member
+     * that configured it.
      *
+     * @param prefetchCount the desired prefetch count, in the range 1..100,000.
      * @return this instance for fluent API
      */
     public FlakeIdGeneratorConfig setPrefetchCount(int prefetchCount) {
@@ -138,20 +139,51 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * For how long the pre-fetched IDs can be used. If this time elapses, new IDs will be fetched.
-     * <p>
-     * Time unit is milliseconds.
-     * <p>
-     * If value is &lt;= 0, validity is unlimited. Default value is 600,000 (10 minutes).
+     * Sets for how long the pre-fetched IDs can be used. If this time elapses, a new batch of IDs will be
+     * fetched. Time unit is milliseconds, default is 600,000 (10 minutes).
      * <p>
      * The IDs contain timestamp component, which ensures rough global ordering of IDs. If an ID
-     * is assigned to an event that occurred much later, it will be much out of order. If you don't need
-     * ordering, set this value to 0.
+     * is assigned to an object that was created much later, it will be much out of order. If you don't care
+     * about ordering, set this value to 0.
+     * <p>
+     * This setting pertains only to {@link FlakeIdGenerator#newId newId} calls made on the member
+     * that configured it.
      *
+     * @param prefetchValidityMs the desired ID validity or unlimited, if configured to 0.
      * @return this instance for fluent API
      */
     public FlakeIdGeneratorConfig setPrefetchValidityMillis(long prefetchValidityMs) {
+        checkNotNegative(prefetchValidityMs, "");
         this.prefetchValidityMillis = prefetchValidityMs;
+        return this;
+    }
+
+    /**
+     * @see #setIdOffset(long)
+     */
+    public long getIdOffset() {
+        return idOffset;
+    }
+
+    /**
+     * Sets the offset that will be added to the returned IDs. Default value is 0. Setting might be useful when
+     * migrating from {@code IdGenerator}, default value works for all green-field projects.
+     * <p>
+     * For example: Largest ID returned from {@code IdGenerator} is 150. {@code FlakeIdGenerator} now
+     * returns 100. If you configure {@code idOffset} of 50 and stop using the {@code IdGenerator}, the next
+     * ID from {@code FlakeIdGenerator} will be 151 or larger and no duplicate IDs will be generated.
+     * In real-life, the IDs are much larger. You also need to add a reserve to the offset because the IDs from
+     * {@code FlakeIdGenerator} are only roughly ordered. Recommended reserve is {@code 1<<38},
+     * that is 274877906944.
+     * <p>
+     * Negative values are allowed to increase the lifespan of the generator, however keep in mind that
+     * the generated IDs might also be negative.
+     *
+     * @param idOffset the value added to each generated ID
+     * @return this instance for fluent API
+     */
+    public FlakeIdGeneratorConfig setIdOffset(long idOffset) {
+        this.idOffset = idOffset;
         return this;
     }
 
@@ -166,21 +198,15 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable {
 
         FlakeIdGeneratorConfig that = (FlakeIdGeneratorConfig) o;
 
-        if (prefetchCount != that.prefetchCount) {
-            return false;
-        }
-        if (prefetchValidityMillis != that.prefetchValidityMillis) {
-            return false;
-        }
-        return name != null ? name.equals(that.name) : that.name == null;
+        return prefetchCount == that.prefetchCount
+                && prefetchValidityMillis == that.prefetchValidityMillis
+                && idOffset == that.idOffset
+                && (name != null ? name.equals(that.name) : that.name == null);
     }
 
     @Override
     public int hashCode() {
-        int result = name != null ? name.hashCode() : 0;
-        result = 31 * result + prefetchCount;
-        result = 31 * result + (int) (prefetchValidityMillis ^ (prefetchValidityMillis >>> 32));
-        return result;
+        return Arrays.hashCode(new Object[]{name, prefetchCount, prefetchValidityMillis, idOffset});
     }
 
     @Override
@@ -189,6 +215,7 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable {
                 + "name='" + name + '\''
                 + ", prefetchCount=" + prefetchCount
                 + ", prefetchValidityMillis=" + prefetchValidityMillis
+                + ", idOffset=" + idOffset
                 + '}';
     }
 
@@ -207,6 +234,7 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable {
         out.writeUTF(name);
         out.writeInt(prefetchCount);
         out.writeLong(prefetchValidityMillis);
+        out.writeLong(idOffset);
     }
 
     @Override
@@ -214,5 +242,6 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable {
         name = in.readUTF();
         prefetchCount = in.readInt();
         prefetchValidityMillis = in.readLong();
+        idOffset = in.readLong();
     }
 }

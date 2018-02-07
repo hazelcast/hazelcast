@@ -536,7 +536,8 @@ public class DynamicConfigTest extends HazelcastTestSupport {
     public void testFlakeIdGeneratorConfig() {
         FlakeIdGeneratorConfig config = new FlakeIdGeneratorConfig(randomName())
                 .setPrefetchCount(123)
-                .setPrefetchValidityMillis(456);
+                .setPrefetchValidityMillis(456)
+                .setIdOffset(789);
         driver.getConfig().addFlakeIdGeneratorConfig(config);
         assertConfigurationsEqualsOnAllMembers(config);
     }
