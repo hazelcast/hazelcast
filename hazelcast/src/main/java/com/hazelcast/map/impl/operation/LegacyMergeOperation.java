@@ -16,7 +16,6 @@
 
 package com.hazelcast.map.impl.operation;
 
-import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.record.Record;
@@ -54,23 +53,13 @@ public class LegacyMergeOperation extends BasePutOperation {
 
     @Override
     public void run() {
-        Record oldRecord = recordStore.getRecord(dataKey);
-        if (oldRecord != null) {
-            dataOldValue = mapServiceContext.toData(oldRecord.getValue());
-        }
-        merged = recordStore.merge(dataKey, mergingEntry, mergePolicy);
-        if (merged) {
-            Record record = recordStore.getRecord(dataKey);
-            if (record != null) {
-                dataValue = mapServiceContext.toData(record.getValue());
-                dataMergingValue = mapServiceContext.toData(mergingEntry.getValue());
-            }
-        }
+        merged = recordStore.merge(dataKey, mergingEntry, mergePolicy,
+                !disableWanReplicationEvent, getCallerUuid(), getCallerAddress());
     }
 
     @Override
-    protected boolean canThisOpGenerateWANEvent() {
-        return !disableWanReplicationEvent;
+    public void afterRun() {
+        // Intentionally empty method body.
     }
 
     @Override
@@ -84,21 +73,15 @@ public class LegacyMergeOperation extends BasePutOperation {
     }
 
     @Override
-    public void afterRun() {
-        if (merged) {
-            eventType = EntryEventType.MERGED;
-            super.afterRun();
-        }
-    }
-
-    @Override
     public Operation getBackupOperation() {
-        if (dataValue == null) {
+        Record record = recordStore.getRecord(dataKey);
+
+        if (record == null) {
             return new RemoveBackupOperation(name, dataKey, false, disableWanReplicationEvent);
         } else {
-            final Record record = recordStore.getRecord(dataKey);
-            final RecordInfo replicationInfo = Records.buildRecordInfo(record);
-            return new PutBackupOperation(name, dataKey, dataValue, replicationInfo, false, false, disableWanReplicationEvent);
+            RecordInfo replicationInfo = Records.buildRecordInfo(record);
+            return new PutBackupOperation(name, dataKey, mapServiceContext.toData(record.getValue()),
+                    replicationInfo, false, false, disableWanReplicationEvent);
         }
     }
 

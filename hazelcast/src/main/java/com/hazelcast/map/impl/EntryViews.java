@@ -19,6 +19,7 @@ package com.hazelcast.map.impl;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.merge.MapMergePolicy;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.serialization.SerializationService;
 
 /**
@@ -27,18 +28,6 @@ import com.hazelcast.spi.serialization.SerializationService;
 public final class EntryViews {
 
     private EntryViews() {
-    }
-
-    /**
-     * Creates a null entry view that has only key and no value.
-     *
-     * @param key the key object which will be wrapped in {@link com.hazelcast.core.EntryView}.
-     * @param <K> the type of key.
-     * @param <V> the type of value.
-     * @return returns  null entry view.
-     */
-    public static <K, V> EntryView<K, V> createNullEntryView(K key) {
-        return new NullEntryView<K, V>(key);
     }
 
     public static <K, V> EntryView<K, V> createSimpleEntryView() {
@@ -58,10 +47,14 @@ public final class EntryViews {
                 .withLastStoredTime(record.getLastStoredTime());
     }
 
-    public static <K, V> EntryView<K, V> createLazyEntryView(K key, V value, Record record,
-                                                             SerializationService serializationService,
-                                                             MapMergePolicy mergePolicy) {
-        return new LazyEntryView<K, V>(key, value, serializationService, mergePolicy)
+    public static <K, V> EntryView<K, V> toLazyEntryViewWithoutValue(K key, SerializationService serializationService) {
+        return new LazyEntryView<K, V>(key, null, serializationService, null);
+    }
+
+    public static <V> EntryView<Data, V> toLazyEntryView(Record<V> record,
+                                                         SerializationService serializationService,
+                                                         MapMergePolicy mergePolicy) {
+        return new LazyEntryView<Data, V>(record.getKey(), record.getValue(), serializationService, mergePolicy)
                 .setCost(record.getCost())
                 .setVersion(record.getVersion())
                 .setHits(record.getHits())
@@ -73,9 +66,9 @@ public final class EntryViews {
                 .setLastStoredTime(record.getLastStoredTime());
     }
 
-    public static <K, V> EntryView<K, V> convertToLazyEntryView(EntryView<K, V> entryView,
-                                                                SerializationService serializationService,
-                                                                MapMergePolicy mergePolicy) {
+    public static <K, V> EntryView<K, V> toLazyEntryView(EntryView<K, V> entryView,
+                                                         SerializationService serializationService,
+                                                         MapMergePolicy mergePolicy) {
         return new LazyEntryView<K, V>(entryView.getKey(), entryView.getValue(), serializationService, mergePolicy)
                 .setCost(entryView.getCost())
                 .setVersion(entryView.getVersion())

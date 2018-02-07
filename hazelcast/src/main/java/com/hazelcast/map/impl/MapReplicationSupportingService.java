@@ -84,6 +84,7 @@ class MapReplicationSupportingService implements ReplicationSupportingService {
             EntryView<Data, Data> entryView = replicationUpdate.getEntryView();
             operation = operationProvider.createLegacyMergeOperation(mapName, entryView, (MapMergePolicy) mergePolicy, true);
         }
+
         try {
             int partitionId = nodeEngine.getPartitionService().getPartitionId(replicationUpdate.getEntryView().getKey());
             Future future = nodeEngine.getOperationService()

@@ -26,6 +26,7 @@ import com.hazelcast.map.merge.LatestUpdateMapMergePolicy;
 import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.map.merge.PassThroughMergePolicy;
 import com.hazelcast.map.merge.PutIfAbsentMapMergePolicy;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -61,13 +62,15 @@ public class MapMergePolicyQuickTest extends HazelcastTestSupport {
         initialEntry.setLastUpdateTime(now);
         // need some latency to be sure that target members time is greater than now
         sleepMillis(100);
-        recordStore.merge(dataKey, initialEntry, mergePolicy);
+        recordStore.merge(dataKey, initialEntry, mergePolicy,
+                true, "", new Address());
 
         SimpleEntryView<String, String> mergingEntry = new SimpleEntryView<String, String>("key", "value2");
         now = Clock.currentTimeMillis();
         mergingEntry.setCreationTime(now);
         mergingEntry.setLastUpdateTime(now);
-        recordStore.merge(dataKey, mergingEntry, mergePolicy);
+        recordStore.merge(dataKey, mergingEntry, mergePolicy,
+                true, "", new Address());
 
         assertEquals("value2", map.get("key"));
     }
@@ -86,10 +89,10 @@ public class MapMergePolicyQuickTest extends HazelcastTestSupport {
                 .getMergePolicy(PutIfAbsentMapMergePolicy.class.getName());
 
         SimpleEntryView<String, String> initialEntry = new SimpleEntryView<String, String>("key", "value1");
-        recordStore.merge(dataKey, initialEntry, mergePolicy);
+        recordStore.merge(dataKey, initialEntry, mergePolicy, true, "", new Address());
 
         SimpleEntryView<String, String> mergingEntry = new SimpleEntryView<String, String>("key", "value2");
-        recordStore.merge(dataKey, mergingEntry, mergePolicy);
+        recordStore.merge(dataKey, mergingEntry, mergePolicy, true, "", new Address());
 
         assertEquals("value1", map.get("key"));
     }
@@ -107,10 +110,10 @@ public class MapMergePolicyQuickTest extends HazelcastTestSupport {
         MapMergePolicy mergePolicy = (MapMergePolicy) mapServiceContext.getMergePolicyProvider()
                 .getMergePolicy(PassThroughMergePolicy.class.getName());
         SimpleEntryView<String, String> initialEntry = new SimpleEntryView<String, String>("key", "value1");
-        recordStore.merge(dataKey, initialEntry, mergePolicy);
+        recordStore.merge(dataKey, initialEntry, mergePolicy, true, "", new Address());
 
         SimpleEntryView<String, String> mergingEntry = new SimpleEntryView<String, String>("key", "value2");
-        recordStore.merge(dataKey, mergingEntry, mergePolicy);
+        recordStore.merge(dataKey, mergingEntry, mergePolicy, true, "", new Address());
 
         assertEquals("value2", map.get("key"));
     }

@@ -19,9 +19,9 @@ package com.hazelcast.map.impl.recordstore;
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NativeMemoryConfig;
+import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.map.impl.EntryViews;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.MapKeyLoader;
@@ -41,6 +41,7 @@ import com.hazelcast.map.impl.querycache.publisher.PublisherRegistry;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.Records;
 import com.hazelcast.map.merge.MapMergePolicy;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.spi.NodeEngine;
@@ -66,10 +67,16 @@ import java.util.concurrent.Future;
 
 import static com.hazelcast.config.NativeMemoryConfig.MemoryAllocatorType.POOLED;
 import static com.hazelcast.core.EntryEventType.ADDED;
+import static com.hazelcast.core.EntryEventType.MERGED;
+import static com.hazelcast.core.EntryEventType.UPDATED;
+import static com.hazelcast.map.impl.EntryViews.createSimpleEntryView;
+import static com.hazelcast.map.impl.EntryViews.toLazyEntryView;
+import static com.hazelcast.map.impl.EntryViews.toLazyEntryViewWithoutValue;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.setTTLAndUpdateExpiryTime;
 import static com.hazelcast.map.impl.mapstore.MapDataStores.EMPTY_MAP_DATA_STORE;
 import static com.hazelcast.spi.merge.SplitBrainEntryViews.createSplitBrainMergeEntryView;
 import static com.hazelcast.util.MapUtil.createHashMap;
+import static java.lang.System.currentTimeMillis;
 import static java.util.Collections.emptyList;
 
 /**
@@ -728,13 +735,22 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     @Override
     public Boolean merge(SplitBrainMergeEntryView<Data, Object> mergingEntry, SplitBrainMergePolicy mergePolicy) {
+        throw new UnsupportedOperationException("Use merge(SplitBrainMergeEntryView<Data, Object> mergingEntry,"
+                + " SplitBrainMergePolicy mergePolicy, "
+                + "String callerUuid, Address callerAddress)");
+    }
+
+    @Override
+    public Boolean merge(final SplitBrainMergeEntryView<Data, Object> mergingEntry,
+                         final SplitBrainMergePolicy mergePolicy, final boolean replicateOverWAN,
+                         final String callerUuid, final Address callerAddress) {
         checkIfLoaded();
         long now = getNow();
 
         mergePolicy.setSerializationService(serializationService);
 
-        Data key = mergingEntry.getKey();
-        Record<Object> record = getRecordOrNull(key, now, false);
+        Data dataKey = mergingEntry.getKey();
+        Record<Object> record = getRecordOrNull(dataKey, now, false);
         Object newValue;
         Object oldValue = null;
         if (record == null) {
@@ -742,12 +758,12 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             if (newValue == null) {
                 return false;
             }
-            newValue = mapDataStore.add(key, newValue, now);
+            newValue = mapDataStore.add(dataKey, newValue, now);
             record = createRecord(newValue, DEFAULT_TTL, now);
             mergeRecordExpiration(record, mergingEntry);
-            storage.put(key, record);
-            eventJournal.writeUpdateEvent(mapContainer.getEventJournalConfig(), mapContainer.getObjectNamespace(), partitionId,
-                    key, null, record.getValue());
+            storage.put(dataKey, record);
+            eventJournal.writeUpdateEvent(mapContainer.getEventJournalConfig(),
+                    mapContainer.getObjectNamespace(), partitionId, dataKey, null, record.getValue());
         } else {
             oldValue = record.getValue();
             SplitBrainMergeEntryView<Data, Object> existingEntry = createSplitBrainMergeEntryView(record);
@@ -755,11 +771,13 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             // existing entry will be removed
             if (newValue == null) {
                 removeIndex(record);
-                mapDataStore.remove(key, now);
+                mapDataStore.remove(dataKey, now);
                 onStore(record);
-                eventJournal.writeUpdateEvent(mapContainer.getEventJournalConfig(), mapContainer.getObjectNamespace(),
-                        partitionId, key, oldValue, null);
+                eventJournal.writeUpdateEvent(mapContainer.getEventJournalConfig(),
+                        mapContainer.getObjectNamespace(), partitionId, dataKey, oldValue, null);
                 storage.removeRecord(record);
+                postProcess(dataKey, oldValue, newValue, mergingEntry.getValue(), MERGED,
+                        replicateOverWAN, callerUuid, callerAddress);
                 return true;
             }
             if (newValue == mergingEntry.getValue()) {
@@ -767,53 +785,61 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             }
             // same with the existing entry so no need to map-store etc operations.
             if (recordComparator.isEqual(newValue, oldValue)) {
+                postProcess(dataKey, oldValue, newValue, mergingEntry.getValue(), MERGED,
+                        replicateOverWAN, callerUuid, callerAddress);
                 return true;
             }
-            newValue = mapDataStore.add(key, newValue, now);
+            newValue = mapDataStore.add(dataKey, newValue, now);
             onStore(record);
-            eventJournal.writeUpdateEvent(mapContainer.getEventJournalConfig(), mapContainer.getObjectNamespace(), partitionId,
-                    key, oldValue, newValue);
-            storage.updateRecordValue(key, record, newValue);
+            eventJournal.writeUpdateEvent(mapContainer.getEventJournalConfig(),
+                    mapContainer.getObjectNamespace(), partitionId, dataKey, oldValue, newValue);
+            storage.updateRecordValue(dataKey, record, newValue);
         }
         saveIndex(record, oldValue);
-        return newValue != null;
+        boolean merged = newValue != null;
+        if (merged) {
+            postProcess(dataKey, oldValue, newValue, mergingEntry.getValue(), MERGED,
+                    replicateOverWAN, callerUuid, callerAddress);
+        }
+        return merged;
     }
 
     @Override
-    public boolean merge(Data key, EntryView mergingEntry, MapMergePolicy mergePolicy) {
+    public boolean merge(final Data dataKey, final EntryView mergingEntry, final MapMergePolicy mergePolicy,
+                         final boolean replicateOverWAN, final String callerUuid, final Address callerAddress) {
         checkIfLoaded();
         long now = getNow();
 
-        Record record = getRecordOrNull(key, now, false);
-        mergingEntry = EntryViews.convertToLazyEntryView(mergingEntry, serializationService, mergePolicy);
+        Record record = getRecordOrNull(dataKey, now, false);
+        EntryView userEntryView = toLazyEntryView(mergingEntry, serializationService, mergePolicy);
         Object newValue;
         Object oldValue = null;
         if (record == null) {
-            Object notExistingKey = mapServiceContext.toObject(key);
-            EntryView nullEntryView = EntryViews.createNullEntryView(notExistingKey);
-            newValue = mergePolicy.merge(name, mergingEntry, nullEntryView);
+            EntryView<Data, Object> nonexistentEntryView = toLazyEntryViewWithoutValue(dataKey, serializationService);
+            newValue = mergePolicy.merge(name, userEntryView, nonexistentEntryView);
             if (newValue == null) {
                 return false;
             }
-            newValue = mapDataStore.add(key, newValue, now);
+            newValue = mapDataStore.add(dataKey, newValue, now);
             record = createRecord(newValue, DEFAULT_TTL, now);
             mergeRecordExpiration(record, mergingEntry);
-            storage.put(key, record);
-            eventJournal.writeUpdateEvent(mapContainer.getEventJournalConfig(), mapContainer.getObjectNamespace(), partitionId,
-                    key, null, record.getValue());
+            storage.put(dataKey, record);
+            eventJournal.writeUpdateEvent(mapContainer.getEventJournalConfig(),
+                    mapContainer.getObjectNamespace(), partitionId, dataKey, null, record.getValue());
         } else {
             oldValue = record.getValue();
-            EntryView existingEntry = EntryViews.createLazyEntryView(record.getKey(), record.getValue(),
-                    record, serializationService, mergePolicy);
-            newValue = mergePolicy.merge(name, mergingEntry, existingEntry);
+            EntryView existingEntry = toLazyEntryView(record, serializationService, mergePolicy);
+            newValue = mergePolicy.merge(name, userEntryView, existingEntry);
             // existing entry will be removed
             if (newValue == null) {
                 removeIndex(record);
-                mapDataStore.remove(key, now);
+                mapDataStore.remove(dataKey, now);
                 onStore(record);
                 eventJournal.writeUpdateEvent(mapContainer.getEventJournalConfig(), mapContainer.getObjectNamespace(),
-                        partitionId, key, oldValue, null);
+                        partitionId, dataKey, oldValue, null);
                 storage.removeRecord(record);
+                postProcess(dataKey, oldValue, newValue, mergingEntry.getValue(), MERGED,
+                        replicateOverWAN, callerUuid, callerAddress);
                 return true;
             }
             if (newValue == mergingEntry.getValue()) {
@@ -821,16 +847,23 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             }
             // same with the existing entry so no need to map-store etc operations.
             if (recordComparator.isEqual(newValue, oldValue)) {
+                postProcess(dataKey, oldValue, newValue, mergingEntry.getValue(), MERGED,
+                        replicateOverWAN, callerUuid, callerAddress);
                 return true;
             }
-            newValue = mapDataStore.add(key, newValue, now);
+            newValue = mapDataStore.add(dataKey, newValue, now);
             onStore(record);
-            eventJournal.writeUpdateEvent(mapContainer.getEventJournalConfig(), mapContainer.getObjectNamespace(), partitionId,
-                    key, oldValue, newValue);
-            storage.updateRecordValue(key, record, newValue);
+            eventJournal.writeUpdateEvent(mapContainer.getEventJournalConfig(),
+                    mapContainer.getObjectNamespace(), partitionId, dataKey, oldValue, newValue);
+            storage.updateRecordValue(dataKey, record, newValue);
         }
         saveIndex(record, oldValue);
-        return newValue != null;
+        boolean merged = newValue != null;
+        if (merged) {
+            postProcess(dataKey, oldValue, newValue, mergingEntry.getValue(), MERGED,
+                    replicateOverWAN, callerUuid, callerAddress);
+        }
+        return merged;
     }
 
     // TODO why does not replace method load data from map store if currently not available in memory.
@@ -1163,5 +1196,63 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         return "on partitionId=" + partitionId + " on " + mapServiceContext.getNodeEngine().getThisAddress()
                 + " loadedOnCreate=" + loadedOnCreate + " loadedOnPreMigration=" + loadedOnPreMigration
                 + " isLoaded=" + isLoaded();
+    }
+
+    @Override
+    public void postProcess(Data dataKey, Object oldValue, Object value, Object mergingValue,
+                            EntryEventType eventType, boolean replicateOverWAN,
+                            String callerUuid, Address callerAddress) {
+
+        if (eventType == null) {
+            eventType = oldValue == null ? ADDED : UPDATED;
+        }
+
+        Object endValue = extractEndValue(dataKey, value);
+        mapServiceContext.interceptAfterPut(name, endValue);
+        mapEventPublisher.publishEvent(callerAddress, name, eventType, dataKey, oldValue, endValue, mergingValue);
+
+        if (replicateOverWAN) {
+            publishWANReplicationEvent(dataKey, endValue);
+        }
+
+        invalidateNearCache(dataKey, callerUuid);
+        evictEntries(dataKey);
+    }
+
+    private Object extractEndValue(Data dataKey, Object value) {
+        if (isPostProcessing()) {
+            Record record = getRecord(dataKey);
+            return record == null ? null : record.getValue();
+        }
+
+        return value;
+    }
+
+    public final void invalidateNearCache(Data key, String callerUuid) {
+        if (!mapContainer.hasInvalidationListener() || key == null) {
+            return;
+        }
+
+        invalidator.invalidateKey(key, name, callerUuid);
+    }
+
+    private void publishWANReplicationEvent(Data dataKey, Object value) {
+        if (!mapContainer.isWanReplicationEnabled()) {
+            return;
+        }
+
+        Record record = getRecord(dataKey);
+
+        if (record == null) {
+            mapEventPublisher.publishWanReplicationRemove(name, dataKey, currentTimeMillis());
+        } else {
+            Data valueConvertedData = mapServiceContext.toData(value);
+            EntryView entryView = createSimpleEntryView(dataKey, valueConvertedData, record);
+            mapEventPublisher.publishWanReplicationUpdate(name, entryView);
+        }
+    }
+
+    private boolean isPostProcessing() {
+        return mapDataStore.isPostProcessingMapStore() || mapServiceContext.hasInterceptor(name);
     }
 }

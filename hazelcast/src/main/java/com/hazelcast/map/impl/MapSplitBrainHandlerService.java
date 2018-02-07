@@ -243,8 +243,7 @@ class MapSplitBrainHandlerService implements SplitBrainHandlerService {
                 Operation operation = operationProvider.createLegacyMergeOperation(name, entryView, mergePolicy, false);
                 try {
                     int partitionId = partitionService.getPartitionId(key);
-                    operationService
-                            .invokeOnPartition(SERVICE_NAME, operation, partitionId)
+                    operationService.invokeOnPartition(SERVICE_NAME, operation, partitionId)
                             .andThen(mergeCallback);
                 } catch (Throwable t) {
                     throw rethrow(t);

@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.recordstore;
 
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationQueue;
 import com.hazelcast.map.impl.MapContainer;
@@ -28,8 +29,11 @@ import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordFactory;
 import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.monitor.LocalRecordStoreStats;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.SplitBrainAwareDataContainer;
+import com.hazelcast.spi.SplitBrainMergeEntryView;
+import com.hazelcast.spi.SplitBrainMergePolicy;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 
 import java.util.Iterator;
@@ -167,7 +171,11 @@ public interface RecordStore<R extends Record> extends SplitBrainAwareDataContai
      */
     Object putFromLoadBackup(Data key, Object value);
 
-    boolean merge(Data dataKey, EntryView mergingEntryView, MapMergePolicy mergePolicy);
+    boolean merge(Data dataKey, EntryView mergingEntryView, MapMergePolicy mergePolicy,
+                  boolean replicateOverWAN, String callerUuid, Address callerAddress);
+
+    Boolean merge(SplitBrainMergeEntryView<Data, Object> mergingEntry, SplitBrainMergePolicy mergePolicy,
+                  boolean replicateOverWAN, String callerUuid, Address callerAddress);
 
     R getRecord(Data key);
 
@@ -447,4 +455,8 @@ public interface RecordStore<R extends Record> extends SplitBrainAwareDataContai
      * @param exception an exception that occurred during key loading
      */
     void updateLoadStatus(boolean lastBatch, Throwable exception);
+
+    void postProcess(Data dataKey, Object value, Object oldValue, Object mergingValue,
+                     EntryEventType eventType, boolean disableWanReplicationEvent,
+                     String callerUuid, Address callerAddress);
 }
