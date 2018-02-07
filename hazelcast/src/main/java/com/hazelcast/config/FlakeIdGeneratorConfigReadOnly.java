@@ -42,6 +42,11 @@ public class FlakeIdGeneratorConfigReadOnly extends FlakeIdGeneratorConfig {
         throw throwReadOnly();
     }
 
+    @Override
+    public FlakeIdGeneratorConfig setIdOffset(long idOffset) {
+        throw throwReadOnly();
+    }
+
     private UnsupportedOperationException throwReadOnly() {
         throw new UnsupportedOperationException("This config is read-only");
     }

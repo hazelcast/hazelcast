@@ -63,9 +63,10 @@ public class FlakeIdGeneratorProxy
     private static final int NODE_ID_NOT_YET_SET = -1;
     private static final int NODE_ID_OUT_OF_RANGE = -2;
 
+    private final String name;
+    private final long epochStart;
     private volatile int nodeId = NODE_ID_NOT_YET_SET;
     private volatile long nextNodeIdUpdate = Long.MIN_VALUE;
-    private final String name;
     private final ILogger logger;
 
     /**
@@ -88,6 +89,7 @@ public class FlakeIdGeneratorProxy
         this.logger = nodeEngine.getLogger(getClass());
 
         FlakeIdGeneratorConfig config = nodeEngine.getConfig().findFlakeIdGeneratorConfig(getName());
+        epochStart = EPOCH_START - (config.getIdOffset() >> (BITS_SEQUENCE + BITS_NODE_ID));
         batcher = new AutoBatcher(config.getPrefetchCount(), config.getPrefetchValidityMillis(),
                 new AutoBatcher.IdBatchSupplier() {
                     @Override
@@ -176,8 +178,10 @@ public class FlakeIdGeneratorProxy
             throw new NodeIdOutOfRangeException("NodeID overflow, this member cannot generate IDs");
         }
         assert (nodeId & -1 << BITS_NODE_ID) == 0  : "nodeId out of range: " + nodeId;
-        now -= EPOCH_START;
-        assert now >= 0 && now < (1L << BITS_TIMESTAMP)  : "Current time out of allowed range";
+        now -= epochStart;
+        if (now < -(1L << BITS_TIMESTAMP) || now >= (1L << BITS_TIMESTAMP)) {
+            throw new HazelcastException("Current time out of allowed range");
+        }
         now <<= BITS_SEQUENCE;
         long oldGeneratedValue;
         long base;

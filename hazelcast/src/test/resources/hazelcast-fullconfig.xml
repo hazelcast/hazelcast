@@ -606,7 +606,8 @@
 
     <flake-id-generator name="default">
         <prefetch-count>100</prefetch-count>
-        <prefetch-validity-millis>10000</prefetch-validity-millis>
+        <prefetch-validity-millis>600000</prefetch-validity-millis>
+        <id-offset>0</id-offset>
     </flake-id-generator>
 
     <listeners>

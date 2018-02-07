@@ -17,8 +17,8 @@
 package com.hazelcast.client.flakeidgen.impl;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.config.ClientFlakeIdGeneratorConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
-import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.logging.ILogger;
@@ -56,7 +56,7 @@ public class FlakeIdGenerator_ClientBackpressureTest {
     @Test
     public void backpressureTest() {
         int batchSize = 100000;
-        before(new ClientConfig().addFlakeIdGeneratorConfig(new FlakeIdGeneratorConfig("gen")
+        before(new ClientConfig().addFlakeIdGeneratorConfig(new ClientFlakeIdGeneratorConfig("gen")
                 .setPrefetchCount(batchSize)));
 
         final FlakeIdGenerator generator = client.getFlakeIdGenerator("gen");

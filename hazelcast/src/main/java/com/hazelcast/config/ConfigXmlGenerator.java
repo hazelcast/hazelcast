@@ -1107,7 +1107,8 @@ public class ConfigXmlGenerator {
         for (FlakeIdGeneratorConfig m : config.getFlakeIdGeneratorConfigs().values()) {
             gen.open("flake-id-generator", "name", m.getName())
                     .node("prefetch-count", m.getPrefetchCount())
-                    .node("prefetch-validity-millis", m.getPrefetchValidityMillis());
+                    .node("prefetch-validity-millis", m.getPrefetchValidityMillis())
+                    .node("id-offset", m.getIdOffset());
             gen.close();
         }
     }

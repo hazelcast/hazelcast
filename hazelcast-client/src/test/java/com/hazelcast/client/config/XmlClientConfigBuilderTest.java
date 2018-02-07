@@ -19,7 +19,6 @@ package com.hazelcast.client.config;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
-import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.GlobalSerializerConfig;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.HostVerificationConfig;
@@ -346,7 +345,7 @@ public class XmlClientConfigBuilderTest extends HazelcastTestSupport {
                 + "</flake-id-generator>"
                 + HAZELCAST_CLIENT_END_TAG;
         ClientConfig config = buildConfig(xml);
-        FlakeIdGeneratorConfig fConfig = config.findFlakeIdGeneratorConfig("gen");
+        ClientFlakeIdGeneratorConfig fConfig = config.findFlakeIdGeneratorConfig("gen");
         assertEquals("gen", fConfig.getName());
         assertEquals(3, fConfig.getPrefetchCount());
         assertEquals(10L, fConfig.getPrefetchValidityMillis());

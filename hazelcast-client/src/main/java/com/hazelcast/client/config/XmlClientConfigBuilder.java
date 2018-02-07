@@ -26,7 +26,6 @@ import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionConfig.MaxSizePolicy;
 import com.hazelcast.config.EvictionPolicy;
-import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.HostVerificationConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.InvalidConfigurationException;
@@ -348,7 +347,7 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
 
     private void handleFlakeIdGenerator(Node node) {
         String name = getAttribute(node, "name");
-        FlakeIdGeneratorConfig config = new FlakeIdGeneratorConfig(name);
+        ClientFlakeIdGeneratorConfig config = new ClientFlakeIdGeneratorConfig(name);
         for (Node child : childElements(node)) {
             String nodeName = cleanNodeName(child);
             String value = getTextContent(child).trim();

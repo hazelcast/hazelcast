@@ -1774,7 +1774,7 @@
                         <xs:element name="query-caches" type="query-caches-client" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="connection-strategy" type="connection-strategy" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="user-code-deployment" type="user-code-deployment-client" minOccurs="0" maxOccurs="1"/>
-                        <xs:element name="flake-id-generator" type="flake-id-generator" minOccurs="0" maxOccurs="1"/>
+                        <xs:element name="flake-id-generator" type="client-flake-id-generator" minOccurs="0" maxOccurs="1"/>
                     </xs:choice>
                     <xs:attribute name="executor-pool-size" type="xs:int" use="optional"/>
                     <xs:attribute name="credentials-ref" type="xs:string" use="optional"/>
@@ -1983,7 +1983,7 @@
             </xs:documentation>
             <xs:appinfo>
                 <tool:annotation>
-                    <tool:exports type="com.hazelcast.core.IdGenerator"/>
+                    <tool:exports type="com.hazelcast.flakeidgen.FlakeIdGenerator"/>
                 </tool:annotation>
             </xs:appinfo>
         </xs:annotation>
@@ -3196,6 +3196,7 @@
             </xs:annotation>
         </xs:attribute>
     </xs:complexType>
+
     <xs:complexType name="flake-id-generator">
         <xs:attribute name="name" type="xs:string" default="default">
             <xs:annotation>
@@ -3207,8 +3208,11 @@
         <xs:attribute name="prefetchCount" default="100" use="optional">
             <xs:annotation>
                 <xs:documentation>
-                    How many IDs are pre-fetched on the background when one call to newId() is made.
-                    Value must be in the range 1..100,000, default is 100.
+                    Sets how many IDs are pre-fetched on the background when one call to
+                    FlakeIdGenerator.newId() is made. Value must be in the range 1..100,000, default
+                    is 100.
+
+                    This setting pertains only to newId() calls made on the member that configured it.
                 </xs:documentation>
             </xs:annotation>
             <xs:simpleType>
@@ -3220,12 +3224,72 @@
         <xs:attribute name="prefetchValidityMillis" type="xs:long" default="600000" use="optional">
             <xs:annotation>
                 <xs:documentation>
-                    For how long the pre-fetched IDs can be used. If this time elapses, new IDs will be fetched.
-                    Time unit is milliseconds.
-                    If value is &lt;= 0, validity is unlimited. Default value is 600,000 (10 minutes).
-                    The IDs contain timestamp component, which ensures rough global ordering of IDs. If an ID
-                    is assigned to an event that occurred much later, it will be much out of order.
-                    If you don't need ordering, set this value to 0.
+                    Sets for how long the pre-fetched IDs can be used. If this time elapses, a new batch of IDs
+                    will be fetched. Time unit is milliseconds, default is 600,000 (10 minutes).
+
+                    The IDs contain timestamp component, which ensures rough global ordering of IDs. If an
+                    ID is assigned to an object that was created much later, it will be much out of order. If you
+                    don't care about ordering, set this value to 0.
+
+                    This setting pertains only to newId() calls made on the member that configured it.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="idOffset" type="xs:long" default="0" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    Sets the offset that will be added to the returned IDs. Default value is 0. Setting might be
+                    useful when migrating from IdGenerator, default value works for all green-field projects.
+
+                    For example: Largest ID returned from IdGenerator is 150. FlakeIdGenerator now returns
+                    100. If you configure idOffset of 50 and stop using the IdGenerator, the next ID from
+                    FlakeIdGenerator will be 151 or larger and no duplicate IDs will be generated. In real-life,
+                    the IDs are much larger. You also need to add a reserve to the offset because the IDs
+                    from FlakeIdGenerator are only roughly ordered. Recommended reserve is 2^38, that is
+                    274877906944.
+
+                    Negative values are allowed to increase the lifespan of the generator, however keep in
+                    mind that the generated IDs might also be negative.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="client-flake-id-generator">
+        <xs:attribute name="name" type="xs:string" default="default">
+            <xs:annotation>
+                <xs:documentation>
+                    Name of the Flake ID Generator.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="prefetchCount" default="100" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    Sets how many IDs are pre-fetched on the background when one call to
+                    FlakeIdGenerator.newId() is made. Value must be in the range 1..100,000, default
+                    is 100.
+
+                    This setting pertains only to newId() calls made on the member that configured it.
+                </xs:documentation>
+            </xs:annotation>
+            <xs:simpleType>
+                <xs:restriction base="xs:int">
+                    <xs:minInclusive value="1" />
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:attribute>
+        <xs:attribute name="prefetchValidityMillis" type="xs:long" default="600000" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    Sets for how long the pre-fetched IDs can be used. If this time elapses, a new batch of IDs
+                    will be fetched. Time unit is milliseconds, default is 600,000 (10 minutes).
+
+                    The IDs contain timestamp component, which ensures rough global ordering of IDs. If an
+                    ID is assigned to an object that was created much later, it will be much out of order. If you
+                    don't care about ordering, set this value to 0.
+
+                    This setting pertains only to newId() calls made on the member that configured it.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
