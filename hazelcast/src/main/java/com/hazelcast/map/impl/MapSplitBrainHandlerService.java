@@ -127,7 +127,7 @@ class MapSplitBrainHandlerService implements SplitBrainHandlerService {
 
     private class Merger implements Runnable {
 
-        private static final int TIMEOUT_FACTOR = 500;
+        private static final long TIMEOUT_FACTOR = 500;
 
         private final Semaphore semaphore = new Semaphore(0);
         private final Map<MapContainer, Collection<Record>> recordMap;

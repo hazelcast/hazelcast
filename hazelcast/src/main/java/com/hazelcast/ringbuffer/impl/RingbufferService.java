@@ -396,7 +396,7 @@ public class RingbufferService implements ManagedService, RemoteService, Fragmen
 
     private class Merger implements Runnable {
 
-        private static final int TIMEOUT_FACTOR = 500;
+        private static final long TIMEOUT_FACTOR = 500;
 
         private final Map<Integer, List<RingbufferContainer>> partitionContainerMap;
 

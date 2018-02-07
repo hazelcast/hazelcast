@@ -232,7 +232,7 @@ public abstract class CollectionService implements ManagedService, RemoteService
 
     private class Merger implements Runnable {
 
-        private static final int TIMEOUT_FACTOR = 500;
+        private static final long TIMEOUT_FACTOR = 500;
 
         private final Map<Integer, Map<CollectionContainer, List<CollectionItem>>> itemMap;
 

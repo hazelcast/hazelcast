@@ -360,7 +360,7 @@ public class DistributedScheduledExecutorService
 
     private class Merger implements Runnable {
 
-        private static final int TIMEOUT_FACTOR = 500;
+        private static final long TIMEOUT_FACTOR = 500;
 
         private Map<Integer, Map<String, Collection<ScheduledTaskDescriptor>>> partitionsSnapshot;
 
