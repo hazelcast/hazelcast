@@ -27,6 +27,7 @@ import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.core.Client;
 import com.hazelcast.core.Member;
+import com.hazelcast.crdt.pncounter.PNCounterService;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.hotrestart.HotRestartService;
 import com.hazelcast.instance.HazelcastInstanceImpl;
@@ -42,6 +43,7 @@ import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.LocalMemoryStats;
 import com.hazelcast.monitor.LocalMultiMapStats;
 import com.hazelcast.monitor.LocalOperationStats;
+import com.hazelcast.monitor.LocalPNCounterStats;
 import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.monitor.LocalReplicatedMapStats;
 import com.hazelcast.monitor.LocalTopicStats;
@@ -249,6 +251,9 @@ public class TimedMemberStateFactory {
                 } else if (service instanceof ReplicatedMapService) {
                     count = handleReplicatedMap(memberState, count, config, ((ReplicatedMapService) service).getStats(),
                             longInstanceNames);
+                } else if (service instanceof PNCounterService) {
+                    count = handlePNCounter(memberState, count, config, ((PNCounterService) service).getStats(),
+                            longInstanceNames);
                 }
             }
         }
@@ -325,8 +330,25 @@ public class TimedMemberStateFactory {
         return count;
     }
 
+    private int handlePNCounter(MemberStateImpl memberState, int count, Config config,
+                                Map<String, LocalPNCounterStats> counters,
+                                List<String> longInstanceNames) {
+        for (Map.Entry<String, LocalPNCounterStats> entry : counters.entrySet()) {
+            String name = entry.getKey();
+            if (count >= maxVisibleInstanceCount) {
+                break;
+            } else if (config.findPNCounterConfig(name).isStatisticsEnabled()) {
+                LocalPNCounterStats stats = entry.getValue();
+                memberState.putLocalPNCounterStats(name, stats);
+                longInstanceNames.add("pnc:" + name);
+                ++count;
+            }
+        }
+        return count;
+    }
+
     private int handleReliableTopic(MemberStateImpl memberState, int count, Config config, Map<String, LocalTopicStats> topics,
-                            List<String> longInstanceNames) {
+                                    List<String> longInstanceNames) {
         for (Map.Entry<String, LocalTopicStats> entry : topics.entrySet()) {
             String name = entry.getKey();
             if (count >= maxVisibleInstanceCount) {

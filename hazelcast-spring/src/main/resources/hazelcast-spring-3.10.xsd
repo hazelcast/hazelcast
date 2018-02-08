@@ -1652,6 +1652,50 @@
                         </xs:element>
                         <xs:element name="hot-restart-persistence" type="hot-restart-persistence" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="flake-id-generator" type="flake-id-generator" minOccurs="0" maxOccurs="1"/>
+                        <xs:element name="crdt-replication" type="crdt-replication" minOccurs="0" maxOccurs="1"/>
+                        <xs:element name="pn-counter" minOccurs="0" maxOccurs="unbounded">
+                            <xs:complexType>
+                                <xs:all>
+                                    <xs:element name="replica-count" type="crdt-replica-count" minOccurs="0" maxOccurs="1" default="2147483647">
+                                        <xs:annotation>
+                                            <xs:documentation>
+                                                Number of replicas on which the CRDT state will be kept. The updates are replicated
+                                                asynchronously between replicas.
+                                                The number must be greater than 1 and up to 2147483647 (Integer.MAX_VALUE).
+                                                The default value is 2147483647 (Integer.MAX_VALUE).
+                                            </xs:documentation>
+                                        </xs:annotation>
+                                    </xs:element>
+                                    <xs:element name="quorum-ref" minOccurs="0" maxOccurs="1">
+                                        <xs:annotation>
+                                            <xs:documentation>
+                                                Adds the Split Brain Protection for this data-structure which you configure using the quorum element.
+                                                You should set the quorum-ref's value as the quorum's name.
+                                                IMPORTANT: The term "quorum" simply refers to the count of members in the cluster required for an operation to succeed.
+                                                It does NOT refer to an implementation of Paxos or Raft protocols as used in many NoSQL and distributed systems.
+                                                The mechanism it provides in Hazelcast protects the user in case the number of nodes in a cluster drops below the
+                                                specified one.
+                                            </xs:documentation>
+                                        </xs:annotation>
+                                    </xs:element>
+                                </xs:all>
+                                <xs:attribute name="name" type="xs:string" use="optional" default="default">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            Name of the PN counter.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                                <xs:attribute name="statistics-enabled" type="parameterized-boolean"
+                                              use="optional" default="true">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            Enable/disable statistics for this PN counter.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                            </xs:complexType>
+                        </xs:element>
                     </xs:sequence>
                 </xs:extension>
             </xs:complexContent>
@@ -2056,6 +2100,18 @@
             <xs:appinfo>
                 <tool:annotation>
                     <tool:exports type="com.hazelcast.core.ILock"/>
+                </tool:annotation>
+            </xs:appinfo>
+        </xs:annotation>
+    </xs:element>
+    <xs:element name="PNCounter" type="hazelcast-type">
+        <xs:annotation>
+            <xs:documentation>
+                Retrieve a Hazelcast PNCounter instance
+            </xs:documentation>
+            <xs:appinfo>
+                <tool:annotation>
+                    <tool:exports type="com.hazelcast.crdt.pncounter.PNCounter"/>
                 </tool:annotation>
             </xs:appinfo>
         </xs:annotation>
@@ -2729,6 +2785,8 @@
                                     maxOccurs="unbounded"/>
                         <xs:element name="scheduled-executor-permission" type="instance-permission" minOccurs="0"
                                     maxOccurs="unbounded"/>
+                        <xs:element name="pn-counter-permission" type="instance-permission" minOccurs="0"
+                                    maxOccurs="unbounded"/>
                         <xs:element name="transaction-permission" type="base-permission" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="cache-permission" type="instance-permission" minOccurs="0"
                                     maxOccurs="unbounded"/>
@@ -2979,6 +3037,12 @@
         <xs:restriction base="xs:byte">
             <xs:minInclusive value="0"/>
             <xs:maxInclusive value="6"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="crdt-replica-count">
+        <xs:restriction base="xs:int">
+            <xs:minInclusive value="1"/>
+            <xs:maxInclusive value="2147483647"/>
         </xs:restriction>
     </xs:simpleType>
     <xs:simpleType name="parameterized-non-negative-integer">
@@ -3556,6 +3620,33 @@
         <xs:union memberTypes="wan-queue-full-behavior-format-enum non-space-string"/>
     </xs:simpleType>
 
+    <xs:complexType name="crdt-replication">
+        <xs:attribute name="replication-period-millis" type="parameterized-unsigned-int">
+            <xs:annotation>
+                <xs:documentation>
+                    The period between two replications of CRDT states in milliseconds.
+                    A lower value will increase the speed at which changes are disseminated
+                    to other cluster members at the expense of burst-like behaviour - less
+                    updates will be batched together in one replication message and one
+                    update to a CRDT may cause a sudden burst of replication messages in a
+                    short time interval.
+                    The value must be a positive non-null integer.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="max-concurrent-replication-targets" type="parameterized-unsigned-int">
+            <xs:annotation>
+                <xs:documentation>
+                    The maximum number of target members that we replicate the CRDT states
+                    to in one period. A higher count will lead to states being disseminated
+                    more rapidly at the expense of burst-like behaviour - one update to a
+                    CRDT will lead to a sudden burst in the number of replication messages
+                    in a short time interval.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
     <xs:complexType name="hot-restart-persistence">
         <xs:sequence>
             <xs:element name="base-dir" type="xs:string" minOccurs="0" maxOccurs="1" default="hot-restart">
@@ -3622,6 +3713,7 @@
             </xs:simpleType>
         </xs:attribute>
     </xs:complexType>
+
     <xs:complexType name="hot-restart">
         <xs:attribute name="fsync" type="parameterized-boolean" default="false">
             <xs:annotation>

@@ -759,4 +759,15 @@
         <quorum-size>3</quorum-size>
         <quorum-type>READ_WRITE</quorum-type>
     </quorum>
+
+    <crdt-replication>
+        <replication-period-millis>1000</replication-period-millis>
+        <max-concurrent-replication-targets>1</max-concurrent-replication-targets>
+    </crdt-replication>
+
+    <pn-counter name="pn-counter-1">
+        <replica-count>100</replica-count>
+        <quorum-ref>quorumRuleWithThreeMembers</quorum-ref>
+        <statistics-enabled>false</statistics-enabled>
+    </pn-counter>
 </hazelcast>

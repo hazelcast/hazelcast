@@ -43,6 +43,7 @@ import com.hazelcast.core.LifecycleService;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.core.PartitionService;
 import com.hazelcast.core.ReplicatedMap;
+import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.mapreduce.JobTracker;
@@ -276,6 +277,11 @@ class HazelcastOSGiInstanceImpl
     @Override
     public CardinalityEstimator getCardinalityEstimator(String name) {
         return delegatedInstance.getCardinalityEstimator(name);
+    }
+
+    @Override
+    public PNCounter getPNCounter(String name) {
+        return delegatedInstance.getPNCounter(name);
     }
 
     @Override

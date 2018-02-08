@@ -31,6 +31,7 @@ import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.LockConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MultiMapConfig;
+import com.hazelcast.config.PNCounterConfig;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.ReliableTopicConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
@@ -94,6 +95,7 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
     private final ConcurrentMap<String, MultiMapConfig> multiMapConfigs = new ConcurrentHashMap<String, MultiMapConfig>();
     private final ConcurrentMap<String, CardinalityEstimatorConfig> cardinalityEstimatorConfigs =
             new ConcurrentHashMap<String, CardinalityEstimatorConfig>();
+    private final ConcurrentMap<String, PNCounterConfig> pnCounterConfigs = new ConcurrentHashMap<String, PNCounterConfig>();
     private final ConcurrentMap<String, RingbufferConfig> ringbufferConfigs = new ConcurrentHashMap<String, RingbufferConfig>();
     private final ConcurrentMap<String, AtomicLongConfig> atomicLongConfigs = new ConcurrentHashMap<String, AtomicLongConfig>();
     private final ConcurrentMap<String, AtomicReferenceConfig> atomicReferenceConfigs
@@ -151,6 +153,7 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
             cacheEventJournalConfigs,
             mapEventJournalConfigs,
             flakeIdGeneratorConfigs,
+            pnCounterConfigs,
     };
 
     private volatile Version version;
@@ -328,6 +331,9 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
         } else if (newConfig instanceof FlakeIdGeneratorConfig) {
             FlakeIdGeneratorConfig config = (FlakeIdGeneratorConfig) newConfig;
             currentConfig = flakeIdGeneratorConfigs.putIfAbsent(config.getName(), config);
+        } else if (newConfig instanceof PNCounterConfig) {
+            PNCounterConfig config = (PNCounterConfig) newConfig;
+            currentConfig = pnCounterConfigs.putIfAbsent(config.getName(), config);
         } else {
             throw new UnsupportedOperationException("Unsupported config type: " + newConfig);
         }
@@ -424,6 +430,16 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
     @Override
     public ConcurrentMap<String, CardinalityEstimatorConfig> getCardinalityEstimatorConfigs() {
         return cardinalityEstimatorConfigs;
+    }
+
+    @Override
+    public PNCounterConfig findPNCounterConfig(String name) {
+        return lookupByPattern(configPatternMatcher, pnCounterConfigs, name);
+    }
+
+    @Override
+    public ConcurrentMap<String, PNCounterConfig> getPNCounterConfigs() {
+        return pnCounterConfigs;
     }
 
     @Override

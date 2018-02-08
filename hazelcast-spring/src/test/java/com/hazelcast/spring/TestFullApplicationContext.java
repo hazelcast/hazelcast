@@ -19,6 +19,7 @@ package com.hazelcast.spring;
 import com.hazelcast.config.AtomicLongConfig;
 import com.hazelcast.config.AtomicReferenceConfig;
 import com.hazelcast.config.AwsConfig;
+import com.hazelcast.config.CRDTReplicationConfig;
 import com.hazelcast.config.CacheDeserializedValues;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
@@ -58,7 +59,10 @@ import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.NetworkConfig;
+import com.hazelcast.config.PNCounterConfig;
 import com.hazelcast.config.PartitionGroupConfig;
+import com.hazelcast.config.PermissionConfig;
+import com.hazelcast.config.PermissionConfig.PermissionType;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.QueueStoreConfig;
@@ -109,6 +113,7 @@ import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.core.RingbufferStore;
 import com.hazelcast.core.RingbufferStoreFactory;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
+import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
@@ -136,6 +141,7 @@ import java.io.File;
 import java.net.InetSocketAddress;
 import java.nio.ByteOrder;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -147,6 +153,7 @@ import static com.hazelcast.config.HotRestartClusterDataRecoveryPolicy.PARTIAL_R
 import static com.hazelcast.spi.properties.GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS;
 import static com.hazelcast.spi.properties.GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS;
 import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
+import static com.hazelcast.util.CollectionUtil.isNotEmpty;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -246,6 +253,9 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
 
     @Resource
     private StreamSerializer dummySerializer;
+
+    @Resource(name = "pnCounter")
+    private PNCounter pnCounter;
 
     @BeforeClass
     @AfterClass
@@ -517,6 +527,28 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         RingbufferStoreConfig store4 = testRingbuffer4.getRingbufferStoreConfig();
         assertNotNull(store4);
         assertEquals(dummyRingbufferStoreFactory, store4.getFactoryImplementation());
+    }
+
+    @Test
+    public void testPNCounterConfig() {
+        PNCounterConfig testPNCounter = config.getPNCounterConfig("testPNCounter");
+        assertNotNull(testPNCounter);
+        assertEquals("testPNCounter", testPNCounter.getName());
+        assertEquals(100, testPNCounter.getReplicaCount());
+        assertEquals("my-quorum", testPNCounter.getQuorumName());
+        assertFalse(testPNCounter.isStatisticsEnabled());
+    }
+
+    @Test
+    public void testSecurity() {
+        final Set<PermissionConfig> clientPermissionConfigs = config.getSecurityConfig().getClientPermissionConfigs();
+        assertTrue(isNotEmpty(clientPermissionConfigs));
+        assertEquals(1, clientPermissionConfigs.size());
+        final PermissionConfig pnCounterPermission = new PermissionConfig(PermissionType.PN_COUNTER, "pnCounterPermission", "*")
+                .addAction("create")
+                .setEndpoints(Collections.<String>emptySet());
+
+        assertContains(clientPermissionConfigs, pnCounterPermission);
     }
 
     @Test
@@ -849,6 +881,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertNotNull(countDownLatch);
         assertNotNull(semaphore);
         assertNotNull(lock);
+        assertNotNull(pnCounter);
         assertEquals("map1", map1.getName());
         assertEquals("map2", map2.getName());
         assertEquals("testMultimap", multiMap.getName());
@@ -934,6 +967,13 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         for (MemberGroupConfig mgc : pgc.getMemberGroupConfigs()) {
             assertEquals(2, mgc.getInterfaces().size());
         }
+    }
+
+    @Test
+    public void testCRDTReplicationConfig() {
+        CRDTReplicationConfig replicationConfig = config.getCRDTReplicationConfig();
+        assertEquals(10, replicationConfig.getMaxConcurrentReplicationTargets());
+        assertEquals(2000, replicationConfig.getReplicationPeriodMillis());
     }
 
     @Test

@@ -14,6 +14,7 @@ import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.LockConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MultiMapConfig;
+import com.hazelcast.config.PNCounterConfig;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.QuorumConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
@@ -34,6 +35,7 @@ import com.hazelcast.core.ISemaphore;
 import com.hazelcast.core.ISet;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.core.ReplicatedMap;
+import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.ringbuffer.Ringbuffer;
@@ -78,6 +80,7 @@ public abstract class AbstractQuorumTest {
     protected static final String RINGBUFFER_NAME = "quorum" + randomString();
     protected static final String SCHEDULED_EXEC_NAME = "quorum" + randomString();
     protected static final String SET_NAME = "quorum" + randomString();
+    protected static final String PN_COUNTER_NAME = "quorum" + randomString();
 
     protected static PartitionedCluster cluster;
 
@@ -196,6 +199,12 @@ public abstract class AbstractQuorumTest {
         return config;
     }
 
+    protected static PNCounterConfig newPNCounterConfig(QuorumType quorumType, String quorumName) {
+        PNCounterConfig config = new PNCounterConfig(PN_COUNTER_NAME + quorumType.name());
+        config.setQuorumName(quorumName);
+        return config;
+    }
+
     protected static QuorumConfig newQuorumConfig(QuorumType quorumType, String quorumName) {
         QuorumConfig quorumConfig = new QuorumConfig();
         quorumConfig.setName(quorumName);
@@ -234,6 +243,7 @@ public abstract class AbstractQuorumTest {
                 config.addScheduledExecutorConfig(newScheduledExecConfig(quorumType, quorumName, postfix));
             }
             config.addSetConfig(newSetConfig(quorumType, quorumName));
+            config.addPNCounterConfig(newPNCounterConfig(quorumType, quorumName));
         }
 
         cluster.createFiveMemberCluster(config);
@@ -331,6 +341,10 @@ public abstract class AbstractQuorumTest {
 
     protected ISet set(int index, QuorumType quorumType) {
         return cluster.instance[index].getSet(SET_NAME + quorumType.name());
+    }
+
+    protected PNCounter pnCounter(int index, QuorumType quorumType) {
+        return cluster.instance[index].getPNCounter(PN_COUNTER_NAME + quorumType.name());
     }
 
     protected static IFunction function() {

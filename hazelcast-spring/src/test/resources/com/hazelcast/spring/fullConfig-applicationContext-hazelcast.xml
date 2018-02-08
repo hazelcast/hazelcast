@@ -51,6 +51,7 @@
                     </hz:properties>
                 </hz:mutual-auth>
             </hz:management-center>
+
             <hz:properties>
                 <hz:property name="hazelcast.merge.first.run.delay.seconds">5</hz:property>
                 <hz:property name="hazelcast.merge.next.run.delay.seconds">5</hz:property>
@@ -563,6 +564,16 @@
                               page-size="20">
                 <hz:size unit="MEGABYTES" value="256"/>
             </hz:native-memory>
+            <hz:security>
+                <hz:client-permissions>
+                    <hz:pn-counter-permission name="pnCounterPermission">
+                        <hz:actions>
+                            <hz:action>create</hz:action>
+                        </hz:actions>
+                    </hz:pn-counter-permission>
+                </hz:client-permissions>
+            </hz:security>
+
             <hz:member-attributes>
                 <hz:attribute name="cluster.group.name">spring-group</hz:attribute>
                 <hz:attribute name="cluster.port.int" type="int">5700</hz:attribute>
@@ -611,6 +622,13 @@
             </hz:hot-restart-persistence>
 
             <hz:flake-id-generator name="flakeIdGenerator*" prefetchCount="3" prefetchValidityMillis="10" idOffset="20"/>
+
+            <hz:crdt-replication max-concurrent-replication-targets="10" replication-period-millis="2000" />
+
+            <hz:pn-counter name="testPNCounter" statistics-enabled="false">
+                <hz:quorum-ref>my-quorum</hz:quorum-ref>
+                <hz:replica-count>100</hz:replica-count>
+            </hz:pn-counter>
         </hz:config>
     </hz:hazelcast>
 
@@ -639,6 +657,7 @@
     <hz:cardinalityEstimator id="cardinality" instance-ref="instance" name="cardinality"/>
     <hz:ringbuffer id="testRingbuffer" instance-ref="instance" name="testRingbuffer"/>
     <hz:reliableTopic id="testReliableTopic" instance-ref="instance" name="testReliableTopic"/>
+    <hz:PNCounter id="pnCounter" instance-ref="instance" name="pnCounter"/>
 
     <bean id="dummyMapStore" class="com.hazelcast.spring.DummyStore"/>
     <bean id="dummyMapStoreFactory" class="com.hazelcast.spring.DummyStoreFactory"/>

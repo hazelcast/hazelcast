@@ -31,6 +31,7 @@ import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.LocalMemoryStats;
 import com.hazelcast.monitor.LocalMultiMapStats;
 import com.hazelcast.monitor.LocalOperationStats;
+import com.hazelcast.monitor.LocalPNCounterStats;
 import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.monitor.LocalReplicatedMapStats;
 import com.hazelcast.monitor.LocalTopicStats;
@@ -60,6 +61,7 @@ public class MemberStateImpl implements MemberState {
     private Map<String, LocalQueueStats> queueStats = new HashMap<String, LocalQueueStats>();
     private Map<String, LocalTopicStats> topicStats = new HashMap<String, LocalTopicStats>();
     private Map<String, LocalTopicStats> reliableTopicStats = new HashMap<String, LocalTopicStats>();
+    private Map<String, LocalPNCounterStats> pnCounterStats = new HashMap<String, LocalPNCounterStats>();
     private Map<String, LocalExecutorStats> executorStats = new HashMap<String, LocalExecutorStats>();
     private Map<String, LocalReplicatedMapStats> replicatedMapStats = new HashMap<String, LocalReplicatedMapStats>();
     private Map<String, LocalCacheStats> cacheStats = new HashMap<String, LocalCacheStats>();
@@ -113,6 +115,11 @@ public class MemberStateImpl implements MemberState {
     }
 
     @Override
+    public LocalPNCounterStats getLocalPNCounterStats(String pnCounterName) {
+        return pnCounterStats.get(pnCounterName);
+    }
+
+    @Override
     public LocalReplicatedMapStats getLocalReplicatedMapStats(String replicatedMapName) {
         return replicatedMapStats.get(replicatedMapName);
     }
@@ -163,6 +170,10 @@ public class MemberStateImpl implements MemberState {
 
     public void putLocalReliableTopicStats(String name, LocalTopicStats localTopicStats) {
         reliableTopicStats.put(name, localTopicStats);
+    }
+
+    public void putLocalPNCounterStats(String name, LocalPNCounterStats localPNCounterStats) {
+        pnCounterStats.put(name, localPNCounterStats);
     }
 
     public void putLocalExecutorStats(String name, LocalExecutorStats localExecutorStats) {
@@ -271,6 +282,7 @@ public class MemberStateImpl implements MemberState {
         serializeMap(root, "queueStats", queueStats);
         serializeMap(root, "topicStats", topicStats);
         serializeMap(root, "reliableTopicStats", reliableTopicStats);
+        serializeMap(root, "pnCounterStats", pnCounterStats);
         serializeMap(root, "executorStats", executorStats);
         serializeMap(root, "cacheStats", cacheStats);
         serializeMap(root, "wanStats", wanStats);
@@ -346,6 +358,11 @@ public class MemberStateImpl implements MemberState {
             LocalTopicStatsImpl stats = new LocalTopicStatsImpl();
             stats.fromJson(next.getValue().asObject());
             reliableTopicStats.put(next.getName(), stats);
+        }
+        for (JsonObject.Member next : getObject(json, "pnCounterStats")) {
+            LocalPNCounterStatsImpl stats = new LocalPNCounterStatsImpl();
+            stats.fromJson(next.getValue().asObject());
+            pnCounterStats.put(next.getName(), stats);
         }
         for (JsonObject.Member next : getObject(json, "executorStats")) {
             LocalExecutorStatsImpl stats = new LocalExecutorStatsImpl();
@@ -425,6 +442,7 @@ public class MemberStateImpl implements MemberState {
                 + ", queueStats=" + queueStats
                 + ", topicStats=" + topicStats
                 + ", reliableTopicStats=" + reliableTopicStats
+                + ", pnCounterStats=" + pnCounterStats
                 + ", executorStats=" + executorStats
                 + ", cacheStats=" + cacheStats
                 + ", memoryStats=" + memoryStats

@@ -170,7 +170,7 @@ public class ConfigXmlGeneratorTest {
 
         assertEquals(expectedConfig, actualConfig);
     }
-    
+
     @Test
     public void testNetworkConfigOutboundPorts() {
         Config cfg = new Config();
@@ -579,6 +579,21 @@ public class ConfigXmlGeneratorTest {
     }
 
     @Test
+    public void testPNCounter() {
+        PNCounterConfig expectedConfig = new PNCounterConfig()
+                .setName("testPNCounter")
+                .setReplicaCount(100)
+                .setQuorumName("quorum");
+
+        Config config = new Config().addPNCounterConfig(expectedConfig);
+
+        Config xmlConfig = getNewConfigViaXMLGenerator(config);
+
+        PNCounterConfig actualConfig = xmlConfig.getPNCounterConfig(expectedConfig.getName());
+        assertEquals(expectedConfig, actualConfig);
+    }
+
+    @Test
     public void testMultiMap() {
         MultiMapConfig expectedConfig = new MultiMapConfig()
                 .setName("testMultiMap")
@@ -796,6 +811,20 @@ public class ConfigXmlGeneratorTest {
                 .setProperty("key", "value");
 
         testMap(mapStoreConfig);
+    }
+
+    @Test
+    public void testCRDTReplication() {
+        final CRDTReplicationConfig replicationConfig = new CRDTReplicationConfig()
+                .setMaxConcurrentReplicationTargets(10)
+                .setReplicationPeriodMillis(2000);
+        final Config config = new Config().setCRDTReplicationConfig(replicationConfig);
+        final Config xmlConfig = getNewConfigViaXMLGenerator(config);
+        final CRDTReplicationConfig xmlReplicationConfig = xmlConfig.getCRDTReplicationConfig();
+
+        assertNotNull(xmlReplicationConfig);
+        assertEquals(10, xmlReplicationConfig.getMaxConcurrentReplicationTargets());
+        assertEquals(2000, xmlReplicationConfig.getReplicationPeriodMillis());
     }
 
     @Test

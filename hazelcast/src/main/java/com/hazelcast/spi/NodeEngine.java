@@ -33,6 +33,8 @@ import com.hazelcast.transaction.TransactionManagerService;
 import com.hazelcast.version.MemberVersion;
 import com.hazelcast.wan.WanReplicationService;
 
+import java.util.Collection;
+
 /**
  * The NodeEngine is the 'umbrella' of services/service-method that gets injected into a {@link ManagedService}.
  * <p>
@@ -298,4 +300,11 @@ public interface NodeEngine {
      * @since 3.10
      */
     SplitBrainMergePolicyProvider getSplitBrainMergePolicyProvider();
+
+    /**
+     * Returns a list of services matching provides service class/interface.
+     * <p>
+     * <b>Note:</b> CoreServices will be placed at the beginning of the list.
+     */
+    <S> Collection<S> getServices(Class<S> serviceClass);
 }

@@ -30,6 +30,7 @@ import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddListConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddLockConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddMapConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddMultiMapConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddPNCounterConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddQueueConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddReliableTopicConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddReplicatedMapConfigCodec;
@@ -49,6 +50,7 @@ import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 import com.hazelcast.config.AtomicLongConfig;
 import com.hazelcast.config.AtomicReferenceConfig;
+import com.hazelcast.config.CRDTReplicationConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.Config;
@@ -70,6 +72,7 @@ import com.hazelcast.config.MemberAttributeConfig;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NetworkConfig;
+import com.hazelcast.config.PNCounterConfig;
 import com.hazelcast.config.PartitionGroupConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.config.QueueConfig;
@@ -322,6 +325,15 @@ public class ClientDynamicClusterConfig extends Config {
         ClientMessage request = DynamicConfigAddSemaphoreConfigCodec.encodeRequest(
                 semaphoreConfig.getName(), semaphoreConfig.getInitialPermits(), semaphoreConfig.getBackupCount(),
                 semaphoreConfig.getAsyncBackupCount(), semaphoreConfig.getQuorumName());
+        invoke(request);
+        return this;
+    }
+
+    @Override
+    public Config addPNCounterConfig(PNCounterConfig pnCounterConfig) {
+        ClientMessage request = DynamicConfigAddPNCounterConfigCodec.encodeRequest(
+                pnCounterConfig.getName(), pnCounterConfig.getReplicaCount(),
+                pnCounterConfig.isStatisticsEnabled(), pnCounterConfig.getQuorumName());
         invoke(request);
         return this;
     }
@@ -978,6 +990,16 @@ public class ClientDynamicClusterConfig extends Config {
 
     @Override
     public Config setHotRestartPersistenceConfig(HotRestartPersistenceConfig hrConfig) {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
+    public CRDTReplicationConfig getCRDTReplicationConfig() {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
+    public Config setCRDTReplicationConfig(CRDTReplicationConfig crdtReplicationConfig) {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 

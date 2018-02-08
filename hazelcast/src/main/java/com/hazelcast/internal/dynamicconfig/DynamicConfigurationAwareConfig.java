@@ -18,6 +18,7 @@ package com.hazelcast.internal.dynamicconfig;
 
 import com.hazelcast.config.AtomicLongConfig;
 import com.hazelcast.config.AtomicReferenceConfig;
+import com.hazelcast.config.CRDTReplicationConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.Config;
@@ -40,6 +41,7 @@ import com.hazelcast.config.MemberAttributeConfig;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NetworkConfig;
+import com.hazelcast.config.PNCounterConfig;
 import com.hazelcast.config.PartitionGroupConfig;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.QuorumConfig;
@@ -1021,6 +1023,49 @@ public class DynamicConfigurationAwareConfig extends Config {
     }
 
     @Override
+    public PNCounterConfig findPNCounterConfig(String name) {
+        return getPNCounterConfigInternal(name, "default");
+    }
+
+    @Override
+    public PNCounterConfig getPNCounterConfig(String name) {
+        return getPNCounterConfigInternal(name, name);
+    }
+
+    private PNCounterConfig getPNCounterConfigInternal(String name, String fallbackName) {
+        String baseName = getBaseName(name);
+        Map<String, PNCounterConfig> pnCounterConfigs = staticConfig.getPNCounterConfigs();
+        PNCounterConfig pnCounterConfig = lookupByPattern(configPatternMatcher, pnCounterConfigs, baseName);
+        if (pnCounterConfig == null) {
+            pnCounterConfig = configurationService.findPNCounterConfig(baseName);
+        }
+        if (pnCounterConfig == null) {
+            pnCounterConfig = staticConfig.getPNCounterConfig(fallbackName);
+        }
+        return pnCounterConfig;
+    }
+
+    @Override
+    public Config addPNCounterConfig(PNCounterConfig pnCounterConfig) {
+        checkStaticConfigurationDoesNotExist(staticConfig.getPNCounterConfigs(), pnCounterConfig.getName(), pnCounterConfig);
+        configurationService.broadcastConfig(pnCounterConfig);
+        return this;
+    }
+
+    @Override
+    public Map<String, PNCounterConfig> getPNCounterConfigs() {
+        Map<String, PNCounterConfig> staticConfigs = staticConfig.getPNCounterConfigs();
+        Map<String, PNCounterConfig> dynamicConfigs = configurationService.getPNCounterConfigs();
+
+        return aggregate(staticConfigs, dynamicConfigs);
+    }
+
+    @Override
+    public Config setPNCounterConfigs(Map<String, PNCounterConfig> pnCounterConfigs) {
+        throw new UnsupportedOperationException("Unsupported operation");
+    }
+
+    @Override
     public SemaphoreConfig findSemaphoreConfig(String name) {
         return getSemaphoreConfigInternal(name, "default").getAsReadOnly();
     }
@@ -1351,6 +1396,16 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     @Override
     public Config setHotRestartPersistenceConfig(HotRestartPersistenceConfig hrConfig) {
+        throw new UnsupportedOperationException("Unsupported operation");
+    }
+
+    @Override
+    public CRDTReplicationConfig getCRDTReplicationConfig() {
+        return staticConfig.getCRDTReplicationConfig();
+    }
+
+    @Override
+    public Config setCRDTReplicationConfig(CRDTReplicationConfig crdtReplicationConfig) {
         throw new UnsupportedOperationException("Unsupported operation");
     }
 

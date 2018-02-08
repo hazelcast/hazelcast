@@ -25,5 +25,6 @@ public interface LocalInstanceStats extends JsonSerializable {
      */
     long STAT_NOT_AVAILABLE = -99L;
 
+    /** Returns the creation time of this distributed object instance on this member. */
     long getCreationTime();
 }

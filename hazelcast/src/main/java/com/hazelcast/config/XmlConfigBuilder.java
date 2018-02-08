@@ -67,6 +67,7 @@ import static com.hazelcast.config.XmlElements.ATOMIC_REFERENCE;
 import static com.hazelcast.config.XmlElements.CACHE;
 import static com.hazelcast.config.XmlElements.CARDINALITY_ESTIMATOR;
 import static com.hazelcast.config.XmlElements.COUNT_DOWN_LATCH;
+import static com.hazelcast.config.XmlElements.CRDT_REPLICATION;
 import static com.hazelcast.config.XmlElements.DURABLE_EXECUTOR_SERVICE;
 import static com.hazelcast.config.XmlElements.EVENT_JOURNAL;
 import static com.hazelcast.config.XmlElements.EXECUTOR_SERVICE;
@@ -88,6 +89,7 @@ import static com.hazelcast.config.XmlElements.MULTIMAP;
 import static com.hazelcast.config.XmlElements.NATIVE_MEMORY;
 import static com.hazelcast.config.XmlElements.NETWORK;
 import static com.hazelcast.config.XmlElements.PARTITION_GROUP;
+import static com.hazelcast.config.XmlElements.PN_COUNTER;
 import static com.hazelcast.config.XmlElements.PROPERTIES;
 import static com.hazelcast.config.XmlElements.QUEUE;
 import static com.hazelcast.config.XmlElements.QUORUM;
@@ -389,6 +391,10 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             handleCardinalityEstimator(node);
         } else if (FLAKE_ID_GENERATOR.isEqual(nodeName)) {
             handleFlakeIdGenerator(node);
+        }  else if (CRDT_REPLICATION.isEqual(nodeName)) {
+            handleCRDTReplication(node);
+        } else if (PN_COUNTER.isEqual(nodeName)) {
+            handlePNCounter(node);
         } else {
             return true;
         }
@@ -466,6 +472,24 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             }
         }
         config.setHotRestartPersistenceConfig(hrConfig);
+    }
+
+    private void handleCRDTReplication(Node root) {
+        final CRDTReplicationConfig replicationConfig = new CRDTReplicationConfig();
+        final String replicationPeriodMillisName = "replication-period-millis";
+        final String maxConcurrentReplicationTargetsName = "max-concurrent-replication-targets";
+
+        for (Node n : childElements(root)) {
+            final String name = cleanNodeName(n);
+            if (replicationPeriodMillisName.equals(name)) {
+                replicationConfig.setReplicationPeriodMillis(
+                        getIntegerValue(replicationPeriodMillisName, getTextContent(n)));
+            } else if (maxConcurrentReplicationTargetsName.equals(name)) {
+                replicationConfig.setMaxConcurrentReplicationTargets(
+                        getIntegerValue(maxConcurrentReplicationTargetsName, getTextContent(n)));
+            }
+        }
+        this.config.setCRDTReplicationConfig(replicationConfig);
     }
 
     private void handleLiteMember(Node node) {
@@ -686,6 +710,11 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
         }
 
         config.addCardinalityEstimatorConfig(cardinalityEstimatorConfig);
+    }
+
+    private void handlePNCounter(Node node) throws Exception {
+        PNCounterConfig pnCounterConfig = new PNCounterConfig();
+        handleViaReflection(node, config, pnCounterConfig);
     }
 
     private void handleFlakeIdGenerator(Node node) {
@@ -2430,6 +2459,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 type = PermissionType.CARDINALITY_ESTIMATOR;
             } else if ("scheduled-executor-permission".equals(nodeName)) {
                 type = PermissionType.SCHEDULED_EXECUTOR;
+            } else if ("pn-counter-permission".equals(nodeName)) {
+                type = PermissionType.PN_COUNTER;
             } else if ("cache-permission".equals(nodeName)) {
                 type = PermissionType.CACHE;
             } else if ("user-code-deployment".equals(nodeName)) {

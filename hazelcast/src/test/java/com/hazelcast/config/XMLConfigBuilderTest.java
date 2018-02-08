@@ -1610,6 +1610,25 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testPNCounterConfig() {
+        String xml = HAZELCAST_START_TAG
+                + "    <pn-counter name=\"pn-counter-1\">\n"
+                + "        <replica-count>100</replica-count>\n"
+                + "        <quorum-ref>quorumRuleWithThreeMembers</quorum-ref>\n"
+                + "        <statistics-enabled>false</statistics-enabled>\n"
+                + "    </pn-counter>"
+                + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml);
+        PNCounterConfig pnCounterConfig = config.getPNCounterConfig("pn-counter-1");
+
+        assertFalse(config.getPNCounterConfigs().isEmpty());
+        assertEquals(100, pnCounterConfig.getReplicaCount());
+        assertEquals("quorumRuleWithThreeMembers", pnCounterConfig.getQuorumName());
+        assertFalse(pnCounterConfig.isStatisticsEnabled());
+    }
+
+    @Test
     public void testMultiMapConfig() {
         String xml = HAZELCAST_START_TAG
                 + "  <multimap name=\"myMultiMap\">"
@@ -1999,6 +2018,20 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         assertEquals("com.blacklisted,com.other.blacklisted", dcConfig.getBlacklistedPrefixes());
         assertEquals("com.whitelisted,com.other.whitelisted", dcConfig.getWhitelistedPrefixes());
         assertEquals("HAS_ATTRIBUTE:foo", dcConfig.getProviderFilter());
+    }
+
+    @Test
+    public void testCRDTReplicationConfig() {
+        final String xml = HAZELCAST_START_TAG
+                + "<crdt-replication>\n" +
+                "        <max-concurrent-replication-targets>10</max-concurrent-replication-targets>\n" +
+                "        <replication-period-millis>2000</replication-period-millis>\n" +
+                "    </crdt-replication>"
+                + HAZELCAST_END_TAG;
+        final Config config = new InMemoryXmlConfig(xml);
+        final CRDTReplicationConfig replicationConfig = config.getCRDTReplicationConfig();
+        assertEquals(10, replicationConfig.getMaxConcurrentReplicationTargets());
+        assertEquals(2000, replicationConfig.getReplicationPeriodMillis());
     }
 
     @Test
