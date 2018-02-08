@@ -18,6 +18,8 @@ package com.hazelcast.spi.merge;
 
 import com.hazelcast.spi.SplitBrainMergeEntryView;
 
+import static com.hazelcast.spi.impl.merge.SplitBrainMergePolicyDataSerializerHook.HIGHER_HITS;
+
 /**
  * Merges data structure entries from source to destination data structure if the source entry
  * has more hits than the destination one.
@@ -26,7 +28,7 @@ import com.hazelcast.spi.SplitBrainMergeEntryView;
  */
 public class HigherHitsMergePolicy extends AbstractMergePolicy {
 
-    HigherHitsMergePolicy() {
+    public HigherHitsMergePolicy() {
     }
 
     @Override
@@ -42,6 +44,6 @@ public class HigherHitsMergePolicy extends AbstractMergePolicy {
 
     @Override
     public int getId() {
-        return SplitBrainMergePolicyDataSerializerHook.HIGHER_HITS;
+        return HIGHER_HITS;
     }
 }

@@ -29,7 +29,7 @@ import java.io.IOException;
 
 import static com.hazelcast.config.CardinalityEstimatorConfig.DEFAULT_ASYNC_BACKUP_COUNT;
 import static com.hazelcast.config.CardinalityEstimatorConfig.DEFAULT_SYNC_BACKUP_COUNT;
-import static com.hazelcast.spi.merge.SplitBrainEntryViews.createSplitBrainMergeEntryView;
+import static com.hazelcast.spi.impl.merge.SplitBrainEntryViews.createSplitBrainMergeEntryView;
 
 public class CardinalityEstimatorContainer
         implements SplitBrainAwareDataContainer<String, HyperLogLog, HyperLogLog>, IdentifiedDataSerializable {

@@ -22,6 +22,8 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.SplitBrainMergePolicy;
 import com.hazelcast.spi.serialization.SerializationService;
 
+import static com.hazelcast.spi.impl.merge.SplitBrainMergePolicyDataSerializerHook.F_ID;
+
 /**
  * Abstract implementation of {@link SplitBrainMergePolicy} for the out-of-the-box merge policies.
  * <p>
@@ -37,7 +39,7 @@ abstract class AbstractMergePolicy implements SplitBrainMergePolicy, IdentifiedD
 
     @Override
     public int getFactoryId() {
-        return SplitBrainMergePolicyDataSerializerHook.F_ID;
+        return F_ID;
     }
 
     @Override
