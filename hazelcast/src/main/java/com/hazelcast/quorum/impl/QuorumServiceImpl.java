@@ -17,6 +17,7 @@
 package com.hazelcast.quorum.impl;
 
 import com.hazelcast.cluster.memberselector.MemberSelectors;
+import com.hazelcast.config.ConfigurationException;
 import com.hazelcast.config.QuorumConfig;
 import com.hazelcast.config.QuorumListenerConfig;
 import com.hazelcast.core.Member;
@@ -28,6 +29,7 @@ import com.hazelcast.quorum.PingAware;
 import com.hazelcast.quorum.Quorum;
 import com.hazelcast.quorum.QuorumEvent;
 import com.hazelcast.quorum.QuorumException;
+import com.hazelcast.quorum.QuorumFunction;
 import com.hazelcast.quorum.QuorumListener;
 import com.hazelcast.quorum.QuorumService;
 import com.hazelcast.quorum.QuorumType;
@@ -44,6 +46,7 @@ import com.hazelcast.spi.ServiceNamespaceAware;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.executionservice.InternalExecutionService;
 import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.executor.ExecutorType;
 
@@ -114,10 +117,46 @@ public class QuorumServiceImpl implements EventPublishingService<QuorumEvent, Qu
     private Map<String, QuorumImpl> initializeQuorums() {
         Map<String, QuorumImpl> quorums = new HashMap<String, QuorumImpl>();
         for (QuorumConfig quorumConfig : nodeEngine.getConfig().getQuorumConfigs().values()) {
+            validateQuorumConfig(quorumConfig);
             QuorumImpl quorum = new QuorumImpl(quorumConfig, nodeEngine);
             quorums.put(quorumConfig.getName(), quorum);
         }
         return quorums;
+    }
+
+    private void validateQuorumConfig(QuorumConfig quorumConfig) {
+        if (quorumConfig.getQuorumFunctionImplementation() == null) {
+            return;
+        }
+
+        QuorumFunction quorumFunction = quorumConfig.getQuorumFunctionImplementation();
+        if (quorumFunction instanceof ProbabilisticQuorumFunction) {
+            validateQuorumParameters(quorumConfig.getName(),
+                    ((ProbabilisticQuorumFunction) quorumFunction).getAcceptableHeartbeatPauseMillis(),
+                    "acceptable heartbeat pause");
+        } else if (quorumFunction instanceof RecentlyActiveQuorumFunction) {
+            validateQuorumParameters(quorumConfig.getName(),
+                    ((RecentlyActiveQuorumFunction) quorumFunction).getHeartbeatToleranceMillis(),
+                    "heartbeat tolerance");
+        }
+    }
+
+    private void validateQuorumParameters(String quorumName, long value, String parameterName) {
+        HazelcastProperties nodeProperties = nodeEngine.getProperties();
+        long maxNoHeartbeatMillis = nodeProperties.getMillis(GroupProperty.MAX_NO_HEARTBEAT_SECONDS);
+        long heartbeatIntervalMillis = nodeProperties.getMillis(GroupProperty.HEARTBEAT_INTERVAL_SECONDS);
+
+        if (value > maxNoHeartbeatMillis) {
+            throw new ConfigurationException("This member is configured with maximum no-heartbeat duration "
+                + maxNoHeartbeatMillis + " millis. For the quorum '" + quorumName + "' to be effective, set "
+                + parameterName + " to a lower value. Currently configured value is " + value
+                + ", reconfigure to a value lower than " + maxNoHeartbeatMillis + ".");
+        } else if (value < heartbeatIntervalMillis) {
+            throw new ConfigurationException("Quorum '" + quorumName + "' is misconfigured: the value of "
+                    + "acceptable heartbeat pause (" + value + ") must be greater than "
+                    + "the configured heartbeat interval (" + heartbeatIntervalMillis + "), otherwise quorum "
+                    + "will be always absent.");
+        }
     }
 
     private void initializeListeners() {
