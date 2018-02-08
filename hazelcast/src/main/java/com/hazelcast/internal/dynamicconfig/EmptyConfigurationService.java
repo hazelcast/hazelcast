@@ -29,6 +29,7 @@ import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.LockConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MultiMapConfig;
+import com.hazelcast.config.PNCounterConfig;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.ReliableTopicConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
@@ -66,6 +67,11 @@ class EmptyConfigurationService implements ConfigurationService {
 
     @Override
     public CardinalityEstimatorConfig findCardinalityEstimatorConfig(String name) {
+        return null;
+    }
+
+    @Override
+    public PNCounterConfig findPNCounterConfig(String name) {
         return null;
     }
 
@@ -251,6 +257,11 @@ class EmptyConfigurationService implements ConfigurationService {
 
     @Override
     public Map<String, CardinalityEstimatorConfig> getCardinalityEstimatorConfigs() {
+        return emptyMap();
+    }
+
+    @Override
+    public Map<String, PNCounterConfig> getPNCounterConfigs() {
         return emptyMap();
     }
 

@@ -2069,4 +2069,50 @@ https://hazelcast.org/documentation/.
         <provider-filter>HAS_ATTRIBUTE:lite</provider-filter>
     </user-code-deployment>
 
+
+    <!--
+        ===== HAZELCAST CRDT REPLICATION CONFIGURATION =====
+
+        Configures the replication mechanism for all CRDT implementations.
+        The CRDT states are replicated in rounds (the period is configurable) and in each round the state is replicated
+        up to the configured number of members.
+        It has the following sub-elements:
+        * <max-concurrent-replication-targets>:
+            The maximum number of target members that we replicate the CRDT states to in one period. A higher count
+            will lead to states being disseminated more rapidly at the expense of burst-like behaviour - one update
+            to a CRDT will lead to a sudden burst in the number of replication messages in a short time interval.
+        * <replication-period-millis>:
+            The period between two replications of CRDT states in milliseconds. A lower value will increase the
+            speed at which changes are disseminated to other cluster members at the expense of burst-like behaviour - less
+            updates will be batched together in one replication message and one update to a CRDT may cause a sudden
+            burst of replication messages in a short time interval. The value must be a positive non-null integer.
+    -->
+    <crdt-replication>
+        <max-concurrent-replication-targets>1</max-concurrent-replication-targets>
+        <replication-period-millis>1000</replication-period-millis>
+    </crdt-replication>
+
+    <!--
+    ===== HAZELCAST PN COUNTER CONFIGURATION =====
+
+    Configuration element's name is <pn-counter>. It has the optional attribute "name" with which you
+    can specify the name of your PN counter. Its default value is "default".
+    It has the following sub-elements:
+    * <replica-count>:
+       Number of replicas on which the CRDT state will be kept. The updates are replicated
+       asynchronously between replicas.
+       The number must be greater than 1 and up to 2147483647 (Integer.MAX_VALUE).
+       The default value is 2147483647 (Integer.MAX_VALUE).
+    * <quorum-ref>:
+       Adds the Split Brain Protection for this data-structure which you configure using the <quorum> element. You should set the <quorum-ref>'s value
+       as the <quorum>'s name.
+    * <statistics-enabled>:
+        When you enable it, you can retrieve the PN counter statistics. Its default value is true.
+    -->
+    <pn-counter name="default">
+        <replica-count>2147483647</replica-count>
+        <quorum-ref>quorumRuleWithThreeNodes</quorum-ref>
+        <statistics-enabled>true</statistics-enabled>
+    </pn-counter>
+
 </hazelcast>

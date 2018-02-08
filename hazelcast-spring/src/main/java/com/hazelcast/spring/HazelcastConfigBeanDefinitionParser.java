@@ -19,6 +19,7 @@ package com.hazelcast.spring;
 import com.hazelcast.config.AtomicLongConfig;
 import com.hazelcast.config.AtomicReferenceConfig;
 import com.hazelcast.config.AwsConfig;
+import com.hazelcast.config.CRDTReplicationConfig;
 import com.hazelcast.config.CachePartitionLostListenerConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig;
@@ -67,6 +68,7 @@ import com.hazelcast.config.MulticastConfig;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.NetworkConfig;
+import com.hazelcast.config.PNCounterConfig;
 import com.hazelcast.config.PartitionGroupConfig;
 import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.config.PermissionConfig;
@@ -134,7 +136,7 @@ import static org.springframework.util.Assert.isTrue;
  * BeanDefinitionParser for Hazelcast Config Configuration.
  * <p>
  * <b>Sample Spring XML for Hazelcast Config:</b>
- *
+ * <p>
  * <pre>{@code
  *   <hz:config>
  *     <hz:map name="map1">
@@ -192,6 +194,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
         private ManagedMap<String, AbstractBeanDefinition> replicatedMapManagedMap;
         private ManagedMap<String, AbstractBeanDefinition> quorumManagedMap;
         private ManagedMap<String, AbstractBeanDefinition> flakeIdGeneratorConfigMap;
+        private ManagedMap<String, AbstractBeanDefinition> pnCounterManagedMap;
 
         public SpringXmlConfigBuilder(ParserContext parserContext) {
             this.parserContext = parserContext;
@@ -221,6 +224,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             this.replicatedMapManagedMap = createManagedMap("replicatedMapConfigs");
             this.quorumManagedMap = createManagedMap("quorumConfigs");
             this.flakeIdGeneratorConfigMap = createManagedMap("flakeIdGeneratorConfigs");
+            this.pnCounterManagedMap = createManagedMap("PNCounterConfigs");
         }
 
         private ManagedMap<String, AbstractBeanDefinition> createManagedMap(String configName) {
@@ -320,6 +324,10 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                         handleHotRestartPersistence(node);
                     } else if ("flake-id-generator".equals(nodeName)) {
                         handleFlakeIdGenerator(node);
+                    } else if ("crdt-replication".equals(nodeName)) {
+                        handleCRDTReplication(node);
+                    } else if ("pn-counter".equals(nodeName)) {
+                        handlePNCounter(node);
                     }
                 }
             }
@@ -346,6 +354,12 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             fillAttributeValues(node, configBuilder);
             String name = getAttribute(node, "name");
             flakeIdGeneratorConfigMap.put(name, configBuilder.getBeanDefinition());
+        }
+
+        private void handleCRDTReplication(Node node) {
+            final BeanDefinitionBuilder crdtReplicationConfigBuilder = createBeanBuilder(CRDTReplicationConfig.class);
+            fillAttributeValues(node, crdtReplicationConfigBuilder);
+            configBuilder.addPropertyValue("CRDTReplicationConfig", crdtReplicationConfigBuilder.getBeanDefinition());
         }
 
         private void handleQuorum(Node node) {
@@ -686,6 +700,10 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     handleMergePolicyConfig(n, builder);
                 }
             }
+        }
+
+        public void handlePNCounter(Node node) {
+            createAndFillListedBean(node, PNCounterConfig.class, "name", pnCounterManagedMap);
         }
 
         public void handleMulticast(Node node, BeanDefinitionBuilder joinConfigBuilder) {

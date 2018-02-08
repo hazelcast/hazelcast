@@ -18,6 +18,7 @@ package com.hazelcast.config;
 
 import java.util.HashSet;
 import java.util.Set;
+
 /**
  * Contains the configuration for a permission.
  */
@@ -137,7 +138,11 @@ public class PermissionConfig {
         /**
          * Configuration permission
          */
-        CONFIG("config-permission");
+        CONFIG("config-permission"),
+        /**
+         * CRDT PN Counter
+         */
+        PN_COUNTER("pn-counter-permission");
 
         private final String nodeName;
 

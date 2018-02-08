@@ -92,8 +92,9 @@ public final class ConfigDataSerializerHook implements DataSerializerHook {
     public static final int ATOMIC_REFERENCE_CONFIG = 50;
     public static final int MERGE_POLICY_CONFIG = 51;
     public static final int COUNT_DOWN_LATCH_CONFIG = 52;
+    public static final int PN_COUNTER_CONFIG = 53;
 
-    private static final int LEN = COUNT_DOWN_LATCH_CONFIG + 1;
+    private static final int LEN = PN_COUNTER_CONFIG + 1;
 
     @Override
     public int getFactoryId() {
@@ -429,6 +430,13 @@ public final class ConfigDataSerializerHook implements DataSerializerHook {
                     @Override
                     public IdentifiedDataSerializable createNew(Integer arg) {
                         return new CountDownLatchConfig();
+                    }
+                };
+        constructors[PN_COUNTER_CONFIG] =
+                new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+                    @Override
+                    public IdentifiedDataSerializable createNew(Integer arg) {
+                        return new PNCounterConfig();
                     }
                 };
 

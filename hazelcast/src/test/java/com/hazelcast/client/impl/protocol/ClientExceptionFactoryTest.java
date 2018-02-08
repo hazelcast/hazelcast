@@ -26,10 +26,13 @@ import com.hazelcast.core.DuplicateInstanceNameException;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.HazelcastOverloadException;
+import com.hazelcast.core.IndeterminateOperationStateException;
 import com.hazelcast.core.LocalMemberResetException;
 import com.hazelcast.core.MemberLeftException;
-import com.hazelcast.core.IndeterminateOperationStateException;
 import com.hazelcast.core.OperationTimeoutException;
+import com.hazelcast.core.ConsistencyLostException;
+import com.hazelcast.crdt.MutationDisallowedException;
+import com.hazelcast.crdt.TargetNotReplicaException;
 import com.hazelcast.durableexecutor.StaleTaskIdException;
 import com.hazelcast.internal.cluster.impl.ConfigMismatchException;
 import com.hazelcast.map.QueryResultSizeExceededException;
@@ -266,7 +269,10 @@ public class ClientExceptionFactoryTest extends HazelcastTestSupport {
                 new Object[]{new RuntimeException("fun",
                         new RuntimeException("!@#$%^&*()'][/.,l;§!|`]:\\ľščťž /sᵻˈrɪlɪk/ Áзбука 中华民族 \n \r \t \r\n"))},
                 new Object[]{new LocalMemberResetException(randomString())},
-                new Object[]{new IndeterminateOperationStateException(randomString())}
+                new Object[]{new IndeterminateOperationStateException(randomString())},
+                new Object[]{new TargetNotReplicaException(randomString())},
+                new Object[]{new MutationDisallowedException(randomString())},
+                new Object[]{new ConsistencyLostException(randomString())}
         );
 
     }

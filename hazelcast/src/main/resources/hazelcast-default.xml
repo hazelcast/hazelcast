@@ -321,4 +321,14 @@
         <pool-size>16</pool-size>
         <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
     </scheduled-executor-service>
+
+    <crdt-replication>
+        <replication-period-millis>1000</replication-period-millis>
+        <max-concurrent-replication-targets>1</max-concurrent-replication-targets>
+    </crdt-replication>
+
+    <pn-counter name="default">
+        <replica-count>2147483647</replica-count>
+        <statistics-enabled>true</statistics-enabled>
+    </pn-counter>
 </hazelcast>

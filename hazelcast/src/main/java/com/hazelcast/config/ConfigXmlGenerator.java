@@ -132,6 +132,8 @@ public class ConfigXmlGenerator {
         servicesXmlGenerator(gen, config);
         hotRestartXmlGenerator(gen, config);
         flakeIdGeneratorXmlGenerator(gen, config);
+        crdtReplicationXmlGenerator(gen, config);
+        pnCounterXmlGenerator(gen, config);
 
         xml.append("</hazelcast>");
 
@@ -361,6 +363,16 @@ public class ConfigXmlGenerator {
                     .node("quorum-ref", ex.getQuorumName())
                     .node("merge-policy", mergePolicyConfig.getPolicy(), "batch-size", mergePolicyConfig.getBatchSize())
                     .close();
+        }
+    }
+
+    private static void pnCounterXmlGenerator(XmlGenerator gen, Config config) {
+        for (PNCounterConfig counterConfig : config.getPNCounterConfigs().values()) {
+            gen.open("pn-counter", "name", counterConfig.getName())
+               .node("replica-count", counterConfig.getReplicaCount())
+               .node("quorum-ref", counterConfig.getQuorumName())
+               .node("statistics-enabled", counterConfig.isStatisticsEnabled())
+               .close();
         }
     }
 
@@ -1111,6 +1123,16 @@ public class ConfigXmlGenerator {
                     .node("id-offset", m.getIdOffset());
             gen.close();
         }
+    }
+
+    private static void crdtReplicationXmlGenerator(XmlGenerator gen, Config config) {
+        CRDTReplicationConfig replicationConfig = config.getCRDTReplicationConfig();
+        gen.open("crdt-replication");
+        if (replicationConfig != null) {
+            gen.node("replication-period-millis", replicationConfig.getReplicationPeriodMillis())
+               .node("max-concurrent-replication-targets", replicationConfig.getMaxConcurrentReplicationTargets());
+        }
+        gen.close();
     }
 
     private static void nativeMemoryXmlGenerator(XmlGenerator gen, Config config) {

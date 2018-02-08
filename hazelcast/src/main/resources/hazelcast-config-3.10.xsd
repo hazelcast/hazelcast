@@ -72,6 +72,8 @@
                 <xs:element name="user-code-deployment" type="user-code-deployment" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="cardinality-estimator" type="cardinality-estimator" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="flake-id-generator" type="flake-id-generator" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="crdt-replication" type="crdt-replication" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="pn-counter" type="pn-counter" minOccurs="0" maxOccurs="unbounded"/>
             </xs:choice>
             <xs:attribute name="id" type="xs:string" use="optional" default="default"/>
         </xs:complexType>
@@ -2102,6 +2104,12 @@
             <xs:minInclusive value="0"/>
         </xs:restriction>
     </xs:simpleType>
+    <xs:simpleType name="crdt-replica-count">
+        <xs:restriction base="xs:int">
+            <xs:minInclusive value="1"/>
+            <xs:maxInclusive value="2147483647"/>
+        </xs:restriction>
+    </xs:simpleType>
 
     <xs:complexType name="symmetric-encryption">
         <xs:annotation>
@@ -2719,6 +2727,7 @@
                         maxOccurs="unbounded"/>
             <xs:element name="cardinality-estimator-permission" type="instance-permission" minOccurs="0" maxOccurs="unbounded"/>
             <xs:element name="scheduled-executor-permission" type="instance-permission" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="pn-counter-permission" type="instance-permission" minOccurs="0" maxOccurs="unbounded"/>
             <xs:element name="transaction-permission" type="base-permission" minOccurs="0" maxOccurs="1"/>
             <xs:element name="cache-permission" type="instance-permission" minOccurs="0" maxOccurs="unbounded"/>
             <xs:element name="config-permission" type="base-permission" minOccurs="0" maxOccurs="1"/>
@@ -3542,6 +3551,35 @@
         </xs:attribute>
     </xs:complexType>
 
+    <xs:complexType name="crdt-replication">
+        <xs:all>
+            <xs:element name="replication-period-millis" type="xs:unsignedInt" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        The period between two replications of CRDT states in milliseconds.
+                        A lower value will increase the speed at which changes are disseminated
+                        to other cluster members at the expense of burst-like behaviour - less
+                        updates will be batched together in one replication message and one
+                        update to a CRDT may cause a sudden burst of replication messages in a
+                        short time interval.
+                        The value must be a positive non-null integer.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="max-concurrent-replication-targets" type="xs:unsignedInt" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        The maximum number of target members that we replicate the CRDT states
+                        to in one period. A higher count will lead to states being disseminated
+                        more rapidly at the expense of burst-like behaviour - one update to a
+                        CRDT will lead to a sudden burst in the number of replication messages
+                        in a short time interval.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:all>
+    </xs:complexType>
+
     <xs:complexType name="hot-restart">
         <xs:all>
             <xs:element name="fsync" type="xs:boolean" default="false">
@@ -3703,6 +3741,47 @@
             <xs:simpleType>
                 <xs:restriction base="xs:string"/>
             </xs:simpleType>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="pn-counter">
+        <xs:all>
+            <xs:element name="replica-count" type="crdt-replica-count" minOccurs="0" maxOccurs="1" default="2147483647">
+                <xs:annotation>
+                    <xs:documentation>
+                        Number of replicas on which the CRDT state will be kept. The updates are replicated
+                        asynchronously between replicas.
+                        The number must be greater than 1 and up to 2147483647 (Integer.MAX_VALUE).
+                        The default value is 2147483647 (Integer.MAX_VALUE).
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="quorum-ref" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Adds the Split Brain Protection for this data-structure which you configure using the quorum element.
+                        You should set the quorum-ref's value as the quorum's name.
+                        IMPORTANT: The term "quorum" simply refers to the count of members in the cluster required for an operation to succeed.
+                        It does NOT refer to an implementation of Paxos or Raft protocols as used in many NoSQL and distributed systems.
+                        The mechanism it provides in Hazelcast protects the user in case the number of nodes in a cluster drops below the
+                        specified one.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="statistics-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true">
+                <xs:annotation>
+                    <xs:documentation>
+                        True (default) if statistics gathering is enabled on the PN counter, false otherwise.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:all>
+        <xs:attribute name="name" type="xs:string" use="optional" default="default">
+            <xs:annotation>
+                <xs:documentation>
+                    Name of the PN counter.
+                </xs:documentation>
+            </xs:annotation>
         </xs:attribute>
     </xs:complexType>
 </xs:schema>

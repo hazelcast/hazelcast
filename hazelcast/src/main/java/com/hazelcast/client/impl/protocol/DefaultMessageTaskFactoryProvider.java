@@ -24,6 +24,9 @@ import com.hazelcast.client.impl.protocol.task.cache.CacheEventJournalSubscribeT
 import com.hazelcast.client.impl.protocol.task.cache.Pre38CacheAddInvalidationListenerTask;
 import com.hazelcast.client.impl.protocol.task.cardinality.CardinalityEstimatorAddMessageTask;
 import com.hazelcast.client.impl.protocol.task.cardinality.CardinalityEstimatorEstimateMessageTask;
+import com.hazelcast.client.impl.protocol.task.crdt.pncounter.PNCounterAddMessageTask;
+import com.hazelcast.client.impl.protocol.task.crdt.pncounter.PNCounterGetConfiguredReplicaCountMessageTask;
+import com.hazelcast.client.impl.protocol.task.crdt.pncounter.PNCounterGetMessageTask;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddCacheConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddCardinalityEstimatorConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.AddDurableExecutorConfigMessageTask;
@@ -2069,6 +2072,24 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 return new NewIdBatchMessageTask(clientMessage, node, connection);
             }
         };
+//endregion
+//region ----------  REGISTRATION FOR com.hazelcast.client.impl.protocol.task.crdt.pncounter
+        factories[com.hazelcast.client.impl.protocol.codec.PNCounterGetCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new PNCounterGetMessageTask(clientMessage, node, connection);
+            }
+        };
+        factories[com.hazelcast.client.impl.protocol.codec.PNCounterAddCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new PNCounterAddMessageTask(clientMessage, node, connection);
+            }
+        };
+        factories[com.hazelcast.client.impl.protocol.codec.PNCounterGetConfiguredReplicaCountCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new PNCounterGetConfiguredReplicaCountMessageTask(clientMessage, node, connection);
+            }
+        };
+//endregion
     }
 
     @SuppressFBWarnings({"MS_EXPOSE_REP", "EI_EXPOSE_REP"})

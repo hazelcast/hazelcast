@@ -60,6 +60,8 @@ enum XmlElements {
     CARDINALITY_ESTIMATOR("cardinality-estimator", true),
     RELIABLE_ID_GENERATOR("reliable-id-generator", true),
     FLAKE_ID_GENERATOR("flake-id-generator", true),
+    CRDT_REPLICATION("crdt-replication", false),
+    PN_COUNTER("pn-counter", true),
     ;
 
     final String name;

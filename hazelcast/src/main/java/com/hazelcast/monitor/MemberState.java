@@ -40,6 +40,8 @@ public interface MemberState extends JsonSerializable {
 
     LocalTopicStats getReliableLocalTopicStats(String reliableTopicName);
 
+    LocalPNCounterStats getLocalPNCounterStats(String pnCounterName);
+
     LocalReplicatedMapStats getLocalReplicatedMapStats(String replicatedMapName);
 
     LocalExecutorStats getLocalExecutorStats(String executorName);

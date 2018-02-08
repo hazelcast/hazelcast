@@ -97,6 +97,8 @@ import com.hazelcast.core.LifecycleService;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.core.PartitionService;
 import com.hazelcast.core.ReplicatedMap;
+import com.hazelcast.crdt.pncounter.PNCounter;
+import com.hazelcast.crdt.pncounter.PNCounterService;
 import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.durableexecutor.impl.DistributedDurableExecutorService;
 import com.hazelcast.executor.impl.DistributedExecutorService;
@@ -169,6 +171,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static com.hazelcast.client.spi.properties.ClientProperty.BACKPRESSURE_BACKOFF_TIMEOUT_MILLIS;
 import static com.hazelcast.client.spi.properties.ClientProperty.MAX_CONCURRENT_INVOCATIONS;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.util.Preconditions.checkNotNull;
 import static java.lang.System.currentTimeMillis;
 
 public class HazelcastClientInstanceImpl implements HazelcastInstance, SerializationServiceSupport {
@@ -605,6 +608,12 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     @Override
     public CardinalityEstimator getCardinalityEstimator(String name) {
         return getDistributedObject(CardinalityEstimatorService.SERVICE_NAME, name);
+    }
+
+    @Override
+    public PNCounter getPNCounter(String name) {
+        checkNotNull(name, "Retrieving a PN counter instance with a null name is not allowed!");
+        return getDistributedObject(PNCounterService.SERVICE_NAME, name);
     }
 
     @Override
