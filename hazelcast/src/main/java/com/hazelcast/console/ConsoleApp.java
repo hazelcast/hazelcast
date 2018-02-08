@@ -259,8 +259,8 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
             handleColon(command);
         } else if ("silent".equals(first)) {
             silent = Boolean.parseBoolean(args[1]);
-        } else if ("shutdown".equals(first)) {
-            hazelcast.getLifecycleService().shutdown();
+        } else if ("shutdown".equalsIgnoreCase(first)) {
+            handleShutdown();
         } else if ("echo".equals(first)) {
             echo = Boolean.parseBoolean(args[1]);
             println("echo: " + echo);
@@ -415,12 +415,20 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
         } else if (first.equalsIgnoreCase("instances")) {
             handleInstances(args);
         } else if (first.equalsIgnoreCase("quit") || first.equalsIgnoreCase("exit")) {
-            System.exit(0);
+            handleExit();
         } else if (first.startsWith("e") && first.endsWith(".simulateLoad")) {
             handleExecutorSimulate(args);
         } else {
             println("type 'help' for help");
         }
+    }
+
+    protected void handleShutdown() {
+        hazelcast.getLifecycleService().shutdown();
+    }
+
+    protected void handleExit() {
+        System.exit(0);
     }
 
     private void handleExecutorSimulate(String[] args) {
