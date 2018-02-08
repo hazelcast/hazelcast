@@ -18,7 +18,7 @@ package com.hazelcast.nio.tcp;
 
 import com.hazelcast.client.ClientEngine;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.util.ClientMessageChannelInboundHandler;
+import com.hazelcast.client.impl.protocol.util.ClientMessageDecoder;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.IOService;
@@ -30,7 +30,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
 
 import static org.mockito.Matchers.any;
@@ -46,18 +45,18 @@ public class ClientMessageHandlerImplTest {
     private IOService ioService;
     private Connection connection;
     private SwCounter counter;
-    private ClientMessageChannelInboundHandler inboundHandler;
+    private ClientMessageDecoder decoder;
     private ClientEngine clientEngine;
 
     @Before
-    public void setup() throws IOException {
+    public void setup() {
         ioService = mock(IOService.class);
         connection = mock(Connection.class);
         counter = SwCounter.newSwCounter();
         clientEngine = mock(ClientEngine.class);
         messageHandler = new ClientMessageHandlerImpl(connection, clientEngine);
-        inboundHandler = new ClientMessageChannelInboundHandler(messageHandler);
-        inboundHandler.setNormalPacketsRead(counter);
+        decoder = new ClientMessageDecoder(messageHandler);
+        decoder.setNormalPacketsRead(counter);
     }
 
     @Test
@@ -72,7 +71,7 @@ public class ClientMessageHandlerImplTest {
         message.writeTo(bb);
         bb.flip();
 
-        inboundHandler.onRead(bb);
+        decoder.onRead(bb);
 
         verify(clientEngine).handleClientMessage(any(ClientMessage.class), eq(connection));
     }

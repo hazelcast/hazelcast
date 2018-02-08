@@ -32,15 +32,15 @@ import static com.hazelcast.nio.Packet.FLAG_URGENT;
  * It reads as many packets from the src ByteBuffer as possible, and each of the Packets is send to the {@link PacketHandler}.
  *
  * @see PacketHandler
- * @see MemberChannelOutboundHandler
+ * @see PacketEncoder
  */
-public class MemberChannelInboundHandler extends ChannelInboundHandlerWithCounters {
+public class PacketDecoder extends ChannelInboundHandlerWithCounters {
 
     protected final TcpIpConnection connection;
     private final PacketHandler handler;
     private final PacketIOHelper packetReader = new PacketIOHelper();
 
-    public MemberChannelInboundHandler(TcpIpConnection connection, PacketHandler handler) {
+    public PacketDecoder(TcpIpConnection connection, PacketHandler handler) {
         this.connection = connection;
         this.handler = handler;
     }

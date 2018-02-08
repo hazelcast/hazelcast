@@ -60,7 +60,7 @@ import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.VERSION;
 
 @PrivateApi
-public class TextChannelInboundHandler implements ChannelInboundHandler {
+public class TextDecoder implements ChannelInboundHandler {
 
     private static final Map<String, CommandParser> MAP_COMMAND_PARSERS = new HashMap<String, CommandParser>();
 
@@ -98,7 +98,7 @@ public class TextChannelInboundHandler implements ChannelInboundHandler {
     private TextCommand command;
     private final boolean sslEnabled;
     private final TextCommandService textCommandService;
-    private final TextChannelOutboundHandler outboundHandler;
+    private final TextEncoder encoder;
     private final TcpIpConnection connection;
     private final boolean restEnabled;
     private final boolean memcacheEnabled;
@@ -107,11 +107,11 @@ public class TextChannelInboundHandler implements ChannelInboundHandler {
     private long requestIdGen;
     private final ILogger logger;
 
-    public TextChannelInboundHandler(TcpIpConnection connection, TextChannelOutboundHandler outboundHandler) {
+    public TextDecoder(TcpIpConnection connection, TextEncoder encoder) {
         IOService ioService = connection.getConnectionManager().getIoService();
         this.sslEnabled = ioService.getSSLConfig() == null ? false : ioService.getSSLConfig().isEnabled();
         this.textCommandService = ioService.getTextCommandService();
-        this.outboundHandler = outboundHandler;
+        this.encoder = encoder;
         this.connection = connection;
         this.memcacheEnabled = ioService.isMemcacheEnabled();
         this.restEnabled = ioService.isRestEnabled();
@@ -120,7 +120,7 @@ public class TextChannelInboundHandler implements ChannelInboundHandler {
     }
 
     public void sendResponse(TextCommand command) {
-        outboundHandler.enqueue(command);
+        encoder.enqueue(command);
     }
 
     @Override
@@ -251,8 +251,8 @@ public class TextChannelInboundHandler implements ChannelInboundHandler {
         }
     }
 
-    public TextChannelOutboundHandler getOutboundHandler() {
-        return outboundHandler;
+    public TextEncoder getEncoder() {
+        return encoder;
     }
 
     public void closeConnection() {

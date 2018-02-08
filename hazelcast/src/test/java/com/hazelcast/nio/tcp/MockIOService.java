@@ -352,7 +352,7 @@ public class MockIOService implements IOService {
 
     @Override
     public ChannelInboundHandler createInboundHandler(final TcpIpConnection connection) {
-        return new MemberChannelInboundHandler(connection, new PacketHandler() {
+        return new PacketDecoder(connection, new PacketHandler() {
             private ILogger logger = loggingService.getLogger("MockIOService");
 
             @Override
@@ -375,7 +375,7 @@ public class MockIOService implements IOService {
 
     @Override
     public ChannelOutboundHandler createOutboundHandler(TcpIpConnection connection) {
-        return new MemberChannelOutboundHandler();
+        return new PacketEncoder();
     }
 
 }

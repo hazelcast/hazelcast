@@ -16,28 +16,18 @@
 
 package com.hazelcast.nio.tcp;
 
+import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.internal.networking.ChannelOutboundHandler;
-import com.hazelcast.nio.Packet;
-import com.hazelcast.nio.PacketIOHelper;
 
 import java.nio.ByteBuffer;
 
 /**
- * A {@link ChannelOutboundHandler} that for member to member communication.
- *
- * It writes {@link Packet} instances to the {@link ByteBuffer}.
- *
- * It makes use of a flyweight to allow the sharing of a packet-instance over multiple connections. The flyweight contains
- * the actual 'position' state of what has been written.
- *
- * @see MemberChannelInboundHandler
+ * A {@link ChannelOutboundHandler} for the new-client. It writes ClientMessages to the ByteBuffer.
  */
-public class MemberChannelOutboundHandler implements ChannelOutboundHandler<Packet> {
-
-   private final PacketIOHelper packetWriter = new PacketIOHelper();
+public class ClientMessageEncoder implements ChannelOutboundHandler<ClientMessage> {
 
     @Override
-    public boolean onWrite(Packet packet, ByteBuffer dst) {
-        return packetWriter.writeTo(packet, dst);
+    public boolean onWrite(ClientMessage message, ByteBuffer dst) {
+        return message.writeTo(dst);
     }
 }

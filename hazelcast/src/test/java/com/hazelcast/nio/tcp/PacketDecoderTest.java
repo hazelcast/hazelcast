@@ -39,10 +39,10 @@ import static org.junit.Assert.assertEquals;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 @Ignore
-public class MemberChannelInboundHandlerTest extends TcpIpConnection_AbstractTest {
+public class PacketDecoderTest extends TcpIpConnection_AbstractTest {
 
     private MockPacketDispatcher dispatcher;
-    private MemberChannelInboundHandler readHandler;
+    private PacketDecoder readHandler;
     private long oldPriorityPacketsRead;
     private long oldNormalPacketsRead;
     private NioChannelReader channelReader;
@@ -59,7 +59,7 @@ public class MemberChannelInboundHandlerTest extends TcpIpConnection_AbstractTes
         TcpIpConnection connection = connect(connManagerA, addressB);
 
         dispatcher = new MockPacketDispatcher();
-        readHandler = new MemberChannelInboundHandler(connection, dispatcher);
+        readHandler = new PacketDecoder(connection, dispatcher);
 
         channelReader = ((NioChannel) connection.getChannel()).getReader();
         oldNormalPacketsRead = channelReader.getNormalFramesReadCounter().get();

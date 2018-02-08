@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.networking;
 
-import com.hazelcast.nio.tcp.MemberChannelInboundHandler;
+import com.hazelcast.nio.tcp.PacketDecoder;
 
 import java.nio.ByteBuffer;
 
@@ -31,7 +31,7 @@ import java.nio.ByteBuffer;
  * <h1>Pipelining & Encryption</h1>
  * The ChannelInboundHandler/ChannelOutboundHandler can also form a pipeline. For example for SSL there could be a initial
  * ChannelInboundHandler that decryption the ByteBuffer and passes the decrypted ByteBuffer to the next ChannelInboundHandler;
- * which could be a {@link MemberChannelInboundHandler} that reads out any Packet from the decrypted ByteBuffer. Using this
+ * which could be a {@link PacketDecoder} that reads out any Packet from the decrypted ByteBuffer. Using this
  * approach encryption can easily be added to any type of communication, not only member 2 member communication.
  *
  * Currently security is added by using a {@link Channel}, but this is not needed if the handlers form a pipeline.
@@ -60,6 +60,10 @@ import java.nio.ByteBuffer;
  *
  * For encryption is similar approach can be followed where the DecryptingWriteHandler is the last ChannelOutboundHandler in
  * the pipeline.
+ *
+ *
+ * If the main task of a ChannelInboundHandler is to decode a message (e.g. a Packet), it is best to call this handler a
+ * decoder. For example PacketDecoder.
  *
  * @see ChannelOutboundHandler
  * @see EventLoopGroup

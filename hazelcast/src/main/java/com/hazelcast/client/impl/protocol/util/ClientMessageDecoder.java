@@ -29,14 +29,14 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.END_FLAG;
 /**
  * Builds {@link ClientMessage}s from byte chunks. Fragmented messages are merged into single messages before processed.
  */
-public class ClientMessageChannelInboundHandler extends ChannelInboundHandlerWithCounters {
+public class ClientMessageDecoder extends ChannelInboundHandlerWithCounters {
 
     private final Long2ObjectHashMap<BufferBuilder> builderBySessionIdMap = new Long2ObjectHashMap<BufferBuilder>();
 
     private final ClientMessageHandler messageHandler;
     private ClientMessage message = ClientMessage.create();
 
-    public ClientMessageChannelInboundHandler(ClientMessageHandler messageHandler) {
+    public ClientMessageDecoder(ClientMessageHandler messageHandler) {
         this.messageHandler = messageHandler;
     }
 
