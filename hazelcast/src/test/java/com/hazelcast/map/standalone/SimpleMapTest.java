@@ -25,6 +25,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.Partition;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.properties.GroupProperty;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -54,11 +55,6 @@ public final class SimpleMapTest {
     private final int putPercentage;
     private final boolean load;
 
-    static {
-        System.setProperty("hazelcast.phone.home.enabled", "false");
-        System.setProperty("java.net.preferIPv4Stack", "true");
-    }
-
     private SimpleMapTest(final int threadCount, final int entryCount, final int valueSize,
                           final int getPercentage, final int putPercentage, final boolean load) {
         this.threadCount = threadCount;
@@ -67,7 +63,9 @@ public final class SimpleMapTest {
         this.getPercentage = getPercentage;
         this.putPercentage = putPercentage;
         this.load = load;
-        Config cfg = new XmlConfigBuilder().build();
+        Config cfg = new XmlConfigBuilder().build()
+                .setProperty(GroupProperty.PHONE_HOME_ENABLED.getName(), "false")
+                .setProperty(GroupProperty.PREFER_IPv4_STACK.getName(), "true");
 
         instance = Hazelcast.newHazelcastInstance(cfg);
         logger = instance.getLoggingService().getLogger("SimpleMapTest");

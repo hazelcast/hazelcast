@@ -16,6 +16,7 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
@@ -28,7 +29,6 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -41,6 +41,11 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.map.impl.event.MapEventPublisherImpl.LISTENER_WITH_PREDICATE_PRODUCES_NATURAL_EVENT_TYPES;
+import static com.hazelcast.spi.properties.GroupProperty.EVENT_THREAD_COUNT;
+import static com.hazelcast.spi.properties.GroupProperty.GENERIC_OPERATION_THREAD_COUNT;
+import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
+import static com.hazelcast.spi.properties.GroupProperty.PARTITION_OPERATION_THREAD_COUNT;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -49,12 +54,7 @@ public class MapListenerTest extends HazelcastTestSupport {
 
     private static final int AGE_THRESHOLD = 50;
 
-    static {
-        System.setProperty("hazelcast.map.entry.filtering.natural.event.types", "true");
-    }
-
     @Test
-    @Ignore("fails occasionally with wrong events count")
     public void testListener_eventCountsCorrect() throws Exception {
         // GIVEN
         HazelcastInstance hz = createHazelcastInstance();
@@ -292,4 +292,13 @@ public class MapListenerTest extends HazelcastTestSupport {
         }
     }
 
+    @Override
+    protected Config getConfig() {
+        return super.getConfig()
+                    .setProperty(PARTITION_COUNT.getName(), "10")
+                    .setProperty(PARTITION_OPERATION_THREAD_COUNT.getName(), "2")
+                    .setProperty(GENERIC_OPERATION_THREAD_COUNT.getName(), "2")
+                    .setProperty(EVENT_THREAD_COUNT.getName(), "1")
+                    .setProperty(LISTENER_WITH_PREDICATE_PRODUCES_NATURAL_EVENT_TYPES.getName(), "true");
+    }
 }

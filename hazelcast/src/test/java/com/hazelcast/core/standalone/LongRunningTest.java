@@ -22,6 +22,7 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.properties.GroupProperty;
 import org.junit.Ignore;
 
 import java.util.List;
@@ -190,7 +191,10 @@ public class LongRunningTest {
             this.valueSize = valueSize;
             this.nodeId = nodeId;
             es = Executors.newFixedThreadPool(threadCount);
-            Config cfg = new XmlConfigBuilder().build();
+            Config cfg = new XmlConfigBuilder().build()
+                    .setProperty(GroupProperty.PHONE_HOME_ENABLED.getName(), "false")
+                    .setProperty(GroupProperty.SOCKET_BIND_ANY.getName(), "false")
+                    .setProperty(GroupProperty.PARTITION_MIGRATION_INTERVAL.getName(), "0");
             hazelcast = Hazelcast.newHazelcastInstance(cfg);
             esStats = Executors.newSingleThreadExecutor();
             createTime = System.currentTimeMillis();
@@ -299,11 +303,5 @@ public class LongRunningTest {
                     + ", gets:" + mapGets.get()
                     + ", remove:" + mapRemoves.get();
         }
-    }
-
-    static {
-        System.setProperty("hazelcast.phone.home.enabled", "false");
-        System.setProperty("hazelcast.socket.bind.any", "false");
-        System.setProperty("hazelcast.partition.migration.interval", "0");
     }
 }
