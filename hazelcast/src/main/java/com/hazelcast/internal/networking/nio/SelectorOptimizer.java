@@ -16,8 +16,10 @@
 
 package com.hazelcast.internal.networking.nio;
 
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
 
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -43,13 +45,37 @@ public final class SelectorOptimizer {
     }
 
     /**
+     * Creates a new Selector and will optimize it if possible.
+     *
+     * @param logger the logger used for the optimization process.
+     * @return the created Selector.
+     * @throws NullPointerException if logger is null.
+     */
+    public static Selector newSelector(ILogger logger) {
+        checkNotNull(logger, "logger");
+
+        Selector selector;
+        try {
+            selector = Selector.open();
+        } catch (IOException e) {
+            throw new HazelcastException("Failed to open a Selector", e);
+        }
+
+        boolean optimize = Boolean.parseBoolean(System.getProperty("hazelcast.io.optimizeselector", "true"));
+        if (optimize) {
+            optimize(selector, logger);
+        }
+        return selector;
+    }
+
+    /**
      * Tries to optimize the provided Selector.
      *
      * @param selector the selector to optimize
      * @return an FastSelectionKeySet if the optimization was a success, null otherwise.
      * @throws NullPointerException if selector or logger is null.
      */
-    public static SelectionKeysSet optimize(Selector selector, ILogger logger) {
+    static SelectionKeysSet optimize(Selector selector, ILogger logger) {
         checkNotNull(selector, "selector");
         checkNotNull(logger, "logger");
 
