@@ -18,33 +18,38 @@ package com.hazelcast.internal.networking.nio;
 
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.networking.ChannelErrorHandler;
-import com.hazelcast.internal.networking.ChannelInitializer;
+import com.hazelcast.internal.networking.ChannelHandler;
 import com.hazelcast.internal.networking.ChannelOutboundHandler;
-import com.hazelcast.internal.networking.InitResult;
+import com.hazelcast.internal.networking.ChannelOutboundPipeline;
+import com.hazelcast.internal.networking.HandlerStatus;
 import com.hazelcast.internal.networking.OutboundFrame;
 import com.hazelcast.internal.networking.nio.iobalancer.IOBalancer;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.util.function.Supplier;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
+import static com.hazelcast.internal.networking.HandlerStatus.CLEAN;
+import static com.hazelcast.internal.networking.HandlerStatus.DIRTY;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
-import static com.hazelcast.nio.IOUtil.compactOrClear;
+import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.util.collection.ArrayUtils.append;
+import static com.hazelcast.util.collection.ArrayUtils.replaceFirst;
 import static java.lang.Math.max;
 import static java.lang.System.currentTimeMillis;
 import static java.lang.Thread.currentThread;
 import static java.nio.channels.SelectionKey.OP_WRITE;
-import static java.util.concurrent.TimeUnit.SECONDS;
 
-public final class NioOutboundPipeline extends NioPipeline {
-
-    private static final long TIMEOUT = 3;
+public final class NioOutboundPipeline
+        extends NioPipeline
+        implements Supplier<OutboundFrame>, ChannelOutboundPipeline {
 
     @SuppressWarnings("checkstyle:visibilitymodifier")
     @Probe(name = "writeQueueSize")
@@ -52,9 +57,9 @@ public final class NioOutboundPipeline extends NioPipeline {
     @SuppressWarnings("checkstyle:visibilitymodifier")
     @Probe(name = "priorityWriteQueueSize")
     public final Queue<OutboundFrame> priorityWriteQueue = new ConcurrentLinkedQueue<OutboundFrame>();
-    private final ChannelInitializer initializer;
 
-    private ByteBuffer outputBuffer;
+    private ChannelOutboundHandler[] handlers = new ChannelOutboundHandler[0];
+    private ByteBuffer sendBuffer;
 
     private final AtomicBoolean scheduled = new AtomicBoolean(false);
     @Probe(name = "bytesWritten")
@@ -63,9 +68,7 @@ public final class NioOutboundPipeline extends NioPipeline {
     private final SwCounter normalFramesWritten = newSwCounter();
     @Probe(name = "priorityFramesWritten")
     private final SwCounter priorityFramesWritten = newSwCounter();
-    private ChannelOutboundHandler outboundHandler;
 
-    private OutboundFrame currentFrame;
     private volatile long lastWriteTime;
 
     private long bytesWrittenLastPublish;
@@ -73,14 +76,12 @@ public final class NioOutboundPipeline extends NioPipeline {
     private long priorityFramesWrittenLastPublish;
     private long processCountLastPublish;
 
-    public NioOutboundPipeline(NioChannel channel,
-                               NioThread owner,
-                               ChannelErrorHandler errorHandler,
-                               ILogger logger,
-                               IOBalancer balancer,
-                               ChannelInitializer initializer) {
+    NioOutboundPipeline(NioChannel channel,
+                        NioThread owner,
+                        ChannelErrorHandler errorHandler,
+                        ILogger logger,
+                        IOBalancer balancer) {
         super(channel, owner, errorHandler, OP_WRITE, logger, balancer);
-        this.initializer = initializer;
     }
 
     @Override
@@ -139,11 +140,11 @@ public final class NioOutboundPipeline extends NioPipeline {
         } else {
             writeQueue.offer(frame);
         }
-
         schedule();
     }
 
-    private OutboundFrame poll() {
+    @Override
+    public OutboundFrame get() {
         OutboundFrame frame = priorityWriteQueue.poll();
         if (frame == null) {
             frame = writeQueue.poll();
@@ -168,27 +169,70 @@ public final class NioOutboundPipeline extends NioPipeline {
      */
     private void schedule() {
         if (scheduled.get()) {
-            // So this ChannelOutboundHandler is still scheduled, we don't need to schedule it again
+            // So this pipeline is still scheduled, we don't need to schedule it again
             return;
         }
 
         if (!scheduled.compareAndSet(false, true)) {
-            // Another thread already has scheduled this ChannelOutboundHandler, we are done. It
+            // Another thread already has scheduled this pipeline, we are done. It
             // doesn't matter which thread does the scheduling, as long as it happens.
             return;
         }
 
-        // We managed to schedule this ChannelOutboundHandler. This means we need to add a task to
-        // the owner and give it a kick so that it processes our frames.
+        addTaskAndWakeup(this);
+    }
 
-        wakeup();
+    @Override
+    @SuppressWarnings("unchecked")
+    public void process() throws Exception {
+        processCount.inc();
+
+        ChannelOutboundHandler[] localHandlers = handlers;
+        HandlerStatus pipelineStatus = CLEAN;
+        for (int handlerIndex = 0; handlerIndex < localHandlers.length; handlerIndex++) {
+            ChannelOutboundHandler handler = localHandlers[handlerIndex];
+
+            HandlerStatus handlerStatus = handler.onWrite();
+
+            if (localHandlers != handlers) {
+                // change in the pipeline detected, therefor the pipeline is restarted.
+                localHandlers = handlers;
+                pipelineStatus = CLEAN;
+                handlerIndex = 0;
+            } else if (handlerStatus != CLEAN) {
+                pipelineStatus = handlerStatus;
+            }
+        }
+
+        flushToSocket();
+
+        if (sendBuffer.remaining() > 0) {
+            pipelineStatus = DIRTY;
+        }
+
+        switch (pipelineStatus) {
+            case CLEAN:
+                // There is nothing left to be done; so lets unschedule this pipeline
+                unschedule();
+                break;
+            case DIRTY:
+                // pipeline is dirty, so lets register for an OP_WRITE to write
+                // more data.
+                registerOp(OP_WRITE);
+                break;
+            case BLOCKED:
+                // pipeline is blocked; no point in receiving OP_WRITE events.
+                unregisterOp(OP_WRITE);
+                break;
+            default:
+                throw new IllegalStateException();
+        }
     }
 
     /**
-     * Tries to unschedule this ChannelOutboundHandler.
+     * Tries to unschedule this pipeline.
      * <p/>
      * It will only be unscheduled if:
-     * - the outputBuffer is empty
      * - there are no pending frames.
      * <p/>
      * If the outputBuffer is dirty then it will register itself for an OP_WRITE since we are interested in knowing
@@ -199,19 +243,9 @@ public final class NioOutboundPipeline extends NioPipeline {
      * This call is only made by the owning IO thread.
      */
     private void unschedule() throws IOException {
-        if (dirtyOutputBuffer() || currentFrame != null) {
-            // Because not all data was written to the socket, we need to register for OP_WRITE so we get
-            // notified when the channel is ready for more data.
-            registerOp(OP_WRITE);
-
-            // If the outputBuffer is not empty, we don't need to unschedule ourselves. This is because the
-            // ChannelOutboundHandler will be triggered by a nio write event to continue sending data.
-            return;
-        }
-
         // since everything is written, we are not interested anymore in write-events, so lets unsubscribe
         unregisterOp(OP_WRITE);
-        // So the outputBuffer is empty, so we are going to unschedule ourselves.
+        // So the outputBuffer is empty, so we are going to unschedule the pipeline.
         scheduled.set(false);
 
         if (writeQueue.isEmpty() && priorityWriteQueue.isEmpty()) {
@@ -230,116 +264,30 @@ public final class NioOutboundPipeline extends NioPipeline {
         // We don't need to call wakeup because the current thread is the IO-thread and the selectionQueue will be processed
         // till it is empty. So it will also pick up tasks that are added while it is processing the selectionQueue.
 
-        // since this is executed from the owning io thread, owner will always be set to the correct value.
-        owner.addTask(this);
+        // owner can't be null because this method is made by the owning io thread.
+        owner().addTask(this);
     }
 
-    @Override
-    @SuppressWarnings("unchecked")
-    void process() throws Exception {
-        processCount.inc();
+    private void flushToSocket() throws IOException {
         lastWriteTime = currentTimeMillis();
-
-        if (outboundHandler == null && !init()) {
-            return;
-        }
-
-        fillOutputBuffer();
-
-        if (dirtyOutputBuffer()) {
-            writeOutputBufferToSocket();
-        }
-
-        unschedule();
-    }
-
-    /**
-     * Tries to initialize.
-     *
-     * @return true if initialization was a success, false if insufficient data is available.
-     * @throws IOException
-     */
-    private boolean init() throws IOException {
-        InitResult<ChannelOutboundHandler> init = initializer.initOutbound(channel);
-        if (init == null) {
-            // we can't initialize the outbound-pipeline yet since insufficient data is available.
-            unschedule();
-            return false;
-        }
-
-        this.outputBuffer = init.getByteBuffer();
-        this.outboundHandler = init.getHandler();
-        registerOp(OP_WRITE);
-        return true;
-    }
-
-    /**
-     * Checks of the outputBuffer is dirty.
-     *
-     * @return true if dirty, false otherwise.
-     */
-    private boolean dirtyOutputBuffer() {
-        return outputBuffer != null && outputBuffer.position() > 0;
-    }
-
-    /**
-     * Writes to content of the outputBuffer to the socket.
-     */
-    private void writeOutputBufferToSocket() throws IOException {
-        // So there is data for writing, so lets prepare the buffer for writing and then write it to the channel.
-        outputBuffer.flip();
-        int written = channel.write(outputBuffer);
-
+        int written = socketChannel.write(sendBuffer);
         bytesWritten.inc(written);
-
-        compactOrClear(outputBuffer);
-    }
-
-    /**
-     * Fills the outBuffer with frames. This is done till there are no more frames or till there is no more space in the
-     * outputBuffer.
-     */
-    private void fillOutputBuffer() throws Exception {
-        if (currentFrame == null) {
-            // there is no pending frame, lets poll one.
-            currentFrame = poll();
-        }
-
-        while (currentFrame != null) {
-            // Lets write the currentFrame to the outputBuffer.
-            if (!outboundHandler.onWrite(currentFrame, outputBuffer)) {
-                // We are done for this round because not all data of the currentFrame fits in the outputBuffer
-                return;
-            }
-
-            // The current frame has been written completely. So lets poll for another one.
-            currentFrame = poll();
-        }
+        //System.out.println(channel+" bytes written:"+written);
     }
 
     @Override
-    public void close() {
+    public void requestClose() {
         writeQueue.clear();
         priorityWriteQueue.clear();
-
-        CloseTask closeTask = new CloseTask();
-        addTaskAndWakeup(closeTask);
-        closeTask.awaitCompletion();
-    }
+        super.requestClose();
+   }
 
     @Override
-    public String toString() {
-        return channel + ".outboundPipeline";
-    }
-
-    @Override
-    void publishMetrics() {
+    protected void publishMetrics() {
         if (currentThread() != owner) {
             return;
         }
 
-        // since this is executed by the owner, the owner field can't change while
-        // this method is executed.
         owner.bytesTransceived += bytesWritten.get() - bytesWrittenLastPublish;
         owner.framesTransceived += normalFramesWritten.get() - normalFramesWrittenLastPublish;
         owner.priorityFramesTransceived += priorityFramesWritten.get() - priorityFramesWrittenLastPublish;
@@ -351,30 +299,84 @@ public final class NioOutboundPipeline extends NioPipeline {
         processCountLastPublish = processCount.get();
     }
 
-    private class CloseTask extends NioPipelineTask {
-        private final CountDownLatch latch = new CountDownLatch(1);
+    @Override
+    public String toString() {
+        return channel + ".outboundPipeline";
+    }
 
-        CloseTask() {
-            super(NioOutboundPipeline.this);
+    @Override
+    protected Iterable<? extends ChannelHandler> handlers() {
+        return Arrays.asList(handlers);
+    }
+
+    @Override
+    public ChannelOutboundPipeline remove(ChannelOutboundHandler handler) {
+        return replace(handler);
+    }
+
+    @Override
+    public ChannelOutboundPipeline addLast(ChannelOutboundHandler... addedHandlers) {
+        checkNotNull(addedHandlers, "addedHandlers can't be null");
+
+        for (ChannelOutboundHandler addedHandler : addedHandlers) {
+            addedHandler.setChannel(channel).handlerAdded();
+        }
+        updatePipeline(append(handlers, addedHandlers));
+        return this;
+    }
+
+    @Override
+    public ChannelOutboundPipeline replace(ChannelOutboundHandler oldHandler, ChannelOutboundHandler... addedHandlers) {
+        checkNotNull(oldHandler, "oldHandler can't be null");
+        checkNotNull(addedHandlers, "newHandler can't be null");
+
+        ChannelOutboundHandler[] newHandlers = replaceFirst(handlers, oldHandler, addedHandlers);
+        if (newHandlers == handlers) {
+            throw new IllegalArgumentException("handler " + oldHandler + " isn't part of the pipeline");
         }
 
-        @Override
-        public void run0() {
-            try {
-                channel.closeOutbound();
-            } catch (IOException e) {
-                logger.finest("Error while closing outbound", e);
-            } finally {
-                latch.countDown();
+        for (ChannelOutboundHandler addedHandler : addedHandlers) {
+            addedHandler.setChannel(channel).handlerAdded();
+        }
+        updatePipeline(newHandlers);
+        return this;
+    }
+
+    private void updatePipeline(ChannelOutboundHandler[] newHandlers) {
+        this.handlers = newHandlers;
+        this.sendBuffer = newHandlers.length == 0 ? null : (ByteBuffer) newHandlers[newHandlers.length - 1].dst();
+
+        ChannelOutboundHandler prev = null;
+        for (ChannelOutboundHandler handler : handlers) {
+            if (prev == null) {
+                handler.src(this);
+            } else {
+                Object src = prev.dst();
+                if (src instanceof ByteBuffer) {
+                    handler.src(src);
+                }
             }
+            prev = handler;
         }
+    }
 
-        void awaitCompletion() {
-            try {
-                latch.await(TIMEOUT, SECONDS);
-            } catch (InterruptedException e) {
-                currentThread().interrupt();
+    // useful for debugging
+    private String pipelineToString() {
+        StringBuilder sb = new StringBuilder("out-pipeline[");
+        ChannelOutboundHandler[] handlers = this.handlers;
+        for (int k = 0; k < handlers.length; k++) {
+            if (k > 0) {
+                sb.append("->-");
             }
+            sb.append(handlers[k].getClass().getSimpleName());
         }
+        sb.append(']');
+        return sb.toString();
+    }
+
+    @Override
+    public ChannelOutboundPipeline wakeup() {
+        addTaskAndWakeup(this);
+        return this;
     }
 }

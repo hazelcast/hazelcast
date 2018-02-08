@@ -17,29 +17,35 @@
 package com.hazelcast.client.impl.protocol.util;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.internal.networking.HandlerStatus;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.function.Supplier;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.nio.ByteBuffer;
+import java.util.Queue;
+import java.util.concurrent.LinkedBlockingQueue;
 
+import static com.hazelcast.internal.networking.HandlerStatus.CLEAN;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class ClientMessageEncoderTest extends HazelcastTestSupport {
 
     private ClientMessageEncoder encoder;
+    private ClientMessageSupplier src;
 
     @Before
     public void setup() {
         encoder = new ClientMessageEncoder();
+        src = new ClientMessageSupplier();
     }
 
     @Test
@@ -48,14 +54,28 @@ public class ClientMessageEncoderTest extends HazelcastTestSupport {
                 .setPartitionId(10)
                 .setMessageType(1);
 
-        ByteBuffer bb = ByteBuffer.allocate(1000);
-        boolean result = encoder.onWrite(message, bb);
+        src.queue.add(message);
+        encoder.src(src);
 
-        assertTrue(result);
-        bb.flip();
-        ClientMessage clone = ClientMessage.createForDecode(new SafeBuffer(bb.array()), 0);
+        ByteBuffer dst = ByteBuffer.allocate(1000);
+        dst.flip();
+        encoder.dst(dst);
+
+        HandlerStatus result = encoder.onWrite();
+
+        assertEquals(CLEAN, result);
+        ClientMessage clone = ClientMessage.createForDecode(new SafeBuffer(dst.array()), 0);
 
         assertEquals(message.getPartitionId(), clone.getPartitionId());
         assertEquals(message.getMessageType(), clone.getMessageType());
+    }
+
+    public static class ClientMessageSupplier implements Supplier<ClientMessage> {
+        public Queue<ClientMessage> queue = new LinkedBlockingQueue<ClientMessage>();
+
+        @Override
+        public ClientMessage get() {
+            return queue.poll();
+        }
     }
 }

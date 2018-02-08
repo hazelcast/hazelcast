@@ -33,11 +33,13 @@ import com.hazelcast.internal.ascii.rest.HttpGetCommandParser;
 import com.hazelcast.internal.ascii.rest.HttpHeadCommandParser;
 import com.hazelcast.internal.ascii.rest.HttpPostCommandParser;
 import com.hazelcast.internal.networking.ChannelInboundHandler;
+import com.hazelcast.internal.networking.HandlerStatus;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ConnectionType;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.spi.annotation.PrivateApi;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.StringUtil;
 
 import java.io.IOException;
@@ -58,9 +60,14 @@ import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.TOUCH;
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.UNKNOWN;
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.VERSION;
+import static com.hazelcast.internal.networking.HandlerStatus.CLEAN;
+import static com.hazelcast.nio.IOUtil.compactOrClear;
+import static com.hazelcast.spi.properties.GroupProperty.HTTP_HEALTHCHECK_ENABLED;
+import static com.hazelcast.spi.properties.GroupProperty.MEMCACHE_ENABLED;
+import static com.hazelcast.spi.properties.GroupProperty.REST_ENABLED;
 
 @PrivateApi
-public class TextDecoder implements ChannelInboundHandler {
+public class TextDecoder extends ChannelInboundHandler<ByteBuffer, Void> {
 
     private static final Map<String, CommandParser> MAP_COMMAND_PARSERS = new HashMap<String, CommandParser>();
 
@@ -113,9 +120,11 @@ public class TextDecoder implements ChannelInboundHandler {
         this.textCommandService = ioService.getTextCommandService();
         this.encoder = encoder;
         this.connection = connection;
-        this.memcacheEnabled = ioService.isMemcacheEnabled();
-        this.restEnabled = ioService.isRestEnabled();
-        this.healthcheckEnabled = ioService.isHealthcheckEnabled();
+        HazelcastProperties props = ioService.properties();
+
+        this.memcacheEnabled = props.getBoolean(MEMCACHE_ENABLED);
+        this.restEnabled = props.getBoolean(REST_ENABLED);
+        this.healthcheckEnabled = props.getBoolean(HTTP_HEALTHCHECK_ENABLED);
         this.logger = ioService.getLoggingService().getLogger(getClass());
     }
 
@@ -124,9 +133,16 @@ public class TextDecoder implements ChannelInboundHandler {
     }
 
     @Override
-    public void onRead(ByteBuffer src) throws Exception {
-        while (src.hasRemaining()) {
-            doRead(src);
+    public HandlerStatus onRead() throws Exception {
+        src.flip();
+        try {
+            while (src.hasRemaining()) {
+                doRead(src);
+            }
+
+            return CLEAN;
+        } finally {
+            compactOrClear(src);
         }
     }
 

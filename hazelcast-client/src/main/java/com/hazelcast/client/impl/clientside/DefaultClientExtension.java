@@ -19,6 +19,9 @@ package com.hazelcast.client.impl.clientside;
 import com.hazelcast.client.ClientExtension;
 import com.hazelcast.client.HazelcastClientNotActiveException;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.config.ClientNetworkConfig;
+import com.hazelcast.client.config.SocketOptions;
+import com.hazelcast.client.connection.nio.ClientPlainChannelInitializer;
 import com.hazelcast.client.proxy.ClientMapProxy;
 import com.hazelcast.client.proxy.NearCachedClientMapProxy;
 import com.hazelcast.client.spi.ClientContext;
@@ -27,13 +30,14 @@ import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.ClientProxyFactory;
 import com.hazelcast.client.spi.impl.ClientProxyFactoryWithContext;
 import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.PartitioningStrategy;
+import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.internal.nearcache.impl.DefaultNearCacheManager;
-import com.hazelcast.internal.networking.ChannelFactory;
-import com.hazelcast.internal.networking.nio.NioChannelFactory;
+import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
@@ -46,10 +50,12 @@ import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
 import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.function.Supplier;
 
 import static com.hazelcast.internal.config.ConfigValidator.checkNearCacheConfig;
+import static com.hazelcast.spi.properties.GroupProperty.SOCKET_CLIENT_BUFFER_DIRECT;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 
 @SuppressWarnings("WeakerAccess")
@@ -120,8 +126,19 @@ public class DefaultClientExtension implements ClientExtension {
     }
 
     @Override
-    public ChannelFactory createSocketChannelWrapperFactory() {
-        return new NioChannelFactory();
+    public ChannelInitializer createChannelInitializer() {
+        ClientNetworkConfig networkConfig = client.getClientConfig().getNetworkConfig();
+        SSLConfig sslConfig = networkConfig.getSSLConfig();
+        if (sslConfig != null && sslConfig.isEnabled()) {
+            if (!BuildInfoProvider.getBuildInfo().isEnterprise()) {
+                throw new IllegalStateException("SSL/TLS requires Hazelcast Enterprise Edition");
+            }
+        }
+
+        SocketOptions socketOptions = networkConfig.getSocketOptions();
+        HazelcastProperties properties = client.getProperties();
+        boolean directBuffer = properties.getBoolean(SOCKET_CLIENT_BUFFER_DIRECT);
+        return new ClientPlainChannelInitializer(socketOptions, directBuffer);
     }
 
     @Override

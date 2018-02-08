@@ -27,6 +27,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.function.Consumer;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -44,7 +45,12 @@ import static org.mockito.Mockito.mock;
 @Category({QuickTest.class, ParallelTest.class})
 public class ClientMessageSplitAndBuildTest {
 
-    private SwCounter readCounter = SwCounter.newSwCounter();
+    private SwCounter readCounter;
+
+    @Before
+    public void before() {
+        readCounter = SwCounter.newSwCounter();
+    }
 
     @Test
     public void splitAndBuild() {
@@ -64,9 +70,15 @@ public class ClientMessageSplitAndBuildTest {
                     }
                 });
         decoder.setNormalPacketsRead(readCounter);
+
         for (ClientMessage subFrame : subFrames) {
-            decoder.onRead(ByteBuffer.wrap(subFrame.buffer().byteArray(), 0, subFrame.getFrameLength()));
+            ByteBuffer src = ByteBuffer.wrap(subFrame.buffer().byteArray(), 0, subFrame.getFrameLength());
+            src.flip();
+            decoder.src(src);
+            decoder.onRead();
         }
+
+        decoder.onRead();
     }
 
     @Test
@@ -124,7 +136,10 @@ public class ClientMessageSplitAndBuildTest {
                     break;
                 }
                 ClientMessage subFrame = clientMessageFrames.get(currentFrameIndex[i]);
-                decoder.onRead(ByteBuffer.wrap(subFrame.buffer().byteArray(), 0, subFrame.getFrameLength()));
+
+                ByteBuffer src = ByteBuffer.wrap(subFrame.buffer().byteArray(), 0, subFrame.getFrameLength());
+                src.flip();
+                decoder.src(src);
                 currentFrameIndex[i]++;
             }
         }
@@ -149,7 +164,10 @@ public class ClientMessageSplitAndBuildTest {
                 });
         decoder.setNormalPacketsRead(readCounter);
         for (ClientMessage subFrame : subFrames) {
-            decoder.onRead(ByteBuffer.wrap(subFrame.buffer().byteArray(), 0, subFrame.getFrameLength()));
+            ByteBuffer src = ByteBuffer.wrap(subFrame.buffer().byteArray(), 0, subFrame.getFrameLength());
+            src.flip();
+            decoder.src(src);
+            decoder.onRead();
         }
     }
 }
