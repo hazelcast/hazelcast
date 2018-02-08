@@ -51,6 +51,11 @@ import static java.lang.System.currentTimeMillis;
  * - are all the probes copied?
  * - NioChannel.flushOutboundPipeline has owner problem; it should only be run from the owning io thread. So can cause
  * problems with migration.
+ * - deal with inbound nio read loop? So imagine there is 64KB of data in the socket and the
+ * socketBuffer has 50KB available. So it reads 50KB and 14KB remains in the socket buffer. Imagine there is a inboundhandler
+ * that is blocking, so it will not drain the socketBuffer. So the NIO thread will keep trying to read any data from the socket
+ * since data is available, but nothing goes down the pipeline. This was not a problem, because a handler normally consumes all
+ * data and therefor the socketBuffer is always drained; but when blocking is introduced this can become a serious problem.
  *
  * done
  * - error handling

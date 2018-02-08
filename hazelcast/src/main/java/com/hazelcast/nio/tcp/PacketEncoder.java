@@ -42,7 +42,7 @@ public class PacketEncoder extends ChannelOutboundHandler<Packet> {
 
     @Override
     public WriteResult onWrite() {
-        System.out.println(channel + " MemberChannelOutboundHandler writing:" + frame);
+        System.out.println(channel + " PacketEncoder writing:" + frame);
 
         if (frame == null || packetWriter.writeTo(frame, dst)) {
             frame = null;

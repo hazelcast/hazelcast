@@ -45,6 +45,8 @@ public class OffloadingProtocolEncoder extends ChannelOutboundHandler {
 
     @Override
     public WriteResult onWrite() {
+        System.out.println(channel + " ProtocolEncoder.onWrite:" + frame +" protocolProcessed:"+protocolProcessed+" blocked:"+blocked);
+
         if (protocolProcessed) {
             complete();
             return CLEAN;
@@ -56,8 +58,6 @@ public class OffloadingProtocolEncoder extends ChannelOutboundHandler {
         }
 
         blocked = true;
-
-        System.out.println(channel + " ProtocolEncoder.onWrite:" + frame);
 
         // we doing bogus protocol offloading to see what we need to reschedule
         new Thread() {
@@ -73,8 +73,6 @@ public class OffloadingProtocolEncoder extends ChannelOutboundHandler {
                 protocolProcessed = true;
 
                 channel.flushOutboundPipeline();
-                System.out.println(channel + " addTaskAndWakup for protocol completion");
-
             }
         }.start();
 
@@ -94,7 +92,9 @@ public class OffloadingProtocolEncoder extends ChannelOutboundHandler {
         outputBuffer.put(stringToBytes(CLUSTER));
 
         handler.dst = outputBuffer;
-        handler.next.dst = outputBuffer;
+        if(handler.next!=null) {
+            handler.next.dst = outputBuffer;
+        }
     }
 
     //

@@ -36,8 +36,6 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
-import static com.hazelcast.internal.networking.WriteResult.CLEAN;
-import static com.hazelcast.internal.networking.WriteResult.DIRTY;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static com.hazelcast.nio.IOUtil.compactOrClear;
 import static java.lang.Math.max;
@@ -54,7 +52,6 @@ import static java.nio.channels.SelectionKey.OP_WRITE;
  * this is going to give a huge amount of overhead.
  * - starvation: if a single handler would have a continous stream of frames to write, and the socket is able to keep up,
  * then this handler would not release the IO thread.
- *
  */
 public final class NioOutboundPipeline
         extends ChannelOutboundHandler
@@ -270,14 +267,37 @@ public final class NioOutboundPipeline
         boolean dirtyPipeline = pushFramesThroughPipeline();
         boolean dirtySocketBuffer = writeSocketBufferToSocket();
 
+        // todo: what would happen if a pipeline is dirty. So it could be that all the content that ends up in the last
+        // bytebuffer is written; but some data remains in the pipeline
+
+        //
+
         if (newOwner != null) {
-            startMigration();
             //System.out.println(channel + " NioOutboundPipeline.onWrite migration");
+
+            // Migration is needed. If socketBuffer or pipeline is dirty, the new owner will take care of it because
+            // it will automatically reschedule to pipeline.
+
+            startMigration();
         } else if (dirtyPipeline || dirtySocketBuffer) {
             //System.out.println(channel + " NioOutboundPipeline.onWrite OP_WRITE");
+
+            // so the pipeline is dirty or the socketBuffer is dirty; this means we need to register for an OP_WRITE
+            // to get the remaining content flushed.
+
             registerOpWrite();
         } else {
             //System.out.println(channel + " NioOutboundPipeline.onWrite unschedule");
+
+            // If a handler is blocked, and the trailing handlers are not dirty and the socketbuffer is not dirty,
+            // we need to unschedule.
+            // What is the difference between clean and blocked? So the dirty makes sense since we can see if the
+            // pipeline needs to be rescheduled. But why make distinction between CLEAN/BLOCKED?
+
+            // It is related to the chain of handlers.
+            // So a handler returns blocked or returns clean
+            // how does the subsequent handler deal with it?
+
             unschedule();
         }
 
@@ -298,6 +318,7 @@ public final class NioOutboundPipeline
                     polled = true;
                 }
             } else {
+                // so there is still a frame pending to be written and therefor polling isn't needed.
                 polled = false;
             }
 
@@ -343,21 +364,21 @@ public final class NioOutboundPipeline
         }
     }
 
-    private ByteBuffer lastBb;
+    private ByteBuffer socketBuffer;
 
     /**
      * return true als the pipeline dirty is.
      */
     private boolean writePipeline() throws Exception {
-        //System.out.println(channel + " write pipeline start");
+        System.out.println(channel + " write pipeline start " + pipelineToString());
 
         ChannelOutboundHandler handler = next;
         Boolean dirty = null;
         do {
-            lastBb = handler.dst;
+            socketBuffer = handler.dst;
             //System.out.println(handler);
             WriteResult result = handler.onWrite();
-            //System.out.println(channel + " write pipeline " + handler.getClass().getSimpleName() + " " + result);
+            System.out.println(channel + " write pipeline " + handler.getClass().getSimpleName() + " " + result);
             switch (result) {
                 case CLEAN:
                     if (dirty == null) {
@@ -384,7 +405,7 @@ public final class NioOutboundPipeline
      * returns true if the socketBuffer is dirty; so not all data got written.
      */
     private boolean writeSocketBufferToSocket() throws IOException {
-        ByteBuffer dst = lastBb;
+        ByteBuffer dst = socketBuffer;
 
         if (dst == null || dst.position() <= 0) {
             return false;
@@ -416,6 +437,7 @@ public final class NioOutboundPipeline
 
         scheduled.set(false);
 
+        // todo: so we check the queue's after we unschedule; why not do it before as well? Could prevent an unwanted unscheduling/rescheduling
         if (writeQueue.isEmpty() && urgentWriteQueue.isEmpty()) {
             // there are no remaining frames, so we are done.
             return;
@@ -466,12 +488,19 @@ public final class NioOutboundPipeline
     }
 
     public String pipelineToString() {
-        StringBuilder sb = new StringBuilder();
+        StringBuilder sb = new StringBuilder("[");
         ChannelOutboundHandler h = this;
+        boolean first = true;
         while (h != null) {
-            sb.append(h.getClass().getSimpleName()).append(".");
+            if (first) {
+                first = false;
+            } else {
+                sb.append("->");
+            }
+            sb.append(h.getClass().getSimpleName());
             h = h.next;
         }
+        sb.append("]");
         return sb.toString();
     }
 

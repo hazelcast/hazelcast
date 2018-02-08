@@ -91,6 +91,9 @@ public abstract class ChannelOutboundHandler<F extends OutboundFrame> {
         if (next != null) {
             next.prev = handler;
         }
+
+        // we need to set next because the handlers can be iterated over and the iterator could still be holding on to the old handler.
+        this.next = handler;
     }
 
     /**

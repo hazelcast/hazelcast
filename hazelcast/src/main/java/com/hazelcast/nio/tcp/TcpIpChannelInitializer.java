@@ -33,6 +33,6 @@ public class TcpIpChannelInitializer implements ChannelInitializer {
     @Override
     public void initChannel(Channel channel) {
         channel.addLast(new ProtocolDecoder(logger, ioService));
-        channel.addLast(new ProtocolEncoder(logger, ioService));
+        channel.addLast(new OffloadingProtocolEncoder(logger, ioService));
     }
 }

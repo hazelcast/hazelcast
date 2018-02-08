@@ -57,12 +57,15 @@ public class NioChannel extends AbstractChannel {
 
     @Override
     public void flushOutboundPipeline() {
+        System.out.println(this+" flushOutboundPipeline");
+
         NioThread nioThread = outboundPipeline.getOwner();
 
         // todo: needs to be fixed in case of migration
         nioThread.addTaskAndWakeup(new Runnable() {
             @Override
             public void run() {
+                System.out.println(NioChannel.this+" outboundPipeline.run");
                 outboundPipeline.run();
             }
         });
