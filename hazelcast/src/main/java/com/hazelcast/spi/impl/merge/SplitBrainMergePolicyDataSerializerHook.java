@@ -14,13 +14,21 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi.merge;
+package com.hazelcast.spi.impl.merge;
 
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.merge.DiscardMergePolicy;
+import com.hazelcast.spi.merge.HigherHitsMergePolicy;
+import com.hazelcast.spi.merge.HyperLogLogMergePolicy;
+import com.hazelcast.spi.merge.LatestAccessMergePolicy;
+import com.hazelcast.spi.merge.LatestUpdateMergePolicy;
+import com.hazelcast.spi.merge.PassThroughMergePolicy;
+import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
+import com.hazelcast.spi.merge.SimpleSplitBrainEntryView;
 import com.hazelcast.util.ConstructorFunction;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.SPLIT_BRAIN_MERGE_POLICY_DS_FACTORY;
@@ -63,7 +71,7 @@ public final class SplitBrainMergePolicyDataSerializerHook implements DataSerial
 
         constructors[ENTRY_VIEW] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
-                return new SplitBrainEntryViews.SimpleSplitBrainEntryView();
+                return new SimpleSplitBrainEntryView();
             }
         };
         constructors[DISCARD] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {

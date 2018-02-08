@@ -52,7 +52,7 @@ import static com.hazelcast.cache.impl.AbstractCacheRecordStore.SOURCE_NOT_AVAIL
 import static com.hazelcast.cache.impl.ICacheService.SERVICE_NAME;
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.config.MergePolicyConfig.DEFAULT_BATCH_SIZE;
-import static com.hazelcast.spi.merge.SplitBrainEntryViews.createSplitBrainMergeEntryView;
+import static com.hazelcast.spi.impl.merge.SplitBrainEntryViews.createSplitBrainMergeEntryView;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.MapUtil.createHashMap;
 

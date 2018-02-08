@@ -18,6 +18,8 @@ package com.hazelcast.spi.merge;
 
 import com.hazelcast.spi.SplitBrainMergeEntryView;
 
+import static com.hazelcast.spi.impl.merge.SplitBrainMergePolicyDataSerializerHook.PUT_IF_ABSENT;
+
 /**
  * Merges data structure entries from source to destination if they don't exist in the destination data structure.
  *
@@ -25,7 +27,7 @@ import com.hazelcast.spi.SplitBrainMergeEntryView;
  */
 public class PutIfAbsentMergePolicy extends AbstractMergePolicy {
 
-    PutIfAbsentMergePolicy() {
+    public PutIfAbsentMergePolicy() {
     }
 
     @Override
@@ -38,6 +40,6 @@ public class PutIfAbsentMergePolicy extends AbstractMergePolicy {
 
     @Override
     public int getId() {
-        return SplitBrainMergePolicyDataSerializerHook.PUT_IF_ABSENT;
+        return PUT_IF_ABSENT;
     }
 }

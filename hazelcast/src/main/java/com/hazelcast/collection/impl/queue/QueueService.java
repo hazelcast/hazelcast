@@ -79,7 +79,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.spi.merge.SplitBrainEntryViews.createSplitBrainMergeEntryView;
+import static com.hazelcast.spi.impl.merge.SplitBrainEntryViews.createSplitBrainMergeEntryView;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.MapUtil.createHashMap;

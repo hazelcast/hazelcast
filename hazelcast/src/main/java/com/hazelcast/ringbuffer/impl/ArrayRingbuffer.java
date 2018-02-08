@@ -21,7 +21,7 @@ import com.hazelcast.spi.SplitBrainMergeEntryView;
 import com.hazelcast.spi.SplitBrainMergePolicy;
 import com.hazelcast.spi.serialization.SerializationService;
 
-import static com.hazelcast.spi.merge.SplitBrainEntryViews.createSplitBrainMergeEntryView;
+import static com.hazelcast.spi.impl.merge.SplitBrainEntryViews.createSplitBrainMergeEntryView;
 
 /**
  * The ArrayRingbuffer is responsible for storing the actual content of a ringbuffer.

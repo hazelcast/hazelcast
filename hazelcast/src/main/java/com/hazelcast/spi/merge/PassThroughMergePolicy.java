@@ -18,6 +18,8 @@ package com.hazelcast.spi.merge;
 
 import com.hazelcast.spi.SplitBrainMergeEntryView;
 
+import static com.hazelcast.spi.impl.merge.SplitBrainMergePolicyDataSerializerHook.PASS_THROUGH;
+
 /**
  * Merges data structure entries from source to destination directly unless the merging entry is {@code null}.
  *
@@ -25,7 +27,7 @@ import com.hazelcast.spi.SplitBrainMergeEntryView;
  */
 public class PassThroughMergePolicy extends AbstractMergePolicy {
 
-    PassThroughMergePolicy() {
+    public PassThroughMergePolicy() {
     }
 
     @Override
@@ -38,6 +40,6 @@ public class PassThroughMergePolicy extends AbstractMergePolicy {
 
     @Override
     public int getId() {
-        return SplitBrainMergePolicyDataSerializerHook.PASS_THROUGH;
+        return PASS_THROUGH;
     }
 }

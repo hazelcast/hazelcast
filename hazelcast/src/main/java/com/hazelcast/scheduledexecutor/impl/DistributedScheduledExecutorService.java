@@ -59,7 +59,7 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.hazelcast.spi.merge.SplitBrainEntryViews.createSplitBrainMergeEntryView;
+import static com.hazelcast.spi.impl.merge.SplitBrainEntryViews.createSplitBrainMergeEntryView;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 import static com.hazelcast.util.ExceptionUtil.peel;
 import static com.hazelcast.util.ExceptionUtil.rethrow;

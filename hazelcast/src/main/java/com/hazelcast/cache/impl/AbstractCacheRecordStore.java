@@ -78,7 +78,7 @@ import static com.hazelcast.cache.impl.CacheEventContextUtil.createCacheUpdatedE
 import static com.hazelcast.cache.impl.operation.MutableOperation.IGNORE_COMPLETION;
 import static com.hazelcast.cache.impl.record.CacheRecordFactory.isExpiredAt;
 import static com.hazelcast.internal.config.ConfigValidator.checkEvictionConfig;
-import static com.hazelcast.spi.merge.SplitBrainEntryViews.createSplitBrainMergeEntryView;
+import static com.hazelcast.spi.impl.merge.SplitBrainEntryViews.createSplitBrainMergeEntryView;
 import static com.hazelcast.util.MapUtil.createHashMap;
 import static com.hazelcast.util.SetUtil.createHashSet;
 import static java.util.Collections.emptySet;

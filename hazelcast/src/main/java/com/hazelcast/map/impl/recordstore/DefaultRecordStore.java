@@ -68,7 +68,7 @@ import static com.hazelcast.config.NativeMemoryConfig.MemoryAllocatorType.POOLED
 import static com.hazelcast.core.EntryEventType.ADDED;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.setTTLAndUpdateExpiryTime;
 import static com.hazelcast.map.impl.mapstore.MapDataStores.EMPTY_MAP_DATA_STORE;
-import static com.hazelcast.spi.merge.SplitBrainEntryViews.createSplitBrainMergeEntryView;
+import static com.hazelcast.spi.impl.merge.SplitBrainEntryViews.createSplitBrainMergeEntryView;
 import static com.hazelcast.util.MapUtil.createHashMap;
 import static java.util.Collections.emptyList;
 

@@ -43,7 +43,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
 import static com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService.SERVICE_NAME;
-import static com.hazelcast.spi.merge.SplitBrainEntryViews.createSplitBrainMergeEntryView;
+import static com.hazelcast.spi.impl.merge.SplitBrainEntryViews.createSplitBrainMergeEntryView;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.util.MapUtil.createHashMap;

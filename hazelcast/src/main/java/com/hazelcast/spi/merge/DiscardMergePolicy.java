@@ -18,6 +18,8 @@ package com.hazelcast.spi.merge;
 
 import com.hazelcast.spi.SplitBrainMergeEntryView;
 
+import static com.hazelcast.spi.impl.merge.SplitBrainMergePolicyDataSerializerHook.DISCARD;
+
 /**
  * Merges only entries from the destination data structure and discards all entries from the source data structure.
  *
@@ -25,7 +27,7 @@ import com.hazelcast.spi.SplitBrainMergeEntryView;
  */
 public class DiscardMergePolicy extends AbstractMergePolicy {
 
-    DiscardMergePolicy() {
+    public DiscardMergePolicy() {
     }
 
     @Override
@@ -38,6 +40,6 @@ public class DiscardMergePolicy extends AbstractMergePolicy {
 
     @Override
     public int getId() {
-        return SplitBrainMergePolicyDataSerializerHook.DISCARD;
+        return DISCARD;
     }
 }

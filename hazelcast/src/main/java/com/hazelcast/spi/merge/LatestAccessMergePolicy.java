@@ -18,6 +18,8 @@ package com.hazelcast.spi.merge;
 
 import com.hazelcast.spi.SplitBrainMergeEntryView;
 
+import static com.hazelcast.spi.impl.merge.SplitBrainMergePolicyDataSerializerHook.LATEST_ACCESS;
+
 /**
  * Merges data structure entries from source to destination data structure if the source entry
  * has been accessed more recently than the destination entry.
@@ -28,7 +30,7 @@ import com.hazelcast.spi.SplitBrainMergeEntryView;
  */
 public class LatestAccessMergePolicy extends AbstractMergePolicy {
 
-    LatestAccessMergePolicy() {
+    public LatestAccessMergePolicy() {
     }
 
     @Override
@@ -44,6 +46,6 @@ public class LatestAccessMergePolicy extends AbstractMergePolicy {
 
     @Override
     public int getId() {
-        return SplitBrainMergePolicyDataSerializerHook.LATEST_ACCESS;
+        return LATEST_ACCESS;
     }
 }

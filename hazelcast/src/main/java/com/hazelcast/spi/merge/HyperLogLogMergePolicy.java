@@ -20,7 +20,7 @@ import com.hazelcast.cardinality.impl.hyperloglog.HyperLogLog;
 import com.hazelcast.spi.SplitBrainMergeEntryView;
 import com.hazelcast.spi.serialization.SerializationService;
 
-import static com.hazelcast.spi.merge.SplitBrainMergePolicyDataSerializerHook.HYPER_LOG_LOG;
+import static com.hazelcast.spi.impl.merge.SplitBrainMergePolicyDataSerializerHook.HYPER_LOG_LOG;
 
 /**
  * Only available for HyperLogLog backed {@link com.hazelcast.cardinality.CardinalityEstimator}.

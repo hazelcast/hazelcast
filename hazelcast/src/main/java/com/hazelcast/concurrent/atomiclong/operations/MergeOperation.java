@@ -26,7 +26,7 @@ import com.hazelcast.spi.SplitBrainMergePolicy;
 import java.io.IOException;
 
 import static com.hazelcast.concurrent.atomiclong.AtomicLongDataSerializerHook.MERGE;
-import static com.hazelcast.spi.merge.SplitBrainEntryViews.createSplitBrainMergeEntryView;
+import static com.hazelcast.spi.impl.merge.SplitBrainEntryViews.createSplitBrainMergeEntryView;
 
 /**
  * Contains a merge value for split-brain healing with a {@link SplitBrainMergePolicy}.

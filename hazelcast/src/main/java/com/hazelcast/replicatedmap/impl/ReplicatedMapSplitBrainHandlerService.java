@@ -51,7 +51,7 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.replicatedmap.impl.ReplicatedMapService.SERVICE_NAME;
-import static com.hazelcast.spi.merge.SplitBrainEntryViews.createSplitBrainMergeEntryView;
+import static com.hazelcast.spi.impl.merge.SplitBrainEntryViews.createSplitBrainMergeEntryView;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 
 /**

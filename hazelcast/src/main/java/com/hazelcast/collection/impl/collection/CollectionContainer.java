@@ -37,7 +37,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static com.hazelcast.spi.merge.SplitBrainEntryViews.createSplitBrainMergeEntryView;
+import static com.hazelcast.spi.impl.merge.SplitBrainEntryViews.createSplitBrainMergeEntryView;
 import static com.hazelcast.util.MapUtil.createHashMap;
 
 @SuppressWarnings("checkstyle:methodcount")
