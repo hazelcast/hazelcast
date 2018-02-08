@@ -25,8 +25,8 @@ import com.hazelcast.internal.diagnostics.Diagnostics;
 import com.hazelcast.internal.dynamicconfig.DynamicConfigListener;
 import com.hazelcast.internal.management.ManagementCenterConnectionFactory;
 import com.hazelcast.internal.management.TimedMemberStateFactory;
-import com.hazelcast.internal.networking.ChannelFactory;
 import com.hazelcast.internal.networking.ChannelInboundHandler;
+import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.networking.ChannelOutboundHandler;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.memory.MemoryStats;
@@ -130,20 +130,16 @@ public interface NodeExtension {
     MemberSocketInterceptor getMemberSocketInterceptor();
 
     /**
-     * Returns <tt>ChannelFactory</tt> instance to be used by this <tt>Node</tt>.
-     *
-     * @return ChannelFactory
-     */
-    ChannelFactory getChannelFactory();
-
-    /**
      * Creates a <tt>ChannelInboundHandler</tt> for given <tt>Connection</tt> instance.
+     *
+     * For TLS and other enterprise features, instead of returning the regular protocol decoder, a TLS decoder
+     * can be returned. This is the first item in the chain.
      *
      * @param connection tcp-ip connection
      * @param ioService  IOService
      * @return the created ChannelInboundHandler.
      */
-    ChannelInboundHandler createInboundHandler(TcpIpConnection connection, IOService ioService);
+    ChannelInboundHandler[] createInboundHandlers(TcpIpConnection connection, IOService ioService);
 
     /**
      * Creates a <tt>ChannelOutboundHandler</tt> for given <tt>Connection</tt> instance.
@@ -152,7 +148,20 @@ public interface NodeExtension {
      * @param ioService  IOService
      * @return the created ChannelOutboundHandler
      */
-    ChannelOutboundHandler createOutboundHandler(TcpIpConnection connection, IOService ioService);
+    ChannelOutboundHandler[] createOutboundHandlers(TcpIpConnection connection, IOService ioService);
+
+
+    /**
+     * Creates the ChannelInitializer.
+     *
+     * Currently there is a single global channel instance per member; but as soon
+     * as WAN is going to run on different ports, we probably need multiple
+     * ChannelInitializers.
+     *
+     * @param ioService
+     * @return
+     */
+    ChannelInitializer createChannelInitializer(IOService ioService);
 
     /**
      * Called on thread start to inject/intercept extension specific logic,
@@ -267,4 +276,5 @@ public interface NodeExtension {
      * @param diagnostics the diagnostics on which plugins should be registered
      */
     void registerPlugins(Diagnostics diagnostics);
+
 }

@@ -20,6 +20,7 @@ import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SecurityConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
@@ -54,10 +55,9 @@ import com.hazelcast.internal.dynamicconfig.DynamicConfigListener;
 import com.hazelcast.internal.dynamicconfig.EmptyDynamicConfigListener;
 import com.hazelcast.internal.management.ManagementCenterConnectionFactory;
 import com.hazelcast.internal.management.TimedMemberStateFactory;
-import com.hazelcast.internal.networking.ChannelFactory;
 import com.hazelcast.internal.networking.ChannelInboundHandler;
+import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.networking.ChannelOutboundHandler;
-import com.hazelcast.internal.networking.nio.NioChannelFactory;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
@@ -71,6 +71,7 @@ import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.MemberSocketInterceptor;
 import com.hazelcast.nio.tcp.PacketDecoder;
 import com.hazelcast.nio.tcp.PacketEncoder;
+import com.hazelcast.nio.tcp.PlainChannelInitializer;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
 import com.hazelcast.security.SecurityContext;
@@ -249,19 +250,27 @@ public class DefaultNodeExtension implements NodeExtension {
     }
 
     @Override
-    public ChannelFactory getChannelFactory() {
-        return new NioChannelFactory();
-    }
-
-    @Override
-    public ChannelInboundHandler createInboundHandler(TcpIpConnection connection, IOService ioService) {
+    public ChannelInboundHandler[] createInboundHandlers(TcpIpConnection connection, IOService ioService) {
         NodeEngineImpl nodeEngine = node.nodeEngine;
-        return new PacketDecoder(connection, nodeEngine.getPacketDispatcher());
+        PacketDecoder decoder = new PacketDecoder(connection, nodeEngine.getPacketDispatcher());
+        return new ChannelInboundHandler[]{decoder};
     }
 
     @Override
-    public ChannelOutboundHandler createOutboundHandler(TcpIpConnection connection, IOService ioService) {
-        return new PacketEncoder();
+    public ChannelOutboundHandler[] createOutboundHandlers(TcpIpConnection connection, IOService ioService) {
+        return new ChannelOutboundHandler[]{new PacketEncoder()};
+    }
+
+    @Override
+    public ChannelInitializer createChannelInitializer(IOService ioService) {
+        SSLConfig sslConfig = ioService.getSSLConfig();
+        if (sslConfig != null && sslConfig.isEnabled()) {
+            if (!BuildInfoProvider.getBuildInfo().isEnterprise()) {
+                throw new IllegalStateException("SSL/TLS requires Hazelcast Enterprise Edition");
+            }
+        }
+
+        return new PlainChannelInitializer(ioService);
     }
 
     @Override

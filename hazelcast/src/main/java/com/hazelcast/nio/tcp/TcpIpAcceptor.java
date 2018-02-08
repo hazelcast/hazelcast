@@ -242,6 +242,9 @@ public class TcpIpAcceptor implements MetricsProvider {
             Channel channel = null;
             try {
                 SocketChannel socketChannel = serverSocketChannel.accept();
+
+                // todo: problem here because setReceiveBuffer is called after
+                // the socket is accepted; so it is too late.
                 if (socketChannel != null) {
                     channel = connectionManager.createChannel(socketChannel, false);
                 }
@@ -283,7 +286,6 @@ public class TcpIpAcceptor implements MetricsProvider {
 
         private void configureAndAssignSocket(Channel channel) {
             try {
-                ioService.configureSocket(channel.socket());
                 ioService.interceptSocket(channel.socket(), true);
                 connectionManager.newConnection(channel, null);
             } catch (Exception e) {

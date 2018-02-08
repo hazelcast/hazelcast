@@ -28,7 +28,6 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
-import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.nio.channels.SocketChannel;
 import java.util.Collection;
@@ -89,7 +88,7 @@ public class TcpIpConnector {
         private final Address address;
         private final boolean silent;
 
-        public ConnectTask(Address address, boolean silent) {
+        ConnectTask(Address address, boolean silent) {
             this.address = address;
             this.silent = silent;
         }
@@ -162,7 +161,9 @@ public class TcpIpConnector {
 
         private void tryToConnect(InetSocketAddress socketAddress, int timeout) throws Exception {
             SocketChannel socketChannel = SocketChannel.open();
-            ioService.configureSocket(socketChannel.socket());
+
+            Channel channel = connectionManager.createChannel(socketChannel, true);
+
             if (ioService.isSocketBind()) {
                 bindSocket(socketChannel);
             }
@@ -174,14 +175,10 @@ public class TcpIpConnector {
             }
 
             try {
-                socketChannel.configureBlocking(true);
-                connectSocketChannel(socketAddress, timeout, socketChannel);
-                if (logger.isFinestEnabled()) {
-                    logger.finest("Successfully connected to: " + address + " using socket " + socketChannel.socket());
-                }
-                Channel channel = connectionManager.createChannel(socketChannel, true);
+                channel.connect(socketAddress, timeout);
+
                 ioService.interceptSocket(socketChannel.socket(), false);
-                socketChannel.configureBlocking(false);
+
                 TcpIpConnection connection = connectionManager.newConnection(channel, address);
                 connectionManager.sendBindRequest(connection, address, true);
             } catch (NullPointerException e) {
@@ -202,21 +199,6 @@ public class TcpIpConnector {
             }
         }
 
-        private void connectSocketChannel(InetSocketAddress address, int timeout, SocketChannel socketChannel)
-                throws IOException {
-            try {
-                if (timeout > 0) {
-                    socketChannel.socket().connect(address, timeout);
-                } else {
-                    socketChannel.connect(address);
-                }
-            } catch (SocketException ex) {
-                //we want to include the address in the exception.
-                SocketException newEx = new SocketException(ex.getMessage() + " to address " + address);
-                newEx.setStackTrace(ex.getStackTrace());
-                throw newEx;
-            }
-        }
 
         private void bindSocket(SocketChannel socketChannel) throws IOException {
             InetAddress inetAddress = getInetAddress();

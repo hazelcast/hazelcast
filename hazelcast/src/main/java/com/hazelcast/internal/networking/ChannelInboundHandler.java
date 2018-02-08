@@ -16,18 +16,22 @@
 
 package com.hazelcast.internal.networking;
 
-import java.nio.ByteBuffer;
+import static com.hazelcast.internal.networking.ChannelOption.DIRECT_BUF;
+import static com.hazelcast.internal.networking.ChannelOption.SO_RCVBUF;
+import static com.hazelcast.nio.IOUtil.newByteBuffer;
 
 /**
- * The {@link ChannelInboundHandler} provides control when data is received and needs to be processed. For example data
- * has received on the socket and needs to be decoded into a Packet.
+ * The {@link ChannelInboundHandler} provides control when data is received and
+ * needs to be processed. For example data has received on the socket and needs
+ * to be decoded into a Packet.
  *
- * {@link ChannelInboundHandler} are not expected to be thread-safe; each channel will gets its own instance(s).
+ * {@link ChannelInboundHandler} are not expected to be thread-safe; each channel
+ * will gets its own instance(s).
  *
  * A {@link ChannelInboundHandler} is constructed through a {@link ChannelInitializer}.
  *
- * If the main task of a ChannelInboundHandler is to decode a message (e.g. a Packet), it is best to call this handler a
- * decoder. For example PacketDecoder.
+ * If the main task of a ChannelInboundHandler is to decode a message (e.g. a Packet),
+ * it is best to call this handler a decoder. For example PacketDecoder.
  *
  * @see ChannelOutboundHandler
  * @see EventLoopGroup
@@ -35,15 +39,41 @@ import java.nio.ByteBuffer;
  * @see ChannelErrorHandler
  * @see Channel
  */
-public interface ChannelInboundHandler {
+public abstract class ChannelInboundHandler<S, D> extends ChannelHandler<ChannelInboundHandler, S, D> {
 
     /**
-     * A callback to indicate that data is available in the src ByteBuffer to be processed.
+     * A callback to indicate that data is available in the src to be
+     * processed.
      *
-     * @param src the ByteBuffer containing the data to read. The ByteBuffer is already in reading mode and when completed,
-     *            should not be converted to write-mode using clear/compact.
-     * @throws Exception if something fails while reading data from the ByteBuffer or processing the data (e.g. when a Packet
-     *                   fails to get processed). When an exception is thrown, the {@link ChannelErrorHandler} is called.
+     * ChannelInboundHandlers should be able to deal with spurious onReads
+     * (so a read even though there is nothing to be processed).
+     *
+     * @return HandlerStatus the status of the handler after processing the src.
+     * @throws Exception if something fails while reading data from the src
+     *                   or processing the data (e.g. when a Packet fails to get processed). When an
+     *                   exception is thrown, the {@link ChannelErrorHandler} is called.
      */
-    void onRead(ByteBuffer src) throws Exception;
+    public abstract HandlerStatus onRead() throws Exception;
+
+    /**
+     * Initializes the src buffer. Should only be called by ChannelInboundHandler
+     * implementations that have a ByteBuffer as source.
+     *
+     * The capacity of the src buffer will come from the {@link ChannelConfig} using
+     * {@link ChannelOption#SO_RCVBUF}
+     */
+    protected final void initSrcBuffer() {
+        initSrcBuffer(channel.config().getOption(SO_RCVBUF));
+    }
+
+    /**
+     * Initializes the src buffer. Should only be called by ChannelInboundHandler
+     * implementations that have a ByteBuffer as source.
+     *
+     * @param sizeBytes the size of the srcBuffer in bytes.
+     */
+    protected final void initSrcBuffer(int sizeBytes) {
+        ChannelConfig config = channel.config();
+        src = (S) newByteBuffer(sizeBytes, config.getOption(DIRECT_BUF));
+    }
 }

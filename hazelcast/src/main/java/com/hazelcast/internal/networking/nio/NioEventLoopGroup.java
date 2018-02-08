@@ -29,6 +29,7 @@ import com.hazelcast.util.concurrent.BackoffIdleStrategy;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
+import java.nio.channels.SocketChannel;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -36,9 +37,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static com.hazelcast.internal.networking.nio.SelectorMode.SELECT;
 import static com.hazelcast.internal.networking.nio.SelectorMode.SELECT_NOW_STRING;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.HashUtil.hashToIndex;
-import static com.hazelcast.util.Preconditions.checkInstanceOf;
 import static com.hazelcast.util.ThreadUtil.createThreadPoolName;
 import static com.hazelcast.util.concurrent.BackoffIdleStrategy.createBackoffIdleStrategy;
 import static java.util.Collections.newSetFromMap;
@@ -199,32 +198,26 @@ public final class NioEventLoopGroup implements EventLoopGroup {
     }
 
     @Override
-    public void register(final Channel channel) {
-        NioChannel nioChannel = checkInstanceOf(NioChannel.class, channel);
+    public Channel register(SocketChannel socketChannel, boolean clientMode) throws IOException {
+        NioChannel channel = new NioChannel(socketChannel, clientMode, channelInitializer);
 
-        try {
-            nioChannel.socketChannel().configureBlocking(false);
-        } catch (IOException e) {
-            throw rethrow(e);
-        }
+        socketChannel.configureBlocking(false);
 
-        NioInboundPipeline inboundPipeline = newInboundPipeline(nioChannel);
-        NioOutboundPipeline outboundPipeline = newOutboundPipeline(nioChannel);
+        NioInboundPipeline inboundPipeline = newInboundPipeline(channel);
+        NioOutboundPipeline outboundPipeline = newOutboundPipeline(channel);
 
-        channels.add(nioChannel);
+        channels.add(channel);
 
-        nioChannel.init(inboundPipeline, outboundPipeline);
-
-        ioBalancer.channelAdded(inboundPipeline, outboundPipeline);
+        channel.init(inboundPipeline, outboundPipeline);
 
         String metricsId = channel.localSocketAddress() + "->" + channel.remoteSocketAddress();
         metricsRegistry.scanAndRegister(outboundPipeline, "tcp.connection[" + metricsId + "].out");
         metricsRegistry.scanAndRegister(inboundPipeline, "tcp.connection[" + metricsId + "].in");
 
-        inboundPipeline.start();
-        outboundPipeline.start();
+        ioBalancer.channelAdded(inboundPipeline, outboundPipeline);
 
         channel.addCloseListener(channelCloseListener);
+        return channel;
     }
 
     private NioOutboundPipeline newOutboundPipeline(NioChannel channel) {
@@ -239,8 +232,7 @@ public final class NioEventLoopGroup implements EventLoopGroup {
                 threads[index],
                 errorHandler,
                 loggingService.getLogger(NioOutboundPipeline.class),
-                ioBalancer,
-                channelInitializer);
+                ioBalancer);
     }
 
     private NioInboundPipeline newInboundPipeline(NioChannel channel) {
@@ -255,8 +247,7 @@ public final class NioEventLoopGroup implements EventLoopGroup {
                 threads[index],
                 errorHandler,
                 loggingService.getLogger(NioInboundPipeline.class),
-                ioBalancer,
-                channelInitializer);
+                ioBalancer);
     }
 
     private class ChannelCloseListenerImpl implements ChannelCloseListener {
@@ -266,10 +257,10 @@ public final class NioEventLoopGroup implements EventLoopGroup {
 
             channels.remove(channel);
 
-            ioBalancer.channelRemoved(nioChannel.inboundPipeline, nioChannel.outboundPipeline);
+            ioBalancer.channelRemoved(nioChannel.inboundPipeline(), nioChannel.outboundPipeline());
 
-            metricsRegistry.deregister(nioChannel.inboundPipeline);
-            metricsRegistry.deregister(nioChannel.outboundPipeline);
+            metricsRegistry.deregister(nioChannel.inboundPipeline());
+            metricsRegistry.deregister(nioChannel.outboundPipeline());
         }
     }
 

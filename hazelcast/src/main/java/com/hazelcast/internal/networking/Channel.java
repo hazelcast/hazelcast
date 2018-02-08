@@ -19,9 +19,9 @@ package com.hazelcast.internal.networking;
 import javax.net.ssl.SSLEngine;
 import java.io.Closeable;
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
-import java.nio.ByteBuffer;
 import java.util.concurrent.ConcurrentMap;
 
 /**
@@ -79,6 +79,15 @@ import java.util.concurrent.ConcurrentMap;
 public interface Channel extends Closeable {
 
     /**
+     * Returns the {@link ChannelConfig} of this Channel.
+     *
+     * Call is threadsafe; but calls to the ChannelConfig are not.
+     *
+     * @return the config for this channel. Returned value will never be null.
+     */
+    ChannelConfig config();
+
+    /**
      * Returns the attribute map.
      *
      * Attribute map can be used to store data into a socket. For example to find the
@@ -88,6 +97,24 @@ public interface Channel extends Closeable {
      * @return the attribute map.
      */
     ConcurrentMap attributeMap();
+
+    /**
+     * Returns the {@link ChannelInboundPipeline} that belongs to this Channel.
+     *
+     * This method is threadsafe, but most methods on the {@link ChannelInboundPipeline} are not!
+     *
+     * @return the ChannelInboundPipeline.
+     */
+    ChannelInboundPipeline inboundPipeline();
+
+    /**
+     * Returns the {@link ChannelOutboundPipeline} that belongs to this Channel.
+     *
+     * This method is threadsafe, but most methods on the {@link ChannelOutboundPipeline} are not!
+     *
+     * @return the ChannelOutboundPipeline.
+     */
+    ChannelOutboundPipeline outboundPipeline();
 
     /**
      * @see java.nio.channels.SocketChannel#socket()
@@ -112,8 +139,7 @@ public interface Channel extends Closeable {
     SocketAddress localSocketAddress();
 
     /**
-     * Returns the last {@link com.hazelcast.util.Clock#currentTimeMillis()} a read
-     * of the socket was done.
+     * Returns the last time epoch time in ms a read of the socket was done.
      *
      * This method is thread-safe.
      *
@@ -122,12 +148,11 @@ public interface Channel extends Closeable {
     long lastReadTimeMillis();
 
     /**
-     * Returns the last {@link com.hazelcast.util.Clock#currentTimeMillis()} that a
-     * write to the socket completed.
+     * Returns the last time epoch time in ms a write to the socket was done.
      *
      * Writing to the socket doesn't mean that data has been send or received; it means
      * that data was written to the SocketChannel. It could very well be that this data
-     * is stuck somewhere in an io-buffer.
+     * is stuck somewhere in an network-buffer.
      *
      * This method is thread-safe.
      *
@@ -136,49 +161,48 @@ public interface Channel extends Closeable {
     long lastWriteTimeMillis();
 
     /**
-     * This method will be removed from the Channel in the near future.
+     * Starts the Channel.
      *
-     * @see java.nio.channels.SocketChannel#read(ByteBuffer)
+     * In case of a client-mode channel, the {@link #connect(InetSocketAddress, int)}
+     * should be called before start is called.
+     *
+     * When the Channel is started, the {@link ChannelInitializer} will be called to
+     * initialize the channel and to start with processing inbound and outbound data.
+     *
+     * This method is not threadsafe and should be made only once.
      */
-    int read(ByteBuffer dst) throws IOException;
-
-    /**
-     * This method will be removed from the Channel in the near future.
-     *
-     * @see java.nio.channels.SocketChannel#write(ByteBuffer)
-     */
-    int write(ByteBuffer src) throws IOException;
-
-    /**
-     * Closes inbound.
-     *
-     * <p>Not thread safe. Should be called in channel reader thread.</p>
-     *
-     * Method will be removed once the TLS integration doesn't rely on subclassing this channel.
-     *
-     * @throws IOException
-     */
-    void closeInbound() throws IOException;
-
-    /**
-     * Closes outbound.
-     *
-     * <p>Not thread safe. Should be called in channel writer thread.</p>
-     *
-     * Method will be removed once the TLS integration doesn't rely on subclassing this channel.
-     *
-     * @throws IOException
-     */
-    void closeOutbound() throws IOException;
+    void start();
 
     /**
      * Closes the Channel.
+     *
+     * It could be that the actual closing of the Channel is executed asynchronous
+     * and completes at some point in the future. This is important for e.g. TLS
+     * goodbye handshake.
      *
      * This method is thread-safe.
      *
      * When the channel already is closed, the call is ignored.
      */
     void close() throws IOException;
+
+    /**
+     * Connects the channel.
+     *
+     * This call should only be made once and is not threadsafe.
+     *
+     * This call blocks until:
+     * <ol>
+     * <li>the connect succeeds</li>
+     * <li>the connect fails</li>
+     * <li>if there is a timeout.</li>
+     * </ol>
+     *
+     * @param address       the address to connect to.
+     * @param timeoutMillis the timeout in millis, or 0 if waiting indefinitely.
+     * @throws IOException if connecting fails.
+     */
+    void connect(InetSocketAddress address, int timeoutMillis) throws IOException;
 
     /**
      * Checks if this Channel is closed. This method is very cheap to make.
@@ -224,12 +248,4 @@ public interface Channel extends Closeable {
      * @return true if the frame was queued; false if rejected.
      */
     boolean write(OutboundFrame frame);
-
-    /**
-     * Flushes whatever needs to be written.
-     *
-     * Normally this call doesn't need to be made since {@link #write(OutboundFrame)} write the content; but in case of protocol
-     * and TLS handshaking, such triggers are needed.
-     */
-    void flush();
 }

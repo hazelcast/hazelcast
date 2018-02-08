@@ -21,7 +21,6 @@ import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.ascii.TextCommandService;
-import com.hazelcast.internal.networking.ChannelFactory;
 import com.hazelcast.internal.networking.ChannelInboundHandler;
 import com.hazelcast.internal.networking.ChannelOutboundHandler;
 import com.hazelcast.internal.serialization.InternalSerializationService;
@@ -36,6 +35,7 @@ import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.function.Consumer;
 
 import java.net.InetSocketAddress;
@@ -44,7 +44,11 @@ import java.net.Socket;
 import java.nio.channels.ServerSocketChannel;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static com.hazelcast.spi.properties.GroupProperty.IO_INPUT_THREAD_COUNT;
+import static com.hazelcast.spi.properties.GroupProperty.IO_OUTPUT_THREAD_COUNT;
 
 public class MockIOService implements IOService {
 
@@ -53,11 +57,11 @@ public class MockIOService implements IOService {
     public final InternalSerializationService serializationService;
     public final LoggingServiceImpl loggingService;
     public final ConcurrentHashMap<Long, DummyPayload> payloads = new ConcurrentHashMap<Long, DummyPayload>();
-    private final ChannelFactory channelFactory;
+    private final HazelcastProperties properties;
     public volatile Consumer<Packet> packetConsumer;
     private final ILogger logger;
 
-    public MockIOService(int port, ChannelFactory channelFactory) throws Exception {
+    public MockIOService(int port) throws Exception {
         loggingService = new LoggingServiceImpl("somegroup", "log4j2", BuildInfoProvider.getBuildInfo());
         logger = loggingService.getLogger(MockIOService.class);
         serverSocketChannel = ServerSocketChannel.open();
@@ -66,10 +70,19 @@ public class MockIOService implements IOService {
         serverSocket.setSoTimeout(1000);
         serverSocket.bind(new InetSocketAddress("0.0.0.0", port));
         thisAddress = new Address("127.0.0.1", port);
-        this.channelFactory = channelFactory;
         this.serializationService = new DefaultSerializationServiceBuilder()
                 .addDataSerializableFactory(TestDataFactory.FACTORY_ID, new TestDataFactory())
                 .build();
+
+        Properties props = new Properties();
+        props.put(IO_INPUT_THREAD_COUNT.getName(), "1");
+        props.put(IO_OUTPUT_THREAD_COUNT.getName(), "1");
+        this.properties = new HazelcastProperties(props);
+    }
+
+    @Override
+    public HazelcastProperties properties() {
+        return properties;
     }
 
     @Override
@@ -118,21 +131,6 @@ public class MockIOService implements IOService {
     }
 
     @Override
-    public boolean isMemcacheEnabled() {
-        return false;
-    }
-
-    @Override
-    public boolean isRestEnabled() {
-        return false;
-    }
-
-    @Override
-    public boolean isHealthcheckEnabled() {
-        return false;
-    }
-
-    @Override
     public void removeEndpoint(Address endpoint) {
         logger.info("Removing endpoint: " + endpoint);
     }
@@ -165,35 +163,6 @@ public class MockIOService implements IOService {
     }
 
     @Override
-    public int getSocketReceiveBufferSize() {
-        return 32;
-    }
-
-    @Override
-    public int getSocketSendBufferSize() {
-        return 32;
-    }
-
-    @Override
-    public int getSocketClientReceiveBufferSize() {
-        return 32;
-    }
-
-    @Override
-    public int getSocketClientSendBufferSize() {
-        return 32;
-    }
-
-    @Override
-    public boolean useDirectSocketBuffer() {
-        return false;
-    }
-
-    @Override
-    public void configureSocket(Socket socket) {
-    }
-
-    @Override
     public void interceptSocket(Socket socket, boolean onAccept) {
     }
 
@@ -208,27 +177,12 @@ public class MockIOService implements IOService {
     }
 
     @Override
-    public int getInputSelectorThreadCount() {
-        return 1;
-    }
-
-    @Override
-    public int getOutputSelectorThreadCount() {
-        return 1;
-    }
-
-    @Override
     public long getConnectionMonitorInterval() {
         return 0;
     }
 
     @Override
     public int getConnectionMonitorMaxFaults() {
-        return 0;
-    }
-
-    @Override
-    public int getBalancerIntervalSeconds() {
         return 0;
     }
 
@@ -346,18 +300,13 @@ public class MockIOService implements IOService {
     }
 
     @Override
-    public ChannelFactory getChannelFactory() {
-        return channelFactory;
-    }
-
-    @Override
     public MemberSocketInterceptor getMemberSocketInterceptor() {
         return null;
     }
 
     @Override
-    public ChannelInboundHandler createInboundHandler(final TcpIpConnection connection) {
-        return new PacketDecoder(connection, new Consumer<Packet>() {
+    public ChannelInboundHandler[] createMemberInboundHandlers(final TcpIpConnection connection) {
+        return new ChannelInboundHandler[]{new PacketDecoder(connection, new Consumer<Packet>() {
             @Override
             public void accept(Packet packet) {
                 try {
@@ -373,12 +322,11 @@ public class MockIOService implements IOService {
                     logger.severe(e);
                 }
             }
-        });
+        })};
     }
 
     @Override
-    public ChannelOutboundHandler createOutboundHandler(TcpIpConnection connection) {
-        return new PacketEncoder();
+    public ChannelOutboundHandler[] createMemberOutboundHandlers(TcpIpConnection connection) {
+        return new ChannelOutboundHandler[]{new PacketEncoder()};
     }
-
 }

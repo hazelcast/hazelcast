@@ -18,31 +18,39 @@ package com.hazelcast.internal.networking;
 
 import com.hazelcast.internal.networking.nio.NioEventLoopGroup;
 
+import java.io.IOException;
+import java.nio.channels.SocketChannel;
+
 /**
- * The EventLoopGroup is responsible for processing registered channels. Effectively it is the threading model for the io system.
+ * The EventLoopGroup is responsible for processing registered channels.
+ * Effectively it is the threading model for the io system.
  *
- * An event loop is for example visible on the NioThread where we loop over the selector events. The EventLoopGroup is the group
- * of all these thread instances.
+ * An event loop is for example visible on the NioThread where we loop over the
+ * selector events. The EventLoopGroup is the group of all these thread
+ * instances.
  *
- * The default implementation of this is the {@link NioEventLoopGroup} that relies on selectors. But also different
- * implementations can be added like spinning, thread per connection, epoll based etc.
- *
- * todo:
- * - packet/client-message reader and metrics
+ * The default implementation of this is the {@link NioEventLoopGroup} that
+ * relies on selectors. But also different implementations can be added like
+ * spinning, thread per connection, epoll based etc.
  *
  * @see NioEventLoopGroup
  */
 public interface EventLoopGroup {
 
     /**
-     * Registers a channel at this {@link EventLoopGroup}.
+     * Registers the SocketChannel to the EventLoop group and returns the
+     * created Channel.
      *
-     * Every Channel should be registered at at most 1 EventLoopGroup and it is very unlikely that during the lifespan of the
-     * Channel, it will change its EventLoopGroup.
+     * The Channel is not yet started so that modifications can be made to the
+     * channel e.g. adding attributes. Once this is done the {@link Channel#start()}
+     * needs to be called.
      *
-     * @param channel the channel to register.
+     * @param socketChannel the socketChannel to register
+     * @param clientMode if the channel is made in clientMode or server mode
+     * @return the created Channel
+     * @throws IOException
      */
-    void register(Channel channel);
+    Channel register(SocketChannel socketChannel, boolean clientMode) throws IOException;
 
     /**
      * Starts this EventLoopGroup.

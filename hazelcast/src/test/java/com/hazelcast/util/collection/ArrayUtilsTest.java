@@ -24,10 +24,14 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Arrays;
+
+import static com.hazelcast.util.collection.ArrayUtils.replaceFirst;
 import static org.hamcrest.Matchers.arrayWithSize;
 import static org.hamcrest.Matchers.emptyArray;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.sameInstance;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -151,6 +155,47 @@ public class ArrayUtilsTest extends HazelcastTestSupport {
         Object result = ArrayUtils.getItemAtPositionOrNull(src, 1);
 
         assertNull(result);
+    }
+
+    @Test
+    public void replace_whenInMiddle() {
+        Integer[] result = replaceFirst(new Integer[]{1, 6, 4}, 6, new Integer[]{2, 3});
+        System.out.println(Arrays.toString(result));
+        assertArrayEquals(new Integer[]{1, 2, 3, 4}, result);
+    }
+
+    @Test
+    public void replace_whenInBeginning() {
+        Integer[] result = replaceFirst(new Integer[]{6, 3, 4}, 6, new Integer[]{1, 2});
+        System.out.println(Arrays.toString(result));
+        assertArrayEquals(new Integer[]{1, 2, 3, 4}, result);
+    }
+
+    @Test
+    public void replace_whenInEnd() {
+        Integer[] result = replaceFirst(new Integer[]{1, 2, 6}, 6, new Integer[]{3, 4});
+        System.out.println(Arrays.toString(result));
+        assertArrayEquals(new Integer[]{1, 2, 3, 4}, result);
+    }
+
+    @Test
+    public void replace_whenSrcEmpty() {
+        Integer[] result = replaceFirst(new Integer[]{}, 6, new Integer[]{3, 4});
+        System.out.println(Arrays.toString(result));
+        assertArrayEquals(new Integer[]{}, result);
+    }
+
+    @Test
+    public void replace_whenNewValuesEmpty() {
+        Integer[] result = replaceFirst(new Integer[]{1, 2, 10, 3, 4}, 10, new Integer[]{});
+        System.out.println(Arrays.toString(result));
+        assertArrayEquals(new Integer[]{1, 2, 3, 4}, result);
+    }
+
+    @Test
+    public void replace_whenNotFound() {
+        Integer[] result = replaceFirst(new Integer[]{1, 2, 3}, 10, new Integer[]{100});
+        assertArrayEquals(new Integer[]{1, 2, 3}, result);
     }
 
     @Test
