@@ -28,6 +28,7 @@ import com.hazelcast.ringbuffer.StaleSequenceException;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestThread;
+import com.hazelcast.test.TimeConstants;
 import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.After;
 import org.junit.Test;
@@ -40,6 +41,10 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.ringbuffer.OverflowPolicy.FAIL;
+import static com.hazelcast.spi.properties.GroupProperty.EVENT_THREAD_COUNT;
+import static com.hazelcast.spi.properties.GroupProperty.GENERIC_OPERATION_THREAD_COUNT;
+import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
+import static com.hazelcast.spi.properties.GroupProperty.PARTITION_OPERATION_THREAD_COUNT;
 import static java.lang.Math.max;
 import static java.lang.System.currentTimeMillis;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -62,7 +67,7 @@ public class RingbufferAddAllReadManyStressTest extends HazelcastTestSupport {
         }
     }
 
-    @Test
+    @Test(timeout = TimeConstants.MINUTE * 10)
     public void whenNoTTL() throws Exception {
         RingbufferConfig ringbufferConfig = new RingbufferConfig("rb")
                 .setCapacity(20 * 1000 * 1000)
@@ -71,7 +76,7 @@ public class RingbufferAddAllReadManyStressTest extends HazelcastTestSupport {
         test(ringbufferConfig);
     }
 
-    @Test
+    @Test(timeout = TimeConstants.MINUTE * 10)
     public void whenTTLEnabled() throws Exception {
         RingbufferConfig ringbufferConfig = new RingbufferConfig("rb")
                 .setCapacity(200 * 1000)
@@ -79,7 +84,7 @@ public class RingbufferAddAllReadManyStressTest extends HazelcastTestSupport {
         test(ringbufferConfig);
     }
 
-    @Test
+    @Test(timeout = TimeConstants.MINUTE * 10)
     public void whenLongTTLAndSmallBuffer() throws Exception {
         RingbufferConfig ringbufferConfig = new RingbufferConfig("rb")
                 .setCapacity(1000)
@@ -87,7 +92,7 @@ public class RingbufferAddAllReadManyStressTest extends HazelcastTestSupport {
         test(ringbufferConfig);
     }
 
-    @Test
+    @Test(timeout = TimeConstants.MINUTE * 10)
     public void whenShortTTLAndBigBuffer() throws Exception {
         RingbufferConfig ringbufferConfig = new RingbufferConfig("rb")
                 .setInMemoryFormat(InMemoryFormat.OBJECT)
@@ -97,7 +102,13 @@ public class RingbufferAddAllReadManyStressTest extends HazelcastTestSupport {
     }
 
     public void test(RingbufferConfig ringbufferConfig) throws Exception {
-        Config config = new Config();
+        // make the test instances consume less resources
+        Config config = new Config()
+                .setProperty(PARTITION_COUNT.getName(), "10")
+                .setProperty(PARTITION_OPERATION_THREAD_COUNT.getName(), "2")
+                .setProperty(GENERIC_OPERATION_THREAD_COUNT.getName(), "2")
+                .setProperty(EVENT_THREAD_COUNT.getName(), "1");
+
         config.addRingBufferConfig(ringbufferConfig);
         HazelcastInstance[] instances = createHazelcastInstanceFactory(2).newInstances(config);
 
