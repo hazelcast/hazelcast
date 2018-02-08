@@ -79,12 +79,12 @@ public class LoadTrackerTest {
         loadTracker.addHandler(selector2Handler3);
 
         LoadImbalance loadImbalance = loadTracker.updateImbalance();
-        assertEquals(0, loadImbalance.minimumEvents);
-        assertEquals(0, loadImbalance.maximumEvents);
+        assertEquals(0, loadImbalance.minimumLoad);
+        assertEquals(0, loadImbalance.maximumLoad);
 
         loadTracker.updateImbalance();
-        assertEquals(100, loadImbalance.minimumEvents);
-        assertEquals(300, loadImbalance.maximumEvents);
+        assertEquals(100, loadImbalance.minimumLoad);
+        assertEquals(300, loadImbalance.maximumLoad);
         assertEquals(selector1, loadImbalance.destinationSelector);
         assertEquals(selector2, loadImbalance.sourceSelector);
     }
@@ -110,8 +110,8 @@ public class LoadTrackerTest {
 
         LoadImbalance loadImbalance = loadTracker.updateImbalance();
 
-        assertEquals(400, loadImbalance.minimumEvents);
-        assertEquals(400, loadImbalance.maximumEvents);
+        assertEquals(400, loadImbalance.minimumLoad);
+        assertEquals(400, loadImbalance.maximumLoad);
         assertEquals(selector2, loadImbalance.destinationSelector);
         assertEquals(selector2, loadImbalance.sourceSelector);
     }

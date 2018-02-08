@@ -119,10 +119,10 @@ public class IOBalancerMemoryLeakTest extends HazelcastTestSupport {
                 LoadTracker outLoadTracker = ioBalancer.getOutLoadTracker();
                 int inHandlerSize = inLoadTracker.getHandlers().size();
                 int outHandlerSize = outLoadTracker.getHandlers().size();
-                int inHandlerEventsCount = inLoadTracker.getHandlerEventsCounter().keySet().size();
-                int outHandlerEventsCount = outLoadTracker.getHandlerEventsCounter().keySet().size();
-                int inLastEventsCount = inLoadTracker.getLastEventCounter().keySet().size();
-                int outLastEventsCount = outLoadTracker.getLastEventCounter().keySet().size();
+                int inHandlerEventsCount = inLoadTracker.getHandlerLoad().keySet().size();
+                int outHandlerEventsCount = outLoadTracker.getHandlerLoad().keySet().size();
+                int inLastEventsCount = inLoadTracker.getLastLoad().keySet().size();
+                int outLastEventsCount = outLoadTracker.getLastLoad().keySet().size();
                 assertEquals(0, inHandlerSize);
                 assertEquals(0, outHandlerSize);
                 assertEquals(0, inHandlerEventsCount);

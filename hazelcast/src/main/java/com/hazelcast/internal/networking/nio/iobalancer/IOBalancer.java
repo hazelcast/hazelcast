@@ -41,7 +41,7 @@ import static com.hazelcast.spi.properties.GroupProperty.IO_THREAD_COUNT;
  * <code>IOBalancer</code> tries to detect such situations and fix them by moving {@link NioChannelReader} and
  * {@link NioChannelWriter} between {@link NioThread} instances.
  *
- * It measures number of events serviced by each handler in a given interval and if imbalance is detected then it
+ * It measures amount of load serviced by each handler in a given interval and if imbalance is detected then it
  * schedules handler migration to fix the situation. The exact migration strategy can be customized via
  * {@link com.hazelcast.internal.networking.nio.iobalancer.MigrationStrategy}.
  *
@@ -149,13 +149,13 @@ public class IOBalancer {
             tryMigrate(loadImbalance);
         } else {
             if (logger.isFinestEnabled()) {
-                long min = loadImbalance.minimumEvents;
-                long max = loadImbalance.maximumEvents;
+                long min = loadImbalance.minimumLoad;
+                long max = loadImbalance.maximumLoad;
                 if (max == Long.MIN_VALUE) {
                     logger.finest("There is at most 1 handler associated with each thread. "
                             + "There is nothing to balance");
                 } else {
-                    logger.finest("No imbalance has been detected. Max. events: " + max + " Min events: " + min + ".");
+                    logger.finest("No imbalance has been detected. Max. load: " + max + " Min load: " + min + ".");
                 }
             }
         }
@@ -168,7 +168,7 @@ public class IOBalancer {
             return new MonkeyMigrationStrategy();
         } else {
             logger.finest("Using normal IO Balancer Strategy.");
-            return new EventCountBasicMigrationStrategy();
+            return new LoadMigrationStrategy();
         }
     }
 

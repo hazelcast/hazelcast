@@ -31,15 +31,15 @@ import java.util.Set;
  * overload of the {@link LoadImbalance#destinationSelector} after a migration.
  *
  */
-class EventCountBasicMigrationStrategy implements MigrationStrategy {
+class LoadMigrationStrategy implements MigrationStrategy {
 
     /**
      * You can use this property to tune whether the migration will be attempted at all. The higher the number is
      * the more likely the migration will be attempted. Too higher number will result in unnecessary overhead, too
      * low number will cause performance degradation due selector imbalance.
      *
-     * Try to schedule a migration if the least busy NioThread receives less events
-     * then (MIN_MAX_RATIO_MIGRATION_THRESHOLD * no. of events received by the busiest NioThread)
+     * Try to schedule a migration if the least busy NioThread receives less load
+     * then (MIN_MAX_RATIO_MIGRATION_THRESHOLD * no. of load received by the busiest NioThread)
      */
     private static final double MIN_MAX_RATIO_MIGRATION_THRESHOLD = 0.8;
 
@@ -47,7 +47,7 @@ class EventCountBasicMigrationStrategy implements MigrationStrategy {
      * You can use this property to tune a selection process for handler migration. The higher number is the more
      * aggressive migration process is.
      */
-    private static final double MAXIMUM_NO_OF_EVENTS_AFTER_MIGRATION_COEFFICIENT = 0.9;
+    private static final double MAXIMUM_LOAD_AFTER_MIGRATION_COEFFICIENT = 0.9;
 
     /**
      * Checks if an imbalance was detected in the system
@@ -57,8 +57,8 @@ class EventCountBasicMigrationStrategy implements MigrationStrategy {
      */
     @Override
     public boolean imbalanceDetected(LoadImbalance imbalance) {
-        long min = imbalance.minimumEvents;
-        long max = imbalance.maximumEvents;
+        long min = imbalance.minimumLoad;
+        long max = imbalance.maximumLoad;
 
         if (min == Long.MIN_VALUE || max == Long.MAX_VALUE) {
             return false;
@@ -76,15 +76,15 @@ class EventCountBasicMigrationStrategy implements MigrationStrategy {
     @Override
     public MigratableHandler findHandlerToMigrate(LoadImbalance imbalance) {
         Set<? extends MigratableHandler> candidates = imbalance.getHandlersOwnerBy(imbalance.sourceSelector);
-        long migrationThreshold = (long) ((imbalance.maximumEvents - imbalance.minimumEvents)
-                * MAXIMUM_NO_OF_EVENTS_AFTER_MIGRATION_COEFFICIENT);
+        long migrationThreshold = (long) ((imbalance.maximumLoad - imbalance.minimumLoad)
+                * MAXIMUM_LOAD_AFTER_MIGRATION_COEFFICIENT);
         MigratableHandler candidate = null;
-        long eventCountInSelectedHandler = 0;
+        long loadInSelectedHandler = 0;
         for (MigratableHandler handler : candidates) {
-            long eventCount = imbalance.getLoad(handler);
-            if (eventCount > eventCountInSelectedHandler) {
-                if (eventCount < migrationThreshold) {
-                    eventCountInSelectedHandler = eventCount;
+            long load = imbalance.getLoad(handler);
+            if (load > loadInSelectedHandler) {
+                if (load < migrationThreshold) {
+                    loadInSelectedHandler = load;
                     candidate = handler;
                 }
             }

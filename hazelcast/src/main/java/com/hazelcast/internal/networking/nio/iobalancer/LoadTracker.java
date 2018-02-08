@@ -47,13 +47,13 @@ class LoadTracker {
     private final NioThread[] ioThreads;
     private final Map<NioThread, Set<MigratableHandler>> selectorToHandlers;
 
-    //no. of events per handler since an instance started
-    private final ItemCounter<MigratableHandler> lastEventCounter = new ItemCounter<MigratableHandler>();
+    //load per handler since an instance started
+    private final ItemCounter<MigratableHandler> lastLoad = new ItemCounter<MigratableHandler>();
 
-    //no. of events per NioThread since last calculation
-    private final ItemCounter<NioThread> selectorEvents = new ItemCounter<NioThread>();
-    //no. of events per handler since last calculation
-    private final ItemCounter<MigratableHandler> handlerEventsCounter = new ItemCounter<MigratableHandler>();
+    //load per NioThread since last calculation
+    private final ItemCounter<NioThread> selectorLoad = new ItemCounter<NioThread>();
+    //load per handler since last calculation
+    private final ItemCounter<MigratableHandler> handlerLoad = new ItemCounter<MigratableHandler>();
 
     //contains all known handlers
     private final Set<MigratableHandler> handlers = new HashSet<MigratableHandler>();
@@ -70,7 +70,7 @@ class LoadTracker {
         for (NioThread selector : ioThreads) {
             selectorToHandlers.put(selector, new HashSet<MigratableHandler>());
         }
-        this.imbalance = new LoadImbalance(selectorToHandlers, handlerEventsCounter);
+        this.imbalance = new LoadImbalance(selectorToHandlers, handlerLoad);
     }
 
     /**
@@ -103,34 +103,34 @@ class LoadTracker {
     }
 
     // just for testing
-    ItemCounter<MigratableHandler> getLastEventCounter() {
-        return lastEventCounter;
+    ItemCounter<MigratableHandler> getLastLoad() {
+        return lastLoad;
     }
 
     // just for testing
-    ItemCounter<MigratableHandler> getHandlerEventsCounter() {
-        return handlerEventsCounter;
+    ItemCounter<MigratableHandler> getHandlerLoad() {
+        return handlerLoad;
     }
 
     private void updateNewFinalImbalance() {
-        imbalance.minimumEvents = Long.MAX_VALUE;
-        imbalance.maximumEvents = Long.MIN_VALUE;
+        imbalance.minimumLoad = Long.MAX_VALUE;
+        imbalance.maximumLoad = Long.MIN_VALUE;
         imbalance.sourceSelector = null;
         imbalance.destinationSelector = null;
         for (NioThread selector : ioThreads) {
-            long eventCount = selectorEvents.get(selector);
+            long load = selectorLoad.get(selector);
             int handlerCount = selectorToHandlers.get(selector).size();
 
-            if (eventCount > imbalance.maximumEvents && handlerCount > 1) {
+            if (load > imbalance.maximumLoad && handlerCount > 1) {
                 // if a selector has only 1 handle, there is no point in making it a source selector since
                 // there is no handler that can be migrated anyway. In that case it is better to move on to
                 // the next selector.
-                imbalance.maximumEvents = eventCount;
+                imbalance.maximumLoad = load;
                 imbalance.sourceSelector = selector;
             }
 
-            if (eventCount < imbalance.minimumEvents) {
-                imbalance.minimumEvents = eventCount;
+            if (load < imbalance.minimumLoad) {
+                imbalance.minimumLoad = load;
                 imbalance.destinationSelector = selector;
             }
         }
@@ -154,23 +154,23 @@ class LoadTracker {
     }
 
     private void updateHandlerState(MigratableHandler handler) {
-        long handlerEventCount = getEventCountSinceLastCheck(handler);
-        handlerEventsCounter.set(handler, handlerEventCount);
+        long handlerLoad = getLoadSinceLastCheck(handler);
+        this.handlerLoad.set(handler, handlerLoad);
         NioThread owner = handler.getOwner();
-        selectorEvents.add(owner, handlerEventCount);
+        selectorLoad.add(owner, handlerLoad);
         Set<MigratableHandler> handlersOwnedBy = selectorToHandlers.get(owner);
         handlersOwnedBy.add(handler);
     }
 
-    private long getEventCountSinceLastCheck(MigratableHandler handler) {
-        long eventCount = handler.getLoad();
-        Long lastEventCount = lastEventCounter.getAndSet(handler, eventCount);
-        return eventCount - lastEventCount;
+    private long getLoadSinceLastCheck(MigratableHandler handler) {
+        long load = handler.getLoad();
+        Long lastLoad = this.lastLoad.getAndSet(handler, load);
+        return load - lastLoad;
     }
 
     private void clearWorkingImbalance() {
-        handlerEventsCounter.reset();
-        selectorEvents.reset();
+        handlerLoad.reset();
+        selectorLoad.reset();
         for (Set<MigratableHandler> handlerSet : selectorToHandlers.values()) {
             handlerSet.clear();
         }
@@ -182,8 +182,8 @@ class LoadTracker {
 
     void removeHandler(MigratableHandler handler) {
         handlers.remove(handler);
-        handlerEventsCounter.remove(handler);
-        lastEventCounter.remove(handler);
+        handlerLoad.remove(handler);
+        lastLoad.remove(handler);
     }
 
     private void printDebugTable() {
@@ -199,23 +199,21 @@ class LoadTracker {
         StringBuilder sb = new StringBuilder(LINE_SEPARATOR)
                 .append("------------")
                 .append(LINE_SEPARATOR);
-        Long eventCountPerSelector = selectorEvents.get(minThread);
+        Long loadPerSelector = selectorLoad.get(minThread);
 
         sb.append("Min Selector ")
                 .append(minThread)
                 .append(" received ")
-                .append(eventCountPerSelector)
-                .append(" events. ");
+                .append(loadPerSelector);
         sb.append("It contains following handlers: ").
                 append(LINE_SEPARATOR);
         appendSelectorInfo(minThread, selectorToHandlers, sb);
 
-        eventCountPerSelector = selectorEvents.get(maxThread);
+        loadPerSelector = selectorLoad.get(maxThread);
         sb.append("Max Selector ")
                 .append(maxThread)
                 .append(" received ")
-                .append(eventCountPerSelector)
-                .append(" events. ");
+                .append(loadPerSelector);
         sb.append("It contains following handlers: ")
                 .append(LINE_SEPARATOR);
         appendSelectorInfo(maxThread, selectorToHandlers, sb);
@@ -225,11 +223,11 @@ class LoadTracker {
 
         for (NioThread selector : ioThreads) {
             if (!selector.equals(minThread) && !selector.equals(maxThread)) {
-                eventCountPerSelector = selectorEvents.get(selector);
+                loadPerSelector = selectorLoad.get(selector);
                 sb.append("Selector ")
                         .append(selector)
                         .append(" contains ")
-                        .append(eventCountPerSelector)
+                        .append(loadPerSelector)
                         .append(" and has these handlers: ")
                         .append(LINE_SEPARATOR);
                 appendSelectorInfo(selector, selectorToHandlers, sb);
@@ -246,10 +244,10 @@ class LoadTracker {
             StringBuilder sb) {
         Set<MigratableHandler> handlerSet = threadHandlers.get(minThread);
         for (MigratableHandler selectionHandler : handlerSet) {
-            Long eventCountPerHandler = handlerEventsCounter.get(selectionHandler);
+            Long loadPerHandler = handlerLoad.get(selectionHandler);
             sb.append(selectionHandler)
                     .append(":  ")
-                    .append(eventCountPerHandler)
+                    .append(loadPerHandler)
                     .append(LINE_SEPARATOR);
         }
         sb.append(LINE_SEPARATOR);

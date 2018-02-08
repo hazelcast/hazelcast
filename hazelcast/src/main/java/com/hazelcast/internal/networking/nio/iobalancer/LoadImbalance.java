@@ -31,10 +31,10 @@ import java.util.Set;
  * {@link SelectionHandler} should be migrated.
  */
 class LoadImbalance {
-    //number of events recorded by the busiest NioThread
-    long maximumEvents;
-    //number of events recorded by the least busy NioThread
-    long minimumEvents;
+    //load recorded by the busiest NioThread
+    long maximumLoad;
+    //load recorded by the least busy NioThread
+    long minimumLoad;
     //busiest NioThread
     NioThread sourceSelector;
     //least busy NioThread
@@ -59,7 +59,7 @@ class LoadImbalance {
 
     /**
      * @param handler
-     * @return number of events recorded by the handler
+     * @return load recorded by the handler
      */
     long getLoad(MigratableHandler handler) {
         return handlerLoadCounter.get(handler);
