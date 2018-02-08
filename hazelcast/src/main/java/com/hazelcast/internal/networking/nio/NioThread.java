@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.networking.nio;
 
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.networking.ChannelErrorHandler;
@@ -39,7 +38,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static com.hazelcast.internal.networking.nio.SelectorMode.SELECT_NOW;
-import static com.hazelcast.internal.networking.nio.SelectorOptimizer.optimize;
+import static com.hazelcast.internal.networking.nio.SelectorOptimizer.newSelector;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static java.lang.Math.max;
 import static java.lang.System.currentTimeMillis;
@@ -130,19 +129,6 @@ public class NioThread extends Thread implements OperationHostileThread {
         this.selector = selector;
         this.selectorWorkaroundTest = false;
         this.idleStrategy = idleStrategy;
-    }
-
-    private static Selector newSelector(ILogger logger) {
-        try {
-            Selector selector = Selector.open();
-            boolean optimize = Boolean.parseBoolean(System.getProperty("hazelcast.io.optimizeselector", "true"));
-            if (optimize) {
-                optimize(selector, logger);
-            }
-            return selector;
-        } catch (final IOException e) {
-            throw new HazelcastException("Failed to open a Selector", e);
-        }
     }
 
     public long bytesTransceived() {
