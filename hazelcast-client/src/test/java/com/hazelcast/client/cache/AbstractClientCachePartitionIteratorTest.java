@@ -24,26 +24,27 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.After;
 import org.junit.Test;
-import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
 
 import javax.cache.Cache;
 import javax.cache.CacheManager;
 import javax.cache.spi.CachingProvider;
-import java.util.Arrays;
 import java.util.Iterator;
 
+import static java.util.Arrays.asList;
 import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertTrue;
 import static org.junit.Assert.assertEquals;
 
 public abstract class AbstractClientCachePartitionIteratorTest extends HazelcastTestSupport {
 
-    @Parameterized.Parameter
+    @Parameter
     public boolean prefetchValues;
 
-    @Parameterized.Parameters(name = "prefetchValues:{0}")
+    @Parameters(name = "prefetchValues:{0}")
     public static Iterable<Object[]> parameters() {
-        return Arrays.asList(new Object[]{Boolean.TRUE}, new Object[]{Boolean.FALSE});
+        return asList(new Object[]{Boolean.TRUE}, new Object[]{Boolean.FALSE});
     }
 
     protected TestHazelcastFactory factory;
@@ -56,14 +57,14 @@ public abstract class AbstractClientCachePartitionIteratorTest extends Hazelcast
     }
 
     @Test
-    public void test_HasNext_Returns_False_On_EmptyPartition() throws Exception {
+    public void test_HasNext_Returns_False_On_EmptyPartition() {
         ICacheInternal<Integer, Integer> cache = getCacheProxy();
         Iterator<Cache.Entry<Integer, Integer>> iterator = cache.iterator(10, 1, prefetchValues);
         assertFalse(iterator.hasNext());
     }
 
     @Test
-    public void test_HasNext_Returns_True_On_NonEmptyPartition() throws Exception {
+    public void test_HasNext_Returns_True_On_NonEmptyPartition() {
         ICacheInternal<String, String> cache = getCacheProxy();
 
         String key = generateKeyForPartition(server, 1);
@@ -75,7 +76,7 @@ public abstract class AbstractClientCachePartitionIteratorTest extends Hazelcast
     }
 
     @Test
-    public void test_Next_Returns_Value_On_NonEmptyPartition() throws Exception {
+    public void test_Next_Returns_Value_On_NonEmptyPartition() {
         ICacheInternal<String, String> cache = getCacheProxy();
 
         String key = generateKeyForPartition(server, 1);
@@ -88,7 +89,7 @@ public abstract class AbstractClientCachePartitionIteratorTest extends Hazelcast
     }
 
     @Test
-    public void test_Next_Returns_Value_On_NonEmptyPartition_and_HasNext_Returns_False_when_Item_Consumed() throws Exception {
+    public void test_Next_Returns_Value_On_NonEmptyPartition_and_HasNext_Returns_False_when_Item_Consumed() {
         ICacheInternal<String, String> cache = getCacheProxy();
 
         String key = generateKeyForPartition(server, 1);
@@ -103,7 +104,7 @@ public abstract class AbstractClientCachePartitionIteratorTest extends Hazelcast
     }
 
     @Test
-    public void test_Next_Returns_Values_When_FetchSizeExceeds_On_NonEmptyPartition() throws Exception {
+    public void test_Next_Returns_Values_When_FetchSizeExceeds_On_NonEmptyPartition() {
         ICacheInternal<String, String> cache = getCacheProxy();
         String value = randomString();
         int count = 1000;

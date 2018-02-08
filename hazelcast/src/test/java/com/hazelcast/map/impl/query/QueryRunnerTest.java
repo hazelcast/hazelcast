@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.query;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.map.impl.MapService;
@@ -32,8 +33,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.concurrent.ExecutionException;
-
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -48,10 +47,11 @@ public class QueryRunnerTest extends HazelcastTestSupport {
     private String key;
     private String value;
 
-
     @Before
     public void before() {
-        instance = createHazelcastInstance();
+        Config config = toDefaultProperties(getConfig());
+
+        instance = createHazelcastInstance(config);
         map = instance.getMap(randomName());
         queryRunner = getQueryRunner();
 
@@ -75,7 +75,7 @@ public class QueryRunnerTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void runFullQuery() throws ExecutionException, InterruptedException {
+    public void runFullQuery() throws Exception {
         Predicate predicate = Predicates.equal("this", value);
         Query query = Query.of().mapName(map.getName()).predicate(predicate).iterationType(IterationType.ENTRY).build();
         QueryResult result = (QueryResult) queryRunner.runIndexOrPartitionScanQueryOnOwnedPartitions(query);
@@ -85,7 +85,7 @@ public class QueryRunnerTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void runPartitionScanQueryOnSinglePartition() throws ExecutionException, InterruptedException {
+    public void runPartitionScanQueryOnSinglePartition() {
         Predicate predicate = Predicates.equal("this", value);
         Query query = Query.of().mapName(map.getName()).predicate(predicate).iterationType(IterationType.ENTRY).build();
         QueryResult result = (QueryResult) queryRunner.runPartitionScanQueryOnGivenOwnedPartition(query, partitionId);
@@ -102,5 +102,4 @@ public class QueryRunnerTest extends HazelcastTestSupport {
     private Object toObject(Data data) {
         return getSerializationService(instance).toObject(data);
     }
-
 }

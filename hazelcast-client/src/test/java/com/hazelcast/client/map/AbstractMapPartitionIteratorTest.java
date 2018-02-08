@@ -54,7 +54,7 @@ public abstract class AbstractMapPartitionIteratorTest extends HazelcastTestSupp
     }
 
     @Test
-    public void test_HasNext_Returns_False_On_EmptyPartition() throws Exception {
+    public void test_HasNext_Returns_False_On_EmptyPartition() {
         ClientMapProxy<Integer, Integer> map = getMapProxy();
 
         Iterator<Map.Entry<Integer, Integer>> iterator = map.iterator(10, 1, prefetchValues);
@@ -62,7 +62,7 @@ public abstract class AbstractMapPartitionIteratorTest extends HazelcastTestSupp
     }
 
     @Test
-    public void test_HasNext_Returns_True_On_NonEmptyPartition() throws Exception {
+    public void test_HasNext_Returns_True_On_NonEmptyPartition() {
         ClientMapProxy<String, String> map = getMapProxy();
 
         String key = generateKeyForPartition(server, 1);
@@ -74,7 +74,7 @@ public abstract class AbstractMapPartitionIteratorTest extends HazelcastTestSupp
     }
 
     @Test
-    public void test_Next_Returns_Value_On_NonEmptyPartition() throws Exception {
+    public void test_Next_Returns_Value_On_NonEmptyPartition() {
         ClientMapProxy<String, String> map = getMapProxy();
 
         String key = generateKeyForPartition(server, 1);
@@ -87,7 +87,7 @@ public abstract class AbstractMapPartitionIteratorTest extends HazelcastTestSupp
     }
 
     @Test
-    public void test_Next_Returns_Values_When_FetchSizeExceeds_On_NonEmptyPartition() throws Exception {
+    public void test_Next_Returns_Values_When_FetchSizeExceeds_On_NonEmptyPartition() {
         ClientMapProxy<String, String> map = getMapProxy();
         String value = randomString();
         int count = 1000;

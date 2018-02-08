@@ -26,15 +26,16 @@ import org.junit.Before;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class ClientMapPartitionIteratorTest extends AbstractMapPartitionIteratorTest {
 
     @Before
     public void setup() {
-        Config config = getConfig();
+        Config config = toDefaultProperties(getConfig());
         ClientConfig clientConfig = getClientConfig();
 
         factory = new TestHazelcastFactory();

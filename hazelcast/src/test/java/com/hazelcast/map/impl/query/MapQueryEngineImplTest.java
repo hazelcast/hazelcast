@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.query;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.map.impl.MapService;
@@ -31,7 +32,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.util.IterationType.ENTRY;
 import static com.hazelcast.util.IterationType.KEY;
@@ -52,7 +52,9 @@ public class MapQueryEngineImplTest extends HazelcastTestSupport {
 
     @Before
     public void before() {
-        instance = createHazelcastInstance();
+        Config config = toDefaultProperties(getConfig());
+
+        instance = createHazelcastInstance(config);
         map = instance.getMap(randomName());
         MapService mapService = getNodeEngineImpl(instance).getService(MapService.SERVICE_NAME);
         queryEngine = mapService.getMapServiceContext().getMapQueryEngine(map.getName());
@@ -72,7 +74,7 @@ public class MapQueryEngineImplTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void runQueryOnAllPartitions() throws ExecutionException, InterruptedException {
+    public void runQueryOnAllPartitions() {
         Predicate predicate = Predicates.equal("this", value);
         Query query = Query.of().mapName(map.getName()).predicate(predicate).iterationType(KEY).build();
 
@@ -83,7 +85,7 @@ public class MapQueryEngineImplTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void runQueryOnLocalPartitions() throws ExecutionException, InterruptedException {
+    public void runQueryOnLocalPartitions() {
         Predicate predicate = Predicates.equal("this", value);
         Query query = Query.of().mapName(map.getName()).predicate(predicate).iterationType(KEY).build();
 
@@ -94,7 +96,7 @@ public class MapQueryEngineImplTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void runQueryOnAllPartitions_key() throws ExecutionException, InterruptedException {
+    public void runQueryOnAllPartitions_key() {
         Predicate predicate = Predicates.equal("this", value);
         Query query = Query.of().mapName(map.getName()).predicate(predicate).iterationType(KEY).build();
 
@@ -105,7 +107,7 @@ public class MapQueryEngineImplTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void runQueryOnAllPartitions_value() throws ExecutionException, InterruptedException {
+    public void runQueryOnAllPartitions_value() {
         Predicate predicate = Predicates.equal("this", value);
         Query query = Query.of().mapName(map.getName()).predicate(predicate).iterationType(VALUE).build();
 
@@ -116,7 +118,7 @@ public class MapQueryEngineImplTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void runQueryOnGivenPartition() throws ExecutionException, InterruptedException {
+    public void runQueryOnGivenPartition() {
         Predicate predicate = Predicates.equal("this", value);
         Query query = Query.of().mapName(map.getName()).predicate(predicate).iterationType(ENTRY).build();
 
@@ -130,5 +132,4 @@ public class MapQueryEngineImplTest extends HazelcastTestSupport {
     private Object toObject(Object data) {
         return getSerializationService(instance).toObject(data);
     }
-
 }

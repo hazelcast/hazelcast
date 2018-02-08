@@ -726,7 +726,7 @@ public class QueryBasicTest extends HazelcastTestSupport {
     public void testMultipleOrPredicatesIssue885WithoutIndex() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         HazelcastInstance instance = factory.newHazelcastInstance(getConfig());
-        factory.newHazelcastInstance(new Config());
+        factory.newHazelcastInstance(getConfig());
         IMap<Integer, Employee> map = instance.getMap("default");
         testMultipleOrPredicates(map);
     }
@@ -735,7 +735,7 @@ public class QueryBasicTest extends HazelcastTestSupport {
     public void testMultipleOrPredicatesIssue885WithIndex() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         HazelcastInstance instance = factory.newHazelcastInstance(getConfig());
-        factory.newHazelcastInstance(new Config());
+        factory.newHazelcastInstance(getConfig());
         IMap<Integer, Employee> map = instance.getMap("default");
         map.addIndex("name", true);
         testMultipleOrPredicates(map);
@@ -745,7 +745,7 @@ public class QueryBasicTest extends HazelcastTestSupport {
     public void testMultipleOrPredicatesIssue885WithDoubleIndex() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         HazelcastInstance instance = factory.newHazelcastInstance(getConfig());
-        factory.newHazelcastInstance(new Config());
+        factory.newHazelcastInstance(getConfig());
         IMap<Integer, Employee> map = instance.getMap("default");
         map.addIndex("name", true);
         map.addIndex("city", true);

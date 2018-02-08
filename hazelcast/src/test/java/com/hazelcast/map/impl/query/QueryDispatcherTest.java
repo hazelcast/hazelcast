@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.query;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.map.impl.MapService;
@@ -34,7 +35,6 @@ import org.junit.runner.RunWith;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -55,7 +55,9 @@ public class QueryDispatcherTest extends HazelcastTestSupport {
 
     @Before
     public void before() {
-        instance = createHazelcastInstance();
+        Config config = toDefaultProperties(getConfig());
+
+        instance = createHazelcastInstance(config);
         map = instance.getMap(randomName());
         MapService mapService = getNodeEngineImpl(instance).getService(MapService.SERVICE_NAME);
         queryDispatcher = new QueryDispatcher(mapService.getMapServiceContext());
@@ -75,12 +77,12 @@ public class QueryDispatcherTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void dispatchFullQueryOnQueryThread_localMembers() throws ExecutionException, InterruptedException {
+    public void dispatchFullQueryOnQueryThread_localMembers() {
         dispatchFullQueryOnQueryThread(Target.LOCAL_NODE);
     }
 
     @Test
-    public void dispatchFullQueryOnQueryThread_allMembers() throws ExecutionException, InterruptedException {
+    public void dispatchFullQueryOnQueryThread_allMembers() {
         dispatchFullQueryOnQueryThread(Target.ALL_NODES);
     }
 
@@ -98,7 +100,7 @@ public class QueryDispatcherTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void dispatchPartitionScanQueryOnOwnerMemberOnPartitionThread_singlePartition() throws ExecutionException, InterruptedException {
+    public void dispatchPartitionScanQueryOnOwnerMemberOnPartitionThread_singlePartition() {
         Query query = Query.of().mapName(map.getName()).predicate(Predicates.equal("this", value))
                 .iterationType(IterationType.ENTRY).build();
         Future<Result> future = queryDispatcher
@@ -114,5 +116,4 @@ public class QueryDispatcherTest extends HazelcastTestSupport {
     private Object toObject(Data data) {
         return getSerializationService(instance).toObject(data);
     }
-
 }

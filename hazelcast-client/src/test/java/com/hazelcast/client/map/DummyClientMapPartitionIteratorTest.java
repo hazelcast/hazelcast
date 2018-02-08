@@ -40,7 +40,7 @@ public class DummyClientMapPartitionIteratorTest extends AbstractMapPartitionIte
     public void setup() {
         factory = new TestHazelcastFactory();
 
-        Config config = getConfig();
+        Config config = toDefaultProperties(getConfig());
         server = factory.newHazelcastInstance(config);
         factory.newHazelcastInstance(config);
 
