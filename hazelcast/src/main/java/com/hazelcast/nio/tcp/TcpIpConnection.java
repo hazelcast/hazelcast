@@ -41,7 +41,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @see EventLoopGroup
  */
 @SuppressWarnings("checkstyle:methodcount")
-public final class TcpIpConnection implements Connection {
+public class TcpIpConnection implements Connection {
 
     private final Channel channel;
 

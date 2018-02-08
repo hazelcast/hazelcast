@@ -18,21 +18,35 @@ package com.hazelcast.nio.ascii;
 
 import com.hazelcast.internal.ascii.TextCommand;
 import com.hazelcast.internal.networking.ChannelOutboundHandler;
+import com.hazelcast.internal.networking.HandlerStatus;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.spi.annotation.PrivateApi;
+import com.hazelcast.util.function.Supplier;
 
 import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static com.hazelcast.internal.networking.HandlerStatus.CLEAN;
+import static com.hazelcast.internal.networking.HandlerStatus.DIRTY;
+import static com.hazelcast.nio.IOUtil.compactOrClear;
+
 @PrivateApi
-public class TextEncoder implements ChannelOutboundHandler<TextCommand> {
+public class TextEncoder extends ChannelOutboundHandler<Supplier<TextCommand>, ByteBuffer> {
+    public static final String TEXT_ENCODER = "textencoder";
+
     private final TcpIpConnection connection;
     private final Map<Long, TextCommand> responses = new ConcurrentHashMap<Long, TextCommand>(100);
     private long currentRequestId;
+    private TextCommand command;
 
     public TextEncoder(TcpIpConnection connection) {
         this.connection = connection;
+    }
+
+    @Override
+    public void handlerAdded() {
+        initDstBuffer();
     }
 
     public void enqueue(TextCommand response) {
@@ -60,7 +74,31 @@ public class TextEncoder implements ChannelOutboundHandler<TextCommand> {
     }
 
     @Override
-    public boolean onWrite(TextCommand textCommand, ByteBuffer dst) throws Exception {
-        return textCommand.writeTo(dst);
+    public HandlerStatus onWrite() {
+        // the buffer is in reading mode
+
+        compactOrClear(dst);
+        try {
+            for (; ; ) {
+                if (command == null) {
+                    command = src.get();
+
+                    if (command == null) {
+                        // everything is processed, so we are done
+                        return CLEAN;
+                    }
+                }
+
+                if (command.writeTo(dst)) {
+                    // command got written, lets see if another command can be written
+                    command = null;
+                } else {
+                    // the command didn't get written completely
+                    return DIRTY;
+                }
+            }
+        } finally {
+            dst.flip();
+        }
     }
 }

@@ -17,27 +17,63 @@
 package com.hazelcast.nio.tcp;
 
 import com.hazelcast.internal.networking.ChannelOutboundHandler;
+import com.hazelcast.internal.networking.HandlerStatus;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.PacketIOHelper;
+import com.hazelcast.util.function.Supplier;
 
 import java.nio.ByteBuffer;
+
+import static com.hazelcast.internal.networking.HandlerStatus.CLEAN;
+import static com.hazelcast.internal.networking.HandlerStatus.DIRTY;
+import static com.hazelcast.nio.IOUtil.compactOrClear;
 
 /**
  * A {@link ChannelOutboundHandler} that for member to member communication.
  *
  * It writes {@link Packet} instances to the {@link ByteBuffer}.
  *
- * It makes use of a flyweight to allow the sharing of a packet-instance over multiple connections. The flyweight contains
- * the actual 'position' state of what has been written.
+ * It makes use of a flyweight to allow the sharing of a packet-instance over
+ * multiple connections. The flyweight contains the actual 'position' state of
+ * what has been written.
  *
  * @see PacketDecoder
  */
-public class PacketEncoder implements ChannelOutboundHandler<Packet> {
+public class PacketEncoder extends ChannelOutboundHandler<Supplier<Packet>, ByteBuffer> {
 
     private final PacketIOHelper packetWriter = new PacketIOHelper();
 
+    private Packet packet;
+
     @Override
-    public boolean onWrite(Packet packet, ByteBuffer dst) {
-        return packetWriter.writeTo(packet, dst);
+    public void handlerAdded() {
+        initDstBuffer();
+    }
+
+    @Override
+    public HandlerStatus onWrite() {
+        compactOrClear(dst);
+        try {
+            for (; ; ) {
+                if (packet == null) {
+                    packet = src.get();
+
+                    if (packet == null) {
+                        // everything is processed, so we are done
+                        return CLEAN;
+                    }
+                }
+
+                if (packetWriter.writeTo(packet, dst)) {
+                    // packet got written, lets see if another packet can be written
+                    packet = null;
+                } else {
+                    // the packet didn't get written completely, so we are done.
+                    return DIRTY;
+                }
+            }
+        } finally {
+            dst.flip();
+        }
     }
 }
