@@ -374,7 +374,7 @@ public class NioThread extends Thread implements OperationHostileThread {
     }
 
     private void handleSelectionKey(SelectionKey sk) {
-        SelectionHandler handler = (SelectionHandler) sk.attachment();
+        AbstractHandler handler = (AbstractHandler) sk.attachment();
         try {
             if (!sk.isValid()) {
                 // if the selectionKey isn't valid, we throw this exception to feedback the situation into the handler.onFailure
