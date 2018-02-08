@@ -30,7 +30,7 @@ import java.nio.channels.SocketChannel;
 import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 
-public abstract class AbstractHandler implements MigratableHandler, Closeable {
+public abstract class NioPipeline implements MigratableHandler, Closeable {
 
     protected static final int LOAD_BALANCING_HANDLE = 0;
     protected static final int LOAD_BALANCING_BYTE = 1;
@@ -59,11 +59,11 @@ public abstract class AbstractHandler implements MigratableHandler, Closeable {
     @Probe
     private final SwCounter migrationCount = newSwCounter();
 
-    AbstractHandler(NioChannel channel,
-                    NioThread ioThread,
-                    int initialOps,
-                    ILogger logger,
-                    IOBalancer ioBalancer) {
+    NioPipeline(NioChannel channel,
+                NioThread ioThread,
+                int initialOps,
+                ILogger logger,
+                IOBalancer ioBalancer) {
         this.channel = channel;
         this.socketChannel = channel.socketChannel();
         this.ioThread = ioThread;

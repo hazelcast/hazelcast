@@ -17,7 +17,7 @@
 package com.hazelcast.nio.tcp;
 
 import com.hazelcast.internal.networking.nio.NioChannel;
-import com.hazelcast.internal.networking.nio.NioChannelReader;
+import com.hazelcast.internal.networking.nio.NioInboundPipeline;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.PacketIOHelper;
 import com.hazelcast.spi.impl.PacketHandler;
@@ -45,7 +45,7 @@ public class PacketDecoderTest extends TcpIpConnection_AbstractTest {
     private PacketDecoder readHandler;
     private long oldPriorityPacketsRead;
     private long oldNormalPacketsRead;
-    private NioChannelReader channelReader;
+    private NioInboundPipeline channelReader;
 
     @Before
     public void setup() throws Exception {
@@ -61,7 +61,7 @@ public class PacketDecoderTest extends TcpIpConnection_AbstractTest {
         dispatcher = new MockPacketDispatcher();
         readHandler = new PacketDecoder(connection, dispatcher);
 
-        channelReader = ((NioChannel) connection.getChannel()).getReader();
+        channelReader = ((NioChannel) connection.getChannel()).getInboundPipeline();
         oldNormalPacketsRead = channelReader.getNormalFramesReadCounter().get();
         oldPriorityPacketsRead = channelReader.getPriorityFramesReadCounter().get();
     }

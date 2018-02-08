@@ -58,7 +58,7 @@ public class NioThread extends Thread implements OperationHostileThread {
             System.getProperty("hazelcast.io.selector.bug.probability", "16"));
 
     @SuppressWarnings("checkstyle:visibilitymodifier")
-    // this field is set during construction and is meant for the probes so that the read/write handler can
+    // this field is set during construction and is meant for the probes so that the NioPipeline can
     // indicate which thread they are currently bound to.
     @Probe(name = "ioThreadId", level = ProbeLevel.INFO)
     public int id;
@@ -374,19 +374,19 @@ public class NioThread extends Thread implements OperationHostileThread {
     }
 
     private void handleSelectionKey(SelectionKey sk) {
-        AbstractHandler handler = (AbstractHandler) sk.attachment();
+        NioPipeline pipeline = (NioPipeline) sk.attachment();
         try {
             if (!sk.isValid()) {
-                // if the selectionKey isn't valid, we throw this exception to feedback the situation into the handler.onFailure
+                // if the selectionKey isn't valid, we throw this exception to feedback the situation into the pipeline.onFailure
                 throw new CancelledKeyException();
             }
 
-            // we don't need to check for sk.isReadable/sk.isWritable since the handler has only registered
+            // we don't need to check for sk.isReadable/sk.isWritable since the pipeline has only registered
             // for events it can handle.
             eventCount.inc();
-            handler.handle();
+            pipeline.handle();
         } catch (Throwable t) {
-            handler.onFailure(t);
+            pipeline.onFailure(t);
         }
     }
 
@@ -415,14 +415,14 @@ public class NioThread extends Thread implements OperationHostileThread {
         Selector newSelector = newSelector(logger);
         Selector oldSelector = this.selector;
 
-        // reset each handler's selectionKey, cancel the old keys
+        // reset each pipeline's selectionKey, cancel the old keys
         for (SelectionKey key : oldSelector.keys()) {
-            AbstractHandler handler = (AbstractHandler) key.attachment();
+            NioPipeline pipeline = (NioPipeline) key.attachment();
             SelectableChannel channel = key.channel();
             try {
                 int ops = key.interestOps();
-                SelectionKey newSelectionKey = channel.register(newSelector, ops, handler);
-                handler.setSelectionKey(newSelectionKey);
+                SelectionKey newSelectionKey = channel.register(newSelector, ops, pipeline);
+                pipeline.setSelectionKey(newSelectionKey);
             } catch (ClosedChannelException e) {
                 logger.info("Channel was closed while trying to register with new selector.");
             } catch (CancelledKeyException e) {

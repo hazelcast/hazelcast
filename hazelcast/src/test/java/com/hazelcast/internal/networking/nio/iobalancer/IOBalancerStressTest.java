@@ -21,10 +21,10 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.HazelcastInstanceFactory;
+import com.hazelcast.internal.networking.nio.NioInboundPipeline;
 import com.hazelcast.internal.networking.nio.MigratableHandler;
 import com.hazelcast.internal.networking.nio.NioChannel;
-import com.hazelcast.internal.networking.nio.NioChannelReader;
-import com.hazelcast.internal.networking.nio.NioChannelWriter;
+import com.hazelcast.internal.networking.nio.NioOutboundPipeline;
 import com.hazelcast.internal.networking.nio.NioEventLoopGroup;
 import com.hazelcast.internal.networking.nio.NioThread;
 import com.hazelcast.nio.tcp.TcpIpConnection;
@@ -102,8 +102,8 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
         Map<NioThread, Set<MigratableHandler>> handlersPerSelector = new HashMap<NioThread, Set<MigratableHandler>>();
         for (TcpIpConnection connection : connectionManager.getActiveConnections()) {
             NioChannel channel = (NioChannel) connection.getChannel();
-            add(handlersPerSelector, channel.getReader());
-            add(handlersPerSelector, channel.getWriter());
+            add(handlersPerSelector, channel.getInboundPipeline());
+            add(handlersPerSelector, channel.getOutboundPipeline());
         }
         return handlersPerSelector;
     }
@@ -157,7 +157,7 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
             sb.append(in).append(": ").append(in.getEventCount()).append("\n");
 
             for (TcpIpConnection connection : connectionManager.getActiveConnections()) {
-                NioChannelReader socketReader = ((NioChannel) connection.getChannel()).getReader();
+                NioInboundPipeline socketReader = ((NioChannel) connection.getChannel()).getInboundPipeline();
                 if (socketReader.getOwner() == in) {
                     sb.append("\t").append(socketReader).append(" eventCount:").append(socketReader.getLoad()).append("\n");
                 }
@@ -168,7 +168,7 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
             sb.append(in).append(": ").append(in.getEventCount()).append("\n");
 
             for (TcpIpConnection connection : connectionManager.getActiveConnections()) {
-                NioChannelWriter socketWriter = ((NioChannel) connection.getChannel()).getWriter();
+                NioOutboundPipeline socketWriter = ((NioChannel) connection.getChannel()).getOutboundPipeline();
                 if (socketWriter.getOwner() == in) {
                     sb.append("\t").append(socketWriter).append(" eventCount:").append(socketWriter.getLoad()).append("\n");
                 }

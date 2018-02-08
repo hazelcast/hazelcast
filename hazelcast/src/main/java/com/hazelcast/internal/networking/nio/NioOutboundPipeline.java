@@ -41,7 +41,7 @@ import static java.lang.System.currentTimeMillis;
 import static java.nio.channels.SelectionKey.OP_WRITE;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
-public final class NioChannelWriter extends AbstractHandler implements Runnable {
+public final class NioOutboundPipeline extends NioPipeline implements Runnable {
 
     private static final long TIMEOUT = 3;
 
@@ -77,11 +77,11 @@ public final class NioChannelWriter extends AbstractHandler implements Runnable 
     private long priorityFramesReadLastPublish;
     private long eventsLastPublish;
 
-    public NioChannelWriter(NioChannel channel,
-                            NioThread ioThread,
-                            ILogger logger,
-                            IOBalancer balancer,
-                            ChannelInitializer initializer) {
+    public NioOutboundPipeline(NioChannel channel,
+                               NioThread ioThread,
+                               ILogger logger,
+                               IOBalancer balancer,
+                               ChannelInitializer initializer) {
         super(channel, ioThread, OP_WRITE, logger, balancer);
         this.initializer = initializer;
     }
@@ -374,14 +374,14 @@ public final class NioChannelWriter extends AbstractHandler implements Runnable 
 
     @Override
     public String toString() {
-        return channel + ".channelWriter";
+        return channel + ".outboundPipeline";
     }
 
     /**
      * The TaskFrame is not really a Frame. It is a way to put a task on one of the frame-queues. Using this approach we
      * can lift on top of the Frame scheduling mechanism and we can prevent having:
-     * - multiple NioThread-tasks for a ChannelWriter on multiple NioThread
-     * - multiple NioThread-tasks for a ChannelWriter on the same NioThread.
+     * - multiple NioThread-tasks for a NioOutboundPipeline on multiple NioThread
+     * - multiple NioThread-tasks for a NioOutboundPipeline on the same NioThread.
      */
     private static final class TaskFrame implements OutboundFrame {
 
@@ -398,8 +398,8 @@ public final class NioChannelWriter extends AbstractHandler implements Runnable 
     }
 
     /**
-     * Triggers the migration when executed by setting the ChannelWriter.newOwner field. When the handle method completes, it
-     * checks if this field if set, if so, the migration starts.
+     * Triggers the migration when executed by setting the NioOutboundPipeline.newOwner field. When the handle method completes,
+     * it checks if this field if set, if so, the migration starts.
      *
      * If the current ioThread is the same as 'theNewOwner' then the call is ignored.
      */

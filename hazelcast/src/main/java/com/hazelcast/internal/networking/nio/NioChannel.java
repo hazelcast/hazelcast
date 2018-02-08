@@ -29,27 +29,27 @@ import static com.hazelcast.nio.IOUtil.closeResource;
  */
 public class NioChannel extends AbstractChannel {
 
-    private NioChannelReader reader;
-    private NioChannelWriter writer;
+    private NioInboundPipeline inboundPipeline;
+    private NioOutboundPipeline outboundPipeline;
 
     public NioChannel(SocketChannel socketChannel, boolean clientMode) {
         super(socketChannel, clientMode);
     }
 
-    public void setReader(NioChannelReader reader) {
-        this.reader = reader;
+    public void setInboundPipeline(NioInboundPipeline inboundPipeline) {
+        this.inboundPipeline = inboundPipeline;
     }
 
-    public void setWriter(NioChannelWriter writer) {
-        this.writer = writer;
+    public void setOutboundPipeline(NioOutboundPipeline outboundPipeline) {
+        this.outboundPipeline = outboundPipeline;
     }
 
-    public NioChannelReader getReader() {
-        return reader;
+    public NioInboundPipeline getInboundPipeline() {
+        return inboundPipeline;
     }
 
-    public NioChannelWriter getWriter() {
-        return writer;
+    public NioOutboundPipeline getOutboundPipeline() {
+        return outboundPipeline;
     }
 
     @Override
@@ -57,29 +57,29 @@ public class NioChannel extends AbstractChannel {
         if (isClosed()) {
             return false;
         }
-        writer.write(frame);
+        outboundPipeline.write(frame);
         return true;
     }
 
     @Override
     public long lastReadTimeMillis() {
-        return reader.lastReadTimeMillis();
+        return inboundPipeline.lastReadTimeMillis();
     }
 
     @Override
     public long lastWriteTimeMillis() {
-        return writer.lastWriteTimeMillis();
+        return outboundPipeline.lastWriteTimeMillis();
     }
 
     @Override
     public void flush() {
-        writer.flush();
+        outboundPipeline.flush();
     }
 
     @Override
     protected void onClose() {
-        closeResource(reader);
-        closeResource(writer);
+        closeResource(inboundPipeline);
+        closeResource(outboundPipeline);
     }
 
     @Override
