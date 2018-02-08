@@ -76,6 +76,7 @@ public class AddMapConfigMessageTask
         if (parameters.mapStoreConfig != null) {
             config.setMapStoreConfig(parameters.mapStoreConfig.asMapStoreConfig(serializationService));
         }
+        config.setTimeToLiveSeconds(parameters.timeToLiveSeconds);
         config.setMaxIdleSeconds(parameters.maxIdleSeconds);
         config.setMaxSizeConfig(new MaxSizeConfig(parameters.maxSizeConfigSize,
                 MaxSizeConfig.MaxSizePolicy.valueOf(parameters.maxSizeConfigMaxSizePolicy)));
