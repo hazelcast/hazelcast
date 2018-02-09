@@ -16,6 +16,7 @@
 
 package com.hazelcast.spi.merge;
 
+import com.hazelcast.spi.SplitBrainMergeEntryView;
 import com.hazelcast.spi.SplitBrainMergePolicy;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -47,30 +48,30 @@ public class PutIfAbsentMergePolicyTest {
     @Test
     @SuppressWarnings("ConstantConditions")
     public void merge_existingValueAbsent() {
-        MergeDataHolder existing = null;
-        MergeDataHolder merging = entryWithGivenValue(MERGING);
+        SplitBrainMergeEntryView existing = null;
+        SplitBrainMergeEntryView merging = entryWithGivenValue(MERGING);
 
         assertEquals(MERGING, policy.merge(merging, existing));
     }
 
     @Test
     public void merge_existingValuePresent() {
-        MergeDataHolder existing = entryWithGivenValue(EXISTING);
-        MergeDataHolder merging = entryWithGivenValue(MERGING);
+        SplitBrainMergeEntryView existing = entryWithGivenValue(EXISTING);
+        SplitBrainMergeEntryView merging = entryWithGivenValue(MERGING);
 
         assertEquals(EXISTING, policy.merge(merging, existing));
     }
 
     @Test
     public void merge_bothValuesNull() {
-        MergeDataHolder existing = entryWithGivenValue(null);
-        MergeDataHolder merging = entryWithGivenValue(null);
+        SplitBrainMergeEntryView existing = entryWithGivenValue(null);
+        SplitBrainMergeEntryView merging = entryWithGivenValue(null);
 
         assertNull(policy.merge(merging, existing));
     }
 
-    private MergeDataHolder entryWithGivenValue(String value) {
-        MergeDataHolder entryView = mock(MergeDataHolder.class);
+    private SplitBrainMergeEntryView entryWithGivenValue(String value) {
+        SplitBrainMergeEntryView entryView = mock(SplitBrainMergeEntryView.class);
         try {
             when(entryView.getValue()).thenReturn(value);
             return entryView;

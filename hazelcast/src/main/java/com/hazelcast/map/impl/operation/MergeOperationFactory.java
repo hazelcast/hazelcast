@@ -21,14 +21,14 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.SplitBrainMergeEntryView;
 import com.hazelcast.spi.SplitBrainMergePolicy;
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionAwareOperationFactory;
-import com.hazelcast.spi.merge.KeyMergeDataHolder;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -40,18 +40,18 @@ import java.util.List;
 public class MergeOperationFactory extends PartitionAwareOperationFactory {
 
     protected String name;
-    protected List<KeyMergeDataHolder<Data, Data>>[] mergeData;
+    protected List<SplitBrainMergeEntryView<Data, Data>>[] mergeEntries;
     protected SplitBrainMergePolicy policy;
 
     public MergeOperationFactory() {
     }
 
     @SuppressFBWarnings("EI_EXPOSE_REP2")
-    public MergeOperationFactory(String name, int[] partitions, List<KeyMergeDataHolder<Data, Data>>[] mergeData,
+    public MergeOperationFactory(String name, int[] partitions, List<SplitBrainMergeEntryView<Data, Data>>[] mergeEntries,
                                  SplitBrainMergePolicy policy) {
         this.name = name;
         this.partitions = partitions;
-        this.mergeData = mergeData;
+        this.mergeEntries = mergeEntries;
         this.policy = policy;
     }
 
@@ -59,7 +59,7 @@ public class MergeOperationFactory extends PartitionAwareOperationFactory {
     public Operation createPartitionOperation(int partitionId) {
         for (int i = 0; i < partitions.length; i++) {
             if (partitions[i] == partitionId) {
-                return new MergeOperation(name, mergeData[i], policy, false);
+                return new MergeOperation(name, mergeEntries[i], policy, false);
             }
         }
         throw new IllegalArgumentException("Unknown partitionId " + partitionId + " (" + Arrays.toString(partitions) + ")");
@@ -69,9 +69,9 @@ public class MergeOperationFactory extends PartitionAwareOperationFactory {
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
         out.writeIntArray(partitions);
-        for (List<KeyMergeDataHolder<Data, Data>> entry : mergeData) {
+        for (List<SplitBrainMergeEntryView<Data, Data>> entry : mergeEntries) {
             out.writeInt(entry.size());
-            for (KeyMergeDataHolder<Data, Data> mergeEntry : entry) {
+            for (SplitBrainMergeEntryView<Data, Data> mergeEntry : entry) {
                 out.writeObject(mergeEntry);
             }
         }
@@ -82,15 +82,15 @@ public class MergeOperationFactory extends PartitionAwareOperationFactory {
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
         partitions = in.readIntArray();
-        mergeData = new List[partitions.length];
+        mergeEntries = new List[partitions.length];
         for (int i = 0; i < partitions.length; i++) {
+            List<SplitBrainMergeEntryView<Data, Data>> list = new LinkedList<SplitBrainMergeEntryView<Data, Data>>();
             int size = in.readInt();
-            List<KeyMergeDataHolder<Data, Data>> list = new ArrayList<KeyMergeDataHolder<Data, Data>>(size);
             for (int j = 0; j < size; j++) {
-                KeyMergeDataHolder<Data, Data> mergeEntry = in.readObject();
+                SplitBrainMergeEntryView<Data, Data> mergeEntry = in.readObject();
                 list.add(mergeEntry);
             }
-            mergeData[i] = list;
+            mergeEntries[i] = list;
         }
         policy = in.readObject();
     }

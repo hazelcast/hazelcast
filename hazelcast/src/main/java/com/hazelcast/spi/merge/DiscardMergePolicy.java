@@ -16,22 +16,24 @@
 
 package com.hazelcast.spi.merge;
 
+import com.hazelcast.spi.SplitBrainMergeEntryView;
+
 /**
  * Merges only entries from the destination data structure and discards all entries from the source data structure.
  *
  * @since 3.10
  */
-public class DiscardMergePolicy extends AbstractSplitBrainMergePolicy {
+public class DiscardMergePolicy extends AbstractMergePolicy {
 
     DiscardMergePolicy() {
     }
 
     @Override
-    public <T> T merge(MergeDataHolder<T> mergingData, MergeDataHolder<T> existingData) {
-        if (existingData == null) {
+    public <K, V> V merge(SplitBrainMergeEntryView<K, V> mergingEntry, SplitBrainMergeEntryView<K, V> existingEntry) {
+        if (existingEntry == null) {
             return null;
         }
-        return existingData.getValue();
+        return existingEntry.getValue();
     }
 
     @Override

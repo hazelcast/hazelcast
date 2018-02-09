@@ -28,11 +28,8 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.merge.MergeDataHolder;
-import com.hazelcast.spi.merge.SimpleMergeDataHolder;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.util.Preconditions;
 
 import java.util.Collection;
 import java.util.Iterator;
@@ -320,22 +317,16 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     }
 
     protected void mergeRecordExpiration(Record record, EntryView mergingEntry) {
-        mergeRecordExpiration(record, mergingEntry.getTtl(), mergingEntry.getCreationTime(), mergingEntry.getLastAccessTime(),
-                mergingEntry.getLastUpdateTime());
-    }
-
-    protected void mergeRecordExpiration(Record record, MergeDataHolder mergeDataHolder) {
-        Preconditions.checkInstanceOf(SimpleMergeDataHolder.class, mergeDataHolder);
-        SimpleMergeDataHolder simpleMergeDataHolder = (SimpleMergeDataHolder) mergeDataHolder;
-        mergeRecordExpiration(record, simpleMergeDataHolder.getTtl(), simpleMergeDataHolder.getCreationTime(),
-                simpleMergeDataHolder.getLastAccessTime(), simpleMergeDataHolder.getLastUpdateTime());
-    }
-
-    private void mergeRecordExpiration(Record record, long ttlMillis, long creationTime, long lastAccessTime,
-                                       long lastUpdateTime) {
+        long ttlMillis = mergingEntry.getTtl();
         record.setTtl(ttlMillis);
+
+        long creationTime = mergingEntry.getCreationTime();
         record.setCreationTime(creationTime);
+
+        long lastAccessTime = mergingEntry.getLastAccessTime();
         record.setLastAccessTime(lastAccessTime);
+
+        long lastUpdateTime = mergingEntry.getLastUpdateTime();
         record.setLastUpdateTime(lastUpdateTime);
 
         long maxIdleMillis = calculateMaxIdleMillis(mapContainer.getMapConfig());

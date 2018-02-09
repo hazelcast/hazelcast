@@ -19,14 +19,14 @@ package com.hazelcast.concurrent.atomicreference;
 import com.hazelcast.config.AtomicReferenceConfig;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.SplitBrainAwareDataContainer;
+import com.hazelcast.spi.SplitBrainMergeEntryView;
 import com.hazelcast.spi.SplitBrainMergePolicy;
-import com.hazelcast.spi.merge.MergeDataHolder;
 import com.hazelcast.spi.serialization.SerializationService;
-import com.hazelcast.spi.serialization.SerializationServiceAware;
 
-import static com.hazelcast.spi.merge.MergeDataHolders.createSplitBrainMergeEntryView;
+import static com.hazelcast.spi.merge.SplitBrainEntryViews.createSplitBrainMergeEntryView;
 
-public class AtomicReferenceContainer {
+public class AtomicReferenceContainer implements SplitBrainAwareDataContainer<Boolean, Data, Data> {
 
     private final String name;
     private final AtomicReferenceConfig config;
@@ -81,20 +81,19 @@ public class AtomicReferenceContainer {
         return value == null;
     }
 
-    public Data merge(MergeDataHolder<Data> mergeDataHolder, SplitBrainMergePolicy mergePolicy, boolean isExistingContainer) {
-        if (mergePolicy instanceof SerializationServiceAware) {
-            ((SerializationServiceAware) mergePolicy).setSerializationService(serializationService);
-        }
+    @Override
+    public Data merge(SplitBrainMergeEntryView<Boolean, Data> mergingEntry, SplitBrainMergePolicy mergePolicy) {
+        mergePolicy.setSerializationService(serializationService);
 
-        if (isExistingContainer) {
-            MergeDataHolder<Data> existingEntry = createSplitBrainMergeEntryView(true, value);
-            Data newValue = mergePolicy.merge(mergeDataHolder, existingEntry);
+        if (mergingEntry.getKey()) {
+            SplitBrainMergeEntryView<Boolean, Data> existingEntry = createSplitBrainMergeEntryView(true, value);
+            Data newValue = mergePolicy.merge(mergingEntry, existingEntry);
             if (newValue != null && !newValue.equals(value)) {
                 value = newValue;
                 return newValue;
             }
         } else {
-            Data newValue = mergePolicy.merge(mergeDataHolder, null);
+            Data newValue = mergePolicy.merge(mergingEntry, null);
             if (newValue != null) {
                 value = newValue;
                 return newValue;

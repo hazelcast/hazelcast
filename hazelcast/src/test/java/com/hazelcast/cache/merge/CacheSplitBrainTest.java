@@ -31,6 +31,7 @@ import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.SplitBrainTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Ignore;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -62,6 +63,7 @@ import static org.junit.Assert.fail;
 @RunWith(Parameterized.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelTest.class})
+@Ignore(value = "https://github.com/hazelcast/hazelcast/issues/9335")
 public class CacheSplitBrainTest extends SplitBrainTestSupport {
 
     @Parameters(name = "format:{0}, mergePolicy:{1}")

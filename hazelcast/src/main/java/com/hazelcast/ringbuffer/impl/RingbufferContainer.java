@@ -29,9 +29,10 @@ import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.ringbuffer.StaleSequenceException;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.ObjectNamespace;
+import com.hazelcast.spi.SplitBrainAwareDataContainer;
+import com.hazelcast.spi.SplitBrainMergeEntryView;
 import com.hazelcast.spi.SplitBrainMergePolicy;
 import com.hazelcast.spi.WaitNotifyKey;
-import com.hazelcast.spi.merge.MergeDataHolder;
 import com.hazelcast.spi.serialization.SerializationService;
 
 import java.io.IOException;
@@ -54,7 +55,8 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * @param <E> the type of items in the ringbuffer
  */
 @SuppressWarnings("checkstyle:methodcount")
-public class RingbufferContainer<T, E> implements IdentifiedDataSerializable, Notifier, Versioned {
+public class RingbufferContainer<T, E> implements IdentifiedDataSerializable, Notifier, Versioned,
+        SplitBrainAwareDataContainer<Long, E, Long> {
 
     private static final long TTL_DISABLED = 0;
 
@@ -620,7 +622,8 @@ public class RingbufferContainer<T, E> implements IdentifiedDataSerializable, No
         return emptyRingWaitNotifyKey;
     }
 
-    public Long merge(MergeDataHolder<E> mergeDataHolder, SplitBrainMergePolicy mergePolicy) {
-        return ringbuffer.merge(mergeDataHolder, mergePolicy, remainingCapacity());
+    @Override
+    public Long merge(SplitBrainMergeEntryView<Long, E> mergingEntry, SplitBrainMergePolicy mergePolicy) {
+        return ringbuffer.merge(mergingEntry, mergePolicy, remainingCapacity());
     }
 }

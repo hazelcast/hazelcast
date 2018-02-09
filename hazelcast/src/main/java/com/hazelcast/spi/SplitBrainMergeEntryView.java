@@ -14,16 +14,21 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi.merge;
+package com.hazelcast.spi;
+
+import com.hazelcast.core.EntryView;
 
 /**
  * Represents a read-only view of data structure entries for the merging process after a split-brain.
+ * <p>
+ * On key-less data structures like {@link com.hazelcast.core.ISet} or {@link com.hazelcast.ringbuffer.Ringbuffer},
+ * the method {@link #getKey()} will return {@code null}.
+ * <p>
+ * Some methods return {@code -1} if statistics are not enabled or not implemented.
  *
  * @param <K> the type of the key
  * @param <V> the type of the value
  * @since 3.10
  */
-public interface KeyMergeDataHolder<K, V> extends MergeDataHolder<V> {
-
-    K getKey();
+public interface SplitBrainMergeEntryView<K, V> extends EntryView<K, V> {
 }

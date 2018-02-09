@@ -45,11 +45,10 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ObjectNamespace;
+import com.hazelcast.spi.SplitBrainMergeEntryView;
 import com.hazelcast.spi.SplitBrainMergePolicy;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
-import com.hazelcast.spi.merge.KeyMergeDataHolder;
 import com.hazelcast.spi.partition.IPartitionService;
-import com.hazelcast.spi.serialization.SerializationServiceAware;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.CollectionUtil;
 import com.hazelcast.util.ExceptionUtil;
@@ -69,7 +68,7 @@ import static com.hazelcast.config.NativeMemoryConfig.MemoryAllocatorType.POOLED
 import static com.hazelcast.core.EntryEventType.ADDED;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.setTTLAndUpdateExpiryTime;
 import static com.hazelcast.map.impl.mapstore.MapDataStores.EMPTY_MAP_DATA_STORE;
-import static com.hazelcast.spi.merge.MergeDataHolders.createSplitBrainMergeEntryView;
+import static com.hazelcast.spi.merge.SplitBrainEntryViews.createSplitBrainMergeEntryView;
 import static com.hazelcast.util.MapUtil.createHashMap;
 import static java.util.Collections.emptyList;
 
@@ -727,33 +726,32 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         return oldValue;
     }
 
-    public boolean merge(KeyMergeDataHolder<Data, Object> mergeDataHolder, SplitBrainMergePolicy mergePolicy) {
+    @Override
+    public Boolean merge(SplitBrainMergeEntryView<Data, Object> mergingEntry, SplitBrainMergePolicy mergePolicy) {
         checkIfLoaded();
         long now = getNow();
 
-        if (mergePolicy instanceof SerializationServiceAware) {
-            ((SerializationServiceAware) mergePolicy).setSerializationService(serializationService);
-        }
+        mergePolicy.setSerializationService(serializationService);
 
-        Data key = mergeDataHolder.getKey();
+        Data key = mergingEntry.getKey();
         Record<Object> record = getRecordOrNull(key, now, false);
         Object newValue;
         Object oldValue = null;
         if (record == null) {
-            newValue = mergePolicy.merge(mergeDataHolder, null);
+            newValue = mergePolicy.merge(mergingEntry, null);
             if (newValue == null) {
                 return false;
             }
             newValue = mapDataStore.add(key, newValue, now);
             record = createRecord(newValue, DEFAULT_TTL, now);
-            mergeRecordExpiration(record, mergeDataHolder);
+            mergeRecordExpiration(record, mergingEntry);
             storage.put(key, record);
             eventJournal.writeUpdateEvent(mapContainer.getEventJournalConfig(), mapContainer.getObjectNamespace(), partitionId,
                     key, null, record.getValue());
         } else {
             oldValue = record.getValue();
-            KeyMergeDataHolder<Data, Object> existingEntry = createSplitBrainMergeEntryView(record);
-            newValue = mergePolicy.merge(mergeDataHolder, existingEntry);
+            SplitBrainMergeEntryView<Data, Object> existingEntry = createSplitBrainMergeEntryView(record);
+            newValue = mergePolicy.merge(mergingEntry, existingEntry);
             // existing entry will be removed
             if (newValue == null) {
                 removeIndex(record);
@@ -764,8 +762,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                 storage.removeRecord(record);
                 return true;
             }
-            if (newValue == mergeDataHolder.getValue()) {
-                mergeRecordExpiration(record, mergeDataHolder);
+            if (newValue == mergingEntry.getValue()) {
+                mergeRecordExpiration(record, mergingEntry);
             }
             // same with the existing entry so no need to map-store etc operations.
             if (recordComparator.isEqual(newValue, oldValue)) {

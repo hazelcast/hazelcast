@@ -16,33 +16,28 @@
 
 package com.hazelcast.spi.merge;
 
+import com.hazelcast.spi.SplitBrainMergeEntryView;
+
 /**
  * Merges data structure entries from source to destination data structure if the source entry
  * has more hits than the destination one.
  *
  * @since 3.10
  */
-public class HigherHitsMergePolicy extends AbstractSplitBrainMergePolicy {
+public class HigherHitsMergePolicy extends AbstractMergePolicy {
 
     HigherHitsMergePolicy() {
     }
 
     @Override
-    public <V> V merge(MergeDataHolder<V> mergingData, MergeDataHolder<V> existingData) {
-        checkInstanceOf(mergingData, HitsDataHolder.class);
-        checkInstanceOf(existingData, HitsDataHolder.class);
-        if (mergingData == null) {
-            return existingData.getValue();
+    public <K, V> V merge(SplitBrainMergeEntryView<K, V> mergingEntry, SplitBrainMergeEntryView<K, V> existingEntry) {
+        if (mergingEntry == null) {
+            return existingEntry.getValue();
         }
-        if (existingData == null) {
-            return mergingData.getValue();
+        if (existingEntry == null || mergingEntry.getHits() >= existingEntry.getHits()) {
+            return mergingEntry.getValue();
         }
-        HitsDataHolder merging = (HitsDataHolder) mergingData;
-        HitsDataHolder existing = (HitsDataHolder) existingData;
-        if (merging.getHits() >= existing.getHits()) {
-            return mergingData.getValue();
-        }
-        return existingData.getValue();
+        return existingEntry.getValue();
     }
 
     @Override

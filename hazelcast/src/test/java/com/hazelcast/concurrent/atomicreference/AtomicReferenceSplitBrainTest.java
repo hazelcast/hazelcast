@@ -23,12 +23,13 @@ import com.hazelcast.core.IAtomicReference;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.spi.SplitBrainMergeEntryView;
 import com.hazelcast.spi.SplitBrainMergePolicy;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.merge.DiscardMergePolicy;
-import com.hazelcast.spi.merge.MergeDataHolder;
 import com.hazelcast.spi.merge.PassThroughMergePolicy;
 import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
+import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.SplitBrainTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -62,7 +63,7 @@ public class AtomicReferenceSplitBrainTest extends SplitBrainTestSupport {
                 {DiscardMergePolicy.class},
                 {PassThroughMergePolicy.class},
                 {PutIfAbsentMergePolicy.class},
-                {IntegerValueMergePolicy.class},
+                {MergeGreaterValueMergePolicy.class},
         });
     }
 
@@ -115,7 +116,7 @@ public class AtomicReferenceSplitBrainTest extends SplitBrainTestSupport {
             afterSplitPassThroughMergePolicy();
         } else if (mergePolicyClass == PutIfAbsentMergePolicy.class) {
             afterSplitPutIfAbsentMergePolicy();
-        } else if (mergePolicyClass == IntegerValueMergePolicy.class) {
+        } else if (mergePolicyClass == MergeGreaterValueMergePolicy.class) {
             afterSplitCustomMergePolicy();
         } else {
             fail();
@@ -137,7 +138,7 @@ public class AtomicReferenceSplitBrainTest extends SplitBrainTestSupport {
             afterMergePassThroughMergePolicy();
         } else if (mergePolicyClass == PutIfAbsentMergePolicy.class) {
             afterMergePutIfAbsentMergePolicy();
-        } else if (mergePolicyClass == IntegerValueMergePolicy.class) {
+        } else if (mergePolicyClass == MergeGreaterValueMergePolicy.class) {
             afterMergeCustomMergePolicy();
         } else {
             fail();
@@ -219,14 +220,18 @@ public class AtomicReferenceSplitBrainTest extends SplitBrainTestSupport {
         return new AtomicReference<E>(value);
     }
 
-    private static class IntegerValueMergePolicy implements SplitBrainMergePolicy, DataSerializable {
+    private static class MergeGreaterValueMergePolicy implements SplitBrainMergePolicy, DataSerializable {
 
         @Override
-        public <T> T merge(MergeDataHolder<T> mergingData, MergeDataHolder<T> existingData) {
-            if (mergingData.getValue() instanceof Integer) {
-                return mergingData.getValue();
+        public <K, V> V merge(SplitBrainMergeEntryView<K, V> mergingEntry, SplitBrainMergeEntryView<K, V> existingEntry) {
+            if (mergingEntry.getValue() instanceof Integer) {
+                return mergingEntry.getValue();
             }
-            return existingData.getValue();
+            return existingEntry.getValue();
+        }
+
+        @Override
+        public void setSerializationService(SerializationService serializationService) {
         }
 
         @Override

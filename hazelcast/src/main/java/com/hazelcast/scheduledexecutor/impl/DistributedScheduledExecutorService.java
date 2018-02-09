@@ -37,9 +37,9 @@ import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.spi.QuorumAwareService;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.SplitBrainHandlerService;
+import com.hazelcast.spi.SplitBrainMergeEntryView;
 import com.hazelcast.spi.SplitBrainMergePolicy;
 import com.hazelcast.spi.impl.executionservice.InternalExecutionService;
-import com.hazelcast.spi.merge.KeyMergeDataHolder;
 import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
 import com.hazelcast.spi.partition.MigrationEndpoint;
 import com.hazelcast.util.ConstructorFunction;
@@ -59,7 +59,7 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.hazelcast.spi.merge.MergeDataHolders.createSplitBrainMergeEntryView;
+import static com.hazelcast.spi.merge.SplitBrainEntryViews.createSplitBrainMergeEntryView;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 import static com.hazelcast.util.ExceptionUtil.peel;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
@@ -391,7 +391,7 @@ public class DistributedScheduledExecutorService
 
             int size = 0;
             int operationCount = 0;
-            List<KeyMergeDataHolder<String, ScheduledTaskDescriptor>> mergeEntries;
+            List<SplitBrainMergeEntryView<String, ScheduledTaskDescriptor>> mergeEntries;
             try {
                 for (Map.Entry<Integer, Map<String, Collection<ScheduledTaskDescriptor>>> partition : partitionsSnapshot
                         .entrySet()) {
@@ -406,16 +406,17 @@ public class DistributedScheduledExecutorService
                         int batchSize = getMergePolicyConfig(containerName).getBatchSize();
                         SplitBrainMergePolicy mergePolicy = getMergePolicy(containerName);
 
-                        mergeEntries = new ArrayList<KeyMergeDataHolder<String, ScheduledTaskDescriptor>>();
+                        mergeEntries = new ArrayList<SplitBrainMergeEntryView<String, ScheduledTaskDescriptor>>();
                         for (ScheduledTaskDescriptor descriptor : tasks) {
-                            KeyMergeDataHolder<String, ScheduledTaskDescriptor> entryView
-                                    = createSplitBrainMergeEntryView(descriptor);
+                            SplitBrainMergeEntryView<String, ScheduledTaskDescriptor> entryView =
+                                    createSplitBrainMergeEntryView(descriptor);
                             mergeEntries.add(entryView);
                             size++;
 
                             if (mergeEntries.size() == batchSize) {
                                 sendBatch(partitionId, containerName, mergePolicy, mergeEntries, mergeCallback);
-                                mergeEntries = new ArrayList<KeyMergeDataHolder<String, ScheduledTaskDescriptor>>(batchSize);
+                                mergeEntries = new ArrayList<SplitBrainMergeEntryView<String,
+                                        ScheduledTaskDescriptor>>(batchSize);
                                 operationCount++;
                             }
                         }
@@ -444,7 +445,7 @@ public class DistributedScheduledExecutorService
         }
 
         private void sendBatch(int partitionId, String name, SplitBrainMergePolicy mergePolicy,
-                               List<KeyMergeDataHolder<String, ScheduledTaskDescriptor>> mergeEntries,
+                               List<SplitBrainMergeEntryView<String, ScheduledTaskDescriptor>> mergeEntries,
                                ExecutionCallback<Object> mergeCallback) {
             MergeOperation operation = new MergeOperation(name, mergePolicy, mergeEntries);
             try {

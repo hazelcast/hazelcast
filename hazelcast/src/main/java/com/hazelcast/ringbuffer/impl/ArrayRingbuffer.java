@@ -17,12 +17,11 @@
 package com.hazelcast.ringbuffer.impl;
 
 import com.hazelcast.ringbuffer.StaleSequenceException;
+import com.hazelcast.spi.SplitBrainMergeEntryView;
 import com.hazelcast.spi.SplitBrainMergePolicy;
-import com.hazelcast.spi.merge.MergeDataHolder;
 import com.hazelcast.spi.serialization.SerializationService;
-import com.hazelcast.spi.serialization.SerializationServiceAware;
 
-import static com.hazelcast.spi.merge.MergeDataHolders.createSplitBrainMergeEntryView;
+import static com.hazelcast.spi.merge.SplitBrainEntryViews.createSplitBrainMergeEntryView;
 
 /**
  * The ArrayRingbuffer is responsible for storing the actual content of a ringbuffer.
@@ -158,10 +157,8 @@ public class ArrayRingbuffer<E> implements Ringbuffer<E> {
         this.serializationService = serializationService;
     }
 
-    public long merge(MergeDataHolder<E> mergingEntry, SplitBrainMergePolicy mergePolicy, long remainingCapacity) {
-        if (mergePolicy instanceof SerializationServiceAware) {
-            ((SerializationServiceAware) mergePolicy).setSerializationService(serializationService);
-        }
+    public long merge(SplitBrainMergeEntryView<Long, E> mergingEntry, SplitBrainMergePolicy mergePolicy, long remainingCapacity) {
+        mergePolicy.setSerializationService(serializationService);
 
         // try to find an existing item with the same value
         E existingItem = null;
@@ -186,7 +183,7 @@ public class ArrayRingbuffer<E> implements Ringbuffer<E> {
                 return add(newValue);
             }
         } else {
-            MergeDataHolder<E> existingEntry = createSplitBrainMergeEntryView(existingSequence, existingItem);
+            SplitBrainMergeEntryView<Long, E> existingEntry = createSplitBrainMergeEntryView(existingSequence, existingItem);
             E newValue = mergePolicy.merge(mergingEntry, existingEntry);
             if (newValue != null && !newValue.equals(existingItem)) {
                 set(existingSequence, newValue);

@@ -16,6 +16,8 @@
 
 package com.hazelcast.spi.merge;
 
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.spi.SplitBrainMergeEntryView;
 import com.hazelcast.spi.SplitBrainMergePolicy;
 import com.hazelcast.spi.serialization.SerializationService;
 import org.junit.Before;
@@ -35,31 +37,34 @@ public abstract class AbstractSplitBrainMergePolicyTest {
 
     @Before
     public void setup() {
+        serializationService = mock(InternalSerializationService.class);
+
         policy = createMergePolicy();
+        policy.setSerializationService(serializationService);
     }
 
     protected abstract SplitBrainMergePolicy createMergePolicy();
 
     @Test
     public void merge_mergingWins() {
-        MergeDataHolder existing = entryWithGivenPropertyAndValue(1, EXISTING);
-        MergeDataHolder merging = entryWithGivenPropertyAndValue(333, MERGING);
+        SplitBrainMergeEntryView existing = entryWithGivenPropertyAndValue(1, EXISTING);
+        SplitBrainMergeEntryView merging = entryWithGivenPropertyAndValue(333, MERGING);
 
         assertEquals(MERGING, policy.merge(merging, existing));
     }
 
     @Test
     public void merge_existingWins() {
-        MergeDataHolder existing = entryWithGivenPropertyAndValue(333, EXISTING);
-        MergeDataHolder merging = entryWithGivenPropertyAndValue(1, MERGING);
+        SplitBrainMergeEntryView existing = entryWithGivenPropertyAndValue(333, EXISTING);
+        SplitBrainMergeEntryView merging = entryWithGivenPropertyAndValue(1, MERGING);
 
         assertEquals(EXISTING, policy.merge(merging, existing));
     }
 
     @Test
     public void merge_draw_mergingWins() {
-        MergeDataHolder existing = entryWithGivenPropertyAndValue(1, EXISTING);
-        MergeDataHolder merging = entryWithGivenPropertyAndValue(1, MERGING);
+        SplitBrainMergeEntryView existing = entryWithGivenPropertyAndValue(1, EXISTING);
+        SplitBrainMergeEntryView merging = entryWithGivenPropertyAndValue(1, MERGING);
 
         assertEquals(MERGING, policy.merge(merging, existing));
     }
@@ -67,8 +72,8 @@ public abstract class AbstractSplitBrainMergePolicyTest {
     @Test
     @SuppressWarnings("ConstantConditions")
     public void merge_mergingWins_sinceExistingIsNotExist() {
-        MergeDataHolder existing = null;
-        MergeDataHolder merging = entryWithGivenPropertyAndValue(1, MERGING);
+        SplitBrainMergeEntryView existing = null;
+        SplitBrainMergeEntryView merging = entryWithGivenPropertyAndValue(1, MERGING);
 
         assertEquals(MERGING, policy.merge(merging, existing));
     }
@@ -76,14 +81,14 @@ public abstract class AbstractSplitBrainMergePolicyTest {
     @Test
     @SuppressWarnings("ConstantConditions")
     public void merge_existingWins_sinceMergingIsNotExist() {
-        MergeDataHolder existing = entryWithGivenPropertyAndValue(1, EXISTING);
-        MergeDataHolder merging = null;
+        SplitBrainMergeEntryView existing = entryWithGivenPropertyAndValue(1, EXISTING);
+        SplitBrainMergeEntryView merging = null;
 
         assertEquals(EXISTING, policy.merge(merging, existing));
     }
 
-    private MergeDataHolder entryWithGivenPropertyAndValue(long testedProperty, String value) {
-        SimpleMergeDataHolder entryView = mock(SimpleMergeDataHolder.class);
+    private SplitBrainMergeEntryView entryWithGivenPropertyAndValue(long testedProperty, String value) {
+        SplitBrainMergeEntryView entryView = mock(SplitBrainMergeEntryView.class);
         try {
             if (policy instanceof HigherHitsMergePolicy) {
                 when(entryView.getHits()).thenReturn(testedProperty);

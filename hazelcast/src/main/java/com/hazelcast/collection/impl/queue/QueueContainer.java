@@ -27,10 +27,10 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.SplitBrainAwareDataContainer;
+import com.hazelcast.spi.SplitBrainMergeEntryView;
 import com.hazelcast.spi.SplitBrainMergePolicy;
-import com.hazelcast.spi.merge.MergeDataHolder;
 import com.hazelcast.spi.serialization.SerializationService;
-import com.hazelcast.spi.serialization.SerializationServiceAware;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.util.Clock;
 
@@ -50,7 +50,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.collection.impl.collection.CollectionContainer.ID_PROMOTION_OFFSET;
-import static com.hazelcast.spi.merge.MergeDataHolders.createSplitBrainMergeEntryView;
+import static com.hazelcast.spi.merge.SplitBrainEntryViews.createSplitBrainMergeEntryView;
 import static com.hazelcast.util.MapUtil.createHashMap;
 import static com.hazelcast.util.MapUtil.createLinkedHashMap;
 import static com.hazelcast.util.SetUtil.createHashSet;
@@ -64,7 +64,7 @@ import static com.hazelcast.util.SetUtil.createHashSet;
  * </ul>
  */
 @SuppressWarnings("checkstyle:methodcount")
-public class QueueContainer implements IdentifiedDataSerializable {
+public class QueueContainer implements IdentifiedDataSerializable, SplitBrainAwareDataContainer<Long, Data, QueueItem> {
 
     /**
      * Contains item ID to queue item mappings for current transactions
@@ -1096,10 +1096,9 @@ public class QueueContainer implements IdentifiedDataSerializable {
         idGenerator = Math.max(itemId + 1, idGenerator);
     }
 
-    public QueueItem merge(MergeDataHolder<Data> mergingEntry, SplitBrainMergePolicy mergePolicy) {
-        if (mergePolicy instanceof SerializationServiceAware) {
-            ((SerializationServiceAware) mergePolicy).setSerializationService(nodeEngine.getSerializationService());
-        }
+    @Override
+    public QueueItem merge(SplitBrainMergeEntryView<Long, Data> mergingEntry, SplitBrainMergePolicy mergePolicy) {
+        mergePolicy.setSerializationService(nodeEngine.getSerializationService());
 
         // try to find an existing item with the same value
         QueueItem existingItem = null;
@@ -1120,7 +1119,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
                 }
             }
         } else {
-            MergeDataHolder<Data> existingEntry = createSplitBrainMergeEntryView(existingItem);
+            SplitBrainMergeEntryView<Long, Data> existingEntry = createSplitBrainMergeEntryView(existingItem);
             Data newValue = mergePolicy.merge(mergingEntry, existingEntry);
             if (newValue != null && !newValue.equals(existingEntry.getValue())) {
                 existingItem.setData(newValue);

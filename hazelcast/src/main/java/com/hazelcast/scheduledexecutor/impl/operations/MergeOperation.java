@@ -21,8 +21,8 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.scheduledexecutor.impl.ScheduledExecutorContainer;
 import com.hazelcast.scheduledexecutor.impl.ScheduledTaskDescriptor;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.SplitBrainMergeEntryView;
 import com.hazelcast.spi.SplitBrainMergePolicy;
-import com.hazelcast.spi.merge.KeyMergeDataHolder;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -35,7 +35,7 @@ public class MergeOperation
 
     private SplitBrainMergePolicy policy;
 
-    private List<KeyMergeDataHolder<String, ScheduledTaskDescriptor>> mergingEntries;
+    private List<SplitBrainMergeEntryView<String, ScheduledTaskDescriptor>> mergingEntries;
 
     private transient List<ScheduledTaskDescriptor> mergedTasks;
 
@@ -44,7 +44,7 @@ public class MergeOperation
     }
 
     public MergeOperation(String name, SplitBrainMergePolicy mergePolicy,
-                          List<KeyMergeDataHolder<String, ScheduledTaskDescriptor>> mergingEntries) {
+                          List<SplitBrainMergeEntryView<String, ScheduledTaskDescriptor>> mergingEntries) {
         super(name);
         this.policy = mergePolicy;
         this.mergingEntries = mergingEntries;
@@ -61,7 +61,7 @@ public class MergeOperation
         ScheduledExecutorContainer container = getContainer();
         mergedTasks = new ArrayList<ScheduledTaskDescriptor>();
 
-        for (KeyMergeDataHolder<String, ScheduledTaskDescriptor> entry : mergingEntries) {
+        for (SplitBrainMergeEntryView<String, ScheduledTaskDescriptor> entry : mergingEntries) {
             ScheduledTaskDescriptor merged = container.merge(entry, policy);
             if (merged != null) {
                 mergedTasks.add(merged);
@@ -87,7 +87,7 @@ public class MergeOperation
         super.writeInternal(out);
         out.writeObject(policy);
         out.writeInt(mergingEntries.size());
-        for (KeyMergeDataHolder<String, ScheduledTaskDescriptor> entry : mergingEntries) {
+        for (SplitBrainMergeEntryView<String, ScheduledTaskDescriptor> entry : mergingEntries) {
             out.writeObject(entry);
         }
     }
@@ -98,9 +98,9 @@ public class MergeOperation
         super.readInternal(in);
         policy = in.readObject();
         int size = in.readInt();
-        mergingEntries = new ArrayList<KeyMergeDataHolder<String, ScheduledTaskDescriptor>>(size);
+        mergingEntries = new ArrayList<SplitBrainMergeEntryView<String, ScheduledTaskDescriptor>>(size);
         for (int i = 0; i < size; i++) {
-            KeyMergeDataHolder<String, ScheduledTaskDescriptor> entry = in.readObject();
+            SplitBrainMergeEntryView<String, ScheduledTaskDescriptor> entry = in.readObject();
             mergingEntries.add(entry);
         }
     }
