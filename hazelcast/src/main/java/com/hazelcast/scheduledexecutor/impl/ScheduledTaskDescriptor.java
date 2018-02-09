@@ -19,7 +19,6 @@ package com.hazelcast.scheduledexecutor.impl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.scheduledexecutor.impl.operations.GetAllScheduledOnMemberOperation;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -39,15 +38,7 @@ public class ScheduledTaskDescriptor
 
     private TaskDefinition definition;
 
-    private ScheduledFuture<?> future;
-
-    /**
-     * Only accessed through a member lock or partition threads Used to identify which replica of the task is the owner, to only
-     * return that instance when {@link GetAllScheduledOnMemberOperation} operation is triggered. This flag is set to true only on
-     * initial scheduling of a task, and on after a promotion (stashed or migration), in the latter case the other replicas get
-     * disposed.
-     */
-    private transient boolean isTaskOwner;
+    private transient ScheduledFuture<?> future;
 
     /**
      * SPMC (see. Member owned tasks)
@@ -84,14 +75,6 @@ public class ScheduledTaskDescriptor
 
     public TaskDefinition getDefinition() {
         return definition;
-    }
-
-    public boolean isTaskOwner() {
-        return isTaskOwner;
-    }
-
-    void setTaskOwner(boolean taskOwner) {
-        this.isTaskOwner = taskOwner;
     }
 
     ScheduledTaskStatisticsImpl getStatsSnapshot() {
@@ -149,7 +132,6 @@ public class ScheduledTaskDescriptor
      */
     void suspend() {
         // Result is not set, allowing task to get re-scheduled, if/when needed.
-        this.isTaskOwner = false;
 
         if (future != null) {
             this.future.cancel(true);
@@ -240,7 +222,6 @@ public class ScheduledTaskDescriptor
         return "ScheduledTaskDescriptor{"
                 + "definition=" + definition
                 + ", future=" + future
-                + ", isTaskOwner=" + isTaskOwner
                 + ", stats=" + stats
                 + ", resultRef=" + resultRef.get()
                 + ", state=" + state

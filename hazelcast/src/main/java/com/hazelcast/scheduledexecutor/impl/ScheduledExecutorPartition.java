@@ -83,6 +83,7 @@ public class ScheduledExecutorPartition
 
     public Map<String, Collection<ScheduledTaskDescriptor>> prepareOwnedSnapshot() {
         Map<String, Collection<ScheduledTaskDescriptor>> snapshot = new HashMap<String, Collection<ScheduledTaskDescriptor>>();
+        boolean owner = nodeEngine.getPartitionService().isPartitionOwner(partitionId);
 
         if (logger.isFinestEnabled()) {
             logger.finest("[Partition: " + partitionId + "] Prepare snapshot of partition owned tasks.");
@@ -91,7 +92,7 @@ public class ScheduledExecutorPartition
         for (ScheduledExecutorContainer container : getContainers()) {
             try {
                 SplitBrainMergePolicy mergePolicy = getMergePolicy(container.getName());
-                if (!(mergePolicy instanceof DiscardMergePolicy)) {
+                if (owner && !(mergePolicy instanceof DiscardMergePolicy)) {
                     snapshot.put(container.getName(), container.prepareForReplication(true).values());
                 }
             } finally {
@@ -134,7 +135,7 @@ public class ScheduledExecutorPartition
 
     void promoteSuspended() {
         if (logger.isFinestEnabled()) {
-            logger.finest("[Partition: " + partitionId + "] " + "Promote stashes");
+            logger.finest("[Partition: " + partitionId + "] " + "Promote suspended");
         }
 
         for (ScheduledExecutorContainer container : containers.values()) {

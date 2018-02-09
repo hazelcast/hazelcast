@@ -228,7 +228,6 @@ public class ScheduledExecutorContainer
                     doSchedule(descriptor);
                 }
 
-                descriptor.setTaskOwner(true);
             } catch (Exception e) {
                 throw rethrow(e);
             }
@@ -397,7 +396,6 @@ public class ScheduledExecutorContainer
                 throw new IllegalArgumentException();
         }
 
-        descriptor.setTaskOwner(true);
         descriptor.setScheduledFuture(future);
     }
 
