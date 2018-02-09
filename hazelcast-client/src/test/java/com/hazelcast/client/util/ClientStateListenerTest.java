@@ -102,7 +102,7 @@ public class ClientStateListenerTest extends ClientTestSupport{
     }
 
     @Test
-    public void testClientReconnecModeAsyncConnected() throws InterruptedException {
+    public void testClientReconnectModeAsyncConnected() throws InterruptedException {
         ClientConfig clientConfig = new ClientConfig();
         ClientStateListener listener = new ClientStateListener(clientConfig);
         clientConfig.getConnectionStrategyConfig().setReconnectMode(ASYNC);
@@ -138,7 +138,7 @@ public class ClientStateListenerTest extends ClientTestSupport{
     }
 
     @Test
-    public void testClientReconnecModeAsyncConnectedMultipleThreads() throws InterruptedException {
+    public void testClientReconnectModeAsyncConnectedMultipleThreads() throws InterruptedException {
         int numThreads = 10;
         ExecutorService executor = Executors.newFixedThreadPool(numThreads);
 
@@ -207,7 +207,7 @@ public class ClientStateListenerTest extends ClientTestSupport{
     }
 
     @Test
-    public void testClientReconnecModeOffDisconnected() throws InterruptedException {
+    public void testClientReconnectModeOffDisconnected() throws InterruptedException {
         ClientConfig clientConfig = new ClientConfig();
         final ClientStateListener listener = new ClientStateListener(clientConfig);
         clientConfig.getConnectionStrategyConfig().setReconnectMode(OFF);
@@ -224,8 +224,6 @@ public class ClientStateListenerTest extends ClientTestSupport{
 
         assertFalse(listener.isConnected());
 
-        assertFalse(listener.isStarted());
-
         assertTrueEventually(new AssertTask() {
             @Override
             public void run()
@@ -233,6 +231,8 @@ public class ClientStateListenerTest extends ClientTestSupport{
                 assertEquals(SHUTDOWN, listener.getCurrentState());
             }
         });
+
+        assertFalse(listener.isStarted());
     }
 
     @Test
