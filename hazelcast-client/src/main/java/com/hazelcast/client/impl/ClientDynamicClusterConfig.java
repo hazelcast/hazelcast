@@ -151,7 +151,8 @@ public class ClientDynamicClusterConfig extends Config {
                 MapStoreConfigHolder.of(mapConfig.getMapStoreConfig(), serializationService),
                 NearCacheConfigHolder.of(mapConfig.getNearCacheConfig(), serializationService),
                 mapConfig.getWanReplicationRef(), mapConfig.getMapIndexConfigs(), mapConfig.getMapAttributeConfigs(),
-                queryCacheConfigHolders, partitioningStrategyClassName, partitioningStrategy, mapConfig.getHotRestartConfig());
+                queryCacheConfigHolders, partitioningStrategyClassName, partitioningStrategy, mapConfig.getHotRestartConfig(),
+                mapConfig.getMergePolicyConfig().getBatchSize());
         invoke(request);
         return this;
     }
@@ -186,7 +187,8 @@ public class ClientDynamicClusterConfig extends Config {
         ClientMessage request = DynamicConfigAddQueueConfigCodec.encodeRequest(queueConfig.getName(), listenerConfigs,
                 queueConfig.getBackupCount(), queueConfig.getAsyncBackupCount(), queueConfig.getMaxSize(),
                 queueConfig.getEmptyQueueTtl(), queueConfig.isStatisticsEnabled(), queueConfig.getQuorumName(),
-                queueStoreConfigHolder);
+                queueStoreConfigHolder, queueConfig.getMergePolicyConfig().getPolicy(),
+                queueConfig.getMergePolicyConfig().getBatchSize());
         invoke(request);
         return this;
     }
@@ -203,7 +205,8 @@ public class ClientDynamicClusterConfig extends Config {
         List<ListenerConfigHolder> listenerConfigs = adaptListenerConfigs(listConfig.getItemListenerConfigs());
         ClientMessage request = DynamicConfigAddListConfigCodec.encodeRequest(listConfig.getName(), listenerConfigs,
                 listConfig.getBackupCount(), listConfig.getAsyncBackupCount(), listConfig.getMaxSize(),
-                listConfig.isStatisticsEnabled(), listConfig.getQuorumName());
+                listConfig.isStatisticsEnabled(), listConfig.getQuorumName(), listConfig.getMergePolicyConfig().getPolicy(),
+                listConfig.getMergePolicyConfig().getBatchSize());
         invoke(request);
         return this;
     }
@@ -213,7 +216,8 @@ public class ClientDynamicClusterConfig extends Config {
         List<ListenerConfigHolder> listenerConfigs = adaptListenerConfigs(setConfig.getItemListenerConfigs());
         ClientMessage request = DynamicConfigAddSetConfigCodec.encodeRequest(setConfig.getName(), listenerConfigs,
                 setConfig.getBackupCount(), setConfig.getAsyncBackupCount(), setConfig.getMaxSize(),
-                setConfig.isStatisticsEnabled(), setConfig.getQuorumName());
+                setConfig.isStatisticsEnabled(), setConfig.getQuorumName(), setConfig.getMergePolicyConfig().getPolicy(),
+                setConfig.getMergePolicyConfig().getBatchSize());
         invoke(request);
         return this;
     }
@@ -226,7 +230,8 @@ public class ClientDynamicClusterConfig extends Config {
                 multiMapConfig.getName(), multiMapConfig.getValueCollectionType().toString(),
                 listenerConfigHolders,
                 multiMapConfig.isBinary(), multiMapConfig.getBackupCount(), multiMapConfig.getAsyncBackupCount(),
-                multiMapConfig.isStatisticsEnabled(), multiMapConfig.getQuorumName());
+                multiMapConfig.isStatisticsEnabled(), multiMapConfig.getQuorumName(),
+                multiMapConfig.getMergePolicyConfig().getPolicy(), multiMapConfig.getMergePolicyConfig().getBatchSize());
         invoke(request);
         return this;
     }
@@ -238,7 +243,9 @@ public class ClientDynamicClusterConfig extends Config {
         ClientMessage request = DynamicConfigAddReplicatedMapConfigCodec.encodeRequest(
                 replicatedMapConfig.getName(), replicatedMapConfig.getInMemoryFormat().name(),
                 replicatedMapConfig.isAsyncFillup(), replicatedMapConfig.isStatisticsEnabled(),
-                replicatedMapConfig.getMergePolicy(), listenerConfigHolders, replicatedMapConfig.getQuorumName());
+                replicatedMapConfig.getMergePolicyConfig().getPolicy(),
+                listenerConfigHolders, replicatedMapConfig.getQuorumName(),
+                replicatedMapConfig.getMergePolicyConfig().getBatchSize());
         invoke(request);
         return this;
     }
@@ -254,7 +261,8 @@ public class ClientDynamicClusterConfig extends Config {
         ClientMessage request = DynamicConfigAddRingbufferConfigCodec.encodeRequest(
                 ringbufferConfig.getName(), ringbufferConfig.getCapacity(), ringbufferConfig.getBackupCount(),
                 ringbufferConfig.getAsyncBackupCount(), ringbufferConfig.getTimeToLiveSeconds(),
-                ringbufferConfig.getInMemoryFormat().name(), ringbufferStoreConfig, ringbufferConfig.getQuorumName());
+                ringbufferConfig.getInMemoryFormat().name(), ringbufferStoreConfig, ringbufferConfig.getQuorumName(),
+                ringbufferConfig.getMergePolicyConfig().getPolicy(), ringbufferConfig.getMergePolicyConfig().getBatchSize());
         invoke(request);
         return this;
     }
@@ -306,7 +314,8 @@ public class ClientDynamicClusterConfig extends Config {
         ClientMessage request = DynamicConfigAddScheduledExecutorConfigCodec.encodeRequest(
                 scheduledExecutorConfig.getName(), scheduledExecutorConfig.getPoolSize(),
                 scheduledExecutorConfig.getDurability(), scheduledExecutorConfig.getCapacity(),
-                scheduledExecutorConfig.getQuorumName());
+                scheduledExecutorConfig.getQuorumName(), scheduledExecutorConfig.getMergePolicyConfig().getPolicy(),
+                scheduledExecutorConfig.getMergePolicyConfig().getBatchSize());
         invoke(request);
         return this;
     }
@@ -315,7 +324,9 @@ public class ClientDynamicClusterConfig extends Config {
     public Config addCardinalityEstimatorConfig(CardinalityEstimatorConfig cardinalityEstimatorConfig) {
         ClientMessage request = DynamicConfigAddCardinalityEstimatorConfigCodec.encodeRequest(
                 cardinalityEstimatorConfig.getName(), cardinalityEstimatorConfig.getBackupCount(),
-                cardinalityEstimatorConfig.getAsyncBackupCount(), cardinalityEstimatorConfig.getQuorumName());
+                cardinalityEstimatorConfig.getAsyncBackupCount(), cardinalityEstimatorConfig.getQuorumName(),
+                cardinalityEstimatorConfig.getMergePolicyConfig().getPolicy(),
+                cardinalityEstimatorConfig.getMergePolicyConfig().getBatchSize());
         invoke(request);
         return this;
     }
@@ -341,7 +352,9 @@ public class ClientDynamicClusterConfig extends Config {
     @Override
     public Config addAtomicReferenceConfig(AtomicReferenceConfig atomicReferenceConfig) {
         ClientMessage request = DynamicConfigAddAtomicReferenceConfigCodec.encodeRequest(
-                atomicReferenceConfig.getName(), atomicReferenceConfig.getQuorumName());
+                atomicReferenceConfig.getName(), atomicReferenceConfig.getQuorumName(),
+                atomicReferenceConfig.getMergePolicyConfig().getPolicy(),
+                atomicReferenceConfig.getMergePolicyConfig().getBatchSize());
         invoke(request);
         return this;
     }
@@ -349,7 +362,8 @@ public class ClientDynamicClusterConfig extends Config {
     @Override
     public Config addAtomicLongConfig(AtomicLongConfig atomicLongConfig) {
         ClientMessage request = DynamicConfigAddAtomicLongConfigCodec.encodeRequest(
-                atomicLongConfig.getName(), atomicLongConfig.getQuorumName());
+                atomicLongConfig.getName(), atomicLongConfig.getQuorumName(),
+                atomicLongConfig.getMergePolicyConfig().getPolicy(), atomicLongConfig.getMergePolicyConfig().getBatchSize());
         invoke(request);
         return this;
     }

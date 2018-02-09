@@ -20,6 +20,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddListConfigCodec;
 import com.hazelcast.config.ItemListenerConfig;
 import com.hazelcast.config.ListConfig;
+import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -55,6 +56,9 @@ public class AddListConfigMessageTask
                     (List<ItemListenerConfig>) adaptListenerConfigs(parameters.listenerConfigs);
             config.setItemListenerConfigs(itemListenerConfigs);
         }
+        MergePolicyConfig mergePolicyConfig = mergePolicyConfig(parameters.mergePolicyExist, parameters.mergePolicy,
+                parameters.mergeBatchSize);
+        config.setMergePolicyConfig(mergePolicyConfig);
         return config;
     }
 

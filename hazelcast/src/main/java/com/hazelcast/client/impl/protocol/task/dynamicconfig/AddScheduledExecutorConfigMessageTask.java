@@ -18,6 +18,7 @@ package com.hazelcast.client.impl.protocol.task.dynamicconfig;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddScheduledExecutorConfigCodec;
+import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
@@ -47,6 +48,9 @@ public class AddScheduledExecutorConfigMessageTask
         config.setDurability(parameters.durability);
         config.setCapacity(parameters.capacity);
         config.setName(parameters.name);
+        MergePolicyConfig mergePolicyConfig = mergePolicyConfig(parameters.mergePolicyExist, parameters.mergePolicy,
+                parameters.mergeBatchSize);
+        config.setMergePolicyConfig(mergePolicyConfig);
         return config;
     }
 

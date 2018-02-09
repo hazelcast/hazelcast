@@ -19,6 +19,7 @@ package com.hazelcast.client.impl.protocol.task.dynamicconfig;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
 import com.hazelcast.config.ListenerConfig;
+import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.instance.Node;
@@ -81,6 +82,15 @@ public abstract class AbstractAddConfigMessageTask<P> extends AbstractMessageTas
     @Override
     public void onFailure(Throwable t) {
         handleProcessingFailure(t);
+    }
+
+    // returns a MergePolicyConfig based on given parameters if these exist, or the default MergePolicyConfig
+    protected MergePolicyConfig mergePolicyConfig(boolean mergePolicyExist, String mergePolicy, int batchSize) {
+        if (mergePolicyExist) {
+            MergePolicyConfig config = new MergePolicyConfig(mergePolicy, batchSize);
+            return config;
+        }
+        return new MergePolicyConfig();
     }
 
     protected List<? extends ListenerConfig> adaptListenerConfigs(List<ListenerConfigHolder> listenerConfigHolders) {

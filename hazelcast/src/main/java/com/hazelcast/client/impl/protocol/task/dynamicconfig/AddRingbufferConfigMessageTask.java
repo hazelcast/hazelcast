@@ -19,6 +19,7 @@ package com.hazelcast.client.impl.protocol.task.dynamicconfig;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddRingbufferConfigCodec;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.config.RingbufferStoreConfig;
 import com.hazelcast.instance.Node;
@@ -54,6 +55,9 @@ public class AddRingbufferConfigMessageTask
             RingbufferStoreConfig storeConfig = parameters.ringbufferStoreConfig.asRingbufferStoreConfig(serializationService);
             config.setRingbufferStoreConfig(storeConfig);
         }
+        MergePolicyConfig mergePolicyConfig = mergePolicyConfig(parameters.mergePolicyExist, parameters.mergePolicy,
+                parameters.mergeBatchSize);
+        config.setMergePolicyConfig(mergePolicyConfig);
         return config;
     }
 

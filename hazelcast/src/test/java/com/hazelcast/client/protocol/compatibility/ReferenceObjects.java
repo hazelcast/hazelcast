@@ -669,6 +669,8 @@ public class ReferenceObjects {
 
     public static List<Map.Entry<String, List<Map.Entry<Integer, Long>>>> aNamePartitionSequenceList;
     public static long[] arrLongs = new long[] { aLong };
+    public static List<Map.Entry<String, Long>> aListOfStringToLong =
+            Collections.<Map.Entry<String, Long>>singletonList(new AbstractMap.SimpleEntry<String, Long>("test", 3141592L));
 
     static {
         List<Map.Entry<Integer, Long>> list = Collections.<Map.Entry<Integer, Long>>singletonList(
