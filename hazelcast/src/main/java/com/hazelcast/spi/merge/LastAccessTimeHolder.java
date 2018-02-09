@@ -14,17 +14,21 @@
  * limitations under the License.
  */
 
-package com.hazelcast.replicatedmap;
+package com.hazelcast.spi.merge;
 
-import com.hazelcast.replicatedmap.impl.record.ReplicatedMapEntryView;
-import com.hazelcast.replicatedmap.merge.ReplicatedMapMergePolicy;
+import com.hazelcast.nio.serialization.DataSerializable;
 
-public class CustomMergePolicy implements ReplicatedMapMergePolicy {
-    @Override
-    public Object merge(String mapName, ReplicatedMapEntryView mergingEntry, ReplicatedMapEntryView existingEntry) {
-        if (mergingEntry.getValue() instanceof Integer) {
-            return mergingEntry.getValue();
-        }
-        return null;
-    }
+/**
+ * Represents a read-only view of a last access time for the merging process after a split-brain.
+ *
+ * @since 3.10
+ */
+public interface LastAccessTimeHolder extends DataSerializable {
+
+    /**
+     * Returns the last access time of the merge data.
+     *
+     * @return the last access time of the merge data
+     */
+    long getLastAccessTime();
 }

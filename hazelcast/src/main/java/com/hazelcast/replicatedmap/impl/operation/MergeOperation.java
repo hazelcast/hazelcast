@@ -20,8 +20,8 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
-import com.hazelcast.spi.SplitBrainMergeEntryView;
 import com.hazelcast.spi.SplitBrainMergePolicy;
+import com.hazelcast.spi.merge.MergingEntryHolder;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -35,7 +35,7 @@ import java.util.List;
 public class MergeOperation extends AbstractNamedSerializableOperation {
 
     private String name;
-    private List<SplitBrainMergeEntryView<Object, Object>> mergeEntries;
+    private List<MergingEntryHolder<Object, Object>> mergingEntries;
     private SplitBrainMergePolicy mergePolicy;
 
     private transient boolean hasMergedValues;
@@ -43,10 +43,10 @@ public class MergeOperation extends AbstractNamedSerializableOperation {
     public MergeOperation() {
     }
 
-    MergeOperation(String name, List<SplitBrainMergeEntryView<Object, Object>> mergeEntries, SplitBrainMergePolicy policy) {
+    MergeOperation(String name, List<MergingEntryHolder<Object, Object>> mergingEntries, SplitBrainMergePolicy mergePolicy) {
         this.name = name;
-        this.mergeEntries = mergeEntries;
-        this.mergePolicy = policy;
+        this.mergingEntries = mergingEntries;
+        this.mergePolicy = mergePolicy;
     }
 
     @Override
@@ -59,7 +59,7 @@ public class MergeOperation extends AbstractNamedSerializableOperation {
         ReplicatedMapService service = getService();
         ReplicatedRecordStore recordStore = service.getReplicatedRecordStore(name, true, getPartitionId());
 
-        for (SplitBrainMergeEntryView<Object, Object> mergingEntry : mergeEntries) {
+        for (MergingEntryHolder<Object, Object> mergingEntry : mergingEntries) {
             if (recordStore.merge(mergingEntry, mergePolicy)) {
                 hasMergedValues = true;
             }
@@ -75,9 +75,9 @@ public class MergeOperation extends AbstractNamedSerializableOperation {
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeUTF(name);
-        out.writeInt(mergeEntries.size());
-        for (SplitBrainMergeEntryView<Object, Object> mergeEntry : mergeEntries) {
-            out.writeObject(mergeEntry);
+        out.writeInt(mergingEntries.size());
+        for (MergingEntryHolder<Object, Object> mergingEntry : mergingEntries) {
+            out.writeObject(mergingEntry);
         }
         out.writeObject(mergePolicy);
     }
@@ -87,10 +87,10 @@ public class MergeOperation extends AbstractNamedSerializableOperation {
         super.readInternal(in);
         name = in.readUTF();
         int size = in.readInt();
-        mergeEntries = new ArrayList<SplitBrainMergeEntryView<Object, Object>>(size);
+        mergingEntries = new ArrayList<MergingEntryHolder<Object, Object>>(size);
         for (int i = 0; i < size; i++) {
-            SplitBrainMergeEntryView<Object, Object> mergeEntry = in.readObject();
-            mergeEntries.add(mergeEntry);
+            MergingEntryHolder<Object, Object> mergingEntry = in.readObject();
+            mergingEntries.add(mergingEntry);
         }
         mergePolicy = in.readObject();
     }

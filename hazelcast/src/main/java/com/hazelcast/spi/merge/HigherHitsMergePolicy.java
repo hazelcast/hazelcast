@@ -16,7 +16,7 @@
 
 package com.hazelcast.spi.merge;
 
-import com.hazelcast.spi.SplitBrainMergeEntryView;
+import com.hazelcast.spi.impl.merge.SplitBrainDataSerializerHook;
 
 /**
  * Merges data structure entries from source to destination data structure if the source entry
@@ -24,24 +24,31 @@ import com.hazelcast.spi.SplitBrainMergeEntryView;
  *
  * @since 3.10
  */
-public class HigherHitsMergePolicy extends AbstractMergePolicy {
+public class HigherHitsMergePolicy extends AbstractSplitBrainMergePolicy {
 
-    HigherHitsMergePolicy() {
+    public HigherHitsMergePolicy() {
     }
 
     @Override
-    public <K, V> V merge(SplitBrainMergeEntryView<K, V> mergingEntry, SplitBrainMergeEntryView<K, V> existingEntry) {
-        if (mergingEntry == null) {
-            return existingEntry.getValue();
+    public <V> V merge(MergingValueHolder<V> mergingValue, MergingValueHolder<V> existingValue) {
+        checkInstanceOf(mergingValue, HitsHolder.class);
+        checkInstanceOf(existingValue, HitsHolder.class);
+        if (mergingValue == null) {
+            return existingValue.getValue();
         }
-        if (existingEntry == null || mergingEntry.getHits() >= existingEntry.getHits()) {
-            return mergingEntry.getValue();
+        if (existingValue == null) {
+            return mergingValue.getValue();
         }
-        return existingEntry.getValue();
+        HitsHolder merging = (HitsHolder) mergingValue;
+        HitsHolder existing = (HitsHolder) existingValue;
+        if (merging.getHits() >= existing.getHits()) {
+            return mergingValue.getValue();
+        }
+        return existingValue.getValue();
     }
 
     @Override
     public int getId() {
-        return SplitBrainMergePolicyDataSerializerHook.HIGHER_HITS;
+        return SplitBrainDataSerializerHook.HIGHER_HITS;
     }
 }

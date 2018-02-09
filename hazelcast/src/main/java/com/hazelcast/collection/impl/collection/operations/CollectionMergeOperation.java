@@ -23,8 +23,8 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.SplitBrainMergeEntryView;
 import com.hazelcast.spi.SplitBrainMergePolicy;
+import com.hazelcast.spi.merge.MergingValueHolder;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -41,15 +41,15 @@ import static com.hazelcast.util.MapUtil.createHashMap;
 public class CollectionMergeOperation extends CollectionBackupAwareOperation {
 
     private SplitBrainMergePolicy mergePolicy;
-    private List<SplitBrainMergeEntryView<Long, Data>> mergingEntries;
+    private List<MergingValueHolder<Data>> mergingValues;
 
     private transient Map<Long, Data> valueMap;
 
     public CollectionMergeOperation(String name, SplitBrainMergePolicy mergePolicy,
-                                    List<SplitBrainMergeEntryView<Long, Data>> mergingEntries) {
+                                    List<MergingValueHolder<Data>> mergingValues) {
         super(name);
         this.mergePolicy = mergePolicy;
-        this.mergingEntries = mergingEntries;
+        this.mergingValues = mergingValues;
     }
 
     public CollectionMergeOperation() {
@@ -73,9 +73,9 @@ public class CollectionMergeOperation extends CollectionBackupAwareOperation {
     @Override
     public void run() throws Exception {
         CollectionContainer collectionContainer = getOrCreateContainer();
-        valueMap = createHashMap(mergingEntries.size());
-        for (SplitBrainMergeEntryView<Long, Data> mergingEntry : mergingEntries) {
-            CollectionItem mergedItem = collectionContainer.merge(mergingEntry, mergePolicy);
+        valueMap = createHashMap(mergingValues.size());
+        for (MergingValueHolder<Data> mergingValue : mergingValues) {
+            CollectionItem mergedItem = collectionContainer.merge(mergingValue, mergePolicy);
             if (mergedItem != null) {
                 valueMap.put(mergedItem.getItemId(), mergedItem.getValue());
             }
@@ -86,9 +86,9 @@ public class CollectionMergeOperation extends CollectionBackupAwareOperation {
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeObject(mergePolicy);
-        out.writeInt(mergingEntries.size());
-        for (SplitBrainMergeEntryView<Long, Data> mergingEntry : mergingEntries) {
-            out.writeObject(mergingEntry);
+        out.writeInt(mergingValues.size());
+        for (MergingValueHolder<Data> mergingValue : mergingValues) {
+            out.writeObject(mergingValue);
         }
     }
 
@@ -97,10 +97,10 @@ public class CollectionMergeOperation extends CollectionBackupAwareOperation {
         super.readInternal(in);
         mergePolicy = in.readObject();
         int size = in.readInt();
-        mergingEntries = new ArrayList<SplitBrainMergeEntryView<Long, Data>>(size);
+        mergingValues = new ArrayList<MergingValueHolder<Data>>(size);
         for (int i = 0; i < size; i++) {
-            SplitBrainMergeEntryView<Long, Data> mergingEntry = in.readObject();
-            mergingEntries.add(mergingEntry);
+            MergingValueHolder<Data> mergingValue = in.readObject();
+            mergingValues.add(mergingValue);
         }
     }
 }

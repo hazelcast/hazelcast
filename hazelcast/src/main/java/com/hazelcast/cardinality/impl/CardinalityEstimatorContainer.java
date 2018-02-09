@@ -21,14 +21,14 @@ import com.hazelcast.cardinality.impl.hyperloglog.impl.HyperLogLogImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.SplitBrainMergeEntryView;
 import com.hazelcast.spi.SplitBrainMergePolicy;
+import com.hazelcast.spi.merge.MergingEntryHolder;
 
 import java.io.IOException;
 
 import static com.hazelcast.config.CardinalityEstimatorConfig.DEFAULT_ASYNC_BACKUP_COUNT;
 import static com.hazelcast.config.CardinalityEstimatorConfig.DEFAULT_SYNC_BACKUP_COUNT;
-import static com.hazelcast.spi.merge.SplitBrainEntryViews.createSplitBrainMergeEntryView;
+import static com.hazelcast.spi.impl.merge.MergingHolders.createMergeHolder;
 
 public class CardinalityEstimatorContainer
         implements IdentifiedDataSerializable {
@@ -69,17 +69,17 @@ public class CardinalityEstimatorContainer
     }
 
     /**
-     * Merges the given {@link SplitBrainMergeEntryView} via the given {@link SplitBrainMergePolicy}.
+     * Merges the given {@link MergingEntryHolder} via the given {@link SplitBrainMergePolicy}.
      *
-     * @param mergingEntry the {@link SplitBrainMergeEntryView} instance to merge
+     * @param mergingEntry the {@link MergingEntryHolder} instance to merge
      * @param mergePolicy  the {@link SplitBrainMergePolicy} instance to apply
      * @return the used {@link HyperLogLog} if merge is applied, otherwise {@code null}
      */
-    public HyperLogLog merge(SplitBrainMergeEntryView<String, HyperLogLog> mergingEntry, SplitBrainMergePolicy mergePolicy) {
+    public HyperLogLog merge(MergingEntryHolder<String, HyperLogLog> mergingEntry, SplitBrainMergePolicy mergePolicy) {
         String name = mergingEntry.getKey();
         if (hll.estimate() != 0) {
-            SplitBrainMergeEntryView<String, HyperLogLog> existing = createSplitBrainMergeEntryView(name, hll);
-            HyperLogLog newValue = mergePolicy.merge(mergingEntry, existing);
+            MergingEntryHolder<String, HyperLogLog> existingEntry = createMergeHolder(name, hll);
+            HyperLogLog newValue = mergePolicy.merge(mergingEntry, existingEntry);
             if (newValue != null && !newValue.equals(hll)) {
                 setValue(newValue);
                 return hll;

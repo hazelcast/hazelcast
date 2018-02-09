@@ -583,7 +583,7 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
                     SplitBrainMergePolicy mergePolicy = getMergePolicy(container);
                     int batchSize = container.getConfig().getMergePolicyConfig().getBatchSize();
 
-                    List<MultiMapMergeContainer> mergeEntries = new ArrayList<MultiMapMergeContainer>(batchSize);
+                    List<MultiMapMergeContainer> mergingData = new ArrayList<MultiMapMergeContainer>(batchSize);
                     for (Map.Entry<Data, MultiMapValue> multiMapValueEntry : container.getMultiMapValues().entrySet()) {
                         Data key = multiMapValueEntry.getKey();
                         MultiMapValue multiMapValue = multiMapValueEntry.getValue();
@@ -593,16 +593,16 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
                         MultiMapMergeContainer mergeContainer = new MultiMapMergeContainer(key, records,
                                 container.getCreationTime(), container.getLastAccessTime(), container.getLastUpdateTime(),
                                 multiMapValue.getHits());
-                        mergeEntries.add(mergeContainer);
+                        mergingData.add(mergeContainer);
 
-                        if (mergeEntries.size() == batchSize) {
-                            sendBatch(partitionId, name, mergePolicy, mergeEntries, mergeCallback);
-                            mergeEntries = new ArrayList<MultiMapMergeContainer>(batchSize);
+                        if (mergingData.size() == batchSize) {
+                            sendBatch(partitionId, name, mergePolicy, mergingData, mergeCallback);
+                            mergingData = new ArrayList<MultiMapMergeContainer>(batchSize);
                             operationCount++;
                         }
                     }
-                    if (mergeEntries.size() > 0) {
-                        sendBatch(partitionId, name, mergePolicy, mergeEntries, mergeCallback);
+                    if (mergingData.size() > 0) {
+                        sendBatch(partitionId, name, mergePolicy, mergingData, mergeCallback);
                         operationCount++;
                     }
                     containerMap.clear();
@@ -621,8 +621,8 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
         }
 
         private void sendBatch(int partitionId, String name, SplitBrainMergePolicy mergePolicy,
-                               List<MultiMapMergeContainer> mergeEntries, ExecutionCallback<Object> mergeCallback) {
-            MergeOperation operation = new MergeOperation(name, mergeEntries, mergePolicy);
+                               List<MultiMapMergeContainer> mergingData, ExecutionCallback<Object> mergeCallback) {
+            MergeOperation operation = new MergeOperation(name, mergingData, mergePolicy);
             try {
                 nodeEngine.getOperationService()
                         .invokeOnPartition(SERVICE_NAME, operation, partitionId)

@@ -22,10 +22,10 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicReference;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.SplitBrainMergeEntryView;
 import com.hazelcast.spi.SplitBrainMergePolicy;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.merge.DiscardMergePolicy;
+import com.hazelcast.spi.merge.MergingValueHolder;
 import com.hazelcast.spi.merge.PassThroughMergePolicy;
 import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
@@ -221,11 +221,11 @@ public class AtomicReferenceSplitBrainTest extends SplitBrainTestSupport {
     private static class MergeInstanceOfIntegerMergePolicy implements SplitBrainMergePolicy {
 
         @Override
-        public <K, V> V merge(SplitBrainMergeEntryView<K, V> mergingEntry, SplitBrainMergeEntryView<K, V> existingEntry) {
-            if (mergingEntry.getValue() instanceof Integer) {
-                return mergingEntry.getValue();
+        public <T> T merge(MergingValueHolder<T> mergingValue, MergingValueHolder<T> existingValue) {
+            if (mergingValue.getValue() instanceof Integer) {
+                return mergingValue.getValue();
             }
-            return existingEntry.getValue();
+            return existingValue.getValue();
         }
 
         @Override

@@ -14,30 +14,17 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map;
+package com.hazelcast.replicatedmap;
 
-import com.hazelcast.core.EntryView;
-import com.hazelcast.map.merge.MapMergePolicy;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.replicatedmap.impl.record.ReplicatedMapEntryView;
+import com.hazelcast.replicatedmap.merge.ReplicatedMapMergePolicy;
 
-import java.io.IOException;
-
-/**
- * Custom merge policy implementation that causes deletion of related entry.
- */
-class TestDeleteMergePolicy implements MapMergePolicy {
-
+public class CustomReplicatedMapMergePolicy implements ReplicatedMapMergePolicy {
     @Override
-    public Object merge(String mapName, EntryView mergingEntry, EntryView existingEntry) {
+    public Object merge(String mapName, ReplicatedMapEntryView mergingEntry, ReplicatedMapEntryView existingEntry) {
+        if (mergingEntry.getValue() instanceof Integer) {
+            return mergingEntry.getValue();
+        }
         return null;
-    }
-
-    @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-    }
-
-    @Override
-    public void readData(ObjectDataInput in) throws IOException {
     }
 }

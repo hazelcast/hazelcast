@@ -17,11 +17,11 @@
 package com.hazelcast.ringbuffer.impl;
 
 import com.hazelcast.ringbuffer.StaleSequenceException;
-import com.hazelcast.spi.SplitBrainMergeEntryView;
 import com.hazelcast.spi.SplitBrainMergePolicy;
+import com.hazelcast.spi.merge.MergingValueHolder;
 import com.hazelcast.spi.serialization.SerializationService;
 
-import static com.hazelcast.spi.merge.SplitBrainEntryViews.createSplitBrainMergeEntryView;
+import static com.hazelcast.spi.impl.merge.MergingHolders.createMergeHolder;
 
 /**
  * The ArrayRingbuffer is responsible for storing the actual content of a ringbuffer.
@@ -45,6 +45,7 @@ public class ArrayRingbuffer<E> implements Ringbuffer<E> {
 
     private SerializationService serializationService;
 
+    @SuppressWarnings("unchecked")
     public ArrayRingbuffer(int capacity) {
         this.capacity = capacity;
         this.ringItems = (E[]) new Object[capacity];
@@ -157,15 +158,17 @@ public class ArrayRingbuffer<E> implements Ringbuffer<E> {
         this.serializationService = serializationService;
     }
 
-    public long merge(SplitBrainMergeEntryView<Long, E> mergingEntry, SplitBrainMergePolicy mergePolicy, long remainingCapacity) {
+    @Override
+    public long merge(MergingValueHolder<E> mergingValue, SplitBrainMergePolicy mergePolicy, long remainingCapacity) {
         serializationService.getManagedContext().initialize(mergePolicy);
+        mergingValue.setSerializationService(serializationService);
 
         // try to find an existing item with the same value
         E existingItem = null;
         long existingSequence = -1;
         for (long sequence = headSequence; sequence <= tailSequence; sequence++) {
             E item = read(sequence);
-            if (mergingEntry.getValue().equals(item)) {
+            if (mergingValue.getValue().equals(item)) {
                 existingItem = item;
                 existingSequence = sequence;
                 break;
@@ -178,13 +181,14 @@ public class ArrayRingbuffer<E> implements Ringbuffer<E> {
                 return -1L;
             }
 
-            E newValue = mergePolicy.merge(mergingEntry, null);
+            E newValue = mergePolicy.merge(mergingValue, null);
             if (newValue != null) {
                 return add(newValue);
             }
         } else {
-            SplitBrainMergeEntryView<Long, E> existingEntry = createSplitBrainMergeEntryView(existingSequence, existingItem);
-            E newValue = mergePolicy.merge(mergingEntry, existingEntry);
+            MergingValueHolder<E> existingValue = createMergeHolder(existingSequence, existingItem);
+            existingValue.setSerializationService(serializationService);
+            E newValue = mergePolicy.merge(mergingValue, existingValue);
             if (newValue != null && !newValue.equals(existingItem)) {
                 set(existingSequence, newValue);
                 return existingSequence;

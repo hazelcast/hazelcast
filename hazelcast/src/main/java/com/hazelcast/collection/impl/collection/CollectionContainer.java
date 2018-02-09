@@ -23,8 +23,9 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.SplitBrainMergeEntryView;
 import com.hazelcast.spi.SplitBrainMergePolicy;
+import com.hazelcast.spi.merge.MergingValueHolder;
+import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.transaction.TransactionException;
 
 import java.io.IOException;
@@ -36,7 +37,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static com.hazelcast.spi.merge.SplitBrainEntryViews.createSplitBrainMergeEntryView;
+import static com.hazelcast.spi.impl.merge.MergingHolders.createMergeHolder;
 import static com.hazelcast.util.MapUtil.createHashMap;
 
 @SuppressWarnings("checkstyle:methodcount")
@@ -343,19 +344,21 @@ public abstract class CollectionContainer implements IdentifiedDataSerializable 
     protected abstract void onDestroy();
 
     /**
-     * Merges the given {@link SplitBrainMergeEntryView} via the given {@link SplitBrainMergePolicy}.
+     * Merges the given {@link MergingValueHolder} via the given {@link SplitBrainMergePolicy}.
      *
-     * @param mergingEntry the {@link SplitBrainMergeEntryView} instance to merge
+     * @param mergingValue the {@link MergingValueHolder} instance to merge
      * @param mergePolicy  the {@link SplitBrainMergePolicy} instance to apply
      * @return the used {@link CollectionItem} if merge is applied, otherwise {@code null}
      */
-    public CollectionItem merge(SplitBrainMergeEntryView<Long, Data> mergingEntry, SplitBrainMergePolicy mergePolicy) {
-        nodeEngine.getSerializationService().getManagedContext().initialize(mergePolicy);
+    public CollectionItem merge(MergingValueHolder<Data> mergingValue, SplitBrainMergePolicy mergePolicy) {
+        SerializationService serializationService = nodeEngine.getSerializationService();
+        serializationService.getManagedContext().initialize(mergePolicy);
+        mergingValue.setSerializationService(serializationService);
 
         // try to find an existing item with the same value
         CollectionItem existingItem = null;
         for (CollectionItem item : getCollection()) {
-            if (mergingEntry.getValue().equals(item.getValue())) {
+            if (mergingValue.getValue().equals(item.getValue())) {
                 existingItem = item;
                 break;
             }
@@ -363,7 +366,7 @@ public abstract class CollectionContainer implements IdentifiedDataSerializable 
 
         CollectionItem mergedItem = null;
         if (existingItem == null) {
-            Data newValue = mergePolicy.merge(mergingEntry, null);
+            Data newValue = mergePolicy.merge(mergingValue, null);
             if (newValue != null) {
                 CollectionItem item = new CollectionItem(nextId(), newValue);
                 if (getCollection().add(item)) {
@@ -371,9 +374,10 @@ public abstract class CollectionContainer implements IdentifiedDataSerializable 
                 }
             }
         } else {
-            SplitBrainMergeEntryView<Long, Data> existingEntry = createSplitBrainMergeEntryView(existingItem);
-            Data newValue = mergePolicy.merge(mergingEntry, existingEntry);
-            if (newValue != null && !newValue.equals(existingEntry.getValue())) {
+            MergingValueHolder<Data> existingValue = createMergeHolder(existingItem);
+            existingValue.setSerializationService(serializationService);
+            Data newValue = mergePolicy.merge(mergingValue, existingValue);
+            if (newValue != null && !newValue.equals(existingValue.getValue())) {
                 existingItem.setValue(newValue);
                 mergedItem = existingItem;
             }

@@ -43,10 +43,11 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ObjectNamespace;
-import com.hazelcast.spi.SplitBrainMergeEntryView;
 import com.hazelcast.spi.SplitBrainMergePolicy;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.InternalEventService;
+import com.hazelcast.spi.merge.ExpirationTimeHolder;
+import com.hazelcast.spi.merge.MergingEntryHolder;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.EmptyStatement;
@@ -78,8 +79,9 @@ import static com.hazelcast.cache.impl.CacheEventContextUtil.createCacheUpdatedE
 import static com.hazelcast.cache.impl.operation.MutableOperation.IGNORE_COMPLETION;
 import static com.hazelcast.cache.impl.record.CacheRecordFactory.isExpiredAt;
 import static com.hazelcast.internal.config.ConfigValidator.checkEvictionConfig;
-import static com.hazelcast.spi.merge.SplitBrainEntryViews.createSplitBrainMergeEntryView;
+import static com.hazelcast.spi.impl.merge.MergingHolders.createMergeHolder;
 import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.util.Preconditions.checkInstanceOf;
 import static com.hazelcast.util.SetUtil.createHashSet;
 import static java.util.Collections.emptySet;
 
@@ -1450,15 +1452,17 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     @Override
-    public CacheRecord merge(SplitBrainMergeEntryView<Data, Data> mergingEntry, SplitBrainMergePolicy mergePolicy) {
+    public CacheRecord merge(MergingEntryHolder<Data, Data> mergingEntry, SplitBrainMergePolicy mergePolicy) {
         final long now = Clock.currentTimeMillis();
         final long start = isStatisticsEnabled() ? System.nanoTime() : 0;
 
         injectDependencies(mergePolicy);
+        mergingEntry.setSerializationService(nodeEngine.getSerializationService());
 
         boolean merged = false;
         Data key = mergingEntry.getKey();
-        long expiryTime = mergingEntry.getExpirationTime();
+        checkInstanceOf(ExpirationTimeHolder.class, mergingEntry);
+        long expiryTime = ((ExpirationTimeHolder) mergingEntry).getExpirationTime();
         R record = records.get(key);
         boolean isExpired = processExpiredEntry(key, record, now);
 
@@ -1470,7 +1474,9 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
             }
         } else {
             Data oldValue = nodeEngine.getSerializationService().toData(record.getValue());
-            Data newValue = mergePolicy.merge(mergingEntry, createSplitBrainMergeEntryView(key, oldValue, record));
+            MergingEntryHolder<Data, Data> existingEntry = createMergeHolder(key, oldValue, record);
+            existingEntry.setSerializationService(nodeEngine.getSerializationService());
+            Data newValue = mergePolicy.merge(mergingEntry, existingEntry);
             if (newValue != null && newValue != oldValue) {
                 merged = updateRecordWithExpiry(key, newValue, record, expiryTime, now, true, IGNORE_COMPLETION);
             }

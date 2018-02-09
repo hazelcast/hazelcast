@@ -24,8 +24,8 @@ import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.OperationFactory;
-import com.hazelcast.spi.SplitBrainMergeEntryView;
 import com.hazelcast.spi.SplitBrainMergePolicy;
+import com.hazelcast.spi.merge.MergingEntryHolder;
 
 import java.util.List;
 import java.util.Set;
@@ -147,9 +147,9 @@ abstract class MapOperationProviderDelegator implements MapOperationProvider {
 
     @Override
     public OperationFactory createMergeOperationFactory(String name, int[] partitions,
-                                                        List<SplitBrainMergeEntryView<Data, Data>>[] mergeEntries,
-                                                        SplitBrainMergePolicy policy) {
-        return getDelegate().createMergeOperationFactory(name, partitions, mergeEntries, policy);
+                                                        List<MergingEntryHolder<Data, Data>>[] mergingEntries,
+                                                        SplitBrainMergePolicy mergePolicy) {
+        return getDelegate().createMergeOperationFactory(name, partitions, mergingEntries, mergePolicy);
     }
 
     @Override
@@ -180,9 +180,9 @@ abstract class MapOperationProviderDelegator implements MapOperationProvider {
     }
 
     @Override
-    public MapOperation createMergeOperation(String name, SplitBrainMergeEntryView<Data, Data> entryView,
-                                             SplitBrainMergePolicy policy, boolean disableWanReplicationEvent) {
-        return getDelegate().createMergeOperation(name, entryView, policy, disableWanReplicationEvent);
+    public MapOperation createMergeOperation(String name, MergingEntryHolder<Data, Data> mergingValue,
+                                             SplitBrainMergePolicy mergePolicy, boolean disableWanReplicationEvent) {
+        return getDelegate().createMergeOperation(name, mergingValue, mergePolicy, disableWanReplicationEvent);
     }
 
     @Override

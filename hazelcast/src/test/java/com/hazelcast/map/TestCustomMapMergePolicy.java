@@ -23,7 +23,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 
-class TestCustomMergePolicy implements MapMergePolicy {
+class TestCustomMapMergePolicy implements MapMergePolicy {
 
     @Override
     public Object merge(String mapName, EntryView mergingEntry, EntryView existingEntry) {

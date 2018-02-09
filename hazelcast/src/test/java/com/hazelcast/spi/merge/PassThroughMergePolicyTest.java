@@ -16,7 +16,6 @@
 
 package com.hazelcast.spi.merge;
 
-import com.hazelcast.spi.SplitBrainMergeEntryView;
 import com.hazelcast.spi.SplitBrainMergePolicy;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -37,35 +36,35 @@ public class PassThroughMergePolicyTest {
     private static final String EXISTING = "EXISTING";
     private static final String MERGING = "MERGING";
 
-    protected SplitBrainMergePolicy policy;
+    protected SplitBrainMergePolicy mergePolicy;
 
     @Before
     public void setup() {
-        policy = new PassThroughMergePolicy();
+        mergePolicy = new PassThroughMergePolicy();
     }
 
     @Test
     public void merge_mergingNotNull() {
-        SplitBrainMergeEntryView existing = entryWithGivenValue(EXISTING);
-        SplitBrainMergeEntryView merging = entryWithGivenValue(MERGING);
+        MergingValueHolder existing = mergingValueWithGivenValue(EXISTING);
+        MergingValueHolder merging = mergingValueWithGivenValue(MERGING);
 
-        assertEquals(MERGING, policy.merge(merging, existing));
+        assertEquals(MERGING, mergePolicy.merge(merging, existing));
     }
 
     @Test
     @SuppressWarnings("ConstantConditions")
     public void merge_mergingNull() {
-        SplitBrainMergeEntryView existing = entryWithGivenValue(EXISTING);
-        SplitBrainMergeEntryView merging = null;
+        MergingValueHolder existing = mergingValueWithGivenValue(EXISTING);
+        MergingValueHolder merging = null;
 
-        assertEquals(EXISTING, policy.merge(merging, existing));
+        assertEquals(EXISTING, mergePolicy.merge(merging, existing));
     }
 
-    private SplitBrainMergeEntryView entryWithGivenValue(String value) {
-        SplitBrainMergeEntryView entryView = mock(SplitBrainMergeEntryView.class);
+    private MergingValueHolder mergingValueWithGivenValue(String value) {
+        MergingValueHolder mergingValue = mock(MergingValueHolder.class);
         try {
-            when(entryView.getValue()).thenReturn(value);
-            return entryView;
+            when(mergingValue.getValue()).thenReturn(value);
+            return mergingValue;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

@@ -16,12 +16,13 @@
 
 package com.hazelcast.spi.merge;
 
-import com.hazelcast.spi.SplitBrainMergeEntryView;
 import com.hazelcast.spi.SplitBrainMergePolicy;
+import com.hazelcast.spi.impl.merge.FullMergingEntryHolderImpl;
 import org.junit.Before;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -30,69 +31,71 @@ public abstract class AbstractSplitBrainMergePolicyTest {
     private static final String EXISTING = "EXISTING";
     private static final String MERGING = "MERGING";
 
-    protected SplitBrainMergePolicy policy;
+    protected SplitBrainMergePolicy mergePolicy;
 
     @Before
     public void setup() {
-        policy = createMergePolicy();
+        mergePolicy = createMergePolicy();
     }
 
     protected abstract SplitBrainMergePolicy createMergePolicy();
 
     @Test
     public void merge_mergingWins() {
-        SplitBrainMergeEntryView existing = entryWithGivenPropertyAndValue(1, EXISTING);
-        SplitBrainMergeEntryView merging = entryWithGivenPropertyAndValue(333, MERGING);
+        MergingValueHolder existing = mergingValueWithGivenPropertyAndValue(1, EXISTING);
+        MergingValueHolder merging = mergingValueWithGivenPropertyAndValue(333, MERGING);
 
-        assertEquals(MERGING, policy.merge(merging, existing));
+        assertEquals(MERGING, mergePolicy.merge(merging, existing));
     }
 
     @Test
     public void merge_existingWins() {
-        SplitBrainMergeEntryView existing = entryWithGivenPropertyAndValue(333, EXISTING);
-        SplitBrainMergeEntryView merging = entryWithGivenPropertyAndValue(1, MERGING);
+        MergingValueHolder existing = mergingValueWithGivenPropertyAndValue(333, EXISTING);
+        MergingValueHolder merging = mergingValueWithGivenPropertyAndValue(1, MERGING);
 
-        assertEquals(EXISTING, policy.merge(merging, existing));
+        assertEquals(EXISTING, mergePolicy.merge(merging, existing));
     }
 
     @Test
     public void merge_draw_mergingWins() {
-        SplitBrainMergeEntryView existing = entryWithGivenPropertyAndValue(1, EXISTING);
-        SplitBrainMergeEntryView merging = entryWithGivenPropertyAndValue(1, MERGING);
+        MergingValueHolder existing = mergingValueWithGivenPropertyAndValue(1, EXISTING);
+        MergingValueHolder merging = mergingValueWithGivenPropertyAndValue(1, MERGING);
 
-        assertEquals(MERGING, policy.merge(merging, existing));
+        assertEquals(MERGING, mergePolicy.merge(merging, existing));
     }
 
     @Test
     @SuppressWarnings("ConstantConditions")
     public void merge_mergingWins_sinceExistingIsNotExist() {
-        SplitBrainMergeEntryView existing = null;
-        SplitBrainMergeEntryView merging = entryWithGivenPropertyAndValue(1, MERGING);
+        MergingValueHolder existing = null;
+        MergingValueHolder merging = mergingValueWithGivenPropertyAndValue(1, MERGING);
 
-        assertEquals(MERGING, policy.merge(merging, existing));
+        assertEquals(MERGING, mergePolicy.merge(merging, existing));
     }
 
     @Test
     @SuppressWarnings("ConstantConditions")
     public void merge_existingWins_sinceMergingIsNotExist() {
-        SplitBrainMergeEntryView existing = entryWithGivenPropertyAndValue(1, EXISTING);
-        SplitBrainMergeEntryView merging = null;
+        MergingValueHolder existing = mergingValueWithGivenPropertyAndValue(1, EXISTING);
+        MergingValueHolder merging = null;
 
-        assertEquals(EXISTING, policy.merge(merging, existing));
+        assertEquals(EXISTING, mergePolicy.merge(merging, existing));
     }
 
-    private SplitBrainMergeEntryView entryWithGivenPropertyAndValue(long testedProperty, String value) {
-        SplitBrainMergeEntryView entryView = mock(SplitBrainMergeEntryView.class);
+    private MergingValueHolder mergingValueWithGivenPropertyAndValue(long testedProperty, String value) {
+        FullMergingEntryHolderImpl mergingEntry = mock(FullMergingEntryHolderImpl.class);
         try {
-            if (policy instanceof HigherHitsMergePolicy) {
-                when(entryView.getHits()).thenReturn(testedProperty);
-            } else if (policy instanceof LatestAccessMergePolicy) {
-                when(entryView.getLastAccessTime()).thenReturn(testedProperty);
-            } else if (policy instanceof LatestUpdateMergePolicy) {
-                when(entryView.getLastUpdateTime()).thenReturn(testedProperty);
+            if (mergePolicy instanceof HigherHitsMergePolicy) {
+                when(mergingEntry.getHits()).thenReturn(testedProperty);
+            } else if (mergePolicy instanceof LatestAccessMergePolicy) {
+                when(mergingEntry.getLastAccessTime()).thenReturn(testedProperty);
+            } else if (mergePolicy instanceof LatestUpdateMergePolicy) {
+                when(mergingEntry.getLastUpdateTime()).thenReturn(testedProperty);
+            } else {
+                fail("Unsupported MergePolicy type");
             }
-            when(entryView.getValue()).thenReturn(value);
-            return entryView;
+            when(mergingEntry.getValue()).thenReturn(value);
+            return mergingEntry;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
