@@ -24,7 +24,7 @@ import com.hazelcast.spi.SplitBrainMergeEntryView;
 import com.hazelcast.spi.SplitBrainMergePolicy;
 
 import java.io.IOException;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -86,8 +86,8 @@ public class MergeOperation extends AbstractNamedSerializableOperation {
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         name = in.readUTF();
-        mergeEntries = new LinkedList<SplitBrainMergeEntryView<Object, Object>>();
         int size = in.readInt();
+        mergeEntries = new ArrayList<SplitBrainMergeEntryView<Object, Object>>(size);
         for (int i = 0; i < size; i++) {
             SplitBrainMergeEntryView<Object, Object> mergeEntry = in.readObject();
             mergeEntries.add(mergeEntry);

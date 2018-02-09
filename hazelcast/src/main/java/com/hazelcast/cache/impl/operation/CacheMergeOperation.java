@@ -35,7 +35,7 @@ import com.hazelcast.spi.impl.AbstractNamedOperation;
 import com.hazelcast.spi.serialization.SerializationService;
 
 import java.io.IOException;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -145,8 +145,8 @@ public class CacheMergeOperation extends AbstractNamedOperation implements Backu
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        mergeEntries = new LinkedList<SplitBrainMergeEntryView<Data, Data>>();
         int size = in.readInt();
+        mergeEntries = new ArrayList<SplitBrainMergeEntryView<Data, Data>>(size);
         for (int i = 0; i < size; i++) {
             SplitBrainMergeEntryView<Data, Data> mergeEntry = in.readObject();
             mergeEntries.add(mergeEntry);

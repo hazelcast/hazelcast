@@ -25,8 +25,8 @@ import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionAwareOpe
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -81,14 +81,14 @@ public class MergeOperationFactory extends PartitionAwareOperationFactory {
         partitions = in.readIntArray();
         //noinspection unchecked
         mergeEntries = new List[partitions.length];
-        for (int i = 0; i < partitions.length; i++) {
-            List<SplitBrainMergeEntryView<Object, Object>> list = new LinkedList<SplitBrainMergeEntryView<Object, Object>>();
+        for (int partitionIndex = 0; partitionIndex < partitions.length; partitionIndex++) {
             int size = in.readInt();
-            for (int j = 0; j < size; j++) {
+            List<SplitBrainMergeEntryView<Object, Object>> list = new ArrayList<SplitBrainMergeEntryView<Object, Object>>(size);
+            for (int i = 0; i < size; i++) {
                 SplitBrainMergeEntryView<Object, Object> mergeEntry = in.readObject();
                 list.add(mergeEntry);
             }
-            mergeEntries[i] = list;
+            mergeEntries[partitionIndex] = list;
         }
         policy = in.readObject();
     }
