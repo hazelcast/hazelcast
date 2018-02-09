@@ -1964,6 +1964,8 @@ public class ClientCompatibilityTest_1_3 {
 }
 
 
+
+
 {
     ClientMessage clientMessage = QueueOfferCodec.encodeRequest(    aString ,    aData ,    aLong   );
     int length = inputStream.readInt();
@@ -6243,6 +6245,26 @@ public class ClientCompatibilityTest_1_3 {
     CardinalityEstimatorEstimateCodec.ResponseParameters params = CardinalityEstimatorEstimateCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
                 assertTrue(isEqual(aLong, params.response));
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

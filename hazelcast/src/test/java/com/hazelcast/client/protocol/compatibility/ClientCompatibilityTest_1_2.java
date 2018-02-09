@@ -1974,6 +1974,8 @@ public class ClientCompatibilityTest_1_2 {
 }
 
 
+
+
 {
     ClientMessage clientMessage = QueueOfferCodec.encodeRequest(    aString ,    aData ,    aLong   );
     int length = inputStream.readInt();
@@ -6220,6 +6222,26 @@ public class ClientCompatibilityTest_1_2 {
     DurableExecutorRetrieveAndDisposeResultCodec.ResponseParameters params = DurableExecutorRetrieveAndDisposeResultCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
                 assertTrue(isEqual(aData, params.response));
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
