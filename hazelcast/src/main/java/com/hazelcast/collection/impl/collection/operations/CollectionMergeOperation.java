@@ -27,7 +27,7 @@ import com.hazelcast.spi.SplitBrainMergeEntryView;
 import com.hazelcast.spi.SplitBrainMergePolicy;
 
 import java.io.IOException;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -97,7 +97,7 @@ public class CollectionMergeOperation extends CollectionBackupAwareOperation {
         super.readInternal(in);
         mergePolicy = in.readObject();
         int size = in.readInt();
-        mergingEntries = new LinkedList<SplitBrainMergeEntryView<Long, Data>>();
+        mergingEntries = new ArrayList<SplitBrainMergeEntryView<Long, Data>>(size);
         for (int i = 0; i < size; i++) {
             SplitBrainMergeEntryView<Long, Data> mergingEntry = in.readObject();
             mergingEntries.add(mergingEntry);
