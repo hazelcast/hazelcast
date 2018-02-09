@@ -21,9 +21,9 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.SplitBrainMergeEntryView;
 import com.hazelcast.spi.SplitBrainMergePolicy;
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionAwareOperationFactory;
+import com.hazelcast.spi.merge.MergingEntryHolder;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
@@ -40,26 +40,26 @@ import java.util.List;
 public class MergeOperationFactory extends PartitionAwareOperationFactory {
 
     protected String name;
-    protected List<SplitBrainMergeEntryView<Data, Data>>[] mergeEntries;
-    protected SplitBrainMergePolicy policy;
+    protected List<MergingEntryHolder<Data, Data>>[] mergingEntries;
+    protected SplitBrainMergePolicy mergePolicy;
 
     public MergeOperationFactory() {
     }
 
     @SuppressFBWarnings("EI_EXPOSE_REP2")
-    public MergeOperationFactory(String name, int[] partitions, List<SplitBrainMergeEntryView<Data, Data>>[] mergeEntries,
-                                 SplitBrainMergePolicy policy) {
+    public MergeOperationFactory(String name, int[] partitions, List<MergingEntryHolder<Data, Data>>[] mergingEntries,
+                                 SplitBrainMergePolicy mergePolicy) {
         this.name = name;
         this.partitions = partitions;
-        this.mergeEntries = mergeEntries;
-        this.policy = policy;
+        this.mergingEntries = mergingEntries;
+        this.mergePolicy = mergePolicy;
     }
 
     @Override
     public Operation createPartitionOperation(int partitionId) {
         for (int i = 0; i < partitions.length; i++) {
             if (partitions[i] == partitionId) {
-                return new MergeOperation(name, mergeEntries[i], policy, false);
+                return new MergeOperation(name, mergingEntries[i], mergePolicy, false);
             }
         }
         throw new IllegalArgumentException("Unknown partitionId " + partitionId + " (" + Arrays.toString(partitions) + ")");
@@ -69,13 +69,13 @@ public class MergeOperationFactory extends PartitionAwareOperationFactory {
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
         out.writeIntArray(partitions);
-        for (List<SplitBrainMergeEntryView<Data, Data>> entry : mergeEntries) {
-            out.writeInt(entry.size());
-            for (SplitBrainMergeEntryView<Data, Data> mergeEntry : entry) {
-                out.writeObject(mergeEntry);
+        for (List<MergingEntryHolder<Data, Data>> list : mergingEntries) {
+            out.writeInt(list.size());
+            for (MergingEntryHolder<Data, Data> mergingEntry : list) {
+                out.writeObject(mergingEntry);
             }
         }
-        out.writeObject(policy);
+        out.writeObject(mergePolicy);
     }
 
     @Override
@@ -83,17 +83,17 @@ public class MergeOperationFactory extends PartitionAwareOperationFactory {
         name = in.readUTF();
         partitions = in.readIntArray();
         //noinspection unchecked
-        mergeEntries = new List[partitions.length];
+        mergingEntries = new List[partitions.length];
         for (int partitionIndex = 0; partitionIndex < partitions.length; partitionIndex++) {
             int size = in.readInt();
-            List<SplitBrainMergeEntryView<Data, Data>> list = new ArrayList<SplitBrainMergeEntryView<Data, Data>>(size);
+            List<MergingEntryHolder<Data, Data>> list = new ArrayList<MergingEntryHolder<Data, Data>>(size);
             for (int i = 0; i < size; i++) {
-                SplitBrainMergeEntryView<Data, Data> mergeEntry = in.readObject();
-                list.add(mergeEntry);
+                MergingEntryHolder<Data, Data> mergingEntry = in.readObject();
+                list.add(mergingEntry);
             }
-            mergeEntries[partitionIndex] = list;
+            mergingEntries[partitionIndex] = list;
         }
-        policy = in.readObject();
+        mergePolicy = in.readObject();
     }
 
     @Override

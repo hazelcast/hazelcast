@@ -23,9 +23,9 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.SplitBrainMergeEntryView;
 import com.hazelcast.spi.SplitBrainMergePolicy;
 import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.spi.merge.MergingValueHolder;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -42,7 +42,7 @@ import static com.hazelcast.util.MapUtil.createHashMap;
 public class QueueMergeOperation extends QueueBackupAwareOperation implements MutatingOperation {
 
     private SplitBrainMergePolicy mergePolicy;
-    private List<SplitBrainMergeEntryView<Long, Data>> mergingEntries;
+    private List<MergingValueHolder<Data>> mergingValues;
 
     private transient Map<Long, Data> valueMap;
 
@@ -50,18 +50,18 @@ public class QueueMergeOperation extends QueueBackupAwareOperation implements Mu
     }
 
     public QueueMergeOperation(String name, SplitBrainMergePolicy mergePolicy,
-                               List<SplitBrainMergeEntryView<Long, Data>> mergingEntries) {
+                               List<MergingValueHolder<Data>> mergingValues) {
         super(name);
         this.mergePolicy = mergePolicy;
-        this.mergingEntries = mergingEntries;
+        this.mergingValues = mergingValues;
     }
 
     @Override
     public void run() {
         QueueContainer queueContainer = getContainer();
-        valueMap = createHashMap(mergingEntries.size());
-        for (SplitBrainMergeEntryView<Long, Data> mergingEntry : mergingEntries) {
-            QueueItem mergedItem = queueContainer.merge(mergingEntry, mergePolicy);
+        valueMap = createHashMap(mergingValues.size());
+        for (MergingValueHolder<Data> mergingValue : mergingValues) {
+            QueueItem mergedItem = queueContainer.merge(mergingValue, mergePolicy);
             if (mergedItem != null) {
                 valueMap.put(mergedItem.getItemId(), mergedItem.getData());
             }
@@ -92,9 +92,9 @@ public class QueueMergeOperation extends QueueBackupAwareOperation implements Mu
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeObject(mergePolicy);
-        out.writeInt(mergingEntries.size());
-        for (SplitBrainMergeEntryView<Long, Data> mergingEntry : mergingEntries) {
-            out.writeObject(mergingEntry);
+        out.writeInt(mergingValues.size());
+        for (MergingValueHolder<Data> mergingValue : mergingValues) {
+            out.writeObject(mergingValue);
         }
     }
 
@@ -103,10 +103,10 @@ public class QueueMergeOperation extends QueueBackupAwareOperation implements Mu
         super.readInternal(in);
         mergePolicy = in.readObject();
         int size = in.readInt();
-        mergingEntries = new ArrayList<SplitBrainMergeEntryView<Long, Data>>(size);
+        mergingValues = new ArrayList<MergingValueHolder<Data>>(size);
         for (int i = 0; i < size; i++) {
-            SplitBrainMergeEntryView<Long, Data> mergingEntry = in.readObject();
-            mergingEntries.add(mergingEntry);
+            MergingValueHolder<Data> mergingValue = in.readObject();
+            mergingValues.add(mergingValue);
         }
     }
 }

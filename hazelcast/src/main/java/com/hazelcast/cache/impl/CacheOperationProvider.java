@@ -19,8 +19,8 @@ package com.hazelcast.cache.impl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
-import com.hazelcast.spi.SplitBrainMergeEntryView;
 import com.hazelcast.spi.SplitBrainMergePolicy;
+import com.hazelcast.spi.merge.MergingEntryHolder;
 
 import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.processor.EntryProcessor;
@@ -57,13 +57,12 @@ public interface CacheOperationProvider {
 
     Operation createEntryIteratorOperation(int lastTableIndex, int fetchSize);
 
-    Operation createMergeOperation(String name, List<SplitBrainMergeEntryView<Data, Data>> mergeEntries,
+    Operation createMergeOperation(String name, List<MergingEntryHolder<Data, Data>> mergingEntries,
                                    SplitBrainMergePolicy policy);
 
-
     OperationFactory createMergeOperationFactory(String name, int[] partitions,
-                                                      List<SplitBrainMergeEntryView<Data, Data>>[] mergeEntries,
-                                                      SplitBrainMergePolicy policy);
+                                                 List<MergingEntryHolder<Data, Data>>[] mergingEntries,
+                                                 SplitBrainMergePolicy policy);
 
     OperationFactory createGetAllOperationFactory(Set<Data> keySet, ExpiryPolicy policy);
 

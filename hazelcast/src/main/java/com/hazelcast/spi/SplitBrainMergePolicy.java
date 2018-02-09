@@ -20,16 +20,15 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.spi.merge.MergingEntryHolder;
+import com.hazelcast.spi.merge.MergingValueHolder;
 
 /**
- * Policy for merging data structure entries after a split-brain has been healed.
+ * Policy for merging data structure values after a split-brain has been healed.
  * <p>
- * The values of merging and existing {@link SplitBrainMergeEntryView}s are always in the in-memory format of the
+ * The values of merging and existing {@link MergingValueHolder}s are always in the in-memory format of the
  * backing data structure. This can be a serialized format, so the content cannot be processed without deserialization.
  * For most merge policies this will be fine, since the key or value are not used.
- * A merge policy can implement {@link NodeAware} to get an instance of {@link Node} injected.
- * Via {@link Node#getSerializationService()} the {@link SerializationService} can be retrieved to deserialize the data.
  * <p>
  * The deserialization is not done eagerly for two main reasons:
  * <ul>
@@ -38,27 +37,30 @@ import com.hazelcast.spi.serialization.SerializationService;
  * So you can put entries from a client by using {@link com.hazelcast.config.InMemoryFormat#BINARY} with a different
  * classpath on client and server. In this case a deserialization could throw a {@link java.lang.ClassNotFoundException}.</li>
  * </ul>
- * A merge policy can also implement {@link HazelcastInstanceAware} to get the {@link HazelcastInstance} injected.
+ * If you need the deserialized data you can call {@link MergingValueHolder#getDeserializedValue()} or
+ * {@link MergingEntryHolder#getDeserializedKey()}, which will deserialize the data lazily.
+ * <p>
+ * A merge policy can implement {@link HazelcastInstanceAware} to get the {@link HazelcastInstance} injected.
  * This can be used to retrieve the user context via {@link HazelcastInstance#getUserContext()},
  * which is an easy way to get user dependencies that are otherwise hard to obtain.
+ * <p>
+ * A merge policy can also implement {@link NodeAware} to get an instance of {@link Node} injected.
  *
  * @since 3.10
  */
 public interface SplitBrainMergePolicy extends DataSerializable {
 
     /**
-     * Selects one of the merging and existing data structure entries to be merged.
+     * Selects the value of either the merging or the existing {@link MergingValueHolder} which should be merged.
      * <p>
-     * Note that as mentioned also in arguments, the {@link SplitBrainMergeEntryView} instance that represents
-     * the existing data structure entry may be {@code null} if there is no existing entry for the specified key
-     * in the {@link SplitBrainMergeEntryView} instance that represents the merging data structure entry.
+     * Note that the existing {@link MergingValueHolder} instance may be {@code null}
+     * if no matching data could be found to the merging {@link MergingValueHolder}.
      *
-     * @param mergingEntry  {@link SplitBrainMergeEntryView} instance that has the data structure entry to be merged
-     * @param existingEntry {@link SplitBrainMergeEntryView} instance that has the existing data structure entry
-     *                      or {@code null} if there is no existing data structure entry
-     * @param <K>           the type of the key
+     * @param mergingValue  {@link MergingValueHolder} instance that has the merging data of the smaller sub-cluster
+     * @param existingValue {@link MergingValueHolder} instance that has the existing data
+     *                      or {@code null} if no matching data exists
      * @param <V>           the type of the value
      * @return the selected value for merging
      */
-    <K, V> V merge(SplitBrainMergeEntryView<K, V> mergingEntry, SplitBrainMergeEntryView<K, V> existingEntry);
+    <V> V merge(MergingValueHolder<V> mergingValue, MergingValueHolder<V> existingValue);
 }

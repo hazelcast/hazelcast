@@ -21,8 +21,8 @@ import com.hazelcast.concurrent.lock.LockStore;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.DistributedObjectNamespace;
 import com.hazelcast.spi.ObjectNamespace;
-import com.hazelcast.spi.SplitBrainMergeEntryView;
 import com.hazelcast.spi.SplitBrainMergePolicy;
+import com.hazelcast.spi.merge.MergingEntryHolder;
 import com.hazelcast.spi.serialization.SerializationService;
 
 import java.util.Collection;
@@ -32,7 +32,7 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
 
-import static com.hazelcast.spi.merge.SplitBrainEntryViews.createSplitBrainMergeEntryView;
+import static com.hazelcast.spi.impl.merge.MergingHolders.createMergeHolder;
 import static com.hazelcast.util.Clock.currentTimeMillis;
 import static com.hazelcast.util.MapUtil.createHashMap;
 
@@ -40,8 +40,7 @@ import static com.hazelcast.util.MapUtil.createHashMap;
  * MultiMap container which holds a map of {@link MultiMapValue}.
  */
 @SuppressWarnings("checkstyle:methodcount")
-public class MultiMapContainer
-        extends MultiMapContainerSupport {
+public class MultiMapContainer extends MultiMapContainerSupport {
 
     private static final int ID_PROMOTION_OFFSET = 100000;
 
@@ -221,34 +220,35 @@ public class MultiMapContainer
     }
 
     /**
-     * Merges the given {@link SplitBrainMergeEntryView} via the given {@link SplitBrainMergePolicy}.
+     * Merges the given {@link MergingEntryHolder} via the given {@link SplitBrainMergePolicy}.
      *
-     * @param mergingEntry the {@link SplitBrainMergeEntryView} instance to merge
+     * @param mergingEntry the {@link MergingEntryHolder} instance to merge
      * @param mergePolicy  the {@link SplitBrainMergePolicy} instance to apply
      * @return the used {@link MultiMapValue} if merge is applied, otherwise {@code null}
      */
-    public MultiMapValue merge(SplitBrainMergeEntryView<Data, MultiMapMergeContainer> mergingEntry,
-                               SplitBrainMergePolicy mergePolicy) {
+    public MultiMapValue merge(MergingEntryHolder<Data, MultiMapMergeContainer> mergingEntry, SplitBrainMergePolicy mergePolicy) {
         SerializationService serializationService = nodeEngine.getSerializationService();
         serializationService.getManagedContext().initialize(mergePolicy);
+        mergingEntry.setSerializationService(serializationService);
 
         Data key = mergingEntry.getKey();
         MultiMapMergeContainer mergingContainer = mergingEntry.getValue();
         MultiMapValue existingValue = getMultiMapValueOrNull(key);
 
         if (existingValue == null) {
-            return mergeNewValue(mergePolicy, serializationService, key, mergingContainer);
+            return mergeNewValue(serializationService, mergePolicy, key, mergingContainer);
         }
-        return mergeExistingValue(mergePolicy, serializationService, key, mergingContainer, existingValue);
+        return mergeExistingValue(serializationService, mergePolicy, key, mergingContainer, existingValue);
     }
 
-    private MultiMapValue mergeNewValue(SplitBrainMergePolicy mergePolicy, SerializationService ss, Data key,
+    private MultiMapValue mergeNewValue(SerializationService ss, SplitBrainMergePolicy mergePolicy, Data key,
                                         MultiMapMergeContainer mergingContainer) {
         boolean isBinary = getConfig().isBinary();
+
         MultiMapValue mergedValue = null;
         for (MultiMapRecord mergeRecord : mergingContainer.getRecords()) {
-            SplitBrainMergeEntryView<Data, Object> mergeEntry = createSplitBrainMergeEntryView(mergingContainer, mergeRecord);
-            Object newValue = mergePolicy.merge(mergeEntry, null);
+            MergingEntryHolder<Data, Object> mergingEntry = createMergeHolder(mergingContainer, mergeRecord);
+            Object newValue = mergePolicy.merge(mergingEntry, null);
             if (newValue != null) {
                 MultiMapRecord newRecord = new MultiMapRecord(nextId(), isBinary ? newValue : ss.toObject(newValue));
                 if (mergedValue == null) {
@@ -261,22 +261,24 @@ public class MultiMapContainer
         return mergedValue;
     }
 
-    private MultiMapValue mergeExistingValue(SplitBrainMergePolicy mergePolicy, SerializationService ss, Data key,
+    private MultiMapValue mergeExistingValue(SerializationService ss, SplitBrainMergePolicy mergePolicy, Data key,
                                              MultiMapMergeContainer mergingContainer, MultiMapValue existingValue) {
         boolean isBinary = getConfig().isBinary();
+
         Collection<MultiMapRecord> existingRecords = existingValue.getCollection(false);
         int existingHits = existingValue.getHits();
         for (MultiMapRecord mergeRecord : mergingContainer.getRecords()) {
-            SplitBrainMergeEntryView<Data, Object> mergeEntry = createSplitBrainMergeEntryView(mergingContainer, mergeRecord);
-            SplitBrainMergeEntryView<Data, Object> existingEntry = null;
+            MergingEntryHolder<Data, Object> mergingEntry = createMergeHolder(mergingContainer, mergeRecord);
+            MergingEntryHolder<Data, Object> existingEntry = null;
             MultiMapRecord existingRecord = null;
             for (MultiMapRecord record : existingRecords) {
                 if (record.getObject().equals(mergeRecord.getObject())) {
-                    existingEntry = createSplitBrainMergeEntryView(this, key, record, existingHits);
+                    existingEntry = createMergeHolder(this, key, record, existingHits);
+                    existingEntry.setSerializationService(ss);
                     existingRecord = record;
                 }
             }
-            Object newValue = mergePolicy.merge(mergeEntry, existingEntry);
+            Object newValue = mergePolicy.merge(mergingEntry, existingEntry);
             if (newValue != null && (existingRecord == null || !newValue.equals(existingRecord.getObject()))) {
                 MultiMapRecord newRecord = new MultiMapRecord(nextId(), isBinary ? newValue : ss.toObject(newValue));
                 existingRecords.remove(existingRecord);

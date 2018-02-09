@@ -15,6 +15,8 @@
  */
 
 /**
- * This package contains out-of-the-box split brain merge policies.
+ * This package contains out-of-the-box split-brain merge policies.
+ *
+ * @since 3.10
  */
 package com.hazelcast.spi.merge;

@@ -61,6 +61,7 @@ import static org.junit.Assert.fail;
 @RunWith(Parameterized.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelTest.class})
+@SuppressWarnings("WeakerAccess")
 public class LegacyMapSplitBrainTest extends SplitBrainTestSupport {
 
     @Parameters(name = "format:{0}, mergePolicy:{1}")
@@ -83,8 +84,8 @@ public class LegacyMapSplitBrainTest extends SplitBrainTestSupport {
     @Parameter(value = 1)
     public Class<? extends MapMergePolicy> mergePolicyClass;
 
-    private String mapNameA = randomMapName("mapA-");
-    private String mapNameB = randomMapName("mapB-");
+    protected String mapNameA = randomMapName("mapA-");
+    protected String mapNameB = randomMapName("mapB-");
     private IMap<Object, Object> mapA1;
     private IMap<Object, Object> mapA2;
     private IMap<Object, Object> mapB1;
@@ -343,7 +344,7 @@ public class LegacyMapSplitBrainTest extends SplitBrainTestSupport {
         assertEquals(1, backupMapA.size());
     }
 
-    private static class CustomLegacyMergePolicy implements MapMergePolicy, DataSerializable {
+    protected static class CustomLegacyMergePolicy implements MapMergePolicy, DataSerializable {
 
         @Override
         public Object merge(String mapName, EntryView mergingEntry, EntryView existingEntry) {

@@ -33,15 +33,13 @@ import com.hazelcast.map.impl.SimpleEntryView;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
-import com.hazelcast.map.merge.MergePolicyProvider;
 import com.hazelcast.map.merge.PassThroughMergePolicy;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.OperationFactory;
-import com.hazelcast.spi.SplitBrainMergeEntryView;
 import com.hazelcast.spi.SplitBrainMergePolicy;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
-import com.hazelcast.spi.merge.SplitBrainEntryViews;
+import com.hazelcast.spi.merge.MergingEntryHolder;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -64,6 +62,7 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.spi.impl.merge.MergingHolders.createMergeHolder;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -274,21 +273,19 @@ public class WanReplicationTest extends HazelcastTestSupport {
         SerializationService serializationService = nodeEngineImpl.getSerializationService();
         MapService mapService = nodeEngineImpl.getService(MapService.SERVICE_NAME);
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        MergePolicyProvider mergePolicyProvider = mapServiceContext.getMergePolicyProvider();
         MapOperationProvider operationProvider = mapServiceContext.getMapOperationProvider(mapName);
 
         // prepare and send one merge operation
         Data data = serializationService.toData(1);
         MapOperation op;
+        SimpleEntryView<Data, Data> entryView = new SimpleEntryView<Data, Data>().withKey(data).withValue(data);
         if (useLegacyMergePolicy) {
-            SimpleEntryView<Data, Data> entryView = new SimpleEntryView<Data, Data>().withKey(data).withValue(data);
             op = operationProvider.createLegacyMergeOperation(mapName, entryView, new PassThroughMergePolicy(),
                     !enableWANReplicationEvent);
         } else {
-            SplitBrainMergeEntryView<Data, Data> entryView = SplitBrainEntryViews.createSplitBrainMergeEntryView(data, data);
-            SplitBrainMergePolicy mergePolicy = (SplitBrainMergePolicy)
-                    mergePolicyProvider.getMergePolicy("com.hazelcast.spi.merge.PassThroughMergePolicy");
-            op = operationProvider.createMergeOperation(mapName, entryView, mergePolicy, !enableWANReplicationEvent);
+            MergingEntryHolder<Data, Data> mergingEntry = createMergeHolder(entryView);
+            SplitBrainMergePolicy mergePolicy = new com.hazelcast.spi.merge.PassThroughMergePolicy();
+            op = operationProvider.createMergeOperation(mapName, mergingEntry, mergePolicy, !enableWANReplicationEvent);
         }
         operationService.createInvocationBuilder(MapService.SERVICE_NAME, op, partitionService.getPartitionId(data)).invoke();
     }

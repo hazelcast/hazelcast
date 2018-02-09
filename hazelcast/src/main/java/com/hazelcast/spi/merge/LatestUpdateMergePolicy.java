@@ -16,7 +16,7 @@
 
 package com.hazelcast.spi.merge;
 
-import com.hazelcast.spi.SplitBrainMergeEntryView;
+import com.hazelcast.spi.impl.merge.SplitBrainDataSerializerHook;
 
 /**
  * Merges data structure entries from source to destination data structure if the source entry
@@ -26,24 +26,31 @@ import com.hazelcast.spi.SplitBrainMergeEntryView;
  *
  * @since 3.10
  */
-public class LatestUpdateMergePolicy extends AbstractMergePolicy {
+public class LatestUpdateMergePolicy extends AbstractSplitBrainMergePolicy {
 
-    LatestUpdateMergePolicy() {
+    public LatestUpdateMergePolicy() {
     }
 
     @Override
-    public <K, V> V merge(SplitBrainMergeEntryView<K, V> mergingEntry, SplitBrainMergeEntryView<K, V> existingEntry) {
-        if (mergingEntry == null) {
-            return existingEntry.getValue();
+    public <V> V merge(MergingValueHolder<V> mergingValue, MergingValueHolder<V> existingValue) {
+        checkInstanceOf(mergingValue, LastUpdateTimeHolder.class);
+        checkInstanceOf(existingValue, LastUpdateTimeHolder.class);
+        if (mergingValue == null) {
+            return existingValue.getValue();
         }
-        if (existingEntry == null || mergingEntry.getLastUpdateTime() >= existingEntry.getLastUpdateTime()) {
-            return mergingEntry.getValue();
+        if (existingValue == null) {
+            return mergingValue.getValue();
         }
-        return existingEntry.getValue();
+        LastUpdateTimeHolder merging = (LastUpdateTimeHolder) mergingValue;
+        LastUpdateTimeHolder existing = (LastUpdateTimeHolder) existingValue;
+        if (merging.getLastUpdateTime() >= existing.getLastUpdateTime()) {
+            return mergingValue.getValue();
+        }
+        return existingValue.getValue();
     }
 
     @Override
     public int getId() {
-        return SplitBrainMergePolicyDataSerializerHook.LATEST_UPDATE;
+        return SplitBrainDataSerializerHook.LATEST_UPDATE;
     }
 }

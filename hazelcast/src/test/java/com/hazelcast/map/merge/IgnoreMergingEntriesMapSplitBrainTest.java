@@ -17,6 +17,8 @@
 package com.hazelcast.map.merge;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.LifecycleEvent;
@@ -43,17 +45,21 @@ public class IgnoreMergingEntriesMapSplitBrainTest extends SplitBrainTestSupport
     private final CountDownLatch clusterMergedLatch = new CountDownLatch(1);
 
     @Override
-    protected int[] brains() {
-        // first half merges into second half
-        return new int[]{1, 2};
+    protected Config config() {
+        MergePolicyConfig mergePolicyConfig = new MergePolicyConfig()
+                .setPolicy(IgnoreMergingEntryMapMergePolicy.class.getName());
+
+        MapConfig mapConfig = new MapConfig(testMapName)
+                .setMergePolicyConfig(mergePolicyConfig);
+
+        return super.config()
+                .addMapConfig(mapConfig);
     }
 
     @Override
-    protected Config config() {
-        Config config = super.config();
-        config.getMapConfig(testMapName)
-                .setMergePolicy(IgnoreMergingEntryMapMergePolicy.class.getName());
-        return config;
+    protected int[] brains() {
+        // first half merges into second half
+        return new int[]{1, 2};
     }
 
     @Override

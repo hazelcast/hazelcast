@@ -26,8 +26,8 @@ import com.hazelcast.replicatedmap.impl.operation.ReplicateUpdateOperation;
 import com.hazelcast.replicatedmap.impl.operation.VersionResponsePair;
 import com.hazelcast.replicatedmap.merge.ReplicatedMapMergePolicy;
 import com.hazelcast.spi.OperationService;
-import com.hazelcast.spi.SplitBrainMergeEntryView;
 import com.hazelcast.spi.SplitBrainMergePolicy;
+import com.hazelcast.spi.merge.MergingEntryHolder;
 import com.hazelcast.util.Clock;
 
 import java.util.ArrayList;
@@ -42,7 +42,7 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.core.EntryEventType.EVICTED;
 import static com.hazelcast.replicatedmap.impl.ReplicatedMapService.SERVICE_NAME;
-import static com.hazelcast.spi.merge.SplitBrainEntryViews.createSplitBrainMergeEntryView;
+import static com.hazelcast.spi.impl.merge.MergingHolders.createMergeHolder;
 import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
@@ -342,8 +342,9 @@ public abstract class AbstractReplicatedRecordStore<K, V> extends AbstractBaseRe
 
     @Override
     @SuppressWarnings("unchecked")
-    public boolean merge(SplitBrainMergeEntryView<Object, Object> mergingEntry, SplitBrainMergePolicy mergePolicy) {
+    public boolean merge(MergingEntryHolder<Object, Object> mergingEntry, SplitBrainMergePolicy mergePolicy) {
         serializationService.getManagedContext().initialize(mergePolicy);
+        mergingEntry.setSerializationService(serializationService);
 
         K marshalledKey = (K) marshall(mergingEntry.getKey());
         InternalReplicatedMapStorage<K, V> storage = getStorage();
@@ -361,7 +362,8 @@ public abstract class AbstractReplicatedRecordStore<K, V> extends AbstractBaseRe
             VersionResponsePair responsePair = new VersionResponsePair(mergingEntry.getValue(), getVersion());
             sendReplicationOperation(false, name, dataKey, dataValue, record.getTtlMillis(), responsePair);
         } else {
-            SplitBrainMergeEntryView<Object, Object> existingEntry = createSplitBrainMergeEntryView(record);
+            MergingEntryHolder<Object, Object> existingEntry = createMergeHolder(record);
+            existingEntry.setSerializationService(serializationService);
             V newValue = (V) mergePolicy.merge(mergingEntry, existingEntry);
             if (newValue == null) {
                 storage.remove(marshalledKey, record);

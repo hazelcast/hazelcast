@@ -22,9 +22,9 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.SplitBrainMergeEntryView;
 import com.hazelcast.spi.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.DiscardMergePolicy;
+import com.hazelcast.spi.merge.MergingValueHolder;
 import com.hazelcast.spi.merge.PassThroughMergePolicy;
 import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
@@ -216,11 +216,11 @@ public class AtomicLongSplitBrainTest extends SplitBrainTestSupport {
     private static class MergeGreaterValueMergePolicy implements SplitBrainMergePolicy {
 
         @Override
-        public <K, V> V merge(SplitBrainMergeEntryView<K, V> mergingEntry, SplitBrainMergeEntryView<K, V> existingEntry) {
-            if ((Long) mergingEntry.getValue() > (Long) existingEntry.getValue()) {
-                return mergingEntry.getValue();
+        public <T> T merge(MergingValueHolder<T> mergingValue, MergingValueHolder<T> existingValue) {
+            if ((Long) mergingValue.getValue() > (Long) existingValue.getValue()) {
+                return mergingValue.getValue();
             }
-            return existingEntry.getValue();
+            return existingValue.getValue();
         }
 
         @Override

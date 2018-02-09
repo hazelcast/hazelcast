@@ -44,7 +44,7 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class MergePolicySerializationTest extends HazelcastTestSupport {
+public class MapMergePolicySerializationTest extends HazelcastTestSupport {
 
     @Test
     public void testIssue2665() {

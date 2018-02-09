@@ -14,17 +14,24 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi.merge;
+package com.hazelcast.spi.impl.merge;
 
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.merge.DiscardMergePolicy;
+import com.hazelcast.spi.merge.HigherHitsMergePolicy;
+import com.hazelcast.spi.merge.HyperLogLogMergePolicy;
+import com.hazelcast.spi.merge.LatestAccessMergePolicy;
+import com.hazelcast.spi.merge.LatestUpdateMergePolicy;
+import com.hazelcast.spi.merge.PassThroughMergePolicy;
+import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
 import com.hazelcast.util.ConstructorFunction;
 
-import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.SPLIT_BRAIN_MERGE_POLICY_DS_FACTORY;
-import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.SPLIT_BRAIN_MERGE_POLICY_DS_FACTORY_ID;
+import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.SPLIT_BRAIN_DS_FACTORY;
+import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.SPLIT_BRAIN_DS_FACTORY_ID;
 
 /**
  * Contains all the ID hooks for {@link IdentifiedDataSerializable} classes used by the split-brain framework.
@@ -35,19 +42,21 @@ import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.SPLIT_BR
  * @since 3.10
  */
 @SuppressWarnings("checkstyle:javadocvariable")
-public final class SplitBrainMergePolicyDataSerializerHook implements DataSerializerHook {
+public final class SplitBrainDataSerializerHook implements DataSerializerHook {
 
-    public static final int F_ID = FactoryIdHelper.getFactoryId(SPLIT_BRAIN_MERGE_POLICY_DS_FACTORY,
-            SPLIT_BRAIN_MERGE_POLICY_DS_FACTORY_ID);
+    public static final int F_ID = FactoryIdHelper.getFactoryId(SPLIT_BRAIN_DS_FACTORY, SPLIT_BRAIN_DS_FACTORY_ID);
 
-    public static final int ENTRY_VIEW = 0;
-    public static final int DISCARD = 1;
-    public static final int HIGHER_HITS = 2;
-    public static final int HYPER_LOG_LOG = 3;
-    public static final int LATEST_ACCESS = 4;
-    public static final int LATEST_UPDATE = 5;
-    public static final int PASS_THROUGH = 6;
-    public static final int PUT_IF_ABSENT = 7;
+    public static final int MERGE_DATA_HOLDER = 0;
+    public static final int KEY_MERGE_DATA_HOLDER = 1;
+    public static final int COMPLETE_MERGE_DATA_HOLDER = 2;
+
+    public static final int DISCARD = 3;
+    public static final int HIGHER_HITS = 4;
+    public static final int HYPER_LOG_LOG = 5;
+    public static final int LATEST_ACCESS = 6;
+    public static final int LATEST_UPDATE = 7;
+    public static final int PASS_THROUGH = 8;
+    public static final int PUT_IF_ABSENT = 9;
 
     private static final int LEN = PUT_IF_ABSENT + 1;
 
@@ -61,11 +70,22 @@ public final class SplitBrainMergePolicyDataSerializerHook implements DataSerial
         //noinspection unchecked
         ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors = new ConstructorFunction[LEN];
 
-        constructors[ENTRY_VIEW] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+        constructors[MERGE_DATA_HOLDER] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
-                return new SplitBrainEntryViews.SimpleSplitBrainEntryView();
+                return new MergingValueHolderImpl();
             }
         };
+        constructors[KEY_MERGE_DATA_HOLDER] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new MergingEntryHolderImpl();
+            }
+        };
+        constructors[COMPLETE_MERGE_DATA_HOLDER] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new FullMergingEntryHolderImpl();
+            }
+        };
+
         constructors[DISCARD] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new DiscardMergePolicy();

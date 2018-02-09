@@ -20,6 +20,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.SplitBrainMergePolicy;
+import com.hazelcast.spi.impl.merge.SplitBrainDataSerializerHook;
 import com.hazelcast.spi.serialization.SerializationService;
 
 /**
@@ -29,11 +30,17 @@ import com.hazelcast.spi.serialization.SerializationService;
  *
  * @since 3.10
  */
-abstract class AbstractMergePolicy implements SplitBrainMergePolicy, IdentifiedDataSerializable {
+public abstract class AbstractSplitBrainMergePolicy implements SplitBrainMergePolicy, IdentifiedDataSerializable {
+
+    protected void checkInstanceOf(MergingValueHolder dataHolder, Class<?> clazz) {
+        if (dataHolder != null && !clazz.isInstance(dataHolder)) {
+            throw new IllegalArgumentException("Expected MergeDataHolder to be an instance of " + clazz.getName());
+        }
+    }
 
     @Override
     public int getFactoryId() {
-        return SplitBrainMergePolicyDataSerializerHook.F_ID;
+        return SplitBrainDataSerializerHook.F_ID;
     }
 
     @Override
@@ -42,5 +49,10 @@ abstract class AbstractMergePolicy implements SplitBrainMergePolicy, IdentifiedD
 
     @Override
     public void readData(ObjectDataInput in) {
+    }
+
+    @Override
+    public <V> V merge(MergingValueHolder<V> mergingValue, MergingValueHolder<V> existingValue) {
+        return null;
     }
 }

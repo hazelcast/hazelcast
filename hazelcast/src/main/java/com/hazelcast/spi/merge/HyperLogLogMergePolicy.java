@@ -17,9 +17,8 @@
 package com.hazelcast.spi.merge;
 
 import com.hazelcast.cardinality.impl.hyperloglog.HyperLogLog;
-import com.hazelcast.spi.SplitBrainMergeEntryView;
 
-import static com.hazelcast.spi.merge.SplitBrainMergePolicyDataSerializerHook.HYPER_LOG_LOG;
+import static com.hazelcast.spi.impl.merge.SplitBrainDataSerializerHook.HYPER_LOG_LOG;
 
 /**
  * Only available for HyperLogLog backed {@link com.hazelcast.cardinality.CardinalityEstimator}.
@@ -29,22 +28,22 @@ import static com.hazelcast.spi.merge.SplitBrainMergePolicyDataSerializerHook.HY
  *
  * @since 3.10
  */
-public class HyperLogLogMergePolicy extends AbstractMergePolicy {
+public class HyperLogLogMergePolicy extends AbstractSplitBrainMergePolicy {
 
     public HyperLogLogMergePolicy() {
     }
 
     @Override
-    public <K, V> V merge(SplitBrainMergeEntryView<K, V> mergingEntry, SplitBrainMergeEntryView<K, V> existingEntry) {
-        if (!(mergingEntry.getValue() instanceof HyperLogLog)) {
-            throw new IllegalArgumentException("Unsupported merging entries");
+    public <V> V merge(MergingValueHolder<V> mergingValue, MergingValueHolder<V> existingValue) {
+        if (!(mergingValue.getValue() instanceof HyperLogLog)) {
+            throw new IllegalArgumentException("Unsupported merging data");
         }
-        if (existingEntry == null) {
-            return mergingEntry.getValue();
+        if (existingValue == null) {
+            return mergingValue.getValue();
         }
 
-        ((HyperLogLog) mergingEntry.getValue()).merge((HyperLogLog) existingEntry.getValue());
-        return mergingEntry.getValue();
+        ((HyperLogLog) mergingValue.getValue()).merge((HyperLogLog) existingValue.getValue());
+        return mergingValue.getValue();
     }
 
     @Override
