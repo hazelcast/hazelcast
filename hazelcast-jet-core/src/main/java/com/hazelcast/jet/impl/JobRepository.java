@@ -47,12 +47,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 import java.util.zip.DeflaterOutputStream;
 
 import static com.hazelcast.jet.Jet.INTERNAL_JET_OBJECTS_PREFIX;
 import static com.hazelcast.jet.impl.util.Util.idToString;
+import static java.util.Collections.newSetFromMap;
 import static java.util.Comparator.comparing;
 import static java.util.concurrent.TimeUnit.HOURS;
 import static java.util.stream.Collectors.toList;
@@ -80,7 +82,7 @@ public class JobRepository {
     public static final String JOB_RESULTS_MAP_NAME = INTERNAL_JET_OBJECTS_PREFIX + "results";
 
     private static final String RESOURCE_MARKER = "__jet.resourceMarker";
-    private static final long JOB_EXPIRATION_DURATION_IN_MILLIS = HOURS.toMillis(2);
+    private static final long DEFAULT_RESOURCES_EXPIRATION_MILLIS = HOURS.toMillis(2);
 
     private final HazelcastInstance instance;
     private final SnapshotRepository snapshotRepository;
@@ -88,7 +90,20 @@ public class JobRepository {
     private final IMap<Long, Long> randomIds;
     private final IMap<Long, JobRecord> jobRecords;
     private final IMap<Long, JobResult> jobResults;
-    private long jobExpirationDurationInMillis = JOB_EXPIRATION_DURATION_IN_MILLIS;
+    private long resourcesExpirationMillis = DEFAULT_RESOURCES_EXPIRATION_MILLIS;
+
+    /**
+     * Because the member can fail at any moment we try to delete job data regularly
+     * for completed jobs. However, this creates overhead:
+     * <pre>{@code
+     *     IMap map = instance.getMap("map");
+     *     map.destroy();
+     * }</pre>
+     *
+     * To avoid it, we store the deleted jobIds in this set. If it's found there, we don't
+     * retry to delete it.
+     */
+    private final Set<Long> deletedJobs = newSetFromMap(new ConcurrentHashMap<>());
 
     /**
      * @param snapshotRepository Can be {@code null} if used on client to upload resources.
@@ -103,8 +118,8 @@ public class JobRepository {
     }
 
     // for tests
-    void setJobExpirationDurationInMillis(long jobExpirationDurationInMillis) {
-        this.jobExpirationDurationInMillis = jobExpirationDurationInMillis;
+    void setResourcesExpirationMillis(long resourcesExpirationMillis) {
+        this.resourcesExpirationMillis = resourcesExpirationMillis;
     }
 
     /**
@@ -142,7 +157,7 @@ public class JobRepository {
         }
 
         // the marker object will be used to decide when to clean up job resources
-        jobResourcesMap.put(RESOURCE_MARKER, jobId);
+        jobResourcesMap.put(RESOURCE_MARKER, System.currentTimeMillis());
 
         return jobId;
     }
@@ -260,9 +275,13 @@ public class JobRepository {
 
     /**
      * Performs cleanup after job completion. Deletes job record and job resources but keeps the job id
-     * so that it will not be used again for a new job submission
+     * so that it will not be used again for a new job submission.
      */
     private void deleteJob(long jobId) {
+        if (deletedJobs.contains(jobId)) {
+            return;
+        }
+
         // Delete the job record
         jobRecords.remove(jobId);
         // Delete the execution ids, but keep the job id
@@ -270,6 +289,8 @@ public class JobRepository {
 
         // Delete job resources
         cleanupJobResourcesAndSnapshots(jobId, getJobResources(jobId));
+
+        deletedJobs.add(jobId);
     }
 
     /**
@@ -293,29 +314,27 @@ public class JobRepository {
                  .filter(jobId -> !validJobIds.contains(jobId))
                  .forEach(jobId -> {
                      IMap<String, Object> resources = getJobResources(jobId);
-                     if (resources.isEmpty()) {
-                         return;
-                     }
-
                      EntryView<String, Object> marker = resources.getEntryView(RESOURCE_MARKER);
                      // If the marker is absent, then job resources may be still uploaded.
                      // Just put the marker so that the job resources may be cleaned up eventually.
                      // If the job resources are still being uploaded, then the marker will be overwritten, which is ok.
                      if (marker == null) {
-                         resources.putIfAbsent(RESOURCE_MARKER, RESOURCE_MARKER);
-                     } else if (isJobRecordExpired(marker.getCreationTime())) {
+                         resources.putIfAbsent(RESOURCE_MARKER, System.currentTimeMillis());
+                     } else if (isMarkerExpired(marker)) {
+                         // The marker has been around for defined expiry time and the job still wasn't started.
+                         // We assume the job submission was interrupted - let's clean up the data.
                          cleanupJobResourcesAndSnapshots(jobId, resources);
                      }
                  });
     }
 
+    private boolean isMarkerExpired(EntryView<String, Object> record) {
+        return (System.currentTimeMillis() - (Long) record.getValue()) >= resourcesExpirationMillis;
+    }
+
     List<JobRecord> getJobRecords(String name) {
         return jobRecords.values(new FilterJobRecordByNamePredicate(name)).stream()
                          .sorted(comparing(JobRecord::getCreationTime).reversed()).collect(toList());
-    }
-
-    private boolean isJobRecordExpired(long creationTime) {
-        return (System.currentTimeMillis() - creationTime) >= jobExpirationDurationInMillis;
     }
 
     Set<Long> getAllJobIds() {

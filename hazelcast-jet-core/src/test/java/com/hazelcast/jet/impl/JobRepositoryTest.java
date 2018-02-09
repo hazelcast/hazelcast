@@ -47,7 +47,7 @@ import static org.junit.Assert.fail;
 @RunWith(HazelcastSerialClassRunner.class)
 public class JobRepositoryTest extends JetTestSupport {
 
-    private static final long JOB_EXPIRATION_TIME_IN_MILLIS = SECONDS.toMillis(1);
+    private static final long RESOURCES_EXPIRATION_TIME_MILLIS = SECONDS.toMillis(1);
     private static final long JOB_SCAN_PERIOD_IN_MILLIS = HOURS.toMillis(1);
     private static final int QUORUM_SIZE = 2;
 
@@ -64,7 +64,7 @@ public class JobRepositoryTest extends JetTestSupport {
 
         instance = createJetMember(config);
         jobRepository = new JobRepository(instance, null);
-        jobRepository.setJobExpirationDurationInMillis(JOB_EXPIRATION_TIME_IN_MILLIS);
+        jobRepository.setResourcesExpirationMillis(RESOURCES_EXPIRATION_TIME_MILLIS);
 
         jobIds = instance.getMap(RANDOM_IDS_MAP_NAME);
     }
@@ -204,12 +204,8 @@ public class JobRepositoryTest extends JetTestSupport {
     }
 
     private void sleepUntilJobExpires() {
-        sleepAtLeastMillis(2 * JOB_EXPIRATION_TIME_IN_MILLIS);
+        sleepAtLeastMillis(2 * RESOURCES_EXPIRATION_TIME_MILLIS);
     }
 
-
-    static class DummyClass {
-
-    }
-
+    static class DummyClass { }
 }

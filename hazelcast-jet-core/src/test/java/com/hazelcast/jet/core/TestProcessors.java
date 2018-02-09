@@ -103,6 +103,9 @@ public class TestProcessors {
         }
     }
 
+    /**
+     * A processor that emits nothing and never completes.
+     */
     public static final class StuckForeverSourceP implements Processor {
         @Override
         public boolean complete() {
