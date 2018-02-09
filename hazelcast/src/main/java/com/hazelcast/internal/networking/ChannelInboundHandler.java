@@ -16,8 +16,6 @@
 
 package com.hazelcast.internal.networking;
 
-import com.hazelcast.nio.tcp.PacketDecoder;
-
 import java.nio.ByteBuffer;
 
 /**
@@ -27,40 +25,6 @@ import java.nio.ByteBuffer;
  * {@link ChannelInboundHandler} are not expected to be thread-safe; each channel will gets its own instance(s).
  *
  * A {@link ChannelInboundHandler} is constructed through a {@link ChannelInitializer}.
- *
- * <h1>Pipelining & Encryption</h1>
- * The ChannelInboundHandler/ChannelOutboundHandler can also form a pipeline. For example for SSL there could be a initial
- * ChannelInboundHandler that decryption the ByteBuffer and passes the decrypted ByteBuffer to the next ChannelInboundHandler;
- * which could be a {@link PacketDecoder} that reads out any Packet from the decrypted ByteBuffer. Using this
- * approach encryption can easily be added to any type of communication, not only member 2 member communication.
- *
- * Currently security is added by using a {@link Channel}, but this is not needed if the handlers form a pipeline.
- * Netty follows a similar approach with pipelining and adding encryption.
- *
- * There is no explicit support for setting up a 'pipeline' of ChannelInboundHandler/WriterHandlers but t can easily be realized
- * by setting up the chain and let a handler explicitly forward to the next. Since it isn't a common practice for the handler
- * so far, isn't needed to add additional complexity to the system; just set up a chain manually.
- *
- * pseudo code:
- * <pre>
- *     public class DecryptingReadHandler implements ChannelInboundHandler {
- *         private final ChannelInboundHandler next;
- *
- *         public DecryptingReadHandler(ChannelInboundHandler next) {
- *             this.next = next;
- *         }
- *
- *         public void onRead(ByteBuffer src) {
- *             decrypt(src, decryptedSrc);
- *             next.onRead(decryptedSrc)
- *         }
- *     }
- * </pre>
- * The <code>next</code> ChannelInboundHandler is the next item in the pipeline.
- *
- * For encryption is similar approach can be followed where the DecryptingWriteHandler is the last ChannelOutboundHandler in
- * the pipeline.
- *
  *
  * If the main task of a ChannelInboundHandler is to decode a message (e.g. a Packet), it is best to call this handler a
  * decoder. For example PacketDecoder.
