@@ -27,8 +27,8 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
-import com.hazelcast.spi.SplitBrainMergeEntryView;
 import com.hazelcast.spi.SplitBrainMergePolicy;
+import com.hazelcast.spi.merge.KeyMergeDataHolder;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -45,7 +45,7 @@ import static com.hazelcast.map.impl.record.Records.buildRecordInfo;
  */
 public class MergeOperation extends MapOperation implements PartitionAwareOperation, BackupAwareOperation {
 
-    private List<SplitBrainMergeEntryView<Data, Data>> mergeEntries;
+    private List<KeyMergeDataHolder<Data, Data>> mergeData;
     private SplitBrainMergePolicy mergePolicy;
     private boolean disableWanReplicationEvent;
 
@@ -62,10 +62,10 @@ public class MergeOperation extends MapOperation implements PartitionAwareOperat
     public MergeOperation() {
     }
 
-    MergeOperation(String name, List<SplitBrainMergeEntryView<Data, Data>> mergeEntries, SplitBrainMergePolicy policy,
+    MergeOperation(String name, List<KeyMergeDataHolder<Data, Data>> mergeData, SplitBrainMergePolicy policy,
                    boolean disableWanReplicationEvent) {
         super(name);
-        this.mergeEntries = mergeEntries;
+        this.mergeData = mergeData;
         this.mergePolicy = policy;
         this.disableWanReplicationEvent = disableWanReplicationEvent;
     }
@@ -78,24 +78,24 @@ public class MergeOperation extends MapOperation implements PartitionAwareOperat
         hasInvalidation = mapContainer.hasInvalidationListener();
 
         if (hasBackups) {
-            mapEntries = new MapEntries(mergeEntries.size());
-            backupRecordInfos = new ArrayList<RecordInfo>(mergeEntries.size());
+            mapEntries = new MapEntries(mergeData.size());
+            backupRecordInfos = new ArrayList<RecordInfo>(mergeData.size());
         }
         if (hasInvalidation) {
-            invalidationKeys = new ArrayList<Data>(mergeEntries.size());
+            invalidationKeys = new ArrayList<Data>(mergeData.size());
         }
 
-        for (SplitBrainMergeEntryView<Data, Data> mergingEntry : mergeEntries) {
-            merge(mergingEntry);
+        for (KeyMergeDataHolder<Data, Data> mergeDataHolder : mergeData) {
+            merge(mergeDataHolder);
         }
     }
 
-    private void merge(SplitBrainMergeEntryView<Data, Data> mergingEntry) {
-        Data dataKey = mergingEntry.getKey();
+    private void merge(KeyMergeDataHolder<Data, Data> mergeDataHolder) {
+        Data dataKey = mergeDataHolder.getKey();
         Data oldValue = hasMapListener ? getValue(dataKey) : null;
 
         //noinspection unchecked
-        if (Boolean.TRUE.equals(recordStore.merge(mergingEntry, mergePolicy))) {
+        if (recordStore.merge(mergeDataHolder, mergePolicy)) {
             hasMergedValues = true;
             Data dataValue = getValueOrPostProcessedValue(dataKey, getValue(dataKey));
             mapServiceContext.interceptAfterPut(name, dataValue);
@@ -169,8 +169,8 @@ public class MergeOperation extends MapOperation implements PartitionAwareOperat
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeInt(mergeEntries.size());
-        for (SplitBrainMergeEntryView<Data, Data> mergeEntry : mergeEntries) {
+        out.writeInt(mergeData.size());
+        for (KeyMergeDataHolder<Data, Data> mergeEntry : mergeData) {
             out.writeObject(mergeEntry);
         }
         out.writeObject(mergePolicy);
@@ -181,10 +181,10 @@ public class MergeOperation extends MapOperation implements PartitionAwareOperat
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         int size = in.readInt();
-        mergeEntries = new ArrayList<SplitBrainMergeEntryView<Data, Data>>();
+        mergeData = new ArrayList<KeyMergeDataHolder<Data, Data>>();
         for (int i = 0; i < size; i++) {
-            SplitBrainMergeEntryView<Data, Data> mergeEntry = in.readObject();
-            mergeEntries.add(mergeEntry);
+            KeyMergeDataHolder<Data, Data> mergeEntry = in.readObject();
+            mergeData.add(mergeEntry);
         }
         mergePolicy = in.readObject();
         disableWanReplicationEvent = in.readBoolean();

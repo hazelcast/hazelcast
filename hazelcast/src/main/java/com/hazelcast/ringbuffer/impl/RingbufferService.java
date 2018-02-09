@@ -40,10 +40,10 @@ import com.hazelcast.spi.QuorumAwareService;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.ServiceNamespace;
 import com.hazelcast.spi.SplitBrainHandlerService;
-import com.hazelcast.spi.SplitBrainMergeEntryView;
 import com.hazelcast.spi.SplitBrainMergePolicy;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.merge.DiscardMergePolicy;
+import com.hazelcast.spi.merge.MergeDataHolder;
 import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.serialization.SerializationService;
@@ -68,7 +68,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.spi.merge.SplitBrainEntryViews.createSplitBrainMergeEntryView;
+import static com.hazelcast.spi.merge.MergeDataHolders.createSplitBrainMergeEntryView;
 import static com.hazelcast.spi.partition.MigrationEndpoint.DESTINATION;
 import static com.hazelcast.spi.partition.MigrationEndpoint.SOURCE;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
@@ -430,7 +430,7 @@ public class RingbufferService implements ManagedService, RemoteService, Fragmen
 
             int itemCount = 0;
             int operationCount = 0;
-            List<SplitBrainMergeEntryView<Long, Object>> mergeEntries;
+            List<MergeDataHolder<Object>> mergeData;
             for (Entry<Integer, List<RingbufferContainer>> entry : partitionContainerMap.entrySet()) {
                 int partitionId = entry.getKey();
                 List<RingbufferContainer> containerList = entry.getValue();
@@ -440,21 +440,21 @@ public class RingbufferService implements ManagedService, RemoteService, Fragmen
                     int batchSize = container.getConfig().getMergePolicyConfig().getBatchSize();
                     SplitBrainMergePolicy mergePolicy = getMergePolicy(container);
 
-                    mergeEntries = new ArrayList<SplitBrainMergeEntryView<Long, Object>>(batchSize);
+                    mergeData = new ArrayList<MergeDataHolder<Object>>(batchSize);
                     for (long sequence = ringbuffer.headSequence(); sequence <= ringbuffer.tailSequence(); sequence++) {
                         Object item = ringbuffer.read(sequence);
-                        SplitBrainMergeEntryView<Long, Object> entryView = createSplitBrainMergeEntryView(sequence, item);
-                        mergeEntries.add(entryView);
+                        MergeDataHolder<Object> entryView = createSplitBrainMergeEntryView(sequence, item);
+                        mergeData.add(entryView);
                         itemCount++;
 
-                        if (mergeEntries.size() == batchSize) {
-                            sendBatch(partitionId, container.getNamespace(), mergePolicy, mergeEntries, mergeCallback);
-                            mergeEntries = new ArrayList<SplitBrainMergeEntryView<Long, Object>>(batchSize);
+                        if (mergeData.size() == batchSize) {
+                            sendBatch(partitionId, container.getNamespace(), mergePolicy, mergeData, mergeCallback);
+                            mergeData = new ArrayList<MergeDataHolder<Object>>(batchSize);
                             operationCount++;
                         }
                     }
-                    if (mergeEntries.size() > 0) {
-                        sendBatch(partitionId, container.getNamespace(), mergePolicy, mergeEntries, mergeCallback);
+                    if (mergeData.size() > 0) {
+                        sendBatch(partitionId, container.getNamespace(), mergePolicy, mergeData, mergeCallback);
                         operationCount++;
                     }
                 }
@@ -472,9 +472,8 @@ public class RingbufferService implements ManagedService, RemoteService, Fragmen
         }
 
         private void sendBatch(int partitionId, ObjectNamespace namespace, SplitBrainMergePolicy mergePolicy,
-                               List<SplitBrainMergeEntryView<Long, Object>> mergeEntries,
-                               ExecutionCallback<Object> mergeCallback) {
-            MergeOperation operation = new MergeOperation(namespace, mergePolicy, mergeEntries);
+                               List<MergeDataHolder<Object>> mergeData, ExecutionCallback<Object> mergeCallback) {
+            MergeOperation operation = new MergeOperation(namespace, mergePolicy, mergeData);
             try {
                 nodeEngine.getOperationService()
                         .invokeOnPartition(SERVICE_NAME, operation, partitionId)

@@ -21,18 +21,17 @@ import com.hazelcast.cardinality.impl.hyperloglog.impl.HyperLogLogImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.SplitBrainAwareDataContainer;
-import com.hazelcast.spi.SplitBrainMergeEntryView;
 import com.hazelcast.spi.SplitBrainMergePolicy;
+import com.hazelcast.spi.merge.KeyMergeDataHolder;
 
 import java.io.IOException;
 
 import static com.hazelcast.config.CardinalityEstimatorConfig.DEFAULT_ASYNC_BACKUP_COUNT;
 import static com.hazelcast.config.CardinalityEstimatorConfig.DEFAULT_SYNC_BACKUP_COUNT;
-import static com.hazelcast.spi.merge.SplitBrainEntryViews.createSplitBrainMergeEntryView;
+import static com.hazelcast.spi.merge.MergeDataHolders.createSplitBrainMergeEntryView;
 
 public class CardinalityEstimatorContainer
-        implements SplitBrainAwareDataContainer<String, HyperLogLog, HyperLogLog>, IdentifiedDataSerializable {
+        implements IdentifiedDataSerializable {
 
     HyperLogLog hll;
 
@@ -69,11 +68,10 @@ public class CardinalityEstimatorContainer
         return backupCount + asyncBackupCount;
     }
 
-    @Override
-    public HyperLogLog merge(SplitBrainMergeEntryView<String, HyperLogLog> mergingEntry, SplitBrainMergePolicy mergePolicy) {
+    public HyperLogLog merge(KeyMergeDataHolder<String, HyperLogLog> mergingEntry, SplitBrainMergePolicy mergePolicy) {
         String name = mergingEntry.getKey();
         if (hll.estimate() != 0) {
-            SplitBrainMergeEntryView<String, HyperLogLog> existing = createSplitBrainMergeEntryView(name, hll);
+            KeyMergeDataHolder<String, HyperLogLog> existing = createSplitBrainMergeEntryView(name, hll);
             HyperLogLog newValue = mergePolicy.merge(mergingEntry, existing);
             if (newValue != null && !newValue.equals(hll)) {
                 setValue(newValue);

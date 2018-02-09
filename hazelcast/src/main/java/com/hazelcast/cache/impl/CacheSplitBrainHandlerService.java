@@ -34,8 +34,8 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.SplitBrainHandlerService;
-import com.hazelcast.spi.SplitBrainMergeEntryView;
 import com.hazelcast.spi.SplitBrainMergePolicy;
+import com.hazelcast.spi.merge.KeyMergeDataHolder;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.MutableLong;
@@ -52,7 +52,7 @@ import static com.hazelcast.cache.impl.AbstractCacheRecordStore.SOURCE_NOT_AVAIL
 import static com.hazelcast.cache.impl.ICacheService.SERVICE_NAME;
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.config.MergePolicyConfig.DEFAULT_BATCH_SIZE;
-import static com.hazelcast.spi.merge.SplitBrainEntryViews.createSplitBrainMergeEntryView;
+import static com.hazelcast.spi.merge.MergeDataHolders.createSplitBrainMergeEntryView;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.MapUtil.createHashMap;
 
@@ -205,21 +205,21 @@ class CacheSplitBrainHandlerService implements SplitBrainHandlerService {
 
             // sort the entries per partition and send out batch operations (multiple partitions per member)
             //noinspection unchecked
-            List<SplitBrainMergeEntryView<Data, Data>>[] entriesPerPartition = new List[partitionCount];
+            List<KeyMergeDataHolder<Data, Data>>[] entriesPerPartition = new List[partitionCount];
             int recordCount = 0;
             for (Map.Entry<Data, CacheRecord> entry : recordMap.entrySet()) {
                 recordCount++;
                 Data key = entry.getKey();
                 CacheRecord record = entry.getValue();
                 int partitionId = partitionService.getPartitionId(key);
-                List<SplitBrainMergeEntryView<Data, Data>> entries = entriesPerPartition[partitionId];
+                List<KeyMergeDataHolder<Data, Data>> entries = entriesPerPartition[partitionId];
                 if (entries == null) {
-                    entries = new LinkedList<SplitBrainMergeEntryView<Data, Data>>();
+                    entries = new LinkedList<KeyMergeDataHolder<Data, Data>>();
                     entriesPerPartition[partitionId] = entries;
                 }
 
                 Data dataValue = serializationService.toData(record.getValue());
-                SplitBrainMergeEntryView<Data, Data> entryView = createSplitBrainMergeEntryView(key, dataValue, record);
+                KeyMergeDataHolder<Data, Data> entryView = createSplitBrainMergeEntryView(key, dataValue, record);
                 entries.add(entryView);
 
                 long currentSize = ++counterPerMember[partitionId].value;
@@ -275,7 +275,7 @@ class CacheSplitBrainHandlerService implements SplitBrainHandlerService {
         }
 
         private void sendBatch(String name, List<Integer> memberPartitions,
-                               List<SplitBrainMergeEntryView<Data, Data>>[] entriesPerPartition,
+                               List<KeyMergeDataHolder<Data, Data>>[] entriesPerPartition,
                                SplitBrainMergePolicy mergePolicy) {
             int size = memberPartitions.size();
             int[] partitions = new int[size];
@@ -295,7 +295,7 @@ class CacheSplitBrainHandlerService implements SplitBrainHandlerService {
             }
 
             //noinspection unchecked
-            List<SplitBrainMergeEntryView<Data, Data>>[] entries = new List[size];
+            List<KeyMergeDataHolder<Data, Data>>[] entries = new List[size];
             index = 0;
             int totalSize = 0;
             for (int partitionId : partitions) {
@@ -312,7 +312,7 @@ class CacheSplitBrainHandlerService implements SplitBrainHandlerService {
         }
 
         private void invokeMergeOperationFactory(String name, SplitBrainMergePolicy mergePolicy, int[] partitions,
-                                                 List<SplitBrainMergeEntryView<Data, Data>>[] entries, int totalSize) {
+                                                 List<KeyMergeDataHolder<Data, Data>>[] entries, int totalSize) {
             try {
                 OperationFactory factory = new CacheMergeOperationFactory(name, partitions, entries, mergePolicy);
                 operationService.invokeOnPartitions(SERVICE_NAME, factory, partitions);

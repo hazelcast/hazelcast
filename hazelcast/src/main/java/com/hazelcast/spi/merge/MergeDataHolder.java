@@ -17,25 +17,12 @@
 package com.hazelcast.spi.merge;
 
 /**
- * Merges data structure entries from source to destination directly unless the merging entry is {@code null}.
+ * Represents a read-only view of data structure entries for the merging process after a split-brain.
  *
+ * @param <V> the type of the value
  * @since 3.10
  */
-public class PassThroughMergePolicy extends AbstractSplitBrainMergePolicy {
+public interface MergeDataHolder<V> {
 
-    public PassThroughMergePolicy() {
-    }
-
-    @Override
-    public <V> V merge(MergeDataHolder<V> mergingData, MergeDataHolder<V> existingData) {
-        if (mergingData == null) {
-            return existingData.getValue();
-        }
-        return mergingData.getValue();
-    }
-
-    @Override
-    public int getId() {
-        return SplitBrainMergePolicyDataSerializerHook.PASS_THROUGH;
-    }
+    V getValue();
 }

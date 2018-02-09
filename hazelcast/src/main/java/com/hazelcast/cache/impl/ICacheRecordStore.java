@@ -23,7 +23,8 @@ import com.hazelcast.config.CacheConfig;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.ObjectNamespace;
-import com.hazelcast.spi.SplitBrainAwareDataContainer;
+import com.hazelcast.spi.SplitBrainMergePolicy;
+import com.hazelcast.spi.merge.KeyMergeDataHolder;
 
 import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.processor.EntryProcessor;
@@ -46,7 +47,7 @@ import java.util.Set;
  * @see com.hazelcast.cache.impl.CacheRecordStore
  */
 @SuppressWarnings("checkstyle:methodcount")
-public interface ICacheRecordStore extends SplitBrainAwareDataContainer<Data, Data, CacheRecord> {
+public interface ICacheRecordStore {
 
     /**
      * Gets the value to which the specified key is mapped,
@@ -489,4 +490,6 @@ public interface ICacheRecordStore extends SplitBrainAwareDataContainer<Data, Da
      */
     CacheRecord merge(CacheEntryView<Data, Data> cacheEntryView, CacheMergePolicy mergePolicy,
                       String caller, String origin, int completionId);
+
+    CacheRecord merge(KeyMergeDataHolder<Data, Data> mergeDataHolder, SplitBrainMergePolicy mergePolicy);
 }

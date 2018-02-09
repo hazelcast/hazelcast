@@ -16,8 +16,6 @@
 
 package com.hazelcast.spi.merge;
 
-import com.hazelcast.spi.SplitBrainMergeEntryView;
-
 /**
  * Merges data structure entries from source to destination data structure if the source entry
  * has been accessed more recently than the destination entry.
@@ -26,20 +24,27 @@ import com.hazelcast.spi.SplitBrainMergeEntryView;
  *
  * @since 3.10
  */
-public class LatestAccessMergePolicy extends AbstractMergePolicy {
+public class LatestAccessMergePolicy extends AbstractSplitBrainMergePolicy {
 
     LatestAccessMergePolicy() {
     }
 
     @Override
-    public <K, V> V merge(SplitBrainMergeEntryView<K, V> mergingEntry, SplitBrainMergeEntryView<K, V> existingEntry) {
-        if (mergingEntry == null) {
-            return existingEntry.getValue();
+    public <V> V merge(MergeDataHolder<V> mergingData, MergeDataHolder<V> existingData) {
+        checkInstanceOf(mergingData, HitsDataHolder.class);
+        checkInstanceOf(existingData, HitsDataHolder.class);
+        if (mergingData == null) {
+            return existingData.getValue();
         }
-        if (existingEntry == null || mergingEntry.getLastAccessTime() >= existingEntry.getLastAccessTime()) {
-            return mergingEntry.getValue();
+        if (existingData == null) {
+            return mergingData.getValue();
         }
-        return existingEntry.getValue();
+        LastAccessTimeDataHolder merging = (LastAccessTimeDataHolder) mergingData;
+        LastAccessTimeDataHolder existing = (LastAccessTimeDataHolder) existingData;
+        if (merging.getLastAccessTime() >= existing.getLastAccessTime()) {
+            return mergingData.getValue();
+        }
+        return existingData.getValue();
     }
 
     @Override

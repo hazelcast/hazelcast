@@ -17,7 +17,8 @@
 package com.hazelcast.replicatedmap.impl.record;
 
 import com.hazelcast.replicatedmap.merge.ReplicatedMapMergePolicy;
-import com.hazelcast.spi.SplitBrainAwareDataContainer;
+import com.hazelcast.spi.SplitBrainMergePolicy;
+import com.hazelcast.spi.merge.KeyMergeDataHolder;
 import com.hazelcast.util.scheduler.ScheduledEntry;
 
 import java.util.Collection;
@@ -29,7 +30,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * This interface describes a common record store for replicated maps and their actual records
  */
-public interface ReplicatedRecordStore extends SplitBrainAwareDataContainer<Object, Object, Boolean> {
+public interface ReplicatedRecordStore {
 
     String getName();
 
@@ -96,4 +97,6 @@ public interface ReplicatedRecordStore extends SplitBrainAwareDataContainer<Obje
     void setLoaded(boolean loaded);
 
     boolean merge(Object key, ReplicatedMapEntryView entryView, ReplicatedMapMergePolicy policy);
+
+    boolean merge(KeyMergeDataHolder<Object, Object> mergeDataHolder, SplitBrainMergePolicy policy);
 }

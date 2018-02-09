@@ -18,14 +18,14 @@ package com.hazelcast.concurrent.atomiclong;
 
 import com.hazelcast.config.AtomicLongConfig;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.SplitBrainAwareDataContainer;
-import com.hazelcast.spi.SplitBrainMergeEntryView;
 import com.hazelcast.spi.SplitBrainMergePolicy;
+import com.hazelcast.spi.merge.MergeDataHolder;
 import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.spi.serialization.SerializationServiceAware;
 
-import static com.hazelcast.spi.merge.SplitBrainEntryViews.createSplitBrainMergeEntryView;
+import static com.hazelcast.spi.merge.MergeDataHolders.createSplitBrainMergeEntryView;
 
-public class AtomicLongContainer implements SplitBrainAwareDataContainer<Boolean, Long, Long> {
+public class AtomicLongContainer {
 
     private final String name;
     private final AtomicLongConfig config;
@@ -80,19 +80,20 @@ public class AtomicLongContainer implements SplitBrainAwareDataContainer<Boolean
         return tempValue;
     }
 
-    @Override
-    public Long merge(SplitBrainMergeEntryView<Boolean, Long> mergingEntry, SplitBrainMergePolicy mergePolicy) {
-        mergePolicy.setSerializationService(serializationService);
+    public Long merge(MergeDataHolder<Long> mergeDataHolder, SplitBrainMergePolicy mergePolicy, boolean isExistingContainer) {
+        if (mergePolicy instanceof SerializationServiceAware) {
+            ((SerializationServiceAware) mergePolicy).setSerializationService(serializationService);
+        }
 
-        if (mergingEntry.getKey()) {
-            SplitBrainMergeEntryView<Boolean, Long> existingEntry = createSplitBrainMergeEntryView(true, value);
-            Long newValue = mergePolicy.merge(mergingEntry, existingEntry);
+        if (isExistingContainer) {
+            MergeDataHolder<Long> existingEntry = createSplitBrainMergeEntryView(true, value);
+            Long newValue = mergePolicy.merge(mergeDataHolder, existingEntry);
             if (newValue != null && !newValue.equals(value)) {
                 value = newValue;
                 return newValue;
             }
         } else {
-            Long newValue = mergePolicy.merge(mergingEntry, null);
+            Long newValue = mergePolicy.merge(mergeDataHolder, null);
             if (newValue != null) {
                 value = newValue;
                 return newValue;

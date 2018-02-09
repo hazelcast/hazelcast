@@ -19,14 +19,14 @@ package com.hazelcast.concurrent.atomicreference;
 import com.hazelcast.config.AtomicReferenceConfig;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.SplitBrainAwareDataContainer;
-import com.hazelcast.spi.SplitBrainMergeEntryView;
 import com.hazelcast.spi.SplitBrainMergePolicy;
+import com.hazelcast.spi.merge.MergeDataHolder;
 import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.spi.serialization.SerializationServiceAware;
 
-import static com.hazelcast.spi.merge.SplitBrainEntryViews.createSplitBrainMergeEntryView;
+import static com.hazelcast.spi.merge.MergeDataHolders.createSplitBrainMergeEntryView;
 
-public class AtomicReferenceContainer implements SplitBrainAwareDataContainer<Boolean, Data, Data> {
+public class AtomicReferenceContainer {
 
     private final String name;
     private final AtomicReferenceConfig config;
@@ -81,19 +81,20 @@ public class AtomicReferenceContainer implements SplitBrainAwareDataContainer<Bo
         return value == null;
     }
 
-    @Override
-    public Data merge(SplitBrainMergeEntryView<Boolean, Data> mergingEntry, SplitBrainMergePolicy mergePolicy) {
-        mergePolicy.setSerializationService(serializationService);
+    public Data merge(MergeDataHolder<Data> mergeDataHolder, SplitBrainMergePolicy mergePolicy, boolean isExistingContainer) {
+        if (mergePolicy instanceof SerializationServiceAware) {
+            ((SerializationServiceAware) mergePolicy).setSerializationService(serializationService);
+        }
 
-        if (mergingEntry.getKey()) {
-            SplitBrainMergeEntryView<Boolean, Data> existingEntry = createSplitBrainMergeEntryView(true, value);
-            Data newValue = mergePolicy.merge(mergingEntry, existingEntry);
+        if (isExistingContainer) {
+            MergeDataHolder<Data> existingEntry = createSplitBrainMergeEntryView(true, value);
+            Data newValue = mergePolicy.merge(mergeDataHolder, existingEntry);
             if (newValue != null && !newValue.equals(value)) {
                 value = newValue;
                 return newValue;
             }
         } else {
-            Data newValue = mergePolicy.merge(mergingEntry, null);
+            Data newValue = mergePolicy.merge(mergeDataHolder, null);
             if (newValue != null) {
                 value = newValue;
                 return newValue;

@@ -16,9 +16,7 @@
 
 package com.hazelcast.spi.merge;
 
-import com.hazelcast.spi.SplitBrainMergeEntryView;
 import com.hazelcast.spi.SplitBrainMergePolicy;
-import com.hazelcast.spi.merge.PassThroughMergePolicy;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -47,8 +45,8 @@ public class PassThroughMergePolicyTest {
 
     @Test
     public void merge_mergingNotNull() {
-        SplitBrainMergeEntryView existing = entryWithGivenValue(EXISTING);
-        SplitBrainMergeEntryView merging = entryWithGivenValue(MERGING);
+        MergeDataHolder existing = entryWithGivenValue(EXISTING);
+        MergeDataHolder merging = entryWithGivenValue(MERGING);
 
         assertEquals(MERGING, policy.merge(merging, existing));
     }
@@ -56,14 +54,14 @@ public class PassThroughMergePolicyTest {
     @Test
     @SuppressWarnings("ConstantConditions")
     public void merge_mergingNull() {
-        SplitBrainMergeEntryView existing = entryWithGivenValue(EXISTING);
-        SplitBrainMergeEntryView merging = null;
+        MergeDataHolder existing = entryWithGivenValue(EXISTING);
+        MergeDataHolder merging = null;
 
         assertEquals(EXISTING, policy.merge(merging, existing));
     }
 
-    private SplitBrainMergeEntryView entryWithGivenValue(String value) {
-        SplitBrainMergeEntryView entryView = mock(SplitBrainMergeEntryView.class);
+    private MergeDataHolder entryWithGivenValue(String value) {
+        MergeDataHolder entryView = mock(MergeDataHolder.class);
         try {
             when(entryView.getValue()).thenReturn(value);
             return entryView;

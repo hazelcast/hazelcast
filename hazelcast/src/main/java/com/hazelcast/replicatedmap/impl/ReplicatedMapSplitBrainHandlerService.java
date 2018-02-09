@@ -31,9 +31,9 @@ import com.hazelcast.replicatedmap.merge.ReplicatedMapMergePolicy;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.SplitBrainHandlerService;
-import com.hazelcast.spi.SplitBrainMergeEntryView;
 import com.hazelcast.spi.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.DiscardMergePolicy;
+import com.hazelcast.spi.merge.KeyMergeDataHolder;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.MutableLong;
@@ -51,7 +51,7 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.replicatedmap.impl.ReplicatedMapService.SERVICE_NAME;
-import static com.hazelcast.spi.merge.SplitBrainEntryViews.createSplitBrainMergeEntryView;
+import static com.hazelcast.spi.merge.MergeDataHolders.createSplitBrainMergeEntryView;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 
 /**
@@ -169,18 +169,18 @@ class ReplicatedMapSplitBrainHandlerService implements SplitBrainHandlerService 
 
             // sort the entries per partition and send out batch operations (multiple partitions per member)
             //noinspection unchecked
-            List<SplitBrainMergeEntryView<Object, Object>>[] entriesPerPartition = new List[partitionCount];
+            List<KeyMergeDataHolder<Object, Object>>[] entriesPerPartition = new List[partitionCount];
             int recordCount = 0;
             for (ReplicatedRecord record : recordList) {
                 recordCount++;
                 int partitionId = partitionService.getPartitionId(record.getKeyInternal());
-                List<SplitBrainMergeEntryView<Object, Object>> entries = entriesPerPartition[partitionId];
+                List<KeyMergeDataHolder<Object, Object>> entries = entriesPerPartition[partitionId];
                 if (entries == null) {
-                    entries = new LinkedList<SplitBrainMergeEntryView<Object, Object>>();
+                    entries = new LinkedList<KeyMergeDataHolder<Object, Object>>();
                     entriesPerPartition[partitionId] = entries;
                 }
 
-                SplitBrainMergeEntryView<Object, Object> entryView = createSplitBrainMergeEntryView(record);
+                KeyMergeDataHolder<Object, Object> entryView = createSplitBrainMergeEntryView(record);
                 entries.add(entryView);
 
                 long currentSize = ++counterPerMember[partitionId].value;
@@ -197,7 +197,7 @@ class ReplicatedMapSplitBrainHandlerService implements SplitBrainHandlerService 
         }
 
         private void sendBatch(String name, List<Integer> memberPartitions,
-                               List<SplitBrainMergeEntryView<Object, Object>>[] entriesPerPartition,
+                               List<KeyMergeDataHolder<Object, Object>>[] entriesPerPartition,
                                SplitBrainMergePolicy mergePolicy) {
             int size = memberPartitions.size();
             int[] partitions = new int[size];
@@ -217,7 +217,7 @@ class ReplicatedMapSplitBrainHandlerService implements SplitBrainHandlerService 
             }
 
             //noinspection unchecked
-            List<SplitBrainMergeEntryView<Object, Object>>[] entries = new List[size];
+            List<KeyMergeDataHolder<Object, Object>>[] entries = new List[size];
             index = 0;
             int totalSize = 0;
             for (int partitionId : partitions) {
@@ -234,7 +234,7 @@ class ReplicatedMapSplitBrainHandlerService implements SplitBrainHandlerService 
         }
 
         private void invokeMergeOperationFactory(String name, SplitBrainMergePolicy mergePolicy, int[] partitions,
-                                                 List<SplitBrainMergeEntryView<Object, Object>>[] entries, int totalSize) {
+                                                 List<KeyMergeDataHolder<Object, Object>>[] entries, int totalSize) {
             try {
                 OperationFactory factory = new MergeOperationFactory(name, partitions, entries, mergePolicy);
                 nodeEngine.getOperationService()

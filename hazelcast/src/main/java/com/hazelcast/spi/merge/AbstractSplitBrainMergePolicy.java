@@ -29,10 +29,13 @@ import com.hazelcast.spi.serialization.SerializationService;
  *
  * @since 3.10
  */
-abstract class AbstractMergePolicy implements SplitBrainMergePolicy, IdentifiedDataSerializable {
+@SuppressWarnings("WeakerAccess")
+abstract class AbstractSplitBrainMergePolicy implements SplitBrainMergePolicy, IdentifiedDataSerializable {
 
-    @Override
-    public void setSerializationService(SerializationService serializationService) {
+    protected void checkInstanceOf(MergeDataHolder dataHolder, Class<?> clazz) {
+        if (dataHolder != null && !clazz.isInstance(dataHolder)) {
+            throw new IllegalArgumentException();
+        }
     }
 
     @Override

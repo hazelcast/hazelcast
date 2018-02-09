@@ -40,7 +40,7 @@ import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.spi.QuorumAwareService;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.SplitBrainHandlerService;
-import com.hazelcast.spi.SplitBrainMergeEntryView;
+import com.hazelcast.spi.merge.MergeDataHolder;
 import com.hazelcast.spi.SplitBrainMergePolicy;
 import com.hazelcast.spi.TransactionalService;
 import com.hazelcast.spi.merge.DiscardMergePolicy;
@@ -60,7 +60,7 @@ import java.util.Set;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.spi.merge.SplitBrainEntryViews.createSplitBrainMergeEntryView;
+import static com.hazelcast.spi.merge.MergeDataHolders.createSplitBrainMergeEntryView;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.MapUtil.createHashMap;
 
@@ -266,7 +266,7 @@ public abstract class CollectionService implements ManagedService, RemoteService
 
             int itemCount = 0;
             int operationCount = 0;
-            List<SplitBrainMergeEntryView<Long, Data>> mergeEntries;
+            List<MergeDataHolder<Data>> mergeData;
             for (Map.Entry<Integer, Map<CollectionContainer, List<CollectionItem>>> partitionEntry : itemMap.entrySet()) {
                 int partitionId = partitionEntry.getKey();
                 Map<CollectionContainer, List<CollectionItem>> containerMap = partitionEntry.getValue();
@@ -278,21 +278,21 @@ public abstract class CollectionService implements ManagedService, RemoteService
                     int batchSize = container.getConfig().getMergePolicyConfig().getBatchSize();
                     SplitBrainMergePolicy mergePolicy = getMergePolicy(container);
 
-                    mergeEntries = new ArrayList<SplitBrainMergeEntryView<Long, Data>>();
+                    mergeData = new ArrayList<MergeDataHolder<Data>>();
                     for (CollectionItem item : itemList) {
-                        SplitBrainMergeEntryView<Long, Data> entryView = createSplitBrainMergeEntryView(item);
-                        mergeEntries.add(entryView);
+                        MergeDataHolder<Data> mergeDataHolder = createSplitBrainMergeEntryView(item);
+                        mergeData.add(mergeDataHolder);
                         itemCount++;
 
-                        if (mergeEntries.size() == batchSize) {
-                            sendBatch(partitionId, name, mergePolicy, mergeEntries, mergeCallback);
-                            mergeEntries = new ArrayList<SplitBrainMergeEntryView<Long, Data>>(batchSize);
+                        if (mergeData.size() == batchSize) {
+                            sendBatch(partitionId, name, mergePolicy, mergeData, mergeCallback);
+                            mergeData = new ArrayList<MergeDataHolder<Data>>(batchSize);
                             operationCount++;
                         }
                     }
                     itemList.clear();
-                    if (mergeEntries.size() > 0) {
-                        sendBatch(partitionId, name, mergePolicy, mergeEntries, mergeCallback);
+                    if (mergeData.size() > 0) {
+                        sendBatch(partitionId, name, mergePolicy, mergeData, mergeCallback);
                         operationCount++;
                     }
                 }
@@ -310,8 +310,8 @@ public abstract class CollectionService implements ManagedService, RemoteService
         }
 
         private void sendBatch(int partitionId, String name, SplitBrainMergePolicy mergePolicy,
-                               List<SplitBrainMergeEntryView<Long, Data>> mergeEntries, ExecutionCallback<Object> mergeCallback) {
-            CollectionOperation operation = new CollectionMergeOperation(name, mergePolicy, mergeEntries);
+                               List<MergeDataHolder<Data>> mergeData, ExecutionCallback<Object> mergeCallback) {
+            CollectionOperation operation = new CollectionMergeOperation(name, mergePolicy, mergeData);
             try {
                 nodeEngine.getOperationService()
                         .invokeOnPartition(getServiceName(), operation, partitionId)

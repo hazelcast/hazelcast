@@ -29,8 +29,9 @@ import com.hazelcast.map.impl.record.RecordFactory;
 import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.monitor.LocalRecordStoreStats;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.SplitBrainAwareDataContainer;
+import com.hazelcast.spi.SplitBrainMergePolicy;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
+import com.hazelcast.spi.merge.KeyMergeDataHolder;
 
 import java.util.Iterator;
 import java.util.List;
@@ -39,7 +40,7 @@ import java.util.Set;
 /**
  * Defines a record-store.
  */
-public interface RecordStore<R extends Record> extends SplitBrainAwareDataContainer<Data, Object, Boolean> {
+public interface RecordStore<R extends Record> {
 
     /**
      * Default TTL value of a record.
@@ -168,6 +169,8 @@ public interface RecordStore<R extends Record> extends SplitBrainAwareDataContai
     Object putFromLoadBackup(Data key, Object value);
 
     boolean merge(Data dataKey, EntryView mergingEntryView, MapMergePolicy mergePolicy);
+
+    boolean merge(KeyMergeDataHolder<Data, Object> mergeDataHolder, SplitBrainMergePolicy mergePolicy);
 
     R getRecord(Data key);
 

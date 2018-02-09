@@ -63,7 +63,7 @@ public final class SplitBrainMergePolicyDataSerializerHook implements DataSerial
 
         constructors[ENTRY_VIEW] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
-                return new SplitBrainEntryViews.SimpleSplitBrainEntryView();
+                return new SimpleMergeDataHolder();
             }
         };
         constructors[DISCARD] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {

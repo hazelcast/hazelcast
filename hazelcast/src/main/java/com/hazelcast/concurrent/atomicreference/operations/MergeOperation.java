@@ -21,13 +21,13 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.SplitBrainMergeEntryView;
+import com.hazelcast.spi.merge.MergeDataHolder;
 import com.hazelcast.spi.SplitBrainMergePolicy;
 
 import java.io.IOException;
 
 import static com.hazelcast.concurrent.atomicreference.AtomicReferenceDataSerializerHook.MERGE;
-import static com.hazelcast.spi.merge.SplitBrainEntryViews.createSplitBrainMergeEntryView;
+import static com.hazelcast.spi.merge.MergeDataHolders.createSplitBrainMergeEntryView;
 
 /**
  * Contains a merge value for split-brain healing with a {@link SplitBrainMergePolicy}.
@@ -55,8 +55,8 @@ public class MergeOperation extends AtomicReferenceBackupAwareOperation {
         AtomicReferenceService service = getService();
         boolean isExistingContainer = service.containsReferenceContainer(name);
 
-        SplitBrainMergeEntryView<Boolean, Data> mergingEntry = createSplitBrainMergeEntryView(isExistingContainer, mergingValue);
-        backupValue = getReferenceContainer().merge(mergingEntry, mergePolicy);
+        MergeDataHolder<Data> mergeDataHolder = createSplitBrainMergeEntryView(mergingValue);
+        backupValue = getReferenceContainer().merge(mergeDataHolder, mergePolicy, isExistingContainer);
     }
 
     @Override

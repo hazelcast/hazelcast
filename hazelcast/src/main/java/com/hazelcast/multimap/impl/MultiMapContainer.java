@@ -21,10 +21,10 @@ import com.hazelcast.concurrent.lock.LockStore;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.DistributedObjectNamespace;
 import com.hazelcast.spi.ObjectNamespace;
-import com.hazelcast.spi.SplitBrainAwareDataContainer;
-import com.hazelcast.spi.SplitBrainMergeEntryView;
 import com.hazelcast.spi.SplitBrainMergePolicy;
+import com.hazelcast.spi.merge.KeyMergeDataHolder;
 import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.spi.serialization.SerializationServiceAware;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -33,7 +33,7 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
 
-import static com.hazelcast.spi.merge.SplitBrainEntryViews.createSplitBrainMergeEntryView;
+import static com.hazelcast.spi.merge.MergeDataHolders.createSplitBrainMergeEntryView;
 import static com.hazelcast.util.Clock.currentTimeMillis;
 import static com.hazelcast.util.MapUtil.createHashMap;
 
@@ -41,9 +41,7 @@ import static com.hazelcast.util.MapUtil.createHashMap;
  * MultiMap container which holds a map of {@link MultiMapValue}.
  */
 @SuppressWarnings("checkstyle:methodcount")
-public class MultiMapContainer
-        extends MultiMapContainerSupport
-        implements SplitBrainAwareDataContainer<Data, MultiMapMergeContainer, MultiMapValue> {
+public class MultiMapContainer extends MultiMapContainerSupport {
 
     private static final int ID_PROMOTION_OFFSET = 100000;
 
@@ -222,11 +220,11 @@ public class MultiMapContainer
         return objectNamespace;
     }
 
-    @Override
-    public MultiMapValue merge(SplitBrainMergeEntryView<Data, MultiMapMergeContainer> mergingEntry,
-                               SplitBrainMergePolicy mergePolicy) {
+    public MultiMapValue merge(KeyMergeDataHolder<Data, MultiMapMergeContainer> mergingEntry, SplitBrainMergePolicy mergePolicy) {
         SerializationService serializationService = nodeEngine.getSerializationService();
-        mergePolicy.setSerializationService(serializationService);
+        if (mergePolicy instanceof SerializationServiceAware) {
+            ((SerializationServiceAware) mergePolicy).setSerializationService(serializationService);
+        }
 
         Data key = mergingEntry.getKey();
         MultiMapMergeContainer mergingContainer = mergingEntry.getValue();
@@ -243,7 +241,7 @@ public class MultiMapContainer
         boolean isBinary = getConfig().isBinary();
         MultiMapValue mergedValue = null;
         for (MultiMapRecord mergeRecord : mergingContainer.getRecords()) {
-            SplitBrainMergeEntryView<Data, Object> mergeEntry = createSplitBrainMergeEntryView(mergingContainer, mergeRecord);
+            KeyMergeDataHolder<Data, Object> mergeEntry = createSplitBrainMergeEntryView(mergingContainer, mergeRecord);
             Object newValue = mergePolicy.merge(mergeEntry, null);
             if (newValue != null) {
                 MultiMapRecord newRecord = new MultiMapRecord(nextId(), isBinary ? newValue : ss.toObject(newValue));
@@ -263,8 +261,8 @@ public class MultiMapContainer
         Collection<MultiMapRecord> existingRecords = existingValue.getCollection(false);
         int existingHits = existingValue.getHits();
         for (MultiMapRecord mergeRecord : mergingContainer.getRecords()) {
-            SplitBrainMergeEntryView<Data, Object> mergeEntry = createSplitBrainMergeEntryView(mergingContainer, mergeRecord);
-            SplitBrainMergeEntryView<Data, Object> existingEntry = null;
+            KeyMergeDataHolder<Data, Object> mergeEntry = createSplitBrainMergeEntryView(mergingContainer, mergeRecord);
+            KeyMergeDataHolder<Data, Object> existingEntry = null;
             MultiMapRecord existingRecord = null;
             for (MultiMapRecord record : existingRecords) {
                 if (record.getObject().equals(mergeRecord.getObject())) {
