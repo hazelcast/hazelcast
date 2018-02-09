@@ -30,8 +30,7 @@ import java.nio.channels.SocketChannel;
 import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 
-public abstract class AbstractHandler
-        implements SelectionHandler, MigratableHandler, Closeable {
+public abstract class AbstractHandler implements MigratableHandler, Closeable {
 
     protected static final int LOAD_BALANCING_HANDLE = 0;
     protected static final int LOAD_BALANCING_BYTE = 1;
@@ -134,7 +133,31 @@ public abstract class AbstractHandler
 
     protected abstract void publish();
 
-    @Override
+    /**
+     * Called when there are bytes available for reading, or space available to write.
+     *
+     * Any exception that leads to a termination of the connection like an IOException should not be handled in the handle method
+     * but should be propagated. The reason behind this is that the handle logic already is complicated enough and by pulling it
+     * out the flow will be easier to understand.
+     *
+     * @throws Exception
+     */
+    public abstract void handle() throws Exception;
+
+    /**
+     * Is called when the {@link #handle()} throws an exception.
+     *
+     * The idiom to use a handler is:
+     * <code>
+     *     try{
+     *         handler.handle();
+     *     } catch(Throwable t) {
+     *         handler.onFailure(t);
+     *     }
+     * </code>
+     *
+     * @param e
+     */
     public void onFailure(Throwable e) {
         if (e instanceof InterruptedException) {
             Thread.currentThread().interrupt();
