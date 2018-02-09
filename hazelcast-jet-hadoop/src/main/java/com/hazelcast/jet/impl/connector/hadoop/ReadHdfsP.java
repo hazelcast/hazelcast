@@ -270,11 +270,11 @@ public final class ReadHdfsP<K, V, R> extends AbstractProcessor {
             }
         }
 
-        private static Integer indexOfMin(int[] ints) {
+        private static int indexOfMin(int[] ints) {
             return range(0, ints.length)
                     .boxed()
                     .min(comparingInt(i -> ints[i]))
-                    .get();
+                    .orElseThrow(() -> new AssertionError("empty array"));
         }
 
         private static <T> T singleItem(Collection<T> coll) {

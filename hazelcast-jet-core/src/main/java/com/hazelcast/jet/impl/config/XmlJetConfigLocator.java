@@ -85,7 +85,7 @@ final class XmlJetConfigLocator {
                     () -> XmlJetConfigLocator.defaultFromClasspath(defaultXmlName))
                     .map(Util::uncheckCall)
                     .filter(Objects::nonNull)
-                    .findFirst().get();
+                    .findFirst().orElseThrow(() -> new JetException("Could not find any Jet configuration file."));
         } catch (Exception e) {
             throw new JetException("Failed to initialize Jet configuration", e);
         }

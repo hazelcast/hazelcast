@@ -53,7 +53,6 @@ public class InitExecutionOperation extends AbstractJobOperation {
         this.executionId = executionId;
         this.coordinatorMemberListVersion = coordinatorMemberListVersion;
         this.participants = participants;
-        this.executionId = executionId;
         this.planSupplier = () -> plan;
     }
 

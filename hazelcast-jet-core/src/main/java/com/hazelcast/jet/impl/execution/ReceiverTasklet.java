@@ -205,7 +205,7 @@ public class ReceiverTasklet implements Tasklet {
         return (int) (seq >> COMPRESSED_SEQ_UNIT_LOG2);
     }
 
-    static long estimatedMemoryFootprint(int itemBlobSize) {
+    static long estimatedMemoryFootprint(long itemBlobSize) {
         final int inboxSlot = 4; // slot in ArrayDeque<ObjPtionAndSenderId> inbox
         final int objPtionAndSenderIdHeader = 16; // object header of ObjPtionAndSenderId instance
         final int itemField = 4; // ObjectWithPartitionId.item
@@ -228,6 +228,7 @@ public class ReceiverTasklet implements Tasklet {
                     final int itemSize = received.position() - mark;
                     inbox.add(new ObjWithPtionIdAndSize(item, received.readInt(), itemSize));
                 }
+                received.close();
                 tracker.madeProgress();
             }
         } catch (IOException e) {
