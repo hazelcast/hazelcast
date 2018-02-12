@@ -113,6 +113,7 @@ public class FlakeIdGeneratorProxy
 
     @Override
     public long newId() {
+        getService().incrementNewId(name);
         // The cluster version is checked when ClusterService.getMemberListJoinVersion() is called. This always happens
         // before first ID is generated.
         return batcher.newId();

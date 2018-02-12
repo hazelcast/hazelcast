@@ -16,18 +16,36 @@
 
 package com.hazelcast.flakeidgen.impl;
 
+import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
+
 import com.hazelcast.core.DistributedObject;
+import com.hazelcast.monitor.LocalFlakeIdGeneratorStats;
+import com.hazelcast.monitor.impl.LocalFlakeIdGeneratorStatsImpl;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.RemoteService;
+import com.hazelcast.spi.StatisticsAwareService;
+import com.hazelcast.util.ConstructorFunction;
 
-import java.util.Properties;
-
-public class FlakeIdGeneratorService implements ManagedService, RemoteService {
+public class FlakeIdGeneratorService implements ManagedService, RemoteService,
+        StatisticsAwareService<LocalFlakeIdGeneratorStats> {
 
     public static final String SERVICE_NAME = "hz:impl:flakeIdGeneratorService";
 
     private NodeEngine nodeEngine;
+    private final ConcurrentHashMap<String, LocalFlakeIdGeneratorStatsImpl> statsMap
+        = new ConcurrentHashMap<String, LocalFlakeIdGeneratorStatsImpl>();
+    private final ConstructorFunction<String, LocalFlakeIdGeneratorStatsImpl> localFlakeIdStatsConstructorFunction
+        = new ConstructorFunction<String, LocalFlakeIdGeneratorStatsImpl>() {
+        public LocalFlakeIdGeneratorStatsImpl createNew(String key) {
+            return new LocalFlakeIdGeneratorStatsImpl();
+        }
+    };
 
     public FlakeIdGeneratorService(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -40,6 +58,7 @@ public class FlakeIdGeneratorService implements ManagedService, RemoteService {
 
     @Override
     public void reset() {
+        statsMap.clear();
     }
 
     @Override
@@ -54,5 +73,19 @@ public class FlakeIdGeneratorService implements ManagedService, RemoteService {
 
     @Override
     public void destroyDistributedObject(String name) {
+        statsMap.remove(name);
+    }
+
+    @Override
+    public Map<String, LocalFlakeIdGeneratorStats> getStats() {
+        return new HashMap<String, LocalFlakeIdGeneratorStats>(statsMap);
+    }
+
+    public void incrementNewId(String name) {
+        getLocalFlakeIdStats(name).incrementUsage();
+    }
+
+    private LocalFlakeIdGeneratorStatsImpl getLocalFlakeIdStats(String name) {
+        return getOrPutIfAbsent(statsMap, name, localFlakeIdStatsConstructorFunction);
     }
 }
