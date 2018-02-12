@@ -26,7 +26,6 @@ import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
-import com.hazelcast.spi.SplitBrainAwareDataContainer;
 import com.hazelcast.spi.SplitBrainMergeEntryView;
 import com.hazelcast.spi.SplitBrainMergePolicy;
 import com.hazelcast.spi.impl.executionservice.InternalExecutionService;
@@ -53,8 +52,7 @@ import static java.util.logging.Level.FINEST;
 import static java.util.logging.Level.WARNING;
 
 @SuppressWarnings("checkstyle:methodcount")
-public class ScheduledExecutorContainer
-        implements SplitBrainAwareDataContainer<String, ScheduledTaskDescriptor, ScheduledTaskDescriptor> {
+public class ScheduledExecutorContainer {
 
     protected final ConcurrentMap<String, ScheduledTaskDescriptor> tasks;
 
@@ -234,15 +232,21 @@ public class ScheduledExecutorContainer
         }
     }
 
-    @Override
-    public ScheduledTaskDescriptor merge(SplitBrainMergeEntryView<String, ScheduledTaskDescriptor> merging,
+    /**
+     * Merges the given {@link SplitBrainMergeEntryView} via the given {@link SplitBrainMergePolicy}.
+     *
+     * @param mergingEntry the {@link SplitBrainMergeEntryView} instance to merge
+     * @param mergePolicy  the {@link SplitBrainMergePolicy} instance to apply
+     * @return the used {@link ScheduledTaskDescriptor} if merge is applied, otherwise {@code null}
+     */
+    public ScheduledTaskDescriptor merge(SplitBrainMergeEntryView<String, ScheduledTaskDescriptor> mergingEntry,
                                          SplitBrainMergePolicy mergePolicy) {
         nodeEngine.getSerializationService().getManagedContext().initialize(mergePolicy);
 
         // try to find an existing item with the same value
         ScheduledTaskDescriptor match = null;
         for (ScheduledTaskDescriptor item : tasks.values()) {
-            if (merging.getValue().equals(item)) {
+            if (mergingEntry.getValue().equals(item)) {
                 match = item;
                 break;
             }
@@ -251,14 +255,14 @@ public class ScheduledExecutorContainer
         ScheduledTaskDescriptor merged;
         if (match == null) {
             // Missing incoming entry
-            merged = mergePolicy.merge(merging, null);
+            merged = mergePolicy.merge(mergingEntry, null);
             if (merged != null) {
                 enqueueSuspended(merged, false);
             }
         } else {
             // Found a match -> real merge
             SplitBrainMergeEntryView<String, ScheduledTaskDescriptor> matchEntryView = createSplitBrainMergeEntryView(match);
-            merged = mergePolicy.merge(merging, matchEntryView);
+            merged = mergePolicy.merge(mergingEntry, matchEntryView);
             if (merged != null && !merged.equals(match)) {
                 // Cancel matched one, before replacing it
                 match.cancel(true);

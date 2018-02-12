@@ -23,7 +23,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.SplitBrainAwareDataContainer;
 import com.hazelcast.spi.SplitBrainMergeEntryView;
 import com.hazelcast.spi.SplitBrainMergePolicy;
 import com.hazelcast.transaction.TransactionException;
@@ -41,8 +40,7 @@ import static com.hazelcast.spi.merge.SplitBrainEntryViews.createSplitBrainMerge
 import static com.hazelcast.util.MapUtil.createHashMap;
 
 @SuppressWarnings("checkstyle:methodcount")
-public abstract class CollectionContainer
-        implements IdentifiedDataSerializable, SplitBrainAwareDataContainer<Long, Data, CollectionItem> {
+public abstract class CollectionContainer implements IdentifiedDataSerializable {
 
     public static final int INVALID_ITEM_ID = -1;
 
@@ -344,7 +342,13 @@ public abstract class CollectionContainer
 
     protected abstract void onDestroy();
 
-    @Override
+    /**
+     * Merges the given {@link SplitBrainMergeEntryView} via the given {@link SplitBrainMergePolicy}.
+     *
+     * @param mergingEntry the {@link SplitBrainMergeEntryView} instance to merge
+     * @param mergePolicy  the {@link SplitBrainMergePolicy} instance to apply
+     * @return the used {@link CollectionItem} if merge is applied, otherwise {@code null}
+     */
     public CollectionItem merge(SplitBrainMergeEntryView<Long, Data> mergingEntry, SplitBrainMergePolicy mergePolicy) {
         nodeEngine.getSerializationService().getManagedContext().initialize(mergePolicy);
 

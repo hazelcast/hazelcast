@@ -54,8 +54,8 @@ public class MergeOperation extends AtomicLongBackupAwareOperation {
         AtomicLongService service = getService();
         boolean isExistingContainer = service.containsAtomicLong(name);
 
-        SplitBrainMergeEntryView<Boolean, Long> mergingEntry = createSplitBrainMergeEntryView(isExistingContainer, mergingValue);
-        backupValue = getLongContainer().merge(mergingEntry, mergePolicy);
+        SplitBrainMergeEntryView<Void, Long> mergingEntry = createSplitBrainMergeEntryView(mergingValue);
+        backupValue = getLongContainer().merge(mergingEntry, mergePolicy, isExistingContainer);
     }
 
     @Override

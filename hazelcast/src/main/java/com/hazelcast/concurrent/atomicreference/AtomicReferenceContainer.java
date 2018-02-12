@@ -19,14 +19,13 @@ package com.hazelcast.concurrent.atomicreference;
 import com.hazelcast.config.AtomicReferenceConfig;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.SplitBrainAwareDataContainer;
 import com.hazelcast.spi.SplitBrainMergeEntryView;
 import com.hazelcast.spi.SplitBrainMergePolicy;
 import com.hazelcast.spi.serialization.SerializationService;
 
 import static com.hazelcast.spi.merge.SplitBrainEntryViews.createSplitBrainMergeEntryView;
 
-public class AtomicReferenceContainer implements SplitBrainAwareDataContainer<Boolean, Data, Data> {
+public class AtomicReferenceContainer {
 
     private final String name;
     private final AtomicReferenceConfig config;
@@ -81,12 +80,19 @@ public class AtomicReferenceContainer implements SplitBrainAwareDataContainer<Bo
         return value == null;
     }
 
-    @Override
-    public Data merge(SplitBrainMergeEntryView<Boolean, Data> mergingEntry, SplitBrainMergePolicy mergePolicy) {
+    /**
+     * Merges the given {@link SplitBrainMergeEntryView} via the given {@link SplitBrainMergePolicy}.
+     *
+     * @param mergingEntry the {@link SplitBrainMergeEntryView} instance to merge
+     * @param mergePolicy  the {@link SplitBrainMergePolicy} instance to apply
+     * @return the new value if merge is applied, otherwise {@code null}
+     */
+    public Data merge(SplitBrainMergeEntryView<Void, Data> mergingEntry, SplitBrainMergePolicy mergePolicy,
+                      boolean isExistingContainer) {
         serializationService.getManagedContext().initialize(mergePolicy);
 
-        if (mergingEntry.getKey()) {
-            SplitBrainMergeEntryView<Boolean, Data> existingEntry = createSplitBrainMergeEntryView(true, value);
+        if (isExistingContainer) {
+            SplitBrainMergeEntryView<Void, Data> existingEntry = createSplitBrainMergeEntryView(value);
             Data newValue = mergePolicy.merge(mergingEntry, existingEntry);
             if (newValue != null && !newValue.equals(value)) {
                 value = newValue;

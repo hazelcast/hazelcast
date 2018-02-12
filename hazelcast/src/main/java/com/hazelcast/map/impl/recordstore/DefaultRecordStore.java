@@ -727,7 +727,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     @Override
-    public Boolean merge(SplitBrainMergeEntryView<Data, Object> mergingEntry, SplitBrainMergePolicy mergePolicy) {
+    public boolean merge(SplitBrainMergeEntryView<Data, Object> mergingEntry, SplitBrainMergePolicy mergePolicy) {
         checkIfLoaded();
         long now = getNow();
 

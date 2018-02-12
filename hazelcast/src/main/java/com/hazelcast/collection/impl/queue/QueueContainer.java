@@ -27,7 +27,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.SplitBrainAwareDataContainer;
 import com.hazelcast.spi.SplitBrainMergeEntryView;
 import com.hazelcast.spi.SplitBrainMergePolicy;
 import com.hazelcast.spi.serialization.SerializationService;
@@ -64,7 +63,7 @@ import static com.hazelcast.util.SetUtil.createHashSet;
  * </ul>
  */
 @SuppressWarnings("checkstyle:methodcount")
-public class QueueContainer implements IdentifiedDataSerializable, SplitBrainAwareDataContainer<Long, Data, QueueItem> {
+public class QueueContainer implements IdentifiedDataSerializable {
 
     /**
      * Contains item ID to queue item mappings for current transactions
@@ -1096,7 +1095,14 @@ public class QueueContainer implements IdentifiedDataSerializable, SplitBrainAwa
         idGenerator = Math.max(itemId + 1, idGenerator);
     }
 
-    @Override
+
+    /**
+     * Merges the given {@link SplitBrainMergeEntryView} via the given {@link SplitBrainMergePolicy}.
+     *
+     * @param mergingEntry the {@link SplitBrainMergeEntryView} instance to merge
+     * @param mergePolicy  the {@link SplitBrainMergePolicy} instance to apply
+     * @return the used {@link QueueItem} if merge is applied, otherwise {@code null}
+     */
     public QueueItem merge(SplitBrainMergeEntryView<Long, Data> mergingEntry, SplitBrainMergePolicy mergePolicy) {
         nodeEngine.getSerializationService().getManagedContext().initialize(mergePolicy);
 

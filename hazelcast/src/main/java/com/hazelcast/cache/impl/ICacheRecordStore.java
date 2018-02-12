@@ -23,7 +23,8 @@ import com.hazelcast.config.CacheConfig;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.ObjectNamespace;
-import com.hazelcast.spi.SplitBrainAwareDataContainer;
+import com.hazelcast.spi.SplitBrainMergeEntryView;
+import com.hazelcast.spi.SplitBrainMergePolicy;
 
 import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.processor.EntryProcessor;
@@ -46,7 +47,7 @@ import java.util.Set;
  * @see com.hazelcast.cache.impl.CacheRecordStore
  */
 @SuppressWarnings("checkstyle:methodcount")
-public interface ICacheRecordStore extends SplitBrainAwareDataContainer<Data, Data, CacheRecord> {
+public interface ICacheRecordStore {
 
     /**
      * Gets the value to which the specified key is mapped,
@@ -477,11 +478,11 @@ public interface ICacheRecordStore extends SplitBrainAwareDataContainer<Data, Da
     ObjectNamespace getObjectNamespace();
 
     /**
-     * Merges given record (inside given {@link CacheEntryView}) with the existing record as given {@link CacheMergePolicy}.
+     * Merges the given {@link CacheEntryView} via the given {@link CacheMergePolicy}.
      *
-     * @param cacheEntryView the {@link CacheEntryView} instance that wraps key/value for merging and existing entry
-     * @param mergePolicy    the {@link CacheMergePolicy} instance for handling merge policy
-     * @param caller
+     * @param cacheEntryView the {@link CacheEntryView} instance to merge
+     * @param mergePolicy    the {@link CacheMergePolicy} instance to apply
+     * @param caller         the UUID of the caller
      * @param completionId   User generated id which shall be received as a field of the cache event upon completion of
      *                       the request in the cluster.
      * @param origin         source of the call
@@ -489,4 +490,13 @@ public interface ICacheRecordStore extends SplitBrainAwareDataContainer<Data, Da
      */
     CacheRecord merge(CacheEntryView<Data, Data> cacheEntryView, CacheMergePolicy mergePolicy,
                       String caller, String origin, int completionId);
+
+    /**
+     * Merges the given {@link SplitBrainMergeEntryView} via the given {@link SplitBrainMergePolicy}.
+     *
+     * @param mergingEntry the {@link SplitBrainMergeEntryView} instance to merge
+     * @param mergePolicy  the {@link SplitBrainMergePolicy} instance to apply
+     * @return the used {@link CacheRecord} if merge is applied, otherwise {@code null}
+     */
+    CacheRecord merge(SplitBrainMergeEntryView<Data, Data> mergingEntry, SplitBrainMergePolicy mergePolicy);
 }

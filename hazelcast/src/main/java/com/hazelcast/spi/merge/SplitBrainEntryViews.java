@@ -48,6 +48,12 @@ public final class SplitBrainEntryViews {
     private SplitBrainEntryViews() {
     }
 
+    public static <V> SplitBrainMergeEntryView<Void, V> createSplitBrainMergeEntryView(V value) {
+        return new SimpleSplitBrainEntryView<Void, V>()
+                .setValue(value)
+                .setCreationTime(Clock.currentTimeMillis());
+    }
+
     public static <K, V> SplitBrainMergeEntryView<K, V> createSplitBrainMergeEntryView(K key, V value) {
         return new SimpleSplitBrainEntryView<K, V>()
                 .setKey(key)

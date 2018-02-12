@@ -342,7 +342,7 @@ public abstract class AbstractReplicatedRecordStore<K, V> extends AbstractBaseRe
 
     @Override
     @SuppressWarnings("unchecked")
-    public Boolean merge(SplitBrainMergeEntryView<Object, Object> mergingEntry, SplitBrainMergePolicy mergePolicy) {
+    public boolean merge(SplitBrainMergeEntryView<Object, Object> mergingEntry, SplitBrainMergePolicy mergePolicy) {
         serializationService.getManagedContext().initialize(mergePolicy);
 
         K marshalledKey = (K) marshall(mergingEntry.getKey());
@@ -383,14 +383,14 @@ public abstract class AbstractReplicatedRecordStore<K, V> extends AbstractBaseRe
 
     @Override
     @SuppressWarnings("unchecked")
-    public boolean merge(Object key, ReplicatedMapEntryView mergingEntry, ReplicatedMapMergePolicy policy) {
+    public boolean merge(Object key, ReplicatedMapEntryView mergingEntry, ReplicatedMapMergePolicy mergePolicy) {
         K marshalledKey = (K) marshall(key);
         InternalReplicatedMapStorage<K, V> storage = getStorage();
         ReplicatedRecord<K, V> existingRecord = storage.get(marshalledKey);
         if (existingRecord == null) {
             ReplicatedMapEntryView nullEntryView = new ReplicatedMapEntryView<Object, V>()
                     .setKey(unmarshall(key));
-            V newValue = (V) policy.merge(name, mergingEntry, nullEntryView);
+            V newValue = (V) mergePolicy.merge(name, mergingEntry, nullEntryView);
             if (newValue == null) {
                 return false;
             }
@@ -410,7 +410,7 @@ public abstract class AbstractReplicatedRecordStore<K, V> extends AbstractBaseRe
                     .setLastAccessTime(existingRecord.getLastAccessTime())
                     .setHits(existingRecord.getHits())
                     .setTtl(existingRecord.getTtlMillis());
-            V newValue = (V) policy.merge(name, mergingEntry, existingEntry);
+            V newValue = (V) mergePolicy.merge(name, mergingEntry, existingEntry);
             if (newValue == null) {
                 storage.remove(marshalledKey, existingRecord);
                 storage.incrementVersion();

@@ -55,8 +55,8 @@ public class MergeOperation extends AtomicReferenceBackupAwareOperation {
         AtomicReferenceService service = getService();
         boolean isExistingContainer = service.containsReferenceContainer(name);
 
-        SplitBrainMergeEntryView<Boolean, Data> mergingEntry = createSplitBrainMergeEntryView(isExistingContainer, mergingValue);
-        backupValue = getReferenceContainer().merge(mergingEntry, mergePolicy);
+        SplitBrainMergeEntryView<Void, Data> mergingEntry = createSplitBrainMergeEntryView(mergingValue);
+        backupValue = getReferenceContainer().merge(mergingEntry, mergePolicy, isExistingContainer);
     }
 
     @Override

@@ -17,7 +17,8 @@
 package com.hazelcast.replicatedmap.impl.record;
 
 import com.hazelcast.replicatedmap.merge.ReplicatedMapMergePolicy;
-import com.hazelcast.spi.SplitBrainAwareDataContainer;
+import com.hazelcast.spi.SplitBrainMergeEntryView;
+import com.hazelcast.spi.SplitBrainMergePolicy;
 import com.hazelcast.util.scheduler.ScheduledEntry;
 
 import java.util.Collection;
@@ -29,7 +30,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * This interface describes a common record store for replicated maps and their actual records
  */
-public interface ReplicatedRecordStore extends SplitBrainAwareDataContainer<Object, Object, Boolean> {
+public interface ReplicatedRecordStore {
 
     String getName();
 
@@ -95,5 +96,21 @@ public interface ReplicatedRecordStore extends SplitBrainAwareDataContainer<Obje
 
     void setLoaded(boolean loaded);
 
-    boolean merge(Object key, ReplicatedMapEntryView entryView, ReplicatedMapMergePolicy policy);
+    /**
+     * Merges the given {@link ReplicatedMapEntryView} via the given {@link ReplicatedMapMergePolicy}.
+     *
+     * @param entryView   the {@link ReplicatedMapEntryView} instance to merge
+     * @param mergePolicy the {@link ReplicatedMapMergePolicy} instance to apply
+     * @return {@code true} if merge is applied, otherwise {@code false}
+     */
+    boolean merge(Object key, ReplicatedMapEntryView entryView, ReplicatedMapMergePolicy mergePolicy);
+
+    /**
+     * Merges the given {@link SplitBrainMergeEntryView} via the given {@link SplitBrainMergePolicy}.
+     *
+     * @param mergingEntry the {@link SplitBrainMergeEntryView} instance to merge
+     * @param mergePolicy  the {@link SplitBrainMergePolicy} instance to apply
+     * @return {@code true} if merge is applied, otherwise {@code false}
+     */
+    boolean merge(SplitBrainMergeEntryView<Object, Object> mergingEntry, SplitBrainMergePolicy mergePolicy);
 }
