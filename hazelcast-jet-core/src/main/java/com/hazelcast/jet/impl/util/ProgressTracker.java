@@ -66,7 +66,7 @@ public class ProgressTracker {
     }
 
     /**
-     * Equivalent to {@code update(NO_PROGRESS)}, but more descriptive in certain usages.
+     * Equivalent to {@code mergeWith(NO_PROGRESS)}, but more descriptive in certain usages.
      */
     public void notDone() {
         isDone = false;
