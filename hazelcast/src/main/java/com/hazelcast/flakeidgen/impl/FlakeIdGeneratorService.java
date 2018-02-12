@@ -85,6 +85,10 @@ public class FlakeIdGeneratorService implements ManagedService, RemoteService,
         getLocalFlakeIdStats(name).incrementUsage();
     }
 
+    public void incrementNewId(String name, int size) {
+        getLocalFlakeIdStats(name).incrementUsage(size);
+    }
+
     private LocalFlakeIdGeneratorStatsImpl getLocalFlakeIdStats(String name) {
         return getOrPutIfAbsent(statsMap, name, localFlakeIdStatsConstructorFunction);
     }

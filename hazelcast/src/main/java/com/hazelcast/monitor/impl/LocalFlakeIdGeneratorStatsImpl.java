@@ -54,6 +54,10 @@ public class LocalFlakeIdGeneratorStatsImpl implements LocalFlakeIdGeneratorStat
         USAGE_COUNT.incrementAndGet(this);
     }
 
+    public void incrementUsage(int size) {
+        USAGE_COUNT.addAndGet(this, size);
+    }
+
     @Override
     public JsonObject toJson() {
         JsonObject root = new JsonObject();
