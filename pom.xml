@@ -427,6 +427,7 @@
                         <configuration>
                             <testFailureIgnore>true</testFailureIgnore>
                             <argLine>@{argLine}</argLine>
+                            <excludedGroups>com.hazelcast.jet.annotation.IgnoredTest</excludedGroups>
                         </configuration>
                     </plugin>
                     <plugin>

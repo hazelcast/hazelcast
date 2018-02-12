@@ -17,13 +17,13 @@
 package com.hazelcast.jet.impl.deployment;
 
 import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.annotation.IgnoredForCoverage;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.impl.deployment.LoadPersonIsolated.LoadPersonIsolatedMetaSupplier;
 import com.hazelcast.jet.stream.IStreamMap;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.util.FilteringClassLoader;
-import org.junit.Test;
-
 import java.io.Serializable;
 import java.lang.reflect.Method;
 import java.net.URL;
@@ -31,6 +31,8 @@ import java.net.URLClassLoader;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import static com.hazelcast.jet.core.TestUtil.executeAndPeel;
 import static com.hazelcast.jet.stream.DistributedCollectors.toList;
@@ -48,7 +50,7 @@ public abstract class AbstractDeploymentTest extends HazelcastTestSupport {
         createCluster();
 
         DAG dag = new DAG();
-        dag.newVertex("create and print person", LoadPersonIsolated::new);
+        dag.newVertex("create and print person", new LoadPersonIsolatedMetaSupplier());
 
 
         JetInstance jetInstance = getJetInstance();
@@ -60,7 +62,13 @@ public abstract class AbstractDeploymentTest extends HazelcastTestSupport {
         executeAndPeel(jetInstance.newJob(dag, jobConfig));
     }
 
+    /**
+     * The test is excluded from the test coverage since JaCoCo instrumentation messes up with the
+     * class internals which generates different serialVersionUid's for same classes.
+     * This leads test to fail with InvalidClassException
+     */
     @Test
+    @Category(IgnoredForCoverage.class)
     public void testStream() throws Throwable {
         createCluster();
 
@@ -82,7 +90,7 @@ public abstract class AbstractDeploymentTest extends HazelcastTestSupport {
         createCluster();
 
         DAG dag = new DAG();
-        dag.newVertex("create and print person", LoadPersonIsolated::new);
+        dag.newVertex("create and print person", new LoadPersonIsolatedMetaSupplier());
 
         JobConfig jobConfig = new JobConfig();
         URL classUrl = this.getClass().getResource("/cp1/");
