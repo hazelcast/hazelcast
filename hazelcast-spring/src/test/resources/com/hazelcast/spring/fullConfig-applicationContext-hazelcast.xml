@@ -566,6 +566,7 @@
                         </hz:actions>
                     </hz:pn-counter-permission>
                 </hz:client-permissions>
+                <hz:client-block-unmapped-actions>false</hz:client-block-unmapped-actions>
             </hz:security>
 
             <hz:member-attributes>

@@ -27,8 +27,8 @@ public class PermissionConfig {
     private PermissionType type;
     private String name;
     private String principal;
-    private Set<String> endpoints;
-    private Set<String> actions;
+    private Set<String> endpoints = new HashSet<String>();
+    private Set<String> actions = new HashSet<String>();
 
     public PermissionConfig() {
     }
@@ -44,10 +44,10 @@ public class PermissionConfig {
         this.name = permissionConfig.getName();
         this.principal = permissionConfig.getPrincipal();
         for (String endpoint : permissionConfig.getEndpoints()) {
-            this.getEndpoints().add(endpoint);
+            this.endpoints.add(endpoint);
         }
         for (String action : permissionConfig.getActions()) {
-            this.getActions().add(action);
+            this.actions.add(action);
         }
     }
 
@@ -165,17 +165,11 @@ public class PermissionConfig {
     }
 
     public PermissionConfig addEndpoint(String endpoint) {
-        if (endpoints == null) {
-            endpoints = new HashSet<String>();
-        }
         endpoints.add(endpoint);
         return this;
     }
 
     public PermissionConfig addAction(String action) {
-        if (actions == null) {
-            actions = new HashSet<String>();
-        }
         actions.add(action);
         return this;
     }
@@ -193,16 +187,10 @@ public class PermissionConfig {
     }
 
     public Set<String> getEndpoints() {
-        if (endpoints == null) {
-            endpoints = new HashSet<String>();
-        }
         return endpoints;
     }
 
     public Set<String> getActions() {
-        if (actions == null) {
-            actions = new HashSet<String>();
-        }
         return actions;
     }
 
