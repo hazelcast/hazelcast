@@ -50,11 +50,6 @@ public class GetAllScheduledOnMemberOperation
     }
 
     @Override
-    protected boolean isRunningOnTaskOwner() {
-        return true;
-    }
-
-    @Override
     public List<ScheduledTaskHandler> getResponse() {
         return response;
     }
