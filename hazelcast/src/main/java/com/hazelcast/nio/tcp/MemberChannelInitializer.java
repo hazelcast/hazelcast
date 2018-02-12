@@ -38,6 +38,7 @@ import static com.hazelcast.nio.IOService.KILO_BYTE;
 import static com.hazelcast.nio.IOUtil.newByteBuffer;
 import static com.hazelcast.nio.Protocols.CLIENT_BINARY_NEW;
 import static com.hazelcast.nio.Protocols.CLUSTER;
+import static com.hazelcast.nio.Protocols.PROTOCOL_LENGTH;
 import static com.hazelcast.util.StringUtil.bytesToString;
 import static com.hazelcast.util.StringUtil.stringToBytes;
 
@@ -94,7 +95,7 @@ public class MemberChannelInitializer implements ChannelInitializer {
         ConcurrentMap attributeMap = channel.attributeMap();
         ByteBuffer protocolBuffer = (ByteBuffer) attributeMap.get(PROTOCOL_BUFFER);
         if (protocolBuffer == null) {
-            protocolBuffer = ByteBuffer.allocate(3);
+            protocolBuffer = ByteBuffer.allocate(PROTOCOL_LENGTH);
             attributeMap.put(PROTOCOL_BUFFER, protocolBuffer);
         }
 
