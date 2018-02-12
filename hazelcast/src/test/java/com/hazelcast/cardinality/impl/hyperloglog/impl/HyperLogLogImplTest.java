@@ -53,7 +53,7 @@ public class HyperLogLogImplTest {
                 {11, 6.5f},
                 {12, 5.5f},
                 {13, 3.5f},
-                {14, 3.0f},
+                {14, 3.5f},
                 {15, 2.5f},
                 {16, 2.0f},
         });
