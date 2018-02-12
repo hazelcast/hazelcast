@@ -91,6 +91,7 @@ public class RecentlyActiveQuorumFunction extends AbstractPingAwareQuorumFunctio
         if (pingFDEnabled) {
             pingFailureDetector.remove(membershipEvent.getMember());
         }
+        latestHeartbeatPerMember.remove(membershipEvent.getMember());
     }
 
     @Override

@@ -85,8 +85,8 @@ public class ProbabilisticQuorumFunction extends AbstractPingAwareQuorumFunction
     public void memberRemoved(MembershipEvent membershipEvent) {
         if (pingFDEnabled) {
             pingFailureDetector.remove(membershipEvent.getMember());
-            failureDetector.remove(membershipEvent.getMember());
         }
+        failureDetector.remove(membershipEvent.getMember());
     }
 
     @Override
