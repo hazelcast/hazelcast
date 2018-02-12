@@ -226,7 +226,7 @@ public class MultiMapContainer
     public MultiMapValue merge(SplitBrainMergeEntryView<Data, MultiMapMergeContainer> mergingEntry,
                                SplitBrainMergePolicy mergePolicy) {
         SerializationService serializationService = nodeEngine.getSerializationService();
-        mergePolicy.setSerializationService(serializationService);
+        serializationService.getManagedContext().initialize(mergePolicy);
 
         Data key = mergingEntry.getKey();
         MultiMapMergeContainer mergingContainer = mergingEntry.getValue();

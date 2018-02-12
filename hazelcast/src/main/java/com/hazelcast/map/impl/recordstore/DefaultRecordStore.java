@@ -731,7 +731,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         checkIfLoaded();
         long now = getNow();
 
-        mergePolicy.setSerializationService(serializationService);
+        serializationService.getManagedContext().initialize(mergePolicy);
 
         Data key = mergingEntry.getKey();
         Record<Object> record = getRecordOrNull(key, now, false);

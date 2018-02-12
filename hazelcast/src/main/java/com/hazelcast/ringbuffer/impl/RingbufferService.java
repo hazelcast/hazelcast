@@ -204,11 +204,7 @@ public class RingbufferService implements ManagedService, RemoteService, Fragmen
             return ringbuffer;
         }
 
-        ringbuffer = new RingbufferContainer<T, E>(
-                namespace,
-                config,
-                serializationService,
-                nodeEngine.getConfigClassLoader(), partitionId);
+        ringbuffer = new RingbufferContainer<T, E>(namespace, config, nodeEngine, partitionId);
         ringbuffer.getStore().instrument(nodeEngine);
         partitionContainers.put(namespace, ringbuffer);
         return ringbuffer;
@@ -255,7 +251,7 @@ public class RingbufferService implements ManagedService, RemoteService, Fragmen
 
     public void addRingbuffer(int partitionId, RingbufferContainer ringbuffer, RingbufferConfig config) {
         checkNotNull(ringbuffer, "ringbuffer can't be null");
-        ringbuffer.init(config, serializationService, nodeEngine.getConfigClassLoader());
+        ringbuffer.init(config, nodeEngine);
         ringbuffer.getStore().instrument(nodeEngine);
         getOrCreateRingbufferContainers(partitionId).put(ringbuffer.getNamespace(), ringbuffer);
     }

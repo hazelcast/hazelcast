@@ -32,10 +32,6 @@ import com.hazelcast.spi.serialization.SerializationService;
 abstract class AbstractMergePolicy implements SplitBrainMergePolicy, IdentifiedDataSerializable {
 
     @Override
-    public void setSerializationService(SerializationService serializationService) {
-    }
-
-    @Override
     public int getFactoryId() {
         return SplitBrainMergePolicyDataSerializerHook.F_ID;
     }

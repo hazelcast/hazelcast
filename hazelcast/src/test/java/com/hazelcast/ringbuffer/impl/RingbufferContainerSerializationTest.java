@@ -122,10 +122,7 @@ public class RingbufferContainerSerializationTest extends HazelcastTestSupport {
 
     private RingbufferContainer getRingbufferContainer(RingbufferConfig config) {
         // partitionId is irrelevant for this test
-        return new RingbufferContainer(
-                RingbufferService.getRingbufferNamespace(config.getName()), config,
-                nodeEngine.getSerializationService(), nodeEngine.getConfigClassLoader(),
-                0);
+        return new RingbufferContainer(RingbufferService.getRingbufferNamespace(config.getName()), config, nodeEngine, 0);
     }
 
     private void testSerialization(RingbufferContainer original) {

@@ -158,7 +158,7 @@ public class ArrayRingbuffer<E> implements Ringbuffer<E> {
     }
 
     public long merge(SplitBrainMergeEntryView<Long, E> mergingEntry, SplitBrainMergePolicy mergePolicy, long remainingCapacity) {
-        mergePolicy.setSerializationService(serializationService);
+        serializationService.getManagedContext().initialize(mergePolicy);
 
         // try to find an existing item with the same value
         E existingItem = null;

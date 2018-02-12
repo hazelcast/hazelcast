@@ -1454,7 +1454,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         final long now = Clock.currentTimeMillis();
         final long start = isStatisticsEnabled() ? System.nanoTime() : 0;
 
-        mergePolicy.setSerializationService(nodeEngine.getSerializationService());
+        injectDependencies(mergePolicy);
 
         boolean merged = false;
         Data key = mergingEntry.getKey();

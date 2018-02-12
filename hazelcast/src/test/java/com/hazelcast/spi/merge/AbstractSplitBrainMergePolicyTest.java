@@ -16,10 +16,8 @@
 
 package com.hazelcast.spi.merge;
 
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.spi.SplitBrainMergeEntryView;
 import com.hazelcast.spi.SplitBrainMergePolicy;
-import com.hazelcast.spi.serialization.SerializationService;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -32,15 +30,11 @@ public abstract class AbstractSplitBrainMergePolicyTest {
     private static final String EXISTING = "EXISTING";
     private static final String MERGING = "MERGING";
 
-    protected SerializationService serializationService;
     protected SplitBrainMergePolicy policy;
 
     @Before
     public void setup() {
-        serializationService = mock(InternalSerializationService.class);
-
         policy = createMergePolicy();
-        policy.setSerializationService(serializationService);
     }
 
     protected abstract SplitBrainMergePolicy createMergePolicy();

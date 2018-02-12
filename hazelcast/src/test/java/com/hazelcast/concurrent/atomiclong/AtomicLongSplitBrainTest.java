@@ -22,13 +22,11 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.spi.SplitBrainMergeEntryView;
 import com.hazelcast.spi.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.DiscardMergePolicy;
 import com.hazelcast.spi.merge.PassThroughMergePolicy;
 import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
-import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.SplitBrainTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -215,7 +213,7 @@ public class AtomicLongSplitBrainTest extends SplitBrainTestSupport {
         return new AtomicLong(container.get());
     }
 
-    private static class MergeGreaterValueMergePolicy implements SplitBrainMergePolicy, DataSerializable {
+    private static class MergeGreaterValueMergePolicy implements SplitBrainMergePolicy {
 
         @Override
         public <K, V> V merge(SplitBrainMergeEntryView<K, V> mergingEntry, SplitBrainMergeEntryView<K, V> existingEntry) {
@@ -223,10 +221,6 @@ public class AtomicLongSplitBrainTest extends SplitBrainTestSupport {
                 return mergingEntry.getValue();
             }
             return existingEntry.getValue();
-        }
-
-        @Override
-        public void setSerializationService(SerializationService serializationService) {
         }
 
         @Override
