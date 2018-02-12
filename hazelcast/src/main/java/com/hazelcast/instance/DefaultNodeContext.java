@@ -21,6 +21,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigurationException;
 import com.hazelcast.config.MemberAddressProviderConfig;
 import com.hazelcast.internal.networking.ChannelErrorHandler;
+import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.networking.EventLoopGroup;
 import com.hazelcast.internal.networking.nio.NioEventLoopGroup;
 import com.hazelcast.logging.ILogger;
@@ -145,7 +146,7 @@ public class DefaultNodeContext implements NodeContext {
     private EventLoopGroup createEventLoopGroup(Node node, NodeIOService ioService) {
         LoggingServiceImpl loggingService = node.loggingService;
 
-        MemberChannelInitializer initializer
+        ChannelInitializer initializer
                 = new MemberChannelInitializer(loggingService.getLogger(MemberChannelInitializer.class), ioService);
 
         ChannelErrorHandler errorHandler
