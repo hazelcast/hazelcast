@@ -19,6 +19,7 @@ package com.hazelcast.map.impl.recordstore;
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.lock.LockStore;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.internal.nearcache.impl.invalidation.Invalidator;
 import com.hazelcast.map.impl.EntryCostEstimator;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
@@ -49,18 +50,19 @@ import static com.hazelcast.map.impl.ExpirationTimeSetter.setTTLAndUpdateExpiryT
  */
 abstract class AbstractRecordStore implements RecordStore<Record> {
 
-    protected final String name;
-    protected final MapContainer mapContainer;
     protected final int partitionId;
-    protected final MapServiceContext mapServiceContext;
-    protected final SerializationService serializationService;
-    protected final InMemoryFormat inMemoryFormat;
-    protected final RecordFactory recordFactory;
-    protected final RecordComparator recordComparator;
-    protected final MapStoreContext mapStoreContext;
-    protected final MapDataStore<Data, Object> mapDataStore;
+    protected final String name;
     protected final LockStore lockStore;
+    protected final Invalidator invalidator;
+    protected final MapContainer mapContainer;
+    protected final RecordFactory recordFactory;
     protected final MapEventJournal eventJournal;
+    protected final InMemoryFormat inMemoryFormat;
+    protected final MapStoreContext mapStoreContext;
+    protected final RecordComparator recordComparator;
+    protected final MapServiceContext mapServiceContext;
+    protected final MapDataStore<Data, Object> mapDataStore;
+    protected final SerializationService serializationService;
 
     protected Storage<Data, Record> storage;
     protected final LocalRecordStoreStatsImpl stats = new LocalRecordStoreStatsImpl();
@@ -78,6 +80,7 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         this.mapDataStore = mapStoreContext.getMapStoreManager().getMapDataStore(name, partitionId);
         this.lockStore = createLockStore();
         this.eventJournal = mapServiceContext.getEventJournal();
+        this.invalidator = mapServiceContext.getMapNearCacheManager().getInvalidator();
     }
 
     @Override

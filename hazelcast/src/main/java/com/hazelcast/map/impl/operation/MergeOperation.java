@@ -16,7 +16,6 @@
 
 package com.hazelcast.map.impl.operation;
 
-import com.hazelcast.core.EntryView;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.record.Record;
@@ -34,8 +33,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.hazelcast.core.EntryEventType.MERGED;
-import static com.hazelcast.map.impl.EntryViews.createSimpleEntryView;
 import static com.hazelcast.map.impl.record.Records.buildRecordInfo;
 
 /**
@@ -49,15 +46,11 @@ public class MergeOperation extends MapOperation implements PartitionAwareOperat
     private SplitBrainMergePolicy mergePolicy;
     private boolean disableWanReplicationEvent;
 
-    private transient boolean hasMapListener;
-    private transient boolean hasWanReplication;
     private transient boolean hasBackups;
-    private transient boolean hasInvalidation;
+    private transient boolean hasMergedValues;
 
     private transient MapEntries mapEntries;
     private transient List<RecordInfo> backupRecordInfos;
-    private transient List<Data> invalidationKeys;
-    private transient boolean hasMergedValues;
 
     public MergeOperation() {
     }
@@ -71,67 +64,35 @@ public class MergeOperation extends MapOperation implements PartitionAwareOperat
     }
 
     @Override
-    public void run() {
-        hasMapListener = mapEventPublisher.hasEventListener(name);
-        hasWanReplication = mapContainer.isWanReplicationEnabled() && !disableWanReplicationEvent;
-        hasBackups = mapContainer.getTotalBackupCount() > 0;
-        hasInvalidation = mapContainer.hasInvalidationListener();
+    public void beforeRun() throws Exception {
+        super.beforeRun();
 
+        hasBackups = mapContainer.getTotalBackupCount() > 0;
         if (hasBackups) {
             mapEntries = new MapEntries(mergeEntries.size());
             backupRecordInfos = new ArrayList<RecordInfo>(mergeEntries.size());
         }
-        if (hasInvalidation) {
-            invalidationKeys = new ArrayList<Data>(mergeEntries.size());
-        }
+    }
 
+    @Override
+    public void run() {
         for (SplitBrainMergeEntryView<Data, Data> mergingEntry : mergeEntries) {
-            merge(mergingEntry);
-        }
-    }
+            Boolean merged = recordStore.merge(mergingEntry, mergePolicy,
+                    !disableWanReplicationEvent, getCallerUuid(), getCallerAddress());
+            hasMergedValues = merged ? true : hasMergedValues;
+            if (merged && hasBackups) {
+                Data dataKey = mergingEntry.getKey();
+                Record record = recordStore.getRecord(dataKey);
 
-    private void merge(SplitBrainMergeEntryView<Data, Data> mergingEntry) {
-        Data dataKey = mergingEntry.getKey();
-        Data oldValue = hasMapListener ? getValue(dataKey) : null;
-
-        //noinspection unchecked
-        if (Boolean.TRUE.equals(recordStore.merge(mergingEntry, mergePolicy))) {
-            hasMergedValues = true;
-            Data dataValue = getValueOrPostProcessedValue(dataKey, getValue(dataKey));
-            mapServiceContext.interceptAfterPut(name, dataValue);
-
-            if (hasMapListener) {
-                mapEventPublisher.publishEvent(getCallerAddress(), name, MERGED, dataKey, oldValue, dataValue);
-            }
-            if (hasWanReplication) {
-                EntryView entryView = createSimpleEntryView(dataKey, dataValue, recordStore.getRecord(dataKey));
-                mapEventPublisher.publishWanReplicationUpdate(name, entryView);
-            }
-            if (hasBackups) {
-                mapEntries.add(dataKey, dataValue);
-                backupRecordInfos.add(buildRecordInfo(recordStore.getRecord(dataKey)));
-            }
-            evict(dataKey);
-            if (hasInvalidation) {
-                invalidationKeys.add(dataKey);
+                mapEntries.add(dataKey, mapServiceContext.toData(record.getValue()));
+                backupRecordInfos.add(buildRecordInfo(record));
             }
         }
     }
 
-    private Data getValueOrPostProcessedValue(Data dataKey, Data dataValue) {
-        if (!isPostProcessing(recordStore)) {
-            return dataValue;
-        }
-        Record record = recordStore.getRecord(dataKey);
-        return mapServiceContext.toData(record.getValue());
-    }
-
-    private Data getValue(Data dataKey) {
-        Record record = recordStore.getRecord(dataKey);
-        if (record != null) {
-            return mapServiceContext.toData(record.getValue());
-        }
-        return null;
+    @Override
+    public void afterRun() throws Exception {
+        // intentionally empty body
     }
 
     @Override
@@ -152,13 +113,6 @@ public class MergeOperation extends MapOperation implements PartitionAwareOperat
     @Override
     public int getAsyncBackupCount() {
         return mapContainer.getAsyncBackupCount();
-    }
-
-    @Override
-    public void afterRun() throws Exception {
-        invalidateNearCache(invalidationKeys);
-
-        super.afterRun();
     }
 
     @Override

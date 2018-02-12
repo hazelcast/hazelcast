@@ -170,14 +170,6 @@ class LazyEntryView<K, V> implements EntryView<K, V> {
         return this;
     }
 
-    public long getEvictionCriteriaNumber() {
-        return 0;
-    }
-
-    public LazyEntryView<K, V> setEvictionCriteriaNumber(long evictionCriteriaNumber) {
-        return this;
-    }
-
     @Override
     public long getTtl() {
         return ttl;

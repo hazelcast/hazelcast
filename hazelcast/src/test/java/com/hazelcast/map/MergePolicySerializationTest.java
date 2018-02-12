@@ -25,6 +25,7 @@ import com.hazelcast.map.impl.SimpleEntryView;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.map.merge.PutIfAbsentMapMergePolicy;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -66,7 +67,7 @@ public class MergePolicySerializationTest extends HazelcastTestSupport {
         MapMergePolicy mergePolicy = (MapMergePolicy) mapServiceContext.getMergePolicyProvider()
                 .getMergePolicy(PutIfAbsentMapMergePolicy.class.getName());
         EntryView<String, MyObject> mergingEntryView = new SimpleEntryView<String, MyObject>("key", new MyObject());
-        recordStore.merge(dataKey, mergingEntryView, mergePolicy);
+        recordStore.merge(dataKey, mergingEntryView, mergePolicy, true, "", new Address());
 
         int deSerializedCount = MyObject.deserializedCount;
         assertEquals(0, deSerializedCount);
