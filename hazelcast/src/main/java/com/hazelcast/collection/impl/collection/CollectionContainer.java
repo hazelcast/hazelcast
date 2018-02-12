@@ -346,7 +346,7 @@ public abstract class CollectionContainer
 
     @Override
     public CollectionItem merge(SplitBrainMergeEntryView<Long, Data> mergingEntry, SplitBrainMergePolicy mergePolicy) {
-        mergePolicy.setSerializationService(nodeEngine.getSerializationService());
+        nodeEngine.getSerializationService().getManagedContext().initialize(mergePolicy);
 
         // try to find an existing item with the same value
         CollectionItem existingItem = null;

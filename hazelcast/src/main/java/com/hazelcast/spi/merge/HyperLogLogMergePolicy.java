@@ -18,7 +18,6 @@ package com.hazelcast.spi.merge;
 
 import com.hazelcast.cardinality.impl.hyperloglog.HyperLogLog;
 import com.hazelcast.spi.SplitBrainMergeEntryView;
-import com.hazelcast.spi.serialization.SerializationService;
 
 import static com.hazelcast.spi.merge.SplitBrainMergePolicyDataSerializerHook.HYPER_LOG_LOG;
 
@@ -46,10 +45,6 @@ public class HyperLogLogMergePolicy extends AbstractMergePolicy {
 
         ((HyperLogLog) mergingEntry.getValue()).merge((HyperLogLog) existingEntry.getValue());
         return mergingEntry.getValue();
-    }
-
-    @Override
-    public void setSerializationService(SerializationService serializationService) {
     }
 
     @Override

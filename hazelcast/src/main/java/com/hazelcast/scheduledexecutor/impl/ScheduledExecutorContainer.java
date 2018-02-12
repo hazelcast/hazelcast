@@ -237,7 +237,7 @@ public class ScheduledExecutorContainer
     @Override
     public ScheduledTaskDescriptor merge(SplitBrainMergeEntryView<String, ScheduledTaskDescriptor> merging,
                                          SplitBrainMergePolicy mergePolicy) {
-        mergePolicy.setSerializationService(nodeEngine.getSerializationService());
+        nodeEngine.getSerializationService().getManagedContext().initialize(mergePolicy);
 
         // try to find an existing item with the same value
         ScheduledTaskDescriptor match = null;

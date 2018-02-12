@@ -27,6 +27,7 @@ import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.ringbuffer.StaleSequenceException;
+import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.SplitBrainAwareDataContainer;
@@ -89,7 +90,7 @@ public class RingbufferContainer<T, E> implements IdentifiedDataSerializable, No
     /**
      * Constructs the ring buffer container with only the name and the key for blocking operations. This does not fully
      * prepare the container for usage. The caller must invoke the
-     * {@link #init(RingbufferConfig, SerializationService, ClassLoader)}
+     * {@link #init(RingbufferConfig, NodeEngine)}
      * method to complete the initialization before usage.
      *
      * @param namespace the namespace of the ring buffer container
@@ -103,14 +104,11 @@ public class RingbufferContainer<T, E> implements IdentifiedDataSerializable, No
      * Constructs a fully initialized ring buffer that can be used immediately. References to other services, the ring buffer
      * store, expiration policy and the config are all set.
      *
-     * @param namespace            the namespace of the ring buffer container
-     * @param config               the configuration of the ring buffer
-     * @param serializationService the serialization service
-     * @param configClassLoader    the class loader for which the ring buffer store classes will be loaded
+     * @param namespace  the namespace of the ring buffer container
+     * @param config     the configuration of the ring buffer
+     * @param nodeEngine the NodeEngine
      */
-    public RingbufferContainer(ObjectNamespace namespace, RingbufferConfig config,
-                               SerializationService serializationService,
-                               ClassLoader configClassLoader, int partitionId) {
+    public RingbufferContainer(ObjectNamespace namespace, RingbufferConfig config, NodeEngine nodeEngine, int partitionId) {
         this(namespace, partitionId);
 
         this.inMemoryFormat = config.getInMemoryFormat();
@@ -120,7 +118,7 @@ public class RingbufferContainer<T, E> implements IdentifiedDataSerializable, No
         if (ttlMs != TTL_DISABLED) {
             this.expirationPolicy = new RingbufferExpirationPolicy(ringbuffer.getCapacity(), ttlMs);
         }
-        init(config, serializationService, configClassLoader);
+        init(config, nodeEngine);
     }
 
     /**
@@ -128,21 +126,17 @@ public class RingbufferContainer<T, E> implements IdentifiedDataSerializable, No
      * on a replication operation the container is only partially constructed. The init method finishes the configuration
      * of the ring buffer container for further usage.
      *
-     * @param config               the configuration of the ring buffer
-     * @param serializationService the serialization service
-     * @param configClassLoader    the class loader for which the ring buffer store classes will be loaded
+     * @param config     the configuration of the ring buffer
+     * @param nodeEngine the NodeEngine
      */
-    public void init(RingbufferConfig config,
-                     SerializationService serializationService,
-                     ClassLoader configClassLoader) {
+    public void init(RingbufferConfig config, NodeEngine nodeEngine) {
         this.config = config;
-        this.serializationService = serializationService;
+        this.serializationService = nodeEngine.getSerializationService();
         ringbuffer.setSerializationService(serializationService);
-        initRingbufferStore(config, serializationService, configClassLoader);
+        initRingbufferStore(nodeEngine.getConfigClassLoader());
     }
 
-    private void initRingbufferStore(RingbufferConfig config, SerializationService serializationService,
-                                     ClassLoader configClassLoader) {
+    private void initRingbufferStore(ClassLoader configClassLoader) {
         this.store = RingbufferStoreWrapper.create(namespace,
                 config.getRingbufferStoreConfig(),
                 config.getInMemoryFormat(),

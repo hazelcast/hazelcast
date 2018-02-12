@@ -28,8 +28,8 @@ import com.hazelcast.instance.NodeState;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.tcp.FirewallingConnectionManager;
+import com.hazelcast.spi.NodeAware;
 import com.hazelcast.spi.SplitBrainMergeEntryView;
 import com.hazelcast.spi.SplitBrainMergePolicy;
 import com.hazelcast.spi.properties.GroupProperty;
@@ -445,7 +445,7 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
         }
     }
 
-    protected static class MergeIntegerValuesMergePolicy implements SplitBrainMergePolicy, DataSerializable {
+    protected static class MergeIntegerValuesMergePolicy implements SplitBrainMergePolicy, NodeAware {
 
         private transient SerializationService serializationService;
 
@@ -458,8 +458,8 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
         }
 
         @Override
-        public void setSerializationService(SerializationService serializationService) {
-            this.serializationService = serializationService;
+        public void setNode(Node node) {
+            this.serializationService = node.getSerializationService();
         }
 
         @Override

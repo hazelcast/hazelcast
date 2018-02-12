@@ -16,14 +16,35 @@
 
 package com.hazelcast.spi;
 
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.HazelcastInstanceAware;
+import com.hazelcast.instance.Node;
+import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.spi.serialization.SerializationService;
 
 /**
  * Policy for merging data structure entries after a split-brain has been healed.
+ * <p>
+ * The values of merging and existing {@link SplitBrainMergeEntryView}s are always in the in-memory format of the
+ * backing data structure. This can be a serialized format, so the content cannot be processed without deserialization.
+ * For most merge policies this will be fine, since the key or value are not used.
+ * A merge policy can implement {@link NodeAware} to get an instance of {@link Node} injected.
+ * Via {@link Node#getSerializationService()} the {@link SerializationService} can be retrieved to deserialize the data.
+ * <p>
+ * The deserialization is not done eagerly for two main reasons:
+ * <ul>
+ * <li>The deserialization is quite expensive and should be avoided, if the result is not needed.</li>
+ * <li>There is no need to locate classes of stored entries on the server side, when the entries are not deserialized.
+ * So you can put entries from a client by using {@link com.hazelcast.config.InMemoryFormat#BINARY} with a different
+ * classpath on client and server. In this case a deserialization could throw a {@link java.lang.ClassNotFoundException}.</li>
+ * </ul>
+ * A merge policy can also implement {@link HazelcastInstanceAware} to get the {@link HazelcastInstance} injected.
+ * This can be used to retrieve the user context via {@link HazelcastInstance#getUserContext()},
+ * which is an easy way to get user dependencies that are otherwise hard to obtain.
  *
  * @since 3.10
  */
-public interface SplitBrainMergePolicy {
+public interface SplitBrainMergePolicy extends DataSerializable {
 
     /**
      * Selects one of the merging and existing data structure entries to be merged.
@@ -40,24 +61,4 @@ public interface SplitBrainMergePolicy {
      * @return the selected value for merging
      */
     <K, V> V merge(SplitBrainMergeEntryView<K, V> mergingEntry, SplitBrainMergeEntryView<K, V> existingEntry);
-
-    /**
-     * Sets the {@link SerializationService} for this merge policy.
-     * <p>
-     * The keys and values of merging and existing {@link SplitBrainMergeEntryView}s are always in the in-memory format of the
-     * backing data structure. This can be a serialized format, so the content cannot be processed without deserialization.
-     * For most merge policies this will be fine, since the key or value are not used. If your implementation needs the
-     * deserialized data, you can use {@link SerializationService#toObject(Object)} of the injected SerializationService.
-     * <p>
-     * The deserialization is not done eagerly for two main reasons:
-     * <ul>
-     * <li>The deserialization is quite expensive and should be avoided, if the result is not needed.</li>
-     * <li>There is no need to locate classes of stored entries on the server side, when the entries are not deserialized.
-     * So you can put entries from a client by using {@link com.hazelcast.config.InMemoryFormat#BINARY} with a different
-     * classpath on client and server. In this case a deserialization could throw a {@link java.lang.ClassNotFoundException}.</li>
-     * </ul>
-     *
-     * @param serializationService the {@link SerializationService}
-     */
-    void setSerializationService(SerializationService serializationService);
 }

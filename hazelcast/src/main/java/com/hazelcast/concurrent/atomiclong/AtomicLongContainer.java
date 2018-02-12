@@ -82,7 +82,7 @@ public class AtomicLongContainer implements SplitBrainAwareDataContainer<Boolean
 
     @Override
     public Long merge(SplitBrainMergeEntryView<Boolean, Long> mergingEntry, SplitBrainMergePolicy mergePolicy) {
-        mergePolicy.setSerializationService(serializationService);
+        serializationService.getManagedContext().initialize(mergePolicy);
 
         if (mergingEntry.getKey()) {
             SplitBrainMergeEntryView<Boolean, Long> existingEntry = createSplitBrainMergeEntryView(true, value);

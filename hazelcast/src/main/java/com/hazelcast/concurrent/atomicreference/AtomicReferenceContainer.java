@@ -83,7 +83,7 @@ public class AtomicReferenceContainer implements SplitBrainAwareDataContainer<Bo
 
     @Override
     public Data merge(SplitBrainMergeEntryView<Boolean, Data> mergingEntry, SplitBrainMergePolicy mergePolicy) {
-        mergePolicy.setSerializationService(serializationService);
+        serializationService.getManagedContext().initialize(mergePolicy);
 
         if (mergingEntry.getKey()) {
             SplitBrainMergeEntryView<Boolean, Data> existingEntry = createSplitBrainMergeEntryView(true, value);
