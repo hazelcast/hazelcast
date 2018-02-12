@@ -21,7 +21,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.management.request.ConsoleCommandRequest;
-import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -30,40 +30,14 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-
-import java.util.Collection;
 
 import static com.hazelcast.util.JsonUtil.getObject;
 import static com.hazelcast.util.JsonUtil.getString;
-import static java.util.Arrays.asList;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class ConsoleCommandRequestTest extends HazelcastTestSupport {
-    @Parameterized.Parameters(name = "command:{0}")
-    public static Collection<Object[]> parameters() {
-        return asList(new Object[][]{
-                {"exit"},
-                {"quit"},
-                {"shutdown"},
-                {"EXIT"},
-                {"ExiT"},
-                {"QUIT"},
-                {"SHUTDOWN"},
-                {"#1 shutdown"},
-                {"#3 exit"},
-                {"&2 quit"},
-                {"echo 1;exit; echo 2;"},
-        });
-    }
-
-    @Parameterized.Parameter
-    public String command;
-
     private ManagementCenterService managementCenterService;
     private LifecycleService lifecycleService;
 
@@ -77,15 +51,31 @@ public class ConsoleCommandRequestTest extends HazelcastTestSupport {
 
     @Test
     public void testConsoleCommand_exitNotAllowed() throws Exception {
-        JsonObject requestJson = new JsonObject();
-        requestJson.add("command", command);
+        String[] forbiddenCommands = new String[]{
+                "exit",
+                "quit",
+                "shutdown",
+                "EXIT",
+                "ExiT",
+                "QUIT",
+                "SHUTDOWN",
+                "#1 shutdown",
+                "#3 exit",
+                "&2 quit",
+                "echo 1;exit; echo 2;",
+        };
 
-        ConsoleCommandRequest consoleCommandRequest = new ConsoleCommandRequest();
-        consoleCommandRequest.fromJson(requestJson);
+        for (String command : forbiddenCommands) {
+            JsonObject requestJson = new JsonObject();
+            requestJson.add("command", command);
 
-        JsonObject responseJson = new JsonObject();
-        consoleCommandRequest.writeResponse(managementCenterService, responseJson);
-        assertContains(getString(getObject(responseJson, "result"), "output"), "is not allowed!");
-        assertTrue(lifecycleService.isRunning());
+            ConsoleCommandRequest consoleCommandRequest = new ConsoleCommandRequest();
+            consoleCommandRequest.fromJson(requestJson);
+
+            JsonObject responseJson = new JsonObject();
+            consoleCommandRequest.writeResponse(managementCenterService, responseJson);
+            assertContains(getString(getObject(responseJson, "result"), "output"), "is not allowed!");
+            assertTrue(lifecycleService.isRunning());
+        }
     }
 }
