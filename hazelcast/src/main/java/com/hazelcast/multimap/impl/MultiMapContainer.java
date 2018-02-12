@@ -21,7 +21,6 @@ import com.hazelcast.concurrent.lock.LockStore;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.DistributedObjectNamespace;
 import com.hazelcast.spi.ObjectNamespace;
-import com.hazelcast.spi.SplitBrainAwareDataContainer;
 import com.hazelcast.spi.SplitBrainMergeEntryView;
 import com.hazelcast.spi.SplitBrainMergePolicy;
 import com.hazelcast.spi.serialization.SerializationService;
@@ -42,8 +41,7 @@ import static com.hazelcast.util.MapUtil.createHashMap;
  */
 @SuppressWarnings("checkstyle:methodcount")
 public class MultiMapContainer
-        extends MultiMapContainerSupport
-        implements SplitBrainAwareDataContainer<Data, MultiMapMergeContainer, MultiMapValue> {
+        extends MultiMapContainerSupport {
 
     private static final int ID_PROMOTION_OFFSET = 100000;
 
@@ -222,7 +220,13 @@ public class MultiMapContainer
         return objectNamespace;
     }
 
-    @Override
+    /**
+     * Merges the given {@link SplitBrainMergeEntryView} via the given {@link SplitBrainMergePolicy}.
+     *
+     * @param mergingEntry the {@link SplitBrainMergeEntryView} instance to merge
+     * @param mergePolicy  the {@link SplitBrainMergePolicy} instance to apply
+     * @return the used {@link MultiMapValue} if merge is applied, otherwise {@code null}
+     */
     public MultiMapValue merge(SplitBrainMergeEntryView<Data, MultiMapMergeContainer> mergingEntry,
                                SplitBrainMergePolicy mergePolicy) {
         SerializationService serializationService = nodeEngine.getSerializationService();

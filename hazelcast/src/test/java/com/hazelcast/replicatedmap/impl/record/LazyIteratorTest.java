@@ -683,12 +683,11 @@ public class LazyIteratorTest extends HazelcastTestSupport {
         }
 
         @Override
-        public boolean merge(Object key, ReplicatedMapEntryView entryView, ReplicatedMapMergePolicy policy) {
+        public boolean merge(Object key, ReplicatedMapEntryView entryView, ReplicatedMapMergePolicy mergePolicy) {
             return false;
         }
 
-        @Override
-        public Boolean merge(SplitBrainMergeEntryView<Object, Object> mergingEntry, SplitBrainMergePolicy mergePolicy) {
+        public boolean merge(SplitBrainMergeEntryView<Object, Object> mergingEntry, SplitBrainMergePolicy mergePolicy) {
             return false;
         }
     }
