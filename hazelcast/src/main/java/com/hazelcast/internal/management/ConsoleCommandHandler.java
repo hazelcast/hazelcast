@@ -38,19 +38,16 @@ public class ConsoleCommandHandler {
 
 
    /**
-    * Runs a command on the console. Will not run "exit" or "quit".
+    * Runs a command on the console. Will not run "exit", "quit", "shutdown", their upper-case
+    * or mixed case counterparts.
     *
     * @param command The command to run.
     *
     * @return either the command is handled, or a console message is returned if the command is not handled.
     *
-    * @throws java.lang.InterruptedException.
+    * @throws java.lang.InterruptedException
     */
     public String handleCommand(final String command) throws InterruptedException {
-        if ("exit".equals(command) || "quit".equals(command)) {
-            return "'" + command + "' is not allowed!";
-        }
-
         if (lock.tryLock(1, TimeUnit.SECONDS)) {
             try {
                 return doHandleCommand(command);
@@ -103,6 +100,16 @@ public class ConsoleCommandHandler {
         @Override
         public void print(Object obj) {
             buffer.append(String.valueOf(obj));
+        }
+
+        @Override
+        protected void handleExit() {
+            print("'exit' is not allowed!");
+        }
+
+        @Override
+        protected void handleShutdown() {
+            print("'shutdown' is not allowed!");
         }
     }
 }
