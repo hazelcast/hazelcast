@@ -33,8 +33,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.concurrent.Future;
-
 import static com.hazelcast.config.MapStoreConfig.InitialLoadMode.LAZY;
 import static com.hazelcast.test.TimeConstants.MINUTE;
 import static org.junit.Assert.assertEquals;
@@ -128,7 +126,7 @@ public class MapLoaderFailoverTest extends HazelcastTestSupport {
         IMap<Object, Object> map = nodes[0].getMap(mapName);
 
         // trigger loading and pause half way through
-        Future<Object> asyncVal = map.getAsync(1);
+        map.getAsync(1);
         pausingLoader.awaitPause();
 
         hz3.getLifecycleService().terminate();
@@ -136,7 +134,6 @@ public class MapLoaderFailoverTest extends HazelcastTestSupport {
 
         pausingLoader.resume();
 
-        assertEquals(1, asyncVal.get());
         assertSizeEventually(MAP_STORE_ENTRY_COUNT, map);
         assertTrue(mapLoader.getLoadedValueCount() >= MAP_STORE_ENTRY_COUNT);
         assertEquals(2, mapLoader.getLoadAllKeysInvocations());
