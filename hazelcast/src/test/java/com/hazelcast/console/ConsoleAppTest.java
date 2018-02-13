@@ -119,6 +119,23 @@ public class ConsoleAppTest extends HazelcastTestSupport {
     }
 
     /**
+     * Tests m.delete operation.
+     */
+    @Test
+    public void mapDelete() {
+        HazelcastInstance hz = createHazelcastInstance();
+        ConsoleApp consoleApp = new ConsoleApp(hz);
+        IMap<String, String> map = hz.getMap("default");
+        map.put("a", "valueOfA");
+        map.put("b", "valueOfB");
+        resetSystemOut();
+        consoleApp.handleCommand("m.delete b");
+        assertTextInSystemOut("true"); // result of successful operation
+        assertEquals("Unexpected map size", 1, map.size());
+        assertFalse("Unexpected entry in the map", map.containsKey("b"));
+    }
+
+    /**
      * Tests m.get operation.
      */
     @Test
