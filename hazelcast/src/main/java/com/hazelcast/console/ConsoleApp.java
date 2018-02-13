@@ -218,8 +218,12 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
             for (int i = 0; i < repeat; i++) {
                 handleCommand(command.substring(first.length()).replaceAll("\\$i", "" + i));
             }
-            long elapsedSeconds = MILLISECONDS.toSeconds(Clock.currentTimeMillis() - started);
-            println("ops/s = " + repeat / elapsedSeconds);
+            long elapsedMilliSeconds = Clock.currentTimeMillis() - started;
+            if (elapsedMilliSeconds > 0) {
+                println(String.format("ops/s = %.2f", (double) repeat * 1000 / elapsedMilliSeconds));
+            } else {
+                println("Bingo, all the operations finished in no time!");
+            }
         } else if (first.startsWith("&") && first.length() > 1) {
             final int fork = Integer.parseInt(first.substring(1));
             final String threadCommand = command.substring(first.length());
@@ -253,8 +257,8 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
             handleColon(command);
         } else if ("silent".equals(first)) {
             silent = Boolean.parseBoolean(args[1]);
-        } else if ("shutdown".equals(first)) {
-            hazelcast.getLifecycleService().shutdown();
+        } else if ("shutdown".equalsIgnoreCase(first)) {
+            handleShutdown();
         } else if ("echo".equals(first)) {
             echo = Boolean.parseBoolean(args[1]);
             println("echo: " + echo);
@@ -409,12 +413,20 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
         } else if (first.equalsIgnoreCase("instances")) {
             handleInstances(args);
         } else if (first.equalsIgnoreCase("quit") || first.equalsIgnoreCase("exit")) {
-            System.exit(0);
+            handleExit();
         } else if (first.startsWith("e") && first.endsWith(".simulateLoad")) {
             handleExecutorSimulate(args);
         } else {
             println("type 'help' for help");
         }
+    }
+
+    protected void handleShutdown() {
+        hazelcast.getLifecycleService().shutdown();
+    }
+
+    protected void handleExit() {
+        System.exit(0);
     }
 
     private void handleExecutorSimulate(String[] args) {
