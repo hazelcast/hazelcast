@@ -150,11 +150,6 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * <p>
      * No atomicity guarantees are given. It could be that in case of failure
      * some of the key/value-pairs get written, while others are not.
-     * <p>
-     * <b>Warning:</b>
-     * <p>
-     * If you have previously set a TTL for the key, the TTL remains unchanged and the entry will
-     * expire when the initial TTL has elapsed.
      *
      * <p><b>Interactions with the map store</b>
      * <p>
@@ -251,11 +246,6 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * This method uses {@code hashCode} and {@code equals} of the binary form of
      * the {@code key}, not the actual implementations of {@code hashCode} and {@code equals}
      * defined in the {@code key}'s class.
-     * <p>
-     * <b>Warning 3:</b>
-     * <p>
-     * If you have previously set a TTL for the key, the TTL remains unchanged and the entry will
-     * expire when the initial TTL has elapsed.
      * <p>
      * <p><b>Note:</b>
      * Use {@link #set(Object, Object)} if you don't need the return value, it's slightly more efficient.
@@ -612,16 +602,11 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * }</pre>
      * ExecutionException is never thrown.
      * <p>
-     * <b>Warning 1:</b>
+     * <b>Warning:</b>
      * <p>
      * This method uses {@code hashCode} and {@code equals} of the binary form of
      * the {@code key}, not the actual implementations of {@code hashCode} and {@code equals}
      * defined in the {@code key}'s class.
-     * <p>
-     * <b>Warning 2:</b>
-     * <p>
-     * If you have previously set a TTL for the key, the TTL remains unchanged and the entry will
-     * expire when the initial TTL has elapsed.
      * <p>
      * <p><b>Note:</b>
      * Use {@link #setAsync(Object, Object)} if you don't need the return value, it's slightly more efficient.
@@ -774,16 +759,11 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * }</pre>
      * ExecutionException is never thrown.
      * <p>
-     * <b>Warning 1:</b>
+     * <b>Warning:</b>
      * <p>
      * This method uses {@code hashCode} and {@code equals} of the binary form of
      * the {@code key}, not the actual implementations of {@code hashCode} and {@code equals}
      * defined in the {@code key}'s class.
-     * <p>
-     * <b>Warning 2:</b>
-     * <p>
-     * If you have previously set a TTL for the key, the TTL remains unchanged and the entry will
-     * expire when the initial TTL has elapsed.
      *
      * <p><b>Interactions with the map store</b>
      * <p>
@@ -953,16 +933,11 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * the caller thread could not acquire the lock for the key within the
      * timeout duration, thus the put operation is not successful.
      * <p>
-     * <b>Warning 1:</b>
+     * <b>Warning:</b>
      * <p>
      * This method uses {@code hashCode} and {@code equals} of the binary form of
      * the {@code key}, not the actual implementations of {@code hashCode} and {@code equals}
      * defined in the {@code key}'s class.
-     * <p>
-     * <b>Warning 2:</b>
-     * <p>
-     * If you have previously set a TTL for the key, the TTL remains unchanged and the entry will
-     * expire when the initial TTL has elapsed.
      *
      * <p><b>Interactions with the map store</b>
      * <p>
@@ -1195,10 +1170,6 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * <p>
      * This method returns a clone of the previous value, not the original (identically equal) value
      * previously put into the map.
-     * <p>
-     * <b>Warning 3:</b>
-     * <p>
-     * If you have previously set a TTL for the key, the same TTL will be again set on the new value.
      *
      * <p><b>Interactions with the map store</b>
      * <p>
@@ -1231,11 +1202,6 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * This method uses {@code hashCode} and {@code equals} of the binary form of
      * the {@code key}, not the actual implementations of {@code hashCode} and {@code equals}
      * defined in the {@code key}'s class.
-     * <p>
-     * <b>Warning 3:</b>
-     * <p>
-     * If you have previously set a TTL for the key, the TTL remains unchanged and the entry will
-     * expire when the initial TTL has elapsed.
      *
      * <p><b>Interactions with the map store</b>
      * <p>
