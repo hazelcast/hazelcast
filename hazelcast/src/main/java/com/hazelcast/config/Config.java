@@ -228,6 +228,8 @@ public class Config {
      * @param name property name
      * @return property value
      * @see #setProperty(String, String)
+     * @see <a href="http://docs.hazelcast.org/docs/latest/manual/html-single/index.html#system-properties">
+     *     Hazelcast System Properties</a>
      */
     public String getProperty(String name) {
         String value = properties.getProperty(name);
@@ -240,6 +242,8 @@ public class Config {
      * @param name  property name
      * @param value value of the property
      * @return this config instance
+     * @see <a href="http://docs.hazelcast.org/docs/latest/manual/html-single/index.html#system-properties">
+     *     Hazelcast System Properties</a>
      */
     public Config setProperty(String name, String value) {
         properties.put(name, value);
