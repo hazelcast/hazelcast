@@ -577,6 +577,20 @@ public final class IOUtil {
         }
     }
 
+    /**
+     * Creates a debug String for te given ByteBuffer. Useful when debugging IO.
+     *
+     * Do not remove even if this method isn't used.
+     *
+     * @param name name of the ByteBuffer.
+     * @param byteBuffer the ByteBuffer
+     * @return the debug String
+     */
+    public static String toDebugString(String name, ByteBuffer byteBuffer) {
+        return name + "(pos:" + byteBuffer.position() + " cap:" + byteBuffer.capacity()
+                + " remain:" + byteBuffer.remaining() + " lim:" + byteBuffer.limit() + ")";
+    }
+
     private static final class ClassLoaderAwareObjectInputStream extends ObjectInputStream {
 
         private final ClassLoader classLoader;
