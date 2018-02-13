@@ -18,7 +18,6 @@ package com.hazelcast.internal.util.concurrent;
 
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.RequireAssertEnabled;
-import com.hazelcast.util.function.Consumer;
 import com.hazelcast.util.function.Predicate;
 import org.junit.Test;
 

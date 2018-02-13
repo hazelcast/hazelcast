@@ -24,7 +24,6 @@ import com.hazelcast.spring.context.SpringAware;
 
 import javax.annotation.Resource;
 import javax.cache.configuration.Factory;
-import javax.cache.integration.CacheLoader;
 import javax.cache.integration.CacheWriter;
 import java.util.concurrent.atomic.AtomicBoolean;
 

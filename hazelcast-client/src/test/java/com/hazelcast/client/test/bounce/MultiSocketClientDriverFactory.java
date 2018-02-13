@@ -19,8 +19,6 @@ package com.hazelcast.client.test.bounce;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.core.HazelcastInstance;
 
-import java.net.InetSocketAddress;
-
 /**
  * Multisocket client test driver factory for bouncing members tests
  */

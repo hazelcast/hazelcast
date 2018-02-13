@@ -29,7 +29,6 @@ import org.junit.runner.RunWith;
 
 import java.nio.channels.SocketChannel;
 
-import static org.junit.Assert.assertFalse;
 import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastSerialClassRunner.class)
