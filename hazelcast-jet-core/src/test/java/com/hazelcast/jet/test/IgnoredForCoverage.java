@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.annotation;
+package com.hazelcast.jet.test;
 
 /**
  * Category marker for the tests which are excluded from test coverage profile.

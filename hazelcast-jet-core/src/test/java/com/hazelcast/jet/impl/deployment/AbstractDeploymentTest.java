@@ -17,7 +17,7 @@
 package com.hazelcast.jet.impl.deployment;
 
 import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.annotation.IgnoredForCoverage;
+import com.hazelcast.jet.test.IgnoredForCoverage;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.impl.deployment.LoadPersonIsolated.LoadPersonIsolatedMetaSupplier;
