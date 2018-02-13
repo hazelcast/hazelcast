@@ -63,7 +63,7 @@ public class WaitSet implements LiveOperationsTracker, Iterable<WaitSetEntry> {
     @Override
     public void populate(LiveOperations liveOperations) {
         for (WaitSetEntry entry : queue) {
-            // we need to read out the data from the BlockedOperation; not from the ParkerOperation-container.
+            // we need to read out the data from the BlockedOperation; not from the WaitSetEntry
             Operation operation = entry.getOperation();
             liveOperations.add(operation.getCallerAddress(), operation.getCallId());
         }
