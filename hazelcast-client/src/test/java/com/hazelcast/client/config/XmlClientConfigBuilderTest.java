@@ -21,7 +21,6 @@ import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.GlobalSerializerConfig;
 import com.hazelcast.config.GroupConfig;
-import com.hazelcast.config.HostVerificationConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.ListenerConfig;
@@ -274,12 +273,6 @@ public class XmlClientConfigBuilderTest extends HazelcastTestSupport {
         assertEquals("com.hazelcast.examples.MySslFactory", sslConfig.getFactoryClassName());
         assertEquals(1, sslConfig.getProperties().size());
         assertEquals("TLS", sslConfig.getProperties().get("protocol"));
-
-        HostVerificationConfig hostVerification = sslConfig.getHostVerificationConfig();
-        assertNotNull(hostVerification);
-        assertEquals("com.hazelcast.nio.ssl.BasicHostVerifier", hostVerification.getPolicyClassName());
-        assertFalse(hostVerification.isEnabledOnServer());
-        assertTrue(hostVerification.getProperties().isEmpty());
     }
 
     @Test

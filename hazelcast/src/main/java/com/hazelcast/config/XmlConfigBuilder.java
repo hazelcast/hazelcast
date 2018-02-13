@@ -1957,32 +1957,9 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 sslConfig.setFactoryClassName(getTextContent(n).trim());
             } else if ("properties".equals(nodeName)) {
                 fillProperties(n, sslConfig.getProperties());
-            } else if ("host-verification".equals(nodeName)) {
-                handleTlsHostVerificationConfig(n, sslConfig);
             }
         }
         config.getNetworkConfig().setSSLConfig(sslConfig);
-    }
-
-    private void handleTlsHostVerificationConfig(Node node, SSLConfig sslConfig) {
-        HostVerificationConfig hostVerification = new HostVerificationConfig();
-        NamedNodeMap attributes = node.getAttributes();
-        Node classNameNode = attributes.getNamedItem("policy-class-name");
-        if (classNameNode == null) {
-            throw new InvalidConfigurationException(
-                    "The 'policy-class-name' attribute has to be provided in ssl/host-verification");
-        }
-        hostVerification.setPolicyClassName(getTextContent(classNameNode).trim());
-        Node enabledNode = attributes.getNamedItem("enabled-on-server");
-        hostVerification.setEnabledOnServer(enabledNode != null && getBooleanValue(getTextContent(enabledNode).trim()));
-
-        for (Node n : childElements(node)) {
-            String nodeName = cleanNodeName(n);
-            if ("properties".equals(nodeName)) {
-                fillProperties(n, hostVerification.getProperties());
-            }
-        }
-        sslConfig.setHostVerificationConfig(hostVerification);
     }
 
     private void handleMcMutualAuthConfig(Node node) {

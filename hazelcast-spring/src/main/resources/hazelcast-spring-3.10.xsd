@@ -2517,21 +2517,11 @@
     <xs:complexType name="ssl">
         <xs:sequence>
             <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="host-verification" type="host-verification" minOccurs="0" maxOccurs="1"/>            
         </xs:sequence>
         <xs:attribute name="enabled" default="false" type="xs:string"/>
         <xs:attribute name="factory-class-name" type="xs:string" use="optional"/>
         <xs:attribute name="factory-implementation" type="xs:string" use="optional"/>
     </xs:complexType>
-
-    <xs:complexType name="host-verification">
-        <xs:sequence>
-            <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
-        </xs:sequence>
-        <xs:attribute name="policy-class-name"  type="xs:string" use="required"/>
-        <xs:attribute name="enabled-on-server" default="false" type="xs:string"/>
-    </xs:complexType>
-
 
     <xs:complexType name="socket-interceptor">
         <xs:sequence>

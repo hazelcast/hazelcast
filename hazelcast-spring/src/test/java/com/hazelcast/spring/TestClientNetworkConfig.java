@@ -21,7 +21,6 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.HazelcastClientProxy;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
-import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.nio.ssl.TestKeyStoreUtil;
@@ -39,7 +38,6 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
@@ -89,9 +87,8 @@ public class TestClientNetworkConfig {
     @Test
     public void smokeSSLConfig() {
         ClientConfig config = client.getClientConfig();
-        SSLConfig sslConfig = config.getNetworkConfig().getSSLConfig();
-        assertEquals("com.hazelcast.nio.ssl.BasicSSLContextFactory", sslConfig.getFactoryClassName());
-        assertEquals("com.hazelcast.nio.ssl.BasicHostVerifier", sslConfig.getHostVerificationConfig().getPolicyClassName());
+        assertEquals("com.hazelcast.nio.ssl.BasicSSLContextFactory",
+                config.getNetworkConfig().getSSLConfig().getFactoryClassName());
     }
 
     @Test

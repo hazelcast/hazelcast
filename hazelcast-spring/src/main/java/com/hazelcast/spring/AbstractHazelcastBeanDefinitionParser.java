@@ -22,7 +22,6 @@ import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.GlobalSerializerConfig;
-import com.hazelcast.config.HostVerificationConfig;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.NearCachePreloaderConfig;
 import com.hazelcast.config.SerializationConfig;
@@ -512,25 +511,5 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
             }
             discoveryStrategyConfigs.add(discoveryStrategyConfigBuilder.getBeanDefinition());
         }
-
-        protected void handleHostVerification(Node node, BeanDefinitionBuilder sslConfigBuilder) {
-            BeanDefinitionBuilder hostVerificationBuilder = createBeanBuilder(HostVerificationConfig.class);
-            NamedNodeMap attributes = node.getAttributes();
-            hostVerificationBuilder.addPropertyValue("policyClassName",
-                    getTextContent(attributes.getNamedItem("policy-class-name")));
-            Node attributeNode = attributes.getNamedItem("enabled-on-server");
-            if (attributeNode != null) {
-                hostVerificationBuilder.addPropertyValue("enabledOnServer", getBooleanValue(getTextContent(attributeNode)));
-            }
-
-            for (Node child : childElements(node)) {
-                String name = cleanNodeName(child);
-                if ("properties".equals(name)) {
-                    handleProperties(child, hostVerificationBuilder);
-                }
-            }
-            sslConfigBuilder.addPropertyValue("hostVerificationConfig", hostVerificationBuilder.getBeanDefinition());
-        }
-
     }
 }
