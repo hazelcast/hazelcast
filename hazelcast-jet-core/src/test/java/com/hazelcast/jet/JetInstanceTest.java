@@ -22,6 +22,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
+import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -38,6 +39,12 @@ public class JetInstanceTest extends JetTestSupport {
 
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
+
+    @After
+    public void tearDown() throws Exception {
+        Hazelcast.shutdownAll();
+        Jet.shutdownAll();
+    }
 
     @Test
     public void when_twoJetInstancesCreated_then_clusterOfTwoShouldBeFormed() {
