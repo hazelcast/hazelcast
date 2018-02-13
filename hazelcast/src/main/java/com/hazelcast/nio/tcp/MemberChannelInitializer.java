@@ -136,13 +136,12 @@ public class MemberChannelInitializer implements ChannelInitializer {
         return new InitResult<ChannelInboundHandler>(inputBuffer, inboundHandler);
     }
 
-    private InitResult<ChannelInboundHandler> initInboundClientProtocol(Channel channel) throws IOException {
+    private InitResult<ChannelInboundHandler> initInboundClientProtocol(Channel channel) {
         TcpIpConnection connection = (TcpIpConnection) channel.attributeMap().get(TcpIpConnection.class);
 
         ByteBuffer inputBuffer = newInputBuffer(channel, ioService.getSocketClientReceiveBufferSize());
 
-        ChannelInboundHandler inboundHandler
-                = new ClientMessageDecoder(new ClientMessageHandlerImpl(connection, ioService.getClientEngine()));
+        ChannelInboundHandler inboundHandler = new ClientMessageDecoder(connection, ioService.getClientEngine());
 
         return new InitResult<ChannelInboundHandler>(inputBuffer, inboundHandler);
     }
