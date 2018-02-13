@@ -244,12 +244,6 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
                 + "          <properties>\r\n"
                 + "            <property name=\"protocol\">TLS</property>\r\n"
                 + "          </properties>\r\n"
-                + "          <host-verification policy-class-name=\"com.example.Verifier\"\r\n"
-                + "              enabled-on-server=\"true\">\r\n"
-                + "            <properties>\r\n"
-                + "              <property name=\"host\">127.0.0.1</property>\r\n"
-                + "            </properties>\r\n"
-                + "          </host-verification>\r\n"
                 + "        </ssl>\r\n"
                 + "    </network>\n"
                 + HAZELCAST_END_TAG;
@@ -260,12 +254,6 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         assertEquals("com.hazelcast.nio.ssl.BasicSSLContextFactory", sslConfig.getFactoryClassName());
         assertEquals(1, sslConfig.getProperties().size());
         assertEquals("TLS", sslConfig.getProperties().get("protocol"));
-
-        HostVerificationConfig hostVerification = sslConfig.getHostVerificationConfig();
-        assertEquals("com.example.Verifier", hostVerification.getPolicyClassName());
-        assertTrue(hostVerification.isEnabledOnServer());
-        assertEquals(1, hostVerification.getProperties().size());
-        assertEquals("127.0.0.1", hostVerification.getProperties().get("host"));
     }
 
     @Test

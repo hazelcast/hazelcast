@@ -1005,15 +1005,6 @@ public class ConfigXmlGenerator {
             gen.node("factory-class-name",
                     classNameOrImplClass(ssl.getFactoryClassName(), ssl.getFactoryImplementation()))
                     .appendProperties(props);
-
-            HostVerificationConfig hostVerification = ssl.getHostVerificationConfig();
-            if (hostVerification != null) {
-                gen.open("host-verification",
-                        "policy-class-name", hostVerification.getPolicyClassName(),
-                        "enabled-on-server", hostVerification.isEnabledOnServer());
-                gen.appendProperties(hostVerification.getProperties());
-                gen.close();
-            }
         }
         gen.close();
     }

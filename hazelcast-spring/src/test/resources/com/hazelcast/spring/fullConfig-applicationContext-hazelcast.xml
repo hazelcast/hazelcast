@@ -167,13 +167,7 @@
 
 
                 <hz:ssl enabled="false" factory-class-name="com.hazelcast.spring.DummySSLContextFactory"
-                        factory-implementation="dummySSLContextFactory">
-                    <hz:host-verification policy-class-name="com.hazelcast.nio.ssl.BasicHostVerifier" enabled-on-server="true">
-                        <hz:properties>
-                            <hz:property name="testProperty">testValue</hz:property>
-                        </hz:properties>
-                    </hz:host-verification>
-                </hz:ssl>
+                        factory-implementation="dummySSLContextFactory"/>
                 <hz:socket-interceptor enabled="false" class-name="com.hazelcast.spring.DummySocketInterceptor"
                                        implementation="dummySocketInterceptor"/>
                 <hz:symmetric-encryption enabled="false"

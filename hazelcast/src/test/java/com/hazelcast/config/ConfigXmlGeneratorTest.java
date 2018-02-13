@@ -1059,26 +1059,6 @@ public class ConfigXmlGeneratorTest {
     }
 
     @Test
-    public void testTlsHostVerification() {
-        Config cfg = new Config();
-        SSLConfig sslConfig = new SSLConfig();
-        HostVerificationConfig expectedConfig = new HostVerificationConfig();
-        expectedConfig.setEnabledOnServer(true);
-        expectedConfig.setPolicyClassName("example.mycompany.FooVerifier");
-        expectedConfig.setProperty("test", "value");
-        sslConfig.setHostVerificationConfig(expectedConfig);
-        cfg.getNetworkConfig().setSSLConfig(sslConfig);
-
-        HostVerificationConfig actualConfig = getNewConfigViaXMLGenerator(cfg).getNetworkConfig().getSSLConfig()
-                                                                              .getHostVerificationConfig();
-        assertNotNull(actualConfig);
-        assertEquals("example.mycompany.FooVerifier", actualConfig.getPolicyClassName());
-        assertTrue(actualConfig.isEnabledOnServer());
-        assertEquals("value", actualConfig.getProperties().get("test"));
-        assertEquals(expectedConfig, actualConfig);
-    }
-
-    @Test
     public void testCardinalityEstimator() {
         Config cfg = new Config();
         CardinalityEstimatorConfig estimatorConfig = new CardinalityEstimatorConfig()
