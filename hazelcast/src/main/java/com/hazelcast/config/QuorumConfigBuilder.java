@@ -14,7 +14,33 @@
  * limitations under the License.
  */
 
+package com.hazelcast.config;
+
 /**
- * Contains cluster quorum operation classes.
+ * Commons for quorum config builders.
  */
-package com.hazelcast.quorum.impl.operation;
+public abstract class QuorumConfigBuilder {
+
+    /**
+     * Quorum size: expected number of live members in cluster for quorum to be present.
+     */
+    protected int size;
+
+    /**
+     * Whether this quorum config is enabled or not
+     */
+    protected boolean enabled = true;
+
+    public QuorumConfigBuilder enabled(boolean enabled) {
+        this.enabled = enabled;
+        return this;
+    }
+
+    public QuorumConfigBuilder withQuorumSize(int size) {
+        this.size = size;
+        return this;
+    }
+
+    public abstract QuorumConfig build();
+
+}

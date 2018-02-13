@@ -613,6 +613,23 @@
                 </hz:quorum-listeners>
             </hz:quorum>
 
+            <hz:quorum enabled="true" name="probabilistic-quorum">
+                <hz:quorum-size>3</hz:quorum-size>
+                <hz:quorum-type>READ_WRITE</hz:quorum-type>
+                <hz:quorum-listeners>
+                    <hz:quorum-listener class-name="com.hazelcast.spring.DummyQuorumListener"/>
+                    <hz:quorum-listener implementation="dummyQuorumListener"/>
+                </hz:quorum-listeners>
+                <hz:probabilistic-quorum suspicion-threshold="11" acceptable-heartbeat-pause-millis="31415" max-sample-size="42"
+                                         heartbeat-interval-millis="77123" min-std-deviation-millis="1000" />
+            </hz:quorum>
+
+            <hz:quorum enabled="true" name="recently-active-quorum">
+                <hz:quorum-size>5</hz:quorum-size>
+                <hz:quorum-type>READ_WRITE</hz:quorum-type>
+                <hz:recently-active-quorum heartbeat-tolerance-millis="5123"/>
+            </hz:quorum>
+
             <hz:hot-restart-persistence enabled="true"
                                         validation-timeout-seconds="1111"
                                         data-load-timeout-seconds="2222"

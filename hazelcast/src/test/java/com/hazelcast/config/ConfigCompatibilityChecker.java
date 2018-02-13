@@ -20,6 +20,7 @@ import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.internal.cluster.impl.ConfigCheck;
 import com.hazelcast.util.CollectionUtil;
 import org.apache.commons.lang3.ArrayUtils;
 
@@ -99,6 +100,7 @@ class ConfigCompatibilityChecker {
         checkCompatibleConfigs("count down latch", c1, c2, c1.getCountDownLatchConfigs(), c2.getCountDownLatchConfigs(), new CountDownLatchConfigChecker());
         checkCompatibleConfigs("cardinality estimator", c1, c2, c1.getCardinalityEstimatorConfigs(), c2.getCardinalityEstimatorConfigs(), new CardinalityEstimatorConfigChecker());
         checkCompatibleConfigs("pn counter", c1, c2, c1.getPNCounterConfigs(), c2.getPNCounterConfigs(), new PNCounterConfigChecker());
+        checkCompatibleConfigs("quorum", c1, c2, c1.getQuorumConfigs(), c2.getQuorumConfigs(), new QuorumConfigChecker());
 
         return true;
     }
@@ -1130,6 +1132,27 @@ class ConfigCompatibilityChecker {
                     (c1 != null && c2 != null
                             && nullSafeEqual(c1.getMaxConcurrentReplicationTargets(), c2.getMaxConcurrentReplicationTargets())
                             && nullSafeEqual(c1.getReplicationPeriodMillis(), c2.getReplicationPeriodMillis()));
+        }
+    }
+
+    static class QuorumConfigChecker extends ConfigChecker<QuorumConfig> {
+        @Override
+        boolean check(QuorumConfig c1, QuorumConfig c2) {
+            if (c1 == c2) {
+                return true;
+            }
+
+            if (c1 == null || c2 == null) {
+                return false;
+            }
+
+            return ((c1.isEnabled() == c2.isEnabled())
+                    && nullSafeEqual(c1.getName(), c2.getName())
+                    && nullSafeEqual(c1.getType(), c2.getType())
+                    && (c1.getSize() == c2.getSize())
+                    && nullSafeEqual(c1.getQuorumFunctionClassName(), c2.getQuorumFunctionClassName())
+                    && nullSafeEqual(c1.getQuorumFunctionImplementation(), c2.getQuorumFunctionImplementation())
+                    && nullSafeEqual(c1.getListenerConfigs(), c2.getListenerConfigs()));
         }
     }
 }

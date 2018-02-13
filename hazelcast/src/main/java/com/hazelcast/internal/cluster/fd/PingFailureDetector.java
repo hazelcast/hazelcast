@@ -35,8 +35,8 @@ public class PingFailureDetector<E> {
         this.maxPingAttempts = maxPingAttempts;
     }
 
-    public void heartbeat(E endpoint) {
-        getAttempts(endpoint).set(0);
+    public int heartbeat(E endpoint) {
+        return getAttempts(endpoint).getAndSet(0);
     }
 
     public void logAttempt(E endpoint) {

@@ -22,6 +22,7 @@ import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExp
 import com.hazelcast.config.ConfigCompatibilityChecker.EventJournalConfigChecker;
 import com.hazelcast.memory.MemorySize;
 import com.hazelcast.memory.MemoryUnit;
+import com.hazelcast.quorum.QuorumType;
 import com.hazelcast.spi.merge.DiscardMergePolicy;
 import com.hazelcast.spi.merge.HigherHitsMergePolicy;
 import com.hazelcast.spi.merge.LatestUpdateMergePolicy;
@@ -1194,6 +1195,52 @@ public class ConfigXmlGeneratorTest {
         assertEquals(defaultSchedExecConfig.getCapacity(), fallsbackToDefault.getCapacity());
         assertEquals(defaultSchedExecConfig.getPoolSize(), fallsbackToDefault.getPoolSize());
         assertEquals(defaultSchedExecConfig.getDurability(), fallsbackToDefault.getDurability());
+    }
+
+    @Test
+    public void testQuorumConfig_configByClassName() {
+        Config config = new Config();
+        QuorumConfig quorumConfig = new QuorumConfig("test-quorum", true, 3);
+        quorumConfig.setType(QuorumType.READ_WRITE)
+                    .setQuorumFunctionClassName("com.hazelcast.QuorumFunction");
+        config.addQuorumConfig(quorumConfig);
+
+        QuorumConfig generatedConfig = getNewConfigViaXMLGenerator(config).getQuorumConfig("test-quorum");
+        assertTrue(generatedConfig.toString() + " should be compatible with " + quorumConfig.toString(),
+                new ConfigCompatibilityChecker.QuorumConfigChecker().check(quorumConfig, generatedConfig));
+    }
+
+    @Test
+    public void testQuorumConfig_configuredByRecentlyActiveQuorumConfigBuilder() {
+        Config config = new Config();
+        QuorumConfig quorumConfig = QuorumConfig.newRecentlyActiveQuorumConfigBuilder("recently-active", 3, 3141592)
+                .build();
+        quorumConfig.setType(QuorumType.READ_WRITE)
+                    .addListenerConfig(new QuorumListenerConfig("com.hazelcast.QuorumListener"));
+        config.addQuorumConfig(quorumConfig);
+
+        QuorumConfig generatedConfig = getNewConfigViaXMLGenerator(config).getQuorumConfig("recently-active");
+        assertTrue(generatedConfig.toString() + " should be compatible with " + quorumConfig.toString(),
+                new ConfigCompatibilityChecker.QuorumConfigChecker().check(quorumConfig, generatedConfig));
+    }
+
+    @Test
+    public void testQuorumConfig_configuredByProbabilisticQuorumConfigBuilder() {
+        Config config = new Config();
+        QuorumConfig quorumConfig = QuorumConfig.newProbabilisticQuorumConfigBuilder("probabilistic-quorum", 3)
+                                                .withHeartbeatIntervalMillis(1)
+                                                .withAcceptableHeartbeatPauseMillis(2)
+                                                .withMaxSampleSize(3)
+                                                .withMinStdDeviationMillis(4)
+                                                .withSuspicionThreshold(5)
+                                                .build();
+        quorumConfig.setType(QuorumType.READ_WRITE)
+                    .addListenerConfig(new QuorumListenerConfig("com.hazelcast.QuorumListener"));
+        config.addQuorumConfig(quorumConfig);
+
+        QuorumConfig generatedConfig = getNewConfigViaXMLGenerator(config).getQuorumConfig("probabilistic-quorum");
+        assertTrue(generatedConfig.toString() + " should be compatible with " + quorumConfig.toString(),
+                new ConfigCompatibilityChecker.QuorumConfigChecker().check(quorumConfig, generatedConfig));
     }
 
     private DiscoveryConfig getDummyDiscoveryConfig() {

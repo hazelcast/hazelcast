@@ -504,6 +504,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
         quorumConfig.setName(name);
         Node attrEnabled = node.getAttributes().getNamedItem("enabled");
         boolean enabled = attrEnabled != null && getBooleanValue(getTextContent(attrEnabled));
+        // probabilistic-quorum and recently-active-quorum quorum configs are constructed via QuorumConfigBuilder
+        QuorumConfigBuilder quorumConfigBuilder = null;
         quorumConfig.setEnabled(enabled);
         for (Node n : childElements(node)) {
             String value = getTextContent(n).trim();
@@ -521,11 +523,64 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 quorumConfig.setType(QuorumType.valueOf(upperCaseInternal(value)));
             } else if ("quorum-function-class-name".equals(nodeName)) {
                 quorumConfig.setQuorumFunctionClassName(value);
+            } else if ("recently-active-quorum".equals(nodeName)) {
+                quorumConfigBuilder = handleRecentlyActiveQuorum(name, n, quorumConfig.getSize());
+            } else if ("probabilistic-quorum".equals(nodeName)) {
+                quorumConfigBuilder = handleProbabilisticQuorum(name, n, quorumConfig.getSize());
             }
+        }
+        if (quorumConfigBuilder != null) {
+            boolean quorumFunctionDefinedByClassName = !isNullOrEmpty(quorumConfig.getQuorumFunctionClassName());
+            if (quorumFunctionDefinedByClassName) {
+                throw new ConfigurationException("A quorum cannot simultaneously define probabilistic-quorum or "
+                        + "recently-active-quorum and a quorum function class name.");
+            }
+            // ensure parsed attributes are reflected in constructed quorum config
+            QuorumConfig constructedConfig = quorumConfigBuilder.build();
+            constructedConfig.setSize(quorumConfig.getSize());
+            constructedConfig.setType(quorumConfig.getType());
+            constructedConfig.setListenerConfigs(quorumConfig.getListenerConfigs());
+            quorumConfig = constructedConfig;
         }
         config.addQuorumConfig(quorumConfig);
     }
 
+    private QuorumConfigBuilder handleRecentlyActiveQuorum(String name, Node node, int quorumSize) {
+        QuorumConfigBuilder quorumConfigBuilder;
+        int heartbeatToleranceMillis = getIntegerValue("heartbeat-tolerance-millis",
+                getAttribute(node, "heartbeat-tolerance-millis"),
+                RecentlyActiveQuorumConfigBuilder.DEFAULT_HEARTBEAT_TOLERANCE_MILLIS);
+        quorumConfigBuilder = QuorumConfig.newRecentlyActiveQuorumConfigBuilder(name,
+                quorumSize,
+                heartbeatToleranceMillis);
+        return quorumConfigBuilder;
+    }
+
+    private QuorumConfigBuilder handleProbabilisticQuorum(String name, Node node, int quorumSize) {
+        QuorumConfigBuilder quorumConfigBuilder;
+        long acceptableHeartPause = getLongValue("acceptable-heartbeat-pause-millis",
+                getAttribute(node, "acceptable-heartbeat-pause-millis"),
+                ProbabilisticQuorumConfigBuilder.DEFAULT_HEARTBEAT_PAUSE_MILLIS);
+        double threshold = getDoubleValue("suspicion-threshold",
+                getAttribute(node, "suspicion-threshold"),
+                ProbabilisticQuorumConfigBuilder.DEFAULT_PHI_THRESHOLD);
+        int maxSampleSize = getIntegerValue("max-sample-size",
+                getAttribute(node, "max-sample-size"),
+                ProbabilisticQuorumConfigBuilder.DEFAULT_SAMPLE_SIZE);
+        long minStdDeviation = getLongValue("min-std-deviation-millis",
+                getAttribute(node, "min-std-deviation-millis"),
+                ProbabilisticQuorumConfigBuilder.DEFAULT_MIN_STD_DEVIATION);
+        long heartbeatIntervalMillis = getLongValue("heartbeat-interval-millis",
+                getAttribute(node, "heartbeat-interval-millis"),
+                ProbabilisticQuorumConfigBuilder.DEFAULT_HEARTBEAT_INTERVAL_MILLIS);
+        quorumConfigBuilder = QuorumConfig.newProbabilisticQuorumConfigBuilder(name, quorumSize)
+                .withAcceptableHeartbeatPauseMillis(acceptableHeartPause)
+                .withSuspicionThreshold(threshold)
+                .withHeartbeatIntervalMillis(heartbeatIntervalMillis)
+                .withMinStdDeviationMillis(minStdDeviation)
+                .withMaxSampleSize(maxSampleSize);
+        return quorumConfigBuilder;
+    }
 
     private void handleServices(Node node) {
         Node attDefaults = node.getAttributes().getNamedItem("enable-defaults");

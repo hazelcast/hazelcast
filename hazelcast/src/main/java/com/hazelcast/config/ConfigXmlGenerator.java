@@ -23,6 +23,8 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.PortableFactory;
+import com.hazelcast.quorum.impl.ProbabilisticQuorumFunction;
+import com.hazelcast.quorum.impl.RecentlyActiveQuorumFunction;
 import com.hazelcast.util.CollectionUtil;
 import com.hazelcast.util.MapUtil;
 
@@ -134,6 +136,7 @@ public class ConfigXmlGenerator {
         flakeIdGeneratorXmlGenerator(gen, config);
         crdtReplicationXmlGenerator(gen, config);
         pnCounterXmlGenerator(gen, config);
+        quorumXmlGenerator(gen, config);
 
         xml.append("</hazelcast>");
 
@@ -1133,6 +1136,49 @@ public class ConfigXmlGenerator {
                .node("max-concurrent-replication-targets", replicationConfig.getMaxConcurrentReplicationTargets());
         }
         gen.close();
+    }
+
+    private static void quorumXmlGenerator(XmlGenerator gen, Config config) {
+        for (QuorumConfig quorumConfig : config.getQuorumConfigs().values()) {
+            gen.open("quorum", "name", quorumConfig.getName(),
+                    "enabled", quorumConfig.isEnabled())
+                    .node("quorum-size", quorumConfig.getSize())
+                    .node("quorum-type", quorumConfig.getType());
+            if (!quorumConfig.getListenerConfigs().isEmpty()) {
+                gen.open("quorum-listeners");
+                for (QuorumListenerConfig listenerConfig : quorumConfig.getListenerConfigs()) {
+                    gen.node("quorum-listener", classNameOrImplClass(listenerConfig.getClassName(),
+                            listenerConfig.getImplementation()));
+                }
+                gen.close();
+            }
+            handleQuorumFunction(gen, quorumConfig);
+            gen.close();
+        }
+    }
+
+    private static void handleQuorumFunction(XmlGenerator gen, QuorumConfig quorumConfig) {
+        if (quorumConfig.getQuorumFunctionImplementation() instanceof ProbabilisticQuorumFunction) {
+            ProbabilisticQuorumFunction qf = (ProbabilisticQuorumFunction) quorumConfig.getQuorumFunctionImplementation();
+            long acceptableHeartbeatPause = qf.getAcceptableHeartbeatPauseMillis();
+            double threshold = qf.getSuspicionThreshold();
+            int maxSampleSize = qf.getMaxSampleSize();
+            long minStdDeviation = qf.getMinStdDeviationMillis();
+            long firstHeartbeatEstimate = qf.getHeartbeatIntervalMillis();
+            gen.open("probabilistic-quorum", "acceptable-heartbeat-pause-millis", acceptableHeartbeatPause,
+                    "suspicion-threshold", threshold,
+                    "max-sample-size", maxSampleSize,
+                    "min-std-deviation-millis", minStdDeviation,
+                    "heartbeat-interval-millis", firstHeartbeatEstimate);
+            gen.close();
+        } else if (quorumConfig.getQuorumFunctionImplementation() instanceof RecentlyActiveQuorumFunction) {
+            RecentlyActiveQuorumFunction qf = (RecentlyActiveQuorumFunction) quorumConfig.getQuorumFunctionImplementation();
+            gen.open("recently-active-quorum", "heartbeat-tolerance-millis", qf.getHeartbeatToleranceMillis());
+            gen.close();
+        } else {
+            gen.node("quorum-function-class-name", classNameOrImplClass(quorumConfig.getQuorumFunctionClassName(),
+                    quorumConfig.getQuorumFunctionImplementation()));
+        }
     }
 
     private static void nativeMemoryXmlGenerator(XmlGenerator gen, Config config) {

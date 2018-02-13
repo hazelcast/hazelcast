@@ -37,9 +37,14 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
 import java.util.Set;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import static com.hazelcast.nio.ClassLoaderUtil.getAllInterfaces;
 import static com.hazelcast.test.starter.HazelcastAPIDelegatingClassloader.DELEGATION_WHITE_LIST;
@@ -105,6 +110,16 @@ public class HazelcastProxyFactory {
             throws ClassNotFoundException, InstantiationException, IllegalAccessException,
             NoSuchMethodException, InvocationTargetException {
 
+        // handle JDK collections (eg ArrayList etc)
+        if (isJDKClass(arg.getClass()) && Collection.class.isAssignableFrom(arg.getClass())) {
+            Collection targetCollection = newCollectionFor(arg.getClass());
+            Collection collectionArg = (Collection) arg;
+            for (Object o : collectionArg) {
+                targetCollection.add(proxyObjectForStarter(targetClassLoader, o));
+            }
+            return targetCollection;
+        }
+
         if (arg.getClass().getClassLoader() == targetClassLoader) {
             return arg;
         }
@@ -155,13 +170,31 @@ public class HazelcastProxyFactory {
         Object[] newArgs = new Object[args.length];
         for (int i = 0; i < args.length; i++) {
             Object arg = args[i];
-            if (arg == null || isJDKClass(arg.getClass())) {
+            if (arg == null || (isJDKClass(arg.getClass()) && !isParameterizedType(arg.getClass()))) {
                 newArgs[i] = arg;
             } else {
                 newArgs[i] = proxyObjectForStarter(targetClassLoader, arg);
             }
         }
         return newArgs;
+    }
+
+    /**
+     * @return a new Collection object of a class that is assignable from the given type
+     */
+    static Collection newCollectionFor(Class type) {
+        if (Set.class.isAssignableFrom(type)) {
+            // original set might be ordered
+            return new LinkedHashSet();
+        } else if (List.class.isAssignableFrom(type)) {
+            return new ArrayList();
+        } else if (Queue.class.isAssignableFrom(type)) {
+            return new ConcurrentLinkedQueue();
+        } else if (Collection.class.isAssignableFrom(type)) {
+            return new LinkedList();
+        } else {
+            throw new UnsupportedOperationException("Cannot locate collection type for " + type);
+        }
     }
 
     static boolean isJDKClass(Class clazz) {
@@ -318,6 +351,10 @@ public class HazelcastProxyFactory {
             interfaces.add(type);
         }
         return interfaces.toArray(new Class<?>[0]);
+    }
+
+    private static boolean isParameterizedType(Class<?> klass) {
+        return klass.getTypeParameters().length > 0;
     }
 
     /**

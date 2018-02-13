@@ -56,23 +56,26 @@ public class ClusterFailureDetectorTest {
     private static long HEARTBEAT_TIMEOUT = TimeUnit.SECONDS.toMillis(1);
 
     @Parameterized.Parameters(name = "fd:{0}")
-    public static Collection<Object> parameters() {
-        return Arrays.asList(new Object[]{"deadline", "phi-accrual"});
+    public static Collection<ClusterFailureDetectorType> parameters() {
+        return Arrays.asList(ClusterFailureDetectorType.values());
     }
 
     @Parameterized.Parameter
-    public String failureDetectorType;
+    public ClusterFailureDetectorType failureDetectorType;
 
     private ClusterFailureDetector failureDetector;
 
     @Before
     public void setup() {
-        if ("deadline".equals(failureDetectorType))  {
-            failureDetector = new DeadlineClusterFailureDetector(HEARTBEAT_TIMEOUT);
-        } else if ("phi-accrual".equals(failureDetectorType)) {
-            failureDetector = new PhiAccrualClusterFailureDetector(HEARTBEAT_TIMEOUT, 1, new HazelcastProperties(new Properties()));
-        } else {
-            throw new IllegalArgumentException(failureDetectorType);
+        switch (failureDetectorType) {
+            case DEADLINE:
+                failureDetector = new DeadlineClusterFailureDetector(HEARTBEAT_TIMEOUT);
+                break;
+            case PHI_ACCRUAL:
+                failureDetector = new PhiAccrualClusterFailureDetector(HEARTBEAT_TIMEOUT, 1, new HazelcastProperties(new Properties()));
+                break;
+            default:
+                throw new IllegalArgumentException(failureDetectorType.toString());
         }
     }
 

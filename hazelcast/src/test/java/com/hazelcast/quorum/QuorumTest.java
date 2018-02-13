@@ -17,6 +17,7 @@
 package com.hazelcast.quorum;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.ConfigurationException;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.QuorumConfig;
 import com.hazelcast.core.HazelcastInstance;
@@ -28,6 +29,7 @@ import com.hazelcast.quorum.impl.QuorumServiceImpl;
 import com.hazelcast.spi.MemberAttributeServiceEvent;
 import com.hazelcast.spi.MembershipAwareService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -357,6 +359,58 @@ public class QuorumTest extends HazelcastTestSupport {
 
         HazelcastInstance instance = createHazelcastInstance(config);
         assertEquals(instance, HazelcastInstanceAwareQuorumFunction.instance);
+    }
+
+    @Test(expected = ConfigurationException.class)
+    public void givenProbabilisticQuorum_whenAcceptableHeartbeatPause_greaterThanMaxNoHeartbeat_exceptionIsThrown() {
+        Config config = new Config();
+        config.setProperty(GroupProperty.MAX_NO_HEARTBEAT_SECONDS.getName(), "10");
+        QuorumConfig probabilisticQuorumConfig = QuorumConfig.newProbabilisticQuorumConfigBuilder("prob-quorum", 3)
+                                                             .withAcceptableHeartbeatPauseMillis(13000)
+                                                             .build();
+
+        config.addQuorumConfig(probabilisticQuorumConfig);
+
+        createHazelcastInstance(config);
+    }
+
+    @Test(expected = ConfigurationException.class)
+    public void givenProbabilisticQuorum_whenAcceptableHeartbeatPause_lessThanHeartbeatInterval_exceptionIsThrown() {
+        Config config = new Config();
+        config.setProperty(GroupProperty.HEARTBEAT_INTERVAL_SECONDS.getName(), "5");
+        QuorumConfig probabilisticQuorumConfig = QuorumConfig.newProbabilisticQuorumConfigBuilder("prob-quorum", 3)
+                                                             .withAcceptableHeartbeatPauseMillis(3000)
+                                                             .build();
+
+        config.addQuorumConfig(probabilisticQuorumConfig);
+
+        createHazelcastInstance(config);
+    }
+
+    @Test(expected = ConfigurationException.class)
+    public void givenRecentlyActiveQuorum_whenHeartbeatTolerance_greaterThanMaxNoHeartbeat_exceptionIsThrown() {
+        Config config = new Config();
+        config.setProperty(GroupProperty.MAX_NO_HEARTBEAT_SECONDS.getName(), "10");
+        QuorumConfig recentlyActiveQuorumConfig = QuorumConfig
+                .newRecentlyActiveQuorumConfigBuilder("test-quorum", 3, 13000)
+                .build();
+
+        config.addQuorumConfig(recentlyActiveQuorumConfig);
+
+        createHazelcastInstance(config);
+    }
+
+    @Test(expected = ConfigurationException.class)
+    public void givenRecentlyActiveQuorum_whenHeartbeatTolerance_lessThanHeartbeatInterval_exceptionIsThrown() {
+        Config config = new Config();
+        config.setProperty(GroupProperty.HEARTBEAT_INTERVAL_SECONDS.getName(), "5");
+        QuorumConfig recentlyActiveQuorumConfig = QuorumConfig
+                .newRecentlyActiveQuorumConfigBuilder("test-quorum", 3, 3000)
+                .build();
+
+        config.addQuorumConfig(recentlyActiveQuorumConfig);
+
+        createHazelcastInstance(config);
     }
 
     private static class HazelcastInstanceAwareQuorumFunction implements QuorumFunction, HazelcastInstanceAware {

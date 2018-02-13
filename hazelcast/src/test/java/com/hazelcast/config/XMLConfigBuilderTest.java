@@ -20,6 +20,8 @@ import com.hazelcast.config.helpers.DummyMapStore;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.quorum.QuorumType;
+import com.hazelcast.quorum.impl.ProbabilisticQuorumFunction;
+import com.hazelcast.quorum.impl.RecentlyActiveQuorumFunction;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -1482,6 +1484,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
                 + "           <quorum-listener>com.abc.my.quorum.listener</quorum-listener>"
                 + "           <quorum-listener>com.abc.my.second.listener</quorum-listener>"
                 + "       </quorum-listeners> "
+                + "        <quorum-function-class-name>com.hazelcast.SomeQuorumFunction</quorum-function-class-name>"
                 + "    </quorum>\n"
                 + HAZELCAST_END_TAG;
 
@@ -1491,6 +1494,127 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         assertFalse(quorumConfig.getListenerConfigs().isEmpty());
         assertEquals("com.abc.my.quorum.listener", quorumConfig.getListenerConfigs().get(0).getClassName());
         assertEquals("com.abc.my.second.listener", quorumConfig.getListenerConfigs().get(1).getClassName());
+        assertEquals("com.hazelcast.SomeQuorumFunction", quorumConfig.getQuorumFunctionClassName());
+    }
+
+    @Test(expected = ConfigurationException.class)
+    public void testQuorumConfig_whenClassNameAndRecentlyActiveQuorumDefined_exceptionIsThrown() {
+        String xml = HAZELCAST_START_TAG
+                + "      <quorum enabled=\"true\" name=\"myQuorum\">\n"
+                + "        <quorum-size>3</quorum-size>\n"
+                + "        <quorum-function-class-name>com.hazelcast.SomeQuorumFunction</quorum-function-class-name>"
+                + "        <recently-active-quorum />"
+                + "    </quorum>\n"
+                + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml);
+    }
+
+    @Test(expected = ConfigurationException.class)
+    public void testQuorumConfig_whenClassNameAndProbabilisticQuorumDefined_exceptionIsThrown() {
+        String xml = HAZELCAST_START_TAG
+                + "      <quorum enabled=\"true\" name=\"myQuorum\">\n"
+                + "        <quorum-size>3</quorum-size>\n"
+                + "        <quorum-function-class-name>com.hazelcast.SomeQuorumFunction</quorum-function-class-name>"
+                + "        <probabilistic-quorum />"
+                + "    </quorum>\n"
+                + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml);
+    }
+
+    @Test(expected = InvalidConfigurationException.class)
+    public void testQuorumConfig_whenBothBuiltinQuorumsDefined_exceptionIsThrown() {
+        String xml = HAZELCAST_START_TAG
+                + "      <quorum enabled=\"true\" name=\"myQuorum\">\n"
+                + "        <quorum-size>3</quorum-size>\n"
+                + "        <probabilistic-quorum />"
+                + "        <recently-active-quorum />"
+                + "    </quorum>\n"
+                + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml);
+    }
+
+    @Test
+    public void testQuorumConfig_whenRecentlyActiveQuorum_withDefaultValues() {
+        String xml = HAZELCAST_START_TAG
+                + "      <quorum enabled=\"true\" name=\"myQuorum\">\n"
+                + "        <quorum-size>3</quorum-size>\n"
+                + "        <recently-active-quorum />"
+                + "    </quorum>\n"
+                + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml);
+        QuorumConfig quorumConfig = config.getQuorumConfig("myQuorum");
+        assertInstanceOf(RecentlyActiveQuorumFunction.class, quorumConfig.getQuorumFunctionImplementation());
+        RecentlyActiveQuorumFunction quorumFunction = (RecentlyActiveQuorumFunction) quorumConfig
+                .getQuorumFunctionImplementation();
+        assertEquals(RecentlyActiveQuorumConfigBuilder.DEFAULT_HEARTBEAT_TOLERANCE_MILLIS,
+                quorumFunction.getHeartbeatToleranceMillis());
+    }
+
+    @Test
+    public void testQuorumConfig_whenRecentlyActiveQuorum_withCustomValues() {
+        String xml = HAZELCAST_START_TAG
+                + "      <quorum enabled=\"true\" name=\"myQuorum\">\n"
+                + "        <quorum-size>3</quorum-size>\n"
+                + "        <recently-active-quorum heartbeat-tolerance-millis=\"13000\" />"
+                + "    </quorum>\n"
+                + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml);
+        QuorumConfig quorumConfig = config.getQuorumConfig("myQuorum");
+        assertEquals(3, quorumConfig.getSize());
+        assertInstanceOf(RecentlyActiveQuorumFunction.class, quorumConfig.getQuorumFunctionImplementation());
+        RecentlyActiveQuorumFunction quorumFunction = (RecentlyActiveQuorumFunction) quorumConfig
+                .getQuorumFunctionImplementation();
+        assertEquals(13000, quorumFunction.getHeartbeatToleranceMillis());
+    }
+
+    @Test
+    public void testQuorumConfig_whenProbabilisticQuorum_withDefaultValues() {
+        String xml = HAZELCAST_START_TAG
+                + "      <quorum enabled=\"true\" name=\"myQuorum\">\n"
+                + "        <quorum-size>3</quorum-size>\n"
+                + "        <probabilistic-quorum />"
+                + "    </quorum>\n"
+                + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml);
+        QuorumConfig quorumConfig = config.getQuorumConfig("myQuorum");
+        assertInstanceOf(ProbabilisticQuorumFunction.class, quorumConfig.getQuorumFunctionImplementation());
+        ProbabilisticQuorumFunction quorumFunction = (ProbabilisticQuorumFunction) quorumConfig.getQuorumFunctionImplementation();
+        assertEquals(ProbabilisticQuorumConfigBuilder.DEFAULT_HEARTBEAT_INTERVAL_MILLIS,
+                quorumFunction.getHeartbeatIntervalMillis());
+        assertEquals(ProbabilisticQuorumConfigBuilder.DEFAULT_HEARTBEAT_PAUSE_MILLIS,
+                quorumFunction.getAcceptableHeartbeatPauseMillis());
+        assertEquals(ProbabilisticQuorumConfigBuilder.DEFAULT_MIN_STD_DEVIATION,
+                quorumFunction.getMinStdDeviationMillis());
+        assertEquals(ProbabilisticQuorumConfigBuilder.DEFAULT_PHI_THRESHOLD, quorumFunction.getSuspicionThreshold(), 0.01);
+        assertEquals(ProbabilisticQuorumConfigBuilder.DEFAULT_SAMPLE_SIZE, quorumFunction.getMaxSampleSize());
+    }
+
+    @Test
+    public void testQuorumConfig_whenProbabilisticQuorum_withCustomValues() {
+        String xml = HAZELCAST_START_TAG
+                + "      <quorum enabled=\"true\" name=\"myQuorum\">\n"
+                + "        <quorum-size>3</quorum-size>\n"
+                + "        <probabilistic-quorum acceptable-heartbeat-pause-millis=\"37400\" suspicion-threshold=\"3.14592\" "
+                + "                 max-sample-size=\"42\" min-std-deviation-millis=\"1234\""
+                + "                 heartbeat-interval-millis=\"4321\" />"
+                + "    </quorum>\n"
+                + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml);
+        QuorumConfig quorumConfig = config.getQuorumConfig("myQuorum");
+        assertInstanceOf(ProbabilisticQuorumFunction.class, quorumConfig.getQuorumFunctionImplementation());
+        ProbabilisticQuorumFunction quorumFunction = (ProbabilisticQuorumFunction) quorumConfig.getQuorumFunctionImplementation();
+        assertEquals(4321, quorumFunction.getHeartbeatIntervalMillis());
+        assertEquals(37400, quorumFunction.getAcceptableHeartbeatPauseMillis());
+        assertEquals(1234, quorumFunction.getMinStdDeviationMillis());
+        assertEquals(3.14592d, quorumFunction.getSuspicionThreshold(), 0.001d);
+        assertEquals(42, quorumFunction.getMaxSampleSize());
     }
 
     @Test
