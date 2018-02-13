@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.map.querycache;
+package com.hazelcast.client.map.impl.querycache;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;

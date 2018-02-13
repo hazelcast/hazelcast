@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.map.querycache;
+package com.hazelcast.client.map.impl.querycache;
 
-import com.hazelcast.client.config.ClientClasspathXmlConfig;
+import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.map.impl.querycache.QueryCacheXmlConfigWildcardTest;
+import com.hazelcast.map.impl.querycache.QueryCacheConfigTest;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -30,7 +31,7 @@ import org.junit.runner.RunWith;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class ClientQueryCacheXmlConfigWithWildcardTest extends QueryCacheXmlConfigWildcardTest {
+public class ClientQueryCacheConfigTest extends QueryCacheConfigTest {
 
     private TestHazelcastFactory factory = new TestHazelcastFactory();
 
@@ -45,9 +46,9 @@ public class ClientQueryCacheXmlConfigWithWildcardTest extends QueryCacheXmlConf
     }
 
     @Override
-    protected HazelcastInstance createInstance() {
-        ClientClasspathXmlConfig clientConfig = new ClientClasspathXmlConfig(
-                "hazelcast-client-querycache-xml-config-wildcard-test.xml");
+    protected HazelcastInstance createInstanceWithQueryCacheConfig(String mapName, QueryCacheConfig queryCacheConfig) {
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.addQueryCacheConfig(mapName, queryCacheConfig);
         return factory.newHazelcastClient(clientConfig);
     }
 }
