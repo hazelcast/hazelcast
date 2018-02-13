@@ -18,6 +18,7 @@ package com.hazelcast.client.impl.protocol.util;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.internal.networking.nio.ChannelInboundHandlerWithCounters;
+import com.hazelcast.nio.Connection;
 import com.hazelcast.util.collection.Long2ObjectHashMap;
 
 import java.nio.ByteBuffer;
@@ -34,14 +35,16 @@ public class ClientMessageDecoder extends ChannelInboundHandlerWithCounters {
     private final Long2ObjectHashMap<BufferBuilder> builderBySessionIdMap = new Long2ObjectHashMap<BufferBuilder>();
 
     private final ClientMessageHandler messageHandler;
+    private final Connection connection;
     private ClientMessage message = ClientMessage.create();
 
-    public ClientMessageDecoder(ClientMessageHandler messageHandler) {
+    public ClientMessageDecoder(Connection connection, ClientMessageHandler messageHandler) {
         this.messageHandler = messageHandler;
+        this.connection = connection;
     }
 
     @Override
-    public void onRead(ByteBuffer src) throws Exception {
+    public void onRead(ByteBuffer src) {
         int messagesCreated = 0;
         while (src.hasRemaining()) {
             final boolean complete = message.readFrom(src);
@@ -90,19 +93,7 @@ public class ClientMessageDecoder extends ChannelInboundHandlerWithCounters {
 
     private void handleMessage(ClientMessage message) {
         message.index(message.getDataOffset());
-        messageHandler.handle(message);
+        messageHandler.handle(message, connection);
     }
 
-    /**
-     * Implementers will be responsible to messageHandler the constructed message
-     */
-    public interface ClientMessageHandler {
-
-        /**
-         * Received message to be processed
-         *
-         * @param message the ClientMessage
-         */
-        void handle(ClientMessage message);
-    }
 }

@@ -16,12 +16,11 @@
 
 package com.hazelcast.nio.tcp;
 
-import com.hazelcast.client.ClientEngine;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.util.ClientMessageDecoder;
+import com.hazelcast.client.impl.protocol.util.ClientMessageHandler;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.IOService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -39,28 +38,25 @@ import static org.mockito.Mockito.verify;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class ClientMessageHandlerImplTest {
+public class ClientMessageDecoderTest {
 
-    private ClientMessageHandlerImpl messageHandler;
-    private IOService ioService;
+    private ClientMessageHandler messageHandler;
     private Connection connection;
     private SwCounter counter;
     private ClientMessageDecoder decoder;
-    private ClientEngine clientEngine;
 
     @Before
     public void setup() {
-        ioService = mock(IOService.class);
+        messageHandler = mock(ClientMessageHandler.class);
         connection = mock(Connection.class);
         counter = SwCounter.newSwCounter();
-        clientEngine = mock(ClientEngine.class);
-        messageHandler = new ClientMessageHandlerImpl(connection, clientEngine);
-        decoder = new ClientMessageDecoder(messageHandler);
+        connection = mock(Connection.class);
+        decoder = new ClientMessageDecoder(connection, messageHandler);
         decoder.setNormalPacketsRead(counter);
     }
 
     @Test
-    public void test() throws Exception {
+    public void test() {
         ClientMessage message = ClientMessage.createForEncode(1000)
                 .setPartitionId(10)
                 .setMessageType(1)
@@ -73,6 +69,6 @@ public class ClientMessageHandlerImplTest {
 
         decoder.onRead(bb);
 
-        verify(clientEngine).handleClientMessage(any(ClientMessage.class), eq(connection));
+        verify(messageHandler).handle(any(ClientMessage.class), eq(connection));
     }
 }

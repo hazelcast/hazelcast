@@ -200,7 +200,8 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
         return endpointManager.size();
     }
 
-    public void handleClientMessage(ClientMessage clientMessage, Connection connection) {
+    @Override
+    public void handle(ClientMessage clientMessage, Connection connection) {
         int partitionId = clientMessage.getPartitionId();
         MessageTask messageTask = messageTaskFactory.create(clientMessage, connection);
         InternalOperationService operationService = nodeEngine.getOperationService();

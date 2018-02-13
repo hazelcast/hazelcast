@@ -395,7 +395,7 @@ class TestClientRegistry {
 
         void handleClientMessage(ClientMessage newPacket) {
             lastReadTimeMillis = System.currentTimeMillis();
-            remoteNodeEngine.getNode().clientEngine.handleClientMessage(newPacket, this);
+            remoteNodeEngine.getNode().clientEngine.handle(newPacket, this);
         }
 
         @Override
