@@ -38,7 +38,7 @@ import static java.nio.channels.SelectionKey.OP_READ;
  * {@link #handle()} is called to read out the data from the socket into a bytebuffer and hand it over to the
  * {@link ChannelInboundHandler} to get processed.
  */
-public final class NioChannelReader extends AbstractHandler {
+public final class NioInboundPipeline extends NioPipeline {
 
     protected ByteBuffer inputBuffer;
 
@@ -57,7 +57,7 @@ public final class NioChannelReader extends AbstractHandler {
     private volatile long priorityFramesReadLastPublish;
     private volatile long handleCountLastPublish;
 
-    public NioChannelReader(
+    public NioInboundPipeline(
             NioChannel channel,
             NioThread ioThread,
             ILogger logger,
@@ -180,7 +180,7 @@ public final class NioChannelReader extends AbstractHandler {
             @Override
             public void run() {
                 if (ioThread != Thread.currentThread()) {
-                    // the NioChannelReader has migrated to a different IOThread after the close got called.
+                    // the NioInboundPipeline has migrated to a different IOThread after the close got called.
                     // so we need to send the task to the right ioThread. Otherwise multiple ioThreads could be accessing
                     // the same channel.
                     ioThread.addTaskAndWakeup(this);
@@ -198,7 +198,7 @@ public final class NioChannelReader extends AbstractHandler {
 
     @Override
     public String toString() {
-        return channel + ".channelReader";
+        return channel + ".inboundPipeline";
     }
 
     private class StartMigrationTask implements Runnable {

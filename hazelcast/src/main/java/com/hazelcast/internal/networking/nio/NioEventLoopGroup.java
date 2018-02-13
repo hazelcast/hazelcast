@@ -52,11 +52,11 @@ import static java.util.logging.Level.INFO;
  *
  * Each {@link NioChannel} has 2 parts:
  * <ol>
- * <li>{@link NioChannelReader}: triggered by the NioThread when data is available in the socket. The NioChannelReader
+ * <li>{@link NioInboundPipeline}: triggered by the NioThread when data is available in the socket. The NioInboundPipeline
  * takes care of reading data from the socket and calling the appropriate
  * {@link com.hazelcast.internal.networking.ChannelInboundHandler}</li>
- * <li>{@link NioChannelWriter}: triggered by the NioThread when either space is available in the socket for writing,
- * or when there is something that needs to be written e.g. a Packet. The NioChannelWriter takes care of calling the
+ * <li>{@link NioOutboundPipeline}: triggered by the NioThread when either space is available in the socket for writing,
+ * or when there is something that needs to be written e.g. a Packet. The NioOutboundPipeline takes care of calling the
  * appropriate {@link com.hazelcast.internal.networking.ChannelOutboundHandler} to convert the
  * {@link com.hazelcast.internal.networking.OutboundFrame} to bytes in in the ByteBuffer and writing it to the socket.
  * </li>
@@ -124,7 +124,6 @@ public class NioEventLoopGroup implements EventLoopGroup {
                     + inputThreadCount + " input threads and "
                     + outputThreadCount + " output threads");
         }
-
 
         logger.log(selectorMode != SELECT ? INFO : FINE, "IO threads selector mode is " + selectorMode);
 
@@ -204,52 +203,52 @@ public class NioEventLoopGroup implements EventLoopGroup {
             throw rethrow(e);
         }
 
-        NioChannelReader reader = newChannelReader(nioChannel);
-        NioChannelWriter writer = newChannelWriter(nioChannel);
+        NioInboundPipeline inboundPipeline = newInboundPipeline(nioChannel);
+        NioOutboundPipeline outboundPipeline = newOutboundPipeline(nioChannel);
 
         channels.add(nioChannel);
 
-        nioChannel.setReader(reader);
-        nioChannel.setWriter(writer);
+        nioChannel.setInboundPipeline(inboundPipeline);
+        nioChannel.setOutboundPipeline(outboundPipeline);
 
-        ioBalancer.channelAdded(reader, writer);
+        ioBalancer.channelAdded(inboundPipeline, outboundPipeline);
 
         String metricsId = channel.getLocalSocketAddress() + "->" + channel.getRemoteSocketAddress();
-        metricsRegistry.scanAndRegister(writer, "tcp.connection[" + metricsId + "].out");
-        metricsRegistry.scanAndRegister(reader, "tcp.connection[" + metricsId + "].in");
+        metricsRegistry.scanAndRegister(outboundPipeline, "tcp.connection[" + metricsId + "].out");
+        metricsRegistry.scanAndRegister(inboundPipeline, "tcp.connection[" + metricsId + "].in");
 
-        reader.start();
-        writer.start();
+        inboundPipeline.start();
+        outboundPipeline.start();
 
         channel.addCloseListener(channelCloseListener);
     }
 
-    private NioChannelWriter newChannelWriter(NioChannel channel) {
+    private NioOutboundPipeline newOutboundPipeline(NioChannel channel) {
         int index = hashToIndex(nextOutputThreadIndex.getAndIncrement(), outputThreadCount);
         NioThread[] threads = outputThreads;
         if (threads == null) {
             throw new IllegalStateException("IO thread is closed!");
         }
 
-        return new NioChannelWriter(
+        return new NioOutboundPipeline(
                 channel,
                 threads[index],
-                loggingService.getLogger(NioChannelWriter.class),
+                loggingService.getLogger(NioOutboundPipeline.class),
                 ioBalancer,
                 channelInitializer);
     }
 
-    private NioChannelReader newChannelReader(NioChannel channel) {
+    private NioInboundPipeline newInboundPipeline(NioChannel channel) {
         int index = hashToIndex(nextInputThreadIndex.getAndIncrement(), inputThreadCount);
         NioThread[] threads = inputThreads;
         if (threads == null) {
             throw new IllegalStateException("IO thread is closed!");
         }
 
-        return new NioChannelReader(
+        return new NioInboundPipeline(
                 channel,
                 threads[index],
-                loggingService.getLogger(NioChannelReader.class),
+                loggingService.getLogger(NioInboundPipeline.class),
                 ioBalancer,
                 channelInitializer);
     }
@@ -261,10 +260,10 @@ public class NioEventLoopGroup implements EventLoopGroup {
 
             channels.remove(channel);
 
-            ioBalancer.channelRemoved(nioChannel.getReader(), nioChannel.getWriter());
+            ioBalancer.channelRemoved(nioChannel.getInboundPipeline(), nioChannel.getOutboundPipeline());
 
-            metricsRegistry.deregister(nioChannel.getReader());
-            metricsRegistry.deregister(nioChannel.getWriter());
+            metricsRegistry.deregister(nioChannel.getInboundPipeline());
+            metricsRegistry.deregister(nioChannel.getOutboundPipeline());
         }
     }
 
@@ -272,24 +271,24 @@ public class NioEventLoopGroup implements EventLoopGroup {
         @Override
         public void run() {
             for (NioChannel channel : channels) {
-                final NioChannelReader reader = channel.getReader();
-                NioThread inputThread = reader.getOwner();
+                final NioInboundPipeline inboundPipeline = channel.getInboundPipeline();
+                NioThread inputThread = inboundPipeline.getOwner();
                 if (inputThread != null) {
                     inputThread.addTaskAndWakeup(new Runnable() {
                         @Override
                         public void run() {
-                            reader.publish();
+                            inboundPipeline.publish();
                         }
                     });
                 }
 
-                final NioChannelWriter writer = channel.getWriter();
-                NioThread outputThread = writer.getOwner();
+                final NioOutboundPipeline outboundPipeline = channel.getOutboundPipeline();
+                NioThread outputThread = outboundPipeline.getOwner();
                 if (outputThread != null) {
                     outputThread.addTaskAndWakeup(new Runnable() {
                         @Override
                         public void run() {
-                            writer.publish();
+                            outboundPipeline.publish();
                         }
                     });
                 }
