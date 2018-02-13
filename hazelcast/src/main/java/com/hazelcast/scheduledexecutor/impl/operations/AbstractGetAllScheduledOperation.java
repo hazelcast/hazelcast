@@ -45,10 +45,7 @@ public abstract class AbstractGetAllScheduledOperation
 
         Collection<ScheduledTaskDescriptor> tasks = container.getTasks();
         for (ScheduledTaskDescriptor task : tasks) {
-            if (task.isTaskOwner()) {
-                handlers.add(container.offprintHandler(task.getDefinition().getName()));
-            }
+            handlers.add(container.offprintHandler(task.getDefinition().getName()));
         }
     }
-
 }

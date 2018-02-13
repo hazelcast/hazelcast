@@ -220,11 +220,9 @@ public class DistributedScheduledExecutorService
                 new HashMap<Integer, Map<String, Collection<ScheduledTaskDescriptor>>>();
 
         for (int partition = 0; partition < partitions.length; partition++) {
-            if (nodeEngine.getPartitionService().isPartitionOwner(partition)) {
-                Map<String, Collection<ScheduledTaskDescriptor>> partitionSnapshot = partitions[partition].prepareOwnedSnapshot();
-                if (!partitionSnapshot.isEmpty()) {
-                    state.put(partition, partitionSnapshot);
-                }
+            Map<String, Collection<ScheduledTaskDescriptor>> partitionSnapshot = partitions[partition].prepareOwnedSnapshot();
+            if (!partitionSnapshot.isEmpty()) {
+                state.put(partition, partitionSnapshot);
             }
         }
 
@@ -422,7 +420,7 @@ public class DistributedScheduledExecutorService
                         }
 
                         tasks.clear();
-                        if (mergeEntries.size() > 0) {
+                        if (!mergeEntries.isEmpty()) {
                             sendBatch(partitionId, containerName, mergePolicy, mergeEntries, mergeCallback);
                             operationCount++;
                         }
