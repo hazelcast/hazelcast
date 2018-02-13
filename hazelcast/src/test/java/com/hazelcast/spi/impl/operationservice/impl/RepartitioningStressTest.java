@@ -96,7 +96,6 @@ public class RepartitioningStressTest extends HazelcastTestSupport {
     }
 
     @Test
-    @Ignore(value = "https://github.com/hazelcast/hazelcast/issues/3683")
     public void callWithBackups() throws Exception {
         int itemCount = 10000;
         ConcurrentMap<Integer, Integer> map = hz.getMap("map");
