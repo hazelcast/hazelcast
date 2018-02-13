@@ -24,7 +24,7 @@ public interface LocalFlakeIdGeneratorStats extends LocalInstanceStats {
 
     /**
      * @return the total number of times the ID generator has been used to generate
-     *         a new ID since its {@link #getCreationTime()}.
+     *         a new ID batch since its {@link #getCreationTime()}.
      */
     long getUsageCount();
 }

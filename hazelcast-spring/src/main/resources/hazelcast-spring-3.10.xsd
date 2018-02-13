@@ -3313,6 +3313,13 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
+        <xs:attribute name="statistics-enabled" type="parameterized-boolean" use="optional" default="true">
+            <xs:annotation>
+                <xs:documentation>
+                    Enable/disable statistics.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
     </xs:complexType>
 
     <xs:complexType name="client-flake-id-generator">

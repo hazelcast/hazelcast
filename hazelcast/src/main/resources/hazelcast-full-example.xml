@@ -1655,11 +1655,14 @@ https://hazelcast.org/documentation/.
 
             Negative values are allowed to increase the lifespan of the generator, however keep in
             mind that the generated IDs might also be negative.
+        * <statistics-enabled>:
+            When you enable it, you can retrieve the Flake ID generators statistics. Its default value is true.
     -->
     <flake-id-generator name="default">
         <prefetch-count>100</prefetch-count>
         <prefetch-validity-millis>600000</prefetch-validity-millis>
         <id-offset>0</id-offset>
+        <statistics-enabled>true</statistics-enabled>
     </flake-id-generator>
 
     <!--

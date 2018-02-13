@@ -1114,7 +1114,8 @@ public class ConfigXmlGenerator {
             gen.open("flake-id-generator", "name", m.getName())
                     .node("prefetch-count", m.getPrefetchCount())
                     .node("prefetch-validity-millis", m.getPrefetchValidityMillis())
-                    .node("id-offset", m.getIdOffset());
+                    .node("id-offset", m.getIdOffset())
+                    .node("statistics-enabled", m.isStatisticsEnabled());
             gen.close();
         }
     }
