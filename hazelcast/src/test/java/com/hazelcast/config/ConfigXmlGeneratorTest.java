@@ -393,12 +393,20 @@ public class ConfigXmlGeneratorTest {
     @Test
     @SuppressWarnings("deprecation")
     public void testReplicatedMapConfigGenerator() {
+        MergePolicyConfig mergePolicyConfig = new MergePolicyConfig()
+                .setPolicy("PassThroughMergePolicy")
+                .setBatchSize(1234);
+
         ReplicatedMapConfig replicatedMapConfig = new ReplicatedMapConfig()
                 .setName("replicated-map-name")
                 .setStatisticsEnabled(false)
                 .setConcurrencyLevel(128)
                 .setQuorumName("quorum")
+                .setMergePolicyConfig(mergePolicyConfig)
+                .setInMemoryFormat(InMemoryFormat.NATIVE)
                 .addEntryListenerConfig(new EntryListenerConfig("com.hazelcast.entrylistener", false, false));
+
+        replicatedMapConfig.setAsyncFillup(true);
 
         Config config = new Config()
                 .addReplicatedMapConfig(replicatedMapConfig);
@@ -406,11 +414,17 @@ public class ConfigXmlGeneratorTest {
         Config xmlConfig = getNewConfigViaXMLGenerator(config);
 
         ReplicatedMapConfig xmlReplicatedMapConfig = xmlConfig.getReplicatedMapConfig("replicated-map-name");
+        MergePolicyConfig actualMergePolicyConfig = xmlReplicatedMapConfig.getMergePolicyConfig();
         assertEquals("replicated-map-name", xmlReplicatedMapConfig.getName());
         assertFalse(xmlReplicatedMapConfig.isStatisticsEnabled());
         assertEquals(128, xmlReplicatedMapConfig.getConcurrencyLevel());
         assertEquals("com.hazelcast.entrylistener", xmlReplicatedMapConfig.getListenerConfigs().get(0).getClassName());
         assertEquals("quorum", xmlReplicatedMapConfig.getQuorumName());
+        assertEquals(InMemoryFormat.NATIVE, xmlReplicatedMapConfig.getInMemoryFormat());
+        assertTrue(xmlReplicatedMapConfig.isAsyncFillup());
+        assertEquals("PassThroughMergePolicy", actualMergePolicyConfig.getPolicy());
+        assertEquals(1234, actualMergePolicyConfig.getBatchSize());
+        assertEquals(replicatedMapConfig, xmlReplicatedMapConfig);
     }
 
     @Test
