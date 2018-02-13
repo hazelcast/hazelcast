@@ -26,7 +26,11 @@ import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
+import java.util.Locale;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -95,6 +99,25 @@ public class StringUtilTest extends HazelcastTestSupport {
         assertArrayEquals(arr(), StringUtil.subraction(arr(), arr("a", "b")));
         assertArrayEquals(arr("a", "b"), StringUtil.subraction(arr("a", "b"), arr()));
         assertArrayEquals(arr(), StringUtil.subraction(arr("a", "test", "b", "a"), arr("a", "b", "test")));
+    }
+
+    @Test
+    public void testEqualsIgnoreCase() throws Exception {
+        assertFalse(StringUtil.equalsIgnoreCase(null, null));
+        assertFalse(StringUtil.equalsIgnoreCase(null, "a"));
+        assertFalse(StringUtil.equalsIgnoreCase("a", null));
+        assertTrue(StringUtil.equalsIgnoreCase("TEST", "test"));
+        assertTrue(StringUtil.equalsIgnoreCase("test", "TEST"));
+        assertFalse(StringUtil.equalsIgnoreCase("test", "TEST2"));
+
+        Locale defaultLocale = Locale.getDefault();
+        Locale.setDefault(new Locale("tr"));
+        try {
+            assertTrue(StringUtil.equalsIgnoreCase("EXIT", "exit"));
+            assertFalse(StringUtil.equalsIgnoreCase("exıt", "EXIT"));
+        } finally {
+            Locale.setDefault(defaultLocale);
+        }
     }
 
     private String[] arr(String... strings) {
