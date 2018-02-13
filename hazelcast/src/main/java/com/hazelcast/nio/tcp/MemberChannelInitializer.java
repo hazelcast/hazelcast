@@ -155,7 +155,7 @@ public class MemberChannelInitializer implements ChannelInitializer {
         TextEncoder outboundHandler = new TextEncoder(connection);
         channel.attributeMap().put(TEXT_OUTBOUND_HANDLER, outboundHandler);
 
-        ByteBuffer inputBuffer = newInputBuffer(channel, ioService.getSocketReceiveBufferSize());
+        ByteBuffer inputBuffer = newInputBuffer(channel, ioService.getSocketClientReceiveBufferSize());
         inputBuffer.put(stringToBytes(protocol));
 
         ChannelInboundHandler inboundHandler = new TextDecoder(connection, outboundHandler);
