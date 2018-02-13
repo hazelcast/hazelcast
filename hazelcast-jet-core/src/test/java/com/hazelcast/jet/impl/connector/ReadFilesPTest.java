@@ -22,19 +22,14 @@ import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.stream.IStreamList;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.stream.IntStream;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeListP;
@@ -126,21 +121,6 @@ public class ReadFilesPTest extends JetTestSupport {
         Vertex writer = dag.newVertex("writer", writeListP(list.getName())).localParallelism(1);
         dag.edge(between(reader, writer));
         return dag;
-    }
-
-    private static void appendToFile(File file, String... lines) throws Exception {
-        try (PrintWriter writer = new PrintWriter(new FileOutputStream(file, true))) {
-            for (String payload : lines) {
-                writer.write(payload + '\n');
-            }
-        }
-    }
-
-    private static File createTempDirectory() throws Exception {
-        Path directory = Files.createTempDirectory("read-file-p");
-        File file = directory.toFile();
-        file.deleteOnExit();
-        return file;
     }
 
     private void finishDirectory(File ... files) throws Exception {

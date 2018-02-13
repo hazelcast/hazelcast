@@ -31,12 +31,16 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
-import org.junit.After;
-import org.junit.Assume;
-
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.PrintWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import org.junit.After;
+import org.junit.Assume;
 
 public abstract class JetTestSupport extends HazelcastTestSupport {
 
@@ -86,7 +90,6 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
         return instance.getCacheManager().getCache(randomName());
     }
 
-
     protected static void fillMapWithInts(IMap<Integer, Integer> map, int count) {
         Map<Integer, Integer> vals = IntStream.range(0, count).boxed().collect(Collectors.toMap(m -> m, m -> m));
         map.putAll(vals);
@@ -108,6 +111,21 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
 
     protected static boolean isWindows() {
         return System.getProperty("os.name").toLowerCase().contains("windows");
+    }
+
+    protected static void appendToFile(File file, String... lines) throws Exception {
+        try (PrintWriter writer = new PrintWriter(new FileOutputStream(file, true))) {
+            for (String payload : lines) {
+                writer.write(payload + '\n');
+            }
+        }
+    }
+
+    protected static File createTempDirectory() throws Exception {
+        Path directory = Files.createTempDirectory("jet-test-temp");
+        File file = directory.toFile();
+        file.deleteOnExit();
+        return file;
     }
 
     public static void assertTrueEventually(UncheckedRunnable runnable) {

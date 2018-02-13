@@ -22,7 +22,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.jet.stream.IStreamMap;
 import com.hazelcast.map.AbstractEntryProcessor;
-import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -41,21 +40,14 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class SinksTest extends PipelineTestSupport {
-    private static HazelcastInstance hz;
+    private static HazelcastInstance remoteHz;
     private static ClientConfig clientConfig;
 
     @BeforeClass
     public static void setUp() throws Exception {
-        hz = Hazelcast.newHazelcastInstance();
-        Hazelcast.newHazelcastInstance();
-
-        clientConfig = new ClientConfig();
-        clientConfig.getGroupConfig().setName("dev");
-        clientConfig.getGroupConfig().setPassword("dev-pass");
-        Address address = hz.getCluster().getLocalMember().getAddress();
-        clientConfig.getNetworkConfig().addAddress(address.getHost() + ':' + address.getPort());
+        remoteHz = createRemoteCluster(2).get(0);
+        clientConfig = getClientConfigForRemoteCluster(remoteHz);
     }
-
 
     @AfterClass
     public static void after() throws Exception {
@@ -87,7 +79,7 @@ public class SinksTest extends PipelineTestSupport {
     public void remoteMap() {
         // Given
         List<Integer> input = sequence(ITEM_COUNT);
-        putToMap(hz.getMap(srcName), input);
+        putToMap(remoteHz.getMap(srcName), input);
 
         // When
         pipeline.drawFrom(Sources.remoteMap(srcName, clientConfig))
@@ -98,7 +90,7 @@ public class SinksTest extends PipelineTestSupport {
         List<Entry<String, Integer>> expected = input.stream()
                                                      .map(i -> entry(String.valueOf(i), i))
                                                      .collect(toList());
-        Set<Entry<Object, Object>> actual = hz.getMap(sinkName).entrySet();
+        Set<Entry<Object, Object>> actual = remoteHz.getMap(sinkName).entrySet();
         assertEquals(expected.size(), actual.size());
         expected.forEach(entry -> assertTrue(actual.contains(entry)));
     }
@@ -182,7 +174,7 @@ public class SinksTest extends PipelineTestSupport {
     public void remoteMapWithMerging() {
         // Given
         List<Integer> input = sequence(ITEM_COUNT);
-        putToMap(hz.getMap(srcName), input);
+        putToMap(remoteHz.getMap(srcName), input);
 
         // When
         pipeline.drawFrom(Sources.<String, Integer>remoteMap(srcName, clientConfig))
@@ -196,7 +188,7 @@ public class SinksTest extends PipelineTestSupport {
         List<Entry<String, Integer>> expected = input.stream()
                                                      .map(i -> entry(String.valueOf(i), i + i))
                                                      .collect(toList());
-        Set<Entry<Object, Object>> actual = hz.getMap(srcName).entrySet();
+        Set<Entry<Object, Object>> actual = remoteHz.getMap(srcName).entrySet();
         assertEquals(expected.size(), actual.size());
         expected.forEach(entry -> assertTrue(actual.contains(entry)));
     }
@@ -205,7 +197,7 @@ public class SinksTest extends PipelineTestSupport {
     public void remoteMapWithMerging_when_functionReturnsNull_then_keyIsRemoved() {
         // Given
         List<Integer> input = sequence(ITEM_COUNT);
-        putToMap(hz.getMap(srcName), input);
+        putToMap(remoteHz.getMap(srcName), input);
 
         // When
         pipeline.drawFrom(Sources.<String, Integer>remoteMap(srcName, clientConfig))
@@ -214,7 +206,7 @@ public class SinksTest extends PipelineTestSupport {
         execute();
 
         // Then
-        Set<Entry<Object, Object>> actual = hz.getMap(srcName).entrySet();
+        Set<Entry<Object, Object>> actual = remoteHz.getMap(srcName).entrySet();
         assertEquals(0, actual.size());
     }
 
@@ -303,7 +295,7 @@ public class SinksTest extends PipelineTestSupport {
     public void remoteMapWithUpdating() {
         // Given
         List<Integer> input = sequence(ITEM_COUNT);
-        putToMap(hz.getMap(srcName), input);
+        putToMap(remoteHz.getMap(srcName), input);
 
         // When
         pipeline.drawFrom(Sources.<String, Integer>remoteMap(srcName, clientConfig))
@@ -316,7 +308,7 @@ public class SinksTest extends PipelineTestSupport {
         List<Entry<String, Integer>> expected = input.stream()
                                                      .map(i -> entry(String.valueOf(i), i + 10))
                                                      .collect(toList());
-        Set<Entry<Object, Object>> actual = hz.getMap(srcName).entrySet();
+        Set<Entry<Object, Object>> actual = remoteHz.getMap(srcName).entrySet();
         assertEquals(expected.size(), actual.size());
         expected.forEach(entry -> assertTrue(actual.contains(entry)));
     }
@@ -325,7 +317,7 @@ public class SinksTest extends PipelineTestSupport {
     public void remoteMapWithUpdating_when_functionReturnsNull_then_keyIsRemoved() {
         // Given
         List<Integer> input = sequence(ITEM_COUNT);
-        putToMap(hz.getMap(srcName), input);
+        putToMap(remoteHz.getMap(srcName), input);
 
         // When
         pipeline.drawFrom(Sources.<String, Integer>remoteMap(srcName, clientConfig))
@@ -334,14 +326,14 @@ public class SinksTest extends PipelineTestSupport {
         execute();
 
         // Then
-        Set<Entry<Object, Object>> actual = hz.getMap(srcName).entrySet();
+        Set<Entry<Object, Object>> actual = remoteHz.getMap(srcName).entrySet();
         assertEquals(0, actual.size());
     }
 
     @Test
     public void remoteMapWithUpdating_when_itemDataSerializable_then_exceptionShouldNotThrown() {
         // Given
-        IMap<Object, Object> sourceMap = hz.getMap(srcName);
+        IMap<Object, Object> sourceMap = remoteHz.getMap(srcName);
         List<Integer> input = sequence(ITEM_COUNT);
         input.forEach(i -> sourceMap.put(String.valueOf(i), new DataSerializableObject(i)));
 
@@ -357,7 +349,7 @@ public class SinksTest extends PipelineTestSupport {
                 .stream()
                 .map(i -> entry(String.valueOf(i), new DataSerializableObject(i * 2)))
                 .collect(toList());
-        Set<Entry<Object, Object>> actual = hz.getMap(srcName).entrySet();
+        Set<Entry<Object, Object>> actual = remoteHz.getMap(srcName).entrySet();
         assertEquals(expected.size(), actual.size());
         expected.forEach(entry -> assertTrue(actual.contains(entry)));
     }
@@ -387,7 +379,7 @@ public class SinksTest extends PipelineTestSupport {
     public void remoteMapWithEntryProcessor() {
         // Given
         List<Integer> input = sequence(ITEM_COUNT);
-        putToMap(hz.getMap(srcName), input);
+        putToMap(remoteHz.getMap(srcName), input);
 
         // When
         pipeline.drawFrom(Sources.<String, Integer>remoteMap(srcName, clientConfig))
@@ -399,7 +391,7 @@ public class SinksTest extends PipelineTestSupport {
         List<Entry<String, Integer>> expected = input.stream()
                                                      .map(i -> entry(String.valueOf(i), i + 10))
                                                      .collect(toList());
-        Set<Entry<Object, Object>> actual = hz.getMap(srcName).entrySet();
+        Set<Entry<Object, Object>> actual = remoteHz.getMap(srcName).entrySet();
         assertEquals(expected.size(), actual.size());
         expected.forEach(entry -> assertTrue(actual.contains(entry)));
 

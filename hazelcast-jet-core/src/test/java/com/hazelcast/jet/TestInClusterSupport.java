@@ -39,6 +39,7 @@ import java.util.function.Supplier;
 public abstract class TestInClusterSupport extends JetTestSupport {
 
     static final String JOURNALED_MAP_PREFIX = "journaledMap.";
+    static final String JOURNALED_CACHE_PREFIX = "journaledCache.";
 
     private static final int MEMBER_COUNT = 2;
 
@@ -67,6 +68,7 @@ public abstract class TestInClusterSupport extends JetTestSupport {
         Config hzConfig = config.getHazelcastConfig();
         hzConfig.addCacheConfig(new CacheSimpleConfig().setName("*"));
         hzConfig.getMapEventJournalConfig(JOURNALED_MAP_PREFIX + '*').setEnabled(true);
+        hzConfig.getCacheEventJournalConfig(JOURNALED_CACHE_PREFIX + '*').setEnabled(true);
         member = createCluster(MEMBER_COUNT, config);
         client = factory.newClient();
     }
