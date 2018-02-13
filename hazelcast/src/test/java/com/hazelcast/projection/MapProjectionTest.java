@@ -16,7 +16,6 @@
 
 package com.hazelcast.projection;
 
-import com.hazelcast.aggregation.Aggregator;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;

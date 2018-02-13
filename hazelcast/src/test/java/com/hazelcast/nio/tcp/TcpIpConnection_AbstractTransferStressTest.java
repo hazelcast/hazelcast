@@ -17,8 +17,8 @@
 package com.hazelcast.nio.tcp;
 
 import com.hazelcast.internal.networking.Channel;
-import com.hazelcast.internal.networking.nio.NioInboundPipeline;
 import com.hazelcast.internal.networking.nio.NioChannel;
+import com.hazelcast.internal.networking.nio.NioInboundPipeline;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.TestThread;

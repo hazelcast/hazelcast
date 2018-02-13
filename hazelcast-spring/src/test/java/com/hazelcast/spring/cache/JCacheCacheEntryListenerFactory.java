@@ -16,7 +16,6 @@
 
 package com.hazelcast.spring.cache;
 
-import com.hazelcast.cache.impl.CacheCreateUseDestroyTest;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.instance.Node;
@@ -26,9 +25,6 @@ import com.hazelcast.spring.context.SpringAware;
 import javax.annotation.Resource;
 import javax.cache.configuration.Factory;
 import javax.cache.event.CacheEntryListener;
-import javax.cache.integration.CacheLoaderException;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 @SpringAware

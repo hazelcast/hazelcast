@@ -1,7 +1,7 @@
 package com.hazelcast.crdt.pncounter;
 
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ConsistencyLostException;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastTestSupport;

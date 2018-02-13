@@ -35,7 +35,6 @@ import org.junit.runner.RunWith;
 import javax.cache.CacheManager;
 import javax.cache.configuration.MutableConfiguration;
 import javax.cache.spi.CachingProvider;
-
 import java.util.concurrent.CountDownLatch;
 
 import static java.util.Collections.singletonList;

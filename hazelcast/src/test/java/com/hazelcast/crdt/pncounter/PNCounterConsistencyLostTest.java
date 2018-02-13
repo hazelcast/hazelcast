@@ -14,7 +14,6 @@ import org.junit.Before;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.map.impl.eviction.ExpirationManager.PROP_TASK_PERIOD_SECONDS;
 import static org.junit.Assert.assertEquals;
 
 /**

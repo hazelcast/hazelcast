@@ -35,7 +35,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import javax.swing.*;
+import javax.swing.JPanel;
 import java.util.List;
 import java.util.Properties;
 
