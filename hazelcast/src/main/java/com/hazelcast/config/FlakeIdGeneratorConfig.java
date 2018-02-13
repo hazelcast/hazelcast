@@ -17,6 +17,7 @@
 package com.hazelcast.config;
 
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
+import com.hazelcast.monitor.LocalFlakeIdGeneratorStats;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -190,18 +191,18 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * Gets if statistics gathering is enabled or disabled.
-     *
-     * @return {@code true} if statistics gathering is enabled (default), {@code false} otherwise
+     * @see #setStatisticsEnabled(boolean)
      */
     public boolean isStatisticsEnabled() {
         return statisticsEnabled;
     }
 
     /**
-     * Enables or disables statistics gathering.
+     * Enables or disables statistics gathering of
+     * {@link LocalFlakeIdGeneratorStats}.
      *
-     * @param statisticsEnabled {@code true} if statistics gathering is enabled, {@code false} otherwise
+     * @param statisticsEnabled {@code true} if statistics gathering is enabled
+     *        (which is also the default), {@code false} otherwise
      * @return this instance for fluent API
      */
     public FlakeIdGeneratorConfig setStatisticsEnabled(boolean statisticsEnabled) {
