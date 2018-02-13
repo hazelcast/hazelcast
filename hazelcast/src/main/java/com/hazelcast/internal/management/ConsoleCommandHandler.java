@@ -77,11 +77,6 @@ public class ConsoleCommandHandler {
         }
 
         @Override
-        protected void handleCommand(String inputCommand) {
-            super.handleCommand(inputCommand);
-        }
-
-        @Override
         protected void handleAddListener(String[] args) {
             println("Listener commands are not allowed!");
         }
