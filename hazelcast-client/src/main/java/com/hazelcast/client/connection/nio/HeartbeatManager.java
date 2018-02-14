@@ -62,7 +62,6 @@ public class HeartbeatManager implements Runnable {
         this.clientICMPManager = new ClientICMPManager(icmpPingConfig,
                 (ClientExecutionServiceImpl) client.getClientExecutionService(),
                 client.getLoggingService(), clientConnectionManager, this);
-
     }
 
     public void start() {
@@ -76,45 +75,51 @@ public class HeartbeatManager implements Runnable {
         if (!clientConnectionManager.alive) {
             return;
         }
-        final long now = Clock.currentTimeMillis();
+
+        long now = Clock.currentTimeMillis();
         for (final ClientConnection connection : clientConnectionManager.getActiveConnections()) {
-            if (!connection.isAlive()) {
-                continue;
-            }
+            checkConnection(now, connection);
+        }
+    }
 
-            if (now - connection.lastReadTimeMillis() > heartbeatTimeout) {
-                if (connection.isHeartBeating()) {
-                    logger.warning("Heartbeat failed over the connection: " + connection);
-                    connection.onHeartbeatFailed();
-                    fireHeartbeatStopped(connection);
-                }
-            }
-            if (now - connection.lastReadTimeMillis() > heartbeatInterval) {
-                ClientMessage request = ClientPingCodec.encodeRequest();
-                final ClientInvocation clientInvocation = new ClientInvocation(client, request, null, connection);
-                clientInvocation.setBypassHeartbeatCheck(true);
-                connection.onHeartbeatRequested();
-                clientInvocation.invokeUrgent().andThen(new ExecutionCallback<ClientMessage>() {
-                    @Override
-                    public void onResponse(ClientMessage response) {
-                        if (connection.isAlive()) {
-                            connection.onHeartbeatReceived();
-                        }
-                    }
+    private void checkConnection(long now, final ClientConnection connection) {
+        if (!connection.isAlive()) {
+            return;
+        }
 
-                    @Override
-                    public void onFailure(Throwable t) {
-                        if (connection.isAlive()) {
-                            logger.warning("Error receiving ping answer from the connection: " + connection, t);
-                        }
+        if (now - connection.lastReadTimeMillis() > heartbeatTimeout) {
+            if (connection.isHeartBeating()) {
+                logger.warning("Heartbeat failed over the connection: " + connection);
+                connection.onHeartbeatFailed();
+                fireHeartbeatStopped(connection);
+            }
+        }
+
+        if (now - connection.lastReadTimeMillis() > heartbeatInterval) {
+            ClientMessage request = ClientPingCodec.encodeRequest();
+            final ClientInvocation clientInvocation = new ClientInvocation(client, request, null, connection);
+            clientInvocation.setBypassHeartbeatCheck(true);
+            connection.onHeartbeatRequested();
+            clientInvocation.invokeUrgent().andThen(new ExecutionCallback<ClientMessage>() {
+                @Override
+                public void onResponse(ClientMessage response) {
+                    if (connection.isAlive()) {
+                        connection.onHeartbeatReceived();
                     }
-                });
-            } else {
-                if (!connection.isHeartBeating()) {
-                    logger.warning("Heartbeat is back to healthy for the connection: " + connection);
-                    connection.onHeartbeatResumed();
-                    fireHeartbeatResumed(connection);
                 }
+
+                @Override
+                public void onFailure(Throwable t) {
+                    if (connection.isAlive()) {
+                        logger.warning("Error receiving ping answer from the connection: " + connection, t);
+                    }
+                }
+            });
+        } else {
+            if (!connection.isHeartBeating()) {
+                logger.warning("Heartbeat is back to healthy for the connection: " + connection);
+                connection.onHeartbeatResumed();
+                fireHeartbeatResumed(connection);
             }
         }
     }
@@ -139,5 +144,4 @@ public class HeartbeatManager implements Runnable {
         heartbeatListeners.clear();
         clientICMPManager.shutdown();
     }
-
 }

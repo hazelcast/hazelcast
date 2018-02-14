@@ -85,7 +85,6 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -97,6 +96,7 @@ import static com.hazelcast.client.spi.properties.ClientProperty.IO_OUTPUT_THREA
 import static com.hazelcast.client.spi.properties.ClientProperty.SHUFFLE_MEMBER_LIST;
 import static com.hazelcast.spi.properties.GroupProperty.SOCKET_CLIENT_BUFFER_DIRECT;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
  * Implementation of {@link ClientConnectionManager}.
@@ -282,7 +282,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
         return alive;
     }
 
-    public synchronized void start(ClientContext clientContext) throws Exception {
+    public synchronized void start(ClientContext clientContext) {
         if (alive) {
             return;
         }
@@ -386,7 +386,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
         this.ownerConnectionAddress = ownerConnectionAddress;
     }
 
-    private Connection getOrConnect(Address address, boolean asOwner) throws IOException {
+    private Connection getOrConnect(Address address, boolean asOwner) {
         try {
             while (true) {
                 ClientConnection connection = (ClientConnection) getConnection(address, asOwner);
@@ -477,10 +477,8 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
             @Override
             public void run() {
                 Address endpoint = connection.getEndPoint();
-                /**
-                 * it may be possible that while waiting on executor queue, the client got connected (another connection),
-                 * then we do not need to do anything for cluster disconnect.
-                 */
+                // it may be possible that while waiting on executor queue, the client got connected (another connection),
+                // then we do not need to do anything for cluster disconnect.
                 if (endpoint == null || !endpoint.equals(ownerConnectionAddress)) {
                     return;
                 }
@@ -631,7 +629,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
         ClientMessage clientMessage = encodeAuthenticationRequest(asOwner, client.getSerializationService(), principal);
         ClientInvocation clientInvocation = new ClientInvocation(client, clientMessage, null, connection);
         ClientInvocationFuture invocationFuture = clientInvocation.invokeUrgent();
-        executionService.schedule(new TimeoutAuthenticationTask(invocationFuture), connectionTimeout, TimeUnit.MILLISECONDS);
+        executionService.schedule(new TimeoutAuthenticationTask(invocationFuture), connectionTimeout, MILLISECONDS);
         invocationFuture.andThen(new AuthCallback(connection, asOwner, target, future));
     }
 
@@ -823,10 +821,8 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
                 }
             }
 
-            /**
-             * If the address providers load no addresses (which seems to be possible), then the above loop is not entered
-             * and the lifecycle check is missing, hence we need to repeat the same check at this point.
-             */
+            // If the address providers load no addresses (which seems to be possible), then the above loop is not entered
+            // and the lifecycle check is missing, hence we need to repeat the same check at this point.
             if (!client.getLifecycleService().isRunning()) {
                 throw new IllegalStateException("Client is being shutdown.");
             }
