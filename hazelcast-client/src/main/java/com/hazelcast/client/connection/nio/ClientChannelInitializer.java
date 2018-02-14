@@ -18,6 +18,7 @@ package com.hazelcast.client.connection.nio;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.util.ClientMessageDecoder;
+import com.hazelcast.client.impl.protocol.util.ClientMessageEncoder;
 import com.hazelcast.client.impl.protocol.util.ClientMessageHandler;
 import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.ChannelInboundHandler;
@@ -25,7 +26,6 @@ import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.networking.ChannelOutboundHandler;
 import com.hazelcast.internal.networking.InitResult;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.tcp.ClientMessageEncoder;
 
 import java.nio.ByteBuffer;
 
