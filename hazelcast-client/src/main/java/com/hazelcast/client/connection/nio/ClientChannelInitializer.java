@@ -25,6 +25,7 @@ import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.networking.ChannelOutboundHandler;
 import com.hazelcast.internal.networking.InitResult;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.tcp.ClientMessageEncoder;
 
 import java.nio.ByteBuffer;
 
@@ -69,13 +70,6 @@ class ClientChannelInitializer implements ChannelInitializer {
         // add the protocol-bytes so the client makes itself known to the 'server'
         outputBuffer.put(stringToBytes(CLIENT_BINARY_NEW));
 
-        ChannelOutboundHandler outboundHandler = new ChannelOutboundHandler<ClientMessage>() {
-            @Override
-            public boolean onWrite(ClientMessage msg, ByteBuffer dst) throws Exception {
-                return msg.writeTo(dst);
-            }
-        };
-
-        return new InitResult<ChannelOutboundHandler>(outputBuffer, outboundHandler);
+        return new InitResult<ChannelOutboundHandler>(outputBuffer, new ClientMessageEncoder());
     }
 }
