@@ -53,7 +53,7 @@ public class WriteLoggerPTest {
         // Then
         verifyZeroInteractions(outbox);
         verify(logger).info("1");
-        verify(logger).info(wm.toString());
+        verify(logger).fine(wm.toString());
         verifyZeroInteractions(logger);
     }
 }

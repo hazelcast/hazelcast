@@ -49,12 +49,12 @@ public final class DiagnosticProcessors {
      * Returns a meta-supplier of processors for a sink vertex that logs all
      * the data items it receives. The log category is {@code
      * com.hazelcast.jet.impl.processor.PeekWrappedP.<vertexName>#<processorIndex>}
-     * and the level is INFO. {@link Watermark} items are always logged, they
-     * are <em>not</em> passed to {@code toStringFn}.
+     * and the level is INFO. {@link Watermark} items are always logged, but at
+     * FINE level; they are <em>not</em> passed to {@code toStringFn}.
      * <p>
      * The vertex logs each item on whichever cluster member it happens to
-     * receive it. Its primary purpose is for development use, when running Jet
-     * on a local machine.
+     * receive it. Its primary purpose is for development, when running Jet on
+     * a local machine.
      *
      * @param toStringFn a function that returns a string representation of a stream item
      * @param <T> stream item type

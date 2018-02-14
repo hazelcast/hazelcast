@@ -536,12 +536,12 @@ public final class Sinks {
     /**
      * Returns a sink that logs all the data items it receives, at the INFO
      * level to the log category {@link
-     * com.hazelcast.jet.impl.connector.WriteLoggerP}. It doesn't log {@link
-     * com.hazelcast.jet.core.Watermark watermark} items.
+     * com.hazelcast.jet.impl.connector.WriteLoggerP}. It also logs {@link
+     * com.hazelcast.jet.core.Watermark watermark} items, but at FINE level.
      * <p>
      * The sink logs each item on whichever cluster member it happens to
-     * receive it. Its primary purpose is for development use, when running Jet
-     * on a local machine.
+     * receive it. Its primary purpose is for development, when running Jet on
+     * a local machine.
      * <p>
      * The default local parallelism for this processor is 1.
      *

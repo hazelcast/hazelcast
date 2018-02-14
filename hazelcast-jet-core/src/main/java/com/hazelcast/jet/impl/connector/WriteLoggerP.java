@@ -43,7 +43,7 @@ public class WriteLoggerP<T> extends AbstractProcessor {
 
     @Override
     public boolean tryProcessWatermark(@Nonnull Watermark watermark) {
-        getLogger().info(watermark.toString());
+        getLogger().fine(watermark.toString());
         return true;
     }
 
