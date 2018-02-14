@@ -35,6 +35,7 @@ package com.hazelcast.client.impl.protocol.task.dynamicconfig;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddQueueConfigCodec;
 import com.hazelcast.config.ItemListenerConfig;
+import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.QueueStoreConfig;
 import com.hazelcast.instance.Node;
@@ -78,6 +79,9 @@ public class AddQueueConfigMessageTask
                     (List<ItemListenerConfig>) adaptListenerConfigs(parameters.listenerConfigs);
             config.setItemListenerConfigs(itemListenerConfigs);
         }
+        MergePolicyConfig mergePolicyConfig = mergePolicyConfig(parameters.mergePolicyExist, parameters.mergePolicy,
+                parameters.mergeBatchSize);
+        config.setMergePolicyConfig(mergePolicyConfig);
         return config;
     }
 

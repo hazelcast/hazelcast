@@ -95,6 +95,8 @@ import static org.junit.Assert.assertEquals;
 public class DynamicConfigTest extends HazelcastTestSupport {
 
     protected static final int INSTANCE_COUNT = 2;
+    protected static final String NON_DEFAULT_MERGE_POLICY = "AnotherMergePolicy";
+    protected static final int NON_DEFAULT_MERGE_BATCH_SIZE = 31415;
 
     private String name = randomString();
     private HazelcastInstance[] members;
@@ -139,6 +141,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
                 .setStatisticsEnabled(true)
                 .setBinary(true)
                 .setValueCollectionType(LIST)
+                .setMergePolicyConfig(new MergePolicyConfig(NON_DEFAULT_MERGE_POLICY, NON_DEFAULT_MERGE_BATCH_SIZE))
                 .addEntryListenerConfig(new EntryListenerConfig(new SampleEntryListener(), true, false));
 
         driver.getConfig().addMultiMapConfig(multiMapConfig);
@@ -148,8 +151,8 @@ public class DynamicConfigTest extends HazelcastTestSupport {
 
     @Test
     public void testCardinalityEstimatorConfig() {
-        CardinalityEstimatorConfig config = new CardinalityEstimatorConfig(name, 4, 2);
-
+        CardinalityEstimatorConfig config = new CardinalityEstimatorConfig(name, 4, 2)
+                .setMergePolicyConfig(new MergePolicyConfig("com.hazelcast.spi.merge.DiscardMergePolicy", 20));
         driver.getConfig().addCardinalityEstimatorConfig(config);
 
         assertConfigurationsEqualsOnAllMembers(config);
@@ -208,7 +211,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
     @Test
     public void testScheduledExecutorConfig() {
         ScheduledExecutorConfig config = new ScheduledExecutorConfig(name, 2, 3, 10, null,
-                new MergePolicyConfig());
+                new MergePolicyConfig(NON_DEFAULT_MERGE_POLICY, NON_DEFAULT_MERGE_BATCH_SIZE));
 
         driver.getConfig().addScheduledExecutorConfig(config);
 
@@ -293,6 +296,16 @@ public class DynamicConfigTest extends HazelcastTestSupport {
     @Test
     public void testReplicatedMapDefaultConfig() {
         ReplicatedMapConfig config = new ReplicatedMapConfig(name);
+
+        driver.getConfig().addReplicatedMapConfig(config);
+
+        assertConfigurationsEqualsOnAllMembers(config);
+    }
+
+    @Test
+    public void testReplicatedMapConfig_withNonDefaultMergePolicy() {
+        ReplicatedMapConfig config = new ReplicatedMapConfig(name)
+                .setMergePolicyConfig(new MergePolicyConfig(NON_DEFAULT_MERGE_POLICY, NON_DEFAULT_MERGE_BATCH_SIZE));
 
         driver.getConfig().addReplicatedMapConfig(config);
 
@@ -837,7 +850,8 @@ public class DynamicConfigTest extends HazelcastTestSupport {
                 .setBackupCount(2)
                 .setAsyncBackupCount(3)
                 .setMaxSize(99)
-                .setStatisticsEnabled(true);
+                .setStatisticsEnabled(true)
+                .setMergePolicyConfig(new MergePolicyConfig(NON_DEFAULT_MERGE_POLICY, NON_DEFAULT_MERGE_BATCH_SIZE));
     }
 
     private MapConfig getMapConfig() {
@@ -848,7 +862,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
                 .setEvictionPolicy(EvictionPolicy.RANDOM)
                 .setHotRestartConfig(new HotRestartConfig().setEnabled(true).setFsync(true))
                 .setInMemoryFormat(InMemoryFormat.OBJECT)
-                .setMergePolicy("com.hazelcast.SomeMergePolicy")
+                .setMergePolicyConfig(new MergePolicyConfig(NON_DEFAULT_MERGE_POLICY, NON_DEFAULT_MERGE_BATCH_SIZE))
                 .setMaxSizeConfig(new MaxSizeConfig(4096, MaxSizeConfig.MaxSizePolicy.PER_NODE))
                 .setTimeToLiveSeconds(220)
                 .setMaxIdleSeconds(110)
@@ -903,7 +917,8 @@ public class DynamicConfigTest extends HazelcastTestSupport {
                 .setStatisticsEnabled(true)
                 .setMaxSize(99)
                 .setBackupCount(4)
-                .setAsyncBackupCount(2);
+                .setAsyncBackupCount(2)
+                .setMergePolicyConfig(new MergePolicyConfig(NON_DEFAULT_MERGE_POLICY, NON_DEFAULT_MERGE_BATCH_SIZE));
     }
 
     private RingbufferConfig getRingbufferConfig() {
@@ -912,7 +927,8 @@ public class DynamicConfigTest extends HazelcastTestSupport {
                 .setInMemoryFormat(InMemoryFormat.OBJECT)
                 .setCapacity(33)
                 .setBackupCount(4)
-                .setAsyncBackupCount(2);
+                .setAsyncBackupCount(2)
+                .setMergePolicyConfig(new MergePolicyConfig(NON_DEFAULT_MERGE_POLICY, NON_DEFAULT_MERGE_BATCH_SIZE));
     }
 
     public QueueConfig getQueueConfig() {
@@ -924,7 +940,8 @@ public class DynamicConfigTest extends HazelcastTestSupport {
                 .setEmptyQueueTtl(10)
                 .setQueueStoreConfig(new QueueStoreConfig().setClassName("foo.bar.ImplName").setEnabled(true))
                 .setStatisticsEnabled(false)
-                .setQuorumName("myQuorum");
+                .setQuorumName("myQuorum")
+                .setMergePolicyConfig(new MergePolicyConfig(NON_DEFAULT_MERGE_POLICY, NON_DEFAULT_MERGE_BATCH_SIZE));
     }
 
     public QueueConfig getQueueConfig_withListeners() {

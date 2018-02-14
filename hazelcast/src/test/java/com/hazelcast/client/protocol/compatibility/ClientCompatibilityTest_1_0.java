@@ -1982,6 +1982,8 @@ public class ClientCompatibilityTest_1_0 {
 }
 
 
+
+
 {
     ClientMessage clientMessage = QueueOfferCodec.encodeRequest(    aString ,    aData ,    aLong   );
     int length = inputStream.readInt();
@@ -6142,6 +6144,26 @@ public class ClientCompatibilityTest_1_0 {
                 assertTrue(isEqual(datas, params.items));
                 assertFalse(params.itemSeqsExist);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
