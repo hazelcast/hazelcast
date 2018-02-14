@@ -22,13 +22,13 @@ import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.util.concurrent.MPSCQueue;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.spi.impl.PacketHandler;
 import com.hazelcast.spi.impl.operationexecutor.OperationHostileThread;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 import com.hazelcast.util.concurrent.BackoffIdleStrategy;
 import com.hazelcast.util.concurrent.BusySpinIdleStrategy;
 import com.hazelcast.util.concurrent.IdleStrategy;
+import com.hazelcast.util.function.Consumer;
 
 import java.util.concurrent.BlockingQueue;
 
@@ -48,14 +48,14 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
  * actual processing is done by the {@link InboundResponseHandler}.
  *
  * So when a response is received from a remote system, it is put in the responseQueue of the ResponseThread.
- * Then the ResponseThread takes it from this responseQueue and calls the {@link PacketHandler} for the
+ * Then the ResponseThread takes it from this responseQueue and calls the {@link Consumer} for the
  * actual processing.
  *
  * The reason that the IO thread doesn't immediately deals with the response is that deserializing the
  * {@link com.hazelcast.spi.impl.operationservice.impl.responses.Response} and let the invocation-future
  * deal with the response can be rather expensive.
  */
-public class AsyncInboundResponseHandler implements PacketHandler, MetricsProvider {
+public class AsyncInboundResponseHandler implements Consumer<Packet>, MetricsProvider {
 
     public static final HazelcastProperty IDLE_STRATEGY
             = new HazelcastProperty("hazelcast.operation.responsequeue.idlestrategy", "block");
@@ -70,7 +70,7 @@ public class AsyncInboundResponseHandler implements PacketHandler, MetricsProvid
 
     AsyncInboundResponseHandler(ClassLoader classLoader, String hzName,
                                 ILogger logger,
-                                PacketHandler responsePacketHandler,
+                                Consumer<Packet> responsePacketHandler,
                                 HazelcastProperties properties) {
         this.logger = logger;
         this.responseThread = new ResponseThread(classLoader, hzName, responsePacketHandler, properties);
@@ -82,7 +82,7 @@ public class AsyncInboundResponseHandler implements PacketHandler, MetricsProvid
     }
 
     @Override
-    public void handle(Packet packet) {
+    public void accept(Packet packet) {
         checkNotNull(packet, "packet can't be null");
         checkTrue(packet.getPacketType() == Packet.Type.OPERATION, "Packet type is not OPERATION");
         checkTrue(packet.isFlagRaised(FLAG_OP_RESPONSE), "FLAG_OP_RESPONSE is not set");
@@ -124,11 +124,11 @@ public class AsyncInboundResponseHandler implements PacketHandler, MetricsProvid
     private final class ResponseThread extends Thread implements OperationHostileThread {
 
         private final BlockingQueue<Packet> responseQueue;
-        private final PacketHandler responsePacketHandler;
+        private final Consumer<Packet> responsePacketHandler;
         private volatile boolean shutdown;
 
         private ResponseThread(ClassLoader classLoader, String hzName,
-                               PacketHandler responsePacketHandler,
+                               Consumer<Packet> responsePacketHandler,
                                HazelcastProperties properties) {
             super(createThreadName(hzName, "response"));
             setContextClassLoader(classLoader);
@@ -152,7 +152,7 @@ public class AsyncInboundResponseHandler implements PacketHandler, MetricsProvid
             while (!shutdown) {
                 Packet response = responseQueue.take();
                 try {
-                    responsePacketHandler.handle(response);
+                    responsePacketHandler.accept(response);
                 } catch (Throwable e) {
                     inspectOutOfMemoryError(e);
                     logger.severe("Failed to process response: " + response + " on:" + getName(), e);

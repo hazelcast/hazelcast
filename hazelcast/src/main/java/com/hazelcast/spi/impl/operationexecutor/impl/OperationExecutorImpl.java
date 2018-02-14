@@ -364,7 +364,7 @@ public final class OperationExecutorImpl implements OperationExecutor, MetricsPr
     }
 
     @Override
-    public void handle(Packet packet) {
+    public void accept(Packet packet) {
         execute(packet, packet.getPartitionId(), packet.isUrgent());
     }
 

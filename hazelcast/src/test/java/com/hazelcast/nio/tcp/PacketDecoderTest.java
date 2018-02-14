@@ -20,9 +20,9 @@ import com.hazelcast.internal.networking.nio.NioChannel;
 import com.hazelcast.internal.networking.nio.NioInboundPipeline;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.PacketIOHelper;
-import com.hazelcast.spi.impl.PacketHandler;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.function.Consumer;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -125,11 +125,11 @@ public class PacketDecoderTest extends TcpIpConnection_AbstractTest {
         assertEquals(oldPriorityPacketsRead + 1, channelReader.getPriorityFramesReadCounter().get());
     }
 
-    class MockPacketDispatcher implements PacketHandler {
+    class MockPacketDispatcher implements Consumer<Packet> {
         private List<Packet> packets = new LinkedList<Packet>();
 
         @Override
-        public void handle(Packet packet) throws Exception {
+        public void accept(Packet packet) {
             packets.add(packet);
         }
     }

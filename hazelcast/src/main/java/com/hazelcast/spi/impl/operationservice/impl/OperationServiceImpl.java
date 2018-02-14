@@ -42,7 +42,6 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.PacketHandler;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
 import com.hazelcast.spi.impl.operationexecutor.impl.OperationExecutorImpl;
@@ -52,6 +51,7 @@ import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.executor.ExecutorType;
 import com.hazelcast.util.executor.ManagedExecutorService;
+import com.hazelcast.util.function.Consumer;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -187,7 +187,7 @@ public final class OperationServiceImpl implements InternalOperationService, Met
         return outboundResponseHandler;
     }
 
-    public PacketHandler getAsyncInboundResponseHandler() {
+    public Consumer<Packet> getAsyncInboundResponseHandler() {
         return asyncInboundResponseHandler;
     }
 
