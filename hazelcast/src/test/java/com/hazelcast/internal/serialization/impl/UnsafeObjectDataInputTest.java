@@ -46,8 +46,7 @@ public class UnsafeObjectDataInputTest extends ByteArrayObjectDataInputTest {
     }
 
     @Test
-    public void testGetByteOrder() throws Exception {
+    public void testGetByteOrder() {
         assertEquals(ByteOrder.nativeOrder(), in.getByteOrder());
     }
-
 }
