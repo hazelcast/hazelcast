@@ -66,7 +66,8 @@ public class DynamicMapConfigTest extends HazelcastTestSupport {
         HazelcastInstance node = createHazelcastInstance(config);
 
         IMap<Integer, Integer> map = node.getMap(mapName);
-        map.put(1, 1);// trigger recordStore creation.
+        // trigger recordStore creation
+        map.put(1, 1);
 
         boolean beforeUpdate = isRecordStoreExpirable(map) && isEvictionEnabled(map);
         updateMapConfig(mapName, node);

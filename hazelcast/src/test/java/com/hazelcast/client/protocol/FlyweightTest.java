@@ -85,7 +85,8 @@ public class FlyweightTest {
 
     @Test
     public void shouldEncodeStringUtf8() {
-        flyweight.set("abc©☺");//0x61 0x62 0x63 0xC2 0xA9 0xE2 0x98 0xBA
+        //0x61 0x62 0x63 0xC2 0xA9 0xE2 0x98 0xBA
+        flyweight.set("abc©☺");
         assertEquals(12, flyweight.index());
         assertThat(byteBuffer.get(0), is((byte) 0x08));
         assertThat(byteBuffer.get(1), is((byte) 0x00));

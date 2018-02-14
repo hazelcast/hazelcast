@@ -108,8 +108,10 @@ public class EvictableGetterCacheTest {
         int classCacheSize = 10;
         float evictPercentage = 0.3f;
         EvictableGetterCache cache = new EvictableGetterCache(classCacheSize, 10, evictPercentage);
-        Class[] classes = {String.class, Character.class, Integer.class, Double.class, Byte.class, Long.class,
-                Number.class, Float.class, BigDecimal.class, BigInteger.class,};
+        Class[] classes = {
+                String.class, Character.class, Integer.class, Double.class, Byte.class, Long.class,
+                Number.class, Float.class, BigDecimal.class, BigInteger.class,
+        };
 
         // WHEN
         for (int i = 0; i < classCacheSize - 1; i++) {
@@ -126,8 +128,10 @@ public class EvictableGetterCacheTest {
         int classCacheSize = 10;
         float evictPercentage = 0.3f;
         EvictableGetterCache cache = new EvictableGetterCache(classCacheSize, 10, evictPercentage);
-        Class[] classes = {String.class, Character.class, Integer.class, Double.class, Byte.class, Long.class,
-                Number.class, Float.class, BigDecimal.class, BigInteger.class,};
+        Class[] classes = {
+                String.class, Character.class, Integer.class, Double.class, Byte.class, Long.class,
+                Number.class, Float.class, BigDecimal.class, BigInteger.class,
+        };
 
         // WHEN
         for (int i = 0; i < classCacheSize; i++) {

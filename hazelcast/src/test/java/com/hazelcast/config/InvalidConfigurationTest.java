@@ -250,7 +250,7 @@ public class InvalidConfigurationTest {
     }
 
     @Test
-    public void testWhenDoctypeAddedToXml() {
+    public void testWhenDocTypeAddedToXml() {
 //        expectInvalid("DOCTYPE is disallowed when the feature " +
 //                "\"http://apache.org/xml/features/disallow-doctype-decl\" set to true.");
         rule.expect(InvalidConfigurationException.class);
@@ -340,10 +340,10 @@ public class InvalidConfigurationTest {
     @Test
     public void testWhenInvalid_BothOfEvictionPolicyAndComparatorClassNameConfigured() {
         expectInvalid();
-        Map<String, String> props = new HashMap<String, String>() {{
-            put("cache-eviction-policy", "LFU");
-            put("cache-eviction-policy-comparator-class-name", "my-comparator");
-        }};
+        Map<String, String> props = new HashMap<String, String>();
+        props.put("cache-eviction-policy", "LFU");
+        props.put("cache-eviction-policy-comparator-class-name", "my-comparator");
+
         buildConfig(props);
     }
 

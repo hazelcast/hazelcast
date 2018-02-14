@@ -89,9 +89,13 @@ public class BounceMemberRuleTest {
                 // do nothing
             }
         };
-        bounceMemberRule.test(new Runnable[]{task});
+        bounceMemberRule.test(new Runnable[]{
+                task,
+        });
         // next statement will throw an AssertionError
-        bounceMemberRule.test(new Runnable[]{task});
+        bounceMemberRule.test(new Runnable[]{
+                task,
+        });
     }
 
     @Test(expected = AssertionError.class)
