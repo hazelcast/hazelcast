@@ -85,13 +85,13 @@ public class CardinalityEstimatorSplitBrainTest extends SplitBrainTestSupport {
 
         Config config = super.config();
         config.getCardinalityEstimatorConfig(estimatorNameA)
-              .setBackupCount(1)
-              .setAsyncBackupCount(0)
-              .setMergePolicyConfig(mergePolicyConfig);
+                .setBackupCount(1)
+                .setAsyncBackupCount(0)
+                .setMergePolicyConfig(mergePolicyConfig);
         config.getCardinalityEstimatorConfig(estimatorNameB)
-              .setBackupCount(1)
-              .setAsyncBackupCount(0)
-              .setMergePolicyConfig(mergePolicyConfig);
+                .setBackupCount(1)
+                .setAsyncBackupCount(0)
+                .setMergePolicyConfig(mergePolicyConfig);
         return config;
     }
 

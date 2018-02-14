@@ -86,7 +86,7 @@ public class DenseHyperLogLogConstantsTest extends HazelcastTestSupport {
 
     /**
      * Asserts {@code double[][]} arrays by an array of hash codes per sub-array.
-     *
+     * <p>
      * The method {@link Arrays#hashCode(Object[])} is not constant for {@code double[][]} arrays.
      * So we compare each sub-array on its own with {@link Arrays#hashCode(double[])}.
      */

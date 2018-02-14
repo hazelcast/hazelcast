@@ -568,7 +568,8 @@ public class ListenerTest extends HazelcastTestSupport {
 
     @Test
     public void hazelcastAwareEntryListener_whenConfiguredViaClassName_thenInjectHazelcastInstance() throws InterruptedException {
-        EntryListenerConfig listenerConfig = new EntryListenerConfig("com.hazelcast.map.ListenerTest$PingPongListener", false, true);
+        EntryListenerConfig listenerConfig
+                = new EntryListenerConfig("com.hazelcast.map.ListenerTest$PingPongListener", false, true);
         hazelcastAwareEntryListener_injectHazelcastInstance(listenerConfig);
     }
 

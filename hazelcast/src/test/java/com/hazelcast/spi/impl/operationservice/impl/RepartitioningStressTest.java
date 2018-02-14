@@ -44,7 +44,7 @@ import static org.junit.Assert.fail;
 /**
  * Verifies how well Hazelcast is able to deal with a cluster where members
  * are joining and leaving all the time, so partitions are moving.
- *
+ * <p>
  * In this cluster, partitioned calls are made and therefor it happens
  * frequently that calls are sent to the wrong machine.
  */

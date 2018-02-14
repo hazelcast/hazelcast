@@ -60,7 +60,7 @@ public class OutboundResponseHandlerTest {
 
     @Parameters(name = "{0}")
     public static Object[][] parameters() {
-        return new Object[][] {
+        return new Object[][]{
                 {BIG_ENDIAN}, {LITTLE_ENDIAN}
         };
     }
@@ -95,7 +95,7 @@ public class OutboundResponseHandlerTest {
 
     @Test
     public void sendResponse_whenPortable() {
-        Object response = new PortableAddress("Sesame Street",1);
+        Object response = new PortableAddress("Sesame Street", 1);
         Operation op = new DummyOperation();
         setCallId(op, 10);
         setCallerAddress(op, thatAddress);

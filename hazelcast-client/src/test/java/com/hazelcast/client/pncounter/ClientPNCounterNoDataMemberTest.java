@@ -20,7 +20,9 @@ import org.junit.runner.RunWith;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class ClientPNCounterNoDataMemberTest extends BasePNCounterNoDataMemberTest {
+
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+
     private String counterName = randomMapName("counter-");
     private HazelcastInstance client;
 

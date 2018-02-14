@@ -251,7 +251,8 @@ public class MigrationPlannerTest {
         final Address[] oldAddresses = new Address[]{new Address("localhost", 5701), new Address("localhost",
                 5702), new Address("localhost", 5703), null, null, null, null};
 
-        final Address[] newAddresses = new Address[]{new Address("localhost", 5703), new Address("localhost", 5701), null, null, null, null, null};
+        final Address[] newAddresses
+                = new Address[]{new Address("localhost", 5703), new Address("localhost", 5701), null, null, null, null, null};
 
         migrationPlanner.planMigrations(oldAddresses, newAddresses, callback);
         verify(callback).migrate(new Address("localhost", 5701), 0, -1, new Address("localhost", 5703), 2, 0);
@@ -264,7 +265,8 @@ public class MigrationPlannerTest {
         final Address[] oldAddresses = new Address[]{new Address("localhost", 5701), null, new Address("localhost",
                 5703), null, null, null, null};
 
-        final Address[] newAddresses = new Address[]{new Address("localhost", 5703), new Address("localhost", 5701), null, null, null, null, null};
+        final Address[] newAddresses
+                = new Address[]{new Address("localhost", 5703), new Address("localhost", 5701), null, null, null, null, null};
 
         migrationPlanner.planMigrations(oldAddresses, newAddresses, callback);
         verify(callback).migrate(new Address("localhost", 5701), 0, 1, new Address("localhost", 5703), 2, 0);
@@ -345,7 +347,8 @@ public class MigrationPlannerTest {
     public void testCopyPrioritizationAgainstShiftDownToColderIndex()
             throws UnknownHostException {
         List<MigrationInfo> migrations = new ArrayList<MigrationInfo>();
-        final MigrationInfo migration1 = new MigrationInfo(0, new Address("localhost", 5701), "5701", new Address("localhost", 5702), "5702", 0, 2, -1, 0);
+        final MigrationInfo migration1
+                = new MigrationInfo(0, new Address("localhost", 5701), "5701", new Address("localhost", 5702), "5702", 0, 2, -1, 0);
         final MigrationInfo migration2 = new MigrationInfo(0, null, null, new Address("localhost", 5703), "5703", -1, -1, -1, 1);
 
         migrations.add(migration1);
@@ -360,7 +363,8 @@ public class MigrationPlannerTest {
     public void testNoCopyPrioritizationAgainstShiftDownToHotterIndex()
             throws UnknownHostException {
         List<MigrationInfo> migrations = new ArrayList<MigrationInfo>();
-        final MigrationInfo migration1 = new MigrationInfo(0, new Address("localhost", 5701), "5701", new Address("localhost", 5702), "5702", 0, 1, -1, 0);
+        final MigrationInfo migration1
+                = new MigrationInfo(0, new Address("localhost", 5701), "5701", new Address("localhost", 5702), "5702", 0, 1, -1, 0);
         final MigrationInfo migration2 = new MigrationInfo(0, null, null, new Address("localhost", 5703), "5703", -1, -1, -1, 2);
 
         migrations.add(migration1);

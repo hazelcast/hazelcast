@@ -74,7 +74,8 @@ public class BasicCacheJournalTest extends HazelcastTestSupport {
 
     private static final Random RANDOM = new Random();
     private static final TruePredicate<EventJournalCacheEvent<String, Integer>> TRUE_PREDICATE = truePredicate();
-    private static final Projection<EventJournalCacheEvent<String, Integer>, EventJournalCacheEvent<String, Integer>> IDENTITY_PROJECTION = identity();
+    private static final Projection<EventJournalCacheEvent<String, Integer>, EventJournalCacheEvent<String, Integer>>
+            IDENTITY_PROJECTION = identity();
 
     protected HazelcastInstance[] instances;
     protected CacheManager cacheManager;

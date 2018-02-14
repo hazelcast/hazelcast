@@ -125,7 +125,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
 
     /**
      * The {@link NearCacheConfig} used by the Near Cache tests.
-     *
+     * <p>
      * Needs to be set by the implementations of this class in their {@link org.junit.Before} methods.
      */
     protected NearCacheConfig nearCacheConfig;
@@ -140,7 +140,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
 
     /**
      * Creates the {@link NearCacheTestContext} used by the Near Cache tests.
-     *
+     * <p>
      * The backing {@link DataStructureAdapter} will be populated with {@value DEFAULT_RECORD_COUNT} entries.
      *
      * @param <K> key type of the created {@link DataStructureAdapter}
@@ -153,7 +153,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
 
     /**
      * Creates the {@link NearCacheTestContext} used by the Near Cache tests.
-     *
+     * <p>
      * The backing {@link DataStructureAdapter} will be populated with {@value DEFAULT_RECORD_COUNT} entries.
      *
      * @param <K>  key type of the created {@link DataStructureAdapter}
@@ -1384,7 +1384,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
 
     /**
      * Checks that the memory costs are calculated correctly.
-     *
+     * <p>
      * This variant uses a single-threaded approach to fill the Near Cache with data.
      */
     @Test
@@ -1394,7 +1394,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
 
     /**
      * Checks that the memory costs are calculated correctly.
-     *
+     * <p>
      * This variant uses a multi-threaded approach to fill the Near Cache with data.
      */
     @Test

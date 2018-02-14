@@ -31,7 +31,7 @@ public class SampleMapStore implements MapStore<String, String> {
 
     @Override
     public void deleteAll(Collection<String> keys) {
-        for(String key : keys) {
+        for (String key : keys) {
             delete(key);
         }
     }
@@ -44,7 +44,7 @@ public class SampleMapStore implements MapStore<String, String> {
     @Override
     public Map<String, String> loadAll(Collection<String> keys) {
         HashMap<String, String> resultMap = new HashMap<String, String>();
-        for (String key: keys) {
+        for (String key : keys) {
             resultMap.put(key, internalStore.get(key));
         }
         return resultMap;

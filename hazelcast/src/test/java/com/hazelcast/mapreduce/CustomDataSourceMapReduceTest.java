@@ -46,7 +46,8 @@ import static org.junit.Assert.assertEquals;
 public class CustomDataSourceMapReduceTest
         extends HazelcastTestSupport {
 
-    private static final Comparator<Map.Entry<String, Integer>> ENTRYSET_COMPARATOR = new Comparator<Map.Entry<String, Integer>>() {
+    private static final Comparator<Map.Entry<String, Integer>> ENTRYSET_COMPARATOR
+            = new Comparator<Map.Entry<String, Integer>>() {
         @Override
         public int compare(Map.Entry<String, Integer> o1, Map.Entry<String, Integer> o2) {
             Integer i1 = Integer.parseInt(o1.getKey());

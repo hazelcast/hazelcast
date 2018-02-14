@@ -97,6 +97,7 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
         TransactionOptions options = TransactionOptions.getDefault();
         when(transactionManagerService.newAllowedDuringPassiveStateTransaction(options)).thenAnswer(new Answer<Transaction>() {
             boolean started;
+
             @Override
             public Transaction answer(InvocationOnMock invocation) throws Throwable {
                 Transaction tx = (Transaction) invocation.callRealMethod();
@@ -131,6 +132,7 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
         TransactionOptions options = TransactionOptions.getDefault();
         when(transactionManagerService.newAllowedDuringPassiveStateTransaction(options)).thenAnswer(new Answer<Transaction>() {
             boolean shutdown;
+
             @Override
             public Transaction answer(InvocationOnMock invocation) throws Throwable {
                 Transaction tx = (Transaction) invocation.callRealMethod();

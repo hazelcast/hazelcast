@@ -108,12 +108,12 @@ public class TopicConfigTest {
     @Test
     public void testEqualsAndHashCode() {
         EqualsVerifier.forClass(TopicConfig.class)
-                      .withPrefabValues(TopicConfigReadOnly.class,
-                              new TopicConfigReadOnly(new TopicConfig("Topic1")),
-                              new TopicConfigReadOnly(new TopicConfig("Topic2")))
-                      .allFieldsShouldBeUsed()
-                      .suppress(Warning.NONFINAL_FIELDS)
-                      .verify();
+                .withPrefabValues(TopicConfigReadOnly.class,
+                        new TopicConfigReadOnly(new TopicConfig("Topic1")),
+                        new TopicConfigReadOnly(new TopicConfig("Topic2")))
+                .allFieldsShouldBeUsed()
+                .suppress(Warning.NONFINAL_FIELDS)
+                .verify();
 
     }
 }

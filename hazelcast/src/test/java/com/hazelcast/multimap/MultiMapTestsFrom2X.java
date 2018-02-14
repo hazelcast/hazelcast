@@ -212,6 +212,7 @@ public class MultiMapTestsFrom2X extends HazelcastTestSupport {
         map.put("Hello", "World");
         assertTrue(map.containsEntry("Hello", "World"));
     }
+
     @Test
     public void testMultiMapDelete() {
         final HazelcastInstance instance = createHazelcastInstance();

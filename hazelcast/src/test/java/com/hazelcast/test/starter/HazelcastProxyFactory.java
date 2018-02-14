@@ -99,6 +99,7 @@ public class HazelcastProxyFactory {
      * This is the main entry point to obtain proxies for a target class loader.
      * Create an Object valid for the Hazelcast version started with {@code targetClassLoader} that proxies
      * the given {@code arg} which is valid in the current Hazelcast version.
+     *
      * @param targetClassLoader
      * @param arg
      * @return
@@ -151,6 +152,7 @@ public class HazelcastProxyFactory {
     /**
      * Convenience method to proxy an array of objects to be passed as arguments to a method on a class that is
      * loaded by {@code targetClassLoader}
+     *
      * @param args
      * @param targetClassLoader
      * @return
@@ -235,19 +237,19 @@ public class HazelcastProxyFactory {
 
     /**
      * Generate a JDK dynamic proxy implementing the expected interfaces.
+     *
      * @param delegate
      * @param proxyTargetClassloader
      * @param expectedInterfaces
      * @param <T>
      * @return
      */
-    private static <T> T generateProxyForInterface(Object delegate, ClassLoader proxyTargetClassloader, Class<?>...expectedInterfaces) {
+    private static <T> T generateProxyForInterface(Object delegate, ClassLoader proxyTargetClassloader, Class<?>... expectedInterfaces) {
         InvocationHandler myInvocationHandler = new ProxyInvocationHandler(delegate);
         return (T) Proxy.newProxyInstance(proxyTargetClassloader, expectedInterfaces, myInvocationHandler);
     }
 
     /**
-     *
      * @param targetClassLoader
      * @param arg
      * @param delegateClass
@@ -265,11 +267,11 @@ public class HazelcastProxyFactory {
             @Override
             public Class<?> apply(ProxySource input) {
                 return new ByteBuddy().subclass(input.getToProxy(), AllAsPublicConstructorStrategy.INSTANCE)
-                                      .method(ElementMatchers.isDeclaredBy(input.getToProxy()))
-                                      .intercept(InvocationHandlerAdapter.of(new ProxyInvocationHandler(arg)))
-                                      .make()
-                                      .load(input.getTargetClassLoader())
-                                      .getLoaded();
+                        .method(ElementMatchers.isDeclaredBy(input.getToProxy()))
+                        .intercept(InvocationHandlerAdapter.of(new ProxyInvocationHandler(arg)))
+                        .make()
+                        .load(input.getTargetClassLoader())
+                        .getLoaded();
             }
         });
         return construct(targetClass, arg);
@@ -278,8 +280,9 @@ public class HazelcastProxyFactory {
     /**
      * Decide whether given {@code delegateClass} should be proxied by subclassing, dynamic JDK proxy or not
      * proxied at all.
-     * @param delegateClass  class of object to be proxied
-     * @param ifaces         interfaces implemented by delegateClass
+     *
+     * @param delegateClass class of object to be proxied
+     * @param ifaces        interfaces implemented by delegateClass
      * @return
      */
     private static ProxyPolicy shouldProxy(Class<?> delegateClass, Class<?>[] ifaces) {
@@ -339,6 +342,7 @@ public class HazelcastProxyFactory {
 
     /**
      * Return all interfaces implemented by {@code type}, along with {@code type} itself if it is an interface
+     *
      * @param type
      * @return
      */
@@ -440,7 +444,8 @@ public class HazelcastProxyFactory {
 
         @Override
         public List<MethodDescription.Token> extractConstructors(TypeDescription instrumentedType) {
-            List<MethodDescription.Token> tokens = doExtractConstructors(instrumentedType), stripped = new ArrayList<MethodDescription.Token>(tokens.size());
+            List<MethodDescription.Token> tokens = doExtractConstructors(instrumentedType), stripped
+                    = new ArrayList<MethodDescription.Token>(tokens.size());
             for (MethodDescription.Token token : tokens) {
                 stripped.add(new MethodDescription.Token(token.getName(),
                         ACC_PUBLIC,

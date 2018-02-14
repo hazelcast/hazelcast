@@ -23,7 +23,8 @@ package com.hazelcast.client.test;
 public class BaseCustom {
     private int value;
 
-    public BaseCustom() {}
+    public BaseCustom() {
+    }
 
     public BaseCustom(int value) {
         this.value = value;

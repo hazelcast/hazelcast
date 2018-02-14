@@ -58,8 +58,8 @@ public class EventJournalConfigTest {
     @Test
     public void testEqualsAndHashCode() {
         EqualsVerifier.forClass(EventJournalConfig.class)
-                      .suppress(Warning.NONFINAL_FIELDS)
-                      .verify();
+                .suppress(Warning.NONFINAL_FIELDS)
+                .verify();
     }
 
     private EventJournalConfigReadOnly getReadOnlyConfig() {

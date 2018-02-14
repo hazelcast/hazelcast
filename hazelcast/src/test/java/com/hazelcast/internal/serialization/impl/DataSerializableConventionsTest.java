@@ -137,7 +137,7 @@ public class DataSerializableConventionsTest {
         serializableClasses.removeAll(allAnnotatedClasses);
 
         // exclude @SerializableByConvention classes
-        Set<?> serializableByConventions = REFLECTIONS.getTypesAnnotatedWith(SerializableByConvention. class , true);
+        Set<?> serializableByConventions = REFLECTIONS.getTypesAnnotatedWith(SerializableByConvention.class, true);
         serializableClasses.removeAll(serializableByConventions);
 
         if (serializableClasses.size() > 0) {

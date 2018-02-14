@@ -39,7 +39,7 @@ public class VersionConstructor extends AbstractStarterObjectConstructor {
         Byte major = (Byte) getFieldValueReflectively(delegate, "major");
         Byte minor = (Byte) getFieldValueReflectively(delegate, "minor");
 
-        Object[] args = new Object[] {major.intValue(), minor.intValue()};
+        Object[] args = new Object[]{major.intValue(), minor.intValue()};
 
         return versionOf.invoke(null, args);
     }

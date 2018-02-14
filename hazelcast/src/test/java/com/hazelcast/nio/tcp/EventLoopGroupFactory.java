@@ -22,5 +22,6 @@ import com.hazelcast.internal.networking.EventLoopGroup;
 
 public interface EventLoopGroupFactory {
     EventLoopGroup create(MockIOService ioService, MetricsRegistry metricsRegistry);
+
     ChannelFactory createChannelFactory();
 }

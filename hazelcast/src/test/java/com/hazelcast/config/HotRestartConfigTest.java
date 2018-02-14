@@ -32,8 +32,8 @@ public class HotRestartConfigTest {
     @Test
     public void testEqualsAndHashCode() {
         EqualsVerifier.forClass(HotRestartConfig.class)
-                      .allFieldsShouldBeUsed()
-                      .suppress(Warning.NONFINAL_FIELDS)
-                      .verify();
+                .allFieldsShouldBeUsed()
+                .suppress(Warning.NONFINAL_FIELDS)
+                .verify();
     }
 }

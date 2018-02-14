@@ -47,7 +47,7 @@ public class JitterRule implements TestRule {
      * Number of buckets to be created. Jitter monitor records a floating window
      * where the length of the window can be calculated as
      * {@code AGGREGATION_INTERVAL_MILLIS * CAPACITY}
-     *
+     * <p>
      * It has to be a power of two.
      */
     public static final int CAPACITY = nextPowerOfTwo(720);

@@ -345,9 +345,9 @@ public abstract class HazelcastTestSupport {
 
     /**
      * Sleeps for the given amount of time and after that, sets stop to true.
-     *
+     * <p>
      * If stop is changed to true while sleeping, the calls returns before waiting the full sleeping period.
-     *
+     * <p>
      * This method is very useful for stress tests that run for a certain amount of time. But if one of the stress tests
      * runs into a failure, the test should be aborted immediately. This is done by letting the thread set stop to true.
      *

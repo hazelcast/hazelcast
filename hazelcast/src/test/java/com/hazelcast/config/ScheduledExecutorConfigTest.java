@@ -72,14 +72,14 @@ public class ScheduledExecutorConfigTest extends HazelcastTestSupport {
     @Test
     public void testEqualsAndHashCode() {
         EqualsVerifier.forClass(ScheduledExecutorConfig.class)
-                      .allFieldsShouldBeUsedExcept("readOnly")
-                      .suppress(Warning.NULL_FIELDS, Warning.NONFINAL_FIELDS)
-                      .withPrefabValues(ScheduledExecutorConfigReadOnly.class,
-                              new ScheduledExecutorConfigReadOnly(new ScheduledExecutorConfig("red")),
-                              new ScheduledExecutorConfigReadOnly(new ScheduledExecutorConfig("black")))
-                      .withPrefabValues(MergePolicyConfig.class,
-                              new MergePolicyConfig(),
-                              new MergePolicyConfig(DiscardMergePolicy.class.getSimpleName(), 10))
-                      .verify();
+                .allFieldsShouldBeUsedExcept("readOnly")
+                .suppress(Warning.NULL_FIELDS, Warning.NONFINAL_FIELDS)
+                .withPrefabValues(ScheduledExecutorConfigReadOnly.class,
+                        new ScheduledExecutorConfigReadOnly(new ScheduledExecutorConfig("red")),
+                        new ScheduledExecutorConfigReadOnly(new ScheduledExecutorConfig("black")))
+                .withPrefabValues(MergePolicyConfig.class,
+                        new MergePolicyConfig(),
+                        new MergePolicyConfig(DiscardMergePolicy.class.getSimpleName(), 10))
+                .verify();
     }
 }

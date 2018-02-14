@@ -168,7 +168,7 @@ public class TcpIpJoinTest extends AbstractJoinTest {
         config1.getGroupConfig().setPassword("pass1");
         config1.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         config1.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(true).setConnectionTimeoutSeconds(3)
-               .addMember("127.0.0.1");
+                .addMember("127.0.0.1");
 
         Config config2 = new Config();
         config2.setProperty(GroupProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "0");
@@ -176,7 +176,7 @@ public class TcpIpJoinTest extends AbstractJoinTest {
         config2.getGroupConfig().setPassword("pass2");
         config2.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         config2.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(true).setConnectionTimeoutSeconds(3)
-               .addMember("127.0.0.1");
+                .addMember("127.0.0.1");
 
         HazelcastInstance hz1 = Hazelcast.newHazelcastInstance(config1);
         HazelcastInstance hz2 = Hazelcast.newHazelcastInstance(config2);

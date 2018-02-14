@@ -25,8 +25,8 @@ public class InterfacesConfigTest {
     @Test
     public void testEqualsAndHashCode() {
         EqualsVerifier.forClass(InterfacesConfig.class)
-                      .allFieldsShouldBeUsed()
-                      .suppress(Warning.NONFINAL_FIELDS, Warning.NULL_FIELDS)
-                      .verify();
+                .allFieldsShouldBeUsed()
+                .suppress(Warning.NONFINAL_FIELDS, Warning.NULL_FIELDS)
+                .verify();
     }
 }

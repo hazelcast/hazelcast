@@ -42,6 +42,7 @@ public class ClientPNCounterBasicIntegrationTest extends BasePNCounterBasicInteg
     }
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+
     private HazelcastInstance[] members;
     private HazelcastInstance[] clients;
 
@@ -61,8 +62,9 @@ public class ClientPNCounterBasicIntegrationTest extends BasePNCounterBasicInteg
                 .setStatisticsEnabled(true);
         final Config config = new Config()
                 .setProperty(GroupProperty.PARTITION_COUNT.getName(), "5")
-                .setCRDTReplicationConfig(new CRDTReplicationConfig().setReplicationPeriodMillis(200)
-                                                                     .setMaxConcurrentReplicationTargets(Integer.MAX_VALUE))
+                .setCRDTReplicationConfig(new CRDTReplicationConfig()
+                        .setReplicationPeriodMillis(200)
+                        .setMaxConcurrentReplicationTargets(Integer.MAX_VALUE))
                 .addPNCounterConfig(counterConfig);
         members = hazelcastFactory.newInstances(config, 2);
         clients = new HazelcastInstance[]{hazelcastFactory.newHazelcastClient(), hazelcastFactory.newHazelcastClient()};

@@ -109,7 +109,8 @@ public class Invocation_NestedLocalTest extends Invocation_NestedAbstractTest {
         int innerPartitionId = 0;
         InnerOperation innerOperation = new InnerOperation(RESPONSE, innerPartitionId);
         OuterOperation outerOperation = new OuterOperation(innerOperation, outerPartitionId);
-        InternalCompletableFuture future = operationService.invokeOnPartition(null, outerOperation, outerOperation.getPartitionId());
+        InternalCompletableFuture future
+                = operationService.invokeOnPartition(null, outerOperation, outerOperation.getPartitionId());
 
         expected.expect(IllegalThreadStateException.class);
         expected.expectMessage("cannot make remote call");

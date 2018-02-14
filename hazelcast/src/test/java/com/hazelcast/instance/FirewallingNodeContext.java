@@ -28,7 +28,7 @@ import java.util.Collections;
  * with a {@link FirewallingConnectionManager}.
  */
 public class FirewallingNodeContext extends DefaultNodeContext {
-    
+
     @Override
     public ConnectionManager createConnectionManager(Node node, ServerSocketChannel serverSocketChannel) {
         ConnectionManager connectionManager = super.createConnectionManager(node, serverSocketChannel);

@@ -72,7 +72,8 @@ public class ClusterFailureDetectorTest {
                 failureDetector = new DeadlineClusterFailureDetector(HEARTBEAT_TIMEOUT);
                 break;
             case PHI_ACCRUAL:
-                failureDetector = new PhiAccrualClusterFailureDetector(HEARTBEAT_TIMEOUT, 1, new HazelcastProperties(new Properties()));
+                failureDetector
+                        = new PhiAccrualClusterFailureDetector(HEARTBEAT_TIMEOUT, 1, new HazelcastProperties(new Properties()));
                 break;
             default:
                 throw new IllegalArgumentException(failureDetectorType.toString());

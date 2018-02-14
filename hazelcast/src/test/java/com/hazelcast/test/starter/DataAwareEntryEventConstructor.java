@@ -48,10 +48,10 @@ public class DataAwareEntryEventConstructor extends AbstractStarterObjectConstru
         Object dataOldValue = getFieldValueReflectively(delegate, "dataOldValue");
         Object dataMergingValue = getFieldValueReflectively(delegate, "dataMergingValue");
 
-        Object[] args = new Object[] {member, eventTypeId.intValue(), source,
-                                      dataKey, dataNewValue,
-                                      dataOldValue, dataMergingValue,
-                                      serializationService};
+        Object[] args = new Object[]{member, eventTypeId.intValue(), source,
+                dataKey, dataNewValue,
+                dataOldValue, dataMergingValue,
+                serializationService};
 
         Object[] proxiedArgs = proxyArgumentsIfNeeded(args, starterClassLoader);
 

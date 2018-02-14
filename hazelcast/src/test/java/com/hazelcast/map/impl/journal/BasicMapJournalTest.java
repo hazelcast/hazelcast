@@ -71,7 +71,8 @@ public class BasicMapJournalTest extends HazelcastTestSupport {
 
     private static final Random RANDOM = new Random();
     private static final TruePredicate<EventJournalMapEvent<String, Integer>> TRUE_PREDICATE = truePredicate();
-    private static final Projection<EventJournalMapEvent<String, Integer>, EventJournalMapEvent<String, Integer>> IDENTITY_PROJECTION = identity();
+    private static final Projection<EventJournalMapEvent<String, Integer>, EventJournalMapEvent<String, Integer>>
+            IDENTITY_PROJECTION = identity();
 
     protected HazelcastInstance[] instances;
 

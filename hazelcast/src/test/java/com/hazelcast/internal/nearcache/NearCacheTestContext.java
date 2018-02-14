@@ -44,25 +44,25 @@ public class NearCacheTestContext<K, V, NK, NV> {
 
     /**
      * The {@link HazelcastInstance} which has the configured Near Cache.
-     *
+     * <p>
      * In a scenario with Hazelcast client and member, this will be the client.
      */
     public final HazelcastInstance nearCacheInstance;
     /**
      * The {@link HazelcastInstance} which holds backing data structure for the Near Cache.
-     *
+     * <p>
      * In a scenario with Hazelcast client and member, this will be the member.
      */
     public final HazelcastInstance dataInstance;
     /**
      * The {@link DataStructureAdapter} which has the configured Near Cache.
-     *
+     * <p>
      * In a scenario with Hazelcast client and member, this will be the near cached data structure on the client.
      */
     public final DataStructureAdapter<K, V> nearCacheAdapter;
     /**
      * The {@link DataStructureAdapter} which has the original data.
-     *
+     * <p>
      * In a scenario with Hazelcast client and member, this will be the original data structure on the member.
      */
     public final DataStructureAdapter<K, V> dataAdapter;

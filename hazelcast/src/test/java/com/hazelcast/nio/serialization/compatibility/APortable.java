@@ -429,13 +429,18 @@ public class APortable implements Portable {
         if (portableObject != null ? !portableObject.equals(that.portableObject) : that.portableObject != null) {
             return false;
         }
-        if (identifiedDataSerializableObject != null ? !identifiedDataSerializableObject.equals(that.identifiedDataSerializableObject) : that.identifiedDataSerializableObject != null) {
+        if (identifiedDataSerializableObject !=
+                null ? !identifiedDataSerializableObject.equals(that.identifiedDataSerializableObject) :
+                that.identifiedDataSerializableObject != null) {
             return false;
         }
-        if (customStreamSerializableObject != null ? !customStreamSerializableObject.equals(that.customStreamSerializableObject) : that.customStreamSerializableObject != null) {
+        if (customStreamSerializableObject != null ? !customStreamSerializableObject.equals(that.customStreamSerializableObject) :
+                that.customStreamSerializableObject != null) {
             return false;
         }
-        if (customByteArraySerializableObject != null ? !customByteArraySerializableObject.equals(that.customByteArraySerializableObject) : that.customByteArraySerializableObject != null) {
+        if (customByteArraySerializableObject !=
+                null ? !customByteArraySerializableObject.equals(that.customByteArraySerializableObject) :
+                that.customByteArraySerializableObject != null) {
             return false;
         }
         return !(data != null ? !data.equals(that.data) : that.data != null);

@@ -354,12 +354,12 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
         HazelcastInstance instance = createHazelcastInstance(config);
         IMap<Object, Object> map = instance.getMap(mapName);
         final CountDownLatch entryEvictedLatch = new CountDownLatch(700);
-        map.addEntryListener(new EntryEvictedListener(){
+        map.addEntryListener(new EntryEvictedListener() {
             @Override
             public void entryEvicted(EntryEvent event) {
                 entryEvictedLatch.countDown();
             }
-        },true);
+        }, true);
         for (int i = 0; i < 1000; i++) {
             map.put(i, i);
             assertEquals(i, map.get(i));

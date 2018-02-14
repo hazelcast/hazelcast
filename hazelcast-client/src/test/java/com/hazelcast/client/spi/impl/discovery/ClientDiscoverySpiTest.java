@@ -381,7 +381,7 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
         verify(discoveryService).discoverNodes();
     }
 
-    @Test (expected = IllegalStateException.class)
+    @Test(expected = IllegalStateException.class)
     public void testDiscoveryEnabledNoLocalhost() {
         Hazelcast.newHazelcastInstance();
 
@@ -405,7 +405,7 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
         HazelcastClient.newHazelcastClient();
     }
 
-    @Test (expected = IllegalStateException.class)
+    @Test(expected = IllegalStateException.class)
     public void testMulticastDiscoveryEnabledNoLocalhost() {
         Hazelcast.newHazelcastInstance();
 

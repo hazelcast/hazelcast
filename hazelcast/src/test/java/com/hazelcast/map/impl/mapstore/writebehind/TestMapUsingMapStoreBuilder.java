@@ -109,7 +109,8 @@ public class TestMapUsingMapStoreBuilder<K, V> {
 
     public TestMapUsingMapStoreBuilder<K, V> withWriteBehindQueueCapacity(int writeBehindQueueCapacity) {
         if (writeBehindQueueCapacity < 0) {
-            throw new IllegalArgumentException("writeBehindQueueCapacity should be > 0 but found [" + writeBehindQueueCapacity + ']');
+            throw new IllegalArgumentException("writeBehindQueueCapacity should be > 0 but found ["
+                    + writeBehindQueueCapacity + ']');
         }
         this.writeBehindQueueCapacity = writeBehindQueueCapacity;
         return this;

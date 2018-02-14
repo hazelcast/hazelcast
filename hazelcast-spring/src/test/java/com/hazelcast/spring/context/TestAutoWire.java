@@ -35,7 +35,7 @@ import static org.junit.Assert.assertNotNull;
  * annotation. This test specifically for {@code @Autowired} case, not other annotations like
  * {@code @Resource}. Because they are using different annotation bean post processors so they may
  * behave differently.
- *
+ * <p>
  * {@link org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor}
  * {@link org.springframework.context.annotation.CommonAnnotationBeanPostProcessor}
  */

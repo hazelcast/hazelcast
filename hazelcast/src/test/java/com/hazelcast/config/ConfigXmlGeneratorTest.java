@@ -62,7 +62,7 @@ public class ConfigXmlGeneratorTest {
         Config cfg = new Config();
         SSLConfig sslConfig = new SSLConfig();
         sslConfig.setProperty("keyStorePassword", "Hazelcast")
-                 .setProperty("trustStorePassword", "Hazelcast");
+                .setProperty("trustStorePassword", "Hazelcast");
         cfg.getNetworkConfig().setSSLConfig(sslConfig);
 
         SymmetricEncryptionConfig symmetricEncryptionConfig = new SymmetricEncryptionConfig();
@@ -193,8 +193,8 @@ public class ConfigXmlGeneratorTest {
 
         NetworkConfig expectedNetworkConfig = cfg.getNetworkConfig();
         expectedNetworkConfig.getInterfaces()
-                             .addInterface("127.0.0.*")
-                             .setEnabled(true);
+                .addInterface("127.0.0.*")
+                .setEnabled(true);
 
         NetworkConfig actualNetworkConfig = getNewConfigViaXMLGenerator(cfg).getNetworkConfig();
 
@@ -234,12 +234,12 @@ public class ConfigXmlGeneratorTest {
 
         HotRestartPersistenceConfig expectedConfig = cfg.getHotRestartPersistenceConfig();
         expectedConfig.setEnabled(true)
-                      .setClusterDataRecoveryPolicy(HotRestartClusterDataRecoveryPolicy.FULL_RECOVERY_ONLY)
-                      .setValidationTimeoutSeconds(100)
-                      .setDataLoadTimeoutSeconds(130)
-                      .setBaseDir(new File("/nonexisting-base"))
-                      .setBackupDir(new File("/nonexisting-backup"))
-                      .setParallelism(5);
+                .setClusterDataRecoveryPolicy(HotRestartClusterDataRecoveryPolicy.FULL_RECOVERY_ONLY)
+                .setValidationTimeoutSeconds(100)
+                .setDataLoadTimeoutSeconds(130)
+                .setBaseDir(new File("/nonexisting-base"))
+                .setBackupDir(new File("/nonexisting-backup"))
+                .setParallelism(5);
 
         HotRestartPersistenceConfig actualConfig = getNewConfigViaXMLGenerator(cfg).getHotRestartPersistenceConfig();
 
@@ -259,8 +259,8 @@ public class ConfigXmlGeneratorTest {
                 .setClassName("ServiceClass")
                 .setProperties(properties);
         ServicesConfig expectedConfig = cfg.getServicesConfig()
-                                           .setEnableDefaults(true)
-                                           .setServiceConfigs(asList(serviceConfig));
+                .setEnableDefaults(true)
+                .setServiceConfigs(asList(serviceConfig));
 
         ServicesConfig actualConfig = getNewConfigViaXMLGenerator(cfg).getServicesConfig();
 
@@ -1182,7 +1182,7 @@ public class ConfigXmlGeneratorTest {
         Config config = new Config();
         QuorumConfig quorumConfig = new QuorumConfig("test-quorum", true, 3);
         quorumConfig.setType(QuorumType.READ_WRITE)
-                    .setQuorumFunctionClassName("com.hazelcast.QuorumFunction");
+                .setQuorumFunctionClassName("com.hazelcast.QuorumFunction");
         config.addQuorumConfig(quorumConfig);
 
         QuorumConfig generatedConfig = getNewConfigViaXMLGenerator(config).getQuorumConfig("test-quorum");
@@ -1196,7 +1196,7 @@ public class ConfigXmlGeneratorTest {
         QuorumConfig quorumConfig = QuorumConfig.newRecentlyActiveQuorumConfigBuilder("recently-active", 3, 3141592)
                 .build();
         quorumConfig.setType(QuorumType.READ_WRITE)
-                    .addListenerConfig(new QuorumListenerConfig("com.hazelcast.QuorumListener"));
+                .addListenerConfig(new QuorumListenerConfig("com.hazelcast.QuorumListener"));
         config.addQuorumConfig(quorumConfig);
 
         QuorumConfig generatedConfig = getNewConfigViaXMLGenerator(config).getQuorumConfig("recently-active");
@@ -1208,14 +1208,14 @@ public class ConfigXmlGeneratorTest {
     public void testQuorumConfig_configuredByProbabilisticQuorumConfigBuilder() {
         Config config = new Config();
         QuorumConfig quorumConfig = QuorumConfig.newProbabilisticQuorumConfigBuilder("probabilistic-quorum", 3)
-                                                .withHeartbeatIntervalMillis(1)
-                                                .withAcceptableHeartbeatPauseMillis(2)
-                                                .withMaxSampleSize(3)
-                                                .withMinStdDeviationMillis(4)
-                                                .withSuspicionThreshold(5)
-                                                .build();
+                .withHeartbeatIntervalMillis(1)
+                .withAcceptableHeartbeatPauseMillis(2)
+                .withMaxSampleSize(3)
+                .withMinStdDeviationMillis(4)
+                .withSuspicionThreshold(5)
+                .build();
         quorumConfig.setType(QuorumType.READ_WRITE)
-                    .addListenerConfig(new QuorumListenerConfig("com.hazelcast.QuorumListener"));
+                .addListenerConfig(new QuorumListenerConfig("com.hazelcast.QuorumListener"));
         config.addQuorumConfig(quorumConfig);
 
         QuorumConfig generatedConfig = getNewConfigViaXMLGenerator(config).getQuorumConfig("probabilistic-quorum");
@@ -1238,15 +1238,15 @@ public class ConfigXmlGeneratorTest {
 
     private AwsConfig getDummyAwsConfig() {
         return new AwsConfig().setHostHeader("dummyHost")
-                              .setRegion("dummyRegion")
-                              .setEnabled(false)
-                              .setConnectionTimeoutSeconds(1)
-                              .setAccessKey("dummyKey")
-                              .setIamRole("dummyIam")
-                              .setSecretKey("dummySecretKey")
-                              .setSecurityGroupName("dummyGroupName")
-                              .setTagKey("dummyTagKey")
-                              .setTagValue("dummyTagValue");
+                .setRegion("dummyRegion")
+                .setEnabled(false)
+                .setConnectionTimeoutSeconds(1)
+                .setAccessKey("dummyKey")
+                .setIamRole("dummyIam")
+                .setSecretKey("dummySecretKey")
+                .setSecurityGroupName("dummyGroupName")
+                .setTagKey("dummyTagKey")
+                .setTagValue("dummyTagValue");
     }
 
     private static Config getNewConfigViaXMLGenerator(Config config) {

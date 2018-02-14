@@ -60,17 +60,19 @@ public class ClientBasicMapJournalTest extends BasicMapJournalTest {
     }
 
     @Override
-    protected <K, V> EventJournalInitialSubscriberState subscribeToEventJournal(IMap<K, V> map, int partitionId) throws Exception{
+    protected <K, V> EventJournalInitialSubscriberState subscribeToEventJournal(IMap<K, V> map, int partitionId)
+            throws Exception {
         return ((ClientMapProxy<K, V>) map).subscribeToEventJournal(partitionId).get();
     }
 
     @Override
-    protected <K, V, T> ICompletableFuture<ReadResultSet<T>> readFromEventJournal(IMap<K, V> map,
-                                                                                  long startSequence,
-                                                                                  int maxSize,
-                                                                                  int partitionId,
-                                                                                  Predicate<? super EventJournalMapEvent<K, V>> predicate,
-                                                                                  Projection<? super EventJournalMapEvent<K, V>, T> projection) {
+    protected <K, V, T> ICompletableFuture<ReadResultSet<T>> readFromEventJournal(
+            IMap<K, V> map,
+            long startSequence,
+            int maxSize,
+            int partitionId,
+            Predicate<? super EventJournalMapEvent<K, V>> predicate,
+            Projection<? super EventJournalMapEvent<K, V>, T> projection) {
         return ((ClientMapProxy<K, V>) map).readFromEventJournal(startSequence, 1, maxSize, partitionId, predicate, projection);
     }
 

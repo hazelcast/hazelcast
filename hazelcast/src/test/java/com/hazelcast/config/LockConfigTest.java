@@ -75,8 +75,8 @@ public class LockConfigTest {
     @Test
     public void testEqualsAndHashCode() {
         EqualsVerifier.forClass(LockConfig.class)
-                      .allFieldsShouldBeUsed()
-                      .suppress(Warning.NONFINAL_FIELDS)
-                      .verify();
+                .allFieldsShouldBeUsed()
+                .suppress(Warning.NONFINAL_FIELDS)
+                .verify();
     }
 }

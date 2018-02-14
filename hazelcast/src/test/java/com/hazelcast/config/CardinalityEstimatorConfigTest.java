@@ -143,14 +143,14 @@ public class CardinalityEstimatorConfigTest extends HazelcastTestSupport {
     @Test
     public void testEqualsAndHashCode() {
         EqualsVerifier.forClass(CardinalityEstimatorConfig.class)
-                      .allFieldsShouldBeUsedExcept("readOnly")
-                      .suppress(Warning.NULL_FIELDS, Warning.NONFINAL_FIELDS)
-                      .withPrefabValues(CardinalityEstimatorConfigReadOnly.class,
-                              new CardinalityEstimatorConfigReadOnly(new CardinalityEstimatorConfig("red")),
-                              new CardinalityEstimatorConfigReadOnly(new CardinalityEstimatorConfig("black")))
-                      .withPrefabValues(MergePolicyConfig.class,
-                              new MergePolicyConfig(),
-                              new MergePolicyConfig(DiscardMergePolicy.class.getSimpleName(), 10))
-                      .verify();
+                .allFieldsShouldBeUsedExcept("readOnly")
+                .suppress(Warning.NULL_FIELDS, Warning.NONFINAL_FIELDS)
+                .withPrefabValues(CardinalityEstimatorConfigReadOnly.class,
+                        new CardinalityEstimatorConfigReadOnly(new CardinalityEstimatorConfig("red")),
+                        new CardinalityEstimatorConfigReadOnly(new CardinalityEstimatorConfig("black")))
+                .withPrefabValues(MergePolicyConfig.class,
+                        new MergePolicyConfig(),
+                        new MergePolicyConfig(DiscardMergePolicy.class.getSimpleName(), 10))
+                .verify();
     }
 }

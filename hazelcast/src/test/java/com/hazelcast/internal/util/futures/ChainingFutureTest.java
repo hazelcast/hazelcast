@@ -166,7 +166,7 @@ public class ChainingFutureTest extends HazelcastTestSupport {
         assertTrue(future.isDone());
     }
 
-    private CountingIterator<ICompletableFuture<Object>> toIterator(ICompletableFuture<Object>...futures) {
+    private CountingIterator<ICompletableFuture<Object>> toIterator(ICompletableFuture<Object>... futures) {
         List<ICompletableFuture<Object>> myCompletableFutures = asList(futures);
         return new CountingIterator<ICompletableFuture<Object>>(myCompletableFutures.iterator());
     }

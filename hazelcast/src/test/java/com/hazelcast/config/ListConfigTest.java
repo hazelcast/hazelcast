@@ -34,14 +34,14 @@ public class ListConfigTest {
     @Test
     public void testEqualsAndHashCode() {
         EqualsVerifier.forClass(ListConfig.class)
-                      .allFieldsShouldBeUsedExcept("readOnly")
-                      .suppress(Warning.NONFINAL_FIELDS)
-                      .withPrefabValues(ListConfigReadOnly.class,
-                              new ListConfigReadOnly(new ListConfig("red")),
-                              new ListConfigReadOnly(new ListConfig("black")))
-                      .withPrefabValues(MergePolicyConfig.class,
-                              new MergePolicyConfig(PutIfAbsentMergePolicy.class.getName(), 100),
-                              new MergePolicyConfig(DiscardMergePolicy.class.getName(), 200))
-                      .verify();
+                .allFieldsShouldBeUsedExcept("readOnly")
+                .suppress(Warning.NONFINAL_FIELDS)
+                .withPrefabValues(ListConfigReadOnly.class,
+                        new ListConfigReadOnly(new ListConfig("red")),
+                        new ListConfigReadOnly(new ListConfig("black")))
+                .withPrefabValues(MergePolicyConfig.class,
+                        new MergePolicyConfig(PutIfAbsentMergePolicy.class.getName(), 100),
+                        new MergePolicyConfig(DiscardMergePolicy.class.getName(), 200))
+                .verify();
     }
 }

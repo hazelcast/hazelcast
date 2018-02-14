@@ -48,7 +48,7 @@ public class FailFastCallIdSequenceTest extends HazelcastTestSupport {
         assertEquals(oldSequence + 1, sequence.getLastCallId());
     }
 
-    @Test (expected = HazelcastOverloadException.class)
+    @Test(expected = HazelcastOverloadException.class)
     public void next_whenNoCapacity_thenThrowException() throws InterruptedException {
         CallIdSequence sequence = new FailFastCallIdSequence(1);
 

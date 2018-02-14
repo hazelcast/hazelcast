@@ -38,7 +38,7 @@ public class ChangeClusterStateTest extends HazelcastTestSupport {
 
     @Parameterized.Parameters(name = "from:{0} to:{1}")
     public static Collection<Object[]> parameters() {
-        return Arrays.asList(new Object[][] {
+        return Arrays.asList(new Object[][]{
                 {ClusterState.ACTIVE, ClusterState.FROZEN},
                 {ClusterState.ACTIVE, ClusterState.NO_MIGRATION},
                 {ClusterState.ACTIVE, ClusterState.PASSIVE},

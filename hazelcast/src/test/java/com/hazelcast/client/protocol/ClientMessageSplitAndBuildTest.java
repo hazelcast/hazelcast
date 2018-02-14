@@ -136,7 +136,8 @@ public class ClientMessageSplitAndBuildTest {
         final ClientMessage expectedClientMessage = ClientAuthenticationCodec.encodeRequest(s, s, s, s, true, s, (byte) 1,
                 BuildInfoProvider.getBuildInfo().getVersion());
         expectedClientMessage.addFlag(ClientMessage.BEGIN_AND_END_FLAGS);
-        List<ClientMessage> subFrames = ClientMessageSplitter.getSubFrames(expectedClientMessage.getFrameLength() + 1, expectedClientMessage);
+        List<ClientMessage> subFrames = ClientMessageSplitter.getSubFrames(
+                expectedClientMessage.getFrameLength() + 1, expectedClientMessage);
         ClientMessageDecoder decoder = new ClientMessageDecoder(
                 mock(Connection.class),
                 new ClientMessageHandler() {

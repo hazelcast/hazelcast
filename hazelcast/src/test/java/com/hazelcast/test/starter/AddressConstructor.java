@@ -34,7 +34,7 @@ public class AddressConstructor extends AbstractStarterObjectConstructor {
 
         Object host = getFieldValueReflectively(delegate, "host");
         Integer port = (Integer) getFieldValueReflectively(delegate, "port");
-        Object[] args = new Object[] {host, port.intValue()};
+        Object[] args = new Object[]{host, port.intValue()};
 
         return constructor.newInstance(args);
     }

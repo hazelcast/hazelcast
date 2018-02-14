@@ -38,14 +38,14 @@ public class EvictionConfigTest {
     @Test
     public void testEqualsAndHashCode() {
         EqualsVerifier.forClass(EvictionConfig.class)
-                      .allFieldsShouldBeUsedExcept("readOnly", "sizeConfigured")
-                      .suppress(Warning.NONFINAL_FIELDS)
-                      .withPrefabValues(EvictionConfig.class,
-                              new EvictionConfig(1000, ENTRY_COUNT, EvictionPolicy.LFU),
-                              new EvictionConfig(300, USED_NATIVE_MEMORY_PERCENTAGE, EvictionPolicy.LRU))
-                      .withPrefabValues(EvictionPolicyComparator.class,
-                              new LFUEvictionPolicyComparator(), new LRUEvictionPolicyComparator())
-                      .verify();
+                .allFieldsShouldBeUsedExcept("readOnly", "sizeConfigured")
+                .suppress(Warning.NONFINAL_FIELDS)
+                .withPrefabValues(EvictionConfig.class,
+                        new EvictionConfig(1000, ENTRY_COUNT, EvictionPolicy.LFU),
+                        new EvictionConfig(300, USED_NATIVE_MEMORY_PERCENTAGE, EvictionPolicy.LRU))
+                .withPrefabValues(EvictionPolicyComparator.class,
+                        new LFUEvictionPolicyComparator(), new LRUEvictionPolicyComparator())
+                .verify();
     }
 
 }

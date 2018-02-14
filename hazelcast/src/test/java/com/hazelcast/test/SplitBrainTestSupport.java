@@ -176,7 +176,7 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
 
     /**
      * Indicates whether test should fail when cluster does not include all original members after communications are unblocked.
-     *
+     * <p>
      * Override this method when it is expected that after communications are unblocked some members will not rejoin the cluster.
      * When overriding this method, it may be desirable to add some wait time to allow the split brain handler to execute.
      *

@@ -94,7 +94,8 @@ public class PartitionReplicaVersionsCorrectnessStressTest extends AbstractParti
 
         String log = "Surviving: " + survivingInstances + " Terminating: " + terminatingInstances;
 
-        Map<Integer, PartitionReplicaVersionsView> replicaVersionsByPartitionId = TestPartitionUtils.getAllReplicaVersions(instances);
+        Map<Integer, PartitionReplicaVersionsView> replicaVersionsByPartitionId
+                = TestPartitionUtils.getAllReplicaVersions(instances);
         Map<Integer, List<Address>> partitionReplicaAddresses = TestPartitionUtils.getAllReplicaAddresses(instances);
         Map<Integer, Integer> minSurvivingReplicaIndexByPartitionId = getMinReplicaIndicesByPartitionId(survivingInstances);
 
@@ -145,8 +146,8 @@ public class PartitionReplicaVersionsCorrectnessStressTest extends AbstractParti
     }
 
     private void verifyReplicaVersions(PartitionReplicaVersionsView initialReplicaVersions,
-            PartitionReplicaVersionsView replicaVersions, int minSurvivingReplicaIndex, String message) {
-
+                                       PartitionReplicaVersionsView replicaVersions,
+                                       int minSurvivingReplicaIndex, String message) {
         Set<String> lostMapNames = new HashSet<String>();
         for (int i = 0; i < minSurvivingReplicaIndex; i++) {
             lostMapNames.add(getIthMapName(i));
@@ -168,7 +169,7 @@ public class PartitionReplicaVersionsCorrectnessStressTest extends AbstractParti
     }
 
     private void verifyReplicaVersions(long[] initialReplicaVersions, long[] replicaVersions,
-            int minSurvivingReplicaIndex, String message) {
+                                       int minSurvivingReplicaIndex, String message) {
         final long[] expected = Arrays.copyOf(initialReplicaVersions, initialReplicaVersions.length);
 
         boolean verified;
@@ -186,5 +187,4 @@ public class PartitionReplicaVersionsCorrectnessStressTest extends AbstractParti
     private void shiftLeft(final long[] versions, final int toIndex, final long version) {
         Arrays.fill(versions, 0, toIndex, version);
     }
-
 }

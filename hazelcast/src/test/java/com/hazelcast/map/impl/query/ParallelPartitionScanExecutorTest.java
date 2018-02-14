@@ -54,7 +54,8 @@ public class ParallelPartitionScanExecutorTest {
     public ExpectedException expected = ExpectedException.none();
 
     private ParallelPartitionScanExecutor executor(PartitionScanRunner runner) {
-        PoolExecutorThreadFactory threadFactory = new PoolExecutorThreadFactory(UUID.randomUUID().toString(), currentThread().getContextClassLoader());
+        PoolExecutorThreadFactory threadFactory
+                = new PoolExecutorThreadFactory(UUID.randomUUID().toString(), currentThread().getContextClassLoader());
         NamedThreadPoolExecutor pool = new NamedThreadPoolExecutor(UUID.randomUUID().toString(), 1, 1,
                 100, TimeUnit.SECONDS,
                 new LinkedBlockingQueue<Runnable>(100),

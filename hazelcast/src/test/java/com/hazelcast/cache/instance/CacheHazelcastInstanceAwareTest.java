@@ -216,7 +216,7 @@ public class CacheHazelcastInstanceAwareTest extends HazelcastTestSupport {
             }
         }, Boolean.TRUE);
         // Node is only injected on member side completion listener
-        if (!ClassLoaderUtil.isClassAvailable(null,"com.hazelcast.client.HazelcastClient")) {
+        if (!ClassLoaderUtil.isClassAvailable(null, "com.hazelcast.client.HazelcastClient")) {
             assertEqualsEventually(new Callable<Boolean>() {
                 @Override
                 public Boolean call()
@@ -244,7 +244,7 @@ public class CacheHazelcastInstanceAwareTest extends HazelcastTestSupport {
         assertEquals("Hazelcast instance has not been injected into entry listener!",
                 Boolean.TRUE, HAZELCAST_INSTANCE_INJECTION_RESULT_MAP.get(id2));
         // Node is only injected on member side entry listeners
-        if (!ClassLoaderUtil.isClassAvailable(null,"com.hazelcast.client.HazelcastClient")) {
+        if (!ClassLoaderUtil.isClassAvailable(null, "com.hazelcast.client.HazelcastClient")) {
             assertEquals("Node instance has not been injected into entry listener factory!", Boolean.TRUE,
                     NODE_INJECTION_RESULT_MAP.get(id1));
             assertEquals("Node instance has not been injected into entry listener!", Boolean.TRUE,
@@ -266,7 +266,7 @@ public class CacheHazelcastInstanceAwareTest extends HazelcastTestSupport {
         assertEquals("Hazelcast instance has not been injected into partition lost listener!",
                 Boolean.TRUE, HAZELCAST_INSTANCE_INJECTION_RESULT_MAP.get(id));
         // Node is only injected on member side listeners
-        if (!ClassLoaderUtil.isClassAvailable(null,"com.hazelcast.client.HazelcastClient")) {
+        if (!ClassLoaderUtil.isClassAvailable(null, "com.hazelcast.client.HazelcastClient")) {
             assertEquals("Node instance has not been injected into partition lost listener!", Boolean.TRUE,
                     NODE_INJECTION_RESULT_MAP.get(id));
         }
@@ -395,7 +395,7 @@ public class CacheHazelcastInstanceAwareTest extends HazelcastTestSupport {
     }
 
     public static class ExpiryPolicyFactoryWithDependencies implements Factory<ExpiryPolicy>, HazelcastInstanceAware,
-                       NodeAware {
+            NodeAware {
 
         private final long id1;
         private final long id2;
@@ -542,7 +542,7 @@ public class CacheHazelcastInstanceAwareTest extends HazelcastTestSupport {
 
     public static class CacheEntryListenerFactoryWithDependencies
             implements Factory<CacheEntryListener<? super Integer, ? super Integer>>, HazelcastInstanceAware,
-                       NodeAware, Serializable {
+            NodeAware, Serializable {
 
         private final long id1;
         private final long id2;

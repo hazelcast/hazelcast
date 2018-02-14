@@ -85,7 +85,8 @@ public class AvgAggregationTest {
             aggregation.accumulate(createExtractableEntryWithValue(value));
         }
 
-        Aggregator<Map.Entry<ValueContainer, ValueContainer>, BigDecimal> resultAggregation = Aggregators.bigDecimalAvg("bigDecimal");
+        Aggregator<Map.Entry<ValueContainer, ValueContainer>, BigDecimal> resultAggregation
+                = Aggregators.bigDecimalAvg("bigDecimal");
         resultAggregation.combine(aggregation);
         BigDecimal result = resultAggregation.aggregate();
 
@@ -134,7 +135,8 @@ public class AvgAggregationTest {
             aggregation.accumulate(createExtractableEntryWithValue(value));
         }
 
-        Aggregator<Map.Entry<ValueContainer, ValueContainer>, BigDecimal> resultAggregation = Aggregators.bigIntegerAvg("bigInteger");
+        Aggregator<Map.Entry<ValueContainer, ValueContainer>, BigDecimal> resultAggregation
+                = Aggregators.bigIntegerAvg("bigInteger");
         resultAggregation.combine(aggregation);
         BigDecimal result = resultAggregation.aggregate();
 

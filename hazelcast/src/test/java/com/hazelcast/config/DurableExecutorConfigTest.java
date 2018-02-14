@@ -61,12 +61,12 @@ public class DurableExecutorConfigTest {
     @Test
     public void testEqualsAndHashCode() {
         EqualsVerifier.forClass(DurableExecutorConfig.class)
-                      .allFieldsShouldBeUsedExcept("readOnly")
-                      .suppress(Warning.NULL_FIELDS, Warning.NONFINAL_FIELDS)
-                      .withPrefabValues(DurableExecutorConfigReadOnly.class,
-                              new DurableExecutorConfigReadOnly(new DurableExecutorConfig("red")),
-                              new DurableExecutorConfigReadOnly(new DurableExecutorConfig("black")))
-                      .verify();
+                .allFieldsShouldBeUsedExcept("readOnly")
+                .suppress(Warning.NULL_FIELDS, Warning.NONFINAL_FIELDS)
+                .withPrefabValues(DurableExecutorConfigReadOnly.class,
+                        new DurableExecutorConfigReadOnly(new DurableExecutorConfig("red")),
+                        new DurableExecutorConfigReadOnly(new DurableExecutorConfig("black")))
+                .verify();
     }
 
     private static Object newParameter(Method method) throws Exception {

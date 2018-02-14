@@ -44,7 +44,7 @@ public class ProbabilisticQuorumFunctionTest extends AbstractQuorumFunctionTest 
 
     @Test
     public void testQuorumPresent_whenAsManyAsQuorumPresent() {
-        quorumFunction = new ProbabilisticQuorumFunction(quorumSize,10000, 10000, 200, 100, 10);
+        quorumFunction = new ProbabilisticQuorumFunction(quorumSize, 10000, 10000, 200, 100, 10);
         heartbeat(5, 1000);
         assertTrue(quorumFunction.apply(subsetOfMembers(quorumSize)));
     }
@@ -54,7 +54,7 @@ public class ProbabilisticQuorumFunctionTest extends AbstractQuorumFunctionTest 
         quorumFunction = new ProbabilisticQuorumFunction(quorumSize, 10000, 10000, 200, 100, 10);
         heartbeat(5, 1000);
         // cluster membership manager considers fewer than quorum members live
-        assertFalse(quorumFunction.apply(subsetOfMembers(quorumSize-1)));
+        assertFalse(quorumFunction.apply(subsetOfMembers(quorumSize - 1)));
     }
 
     @Test
@@ -65,7 +65,7 @@ public class ProbabilisticQuorumFunctionTest extends AbstractQuorumFunctionTest 
         long clockOffset = 60000;
         initClockOffsetTest(clockOffset);
         createQuorumFunctionProxy(1000, 1000);
-        heartbeat(now,5, 500);
+        heartbeat(now, 5, 500);
         assertFalse(quorumFunction.apply(Arrays.asList(members)));
     }
 
@@ -126,7 +126,7 @@ public class ProbabilisticQuorumFunctionTest extends AbstractQuorumFunctionTest 
             Constructor<?> constructor = quorumClazz.getDeclaredConstructor(Integer.TYPE, Long.TYPE, Long.TYPE, Integer.TYPE,
                     Long.TYPE, Double.TYPE);
 
-            Object[] args = new Object[] {quorumSize, hearbeatIntervalMillis, maxNoHeartbeatMillis, 200, 100, 10};
+            Object[] args = new Object[]{quorumSize, hearbeatIntervalMillis, maxNoHeartbeatMillis, 200, 100, 10};
             return constructor.newInstance(args);
         } catch (Exception e) {
             throw new RuntimeException("Could not setup clock offset", e);

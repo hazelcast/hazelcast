@@ -60,9 +60,9 @@ public class MemberAddressProviderTest {
     public void testPropertiesAreInjected() {
         final Config config = new Config();
         config.getNetworkConfig().getMemberAddressProviderConfig()
-              .setEnabled(true)
-              .setClassName(MemberAddressProviderWithStaticProperties.class.getName())
-              .getProperties().setProperty("propName", "propValue");
+                .setEnabled(true)
+                .setClassName(MemberAddressProviderWithStaticProperties.class.getName())
+                .getProperties().setProperty("propName", "propValue");
 
         config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
 
@@ -87,9 +87,9 @@ public class MemberAddressProviderTest {
     public void testFailFastWhenNoMatchingConstructorIsFound() {
         final Config config = new Config();
         config.getNetworkConfig().getMemberAddressProviderConfig()
-              .setEnabled(true)
-              .setClassName(SimpleMemberAddressProvider.class.getName())
-              .getProperties().setProperty("foo", "bar"); // <-- this assumes MemberAddressProvider has a constructor accepting Properties
+                .setEnabled(true)
+                .setClassName(SimpleMemberAddressProvider.class.getName())
+                .getProperties().setProperty("foo", "bar"); // <-- this assumes MemberAddressProvider has a constructor accepting Properties
 
         config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
 
@@ -156,8 +156,8 @@ public class MemberAddressProviderTest {
     private Config getConfig(Class memberAddressProviderClass) {
         Config config = new Config();
         config.getNetworkConfig().getMemberAddressProviderConfig()
-              .setEnabled(true)
-              .setClassName(memberAddressProviderClass.getName());
+                .setEnabled(true)
+                .setClassName(memberAddressProviderClass.getName());
 
         config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         return config;
@@ -166,8 +166,8 @@ public class MemberAddressProviderTest {
     private Config getConfig(MemberAddressProvider implementation) {
         Config config = new Config();
         config.getNetworkConfig().getMemberAddressProviderConfig()
-              .setEnabled(true)
-              .setImplementation(implementation);
+                .setEnabled(true)
+                .setImplementation(implementation);
 
         config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         return config;

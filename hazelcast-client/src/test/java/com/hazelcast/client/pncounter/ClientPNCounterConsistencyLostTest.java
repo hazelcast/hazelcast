@@ -28,6 +28,7 @@ import static org.junit.Assert.assertEquals;
 public class ClientPNCounterConsistencyLostTest extends BasePNCounterConsistencyLostTest {
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+
     private String counterName = randomMapName("counter-");
     private HazelcastInstance[] members;
     private HazelcastInstance client;
@@ -41,8 +42,9 @@ public class ClientPNCounterConsistencyLostTest extends BasePNCounterConsistency
     public void setup() {
         final Config config = new Config()
                 .setProperty(GroupProperty.PARTITION_COUNT.getName(), "5")
-                .setCRDTReplicationConfig(new CRDTReplicationConfig().setReplicationPeriodMillis(Integer.MAX_VALUE)
-                                                                     .setMaxConcurrentReplicationTargets(Integer.MAX_VALUE));
+                .setCRDTReplicationConfig(new CRDTReplicationConfig()
+                        .setReplicationPeriodMillis(Integer.MAX_VALUE)
+                        .setMaxConcurrentReplicationTargets(Integer.MAX_VALUE));
         members = hazelcastFactory.newInstances(config, 2);
         client = hazelcastFactory.newHazelcastClient();
     }

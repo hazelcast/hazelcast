@@ -208,7 +208,7 @@ public class CacheDestroyTest extends CacheTestSupport {
         CreateCacheTask createCacheTask = new CreateCacheTask(cacheName, cacheManager, latch, cacheConfig);
 
         for (int i = 0; i < concurrency; i++) {
-            futures[i] = spawn( i % 2 == 0 ? destroyCacheTask : createCacheTask);
+            futures[i] = spawn(i % 2 == 0 ? destroyCacheTask : createCacheTask);
         }
 
         latch.countDown();

@@ -124,7 +124,8 @@ public class TxnMapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, S
     private void waitForExpectedClusterSize() {
         Collection<HazelcastInstance> allHazelcastInstances = hazelcastFactory.getAllHazelcastInstances();
         List<HazelcastInstance> hazelcastInstanceList = new ArrayList<HazelcastInstance>(allHazelcastInstances);
-        HazelcastInstance[] hazelcastInstanceArray = hazelcastInstanceList.toArray(new HazelcastInstance[allHazelcastInstances.size()]);
+        HazelcastInstance[] hazelcastInstanceArray
+                = hazelcastInstanceList.toArray(new HazelcastInstance[allHazelcastInstances.size()]);
         assertClusterSizeEventually(nodeCount, hazelcastInstanceArray);
     }
 

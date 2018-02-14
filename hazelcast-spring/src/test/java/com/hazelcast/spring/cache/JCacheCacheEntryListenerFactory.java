@@ -29,7 +29,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 @SpringAware
 public class JCacheCacheEntryListenerFactory implements Factory<CacheEntryListener>,
-                                                        HazelcastInstanceAware, NodeAware {
+        HazelcastInstanceAware, NodeAware {
 
     public static final AtomicBoolean HAZELCAST_INSTANCE_INJECTED = new AtomicBoolean();
     public static final AtomicBoolean NODE_INJECTED = new AtomicBoolean();

@@ -60,7 +60,7 @@ public class PortableFactory implements com.hazelcast.nio.serialization.Portable
         }
     }
 
-    class BasePortable implements Portable  {
+    class BasePortable implements Portable {
         @Override
         public int getFactoryId() {
             return 666;

@@ -61,7 +61,7 @@ public class DurableExecutorQuorumWriteTest extends AbstractQuorumTest {
     public static Iterable<Object[]> parameters() {
         return asList(new Object[][]{{QuorumType.WRITE}, {QuorumType.READ_WRITE}});
     }
-    
+
     @Parameter
     public static QuorumType quorumType;
 

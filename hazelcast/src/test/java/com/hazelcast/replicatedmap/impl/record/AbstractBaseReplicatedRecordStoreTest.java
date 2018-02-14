@@ -59,7 +59,7 @@ public class AbstractBaseReplicatedRecordStoreTest extends HazelcastTestSupport 
     }
 
     @After
-    public void tearDown()  {
+    public void tearDown() {
         shutdownNodeFactory();
     }
 

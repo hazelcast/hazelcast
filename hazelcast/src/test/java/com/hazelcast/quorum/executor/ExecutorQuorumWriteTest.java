@@ -497,7 +497,7 @@ public class ExecutorQuorumWriteTest extends AbstractQuorumTest {
     public void shutdown_noQuorum() {
         try {
             exec(3, "shutdown").shutdown();
-        } catch(QuorumException ex) {
+        } catch (QuorumException ex) {
             // best effort - server will throw with best effort basis, client will never throw due to API
         }
     }
@@ -511,7 +511,7 @@ public class ExecutorQuorumWriteTest extends AbstractQuorumTest {
     public void shutdownNow_noQuorum() {
         try {
             exec(3, "shutdownNow").shutdownNow();
-        } catch(QuorumException ex) {
+        } catch (QuorumException ex) {
             // best effort - server will throw with best effort basis, client will never throw due to API
         }
     }
@@ -542,8 +542,9 @@ public class ExecutorQuorumWriteTest extends AbstractQuorumTest {
         try {
             callback.get();
         } catch (Exception ex) {
-            if (!(ex instanceof QuorumException || ex.getCause() instanceof QuorumException))
+            if (!(ex instanceof QuorumException || ex.getCause() instanceof QuorumException)) {
                 fail("Expected QuorumException but was " + ex);
+            }
         }
     }
 
@@ -552,8 +553,9 @@ public class ExecutorQuorumWriteTest extends AbstractQuorumTest {
             try {
                 future.get();
             } catch (Exception ex) {
-                if (!(ex instanceof QuorumException || ex.getCause() instanceof QuorumException))
+                if (!(ex instanceof QuorumException || ex.getCause() instanceof QuorumException)) {
                     fail("Expected QuorumException but was " + ex);
+                }
             }
         }
     }
@@ -562,8 +564,9 @@ public class ExecutorQuorumWriteTest extends AbstractQuorumTest {
         try {
             callback.get();
         } catch (Exception ex) {
-            if (!(ex instanceof QuorumException || ex.getCause() instanceof QuorumException))
+            if (!(ex instanceof QuorumException || ex.getCause() instanceof QuorumException)) {
                 fail("Expected QuorumException but was " + ex);
+            }
         }
     }
 

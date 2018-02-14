@@ -25,9 +25,9 @@ public class GlobalSerializerConfigTest {
     @Test
     public void testEqualsAndHashCode() {
         EqualsVerifier.forClass(GlobalSerializerConfig.class)
-                      .allFieldsShouldBeUsed()
-                      .suppress(Warning.NONFINAL_FIELDS)
-                      .verify();
+                .allFieldsShouldBeUsed()
+                .suppress(Warning.NONFINAL_FIELDS)
+                .verify();
     }
 
 }

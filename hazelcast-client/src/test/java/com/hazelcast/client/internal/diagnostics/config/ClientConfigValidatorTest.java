@@ -43,7 +43,7 @@ public class ClientConfigValidatorTest extends HazelcastTestSupport {
     @Rule
     public ExpectedException thrown = ExpectedException.none();
 
-    private TestHazelcastFactory factory = new TestHazelcastFactory();;
+    private TestHazelcastFactory factory = new TestHazelcastFactory();
 
     @Test
     public void getMap_throws_illegalArgumentException_whenLocalUpdatePolicy_is_cacheOnUpdate() {

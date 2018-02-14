@@ -67,8 +67,9 @@ public class ClientMapNearCachePreloaderStressTest extends HazelcastTestSupport 
                 @Override
                 public void run() {
                     while (isRunning.get()) {
-                        for (DistributedObject distributedObject : client.getDistributedObjects())
+                        for (DistributedObject distributedObject : client.getDistributedObjects()) {
                             distributedObject.destroy();
+                        }
                     }
                 }
             });

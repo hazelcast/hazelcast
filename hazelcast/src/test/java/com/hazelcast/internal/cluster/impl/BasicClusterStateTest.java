@@ -405,7 +405,7 @@ public class BasicClusterStateTest extends HazelcastTestSupport {
 
     @Test
     public void pendingInvocations_shouldBeNotified_whenMemberLeft_whenClusterState_PASSIVE() throws Exception {
-         pendingInvocations_shouldBeNotified_whenMemberLeft_whenClusterState_doesNotAllowJoin(ClusterState.PASSIVE);
+        pendingInvocations_shouldBeNotified_whenMemberLeft_whenClusterState_doesNotAllowJoin(ClusterState.PASSIVE);
     }
 
     @Test

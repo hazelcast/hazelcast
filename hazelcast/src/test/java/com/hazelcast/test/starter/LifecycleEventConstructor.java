@@ -38,7 +38,7 @@ public class LifecycleEventConstructor extends AbstractStarterObjectConstructor 
         Constructor<?> constructor = targetClass.getDeclaredConstructor(stateClass);
 
         Object state = getFieldValueReflectively(delegate, "state");
-        Object[] args = new Object[] {state};
+        Object[] args = new Object[]{state};
         Object[] proxiedArgs = proxyArgumentsIfNeeded(args, starterClassLoader);
 
         return constructor.newInstance(proxiedArgs);

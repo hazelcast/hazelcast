@@ -51,7 +51,7 @@ public class HazelcastProxyFactoryTest {
         // HazelcastAPIDelegatingClassloader will reload the bytes of ProxiedInterface as a new class
         // as happens with every com.hazelcast class that contains "test"
         HazelcastAPIDelegatingClassloader targetClassLoader =
-                new HazelcastAPIDelegatingClassloader(new URL[] {}, HazelcastProxyFactoryTest.class.getClassLoader());
+                new HazelcastAPIDelegatingClassloader(new URL[]{}, HazelcastProxyFactoryTest.class.getClassLoader());
 
         Object proxy = HazelcastProxyFactory.proxyObjectForStarter(targetClassLoader, delegate);
 

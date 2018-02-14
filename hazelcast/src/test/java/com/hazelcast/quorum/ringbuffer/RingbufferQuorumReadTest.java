@@ -53,7 +53,7 @@ public class RingbufferQuorumReadTest extends AbstractQuorumTest {
 
     @Parameter
     public static QuorumType quorumType;
-    
+
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 

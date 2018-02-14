@@ -168,7 +168,7 @@ public class CacheCreationTest extends HazelcastTestSupport {
         HazelcastInstance hz = Hazelcast.newHazelcastInstance();
         try {
             DistributedObject setupRef = HazelcastTestSupport.getNodeEngineImpl(hz).getProxyService()
-                                                             .getDistributedObject(CacheService.SERVICE_NAME, "setupRef");
+                    .getDistributedObject(CacheService.SERVICE_NAME, "setupRef");
             assertNotNull(setupRef);
         } finally {
             Hazelcast.shutdownAll();

@@ -25,8 +25,8 @@ public class IcmpFailureDetectorConfigTest {
     @Test
     public void testEqualsAndHashCode() {
         EqualsVerifier.forClass(IcmpFailureDetectorConfig.class)
-                      .allFieldsShouldBeUsed()
-                      .suppress(Warning.NONFINAL_FIELDS)
-                      .verify();
+                .allFieldsShouldBeUsed()
+                .suppress(Warning.NONFINAL_FIELDS)
+                .verify();
     }
 }
