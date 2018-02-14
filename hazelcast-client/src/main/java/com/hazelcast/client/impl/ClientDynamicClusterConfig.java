@@ -416,7 +416,9 @@ public class ClientDynamicClusterConfig extends Config {
                 flakeIdGeneratorConfig.getName(),
                 flakeIdGeneratorConfig.getPrefetchCount(),
                 flakeIdGeneratorConfig.getPrefetchValidityMillis(),
-                flakeIdGeneratorConfig.getIdOffset());
+                flakeIdGeneratorConfig.getIdOffset(),
+                // TODO this should be flakeIdGeneratorConfig.isStatisticsEnabled()
+                true);
         invoke(request);
         return this;
     }
