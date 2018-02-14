@@ -157,11 +157,11 @@ public class MapListenerTest extends HazelcastTestSupport {
 
         @Override
         public void entryUpdated(EntryEvent<String, Person> event) {
-            if (event.getOldValue().getAge() > AGE_THRESHOLD &&
-                    event.getValue().getAge() <= AGE_THRESHOLD) {
+            if (event.getOldValue().getAge() > AGE_THRESHOLD
+                    && event.getValue().getAge() <= AGE_THRESHOLD) {
                 exitsObserved.incrementAndGet();
-            } else if (event.getOldValue().getAge() <= AGE_THRESHOLD &&
-                    event.getValue().getAge() > AGE_THRESHOLD) {
+            } else if (event.getOldValue().getAge() <= AGE_THRESHOLD
+                    && event.getValue().getAge() > AGE_THRESHOLD) {
                 entriesObserved.incrementAndGet();
             }
         }
@@ -200,9 +200,9 @@ public class MapListenerTest extends HazelcastTestSupport {
 
         @Override
         public String toString() {
-            return "Person{" +
-                    "age=" + age +
-                    '}';
+            return "Person{"
+                    + "age=" + age
+                    + '}';
         }
     }
 
@@ -225,8 +225,7 @@ public class MapListenerTest extends HazelcastTestSupport {
         }
 
         private void act() {
-            int action = random.nextInt(10) < 6 ? ACTION_ADD :
-                    random.nextInt(10) < 8 ? ACTION_UPDATE_AGE : ACTION_REMOVE;
+            int action = random.nextInt(10) < 6 ? ACTION_ADD : random.nextInt(10) < 8 ? ACTION_UPDATE_AGE : ACTION_REMOVE;
             switch (action) {
                 case ACTION_ADD:
                     addPerson();

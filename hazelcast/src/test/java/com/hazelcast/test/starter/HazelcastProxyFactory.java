@@ -275,8 +275,8 @@ public class HazelcastProxyFactory {
                             return new LifecycleEventConstructor(input);
                         } else if (className.equals(CLASS_NAME_ADDRESS)) {
                             return new AddressConstructor(input);
-                        } else if (className.equals(CLASS_NAME_CONFIG) ||
-                                className.equals(CLASS_NAME_CLIENT_CONFIG)) {
+                        } else if (className.equals(CLASS_NAME_CONFIG)
+                                || className.equals(CLASS_NAME_CLIENT_CONFIG)) {
                             return new ConfigConstructor(input);
                         } else if (className.equals(CLASS_NAME_VERSION)) {
                             return new VersionConstructor(input);

@@ -77,13 +77,13 @@ public class Employee implements Serializable, Comparable<Employee> {
 
     @Override
     public String toString() {
-        return "Employee{" +
-                "id=" + id +
-                ", name='" + name + '\'' +
-                ", age=" + age +
-                ", active=" + active +
-                ", salary=" + salary +
-                '}';
+        return "Employee{"
+                + "id=" + id
+                + ", name='" + name + '\''
+                + ", age=" + age
+                + ", active=" + active
+                + ", salary=" + salary
+                + '}';
     }
 
     @Override

@@ -381,17 +381,17 @@ public class IndexTest {
 
         @Override
         public String toString() {
-            return "MainPortable{" +
-                    "b=" + b +
-                    ", bool=" + bool +
-                    ", c=" + c +
-                    ", s=" + s +
-                    ", i=" + i +
-                    ", l=" + l +
-                    ", f=" + f +
-                    ", d=" + d +
-                    ", str='" + str + '\'' +
-                    '}';
+            return "MainPortable{"
+                    + "b=" + b
+                    + ", bool=" + bool
+                    + ", c=" + c
+                    + ", s=" + s
+                    + ", i=" + i
+                    + ", l=" + l
+                    + ", f=" + f
+                    + ", d=" + d
+                    + ", str='" + str + '\''
+                    + '}';
         }
 
         public int getFactoryId() {

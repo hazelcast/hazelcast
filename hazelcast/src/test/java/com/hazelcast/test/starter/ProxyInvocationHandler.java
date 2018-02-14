@@ -131,8 +131,8 @@ class ProxyInvocationHandler implements InvocationHandler, Serializable {
                 Class<?> parameterType = parameterTypes[i];
                 ClassLoader parameterTypeClassloader = parameterType.getClassLoader();
                 ClassLoader delegateClassLoader = delegateClass.getClassLoader();
-                if (parameterTypeClassloader != String.class.getClassLoader() &&
-                        parameterTypeClassloader != delegateClassLoader) {
+                if (parameterTypeClassloader != String.class.getClassLoader()
+                        && parameterTypeClassloader != delegateClassLoader) {
                     try {
                         Class<?> delegateParameterType = delegateClassLoader.loadClass(parameterType.getName());
                         parameterTypes[i] = delegateParameterType;

@@ -19,6 +19,7 @@ package com.hazelcast.multimap;
 import java.io.Serializable;
 
 public class ComplexValue implements Serializable {
+
     String name;
     int time;
 
@@ -49,9 +50,9 @@ public class ComplexValue implements Serializable {
 
     @Override
     public String toString() {
-        return "ComplexValue{" +
-                "name='" + name + '\'' +
-                ", time=" + time +
-                '}';
+        return "ComplexValue{"
+                + "name='" + name + '\''
+                + ", time=" + time
+                + '}';
     }
 }

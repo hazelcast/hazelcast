@@ -32,7 +32,7 @@ public class ProgressMonitor {
     private static final ILogger LOGGER = Logger.getLogger(ProgressMonitor.class);
 
     private final long maximumStaleNanos;
-    private final List<BounceMemberRule.TestTaskRunable> tasks = new ArrayList<BounceMemberRule.TestTaskRunable>();
+    private final List<BounceMemberRule.TestTaskRunnable> tasks = new ArrayList<BounceMemberRule.TestTaskRunnable>();
 
     private long lastProgressLoggedNanos;
     private long progressDelta;
@@ -44,8 +44,8 @@ public class ProgressMonitor {
     }
 
     public void registerTask(Runnable task) {
-        if (task instanceof BounceMemberRule.TestTaskRunable) {
-            tasks.add((BounceMemberRule.TestTaskRunable) task);
+        if (task instanceof BounceMemberRule.TestTaskRunnable) {
+            tasks.add((BounceMemberRule.TestTaskRunnable) task);
         } else if (maximumStaleNanos != STALENESS_DETECTOR_DISABLED) {
             throw new UnsupportedOperationException("Progress checking is enabled only for automatically repeated tasks");
         }
@@ -55,7 +55,7 @@ public class ProgressMonitor {
         long now = System.nanoTime();
         long aggregatedProgress = 0;
         long maxLatencyNanos = 0;
-        for (BounceMemberRule.TestTaskRunable task : tasks) {
+        for (BounceMemberRule.TestTaskRunnable task : tasks) {
             long lastIterationStartedTimestamp = task.getLastIterationStartedTimestamp();
             if (lastIterationStartedTimestamp == 0) {
                 //the tasks haven't started yet
@@ -98,7 +98,7 @@ public class ProgressMonitor {
         }
     }
 
-    private void onStalenessDetected(BounceMemberRule.TestTaskRunable task, long currentStaleNanos) {
+    private void onStalenessDetected(BounceMemberRule.TestTaskRunnable task, long currentStaleNanos) {
         // this could seems redundant as the Hazelcast JUnit runner will also take threadumps
         // however in this case we are doing the threaddump before declaring a test failure
         // and stopping Hazelcast instances -> there is a higher chance we will actually

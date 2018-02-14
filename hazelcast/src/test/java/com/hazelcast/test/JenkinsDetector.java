@@ -27,8 +27,8 @@ public final class JenkinsDetector {
     }
 
     public static boolean isOnJenkins() {
-        return getenv("JENKINS_URL") != null &&
-                getenv("BUILD_NUMBER") != null &&
-                getenv("NODE_NAME") != null;
+        return getenv("JENKINS_URL") != null
+                && getenv("BUILD_NUMBER") != null
+                && getenv("NODE_NAME") != null;
     }
 }

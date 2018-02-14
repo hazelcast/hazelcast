@@ -236,11 +236,11 @@ public class RestClusterTest extends HazelcastTestSupport {
         HTTPCommunicator communicator = new HTTPCommunicator(instance);
         String result = communicator.getClusterHealth();
 
-        assertEquals("Hazelcast::NodeState=ACTIVE\n" +
-                "Hazelcast::ClusterState=ACTIVE\n" +
-                "Hazelcast::ClusterSafe=TRUE\n" +
-                "Hazelcast::MigrationQueueSize=0\n" +
-                "Hazelcast::ClusterSize=1\n", result);
+        assertEquals("Hazelcast::NodeState=ACTIVE\n"
+                + "Hazelcast::ClusterState=ACTIVE\n"
+                + "Hazelcast::ClusterSafe=TRUE\n"
+                + "Hazelcast::MigrationQueueSize=0\n"
+                + "Hazelcast::ClusterSize=1\n", result);
     }
 
     @Test(expected = NoHttpResponseException.class)

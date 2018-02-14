@@ -278,8 +278,8 @@ public class QueueStoreTest extends HazelcastTestSupport {
         TestQueueStore testQueueStore = (TestQueueStore) queueStore;
         int size = testQueueStore.store.size();
 
-        assertEquals("Expected not queue store operation" +
-                " since we disabled it in QueueStoreConfig but found initialized ", 0, size);
+        assertEquals("Expected not queue store operation since we disabled it in QueueStoreConfig, but found initialized ",
+                0, size);
     }
 
     @Test

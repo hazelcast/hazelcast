@@ -485,8 +485,8 @@ public class QueryBasicTest extends HazelcastTestSupport {
         cal.set(2012, Calendar.FEBRUARY, 10);
         Date d2 = cal.getTime();
         assertEquals(3, map.values(new PredicateBuilder().getEntryObject().get("this").between(d1, d2)).size());
-        assertEquals(3, map.values(new SqlPredicate("this between 'Mon Nov 10 11:43:05 EET 2003'" +
-                " and 'Fri Feb 10 11:43:05 EET 2012'")).size());
+        assertEquals(3, map.values(new SqlPredicate("this between 'Mon Nov 10 11:43:05 EET 2003'"
+                + " and 'Fri Feb 10 11:43:05 EET 2012'")).size());
     }
 
     @Test(timeout = 1000 * 90)

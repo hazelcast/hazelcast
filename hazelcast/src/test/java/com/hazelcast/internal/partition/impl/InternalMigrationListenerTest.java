@@ -120,12 +120,12 @@ public class InternalMigrationListenerTest extends HazelcastTestSupport {
 
         @Override
         public String toString() {
-            return "MigrationProgressNotification{" +
-                    "event=" + event +
-                    ", participant=" + participant +
-                    ", migrationInfo=" + migrationInfo +
-                    ", success=" + success +
-                    '}';
+            return "MigrationProgressNotification{"
+                    + "event=" + event
+                    + ", participant=" + participant
+                    + ", migrationInfo=" + migrationInfo
+                    + ", success=" + success
+                    + '}';
         }
     }
 
@@ -142,8 +142,8 @@ public class InternalMigrationListenerTest extends HazelcastTestSupport {
         @Override
         public synchronized void onMigrationComplete(MigrationParticipant participant, MigrationInfo migrationInfo,
                                                      boolean success) {
-            notifications
-                    .add(new MigrationProgressNotification(MigrationProgressEvent.COMPLETE, participant, migrationInfo, success));
+            notifications.add(
+                    new MigrationProgressNotification(MigrationProgressEvent.COMPLETE, participant, migrationInfo, success));
         }
 
         @Override
@@ -159,7 +159,5 @@ public class InternalMigrationListenerTest extends HazelcastTestSupport {
         public synchronized List<MigrationProgressNotification> getNotifications() {
             return new ArrayList<MigrationProgressNotification>(notifications);
         }
-
     }
-
 }

@@ -283,8 +283,8 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
                     for (int i = replica - 1; i < actualBackupCount; i++) {
                         assertEquals("Replica version mismatch! Owner: " + thisAddress + ", Backup: " + address
                                         + ", Partition: " + partition + ", Replica: " + (i + 1) + " owner versions: "
-                                        + Arrays.toString(replicaVersions) + " backup versions: " +
-                                        Arrays.toString(backupReplicaVersions),
+                                        + Arrays.toString(replicaVersions) + " backup versions: "
+                                        + Arrays.toString(backupReplicaVersions),
                                 replicaVersions[i], backupReplicaVersions[i]);
                     }
 

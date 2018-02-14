@@ -331,11 +331,10 @@ class ConfigCompatibilityChecker {
         private static boolean isCompatible(QueueStoreConfig c1, QueueStoreConfig c2) {
             boolean c1Disabled = c1 == null || !c1.isEnabled();
             boolean c2Disabled = c2 == null || !c2.isEnabled();
-            return c1 == c2 || (c1Disabled && c2Disabled) ||
-                    (c1 != null && c2 != null
-                            && nullSafeEqual(c1.getClassName(), c2.getClassName())
-                            && nullSafeEqual(c1.getFactoryClassName(), c2.getFactoryClassName())
-                            && nullSafeEqual(c1.getProperties(), c2.getProperties()));
+            return c1 == c2 || (c1Disabled && c2Disabled) || (c1 != null && c2 != null
+                    && nullSafeEqual(c1.getClassName(), c2.getClassName())
+                    && nullSafeEqual(c1.getFactoryClassName(), c2.getFactoryClassName())
+                    && nullSafeEqual(c1.getProperties(), c2.getProperties()));
         }
 
         @Override
@@ -1140,10 +1139,9 @@ class ConfigCompatibilityChecker {
     private static class CRDTReplicationConfigChecker extends ConfigChecker<CRDTReplicationConfig> {
         @Override
         boolean check(CRDTReplicationConfig c1, CRDTReplicationConfig c2) {
-            return c1 == c2 ||
-                    (c1 != null && c2 != null
-                            && nullSafeEqual(c1.getMaxConcurrentReplicationTargets(), c2.getMaxConcurrentReplicationTargets())
-                            && nullSafeEqual(c1.getReplicationPeriodMillis(), c2.getReplicationPeriodMillis()));
+            return c1 == c2 || (c1 != null && c2 != null
+                    && nullSafeEqual(c1.getMaxConcurrentReplicationTargets(), c2.getMaxConcurrentReplicationTargets())
+                    && nullSafeEqual(c1.getReplicationPeriodMillis(), c2.getReplicationPeriodMillis()));
         }
     }
 
@@ -1153,7 +1151,6 @@ class ConfigCompatibilityChecker {
             if (c1 == c2) {
                 return true;
             }
-
             if (c1 == null || c2 == null) {
                 return false;
             }

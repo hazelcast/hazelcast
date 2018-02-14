@@ -1039,8 +1039,8 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
 
     @Test
     public void testPartitionGroupZoneAware() {
-        String xml = HAZELCAST_START_TAG +
-                "<partition-group enabled=\"true\" group-type=\"ZONE_AWARE\" />"
+        String xml = HAZELCAST_START_TAG
+                + "<partition-group enabled=\"true\" group-type=\"ZONE_AWARE\" />"
                 + HAZELCAST_END_TAG;
 
         Config config = buildConfig(xml);
@@ -1049,8 +1049,8 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
 
     @Test
     public void testPartitionGroupSPI() {
-        String xml = HAZELCAST_START_TAG +
-                "<partition-group enabled=\"true\" group-type=\"SPI\" />"
+        String xml = HAZELCAST_START_TAG
+                + "<partition-group enabled=\"true\" group-type=\"SPI\" />"
                 + HAZELCAST_END_TAG;
 
         Config config = buildConfig(xml);
@@ -2135,10 +2135,10 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     @Test
     public void testCRDTReplicationConfig() {
         final String xml = HAZELCAST_START_TAG
-                + "<crdt-replication>\n" +
-                "        <max-concurrent-replication-targets>10</max-concurrent-replication-targets>\n" +
-                "        <replication-period-millis>2000</replication-period-millis>\n" +
-                "    </crdt-replication>"
+                + "<crdt-replication>\n"
+                + "        <max-concurrent-replication-targets>10</max-concurrent-replication-targets>\n"
+                + "        <replication-period-millis>2000</replication-period-millis>\n"
+                + "</crdt-replication>"
                 + HAZELCAST_END_TAG;
         final Config config = new InMemoryXmlConfig(xml);
         final CRDTReplicationConfig replicationConfig = config.getCRDTReplicationConfig();
@@ -2180,8 +2180,8 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
                 + "    <validation-timeout-seconds>" + validationTimeout + "</validation-timeout-seconds>"
                 + "    <data-load-timeout-seconds>" + dataLoadTimeout + "</data-load-timeout-seconds>"
                 + "    <cluster-data-recovery-policy>" + policy + "</cluster-data-recovery-policy>"
-                + "</hot-restart-persistence>\n" +
-                HAZELCAST_END_TAG;
+                + "</hot-restart-persistence>\n"
+                + HAZELCAST_END_TAG;
 
         Config config = new InMemoryXmlConfig(xml);
         HotRestartPersistenceConfig hotRestartPersistenceConfig = config.getHotRestartPersistenceConfig();
