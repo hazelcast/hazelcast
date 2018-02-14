@@ -105,12 +105,10 @@ public class DefaultClientConnectionStrategy extends ClientConnectionStrategy {
 
     @Override
     public void onConnect(ClientConnection connection) {
-
     }
 
     @Override
     public void onDisconnect(ClientConnection connection) {
-
     }
 
     @Override
@@ -122,12 +120,10 @@ public class DefaultClientConnectionStrategy extends ClientConnectionStrategy {
 
     @Override
     public void onHeartbeatResumed(ClientConnection connection) {
-
     }
 
     @Override
     public void shutdown() {
-
     }
 
     private boolean isClusterAvailable() {

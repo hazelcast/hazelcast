@@ -75,9 +75,7 @@ public class ClientConnection implements Connection {
     private int connectedServerVersion = BuildInfo.UNKNOWN_HAZELCAST_VERSION;
     private String connectedServerVersionString;
 
-    public ClientConnection(HazelcastClientInstanceImpl client,
-                            int connectionId,
-                            Channel channel) throws IOException {
+    public ClientConnection(HazelcastClientInstanceImpl client, int connectionId, Channel channel) {
         this.client = client;
         this.connectionManager = (ClientConnectionManagerImpl) client.getConnectionManager();
         this.lifecycleService = client.getLifecycleService();
@@ -87,8 +85,7 @@ public class ClientConnection implements Connection {
         this.logger = client.getLoggingService().getLogger(ClientConnection.class);
     }
 
-    public ClientConnection(HazelcastClientInstanceImpl client,
-                            int connectionId) throws IOException {
+    public ClientConnection(HazelcastClientInstanceImpl client, int connectionId) {
         this.client = client;
         this.connectionManager = (ClientConnectionManagerImpl) client.getConnectionManager();
         this.lifecycleService = client.getLifecycleService();
@@ -352,5 +349,4 @@ public class ClientConnection implements Connection {
     public String getConnectedServerVersionString() {
         return connectedServerVersionString;
     }
-
 }
