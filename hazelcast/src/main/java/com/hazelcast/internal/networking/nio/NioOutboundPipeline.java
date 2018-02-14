@@ -154,28 +154,21 @@ public final class NioOutboundPipeline extends NioPipeline implements Runnable {
 
     private OutboundFrame poll() {
         for (; ; ) {
-            boolean urgent = true;
             OutboundFrame frame = urgentWriteQueue.poll();
-
             if (frame == null) {
-                urgent = false;
                 frame = writeQueue.poll();
-            }
-
-            if (frame == null) {
-                return null;
+                if (frame == null) {
+                    return null;
+                }
+                normalFramesWritten.inc();
+            } else {
+                priorityFramesWritten.inc();
             }
 
             if (frame.getClass() == TaskFrame.class) {
                 TaskFrame taskFrame = (TaskFrame) frame;
                 taskFrame.task.run();
                 continue;
-            }
-
-            if (urgent) {
-                priorityFramesWritten.inc();
-            } else {
-                normalFramesWritten.inc();
             }
 
             return frame;
