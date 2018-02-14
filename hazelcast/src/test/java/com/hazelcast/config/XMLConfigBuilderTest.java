@@ -593,9 +593,8 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         Config config = new ClasspathXmlConfig(fileName);
         config.getGroupConfig().setPassword(pass);
 
-        String xml = new ConfigXmlGenerator(true).generate(config);
+        String xml = new ConfigXmlGenerator(true, false).generate(config);
         Config config2 = new InMemoryXmlConfig(xml);
-        config2.getGroupConfig().setPassword(pass);
 
         assertTrue(ConfigCompatibilityChecker.isCompatible(config, config2));
     }

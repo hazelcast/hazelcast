@@ -61,6 +61,7 @@ public class ConfigXmlGenerator {
     private static final ILogger LOGGER = Logger.getLogger(ConfigXmlGenerator.class);
 
     private final boolean formatted;
+    private final boolean maskSensitiveFields;
 
     /**
      * Creates a ConfigXmlGenerator that will format the code.
@@ -75,7 +76,19 @@ public class ConfigXmlGenerator {
      * @param formatted {@code true} if the XML should be formatted, {@code false} otherwise
      */
     public ConfigXmlGenerator(boolean formatted) {
+        this(formatted, true);
+    }
+
+    /**
+     * Creates a ConfigXmlGenerator.
+     *
+     * @param formatted {@code true} if the XML should be formatted, {@code false} otherwise
+     * @param maskSensitiveFields {@code true} if the sensitive fields (like passwords) should be masked in the
+     *                                        output XML, {@code false} otherwise
+     */
+    public ConfigXmlGenerator(boolean formatted, boolean maskSensitiveFields) {
         this.formatted = formatted;
+        this.maskSensitiveFields = maskSensitiveFields;
     }
 
     /**
@@ -97,9 +110,9 @@ public class ConfigXmlGenerator {
                 .append("http://www.hazelcast.com/schema/config/hazelcast-config-3.10.xsd\">");
         gen.open("group")
                 .node("name", config.getGroupConfig().getName())
-                .node("password", MASK_FOR_SENSITIVE_DATA)
+                .node("password", getOrMaskValue(config.getGroupConfig().getPassword()))
                 .close()
-                .node("license-key", MASK_FOR_SENSITIVE_DATA)
+                .node("license-key", getOrMaskValue(config.getLicenseKey()))
                 .node("instance-name", config.getInstanceName());
 
         manCenterXmlGenerator(gen, config);
@@ -143,7 +156,11 @@ public class ConfigXmlGenerator {
         return format(xml.toString(), INDENT);
     }
 
-    private static void manCenterXmlGenerator(XmlGenerator gen, Config config) {
+    private String getOrMaskValue(String value) {
+        return maskSensitiveFields ? MASK_FOR_SENSITIVE_DATA : value;
+    }
+
+    private void manCenterXmlGenerator(XmlGenerator gen, Config config) {
         if (config.getManagementCenterConfig() != null) {
             ManagementCenterConfig mcConfig = config.getManagementCenterConfig();
             gen.open("management-center",
@@ -557,7 +574,7 @@ public class ConfigXmlGenerator {
         }
     }
 
-    private static void networkConfigXmlGenerator(XmlGenerator gen, Config config) {
+    private void networkConfigXmlGenerator(XmlGenerator gen, Config config) {
         NetworkConfig netCfg = config.getNetworkConfig();
         gen.open("network")
                 .node("public-address", netCfg.getPublicAddress())
@@ -990,18 +1007,18 @@ public class ConfigXmlGenerator {
         gen.close();
     }
 
-    private static void sslConfigXmlGenerator(XmlGenerator gen, NetworkConfig netCfg) {
+    private void sslConfigXmlGenerator(XmlGenerator gen, NetworkConfig netCfg) {
         SSLConfig ssl = netCfg.getSSLConfig();
         gen.open("ssl", "enabled", ssl != null && ssl.isEnabled());
         if (ssl != null) {
             Properties props = new Properties();
             props.putAll(ssl.getProperties());
 
-            if (props.containsKey("trustStorePassword")) {
+            if (maskSensitiveFields && props.containsKey("trustStorePassword")) {
                 props.setProperty("trustStorePassword", MASK_FOR_SENSITIVE_DATA);
             }
 
-            if (props.containsKey("keyStorePassword")) {
+            if (maskSensitiveFields && props.containsKey("keyStorePassword")) {
                 props.setProperty("keyStorePassword", MASK_FOR_SENSITIVE_DATA);
             }
 
@@ -1012,18 +1029,18 @@ public class ConfigXmlGenerator {
         gen.close();
     }
 
-    private static void mcMutualAuthConfigXmlGenerator(XmlGenerator gen, ManagementCenterConfig mcConfig) {
+    private void mcMutualAuthConfigXmlGenerator(XmlGenerator gen, ManagementCenterConfig mcConfig) {
         MCMutualAuthConfig mutualAuthConfig = mcConfig.getMutualAuthConfig();
         gen.open("mutual-auth", "enabled", mutualAuthConfig != null && mutualAuthConfig.isEnabled());
         if (mutualAuthConfig != null) {
             Properties props = new Properties();
             props.putAll(mutualAuthConfig.getProperties());
 
-            if (props.containsKey("trustStorePassword")) {
+            if (maskSensitiveFields && props.containsKey("trustStorePassword")) {
                 props.setProperty("trustStorePassword", MASK_FOR_SENSITIVE_DATA);
             }
 
-            if (props.containsKey("keyStorePassword")) {
+            if (maskSensitiveFields && props.containsKey("keyStorePassword")) {
                 props.setProperty("keyStorePassword", MASK_FOR_SENSITIVE_DATA);
             }
 
@@ -1044,15 +1061,15 @@ public class ConfigXmlGenerator {
         gen.close();
     }
 
-    private static void symmetricEncInterceptorConfigXmlGenerator(XmlGenerator gen, NetworkConfig netCfg) {
+    private void symmetricEncInterceptorConfigXmlGenerator(XmlGenerator gen, NetworkConfig netCfg) {
         SymmetricEncryptionConfig sec = netCfg.getSymmetricEncryptionConfig();
         if (sec == null) {
             return;
         }
         gen.open("symmetric-encryption", "enabled", sec.isEnabled())
                 .node("algorithm", sec.getAlgorithm())
-                .node("salt", MASK_FOR_SENSITIVE_DATA)
-                .node("password", MASK_FOR_SENSITIVE_DATA)
+                .node("salt", getOrMaskValue(sec.getSalt()))
+                .node("password", getOrMaskValue(sec.getPassword()))
                 .node("iteration-count", sec.getIterationCount())
                 .close();
     }
