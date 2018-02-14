@@ -21,6 +21,8 @@ import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.cache.impl.operation.CacheDestroyOperation;
 import com.hazelcast.config.CacheConfig;
+import com.hazelcast.core.DistributedObjectEvent;
+import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.HazelcastInstanceProxy;
 import com.hazelcast.internal.nearcache.impl.invalidation.Invalidation;
@@ -97,9 +99,13 @@ public class CacheDestroyTest extends CacheTestSupport {
     }
 
     @Test
-    public void test_cacheDestroyOperation() throws ExecutionException, InterruptedException {
+    public void test_cacheDestroyOperation() {
         final String CACHE_NAME = "MyCache";
         final String FULL_CACHE_NAME = HazelcastCacheManager.CACHE_MANAGER_PREFIX + CACHE_NAME;
+        final CountDownLatch cacheProxyCreatedLatch = new CountDownLatch(INSTANCE_COUNT);
+        for (HazelcastInstance hz : hazelcastInstances) {
+            hz.addDistributedObjectListener(new CacheProxyListener(cacheProxyCreatedLatch));
+        }
 
         CachingProvider cachingProvider = HazelcastServerCachingProvider.createCachingProvider(getHazelcastInstance());
         CacheManager cacheManager = cachingProvider.getCacheManager();
@@ -114,6 +120,11 @@ public class CacheDestroyTest extends CacheTestSupport {
 
         assertNotNull(cacheService1.getCacheConfig(FULL_CACHE_NAME));
         assertNotNull(cacheService2.getCacheConfig(FULL_CACHE_NAME));
+
+        // wait for the latch to ensure proxy registration events have been processed (otherwise
+        // the cache config may be added on a member after having been removed by CacheDestroyOp)
+        assertOpenEventually("A cache proxy should have been created on each instance, latch count was "
+                                + cacheProxyCreatedLatch.getCount(), cacheProxyCreatedLatch);
 
         // Invoke on single node and the operation is also forward to others nodes by the operation itself
         operationService1.invokeOnTarget(ICacheService.SERVICE_NAME,
@@ -294,4 +305,22 @@ public class CacheDestroyTest extends CacheTestSupport {
         }
     }
 
+    public static class CacheProxyListener implements DistributedObjectListener {
+        private final CountDownLatch objectCreatedLatch;
+
+        public CacheProxyListener(CountDownLatch objectCreatedLatch) {
+            this.objectCreatedLatch = objectCreatedLatch;
+        }
+
+        @Override
+        public void distributedObjectCreated(DistributedObjectEvent event) {
+            if (event.getDistributedObject() instanceof Cache) {
+                objectCreatedLatch.countDown();
+            }
+        }
+
+        @Override
+        public void distributedObjectDestroyed(DistributedObjectEvent event) {
+        }
+    }
 }
