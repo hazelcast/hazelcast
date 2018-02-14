@@ -392,6 +392,23 @@ public class CacheThroughHazelcastInstanceTest extends HazelcastTestSupport {
         hzCacheManager.getCache("any-cache");
     }
 
+    @Test
+    public void cacheConfigIsAvailableOnAllMembers_afterGetCacheCompletes() {
+        Config config = createConfig();
+        config.addCacheConfig(createCacheSimpleConfig(CACHE_NAME));
+
+        TestHazelcastInstanceFactory instanceFactory = createHazelcastInstanceFactory();
+
+        HazelcastInstance instance1 = instanceFactory.newHazelcastInstance(config);
+        HazelcastInstance instance2 = instanceFactory.newHazelcastInstance(config);
+
+        ICacheService cacheServiceOnInstance2 = getNodeEngineImpl(instance2).getService(ICacheService.SERVICE_NAME);
+        retrieveCache(instance1, true);
+        assertNotNull("Cache config was not available on other instance after cache proxy was created",
+                cacheServiceOnInstance2.getCacheConfig(
+                HazelcastCacheManager.CACHE_MANAGER_PREFIX + CACHE_NAME));
+    }
+
     private static ICache<Integer, Integer> retrieveCache(HazelcastInstance instance, boolean getCache) {
         return retrieveCache(instance, CACHE_NAME, getCache);
     }
