@@ -37,7 +37,6 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareService;
 import com.hazelcast.spi.PartitionMigrationEvent;
-import com.hazelcast.spi.PostJoinAwareService;
 import com.hazelcast.spi.PreJoinAwareService;
 import com.hazelcast.spi.QuorumAwareService;
 import com.hazelcast.spi.SplitBrainHandlerService;
@@ -48,7 +47,6 @@ import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ContextMutexFactory;
 import com.hazelcast.util.ExceptionUtil;
-import com.hazelcast.version.Version;
 
 import javax.cache.CacheException;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
@@ -65,10 +63,9 @@ import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.cache.impl.AbstractCacheRecordStore.SOURCE_NOT_AVAILABLE;
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateCacheConfig;
-import static com.hazelcast.internal.cluster.Versions.V3_9;
 
 @SuppressWarnings("checkstyle:classdataabstractioncoupling")
-public abstract class AbstractCacheService implements ICacheService, PreJoinAwareService, PostJoinAwareService,
+public abstract class AbstractCacheService implements ICacheService, PreJoinAwareService,
         PartitionAwareService, QuorumAwareService, SplitBrainHandlerService {
 
     private static final String SETUP_REF = "setupRef";
@@ -583,25 +580,13 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
 
     @Override
     public Operation getPreJoinOperation() {
-        Version clusterVersion = nodeEngine.getClusterService().getClusterVersion();
-        OnJoinCacheOperation preJoinCacheOperation = null;
-        assert !clusterVersion.isUnknown() : "Cluster version should not be unknown";
-        if (clusterVersion.isGreaterOrEqual(V3_9)) {
-            preJoinCacheOperation = prepareOnJoinCacheOperation(true);
+        OnJoinCacheOperation preJoinCacheOperation;
+        preJoinCacheOperation = new OnJoinCacheOperation();
+        for (Map.Entry<String, CacheConfig> cacheConfigEntry : configs.entrySet()) {
+            CacheConfig cacheConfig = new PreJoinCacheConfig(cacheConfigEntry.getValue());
+            preJoinCacheOperation.addCacheConfig(cacheConfig);
         }
         return preJoinCacheOperation;
-    }
-
-    // RU_COMPAT_38 since 3.9, configs are transferred in pre-join operation
-    @Override
-    public Operation getPostJoinOperation() {
-        Version clusterVersion = nodeEngine.getClusterService().getClusterVersion();
-        OnJoinCacheOperation postJoinCacheOperation = null;
-        assert !clusterVersion.isUnknown() : "Cluster version should not be unknown";
-        if (clusterVersion.isLessThan(V3_9)) {
-            postJoinCacheOperation = prepareOnJoinCacheOperation(false);
-        }
-        return postJoinCacheOperation;
     }
 
     protected void publishCachePartitionLostEvent(String cacheName, int partitionId) {
@@ -721,20 +706,5 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
     @Override
     public CacheEventJournal getEventJournal() {
         return eventJournal;
-    }
-
-    private OnJoinCacheOperation prepareOnJoinCacheOperation(boolean clusterVersionGreaterOrEqualV39) {
-        OnJoinCacheOperation preJoinCacheOperation;
-        preJoinCacheOperation = new OnJoinCacheOperation();
-        for (Map.Entry<String, CacheConfig> cacheConfigEntry : configs.entrySet()) {
-            CacheConfig cacheConfig;
-            if (clusterVersionGreaterOrEqualV39) {
-                cacheConfig = new PreJoinCacheConfig(cacheConfigEntry.getValue());
-            } else {
-                cacheConfig = cacheConfigEntry.getValue();
-            }
-            preJoinCacheOperation.addCacheConfig(cacheConfig);
-        }
-        return preJoinCacheOperation;
     }
 }
