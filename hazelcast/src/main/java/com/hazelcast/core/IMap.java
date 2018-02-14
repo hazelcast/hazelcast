@@ -139,6 +139,22 @@ import java.util.concurrent.TimeUnit;
  * {@link MapStore} methods to load, store or remove data. Each method's
  * javadoc describes the way of its interaction with the map store.
  *
+ * <p><b>Mutating methods without TTL</b>
+ * <p>
+ * Certain {@link IMap} methods perform the entry set mutation and don't accept TTL as a parameter. Entries
+ * created or updated by such methods are subjects for the following TTL calculation procedure:
+ * <ul>
+ * <li>If the entry is new, i.e. the entry was created, it receives the default TTL value configured for
+ * the map using {@code time-to-live-seconds} configuration setting. If this setting is not provided for
+ * the map, the entry receives an infinite TTL value.
+ * <li>If the entry already exists, i.e. the entry was updated, its TTL value remains unchanged and its
+ * lifetime is prolonged by this TTL value.
+ * </ul>
+ * The methods to which this procedure applies: {@link #put(Object, Object) put}, {@link #set(Object, Object) set},
+ * {@link #putAsync(Object, Object) putAsync}, {@link #setAsync(Object, Object) setAsync},
+ * {@link #tryPut(Object, Object, long, TimeUnit) tryPut}, {@link #putAll(Map) putAll},
+ * {@link #replace(Object, Object, Object)} and {@link #replace(Object, Object)}.
+ *
  * @param <K> key
  * @param <V> value
  * @see java.util.concurrent.ConcurrentMap
