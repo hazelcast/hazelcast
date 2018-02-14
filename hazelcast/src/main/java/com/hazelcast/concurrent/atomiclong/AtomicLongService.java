@@ -51,6 +51,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.internal.config.ConfigValidator.checkBasicConfig;
 import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getPartitionKey;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
@@ -116,6 +117,9 @@ public class AtomicLongService
 
     @Override
     public AtomicLongProxy createDistributedObject(String name) {
+        AtomicLongConfig atomicLongConfig = nodeEngine.getConfig().findAtomicLongConfig(name);
+        checkBasicConfig(atomicLongConfig);
+
         return new AtomicLongProxy(name, nodeEngine, this);
     }
 

@@ -17,6 +17,7 @@
 package com.hazelcast.multimap.impl;
 
 import com.hazelcast.config.EntryListenerConfig;
+import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
@@ -65,8 +66,8 @@ public class ObjectMultiMapProxy<K, V>
     protected static final String NULL_KEY_IS_NOT_ALLOWED = "Null key is not allowed!";
     protected static final String NULL_VALUE_IS_NOT_ALLOWED = "Null value is not allowed!";
 
-    public ObjectMultiMapProxy(MultiMapService service, NodeEngine nodeEngine, String name) {
-        super(service, nodeEngine, name);
+    public ObjectMultiMapProxy(MultiMapConfig config, MultiMapService service, NodeEngine nodeEngine, String name) {
+        super(config, service, nodeEngine, name);
     }
 
     @Override

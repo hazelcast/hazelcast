@@ -52,6 +52,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.internal.config.ConfigValidator.checkBasicConfig;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
@@ -117,6 +118,9 @@ public class AtomicReferenceService
 
     @Override
     public AtomicReferenceProxy createDistributedObject(String name) {
+        AtomicReferenceConfig atomicReferenceConfig = nodeEngine.getConfig().findAtomicReferenceConfig(name);
+        checkBasicConfig(atomicReferenceConfig);
+
         return new AtomicReferenceProxy(name, nodeEngine, this);
     }
 

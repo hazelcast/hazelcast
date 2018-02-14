@@ -90,7 +90,7 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
 
     private int retryCount;
 
-    ReplicatedMapProxy(NodeEngine nodeEngine, String name, ReplicatedMapService service) {
+    ReplicatedMapProxy(NodeEngine nodeEngine, String name, ReplicatedMapService service, ReplicatedMapConfig config) {
         super(nodeEngine, service);
         this.name = name;
         this.nodeEngine = nodeEngine;
@@ -98,7 +98,7 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
         this.eventPublishingService = service.getEventPublishingService();
         this.serializationService = nodeEngine.getSerializationService();
         this.partitionService = (InternalPartitionServiceImpl) nodeEngine.getPartitionService();
-        this.config = service.getReplicatedMapConfig(name);
+        this.config = config;
     }
 
     @Override
@@ -147,7 +147,6 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
     @Override
     protected boolean preDestroy() {
         if (super.preDestroy()) {
-            ReplicatedMapEventPublishingService eventPublishingService = service.getEventPublishingService();
             eventPublishingService.fireMapClearedEvent(size(), name);
             return true;
         }
@@ -342,7 +341,6 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
             for (Object deletedEntryPerPartition : results.values()) {
                 deletedEntrySize += (Integer) deletedEntryPerPartition;
             }
-            ReplicatedMapEventPublishingService eventPublishingService = service.getEventPublishingService();
             eventPublishingService.fireMapClearedEvent(deletedEntrySize, name);
         } catch (Throwable t) {
             throw rethrow(t);

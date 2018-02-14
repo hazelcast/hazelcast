@@ -26,6 +26,7 @@ import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.Versions;
+import com.hazelcast.internal.config.ConfigValidator;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.event.EventData;
 import com.hazelcast.monitor.LocalMultiMapStats;
@@ -192,7 +193,10 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
 
     @Override
     public DistributedObject createDistributedObject(String name) {
-        return new ObjectMultiMapProxy(this, nodeEngine, name);
+        MultiMapConfig multiMapConfig = nodeEngine.getConfig().findMultiMapConfig(name);
+        ConfigValidator.checkMultiMapConfig(multiMapConfig);
+
+        return new ObjectMultiMapProxy(multiMapConfig, this, nodeEngine, name);
     }
 
     @Override
