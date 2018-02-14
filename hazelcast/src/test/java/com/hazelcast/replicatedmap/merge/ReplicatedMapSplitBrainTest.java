@@ -29,6 +29,7 @@ import com.hazelcast.spi.merge.LatestAccessMergePolicy;
 import com.hazelcast.spi.merge.LatestUpdateMergePolicy;
 import com.hazelcast.spi.merge.PassThroughMergePolicy;
 import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.SplitBrainTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -161,23 +162,32 @@ public class ReplicatedMapSplitBrainTest extends SplitBrainTestSupport {
 
         replicatedMapB1 = instances[0].getReplicatedMap(replicatedMapNameB);
 
-        if (mergePolicyClass == DiscardMergePolicy.class) {
-            afterMergeDiscardMergePolicy();
-        } else if (mergePolicyClass == HigherHitsMergePolicy.class) {
-            afterMergeHigherHitsMergePolicy();
-        } else if (mergePolicyClass == LatestAccessMergePolicy.class) {
-            afterMergeLatestAccessMergePolicy();
-        } else if (mergePolicyClass == LatestUpdateMergePolicy.class) {
-            afterMergeLatestUpdateMergePolicy();
-        } else if (mergePolicyClass == PassThroughMergePolicy.class) {
-            afterMergePassThroughMergePolicy();
-        } else if (mergePolicyClass == PutIfAbsentMergePolicy.class) {
-            afterMergePutIfAbsentMergePolicy();
-        } else if (mergePolicyClass == MergeIntegerValuesMergePolicy.class) {
-            afterMergeCustomMergePolicy();
-        } else {
-            fail();
-        }
+        AssertTask assertTask = new AssertTask() {
+            @Override
+            public void run() {
+                if (mergePolicyClass == DiscardMergePolicy.class) {
+                    afterMergeDiscardMergePolicy();
+                } else if (mergePolicyClass == HigherHitsMergePolicy.class) {
+                    afterMergeHigherHitsMergePolicy();
+                } else if (mergePolicyClass == LatestAccessMergePolicy.class) {
+                    afterMergeLatestAccessMergePolicy();
+                } else if (mergePolicyClass == LatestUpdateMergePolicy.class) {
+                    afterMergeLatestUpdateMergePolicy();
+                } else if (mergePolicyClass == PassThroughMergePolicy.class) {
+                    afterMergePassThroughMergePolicy();
+                } else if (mergePolicyClass == PutIfAbsentMergePolicy.class) {
+                    afterMergePutIfAbsentMergePolicy();
+                } else if (mergePolicyClass == MergeIntegerValuesMergePolicy.class) {
+                    afterMergeCustomMergePolicy();
+                } else {
+                    fail();
+                }
+            }
+        };
+
+        // wait completion of migration tasks after lite member promotion
+        assertTrueEventually(assertTask);
+
     }
 
     private void afterSplitDiscardMergePolicy() {

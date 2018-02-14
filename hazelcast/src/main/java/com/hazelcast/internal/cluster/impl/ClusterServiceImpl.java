@@ -68,7 +68,6 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -125,6 +124,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
 
     private volatile String clusterId;
 
+
     public ClusterServiceImpl(Node node, MemberImpl localMember) {
         this.node = node;
         this.localMember = localMember;
@@ -145,8 +145,6 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         nodeEngine.getExecutionService().register(MEMBERSHIP_EVENT_EXECUTOR_NAME, 1, Integer.MAX_VALUE, ExecutorType.CACHED);
         registerMetrics();
     }
-
-
 
     private void registerMetrics() {
         MetricsRegistry metricsRegistry = node.nodeEngine.getMetricsRegistry();
@@ -254,7 +252,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
                     candidateAddress + " claims mastership but it is already the known master!");
 
             MemberImpl masterCandidate = membershipManager.getMember(candidateAddress, candidateUuid);
-            checkTrue(masterCandidate != null ,
+            checkTrue(masterCandidate != null,
                     candidateAddress + " claims mastership but it is not a member!");
 
             MemberMap memberMap = membershipManager.getMemberMap();
@@ -304,9 +302,13 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
 
     @Override
     public void reset() {
+        reset(false);
+    }
+
+    public void reset(boolean isForceStart) {
         lock.lock();
         try {
-            resetLocalMemberUuid();
+            resetLocalMember(isForceStart);
             resetClusterId();
             clearInternalState();
         } finally {
@@ -314,18 +316,36 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         }
     }
 
-    private void resetLocalMemberUuid() {
+    /**
+     * Reset means:
+     * - Give a new uuid to local member
+     * - If {@code isForceStart} is {@code false}, set member type of local member to lite
+     *
+     * @param isForceStart set {@code true} if this method is called to start local node forcibly for hot-restart,
+     *                     otherwise set it to {@code false} when resetting this service
+     */
+    private void resetLocalMember(boolean isForceStart) {
         assert lock.isHeldByCurrentThread() : "Called without holding cluster service lock!";
         assert !isJoined() : "Cannot reset local member UUID when joined.";
 
         Address address = getThisAddress();
         String newUuid = UuidUtil.createMemberUuid(address);
+
         logger.warning("Resetting local member UUID. Previous: " + localMember.getUuid() + ", new: " + newUuid);
-        boolean liteMember = localMember.isLiteMember();
-        Map<String, Object> memberAttributes = localMember.getAttributes();
-        localMember = new MemberImpl(address, localMember.getVersion(), true, newUuid, memberAttributes,
-                liteMember, localMember.getMemberListJoinVersion(), node.hazelcastInstance);
-        node.loggingService.setThisMember(localMember);
+
+        boolean liteMember = !isForceStart || localMember.isLiteMember();
+
+        MemberImpl resetLocalMember = new MemberImpl(address, localMember.getVersion(),
+                true, newUuid, localMember.getAttributes(), liteMember,
+                localMember.getMemberListJoinVersion(), node.hazelcastInstance);
+
+        localMember = resetLocalMember;
+
+        if (!isForceStart) {
+            logger.info("Converted local member to lite-member before start of split brain healing");
+        }
+
+        node.loggingService.setThisMember(this.localMember);
     }
 
     public void resetJoinState() {
@@ -390,12 +410,12 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         lock.lock();
         try {
             if (!isJoined()) {
-                logger.warning("Not updating members received from caller: " + callerAddress +  " because node is not joined! ");
+                logger.warning("Not updating members received from caller: " + callerAddress + " because node is not joined! ");
                 return false;
             }
 
             if (!checkValidMaster(callerAddress)) {
-                logger.warning("Not updating members because caller: " + callerAddress  + " is not known master: "
+                logger.warning("Not updating members because caller: " + callerAddress + " is not known master: "
                         + getMasterAddress());
                 MembersViewMetadata callerMembersViewMetadata = new MembersViewMetadata(callerAddress, callerUuid,
                         callerAddress, membersView.getVersion());
@@ -420,17 +440,17 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
 
     private void assertMemberUpdateContainsLocalMember(MembersView membersView) {
         if (!ASSERTION_ENABLED) {
-             return;
+            return;
         }
 
         Member localMember = getLocalMember();
         assert membersView.containsMember(localMember.getAddress(), localMember.getUuid())
                 : "Not applying member update because member list doesn't contain us! -> " + membersView
-                    + ", local member: " + localMember;
+                + ", local member: " + localMember;
     }
 
     private boolean checkValidMaster(Address callerAddress) {
-        return  (callerAddress != null && callerAddress.equals(getMasterAddress()));
+        return (callerAddress != null && callerAddress.equals(getMasterAddress()));
     }
 
     void repairPartitionTableIfReturningMember(MemberImpl member) {
@@ -1010,7 +1030,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
             MemberImpl localMemberInMemberList = membershipManager.getMember(member.getAddress());
             if (localMemberInMemberList.isLiteMember()) {
                 throw new IllegalStateException("Cannot promote to data member! Previous master was: " + master.getAddress()
-                    + ", Current master is: " + getMasterAddress());
+                        + ", Current master is: " + getMasterAddress());
             }
         } finally {
             lock.unlock();

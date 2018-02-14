@@ -905,7 +905,7 @@ public class MembershipManager {
         }
     }
 
-    public MembersView promoteToNormalMember(Address address, String uuid) {
+    public MembersView promoteToDataMember(Address address, String uuid) {
         clusterServiceLock.lock();
         try {
             ensureLiteMemberPromotionIsAllowed();

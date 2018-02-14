@@ -20,6 +20,8 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.instance.LifecycleServiceImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.Disposable;
 import com.hazelcast.spi.CoreService;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.SplitBrainHandlerService;
@@ -29,7 +31,6 @@ import com.hazelcast.util.ExceptionUtil;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.MERGED;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.MERGE_FAILED;
@@ -43,15 +44,18 @@ import static com.hazelcast.core.LifecycleEvent.LifecycleState.MERGING;
  */
 class ClusterMergeTask implements Runnable {
 
-    private static final long MIN_WAIT_ON_FUTURE_TIMEOUT_MILLIS = TimeUnit.SECONDS.toMillis(10);
     private static final String MERGE_TASKS_EXECUTOR = "hz:cluster-merge";
 
+    private final boolean wasLiteMember;
     private final Node node;
+    private final ILogger logger;
     private final LifecycleServiceImpl lifecycleService;
 
     ClusterMergeTask(Node node) {
         this.node = node;
+        this.logger = node.getLogger(getClass());
         this.lifecycleService = node.hazelcastInstance.getLifecycleService();
+        this.wasLiteMember = node.clusterService.getLocalMember().isLiteMember();
     }
 
     public void run() {
@@ -71,12 +75,48 @@ class ClusterMergeTask implements Runnable {
             joined = isJoined();
 
             if (joined) {
-                executeMergeTasks(coreTasks);
-                executeMergeTasks(nonCoreTasks);
+                try {
+                    executeMergeTasks(coreTasks);
+                    executeMergeTasks(nonCoreTasks);
+                } finally {
+                    disposeTasks(coreTasks, nonCoreTasks);
+                }
             }
         } finally {
-            lifecycleService.fireLifecycleEvent(joined ? MERGED : MERGE_FAILED);
+            try {
+                if (joined) {
+                    tryToPromoteLocalLiteMember();
+                }
+            } finally {
+                lifecycleService.fireLifecycleEvent(joined ? MERGED : MERGE_FAILED);
+            }
         }
+    }
+
+    /**
+     * Release associated task resources if tasks are {@link Disposable}
+     */
+    private void disposeTasks(Collection<Runnable>... tasks) {
+        for (Collection<Runnable> task : tasks) {
+            for (Runnable runnable : task) {
+                if (runnable instanceof Disposable) {
+                    ((Disposable) runnable).dispose();
+                }
+            }
+        }
+    }
+
+    private void tryToPromoteLocalLiteMember() {
+        if (wasLiteMember) {
+            // this node was a lite-member so no promotion needed after merging
+            return;
+        }
+
+        logger.info("Local lite-member was previously a data-member, now trying to promote it back...");
+
+        node.clusterService.promoteLocalLiteMember();
+
+        logger.info("Promoted local lite-member upon finish of split brain healing");
     }
 
     private boolean isJoined() {
@@ -137,12 +177,13 @@ class ClusterMergeTask implements Runnable {
     }
 
     private void executeMergeTasks(Collection<Runnable> tasks) {
-        // execute merge tasks
         Collection<Future> futures = new LinkedList<Future>();
+
         for (Runnable task : tasks) {
             Future f = node.nodeEngine.getExecutionService().submit(MERGE_TASKS_EXECUTOR, task);
             futures.add(f);
         }
+
         for (Future f : futures) {
             try {
                 waitOnFuture(f);

@@ -54,7 +54,6 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -123,7 +122,7 @@ public class MemberListJoinVersionTest extends HazelcastTestSupport {
 
         assertClusterSizeEventually(1, member3);
 
-        int memberListVersionBeforeMerge = getClusterService(member3).getMemberListVersion();
+        int beforeJoinVersionOnClusterService3 = getClusterService(member3).getMemberListVersion();
 
         resetPacketFiltersFrom(member3);
 
@@ -131,9 +130,14 @@ public class MemberListJoinVersionTest extends HazelcastTestSupport {
         assertMemberViewsAreSame(getMemberMap(member1), getMemberMap(member2));
         assertMemberViewsAreSame(getMemberMap(member1), getMemberMap(member3));
 
-        int memberListVersionAfterMerge = getClusterService(member1).getMemberListVersion();
-        assertTrue(memberListVersionAfterMerge != memberListVersionBeforeMerge);
-        assertEquals(memberListVersionAfterMerge, getNode(member3).getLocalMember().getMemberListJoinVersion());
+        int afterJoinVersionOnClusterService1 = getClusterService(member1).getMemberListVersion();
+        assertNotEquals(afterJoinVersionOnClusterService1, beforeJoinVersionOnClusterService3);
+
+        int versionOnLocalMember3 = getNode(member3).getLocalMember().getMemberListJoinVersion();
+        // during join, we are forcibly changing member-type of member3 to lite member, upon end of merge operations
+        // promoting that member3 to data member, in this scenario, local members version is not incremented and
+        // in this test it should be off by 1.
+        assertEquals(afterJoinVersionOnClusterService1, versionOnLocalMember3 + 1);
 
         assertJoinMemberListVersions(member1, member2, member3);
     }

@@ -48,22 +48,22 @@ import static org.junit.Assert.assertEquals;
 @Category(NightlyTest.class)
 public class MapSplitBrainStressTest extends SplitBrainTestSupport {
 
-    private static final int ITERATION_COUNT = 50;
-    private static final int MAP_COUNT = 100;
-    private static final int ENTRY_COUNT = 100;
-    private static final int FIRST_BRAIN_SIZE = 3;
-    private static final int SECOND_BRAIN_SIZE = 2;
-    private static final Class MERGE_POLICY = PassThroughMergePolicy.class;
+    static final int ITERATION_COUNT = 50;
+    static final int MAP_COUNT = 100;
+    static final int ENTRY_COUNT = 100;
+    static final int FIRST_BRAIN_SIZE = 3;
+    static final int SECOND_BRAIN_SIZE = 2;
+    static final Class MERGE_POLICY = PassThroughMergePolicy.class;
 
-    private static final int TEST_TIMEOUT_IN_MILLIS = 15 * 60 * 1000;
-    private static final String MAP_NAME_PREFIX = MapSplitBrainStressTest.class.getSimpleName() + "-";
-    private static final ILogger LOGGER = Logger.getLogger(MapSplitBrainStressTest.class);
+    static final int TEST_TIMEOUT_IN_MILLIS = 15 * 60 * 1000;
+    static final String MAP_NAME_PREFIX = MapSplitBrainStressTest.class.getSimpleName() + "-";
+    static final ILogger LOGGER = Logger.getLogger(MapSplitBrainStressTest.class);
 
-    private final Map<HazelcastInstance, String> listenerRegistry = new ConcurrentHashMap<HazelcastInstance, String>();
-    private final Map<Integer, String> mapNames = new ConcurrentHashMap<Integer, String>();
+    final Map<HazelcastInstance, String> listenerRegistry = new ConcurrentHashMap<HazelcastInstance, String>();
+    final Map<Integer, String> mapNames = new ConcurrentHashMap<Integer, String>();
 
-    private MergeLifecycleListener mergeLifecycleListener;
-    private int iteration = 1;
+    MergeLifecycleListener mergeLifecycleListener;
+    int iteration = 1;
 
     @Override
     protected Config config() {

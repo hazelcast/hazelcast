@@ -86,15 +86,15 @@ public class CacheSplitBrainTest extends SplitBrainTestSupport {
     @Parameter(value = 1)
     public Class<? extends SplitBrainMergePolicy> mergePolicyClass;
 
-    private String cacheNameA = randomMapName("cacheA-");
-    private String cacheNameB = randomMapName("cacheB-");
-    private ICache<Object, Object> cacheA1;
-    private ICache<Object, Object> cacheA2;
-    private ICache<Object, Object> cacheB1;
-    private ICache<Object, Object> cacheB2;
-    private Map<Object, Object> backupCacheA;
-    private Map<Object, Object> backupCacheB;
-    private MergeLifecycleListener mergeLifecycleListener;
+    protected String cacheNameA = randomMapName("cacheA-");
+    protected String cacheNameB = randomMapName("cacheB-");
+    protected ICache<Object, Object> cacheA1;
+    protected ICache<Object, Object> cacheA2;
+    protected ICache<Object, Object> cacheB1;
+    protected ICache<Object, Object> cacheB2;
+    protected Map<Object, Object> backupCacheA;
+    protected Map<Object, Object> backupCacheB;
+    protected MergeLifecycleListener mergeLifecycleListener;
 
     @Override
     protected Config config() {

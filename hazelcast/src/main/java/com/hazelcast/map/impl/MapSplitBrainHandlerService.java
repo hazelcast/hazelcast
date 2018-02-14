@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl;
 
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.core.EntryView;
@@ -29,6 +30,7 @@ import com.hazelcast.map.merge.IgnoreMergingEntryMapMergePolicy;
 import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.map.merge.MergePolicyProvider;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.Disposable;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
@@ -60,13 +62,15 @@ import static com.hazelcast.util.MapUtil.createHashMap;
 
 class MapSplitBrainHandlerService implements SplitBrainHandlerService {
 
-    private final int partitionCount;
-    private final ILogger logger;
-    private final NodeEngine nodeEngine;
-    private final OperationService operationService;
-    private final IPartitionService partitionService;
-    private final MapServiceContext mapServiceContext;
-    private final MergePolicyProvider mergePolicyProvider;
+    protected static final long TIMEOUT_FACTOR = 500;
+
+    protected final int partitionCount;
+    protected final ILogger logger;
+    protected final NodeEngine nodeEngine;
+    protected final OperationService operationService;
+    protected final IPartitionService partitionService;
+    protected final MapServiceContext mapServiceContext;
+    protected final MergePolicyProvider mergePolicyProvider;
 
     MapSplitBrainHandlerService(MapServiceContext mapServiceContext) {
         this.mapServiceContext = mapServiceContext;
@@ -87,9 +91,12 @@ class MapSplitBrainHandlerService implements SplitBrainHandlerService {
 
         for (MapContainer mapContainer : mapContainers.values()) {
             MapConfig mapConfig = mapContainer.getMapConfig();
-            if (NATIVE.equals(mapConfig.getInMemoryFormat())) {
-                logger.warning("Split-brain recovery can not be applied to NATIVE in-memory formatted map ["
+            InMemoryFormat inMemoryFormat = mapConfig.getInMemoryFormat();
+            if (inMemoryFormat == NATIVE
+                    && nodeEngine.getClusterService().getClusterVersion().isLessThan(Versions.V3_10)) {
+                logger.warning("Split-brain recovery can not be applied NATIVE in-memory-formatted map ["
                         + mapContainer.name + ']');
+
                 continue;
             }
 
@@ -98,9 +105,10 @@ class MapSplitBrainHandlerService implements SplitBrainHandlerService {
                     && !(mergePolicy instanceof DiscardMergePolicy);
 
             for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
-                PartitionContainer partitionContainer = mapServiceContext.getPartitionContainer(partitionId);
-                //noinspection unchecked
-                RecordStore<Record> recordStore = partitionContainer.getRecordStore(mapContainer.getName());
+                RecordStore<Record> recordStore = getOrNullRecordStore(mapContainer.name, inMemoryFormat, partitionId);
+                if (recordStore == null) {
+                    continue;
+                }
                 // add your owned entries to the map so they will be merged
                 if (mergePartitionData && partitionService.isPartitionOwner(partitionId)) {
                     Collection<Record> records = recordMap.get(mapContainer);
@@ -113,24 +121,47 @@ class MapSplitBrainHandlerService implements SplitBrainHandlerService {
                         records.add(iterator.next());
                     }
                 }
-                // clear all records either owned or backup
-                recordStore.reset();
-                mapContainer.getIndexes(partitionId).clearIndexes();
             }
         }
+
         return new Merger(recordMap);
+    }
+
+    // overridden on ee
+    protected void destroyRecordStores(Collection<RecordStore> recordStores) {
+        Iterator<RecordStore> iterator = recordStores.iterator();
+        while (iterator.hasNext()) {
+            RecordStore recordStore = iterator.next();
+            try {
+                recordStore.getMapContainer().getIndexes(recordStore.getPartitionId()).clearIndexes();
+                recordStore.destroy();
+            } finally {
+                iterator.remove();
+            }
+        }
+    }
+
+    // overridden on ee
+    protected RecordStore<Record> getOrNullRecordStore(String mapName, InMemoryFormat inMemoryFormat, int partitionId) {
+        PartitionContainer partitionContainer = mapServiceContext.getPartitionContainer(partitionId);
+        //noinspection unchecked
+        RecordStore recordStore = partitionContainer.getExistingRecordStore(mapName);
+        if (recordStore == null) {
+            return null;
+        }
+
+        return (RecordStore<Record>) recordStore;
     }
 
     private Object getMergePolicy(MergePolicyConfig config) {
         return mergePolicyProvider.getMergePolicy(config.getPolicy());
     }
 
-    private class Merger implements Runnable {
+    // TODO traverse over recordstores not copy to heap eagerly
+    private class Merger implements Runnable, Disposable {
 
-        private static final long TIMEOUT_FACTOR = 500;
-
-        private final ILogger logger = nodeEngine.getLogger(MapSplitBrainHandlerService.class);
         private final Semaphore semaphore = new Semaphore(0);
+        private final ILogger logger = nodeEngine.getLogger(MapSplitBrainHandlerService.class);
 
         private final Map<MapContainer, Collection<Record>> recordMap;
 
@@ -304,6 +335,15 @@ class MapSplitBrainHandlerService implements SplitBrainHandlerService {
                 throw rethrow(t);
             } finally {
                 semaphore.release(totalSize);
+            }
+        }
+
+        @Override
+        public void dispose() {
+            for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
+                PartitionContainer partitionContainer = mapServiceContext.getPartitionContainer(partitionId);
+                Collection<RecordStore> recordStores = partitionContainer.getAllRecordStores();
+                destroyRecordStores(recordStores);
             }
         }
     }

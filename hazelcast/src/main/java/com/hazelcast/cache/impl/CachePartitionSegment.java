@@ -36,11 +36,10 @@ import java.util.concurrent.ConcurrentMap;
  */
 public class CachePartitionSegment implements ConstructorFunction<String, ICacheRecordStore> {
 
-    protected final AbstractCacheService cacheService;
     protected final int partitionId;
-    protected final ConcurrentMap<String, ICacheRecordStore> recordStores =
-            new ConcurrentHashMap<String, ICacheRecordStore>();
     protected final Object mutex = new Object();
+    protected final AbstractCacheService cacheService;
+    protected final ConcurrentMap<String, ICacheRecordStore> recordStores = new ConcurrentHashMap<String, ICacheRecordStore>();
 
     public CachePartitionSegment(final AbstractCacheService cacheService, final int partitionId) {
         this.cacheService = cacheService;

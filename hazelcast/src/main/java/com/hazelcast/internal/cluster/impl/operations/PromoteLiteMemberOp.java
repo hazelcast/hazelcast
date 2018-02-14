@@ -41,7 +41,7 @@ public class PromoteLiteMemberOp extends AbstractClusterOperation {
         String callerUuid = getCallerUuid();
 
         MembershipManager membershipManager = service.getMembershipManager();
-        response = membershipManager.promoteToNormalMember(callerAddress, callerUuid);
+        response = membershipManager.promoteToDataMember(callerAddress, callerUuid);
     }
 
     @Override
