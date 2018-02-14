@@ -33,7 +33,6 @@ import net.bytebuddy.matcher.ElementMatchers;
 import net.bytebuddy.matcher.LatentMatcher;
 
 import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -99,18 +98,8 @@ public class HazelcastProxyFactory {
      * This is the main entry point to obtain proxies for a target class loader.
      * Create an Object valid for the Hazelcast version started with {@code targetClassLoader} that proxies
      * the given {@code arg} which is valid in the current Hazelcast version.
-     *
-     * @param targetClassLoader
-     * @param arg
-     * @return
-     * @throws ClassNotFoundException
-     * @throws InstantiationException
-     * @throws IllegalAccessException
      */
-    public static Object proxyObjectForStarter(ClassLoader targetClassLoader, Object arg)
-            throws ClassNotFoundException, InstantiationException, IllegalAccessException,
-            NoSuchMethodException, InvocationTargetException {
-
+    public static Object proxyObjectForStarter(ClassLoader targetClassLoader, Object arg) throws ClassNotFoundException {
         // handle JDK collections (eg ArrayList etc)
         if (isJDKClass(arg.getClass()) && Collection.class.isAssignableFrom(arg.getClass())) {
             Collection targetCollection = newCollectionFor(arg.getClass());
@@ -152,19 +141,8 @@ public class HazelcastProxyFactory {
     /**
      * Convenience method to proxy an array of objects to be passed as arguments to a method on a class that is
      * loaded by {@code targetClassLoader}
-     *
-     * @param args
-     * @param targetClassLoader
-     * @return
-     * @throws ClassNotFoundException
-     * @throws IllegalAccessException
-     * @throws InstantiationException
-     * @throws NoSuchMethodException
-     * @throws InvocationTargetException
      */
-    public static Object[] proxyArgumentsIfNeeded(Object[] args, ClassLoader targetClassLoader)
-            throws ClassNotFoundException, IllegalAccessException, InstantiationException,
-            NoSuchMethodException, InvocationTargetException {
+    public static Object[] proxyArgumentsIfNeeded(Object[] args, ClassLoader targetClassLoader) throws ClassNotFoundException {
         if (args == null) {
             return null;
         }
@@ -204,8 +182,7 @@ public class HazelcastProxyFactory {
     }
 
     private static Object constructWithJdkProxy(ClassLoader targetClassLoader, Object arg, Class<?>[] ifaces,
-                                                Class<?>[] delegateIfaces)
-            throws ClassNotFoundException {
+                                                Class<?>[] delegateIfaces) throws ClassNotFoundException {
         for (int j = 0; j < ifaces.length; j++) {
             Class<?> clazz = ifaces[j];
             Class<?> delegateInterface = targetClassLoader.loadClass(clazz.getName());
@@ -214,18 +191,13 @@ public class HazelcastProxyFactory {
         return generateProxyForInterface(arg, targetClassLoader, delegateIfaces);
     }
 
-    private static Object constructWithSubclassProxy(ClassLoader targetClassLoader, Object arg)
-            throws ClassNotFoundException, InstantiationException, IllegalAccessException,
-            NoSuchMethodException, InvocationTargetException {
+    private static Object constructWithSubclassProxy(ClassLoader targetClassLoader, Object arg) throws ClassNotFoundException {
         // proxy class via subclassing the existing class implementation in the target targetClassLoader
         Class<?> delegateClass = targetClassLoader.loadClass(arg.getClass().getName());
         return proxyWithSubclass(targetClassLoader, arg, delegateClass);
     }
 
-    private static Object constructWithoutProxy(ClassLoader targetClassLoader, Object arg)
-            throws ClassNotFoundException, IllegalAccessException, InstantiationException,
-            NoSuchMethodException, InvocationTargetException {
-
+    private static Object constructWithoutProxy(ClassLoader targetClassLoader, Object arg) throws ClassNotFoundException {
         if (isJDKClass(arg.getClass())) {
             return arg;
         }
@@ -237,30 +209,14 @@ public class HazelcastProxyFactory {
 
     /**
      * Generate a JDK dynamic proxy implementing the expected interfaces.
-     *
-     * @param delegate
-     * @param proxyTargetClassloader
-     * @param expectedInterfaces
-     * @param <T>
-     * @return
      */
-    private static <T> T generateProxyForInterface(Object delegate, ClassLoader proxyTargetClassloader, Class<?>... expectedInterfaces) {
+    private static <T> T generateProxyForInterface(Object delegate, ClassLoader proxyTargetClassloader,
+                                                   Class<?>... expectedInterfaces) {
         InvocationHandler myInvocationHandler = new ProxyInvocationHandler(delegate);
         return (T) Proxy.newProxyInstance(proxyTargetClassloader, expectedInterfaces, myInvocationHandler);
     }
 
-    /**
-     * @param targetClassLoader
-     * @param arg
-     * @param delegateClass
-     * @return
-     * @throws InstantiationException
-     * @throws IllegalAccessException
-     */
-    private static Object proxyWithSubclass(ClassLoader targetClassLoader, final Object arg, Class<?> delegateClass)
-            throws InstantiationException, IllegalAccessException, NoSuchMethodException,
-            InvocationTargetException, ClassNotFoundException {
-
+    private static Object proxyWithSubclass(ClassLoader targetClassLoader, final Object arg, Class<?> delegateClass) {
         Class<?> targetClass;
         ProxySource proxySource = ProxySource.of(arg.getClass(), targetClassLoader);
         targetClass = PROXIES.applyIfAbsent(proxySource, new IFunction<ProxySource, Class<?>>() {
@@ -283,7 +239,6 @@ public class HazelcastProxyFactory {
      *
      * @param delegateClass class of object to be proxied
      * @param ifaces        interfaces implemented by delegateClass
-     * @return
      */
     private static ProxyPolicy shouldProxy(Class<?> delegateClass, Class<?>[] ifaces) {
         if (delegateClass.isPrimitive() || isJDKClass(delegateClass)) {
@@ -306,10 +261,7 @@ public class HazelcastProxyFactory {
         return ProxyPolicy.JDK_PROXY;
     }
 
-    private static Object construct(Class<?> klass, Object delegate)
-            throws IllegalAccessException, InstantiationException, ClassNotFoundException,
-            NoSuchMethodException, InvocationTargetException {
-
+    private static Object construct(Class<?> klass, Object delegate) {
         ConstructorFunction<Object, Object> constructorFunction = CONSTRUCTORS.applyIfAbsent(klass,
                 new IFunction<Class<?>, ConstructorFunction<Object, Object>>() {
                     @Override
@@ -342,9 +294,6 @@ public class HazelcastProxyFactory {
 
     /**
      * Return all interfaces implemented by {@code type}, along with {@code type} itself if it is an interface
-     *
-     * @param type
-     * @return
      */
     private static Class<?>[] getAllInterfacesIncludingSelf(Class<?> type) {
         Set<Class<?>> interfaces = new HashSet<Class<?>>();
@@ -392,7 +341,6 @@ public class HazelcastProxyFactory {
             }
 
             ProxySource that = (ProxySource) o;
-
             if (!toProxy.equals(that.toProxy)) {
                 return false;
             }
@@ -444,8 +392,8 @@ public class HazelcastProxyFactory {
 
         @Override
         public List<MethodDescription.Token> extractConstructors(TypeDescription instrumentedType) {
-            List<MethodDescription.Token> tokens = doExtractConstructors(instrumentedType), stripped
-                    = new ArrayList<MethodDescription.Token>(tokens.size());
+            List<MethodDescription.Token> tokens = doExtractConstructors(instrumentedType);
+            List<MethodDescription.Token> stripped = new ArrayList<MethodDescription.Token>(tokens.size());
             for (MethodDescription.Token token : tokens) {
                 stripped.add(new MethodDescription.Token(token.getName(),
                         ACC_PUBLIC,
@@ -466,7 +414,5 @@ public class HazelcastProxyFactory {
                     ? new MethodList.Empty<MethodDescription.InGenericShape>()
                     : superClass.getDeclaredMethods().filter(isConstructor())).asTokenList(is(instrumentedType));
         }
-
-
     }
 }

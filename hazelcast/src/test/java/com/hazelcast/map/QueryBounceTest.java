@@ -49,8 +49,6 @@ public class QueryBounceTest {
     private static final int COUNT_ENTRIES = 100000;
     private static final int CONCURRENCY = 10;
 
-    private IMap<String, SampleTestObjects.Employee> map;
-
     @Rule
     public BounceMemberRule bounceMemberRule = BounceMemberRule.with(getConfig())
             .clusterSize(4)
@@ -64,6 +62,7 @@ public class QueryBounceTest {
 
     @Before
     public void setup() {
+        IMap<String, SampleTestObjects.Employee> map;
         if (testName.getMethodName().contains("Indexes")) {
             map = getMapWithIndexes();
         } else {
@@ -130,9 +129,8 @@ public class QueryBounceTest {
             if (map == null) {
                 map = hazelcastInstance.getMap(TEST_MAP_NAME);
             }
-            int min, max;
-            min = random.nextInt(COUNT_ENTRIES - numberOfResults);
-            max = min + numberOfResults;
+            int min = random.nextInt(COUNT_ENTRIES - numberOfResults);
+            int max = min + numberOfResults;
             String sql = (min % 2 == 0)
                     ? "age >= " + min + " AND age < " + max // may use sorted index
                     : "id >= " + min + " AND id < " + max;  // may use unsorted index
@@ -142,5 +140,4 @@ public class QueryBounceTest {
                     numberOfResults, employees.size());
         }
     }
-
 }

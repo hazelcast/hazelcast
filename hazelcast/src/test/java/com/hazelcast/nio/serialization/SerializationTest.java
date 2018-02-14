@@ -369,7 +369,8 @@ public class SerializationTest extends HazelcastTestSupport {
         SerializationService serializationService = new DefaultSerializationServiceBuilder()
                 .setEnableCompression(true)
                 .build();
-        long key = 1, value = 5000;
+        long key = 1;
+        long value = 5000;
         Properties properties = new Properties();
         properties.put(key, value);
         Data data = serializationService.toData(properties);

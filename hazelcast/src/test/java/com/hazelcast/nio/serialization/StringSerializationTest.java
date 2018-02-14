@@ -102,7 +102,8 @@ public class StringSerializationTest {
     @Test
     public void testLargeStringEncodeDecode() {
         StringBuilder sb = new StringBuilder();
-        int i = 0, j = 0;
+        int i = 0;
+        int j = 0;
         while (j < TEST_STR_SIZE) {
             int ch = i++ % Character.MAX_VALUE;
             if (Character.isLetter(ch)) {

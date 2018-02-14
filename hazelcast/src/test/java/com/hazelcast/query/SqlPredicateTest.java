@@ -114,7 +114,10 @@ public class SqlPredicateTest {
     }
 
     public static class Record {
-        private String str1, str2, str3;
+
+        private String str1;
+        private String str2;
+        private String str3;
 
         public Record(String str1, String str2, String str3) {
             this.str1 = str1;

@@ -648,7 +648,8 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
         final int partitionCount = getPartitionService(instance1).getPartitionCount();
         final Set<String> keys = generateRandomKeys(instance1, partitionCount);
 
-        int half = keys.size() / 2, i = 0;
+        int half = keys.size() / 2;
+        int i = 0;
         for (String key : keys) {
             final ReplicatedMap<String, String> map = i++ < half ? map1 : map2;
             map.put(key, key);
@@ -702,7 +703,8 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
         final int partitionCount = getPartitionService(instance1).getPartitionCount();
         final Set<String> keys = generateRandomKeys(instance1, partitionCount);
 
-        int half = keys.size() / 2, i = 0;
+        int half = keys.size() / 2;
+        int i = 0;
         for (String key : keys) {
             final ReplicatedMap<String, String> map = i++ < half ? map1 : map2;
             map.put(key, key);
@@ -739,7 +741,8 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
         final int partitionCount = getPartitionService(instance1).getPartitionCount();
         final Set<String> keys = generateRandomKeys(instance1, partitionCount);
 
-        int half = keys.size() / 2, i = 0;
+        int half = keys.size() / 2;
+        int i = 0;
         for (String key : keys) {
             final ReplicatedMap<String, String> map = i++ < half ? map1 : map2;
             map.put(key, key);
@@ -776,7 +779,8 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
         final int partitionCount = getPartitionService(instance1).getPartitionCount();
         final Set<String> keys = generateRandomKeys(instance1, partitionCount);
 
-        int half = keys.size() / 2, i = 0;
+        int half = keys.size() / 2;
+        int i = 0;
         for (String key : keys) {
             final ReplicatedMap<String, String> map = i++ < half ? map1 : map2;
             map.put(key, key);

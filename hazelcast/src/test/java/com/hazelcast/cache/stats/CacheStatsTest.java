@@ -509,7 +509,8 @@ public class CacheStatsTest extends CacheTestSupport {
         CacheStatistics stats = cache.getLocalCacheStatistics();
 
         final int ENTRY_COUNT = 100;
-        long start, end;
+        long start;
+        long end;
 
         for (int i = 0; i < ENTRY_COUNT; i++) {
             cache.put(i, "Value-" + i);
@@ -554,7 +555,8 @@ public class CacheStatsTest extends CacheTestSupport {
         CacheStatistics stats = cache.getLocalCacheStatistics();
 
         final int ENTRY_COUNT = 100;
-        long start, end;
+        long start;
+        long end;
 
         start = System.currentTimeMillis();
         for (int i = 0; i < ENTRY_COUNT; i++) {

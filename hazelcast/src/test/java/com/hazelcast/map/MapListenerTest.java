@@ -133,7 +133,10 @@ public class MapListenerTest extends HazelcastTestSupport {
     class AllListener implements EntryAddedListener<String, Person>, EntryRemovedListener<String, Person>,
             EntryUpdatedListener<String, Person> {
 
-        public final AtomicInteger entries, exits, entriesObserved, exitsObserved;
+        final AtomicInteger entries;
+        final AtomicInteger exits;
+        final AtomicInteger entriesObserved;
+        final AtomicInteger exitsObserved;
 
         public AllListener() {
             entries = new AtomicInteger();

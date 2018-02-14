@@ -121,12 +121,10 @@ public class DurableSingleNodeTest extends ExecutorServiceTestSupport {
     @Test
     public void issue129() throws Exception {
         for (int i = 0; i < 1000; i++) {
-            Callable<String>
-                    task1 = new BasicTestCallable(),
-                    task2 = new BasicTestCallable();
-            Future<String>
-                    future1 = executor.submit(task1),
-                    future2 = executor.submit(task2);
+            Callable<String> task1 = new BasicTestCallable();
+            Callable<String> task2 = new BasicTestCallable();
+            Future<String> future1 = executor.submit(task1);
+            Future<String> future2 = executor.submit(task2);
             assertEquals(future2.get(), BasicTestCallable.RESULT);
             assertTrue(future2.isDone());
             assertEquals(future1.get(), BasicTestCallable.RESULT);
