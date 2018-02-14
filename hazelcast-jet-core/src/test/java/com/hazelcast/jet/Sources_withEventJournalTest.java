@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet;
 
+import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.journal.EventJournalCacheEvent;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.CacheSimpleConfig;
@@ -24,6 +25,7 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.jet.function.DistributedPredicate;
+import com.hazelcast.jet.stream.IStreamList;
 import com.hazelcast.jet.stream.IStreamMap;
 import com.hazelcast.map.journal.EventJournalMapEvent;
 import java.util.List;
@@ -35,11 +37,16 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import static com.hazelcast.jet.JournalInitialPosition.START_FROM_OLDEST;
+import static com.hazelcast.jet.Util.mapPutEvents;
 import static com.hazelcast.jet.core.WatermarkEmissionPolicy.suppressDuplicates;
+import static com.hazelcast.jet.core.WatermarkGenerationParams.noWatermarks;
 import static com.hazelcast.jet.core.WatermarkGenerationParams.wmGenParams;
 import static com.hazelcast.jet.core.WatermarkPolicies.withFixedLag;
 import static com.hazelcast.jet.function.DistributedFunctions.entryValue;
+import static com.hazelcast.query.impl.predicates.PredicateTestUtils.entry;
+import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.IntStream.range;
 import static org.junit.Assert.assertEquals;
 
 public class Sources_withEventJournalTest extends PipelineTestSupport {
@@ -47,7 +54,7 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
     private static ClientConfig clientConfig;
 
     @BeforeClass
-    public static void setUp() throws Exception {
+    public static void setUp() {
         Config config = new Config();
         config.addCacheConfig(new CacheSimpleConfig().setName("*"));
         config.getMapEventJournalConfig(JOURNALED_MAP_PREFIX + '*').setEnabled(true);
@@ -58,7 +65,7 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
     }
 
     @AfterClass
-    public static void after() throws Exception {
+    public static void after() {
         Hazelcast.shutdownAll();
     }
 
@@ -113,6 +120,108 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
         List<Integer> expected = Stream.concat(input.stream().map(i -> Integer.MIN_VALUE + i), input.stream())
                                        .collect(toList());
         assertEquals(toBag(expected), sinkToBag());
+    }
+
+    @Test
+    public void mapJournal_withProjectionToNull_then_nullsSkipped() {
+        // given
+        String mapName = JOURNALED_MAP_PREFIX + randomName();
+        Source<String> source = Sources.mapJournal(mapName, mapPutEvents(),
+                (EventJournalMapEvent<Integer, Entry<Integer, String>> entry) -> entry.getNewValue().getValue(),
+                START_FROM_OLDEST,
+                noWatermarks()
+        );
+        IStreamMap<Integer, Entry<Integer, String>> sourceMap = jet().getMap(mapName);
+        range(0, ITEM_COUNT).forEach(i -> sourceMap.put(i, entry(i, i % 2 == 0 ? null : String.valueOf(i))));
+
+        // when
+        pipeline.drawFrom(source)
+                .drainTo(sink);
+        jet().newJob(pipeline);
+
+        // then
+        assertTrueEventually(() -> assertEquals(
+                range(0, ITEM_COUNT)
+                        .filter(i -> i % 2 != 0)
+                        .mapToObj(String::valueOf)
+                        .sorted()
+                        .collect(joining("\n")),
+                jet().getHazelcastInstance().<String>getList(sinkName)
+                        .stream()
+                        .sorted()
+                        .collect(joining("\n"))
+        ));
+    }
+
+    @Test
+    public void mapJournal_withDefaultFilter() {
+        // given
+        String mapName = JOURNALED_MAP_PREFIX + randomName();
+        Source<Entry<Integer, Integer>> source = Sources.mapJournal(mapName,
+                START_FROM_OLDEST,
+                noWatermarks()
+        );
+
+        IStreamMap<Integer, Integer> sourceMap = jet().getMap(mapName);
+        sourceMap.put(1, 1); // ADDED
+        sourceMap.remove(1); // REMOVED - filtered out
+        sourceMap.put(1, 2); // ADDED
+
+
+        // when
+        pipeline.drawFrom(source)
+                .drainTo(sink);
+        jet().newJob(pipeline);
+
+        // then
+        IStreamList<Entry<Integer, Integer>> sinkList = jet().getList(sinkName);
+        assertTrueEventually(() -> {
+                    assertEquals(2, sinkList.size());
+
+                    Entry<Integer, Integer> e = sinkList.get(0);
+                    assertEquals(Integer.valueOf(1), e.getKey());
+                    assertEquals(Integer.valueOf(1), e.getValue());
+
+                    e = sinkList.get(1);
+                    assertEquals(Integer.valueOf(1), e.getKey());
+                    assertEquals(Integer.valueOf(2), e.getValue());
+                }
+        );
+    }
+
+
+    @Test
+    public void cacheJournal_withDefaultFilter() {
+        // given
+        String cacheName = JOURNALED_CACHE_PREFIX + randomName();
+        Source<Entry<Integer, Integer>> source = Sources.cacheJournal(cacheName,
+                START_FROM_OLDEST,
+                noWatermarks()
+        );
+        ICache<Integer, Integer> sourceMap = jet().getCacheManager().getCache(cacheName);
+        sourceMap.put(1, 1); // ADDED
+        sourceMap.remove(1); // REMOVED - filtered out
+        sourceMap.put(1, 2); // ADDED
+
+        // when
+        pipeline.drawFrom(source)
+                .drainTo(sink);
+        jet().newJob(pipeline);
+
+        // then
+        IStreamList<Entry<Integer, Integer>> sinkList = jet().getList(sinkName);
+        assertTrueEventually(() -> {
+                    assertEquals(2, sinkList.size());
+
+                    Entry<Integer, Integer> e = sinkList.get(0);
+                    assertEquals(Integer.valueOf(1), e.getKey());
+                    assertEquals(Integer.valueOf(1), e.getValue());
+
+                    e = sinkList.get(1);
+                    assertEquals(Integer.valueOf(1), e.getKey());
+                    assertEquals(Integer.valueOf(2), e.getValue());
+                }
+        );
     }
 
     @Test

@@ -16,7 +16,10 @@
 
 package com.hazelcast.jet;
 
+import com.hazelcast.cache.ICache;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.config.CacheSimpleConfig;
+import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
@@ -45,13 +48,56 @@ public class SinksTest extends PipelineTestSupport {
 
     @BeforeClass
     public static void setUp() {
-        remoteHz = createRemoteCluster(2).get(0);
+        Config config = new Config();
+        config.addCacheConfig(new CacheSimpleConfig().setName("*"));
+        remoteHz = createRemoteCluster(config, 2).get(0);
         clientConfig = getClientConfigForRemoteCluster(remoteHz);
     }
 
     @AfterClass
     public static void after() {
         Hazelcast.shutdownAll();
+    }
+
+    @Test
+    public void cache() {
+        // Given
+        List<Integer> input = sequence(ITEM_COUNT);
+        putToSrcCache(input);
+
+        // When
+        pipeline.drawFrom(Sources.cache(srcName))
+                .drainTo(Sinks.cache(sinkName));
+        execute();
+
+        // Then
+        List<Entry<String, Integer>> expected = input.stream()
+                                                     .map(i -> entry(String.valueOf(i), i))
+                                                     .collect(toList());
+        ICache<String, Integer> cache = jet().getCacheManager().getCache(sinkName);
+        assertEquals(expected.size(), cache.size());
+        expected.forEach(entry -> assertEquals(entry.getValue(), cache.get(entry.getKey())));
+    }
+
+
+    @Test
+    public void remoteCache() {
+        // Given
+        List<Integer> input = sequence(ITEM_COUNT);
+        putToSrcCache(input);
+
+        // When
+        pipeline.drawFrom(Sources.cache(srcName))
+                .drainTo(Sinks.remoteCache(sinkName, clientConfig));
+        execute();
+
+        // Then
+        List<Entry<String, Integer>> expected = input.stream()
+                                                     .map(i -> entry(String.valueOf(i), i))
+                                                     .collect(toList());
+        ICache<String, Integer> remoteCache = remoteHz.getCacheManager().getCache(sinkName);
+        assertEquals(expected.size(), remoteCache.size());
+        expected.forEach(entry -> assertEquals(entry.getValue(), remoteCache.get(entry.getKey())));
     }
 
     @Test

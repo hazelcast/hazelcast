@@ -23,6 +23,7 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.stream.IStreamMap;
 import java.io.File;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
@@ -40,7 +41,9 @@ import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static com.hazelcast.projection.Projections.singleAttribute;
 import static com.hazelcast.query.TruePredicate.truePredicate;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.IntStream.range;
 import static org.junit.Assert.assertEquals;
 
 public class SourcesTest extends PipelineTestSupport {
@@ -48,7 +51,7 @@ public class SourcesTest extends PipelineTestSupport {
     private static ClientConfig clientConfig;
 
     @BeforeClass
-    public static void setUp() throws Exception {
+    public static void setUp() {
         Config config = new Config();
         config.addCacheConfig(new CacheSimpleConfig().setName("*"));
         remoteHz = createRemoteCluster(config, 2).get(0);
@@ -56,7 +59,7 @@ public class SourcesTest extends PipelineTestSupport {
     }
 
     @AfterClass
-    public static void after() throws Exception {
+    public static void after() {
         Hazelcast.shutdownAll();
     }
 
@@ -130,6 +133,33 @@ public class SourcesTest extends PipelineTestSupport {
 
         // Then
         assertEquals(toBag(input), sinkToBag());
+    }
+
+    @Test
+    public void map_withProjectionToNull_then_nullsSkipped() {
+        // given
+        String mapName = randomName();
+        IStreamMap<Integer, Entry<Integer, String>> sourceMap = jet().getMap(mapName);
+        range(0, ITEM_COUNT).forEach(i -> sourceMap.put(i, entry(i, i % 2 == 0 ? null : String.valueOf(i))));
+        Source<String> source = Sources.map(mapName, truePredicate(), singleAttribute("value"));
+
+        // when
+        pipeline.drawFrom(source)
+                .drainTo(sink);
+        jet().newJob(pipeline);
+
+        // then
+        assertTrueEventually(() -> assertEquals(
+                range(0, ITEM_COUNT)
+                        .filter(i -> i % 2 != 0)
+                        .mapToObj(String::valueOf)
+                        .sorted()
+                        .collect(joining("\n")),
+                jet().getHazelcastInstance().<String>getList(sinkName)
+                        .stream()
+                        .sorted()
+                        .collect(joining("\n"))
+        ));
     }
 
     @Test
