@@ -30,9 +30,11 @@ public class MapEventJournalReadResultSetImpl<K, V, T> extends ReadResultSetImpl
     public MapEventJournalReadResultSetImpl() {
     }
 
-    MapEventJournalReadResultSetImpl(int minSize, int maxSize, SerializationService serializationService,
-                                     final Predicate<? super EventJournalMapEvent<K, V>> predicate,
-                                     final Projection<? super EventJournalMapEvent<K, V>, T> projection) {
+    MapEventJournalReadResultSetImpl(
+            int minSize, int maxSize, SerializationService serializationService,
+            final Predicate<? super EventJournalMapEvent<K, V>> predicate,
+            final Projection<? super EventJournalMapEvent<K, V>, ? extends T> projection
+    ) {
         super(minSize, maxSize, serializationService,
                 predicate == null ? null : new Predicate<InternalEventJournalMapEvent>() {
                     @Override
@@ -67,9 +69,9 @@ public class MapEventJournalReadResultSetImpl<K, V, T> extends ReadResultSetImpl
     @SerializableByConvention
     private static class ProjectionAdapter<K, V, T> extends Projection<InternalEventJournalMapEvent, T> {
 
-        private final Projection<? super EventJournalMapEvent<K, V>, T> projection;
+        private final Projection<? super EventJournalMapEvent<K, V>, ? extends T> projection;
 
-        ProjectionAdapter(Projection<? super EventJournalMapEvent<K, V>, T> projection) {
+        ProjectionAdapter(Projection<? super EventJournalMapEvent<K, V>, ? extends T> projection) {
             this.projection = projection;
         }
 

@@ -61,10 +61,12 @@ public interface EventJournalReader<E> {
      * @return the future with the filtered and projected journal items
      * @since 3.9
      */
-    <T> ICompletableFuture<ReadResultSet<T>> readFromEventJournal(long startSequence,
-                                                                  int minSize,
-                                                                  int maxSize,
-                                                                  int partitionId,
-                                                                  com.hazelcast.util.function.Predicate<? super E> predicate,
-                                                                  Projection<? super E, T> projection);
+    <T> ICompletableFuture<ReadResultSet<T>> readFromEventJournal(
+            long startSequence,
+            int minSize,
+            int maxSize,
+            int partitionId,
+            com.hazelcast.util.function.Predicate<? super E> predicate,
+            Projection<? super E, ? extends T> projection
+    );
 }
