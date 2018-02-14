@@ -100,7 +100,7 @@ final class InvokeOnPartitions {
         for (Map.Entry<Address, Future> response : futures.entrySet()) {
             try {
                 Future future = response.getValue();
-                PartitionResponse result = (PartitionResponse) nodeEngine.toObject(future.get());
+                PartitionResponse result = nodeEngine.toObject(future.get());
                 result.addResults(partitionResults);
             } catch (Throwable t) {
                 if (operationService.logger.isFinestEnabled()) {

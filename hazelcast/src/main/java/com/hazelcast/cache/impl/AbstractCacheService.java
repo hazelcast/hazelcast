@@ -116,7 +116,7 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
     protected NodeEngine nodeEngine;
     protected CachePartitionSegment[] segments;
     protected CacheEventHandler cacheEventHandler;
-    protected CacheSplitBrainHandlerService splitBrainHandlerService;
+    protected SplitBrainHandlerService splitBrainHandlerService;
     protected RingbufferCacheEventJournalImpl eventJournal;
     protected ILogger logger;
 
@@ -129,10 +129,15 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
             segments[i] = newPartitionSegment(i);
         }
         this.cacheEventHandler = new CacheEventHandler(nodeEngine);
-        this.splitBrainHandlerService = new CacheSplitBrainHandlerService(nodeEngine, configs, segments);
+        this.splitBrainHandlerService = newSplitBrainHandlerService(nodeEngine);
         this.logger = nodeEngine.getLogger(getClass());
         this.eventJournal = new RingbufferCacheEventJournalImpl(nodeEngine);
         postInit(nodeEngine, properties);
+    }
+
+    // this method is overridden on ee
+    protected SplitBrainHandlerService newSplitBrainHandlerService(NodeEngine nodeEngine) {
+        return new CacheSplitBrainHandlerService(nodeEngine, configs, segments);
     }
 
     protected void postInit(NodeEngine nodeEngine, Properties properties) {

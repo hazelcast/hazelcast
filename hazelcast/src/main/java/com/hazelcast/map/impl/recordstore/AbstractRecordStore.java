@@ -49,21 +49,21 @@ import static com.hazelcast.map.impl.ExpirationTimeSetter.setTTLAndUpdateExpiryT
  */
 abstract class AbstractRecordStore implements RecordStore<Record> {
 
-    protected final String name;
-    protected final MapContainer mapContainer;
     protected final int partitionId;
+    protected final String name;
+    protected final LockStore lockStore;
+    protected final MapContainer mapContainer;
+    protected final RecordFactory recordFactory;
+    protected final MapEventJournal eventJournal;
+    protected final InMemoryFormat inMemoryFormat;
+    protected final MapStoreContext mapStoreContext;
+    protected final RecordComparator recordComparator;
     protected final MapServiceContext mapServiceContext;
     protected final SerializationService serializationService;
-    protected final InMemoryFormat inMemoryFormat;
-    protected final RecordFactory recordFactory;
-    protected final RecordComparator recordComparator;
-    protected final MapStoreContext mapStoreContext;
     protected final MapDataStore<Data, Object> mapDataStore;
-    protected final LockStore lockStore;
-    protected final MapEventJournal eventJournal;
+    protected final LocalRecordStoreStatsImpl stats = new LocalRecordStoreStatsImpl();
 
     protected Storage<Data, Record> storage;
-    protected final LocalRecordStoreStatsImpl stats = new LocalRecordStoreStatsImpl();
 
     protected AbstractRecordStore(MapContainer mapContainer, int partitionId) {
         this.name = mapContainer.getName();

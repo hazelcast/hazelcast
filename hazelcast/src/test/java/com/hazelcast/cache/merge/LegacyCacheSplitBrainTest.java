@@ -20,6 +20,7 @@ import com.hazelcast.cache.CacheEntryView;
 import com.hazelcast.cache.CacheMergePolicy;
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.config.CacheConfig;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.SplitBrainTestSupport;
@@ -37,6 +38,7 @@ import javax.cache.CacheManager;
 import javax.cache.spi.CachingProvider;
 import java.util.Collection;
 
+import static com.hazelcast.config.InMemoryFormat.BINARY;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -47,18 +49,21 @@ import static org.junit.Assert.fail;
 @SuppressWarnings("unchecked")
 public class LegacyCacheSplitBrainTest extends SplitBrainTestSupport {
 
-    @Parameters(name = "mergePolicy:{0}")
-    public static Collection<Object> parameters() {
-        return asList(new Object[]{
-                LatestAccessCacheMergePolicy.class,
-                HigherHitsCacheMergePolicy.class,
-                PutIfAbsentCacheMergePolicy.class,
-                PassThroughCacheMergePolicy.class,
-                CustomCacheMergePolicy.class,
+    @Parameters(name = "inMemoryFormat:{0}, mergePolicy:{1}")
+    public static Collection<Object[]> parameters() {
+        return asList(new Object[][]{
+                {BINARY, LatestAccessCacheMergePolicy.class},
+                {BINARY, HigherHitsCacheMergePolicy.class},
+                {BINARY, PutIfAbsentCacheMergePolicy.class},
+                {BINARY, PassThroughCacheMergePolicy.class},
+                {BINARY, CustomCacheMergePolicy.class}
         });
     }
 
     @Parameter
+    public InMemoryFormat inMemoryFormat;
+
+    @Parameter(value = 1)
     public Class<? extends CacheMergePolicy> mergePolicyClass;
 
     private String cacheName = randomMapName();
@@ -78,7 +83,7 @@ public class LegacyCacheSplitBrainTest extends SplitBrainTestSupport {
             instance.getLifecycleService().addLifecycleListener(mergeLifecycleListener);
         }
 
-        CacheConfig cacheConfig = newCacheConfig(cacheName, mergePolicyClass);
+        CacheConfig cacheConfig = newCacheConfig(cacheName, mergePolicyClass, inMemoryFormat);
         cache1 = createCache(firstBrain[0], cacheConfig);
         cache2 = createCache(secondBrain[0], cacheConfig);
 
@@ -214,14 +219,16 @@ public class LegacyCacheSplitBrainTest extends SplitBrainTestSupport {
         return cacheManager.createCache(cacheConfig.getName(), cacheConfig);
     }
 
-    private static CacheConfig newCacheConfig(String cacheName, Class<? extends CacheMergePolicy> mergePolicy) {
+    protected CacheConfig newCacheConfig(String cacheName, Class<? extends CacheMergePolicy> mergePolicy,
+                                         InMemoryFormat inMemoryFormat) {
         CacheConfig cacheConfig = new CacheConfig();
         cacheConfig.setName(cacheName);
         cacheConfig.setMergePolicy(mergePolicy.getName());
+        cacheConfig.setInMemoryFormat(inMemoryFormat);
         return cacheConfig;
     }
 
-    private static class CustomCacheMergePolicy implements CacheMergePolicy {
+    protected static class CustomCacheMergePolicy implements CacheMergePolicy {
 
         @Override
         public Object merge(String cacheName, CacheEntryView mergingEntry, CacheEntryView existingEntry) {

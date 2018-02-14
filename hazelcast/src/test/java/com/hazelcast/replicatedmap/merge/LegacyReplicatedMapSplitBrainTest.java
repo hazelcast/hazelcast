@@ -21,6 +21,7 @@ import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedMapEntryView;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.SplitBrainTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -116,19 +117,27 @@ public class LegacyReplicatedMapSplitBrainTest extends SplitBrainTestSupport {
         // wait until merge completes
         mergeLifecycleListener.await();
 
-        if (mergePolicyClass == LatestUpdateMapMergePolicy.class) {
-            afterMergeLatestUpdateMapMergePolicy();
-        } else if (mergePolicyClass == HigherHitsMapMergePolicy.class) {
-            afterMergeHigherHitsMapMergePolicy();
-        } else if (mergePolicyClass == PutIfAbsentMapMergePolicy.class) {
-            afterMergePutIfAbsentMapMergePolicy();
-        } else if (mergePolicyClass == PassThroughMergePolicy.class) {
-            afterMergePassThroughMapMergePolicy();
-        } else if (mergePolicyClass == CustomReplicatedMergePolicy.class) {
-            afterMergeCustomReplicatedMapMergePolicy();
-        } else {
-            fail();
-        }
+        AssertTask assertTask = new AssertTask() {
+            @Override
+            public void run() {
+                if (mergePolicyClass == LatestUpdateMapMergePolicy.class) {
+                    afterMergeLatestUpdateMapMergePolicy();
+                } else if (mergePolicyClass == HigherHitsMapMergePolicy.class) {
+                    afterMergeHigherHitsMapMergePolicy();
+                } else if (mergePolicyClass == PutIfAbsentMapMergePolicy.class) {
+                    afterMergePutIfAbsentMapMergePolicy();
+                } else if (mergePolicyClass == PassThroughMergePolicy.class) {
+                    afterMergePassThroughMapMergePolicy();
+                } else if (mergePolicyClass == CustomReplicatedMergePolicy.class) {
+                    afterMergeCustomReplicatedMapMergePolicy();
+                } else {
+                    fail();
+                }
+            }
+        };
+
+        // wait completion of migration tasks after lite member promotion
+        assertTrueEventually(assertTask);
     }
 
     private void afterSplitLatestUpdateMapMergePolicy() {

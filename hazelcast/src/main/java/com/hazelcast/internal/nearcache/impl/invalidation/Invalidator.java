@@ -17,7 +17,6 @@
 package com.hazelcast.internal.nearcache.impl.invalidation;
 
 import com.hazelcast.core.IFunction;
-import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventRegistration;
@@ -28,6 +27,8 @@ import com.hazelcast.spi.partition.IPartitionService;
 
 import java.util.Collection;
 import java.util.UUID;
+
+import static com.hazelcast.internal.util.ToHeapDataConverter.toHeapData;
 
 /**
  * Contains shared functionality for Near Cache invalidation.
@@ -94,25 +95,15 @@ public abstract class Invalidator {
         return newInvalidation(key, dataStructureName, sourceUuid, partitionId);
     }
 
-    protected final Invalidation newClearInvalidation(String dataStructureName, String sourceUuid) {
+    private Invalidation newClearInvalidation(String dataStructureName, String sourceUuid) {
         int partitionId = getPartitionId(dataStructureName);
         return newInvalidation(null, dataStructureName, sourceUuid, partitionId);
     }
 
     protected Invalidation newInvalidation(Data key, String dataStructureName, String sourceUuid, int partitionId) {
-        assert assertHeapData(key);
-
         long sequence = metaDataGenerator.nextSequence(dataStructureName, partitionId);
         UUID partitionUuid = metaDataGenerator.getOrCreateUuid(partitionId);
-        return new SingleNearCacheInvalidation(key, dataStructureName, sourceUuid, partitionUuid, sequence);
-    }
-
-    private static boolean assertHeapData(Data data) {
-        if (data != null) {
-            return data instanceof HeapData;
-        } else {
-            return true;
-        }
+        return new SingleNearCacheInvalidation(toHeapData(key), dataStructureName, sourceUuid, partitionUuid, sequence);
     }
 
     private int getPartitionId(Data o) {

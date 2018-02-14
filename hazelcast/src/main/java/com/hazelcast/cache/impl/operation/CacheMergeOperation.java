@@ -62,7 +62,8 @@ public class CacheMergeOperation extends AbstractNamedOperation implements Backu
     public CacheMergeOperation() {
     }
 
-    CacheMergeOperation(String name, List<SplitBrainMergeEntryView<Data, Data>> mergeEntries, SplitBrainMergePolicy policy) {
+    public CacheMergeOperation(String name, List<SplitBrainMergeEntryView<Data, Data>> mergeEntries,
+                               SplitBrainMergePolicy policy) {
         super(name);
         this.mergeEntries = mergeEntries;
         this.mergePolicy = policy;
