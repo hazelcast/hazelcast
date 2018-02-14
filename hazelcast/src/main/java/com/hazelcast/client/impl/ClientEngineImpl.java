@@ -302,7 +302,9 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
     public Collection<Client> getClients() {
         final HashSet<Client> clients = new HashSet<Client>();
         for (ClientEndpoint endpoint : endpointManager.getEndpoints()) {
-            clients.add((Client) endpoint);
+            if (endpoint.isAlive()) {
+                clients.add((Client) endpoint);
+            }
         }
         return clients;
     }
@@ -618,10 +620,10 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
     @Override
     public Map<ClientType, Integer> getConnectedClientStats() {
 
-        int numberOfCppClients    = 0;
+        int numberOfCppClients = 0;
         int numberOfDotNetClients = 0;
-        int numberOfJavaClients   = 0;
-        int numberOfOtherClients  = 0;
+        int numberOfJavaClients = 0;
+        int numberOfOtherClients = 0;
 
         Operation clientInfoOperation = new GetConnectedClientsOperation();
         OperationService operationService = node.nodeEngine.getOperationService();

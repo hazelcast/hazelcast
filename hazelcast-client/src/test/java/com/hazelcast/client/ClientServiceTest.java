@@ -167,6 +167,30 @@ public class ClientServiceTest extends HazelcastTestSupport {
         assertEquals(0, instance2.getClientService().getConnectedClients().size());
     }
 
+    @Test
+    public void testGetConnectedClients_whenOwnerAndClientDiesTogether() throws Exception {
+        HazelcastInstance instance1 = hazelcastFactory.newHazelcastInstance();
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient();
+        final HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance();
+
+        final String instance1Key = generateKeyOwnedBy(instance1);
+        final String instance2Key = generateKeyOwnedBy(instance2);
+
+        final IMap<Object, Object> map = client.getMap("map");
+        map.put(instance1Key, 0);
+        map.put(instance2Key, 0);
+
+        instance1.shutdown();
+        client.shutdown();
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(0, instance2.getClientService().getConnectedClients().size());
+            }
+        });
+
+    }
 
     @Test
     public void testConnectedClients() {

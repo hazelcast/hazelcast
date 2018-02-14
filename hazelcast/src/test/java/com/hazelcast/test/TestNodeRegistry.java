@@ -459,7 +459,7 @@ public final class TestNodeRegistry {
 
         @Override
         public boolean isAlive() {
-            return true;
+            return live;
         }
 
         @Override
