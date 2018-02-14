@@ -50,7 +50,7 @@ public class LegacyReplicatedMapSplitBrainTest extends SplitBrainTestSupport {
                 HigherHitsMapMergePolicy.class,
                 PutIfAbsentMapMergePolicy.class,
                 PassThroughMergePolicy.class,
-                CustomReplicatedMergePolicy.class
+                CustomReplicatedMergePolicy.class,
         });
     }
 

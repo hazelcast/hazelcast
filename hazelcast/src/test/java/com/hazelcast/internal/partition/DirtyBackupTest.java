@@ -31,32 +31,35 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
-import java.util.Arrays;
 import java.util.Collection;
 
+import static java.util.Arrays.asList;
+
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class DirtyBackupTest extends PartitionCorrectnessTestSupport {
 
-    @Parameterized.Parameters(name = "backups:{0},nodes:{1}")
+    @Parameters(name = "backups:{0},nodes:{1}")
     public static Collection<Object[]> parameters() {
-        return Arrays.asList(new Object[][]{
+        return asList(new Object[][]{
                 {1, 2},
                 {2, 3},
-                {3, 4}
+                {3, 4},
         });
     }
 
     @Test
-    public void testPartitionData_withoutAntiEntropy() throws InterruptedException {
+    public void testPartitionData_withoutAntiEntropy() {
         startInstancesAndFillPartitions(false);
         assertSizeAndDataEventually(true);
     }
 
     @Test
-    public void testPartitionData_withAntiEntropy() throws InterruptedException {
+    public void testPartitionData_withAntiEntropy() {
         startInstancesAndFillPartitions(true);
         assertSizeAndDataEventually(false);
     }

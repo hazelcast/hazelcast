@@ -29,28 +29,30 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import javax.cache.Cache;
 import javax.cache.CacheManager;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
 import static com.hazelcast.cache.impl.HazelcastServerCachingProvider.createCachingProvider;
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category(SlowTest.class)
 public class CachePartitionLostListenerStressTest extends AbstractPartitionLostListenerTest {
 
-
-    @Parameterized.Parameters(name = "numberOfNodesToCrash:{0},withData:{1},nodeLeaveType:{2},shouldExpectPartitionLostEvents:{3}")
+    @Parameters(name = "numberOfNodesToCrash:{0},withData:{1},nodeLeaveType:{2},shouldExpectPartitionLostEvents:{3}")
     public static Collection<Object[]> parameters() {
-        return Arrays.asList(new Object[][]{
+        return asList(new Object[][]{
                 {1, true, NodeLeaveType.SHUTDOWN, false},
                 {1, true, NodeLeaveType.TERMINATE, true},
                 {1, false, NodeLeaveType.SHUTDOWN, false},
@@ -62,20 +64,20 @@ public class CachePartitionLostListenerStressTest extends AbstractPartitionLostL
                 {3, true, NodeLeaveType.SHUTDOWN, false},
                 {3, true, NodeLeaveType.TERMINATE, true},
                 {3, false, NodeLeaveType.SHUTDOWN, false},
-                {3, false, NodeLeaveType.TERMINATE, true}
+                {3, false, NodeLeaveType.TERMINATE, true},
         });
     }
 
-    @Parameterized.Parameter(0)
+    @Parameter(0)
     public int numberOfNodesToCrash;
 
-    @Parameterized.Parameter(1)
+    @Parameter(1)
     public boolean withData;
 
-    @Parameterized.Parameter(2)
+    @Parameter(2)
     public NodeLeaveType nodeLeaveType;
 
-    @Parameterized.Parameter(3)
+    @Parameter(3)
     public boolean shouldExpectPartitionLostEvents;
 
     protected int getNodeCount() {

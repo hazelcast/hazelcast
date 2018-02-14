@@ -47,7 +47,7 @@ public final class ThreadLeakTestUtils {
      * We should not add classes of Hazelcast production code here, just test related classes.
      */
     private static final List<Class> THREAD_CLASS_WHITELIST = asList(new Class[]{
-            JitterThread.class
+            JitterThread.class,
     });
 
     public static Set<Thread> getThreads() {

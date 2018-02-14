@@ -30,27 +30,30 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
-import java.util.Arrays;
 import java.util.Collection;
 
 import static com.hazelcast.spi.properties.GroupProperty.PARTITION_BACKUP_SYNC_INTERVAL;
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertFalse;
 
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class AntiEntropyCleanupTest extends HazelcastTestSupport {
 
-    @Parameterized.Parameters(name = "nodeCount:{0}")
+    @Parameters(name = "nodeCount:{0}")
     public static Collection<Object[]> parameters() {
-        return Arrays.asList(new Object[][]{
+        return asList(new Object[][]{
                 {1},
-                {2}
+                {2},
         });
     }
 
-    @Parameterized.Parameter
+    @Parameter
     public int nodeCount;
 
     @Test

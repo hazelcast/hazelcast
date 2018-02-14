@@ -39,8 +39,12 @@ public class PortableDataStructure {
         public CarPortable(String name, EnginePortable engine) {
             this.name = name;
             this.engine = engine;
-            this.wheels = new Portable[]{new WheelPortable("FL"), new WheelPortable("FR"),
-                    new WheelPortable("RL"), new WheelPortable("RR")};
+            this.wheels = new Portable[]{
+                    new WheelPortable("FL"),
+                    new WheelPortable("FR"),
+                    new WheelPortable("RL"),
+                    new WheelPortable("RR"),
+            };
             this.model = new String[]{"911", "GT"};
         }
 
@@ -381,5 +385,4 @@ public class PortableDataStructure {
             }
         }
     }
-
 }

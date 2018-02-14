@@ -51,7 +51,7 @@ public class ExtractorsTest {
     public static Collection<Object[]> parameters() {
         return asList(new Object[][]{
                 {false},
-                {true}
+                {true},
         });
     }
 

@@ -87,9 +87,11 @@ class ReferenceObjects {
     static float[] floats = {900.5678f, 1.0f, 2.1f, 3.4f};
     static int[] ints = {56789, 2, 3};
     static long[] longs = {-50992225L, 1231232141L, 2L, 3L};
-    static String[] strings = {"Pijamalı hasta, yağız şoföre çabucak güvendi.",
+    static String[] strings = {
+            "Pijamalı hasta, yağız şoföre çabucak güvendi.",
             "イロハニホヘト チリヌルヲ ワカヨタレソ ツネナラム",
-            "The quick brown fox jumps over the lazy dog"};
+            "The quick brown fox jumps over the lazy dog",
+    };
 
     static Data aData = new HeapData("111313123131313131".getBytes());
 
@@ -147,5 +149,6 @@ class ReferenceObjects {
             anIdentifiedDataSerializable, aPortable,
             aDate, aBigInteger, aBigDecimal, aClass, anEnum,
             serializable, externalizable,
-            arrayList, linkedList};
+            arrayList, linkedList,
+    };
 }

@@ -61,7 +61,7 @@ public class PartitionReplicaVersionsCorrectnessStressTest extends AbstractParti
                 {3, 7, NodeLeaveType.SHUTDOWN},
                 {3, 7, NodeLeaveType.TERMINATE},
                 {6, 7, NodeLeaveType.SHUTDOWN},
-                {6, 7, NodeLeaveType.TERMINATE}
+                {6, 7, NodeLeaveType.TERMINATE},
         });
     }
 

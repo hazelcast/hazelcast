@@ -50,7 +50,7 @@ public class PredicateHzAwareTest extends HazelcastTestSupport {
     public static Collection<Object[]> parameters() {
         return asList(new Object[][]{
                 {1},
-                {3}
+                {3},
         });
     }
 

@@ -36,6 +36,9 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -57,7 +60,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class EntryProcessorOffloadableTest extends HazelcastTestSupport {
 
@@ -65,24 +68,24 @@ public class EntryProcessorOffloadableTest extends HazelcastTestSupport {
 
     private HazelcastInstance[] instances;
 
-    @Parameterized.Parameter(0)
+    @Parameter(0)
     public InMemoryFormat inMemoryFormat;
 
-    @Parameterized.Parameter(1)
+    @Parameter(1)
     public int syncBackupCount;
 
-    @Parameterized.Parameter(2)
+    @Parameter(2)
     public int asyncBackupCount;
 
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
-    @Parameterized.Parameters(name = "{index}: {0} sync={1} async={2}")
+    @Parameters(name = "{index}: {0} sync={1} async={2}")
     public static Collection<Object[]> data() {
         return asList(new Object[][]{
                 {BINARY, 0, 0}, {OBJECT, 0, 0},
                 {BINARY, 1, 0}, {OBJECT, 1, 0},
-                {BINARY, 0, 1}, {OBJECT, 0, 1}
+                {BINARY, 0, 1}, {OBJECT, 0, 1},
         });
     }
 

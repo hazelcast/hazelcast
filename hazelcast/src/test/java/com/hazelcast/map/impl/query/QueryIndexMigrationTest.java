@@ -40,6 +40,9 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -62,7 +65,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category({SlowTest.class, ParallelTest.class})
 public class QueryIndexMigrationTest extends HazelcastTestSupport {
 
@@ -85,15 +88,15 @@ public class QueryIndexMigrationTest extends HazelcastTestSupport {
         shutdownNodeFactory();
     }
 
-    @Parameterized.Parameter(0)
+    @Parameter(0)
     public IndexCopyBehavior copyBehavior;
 
-    @Parameterized.Parameters(name = "copyBehavior: {0}")
+    @Parameters(name = "copyBehavior: {0}")
     public static Collection<Object[]> parameters() {
-        return Arrays.asList(new Object[][]{
+        return Arrays.<Object[]>asList(new Object[][]{
                 {IndexCopyBehavior.COPY_ON_READ},
                 {IndexCopyBehavior.COPY_ON_WRITE},
-                {IndexCopyBehavior.NEVER}
+                {IndexCopyBehavior.NEVER},
         });
     }
 

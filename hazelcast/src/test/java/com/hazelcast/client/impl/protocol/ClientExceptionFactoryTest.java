@@ -69,6 +69,9 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import javax.cache.CacheException;
 import javax.cache.integration.CacheLoaderException;
@@ -85,7 +88,6 @@ import java.io.UTFDataFormatException;
 import java.net.SocketException;
 import java.net.URISyntaxException;
 import java.security.AccessControlException;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.ConcurrentModificationException;
 import java.util.NoSuchElementException;
@@ -94,15 +96,17 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeoutException;
 
+import static java.util.Arrays.asList;
 import static junit.framework.TestCase.assertEquals;
 
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class ClientExceptionFactoryTest extends HazelcastTestSupport {
 
-    @Parameterized.Parameter
+    @Parameter
     public Throwable throwable;
+
     private ClientExceptionFactory exceptionFactory = new ClientExceptionFactory(true);
 
     @Test
@@ -172,9 +176,9 @@ public class ClientExceptionFactoryTest extends HazelcastTestSupport {
         return true;
     }
 
-    @Parameterized.Parameters(name = "Throwable:{0}")
+    @Parameters(name = "Throwable:{0}")
     public static Iterable<Object[]> parameters() {
-        return Arrays.asList(
+        return asList(
                 new Object[]{new CacheException(randomString())},
                 new Object[]{new CacheLoaderException(randomString())},
                 new Object[]{new CacheWriterException(randomString())},
@@ -245,8 +249,10 @@ public class ClientExceptionFactoryTest extends HazelcastTestSupport {
                 new Object[]{new XAException(randomString())},
                 new Object[]{new AccessControlException(randomString())},
                 new Object[]{new LoginException(randomString())},
-                new Object[]{new UnsupportedCallbackException(new Callback() {
-                })},
+                new Object[]{
+                        new UnsupportedCallbackException(new Callback() {
+                        }),
+                },
                 new Object[]{new NoDataMemberInClusterException(randomString())},
                 new Object[]{new ReplicatedMapCantBeCreatedOnLiteMemberException(randomString())},
                 new Object[]{new MaxMessageSizeExceeded()},
@@ -266,15 +272,15 @@ public class ClientExceptionFactoryTest extends HazelcastTestSupport {
                 // custom exception in causes
                 new Object[]{new RuntimeException("blabla", new DummyUncheckedHazelcastTestException())},
                 new Object[]{new RuntimeException("fun", new RuntimeException("codec \n is \n not \n pwned"))},
-                new Object[]{new RuntimeException("fun",
-                        new RuntimeException("!@#$%^&*()'][/.,l;§!|`]:\\ľščťž /sᵻˈrɪlɪk/ Áзбука 中华民族 \n \r \t \r\n"))},
+                new Object[]{
+                        new RuntimeException("fun",
+                                new RuntimeException("!@#$%^&*()'][/.,l;§!|`]:\\ľščťž /sᵻˈrɪlɪk/ Áзбука 中华民族 \n \r \t \r\n")),
+                },
                 new Object[]{new LocalMemberResetException(randomString())},
                 new Object[]{new IndeterminateOperationStateException(randomString())},
                 new Object[]{new TargetNotReplicaException(randomString())},
                 new Object[]{new MutationDisallowedException(randomString())},
                 new Object[]{new ConsistencyLostException(randomString())}
         );
-
     }
-
 }

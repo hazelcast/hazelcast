@@ -71,7 +71,7 @@ public class ScheduledExecutorSplitBrainTest extends SplitBrainTestSupport {
     public static Collection<Object> parameters() {
         return asList(new Object[]{
                 DiscardMergePolicy.class,
-                PutIfAbsentMergePolicy.class
+                PutIfAbsentMergePolicy.class,
         });
     }
 

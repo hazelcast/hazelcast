@@ -288,21 +288,28 @@ public class DefaultPortableReaderQuickTest extends HazelcastTestSupport {
 
     @Test
     public void portableArrayFirst_withAny_primitiveArrayAtTheEnd2() throws IOException {
-        Portable[] expected = new Portable[]{((WheelPortable) PORSCHE.wheels[0]).chip,
-                ((WheelPortable) PORSCHE.wheels[1]).chip};
+        Portable[] expected = new Portable[]{
+                ((WheelPortable) PORSCHE.wheels[0]).chip,
+                ((WheelPortable) PORSCHE.wheels[1]).chip,
+        };
         assertArrayEquals(expected, reader(PORSCHE).readPortableArray("wheels[any].chip"));
     }
 
     @Test
     public void portableArrayFirst_withAny_primitiveArrayAtTheEnd3() throws IOException {
-        Portable[] expected = new Portable[]{((WheelPortable) PORSCHE.wheels[0]).chips[1],
-                ((WheelPortable) PORSCHE.wheels[1]).chips[1]};
+        Portable[] expected = new Portable[]{
+                ((WheelPortable) PORSCHE.wheels[0]).chips[1],
+                ((WheelPortable) PORSCHE.wheels[1]).chips[1],
+        };
         assertArrayEquals(expected, reader(PORSCHE).readPortableArray("wheels[any].chips[1]"));
     }
 
     @Test
     public void portableArrayFirst_withAny_primitiveArrayAtTheEnd5() throws IOException {
-        String[] expected = {"front", "rear"};
+        String[] expected = {
+                "front",
+                "rear",
+        };
         assertArrayEquals(expected, reader(PORSCHE).readUTFArray("wheels[any].name"));
     }
 
@@ -344,7 +351,7 @@ public class DefaultPortableReaderQuickTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void reusingTheReader_multipleCalls_stateResetCorreclty() throws IOException {
+    public void reusingTheReader_multipleCalls_stateResetCorrectly() throws IOException {
         PortableReader reader = reader(PORSCHE);
         assertEquals("rear", reader.readUTF("wheels[1].name"));
         assertEquals(300, reader.readInt("engine.power"));

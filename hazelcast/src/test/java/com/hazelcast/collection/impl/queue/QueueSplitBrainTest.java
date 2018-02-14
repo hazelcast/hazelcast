@@ -68,7 +68,7 @@ public class QueueSplitBrainTest extends SplitBrainTestSupport {
                 DiscardMergePolicy.class,
                 PassThroughMergePolicy.class,
                 PutIfAbsentMergePolicy.class,
-                MergeIntegerValuesMergePolicy.class
+                MergeIntegerValuesMergePolicy.class,
         });
     }
 

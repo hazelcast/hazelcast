@@ -48,7 +48,7 @@ public class ConfigDefaultsTest extends HazelcastTestSupport {
         return asList(new Object[][]{
                 {"Java - hazelcast-default.xml", JAVA_CONFIG, DEFAULT_XML_CONFIG},
                 {"Java - empty XML", JAVA_CONFIG, EMPTY_XML_CONFIG},
-                {"hazelcast-default.xml - empty XML", DEFAULT_XML_CONFIG, EMPTY_XML_CONFIG}
+                {"hazelcast-default.xml - empty XML", DEFAULT_XML_CONFIG, EMPTY_XML_CONFIG},
         });
     }
 

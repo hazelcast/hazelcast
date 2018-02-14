@@ -50,7 +50,7 @@ public class ChangeClusterStateTest extends HazelcastTestSupport {
                 {ClusterState.FROZEN, ClusterState.PASSIVE},
                 {ClusterState.PASSIVE, ClusterState.ACTIVE},
                 {ClusterState.PASSIVE, ClusterState.NO_MIGRATION},
-                {ClusterState.PASSIVE, ClusterState.FROZEN}
+                {ClusterState.PASSIVE, ClusterState.FROZEN},
         });
     }
 

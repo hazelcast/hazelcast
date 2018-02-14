@@ -56,7 +56,7 @@ public class MapPartitionLostListenerStressTest extends AbstractPartitionLostLis
                 {3, true, NodeLeaveType.SHUTDOWN, false},
                 {3, true, NodeLeaveType.TERMINATE, true},
                 {3, false, NodeLeaveType.SHUTDOWN, false},
-                {3, false, NodeLeaveType.TERMINATE, true}
+                {3, false, NodeLeaveType.TERMINATE, true},
         });
     }
 

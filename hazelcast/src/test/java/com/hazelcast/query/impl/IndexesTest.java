@@ -31,37 +31,40 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
 import static com.hazelcast.instance.TestUtil.toData;
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category(QuickTest.class)
 public class IndexesTest {
 
     private final InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
 
-    @Parameterized.Parameter(0)
+    @Parameter(0)
     public IndexCopyBehavior copyBehavior;
 
-    @Parameterized.Parameters(name = "copyBehavior: {0}")
+    @Parameters(name = "copyBehavior: {0}")
     public static Collection<Object[]> parameters() {
-        return Arrays.asList(new Object[][]{
+        return asList(new Object[][]{
                 {IndexCopyBehavior.COPY_ON_READ},
                 {IndexCopyBehavior.COPY_ON_WRITE},
-                {IndexCopyBehavior.NEVER}
+                {IndexCopyBehavior.NEVER},
         });
     }
 
     @Test
-    public void testAndWithSingleEntry() throws Exception {
+    public void testAndWithSingleEntry() {
         Indexes indexes = new Indexes(serializationService, new DefaultIndexProvider(), Extractors.empty(), true, copyBehavior);
         indexes.addOrGetIndex("name", false);
         indexes.addOrGetIndex("age", true);
@@ -83,7 +86,7 @@ public class IndexesTest {
     }
 
     @Test
-    public void testIndex() throws Exception {
+    public void testIndex() {
         Indexes indexes = new Indexes(serializationService, new DefaultIndexProvider(), Extractors.empty(), true, copyBehavior);
         indexes.addOrGetIndex("name", false);
         indexes.addOrGetIndex("age", true);
@@ -101,7 +104,7 @@ public class IndexesTest {
     }
 
     @Test
-    public void testIndex2() throws Exception {
+    public void testIndex2() {
         Indexes indexes = new Indexes(serializationService, new DefaultIndexProvider(), Extractors.empty(), true, copyBehavior);
         indexes.addOrGetIndex("name", false);
         indexes.saveEntryIndex(new QueryEntry(serializationService, toData(1), new Value("abc"), Extractors.empty()), null);
@@ -122,7 +125,7 @@ public class IndexesTest {
      * throw exception.
      */
     @Test
-    public void shouldNotThrowException_withNullValues_whenIndexAddedForValueField() throws Exception {
+    public void shouldNotThrowException_withNullValues_whenIndexAddedForValueField() {
         Indexes indexes = new Indexes(serializationService, new DefaultIndexProvider(), Extractors.empty(), true, copyBehavior);
         indexes.addOrGetIndex("name", false);
 
@@ -130,7 +133,7 @@ public class IndexesTest {
     }
 
     @Test
-    public void shouldNotThrowException_withNullValues_whenNoIndexAdded() throws Exception {
+    public void shouldNotThrowException_withNullValues_whenNoIndexAdded() {
         Indexes indexes = new Indexes(serializationService, new DefaultIndexProvider(), Extractors.empty(), true, copyBehavior);
 
         shouldReturnNull_whenQueryingOnKeys(indexes);
@@ -148,7 +151,7 @@ public class IndexesTest {
     }
 
     @Test
-    public void shouldNotThrowException_withNullValue_whenIndexAddedForKeyField() throws Exception {
+    public void shouldNotThrowException_withNullValue_whenIndexAddedForKeyField() {
         Indexes indexes = new Indexes(serializationService, new DefaultIndexProvider(), Extractors.empty(), true, copyBehavior);
         indexes.addOrGetIndex("__key", false);
 

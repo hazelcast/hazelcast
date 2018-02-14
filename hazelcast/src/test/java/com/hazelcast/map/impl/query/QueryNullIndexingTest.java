@@ -32,10 +32,12 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
@@ -43,19 +45,19 @@ import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category(QuickTest.class)
 public class QueryNullIndexingTest extends HazelcastTestSupport {
 
-    @Parameterized.Parameter(0)
+    @Parameter(0)
     public IndexCopyBehavior copyBehavior;
 
-    @Parameterized.Parameters(name = "copyBehavior: {0}")
+    @Parameters(name = "copyBehavior: {0}")
     public static Collection<Object[]> parameters() {
-        return Arrays.asList(new Object[][]{
+        return asList(new Object[][]{
                 {IndexCopyBehavior.COPY_ON_READ},
                 {IndexCopyBehavior.COPY_ON_WRITE},
-                {IndexCopyBehavior.NEVER}
+                {IndexCopyBehavior.NEVER},
         });
     }
 

@@ -67,26 +67,25 @@ public class OutboundResponseHandlerTest {
     public ByteOrder byteOrder;
 
     private OutboundResponseHandler handler;
-    private Address thisAddress;
     private InternalSerializationService serializationService;
     private ILogger logger = Logger.getLogger(OutboundResponseHandlerTest.class);
-    private Node node;
     private Address thatAddress;
     private ConnectionManager connectionManager;
 
     @Parameters(name = "{0}")
     public static Object[][] parameters() {
         return new Object[][]{
-                {BIG_ENDIAN}, {LITTLE_ENDIAN}
+                {BIG_ENDIAN},
+                {LITTLE_ENDIAN},
         };
     }
 
     @Before
     public void setup() throws Exception {
-        thisAddress = new Address("127.0.0.1", 5701);
+        Address thisAddress = new Address("127.0.0.1", 5701);
         thatAddress = new Address("127.0.0.1", 5702);
         serializationService = new DefaultSerializationServiceBuilder().setByteOrder(byteOrder).build();
-        node = mock(Node.class);
+        Node node = mock(Node.class);
         connectionManager = mock(ConnectionManager.class);
         when(node.getConnectionManager()).thenReturn(connectionManager);
         handler = new OutboundResponseHandler(thisAddress, serializationService, node, logger);

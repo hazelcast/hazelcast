@@ -77,7 +77,7 @@ public class BounceMemberRuleTest {
                     public void run() {
                         assertFalse(getMapFromTestDriver().containsKey("1"));
                     }
-                }
+                },
         });
     }
 
@@ -102,7 +102,7 @@ public class BounceMemberRuleTest {
                     public void run() {
                         assertFalse(getMapFromTestDriver().containsKey("1"));
                     }
-                }
+                },
         }, 10);
     }
 

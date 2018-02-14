@@ -59,7 +59,7 @@ public class PartitionLostListenerStressTest extends AbstractPartitionLostListen
                 {3, true, NodeLeaveType.SHUTDOWN, false},
                 {3, true, NodeLeaveType.TERMINATE, true},
                 {3, false, NodeLeaveType.SHUTDOWN, false},
-                {3, false, NodeLeaveType.TERMINATE, true}
+                {3, false, NodeLeaveType.TERMINATE, true},
         });
     }
 
