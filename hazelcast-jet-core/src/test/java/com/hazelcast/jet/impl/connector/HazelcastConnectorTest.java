@@ -37,13 +37,12 @@ import com.hazelcast.projection.Projections;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.TruePredicate;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.IntStream;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import static com.hazelcast.jet.JournalInitialPosition.START_FROM_OLDEST;
 import static com.hazelcast.jet.Util.mapPutEvents;
@@ -56,13 +55,11 @@ import static com.hazelcast.jet.core.processor.SinkProcessors.writeCacheP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeListP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeMapP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.readCacheP;
-import static com.hazelcast.jet.core.processor.SourceProcessors.readListP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.readMapP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.streamCacheP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.streamMapP;
 import static com.hazelcast.query.impl.predicates.PredicateTestUtils.entry;
 import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toList;
 import static java.util.stream.IntStream.range;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -162,7 +159,7 @@ public class HazelcastConnectorTest extends JetTestSupport {
         checkContents_projectedToNull(sinkName);
     }
 
-    public void checkContents_projectedToNull(String sinkName) {
+    private void checkContents_projectedToNull(String sinkName) {
         assertEquals(
                 IntStream.range(0, ENTRY_COUNT)
                          .filter(i -> i % 2 != 0)
@@ -227,7 +224,7 @@ public class HazelcastConnectorTest extends JetTestSupport {
         IStreamMap<Integer, Entry<Integer, String>> sourceMap = jetInstance.getMap(streamSourceName);
         range(0, ENTRY_COUNT).forEach(i -> sourceMap.put(i, entry(i, i % 2 == 0 ? null : String.valueOf(i))));
 
-        assertTrueEventually(() -> checkContents_projectedToNull(streamSinkName), 3);
+        assertTrueEventually(() -> checkContents_projectedToNull(streamSinkName));
         job.cancel();
     }
 
@@ -308,22 +305,6 @@ public class HazelcastConnectorTest extends JetTestSupport {
     }
 
     @Test
-    public void when_readList_and_writeList() {
-        IStreamList<Integer> list = jetInstance.getList(sourceName);
-        list.addAll(range(0, ENTRY_COUNT).boxed().collect(toList()));
-
-        DAG dag = new DAG();
-        Vertex source = dag.newVertex("source", readListP(sourceName)).localParallelism(1);
-        Vertex sink = dag.newVertex("sink", writeListP(sinkName)).localParallelism(1);
-
-        dag.edge(between(source, sink));
-
-        jetInstance.newJob(dag).join();
-
-        assertEquals(ENTRY_COUNT, jetInstance.getList(sinkName).size());
-    }
-
-    @Test
     public void test_defaultFilter_mapJournal() {
         DAG dag = new DAG();
         Vertex source = dag.newVertex("source", streamMapP(streamSourceName, START_FROM_OLDEST,
@@ -350,7 +331,7 @@ public class HazelcastConnectorTest extends JetTestSupport {
             e = sinkList.get(1);
             assertEquals(Integer.valueOf(1), e.getKey());
             assertEquals(Integer.valueOf(2), e.getValue());
-        }, 3);
+        });
 
         job.cancel();
     }
@@ -382,7 +363,7 @@ public class HazelcastConnectorTest extends JetTestSupport {
             e = sinkList.get(1);
             assertEquals(Integer.valueOf(1), e.getKey());
             assertEquals(Integer.valueOf(2), e.getValue());
-        }, 3);
+        });
 
         job.cancel();
     }

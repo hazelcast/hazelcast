@@ -44,13 +44,13 @@ public class SinksTest extends PipelineTestSupport {
     private static ClientConfig clientConfig;
 
     @BeforeClass
-    public static void setUp() throws Exception {
+    public static void setUp() {
         remoteHz = createRemoteCluster(2).get(0);
         clientConfig = getClientConfigForRemoteCluster(remoteHz);
     }
 
     @AfterClass
-    public static void after() throws Exception {
+    public static void after() {
         Hazelcast.shutdownAll();
     }
 

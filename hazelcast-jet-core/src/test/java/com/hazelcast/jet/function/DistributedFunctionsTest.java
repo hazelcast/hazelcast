@@ -17,35 +17,64 @@
 package com.hazelcast.jet.function;
 
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import org.junit.Assert;
+import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.jet.Util.entry;
+import static com.hazelcast.jet.function.DistributedFunctions.CONSTANT_KEY;
+import static com.hazelcast.jet.function.DistributedFunctions.alwaysFalse;
+import static com.hazelcast.jet.function.DistributedFunctions.alwaysTrue;
+import static com.hazelcast.jet.function.DistributedFunctions.constantKey;
+import static com.hazelcast.jet.function.DistributedFunctions.entryKey;
+import static com.hazelcast.jet.function.DistributedFunctions.entryValue;
+import static com.hazelcast.jet.function.DistributedFunctions.noopConsumer;
+import static com.hazelcast.jet.function.DistributedFunctions.wholeItem;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 
 @RunWith(HazelcastParallelClassRunner.class)
-public class DistributedFunctionsTest {
+public class DistributedFunctionsTest extends HazelcastTestSupport {
+
+    @Test
+    public void constructor() {
+        assertUtilityConstructor(DistributedFunctions.class);
+    }
 
     @Test
     public void when_wholeItem() {
         Object o = new Object();
-        assertSame(o, DistributedFunctions.wholeItem().apply(o));
+        assertSame(o, wholeItem().apply(o));
     }
 
     @Test
     public void when_entryKey() {
-        Assert.assertEquals(1, DistributedFunctions.entryKey().apply(entry(1, 2)));
+        assertEquals(1, entryKey().apply(entry(1, 2)));
     }
 
     @Test
     public void when_entryValue() {
-        Assert.assertEquals(2, DistributedFunctions.entryValue().apply(entry(1, 2)));
+        assertEquals(2, entryValue().apply(entry(1, 2)));
+    }
+
+    @Test
+    public void when_constantKey() {
+        assertEquals(CONSTANT_KEY, constantKey().apply(1));
+    }
+
+    @Test
+    public void when_alwaysTrue() {
+        assertEquals(true, alwaysTrue().test(3));
+    }
+
+    @Test
+    public void when_alwaysFalse() {
+        assertEquals(false, alwaysFalse().test(2));
     }
 
     @Test
     public void when_noopConsumer() {
         // assert it's non-null and doesn't fail
-        DistributedFunctions.noopConsumer().accept(1);
+        noopConsumer().accept(1);
     }
 }
