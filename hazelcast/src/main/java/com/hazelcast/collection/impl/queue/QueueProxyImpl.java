@@ -16,6 +16,7 @@
 
 package com.hazelcast.collection.impl.queue;
 
+import com.hazelcast.config.QueueConfig;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.nio.serialization.Data;
@@ -39,8 +40,8 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  */
 public class QueueProxyImpl<E> extends QueueProxySupport implements IQueue<E>, InitializingObject {
 
-    public QueueProxyImpl(String name, QueueService queueService, NodeEngine nodeEngine) {
-        super(name, queueService, nodeEngine);
+    public QueueProxyImpl(String name, QueueService queueService, NodeEngine nodeEngine, QueueConfig config) {
+        super(name, queueService, nodeEngine, config);
     }
 
     @Override

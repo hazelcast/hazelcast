@@ -59,6 +59,7 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.hazelcast.internal.config.ConfigValidator.checkScheduledExecutorConfig;
 import static com.hazelcast.spi.merge.SplitBrainEntryViews.createSplitBrainMergeEntryView;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 import static com.hazelcast.util.ExceptionUtil.peel;
@@ -184,6 +185,9 @@ public class DistributedScheduledExecutorService
 
     @Override
     public DistributedObject createDistributedObject(String name) {
+        ScheduledExecutorConfig executorConfig = nodeEngine.getConfig().findScheduledExecutorConfig(name);
+        checkScheduledExecutorConfig(executorConfig);
+
         return new ScheduledExecutorServiceProxy(name, nodeEngine, this);
     }
 

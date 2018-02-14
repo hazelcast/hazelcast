@@ -51,6 +51,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Future;
 
+import static com.hazelcast.internal.config.ConfigValidator.checkCollectionConfig;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.SetUtil.createHashSet;
 import static java.util.Collections.singleton;
@@ -71,6 +72,8 @@ public abstract class AbstractCollectionProxyImpl<S extends RemoteService, E> ex
     public void initialize() {
         final NodeEngine nodeEngine = getNodeEngine();
         CollectionConfig config = getConfig(nodeEngine);
+        checkCollectionConfig(config);
+
         final List<ItemListenerConfig> itemListenerConfigs = config.getItemListenerConfigs();
         for (ItemListenerConfig itemListenerConfig : itemListenerConfigs) {
             ItemListener listener = itemListenerConfig.getImplementation();

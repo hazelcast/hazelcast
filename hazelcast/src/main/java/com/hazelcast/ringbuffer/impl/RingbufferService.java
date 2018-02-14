@@ -68,6 +68,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.internal.config.ConfigValidator.checkRingbufferConfig;
 import static com.hazelcast.spi.merge.SplitBrainEntryViews.createSplitBrainMergeEntryView;
 import static com.hazelcast.spi.partition.MigrationEndpoint.DESTINATION;
 import static com.hazelcast.spi.partition.MigrationEndpoint.SOURCE;
@@ -141,7 +142,9 @@ public class RingbufferService implements ManagedService, RemoteService, Fragmen
 
     @Override
     public DistributedObject createDistributedObject(String objectName) {
-        final RingbufferConfig ringbufferConfig = getRingbufferConfig(objectName);
+        RingbufferConfig ringbufferConfig = getRingbufferConfig(objectName);
+        checkRingbufferConfig(ringbufferConfig);
+
         return new RingbufferProxy(nodeEngine, this, objectName, ringbufferConfig);
     }
 

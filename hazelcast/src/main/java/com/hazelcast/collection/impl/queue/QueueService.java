@@ -79,6 +79,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.internal.config.ConfigValidator.checkQueueConfig;
 import static com.hazelcast.spi.merge.SplitBrainEntryViews.createSplitBrainMergeEntryView;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
@@ -264,7 +265,10 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
 
     @Override
     public QueueProxyImpl createDistributedObject(String objectId) {
-        return new QueueProxyImpl(objectId, this, nodeEngine);
+        QueueConfig queueConfig = nodeEngine.getConfig().findQueueConfig(objectId);
+        checkQueueConfig(queueConfig);
+
+        return new QueueProxyImpl(objectId, this, nodeEngine, queueConfig);
     }
 
     @Override

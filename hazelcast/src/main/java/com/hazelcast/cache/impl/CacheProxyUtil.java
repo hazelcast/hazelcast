@@ -17,7 +17,6 @@
 package com.hazelcast.cache.impl;
 
 import com.hazelcast.config.CacheConfig;
-import com.hazelcast.internal.config.ConfigValidator;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.EmptyStatement;
@@ -26,6 +25,7 @@ import com.hazelcast.util.ExceptionUtil;
 import java.util.Map;
 import java.util.Set;
 
+import static com.hazelcast.internal.config.ConfigValidator.checkCacheConfig;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
@@ -239,6 +239,7 @@ public final class CacheProxyUtil {
     }
 
     public static <K, V> void validateCacheConfig(CacheConfig<K, V> cacheConfig) {
-        ConfigValidator.checkCacheConfig(cacheConfig.getInMemoryFormat(), cacheConfig.getEvictionConfig());
+        checkCacheConfig(cacheConfig.getInMemoryFormat(), cacheConfig.getEvictionConfig(), cacheConfig.isStatisticsEnabled(),
+                cacheConfig.getMergePolicy());
     }
 }

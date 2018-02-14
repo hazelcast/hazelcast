@@ -73,6 +73,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
+import static com.hazelcast.internal.config.ConfigValidator.checkReplicatedMapConfig;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 
 /**
@@ -239,9 +240,12 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
 
     @Override
     public DistributedObject createDistributedObject(String objectName) {
+        ReplicatedMapConfig replicatedMapConfig = getReplicatedMapConfig(objectName);
+        checkReplicatedMapConfig(replicatedMapConfig);
         if (config.isLiteMember()) {
             throw new ReplicatedMapCantBeCreatedOnLiteMemberException(nodeEngine.getThisAddress());
         }
+
         for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
             PartitionContainer partitionContainer = partitionContainers[i];
             if (partitionContainer == null) {
@@ -249,7 +253,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
             }
             partitionContainer.getOrCreateRecordStore(objectName);
         }
-        return new ReplicatedMapProxy(nodeEngine, objectName, this);
+        return new ReplicatedMapProxy(nodeEngine, objectName, this, replicatedMapConfig);
     }
 
     @Override

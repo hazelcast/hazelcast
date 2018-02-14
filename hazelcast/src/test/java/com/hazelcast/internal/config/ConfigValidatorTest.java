@@ -263,22 +263,28 @@ public class ConfigValidatorTest extends HazelcastTestSupport {
 
     @Test(expected = IllegalArgumentException.class)
     public void checkCacheConfig_whenNATIVEAndEntryCountMaxSizePolicy() {
-        CacheSimpleConfig cacheSimpleConfig = new CacheSimpleConfig();
-        cacheSimpleConfig.getEvictionConfig().setMaximumSizePolicy(EvictionConfig.MaxSizePolicy.ENTRY_COUNT);
-        cacheSimpleConfig.setInMemoryFormat(NATIVE);
+        EvictionConfig evictionConfig = new EvictionConfig()
+                .setMaximumSizePolicy(EvictionConfig.MaxSizePolicy.ENTRY_COUNT);
+        CacheSimpleConfig cacheSimpleConfig = new CacheSimpleConfig()
+                .setInMemoryFormat(NATIVE)
+                .setEvictionConfig(evictionConfig);
+
         checkCacheConfig(cacheSimpleConfig);
     }
 
     @Test
     public void checkCacheConfig_whenOBJECTAndEntryCountMaxSizePolicy() {
-        CacheSimpleConfig cacheSimpleConfig = new CacheSimpleConfig();
-        cacheSimpleConfig.getEvictionConfig().setMaximumSizePolicy(EvictionConfig.MaxSizePolicy.ENTRY_COUNT);
-        cacheSimpleConfig.setInMemoryFormat(OBJECT);
+        EvictionConfig evictionConfig = new EvictionConfig()
+                .setMaximumSizePolicy(EvictionConfig.MaxSizePolicy.ENTRY_COUNT);
+        CacheSimpleConfig cacheSimpleConfig = new CacheSimpleConfig()
+                .setInMemoryFormat(OBJECT)
+                .setEvictionConfig(evictionConfig);
+
         checkCacheConfig(cacheSimpleConfig);
     }
 
     @Test
-    public void test_checkNearCacheConfig_withPreLoaderConfig_onClients() {
+    public void checkNearCacheConfig_withPreLoaderConfig_onClients() {
         NearCacheConfig nearCacheConfig = getNearCacheConfig(BINARY)
                 .setCacheLocalEntries(false);
         nearCacheConfig.getPreloaderConfig()
@@ -290,7 +296,7 @@ public class ConfigValidatorTest extends HazelcastTestSupport {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void test_checkNearCacheConfig_withPreloader_onMembers() {
+    public void checkNearCacheConfig_withPreloaderConfig_onMembers() {
         NearCacheConfig nearCacheConfig = getNearCacheConfig(BINARY);
         nearCacheConfig.getPreloaderConfig()
                 .setEnabled(true)
@@ -301,17 +307,17 @@ public class ConfigValidatorTest extends HazelcastTestSupport {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void not_supports_near_cache_localUpdatePolicy_CACHE_ON_UPDATE() {
-        NearCacheConfig nearCacheConfig = new NearCacheConfig();
-        nearCacheConfig.setLocalUpdatePolicy(CACHE_ON_UPDATE);
+    public void checkNearCacheConfig_withLocalUpdatePolicy_CACHE_ON_UPDATE() {
+        NearCacheConfig nearCacheConfig = new NearCacheConfig()
+                .setLocalUpdatePolicy(CACHE_ON_UPDATE);
 
         checkNearCacheConfig(MAP_NAME, nearCacheConfig, null, false);
     }
 
     @Test
-    public void supports_near_cache_localUpdatePolicy_INVALIDATE() {
-        NearCacheConfig nearCacheConfig = new NearCacheConfig();
-        nearCacheConfig.setLocalUpdatePolicy(INVALIDATE);
+    public void checkNearCacheConfig_withLocalUpdatePolicy_INVALIDATE() {
+        NearCacheConfig nearCacheConfig = new NearCacheConfig()
+                .setLocalUpdatePolicy(INVALIDATE);
 
         checkNearCacheConfig(MAP_NAME, nearCacheConfig, null, false);
     }
@@ -338,8 +344,9 @@ public class ConfigValidatorTest extends HazelcastTestSupport {
 
     @Test
     public void should_not_throw_exception_with_native_memory_config_when_native_memory_used_on_ee() {
-        NativeMemoryConfig nativeMemoryConfig = new NativeMemoryConfig();
-        nativeMemoryConfig.setEnabled(true);
+        NativeMemoryConfig nativeMemoryConfig = new NativeMemoryConfig()
+                .setEnabled(true);
+
         checkNearCacheNativeMemoryConfig(InMemoryFormat.NATIVE, nativeMemoryConfig, true);
     }
 
