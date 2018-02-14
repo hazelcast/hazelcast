@@ -21,6 +21,7 @@ import com.hazelcast.cache.HazelcastCacheManager;
 import com.hazelcast.cache.impl.event.CachePartitionLostEventFilter;
 import com.hazelcast.cache.impl.journal.CacheEventJournal;
 import com.hazelcast.cache.impl.journal.RingbufferCacheEventJournalImpl;
+import com.hazelcast.cache.impl.operation.CacheCreateConfigOperation;
 import com.hazelcast.cache.impl.operation.OnJoinCacheOperation;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.CacheSimpleConfig;
@@ -33,8 +34,10 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
+import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.PartitionAwareService;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PreJoinAwareService;
@@ -214,6 +217,8 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
 
                 validateCacheConfig(cacheConfig);
                 putCacheConfigIfAbsent(cacheConfig);
+                // ensure cache config becomes available on all members before the proxy is returned to the caller
+                createCacheConfigOnAllMembers(cacheConfig);
 
                 return new CacheProxy(cacheConfig, nodeEngine, this);
             }
@@ -711,5 +716,14 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
     @Override
     public CacheEventJournal getEventJournal() {
         return eventJournal;
+    }
+
+    // creates the given CacheConfig on all members of the cluster synchronously
+    private <K, V> void createCacheConfigOnAllMembers(CacheConfig<K, V> cacheConfig) {
+        OperationService operationService = nodeEngine.getOperationService();
+        CacheCreateConfigOperation op = new CacheCreateConfigOperation(cacheConfig);
+        InternalCompletableFuture future =
+                operationService.invokeOnTarget(CacheService.SERVICE_NAME, op, nodeEngine.getThisAddress());
+        future.join();
     }
 }
