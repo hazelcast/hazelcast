@@ -61,7 +61,7 @@ public class MemberDriverFactory implements DriverFactory {
 
     /**
      * Override this method to provide custom configuration for test drivers
-     *
+     * <p>
      * When you return <code>null</code> then drivers will use the same
      * configuration as other (non-driver) members.
      *

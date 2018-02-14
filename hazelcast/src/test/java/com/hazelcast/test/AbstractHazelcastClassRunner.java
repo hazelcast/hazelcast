@@ -268,7 +268,7 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
 
     /**
      * Gets the {@link Repeat} annotation if set.
-     *
+     * <p>
      * Method level definition overrides class level definition.
      */
     private Repeat getRepeatable(FrameworkMethod method) {

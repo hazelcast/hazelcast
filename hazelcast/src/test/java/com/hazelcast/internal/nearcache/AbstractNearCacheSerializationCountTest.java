@@ -116,7 +116,7 @@ public abstract class AbstractNearCacheSerializationCountTest<NK, NV> extends Ha
 
     /**
      * The {@link NearCacheConfig} used by the Near Cache tests.
-     *
+     * <p>
      * Needs to be set by the implementations of this class in their {@link org.junit.Before} methods.
      */
     protected NearCacheConfig nearCacheConfig;

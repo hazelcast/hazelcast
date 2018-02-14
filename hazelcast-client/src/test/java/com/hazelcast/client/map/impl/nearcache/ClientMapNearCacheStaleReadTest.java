@@ -48,9 +48,9 @@ import static org.junit.Assert.fail;
 
 /**
  * A test to ensure no lost invalidations on the Near Cache.
- *
+ * <p>
  * Issue: https://github.com/hazelcast/hazelcast/issues/4671
- *
+ * <p>
  * Thanks Lukas Blunschi for this test (https://github.com/lukasblu).
  */
 @RunWith(HazelcastParallelClassRunner.class)

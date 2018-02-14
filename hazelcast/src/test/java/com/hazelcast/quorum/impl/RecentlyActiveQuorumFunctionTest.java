@@ -77,7 +77,7 @@ public class RecentlyActiveQuorumFunctionTest extends AbstractQuorumFunctionTest
             Class<?> quorumClazz = filteringClassloader.loadClass("com.hazelcast.quorum.impl.RecentlyActiveQuorumFunction");
             Constructor<?> constructor = quorumClazz.getDeclaredConstructor(Integer.TYPE, Integer.TYPE);
 
-            Object[] args = new Object[] {quorumSize, toleranceMillis};
+            Object[] args = new Object[]{quorumSize, toleranceMillis};
             return constructor.newInstance(args);
         } catch (Exception e) {
             throw new RuntimeException("Could not create new instance of RecentlyActiveQuorumFunction reflectively", e);

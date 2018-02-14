@@ -87,7 +87,7 @@ public class CacheSimpleConfigTest extends HazelcastTestSupport {
                         new EvictionConfig(1000, ENTRY_COUNT, EvictionPolicy.LFU),
                         new EvictionConfig(300, USED_NATIVE_MEMORY_PERCENTAGE, EvictionPolicy.LRU))
                 .withPrefabValues(WanReplicationRef.class,
-                        new WanReplicationRef("red", null, null,false),
+                        new WanReplicationRef("red", null, null, false),
                         new WanReplicationRef("black", null, null, true))
                 .withPrefabValues(CacheSimpleConfig.class,
                         new CacheSimpleConfig().setName("red"),

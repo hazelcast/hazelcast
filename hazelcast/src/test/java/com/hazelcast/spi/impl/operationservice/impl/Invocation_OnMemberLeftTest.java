@@ -89,12 +89,12 @@ public class Invocation_OnMemberLeftTest extends HazelcastTestSupport {
 
     @Test
     public void whenMemberRestarts_withSameAddress() throws Exception {
-       whenMemberRestarts(new Runnable() {
-           @Override
-           public void run() {
-               remote = instanceFactory.newHazelcastInstance(remoteMember.getAddress());
-           }
-       });
+        whenMemberRestarts(new Runnable() {
+            @Override
+            public void run() {
+                remote = instanceFactory.newHazelcastInstance(remoteMember.getAddress());
+            }
+        });
     }
 
     @Test

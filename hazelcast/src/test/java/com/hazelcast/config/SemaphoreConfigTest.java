@@ -51,11 +51,11 @@ public class SemaphoreConfigTest {
     @Test
     public void testEqualsAndHashCode() {
         EqualsVerifier.forClass(SemaphoreConfig.class)
-                      .allFieldsShouldBeUsedExcept("readOnly")
-                      .suppress(Warning.NONFINAL_FIELDS)
-                      .withPrefabValues(SemaphoreConfigReadOnly.class,
-                              new SemaphoreConfigReadOnly(new SemaphoreConfig().setName("red")),
-                              new SemaphoreConfigReadOnly(new SemaphoreConfig().setName("black")))
-                      .verify();
+                .allFieldsShouldBeUsedExcept("readOnly")
+                .suppress(Warning.NONFINAL_FIELDS)
+                .withPrefabValues(SemaphoreConfigReadOnly.class,
+                        new SemaphoreConfigReadOnly(new SemaphoreConfig().setName("red")),
+                        new SemaphoreConfigReadOnly(new SemaphoreConfig().setName("black")))
+                .verify();
     }
 }

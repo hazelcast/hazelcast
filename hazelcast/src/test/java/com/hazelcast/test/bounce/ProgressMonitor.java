@@ -29,7 +29,7 @@ public class ProgressMonitor {
 
     public void registerTask(Runnable task) {
         if (task instanceof BounceMemberRule.TestTaskRunable) {
-            tasks.add((BounceMemberRule.TestTaskRunable)task);
+            tasks.add((BounceMemberRule.TestTaskRunable) task);
         } else if (maximumStaleNanos != STALENESS_DETECTOR_DISABLED) {
             throw new UnsupportedOperationException("Progress checking is enabled only for automatically repeated tasks");
         }
@@ -67,12 +67,12 @@ public class ProgressMonitor {
                         .append(" ms.");
 
                 long timeInNanos = now - lastProgressLoggedNanos;
-                double timeInSeconds = (double)timeInNanos / 1000000000;
+                double timeInSeconds = (double) timeInNanos / 1000000000;
                 double progressPerSecond = progressDelta / timeInSeconds;
                 sb.append("Throughput in last ")
-                        .append((long)(timeInSeconds * 1000))
+                        .append((long) (timeInSeconds * 1000))
                         .append(" ms: ")
-                        .append((long)progressPerSecond)
+                        .append((long) progressPerSecond)
                         .append(" ops / second. ");
 
             }

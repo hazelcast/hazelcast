@@ -14,14 +14,14 @@ public class OperationTest {
 
     // test for https://github.com/hazelcast/hazelcast/issues/11375
     @Test
-    public void sendResponse_whenResponseHandlerIsNull_andThrowableValue_thenNoNPE(){
+    public void sendResponse_whenResponseHandlerIsNull_andThrowableValue_thenNoNPE() {
         Operation op = new DummyOperation();
         op.sendResponse(new Exception());
     }
 
     // test for https://github.com/hazelcast/hazelcast/issues/11375
     @Test
-    public void sendResponse_whenResponseHandlerIsNull_andNoThrowableValue_thenNoNPE(){
+    public void sendResponse_whenResponseHandlerIsNull_andNoThrowableValue_thenNoNPE() {
         Operation op = new DummyOperation();
         op.sendResponse("foo");
     }

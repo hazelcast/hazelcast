@@ -134,7 +134,7 @@ public class IOBalancerMemoryLeakTest extends HazelcastTestSupport {
     }
 
     private static IOBalancer getIoBalancer(TcpIpConnectionManager connectionManager) {
-        NioEventLoopGroup threadingModel = (NioEventLoopGroup)connectionManager.getEventLoopGroup();
+        NioEventLoopGroup threadingModel = (NioEventLoopGroup) connectionManager.getEventLoopGroup();
         return threadingModel.getIOBalancer();
     }
 }

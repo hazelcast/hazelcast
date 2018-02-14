@@ -105,9 +105,9 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * </ul>
  * </li>
  * </ul>
- *
+ * <p>
  * For examples on how to use this rule, see {@code BounceMemberRuleTest} and {@code QueryBounceTest}.
- *
+ * <p>
  * {@code BounceMemberRule} integrates with test lifecycle as described below:
  * <ol>
  * <li>{@code BounceMemberRule} creates the cluster and test drivers</li>
@@ -190,7 +190,7 @@ public class BounceMemberRule implements TestRule {
      * The {@code task} is executed in a loop until either the configured test's duration is reached or an exception
      * is thrown from the {@code task}, in which case the test is marked as failed and the exception will be propagated
      * as test failure cause.
-     *
+     * <p>
      * This method blocks until all test tasks have been completed or one of them throws an exception.
      *
      * @param concurrency
@@ -217,7 +217,7 @@ public class BounceMemberRule implements TestRule {
      * The {@code task} is executed in a loop until either the configured test's duration is reached or an exception
      * is thrown from the {@code task}, in which case the test is marked as failed and the exception will be propagated
      * as test failure cause.
-     *
+     * <p>
      * This method blocks until all test tasks have been completed or one of them throws an exception.
      *
      * @param tasks
@@ -235,7 +235,7 @@ public class BounceMemberRule implements TestRule {
     /**
      * Submit Runnables to be executed concurrently. Each {@code task} is executed once. Exceptions thrown from a {@code task}
      * will mark the test as failed and the exception will be propagated as test failure cause.
-     *
+     * <p>
      * This method blocks until all test tasks have been completed or one of them throws an exception.
      *
      * @param tasks

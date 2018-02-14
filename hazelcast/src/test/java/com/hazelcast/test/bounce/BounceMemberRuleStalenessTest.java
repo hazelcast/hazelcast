@@ -45,8 +45,8 @@ public class BounceMemberRuleStalenessTest extends HazelcastTestSupport {
         } catch (AssertionError ae) {
             long detectionDurationSeconds = NANOSECONDS.toSeconds(System.nanoTime() - startTime);
             assertTrue("Staleness detector was too slow to detect stale. "
-                    + "Maximum configured staleness in seconds: " + MAXIMUM_STALENESS_SECONDS
-                    + " and it took " + detectionDurationSeconds + " seconds to detect staleness",
+                            + "Maximum configured staleness in seconds: " + MAXIMUM_STALENESS_SECONDS
+                            + " and it took " + detectionDurationSeconds + " seconds to detect staleness",
                     detectionDurationSeconds < BOUNCING_INTERVAL_SECONDS * 4);
         }
     }

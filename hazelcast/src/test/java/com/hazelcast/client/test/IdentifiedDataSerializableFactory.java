@@ -396,7 +396,7 @@ public class IdentifiedDataSerializableFactory implements DataSerializableFactor
                 return prefix;
             }
 
-            String val = (String)value;
+            String val = (String) value;
             return prefix + val;
         }
 
@@ -483,7 +483,7 @@ public class IdentifiedDataSerializableFactory implements DataSerializableFactor
 
     @Override
     public IdentifiedDataSerializable create(int typeId) {
-        switch(typeId) {
+        switch (typeId) {
             case 1:
                 return new SampleFailingTask();
             case 2:

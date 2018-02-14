@@ -42,7 +42,7 @@ import static org.junit.Assert.assertTrue;
  * Tests for demo console application.
  */
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({ QuickTest.class })
+@Category({QuickTest.class})
 public class ConsoleAppTest extends HazelcastTestSupport {
 
     private static final PrintStream systemOutOrig = System.out;
@@ -142,11 +142,11 @@ public class ConsoleAppTest extends HazelcastTestSupport {
     public void mapGet() {
         HazelcastInstance hz = createHazelcastInstance();
         ConsoleApp consoleApp = new ConsoleApp(hz);
-        hz.<String, String> getMap("default").put("testGetKey", "testGetValue");
+        hz.<String, String>getMap("default").put("testGetKey", "testGetValue");
         consoleApp.handleCommand("m.get testGetKey");
         assertTextInSystemOut("testGetValue");
     }
-    
+
     /**
      * Tests m.putmany operation.
      */
@@ -166,7 +166,7 @@ public class ConsoleAppTest extends HazelcastTestSupport {
 
     /**
      * Asserts that given substring in in standard output buffer. Calling this method resets the buffer.
-     * 
+     *
      * @param substring
      */
     private void assertTextInSystemOut(String substring) {
@@ -187,7 +187,7 @@ public class ConsoleAppTest extends HazelcastTestSupport {
 
     /**
      * Clears standard output buffer.
-     * 
+     *
      * @return original content of the standard output
      */
     private static String resetSystemOut() {

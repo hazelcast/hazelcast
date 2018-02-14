@@ -340,7 +340,7 @@ public class ComplexTestDataStructure {
         if (limb.fingers_array != null) {
             portable.fingers_portable = new Portable[limb.fingers_array.length];
             for (int i = 0; i < limb.fingers_array.length; i++) {
-                if(limb.fingers_array[i] != null) {
+                if (limb.fingers_array[i] != null) {
                     portable.fingers_portable[i] = limb.fingers_array[i].getPortable();
                 }
             }
@@ -377,7 +377,7 @@ public class ComplexTestDataStructure {
         if (person.limbs_array != null) {
             portable.limbs_portable = new Portable[person.limbs_array.length];
             for (int i = 0; i < person.limbs_array.length; i++) {
-                if(person.limbs_array[i] != null) {
+                if (person.limbs_array[i] != null) {
                     portable.limbs_portable[i] = person.limbs_array[i].getPortable();
                 }
             }

@@ -30,8 +30,9 @@ public class PNCounterConsistencyLostTest extends BasePNCounterConsistencyLostTe
     public void setup() {
         final Config dataConfig = new Config()
                 .setProperty(GroupProperty.PARTITION_COUNT.getName(), "5")
-                .setCRDTReplicationConfig(new CRDTReplicationConfig().setReplicationPeriodMillis(Integer.MAX_VALUE)
-                                                                     .setMaxConcurrentReplicationTargets(Integer.MAX_VALUE));
+                .setCRDTReplicationConfig(new CRDTReplicationConfig()
+                        .setReplicationPeriodMillis(Integer.MAX_VALUE)
+                        .setMaxConcurrentReplicationTargets(Integer.MAX_VALUE));
         final Config liteConfig = new Config()
                 .setProperty(GroupProperty.PARTITION_COUNT.getName(), "5")
                 .setLiteMember(true);

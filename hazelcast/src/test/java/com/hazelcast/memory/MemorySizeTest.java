@@ -25,8 +25,8 @@ public class MemorySizeTest {
     @Test
     public void testEqualsAndHashCode() {
         EqualsVerifier.forClass(MemorySize.class)
-                      .allFieldsShouldBeUsed()
-                      .suppress(Warning.NONFINAL_FIELDS)
-                      .verify();
+                .allFieldsShouldBeUsed()
+                .suppress(Warning.NONFINAL_FIELDS)
+                .verify();
     }
 }

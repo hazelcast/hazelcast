@@ -208,7 +208,8 @@ public class ClientCachePartitionLostListenerTest extends HazelcastTestSupport {
     private static class EventCollectingCachePartitionLostListener
             implements CachePartitionLostListener {
 
-        private final List<CachePartitionLostEvent> events = Collections.synchronizedList(new LinkedList<CachePartitionLostEvent>());
+        private final List<CachePartitionLostEvent> events
+                = Collections.synchronizedList(new LinkedList<CachePartitionLostEvent>());
 
         public EventCollectingCachePartitionLostListener() {
         }

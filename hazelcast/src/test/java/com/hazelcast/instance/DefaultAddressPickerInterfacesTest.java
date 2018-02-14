@@ -65,8 +65,8 @@ import static org.mockito.Mockito.when;
  * </p>
  */
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({ DefaultAddressPicker.class })
-@Category({ QuickTest.class, ParallelTest.class })
+@PrepareForTest({DefaultAddressPicker.class})
+@Category({QuickTest.class, ParallelTest.class})
 public class DefaultAddressPickerInterfacesTest {
 
     private static final String SYS_PROP_PREFER_IPV4 = "java.net.preferIPv4Stack";
@@ -343,7 +343,7 @@ public class DefaultAddressPickerInterfacesTest {
         DefaultAddressPicker picker = new DefaultAddressPicker(config, hazelcastProperties, logger);
         Method method = DefaultAddressPicker.class.getDeclaredMethod("pickMatchingAddress", Collection.class);
         method.setAccessible(true);
-        Object addressDefinitionObject = method.invoke(picker, new Object[] { null });
+        Object addressDefinitionObject = method.invoke(picker, new Object[]{null});
         if (addressDefinitionObject == null) {
             return null;
         }

@@ -231,8 +231,6 @@ public class ClientMultiMapTest {
         assertTrue(mm.get(key).isEmpty());
     }
 
-
-
     @Test(expected = UnsupportedOperationException.class)
     public void testLocalKeySet() {
         final MultiMap mm = client.getMultiMap(randomString());

@@ -552,7 +552,7 @@ public class MapStoreTest extends AbstractMapStoreTest {
 
     /*
      * Test for Issue 572
-    */
+     */
     @Test(timeout = 120000)
     public void testMapstoreDeleteOnClear() {
         Config config = getConfig();

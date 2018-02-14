@@ -39,6 +39,7 @@ public class AutoBatcherTest {
 
     private AutoBatcher batcher = new AutoBatcher(3, VALIDITY, new AutoBatcher.IdBatchSupplier() {
         int base;
+
         @Override
         public IdBatch newIdBatch(int batchSize) {
             try {

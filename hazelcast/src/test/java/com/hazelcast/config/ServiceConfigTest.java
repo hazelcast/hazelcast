@@ -69,9 +69,9 @@ public class ServiceConfigTest extends HazelcastTestSupport {
     @Test
     public void testEqualsAndHashCode() {
         EqualsVerifier.forClass(ServiceConfig.class)
-                      .allFieldsShouldBeUsed()
-                      .suppress(Warning.NONFINAL_FIELDS, Warning.NULL_FIELDS)
-                      .verify();
+                .allFieldsShouldBeUsed()
+                .suppress(Warning.NONFINAL_FIELDS, Warning.NULL_FIELDS)
+                .verify();
     }
 
 }

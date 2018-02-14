@@ -60,7 +60,8 @@ public class OperationExecutorImpl_RunTest extends OperationExecutorImpl_Abstrac
         config.setProperty(PRIORITY_GENERIC_OPERATION_THREAD_COUNT.getName(), "0");
         initExecutor();
 
-        final DummyOperationRunner genericOperationHandler = ((DummyOperationRunnerFactory) handlerFactory).genericOperationHandlers.get(0);
+        final DummyOperationRunner genericOperationHandler
+                = ((DummyOperationRunnerFactory) handlerFactory).genericOperationHandlers.get(0);
         final DummyGenericOperation genericOperation = new DummyGenericOperation();
 
         PartitionSpecificCallable task = new PartitionSpecificCallable(GENERIC_PARTITION_ID) {

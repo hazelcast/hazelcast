@@ -25,8 +25,8 @@ public class NativeMemoryConfigTest {
     @Test
     public void testEqualsAndHashCode() {
         EqualsVerifier.forClass(NativeMemoryConfig.class)
-                      .allFieldsShouldBeUsed()
-                      .suppress(Warning.NONFINAL_FIELDS)
-                      .verify();
+                .allFieldsShouldBeUsed()
+                .suppress(Warning.NONFINAL_FIELDS)
+                .verify();
     }
 }

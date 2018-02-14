@@ -49,11 +49,15 @@ public class ReplicaSyncInfoTest {
         Address otherTarget = new Address("127.0.0.1", 5702);
 
         replicaSyncInfo = new ReplicaFragmentSyncInfo(partitionId, NonFragmentedServiceNamespace.INSTANCE, replicaIndex, target);
-        replicaSyncInfoSameAttributes = new ReplicaFragmentSyncInfo(partitionId, NonFragmentedServiceNamespace.INSTANCE, replicaIndex, target);
+        replicaSyncInfoSameAttributes
+                = new ReplicaFragmentSyncInfo(partitionId, NonFragmentedServiceNamespace.INSTANCE, replicaIndex, target);
 
-        replicaSyncInfoOtherTarget = new ReplicaFragmentSyncInfo(partitionId, NonFragmentedServiceNamespace.INSTANCE, replicaIndex, otherTarget);
-        replicaSyncInfoOtherPartitionId = new ReplicaFragmentSyncInfo(24, NonFragmentedServiceNamespace.INSTANCE, replicaIndex, target);
-        replicaSyncInfoOtherReplicaIndex = new ReplicaFragmentSyncInfo(partitionId, NonFragmentedServiceNamespace.INSTANCE, 43, target);
+        replicaSyncInfoOtherTarget
+                = new ReplicaFragmentSyncInfo(partitionId, NonFragmentedServiceNamespace.INSTANCE, replicaIndex, otherTarget);
+        replicaSyncInfoOtherPartitionId
+                = new ReplicaFragmentSyncInfo(24, NonFragmentedServiceNamespace.INSTANCE, replicaIndex, target);
+        replicaSyncInfoOtherReplicaIndex
+                = new ReplicaFragmentSyncInfo(partitionId, NonFragmentedServiceNamespace.INSTANCE, 43, target);
     }
 
     @Test

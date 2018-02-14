@@ -29,7 +29,7 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
 /**
  * The factory uses log4j2 internally, however loggers always
  * return true to guards such as `isFinestEnabled()` etc.
- *
+ * <p>
  * The real filtering is happening in the log4js once again.
  * Thus it covers branches guarded by is-level-enabled checks
  * yet the real logging is configurable via log4j2.xml

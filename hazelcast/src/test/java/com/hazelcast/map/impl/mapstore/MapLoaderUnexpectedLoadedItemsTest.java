@@ -67,9 +67,9 @@ public class MapLoaderUnexpectedLoadedItemsTest extends HazelcastTestSupport {
     private Config getConfig(String mapName1, DummyMapLoader mapLoader) {
         Config config = getConfig();
         config.getMapConfig(mapName1).getMapStoreConfig()
-              .setEnabled(true)
-              .setInitialLoadMode(LAZY)
-              .setImplementation(mapLoader);
+                .setEnabled(true)
+                .setInitialLoadMode(LAZY)
+                .setImplementation(mapLoader);
         return config;
     }
 

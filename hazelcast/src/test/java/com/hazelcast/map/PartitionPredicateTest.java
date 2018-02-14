@@ -154,7 +154,7 @@ public class PartitionPredicateTest extends HazelcastTestSupport {
 
     @Test
     public void executeOnEntries() {
-        PartitionPredicate<String, Integer>  lessThan10pp = new PartitionPredicate<String, Integer>(partitionKey,
+        PartitionPredicate<String, Integer> lessThan10pp = new PartitionPredicate<String, Integer>(partitionKey,
                 Predicates.lessThan("this", 10));
         Map<String, Object> result = aggMap.executeOnEntries(new EntryNoop(), lessThan10pp);
 

@@ -81,17 +81,17 @@ import static org.junit.Assert.assertThat;
 /**
  * Tests that verifies the behavior of the DefaultPortableReader.
  * All tests cases are generated, since there's a lot of possible cases due to the long lists of read* method on the reader.
- *
+ * <p>
  * The test is parametrised with 4 parameters
  * Each test execution runs one read operation on the reader.
- *
+ * <p>
  * The rationale behind these tests is to cover all possible combinations of reads using nested paths and quantifiers
  * (number or any) with all possible portable types. It's impossible to do it manually, since there's 20 supported
  * types and a read method for each one of them.
- *
+ * <p>
  * Each test case is documented, plus each test outputs it's scenario in a readable way, so you it's easy to follow
  * the test case while you run it. Also each test case shows in which method it is generated.
- *
+ * <p>
  * IF YOU SEE A FAILURE HERE:
  * - check the test output - analyse the test scenario
  * - check in which method the scenario is generated - narrow down the scope of the tests run
@@ -166,7 +166,7 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
         Object result = Invoker.invoke(reader(inputObject), readMethodNameToInvoke, pathToRead);
         if (result instanceof MultiResult) {
             MultiResult multiResult = (MultiResult) result;
-            if(multiResult.getResults().size() == 1
+            if (multiResult.getResults().size() == 1
                     && multiResult.getResults().get(0) == null && multiResult.isNullEmptyTarget()) {
                 // explode null in case of a single multi-result target result
                 result = null;
@@ -235,7 +235,7 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
     /**
      * Expands test cases for primitive non-array data types.
      * Word "primitive_" is replaced by each primitive type and the scenario is to call a wrong method type for the field.
-     *
+     * <p>
      * So, for example, for primitive byte field we call methods for other data types.
      * <ul>
      * <li>scenario(input, result.byte_, Short, adjustedPath + "byte_"),</li>
@@ -267,7 +267,7 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
     /**
      * Expands test cases for primitive array data types.
      * Word "primitive_" is replaced by each primitive type and the scenario is to call a wrong method type for the field.
-     *
+     * <p>
      * So, for example, for primitive byte field we call methods for other data types.
      * <ul>
      * <li>scenario(input, result.bytes, Short, adjustedPath + "bytes"),</li>
@@ -298,29 +298,29 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
     /**
      * Expands test cases for primitive array data types.
      * Word "primitiveArray" is replaced by each primitive array type and the scenario is expanded to for each type:
-     *
+     * <p>
      * group A:
      * <ul>
      * <li>scenario(prim(FULL), prim(FULL).bytes, ByteArray, "bytes"),</li>
      * <li>scenario(prim(NONE), prim(NONE).bytes, ByteArray, "bytes"),</li>
      * <li>scenario(prim(NULL), prim(NULL).bytes, ByteArray, "bytes"),</li>
-     *
+     * <p>
      * <li>scenario(prim(FULL), prim(FULL).bytes, ByteArray, "bytes[any]"),</li>
      * <li>scenario(prim(NONE), prim(NONE).bytes, ByteArray, "bytes[any]"),</li>
      * <li>scenario(prim(NULL), prim(NULL).bytes, ByteArray, "bytes[any]"),</li>
      * </ul>
-     *
+     * <p>
      * group B:
      * <ul>
      * <li>scenario(prim(FULL), prim(FULL).bytes[0], Byte, "bytes[0]"),</li>
      * <li>scenario(prim(FULL), prim(FULL).bytes[1], Byte, "bytes[1]"),</li>
      * <li>scenario(prim(FULL), prim(FULL).bytes[2], Byte, "bytes[2]"),</li>
-     *
+     * <p>
      * <li>for all primitives apart from UTF (exception expected)<ul>
      * <li>scenario(prim(NONE), IllegalArgumentException.class, Byte, "bytes[0]"),</li>
      * <li>scenario(prim(NULL), IllegalArgumentException.class, Byte, "bytes[1]"),</li>
      * </ul></li>
-     *
+     * <p>
      * <li>for UTF (null expected)<ul>
      * <li>scenario(prim(NONE), null, UTF, "strings[0]"),</li>
      * <li>scenario(prim(NULL), null, UTF, "strings[1]"),</li>
@@ -388,7 +388,7 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
      * Expands test cases for that navigate from portable array to a primitive field.
      * Word portableArray is replaced to: portables[0], portables[1], portables[2], portables[any]
      * Word "primitive_" is replaced by each primitive type and the scenario is expanded to for each type:
-     *
+     * <p>
      * A.) The contract is that input should somewhere on the path contain an array of Portable[] which contains objects of type
      * PrimitivePortable. For example: "portableArray.primitive_" will be expanded two-fold, the portable array and primitive
      * types will be expanded as follows:
@@ -397,12 +397,12 @@ public class DefaultPortableReaderSpecTest extends HazelcastTestSupport {
      * <li>portables[1].byte, portables[1].short, portables[1].char, ...</li>
      * <li>portables[2].byte, portables[2].short, portables[2].char, ...</li>
      * </ul>
-     *
+     * <p>
      * B.) Then the [any] case will be expanded too:
      * <ul>
      * <li>portables[any].byte, portables[any].short, portables[any].char, ... for all primitive types</li>
      * </ul>
-     *
+     * <p>
      * The expected result should be the object that contains the portable array - that's the general contract.
      * The result for assertion will be automatically calculated
      */

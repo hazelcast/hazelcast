@@ -116,16 +116,16 @@ public class QueryCacheConfigTest extends HazelcastTestSupport {
     @Test
     public void testEqualsAndHashCode() {
         EqualsVerifier.forClass(QueryCacheConfig.class)
-                      .allFieldsShouldBeUsedExcept("readOnly")
-                      .suppress(Warning.NONFINAL_FIELDS)
-                      .withPrefabValues(PredicateConfig.class,
-                              new PredicateConfig("red"), new PredicateConfig("black"))
-                      .withPrefabValues(EvictionConfig.class,
-                              new EvictionConfig(1000, ENTRY_COUNT, EvictionPolicy.LFU),
-                              new EvictionConfig(300, USED_NATIVE_MEMORY_PERCENTAGE, EvictionPolicy.LRU))
-                      .withPrefabValues(QueryCacheConfigReadOnly.class,
-                              new QueryCacheConfigReadOnly(new QueryCacheConfig("red")),
-                              new QueryCacheConfigReadOnly(new QueryCacheConfig("black")))
-                      .verify();
+                .allFieldsShouldBeUsedExcept("readOnly")
+                .suppress(Warning.NONFINAL_FIELDS)
+                .withPrefabValues(PredicateConfig.class,
+                        new PredicateConfig("red"), new PredicateConfig("black"))
+                .withPrefabValues(EvictionConfig.class,
+                        new EvictionConfig(1000, ENTRY_COUNT, EvictionPolicy.LFU),
+                        new EvictionConfig(300, USED_NATIVE_MEMORY_PERCENTAGE, EvictionPolicy.LRU))
+                .withPrefabValues(QueryCacheConfigReadOnly.class,
+                        new QueryCacheConfigReadOnly(new QueryCacheConfig("red")),
+                        new QueryCacheConfigReadOnly(new QueryCacheConfig("black")))
+                .verify();
     }
 }

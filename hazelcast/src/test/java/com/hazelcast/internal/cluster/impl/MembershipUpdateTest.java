@@ -450,7 +450,7 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
     public void memberListsConverge_whenMembershipUpdatesSent_outOfOrder() {
         Config config = new Config();
         config.setProperty(MEMBER_LIST_PUBLISH_INTERVAL_SECONDS.getName(), "1");
-        
+
         HazelcastInstance hz1 = factory.newHazelcastInstance(config);
         delayOperationsFrom(hz1, F_ID, singletonList(MEMBER_INFO_UPDATE));
 
@@ -543,7 +543,7 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         HazelcastInstance hz4 = factory.newHazelcastInstance(config);
 
         assertClusterSizeEventually(3, hz3);
-        
+
         assertMemberViewsAreSame(getMemberMap(hz1), getMemberMap(hz3));
         assertMemberViewsAreSame(getMemberMap(hz1), getMemberMap(hz4));
     }
@@ -561,8 +561,8 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         Node node = getNode(hz1);
         ClusterServiceImpl clusterService = node.getClusterService();
         MembershipManager membershipManager = clusterService.getMembershipManager();
-        
-        MembersView membersView = MembersView.createNew(membershipManager.getMemberListVersion() + 1, 
+
+        MembersView membersView = MembersView.createNew(membershipManager.getMemberListVersion() + 1,
                 asList(membershipManager.getMember(getAddress(hz1)), membershipManager.getMember(getAddress(hz2))));
 
         Operation memberUpdate = new MembersUpdateOp(membershipManager.getMember(getAddress(hz3)).getUuid(),
@@ -757,7 +757,7 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         // order is important
         List<MemberImpl> expectedMembers = new ArrayList<MemberImpl>(expectedMemberMap.getMembers());
         List<MemberImpl> actualMembers = new ArrayList<MemberImpl>(actualMemberMap.getMembers());
-        
+
         assertEquals(expectedMembers, actualMembers);
     }
 
@@ -884,6 +884,7 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
 
     private static class FailingPreJoinOpService implements PreJoinAwareService {
         static final String SERVICE_NAME = "failing-pre-join-service";
+
         @Override
         public Operation getPreJoinOperation() {
             return new FailsDeserializationOperation();
@@ -892,6 +893,7 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
 
     private static class FailingPostJoinOpService implements PostJoinAwareService {
         static final String SERVICE_NAME = "failing-post-join-service";
+
         @Override
         public Operation getPostJoinOperation() {
             return new FailsDeserializationOperation();

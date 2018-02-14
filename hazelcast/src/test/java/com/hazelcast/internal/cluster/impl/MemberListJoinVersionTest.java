@@ -79,10 +79,10 @@ public class MemberListJoinVersionTest extends HazelcastTestSupport {
     public void when_splitSubClustersMerge_then_targetClusterShouldIncrementMemberListVersion() {
         Config config = new Config();
         config.setProperty(MAX_NO_HEARTBEAT_SECONDS.getName(), "15")
-              .setProperty(HEARTBEAT_INTERVAL_SECONDS.getName(), "1")
-              .setProperty(MEMBER_LIST_PUBLISH_INTERVAL_SECONDS.getName(), "5")
-              .setProperty(MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "5")
-              .setProperty(MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "5");
+                .setProperty(HEARTBEAT_INTERVAL_SECONDS.getName(), "1")
+                .setProperty(MEMBER_LIST_PUBLISH_INTERVAL_SECONDS.getName(), "5")
+                .setProperty(MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "5")
+                .setProperty(MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "5");
         HazelcastInstance member1 = factory.newHazelcastInstance(config);
         HazelcastInstance member2 = factory.newHazelcastInstance(config);
         HazelcastInstance member3 = factory.newHazelcastInstance(config);

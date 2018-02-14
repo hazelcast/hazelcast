@@ -25,8 +25,8 @@ public class TcpIpConfigTest {
     @Test
     public void testEqualsAndHashCode() {
         EqualsVerifier.forClass(TcpIpConfig.class)
-                      .allFieldsShouldBeUsed()
-                      .suppress(Warning.NONFINAL_FIELDS)
-                      .verify();
+                .allFieldsShouldBeUsed()
+                .suppress(Warning.NONFINAL_FIELDS)
+                .verify();
     }
 }

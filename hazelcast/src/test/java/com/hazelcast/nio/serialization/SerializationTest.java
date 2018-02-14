@@ -533,7 +533,8 @@ public class SerializationTest extends HazelcastTestSupport {
             DynamicProxyTestClassLoader cl = new DynamicProxyTestClassLoader(current);
             Thread.currentThread().setContextClassLoader(cl);
             SerializationService ss = new DefaultSerializationServiceBuilder().setClassLoader(cl).build();
-            IObjectA oa = (IObjectA) Proxy.newProxyInstance(current, new Class[]{IObjectA.class}, DummyInvocationHandler.INSTANCE);
+            IObjectA oa
+                    = (IObjectA) Proxy.newProxyInstance(current, new Class[]{IObjectA.class}, DummyInvocationHandler.INSTANCE);
             Data data = ss.toData(oa);
             Object o = ss.toObject(data);
             Assert.assertSame("context classloader is not used", cl, o.getClass().getClassLoader());
@@ -554,7 +555,8 @@ public class SerializationTest extends HazelcastTestSupport {
         DynamicProxyTestClassLoader cl1 = new DynamicProxyTestClassLoader(current, IPrivateObjectB.class.getName());
         DynamicProxyTestClassLoader cl2 = new DynamicProxyTestClassLoader(cl1, IPrivateObjectC.class.getName());
         SerializationService ss = new DefaultSerializationServiceBuilder().setClassLoader(cl2).build();
-        Object ocd = Proxy.newProxyInstance(current, new Class[]{IPrivateObjectB.class, IPrivateObjectC.class}, DummyInvocationHandler.INSTANCE);
+        Object ocd
+                = Proxy.newProxyInstance(current, new Class[]{IPrivateObjectB.class, IPrivateObjectC.class}, DummyInvocationHandler.INSTANCE);
         Data data = ss.toData(ocd);
         try {
             ss.toObject(data);

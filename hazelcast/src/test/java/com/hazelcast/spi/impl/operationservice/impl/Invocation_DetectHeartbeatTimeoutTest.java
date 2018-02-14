@@ -120,7 +120,7 @@ public class Invocation_DetectHeartbeatTimeoutTest extends HazelcastTestSupport 
     /**
      * This test checks if the invocation expires eventually after the operation did manage to execute and did manage to send
      * some heartbeats but for whatever reason the response was not received.
-     *
+     * <p>
      * We do this by sending in a void operation that runs for an long period (so there are heartbeats) but on completion it
      * doesn't send a response.
      */

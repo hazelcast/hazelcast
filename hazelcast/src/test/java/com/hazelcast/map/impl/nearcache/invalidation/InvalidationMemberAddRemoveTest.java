@@ -72,7 +72,8 @@ public class InvalidationMemberAddRemoveTest extends NearCacheTestSupport {
         }
 
         // a new member comes with Near Cache configured
-        final Config config2 = createConfig().addMapConfig(createMapConfig(mapName).setNearCacheConfig(createNearCacheConfig(mapName)));
+        final Config config2 = createConfig().addMapConfig(createMapConfig(mapName)
+                .setNearCacheConfig(createNearCacheConfig(mapName)));
         final HazelcastInstance nearCachedMember = factory.newHazelcastInstance(config2);
         final IMap<Integer, Integer> nearCachedMap = nearCachedMember.getMap(mapName);
 

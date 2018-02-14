@@ -43,7 +43,7 @@ public class MapEventConstructor extends AbstractStarterObjectConstructor {
         Integer eventTypeId = (Integer) entryEventType.getClass().getMethod("getType").invoke(entryEventType);
         Object numberOfKeysAffected = getFieldValueReflectively(delegate, "numberOfEntriesAffected");
 
-        Object[] args = new Object[] {source, member, eventTypeId.intValue(), numberOfKeysAffected};
+        Object[] args = new Object[]{source, member, eventTypeId.intValue(), numberOfKeysAffected};
 
         Object[] proxiedArgs = proxyArgumentsIfNeeded(args, starterClassLoader);
 

@@ -53,7 +53,9 @@ import static org.mockito.Mockito.when;
 @Category({QuickTest.class, ParallelTest.class})
 public class FlakeIdGeneratorProxyTest {
 
-    /** Available number of IDs per second from single member */
+    /**
+     * Available number of IDs per second from single member
+     */
     private static final int IDS_PER_SECOND = 1 << BITS_SEQUENCE;
     private static final ILogger LOG = Logger.getLogger(FlakeIdGeneratorProxyTest.class);
 
@@ -118,8 +120,8 @@ public class FlakeIdGeneratorProxyTest {
     public void test_idsOrdered() {
         long lastId = -1;
         for (long now = EPOCH_START;
-                now < EPOCH_START + (1L << BITS_TIMESTAMP);
-                now += 365L * 24L * 60L * 60L * 1000L) {
+             now < EPOCH_START + (1L << BITS_TIMESTAMP);
+             now += 365L * 24L * 60L * 60L * 1000L) {
             long base = gen.newIdBaseLocal(now, 1234, 1).idBatch.base();
             LOG.info("at " + new Date(now) + ", id=" + base);
             assertTrue("lastId=" + lastId + ", newId=" + base, lastId < base);
@@ -164,7 +166,7 @@ public class FlakeIdGeneratorProxyTest {
         // By assigning MIN_VALUE idOffset we'll offset the default epoch start by (Long.MIN_VALUE >> 22) ms, that is
         // by about 69 years. So the lowest working date will be:
         before(Long.MIN_VALUE);
-        long id= gen.newIdBaseLocal(EPOCH_START, 1234, 1).idBatch.base();
+        long id = gen.newIdBaseLocal(EPOCH_START, 1234, 1).idBatch.base();
         LOG.info("ID=" + id);
         assertEquals(-9223372036854774574L, id);
     }
@@ -174,7 +176,7 @@ public class FlakeIdGeneratorProxyTest {
         // By assigning MIN_VALUE idOffset we'll offset the default epoch start by (Long.MIN_VALUE >> 22) ms, that is
         // by about 69 years. So the lowest working date will be:
         before(Long.MAX_VALUE);
-        long id= gen.newIdBaseLocal(EPOCH_START, 1234, 1).idBatch.base();
+        long id = gen.newIdBaseLocal(EPOCH_START, 1234, 1).idBatch.base();
         LOG.info("ID=" + id);
         assertEquals(9223372036850582738L, id);
     }
@@ -197,7 +199,6 @@ public class FlakeIdGeneratorProxyTest {
         assertTrue(newFlakeGenValue > largestIdGeneratorValue);
         assertTrue(newFlakeGenValue - largestIdGeneratorValue < MINUTES.toMillis(10) * (1 << (BITS_NODE_ID + BITS_SEQUENCE)));
     }
-
 
 
     // #### Tests pertaining to wait time ####

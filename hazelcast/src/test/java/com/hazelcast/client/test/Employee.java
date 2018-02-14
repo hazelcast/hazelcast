@@ -109,24 +109,24 @@ class Employee implements Portable {
         name = reader.readUTF("n");
         age = reader.readInt("a");
 
-        by = reader.readByte("b");;
-        c = reader.readChar("c");;
-        bool = reader.readBoolean("bo");;
-        s = reader.readShort("s");;
-        i = reader.readInt("i");;
-        l = reader.readLong("l");;
-        f = reader.readFloat("f");;
-        d = reader.readDouble("d");;
-        str = reader.readUTF("str");;
-        utfStr = reader.readUTF("utfstr");;
+        by = reader.readByte("b");
+        c = reader.readChar("c");
+        bool = reader.readBoolean("bo");
+        s = reader.readShort("s");
+        i = reader.readInt("i");
+        l = reader.readLong("l");
+        f = reader.readFloat("f");
+        d = reader.readDouble("d");
+        str = reader.readUTF("str");
+        utfStr = reader.readUTF("utfstr");
 
-        byteArray = reader.readByteArray("bb");;
-        charArray = reader.readCharArray("cc");;
-        boolArray = reader.readBooleanArray("ba");;
-        shortArray = reader.readShortArray("ss");;
-        integerArray = reader.readIntArray("ii");;
-        floatArray = reader.readFloatArray("ff");;
-        doubleArray = reader.readDoubleArray("dd");;
+        byteArray = reader.readByteArray("bb");
+        charArray = reader.readCharArray("cc");
+        boolArray = reader.readBooleanArray("ba");
+        shortArray = reader.readShortArray("ss");
+        integerArray = reader.readIntArray("ii");
+        floatArray = reader.readFloatArray("ff");
+        doubleArray = reader.readDoubleArray("dd");
 
         ObjectDataInput in = reader.getRawDataInput();
         by = (Byte) in.readObject();
@@ -144,4 +144,3 @@ class Employee implements Portable {
         return age;
     }
 }
-

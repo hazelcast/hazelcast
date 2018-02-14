@@ -53,8 +53,8 @@ public class QueryBounceTest {
 
     @Rule
     public BounceMemberRule bounceMemberRule = BounceMemberRule.with(getConfig())
-                                                               .clusterSize(4)
-                                                               .driverCount(4).build();
+            .clusterSize(4)
+            .driverCount(4).build();
 
     @Rule
     public JitterRule jitterRule = new JitterRule();

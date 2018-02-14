@@ -120,7 +120,8 @@ public class MapPartitionLostListenerStressTest extends AbstractPartitionLostLis
     }
 
     private List<TestEventCollectingMapPartitionLostListener> registerListeners(HazelcastInstance instance) {
-        List<TestEventCollectingMapPartitionLostListener> listeners = new ArrayList<TestEventCollectingMapPartitionLostListener>();
+        List<TestEventCollectingMapPartitionLostListener> listeners
+                = new ArrayList<TestEventCollectingMapPartitionLostListener>();
         for (int i = 0; i < getNodeCount(); i++) {
             TestEventCollectingMapPartitionLostListener listener = new TestEventCollectingMapPartitionLostListener(i);
             instance.getMap(getIthMapName(i)).addPartitionLostListener(listener);

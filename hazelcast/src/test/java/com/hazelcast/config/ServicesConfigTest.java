@@ -24,9 +24,9 @@ public class ServicesConfigTest {
     @Test
     public void testEqualsAndHashCode() {
         EqualsVerifier.forClass(ServicesConfig.class)
-                      .allFieldsShouldBeUsed()
-                      .suppress(Warning.NONFINAL_FIELDS, Warning.NULL_FIELDS)
-                      .verify();
+                .allFieldsShouldBeUsed()
+                .suppress(Warning.NONFINAL_FIELDS, Warning.NULL_FIELDS)
+                .verify();
     }
 
 }

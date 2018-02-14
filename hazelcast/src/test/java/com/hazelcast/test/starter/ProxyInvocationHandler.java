@@ -95,10 +95,9 @@ class ProxyInvocationHandler implements InvocationHandler, Serializable {
     }
 
     /**
-     *
      * @param targetClassLoader the classloader on which the proxy will be created
-     * @param delegate    the object to be delegated to by the proxy
-     * @return                  a proxy to delegate
+     * @param delegate          the object to be delegated to by the proxy
+     * @return a proxy to delegate
      */
     private Object proxyReturnObject(ClassLoader targetClassLoader, Object delegate) {
         Object resultingProxy;
@@ -132,7 +131,8 @@ class ProxyInvocationHandler implements InvocationHandler, Serializable {
                 Class<?> parameterType = parameterTypes[i];
                 ClassLoader parameterTypeClassloader = parameterType.getClassLoader();
                 ClassLoader delegateClassLoader = delegateClass.getClassLoader();
-                if (parameterTypeClassloader != String.class.getClassLoader() && parameterTypeClassloader != delegateClassLoader) {
+                if (parameterTypeClassloader != String.class.getClassLoader() &&
+                        parameterTypeClassloader != delegateClassLoader) {
                     try {
                         Class<?> delegateParameterType = delegateClassLoader.loadClass(parameterType.getName());
                         parameterTypes[i] = delegateParameterType;

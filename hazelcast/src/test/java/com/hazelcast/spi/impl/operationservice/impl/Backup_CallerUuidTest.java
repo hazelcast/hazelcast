@@ -36,7 +36,7 @@ import static org.junit.Assert.assertEquals;
 
 /**
  * A unit test that verifies that there is no need to explicitly pass the callerUuid.
- *
+ * <p>
  * See the following PR for more detail:
  * https://github.com/hazelcast/hazelcast/pull/8173
  */

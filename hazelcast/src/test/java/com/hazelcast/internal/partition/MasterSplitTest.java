@@ -65,7 +65,8 @@ public class MasterSplitTest extends HazelcastTestSupport {
     }
 
     private MigrationInfo createMigrationInfo(HazelcastInstance master, HazelcastInstance nonMaster) {
-        MigrationInfo migration = new MigrationInfo(getPartitionId(nonMaster), getAddress(nonMaster), getNode(nonMaster).getThisUuid(),
+        MigrationInfo migration
+                = new MigrationInfo(getPartitionId(nonMaster), getAddress(nonMaster), getNode(nonMaster).getThisUuid(),
                 getAddress(master), getNode(master).getThisUuid(), 0, 1, -1, 0);
         migration.setMaster(getAddress(nonMaster));
         return migration;

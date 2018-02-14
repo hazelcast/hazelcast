@@ -71,7 +71,8 @@ public class GlobalMemoryAccessorRegistryTest extends AbstractUnsafeDependentMem
     }
 
     private void checkAlignmentAwareMemoryAccessorAvailable() {
-        MemoryAccessor memoryAccessor = GlobalMemoryAccessorRegistry.getGlobalMemoryAccessor(GlobalMemoryAccessorType.ALIGNMENT_AWARE);
+        MemoryAccessor memoryAccessor
+                = GlobalMemoryAccessorRegistry.getGlobalMemoryAccessor(GlobalMemoryAccessorType.ALIGNMENT_AWARE);
         if (AlignmentAwareMemoryAccessor.isAvailable()) {
             assertNotNull(memoryAccessor);
             assertTrue(memoryAccessor instanceof AlignmentAwareMemoryAccessor);

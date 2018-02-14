@@ -684,7 +684,8 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertTrue(configObject.boolProp);
         Object impl = serviceConfig.getImplementation();
         assertNotNull(impl);
-        assertTrue("expected service of class com.hazelcast.spring.MyService but it is " + impl.getClass().getName(), impl instanceof MyService);
+        assertTrue("expected service of class com.hazelcast.spring.MyService but it is "
+                + impl.getClass().getName(), impl instanceof MyService);
     }
 
     @Test

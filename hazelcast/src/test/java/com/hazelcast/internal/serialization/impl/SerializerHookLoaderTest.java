@@ -91,7 +91,8 @@ public class SerializerHookLoaderTest extends HazelcastTestSupport {
             SerializerHookLoader hook = new SerializerHookLoader(serializationConfig, classLoader);
             Map<Class, Object> serializers = hook.getSerializers();
 
-            TestSerializerHook.TestSerializerWithTypeConstructor serializer = (TestSerializerHook.TestSerializerWithTypeConstructor)
+            TestSerializerHook.TestSerializerWithTypeConstructor serializer
+                    = (TestSerializerHook.TestSerializerWithTypeConstructor)
                     serializers.get(SampleIdentifiedDataSerializable.class);
             assertNull(serializer.getClazz());
         } finally {

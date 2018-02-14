@@ -234,7 +234,8 @@ public class InvalidationMemberAddRemoveTest extends ClientNearCacheTestSupport 
             }
 
             private MetaDataGenerator getMetaDataGenerator() {
-                CacheEventHandler cacheEventHandler = ((CacheService) ((CacheProxy) memberCache).getService()).getCacheEventHandler();
+                CacheEventHandler cacheEventHandler
+                        = ((CacheService) ((CacheProxy) memberCache).getService()).getCacheEventHandler();
                 return cacheEventHandler.getMetaDataGenerator();
             }
 

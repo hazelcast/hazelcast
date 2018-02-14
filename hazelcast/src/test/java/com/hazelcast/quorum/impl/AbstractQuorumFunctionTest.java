@@ -78,8 +78,7 @@ public class AbstractQuorumFunctionTest
             for (Member member : members) {
                 if (quorumFunction instanceof HeartbeatAware) {
                     ((HeartbeatAware) quorumFunction).onHeartbeat(member, timestamp);
-                }
-                else {
+                } else {
                     fail("Tested QuorumFunction should be heartbeat aware");
                 }
             }
@@ -124,10 +123,10 @@ public class AbstractQuorumFunctionTest
         Config config = new Config();
         IcmpFailureDetectorConfig icmpFDConfig = new IcmpFailureDetectorConfig();
         icmpFDConfig.setEnabled(true)
-                    .setFailFastOnStartup(false)
-                    .setIntervalMilliseconds(1000)
-                    .setMaxAttempts(3)
-                    .setParallelMode(true);
+                .setFailFastOnStartup(false)
+                .setIntervalMilliseconds(1000)
+                .setMaxAttempts(3)
+                .setParallelMode(true);
         config.getNetworkConfig().setIcmpFailureDetectorConfig(icmpFDConfig);
         return config;
     }

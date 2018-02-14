@@ -32,11 +32,11 @@ public class QueueStoreConfigTest {
     @Test
     public void testEqualsAndHashCode() {
         EqualsVerifier.forClass(QueueStoreConfig.class)
-                      .allFieldsShouldBeUsedExcept("readOnly")
-                      .suppress(Warning.NONFINAL_FIELDS)
-                      .withPrefabValues(QueueStoreConfigReadOnly.class,
-                              new QueueStoreConfigReadOnly(new QueueStoreConfig().setClassName("red")),
-                              new QueueStoreConfigReadOnly(new QueueStoreConfig().setClassName("black")))
-                      .verify();
+                .allFieldsShouldBeUsedExcept("readOnly")
+                .suppress(Warning.NONFINAL_FIELDS)
+                .withPrefabValues(QueueStoreConfigReadOnly.class,
+                        new QueueStoreConfigReadOnly(new QueueStoreConfig().setClassName("red")),
+                        new QueueStoreConfigReadOnly(new QueueStoreConfig().setClassName("black")))
+                .verify();
     }
 }

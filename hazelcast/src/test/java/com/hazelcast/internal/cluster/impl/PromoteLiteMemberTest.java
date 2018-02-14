@@ -167,7 +167,7 @@ public class PromoteLiteMemberTest extends HazelcastTestSupport {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
 
         HazelcastInstance hz = factory.newHazelcastInstance(new Config().setLiteMember(true));
-        
+
         hz.getCluster().promoteLocalLiteMember();
         assertFalse(getMember(hz).isLiteMember());
         assertAllNormalMembers(hz.getCluster());

@@ -25,8 +25,8 @@ public class SocketInterceptorConfigTest {
     @Test
     public void testEqualsAndHashCode() {
         EqualsVerifier.forClass(SocketInterceptorConfig.class)
-                      .allFieldsShouldBeUsed()
-                      .suppress(Warning.NONFINAL_FIELDS)
-                      .verify();
+                .allFieldsShouldBeUsed()
+                .suppress(Warning.NONFINAL_FIELDS)
+                .verify();
     }
 }

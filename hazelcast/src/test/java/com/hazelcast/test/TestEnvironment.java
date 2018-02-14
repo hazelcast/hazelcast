@@ -29,6 +29,7 @@ public final class TestEnvironment {
      * followed by a random UUID to avoid clashes.
      * For example {@code -Dhazelcast.test.sample.serialized.objects=/home/hz/tmp/objects-} will create files
      * {@code /home/hz/tmp/objects-UUID.index} and {@code /home/hz/tmp/objects-UUID.samples}.
+     *
      * @see SamplingSerializationService
      */
     public static final String SAMPLE_SERIALIZED_OBJECTS = "hazelcast.test.sample.serialized.objects";

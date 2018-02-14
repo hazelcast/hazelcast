@@ -27,10 +27,11 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.CharBuffer;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.LinkedList;
+
+import static java.util.Arrays.asList;
 
 class ReferenceObjects {
 
@@ -97,19 +98,19 @@ class ReferenceObjects {
     static CustomByteArraySerializable aCustomByteArraySerializable = new CustomByteArraySerializable(anInt, aFloat);
     static Portable[] portables = {anInnerPortable, anInnerPortable, anInnerPortable};
 
-    static AnIdentifiedDataSerializable anIdentifiedDataSerializable =
-            new AnIdentifiedDataSerializable(aBoolean, aByte, aChar, aDouble, aShort, aFloat, anInt, aLong, aString,
-                    booleans, bytes, chars, doubles, shorts, floats, ints, longs, strings,
-                    anInnerPortable,
-                    (AnIdentifiedDataSerializable) null,
-                    aCustomStreamSerializable,
-                    aCustomByteArraySerializable, aData);
-    static APortable aPortable =
-            new APortable(aBoolean, aByte, aChar, aDouble, aShort, aFloat, anInt, aLong, aString, anInnerPortable,
-                    booleans, bytes, chars, doubles, shorts, floats, ints, longs, strings, portables,
-                    anIdentifiedDataSerializable,
-                    aCustomStreamSerializable,
-                    aCustomByteArraySerializable, aData);
+    static AnIdentifiedDataSerializable anIdentifiedDataSerializable = new AnIdentifiedDataSerializable(
+            aBoolean, aByte, aChar, aDouble, aShort, aFloat, anInt, aLong, aString,
+            booleans, bytes, chars, doubles, shorts, floats, ints, longs, strings,
+            anInnerPortable,
+            (AnIdentifiedDataSerializable) null,
+            aCustomStreamSerializable,
+            aCustomByteArraySerializable, aData);
+    static APortable aPortable = new APortable(
+            aBoolean, aByte, aChar, aDouble, aShort, aFloat, anInt, aLong, aString, anInnerPortable,
+            booleans, bytes, chars, doubles, shorts, floats, ints, longs, strings, portables,
+            anIdentifiedDataSerializable,
+            aCustomStreamSerializable,
+            aCustomByteArraySerializable, aData);
 
     static Date aDate;
 
@@ -129,17 +130,18 @@ class ReferenceObjects {
     static Serializable serializable = new AJavaSerialiazable(anInt, aFloat);
     static Externalizable externalizable = new AJavaExternalizable(anInt, aFloat);
 
-    static ArrayList arrayList =
-            new ArrayList(Arrays.asList(aNullObject, aBoolean, aByte, aChar, aDouble, aShort, aFloat, anInt, aLong, aString, anInnerPortable,
-                    booleans, bytes, chars, doubles, shorts, floats, ints, longs, strings,
-                    aCustomStreamSerializable, aCustomByteArraySerializable,
-                    anIdentifiedDataSerializable, aPortable,
-                    aDate, aBigInteger, aBigDecimal, aClass, anEnum,
-                    serializable, externalizable));
+    static ArrayList arrayList = new ArrayList(asList(
+            aNullObject, aBoolean, aByte, aChar, aDouble, aShort, aFloat, anInt, aLong, aString, anInnerPortable,
+            booleans, bytes, chars, doubles, shorts, floats, ints, longs, strings,
+            aCustomStreamSerializable, aCustomByteArraySerializable,
+            anIdentifiedDataSerializable, aPortable,
+            aDate, aBigInteger, aBigDecimal, aClass, anEnum,
+            serializable, externalizable));
 
     static LinkedList linkedList = new LinkedList(arrayList);
 
-    static Object[] allTestObjects = {aNullObject, aBoolean, aByte, aChar, aDouble, aShort, aFloat, anInt, aLong, aString, anInnerPortable,
+    static Object[] allTestObjects = {
+            aNullObject, aBoolean, aByte, aChar, aDouble, aShort, aFloat, anInt, aLong, aString, anInnerPortable,
             booleans, bytes, chars, doubles, shorts, floats, ints, longs, strings,
             aCustomStreamSerializable, aCustomByteArraySerializable,
             anIdentifiedDataSerializable, aPortable,

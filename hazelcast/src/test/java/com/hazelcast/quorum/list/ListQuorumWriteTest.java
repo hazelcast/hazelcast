@@ -127,7 +127,7 @@ public class ListQuorumWriteTest extends AbstractQuorumTest {
     public void setOperation_successful_whenQuorumSize_met() {
         try {
             list(0).set(0, "bar");
-        } catch(IndexOutOfBoundsException ex) {
+        } catch (IndexOutOfBoundsException ex) {
             // meaningless
         }
     }

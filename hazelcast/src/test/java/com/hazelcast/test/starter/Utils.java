@@ -23,7 +23,7 @@ public class Utils {
 
     public static RuntimeException rethrow(Exception e) {
         if (e instanceof RuntimeException) {
-            throw (RuntimeException)e;
+            throw (RuntimeException) e;
         }
         throw new GuardianException(e);
     }

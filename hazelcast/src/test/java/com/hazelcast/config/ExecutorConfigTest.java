@@ -56,11 +56,11 @@ public class ExecutorConfigTest {
     @Test
     public void testEqualsAndHashCode() {
         EqualsVerifier.forClass(ExecutorConfig.class)
-                      .allFieldsShouldBeUsedExcept("readOnly")
-                      .suppress(Warning.NULL_FIELDS, Warning.NONFINAL_FIELDS)
-                      .withPrefabValues(ExecutorConfigReadOnly.class,
-                              new ExecutorConfigReadOnly(new ExecutorConfig("red")),
-                              new ExecutorConfigReadOnly(new ExecutorConfig("black")))
-                      .verify();
+                .allFieldsShouldBeUsedExcept("readOnly")
+                .suppress(Warning.NULL_FIELDS, Warning.NONFINAL_FIELDS)
+                .withPrefabValues(ExecutorConfigReadOnly.class,
+                        new ExecutorConfigReadOnly(new ExecutorConfig("red")),
+                        new ExecutorConfigReadOnly(new ExecutorConfig("black")))
+                .verify();
     }
 }

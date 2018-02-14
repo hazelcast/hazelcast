@@ -113,7 +113,7 @@ public class JCacheCacheManagerDITest {
     @Test
     public void testCacheWithListeners_dependenciesInjected() {
         Cache cacheWithPartitionLostListener = springCacheManager.getCacheManager()
-                                                                 .getCache("cacheWithListeners");
+                .getCache("cacheWithListeners");
 
         cacheWithPartitionLostListener.get(1);
 

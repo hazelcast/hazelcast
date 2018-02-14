@@ -201,8 +201,12 @@ public class TestFragmentedMigrationAwareService extends TestAbstractMigrationAw
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
 
             Key key = (Key) o;
             return partitionId == key.partitionId && name.equals(key.name);

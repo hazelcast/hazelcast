@@ -34,8 +34,10 @@ import static org.junit.Assert.assertEquals;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
 public class PNCounterBounceTest extends AbstractCRDTBounceTest {
+
     private static final String TEST_PN_COUNTER_NAME = "counter";
     private static final ILogger LOGGER = Logger.getLogger(PNCounterBounceTest.class);
+
     private final AtomicLong assertionCounter = new AtomicLong();
     private final Random rnd = new Random();
 

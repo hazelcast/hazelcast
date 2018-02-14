@@ -52,8 +52,9 @@ public class PNCounterBasicIntegrationTest extends BasePNCounterBasicIntegration
                 .setStatisticsEnabled(true);
         final Config config = new Config()
                 .setProperty(GroupProperty.PARTITION_COUNT.getName(), "5")
-                .setCRDTReplicationConfig(new CRDTReplicationConfig().setReplicationPeriodMillis(200)
-                                                                     .setMaxConcurrentReplicationTargets(Integer.MAX_VALUE))
+                .setCRDTReplicationConfig(new CRDTReplicationConfig()
+                        .setReplicationPeriodMillis(200)
+                        .setMaxConcurrentReplicationTargets(Integer.MAX_VALUE))
                 .addPNCounterConfig(counterConfig);
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         instances = factory.newInstances(config);

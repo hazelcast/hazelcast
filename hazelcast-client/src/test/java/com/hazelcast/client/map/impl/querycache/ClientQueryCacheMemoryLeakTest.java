@@ -388,7 +388,8 @@ public class ClientQueryCacheMemoryLeakTest extends HazelcastTestSupport {
     }
 
     private static boolean hasAnyListenerRegistered(QueryCacheEventService eventService, String mapName) {
-        ConcurrentMap<String, QueryCacheToListenerMapper> registrations = ((ClientQueryCacheEventService) eventService).getRegistrations();
+        ConcurrentMap<String, QueryCacheToListenerMapper> registrations
+                = ((ClientQueryCacheEventService) eventService).getRegistrations();
         QueryCacheToListenerMapper queryCacheToListenerMapper = registrations.get(mapName);
         return queryCacheToListenerMapper != null && queryCacheToListenerMapper.hasAnyQueryCacheRegistered();
     }

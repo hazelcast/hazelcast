@@ -50,11 +50,11 @@ public class MapIndexConfigTest {
     @Test
     public void testEqualsAndHashCode() {
         EqualsVerifier.forClass(MapIndexConfig.class)
-                      .allFieldsShouldBeUsedExcept("readOnly")
-                      .suppress(Warning.NONFINAL_FIELDS)
-                      .withPrefabValues(MapIndexConfigReadOnly.class,
-                              new MapIndexConfigReadOnly(new MapIndexConfig("red", false)),
-                              new MapIndexConfigReadOnly(new MapIndexConfig("black", true)))
-                      .verify();
+                .allFieldsShouldBeUsedExcept("readOnly")
+                .suppress(Warning.NONFINAL_FIELDS)
+                .withPrefabValues(MapIndexConfigReadOnly.class,
+                        new MapIndexConfigReadOnly(new MapIndexConfig("red", false)),
+                        new MapIndexConfigReadOnly(new MapIndexConfig("black", true)))
+                .verify();
     }
 }

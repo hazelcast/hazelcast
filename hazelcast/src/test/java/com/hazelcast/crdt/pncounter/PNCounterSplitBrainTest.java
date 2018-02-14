@@ -66,7 +66,7 @@ public class PNCounterSplitBrainTest extends SplitBrainTestSupport {
     protected Config config() {
         Config config = super.config();
         config.getPNCounterConfig(counterName)
-              .setReplicaCount(replicaCount);
+                .setReplicaCount(replicaCount);
         return config;
     }
 

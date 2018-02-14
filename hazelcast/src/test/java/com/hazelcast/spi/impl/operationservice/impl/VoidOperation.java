@@ -25,7 +25,7 @@ import java.io.IOException;
 
 /**
  * An operation that doesn't return a response.
- *
+ * <p>
  * This is practical for testing heartbeats and timeouts
  * when the caller is going to wait for a response.
  */

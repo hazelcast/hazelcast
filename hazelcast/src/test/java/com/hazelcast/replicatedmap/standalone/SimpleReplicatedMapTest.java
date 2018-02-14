@@ -107,7 +107,8 @@ public class SimpleReplicatedMapTest {
             System.out.println();
         }
 
-        SimpleReplicatedMapTest test = new SimpleReplicatedMapTest(threadCount, entryCount, valueSize, getPercentage, putPercentage, load);
+        SimpleReplicatedMapTest test
+                = new SimpleReplicatedMapTest(threadCount, entryCount, valueSize, getPercentage, putPercentage, load);
         test.start();
     }
 

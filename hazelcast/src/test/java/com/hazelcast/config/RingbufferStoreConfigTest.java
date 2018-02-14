@@ -111,11 +111,11 @@ public class RingbufferStoreConfigTest {
     @Test
     public void testEqualsAndHashCode() {
         EqualsVerifier.forClass(RingbufferStoreConfig.class)
-                      .allFieldsShouldBeUsedExcept("readOnly")
-                      .suppress(Warning.NONFINAL_FIELDS)
-                      .withPrefabValues(RingbufferStoreConfigReadOnly.class,
-                              new RingbufferStoreConfigReadOnly(new RingbufferStoreConfig().setClassName("red")),
-                              new RingbufferStoreConfigReadOnly(new RingbufferStoreConfig().setClassName("black")))
-                      .verify();
+                .allFieldsShouldBeUsedExcept("readOnly")
+                .suppress(Warning.NONFINAL_FIELDS)
+                .withPrefabValues(RingbufferStoreConfigReadOnly.class,
+                        new RingbufferStoreConfigReadOnly(new RingbufferStoreConfig().setClassName("red")),
+                        new RingbufferStoreConfigReadOnly(new RingbufferStoreConfig().setClassName("black")))
+                .verify();
     }
 }

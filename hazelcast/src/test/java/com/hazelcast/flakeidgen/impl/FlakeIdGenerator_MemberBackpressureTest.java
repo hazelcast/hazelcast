@@ -38,9 +38,9 @@ public class FlakeIdGenerator_MemberBackpressureTest extends FlakeIdGenerator_Ab
         instance = factory.newHazelcastInstance(new Config().addFlakeIdGeneratorConfig(new FlakeIdGeneratorConfig("gen")
                 .setPrefetchCount(BATCH_SIZE)));
     }
+
     @After
     public void after() {
         factory.shutdownAll();
     }
-
 }

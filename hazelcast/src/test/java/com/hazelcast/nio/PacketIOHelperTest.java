@@ -57,7 +57,8 @@ public class PacketIOHelperTest extends HazelcastTestSupport {
     private PacketIOHelper packetWriter;
     private PacketIOHelper packetReader;
 
-    private final Person person = new Person(111, 123L, 89.56d, "test-person", new SerializationConcurrencyTest.Address("street", 987));
+    private final Person person
+            = new Person(111, 123L, 89.56d, "test-person", new SerializationConcurrencyTest.Address("street", 987));
 
     private final PortablePerson portablePerson = new PortablePerson(222, 456L, "portable-person",
             new PortableAddress("street", 567));

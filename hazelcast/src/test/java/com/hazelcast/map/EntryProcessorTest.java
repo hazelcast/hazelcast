@@ -1875,7 +1875,8 @@ public class EntryProcessorTest extends HazelcastTestSupport {
 
         OperationFactory operationFactory = new BinaryOperationFactory(operation, nodeEngineImpl);
 
-        Map<Integer, Object> partitionResponses = operationService.invokeOnAllPartitions(MapService.SERVICE_NAME, operationFactory);
+        Map<Integer, Object> partitionResponses
+                = operationService.invokeOnAllPartitions(MapService.SERVICE_NAME, operationFactory);
 
         for (Object response : partitionResponses.values()) {
             assertEquals(0, ((MapEntries) response).size());

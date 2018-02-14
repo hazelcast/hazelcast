@@ -66,7 +66,8 @@ public abstract class TestAbstractMigrationAwareService<N> implements ManagedSer
         onBeforeMigration(event);
     }
 
-    protected void onBeforeMigration(PartitionMigrationEvent event) {}
+    protected void onBeforeMigration(PartitionMigrationEvent event) {
+    }
 
     @Override
     public final void commitMigration(PartitionMigrationEvent event) {
@@ -76,7 +77,8 @@ public abstract class TestAbstractMigrationAwareService<N> implements ManagedSer
         onCommitMigration(event);
     }
 
-    protected void onCommitMigration(PartitionMigrationEvent event) {}
+    protected void onCommitMigration(PartitionMigrationEvent event) {
+    }
 
     @Override
     public void rollbackMigration(PartitionMigrationEvent event) {
@@ -86,7 +88,8 @@ public abstract class TestAbstractMigrationAwareService<N> implements ManagedSer
         onRollbackMigration(event);
     }
 
-    protected void onRollbackMigration(PartitionMigrationEvent event) {}
+    protected void onRollbackMigration(PartitionMigrationEvent event) {
+    }
 
     public List<PartitionMigrationEvent> getBeforeEvents() {
         synchronized (beforeEvents) {

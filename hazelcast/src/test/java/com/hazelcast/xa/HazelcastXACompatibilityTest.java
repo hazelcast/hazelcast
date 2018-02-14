@@ -115,8 +115,9 @@ public class HazelcastXACompatibilityTest extends HazelcastTestSupport {
         try {
             xaResource.rollback(xid);
         } catch (XAException xaerr) {
-            assertTrue("rollback of unknown xid gives unexpected errorCode: " + xaerr.errorCode, ((XAException.XA_RBBASE <= xaerr.errorCode) && (xaerr.errorCode <= XAException.XA_RBEND))
-                    || xaerr.errorCode == XAException.XAER_NOTA);
+            assertTrue("rollback of unknown xid gives unexpected errorCode: " + xaerr.errorCode,
+                    ((XAException.XA_RBBASE <= xaerr.errorCode) && (xaerr.errorCode <= XAException.XA_RBEND))
+                            || xaerr.errorCode == XAException.XAER_NOTA);
         }
     }
 

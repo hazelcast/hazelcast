@@ -229,9 +229,9 @@ public class ReliableTopicConfigTest {
     @Test
     public void testEqualsAndHashCode() {
         EqualsVerifier.forClass(ReliableTopicConfig.class)
-                      .allFieldsShouldBeUsed()
-                      .suppress(Warning.NULL_FIELDS, Warning.NONFINAL_FIELDS)
-                      .verify();
+                .allFieldsShouldBeUsed()
+                .suppress(Warning.NULL_FIELDS, Warning.NONFINAL_FIELDS)
+                .verify();
     }
 
 }

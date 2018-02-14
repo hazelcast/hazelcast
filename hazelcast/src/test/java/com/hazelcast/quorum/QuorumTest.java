@@ -366,8 +366,8 @@ public class QuorumTest extends HazelcastTestSupport {
         Config config = new Config();
         config.setProperty(GroupProperty.MAX_NO_HEARTBEAT_SECONDS.getName(), "10");
         QuorumConfig probabilisticQuorumConfig = QuorumConfig.newProbabilisticQuorumConfigBuilder("prob-quorum", 3)
-                                                             .withAcceptableHeartbeatPauseMillis(13000)
-                                                             .build();
+                .withAcceptableHeartbeatPauseMillis(13000)
+                .build();
 
         config.addQuorumConfig(probabilisticQuorumConfig);
 
@@ -379,8 +379,8 @@ public class QuorumTest extends HazelcastTestSupport {
         Config config = new Config();
         config.setProperty(GroupProperty.HEARTBEAT_INTERVAL_SECONDS.getName(), "5");
         QuorumConfig probabilisticQuorumConfig = QuorumConfig.newProbabilisticQuorumConfigBuilder("prob-quorum", 3)
-                                                             .withAcceptableHeartbeatPauseMillis(3000)
-                                                             .build();
+                .withAcceptableHeartbeatPauseMillis(3000)
+                .build();
 
         config.addQuorumConfig(probabilisticQuorumConfig);
 
