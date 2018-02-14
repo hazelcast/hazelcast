@@ -133,5 +133,4 @@ public class RestartingMemberIteratorTest extends HazelcastTestSupport {
         //this should throw NoSuchElementException
         iterator.next();
     }
-
 }

@@ -311,4 +311,3 @@ public class Long2ObjectHashMapTest {
         assertEquals(count, longToObjectMap.size());
     }
 }
-

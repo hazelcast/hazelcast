@@ -132,4 +132,3 @@ public class StoreLatencyPlugin_MapIntegrationTest extends HazelcastTestSupport 
         return mapConfig;
     }
 }
-

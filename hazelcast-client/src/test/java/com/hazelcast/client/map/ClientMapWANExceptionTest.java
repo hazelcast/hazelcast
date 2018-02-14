@@ -96,4 +96,3 @@ public class ClientMapWANExceptionTest extends HazelcastTestSupport {
         return target;
     }
 }
-

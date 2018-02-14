@@ -97,4 +97,3 @@ public class ClientLoggerConfigurationTest extends HazelcastTestSupport {
         assertSame(expectedLoggerClass, clientLoggerClass);
     }
 }
-

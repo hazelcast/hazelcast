@@ -33,4 +33,3 @@ public class CancellationAwareTask implements Callable<Boolean>, Serializable {
         return Boolean.TRUE;
     }
 }
-

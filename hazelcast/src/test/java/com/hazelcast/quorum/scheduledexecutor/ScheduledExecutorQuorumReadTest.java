@@ -79,4 +79,3 @@ public class ScheduledExecutorQuorumReadTest extends AbstractQuorumTest {
         return scheduledExec(index, quorumType);
     }
 }
-

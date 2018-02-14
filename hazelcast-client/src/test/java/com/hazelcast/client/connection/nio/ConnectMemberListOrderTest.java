@@ -104,4 +104,3 @@ public class ConnectMemberListOrderTest extends ClientTestSupport {
     }
 
 }
-

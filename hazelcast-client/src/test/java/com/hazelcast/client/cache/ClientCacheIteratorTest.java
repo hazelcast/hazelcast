@@ -50,4 +50,3 @@ public class ClientCacheIteratorTest extends CacheIteratorAbstractTest {
     }
 
 }
-
