@@ -915,7 +915,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
             int maxSize,
             int partitionId,
             com.hazelcast.util.function.Predicate<? super EventJournalMapEvent<K, V>> predicate,
-            Projection<? super EventJournalMapEvent<K, V>, T> projection) {
+            Projection<? super EventJournalMapEvent<K, V>, ? extends T> projection) {
         final ManagedContext context = serializationService.getManagedContext();
         context.initialize(predicate);
         context.initialize(projection);
