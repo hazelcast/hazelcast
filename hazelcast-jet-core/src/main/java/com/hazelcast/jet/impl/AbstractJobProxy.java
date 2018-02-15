@@ -199,9 +199,12 @@ public abstract class AbstractJobProxy<T> implements Job {
             Throwable ex = peel(t);
             if (ex instanceof LocalMemberResetException) {
                 String msg = "Job " + idToString(jobId) + " failed because the cluster is performing split-brain merge";
-                logger.fine(msg, ex);
+                logger.warning(msg, ex);
                 future.completeExceptionally(new CancellationException(msg));
             } else if (!isRestartable(ex)) {
+                String msg = "Job " + idToString(jobId)
+                        + " failed because it has received a non-restartable exception during submission";
+                logger.warning(msg, ex);
                 future.completeExceptionally(ex);
             } else {
                 try {
@@ -221,7 +224,7 @@ public abstract class AbstractJobProxy<T> implements Job {
             // job data will be cleaned up eventually by coordinator
             String msg = "Job " + idToString(jobId) + " failed because the cluster is performing "
                     + " split-brain merge and coordinator is not known";
-            logger.fine(msg, t);
+            logger.warning(msg, t);
             future.completeExceptionally(new CancellationException(msg));
         }
     }
@@ -239,7 +242,7 @@ public abstract class AbstractJobProxy<T> implements Job {
             Throwable ex = peel(t);
             if (ex instanceof LocalMemberResetException) {
                 String msg = "Job " + idToString(jobId) + " failed because the cluster is performing split-brain merge";
-                logger.fine(msg, ex);
+                logger.warning(msg, ex);
                 future.internalCompleteExceptionally(new CancellationException(msg));
             } else if (!isRestartable(ex)) {
                 future.internalCompleteExceptionally(ex);
@@ -261,7 +264,7 @@ public abstract class AbstractJobProxy<T> implements Job {
             // job data will be cleaned up eventually by coordinator
             String msg = "Job " + idToString(jobId) + " failed because the cluster is performing "
                     + " split-brain merge and coordinator is not known";
-            logger.fine(msg, t);
+            logger.warning(msg, t);
             future.internalCompleteExceptionally(new CancellationException(msg));
         }
     }
