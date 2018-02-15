@@ -36,6 +36,7 @@ import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.util.Clock;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -43,9 +44,11 @@ import org.junit.runner.RunWith;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -122,6 +125,71 @@ public class EvictionTest extends HazelcastTestSupport {
         map.put(1, "value2", 300, TimeUnit.SECONDS);
         sleepSeconds(2);
 
+        assertTrue(map.containsKey(1));
+    }
+
+    @Test
+    public void testTTL_prolongationAfterNonTTLUpdate_Quick() {
+        final IMap<Integer, String> map = createSimpleMap();
+
+        map.put(1, "value0", 3, TimeUnit.SECONDS);
+        // 1 second safety margin before eviction
+        sleepSeconds(2);
+        assertTrue(map.containsKey(1));
+
+        // this should prolong the life of the entry for another 3 seconds
+        map.put(1, "value1");
+        // 4 seconds of wait time in total, 1 second safety margin after a potential eviction
+        sleepSeconds(2);
+        assertTrue(map.containsKey(1));
+    }
+
+    @Test
+    @Category(SlowTest.class)
+    public void testTTL_prolongationAfterNonTTLUpdate_Slow() throws ExecutionException, InterruptedException {
+        final IMap<Integer, String> map = createSimpleMap();
+
+        map.put(1, "value0", 3, TimeUnit.SECONDS);
+        // 1 second safety margin before eviction
+        sleepSeconds(2);
+        assertTrue(map.containsKey(1));
+
+        // this should prolong the life of the entry for another 3 seconds
+        map.put(1, "value1");
+        // 4 seconds of wait time in total, 1 second safety margin after a potential eviction
+        sleepSeconds(2);
+        assertTrue(map.containsKey(1));
+
+        map.set(1, "value2");
+        sleepSeconds(2);
+        assertTrue(map.containsKey(1));
+
+        final HashMap<Integer, String> items = new HashMap<Integer, String>();
+        items.put(1, "value3");
+        items.put(2, "value1");
+        items.put(3, "value1");
+        map.putAll(items);
+        sleepSeconds(2);
+        assertTrue(map.containsKey(1));
+
+        map.putAsync(1, "value4").get();
+        sleepSeconds(2);
+        assertTrue(map.containsKey(1));
+
+        map.setAsync(1, "value5").get();
+        sleepSeconds(2);
+        assertTrue(map.containsKey(1));
+
+        assertTrue(map.tryPut(1, "value6", 333, TimeUnit.MILLISECONDS));
+        sleepSeconds(2);
+        assertTrue(map.containsKey(1));
+
+        map.replace(1, "value7");
+        sleepSeconds(2);
+        assertTrue(map.containsKey(1));
+
+        map.replace(1, "value7", "value8");
+        sleepSeconds(2);
         assertTrue(map.containsKey(1));
     }
 
