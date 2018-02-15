@@ -71,26 +71,6 @@
         </plugins>
     </build>
 
-    <profiles>
-        <profile>
-            <id>test</id>
-            <activation>
-                <file>
-                    <exists>${basedir}/src/test/resources/sample-pojo-1.0-person.jar</exists>
-                </file>
-            </activation>
-            <dependencies>
-                <dependency>
-                    <groupId>sample-person</groupId>
-                    <artifactId>com.sample</artifactId>
-                    <version>1.0</version>
-                    <scope>system</scope>
-                    <systemPath>${basedir}/src/test/resources/sample-pojo-1.0-person.jar</systemPath>
-                </dependency>
-            </dependencies>
-        </profile>
-    </profiles>
-
     <dependencies>
         <dependency>
             <groupId>com.hazelcast.jet</groupId>

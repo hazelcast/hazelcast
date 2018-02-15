@@ -49,6 +49,7 @@ public class SinksTest extends PipelineTestSupport {
     @BeforeClass
     public static void setUp() {
         Config config = new Config();
+        config.getGroupConfig().setName(randomName());
         config.addCacheConfig(new CacheSimpleConfig().setName("*"));
         remoteHz = createRemoteCluster(config, 2).get(0);
         clientConfig = getClientConfigForRemoteCluster(remoteHz);

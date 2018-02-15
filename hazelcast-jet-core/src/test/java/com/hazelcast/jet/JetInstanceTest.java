@@ -41,7 +41,7 @@ public class JetInstanceTest extends JetTestSupport {
     public ExpectedException expectedException = ExpectedException.none();
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         Hazelcast.shutdownAll();
         Jet.shutdownAll();
     }

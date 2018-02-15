@@ -34,7 +34,7 @@ public class LoadPersonIsolated extends AbstractProcessor {
 
     @Override
     public boolean complete() {
-        ClassLoader cl = getClass().getClassLoader();
+        ClassLoader cl = Thread.currentThread().getContextClassLoader();
         try {
             cl.loadClass("com.sample.pojo.person.Person$Appereance");
         } catch (ClassNotFoundException e) {

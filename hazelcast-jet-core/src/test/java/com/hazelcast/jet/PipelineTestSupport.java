@@ -134,6 +134,7 @@ public abstract class PipelineTestSupport extends TestInClusterSupport {
         ClientConfig clientConfig = new ClientConfig();
         Address address = instance.getCluster().getLocalMember().getAddress();
         clientConfig.getNetworkConfig().addAddress(address.getHost() + ':' + address.getPort());
+        clientConfig.getGroupConfig().setName(instance.getConfig().getGroupConfig().getName());
         return clientConfig;
     }
 

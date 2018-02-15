@@ -56,6 +56,7 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
     @BeforeClass
     public static void setUp() {
         Config config = new Config();
+        config.getGroupConfig().setName(randomName());
         config.addCacheConfig(new CacheSimpleConfig().setName("*"));
         config.getMapEventJournalConfig(JOURNALED_MAP_PREFIX + '*').setEnabled(true);
         config.getCacheEventJournalConfig(JOURNALED_CACHE_PREFIX + '*').setEnabled(true);

@@ -16,28 +16,25 @@
 
 package com.hazelcast.jet.impl.deployment;
 
-import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.JetTestInstanceFactory;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.util.FilteringClassLoader;
 import org.junit.After;
 import org.junit.runner.RunWith;
 
-import java.lang.reflect.Method;
-import java.util.Collections;
+import static java.util.Collections.singletonList;
 
 @RunWith(HazelcastSerialClassRunner.class)
 public class DeploymentTest extends AbstractDeploymentTest {
 
     private JetInstance instance;
-    private Object isolatedNode;
-
+    private JetTestInstanceFactory factory;
 
     @After
     public void tearDown() {
-        Jet.shutdownAll();
-        shutdownIsolatedNode();
+        factory.shutdownAll();
     }
 
     @Override
@@ -47,32 +44,13 @@ public class DeploymentTest extends AbstractDeploymentTest {
 
     @Override
     protected void createCluster() {
-        JetConfig jetConfig = new JetConfig();
-        instance = Jet.newJetInstance(jetConfig);
-        Thread thread = Thread.currentThread();
-        ClassLoader tccl = thread.getContextClassLoader();
-        try {
-            isolatedNode = createIsolatedNode(thread,
-                    new FilteringClassLoader(Collections.singletonList("deployment"), "com.hazelcast"));
-        } catch (Exception e) {
-            throw new RuntimeException("Could not start isolated Hazelcast instance", e);
-        } finally {
-            thread.setContextClassLoader(tccl);
-        }
-    }
+        factory = new JetTestInstanceFactory();
+        instance = factory.newMember();
 
-    private void shutdownIsolatedNode() {
-        if (isolatedNode == null) {
-            return;
-        }
-        try {
-            Class<?> instanceClass = isolatedNode.getClass();
-            Method method = instanceClass.getMethod("shutdown");
-            method.invoke(isolatedNode);
-            isolatedNode = null;
-        } catch (Exception e) {
-            throw new RuntimeException("Could not start shutdown Hazelcast instance", e);
-        }
+        JetConfig jetConfig = new JetConfig();
+        FilteringClassLoader filteringClassLoader = new FilteringClassLoader(singletonList("deployment"), null);
+        jetConfig.getHazelcastConfig().setClassLoader(filteringClassLoader);
+        factory.newMember(jetConfig);
     }
 
 

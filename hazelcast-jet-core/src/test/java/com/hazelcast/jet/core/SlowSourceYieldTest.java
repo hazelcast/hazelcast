@@ -16,17 +16,16 @@
 
 package com.hazelcast.jet.core;
 
-import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.JetTestInstanceFactory;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import java.util.stream.IntStream;
+import javax.annotation.Nonnull;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
-import javax.annotation.Nonnull;
-import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.Traversers.traverseStream;
 import static com.hazelcast.jet.core.Edge.between;
@@ -38,15 +37,17 @@ import static org.junit.Assert.assertTrue;
 public class SlowSourceYieldTest {
 
     private JetInstance instance;
+    private JetTestInstanceFactory factory;
 
     @Before
     public void before() {
-        instance = Jet.newJetInstance();
+        factory = new JetTestInstanceFactory();
+        instance = factory.newMember();
     }
 
     @After
     public void after() {
-        Jet.shutdownAll();
+        factory.shutdownAll();
     }
 
     @Test

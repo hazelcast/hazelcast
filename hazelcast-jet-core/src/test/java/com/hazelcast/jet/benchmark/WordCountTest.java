@@ -92,6 +92,7 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
         JetConfig config = new JetConfig();
         config.getInstanceConfig().setCooperativeThreadCount(PARALLELISM);
         Config hazelcastConfig = config.getHazelcastConfig();
+        hazelcastConfig.getGroupConfig().setName(randomName());
         final JoinConfig join = hazelcastConfig.getNetworkConfig().getJoin();
         join.getMulticastConfig().setEnabled(false);
         join.getTcpIpConfig().setEnabled(true).addMember("127.0.0.1");
