@@ -192,6 +192,8 @@ public class FlakeIdGeneratorProxy
 
         long waitTime = Math.max(0, ((base + batchSize - now) >> BITS_SEQUENCE) - ALLOWED_FUTURE_MILLIS);
         base = base << BITS_NODE_ID | nodeId;
+
+        getService().incrementStatsForNewId(name);
         return new IdBatchAndWaitTime(new IdBatch(base, INCREMENT, batchSize), waitTime);
     }
 

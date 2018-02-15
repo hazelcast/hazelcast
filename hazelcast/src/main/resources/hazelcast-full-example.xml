@@ -1642,6 +1642,7 @@ https://hazelcast.org/documentation/.
             don't care about ordering, set this value to 0.
 
             This setting pertains only to newId() calls made on the member that configured it.
+
         * <id-offset>:
             Sets the offset that will be added to the returned IDs. Default value is 0. Setting might be
             useful when migrating from IdGenerator, default value works for all green-field projects.
@@ -1655,11 +1656,15 @@ https://hazelcast.org/documentation/.
 
             Negative values are allowed to increase the lifespan of the generator, however keep in
             mind that the generated IDs might also be negative.
+
+        * <statistics-enabled>:
+            When you enable it, you can retrieve the Flake ID generators statistics. Its default value is true.
     -->
     <flake-id-generator name="default">
         <prefetch-count>100</prefetch-count>
         <prefetch-validity-millis>600000</prefetch-validity-millis>
         <id-offset>0</id-offset>
+        <statistics-enabled>true</statistics-enabled>
     </flake-id-generator>
 
     <!--

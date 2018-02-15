@@ -29,6 +29,7 @@ import com.hazelcast.core.Client;
 import com.hazelcast.core.Member;
 import com.hazelcast.crdt.pncounter.PNCounterService;
 import com.hazelcast.executor.impl.DistributedExecutorService;
+import com.hazelcast.flakeidgen.impl.FlakeIdGeneratorService;
 import com.hazelcast.hotrestart.HotRestartService;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.MemberImpl;
@@ -39,6 +40,7 @@ import com.hazelcast.internal.management.dto.ClusterHotRestartStatusDTO;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.monitor.LocalExecutorStats;
+import com.hazelcast.monitor.LocalFlakeIdGeneratorStats;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.LocalMemoryStats;
 import com.hazelcast.monitor.LocalMultiMapStats;
@@ -254,6 +256,9 @@ public class TimedMemberStateFactory {
                 } else if (service instanceof PNCounterService) {
                     count = handlePNCounter(memberState, count, config, ((PNCounterService) service).getStats(),
                             longInstanceNames);
+                } else if (service instanceof FlakeIdGeneratorService) {
+                    count = handleFlakeIdGenerator(memberState, count, config,
+                            ((FlakeIdGeneratorService) service).getStats(), longInstanceNames);
                 }
             }
         }
@@ -278,6 +283,22 @@ public class TimedMemberStateFactory {
             }
         }
         timedMemberState.setInstanceNames(longInstanceNames);
+    }
+
+    private int handleFlakeIdGenerator(MemberStateImpl memberState, int count, Config config,
+            Map<String, LocalFlakeIdGeneratorStats> flakeIdstats, List<String> longInstanceNames) {
+        for (Map.Entry<String, LocalFlakeIdGeneratorStats> entry : flakeIdstats.entrySet()) {
+            String name = entry.getKey();
+            if (count >= maxVisibleInstanceCount) {
+                break;
+            } else if (config.findFlakeIdGeneratorConfig(name).isStatisticsEnabled()) {
+                LocalFlakeIdGeneratorStats stats = entry.getValue();
+                memberState.putLocalFlakeIdStats(name, stats);
+                longInstanceNames.add("f:" + name);
+                ++count;
+            }
+        }
+        return count;
     }
 
     private int handleExecutorService(MemberStateImpl memberState, int count, Config config,

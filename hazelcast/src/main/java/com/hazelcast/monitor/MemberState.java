@@ -50,6 +50,8 @@ public interface MemberState extends JsonSerializable {
 
     LocalWanStats getLocalWanStats(String schemeName);
 
+    LocalFlakeIdGeneratorStats getLocalFlakeIdGeneratorStats(String flakeIdName);
+
     Collection<ClientEndPointDTO> getClients();
 
     MXBeansDTO getMXBeans();

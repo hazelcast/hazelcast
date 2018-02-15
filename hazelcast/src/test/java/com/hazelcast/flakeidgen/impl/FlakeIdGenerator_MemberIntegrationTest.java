@@ -18,6 +18,7 @@ package com.hazelcast.flakeidgen.impl;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
+import com.hazelcast.monitor.LocalFlakeIdGeneratorStats;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -34,6 +35,10 @@ import org.junit.runner.RunWith;
 
 import static com.hazelcast.instance.BuildInfoProvider.HAZELCAST_INTERNAL_OVERRIDE_VERSION;
 import static com.hazelcast.internal.cluster.Versions.V3_9;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+import java.util.Map;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -74,5 +79,20 @@ public class FlakeIdGenerator_MemberIntegrationTest extends HazelcastTestSupport
         FlakeIdGenerator gen = instance.getFlakeIdGenerator("gen");
         exception.expect(UnsupportedOperationException.class);
         gen.newId();
+    }
+
+    @Test
+    public void statistics() {
+        HazelcastInstance instance = factory.newHazelcastInstance();
+
+        FlakeIdGenerator gen = instance.getFlakeIdGenerator("gen");
+        gen.newId();
+
+        FlakeIdGeneratorService service = getNodeEngineImpl(instance).getService(FlakeIdGeneratorService.SERVICE_NAME);
+        Map<String, LocalFlakeIdGeneratorStats> stats = service.getStats();
+        assertTrue(!stats.isEmpty());
+        assertTrue(stats.containsKey("gen"));
+        LocalFlakeIdGeneratorStats genStats = stats.get("gen");
+        assertEquals(1L, genStats.getUsageCount());
     }
 }

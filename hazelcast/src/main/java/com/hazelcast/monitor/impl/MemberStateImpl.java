@@ -27,6 +27,7 @@ import com.hazelcast.internal.management.dto.MXBeansDTO;
 import com.hazelcast.monitor.HotRestartState;
 import com.hazelcast.monitor.LocalCacheStats;
 import com.hazelcast.monitor.LocalExecutorStats;
+import com.hazelcast.monitor.LocalFlakeIdGeneratorStats;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.LocalMemoryStats;
 import com.hazelcast.monitor.LocalMultiMapStats;
@@ -51,7 +52,7 @@ import static com.hazelcast.util.JsonUtil.getArray;
 import static com.hazelcast.util.JsonUtil.getObject;
 import static com.hazelcast.util.JsonUtil.getString;
 
-@SuppressWarnings("checkstyle:classdataabstractioncoupling")
+@SuppressWarnings({"checkstyle:classdataabstractioncoupling", "checkstyle:classfanoutcomplexity"})
 public class MemberStateImpl implements MemberState {
 
     private String address;
@@ -66,6 +67,7 @@ public class MemberStateImpl implements MemberState {
     private Map<String, LocalReplicatedMapStats> replicatedMapStats = new HashMap<String, LocalReplicatedMapStats>();
     private Map<String, LocalCacheStats> cacheStats = new HashMap<String, LocalCacheStats>();
     private Map<String, LocalWanStats> wanStats = new HashMap<String, LocalWanStats>();
+    private Map<String, LocalFlakeIdGeneratorStats> flakeIdGeneratorStats = new HashMap<String, LocalFlakeIdGeneratorStats>();
     private Collection<ClientEndPointDTO> clients = new HashSet<ClientEndPointDTO>();
     private Map<String, String> clientStats = new HashMap<String, String>();
     private MXBeansDTO beans = new MXBeansDTO();
@@ -140,6 +142,11 @@ public class MemberStateImpl implements MemberState {
     }
 
     @Override
+    public LocalFlakeIdGeneratorStats getLocalFlakeIdGeneratorStats(String flakeIdName) {
+        return flakeIdGeneratorStats.get(flakeIdName);
+    }
+
+    @Override
     public String getAddress() {
         return address;
     }
@@ -186,6 +193,10 @@ public class MemberStateImpl implements MemberState {
 
     public void putLocalWanStats(String name, LocalWanStats localWanStats) {
         wanStats.put(name, localWanStats);
+    }
+
+    public void putLocalFlakeIdStats(String name, LocalFlakeIdGeneratorStats localFlakeIdStats) {
+        flakeIdGeneratorStats.put(name, localFlakeIdStats);
     }
 
     public Collection<ClientEndPointDTO> getClients() {
@@ -286,6 +297,7 @@ public class MemberStateImpl implements MemberState {
         serializeMap(root, "executorStats", executorStats);
         serializeMap(root, "cacheStats", cacheStats);
         serializeMap(root, "wanStats", wanStats);
+        serializeMap(root, "flakeIdStats", flakeIdGeneratorStats);
 
         final JsonObject runtimePropsObject = new JsonObject();
         for (Map.Entry<String, Long> entry : runtimeProps.entrySet()) {
@@ -379,6 +391,11 @@ public class MemberStateImpl implements MemberState {
             stats.fromJson(next.getValue().asObject());
             wanStats.put(next.getName(), stats);
         }
+        for (JsonObject.Member next : getObject(json, "flakeIdStats", new JsonObject())) {
+            LocalFlakeIdGeneratorStats stats = new LocalFlakeIdGeneratorStatsImpl();
+            stats.fromJson(next.getValue().asObject());
+            flakeIdGeneratorStats.put(next.getName(), stats);
+        }
         for (JsonObject.Member next : getObject(json, "runtimeProps")) {
             runtimeProps.put(next.getName(), next.getValue().asLong());
         }
@@ -452,6 +469,7 @@ public class MemberStateImpl implements MemberState {
                 + ", hotRestartState=" + hotRestartState
                 + ", clusterHotRestartStatus=" + clusterHotRestartStatus
                 + ", wanSyncState=" + wanSyncState
+                + ", flakeIdStats=" + flakeIdGeneratorStats
                 + ", clientStats=" + clientStats
                 + '}';
     }

@@ -432,6 +432,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(10L, c.getPrefetchValidityMillis());
         assertEquals(20L, c.getIdOffset());
         assertEquals("flakeIdGenerator*", c.getName());
+        assertFalse(c.isStatisticsEnabled());
     }
 
     @Test

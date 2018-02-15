@@ -74,13 +74,14 @@ public class FlakeIdGeneratorProxyTest {
         ILogger logger = mock(ILogger.class);
         clusterService = mock(ClusterService.class);
         NodeEngine nodeEngine = mock(NodeEngine.class);
+        FlakeIdGeneratorService service = mock(FlakeIdGeneratorService.class);
         when(nodeEngine.getLogger(FlakeIdGeneratorProxy.class)).thenReturn(logger);
         when(nodeEngine.isRunning()).thenReturn(true);
         when(nodeEngine.getConfig()).thenReturn(new Config().addFlakeIdGeneratorConfig(
                 new FlakeIdGeneratorConfig("foo").setIdOffset(idOffset)
         ));
         when(nodeEngine.getClusterService()).thenReturn(clusterService);
-        gen = new FlakeIdGeneratorProxy("foo", nodeEngine, null);
+        gen = new FlakeIdGeneratorProxy("foo", nodeEngine, service);
     }
 
     @Test

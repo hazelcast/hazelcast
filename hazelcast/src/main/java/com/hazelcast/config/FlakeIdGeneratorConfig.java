@@ -17,6 +17,7 @@
 package com.hazelcast.config;
 
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
+import com.hazelcast.monitor.LocalFlakeIdGeneratorStats;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -58,6 +59,7 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable {
     private int prefetchCount = DEFAULT_PREFETCH_COUNT;
     private long prefetchValidityMillis = DEFAULT_PREFETCH_VALIDITY_MILLIS;
     private long idOffset;
+    private boolean statisticsEnabled = true;
 
     private transient FlakeIdGeneratorConfigReadOnly readOnly;
 
@@ -77,6 +79,7 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable {
         this.prefetchCount = other.prefetchCount;
         this.prefetchValidityMillis = other.prefetchValidityMillis;
         this.idOffset = other.idOffset;
+        this.statisticsEnabled = other.statisticsEnabled;
     }
 
     /**
@@ -187,6 +190,26 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable {
         return this;
     }
 
+    /**
+     * @see #setStatisticsEnabled(boolean)
+     */
+    public boolean isStatisticsEnabled() {
+        return statisticsEnabled;
+    }
+
+    /**
+     * Enables or disables statistics gathering of
+     * {@link LocalFlakeIdGeneratorStats}.
+     *
+     * @param statisticsEnabled {@code true} if statistics gathering is enabled
+     *        (which is also the default), {@code false} otherwise
+     * @return this instance for fluent API
+     */
+    public FlakeIdGeneratorConfig setStatisticsEnabled(boolean statisticsEnabled) {
+        this.statisticsEnabled = statisticsEnabled;
+        return this;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -201,12 +224,13 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable {
         return prefetchCount == that.prefetchCount
                 && prefetchValidityMillis == that.prefetchValidityMillis
                 && idOffset == that.idOffset
-                && (name != null ? name.equals(that.name) : that.name == null);
+                && (name != null ? name.equals(that.name) : that.name == null)
+                && statisticsEnabled == that.statisticsEnabled;
     }
 
     @Override
     public int hashCode() {
-        return Arrays.hashCode(new Object[]{name, prefetchCount, prefetchValidityMillis, idOffset});
+        return Arrays.hashCode(new Object[] { name, prefetchCount, prefetchValidityMillis, idOffset, statisticsEnabled });
     }
 
     @Override
@@ -216,6 +240,7 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable {
                 + ", prefetchCount=" + prefetchCount
                 + ", prefetchValidityMillis=" + prefetchValidityMillis
                 + ", idOffset=" + idOffset
+                + ", statisticsEnabled=" + statisticsEnabled
                 + '}';
     }
 
@@ -235,6 +260,7 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable {
         out.writeInt(prefetchCount);
         out.writeLong(prefetchValidityMillis);
         out.writeLong(idOffset);
+        out.writeBoolean(statisticsEnabled);
     }
 
     @Override
@@ -243,5 +269,6 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable {
         prefetchCount = in.readInt();
         prefetchValidityMillis = in.readLong();
         idOffset = in.readLong();
+        statisticsEnabled = in.readBoolean();
     }
 }
