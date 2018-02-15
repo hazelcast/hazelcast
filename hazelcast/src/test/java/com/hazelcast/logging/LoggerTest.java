@@ -16,6 +16,9 @@
 
 package com.hazelcast.logging;
 
+import com.hazelcast.config.Config;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.SaveLoggingPropertiesRule;
@@ -28,6 +31,9 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.lang.reflect.Field;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 
 /**
  * Unit tests for {@link com.hazelcast.logging.Logger} class.
@@ -116,5 +122,63 @@ public class LoggerTest extends HazelcastTestSupport {
     @Test
     public void noLogger() {
         assertInstanceOf(NoLogFactory.NoLogger.class, Logger.noLogger());
+    }
+
+    @Test
+    public void getLogger_whenTypeConfiguredForInstance_thenReturnLoggerOfConfiguredType() {
+        final ILogger loggerBeforeInstanceStartup = Logger.getLogger(getClass());
+
+        final Config config = new Config();
+        config.setProperty(LOGGING_TYPE_PROPERTY_NAME, LOGGING_TYPE_LOG4J2);
+        final HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
+        try {
+            final ILogger loggerAfterInstanceStartup = Logger.getLogger(getClass());
+
+            assertInstanceOf(StandardLoggerFactory.StandardLogger.class, loggerBeforeInstanceStartup);
+            assertInstanceOf(Log4j2Factory.Log4j2Logger.class, loggerAfterInstanceStartup);
+        } finally {
+            instance.shutdown();
+        }
+    }
+
+    @Test
+    public void newLoggerFactory_whenClassConfigured_thenShareLoggerFactoryWithGetLogger() throws IllegalAccessException {
+        System.setProperty(LOGGING_CLASS_PROPERTY_NAME, Log4j2Factory.class.getName());
+
+        final ILogger loggerViaGetLogger = Logger.getLogger(getClass().getName());
+        final LoggerFactory loggerFactory = Logger.newLoggerFactory("irrelevant");
+        final ILogger loggerViaFactory = loggerFactory.getLogger(getClass().getName());
+
+        assertInstanceOf(Log4j2Factory.Log4j2Logger.class, loggerViaGetLogger);
+        assertInstanceOf(Log4j2Factory.Log4j2Logger.class, loggerViaFactory);
+        assertEquals(loggerFactory, LOGGER_FACTORY_FIELD.get(null));
+    }
+
+    @Test
+    public void newLoggerFactory_whenTypeConfigured_thenShareLoggerFactoryWithGetLoggerIfTypesMatch()
+            throws IllegalAccessException {
+        System.setProperty(LOGGING_TYPE_PROPERTY_NAME, LOGGING_TYPE_LOG4J2);
+
+        final ILogger loggerViaGetLogger = Logger.getLogger(getClass().getName());
+        final LoggerFactory loggerFactory = Logger.newLoggerFactory(LOGGING_TYPE_LOG4J2);
+        final ILogger loggerViaFactory = loggerFactory.getLogger(getClass().getName());
+
+        assertInstanceOf(Log4j2Factory.Log4j2Logger.class, loggerViaGetLogger);
+        assertInstanceOf(Log4j2Factory.Log4j2Logger.class, loggerViaFactory);
+        assertEquals(loggerFactory, LOGGER_FACTORY_FIELD.get(null));
+    }
+
+    @Test
+    public void newLoggerFactory_whenTypeConfigured_thenDoNotShareLoggerFactoryWithGetLoggerIfTypesDoNotMatch()
+            throws IllegalAccessException {
+        System.setProperty(LOGGING_TYPE_PROPERTY_NAME, LOGGING_TYPE_LOG4J2);
+
+        final ILogger loggerViaGetLogger = Logger.getLogger(getClass().getName());
+        final LoggerFactory loggerFactory = Logger.newLoggerFactory(LOGGING_TYPE_LOG4J);
+        final ILogger loggerViaFactory = loggerFactory.getLogger(getClass().getName());
+
+        assertInstanceOf(Log4j2Factory.Log4j2Logger.class, loggerViaGetLogger);
+        assertInstanceOf(Log4jFactory.Log4jLogger.class, loggerViaFactory);
+        assertNotEquals(loggerFactory, LOGGER_FACTORY_FIELD.get(null));
     }
 }
