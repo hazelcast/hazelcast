@@ -3774,6 +3774,7 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+
             <xs:element name="statistics-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true">
                 <xs:annotation>
                     <xs:documentation>
