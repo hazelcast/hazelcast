@@ -27,6 +27,7 @@ import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.client.spi.ClientPartitionService;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.listener.AbstractClientListenerService;
+import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.util.concurrent.MPSCQueue;
@@ -47,6 +48,8 @@ import static com.hazelcast.client.spi.properties.ClientProperty.INVOCATION_RETR
 import static com.hazelcast.client.spi.properties.ClientProperty.INVOCATION_TIMEOUT_SECONDS;
 import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.onOutOfMemory;
 import static com.hazelcast.spi.impl.operationservice.impl.AsyncInboundResponseHandler.getIdleStrategy;
+import static com.hazelcast.util.Clock.currentTimeMillis;
+import static com.hazelcast.util.StringUtil.timeToString;
 
 public abstract class AbstractClientInvocationService implements ClientInvocationService {
 
@@ -198,34 +201,56 @@ public abstract class AbstractClientInvocationService implements ClientInvocatio
                 Map.Entry<Long, ClientInvocation> entry = iter.next();
                 ClientInvocation invocation = entry.getValue();
                 ClientConnection connection = invocation.getSendConnection();
-                if (connection == null) {
-                    continue;
+                if (checkConnectionDead(connection)) {
+                    iter.remove();
+                    invocation.notifyException(newTargetDisconnectedException(connection));
+                } else if (checkHardTimeout(invocation)) {
+                    iter.remove();
+                    invocation.notifyException(newOperationTimeoutException(invocation));
                 }
 
-                if (connection.isHeartBeating()) {
-                    continue;
-                }
-
-                iter.remove();
-
-                notifyException(invocation, connection);
             }
         }
 
-        private void notifyException(ClientInvocation invocation, ClientConnection connection) {
-            Exception ex;
-            /**
+        private boolean checkHardTimeout(ClientInvocation invocation) {
+            long hardTimeoutMillis = invocation.getHardTimeoutMillis();
+            if (hardTimeoutMillis == 0) {
+                return false;
+            }
+            long startTimeMillis = invocation.startTimeMillis();
+            long currentTimeMillis = System.currentTimeMillis();
+            long timePassed = currentTimeMillis - startTimeMillis;
+            return timePassed > hardTimeoutMillis;
+        }
+
+        private Exception newOperationTimeoutException(ClientInvocation invocation) {
+            StringBuilder sb = new StringBuilder();
+            sb.append(invocation);
+            sb.append(" timed out because a hard timeout passed ");
+            sb.append(invocation.getHardTimeoutMillis()).append(" ms. ");
+            sb.append("Current time: ").append(timeToString(currentTimeMillis())).append(". ");
+            sb.append("Start time: ").append(timeToString(invocation.startTimeMillis())).append(". ");
+            sb.append("Total elapsed time: ").append(currentTimeMillis() - invocation.startTimeMillis()).append(" ms. ");
+            String msg = sb.toString();
+            return new OperationTimeoutException(msg);
+        }
+
+        private boolean checkConnectionDead(ClientConnection connection) {
+            return connection != null && !connection.isHeartBeating();
+        }
+
+        private Exception newTargetDisconnectedException(ClientConnection connection) {
+            /*
              * Connection may be closed(e.g. remote member shutdown) in which case the isAlive is set to false or the
              * heartbeat failure occurs. The order of the following check matters. We need to first check for isAlive since
              * the connection.isHeartBeating also checks for isAlive as well.
              */
             if (!connection.isAlive()) {
-                ex = new TargetDisconnectedException(connection.getCloseReason(), connection.getCloseCause());
+                return new TargetDisconnectedException(connection.getCloseReason(), connection.getCloseCause());
             } else {
-                ex = new TargetDisconnectedException("Heartbeat timed out to " + connection);
+                return new TargetDisconnectedException("Heartbeat timed out to " + connection);
             }
 
-            invocation.notifyException(ex);
         }
 
     }
