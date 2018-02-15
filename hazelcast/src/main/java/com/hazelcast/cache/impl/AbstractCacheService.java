@@ -27,6 +27,7 @@ import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.DistributedObject;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.Member;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.IOUtil;
@@ -66,6 +67,7 @@ import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.cache.impl.AbstractCacheRecordStore.SOURCE_NOT_AVAILABLE;
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateCacheConfig;
+import static com.hazelcast.util.EmptyStatement.ignore;
 
 @SuppressWarnings("checkstyle:classdataabstractioncoupling")
 public abstract class AbstractCacheService implements ICacheService, PreJoinAwareService,
@@ -721,9 +723,18 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
     // creates the given CacheConfig on all members of the cluster synchronously
     private <K, V> void createCacheConfigOnAllMembers(CacheConfig<K, V> cacheConfig) {
         OperationService operationService = nodeEngine.getOperationService();
-        CacheCreateConfigOperation op = new CacheCreateConfigOperation(cacheConfig);
-        InternalCompletableFuture future =
-                operationService.invokeOnTarget(CacheService.SERVICE_NAME, op, nodeEngine.getThisAddress());
-        future.join();
+        // wrap the CacheConfig in a PreJoinCacheConfig with KV type class names instead of implementations,
+        // to prevent de-serialization failures on remote nodes
+        CacheCreateConfigOperation op = new CacheCreateConfigOperation(
+                new PreJoinCacheConfig(cacheConfig, false), true, true);
+        try {
+            InternalCompletableFuture future = operationService.invokeOnTarget(CacheService.SERVICE_NAME, op,
+                    nodeEngine.getThisAddress());
+            future.join();
+        } catch (HazelcastInstanceNotActiveException e) {
+            // do not fail the cache proxy creation if the operation invocation fails
+            // (eg node is in PASSIVE state due to being restored from hot restart),
+            ignore(e);
+        }
     }
 }
