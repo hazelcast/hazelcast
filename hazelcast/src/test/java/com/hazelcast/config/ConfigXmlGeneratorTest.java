@@ -58,7 +58,7 @@ import static org.junit.Assert.assertTrue;
 public class ConfigXmlGeneratorTest {
 
     @Test
-    public void testIfSensitiveDataIsMasked() {
+    public void testIfSensitiveDataIsMasked_whenMaskingEnabled() {
         Config cfg = new Config();
         SSLConfig sslConfig = new SSLConfig();
         sslConfig.setProperty("keyStorePassword", "Hazelcast")
@@ -84,6 +84,41 @@ public class ConfigXmlGeneratorTest {
         assertEquals(theSalt, MASK_FOR_SENSITIVE_DATA);
         assertEquals(newConfigViaXMLGenerator.getLicenseKey(), MASK_FOR_SENSITIVE_DATA);
         assertEquals(newConfigViaXMLGenerator.getGroupConfig().getPassword(), MASK_FOR_SENSITIVE_DATA);
+    }
+
+    @Test
+    public void testIfSensitiveDataIsNotMasked_whenMaskingDisabled() {
+        String password = "Hazelcast";
+        String salt = "theSalt";
+        String licenseKey = "HazelcastLicenseKey";
+
+        Config cfg = new Config();
+        cfg.getGroupConfig().setPassword(password);
+
+        SSLConfig sslConfig = new SSLConfig();
+        sslConfig.setProperty("keyStorePassword", password)
+                .setProperty("trustStorePassword", password);
+        cfg.getNetworkConfig().setSSLConfig(sslConfig);
+
+        SymmetricEncryptionConfig symmetricEncryptionConfig = new SymmetricEncryptionConfig();
+        symmetricEncryptionConfig.setPassword(password);
+        symmetricEncryptionConfig.setSalt(salt);
+
+        cfg.getNetworkConfig().setSymmetricEncryptionConfig(symmetricEncryptionConfig);
+        cfg.setLicenseKey(licenseKey);
+
+        Config newConfigViaXMLGenerator = getNewConfigViaXMLGenerator(cfg, false);
+        SSLConfig generatedSSLConfig = newConfigViaXMLGenerator.getNetworkConfig().getSSLConfig();
+
+        assertEquals(generatedSSLConfig.getProperty("keyStorePassword"), password);
+        assertEquals(generatedSSLConfig.getProperty("trustStorePassword"), password);
+
+        String secPassword = newConfigViaXMLGenerator.getNetworkConfig().getSymmetricEncryptionConfig().getPassword();
+        String theSalt = newConfigViaXMLGenerator.getNetworkConfig().getSymmetricEncryptionConfig().getSalt();
+        assertEquals(secPassword, password);
+        assertEquals(theSalt, salt);
+        assertEquals(newConfigViaXMLGenerator.getLicenseKey(), licenseKey);
+        assertEquals(newConfigViaXMLGenerator.getGroupConfig().getPassword(), password);
     }
 
     @Test
@@ -1250,7 +1285,11 @@ public class ConfigXmlGeneratorTest {
     }
 
     private static Config getNewConfigViaXMLGenerator(Config config) {
-        ConfigXmlGenerator configXmlGenerator = new ConfigXmlGenerator();
+        return getNewConfigViaXMLGenerator(config, true);
+    }
+
+    private static Config getNewConfigViaXMLGenerator(Config config, boolean maskSensitiveFields) {
+        ConfigXmlGenerator configXmlGenerator = new ConfigXmlGenerator(true, maskSensitiveFields);
         String xml = configXmlGenerator.generate(config);
 
         ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
