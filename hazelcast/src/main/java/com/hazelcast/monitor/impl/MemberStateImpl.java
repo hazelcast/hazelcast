@@ -52,7 +52,7 @@ import static com.hazelcast.util.JsonUtil.getArray;
 import static com.hazelcast.util.JsonUtil.getObject;
 import static com.hazelcast.util.JsonUtil.getString;
 
-@SuppressWarnings("checkstyle:classdataabstractioncoupling")
+@SuppressWarnings({"checkstyle:classdataabstractioncoupling", "checkstyle:classfanoutcomplexity"})
 public class MemberStateImpl implements MemberState {
 
     private String address;

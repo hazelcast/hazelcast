@@ -46,6 +46,7 @@ public class AddFlakeIdGeneratorConfigMessageTask
         config.setPrefetchCount(parameters.prefetchCount);
         config.setPrefetchValidityMillis(parameters.prefetchValidity);
         config.setIdOffset(parameters.idOffset);
+        config.setStatisticsEnabled(parameters.statisticsEnabled);
         return config;
     }
 

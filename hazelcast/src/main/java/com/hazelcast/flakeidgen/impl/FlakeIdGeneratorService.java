@@ -24,6 +24,7 @@ import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.hazelcast.core.DistributedObject;
+import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.monitor.LocalFlakeIdGeneratorStats;
 import com.hazelcast.monitor.impl.LocalFlakeIdGeneratorStatsImpl;
 import com.hazelcast.spi.ManagedService;
@@ -81,7 +82,13 @@ public class FlakeIdGeneratorService implements ManagedService, RemoteService,
         return new HashMap<String, LocalFlakeIdGeneratorStats>(statsMap);
     }
 
-    public void incrementNewId(String name) {
+    /**
+     * Increments the usage count of the {@link FlakeIdGenerator} with the given
+     * name.
+     *
+     * @param name name of the generator, not null
+     */
+    public void incrementStatsForNewId(String name) {
         getLocalFlakeIdStats(name).incrementUsage();
     }
 
