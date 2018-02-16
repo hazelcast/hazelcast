@@ -20,6 +20,7 @@ import com.hazelcast.cardinality.impl.CardinalityEstimatorContainer;
 import com.hazelcast.cardinality.impl.CardinalityEstimatorService;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.test.HazelcastTestSupport;
 
 import static com.hazelcast.test.HazelcastTestSupport.getNodeEngineImpl;
 
@@ -28,6 +29,16 @@ final class CardinalityEstimatorTestUtil {
     private CardinalityEstimatorTestUtil() {
     }
 
+    /**
+     * Returns the backup estimation of an {@link CardinalityEstimator} by a given cardinality estimator name.
+     * <p>
+     * Note: You have to provide the {@link HazelcastInstance} you want to retrieve the backups from.
+     * Use {@link HazelcastTestSupport#getBackupInstance} to retrieve the backup instance for a given replica index.
+     *
+     * @param backupInstance the {@link HazelcastInstance} to retrieve the backup estimation from
+     * @param estimatorName  the cardinality estimator name
+     * @return the backup estimation
+     */
     static long getBackupEstimate(HazelcastInstance backupInstance, String estimatorName) {
         NodeEngineImpl nodeEngine = getNodeEngineImpl(backupInstance);
         CardinalityEstimatorService service = nodeEngine.getService(CardinalityEstimatorService.SERVICE_NAME);

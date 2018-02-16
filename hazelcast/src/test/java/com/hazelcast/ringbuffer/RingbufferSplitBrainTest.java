@@ -19,16 +19,12 @@ package com.hazelcast.ringbuffer;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MergePolicyConfig;
-import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.ringbuffer.impl.RingbufferContainer;
 import com.hazelcast.ringbuffer.impl.RingbufferProxy;
-import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.spi.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.DiscardMergePolicy;
 import com.hazelcast.spi.merge.PassThroughMergePolicy;
 import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
-import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.SplitBrainTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -40,14 +36,13 @@ import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
 import static com.hazelcast.config.InMemoryFormat.BINARY;
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
-import static com.hazelcast.ringbuffer.impl.RingbufferService.getRingbufferNamespace;
+import static com.hazelcast.ringbuffer.RingbufferTestUtil.getBackupRingbuffer;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -90,7 +85,6 @@ public class RingbufferSplitBrainTest extends SplitBrainTestSupport {
 
     private String ringbufferNameA = randomMapName("ringbufferA-");
     private String ringbufferNameB = randomMapName("ringbufferB-");
-    private RingbufferConfig ringbufferConfig;
     private Ringbuffer<Object> ringbufferA1;
     private Ringbuffer<Object> ringbufferA2;
     private Ringbuffer<Object> ringbufferB1;
@@ -105,13 +99,13 @@ public class RingbufferSplitBrainTest extends SplitBrainTestSupport {
                 .setBatchSize(10);
 
         Config config = super.config();
-        ringbufferConfig = config.getRingbufferConfig(ringbufferNameA)
+        config.getRingbufferConfig(ringbufferNameA)
                 .setInMemoryFormat(inMemoryFormat)
                 .setMergePolicyConfig(mergePolicyConfig)
                 .setBackupCount(1)
                 .setAsyncBackupCount(0)
                 .setTimeToLiveSeconds(0);
-        ringbufferConfig = config.getRingbufferConfig(ringbufferNameB)
+        config.getRingbufferConfig(ringbufferNameB)
                 .setInMemoryFormat(inMemoryFormat)
                 .setMergePolicyConfig(mergePolicyConfig)
                 .setBackupCount(1)
@@ -131,7 +125,7 @@ public class RingbufferSplitBrainTest extends SplitBrainTestSupport {
 
         int partitionId = ((RingbufferProxy) ringbuffer).getPartitionId();
         HazelcastInstance backupInstance = getFirstBackupInstance(instances, partitionId);
-        Collection<Object> backupRingbuffer = getBackupRingbuffer(backupInstance, partitionId, ringbufferNameA, ringbufferConfig);
+        Collection<Object> backupRingbuffer = getBackupRingbuffer(backupInstance, partitionId, ringbufferNameA);
 
         assertEquals("backupRingbuffer should contain " + INITIAL_COUNT + " items", INITIAL_COUNT, backupRingbuffer.size());
         for (int i = 0; i < INITIAL_COUNT; i++) {
@@ -173,9 +167,7 @@ public class RingbufferSplitBrainTest extends SplitBrainTestSupport {
         // wait until merge completes
         mergeLifecycleListener.await();
 
-        int partitionId = ((RingbufferProxy) ringbufferA1).getPartitionId();
-        HazelcastInstance backupInstance = getFirstBackupInstance(instances, partitionId);
-        backupRingbuffer = getBackupRingbuffer(backupInstance, partitionId, ringbufferNameA, ringbufferConfig);
+        backupRingbuffer = getBackupRingbuffer(instances, ringbufferA1);
 
         ringbufferB1 = instances[0].getRingbuffer(ringbufferNameB);
 
@@ -291,19 +283,6 @@ public class RingbufferSplitBrainTest extends SplitBrainTestSupport {
             assertFalse("ringbufferA2 should not contain 'lostItem" + i + "'", ringbufferContent2.contains("lostItem" + i));
             assertFalse("backupRingbuffer should not contain 'lostItem" + i + "'", backupRingbuffer.contains("lostItem" + i));
         }
-    }
-
-    private static Collection<Object> getBackupRingbuffer(HazelcastInstance backupInstance, int partitionId,
-                                                          String ringbufferName, RingbufferConfig config) {
-        RingbufferService service = getNodeEngineImpl(backupInstance).getService(RingbufferService.SERVICE_NAME);
-        RingbufferContainer container = service.getOrCreateContainer(partitionId, getRingbufferNamespace(ringbufferName), config);
-
-        List<Object> backupRingbuffer = new ArrayList<Object>((int) container.size());
-        SerializationService serializationService = getNodeEngineImpl(backupInstance).getSerializationService();
-        for (long sequence = container.headSequence(); sequence <= container.tailSequence(); sequence++) {
-            backupRingbuffer.add(serializationService.toObject(container.readAsData(sequence)));
-        }
-        return backupRingbuffer;
     }
 
     private static void assertRingbufferContent(Ringbuffer<Object> ringbuffer, boolean hasMergedItems) {

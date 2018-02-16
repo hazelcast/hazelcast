@@ -25,7 +25,11 @@ import com.hazelcast.collection.impl.queue.QueueItem;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IList;
+import com.hazelcast.core.IQueue;
+import com.hazelcast.core.ISet;
 import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.test.HazelcastTestSupport;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -42,9 +46,20 @@ public final class CollectionTestUtil {
     private CollectionTestUtil() {
     }
 
+    /**
+     * Returns all backup items of an {@link IList} by a given list name.
+     * <p>
+     * Note: You have to provide the {@link HazelcastInstance} you want to retrieve the backups from.
+     * Use {@link HazelcastTestSupport#getBackupInstance} to retrieve the backup instance for a given replica index.
+     *
+     * @param backupInstance the {@link HazelcastInstance} to retrieve the backups from
+     * @param listName       the list name
+     * @return a {@link List} with the backup items
+     */
     public static <E> List<E> getBackupList(HazelcastInstance backupInstance, String listName) {
         CollectionService service = getNodeEngineImpl(backupInstance).getService(ListService.SERVICE_NAME);
         CollectionContainer collectionContainer = service.getContainerMap().get(listName);
+        // the replica items are retrieved via `getMap()`, the primary items via `getCollection()`
         Map<Long, CollectionItem> map = collectionContainer.getMap();
 
         List<E> backupList = new ArrayList<E>(map.size());
@@ -56,6 +71,16 @@ public final class CollectionTestUtil {
         return backupList;
     }
 
+    /**
+     * Returns all backup items of an {@link IQueue} by a given queue name.
+     * <p>
+     * Note: You have to provide the {@link HazelcastInstance} you want to retrieve the backups from.
+     * Use {@link HazelcastTestSupport#getBackupInstance} to retrieve the backup instance for a given replica index.
+     *
+     * @param backupInstance the {@link HazelcastInstance} to retrieve the backups from
+     * @param queueName      the queue name
+     * @return a {@link List} with the backup items
+     */
     public static <E> Queue<E> getBackupQueue(HazelcastInstance backupInstance, String queueName) {
         QueueService service = getNodeEngineImpl(backupInstance).getService(QueueService.SERVICE_NAME);
         QueueContainer container = service.getOrCreateContainer(queueName, true);
@@ -70,9 +95,20 @@ public final class CollectionTestUtil {
         return backupQueue;
     }
 
+    /**
+     * Returns all backup items of an {@link ISet} by a given queue name.
+     * <p>
+     * Note: You have to provide the {@link HazelcastInstance} you want to retrieve the backups from.
+     * Use {@link HazelcastTestSupport#getBackupInstance} to retrieve the backup instance for a given replica index.
+     *
+     * @param backupInstance the {@link HazelcastInstance} to retrieve the backups from
+     * @param setName        the set name
+     * @return a {@link List} with the backup items
+     */
     public static <E> Set<E> getBackupSet(HazelcastInstance backupInstance, String setName) {
         CollectionService service = getNodeEngineImpl(backupInstance).getService(SetService.SERVICE_NAME);
         CollectionContainer collectionContainer = service.getContainerMap().get(setName);
+        // the replica items are retrieved via `getMap()`, the primary items via `getCollection()`
         Map<Long, CollectionItem> map = collectionContainer.getMap();
 
         Set<E> backupSet = new HashSet<E>();

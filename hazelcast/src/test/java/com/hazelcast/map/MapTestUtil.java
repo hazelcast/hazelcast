@@ -38,7 +38,9 @@ public final class MapTestUtil {
     }
 
     /**
-     * Returns the backup entries of an {@link com.hazelcast.core.IMap} by a given map name.
+     * Returns all backup entries of an {@link com.hazelcast.core.IMap} by a given map name.
+     * <p>
+     * Note: This method returns all backups from all nodes and doesn't consider the replica indexes.
      *
      * @param instances the {@link HazelcastInstance} array to gather the data from
      * @param mapName   the map name
@@ -57,7 +59,7 @@ public final class MapTestUtil {
             SerializationService serializationService = nodeEngine.getSerializationService();
 
             for (int partitionId = 0; partitionId < partitionService.getPartitionCount(); partitionId++) {
-                if (partitionService.getPartition(partitionId, false).isLocal()) {
+                if (partitionService.isPartitionOwner(partitionId)) {
                     continue;
                 }
                 PartitionContainer partitionContainer = context.getPartitionContainer(partitionId);

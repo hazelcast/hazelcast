@@ -187,7 +187,6 @@ public class ReplicatedMapSplitBrainTest extends SplitBrainTestSupport {
 
         // wait completion of migration tasks after lite member promotion
         assertTrueEventually(assertTask);
-
     }
 
     private void afterSplitDiscardMergePolicy() {
