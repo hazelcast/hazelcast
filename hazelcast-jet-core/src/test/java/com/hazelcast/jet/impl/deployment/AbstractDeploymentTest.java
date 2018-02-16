@@ -17,16 +17,14 @@
 package com.hazelcast.jet.impl.deployment;
 
 import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.impl.deployment.LoadResource.LoadResourceMetaSupplier;
-import com.hazelcast.jet.test.IgnoredForCoverage;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.impl.deployment.LoadPersonIsolated.LoadPersonIsolatedMetaSupplier;
+import com.hazelcast.jet.impl.deployment.LoadResource.LoadResourceMetaSupplier;
 import com.hazelcast.jet.stream.IStreamMap;
+import com.hazelcast.jet.test.IgnoredForCoverage;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.util.FilteringClassLoader;
 import java.io.Serializable;
-import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.List;
@@ -111,21 +109,6 @@ public abstract class AbstractDeploymentTest extends HazelcastTestSupport {
         jobConfig.addResource(this.getClass().getResource("/deployment/resource.txt"), "customId");
 
         executeAndPeel(getJetInstance().newJob(dag, jobConfig));
-    }
-
-    static Object createIsolatedNode(Thread thread, FilteringClassLoader cl) throws Exception {
-        thread.setContextClassLoader(cl);
-        Class<?> jetConfigClazz = cl.loadClass("com.hazelcast.jet.config.JetConfig");
-        Class<?> hazelcastConfigClazz = cl.loadClass("com.hazelcast.config.Config");
-        Object config = jetConfigClazz.newInstance();
-        Method getHazelcastConfig = jetConfigClazz.getDeclaredMethod("getHazelcastConfig");
-        Object hazelcastConfig = getHazelcastConfig.invoke(config);
-        Method setClassLoader = hazelcastConfigClazz.getDeclaredMethod("setClassLoader", ClassLoader.class);
-        setClassLoader.invoke(hazelcastConfig, cl);
-
-        Class<?> jetClazz = cl.loadClass("com.hazelcast.jet.Jet");
-        Method newJetInstance = jetClazz.getDeclaredMethod("newJetInstance", jetConfigClazz);
-        return newJetInstance.invoke(jetClazz, config);
     }
 
     static class MyMapper implements Function<Map.Entry<Integer, Integer>, Integer>, Serializable {

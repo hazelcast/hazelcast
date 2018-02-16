@@ -22,9 +22,11 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EventJournalConfig;
+import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.JetTestInstanceFactory;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.core.DAG;
@@ -37,15 +39,15 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.projection.Projections;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.IntStream;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import static com.hazelcast.jet.JournalInitialPosition.START_FROM_OLDEST;
 import static com.hazelcast.jet.core.Edge.between;
@@ -75,47 +77,62 @@ import static org.junit.Assert.assertTrue;
 public class HazelcastRemoteConnectorTest extends JetTestSupport {
 
     private static final int ITEM_COUNT = 20;
-    private static final String SOURCE_NAME = "source";
-    private static final String SINK_NAME = "sink";
+    private static String SOURCE_NAME = randomName() + "-source";
+    private static String SINK_NAME = randomName() + "-sink";
 
-    private JetInstance jet;
-    private HazelcastInstance hz;
-    private ClientConfig clientConfig;
+    private static JetInstance jet;
+    private static HazelcastInstance hz;
+    private static ClientConfig clientConfig;
+    private static final JetTestInstanceFactory factory = new JetTestInstanceFactory();
 
-    @Before
-    public void before() {
+    @BeforeClass
+    public static void setUp() {
         JetConfig jetConfig = new JetConfig();
         Config hazelcastConfig = jetConfig.getHazelcastConfig();
         hazelcastConfig.addCacheConfig(new CacheSimpleConfig().setName("*"));
-        jet = createJetMember(jetConfig);
-        JetInstance jet2 = createJetMember(jetConfig);
+
+        jet = factory.newMember(jetConfig);
+        JetInstance jet2 = factory.newMember(jetConfig);
 
         Config config = new Config();
         config.addCacheConfig(new CacheSimpleConfig().setName("*"));
         config.addEventJournalConfig(new EventJournalConfig().setCacheName("default").setMapName("default"));
+        config.getGroupConfig().setName(randomName());
         hz = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance hz2 = Hazelcast.newHazelcastInstance(config);
 
         clientConfig = new ClientConfig();
-        clientConfig.getGroupConfig().setName("dev");
-        clientConfig.getGroupConfig().setPassword("dev-pass");
+        clientConfig.getGroupConfig().setName(config.getGroupConfig().getName());
         Address address = hz.getCluster().getLocalMember().getAddress();
         clientConfig.getNetworkConfig().addAddress(address.getHost() + ':' + address.getPort());
 
         // workaround for `cache is not created` exception, create cache locally on all nodes
-        jet2.getCacheManager().getCache(SOURCE_NAME);
-        jet2.getCacheManager().getCache(SINK_NAME);
         hz2.getCacheManager().getCache(SOURCE_NAME);
         hz2.getCacheManager().getCache(SINK_NAME);
+        jet2.getCacheManager().getCache(SOURCE_NAME);
+        jet2.getCacheManager().getCache(SINK_NAME);
     }
 
-    @After
-    public void after() throws Exception {
+    @AfterClass
+    public static void teardown() {
         Hazelcast.shutdownAll();
+        factory.shutdownAll();
+    }
+
+    @Before
+    public void setup() {
+        destroyObjects(jet.getHazelcastInstance());
+        destroyObjects(hz);
+        SOURCE_NAME = randomName() + "-source";
+        SINK_NAME = randomName() + "-sink";
+    }
+
+    public void destroyObjects(HazelcastInstance hz) {
+        hz.getDistributedObjects().forEach(DistributedObject::destroy);
     }
 
     @Test
-    public void when_readRemoteList() throws Exception {
+    public void when_readRemoteList() {
         populateList(hz.getList(SOURCE_NAME));
 
         DAG dag = new DAG();
@@ -128,7 +145,7 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
     }
 
     @Test
-    public void when_writeRemoteList() throws Exception {
+    public void when_writeRemoteList() {
         populateList(jet.getList(SOURCE_NAME));
 
         DAG dag = new DAG();
@@ -141,8 +158,7 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
     }
 
     @Test
-    public void when_readRemoteMap_withNativePredicateAndProjection()
-            throws Exception {
+    public void when_readRemoteMap_withNativePredicateAndProjection() {
         populateMap(hz.getMap(SOURCE_NAME));
 
         DAG dag = new DAG();
@@ -163,8 +179,7 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
     }
 
     @Test
-    public void when_readRemoteMap_withPredicateAndDistributedFunction()
-            throws Exception {
+    public void when_readRemoteMap_withPredicateAndDistributedFunction() {
         populateMap(hz.getMap(SOURCE_NAME));
 
         DAG dag = new DAG();
@@ -181,7 +196,7 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
     }
 
     @Test
-    public void when_writeRemoteMap() throws Exception {
+    public void when_writeRemoteMap() {
         populateMap(jet.getMap(SOURCE_NAME));
 
         DAG dag = new DAG();
@@ -194,7 +209,7 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
     }
 
     @Test
-    public void when_readRemoteCache() throws Exception {
+    public void when_readRemoteCache() {
         populateCache(hz.getCacheManager().getCache(SOURCE_NAME));
 
         DAG dag = new DAG();
@@ -207,7 +222,7 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
     }
 
     @Test
-    public void when_writeRemoteCache() throws Exception {
+    public void when_writeRemoteCache() {
         populateCache(jet.getCacheManager().getCache(SOURCE_NAME));
 
         DAG dag = new DAG();
@@ -220,7 +235,7 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
     }
 
     @Test
-    public void when_streamRemoteMap() throws Exception {
+    public void when_streamRemoteMap() {
         DAG dag = new DAG();
         Vertex source = dag.newVertex(SOURCE_NAME, streamRemoteMapP(SOURCE_NAME, clientConfig, START_FROM_OLDEST,
                 wmGenParams(Entry<Integer, Integer>::getValue, withFixedLag(0), suppressDuplicates(), 10_000)));
@@ -236,7 +251,7 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
     }
 
     @Test
-    public void when_streamRemoteMap_withPredicateAndProjection() throws Exception {
+    public void when_streamRemoteMap_withPredicateAndProjection() {
         DAG dag = new DAG();
         Vertex source = dag.newVertex(SOURCE_NAME, SourceProcessors.<Integer, Integer, Integer>streamRemoteMapP(
                 SOURCE_NAME, clientConfig, event -> event.getKey() != 0, EventJournalMapEvent::getKey, START_FROM_OLDEST,
@@ -255,7 +270,7 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
     }
 
     @Test
-    public void when_streamRemoteCache() throws Exception {
+    public void when_streamRemoteCache() {
         DAG dag = new DAG();
         Vertex source = dag.newVertex(SOURCE_NAME,
                 streamRemoteCacheP(SOURCE_NAME, clientConfig, START_FROM_OLDEST,
@@ -273,8 +288,7 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
     }
 
     @Test
-    public void when_streamRemoteCache_withPredicateAndProjection()
-            throws Exception {
+    public void when_streamRemoteCache_withPredicateAndProjection() {
         DAG dag = new DAG();
         Vertex source = dag.newVertex(SOURCE_NAME, SourceProcessors.<Integer, Integer, Integer>streamRemoteCacheP(
                 SOURCE_NAME, clientConfig, event -> !event.getKey().equals(0), EventJournalCacheEvent::getKey,
