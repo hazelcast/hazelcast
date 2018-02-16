@@ -26,6 +26,7 @@ import org.junit.runner.RunWith;
 
 import java.util.Locale;
 
+import static com.hazelcast.util.StringUtil.VERSION_PATTERN;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -35,6 +36,29 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class StringUtilTest extends HazelcastTestSupport {
+
+    @Test
+    public void testVersionPattern() {
+        assertTrue(VERSION_PATTERN.matcher("3.1").matches());
+        assertTrue(VERSION_PATTERN.matcher("3.1-SNAPSHOT").matches());
+        assertTrue(VERSION_PATTERN.matcher("3.1-RC").matches());
+        assertTrue(VERSION_PATTERN.matcher("3.1-RC1-SNAPSHOT").matches());
+        assertTrue(VERSION_PATTERN.matcher("3.1.1").matches());
+        assertTrue(VERSION_PATTERN.matcher("3.1.1-RC").matches());
+        assertTrue(VERSION_PATTERN.matcher("3.1.1-SNAPSHOT").matches());
+        assertTrue(VERSION_PATTERN.matcher("3.1.1-RC1-SNAPSHOT").matches());
+
+        assertFalse(VERSION_PATTERN.matcher("${project.version}").matches());
+        assertFalse(VERSION_PATTERN.matcher("project.version").matches());
+        assertFalse(VERSION_PATTERN.matcher("3").matches());
+        assertFalse(VERSION_PATTERN.matcher("3.RC").matches());
+        assertFalse(VERSION_PATTERN.matcher("3.SNAPSHOT").matches());
+        assertFalse(VERSION_PATTERN.matcher("3-RC").matches());
+        assertFalse(VERSION_PATTERN.matcher("3-SNAPSHOT").matches());
+        assertFalse(VERSION_PATTERN.matcher("3.").matches());
+        assertFalse(VERSION_PATTERN.matcher("3.1.RC").matches());
+        assertFalse(VERSION_PATTERN.matcher("3.1.SNAPSHOT").matches());
+    }
 
     @Test
     public void getterIntoProperty_whenNull_returnNull() throws Exception {
