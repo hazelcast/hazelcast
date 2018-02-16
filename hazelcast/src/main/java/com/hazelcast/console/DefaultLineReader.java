@@ -23,11 +23,11 @@ import java.io.UnsupportedEncodingException;
 /**
  * A {@link LineReader} implemetation.
  */
-class DefaultLineReader implements LineReader {
+public class DefaultLineReader implements LineReader {
 
     private BufferedReader in;
 
-    DefaultLineReader() throws UnsupportedEncodingException {
+    public DefaultLineReader() throws UnsupportedEncodingException {
         in = new BufferedReader(new InputStreamReader(System.in, "UTF-8"));
     }
 

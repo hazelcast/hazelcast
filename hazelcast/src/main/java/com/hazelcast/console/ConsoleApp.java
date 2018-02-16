@@ -84,6 +84,11 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
     private static final String EXECUTOR_NAMESPACE = "Sample Executor";
     private static final int LOAD_EXECUTORS_COUNT = 16;
     private static final int ONE_HUNDRED = 100;
+    private static final int ONE_THOUSAND = 1000;
+
+    private static final int MAX_THREAD_COUNT = 16;
+    private static final int BYTE_TO_BIT = 8;
+    private static final int LENGTH_BORDER = 4;
 
     private IQueue<Object> queue;
     private ITopic<Object> topic;
@@ -97,7 +102,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
     private boolean silent;
     private boolean echo;
 
-    private volatile HazelcastInstance hazelcast;
+    protected volatile HazelcastInstance hazelcast;
     private volatile LineReader lineReader;
     private volatile boolean running;
 
@@ -160,6 +165,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
         getQueue().size();
         getTopic().getLocalTopicStats();
         getMultiMap().size();
+
         hazelcast.getExecutorService("default").getLocalExecutorStats();
         for (int i = 1; i <= LOAD_EXECUTORS_COUNT; i++) {
             hazelcast.getExecutorService(EXECUTOR_NAMESPACE + " " + i).getLocalExecutorStats();
@@ -224,7 +230,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
             }
             long elapsedMilliSeconds = Clock.currentTimeMillis() - started;
             if (elapsedMilliSeconds > 0) {
-                println(String.format("ops/s = %.2f", (double) repeat * 1000 / elapsedMilliSeconds));
+                println(String.format("ops/s = %.2f", (double) repeat * ONE_THOUSAND / elapsedMilliSeconds));
             } else {
                 println("Bingo, all the operations finished in no time!");
             }
@@ -241,7 +247,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
                         String[] threadArgs = trim(command.replaceAll("\\$t", "" + threadID)).split(" ");
                         // TODO &t #4 m.putmany x k
                         if ("m.putmany".equals(threadArgs[0]) || "m.removemany".equals(threadArgs[0])) {
-                            if (threadArgs.length < 4) {
+                            if (threadArgs.length < LENGTH_BORDER) {
                                 command += " " + Integer.parseInt(threadArgs[1]) * threadID;
                             }
                         }
@@ -428,8 +434,8 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
     private void handleExecutorSimulate(String[] args) {
         String first = args[0];
         int threadCount = Integer.parseInt(first.substring(1, first.indexOf(".")));
-        if (threadCount < 1 || threadCount > 16) {
-            throw new RuntimeException("threadCount can't be smaller than 1 or larger than 16");
+        if (threadCount < 1 || threadCount > MAX_THREAD_COUNT) {
+            throw new RuntimeException("threadCount can't be smaller than 1 or larger than " + MAX_THREAD_COUNT);
         }
 
         int taskCount = Integer.parseInt(args[1]);
@@ -476,7 +482,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
         }
     }
 
-    private void handleAt(String first) {
+    protected void handleAt(String first) {
         if (first.length() == 1) {
             println("usage: @<file-name>");
             return;
@@ -500,7 +506,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
         }
     }
 
-    private void handleEcho(String command) {
+    protected void handleEcho(String command) {
         String threadName = lowerCaseInternal(Thread.currentThread().getName());
         if (!threadName.contains("main")) {
             println(" [" + Thread.currentThread().getName() + "] " + command);
@@ -509,7 +515,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
         }
     }
 
-    private void handleNamespace(String namespace) {
+    protected void handleNamespace(String namespace) {
         if (!namespace.isEmpty()) {
             this.namespace = namespace;
         }
@@ -517,7 +523,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
     }
 
     @SuppressFBWarnings("DM_GC")
-    private void handleJvm() {
+    protected void handleJvm() {
         System.gc();
 
         long max = Runtime.getRuntime().maxMemory();
@@ -535,11 +541,11 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
                 + " " + ManagementFactory.getRuntimeMXBean().getVmVersion());
     }
 
-    private void handleWhoami() {
+    protected void handleWhoami() {
         println(hazelcast.getCluster().getLocalMember());
     }
 
-    private void handleWho() {
+    protected void handleWho() {
         StringBuilder sb = new StringBuilder("\n\nMembers [");
         final Collection<Member> members = hazelcast.getCluster().getMembers();
         sb.append(members != null ? members.size() : 0);
@@ -553,11 +559,11 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
         println(sb.toString());
     }
 
-    private void handleAtomicNumberGet(String[] args) {
+    protected void handleAtomicNumberGet(String[] args) {
         println(getAtomicNumber().get());
     }
 
-    private void handleAtomicNumberSet(String[] args) {
+    protected void handleAtomicNumberSet(String[] args) {
         long v = 0;
         if (args.length > 1) {
             v = Long.parseLong(args[1]);
@@ -566,11 +572,11 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
         println(getAtomicNumber().get());
     }
 
-    private void handleAtomicNumberInc(String[] args) {
+    protected void handleAtomicNumberInc(String[] args) {
         println(getAtomicNumber().incrementAndGet());
     }
 
-    private void handleAtomicNumberDec(String[] args) {
+    protected void handleAtomicNumberDec(String[] args) {
         println(getAtomicNumber().decrementAndGet());
     }
 
@@ -745,7 +751,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
         if (elapsedMillis > 0) {
             long addedKiloBytes = count * BYTES.toKiloBytes(b);
             println("size = " + getMap().size() + ", " + MILLISECONDS.toSeconds(count / elapsedMillis) + " evt/s, "
-                    + MILLISECONDS.toSeconds(addedKiloBytes * 8 / elapsedMillis) + " KBit/s, "
+                    + MILLISECONDS.toSeconds(addedKiloBytes * BYTE_TO_BIT / elapsedMillis) + " KBit/s, "
                     + addedKiloBytes + " KB added");
         }
     }
@@ -930,7 +936,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
 
     // =======================================================
 
-    private void handStats(String[] args) {
+    protected void handStats(String[] args) {
         String iteratorStr = args[0];
         if (iteratorStr.startsWith("m.")) {
             println(getMap().getLocalMapStats());
@@ -1223,7 +1229,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
         } else if (elapsedMillis > 0) {
             int b = Integer.parseInt(args[2]);
             long addedKiloBytes = count * BYTES.toKiloBytes(b);
-            println(", " + MILLISECONDS.toSeconds(addedKiloBytes * 8 / elapsedMillis) + " KBit/s, "
+            println(", " + MILLISECONDS.toSeconds(addedKiloBytes * BYTE_TO_BIT / elapsedMillis) + " KBit/s, "
                     + addedKiloBytes + " KB added");
         }
     }
@@ -1252,17 +1258,17 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
         println(getQueue().remainingCapacity());
     }
 
-    private void execute(String[] args) {
+    protected void execute(String[] args) {
         // execute <echo-string>
         doExecute(false, false, args);
     }
 
-    private void executeOnKey(String[] args) {
+    protected void executeOnKey(String[] args) {
         // executeOnKey <echo-string> <key>
         doExecute(true, false, args);
     }
 
-    private void executeOnMember(String[] args) {
+    protected void executeOnMember(String[] args) {
         // executeOnMember <echo-string> <memberIndex>
         doExecute(false, true, args);
     }
@@ -1296,7 +1302,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
         }
     }
 
-    private void executeOnMembers(String[] args) {
+    protected void executeOnMembers(String[] args) {
         // executeOnMembers <echo-string>
         try {
             IExecutorService executorService = hazelcast.getExecutorService("default");
@@ -1361,7 +1367,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
     /**
      * Handled the help command
      */
-    private void handleHelp(String command) {
+    protected void handleHelp(String command) {
         boolean silentBefore = silent;
         silent = false;
         println("Commands:");
@@ -1379,7 +1385,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
         silent = silentBefore;
     }
 
-    private void printGeneralCommands() {
+    protected void printGeneralCommands() {
         println("-- General commands");
         println("echo true|false                      //turns on/off echo of commands (default false)");
         println("silent true|false                    //turns on/off silent of command output (default false)");
@@ -1399,7 +1405,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
         println("");
     }
 
-    private void printQueueCommands() {
+    protected void printQueueCommands() {
         println("-- Queue commands");
         println("q.offer <string>                     //adds a string object to the queue");
         println("q.poll                               //takes an object from the queue");
@@ -1412,7 +1418,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
         println("");
     }
 
-    private void printSetCommands() {
+    protected void printSetCommands() {
         println("-- Set commands");
         println("s.add <string>                       //adds a string object to the set");
         println("s.remove <string>                    //removes the string object from the set");
@@ -1424,7 +1430,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
         println("");
     }
 
-    private void printLockCommands() {
+    protected void printLockCommands() {
         println("-- Lock commands");
         println("lock <key>                           //same as Hazelcast.getLock(key).lock()");
         println("tryLock <key>                        //same as Hazelcast.getLock(key).tryLock()");
@@ -1433,7 +1439,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
         println("");
     }
 
-    private void printMapCommands() {
+    protected void printMapCommands() {
         println("-- Map commands");
         println("m.put <key> <value>                  //puts an entry to the map");
         println("m.remove <key>                       //removes the entry of given key from the map");
@@ -1460,7 +1466,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
         println("");
     }
 
-    private void printMulitiMapCommands() {
+    protected void printMulitiMapCommands() {
         println("-- MultiMap commands");
         println("mm.put <key> <value>                  //puts an entry to the multimap");
         println("mm.get <key>                          //returns the value of given key from the multimap");
@@ -1480,7 +1486,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
         println("");
     }
 
-    private void printExecutorServiceCommands() {
+    protected void printExecutorServiceCommands() {
         println("-- Executor Service commands:");
         println("execute <echo-input>                            //executes an echo task on random member");
         println("executeOnKey <echo-input> <key>                  //executes an echo task on the member that owns the given key");
@@ -1492,7 +1498,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
         println("");
     }
 
-    private void printAtomicLongCommands() {
+    protected void printAtomicLongCommands() {
         println("-- IAtomicLong commands:");
         println("a.get");
         println("a.set <long>");
@@ -1501,7 +1507,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
         print("");
     }
 
-    private void printListCommands() {
+    protected void printListCommands() {
         println("-- List commands:");
         println("l.add <string>");
         println("l.add <index> <string>");
