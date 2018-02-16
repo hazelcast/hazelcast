@@ -24,9 +24,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.regex.Pattern;
-
 import static com.hazelcast.instance.BuildInfoProvider.HAZELCAST_INTERNAL_OVERRIDE_VERSION;
+import static com.hazelcast.util.StringUtil.VERSION_PATTERN;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -34,9 +33,6 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class BuildInfoProviderTest extends HazelcastTestSupport {
-
-    // major.minor.patch-RC-SNAPSHOT
-    private static final Pattern VERSION_PATTERN = Pattern.compile("^[\\d]+\\.[\\d]+(\\.[\\d]+)?(\\-[\\w]+)?(\\-SNAPSHOT)?$");
 
     @After
     public void cleanup() {
@@ -46,29 +42,6 @@ public class BuildInfoProviderTest extends HazelcastTestSupport {
     @Test
     public void testConstructor() {
         assertUtilityConstructor(BuildInfoProvider.class);
-    }
-
-    @Test
-    public void testVersionPattern() {
-        assertTrue(VERSION_PATTERN.matcher("3.1").matches());
-        assertTrue(VERSION_PATTERN.matcher("3.1-SNAPSHOT").matches());
-        assertTrue(VERSION_PATTERN.matcher("3.1-RC").matches());
-        assertTrue(VERSION_PATTERN.matcher("3.1-RC1-SNAPSHOT").matches());
-        assertTrue(VERSION_PATTERN.matcher("3.1.1").matches());
-        assertTrue(VERSION_PATTERN.matcher("3.1.1-RC").matches());
-        assertTrue(VERSION_PATTERN.matcher("3.1.1-SNAPSHOT").matches());
-        assertTrue(VERSION_PATTERN.matcher("3.1.1-RC1-SNAPSHOT").matches());
-
-        assertFalse(VERSION_PATTERN.matcher("${project.version}").matches());
-        assertFalse(VERSION_PATTERN.matcher("project.version").matches());
-        assertFalse(VERSION_PATTERN.matcher("3").matches());
-        assertFalse(VERSION_PATTERN.matcher("3.RC").matches());
-        assertFalse(VERSION_PATTERN.matcher("3.SNAPSHOT").matches());
-        assertFalse(VERSION_PATTERN.matcher("3-RC").matches());
-        assertFalse(VERSION_PATTERN.matcher("3-SNAPSHOT").matches());
-        assertFalse(VERSION_PATTERN.matcher("3.").matches());
-        assertFalse(VERSION_PATTERN.matcher("3.1.RC").matches());
-        assertFalse(VERSION_PATTERN.matcher("3.1.SNAPSHOT").matches());
     }
 
     @Test
