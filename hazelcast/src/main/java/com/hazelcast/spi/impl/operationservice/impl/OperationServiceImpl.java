@@ -49,7 +49,7 @@ import com.hazelcast.spi.impl.operationexecutor.impl.OperationExecutorImpl;
 import com.hazelcast.spi.impl.operationexecutor.slowoperationdetector.SlowOperationDetector;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.properties.GroupProperty;
-import com.hazelcast.util.EmptyStatement;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.executor.ExecutorType;
 import com.hazelcast.util.executor.ManagedExecutorService;
 
@@ -135,52 +135,51 @@ public final class OperationServiceImpl implements InternalOperationService, Met
     // contains the current executing asyncOperations. This information is needed for the operation-ping.
     // this is a temporary solution till we found a better async operation abstraction
     @Probe
-    private final Set<Operation> asyncOperations
-            = newSetFromMap(new ConcurrentHashMap<Operation, Boolean>());
+    private final Set<Operation> asyncOperations = newSetFromMap(new ConcurrentHashMap<Operation, Boolean>());
 
+    @SuppressWarnings("checkstyle:executablestatementcount")
     public OperationServiceImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
         this.node = nodeEngine.getNode();
-        Address thisAddress = node.getThisAddress();
         this.logger = node.getLogger(OperationService.class);
         this.serializationService = (InternalSerializationService) nodeEngine.getSerializationService();
 
-        this.invocationMaxRetryCount = node.getProperties().getInteger(GroupProperty.INVOCATION_MAX_RETRY_COUNT);
-        this.invocationRetryPauseMillis = node.getProperties().getMillis(GroupProperty.INVOCATION_RETRY_PAUSE);
-        this.failOnIndeterminateOperationState = nodeEngine.getProperties().getBoolean(FAIL_ON_INDETERMINATE_OPERATION_STATE);
+        HazelcastProperties properties = node.getProperties();
+        Address thisAddress = node.getThisAddress();
+        String hzName = nodeEngine.getHazelcastInstance().getName();
+        ClassLoader configClassLoader = node.getConfigClassLoader();
 
-        this.backpressureRegulator = new BackpressureRegulator(
-                node.getProperties(), node.getLogger(BackpressureRegulator.class));
+        this.invocationMaxRetryCount = properties.getInteger(GroupProperty.INVOCATION_MAX_RETRY_COUNT);
+        this.invocationRetryPauseMillis = properties.getMillis(GroupProperty.INVOCATION_RETRY_PAUSE);
+        this.failOnIndeterminateOperationState = properties.getBoolean(FAIL_ON_INDETERMINATE_OPERATION_STATE);
+
+        this.backpressureRegulator = new BackpressureRegulator(properties, node.getLogger(BackpressureRegulator.class));
 
         this.outboundResponseHandler = new OutboundResponseHandler(thisAddress, serializationService, node,
                 node.getLogger(OutboundResponseHandler.class));
 
-        this.invocationRegistry = new InvocationRegistry(
-                node.getLogger(OperationServiceImpl.class), backpressureRegulator.newCallIdSequence());
+        this.invocationRegistry = new InvocationRegistry(node.getLogger(OperationServiceImpl.class),
+                backpressureRegulator.newCallIdSequence());
 
-        this.invocationMonitor = new InvocationMonitor(
-                nodeEngine, thisAddress, node.getProperties(), invocationRegistry,
-                node.getLogger(InvocationMonitor.class), serializationService, nodeEngine.getServiceManager());
+        this.invocationMonitor = new InvocationMonitor(nodeEngine.getClusterService(), serializationService,
+                nodeEngine.getServiceManager(), node.getConnectionManager(), invocationRegistry,
+                node.getLogger(InvocationMonitor.class), hzName, thisAddress, properties);
 
         this.outboundOperationHandler = new OutboundOperationHandler(node, thisAddress, serializationService);
 
         this.backupHandler = new OperationBackupHandler(this, outboundOperationHandler);
 
-        String hzName = nodeEngine.getHazelcastInstance().getName();
-        this.inboundResponseHandler = new InboundResponseHandler(
-                node.getLogger(InboundResponseHandler.class), node.getSerializationService(), invocationRegistry, nodeEngine);
-        ClassLoader configClassLoader = node.getConfigClassLoader();
+        this.inboundResponseHandler = new InboundResponseHandler(node.getLogger(InboundResponseHandler.class),
+                node.getSerializationService(), invocationRegistry, nodeEngine);
         this.asyncInboundResponseHandler = new AsyncInboundResponseHandler(configClassLoader, hzName,
-                node.getLogger(AsyncInboundResponseHandler.class),
-                inboundResponseHandler, node.getProperties());
+                node.getLogger(AsyncInboundResponseHandler.class), inboundResponseHandler, properties);
 
-        this.operationExecutor = new OperationExecutorImpl(
-                node.getProperties(), node.loggingService, thisAddress, new OperationRunnerFactoryImpl(this),
-                node.getNodeExtension(), hzName, configClassLoader);
+        this.operationExecutor = new OperationExecutorImpl(properties, thisAddress, node.getLogger(OperationExecutorImpl.class),
+                new OperationRunnerFactoryImpl(this), node.getNodeExtension(), hzName, configClassLoader);
 
-        this.slowOperationDetector = new SlowOperationDetector(node.loggingService,
+        this.slowOperationDetector = new SlowOperationDetector(node.getLogger(SlowOperationDetector.class),
                 operationExecutor.getGenericOperationRunners(), operationExecutor.getPartitionOperationRunners(),
-                node.getProperties(), hzName);
+                properties, hzName);
     }
 
     public OutboundResponseHandler getOutboundResponseHandler() {
@@ -305,16 +304,14 @@ public final class OperationServiceImpl implements InternalOperationService, Met
                 .setPartitionId(partitionId)
                 .setReplicaIndex(DEFAULT_REPLICA_INDEX);
 
-        return new PartitionInvocation(
-                invocationContext, op, invocationMaxRetryCount, invocationRetryPauseMillis,
+        return new PartitionInvocation(invocationContext, op, invocationMaxRetryCount, invocationRetryPauseMillis,
                 DEFAULT_CALL_TIMEOUT, DEFAULT_DESERIALIZE_RESULT, failOnIndeterminateOperationState).invoke();
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public <E> InternalCompletableFuture<E> invokeOnPartition(Operation op) {
-        return new PartitionInvocation(
-                invocationContext, op, invocationMaxRetryCount, invocationRetryPauseMillis,
+        return new PartitionInvocation(invocationContext, op, invocationMaxRetryCount, invocationRetryPauseMillis,
                 DEFAULT_CALL_TIMEOUT, DEFAULT_DESERIALIZE_RESULT, failOnIndeterminateOperationState).invoke();
     }
 
@@ -332,9 +329,9 @@ public final class OperationServiceImpl implements InternalOperationService, Met
     public <V> void asyncInvokeOnPartition(String serviceName, Operation op, int partitionId, ExecutionCallback<V> callback) {
         op.setServiceName(serviceName).setPartitionId(partitionId).setReplicaIndex(DEFAULT_REPLICA_INDEX);
 
-        InvocationFuture future = new PartitionInvocation(invocationContext, op,
-                invocationMaxRetryCount, invocationRetryPauseMillis,
-                DEFAULT_CALL_TIMEOUT, DEFAULT_DESERIALIZE_RESULT, failOnIndeterminateOperationState).invokeAsync();
+        InvocationFuture future = new PartitionInvocation(invocationContext, op, invocationMaxRetryCount,
+                invocationRetryPauseMillis, DEFAULT_CALL_TIMEOUT, DEFAULT_DESERIALIZE_RESULT,
+                failOnIndeterminateOperationState).invokeAsync();
 
         if (callback != null) {
             future.andThen(callback);
@@ -353,8 +350,8 @@ public final class OperationServiceImpl implements InternalOperationService, Met
 
     @Override
     public boolean isCallTimedOut(Operation op) {
-        // Join operations should not be checked for timeout because caller is not member of this cluster
-        // and can have a different clock.
+        // join operations should not be checked for timeout, because the caller is not a member of this cluster
+        // and can have a different clock
         if (isJoinOperation(op)) {
             return false;
         }
@@ -369,11 +366,7 @@ public final class OperationServiceImpl implements InternalOperationService, Met
 
         ClusterClock clusterClock = nodeEngine.getClusterService().getClusterClock();
         long now = clusterClock.getClusterTime();
-        if (expireTime < now) {
-            return true;
-        }
-
-        return false;
+        return expireTime < now;
     }
 
     @Override
@@ -386,7 +379,6 @@ public final class OperationServiceImpl implements InternalOperationService, Met
     @Override
     public Map<Integer, Object> invokeOnPartitions(String serviceName, OperationFactory operationFactory,
                                                    Collection<Integer> partitions) throws Exception {
-
         Map<Address, List<Integer>> memberPartitions = createHashMap(3);
         InternalPartitionService partitionService = nodeEngine.getPartitionService();
         for (int partition : partitions) {
@@ -481,10 +473,9 @@ public final class OperationServiceImpl implements InternalOperationService, Met
         try {
             invocationMonitor.awaitTermination(TERMINATION_TIMEOUT_MILLIS);
         } catch (InterruptedException e) {
-            //restore the interrupt.
-            //todo: we need a better mechanism for dealing with interruption and waiting for termination
+            // TODO: we need a better mechanism for dealing with interruption and waiting for termination
+            // restore the interrupt
             Thread.currentThread().interrupt();
-            EmptyStatement.ignore(e);
         }
     }
 

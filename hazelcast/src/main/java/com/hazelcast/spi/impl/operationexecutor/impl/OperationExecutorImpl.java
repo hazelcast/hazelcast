@@ -23,7 +23,6 @@ import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.internal.util.concurrent.MPSCQueue;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.LiveOperations;
@@ -76,7 +75,8 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  */
 @SuppressWarnings("checkstyle:methodcount")
 public final class OperationExecutorImpl implements OperationExecutor, MetricsProvider {
-    public static final HazelcastProperty IDLE_STRATEGY
+
+    private static final HazelcastProperty IDLE_STRATEGY
             = new HazelcastProperty("hazelcast.operation.partitionthread.idlestrategy", "block");
 
     private static final int TERMINATION_TIMEOUT_SECONDS = 3;
@@ -98,15 +98,11 @@ public final class OperationExecutorImpl implements OperationExecutor, MetricsPr
     private final OperationRunner adHocOperationRunner;
     private final int priorityThreadCount;
 
-    public OperationExecutorImpl(HazelcastProperties properties,
-                                 LoggingService loggerService,
-                                 Address thisAddress,
-                                 OperationRunnerFactory runnerFactory,
-                                 NodeExtension nodeExtension,
-                                 String hzName,
+    public OperationExecutorImpl(HazelcastProperties properties, Address thisAddress, ILogger logger,
+                                 OperationRunnerFactory runnerFactory, NodeExtension nodeExtension, String hzName,
                                  ClassLoader configClassLoader) {
         this.thisAddress = thisAddress;
-        this.logger = loggerService.getLogger(OperationExecutorImpl.class);
+        this.logger = logger;
 
         this.adHocOperationRunner = runnerFactory.createAdHocRunner();
 
