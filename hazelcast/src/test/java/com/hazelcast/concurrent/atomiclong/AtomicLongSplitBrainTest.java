@@ -41,6 +41,7 @@ import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 import java.util.Collection;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.hazelcast.concurrent.ConcurrencyTestUtil.getAtomicLongBackup;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -126,8 +127,8 @@ public class AtomicLongSplitBrainTest extends SplitBrainTestSupport {
 
         atomicLongB1 = instances[0].getAtomicLong(atomicLongNameB);
 
-        backupAtomicLongA = getAtomicLongBackup(instances, atomicLongA1, atomicLongNameA);
-        backupAtomicLongB = getAtomicLongBackup(instances, atomicLongB1, atomicLongNameB);
+        backupAtomicLongA = getAtomicLongBackup(instances, atomicLongA1);
+        backupAtomicLongB = getAtomicLongBackup(instances, atomicLongB1);
 
         if (mergePolicyClass == DiscardMergePolicy.class) {
             afterMergeDiscardMergePolicy();
@@ -203,14 +204,6 @@ public class AtomicLongSplitBrainTest extends SplitBrainTestSupport {
         assertEquals(42, atomicLongA1.get());
         assertEquals(42, atomicLongA2.get());
         assertEquals(42, backupAtomicLongA.get());
-    }
-
-    private static AtomicLong getAtomicLongBackup(HazelcastInstance[] instances, IAtomicLong atomicLong, String atomicLongName) {
-        int partitionId = ((AtomicLongProxy) atomicLong).getPartitionId();
-        HazelcastInstance backupInstance = getFirstBackupInstance(instances, partitionId);
-        AtomicLongService service = getNodeEngineImpl(backupInstance).getService(AtomicLongService.SERVICE_NAME);
-        AtomicLongContainer container = service.getLongContainer(atomicLongName);
-        return new AtomicLong(container.get());
     }
 
     private static class MergeGreaterValueMergePolicy implements SplitBrainMergePolicy {

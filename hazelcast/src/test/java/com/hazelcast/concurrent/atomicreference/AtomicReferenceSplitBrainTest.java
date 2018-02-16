@@ -23,7 +23,6 @@ import com.hazelcast.core.IAtomicReference;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.SplitBrainMergePolicy;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.merge.DiscardMergePolicy;
 import com.hazelcast.spi.merge.MergingValueHolder;
 import com.hazelcast.spi.merge.PassThroughMergePolicy;
@@ -42,6 +41,7 @@ import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 import java.util.Collection;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static com.hazelcast.concurrent.ConcurrencyTestUtil.getAtomicReferenceBackup;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -127,8 +127,8 @@ public class AtomicReferenceSplitBrainTest extends SplitBrainTestSupport {
         mergeLifecycleListener.await();
 
         atomicReferenceB1 = instances[0].getAtomicReference(atomicReferenceNameB);
-        backupAtomicReferenceA = getAtomicReferenceBackup(instances, atomicReferenceA1, atomicReferenceNameA);
-        backupAtomicReferenceB = getAtomicReferenceBackup(instances, atomicReferenceB1, atomicReferenceNameB);
+        backupAtomicReferenceA = getAtomicReferenceBackup(instances, atomicReferenceA1);
+        backupAtomicReferenceB = getAtomicReferenceBackup(instances, atomicReferenceB1);
 
         if (mergePolicyClass == DiscardMergePolicy.class) {
             afterMergeDiscardMergePolicy();
@@ -204,18 +204,6 @@ public class AtomicReferenceSplitBrainTest extends SplitBrainTestSupport {
         assertEquals(42, atomicReferenceA1.get());
         assertEquals(42, atomicReferenceA2.get());
         assertEquals(42, backupAtomicReferenceA.get());
-    }
-
-    private static <E> AtomicReference<E> getAtomicReferenceBackup(HazelcastInstance[] instances,
-                                                                   IAtomicReference<E> atomicReference,
-                                                                   String atomicReferenceName) {
-        int partitionId = ((AtomicReferenceProxy) atomicReference).getPartitionId();
-        HazelcastInstance backupInstance = getFirstBackupInstance(instances, partitionId);
-        NodeEngineImpl nodeEngine = getNodeEngineImpl(backupInstance);
-        AtomicReferenceService service = nodeEngine.getService(AtomicReferenceService.SERVICE_NAME);
-        AtomicReferenceContainer container = service.getReferenceContainer(atomicReferenceName);
-        E value = nodeEngine.getSerializationService().toObject(container.get());
-        return new AtomicReference<E>(value);
     }
 
     private static class MergeInstanceOfIntegerMergePolicy implements SplitBrainMergePolicy {

@@ -223,5 +223,4 @@ public class ScheduledExecutorSplitBrainTest extends SplitBrainTestSupport {
             assertEquals(30, future.get(), 0);
         }
     }
-
 }

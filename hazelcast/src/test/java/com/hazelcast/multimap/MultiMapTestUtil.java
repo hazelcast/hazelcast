@@ -40,7 +40,9 @@ public final class MultiMapTestUtil {
     }
 
     /**
-     * Returns the backup entries of an {@link com.hazelcast.core.MultiMap} by a given map name.
+     * Returns all backup entries of an {@link com.hazelcast.core.MultiMap} by a given map name.
+     * <p>
+     * Note: This method returns all backups from all nodes and doesn't consider the replica indexes.
      *
      * @param instances    the {@link HazelcastInstance} array to gather the data from
      * @param multiMapName the MultiMap name
@@ -57,7 +59,7 @@ public final class MultiMapTestUtil {
             SerializationService serializationService = nodeEngine.getSerializationService();
 
             for (int partitionId = 0; partitionId < partitionService.getPartitionCount(); partitionId++) {
-                if (partitionService.getPartition(partitionId, false).isLocal()) {
+                if (partitionService.isPartitionOwner(partitionId)) {
                     continue;
                 }
                 MultiMapPartitionContainer partitionContainer = mapService.getPartitionContainer(partitionId);
