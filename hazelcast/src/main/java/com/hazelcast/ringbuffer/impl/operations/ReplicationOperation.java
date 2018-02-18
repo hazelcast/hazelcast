@@ -89,12 +89,12 @@ public class ReplicationOperation extends Operation implements IdentifiedDataSer
             final MapService mapService = getNodeEngine().getService(MapService.SERVICE_NAME);
             final MapEventJournal journal = mapService.getMapServiceContext().getEventJournal();
             final EventJournalConfig journalConfig = journal.getEventJournalConfig(ns);
-            return journal.toRingbufferConfig(journalConfig);
+            return journal.toRingbufferConfig(journalConfig, ns);
         } else if (CacheService.SERVICE_NAME.equals(serviceName)) {
             final CacheService cacheService = getNodeEngine().getService(CacheService.SERVICE_NAME);
             final CacheEventJournal journal = cacheService.getEventJournal();
             final EventJournalConfig journalConfig = journal.getEventJournalConfig(ns);
-            return journal.toRingbufferConfig(journalConfig);
+            return journal.toRingbufferConfig(journalConfig, ns);
         } else {
             throw new IllegalArgumentException("Unsupported ringbuffer service name " + serviceName);
         }

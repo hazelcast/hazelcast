@@ -18,6 +18,7 @@ package com.hazelcast.map.impl.journal;
 
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.internal.cluster.Versions;
@@ -146,11 +147,12 @@ public class RingbufferMapEventJournalImpl implements MapEventJournal {
     }
 
     @Override
-    public RingbufferConfig toRingbufferConfig(EventJournalConfig config) {
+    public RingbufferConfig toRingbufferConfig(EventJournalConfig config, ObjectNamespace namespace) {
         int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
+        MapConfig mapConfig = nodeEngine.getConfig().findMapConfig(namespace.getObjectName());
         return new RingbufferConfig()
-                .setAsyncBackupCount(0)
-                .setBackupCount(0)
+                .setAsyncBackupCount(mapConfig.getAsyncBackupCount())
+                .setBackupCount(mapConfig.getBackupCount())
                 .setInMemoryFormat(InMemoryFormat.OBJECT)
                 .setCapacity(config.getCapacity() / partitionCount)
                 .setTimeToLiveSeconds(config.getTimeToLiveSeconds());
@@ -199,7 +201,7 @@ public class RingbufferMapEventJournalImpl implements MapEventJournal {
         if (config == null || !config.isEnabled()) {
             return null;
         }
-        ringbufferConfig = toRingbufferConfig(config);
+        ringbufferConfig = toRingbufferConfig(config, namespace);
         return service.getOrCreateContainer(partitionId, namespace, ringbufferConfig);
     }
 
