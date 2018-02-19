@@ -21,6 +21,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.hamcrest.CoreMatchers;
 import org.junit.AfterClass;
@@ -43,7 +44,7 @@ import static org.junit.Assert.assertTrue;
  * Tests for demo console application.
  */
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class})
+@Category({QuickTest.class, ParallelTest.class})
 public class ClientConsoleAppTest extends HazelcastTestSupport {
 
     private static final PrintStream systemOutOrig = System.out;
