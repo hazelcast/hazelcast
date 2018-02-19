@@ -31,9 +31,8 @@ public final class Hazelcast {
     }
 
     /**
-     * Shuts down all running Hazelcast Instances on this JVM.
-     * It doesn't shutdown all members of the
-     * cluster but just the ones running on this JVM.
+     * Shuts down all member {@link HazelcastInstance}s running on this JVM.
+     * It doesn't shutdown all members of the cluster but just the ones running on this JVM.
      *
      * @see #newHazelcastInstance(Config)
      */
