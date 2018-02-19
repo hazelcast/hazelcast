@@ -25,7 +25,6 @@ import com.hazelcast.client.impl.protocol.AuthenticationStatus;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.Member;
-import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -41,24 +40,18 @@ import com.hazelcast.util.function.Supplier;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 import java.security.Permission;
-import java.util.ArrayList;
-import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
-import java.util.Map;
-
-import static java.util.Collections.synchronizedList;
 
 /**
  * Base authentication task
  */
-public abstract class AuthenticationBaseMessageTask<P> extends AbstractMultiTargetMessageTask<P> {
-
+public abstract class AuthenticationBaseMessageTask<P> extends AbstractStableClusterMessageTask<P> {
 
     protected transient ClientPrincipal principal;
     protected transient Credentials credentials;
     protected transient byte clientSerializationVersion;
     protected transient String clientVersion;
-    private final List<Member> cleanedUpMembers = synchronizedList(new ArrayList<Member>());
 
     public AuthenticationBaseMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -70,28 +63,8 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMultiTarg
     }
 
     @Override
-    protected Object reduce(Map<Member, Object> map) throws Throwable {
-        for (Map.Entry<Member, Object> entry : map.entrySet()) {
-            Member member = entry.getKey();
-            Object response = entry.getValue();
-            if (response instanceof Throwable) {
-                if (response instanceof MemberLeftException) {
-                    cleanedUpMembers.add(member);
-                    continue;
-                }
-                throw (Throwable) response;
-            }
-            boolean isClientDisconnectOperationRun = (Boolean) response;
-            if (isClientDisconnectOperationRun) {
-                cleanedUpMembers.add(member);
-            }
-        }
+    protected Object resolve(Object response) {
         return prepareAuthenticatedClientMessage();
-    }
-
-    @Override
-    public Collection<Member> getTargets() {
-        return clientEngine.getClusterService().getMembers();
     }
 
     @Override
@@ -227,7 +200,7 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMultiTarg
         final Address thisAddress = clientEngine.getThisAddress();
         byte status = AuthenticationStatus.AUTHENTICATED.getId();
         return encodeAuth(status, thisAddress, principal.getUuid(), principal.getOwnerUuid(),
-                serializationService.getVersion(), cleanedUpMembers);
+                serializationService.getVersion(), Collections.<Member>emptyList());
     }
 
     private void setConnectionType() {
