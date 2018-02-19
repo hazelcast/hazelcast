@@ -24,7 +24,7 @@ import com.hazelcast.client.ClientEvent;
 import com.hazelcast.client.ClientEventType;
 import com.hazelcast.client.impl.operations.ClientDisconnectionOperation;
 import com.hazelcast.client.impl.operations.GetConnectedClientsOperation;
-import com.hazelcast.client.impl.operations.PostJoinClientOperation;
+import com.hazelcast.client.impl.operations.OnJoinClientOperation;
 import com.hazelcast.client.impl.protocol.ClientExceptionFactory;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.MessageTaskFactory;
@@ -61,7 +61,7 @@ import com.hazelcast.spi.MembershipServiceEvent;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
-import com.hazelcast.spi.PostJoinAwareService;
+import com.hazelcast.spi.PreJoinAwareService;
 import com.hazelcast.spi.ProxyService;
 import com.hazelcast.spi.UrgentSystemOperation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -79,6 +79,7 @@ import javax.security.auth.login.LoginException;
 import java.util.Collection;
 import java.util.EnumMap;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -97,7 +98,7 @@ import static com.hazelcast.util.SetUtil.createHashSet;
  * Class that requests, listeners from client handled in node side.
  */
 @SuppressWarnings("checkstyle:classdataabstractioncoupling")
-public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwareService,
+public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAwareService,
         ManagedService, MembershipAwareService, EventPublishingService<ClientEvent, ClientListener> {
 
     /**
@@ -534,8 +535,15 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
     }
 
     @Override
-    public Operation getPostJoinOperation() {
-        return ownershipMappings.isEmpty() ? null : new PostJoinClientOperation(ownershipMappings);
+    public Operation getPreJoinOperation() {
+        Set<Member> members = nodeEngine.getClusterService().getMembers();
+        HashSet<String> liveMemberUUIDs = new HashSet<String>();
+        for (Member member : members) {
+            liveMemberUUIDs.add(member.getUuid());
+        }
+        Map<String, String> liveMappings = new HashMap<String, String>(ownershipMappings);
+        liveMappings.values().retainAll(liveMemberUUIDs);
+        return liveMappings.isEmpty() ? null : new OnJoinClientOperation(liveMappings);
     }
 
     @Override

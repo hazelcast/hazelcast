@@ -64,7 +64,7 @@ public class QuorumOperationTest {
     private static final Collection<String> INTERNAL_CLASS_NAMES = asList(
             "merge", "backup",
             "replication", "migration",
-            "postjoin", "rollback",
+            "postjoin", "rollback", "onjoin",
             "detachmember", "putresult"
     );
 
