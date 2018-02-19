@@ -33,8 +33,7 @@ import java.io.IOException;
  * @param <V> the type of value
  * @since 3.10
  */
-public class MergingEntryHolderImpl<K, V> implements MergingEntryHolder<K, V>, CreationTimeHolder,
-        IdentifiedDataSerializable {
+public class MergingEntryHolderImpl<K, V> implements MergingEntryHolder<K, V>, CreationTimeHolder, IdentifiedDataSerializable {
 
     private K key;
     private V value;
