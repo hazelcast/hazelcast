@@ -44,8 +44,10 @@ import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.Semaphore;
@@ -453,19 +455,14 @@ public class ExecutorQuorumWriteTest extends AbstractQuorumTest {
     }
 
     @Test
-    public void invokeAll_timeout_quorum() throws Exception {
-        try {
-            expectQuorumException(exec(0).invokeAll(Arrays.<Callable<Object>>asList(callable(), callable()), 10l, TimeUnit.SECONDS));
-        } catch (UnsupportedOperationException ex) {
-        }
+    public void invokeAll_timeout_quorum_short_timeout() throws Exception {
+        List<Future<?>> futures = exec(0).invokeAll(Arrays.<Callable<Object>>asList(callable(), callable()), 10l, TimeUnit.SECONDS);
+        assertAllowedException(futures, CancellationException.class);
     }
 
     @Test
     public void invokeAll_timeout_noQuorum() throws Exception {
-        try {
-            expectQuorumException(exec(3).invokeAll(Arrays.<Callable<Object>>asList(callable(), callable()), 10l, TimeUnit.SECONDS));
-        } catch (UnsupportedOperationException ex) {
-        }
+        expectQuorumException(exec(3).invokeAll(Arrays.<Callable<Object>>asList(callable(), callable()), 10l, TimeUnit.SECONDS));
     }
 
     @Test(expected = UnsupportedOperationException.class)
@@ -548,13 +545,17 @@ public class ExecutorQuorumWriteTest extends AbstractQuorumTest {
         }
     }
 
-    private void expectQuorumException(Collection<Future> futures) {
-        for (Future future : futures) {
+    private void expectQuorumException(Collection<Future<?>> futures) {
+        assertAllowedException(futures, QuorumException.class);
+    }
+
+    private void assertAllowedException(Collection<Future<?>> futures, Class<?> allowedException) {
+        for (Future f : futures) {
             try {
-                future.get();
-            } catch (Exception ex) {
-                if (!(ex instanceof QuorumException || ex.getCause() instanceof QuorumException)) {
-                    fail("Expected QuorumException but was " + ex);
+                f.get();
+            } catch (Exception e) {
+                if (!(allowedException.isInstance(e) || allowedException.isInstance(e.getCause()))) {
+                    fail("Expected " + allowedException + " but was " + e);
                 }
             }
         }
