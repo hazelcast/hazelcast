@@ -103,6 +103,7 @@ import static com.hazelcast.spi.properties.GroupProperty.LOGGING_TYPE;
 import static com.hazelcast.spi.properties.GroupProperty.MAX_JOIN_SECONDS;
 import static com.hazelcast.spi.properties.GroupProperty.SHUTDOWNHOOK_ENABLED;
 import static com.hazelcast.spi.properties.GroupProperty.SHUTDOWNHOOK_POLICY;
+import static com.hazelcast.util.StringUtil.isNullOrEmpty;
 import static com.hazelcast.util.ThreadUtil.createThreadName;
 import static java.security.AccessController.doPrivileged;
 
@@ -200,6 +201,7 @@ public class Node {
             logger = loggingService.getLogger(Node.class.getName());
 
             nodeExtension.printNodeInfo();
+            logGroupPasswordInfo();
             nodeExtension.beforeStart();
 
             serializationService = nodeExtension.createSerializationService();
@@ -799,4 +801,12 @@ public class Node {
         return attributes;
     }
 
+    private void logGroupPasswordInfo() {
+        if (!isNullOrEmpty(config.getGroupConfig().getPassword())) {
+            logger.info("A non-empty group password is configured for the Hazelcast member."
+                    + " Starting with Hazelcast version 3.8.2, members with the same group name,"
+                    + " but with different group passwords (that do not use authentication) form a cluster."
+                    + " The group password configuration will be removed completely in a future relase.");
+        }
+    }
 }
