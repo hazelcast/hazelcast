@@ -114,12 +114,9 @@ public class Networking {
     private byte[] createFlowControlPacket(Address member) throws IOException {
         try (BufferObjectDataOutput out = createObjectDataOutput(nodeEngine)) {
             final boolean[] hasData = {false};
-            Map<Long, ExecutionContext> executionContexts = jobExecutionService.getExecutionContexts();
+            Map<Long, ExecutionContext> executionContexts = jobExecutionService.getExecutionContextsFor(member);
             out.writeInt(executionContexts.size());
             executionContexts.forEach((execId, exeCtx) -> uncheckRun(() -> {
-                if (!exeCtx.hasParticipant(member)) {
-                    return;
-                }
                 out.writeLong(execId);
                 out.writeInt(exeCtx.receiverMap().values().stream().mapToInt(Map::size).sum());
                 exeCtx.receiverMap().forEach((vertexId, ordinalToSenderToTasklet) ->

@@ -35,17 +35,19 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Supplier;
 
+import static com.hazelcast.jet.function.DistributedFunctions.entryKey;
+import static com.hazelcast.jet.function.DistributedFunctions.entryValue;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.impl.util.Util.idToString;
 import static com.hazelcast.jet.impl.util.Util.jobAndExecutionId;
 import static java.util.Collections.newSetFromMap;
+import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
 
 public class JobExecutionService {
@@ -79,8 +81,10 @@ public class JobExecutionService {
         return executionContexts.get(executionId);
     }
 
-    Map<Long, ExecutionContext> getExecutionContexts() {
-        return new HashMap<>(executionContexts);
+    Map<Long, ExecutionContext> getExecutionContextsFor(Address member) {
+        return executionContexts.entrySet().stream()
+                         .filter(entry -> entry.getValue().hasParticipant(member))
+                         .collect(toMap(entryKey(), entryValue()));
     }
 
     Map<Integer, Map<Integer, Map<Address, SenderTasklet>>> getSenderMap(long executionId) {
