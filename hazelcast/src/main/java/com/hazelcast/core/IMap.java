@@ -139,13 +139,43 @@ import java.util.concurrent.TimeUnit;
  * {@link MapStore} methods to load, store or remove data. Each method's
  * javadoc describes the way of its interaction with the map store.
  *
+ * <p><b>Expiration and eviction</b>
+ * <p>
+ * Expiration puts a limit on the maximum lifetime of an entry stored inside the map. When the entry expires
+ * it can't be retrieved from the map any longer and at some point in time it will be cleaned out from the map
+ * to free up the memory. There are two expiration policies:
+ * <ul>
+ * <li>The time-to-live (TTL) expiration policy limits the lifetime of the entry relative to the time of the last
+ * <i>write</i> access performed on the entry. The default TTL value for the map may be configured using the
+ * {@code time-to-live-seconds} setting, which has an infinite by default. An individual entry may have its own TTL
+ * value assigned using one of the methods accepting a TTL value, for instance using the
+ * {@link #put(Object, Object, long, TimeUnit) put} method.
+ * <li>The max-idle expiration policy limits the lifetime of the entry relative to the time of the last <i>read</i> or
+ * <i>write</i> access performed on the entry. The max-idle value for the map may be configured using the
+ * {@code max-idle-seconds} setting, which has an infinite value by default.
+ * </ul>
+ * <p>
+ * Both expiration policies may be used simultaneously on the map entries. In such case, the entry considered expired
+ * if at least one of the policies marks it as expired.
+ * <p>
+ * Eviction puts a limit on the maximum size of the map. If the size of the map grows larger than the maximum allowed
+ * size, an eviction policy decides which item to evict from the map to reduce its size. The maximum allowed size may
+ * be configured using the {@code max-size} setting and the eviction policy may be configured using the
+ * {@code eviction-policy} setting as well. By default, maps have no restrictions on the size and may grow arbitrarily
+ * large.
+ * <p>
+ * Eviction may be enabled along with the expiration policies. In such case, the expiration policies continue to work
+ * as usual cleaning out the expired entries regardless of the map size.
+ * <p>
+ * Locked map entries are not the subjects for the expiration and eviction policies.
+ *
  * <p><b>Mutating methods without TTL</b>
  * <p>
  * Certain {@link IMap} methods perform the entry set mutation and don't accept TTL as a parameter. Entries
  * created or updated by such methods are subjects for the following TTL calculation procedure:
  * <ul>
  * <li>If the entry is new, i.e. the entry was created, it receives the default TTL value configured for
- * the map using {@code time-to-live-seconds} configuration setting. If this setting is not provided for
+ * the map using the {@code time-to-live-seconds} configuration setting. If this setting is not provided for
  * the map, the entry receives an infinite TTL value.
  * <li>If the entry already exists, i.e. the entry was updated, its TTL value remains unchanged and its
  * lifetime is prolonged by this TTL value.
