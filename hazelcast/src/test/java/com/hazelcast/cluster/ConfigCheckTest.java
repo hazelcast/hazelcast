@@ -88,7 +88,7 @@ public class ConfigCheckTest {
         ObjectDataOutput odo = mock(ObjectDataOutput.class);
 
         try {
-            ConfigCheck configCheck = new ConfigCheck(config, "multicast", Versions.CURRENT_CLUSTER_VERSION);
+            ConfigCheck configCheck = new ConfigCheck(config, "multicast");
             configCheck.writeData(odo);
         } catch (IOException e) {
             fail(e.getMessage());

@@ -23,7 +23,6 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.util.EmptyStatement;
-import com.hazelcast.version.Version;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -43,13 +42,9 @@ public final class ConfigCheck implements IdentifiedDataSerializable {
 
     private String groupName;
 
-    private String groupPassword;
-
     private String joinerType;
 
     private boolean partitionGroupEnabled;
-
-    private Version clusterVersion = Version.UNKNOWN;
 
     private PartitionGroupConfig.MemberGroupType memberGroupType;
 
@@ -65,12 +60,7 @@ public final class ConfigCheck implements IdentifiedDataSerializable {
     }
 
     public ConfigCheck(Config config, String joinerType) {
-        this(config, joinerType, Version.UNKNOWN);
-    }
-
-    public ConfigCheck(Config config, String joinerType, Version clusterVersion) {
         this.joinerType = joinerType;
-        this.clusterVersion = clusterVersion;
 
         // Copying all properties relevant for checking
         properties.put(PARTITION_COUNT.getName(), config.getProperty(PARTITION_COUNT.getName()));
@@ -80,7 +70,6 @@ public final class ConfigCheck implements IdentifiedDataSerializable {
         GroupConfig groupConfig = config.getGroupConfig();
         if (groupConfig != null) {
             this.groupName = groupConfig.getName();
-            this.groupPassword = config.getGroupConfig().getPassword();
         }
 
         // Partition-group settings
