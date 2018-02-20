@@ -682,7 +682,7 @@ public class Node {
 
     public ConfigCheck createConfigCheck() {
         String joinerType = joiner == null ? "" : joiner.getType();
-        return new ConfigCheck(config, joinerType, clusterService.getClusterVersion());
+        return new ConfigCheck(config, joinerType);
     }
 
     public void join() {
