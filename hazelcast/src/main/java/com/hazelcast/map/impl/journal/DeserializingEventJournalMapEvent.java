@@ -25,9 +25,12 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
 import com.hazelcast.spi.serialization.SerializationService;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 
+@SuppressFBWarnings(value = "EQ_DOESNT_OVERRIDE_EQUALS",
+        justification = "equality is checked by serialised data in superclass, not deserialised instances in this class")
 public class DeserializingEventJournalMapEvent<K, V>
         extends InternalEventJournalMapEvent
         implements EventJournalMapEvent<K, V>, HazelcastInstanceAware {
@@ -93,19 +96,5 @@ public class DeserializingEventJournalMapEvent<K, V>
     @Override
     public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
         serializationService = ((SerializationServiceSupport) hazelcastInstance).getSerializationService();
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        // equality is checked by serialised data in superclass, not
-        // deserialised instances in this class
-        return super.equals(o);
-    }
-
-    @Override
-    public int hashCode() {
-        // equality is checked by serialised data in superclass, not
-        // deserialised instances in this class
-        return super.hashCode();
     }
 }

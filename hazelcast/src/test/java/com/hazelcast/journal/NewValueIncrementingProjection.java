@@ -35,6 +35,6 @@ class NewValueIncrementingProjection<EJ_TYPE> extends Projection<EJ_TYPE, Intege
 
     @Override
     public Integer transform(EJ_TYPE input) {
-        return journalEventAdapter.getEventNewValue(input) + delta;
+        return journalEventAdapter.getNewValue(input) + delta;
     }
 }

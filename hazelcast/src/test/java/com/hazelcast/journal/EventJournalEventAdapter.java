@@ -30,22 +30,22 @@ public interface EventJournalEventAdapter<K, V, EJ_TYPE> extends Serializable {
     /**
      * Returns the event key
      */
-    K getEventKey(EJ_TYPE e);
+    K getKey(EJ_TYPE e);
 
     /**
      * Returns the event new value
      */
-    V getEventNewValue(EJ_TYPE e);
+    V getNewValue(EJ_TYPE e);
 
     /**
      * Returns the event old value
      */
-    V getEventOldValue(EJ_TYPE e);
+    V getOldValue(EJ_TYPE e);
 
     /**
      * Returns the unified event type
      */
-    EventType getEventType(EJ_TYPE e);
+    EventType getType(EJ_TYPE e);
 
     /**
      * Unified event type for all data structures. Data structure specific

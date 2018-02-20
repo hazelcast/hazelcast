@@ -27,6 +27,7 @@ import com.hazelcast.journal.EventJournalDataStructureAdapter;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.spi.ObjectNamespace;
+import com.hazelcast.util.function.Predicate;
 
 import javax.cache.Cache;
 import java.util.AbstractMap.SimpleImmutableEntry;
@@ -90,11 +91,16 @@ public class EventJournalCacheDataStructureAdapter<K, V>
     @Override
     @SuppressWarnings("unchecked")
     public <T> ICompletableFuture<ReadResultSet<T>> readFromEventJournal(
-            long startSequence, int minSize, int maxSize, int partitionId,
-            com.hazelcast.util.function.Predicate<? super EventJournalCacheEvent<K, V>> predicate,
-            Projection<? super EventJournalCacheEvent<K, V>, ? extends T> projection) {
-        return ((EventJournalReader<EventJournalCacheEvent<K, V>>) cache)
-                .readFromEventJournal(startSequence, minSize, maxSize, partitionId, predicate, projection);
+            long startSequence,
+            int minSize,
+            int maxSize,
+            int partitionId,
+            Predicate<? super EventJournalCacheEvent<K, V>> predicate,
+            Projection<? super EventJournalCacheEvent<K, V>, ? extends T> projection
+    ) {
+        final EventJournalReader<EventJournalCacheEvent<K, V>> reader
+                = (EventJournalReader<EventJournalCacheEvent<K, V>>) this.cache;
+        return reader.readFromEventJournal(startSequence, minSize, maxSize, partitionId, predicate, projection);
     }
 
     private Set<Map.Entry<K, V>> getEntries(ICache<K, V> cache) {

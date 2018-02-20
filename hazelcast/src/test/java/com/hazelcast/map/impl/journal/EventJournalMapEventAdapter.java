@@ -5,22 +5,22 @@ import com.hazelcast.map.journal.EventJournalMapEvent;
 
 public class EventJournalMapEventAdapter<K, V> implements EventJournalEventAdapter<K, V, EventJournalMapEvent<K, V>> {
     @Override
-    public K getEventKey(EventJournalMapEvent<K, V> e) {
+    public K getKey(EventJournalMapEvent<K, V> e) {
         return e.getKey();
     }
 
     @Override
-    public V getEventNewValue(EventJournalMapEvent<K, V> e) {
+    public V getNewValue(EventJournalMapEvent<K, V> e) {
         return e.getNewValue();
     }
 
     @Override
-    public V getEventOldValue(EventJournalMapEvent<K, V> e) {
+    public V getOldValue(EventJournalMapEvent<K, V> e) {
         return e.getOldValue();
     }
 
     @Override
-    public EventType getEventType(EventJournalMapEvent<K, V> e) {
+    public EventType getType(EventJournalMapEvent<K, V> e) {
         switch (e.getType()) {
             case ADDED:
                 return EventType.ADDED;

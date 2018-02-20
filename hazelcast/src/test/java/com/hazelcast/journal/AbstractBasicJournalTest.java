@@ -111,9 +111,9 @@ public abstract class AbstractBasicJournalTest<EJ_TYPE> extends HazelcastTestSup
                 final EventJournalEventAdapter<String, Integer, EJ_TYPE> journalAdapter = context.eventJournalAdapter;
                 final EJ_TYPE e = response.get(0);
 
-                assertEquals(ADDED, journalAdapter.getEventType(e));
-                assertEquals(key, journalAdapter.getEventKey(e));
-                assertEquals(value, journalAdapter.getEventNewValue(e));
+                assertEquals(ADDED, journalAdapter.getType(e));
+                assertEquals(key, journalAdapter.getKey(e));
+                assertEquals(value, journalAdapter.getNewValue(e));
                 latch.countDown();
             }
 
@@ -151,9 +151,9 @@ public abstract class AbstractBasicJournalTest<EJ_TYPE> extends HazelcastTestSup
         final HashMap<String, Integer> received = new HashMap<String, Integer>();
         final EventJournalEventAdapter<String, Integer, EJ_TYPE> journalAdapter = context.eventJournalAdapter;
         for (EJ_TYPE e : events) {
-            assertEquals(ADDED, journalAdapter.getEventType(e));
-            assertNull(journalAdapter.getEventOldValue(e));
-            received.put(journalAdapter.getEventKey(e), journalAdapter.getEventNewValue(e));
+            assertEquals(ADDED, journalAdapter.getType(e));
+            assertNull(journalAdapter.getOldValue(e));
+            received.put(journalAdapter.getKey(e), journalAdapter.getNewValue(e));
         }
 
         assertEquals(context.dataAdapter.entrySet(), received.entrySet());
@@ -207,12 +207,12 @@ public abstract class AbstractBasicJournalTest<EJ_TYPE> extends HazelcastTestSup
 
         final EventJournalEventAdapter<String, Integer, EJ_TYPE> journalAdapter = context.eventJournalAdapter;
         for (EJ_TYPE e : getAllEvents(context.dataAdapter, TRUE_PREDICATE, IDENTITY_PROJECTION)) {
-            switch (journalAdapter.getEventType(e)) {
+            switch (journalAdapter.getType(e)) {
                 case ADDED:
-                    added.put(journalAdapter.getEventKey(e), journalAdapter.getEventNewValue(e));
+                    added.put(journalAdapter.getKey(e), journalAdapter.getNewValue(e));
                     break;
                 case REMOVED:
-                    removed.put(journalAdapter.getEventKey(e), journalAdapter.getEventOldValue(e));
+                    removed.put(journalAdapter.getKey(e), journalAdapter.getOldValue(e));
                     break;
             }
         }
@@ -251,10 +251,10 @@ public abstract class AbstractBasicJournalTest<EJ_TYPE> extends HazelcastTestSup
 
         final EventJournalEventAdapter<String, Integer, EJ_TYPE> journalAdapter = context.eventJournalAdapter;
         for (EJ_TYPE e : getAllEvents(context.dataAdapter, TRUE_PREDICATE, IDENTITY_PROJECTION)) {
-            switch (journalAdapter.getEventType(e)) {
+            switch (journalAdapter.getType(e)) {
                 case UPDATED:
-                    updatedFrom.put(journalAdapter.getEventKey(e), journalAdapter.getEventOldValue(e));
-                    updatedTo.put(journalAdapter.getEventKey(e), journalAdapter.getEventNewValue(e));
+                    updatedFrom.put(journalAdapter.getKey(e), journalAdapter.getOldValue(e));
+                    updatedTo.put(journalAdapter.getKey(e), journalAdapter.getNewValue(e));
                     break;
             }
         }
@@ -281,13 +281,13 @@ public abstract class AbstractBasicJournalTest<EJ_TYPE> extends HazelcastTestSup
         final NewValueParityPredicate<EJ_TYPE> oddPredicate = new NewValueParityPredicate<EJ_TYPE>(1, journalAdapter);
 
         for (EJ_TYPE e : getAllEvents(context.dataAdapter, evenPredicate, IDENTITY_PROJECTION)) {
-            assertEquals(ADDED, journalAdapter.getEventType(e));
-            evenMap.put(journalAdapter.getEventKey(e), journalAdapter.getEventNewValue(e));
+            assertEquals(ADDED, journalAdapter.getType(e));
+            evenMap.put(journalAdapter.getKey(e), journalAdapter.getNewValue(e));
         }
 
         for (EJ_TYPE e : getAllEvents(context.dataAdapter, oddPredicate, IDENTITY_PROJECTION)) {
-            assertEquals(ADDED, journalAdapter.getEventType(e));
-            oddMap.put(journalAdapter.getEventKey(e), journalAdapter.getEventNewValue(e));
+            assertEquals(ADDED, journalAdapter.getType(e));
+            oddMap.put(journalAdapter.getKey(e), journalAdapter.getNewValue(e));
         }
 
         assertEquals(count / 2, evenMap.size());
@@ -361,10 +361,10 @@ public abstract class AbstractBasicJournalTest<EJ_TYPE> extends HazelcastTestSup
                 final HashMap<String, Integer> added = new HashMap<String, Integer>();
                 final HashMap<String, Integer> evicted = new HashMap<String, Integer>();
                 for (EJ_TYPE e : set) {
-                    if (ADDED.equals(journalAdapter.getEventType(e))) {
-                        added.put(journalAdapter.getEventKey(e), journalAdapter.getEventNewValue(e));
-                    } else if (EVICTED.equals(journalAdapter.getEventType(e))) {
-                        evicted.put(journalAdapter.getEventKey(e), journalAdapter.getEventOldValue(e));
+                    if (ADDED.equals(journalAdapter.getType(e))) {
+                        added.put(journalAdapter.getKey(e), journalAdapter.getNewValue(e));
+                    } else if (EVICTED.equals(journalAdapter.getType(e))) {
+                        evicted.put(journalAdapter.getKey(e), journalAdapter.getOldValue(e));
                     }
                 }
                 assertEquals(added, evicted);

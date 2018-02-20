@@ -37,6 +37,6 @@ class NewValueParityPredicate<EJ_TYPE> implements Predicate<EJ_TYPE>, Serializab
 
     @Override
     public boolean test(EJ_TYPE e) {
-        return journalEventAdapter.getEventNewValue(e) % 2 == remainder;
+        return journalEventAdapter.getNewValue(e) % 2 == remainder;
     }
 }
