@@ -507,8 +507,14 @@ public class MembershipFailureTest extends HazelcastTestSupport {
         assertClusterSizeEventually(1, member3);
 
         assertOpenEventually(mergeLatch);
-        assertMemberViewsAreSame(getMemberMap(member1), getMemberMap(member2));
         assertMemberViewsAreSame(getMemberMap(member1), getMemberMap(member3));
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertMemberViewsAreSame(getMemberMap(member1), getMemberMap(member2));
+            }
+        });
     }
 
     @Test
