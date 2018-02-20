@@ -187,14 +187,28 @@ public class CacheEventListenerAdaptor<K, V>
     private Iterable<CacheEntryEvent<? extends K, ? extends V>> createCacheEntryEvent(Collection<CacheEventData> keys) {
         HashSet<CacheEntryEvent<? extends K, ? extends V>> evt = new HashSet<CacheEntryEvent<? extends K, ? extends V>>();
         for (CacheEventData cacheEventData : keys) {
-            final EventType eventType = CacheEventType.convertToEventType(cacheEventData.getCacheEventType());
-            final K key = toObject(cacheEventData.getDataKey());
-            final V newValue = toObject(cacheEventData.getDataValue());
+            EventType eventType = CacheEventType.convertToEventType(cacheEventData.getCacheEventType());
+            K key = toObject(cacheEventData.getDataKey());
+            boolean hasNewValue = !(eventType == EventType.REMOVED || eventType == EventType.EXPIRED);
+            final V newValue;
             final V oldValue;
             if (isOldValueRequired) {
-                oldValue = toObject(cacheEventData.getDataOldValue());
+                if (hasNewValue) {
+                    newValue = toObject(cacheEventData.getDataValue());
+                    oldValue = toObject(cacheEventData.getDataOldValue());
+                } else {
+                    // according to contract of CacheEntryEvent#getValue
+                    oldValue = toObject(cacheEventData.getDataValue());
+                    newValue = oldValue;
+                }
             } else {
-                oldValue = null;
+                if (hasNewValue) {
+                    newValue = toObject(cacheEventData.getDataValue());
+                    oldValue = null;
+                } else {
+                    newValue = null;
+                    oldValue = null;
+                }
             }
             final CacheEntryEventImpl<K, V> event =
                     new CacheEntryEventImpl<K, V>(source, eventType, key, newValue, oldValue);
