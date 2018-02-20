@@ -16,8 +16,8 @@
 
 package com.hazelcast.map.impl.journal;
 
-import com.hazelcast.journal.EventJournal;
-import com.hazelcast.journal.EventJournalReadOperation;
+import com.hazelcast.internal.journal.EventJournal;
+import com.hazelcast.internal.journal.EventJournalReadOperation;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.journal.EventJournalMapEvent;

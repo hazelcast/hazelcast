@@ -15,7 +15,7 @@
  */
 
 /**
- * Contains {@link com.hazelcast.journal.EventJournal} event interface for ICache.
+ * Contains {@link com.hazelcast.internal.journal.EventJournal} event interface for ICache.
  * @since 3.9
  */
 package com.hazelcast.cache.journal;

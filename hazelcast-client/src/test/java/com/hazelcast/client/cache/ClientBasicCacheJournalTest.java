@@ -16,26 +16,17 @@
 
 package com.hazelcast.client.cache;
 
-import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.impl.journal.BasicCacheJournalTest;
-import com.hazelcast.cache.journal.EventJournalCacheEvent;
-import com.hazelcast.client.cache.impl.ClientCacheProxy;
 import com.hazelcast.client.cache.impl.HazelcastClientCachingProvider;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.journal.EventJournalInitialSubscriberState;
-import com.hazelcast.projection.Projection;
-import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.function.Predicate;
 import org.junit.After;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import javax.cache.Cache;
 import javax.cache.CacheManager;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -62,26 +53,6 @@ public class ClientBasicCacheJournalTest extends BasicCacheJournalTest {
     protected CacheManager createCacheManager() {
         final HazelcastClientCachingProvider provider = HazelcastClientCachingProvider.createCachingProvider(client);
         return provider.getCacheManager();
-    }
-
-    @Override
-    protected <K, V> ICache<K, V> getCache(String cacheName) {
-        return (ICache<K, V>) cacheManager.getCache(cacheName);
-    }
-
-    @Override
-    protected <K, V> EventJournalInitialSubscriberState subscribeToEventJournal(Cache<K, V> cache, int partitionId) throws Exception {
-        return ((ClientCacheProxy<K, V>) cache).subscribeToEventJournal(partitionId).get();
-    }
-
-    @Override
-    protected <K, V, T> ICompletableFuture<ReadResultSet<T>> readFromEventJournal(Cache<K, V> cache,
-                                                                                  long startSequence,
-                                                                                  int maxSize,
-                                                                                  int partitionId,
-                                                                                  Predicate<? super EventJournalCacheEvent<K, V>> predicate,
-                                                                                  Projection<? super EventJournalCacheEvent<K, V>, T> projection) {
-        return ((ClientCacheProxy<K, V>) cache).readFromEventJournal(startSequence, 1, maxSize, partitionId, predicate, projection);
     }
 
     @After

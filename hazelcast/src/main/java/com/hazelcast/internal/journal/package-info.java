@@ -23,4 +23,4 @@
  * @since 3.9
  */
 
-package com.hazelcast.journal;
+package com.hazelcast.internal.journal;

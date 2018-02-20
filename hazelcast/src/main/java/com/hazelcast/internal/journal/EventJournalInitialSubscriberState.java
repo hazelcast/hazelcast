@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.journal;
+package com.hazelcast.internal.journal;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;

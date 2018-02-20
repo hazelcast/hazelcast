@@ -94,4 +94,18 @@ public class DeserializingEventJournalMapEvent<K, V>
     public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
         serializationService = ((SerializationServiceSupport) hazelcastInstance).getSerializationService();
     }
+
+    @Override
+    public boolean equals(Object o) {
+        // equality is checked by serialised data in superclass, not
+        // deserialised instances in this class
+        return super.equals(o);
+    }
+
+    @Override
+    public int hashCode() {
+        // equality is checked by serialised data in superclass, not
+        // deserialised instances in this class
+        return super.hashCode();
+    }
 }

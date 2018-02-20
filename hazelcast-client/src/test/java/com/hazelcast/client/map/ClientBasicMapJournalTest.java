@@ -16,20 +16,12 @@
 
 package com.hazelcast.client.map;
 
-import com.hazelcast.client.proxy.ClientMapProxy;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.core.IMap;
-import com.hazelcast.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.map.impl.journal.BasicMapJournalTest;
-import com.hazelcast.map.journal.EventJournalMapEvent;
-import com.hazelcast.projection.Projection;
-import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.function.Predicate;
 import org.junit.After;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -52,28 +44,6 @@ public class ClientBasicMapJournalTest extends BasicMapJournalTest {
         final HazelcastInstance[] instances = factory.newInstances(getConfig(), 2);
         client = factory.newHazelcastClient();
         return instances;
-    }
-
-    @Override
-    protected <K, V> IMap<K, V> getMap(String mapName) {
-        return client.getMap(mapName);
-    }
-
-    @Override
-    protected <K, V> EventJournalInitialSubscriberState subscribeToEventJournal(IMap<K, V> map, int partitionId)
-            throws Exception {
-        return ((ClientMapProxy<K, V>) map).subscribeToEventJournal(partitionId).get();
-    }
-
-    @Override
-    protected <K, V, T> ICompletableFuture<ReadResultSet<T>> readFromEventJournal(
-            IMap<K, V> map,
-            long startSequence,
-            int maxSize,
-            int partitionId,
-            Predicate<? super EventJournalMapEvent<K, V>> predicate,
-            Projection<? super EventJournalMapEvent<K, V>, T> projection) {
-        return ((ClientMapProxy<K, V>) map).readFromEventJournal(startSequence, 1, maxSize, partitionId, predicate, projection);
     }
 
     @After

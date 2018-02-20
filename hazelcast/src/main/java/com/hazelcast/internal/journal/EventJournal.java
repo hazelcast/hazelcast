@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.journal;
+package com.hazelcast.internal.journal;
 
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.RingbufferConfig;

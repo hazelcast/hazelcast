@@ -20,7 +20,7 @@ import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.internal.cluster.Versions;
-import com.hazelcast.journal.EventJournalInitialSubscriberState;
+import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.PartitionAwareOperation;
