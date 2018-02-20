@@ -41,7 +41,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
-                <version>${maven.jar.plugin.version}</version>
                 <configuration>
                     <archive>
                         <index>true</index>
@@ -49,6 +48,9 @@
                         <manifest>
                             <mainClass>com.hazelcast.jet.server.StartServer</mainClass>
                         </manifest>
+                        <manifestEntries>
+                            <Automatic-Module-Name>com.hazelcast.jet</Automatic-Module-Name>
+                        </manifestEntries>
                     </archive>
                 </configuration>
             </plugin>

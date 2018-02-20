@@ -35,7 +35,7 @@ import java.util.function.Function;
  * client creates {@code ProcessorMetaSupplier} as a part of the DAG;
  * </li><li>
  * serializes it and sends to a cluster member;
- * </li<li>
+ * </li><li>
  * the member deserializes and uses it to create one {@code ProcessorSupplier}
  * for each cluster member;
  * </li><li>

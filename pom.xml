@@ -81,7 +81,7 @@
         <maven.compiler.plugin.version>3.7.0</maven.compiler.plugin.version>
         <maven.jar.plugin.version>2.4</maven.jar.plugin.version>
         <maven.source.plugin.version>2.2.1</maven.source.plugin.version>
-        <maven.javadoc.plugin.version>2.10.4</maven.javadoc.plugin.version>
+        <maven.javadoc.plugin.version>3.0.0</maven.javadoc.plugin.version>
         <maven.gpg.plugin.version>1.4</maven.gpg.plugin.version>
         <maven.assembly.plugin.version>3.0.0</maven.assembly.plugin.version>
         <maven.bundle.plugin.version>2.4.0</maven.bundle.plugin.version>
@@ -89,6 +89,7 @@
         <maven.dependency.plugin.version>2.6</maven.dependency.plugin.version>
         <maven.git.commit.id.plugin.version>2.1.10</maven.git.commit.id.plugin.version>
 
+        <maven.enforcer.plugin.version>3.0.0-M1</maven.enforcer.plugin.version>
         <maven.surefire.plugin.version>2.20.1</maven.surefire.plugin.version>
         <maven.spotbuts.plugin.version>3.1.1</maven.spotbuts.plugin.version>
         <maven.checkstyle.plugin.version>2.17</maven.checkstyle.plugin.version>
@@ -251,6 +252,26 @@
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <version>${maven.enforcer.plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>enforce-maven</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <requireMavenVersion>
+                                    <version>3.5.2</version>
+                                </requireMavenVersion>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>${maven.compiler.plugin.version}</version>
                 <configuration>
@@ -275,7 +296,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
-                <version>${maven.jar.plugin.version}</version>
                 <configuration>
                     <archive>
                         <index>true</index>
@@ -332,8 +352,9 @@
                 <artifactId>maven-javadoc-plugin</artifactId>
                 <version>${maven.javadoc.plugin.version}</version>
                 <configuration>
+                    <doclint>-missing</doclint>
                     <maxmemory>1024</maxmemory>
-                    <additionalparam>-Xdoclint:-missing -tag apiNote::a -tag implSpec:a -link https://docs.oracle.com/javase/8/docs/api/</additionalparam>
+                    <detectJavaApiLink>true</detectJavaApiLink>
                     <excludePackageNames>
                         *.impl:*.internal
                     </excludePackageNames>
@@ -385,6 +406,11 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>${maven.surefire.plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-jar-plugin</artifactId>
+                    <version>${maven.jar.plugin.version}</version>
                 </plugin>
             </plugins>
         </pluginManagement>

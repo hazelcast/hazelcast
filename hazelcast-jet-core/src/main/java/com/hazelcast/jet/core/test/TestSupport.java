@@ -81,7 +81,7 @@ import static java.util.stream.Collectors.toMap;
  *     method returned {@code false} and made a progress
  * </ul>
  *
- * <h3>Snapshot & restore</h3>
+ * <h3>Snapshot &amp; restore</h3>
  * The {@link #disableSnapshots() optional} snapshot+restore test procedure:
  * <ul>
  *     <li>{@code saveToSnapshot()} is called. If we are not doing restore, this
@@ -132,7 +132,7 @@ import static java.util.stream.Collectors.toMap;
  *     returned from your supplier).
  *     <li>This utility never calls {@link Processor#tryProcess()}.
  * </ul>
- * <p>
+ * <p/>
  *
  * <h3>Example usage</h3>
  * This will test one of the jet-provided processors:

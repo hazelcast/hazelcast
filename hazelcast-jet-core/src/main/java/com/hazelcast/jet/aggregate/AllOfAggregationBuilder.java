@@ -30,7 +30,7 @@ import static com.hazelcast.jet.function.DistributedFunction.identity;
 /**
  * Use {@link AggregateOperations#allOfBuilder()} to create.
  *
- * @param <T>
+ * @param <T> the type of the stream item
  */
 public final class AllOfAggregationBuilder<T> {
 

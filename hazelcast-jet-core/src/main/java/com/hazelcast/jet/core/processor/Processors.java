@@ -148,7 +148,7 @@ import static com.hazelcast.jet.function.DistributedFunctions.noopConsumer;
  * each upstream processor, doing very little work.
  *
  * <h1>Overview of factory methods for aggregate operations</h1>
- * <table border="1">
+ * <table border="1" summary="Overview of factory methods for aggregate operations">
  * <tr>
  *     <th></th>
  *     <th>single-stage</th>
