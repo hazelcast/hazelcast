@@ -35,23 +35,21 @@ import static org.junit.Assert.assertTrue;
 @Category(SlowTest.class)
 public abstract class FlakeIdGenerator_AbstractBackpressureTest {
 
-    public static final int BATCH_SIZE = 100000;
+    protected static final int BATCH_SIZE = 100000;
     private static final ILogger LOGGER = Logger.getLogger(FlakeIdGenerator_MemberBackpressureTest.class);
+    private static final long CTM_IMPRECISION = 50; // imprecision of the value returned from currentTimeMillis()
     public HazelcastInstance instance;
 
     @Test
     public void backpressureTest() {
-        int batchSize = 100000;
-
         final FlakeIdGenerator generator = instance.getFlakeIdGenerator("gen");
 
         long testStart = System.nanoTime();
         long allowedHiccupMillis = 2000;
-        int idsPerMs = 1 << BITS_SEQUENCE;
         for (int i = 1; i <= 15; i++) {
             generator.newId();
             long elapsedMs = NANOSECONDS.toMillis(System.nanoTime() - testStart);
-            long minimumRequiredMs = Math.max(0, i * batchSize / idsPerMs - ALLOWED_FUTURE_MILLIS);
+            long minimumRequiredMs = Math.max(0, (i * BATCH_SIZE >> BITS_SEQUENCE) - ALLOWED_FUTURE_MILLIS - CTM_IMPRECISION);
             long maximumAllowedMs = minimumRequiredMs + allowedHiccupMillis;
             String msg = "Iteration " + i + ", elapsed: " + NANOSECONDS.toMillis(System.nanoTime() - testStart) + "ms, "
                     + "minimum: " + minimumRequiredMs + ", maximum: " + maximumAllowedMs;
@@ -59,28 +57,28 @@ public abstract class FlakeIdGenerator_AbstractBackpressureTest {
             assertTrue(msg, elapsedMs >= minimumRequiredMs && elapsedMs <= maximumAllowedMs);
 
             // drain remainder of the IDs from the batch
-            for (int j = 1; j < batchSize; j++) {
+            for (int j = 1; j < BATCH_SIZE; j++) {
                 generator.newId();
             }
         }
 
         /*
         This is the typical output of the test:
-            Iteration 1, elapsed: 6ms, minimum: 0, maximum: 2000
-            Iteration 2, elapsed: 14ms, minimum: 0, maximum: 2000
-            Iteration 3, elapsed: 20ms, minimum: 0, maximum: 2000
-            Iteration 4, elapsed: 25ms, minimum: 0, maximum: 2000
-            Iteration 5, elapsed: 29ms, minimum: 0, maximum: 2000
-            Iteration 6, elapsed: 33ms, minimum: 0, maximum: 2000
-            Iteration 7, elapsed: 40ms, minimum: 0, maximum: 2000
-            Iteration 8, elapsed: 44ms, minimum: 0, maximum: 2000
-            Iteration 9, elapsed: 48ms, minimum: 0, maximum: 2000
-            Iteration 10, elapsed: 632ms, minimum: 625, maximum: 2625
-            Iteration 11, elapsed: 2193ms, minimum: 2187, maximum: 4187
-            Iteration 12, elapsed: 3755ms, minimum: 3750, maximum: 5750
-            Iteration 13, elapsed: 5319ms, minimum: 5312, maximum: 7312
-            Iteration 14, elapsed: 6881ms, minimum: 6875, maximum: 8875
-            Iteration 15, elapsed: 8443ms, minimum: 8437, maximum: 10437
+            Iteration 1, elapsed: 0ms, minimum: 0, maximum: 2000
+            Iteration 2, elapsed: 1ms, minimum: 0, maximum: 2000
+            Iteration 3, elapsed: 3ms, minimum: 0, maximum: 2000
+            Iteration 4, elapsed: 4ms, minimum: 0, maximum: 2000
+            Iteration 5, elapsed: 5ms, minimum: 0, maximum: 2000
+            Iteration 6, elapsed: 6ms, minimum: 0, maximum: 2000
+            Iteration 7, elapsed: 8ms, minimum: 0, maximum: 2000
+            Iteration 8, elapsed: 9ms, minimum: 0, maximum: 2000
+            Iteration 9, elapsed: 10ms, minimum: 0, maximum: 2000
+            Iteration 10, elapsed: 621ms, minimum: 575, maximum: 2575
+            Iteration 11, elapsed: 2183ms, minimum: 2137, maximum: 4137
+            Iteration 12, elapsed: 3746ms, minimum: 3700, maximum: 5700
+            Iteration 13, elapsed: 5307ms, minimum: 5262, maximum: 7262
+            Iteration 14, elapsed: 6871ms, minimum: 6825, maximum: 8825
+            Iteration 15, elapsed: 8433ms, minimum: 8387, maximum: 10387
          */
     }
 }
