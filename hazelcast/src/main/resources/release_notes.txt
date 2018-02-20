@@ -65,8 +65,12 @@ The following are the other improvements performed to solve the enhancement issu
 
 4. Behavioral Changes
 
-- Edge-case behavior of findXConfig methods in the Config class changed and methods are more consistent. The method findCacheConfig now behaves similarly to other findXConfig methods.
+Up to 3.9.x, the method Config.findCacheConfig looks up a CacheSimpleConfig: if none is found, then null is returned. This behavior has been not like all the other findXXConfig methods in the following ways:
 
+- findXXConfig never returns null, it falls back to defaults, creates the missing data structure configuration and stores it in Config.
+- findXXConfig returns a read-only copy of the actual configuration, while findCacheConfig returns the found configuration object itself.
+
+With 3.10, the method Config.findCacheConfig is aligned to behave like the other findXXConfig methods; it now returns a read-only copy and does fallback to defaults. If you who want the old behavior for this method in 3.10.x, you should use the method Config.findCacheConfigOrNull.
 
 5. Known Problems
 
