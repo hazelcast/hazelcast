@@ -120,10 +120,10 @@ public class CachePartitionSegment implements ConstructorFunction<String, ICache
         }
     }
 
-    public void clear() {
+    public void reset() {
         synchronized (mutex) {
             for (ICacheRecordStore store : recordStores.values()) {
-                store.clear();
+                store.reset();
             }
         }
     }
@@ -142,7 +142,7 @@ public class CachePartitionSegment implements ConstructorFunction<String, ICache
             for (ICacheRecordStore store : recordStores.values()) {
                 CacheConfig cacheConfig = store.getConfig();
                 if (backupCount > cacheConfig.getTotalBackupCount()) {
-                    store.clear();
+                    store.reset();
                 }
             }
         }

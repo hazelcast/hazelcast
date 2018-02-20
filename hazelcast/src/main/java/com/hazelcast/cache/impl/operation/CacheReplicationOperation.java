@@ -104,7 +104,7 @@ public class CacheReplicationOperation extends Operation implements IdentifiedDa
         ICacheService service = getService();
         for (Map.Entry<String, Map<Data, CacheRecord>> entry : data.entrySet()) {
             ICacheRecordStore cache = service.getOrCreateRecordStore(entry.getKey(), getPartitionId());
-            cache.clear();
+            cache.reset();
             Map<Data, CacheRecord> map = entry.getValue();
 
             Iterator<Map.Entry<Data, CacheRecord>> iterator = map.entrySet().iterator();
@@ -113,7 +113,7 @@ public class CacheReplicationOperation extends Operation implements IdentifiedDa
                 Data key = next.getKey();
                 CacheRecord record = next.getValue();
                 iterator.remove();
-                cache.putRecord(key, record);
+                cache.putRecord(key, record, false);
             }
         }
         data.clear();

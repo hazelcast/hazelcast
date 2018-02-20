@@ -23,6 +23,8 @@ import com.hazelcast.core.EntryEventType;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.map.impl.MapContainer;
+import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataType;
 import com.hazelcast.ringbuffer.impl.ReadResultSetImpl;
@@ -49,10 +51,12 @@ import static com.hazelcast.core.EntryEventType.UPDATED;
 public class RingbufferMapEventJournalImpl implements MapEventJournal {
 
     private final NodeEngineImpl nodeEngine;
+    private final MapServiceContext mapServiceContext;
     private final ILogger logger;
 
-    public RingbufferMapEventJournalImpl(NodeEngine engine) {
+    public RingbufferMapEventJournalImpl(NodeEngine engine, MapServiceContext mapServiceContext) {
         this.nodeEngine = (NodeEngineImpl) engine;
+        this.mapServiceContext = mapServiceContext;
         this.logger = this.nodeEngine.getLogger(RingbufferMapEventJournalImpl.class);
     }
 
@@ -146,11 +150,12 @@ public class RingbufferMapEventJournalImpl implements MapEventJournal {
     }
 
     @Override
-    public RingbufferConfig toRingbufferConfig(EventJournalConfig config) {
+    public RingbufferConfig toRingbufferConfig(EventJournalConfig config, ObjectNamespace namespace) {
+        MapContainer mapContainer = mapServiceContext.getMapContainer(namespace.getObjectName());
         int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
         return new RingbufferConfig()
-                .setAsyncBackupCount(0)
-                .setBackupCount(0)
+                .setAsyncBackupCount(mapContainer.getAsyncBackupCount())
+                .setBackupCount(mapContainer.getBackupCount())
                 .setInMemoryFormat(InMemoryFormat.OBJECT)
                 .setCapacity(config.getCapacity() / partitionCount)
                 .setTimeToLiveSeconds(config.getTimeToLiveSeconds());
@@ -199,7 +204,7 @@ public class RingbufferMapEventJournalImpl implements MapEventJournal {
         if (config == null || !config.isEnabled()) {
             return null;
         }
-        ringbufferConfig = toRingbufferConfig(config);
+        ringbufferConfig = toRingbufferConfig(config, namespace);
         return service.getOrCreateContainer(partitionId, namespace, ringbufferConfig);
     }
 

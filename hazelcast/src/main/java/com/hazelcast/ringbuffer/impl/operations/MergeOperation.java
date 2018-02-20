@@ -133,12 +133,12 @@ public class MergeOperation extends Operation implements IdentifiedDataSerializa
             MapService mapService = getNodeEngine().getService(MapService.SERVICE_NAME);
             MapEventJournal journal = mapService.getMapServiceContext().getEventJournal();
             EventJournalConfig journalConfig = journal.getEventJournalConfig(ns);
-            return journal.toRingbufferConfig(journalConfig);
+            return journal.toRingbufferConfig(journalConfig, namespace);
         } else if (CacheService.SERVICE_NAME.equals(serviceName)) {
             CacheService cacheService = getNodeEngine().getService(CacheService.SERVICE_NAME);
             CacheEventJournal journal = cacheService.getEventJournal();
             EventJournalConfig journalConfig = journal.getEventJournalConfig(ns);
-            return journal.toRingbufferConfig(journalConfig);
+            return journal.toRingbufferConfig(journalConfig, namespace);
         } else {
             throw new IllegalArgumentException("Unsupported ringbuffer service name: " + serviceName);
         }

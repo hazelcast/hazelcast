@@ -560,7 +560,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
                              boolean disableWriteThrough, int completionId, String origin) {
         R record = createRecord(value, now, expiryTime);
         try {
-            doPutRecord(key, record, origin);
+            doPutRecord(key, record, origin, true);
         } catch (Throwable error) {
             onCreateRecordError(key, value, expiryTime, now, disableWriteThrough,
                     completionId, origin, record, error);
@@ -919,22 +919,21 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     @Override
-    public void putRecord(Data key, CacheRecord record) {
+    public void putRecord(Data key, CacheRecord record, boolean updateJournal) {
         evictIfRequired();
-        doPutRecord(key, (R) record);
+        doPutRecord(key, (R) record, SOURCE_NOT_AVAILABLE, updateJournal);
     }
 
-    public final R doPutRecord(Data key, R record) {
-        return doPutRecord(key, record, SOURCE_NOT_AVAILABLE);
-    }
-
-    protected R doPutRecord(Data key, R record, String source) {
+    protected R doPutRecord(Data key, R record, String source, boolean updateJournal) {
         R oldRecord = records.put(key, record);
-        if (oldRecord != null) {
-            cacheService.eventJournal.writeUpdateEvent(
-                    eventJournalConfig, objectNamespace, partitionId, key, oldRecord.getValue(), record.getValue());
-        } else {
-            cacheService.eventJournal.writeCreatedEvent(eventJournalConfig, objectNamespace, partitionId, key, record.getValue());
+        if (updateJournal) {
+            if (oldRecord != null) {
+                cacheService.eventJournal.writeUpdateEvent(
+                        eventJournalConfig, objectNamespace, partitionId, key, oldRecord.getValue(), record.getValue());
+            } else {
+                cacheService.eventJournal.writeCreatedEvent(
+                        eventJournalConfig, objectNamespace, partitionId, key, record.getValue());
+            }
         }
         invalidateEntry(key, source);
         return oldRecord;
@@ -942,10 +941,6 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
     @Override
     public CacheRecord removeRecord(Data key) {
-        return doRemoveRecord(key);
-    }
-
-    protected R doRemoveRecord(Data key) {
         return doRemoveRecord(key, SOURCE_NOT_AVAILABLE);
     }
 
@@ -1632,8 +1627,17 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
     @Override
     public void clear() {
-        records.clear();
+        reset();
+        destroyEventJournal();
+    }
+
+    protected void destroyEventJournal() {
         cacheService.eventJournal.destroy(objectNamespace, partitionId);
+    }
+
+    @Override
+    public void reset() {
+        records.clear();
     }
 
     @Override

@@ -209,7 +209,7 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     private MapEventJournal createEventJournal() {
-        return new RingbufferMapEventJournalImpl(getNodeEngine());
+        return new RingbufferMapEventJournalImpl(getNodeEngine(), this);
     }
 
     private LocalMapStatsProvider createLocalMapStatsProvider() {
@@ -310,7 +310,6 @@ class MapServiceContextImpl implements MapServiceContext {
                 final MapContainer mapContainer = recordStore.getMapContainer();
                 if (backupCount > mapContainer.getTotalBackupCount()) {
                     recordStore.clearPartition(false);
-                    eventJournal.destroy(mapContainer.getObjectNamespace(), partitionId);
                     iter.remove();
                 }
             }
@@ -323,7 +322,6 @@ class MapServiceContextImpl implements MapServiceContext {
         if (container != null) {
             for (RecordStore mapPartition : container.getMaps().values()) {
                 mapPartition.clearPartition(false);
-                eventJournal.destroy(mapPartition.getMapContainer().getObjectNamespace(), partitionId);
             }
             container.getMaps().clear();
         }
