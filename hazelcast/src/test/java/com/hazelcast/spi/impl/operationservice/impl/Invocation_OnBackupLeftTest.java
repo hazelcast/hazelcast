@@ -38,9 +38,10 @@ import java.io.IOException;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static com.hazelcast.spi.impl.operationservice.impl.InvocationConstant.VOID;
 import static com.hazelcast.util.UuidUtil.newUnsecureUuidString;
 import static java.util.Collections.newSetFromMap;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -117,7 +118,7 @@ public class Invocation_OnBackupLeftTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                assertNotNull(f.invocation.pendingResponse);
+                assertNotEquals(VOID, f.invocation.pendingResponse);
             }
         });
     }
