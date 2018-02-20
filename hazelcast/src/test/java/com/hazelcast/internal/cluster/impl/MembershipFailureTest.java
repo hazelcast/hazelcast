@@ -733,6 +733,8 @@ public class MembershipFailureTest extends HazelcastTestSupport {
     @Test
     public void test_shouldNotRemoveMemberBecauseOfMasterConfirmationTimeout_duringMastershipClaim() {
         Config config = new Config();
+        config.setProperty(GroupProperty.HEARTBEAT_INTERVAL_SECONDS.getName(), "1");
+        config.setProperty(GroupProperty.MASTER_CONFIRMATION_INTERVAL_SECONDS.getName(), "1");
         config.setProperty(GroupProperty.MAX_NO_MASTER_CONFIRMATION_SECONDS.getName(), "5");
 
         HazelcastInstance member1 = newHazelcastInstance(config);
@@ -744,6 +746,7 @@ public class MembershipFailureTest extends HazelcastTestSupport {
 
         dropOperationsBetween(member2, member3, F_ID, singletonList(FETCH_MEMBER_LIST_STATE));
         member1.getLifecycleService().terminate();
+        dropOperationsFrom(member3, F_ID, singletonList(MASTER_CONFIRM));
 
         assertTrueEventually(new AssertTask() {
             final ClusterServiceImpl clusterService = getNode(member2).getClusterService();
