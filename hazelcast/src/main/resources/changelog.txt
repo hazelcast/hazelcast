@@ -1,5 +1,22 @@
 You can also see the Release Notes document at http://docs.hazelcast.org/docs/release-notes/.
 
+2018.02.21, Release 3.10-BETA-1
+
+- Split-Brain Healing for Hazelcast Data Structures with High-Density (HD) Memory Store.
+- Multiple Users/Roles in a Single Security Mapping.
+- Extended Split-Brain Protection.
+- Shorter Split-Brain Detection Window.
+- Extended Merge Policies.
+- Introduced Flake ID Generator.
+- Deprecated ID Generator.
+- Introduced CRDT PN-Counter.
+- More consistency on findXConfig methods.
+- Deprecated:
+  - hazelcast.master.confirmation.interval.seconds
+  - hazelcast.max.no.master.confirmation.seconds
+  - hazelcast.mc.max.visible.instance.count
+
+
 2017.10.23, Release 3.9
 
 - WAN Replication using Discovery SPI.
