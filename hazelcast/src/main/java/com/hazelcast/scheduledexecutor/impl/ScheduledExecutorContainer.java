@@ -340,8 +340,8 @@ public class ScheduledExecutorContainer {
     }
 
     /**
-     * State is published after every run. When replicas get promoted, they start of, with the latest state see {@link
-     * TaskRunner#initOnce()}
+     * State is published after every run.
+     * When replicas get promoted, they start with the latest state.
      */
     void publishTaskState(String taskName, Map stateSnapshot, ScheduledTaskStatisticsImpl statsSnapshot,
                           ScheduledTaskResult result) {

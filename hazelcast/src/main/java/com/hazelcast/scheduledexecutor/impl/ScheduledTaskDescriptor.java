@@ -30,8 +30,13 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * Metadata holder for scheduled tasks. Scheduled ones have a reference in their future in {@link #future}.
- * Reserved ones have this reference null.
+ * Metadata holder for scheduled tasks.
+ * Active tasks, eg. not suspended, hold a non-null {@link #future} reference. Suspended ones, i.e., backups
+ * or on-going migration have {@link #future} set to null.
+ * <p>
+ * For partition owned tasks, writes to the fields are done through the partition-thread.
+ * For member owned tasks, writes to the fields are done through the generic-thread.
+ * Reads on the fields, follow the same principal.
  */
 public class ScheduledTaskDescriptor
         implements IdentifiedDataSerializable {
@@ -40,21 +45,11 @@ public class ScheduledTaskDescriptor
 
     private transient ScheduledFuture<?> future;
 
-    /**
-     * SPMC (see. Member owned tasks)
-     */
+    private final AtomicReference<ScheduledTaskResult> resultRef = new AtomicReference<ScheduledTaskResult>(null);
+
     private volatile ScheduledTaskStatisticsImpl stats;
 
-    /**
-     * MPMC (Multiple Producers Multiple Concumers) MP when cancelling, due to member owned tasks, all other writes are SP and
-     * through partition threads. Reads are MP for member owned tasks.
-     */
-    private AtomicReference<ScheduledTaskResult> resultRef = new AtomicReference<ScheduledTaskResult>(null);
-
-    /**
-     * SPMC
-     */
-    private Map<?, ?> state;
+    private volatile Map<?, ?> state;
 
     public ScheduledTaskDescriptor() {
     }
