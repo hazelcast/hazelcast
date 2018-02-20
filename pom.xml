@@ -102,6 +102,7 @@
 
         <h2.version>1.3.160</h2.version>
         <atomikos.version>3.9.3</atomikos.version>
+        <hazelcast.test.additionalJvmArguments></hazelcast.test.additionalJvmArguments>
     </properties>
     <licenses>
         <license>
@@ -250,6 +251,7 @@
                         -Dhazelcast.phone.home.enabled=false
                         -Dhazelcast.mancenter.enabled=false
                         -Dhazelcast.test.use.network=false
+                        ${hazelcast.test.additionalJvmArguments}
                     </argLine>
                     <includes>
                         <include>**/**.java</include>
@@ -287,6 +289,7 @@
                         -Dhazelcast.mancenter.enabled=false
                         -Dhazelcast.logging.type=none
                         -Dhazelcast.test.use.network=true
+                        ${hazelcast.test.additionalJvmArguments}
                     </argLine>
                     <useManifestOnlyJar>false</useManifestOnlyJar>
                     <useSystemClassLoader>true</useSystemClassLoader>
@@ -339,6 +342,7 @@
                                         -Dhazelcast.test.use.network=false
                                         -Dhazelcast.test.multiple.jvm=true
                                         -Dlog4j.configurationFile=log4j2-info.xml
+                                        ${hazelcast.test.additionalJvmArguments}
                                     </argLine>
                                     <includes>
                                         <include>**/**.java</include>
@@ -377,6 +381,7 @@
                                         -Dhazelcast.logging.type=none
                                         -Dhazelcast.test.use.network=false
                                         -Dlog4j.configurationFile=log4j2-info.xml
+                                        ${hazelcast.test.additionalJvmArguments}
                                     </argLine>
                                     <includes>
                                         <include>**/**.java</include>
@@ -423,6 +428,7 @@
                                 -Dhazelcast.phone.home.enabled=false
                                 -Dhazelcast.mancenter.enabled=false
                                 -Dhazelcast.test.use.network=false
+                                ${hazelcast.test.additionalJvmArguments}
                             </argLine>
                             <includes>
                                 <include>**/**.java</include>
@@ -459,6 +465,7 @@
                                 -Dhazelcast.phone.home.enabled=false
                                 -Dhazelcast.mancenter.enabled=false
                                 -Dhazelcast.test.use.network=false
+                                ${hazelcast.test.additionalJvmArguments}
                             </argLine>
                             <useManifestOnlyJar>false</useManifestOnlyJar>
                             <useSystemClassLoader>true</useSystemClassLoader>
@@ -520,6 +527,7 @@
                                 -Dhazelcast.logging.type=none
                                 -Dhazelcast.test.use.network=false
                                 -Dlog4j.skipJansi=true
+                                ${hazelcast.test.additionalJvmArguments}
                             </argLine>
                             <includes>
                                 <include>**/YourTestFileHear.java</include>
@@ -556,6 +564,7 @@
                     -Dhazelcast.logging.type=none
                     -Dhazelcast.test.use.network=false
                     -Dlog4j.skipJansi=true
+                    ${hazelcast.test.additionalJvmArguments}
                 </argLine>
             </properties>
             <build>
@@ -629,6 +638,7 @@
                                 -Dhazelcast.mancenter.enabled=false
                                 -Dhazelcast.logging.type=none
                                 -Dhazelcast.test.use.network=true
+                                ${hazelcast.test.additionalJvmArguments}
                             </argLine>
                             <groups>
                                 com.hazelcast.test.annotation.QuickTest,
@@ -735,6 +745,7 @@
                                 -Dhazelcast.logging.type=none
                                 -Dhazelcast.test.use.network=false
                                 -Dlog4j.skipJansi=true
+                                ${hazelcast.test.additionalJvmArguments}
                             </argLine>
 
                             <includes>
@@ -767,6 +778,7 @@
                                 -Dhazelcast.mancenter.enabled=false
                                 -Dhazelcast.logging.type=none
                                 -Dhazelcast.test.use.network=true
+                                ${hazelcast.test.additionalJvmArguments}
                             </argLine>
                             <includes>
                                 <include>**/AtomicLongTest*.java</include>
@@ -997,6 +1009,7 @@
                                 -Dhazelcast.logging.type=none
                                 -Dhazelcast.test.use.network=false
                                 -Dlog4j.skipJansi=true
+                                ${hazelcast.test.additionalJvmArguments}
                             </argLine>
                             <includes>
                                 <include>**/**.java</include>
@@ -1031,6 +1044,7 @@
                                 -Dhazelcast.mancenter.enabled=false
                                 -Dhazelcast.logging.type=none
                                 -Dhazelcast.test.use.network=true
+                                ${hazelcast.test.additionalJvmArguments}
                             </argLine>
                             <useManifestOnlyJar>false</useManifestOnlyJar>
                             <useSystemClassLoader>true</useSystemClassLoader>
@@ -1071,6 +1085,7 @@
                                 -Dhazelcast.logging.type=none
                                 -Dhazelcast.test.use.network=false
                                 -Dlog4j.skipJansi=true
+                                ${hazelcast.test.additionalJvmArguments}
                             </argLine>
                             <includes>
                                 <include>**/**.java</include>
@@ -1106,6 +1121,7 @@
                                 -Dhazelcast.mancenter.enabled=false
                                 -Dhazelcast.logging.type=none
                                 -Dhazelcast.test.use.network=true
+                                ${hazelcast.test.additionalJvmArguments}
                             </argLine>
                             <useManifestOnlyJar>false</useManifestOnlyJar>
                             <useSystemClassLoader>true</useSystemClassLoader>
@@ -1147,6 +1163,7 @@
                                 -Dhazelcast.phone.home.enabled=false
                                 -Dhazelcast.mancenter.enabled=false
                                 -Dhazelcast.test.use.network=false
+                                ${hazelcast.test.additionalJvmArguments}
                             </argLine>
                             <includes>
                                 <include>**/**.java</include>
@@ -1199,6 +1216,7 @@
                                 -Dhazelcast.mancenter.enabled=false
                                 -Dhazelcast.test.use.network=false
                                 -Dhazelcast.test.sample.serialized.objects=${target.dir}/serialized-objects-${project.version}-
+                                ${hazelcast.test.additionalJvmArguments}
                             </argLine>
                             <includes>
                                 <include>**/**.java</include>
