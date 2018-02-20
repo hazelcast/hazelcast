@@ -1149,12 +1149,21 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
     /**
      * {@inheritDoc}
      * <p>
-     * <b>Warning:</b>
+     * <b>Warning 1:</b>
      * <p>
      * This method uses {@code hashCode} and {@code equals} of the
      * binary form of the {@code key}, not the actual implementations of
      * {@code hashCode} and {@code equals} defined in the {@code key}'s
      * class.
+     * <p>
+     * <b>Warning 2:</b>
+     * <p>
+     * This method may return {@code false} even if the operation succeeds.<br>
+     * Background: If the partition owner for given key goes down after successful value replace, but before the executing node
+     * retrieved the invocation result response, then the operation is retried. The invocation
+     * retry fails because the value is already updated and the result of such replace call
+     * returns {@code false}. Hazelcast doesn't guarantee exactly once invocation.
+     * <p>
      *
      * <p><b>Interactions with the map store</b>
      * <p>
