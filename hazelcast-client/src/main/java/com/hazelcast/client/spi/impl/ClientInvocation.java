@@ -72,6 +72,7 @@ public class ClientInvocation implements Runnable {
     private final long startTimeMillis;
     private final long retryPauseMillis;
     private final String objectName;
+    private long hardTimeoutMillis;
     private volatile ClientConnection sendConnection;
     private boolean bypassHeartbeatCheck;
     private EventHandler handler;
@@ -299,6 +300,14 @@ public class ClientInvocation implements Runnable {
         return sendConnection;
     }
 
+    public long getHardTimeoutMillis() {
+        return hardTimeoutMillis;
+    }
+
+    public void setHardTimeoutMillis(long hardTimeoutMillis) {
+        this.hardTimeoutMillis = hardTimeoutMillis;
+    }
+
     public static boolean isRetrySafeException(Throwable t) {
         return t instanceof IOException
                 || t instanceof HazelcastInstanceNotActiveException
@@ -339,5 +348,9 @@ public class ClientInvocation implements Runnable {
                 + ", objectName = " + objectName
                 + ", target = " + target
                 + ", sendConnection = " + sendConnection + '}';
+    }
+
+    public long startTimeMillis() {
+        return this.startTimeMillis;
     }
 }
