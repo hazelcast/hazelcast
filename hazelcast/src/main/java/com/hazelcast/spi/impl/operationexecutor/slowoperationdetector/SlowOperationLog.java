@@ -16,8 +16,10 @@
 
 package com.hazelcast.spi.impl.operationexecutor.slowoperationdetector;
 
+import com.hazelcast.internal.diagnostics.OperationDescriptors;
 import com.hazelcast.internal.management.dto.SlowOperationDTO;
 import com.hazelcast.internal.management.dto.SlowOperationInvocationDTO;
+import com.hazelcast.spi.Operation;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -47,8 +49,12 @@ final class SlowOperationLog {
 
     private final ConcurrentHashMap<Integer, Invocation> invocations = new ConcurrentHashMap<Integer, Invocation>();
 
-    SlowOperationLog(String stackTrace, Object operation) {
-        this.operation = operation.getClass().getName();
+    SlowOperationLog(String stackTrace, Object task) {
+        if (task instanceof Operation) {
+            this.operation = OperationDescriptors.toOperationDesc((Operation) task);
+        } else {
+            this.operation = task.getClass().getName();
+        }
         this.stackTrace = stackTrace;
         if (stackTrace.length() <= SHORT_STACKTRACE_LENGTH) {
             this.shortStackTrace = stackTrace;
