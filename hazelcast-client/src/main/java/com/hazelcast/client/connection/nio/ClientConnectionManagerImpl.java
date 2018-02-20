@@ -85,6 +85,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -114,7 +115,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
 
 
     private final ILogger logger;
-    private final int connectionTimeout;
+    private final int connectionTimeoutMillis;
 
     private final HazelcastClientInstanceImpl client;
     private final SocketInterceptor socketInterceptor;
@@ -159,7 +160,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
         ClientNetworkConfig networkConfig = client.getClientConfig().getNetworkConfig();
 
         final int connTimeout = networkConfig.getConnectionTimeout();
-        this.connectionTimeout = connTimeout == 0 ? Integer.MAX_VALUE : connTimeout;
+        this.connectionTimeoutMillis = connTimeout == 0 ? Integer.MAX_VALUE : connTimeout;
 
         this.executionService = (ClientExecutionServiceImpl) client.getClientExecutionService();
         this.socketOptions = networkConfig.getSocketOptions();
@@ -393,8 +394,8 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
                 if (connection != null) {
                     return connection;
                 }
-                AuthenticationFuture firstCallback = triggerConnect(address, asOwner);
-                connection = (ClientConnection) firstCallback.get();
+                AuthenticationFuture future = triggerConnect(address, asOwner);
+                connection = (ClientConnection) future.get();
 
                 if (!asOwner) {
                     return connection;
@@ -558,7 +559,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
             socket.setReceiveBufferSize(bufferSize);
             InetSocketAddress inetSocketAddress = address.getInetSocketAddress();
             bindSocketToPort(socket);
-            socketChannel.socket().connect(inetSocketAddress, connectionTimeout);
+            socketChannel.socket().connect(inetSocketAddress, connectionTimeoutMillis);
 
             HazelcastProperties properties = client.getProperties();
             boolean directBuffer = properties.getBoolean(SOCKET_CLIENT_BUFFER_DIRECT);
@@ -629,8 +630,9 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
         ClientMessage clientMessage = encodeAuthenticationRequest(asOwner, client.getSerializationService(), principal);
         ClientInvocation clientInvocation = new ClientInvocation(client, clientMessage, null, connection);
         ClientInvocationFuture invocationFuture = clientInvocation.invokeUrgent();
-        executionService.schedule(new TimeoutAuthenticationTask(invocationFuture), connectionTimeout, MILLISECONDS);
-        invocationFuture.andThen(new AuthCallback(connection, asOwner, target, future));
+        ScheduledFuture timeoutTaskFuture = executionService.schedule(new TimeoutAuthenticationTask(invocationFuture),
+                connectionTimeoutMillis, MILLISECONDS);
+        invocationFuture.andThen(new AuthCallback(connection, asOwner, target, future, timeoutTaskFuture));
     }
 
     private ClientMessage encodeAuthenticationRequest(boolean asOwner, SerializationService ss, ClientPrincipal principal) {
@@ -711,7 +713,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
 
         private final ClientInvocationFuture future;
 
-        public TimeoutAuthenticationTask(ClientInvocationFuture future) {
+        TimeoutAuthenticationTask(ClientInvocationFuture future) {
             this.future = future;
         }
 
@@ -721,7 +723,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
                 return;
             }
             future.complete(new TimeoutException("Authentication response did not come back in "
-                    + connectionTimeout + " millis"));
+                    + connectionTimeoutMillis + " millis"));
         }
 
     }
@@ -932,17 +934,20 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
         private final boolean asOwner;
         private final Address target;
         private final AuthenticationFuture future;
+        private final ScheduledFuture timeoutTaskFuture;
 
         AuthCallback(ClientConnection connection, boolean asOwner, Address target,
-                     AuthenticationFuture future) {
+                     AuthenticationFuture future, ScheduledFuture timeoutTaskFuture) {
             this.connection = connection;
             this.asOwner = asOwner;
             this.target = target;
             this.future = future;
+            this.timeoutTaskFuture = timeoutTaskFuture;
         }
 
         @Override
         public void onResponse(ClientMessage response) {
+            timeoutTaskFuture.cancel(true);
             ClientAuthenticationCodec.ResponseParameters result;
             try {
                 result = ClientAuthenticationCodec.decodeResponse(response);
@@ -974,6 +979,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
 
         @Override
         public void onFailure(Throwable t) {
+            timeoutTaskFuture.cancel(true);
             onAuthenticationFailed(target, connection, t);
             future.onFailure(t);
         }
