@@ -29,6 +29,7 @@ import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -180,11 +181,13 @@ public class MultiMapQuorumReadTest extends AbstractQuorumTest {
     }
 
     @Test
+    @Ignore
     public void aggregate_successful_whenQuorumSize_met() {
         map(0).aggregate(Supplier.all(), Aggregations.distinctValues());
     }
 
     @Test
+    @Ignore
     public void aggregate_successful_whenQuorumSize_notMet() {
         map(3).aggregate(Supplier.all(), Aggregations.distinctValues());
     }
