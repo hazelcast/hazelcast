@@ -31,11 +31,11 @@ public final class TestTaskExecutorUtil {
      * Executes a callable on a specific partition thread and return a result.
      * This does NOT check if a given Hazelcast instance owns a specific partition.
      *
-     * @param instance
-     * @param task
-     * @param partitionId
-     * @param <T>
-     * @return
+     * @param instance Hazelcast instance to be used for task executin
+     * @param task the task to be executed
+     * @param partitionId selects partition thread
+     * @param <T> type of the result
+     * @return result as returned by the callable
      */
     public static <T> T runOnPartitionThread(HazelcastInstance instance, final Callable<T> task, final int partitionId) {
         InternalOperationService operationService = getNodeEngineImpl(instance).getOperationService();

@@ -143,7 +143,7 @@ public final class TestBackupUtils {
 
         private CacheBackupAccessor(HazelcastInstance[] cluster, String cacheName, int replicaIndex) {
             super(cluster);
-            if (replicaIndex < 1) {
+            if (replicaIndex < 1 || replicaIndex > IPartition.MAX_BACKUP_COUNT) {
                 throw new IllegalArgumentException("Cannot access replica index " + replicaIndex);
             }
 
@@ -232,7 +232,7 @@ public final class TestBackupUtils {
 
         private MapBackupAccessor(HazelcastInstance[] cluster, String mapName, int replicaIndex) {
             super(cluster);
-            if (replicaIndex < 1) {
+            if (replicaIndex < 1 || replicaIndex > IPartition.MAX_BACKUP_COUNT) {
                 throw new IllegalArgumentException("Cannot access replica index " + replicaIndex);
             }
 
