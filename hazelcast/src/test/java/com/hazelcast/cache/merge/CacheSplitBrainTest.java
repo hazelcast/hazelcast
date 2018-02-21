@@ -20,6 +20,7 @@ import com.hazelcast.cache.ICache;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.map.TestBackupUtils;
 import com.hazelcast.spi.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.DiscardMergePolicy;
 import com.hazelcast.spi.merge.HigherHitsMergePolicy;
@@ -39,11 +40,12 @@ import org.junit.runners.Parameterized.Parameters;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.util.Collection;
-import java.util.Map;
 
-import static com.hazelcast.cache.CacheTestUtil.getBackupCache;
 import static com.hazelcast.config.InMemoryFormat.BINARY;
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
+import static com.hazelcast.map.TestBackupUtils.assertBackupEntryEqualsEventually;
+import static com.hazelcast.map.TestBackupUtils.assertBackupEntryNullEventually;
+import static com.hazelcast.map.TestBackupUtils.assertBackupSizeEventually;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -91,8 +93,8 @@ public class CacheSplitBrainTest extends SplitBrainTestSupport {
     protected ICache<Object, Object> cacheA2;
     protected ICache<Object, Object> cacheB1;
     protected ICache<Object, Object> cacheB2;
-    protected Map<Object, Object> backupCacheA;
-    protected Map<Object, Object> backupCacheB;
+    protected TestBackupUtils.BackupAccessor<Object, Object> backupCacheA;
+    protected TestBackupUtils.BackupAccessor<Object, Object> backupCacheB;
     protected MergeLifecycleListener mergeLifecycleListener;
 
     @Override
@@ -117,8 +119,8 @@ public class CacheSplitBrainTest extends SplitBrainTestSupport {
     protected void onBeforeSplitBrainCreated(HazelcastInstance[] instances) {
         waitAllForSafeState(instances);
 
-        Map<Object, Object> backupCache = getBackupCache(instances, cacheNameA);
-        assertEquals("backupCache should contain 0 entries", 0, backupCache.size());
+        TestBackupUtils.BackupAccessor<Object, Object> accessor = TestBackupUtils.newCacheAccessor(instances, cacheNameA);
+        assertEquals("backupCache should contain 0 entries", 0, accessor.size());
     }
 
     @Override
@@ -158,8 +160,8 @@ public class CacheSplitBrainTest extends SplitBrainTestSupport {
 
         cacheB1 = instances[0].getCacheManager().getCache(cacheNameB);
 
-        backupCacheA = getBackupCache(instances, cacheNameA);
-        backupCacheB = getBackupCache(instances, cacheNameB);
+        backupCacheA = TestBackupUtils.newCacheAccessor(instances, cacheNameA);
+        backupCacheB = TestBackupUtils.newCacheAccessor(instances, cacheNameB);
 
         if (mergePolicyClass == DiscardMergePolicy.class) {
             afterMergeDiscardMergePolicy();
@@ -192,23 +194,23 @@ public class CacheSplitBrainTest extends SplitBrainTestSupport {
     private void afterMergeDiscardMergePolicy() {
         assertEquals("value1", cacheA1.get("key1"));
         assertEquals("value1", cacheA2.get("key1"));
-        assertEquals("value1", backupCacheA.get("key1"));
+        assertBackupEntryEqualsEventually("key1", "value1", backupCacheA);
 
         assertNull(cacheA1.get("key2"));
         assertNull(cacheA2.get("key2"));
-        assertNull(backupCacheA.get("key2"));
+        assertBackupEntryNullEventually("key2", backupCacheA);
 
         assertEquals(1, cacheA1.size());
         assertEquals(1, cacheA2.size());
-        assertEquals(1, backupCacheA.size());
+        assertBackupSizeEventually(1, backupCacheA);
 
         assertNull(cacheB1.get("key"));
         assertNull(cacheB2.get("key"));
-        assertNull(backupCacheB.get("key"));
+        assertBackupEntryNullEventually("key", backupCacheB);
 
         assertEquals(0, cacheB1.size());
         assertEquals(0, cacheB2.size());
-        assertEquals(0, backupCacheB.size());
+        assertBackupSizeEventually(0, backupCacheB);
     }
 
     private void afterSplitHigherHitsMergePolicy() {
@@ -230,15 +232,15 @@ public class CacheSplitBrainTest extends SplitBrainTestSupport {
     private void afterMergeHigherHitsMergePolicy() {
         assertEquals("higherHitsValue1", cacheA1.get("key1"));
         assertEquals("higherHitsValue1", cacheA2.get("key1"));
-        assertEquals("higherHitsValue1", backupCacheA.get("key1"));
+        assertBackupEntryEqualsEventually("key1", "higherHitsValue1", backupCacheA);
 
         assertEquals("higherHitsValue2", cacheA1.get("key2"));
         assertEquals("higherHitsValue2", cacheA2.get("key2"));
-        assertEquals("higherHitsValue2", backupCacheA.get("key2"));
+        assertBackupEntryEqualsEventually("key2", "higherHitsValue2", backupCacheA);
 
         assertEquals(2, cacheA1.size());
         assertEquals(2, cacheA2.size());
-        assertEquals(2, backupCacheA.size());
+        assertBackupSizeEventually(2, backupCacheA);
     }
 
     private void afterSplitLatestAccessMergePolicy() {
@@ -268,15 +270,15 @@ public class CacheSplitBrainTest extends SplitBrainTestSupport {
     private void afterMergeLatestAccessMergePolicy() {
         assertEquals("LatestAccessedValue1", cacheA1.get("key1"));
         assertEquals("LatestAccessedValue1", cacheA2.get("key1"));
-        assertEquals("LatestAccessedValue1", backupCacheA.get("key1"));
+        assertBackupEntryEqualsEventually("key1", "LatestAccessedValue1", backupCacheA);
 
         assertEquals("LatestAccessedValue2", cacheA1.get("key2"));
         assertEquals("LatestAccessedValue2", cacheA2.get("key2"));
-        assertEquals("LatestAccessedValue2", backupCacheA.get("key2"));
+        assertBackupEntryEqualsEventually("key2", "LatestAccessedValue2", backupCacheA);
 
         assertEquals(2, cacheA1.size());
         assertEquals(2, cacheA2.size());
-        assertEquals(2, backupCacheA.size());
+        assertBackupSizeEventually(2, backupCacheA);
     }
 
     private void afterSplitLatestUpdateMergePolicy() {
@@ -297,15 +299,15 @@ public class CacheSplitBrainTest extends SplitBrainTestSupport {
     private void afterMergeLatestUpdateMergePolicy() {
         assertEquals("LatestUpdatedValue1", cacheA1.get("key1"));
         assertEquals("LatestUpdatedValue1", cacheA2.get("key1"));
-        assertEquals("LatestUpdatedValue1", backupCacheA.get("key1"));
+        assertBackupEntryEqualsEventually("key1", "LatestUpdatedValue1", backupCacheA);
 
         assertEquals("LatestUpdatedValue2", cacheA1.get("key2"));
         assertEquals("LatestUpdatedValue2", cacheA2.get("key2"));
-        assertEquals("LatestUpdatedValue2", backupCacheA.get("key2"));
+        assertBackupEntryEqualsEventually("key2", "LatestUpdatedValue2", backupCacheA);
 
         assertEquals(2, cacheA1.size());
         assertEquals(2, cacheA2.size());
-        assertEquals(2, backupCacheA.size());
+        assertBackupSizeEventually(2, backupCacheA);
     }
 
     private void afterSplitPassThroughMergePolicy() {
@@ -320,23 +322,23 @@ public class CacheSplitBrainTest extends SplitBrainTestSupport {
     private void afterMergePassThroughMergePolicy() {
         assertEquals("PassThroughValue1", cacheA1.get("key1"));
         assertEquals("PassThroughValue1", cacheA2.get("key1"));
-        assertEquals("PassThroughValue1", backupCacheA.get("key1"));
+        assertBackupEntryEqualsEventually("key1", "PassThroughValue1", backupCacheA);
 
         assertEquals("PassThroughValue2", cacheA1.get("key2"));
         assertEquals("PassThroughValue2", cacheA2.get("key2"));
-        assertEquals("PassThroughValue2", backupCacheA.get("key2"));
+        assertBackupEntryEqualsEventually("key2", "PassThroughValue2", backupCacheA);
 
         assertEquals(2, cacheA1.size());
         assertEquals(2, cacheA2.size());
-        assertEquals(2, backupCacheA.size());
+        assertBackupSizeEventually(2, backupCacheA);
 
         assertEquals("PutIfAbsentValue", cacheB1.get("key"));
         assertEquals("PutIfAbsentValue", cacheB2.get("key"));
-        assertEquals("PutIfAbsentValue", backupCacheB.get("key"));
+        assertBackupEntryEqualsEventually("key", "PutIfAbsentValue", backupCacheB);
 
         assertEquals(1, cacheB1.size());
         assertEquals(1, cacheB2.size());
-        assertEquals(1, backupCacheB.size());
+        assertBackupSizeEventually(1, backupCacheB);
     }
 
     private void afterSplitPutIfAbsentMergePolicy() {
@@ -351,23 +353,23 @@ public class CacheSplitBrainTest extends SplitBrainTestSupport {
     private void afterMergePutIfAbsentMergePolicy() {
         assertEquals("PutIfAbsentValue1", cacheA1.get("key1"));
         assertEquals("PutIfAbsentValue1", cacheA2.get("key1"));
-        assertEquals("PutIfAbsentValue1", backupCacheA.get("key1"));
+        assertBackupEntryEqualsEventually("key1", "PutIfAbsentValue1", backupCacheA);
 
         assertEquals("PutIfAbsentValue2", cacheA1.get("key2"));
         assertEquals("PutIfAbsentValue2", cacheA2.get("key2"));
-        assertEquals("PutIfAbsentValue2", backupCacheA.get("key2"));
+        assertBackupEntryEqualsEventually("key2", "PutIfAbsentValue2", backupCacheA);
 
         assertEquals(2, cacheA1.size());
         assertEquals(2, cacheA2.size());
-        assertEquals(2, backupCacheA.size());
+        assertBackupSizeEventually(2, backupCacheA);
 
         assertEquals("PutIfAbsentValue", cacheB1.get("key"));
         assertEquals("PutIfAbsentValue", cacheB2.get("key"));
-        assertEquals("PutIfAbsentValue", backupCacheB.get("key"));
+        assertBackupEntryEqualsEventually("key", "PutIfAbsentValue", backupCacheB);
 
         assertEquals(1, cacheB1.size());
         assertEquals(1, cacheB2.size());
-        assertEquals(1, backupCacheB.size());
+        assertBackupSizeEventually(1, backupCacheB);
     }
 
     private void afterSplitCustomMergePolicy() {
@@ -378,10 +380,10 @@ public class CacheSplitBrainTest extends SplitBrainTestSupport {
     private void afterMergeCustomMergePolicy() {
         assertEquals(1, cacheA1.get("key"));
         assertEquals(1, cacheA2.get("key"));
-        assertEquals(1, backupCacheA.get("key"));
+        assertBackupEntryEqualsEventually("key", 1, backupCacheA);
 
         assertEquals(1, cacheA1.size());
         assertEquals(1, cacheA2.size());
-        assertEquals(1, backupCacheA.size());
+        assertBackupSizeEventually(1, backupCacheA);
     }
 }

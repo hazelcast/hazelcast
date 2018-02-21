@@ -1,10 +1,14 @@
 package com.hazelcast.map;
 
+import com.hazelcast.cache.HazelcastCacheManager;
+import com.hazelcast.cache.impl.CacheService;
+import com.hazelcast.cache.impl.HazelcastServerCacheManager;
+import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
+import com.hazelcast.cache.impl.ICacheRecordStore;
+import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.Node;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
@@ -13,15 +17,25 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.partition.IPartition;
+import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.TestTaskExecutorUtil;
+
+import javax.cache.spi.CachingProvider;
+
+import java.util.concurrent.Callable;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
+import static com.hazelcast.test.HazelcastTestSupport.getNode;
+import static com.hazelcast.test.HazelcastTestSupport.getNodeEngineImpl;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
 /**
- * Convenience for accessing backup records.
+ * Convenience for accessing and asserting backup records.
+ *
+ * All accessors use a partition thread to access data hence they are safe to use with HD-backed data structures.
  *
  */
 public final class TestBackupUtils {
@@ -40,7 +54,7 @@ public final class TestBackupUtils {
      */
     public interface BackupAccessor<K ,V> {
         /**
-         * Number of backup entries
+         * Number of existing backup entries in a given structure and replica index
          *
          * @return
          */
@@ -56,7 +70,7 @@ public final class TestBackupUtils {
     }
 
     /**
-     * Create a new instance of {@link BackupAccessor} for a give map. It uses a first backup replica.
+     * Create a new instance of {@link BackupAccessor} for a given map. It uses a first backup replica.
      *
      * @param cluster
      * @param mapName
@@ -70,6 +84,14 @@ public final class TestBackupUtils {
 
     public static <K, V> BackupAccessor<K, V> newMapAccessor(HazelcastInstance[] cluster, String mapName, int replicaIndex) {
         return new MapBackupAccessor<K, V>(cluster, mapName, replicaIndex);
+    }
+
+    public static <K, V> BackupAccessor<K, V> newCacheAccessor(HazelcastInstance[] cluster, String cacheName) {
+        return newCacheAccessor(cluster, cacheName, DEFAULT_REPLICA_INDEX);
+    }
+
+    public static <K, V> BackupAccessor<K, V> newCacheAccessor(HazelcastInstance[] cluster, String cacheName, int replicaIndex) {
+        return new CacheBackupAccessor<K, V>(cluster, cacheName, replicaIndex);
     }
 
     public static <K, V> void assertBackupEntryEqualsEventually(final K key, final V expectedValue, final BackupAccessor<K, V> accessor) {
@@ -103,14 +125,17 @@ public final class TestBackupUtils {
         });
     }
 
-    private static class MapBackupAccessor<K, V> implements BackupAccessor<K, V> {
-        private final HazelcastInstance[] cluster;
-        private final String mapName;
-        private final int replicaIndex;
-        private final InternalSerializationService serializationService;
-        private final InternalPartitionService partitionService;
 
-        private MapBackupAccessor(HazelcastInstance[] cluster, String mapName, int replicaIndex) {
+    // ######################################################################
+    // ##### PRIVATE STUFF BELLOW, NO NEED TO TOUCH IT IN REGULAR TESTS #####
+    // ######################################################################
+
+    private static class CacheBackupAccessor<K, V> extends BackupAccessorSupport<K, V> implements BackupAccessor<K ,V> {
+        private final String cacheName;
+        private final int replicaIndex;
+
+        private CacheBackupAccessor(HazelcastInstance[] cluster, String cacheName, int replicaIndex) {
+            super(cluster);
             if (replicaIndex < 1) {
                 throw new IllegalArgumentException("Cannot access replica index " + replicaIndex);
             }
@@ -119,16 +144,101 @@ public final class TestBackupUtils {
                 throw new IllegalArgumentException("Cluster has to have at least 1 member.");
             }
 
-            this.cluster = cluster;
+            this.cacheName = cacheName;
+            this.replicaIndex = replicaIndex;
+        }
+
+
+        @Override
+        public int size() {
+            InternalPartitionService partitionService = getNodeEngineImpl(cluster[0]).getPartitionService();
+            IPartition[] partitions = partitionService.getPartitions();
+            int count = 0;
+            for (final IPartition partition : partitions) {
+                Address replicaAddress = partition.getReplicaAddress(replicaIndex);
+                if (replicaAddress == null) {
+                    continue;
+                }
+                HazelcastInstance instance = getInstancePerAddress(replicaAddress);
+                NodeEngineImpl nodeEngineImpl = HazelcastTestSupport.getNodeEngineImpl(instance);
+                final CacheService service = nodeEngineImpl.getService(CacheService.SERVICE_NAME);
+
+                CachingProvider provider = HazelcastServerCachingProvider.createCachingProvider(instance);
+                HazelcastCacheManager cacheManager = (HazelcastServerCacheManager) provider.getCacheManager();
+
+                final String cacheNameWithPrefix = cacheManager.getCacheNameWithPrefix(cacheName);
+                count += TestTaskExecutorUtil.runOnPartitionThread(instance, new Callable<Integer>() {
+                    @Override
+                    public Integer call() {
+                        ICacheRecordStore recordStore = service.getRecordStore(cacheNameWithPrefix, partition.getPartitionId());
+                        if (recordStore == null) {
+                            return 0;
+                        }
+                        return recordStore.size();
+                    }
+                }, partition.getPartitionId());
+            }
+            return count;
+        }
+
+        @Override
+        public V get(final K key) {
+            final InternalPartition partition = getPartitionForKey(key);
+            Address replicaAddress = partition.getReplicaAddress(replicaIndex);
+
+            for (HazelcastInstance hz : cluster) {
+                if (!hz.getCluster().getLocalMember().getAddress().equals(replicaAddress)) {
+                    continue;
+                }
+
+                CachingProvider provider = HazelcastServerCachingProvider.createCachingProvider(hz);
+                HazelcastCacheManager cacheManager = (HazelcastServerCacheManager) provider.getCacheManager();
+                final String cacheNameWithPrefix = cacheManager.getCacheNameWithPrefix(cacheName);
+                NodeEngineImpl nodeEngine = getNodeEngineImpl(hz);
+                final CacheService cacheService = nodeEngine.getService(CacheService.SERVICE_NAME);
+                final SerializationService serializationService = nodeEngine.getSerializationService();
+                return TestTaskExecutorUtil.runOnPartitionThread(hz, new Callable<V>() {
+                    @Override
+                    public V call() {
+                        ICacheRecordStore recordStore = cacheService.getRecordStore(cacheNameWithPrefix, partition.getPartitionId());
+                        if (recordStore == null) {
+                            return null;
+                        }
+                        Data keyData = serializationService.toData(key);
+                        CacheRecord cacheRecord = recordStore.getReadOnlyRecords().get(keyData);
+                        if (cacheRecord == null) {
+                            return null;
+                        }
+                        Object value = cacheRecord.getValue();
+                        return serializationService.toObject(value);
+                    }
+                }, partition.getPartitionId());
+
+            }
+            return null;
+        }
+    }
+
+    private static class MapBackupAccessor<K, V> extends BackupAccessorSupport<K, V> implements BackupAccessor<K, V> {
+        private final String mapName;
+        private final int replicaIndex;
+
+        private MapBackupAccessor(HazelcastInstance[] cluster, String mapName, int replicaIndex) {
+            super(cluster);
+            if (replicaIndex < 1) {
+                throw new IllegalArgumentException("Cannot access replica index " + replicaIndex);
+            }
+
+            if (cluster == null || cluster.length == 0) {
+                throw new IllegalArgumentException("Cluster has to have at least 1 member.");
+            }
+
             this.mapName = mapName;
             this.replicaIndex = replicaIndex;
-
-            Node node = HazelcastTestSupport.getNode(cluster[0]);
-            partitionService = node.getPartitionService();
-            serializationService = node.getSerializationService();
         }
 
         public int size() {
+            InternalPartitionService partitionService = getNodeEngineImpl(cluster[0]).getPartitionService();
             IPartition[] partitions = partitionService.getPartitions();
             int count = 0;
             for (IPartition partition : partitions) {
@@ -137,50 +247,77 @@ public final class TestBackupUtils {
                     continue;
                 }
                 HazelcastInstance instance = getInstancePerAddress(replicaAddress);
-
                 NodeEngineImpl nodeEngineImpl = HazelcastTestSupport.getNodeEngineImpl(instance);
                 MapService service = nodeEngineImpl.getService(MapService.SERVICE_NAME);
 
                 MapServiceContext context = service.getMapServiceContext();
-                PartitionContainer container = context.getPartitionContainer(partition.getPartitionId());
+                final PartitionContainer container = context.getPartitionContainer(partition.getPartitionId());
 
-                RecordStore recordStore = container.getExistingRecordStore(mapName);
-                if (recordStore == null) {
-                    continue;
-                }
-                count += recordStore.size();
+                count += TestTaskExecutorUtil.runOnPartitionThread(instance, new Callable<Integer>() {
+                    @Override
+                    public Integer call() {
+                        RecordStore recordStore = container.getExistingRecordStore(mapName);
+                        if (recordStore == null) {
+                            return 0;
+                        }
+                        return recordStore.size();
+                    }
+                }, partition.getPartitionId());
             }
             return count;
         }
 
-        public V get(K key) {
-            Data keyData = serializationService.toData(key);
-            int partitionId = partitionService.getPartitionId(key);
-            InternalPartition partition = partitionService.getPartition(partitionId);
+
+        public V get(final K key) {
+            final InternalPartition partition = getPartitionForKey(key);
             Address replicaAddress = partition.getReplicaAddress(replicaIndex);
 
             for (HazelcastInstance hz : cluster) {
                 if (!hz.getCluster().getLocalMember().getAddress().equals(replicaAddress)) {
                     continue;
                 }
+                final SerializationService serializationService = getNodeEngineImpl(hz).getSerializationService();
                 MapService mapService = HazelcastTestSupport.getNodeEngineImpl(hz).getService(MapService.SERVICE_NAME);
-                MapServiceContext context = mapService.getMapServiceContext();
+                final MapServiceContext context = mapService.getMapServiceContext();
 
-                PartitionContainer partitionContainer = context.getPartitionContainer(partitionId);
-                RecordStore recordStore = partitionContainer.getExistingRecordStore(mapName);
-                if (recordStore == null) {
-                    return null;
-                }
-                Object o = recordStore.get(keyData, true);
-                if (o == null) {
-                    return null;
-                }
-                return serializationService.toObject(o);
+                return TestTaskExecutorUtil.runOnPartitionThread(hz, new Callable<V>() {
+                    @Override
+                    public V call() {
+                        PartitionContainer partitionContainer = context.getPartitionContainer(partition.getPartitionId());
+                        RecordStore recordStore = partitionContainer.getExistingRecordStore(mapName);
+                        if (recordStore == null) {
+                            return null;
+                        }
+                        Data keyData = serializationService.toData(key);
+                        Object o = recordStore.get(keyData, true);
+                        if (o == null) {
+                            return null;
+                        }
+                        return serializationService.toObject(o);
+                    }
+                }, partition.getPartitionId());
             }
             return null;
         }
+    }
 
-        private HazelcastInstance getInstancePerAddress(Address address) {
+    private abstract static class BackupAccessorSupport<K, V> implements BackupAccessor<K, V> {
+        protected final HazelcastInstance[] cluster;
+
+        protected BackupAccessorSupport(HazelcastInstance[] cluster) {
+            this.cluster = cluster;
+        }
+
+        protected InternalPartition getPartitionForKey(K key) {
+            //to determine partition we can use any instance. let's pick the 1st one
+            HazelcastInstance instance = cluster[0];
+            InternalPartitionService partitionService = getNode(instance).getPartitionService();
+            int partitionId = partitionService.getPartitionId(key);
+            InternalPartition partition = partitionService.getPartition(partitionId);
+            return partition;
+        }
+
+        protected HazelcastInstance getInstancePerAddress(Address address) {
             for (HazelcastInstance hz : cluster) {
                 if (hz.getCluster().getLocalMember().getAddress().equals(address)) {
                     return hz;
