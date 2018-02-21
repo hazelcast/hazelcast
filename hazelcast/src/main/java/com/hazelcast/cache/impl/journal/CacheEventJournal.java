@@ -18,7 +18,7 @@ package com.hazelcast.cache.impl.journal;
 
 import com.hazelcast.cache.CacheEventType;
 import com.hazelcast.config.EventJournalConfig;
-import com.hazelcast.journal.EventJournal;
+import com.hazelcast.internal.journal.EventJournal;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.ObjectNamespace;
 

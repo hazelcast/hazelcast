@@ -15,7 +15,7 @@
  */
 
 /**
- * Contains {@link com.hazelcast.journal.EventJournal} event interface for IMap.
+ * Contains {@link com.hazelcast.internal.journal.EventJournal} event interface for IMap.
  * @since 3.9
  */
 package com.hazelcast.map.journal;

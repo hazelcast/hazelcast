@@ -14,8 +14,20 @@
  * limitations under the License.
  */
 
+package com.hazelcast.journal;
+
+import com.hazelcast.util.function.Predicate;
+
+import java.io.Serializable;
+
 /**
- * Contains {@link com.hazelcast.internal.journal.EventJournal} event interface for ICache.
- * @since 3.9
+ * True predicate always returning {@code true}.
+ *
+ * @param <T> predicate argument type
  */
-package com.hazelcast.cache.journal;
+class TruePredicate<T> implements Predicate<T>, Serializable {
+    @Override
+    public boolean test(T t) {
+        return true;
+    }
+}

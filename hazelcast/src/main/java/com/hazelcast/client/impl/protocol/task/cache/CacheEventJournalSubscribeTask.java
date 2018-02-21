@@ -22,7 +22,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheEventJournalSubscribeCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.Versions;
-import com.hazelcast.journal.EventJournalInitialSubscriberState;
+import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.CachePermission;

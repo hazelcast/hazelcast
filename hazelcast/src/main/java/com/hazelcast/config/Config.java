@@ -20,6 +20,7 @@ import com.hazelcast.config.matcher.MatchingPointConfigPatternMatcher;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
+import com.hazelcast.internal.journal.EventJournal;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
@@ -3025,7 +3026,7 @@ public class Config {
     }
 
     /**
-     * Returns a read-only map {@link com.hazelcast.journal.EventJournal}
+     * Returns a read-only map {@link EventJournal}
      * configuration for the given name.
      * <p>
      * The name is matched by pattern to the configuration and by stripping the
@@ -3051,7 +3052,7 @@ public class Config {
     }
 
     /**
-     * Returns a read-only cache {@link com.hazelcast.journal.EventJournal}
+     * Returns a read-only cache {@link EventJournal}
      * configuration for the given name.
      * <p>
      * The name is matched by pattern to the configuration and by stripping the
