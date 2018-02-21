@@ -71,6 +71,12 @@ public class ClientExecutorQuorumWriteTest extends ExecutorQuorumWriteTest {
 
     @Override
     @Test(expected = UnsupportedOperationException.class)
+    public void invokeAll_timeout_quorum_long_timeout() throws Exception {
+        super.invokeAll_timeout_quorum_long_timeout();
+    }
+
+    @Override
+    @Test(expected = UnsupportedOperationException.class)
     public void invokeAll_timeout_noQuorum() throws Exception {
         super.invokeAll_timeout_noQuorum();
     }
