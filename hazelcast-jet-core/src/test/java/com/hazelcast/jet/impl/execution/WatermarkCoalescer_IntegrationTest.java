@@ -245,10 +245,10 @@ public class WatermarkCoalescer_IntegrationTest extends JetTestSupport {
     public void when_waitingForWmOnI2ButI2BecomesDone_then_wmFromI1Forwarded() {
         dag = createDag(mode, singletonList(wm(100)), asList(delay(500), DONE_ITEM));
 
-        JobConfig config = new JobConfig().setMaxWatermarkRetainMillis(5000);
+        JobConfig config = new JobConfig().setMaxWatermarkRetainMillis(10_000);
         instance.newJob(dag, config);
 
-        assertTrueEventually(() -> assertEquals(1, sinkList.size()), 3);
+        assertTrueEventually(() -> assertEquals(1, sinkList.size()), 6);
         assertEquals("wm(100)", sinkList.get(0));
     }
 
