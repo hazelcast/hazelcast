@@ -177,7 +177,7 @@ public class LoggingScheduledExecutorTest extends HazelcastTestSupport {
         Future<Integer> future = executor.submit(new FailedCallable());
 
         expectedException.expect(new RootCauseMatcher(RuntimeException.class));
-        future.get(1, SECONDS);
+        future.get(10, SECONDS);
 
         assertNull(logger.getThrowable());
     }
