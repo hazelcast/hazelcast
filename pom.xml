@@ -102,7 +102,7 @@
 
         <h2.version>1.3.160</h2.version>
         <atomikos.version>3.9.3</atomikos.version>
-        <extraVmArgs></extraVmArgs>
+        <extraVmArgs/>
     </properties>
     <licenses>
         <license>
