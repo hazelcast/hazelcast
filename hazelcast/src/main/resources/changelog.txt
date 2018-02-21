@@ -11,6 +11,7 @@ You can also see the Release Notes document at http://docs.hazelcast.org/docs/re
 - Deprecated ID Generator.
 - Introduced CRDT PN-Counter.
 - More consistency on findXConfig methods.
+- Enabled Health Check on F5 BIG-IP LTM.
 - Deprecated:
   - hazelcast.master.confirmation.interval.seconds
   - hazelcast.max.no.master.confirmation.seconds
