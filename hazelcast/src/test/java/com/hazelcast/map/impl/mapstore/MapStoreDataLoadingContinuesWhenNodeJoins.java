@@ -59,8 +59,10 @@ import java.util.concurrent.atomic.AtomicReferenceArray;
 import static com.hazelcast.config.MapStoreConfig.InitialLoadMode.EAGER;
 import static com.hazelcast.config.MapStoreConfig.InitialLoadMode.LAZY;
 import static java.util.Arrays.asList;
+import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
+import static org.junit.Assume.assumeThat;
 
 /**
  * Test if a node joining a cluster which is loading data works.
@@ -163,6 +165,9 @@ public class MapStoreDataLoadingContinuesWhenNodeJoins extends HazelcastTestSupp
 
     @Test(timeout = 600000)
     public void testLoadingFinishes_whenMemberJoinsWhileLoading() throws Exception {
+        assumeThat("With LAZY InMemoryModel this test may fail due to a known issue reported in OS #11544 and #12384",
+                initialLoadMode, not(LAZY));
+
         final Config config = createConfigWithDelayingMapStore();
 
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
@@ -181,7 +186,10 @@ public class MapStoreDataLoadingContinuesWhenNodeJoins extends HazelcastTestSupp
                 // get map and trigger loading the data
                 IMap<String, String> map = instance.getMap(MAP_NAME);
                 node1MapLoadingAboutToStart.countDown();
-                map.size();
+                LOGGER.info("Getting the size of the map on node1 -> load is triggered");
+                int sizeOnNode1 = map.size();
+                LOGGER.info("Map loading has been completed by now");
+                LOGGER.info("Map size on node 1: " + sizeOnNode1);
                 node1FinishedLoading.countDown();
             }
         }, "Thread 1");
@@ -195,10 +203,16 @@ public class MapStoreDataLoadingContinuesWhenNodeJoins extends HazelcastTestSupp
                 HazelcastInstance instance = factory.newHazelcastInstance(config);
                 instances.set(1, instance);
                 try {
+                    LOGGER.info("Getting the map " + MAP_NAME);
                     IMap map = instance.getMap(MAP_NAME);
                     final int loadTimeMillis = MS_PER_LOAD * PRELOAD_SIZE;
-                    node1FinishedLoading.await(loadTimeMillis, TimeUnit.MILLISECONDS);
+                    boolean node1FinishedLoadingInTime = node1FinishedLoading.await(loadTimeMillis, TimeUnit.MILLISECONDS);
+                    // if node1 doesn't finish in time (unlikely because of the 5min timeout), we may execute GetSizeOperation
+                    // again on a not fully loaded map -> map size may not match to the expected value
+                    LOGGER.info("Node1 finished loading in time: " + node1FinishedLoadingInTime);
+                    LOGGER.info("Getting the size of the map on node2");
                     mapSizeOnNode2.set(map.size());
+                    LOGGER.info("Map size on node 2: " + mapSizeOnNode2.get());
                 } catch (InterruptedException e) {
                     EmptyStatement.ignore(e);
                 }
@@ -206,16 +220,11 @@ public class MapStoreDataLoadingContinuesWhenNodeJoins extends HazelcastTestSupp
         }, "Thread 2");
         thread2.start();
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(PRELOAD_SIZE, mapSizeOnNode2.get());
-            }
-        });
-
         // join threads
         thread1.join();
         thread2.join();
+
+        assertEquals(PRELOAD_SIZE, mapSizeOnNode2.get());
     }
 
     @Test(timeout = 600000)
