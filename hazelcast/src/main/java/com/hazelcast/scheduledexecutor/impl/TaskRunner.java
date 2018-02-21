@@ -116,7 +116,7 @@ class TaskRunner<V>
                 ((StatefulTask) original).save(state);
             }
 
-            container.publishTaskState(taskName, state, statistics, resolution);
+            container.publishTaskState(taskName, state, statistics.snapshot(), resolution);
         } catch (Exception ex) {
             container.log(WARNING, taskName, "Unexpected exception during afterRun occurred", ex);
         } finally {

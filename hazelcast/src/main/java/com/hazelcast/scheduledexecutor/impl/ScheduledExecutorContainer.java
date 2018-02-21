@@ -350,7 +350,9 @@ public class ScheduledExecutorContainer {
         }
 
         Operation op = new SyncStateOperation(getName(), taskName, stateSnapshot, statsSnapshot, result);
-        createInvocationBuilder(op).invoke().join();
+        createInvocationBuilder(op)
+                .invoke()
+                .join();
     }
 
     protected InvocationBuilder createInvocationBuilder(Operation op) {
