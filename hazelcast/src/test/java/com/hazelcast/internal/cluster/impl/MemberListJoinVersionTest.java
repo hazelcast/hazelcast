@@ -21,6 +21,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -98,9 +99,10 @@ public class MemberListJoinVersionTest extends HazelcastTestSupport {
                 .setProperty(MEMBER_LIST_PUBLISH_INTERVAL_SECONDS.getName(), "5")
                 .setProperty(MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "5")
                 .setProperty(MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "5");
-        HazelcastInstance member1 = factory.newHazelcastInstance(config);
-        HazelcastInstance member2 = factory.newHazelcastInstance(config);
-        HazelcastInstance member3 = factory.newHazelcastInstance(config);
+
+        final HazelcastInstance member1 = factory.newHazelcastInstance(config);
+        final HazelcastInstance member2 = factory.newHazelcastInstance(config);
+        final HazelcastInstance member3 = factory.newHazelcastInstance(config);
 
         assertClusterSizeEventually(3, member2);
 
@@ -122,23 +124,28 @@ public class MemberListJoinVersionTest extends HazelcastTestSupport {
 
         assertClusterSizeEventually(1, member3);
 
-        int beforeJoinVersionOnClusterService3 = getClusterService(member3).getMemberListVersion();
+        int beforeJoinVersionOnMember3 = getClusterService(member3).getMemberListVersion();
 
         resetPacketFiltersFrom(member3);
 
         assertOpenEventually(mergeLatch);
-        assertMemberViewsAreSame(getMemberMap(member1), getMemberMap(member2));
-        assertMemberViewsAreSame(getMemberMap(member1), getMemberMap(member3));
 
-        int afterJoinVersionOnClusterService1 = getClusterService(member1).getMemberListVersion();
-        assertNotEquals(afterJoinVersionOnClusterService1, beforeJoinVersionOnClusterService3);
+        int afterJoinVersionOnMember1 = getClusterService(member1).getMemberListVersion();
+        assertNotEquals(afterJoinVersionOnMember1, beforeJoinVersionOnMember3);
 
         int versionOnLocalMember3 = getNode(member3).getLocalMember().getMemberListJoinVersion();
         // during join, we are forcibly changing member-type of member3 to lite member, upon end of merge operations
         // promoting that member3 to data member, in this scenario, local members version is not incremented and
         // in this test it should be off by 1.
-        assertEquals(afterJoinVersionOnClusterService1, versionOnLocalMember3 + 1);
+        assertEquals(afterJoinVersionOnMember1, versionOnLocalMember3 + 1);
 
+        assertMemberViewsAreSame(getMemberMap(member1), getMemberMap(member3));
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertMemberViewsAreSame(getMemberMap(member1), getMemberMap(member2));
+            }
+        });
         assertJoinMemberListVersions(member1, member2, member3);
     }
 
