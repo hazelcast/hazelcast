@@ -139,12 +139,10 @@ public class ScheduledExecutorServiceSlowTest extends ScheduledExecutorServiceTe
                 new ICountdownLatchRunnableTask("latch"), 0, 10, SECONDS);
 
         latch.await(120, SECONDS);
-        // wait for run-cycle to finish before cancelling, in order for stats to get updated
-        sleepSeconds(4);
         future.cancel(false);
 
         ScheduledTaskStatistics stats = future.getStats();
-        assertEquals(6, stats.getTotalRuns());
+        assertEquals(6, stats.getTotalRuns(), 1);
     }
 
     @Test
