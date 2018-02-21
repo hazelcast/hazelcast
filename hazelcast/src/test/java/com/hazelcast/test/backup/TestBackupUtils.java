@@ -24,6 +24,7 @@ import com.hazelcast.test.TestTaskExecutorUtil;
 
 import javax.cache.spi.CachingProvider;
 
+import java.util.Arrays;
 import java.util.concurrent.Callable;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
@@ -166,7 +167,7 @@ public final class TestBackupUtils {
                 if (replicaAddress == null) {
                     continue;
                 }
-                HazelcastInstance instance = getInstancePerAddress(replicaAddress);
+                HazelcastInstance instance = getInstanceWithAddress(replicaAddress);
                 NodeEngineImpl nodeEngineImpl = HazelcastTestSupport.getNodeEngineImpl(instance);
                 final CacheService service = nodeEngineImpl.getService(CacheService.SERVICE_NAME);
 
@@ -192,37 +193,39 @@ public final class TestBackupUtils {
         public V get(final K key) {
             final InternalPartition partition = getPartitionForKey(key);
             Address replicaAddress = partition.getReplicaAddress(replicaIndex);
-
-            for (HazelcastInstance hz : cluster) {
-                if (!hz.getCluster().getLocalMember().getAddress().equals(replicaAddress)) {
-                    continue;
-                }
-
-                CachingProvider provider = HazelcastServerCachingProvider.createCachingProvider(hz);
-                HazelcastCacheManager cacheManager = (HazelcastServerCacheManager) provider.getCacheManager();
-                final String cacheNameWithPrefix = cacheManager.getCacheNameWithPrefix(cacheName);
-                NodeEngineImpl nodeEngine = getNodeEngineImpl(hz);
-                final CacheService cacheService = nodeEngine.getService(CacheService.SERVICE_NAME);
-                final SerializationService serializationService = nodeEngine.getSerializationService();
-                return TestTaskExecutorUtil.runOnPartitionThread(hz, new Callable<V>() {
-                    @Override
-                    public V call() {
-                        ICacheRecordStore recordStore = cacheService.getRecordStore(cacheNameWithPrefix, partition.getPartitionId());
-                        if (recordStore == null) {
-                            return null;
-                        }
-                        Data keyData = serializationService.toData(key);
-                        CacheRecord cacheRecord = recordStore.getReadOnlyRecords().get(keyData);
-                        if (cacheRecord == null) {
-                            return null;
-                        }
-                        Object value = cacheRecord.getValue();
-                        return serializationService.toObject(value);
-                    }
-                }, partition.getPartitionId());
-
+            if (replicaAddress == null) {
+                // there is no owner of this replica (yet?)
+                return null;
             }
-            return null;
+
+            HazelcastInstance hz = getInstanceWithAddress(replicaAddress);
+            if (hz == null) {
+                throw new IllegalStateException("Partition " + partition + " with replica index " + replicaIndex
+                        + " is mapped to " + replicaAddress + " but there is no member with this address in the cluster."
+                        + " List of known members: " + Arrays.toString(cluster));
+            }
+            CachingProvider provider = HazelcastServerCachingProvider.createCachingProvider(hz);
+            HazelcastCacheManager cacheManager = (HazelcastServerCacheManager) provider.getCacheManager();
+            final String cacheNameWithPrefix = cacheManager.getCacheNameWithPrefix(cacheName);
+            NodeEngineImpl nodeEngine = getNodeEngineImpl(hz);
+            final CacheService cacheService = nodeEngine.getService(CacheService.SERVICE_NAME);
+            final SerializationService serializationService = nodeEngine.getSerializationService();
+            return TestTaskExecutorUtil.runOnPartitionThread(hz, new Callable<V>() {
+                @Override
+                public V call() {
+                    ICacheRecordStore recordStore = cacheService.getRecordStore(cacheNameWithPrefix, partition.getPartitionId());
+                    if (recordStore == null) {
+                        return null;
+                    }
+                    Data keyData = serializationService.toData(key);
+                    CacheRecord cacheRecord = recordStore.getReadOnlyRecords().get(keyData);
+                    if (cacheRecord == null) {
+                        return null;
+                    }
+                    Object value = cacheRecord.getValue();
+                    return serializationService.toObject(value);
+                }
+            }, partition.getPartitionId());
         }
     }
 
@@ -253,7 +256,7 @@ public final class TestBackupUtils {
                 if (replicaAddress == null) {
                     continue;
                 }
-                HazelcastInstance instance = getInstancePerAddress(replicaAddress);
+                HazelcastInstance instance = getInstanceWithAddress(replicaAddress);
                 NodeEngineImpl nodeEngineImpl = HazelcastTestSupport.getNodeEngineImpl(instance);
                 MapService service = nodeEngineImpl.getService(MapService.SERVICE_NAME);
 
@@ -278,33 +281,38 @@ public final class TestBackupUtils {
         public V get(final K key) {
             final InternalPartition partition = getPartitionForKey(key);
             Address replicaAddress = partition.getReplicaAddress(replicaIndex);
-
-            for (HazelcastInstance hz : cluster) {
-                if (!hz.getCluster().getLocalMember().getAddress().equals(replicaAddress)) {
-                    continue;
-                }
-                final SerializationService serializationService = getNodeEngineImpl(hz).getSerializationService();
-                MapService mapService = HazelcastTestSupport.getNodeEngineImpl(hz).getService(MapService.SERVICE_NAME);
-                final MapServiceContext context = mapService.getMapServiceContext();
-
-                return TestTaskExecutorUtil.runOnPartitionThread(hz, new Callable<V>() {
-                    @Override
-                    public V call() {
-                        PartitionContainer partitionContainer = context.getPartitionContainer(partition.getPartitionId());
-                        RecordStore recordStore = partitionContainer.getExistingRecordStore(mapName);
-                        if (recordStore == null) {
-                            return null;
-                        }
-                        Data keyData = serializationService.toData(key);
-                        Object o = recordStore.get(keyData, true);
-                        if (o == null) {
-                            return null;
-                        }
-                        return serializationService.toObject(o);
-                    }
-                }, partition.getPartitionId());
+            if (replicaAddress == null) {
+                // there is no owner of this replica (yet?)
+                return null;
             }
-            return null;
+
+            HazelcastInstance hz = getInstanceWithAddress(replicaAddress);
+            if (hz == null) {
+                throw new IllegalStateException("Partition " + partition + " with replica index " + replicaIndex
+                        + " is mapped to " + replicaAddress + " but there is no member with this address in the cluster."
+                        + " List of known members: " + Arrays.toString(cluster));
+            }
+
+            final SerializationService serializationService = getNodeEngineImpl(hz).getSerializationService();
+            MapService mapService = HazelcastTestSupport.getNodeEngineImpl(hz).getService(MapService.SERVICE_NAME);
+            final MapServiceContext context = mapService.getMapServiceContext();
+
+            return TestTaskExecutorUtil.runOnPartitionThread(hz, new Callable<V>() {
+                @Override
+                public V call() {
+                    PartitionContainer partitionContainer = context.getPartitionContainer(partition.getPartitionId());
+                    RecordStore recordStore = partitionContainer.getExistingRecordStore(mapName);
+                    if (recordStore == null) {
+                        return null;
+                    }
+                    Data keyData = serializationService.toData(key);
+                    Object o = recordStore.get(keyData, true);
+                    if (o == null) {
+                        return null;
+                    }
+                    return serializationService.toObject(o);
+                }
+            }, partition.getPartitionId());
         }
     }
 
@@ -324,7 +332,7 @@ public final class TestBackupUtils {
             return partition;
         }
 
-        protected HazelcastInstance getInstancePerAddress(Address address) {
+        protected HazelcastInstance getInstanceWithAddress(Address address) {
             for (HazelcastInstance hz : cluster) {
                 if (hz.getCluster().getLocalMember().getAddress().equals(address)) {
                     return hz;
