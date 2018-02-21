@@ -23,7 +23,7 @@ import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EvictionConfig.MaxSizePolicy;
 import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.journal.AbstractBasicJournalTest;
+import com.hazelcast.journal.AbstractEventJournalBasicTest;
 import com.hazelcast.journal.EventJournalTestContext;
 import com.hazelcast.map.journal.EventJournalMapEvent;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -41,7 +41,7 @@ import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.USED_NATIVE_MEMO
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class BasicCacheJournalTest<K, V> extends AbstractBasicJournalTest<EventJournalMapEvent> {
+public class CacheEventJournalBasicTest<K, V> extends AbstractEventJournalBasicTest<EventJournalMapEvent> {
 
     private static final String NON_EVICTING_CACHE = "cache";
     private static final String EVICTING_CACHE = "evicting";

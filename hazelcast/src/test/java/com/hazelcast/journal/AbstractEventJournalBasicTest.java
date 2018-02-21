@@ -62,7 +62,7 @@ import static org.junit.Assert.assertTrue;
  *
  * @param <EJ_TYPE> the type of the event journal event
  */
-public abstract class AbstractBasicJournalTest<EJ_TYPE> extends HazelcastTestSupport {
+public abstract class AbstractEventJournalBasicTest<EJ_TYPE> extends HazelcastTestSupport {
     private static final Random RANDOM = new Random();
 
     protected HazelcastInstance[] instances;

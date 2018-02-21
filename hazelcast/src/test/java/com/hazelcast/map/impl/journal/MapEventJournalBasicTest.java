@@ -19,7 +19,7 @@ package com.hazelcast.map.impl.journal;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.journal.AbstractBasicJournalTest;
+import com.hazelcast.journal.AbstractEventJournalBasicTest;
 import com.hazelcast.journal.EventJournalTestContext;
 import com.hazelcast.map.journal.EventJournalMapEvent;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -30,7 +30,7 @@ import org.junit.runner.RunWith;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class BasicMapJournalTest<K, V> extends AbstractBasicJournalTest<EventJournalMapEvent> {
+public class MapEventJournalBasicTest<K, V> extends AbstractEventJournalBasicTest<EventJournalMapEvent> {
 
     private static final String NON_EXPIRING_MAP = "mappy";
     private static final String EXPIRING_MAP = "expiring";

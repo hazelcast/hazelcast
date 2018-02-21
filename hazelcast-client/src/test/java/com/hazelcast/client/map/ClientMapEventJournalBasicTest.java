@@ -14,12 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.cache;
+package com.hazelcast.client.map;
 
-import com.hazelcast.cache.impl.journal.BasicCacheJournalTest;
-import com.hazelcast.client.cache.impl.HazelcastClientCachingProvider;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.map.impl.journal.MapEventJournalBasicTest;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -27,11 +26,9 @@ import org.junit.After;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import javax.cache.CacheManager;
-
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class ClientBasicCacheJournalTest extends BasicCacheJournalTest {
+public class ClientMapEventJournalBasicTest extends MapEventJournalBasicTest {
 
     private TestHazelcastFactory factory;
     private HazelcastInstance client;
@@ -47,12 +44,6 @@ public class ClientBasicCacheJournalTest extends BasicCacheJournalTest {
         final HazelcastInstance[] instances = factory.newInstances(getConfig(), 2);
         client = factory.newHazelcastClient();
         return instances;
-    }
-
-    @Override
-    protected CacheManager createCacheManager() {
-        final HazelcastClientCachingProvider provider = HazelcastClientCachingProvider.createCachingProvider(client);
-        return provider.getCacheManager();
     }
 
     @After
