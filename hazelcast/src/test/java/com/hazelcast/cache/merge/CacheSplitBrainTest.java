@@ -20,7 +20,8 @@ import com.hazelcast.cache.ICache;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.map.TestBackupUtils;
+import com.hazelcast.test.backup.BackupAccessor;
+import com.hazelcast.test.backup.TestBackupUtils;
 import com.hazelcast.spi.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.DiscardMergePolicy;
 import com.hazelcast.spi.merge.HigherHitsMergePolicy;
@@ -43,9 +44,9 @@ import java.util.Collection;
 
 import static com.hazelcast.config.InMemoryFormat.BINARY;
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
-import static com.hazelcast.map.TestBackupUtils.assertBackupEntryEqualsEventually;
-import static com.hazelcast.map.TestBackupUtils.assertBackupEntryNullEventually;
-import static com.hazelcast.map.TestBackupUtils.assertBackupSizeEventually;
+import static com.hazelcast.test.backup.TestBackupUtils.assertBackupEntryEqualsEventually;
+import static com.hazelcast.test.backup.TestBackupUtils.assertBackupEntryNullEventually;
+import static com.hazelcast.test.backup.TestBackupUtils.assertBackupSizeEventually;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -93,8 +94,8 @@ public class CacheSplitBrainTest extends SplitBrainTestSupport {
     protected ICache<Object, Object> cacheA2;
     protected ICache<Object, Object> cacheB1;
     protected ICache<Object, Object> cacheB2;
-    protected TestBackupUtils.BackupAccessor<Object, Object> backupCacheA;
-    protected TestBackupUtils.BackupAccessor<Object, Object> backupCacheB;
+    protected BackupAccessor<Object, Object> backupCacheA;
+    protected BackupAccessor<Object, Object> backupCacheB;
     protected MergeLifecycleListener mergeLifecycleListener;
 
     @Override
@@ -119,7 +120,7 @@ public class CacheSplitBrainTest extends SplitBrainTestSupport {
     protected void onBeforeSplitBrainCreated(HazelcastInstance[] instances) {
         waitAllForSafeState(instances);
 
-        TestBackupUtils.BackupAccessor<Object, Object> accessor = TestBackupUtils.newCacheAccessor(instances, cacheNameA);
+        BackupAccessor<Object, Object> accessor = TestBackupUtils.newCacheAccessor(instances, cacheNameA);
         assertEquals("backupCache should contain 0 entries", 0, accessor.size());
     }
 

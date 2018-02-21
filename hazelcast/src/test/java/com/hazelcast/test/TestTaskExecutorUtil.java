@@ -49,8 +49,8 @@ public final class TestTaskExecutorUtil {
             @Override
             public void run() {
                 try {
-                    T result = task.call();
-                    resultQueue.add(result == null ? NULL_VALUE : result);
+                    Object result = wrapNullIfNeeded(task.call());
+                    resultQueue.add(result);
                 } catch (Throwable e) {
                     resultQueue.add(e);
                 }
@@ -61,11 +61,18 @@ public final class TestTaskExecutorUtil {
             if (result instanceof Throwable) {
                 ExceptionUtil.sneakyThrow((Throwable) result);
             }
-            return result == NULL_VALUE ? null : (T) result;
+            return (T) unwrapNullIfNeeded(result);
         } catch (InterruptedException e) {
             Thread.interrupted();
             throw new IllegalStateException("Interrupted while waiting for result", e);
         }
+    }
 
+    private static Object wrapNullIfNeeded(Object object) {
+        return object == null ? NULL_VALUE : object;
+    }
+
+    private static Object unwrapNullIfNeeded(Object object) {
+        return object == NULL_VALUE ? null : object;
     }
 }

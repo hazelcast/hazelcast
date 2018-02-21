@@ -1,4 +1,4 @@
-package com.hazelcast.map;
+package com.hazelcast.test.backup;
 
 import com.hazelcast.cache.HazelcastCacheManager;
 import com.hazelcast.cache.impl.CacheService;
@@ -35,8 +35,6 @@ import static org.junit.Assert.assertNull;
 /**
  * Convenience for accessing and asserting backup records.
  *
- * All accessors use a partition thread to access data hence they are safe to use with HD-backed data structures.
- *
  */
 public final class TestBackupUtils {
     private static final int DEFAULT_REPLICA_INDEX = 1;
@@ -46,50 +44,59 @@ public final class TestBackupUtils {
     }
 
     /**
-     * Access backup records in a given replica. Use {@link #newMapAccessor(HazelcastInstance[], String)}
-     * to create an instance for your data structure.
+     * Create a new instance of {@link BackupAccessor} for a given map.
+     * It access a first backup replica.
      *
-     * @param <K>
-     * @param <V>
-     */
-    public interface BackupAccessor<K ,V> {
-        /**
-         * Number of existing backup entries in a given structure and replica index
-         *
-         * @return
-         */
-        int size();
-
-        /**
-         * Reads backup value
-         *
-         * @param key
-         * @return backup value or null
-         */
-        V get(K key);
-    }
-
-    /**
-     * Create a new instance of {@link BackupAccessor} for a given map. It uses a first backup replica.
-     *
-     * @param cluster
-     * @param mapName
-     * @param <K>
-     * @param <V>
-     * @return
+     * @param cluster all instances in the cluster
+     * @param mapName map to access
+     * @param <K> type of keys
+     * @param <V> type of values
+     * @return accessor for a given map and first backup replica
      */
     public static <K, V> BackupAccessor<K, V> newMapAccessor(HazelcastInstance[] cluster, String mapName) {
         return newMapAccessor(cluster, mapName, DEFAULT_REPLICA_INDEX);
     }
 
+    /**
+     * Create a new instance of {@link BackupAccessor} for a given map.
+     * It allows to access an arbitrary replica index as long as it's greater or equals 1
+     *
+     * @param cluster all instances in the cluster
+     * @param mapName map to access
+     * @param replicaIndex replica index to access
+     * @param <K> type of keys
+     * @param <V> type of values
+     * @return accessor for a given map and replica index
+     */
     public static <K, V> BackupAccessor<K, V> newMapAccessor(HazelcastInstance[] cluster, String mapName, int replicaIndex) {
         return new MapBackupAccessor<K, V>(cluster, mapName, replicaIndex);
     }
 
+    /**
+     * Create a new instance of {@link BackupAccessor} for a given cache.
+     * It access a first backup replica.
+     *
+     * @param cluster all instances in the cluster
+     * @param cacheName cache to access
+     * @param <K> type of keys
+     * @param <V> type of values
+     * @return accessor for a given cache and first backup replica
+     */
     public static <K, V> BackupAccessor<K, V> newCacheAccessor(HazelcastInstance[] cluster, String cacheName) {
         return newCacheAccessor(cluster, cacheName, DEFAULT_REPLICA_INDEX);
     }
 
+    /**
+     * Create a new instance of {@link BackupAccessor} for a given cache.
+     * It allows to access an arbitrary replica index as long as it's greater or equals 1
+     *
+     * @param cluster all instances in the cluster
+     * @param cacheName cache to access
+     * @param replicaIndex replica index to access
+     * @param <K> type of keys
+     * @param <V> type of values
+     * @return accessor for a given cache and replica index
+     */
     public static <K, V> BackupAccessor<K, V> newCacheAccessor(HazelcastInstance[] cluster, String cacheName, int replicaIndex) {
         return new CacheBackupAccessor<K, V>(cluster, cacheName, replicaIndex);
     }

@@ -22,7 +22,8 @@ import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.map.TestBackupUtils;
+import com.hazelcast.test.backup.BackupAccessor;
+import com.hazelcast.test.backup.TestBackupUtils;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -41,9 +42,9 @@ import java.util.Collection;
 
 import static com.hazelcast.config.InMemoryFormat.BINARY;
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
-import static com.hazelcast.map.TestBackupUtils.assertBackupEntryEqualsEventually;
-import static com.hazelcast.map.TestBackupUtils.assertBackupEntryNullEventually;
-import static com.hazelcast.map.TestBackupUtils.assertBackupSizeEventually;
+import static com.hazelcast.test.backup.TestBackupUtils.assertBackupEntryEqualsEventually;
+import static com.hazelcast.test.backup.TestBackupUtils.assertBackupEntryNullEventually;
+import static com.hazelcast.test.backup.TestBackupUtils.assertBackupSizeEventually;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -92,8 +93,8 @@ public class LegacyMapSplitBrainTest extends SplitBrainTestSupport {
     private IMap<Object, Object> mapA2;
     private IMap<Object, Object> mapB1;
     private IMap<Object, Object> mapB2;
-    private TestBackupUtils.BackupAccessor<Object, Object> backupMapA;
-    private TestBackupUtils.BackupAccessor<Object, Object> backupMapB;
+    private BackupAccessor<Object, Object> backupMapA;
+    private BackupAccessor<Object, Object> backupMapB;
     private MergeLifecycleListener mergeLifecycleListener;
 
     @Override
@@ -120,7 +121,7 @@ public class LegacyMapSplitBrainTest extends SplitBrainTestSupport {
     protected void onBeforeSplitBrainCreated(HazelcastInstance[] instances) {
         waitAllForSafeState(instances);
 
-        TestBackupUtils.BackupAccessor<Object, Object> accessor = TestBackupUtils.newMapAccessor(instances, mapNameA);
+        BackupAccessor<Object, Object> accessor = TestBackupUtils.newMapAccessor(instances, mapNameA);
         assertEquals("backupMap should contain 0 entries", 0, accessor.size());
     }
 
