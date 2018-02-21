@@ -22,6 +22,7 @@ import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.CloseableProcessorSupplier;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.processor.SourceProcessors;
+import com.hazelcast.jet.function.DistributedBiFunction;
 
 import javax.annotation.Nonnull;
 import java.io.Closeable;
@@ -51,23 +52,26 @@ import static java.util.stream.Collectors.toList;
  * one file is only read by one thread, so extra parallelism won't improve
  * performance if there aren't enough files to read.
  */
-public final class ReadFilesP extends AbstractProcessor implements Closeable {
+public final class ReadFilesP<R> extends AbstractProcessor implements Closeable {
 
     private final Charset charset;
     private final int parallelism;
     private final int id;
+    private final DistributedBiFunction<String, String, R> mapOutputFn;
     private final Path directory;
     private final String glob;
     private DirectoryStream<Path> directoryStream;
-    private Traverser<String> outputTraverser;
+    private Traverser<R> outputTraverser;
     private Stream<String> currentFileLines;
 
-    private ReadFilesP(String directory, Charset charset, String glob, int parallelism, int id) {
+    private ReadFilesP(String directory, Charset charset, String glob, int parallelism, int id,
+                       DistributedBiFunction<String, String, R> mapOutputFn) {
         this.directory = Paths.get(directory);
         this.glob = glob;
         this.charset = charset;
         this.parallelism = parallelism;
         this.id = id;
+        this.mapOutputFn = mapOutputFn;
     }
 
     @Override
@@ -95,14 +99,16 @@ public final class ReadFilesP extends AbstractProcessor implements Closeable {
         return ((hashCode & Integer.MAX_VALUE) % parallelism) == id;
     }
 
-    private Traverser<String> processFile(Path file) {
+    private Traverser<R> processFile(Path file) {
         if (getLogger().isFinestEnabled()) {
             getLogger().finest("Processing file " + file);
         }
         try {
             assert currentFileLines == null : "currentFileLines != null";
             currentFileLines = Files.lines(file, charset);
+            String fileName = file.getFileName().toString();
             return traverseStream(currentFileLines)
+                    .map(line -> mapOutputFn.apply(fileName, line))
                     .onFirstNull(() -> {
                         currentFileLines.close();
                         currentFileLines = null;
@@ -136,15 +142,18 @@ public final class ReadFilesP extends AbstractProcessor implements Closeable {
     }
 
     /**
-     * Private API. Use {@link SourceProcessors#readFilesP(String, Charset, String)}
-     * instead.
+     * Private API. Use {@link SourceProcessors#readFilesP} instead.
      */
     public static ProcessorMetaSupplier metaSupplier(
-            @Nonnull String directory, @Nonnull String charset, @Nonnull String glob
+            @Nonnull String directory,
+            @Nonnull String charset,
+            @Nonnull String glob,
+            @Nonnull DistributedBiFunction<String, String, ?> mapOutputFn
     ) {
         return ProcessorMetaSupplier.of(new CloseableProcessorSupplier<>(
                 count -> IntStream.range(0, count)
-                                  .mapToObj(i -> new ReadFilesP(directory, Charset.forName(charset), glob, count, i))
+                                  .mapToObj(i -> new ReadFilesP(directory, Charset.forName(charset), glob, count, i,
+                                          mapOutputFn))
                                   .collect(toList())),
                 2);
     }

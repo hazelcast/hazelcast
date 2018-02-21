@@ -20,6 +20,7 @@ import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.CloseableProcessorSupplier;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
+import com.hazelcast.jet.function.DistributedBiFunction;
 import com.hazelcast.jet.impl.util.ReflectionUtils;
 import com.hazelcast.logging.ILogger;
 
@@ -59,7 +60,7 @@ import static java.util.stream.Collectors.toList;
 
 /**
  * Private API. Access via {@link
- * com.hazelcast.jet.core.processor.SourceProcessors#streamFilesP(String, Charset, String).
+ * com.hazelcast.jet.core.processor.SourceProcessors#streamFilesP}.
  * <p>
  * Since the work of this vertex is file IO-intensive, its {@link
  * com.hazelcast.jet.core.Vertex#localParallelism(int) local parallelism}
@@ -70,7 +71,7 @@ import static java.util.stream.Collectors.toList;
  * one file is only read by one thread, so extra parallelism won't improve
  * performance if there aren't enough files to read.
  */
-public class StreamFilesP extends AbstractProcessor implements Closeable {
+public class StreamFilesP<R> extends AbstractProcessor implements Closeable {
 
     /**
      * The amount of data read from one file at once must be limited
@@ -80,7 +81,7 @@ public class StreamFilesP extends AbstractProcessor implements Closeable {
      * back to polling the event queue.
      */
     private static final int LINES_IN_ONE_BATCH = 64;
-    private static final String SENSITIVITY_MODIFIER_CLASSNAME = "com.sun.nio.file.SensitivityWatchEventModifier";
+    private static final String SENSITIVITY_MODIFIER_CLASS_NAME = "com.sun.nio.file.SensitivityWatchEventModifier";
     private static final WatchEvent.Kind[] WATCH_EVENT_KINDS = {ENTRY_CREATE, ENTRY_MODIFY, ENTRY_DELETE};
     private static final WatchEvent.Modifier[] WATCH_EVENT_MODIFIERS = getHighSensitivityModifiers();
 
@@ -96,25 +97,28 @@ public class StreamFilesP extends AbstractProcessor implements Closeable {
     private final Charset charset;
     private final PathMatcher glob;
     private final int parallelism;
-
     private final int id;
+    private final DistributedBiFunction<String, String, R> mapOutputFn;
+
     private final Queue<Path> eventQueue = new ArrayDeque<>();
 
     private WatchService watcher;
     private StringBuilder lineBuilder = new StringBuilder();
-    private String pendingLine;
+    private R pendingLine;
     private Path currentFile;
+    private String currentFileName;
     private FileInputStream currentInputStream;
     private Reader currentReader;
 
     StreamFilesP(@Nonnull String watchedDirectory, @Nonnull Charset charset, @Nonnull String glob,
-                 int parallelism, int id
+                 int parallelism, int id, @Nonnull DistributedBiFunction<String, String, R> mapOutputFn
     ) {
         this.watchedDirectory = Paths.get(watchedDirectory);
         this.charset = charset;
         this.glob = FileSystems.getDefault().getPathMatcher("glob:" + glob);
         this.parallelism = parallelism;
         this.id = id;
+        this.mapOutputFn = mapOutputFn;
         setCooperative(false);
     }
 
@@ -158,6 +162,7 @@ public class StreamFilesP extends AbstractProcessor implements Closeable {
             drainWatcherEvents();
             if (currentFile == null) {
                 currentFile = eventQueue.poll();
+                currentFileName = currentFile != null ? String.valueOf(currentFile.getFileName()) : null;
             }
             if (currentFile != null) {
                 processFile();
@@ -217,7 +222,8 @@ public class StreamFilesP extends AbstractProcessor implements Closeable {
             }
             for (int i = 0; i < LINES_IN_ONE_BATCH; i++) {
                 if (pendingLine == null) {
-                    pendingLine = readCompleteLine(currentReader);
+                    String line = readCompleteLine(currentReader);
+                    pendingLine = line != null ? mapOutputFn.apply(currentFileName, line) : null;
                 }
                 if (pendingLine == null) {
                     fileOffsets.put(currentFile,
@@ -329,6 +335,7 @@ public class StreamFilesP extends AbstractProcessor implements Closeable {
             }
         }
         currentFile = null;
+        currentFileName = null;
         currentReader = null;
         currentInputStream = null;
     }
@@ -339,16 +346,19 @@ public class StreamFilesP extends AbstractProcessor implements Closeable {
 
     /**
      * Private API. Use {@link
-     * com.hazelcast.jet.core.processor.SourceProcessors#streamFilesP(String, Charset, String)}
-     * instead.
+     * com.hazelcast.jet.core.processor.SourceProcessors#streamFilesP} instead.
      */
     @Nonnull
     public static ProcessorMetaSupplier metaSupplier(
-            @Nonnull String watchedDirectory, @Nonnull String charset, @Nonnull String glob
+            @Nonnull String watchedDirectory,
+            @Nonnull String charset,
+            @Nonnull String glob,
+            @Nonnull DistributedBiFunction<String, String, ?> mapOutputFn
     ) {
         return ProcessorMetaSupplier.of(new CloseableProcessorSupplier<>(
                 count -> IntStream.range(0, count)
-                        .mapToObj(i -> new StreamFilesP(watchedDirectory, Charset.forName(charset), glob, count, i))
+                        .mapToObj(i -> new StreamFilesP(watchedDirectory, Charset.forName(charset), glob, count, i,
+                                mapOutputFn))
                         .collect(toList())),
                 2);
     }
@@ -359,7 +369,7 @@ public class StreamFilesP extends AbstractProcessor implements Closeable {
         // modifiers to increase sensitivity. This field contains modifiers to be used for highest possible sensitivity.
         // It's JVM-specific and hence it's just a best-effort.
         // I believe this is useful on platforms without native watch service (or where Java does not use it) e.g. MacOSX
-        Object modifier = ReflectionUtils.readStaticFieldOrNull(SENSITIVITY_MODIFIER_CLASSNAME, "HIGH");
+        Object modifier = ReflectionUtils.readStaticFieldOrNull(SENSITIVITY_MODIFIER_CLASS_NAME, "HIGH");
         if (modifier instanceof WatchEvent.Modifier) {
             return new WatchEvent.Modifier[]{(WatchEvent.Modifier) modifier};
         }

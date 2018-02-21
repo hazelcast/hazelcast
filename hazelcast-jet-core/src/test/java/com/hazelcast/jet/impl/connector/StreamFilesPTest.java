@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl.connector;
 
+import com.hazelcast.jet.Util;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.Processor.Context;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
@@ -46,7 +47,9 @@ import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map.Entry;
 
+import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.processor.SourceProcessors.streamFilesP;
 import static java.lang.Thread.interrupted;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -68,7 +71,7 @@ public class StreamFilesPTest extends JetTestSupport {
 
     private Thread driverThread;
     private TestOutbox outbox;
-    private final List<String> outboxLines = Collections.synchronizedList(new ArrayList<>());
+    private final List<Entry<String, String>> outboxLines = Collections.synchronizedList(new ArrayList<>());
 
     private volatile int fileOffsetsSize;
     private volatile boolean completedNormally;
@@ -92,7 +95,7 @@ public class StreamFilesPTest extends JetTestSupport {
 
     @Test
     public void when_metaSupplier_then_returnsCorrectProcessors() {
-        ProcessorMetaSupplier metaSupplier = streamFilesP(workDir.getAbsolutePath(), UTF_8, "*");
+        ProcessorMetaSupplier metaSupplier = streamFilesP(workDir.getAbsolutePath(), UTF_8, "*", Util::entry);
         Address a = new Address();
         ProcessorSupplier supplier = metaSupplier.get(singletonList(a)).apply(a);
         assertEquals(1, supplier.get(1).size());
@@ -262,7 +265,9 @@ public class StreamFilesPTest extends JetTestSupport {
         writeToFile(file2, " complete2\n");
 
         // Then
-        List<String> expected = asList("incomplete1 complete1", "incomplete2 complete2");
+        List<Entry<String, String>> expected = asList(
+                entry("a.txt", "incomplete1 complete1"),
+                entry("b.txt", "incomplete2 complete2"));
         assertTrueEventually(() -> assertEquals(expected, outboxLines), ASSERT_COUNT_TIMEOUT_SECONDS);
     }
 
@@ -292,7 +297,7 @@ public class StreamFilesPTest extends JetTestSupport {
         if (glob == null) {
             glob = "*";
         }
-        processor = new StreamFilesP(workDir.getAbsolutePath(), UTF_8, glob, 1, 0);
+        processor = new StreamFilesP(workDir.getAbsolutePath(), UTF_8, glob, 1, 0, Util::entry);
         outbox = new TestOutbox(1);
         Context ctx = new TestProcessorContext()
                 .setLogger(Logger.getLogger(StreamFilesP.class));

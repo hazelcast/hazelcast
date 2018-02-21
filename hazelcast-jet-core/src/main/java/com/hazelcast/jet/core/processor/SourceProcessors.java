@@ -21,6 +21,7 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.jet.JournalInitialPosition;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.WatermarkGenerationParams;
+import com.hazelcast.jet.function.DistributedBiFunction;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedPredicate;
 import com.hazelcast.jet.impl.connector.ReadFilesP;
@@ -315,9 +316,12 @@ public final class SourceProcessors {
      */
     @Nonnull
     public static ProcessorMetaSupplier readFilesP(
-            @Nonnull String directory, @Nonnull Charset charset, @Nonnull String glob
+            @Nonnull String directory,
+            @Nonnull Charset charset,
+            @Nonnull String glob,
+            @Nonnull DistributedBiFunction<String, String, ?> mapOutputFn
     ) {
-        return ReadFilesP.metaSupplier(directory, charset.name(), glob);
+        return ReadFilesP.metaSupplier(directory, charset.name(), glob, mapOutputFn);
     }
 
     /**
@@ -325,9 +329,12 @@ public final class SourceProcessors {
      * {@link com.hazelcast.jet.Sources#fileWatcher(String, Charset, String)}.
      */
     public static ProcessorMetaSupplier streamFilesP(
-            @Nonnull String watchedDirectory, @Nonnull Charset charset, @Nonnull String glob
+            @Nonnull String watchedDirectory,
+            @Nonnull Charset charset,
+            @Nonnull String glob,
+            @Nonnull DistributedBiFunction<String, String, ?> mapOutputFn
     ) {
-        return StreamFilesP.metaSupplier(watchedDirectory, charset.name(), glob);
+        return StreamFilesP.metaSupplier(watchedDirectory, charset.name(), glob, mapOutputFn);
     }
 
     private static <I, O> Projection<I, O> toProjection(DistributedFunction<I, O> projectionFn) {

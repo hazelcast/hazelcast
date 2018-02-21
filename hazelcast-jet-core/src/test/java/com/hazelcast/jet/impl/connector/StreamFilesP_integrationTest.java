@@ -17,11 +17,17 @@
 package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.Util;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.stream.IStreamList;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -29,17 +35,15 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.util.Collections;
+import java.util.Map.Entry;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.concurrent.locks.LockSupport;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runner.RunWith;
 
+import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeListP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.streamFilesP;
@@ -55,7 +59,7 @@ public class StreamFilesP_integrationTest extends JetTestSupport {
 
     private JetInstance instance;
     private File directory;
-    private IStreamList<String> list;
+    private IStreamList<Entry<String, String>> list;
 
     @Before
     public void setup() throws Exception {
@@ -108,7 +112,7 @@ public class StreamFilesP_integrationTest extends JetTestSupport {
         appendToFile(file, "world", "second line");
         // now, all three lines are picked up
         assertTrueEventually(() -> assertEquals(1, list.size()));
-        assertEquals("second line", list.get(0));
+        assertEquals(entry(file.getName(), "second line"), list.get(0));
 
         finishDirectory(jobFuture, file);
     }
@@ -138,7 +142,7 @@ public class StreamFilesP_integrationTest extends JetTestSupport {
         }
         // now, all three lines are picked up
         assertTrueEventually(() -> assertEquals(1, list.size()));
-        assertEquals("second line", list.get(0));
+        assertEquals(entry(file.getName(), "second line"), list.get(0));
 
         finishDirectory(jobFuture, file);
     }
@@ -216,10 +220,10 @@ public class StreamFilesP_integrationTest extends JetTestSupport {
                 IntStream.range(0, numLines).boxed().collect(Collectors.toSet()),
                 IntStream.range(0, numLines).boxed().collect(Collectors.toSet())};
 
-        for (String logLine : list) {
+        for (Entry<String, String> logLine : list) {
             // logLine has the form "fileN M ...", N is fileIndex, M is line number
-            int fileIndex = logLine.charAt(4) - '0';
-            int lineIndex = Integer.parseInt(logLine.split(" ", 3)[1]);
+            int fileIndex = logLine.getValue().charAt(4) - '0';
+            int lineIndex = Integer.parseInt(logLine.getValue().split(" ", 3)[1]);
             assertTrue(expectedNumbers[fileIndex].remove(lineIndex));
         }
 
@@ -267,7 +271,7 @@ public class StreamFilesP_integrationTest extends JetTestSupport {
 
     private DAG buildDag() {
         DAG dag = new DAG();
-        Vertex reader = dag.newVertex("reader", streamFilesP(directory.getPath(), UTF_8, "*"))
+        Vertex reader = dag.newVertex("reader", streamFilesP(directory.getPath(), UTF_8, "*", Util::entry))
                            .localParallelism(1);
         Vertex writer = dag.newVertex("writer", writeListP(list.getName())).localParallelism(1);
         dag.edge(between(reader, writer));
