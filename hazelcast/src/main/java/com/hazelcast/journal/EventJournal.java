@@ -174,7 +174,8 @@ public interface EventJournal<E> {
      * event journal events for a single partition.
      *
      * @param config the event journal config
+     * @param namespace the object namespace
      * @return the ringbuffer config for a single partition of the event journal
      */
-    RingbufferConfig toRingbufferConfig(EventJournalConfig config);
+    RingbufferConfig toRingbufferConfig(EventJournalConfig config, ObjectNamespace namespace);
 }

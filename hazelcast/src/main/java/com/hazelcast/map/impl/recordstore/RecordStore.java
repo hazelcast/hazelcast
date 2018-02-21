@@ -289,6 +289,9 @@ public interface RecordStore<R extends Record> {
 
     /**
      * Resets the record store to it's initial state.
+     * Used in replication operations.
+     *
+     * @see #putRecord(Data, Record)
      */
     void reset();
 

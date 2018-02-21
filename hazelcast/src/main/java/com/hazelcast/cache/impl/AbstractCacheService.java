@@ -164,7 +164,7 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
                 if (onShutdown) {
                     partitionSegment.shutdown();
                 } else {
-                    partitionSegment.clear();
+                    partitionSegment.reset();
                     partitionSegment.init();
                 }
             }
@@ -269,7 +269,7 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
     }
 
     private void clearPartitionReplica(int partitionId) {
-        segments[partitionId].clear();
+        segments[partitionId].reset();
     }
 
     @Override

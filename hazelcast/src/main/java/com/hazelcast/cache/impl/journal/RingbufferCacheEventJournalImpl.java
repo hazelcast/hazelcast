@@ -184,11 +184,12 @@ public class RingbufferCacheEventJournalImpl implements CacheEventJournal {
     }
 
     @Override
-    public RingbufferConfig toRingbufferConfig(EventJournalConfig config) {
+    public RingbufferConfig toRingbufferConfig(EventJournalConfig config, ObjectNamespace namespace) {
+        CacheConfig cacheConfig = getCacheService().getCacheConfig(namespace.getObjectName());
         int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
         return new RingbufferConfig()
-                .setAsyncBackupCount(0)
-                .setBackupCount(0)
+                .setAsyncBackupCount(cacheConfig.getAsyncBackupCount())
+                .setBackupCount(cacheConfig.getBackupCount())
                 .setInMemoryFormat(InMemoryFormat.OBJECT)
                 .setCapacity(config.getCapacity() / partitionCount)
                 .setTimeToLiveSeconds(config.getTimeToLiveSeconds());
@@ -275,7 +276,7 @@ public class RingbufferCacheEventJournalImpl implements CacheEventJournal {
 
     private RingbufferContainer<InternalEventJournalCacheEvent, Object> getOrCreateRingbufferContainer(
             ObjectNamespace namespace, int partitionId, EventJournalConfig config) {
-        RingbufferConfig ringbufferConfig = toRingbufferConfig(config);
+        RingbufferConfig ringbufferConfig = toRingbufferConfig(config, namespace);
         return getRingbufferService().getOrCreateContainer(partitionId, namespace, ringbufferConfig);
     }
 

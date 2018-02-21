@@ -158,8 +158,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     public void putRecord(Data key, Record record) {
         markRecordStoreExpirable(record.getTtl());
         storage.put(key, record);
-        eventJournal.writeAddEvent(mapContainer.getEventJournalConfig(), mapContainer.getObjectNamespace(), partitionId,
-                key, record.getValue());
         updateStatsOnPut(record.getHits());
     }
 
@@ -443,7 +441,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     public void reset() {
         mapDataStore.reset();
         storage.clear(false);
-        eventJournal.destroy(mapContainer.getObjectNamespace(), partitionId);
         stats.reset();
     }
 

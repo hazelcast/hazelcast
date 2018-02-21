@@ -312,6 +312,12 @@ public interface ICacheRecordStore {
     void clear();
 
     /**
+     * Resets the record store to it's initial state.
+     * Used in replication operations.
+     */
+    void reset();
+
+    /**
      * records of keys will be deleted one by one and will publish a REMOVE event
      * for each key.
      *
@@ -384,11 +390,11 @@ public interface ICacheRecordStore {
      * Associates the specified record with the specified key.
      * This is simply a put operation on the internal map data
      * without any CacheLoad. It also <b>DOES</b> trigger eviction!
-     *
-     * @param key    the key to the entry.
+     *  @param key    the key to the entry.
      * @param record the value to be associated with the specified key.
+     * @param updateJournal when true an event is appended to related event-journal
      */
-    void putRecord(Data key, CacheRecord record);
+    void putRecord(Data key, CacheRecord record, boolean updateJournal);
 
     /**
      * Removes the record for a key.

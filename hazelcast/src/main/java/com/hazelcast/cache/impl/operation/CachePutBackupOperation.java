@@ -69,7 +69,7 @@ public class CachePutBackupOperation
     public void runInternal() {
         ICacheService service = getService();
         ICacheRecordStore cache = service.getOrCreateRecordStore(name, getPartitionId());
-        cache.putRecord(key, cacheRecord);
+        cache.putRecord(key, cacheRecord, true);
         response = Boolean.TRUE;
     }
 
