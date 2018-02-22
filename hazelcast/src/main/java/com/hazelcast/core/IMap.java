@@ -149,13 +149,14 @@ import java.util.concurrent.TimeUnit;
  * <i>write</i> access performed on the entry. The default TTL value for the map may be configured using the
  * {@code time-to-live-seconds} setting, which has an infinite by default. An individual entry may have its own TTL
  * value assigned using one of the methods accepting a TTL value, for instance using the
- * {@link #put(Object, Object, long, TimeUnit) put} method.
+ * {@link #put(Object, Object, long, TimeUnit) put} method. If there is no TTL value provided for the individual
+ * entry, it inherits the value set in the map configuration.
  * <li>The max-idle expiration policy limits the lifetime of the entry relative to the time of the last <i>read</i> or
  * <i>write</i> access performed on the entry. The max-idle value for the map may be configured using the
  * {@code max-idle-seconds} setting, which has an infinite value by default.
  * </ul>
  * <p>
- * Both expiration policies may be used simultaneously on the map entries. In such case, the entry considered expired
+ * Both expiration policies may be used simultaneously on the map entries. In such case, the entry is considered expired
  * if at least one of the policies marks it as expired.
  * <p>
  * Eviction puts a limit on the maximum size of the map. If the size of the map grows larger than the maximum allowed
