@@ -92,8 +92,8 @@ public abstract class OperationExecutorImpl_AbstractTest extends HazelcastTestSu
 
     protected OperationExecutorImpl initExecutor() {
         props = new HazelcastProperties(config);
-        executor = new OperationExecutorImpl(
-                props, loggingService, thisAddress, handlerFactory, nodeExtension, "hzName", Thread.currentThread().getContextClassLoader());
+        executor = new OperationExecutorImpl(props, thisAddress, loggingService.getLogger(OperationExecutorImpl.class),
+                handlerFactory, nodeExtension, "hzName", Thread.currentThread().getContextClassLoader());
         executor.start();
         return executor;
     }
@@ -101,7 +101,7 @@ public abstract class OperationExecutorImpl_AbstractTest extends HazelcastTestSu
     public static <E> void assertEqualsEventually(final PartitionSpecificCallable task, final E expected) {
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertTrue(task + " has not given a response", task.completed());
                 assertEquals(expected, task.getResult());
             }
@@ -114,7 +114,7 @@ public abstract class OperationExecutorImpl_AbstractTest extends HazelcastTestSu
         List<Response> responses = synchronizedList(new LinkedList<Response>());
 
         @Override
-        public void handle(Packet packet) throws Exception {
+        public void handle(Packet packet) {
             packets.add(packet);
             Response response = serializationService.toObject(packet);
             responses.add(response);

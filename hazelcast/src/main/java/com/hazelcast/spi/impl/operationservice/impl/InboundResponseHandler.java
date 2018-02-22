@@ -27,7 +27,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.PacketHandler;
 import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
 
@@ -53,7 +53,7 @@ public final class InboundResponseHandler implements PacketHandler, MetricsProvi
     private final ILogger logger;
     private final InternalSerializationService serializationService;
     private final InvocationRegistry invocationRegistry;
-    private final NodeEngineImpl nodeEngine;
+    private final NodeEngine nodeEngine;
     @Probe(name = "responses[normal]", level = MANDATORY)
     private final SwCounter responsesNormal = newSwCounter();
     @Probe(name = "responses[timeout]", level = MANDATORY)
@@ -69,7 +69,7 @@ public final class InboundResponseHandler implements PacketHandler, MetricsProvi
     InboundResponseHandler(ILogger logger,
                            InternalSerializationService serializationService,
                            InvocationRegistry invocationRegistry,
-                           NodeEngineImpl nodeEngine) {
+                           NodeEngine nodeEngine) {
         this.logger = logger;
         this.useBigEndian = serializationService.getByteOrder() == ByteOrder.BIG_ENDIAN;
         this.serializationService = serializationService;
@@ -83,7 +83,7 @@ public final class InboundResponseHandler implements PacketHandler, MetricsProvi
     }
 
     @Override
-    public void handle(Packet packet) throws Exception {
+    public void handle(Packet packet) {
         byte[] bytes = packet.toByteArray();
         int typeId = Bits.readInt(bytes, OFFSET_TYPE_ID, useBigEndian);
         long callId = Bits.readLong(bytes, OFFSET_CALL_ID, useBigEndian);

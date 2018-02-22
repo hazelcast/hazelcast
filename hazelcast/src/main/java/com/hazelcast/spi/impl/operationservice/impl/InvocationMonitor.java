@@ -27,12 +27,12 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.CallsPerMember;
 import com.hazelcast.spi.CanCancelOperations;
 import com.hazelcast.spi.LiveOperationsTracker;
 import com.hazelcast.spi.OperationControl;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.PacketHandler;
 import com.hazelcast.spi.impl.operationexecutor.OperationHostileThread;
 import com.hazelcast.spi.impl.servicemanager.ServiceManager;
@@ -65,7 +65,7 @@ import static java.util.logging.Level.INFO;
 /**
  * The InvocationMonitor monitors all pending invocations and determines if there are any problems like timeouts. It uses the
  * {@link InvocationRegistry} to access the pending invocations.
- *
+ * <p>
  * The {@link InvocationMonitor} sends Operation heartbeats to the other member informing them about if the operation is still
  * alive. Also if no operations are running, it will still send a period packet to each member. This is a different system than
  * the regular heartbeats, but it has similar characteristics. The reason the packet is always send is for debugging purposes.
@@ -75,14 +75,16 @@ public class InvocationMonitor implements PacketHandler, MetricsProvider {
     private static final int HEARTBEAT_CALL_TIMEOUT_RATIO = 4;
     private static final long MAX_DELAY_MILLIS = SECONDS.toMillis(10);
 
-    private final NodeEngineImpl nodeEngine;
+    private final ConcurrentMap<Address, AtomicLong> heartbeatPerMember = new ConcurrentHashMap<Address, AtomicLong>();
+
+    private final ClusterService clusterService;
     private final InternalSerializationService serializationService;
     private final ServiceManager serviceManager;
+    private final ConnectionManager connectionManager;
     private final InvocationRegistry invocationRegistry;
     private final ILogger logger;
     private final ScheduledExecutorService scheduler;
     private final Address thisAddress;
-    private final ConcurrentMap<Address, AtomicLong> heartbeatPerMember = new ConcurrentHashMap<Address, AtomicLong>();
 
     @Probe(name = "backupTimeouts", level = MANDATORY)
     private final SwCounter backupTimeoutsCount = newSwCounter();
@@ -103,32 +105,28 @@ public class InvocationMonitor implements PacketHandler, MetricsProvider {
     @Probe
     private final long invocationScanPeriodMillis = SECONDS.toMillis(1);
 
-    //todo: we need to get rid of the nodeEngine dependency
-    InvocationMonitor(NodeEngineImpl nodeEngine,
-                      Address thisAddress,
-                      HazelcastProperties properties,
-                      InvocationRegistry invocationRegistry,
-                      ILogger logger,
-                      InternalSerializationService serializationService,
-                      ServiceManager serviceManager) {
-        this.nodeEngine = nodeEngine;
-        this.thisAddress = thisAddress;
+    InvocationMonitor(ClusterService clusterService, InternalSerializationService serializationService,
+                      ServiceManager serviceManager, ConnectionManager connectionManager, InvocationRegistry invocationRegistry,
+                      ILogger logger, String hzName, Address thisAddress, HazelcastProperties properties) {
+        this.clusterService = clusterService;
         this.serializationService = serializationService;
         this.serviceManager = serviceManager;
+        this.connectionManager = connectionManager;
         this.invocationRegistry = invocationRegistry;
         this.logger = logger;
+        this.scheduler = newScheduler(hzName);
+        this.thisAddress = thisAddress;
         this.backupTimeoutMillis = backupTimeoutMillis(properties);
         this.invocationTimeoutMillis = invocationTimeoutMillis(properties);
         this.heartbeatBroadcastPeriodMillis = heartbeatBroadcastPeriodMillis(properties);
-        this.scheduler = newScheduler(nodeEngine.getHazelcastInstance().getName());
     }
 
-    // Only accessed by diagnostics.
+    // only accessed by diagnostics
     public ConcurrentMap<Address, AtomicLong> getHeartbeatPerMember() {
         return heartbeatPerMember;
     }
 
-    // Only accessed by diagnostics.
+    // only accessed by diagnostics
     public long getHeartbeatBroadcastPeriodMillis() {
         return heartbeatBroadcastPeriodMillis;
     }
@@ -139,11 +137,11 @@ public class InvocationMonitor implements PacketHandler, MetricsProvider {
     }
 
     private static ScheduledExecutorService newScheduler(final String hzName) {
-        // the scheduler is configured with a single thread; so prevent concurrency problems.
+        // the scheduler is configured with a single thread to prevent concurrency problems
         return new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
             @Override
-            public Thread newThread(Runnable r) {
-                return new InvocationMonitorThread(r, hzName);
+            public Thread newThread(Runnable runnable) {
+                return new InvocationMonitorThread(runnable, hzName);
             }
         });
     }
@@ -187,7 +185,7 @@ public class InvocationMonitor implements PacketHandler, MetricsProvider {
     void onMemberLeft(MemberImpl member) {
         // Member list version at the time of member removal. Since version is read after member removal,
         // this is guaranteed to be greater than version in invocations whose target was left member.
-        int memberListVersion = nodeEngine.getClusterService().getMemberListVersion();
+        int memberListVersion = clusterService.getMemberListVersion();
         // postpone notifying invocations since real response may arrive in the mean time.
         scheduler.execute(new OnMemberLeftTask(member, memberListVersion));
     }
@@ -207,8 +205,7 @@ public class InvocationMonitor implements PacketHandler, MetricsProvider {
 
     public void start() {
         MonitorInvocationsTask monitorInvocationsTask = new MonitorInvocationsTask(invocationScanPeriodMillis);
-        scheduler.scheduleAtFixedRate(
-                monitorInvocationsTask, 0, monitorInvocationsTask.periodMillis, MILLISECONDS);
+        scheduler.scheduleAtFixedRate(monitorInvocationsTask, 0, monitorInvocationsTask.periodMillis, MILLISECONDS);
 
         BroadcastOperationControlTask broadcastOperationControlTask
                 = new BroadcastOperationControlTask(heartbeatBroadcastPeriodMillis);
@@ -234,6 +231,7 @@ public class InvocationMonitor implements PacketHandler, MetricsProvider {
     }
 
     private abstract class MonitorTask implements Runnable {
+
         @Override
         public void run() {
             try {
@@ -247,8 +245,10 @@ public class InvocationMonitor implements PacketHandler, MetricsProvider {
         protected abstract void run0();
     }
 
-    abstract class FixedRateMonitorTask implements Runnable {
+    private abstract class FixedRateMonitorTask implements Runnable {
+
         final long periodMillis;
+
         private long expectedNextMillis = System.currentTimeMillis();
 
         FixedRateMonitorTask(long periodMillis) {
@@ -280,13 +280,15 @@ public class InvocationMonitor implements PacketHandler, MetricsProvider {
 
     /**
      * The MonitorTask iterates over all pending invocations and sees what needs to be done. Currently its tasks are:
-     * - getting rid of duplicates
-     * - checking for heartbeat timeout
-     * - checking for backup timeout
-     *
+     * <ul>
+     * <li>getting rid of duplicates</li>
+     * <li>checking for heartbeat timeout</li>
+     * <li>checking for backup timeout</li>
+     * </ul>
      * In the future additional checks can be added here like checking if a retry is needed etc.
      */
     private final class MonitorInvocationsTask extends FixedRateMonitorTask {
+
         private MonitorInvocationsTask(long periodMillis) {
             super(periodMillis);
         }
@@ -342,6 +344,7 @@ public class InvocationMonitor implements PacketHandler, MetricsProvider {
     }
 
     private final class OnMemberLeftTask extends MonitorTask {
+
         private final MemberImpl leftMember;
         private final int memberListVersion;
 
@@ -399,6 +402,7 @@ public class InvocationMonitor implements PacketHandler, MetricsProvider {
     }
 
     private final class ProcessOperationControlTask extends MonitorTask {
+
         // either OperationControl or Packet that contains it
         private final Object payload;
         private final Address sender;
@@ -455,6 +459,7 @@ public class InvocationMonitor implements PacketHandler, MetricsProvider {
     }
 
     private final class BroadcastOperationControlTask extends FixedRateMonitorTask {
+
         private final CallsPerMember calls = new CallsPerMember(thisAddress);
 
         private BroadcastOperationControlTask(long periodMillis) {
@@ -476,7 +481,6 @@ public class InvocationMonitor implements PacketHandler, MetricsProvider {
         private CallsPerMember populate() {
             calls.clear();
 
-            ClusterService clusterService = nodeEngine.getClusterService();
             calls.ensureMember(thisAddress);
             for (Member member : clusterService.getMembers()) {
                 calls.ensureMember(member.getAddress());
@@ -501,7 +505,7 @@ public class InvocationMonitor implements PacketHandler, MetricsProvider {
                 Packet packet = new Packet(serializationService.toBytes(opControl))
                         .setPacketType(Packet.Type.OPERATION)
                         .raiseFlags(FLAG_OP_CONTROL | FLAG_URGENT);
-                nodeEngine.getNode().getConnectionManager().transmit(packet, address);
+                connectionManager.transmit(packet, address);
             }
         }
     }
@@ -511,6 +515,7 @@ public class InvocationMonitor implements PacketHandler, MetricsProvider {
      * is not going to schedule any operations on this thread due to retry.
      */
     private static final class InvocationMonitorThread extends Thread implements OperationHostileThread {
+
         private InvocationMonitorThread(Runnable task, String hzName) {
             super(task, createThreadName(hzName, "InvocationMonitorThread"));
         }

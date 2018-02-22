@@ -18,7 +18,6 @@ package com.hazelcast.spi.impl.operationexecutor.slowoperationdetector;
 
 import com.hazelcast.internal.management.dto.SlowOperationDTO;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.LoggingService;
 import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
 import com.hazelcast.spi.properties.HazelcastProperties;
@@ -72,13 +71,10 @@ public final class SlowOperationDetector {
     private boolean isFirstLog = true;
 
     @SuppressFBWarnings("EI_EXPOSE_REP2")
-    public SlowOperationDetector(LoggingService loggingServices,
-                                 OperationRunner[] genericOperationRunners,
-                                 OperationRunner[] partitionOperationRunners,
-                                 HazelcastProperties hazelcastProperties,
+    public SlowOperationDetector(ILogger logger, OperationRunner[] genericOperationRunners,
+                                 OperationRunner[] partitionOperationRunners, HazelcastProperties hazelcastProperties,
                                  String hzName) {
-
-        this.logger = loggingServices.getLogger(SlowOperationDetector.class);
+        this.logger = logger;
 
         this.slowOperationThresholdNanos = hazelcastProperties.getNanos(SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS);
         this.logPurgeIntervalNanos = hazelcastProperties.getNanos(SLOW_OPERATION_DETECTOR_LOG_PURGE_INTERVAL_SECONDS);

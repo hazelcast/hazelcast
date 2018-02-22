@@ -46,11 +46,11 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
 /**
  * The {@link AsyncInboundResponseHandler} is a PacketHandler that asynchronously process operation-response packets. The
  * actual processing is done by the {@link InboundResponseHandler}.
- *
+ * <p>
  * So when a response is received from a remote system, it is put in the responseQueue of the ResponseThread.
  * Then the ResponseThread takes it from this responseQueue and calls the {@link PacketHandler} for the
  * actual processing.
- *
+ * <p>
  * The reason that the IO thread doesn't immediately deals with the response is that deserializing the
  * {@link com.hazelcast.spi.impl.operationservice.impl.responses.Response} and let the invocation-future
  * deal with the response can be rather expensive.
@@ -68,9 +68,7 @@ public class AsyncInboundResponseHandler implements PacketHandler, MetricsProvid
     final ResponseThread responseThread;
     private final ILogger logger;
 
-    AsyncInboundResponseHandler(ClassLoader classLoader, String hzName,
-                                ILogger logger,
-                                PacketHandler responsePacketHandler,
+    AsyncInboundResponseHandler(ClassLoader classLoader, String hzName, ILogger logger, PacketHandler responsePacketHandler,
                                 HazelcastProperties properties) {
         this.logger = logger;
         this.responseThread = new ResponseThread(classLoader, hzName, responsePacketHandler, properties);
