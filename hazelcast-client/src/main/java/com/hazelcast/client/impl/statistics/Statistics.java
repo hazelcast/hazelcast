@@ -360,6 +360,7 @@ public class Statistics {
             stats.append("lastStatisticsCollectionTime").append(KEY_VALUE_SEPARATOR).append(System.currentTimeMillis());
             addStat(stats, "enterprise", enterprise);
             addStat(stats, "clientType", ClientType.JAVA.toString());
+            addStat(stats, "clientVersion", BuildInfoProvider.getBuildInfo().getVersion());
             addStat(stats, "clusterConnectionTimestamp", ownerConnection.getStartTime());
 
             stats.append(STAT_SEPARATOR).append("clientAddress").append(KEY_VALUE_SEPARATOR)
