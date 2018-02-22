@@ -27,6 +27,7 @@ import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -60,5 +61,23 @@ public class ClientExecutorQuorumWriteTest extends ExecutorQuorumWriteTest {
     @Override
     protected IExecutorService exec(int index, QuorumType quorumType, String postfix) {
         return clients.client(index).getExecutorService(EXEC_NAME + quorumType.name() + postfix);
+    }
+
+    @Override
+    @Test(expected = UnsupportedOperationException.class)
+    public void invokeAll_timeout_quorum_short_timeout() throws Exception {
+        super.invokeAll_timeout_quorum_short_timeout();
+    }
+
+    @Override
+    @Test(expected = UnsupportedOperationException.class)
+    public void invokeAll_timeout_quorum_long_timeout() throws Exception {
+        super.invokeAll_timeout_quorum_long_timeout();
+    }
+
+    @Override
+    @Test(expected = UnsupportedOperationException.class)
+    public void invokeAll_timeout_noQuorum() throws Exception {
+        super.invokeAll_timeout_noQuorum();
     }
 }
