@@ -33,6 +33,7 @@ import com.hazelcast.core.ICacheManager;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
+import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -103,6 +104,7 @@ public class ClientStatisticsTest extends ClientTestSupport {
         String expectedClientAddress = format("%s:%d", ownerConnection.getLocalSocketAddress().getAddress().getHostAddress(),
                 ownerConnection.getLocalSocketAddress().getPort());
         assertEquals(expectedClientAddress, stats.get("clientAddress"));
+        assertEquals(BuildInfoProvider.getBuildInfo().getVersion(), stats.get("clientVersion"));
 
         // time measured by us after client connection should be greater than the connection time reported by the statistics
         assertTrue(format("connectionTimeStat was %d, clientConnectionTime was %d (%s)",
