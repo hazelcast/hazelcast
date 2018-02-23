@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.stream;
 
+import com.hazelcast.jet.IListJet;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -28,8 +29,8 @@ public class DoubleStreamCastingTest extends AbstractStreamTest {
 
     @Before
     public void setUp() {
-        IStreamList<Integer> list = getList();
-        stream = list.stream().mapToDouble(m -> m);
+        IListJet<Integer> list = getList();
+        stream = DistributedStream.fromList(list).mapToDouble(m -> m);
     }
 
     @Test(expected = IllegalArgumentException.class)

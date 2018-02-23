@@ -23,7 +23,7 @@ import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.function.DistributedFunction;
-import com.hazelcast.jet.stream.IStreamList;
+import com.hazelcast.jet.IListJet;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import org.junit.After;
@@ -58,7 +58,7 @@ public class WriteFilePTest extends JetTestSupport {
     private JetInstance instance;
     private Path directory;
     private Path file;
-    private IStreamList<String> list;
+    private IListJet<String> list;
 
     @Before
     public void setup() throws IOException {

@@ -17,12 +17,12 @@
 package com.hazelcast.jet.stream;
 
 
+import com.hazelcast.jet.IListJet;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.io.Serializable;
 import java.util.Comparator;
-import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
@@ -44,8 +44,8 @@ public class DistributedStreamNonDistributedFunctionsTest extends AbstractStream
 
     @Before
     public void setUp() {
-        List<Integer> list = getList();
-        stream = list.stream();
+        IListJet<Integer> list = getList();
+        stream = DistributedStream.fromList(list);
     }
 
     @Test

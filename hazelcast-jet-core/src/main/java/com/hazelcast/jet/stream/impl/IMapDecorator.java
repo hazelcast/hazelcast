@@ -23,11 +23,7 @@ import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IMap;
 import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.function.DistributedFunction;
-import com.hazelcast.jet.stream.DistributedStream;
-import com.hazelcast.jet.stream.IStreamMap;
-import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
-import com.hazelcast.jet.stream.impl.source.MapSourcePipe;
+import com.hazelcast.jet.IMapJet;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.QueryCache;
@@ -47,15 +43,22 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 @SuppressWarnings({"checkstyle:methodcount", "deprecation"})
-public class MapDecorator<K, V> implements IStreamMap<K, V> {
+public class IMapDecorator<K, V> implements IMapJet<K, V> {
 
     private final IMap<K, V> map;
     private final JetInstance instance;
 
-    public MapDecorator(IMap<K, V> map, JetInstance instance) {
+    public IMapDecorator(IMap<K, V> map, JetInstance instance) {
         this.map = map;
         this.instance = instance;
     }
+
+    @Nonnull
+    public JetInstance getInstance() {
+        return instance;
+    }
+
+    // IMap decorated methods
 
     @Override
     public void putAll(Map<? extends K, ? extends V> m) {
@@ -369,17 +372,17 @@ public class MapDecorator<K, V> implements IStreamMap<K, V> {
         map.evictAll();
     }
 
-    @Override
+    @Nonnull @Override
     public Set<K> keySet() {
         return map.keySet();
     }
 
-    @Override
+    @Nonnull @Override
     public Collection<V> values() {
         return map.values();
     }
 
-    @Override
+    @Nonnull @Override
     public Set<Entry<K, V>> entrySet() {
         return map.entrySet();
     }
@@ -519,16 +522,5 @@ public class MapDecorator<K, V> implements IStreamMap<K, V> {
         map.destroy();
     }
 
-    @Override
-    public DistributedStream<Entry<K, V>> stream() {
-        return new MapSourcePipe<>(new StreamContext(instance), map, null, null);
-    }
 
-    @Override
-    public <E> DistributedStream<E> stream(
-            @Nonnull Predicate<K, V> predicate,
-            @Nonnull DistributedFunction<Entry<K, V>, E> projectionFn
-    ) {
-        return new MapSourcePipe<>(new StreamContext(instance), map, predicate, projectionFn);
-    }
 }

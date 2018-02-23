@@ -34,7 +34,7 @@ import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedToLongFunction;
 import com.hazelcast.jet.impl.SnapshotRepository;
 import com.hazelcast.jet.impl.execution.SnapshotRecord;
-import com.hazelcast.jet.stream.IStreamMap;
+import com.hazelcast.jet.IMapJet;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -154,7 +154,7 @@ public class StreamKafkaPTest extends KafkaTestSupport {
         if (guarantee != ProcessingGuarantee.NONE) {
             // wait until the items are consumed and a new snapshot appears
             assertTrueEventually(() -> assertTrue(list.size() == messageCount * 2));
-            IStreamMap<Long, Object> snapshotsMap =
+            IMapJet<Long, Object> snapshotsMap =
                     instances[0].getMap(SnapshotRepository.snapshotsMapName(job.getId()));
             Long currentMax = maxSuccessfulSnapshot(snapshotsMap);
             assertTrueEventually(() -> {
@@ -194,7 +194,7 @@ public class StreamKafkaPTest extends KafkaTestSupport {
     /**
      * @return maximum ID of successful snapshot or null, if there is no successful snapshot.
      */
-    private Long maxSuccessfulSnapshot(IStreamMap<Long, Object> snapshotsMap) {
+    private Long maxSuccessfulSnapshot(IMapJet<Long, Object> snapshotsMap) {
         return snapshotsMap.entrySet().stream()
                            .filter(e -> e.getValue() instanceof SnapshotRecord)
                            .map(e -> (SnapshotRecord) e.getValue())

@@ -21,10 +21,9 @@ import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.impl.event.CachePartitionLostListener;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.jet.stream.DistributedStream;
-import com.hazelcast.jet.stream.IStreamCache;
-import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
-import com.hazelcast.jet.stream.impl.source.CacheSourcePipe;
+import com.hazelcast.jet.ICacheJet;
 
 import javax.cache.CacheManager;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
@@ -41,20 +40,22 @@ import java.util.Spliterator;
 import java.util.function.Consumer;
 
 @SuppressWarnings({"checkstyle:methodcount", "deprecation"})
-public class CacheDecorator<K, V> implements IStreamCache<K, V> {
+public class ICacheDecorator<K, V> implements ICacheJet<K, V> {
 
     private final ICache<K, V> cache;
     private final JetInstance instance;
 
-    public CacheDecorator(ICache<K, V> cache, JetInstance instance) {
+    public ICacheDecorator(ICache<K, V> cache, JetInstance instance) {
         this.cache = cache;
         this.instance = instance;
     }
 
     @Override
-    public DistributedStream<Map.Entry<K, V>> stream() {
-        return new CacheSourcePipe<>(new StreamContext(instance), cache);
+    public DistributedStream<Map.Entry<K, V>> distributedStream() {
+        return DistributedStream.fromSource(instance, Sources.cache(getName()), false);
     }
+
+    // ICache decorated methods
 
     @Override
     public ICompletableFuture<V> getAsync(K key) {

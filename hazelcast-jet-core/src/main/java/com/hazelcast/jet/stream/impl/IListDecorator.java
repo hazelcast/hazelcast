@@ -19,27 +19,32 @@ package com.hazelcast.jet.stream.impl;
 import com.hazelcast.core.IList;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.stream.DistributedStream;
-import com.hazelcast.jet.stream.IStreamList;
-import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
-import com.hazelcast.jet.stream.impl.source.ListSourcePipe;
+import com.hazelcast.jet.IListJet;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.stream.Stream;
 
 @SuppressWarnings({"checkstyle:methodcount", "deprecation"})
-public class ListDecorator<E> implements IStreamList<E> {
+public class IListDecorator<E> implements IListJet<E> {
 
     private final IList<E> list;
     private final JetInstance instance;
 
-    public ListDecorator(IList<E> list, JetInstance instance) {
+    public IListDecorator(IList<E> list, JetInstance instance) {
         this.list = list;
         this.instance = instance;
     }
+
+    @Nonnull
+    public JetInstance getInstance() {
+        return instance;
+    }
+
+    // IList decorated methods
 
     @Override
     public String getPartitionKey() {
@@ -187,12 +192,13 @@ public class ListDecorator<E> implements IStreamList<E> {
     }
 
     @Override
-    public DistributedStream<E> stream() {
-        return new ListSourcePipe<>(new StreamContext(instance), list);
+    public Stream<E> stream() {
+        throw new UnsupportedOperationException("This method is no longer supported. Instead use DistributedStream" +
+                ".fromList() to create a distributed stream.");
     }
 
     @Override
-    public DistributedStream<E> parallelStream() {
-        return stream().unordered();
+    public Stream<E> parallelStream() {
+        return stream();
     }
 }

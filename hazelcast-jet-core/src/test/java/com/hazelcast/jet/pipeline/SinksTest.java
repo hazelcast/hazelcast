@@ -24,7 +24,7 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.jet.Job;
-import com.hazelcast.jet.stream.IStreamMap;
+import com.hazelcast.jet.IMapJet;
 import com.hazelcast.map.AbstractEntryProcessor;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -213,7 +213,7 @@ public class SinksTest extends PipelineTestSupport {
         execute();
 
         // Then
-        IStreamMap<Object, Object> actual = jet().getMap(srcName);
+        IMapJet<Object, Object> actual = jet().getMap(srcName);
         assertEquals(1, actual.size());
         assertEquals(((ITEM_COUNT - 1) * ITEM_COUNT) / 2, actual.get("listSum"));
     }
@@ -302,7 +302,7 @@ public class SinksTest extends PipelineTestSupport {
     @Test
     public void mapWithUpdating_when_itemDataSerializable_then_exceptionShouldNotThrown() {
         // Given
-        IStreamMap<Object, Object> sourceMap = jet().getMap(srcName);
+        IMapJet<Object, Object> sourceMap = jet().getMap(srcName);
         List<Integer> input = sequence(ITEM_COUNT);
         input.forEach(i -> sourceMap.put(String.valueOf(i), new DataSerializableObject(i)));
 

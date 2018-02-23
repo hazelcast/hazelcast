@@ -18,7 +18,6 @@ package com.hazelcast.jet.pipeline;
 
 import com.hazelcast.cache.journal.EventJournalCacheEvent;
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.jet.JournalInitialPosition;
 import com.hazelcast.jet.Util;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.WatermarkGenerationParams;

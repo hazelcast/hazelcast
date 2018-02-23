@@ -16,7 +16,9 @@
 
 package com.hazelcast.jet.stream;
 
-import com.hazelcast.core.IList;
+import com.hazelcast.jet.ICacheJet;
+import com.hazelcast.jet.IListJet;
+import com.hazelcast.jet.IMapJet;
 import com.hazelcast.jet.function.DistributedComparator;
 import org.junit.Test;
 
@@ -58,11 +60,11 @@ public class CollectorsTest extends AbstractStreamTest {
 
     @Test
     public void list_toCollection() {
-        IList<Integer> list = getList();
+        IListJet<Integer> list = getList();
         fillList(list);
 
-        Set<Integer> collection = list
-                .stream()
+        Set<Integer> collection = DistributedStream
+                .fromList(list)
                 .collect(DistributedCollectors.toCollection(TreeSet::new));
 
         assertCollection(collection);
@@ -220,28 +222,28 @@ public class CollectorsTest extends AbstractStreamTest {
     }
 
     @Test
-    public void map_counting() throws Exception {
+    public void map_counting() {
         long count = streamMap().collect(DistributedCollectors.counting());
 
         assertEquals(COUNT, count);
     }
 
     @Test
-    public void cache_counting() throws Exception {
+    public void cache_counting() {
         long count = streamCache().collect(DistributedCollectors.counting());
 
         assertEquals(COUNT, count);
     }
 
     @Test
-    public void list_counting() throws Exception {
+    public void list_counting() {
         long count = streamList().collect(DistributedCollectors.counting());
 
         assertEquals(COUNT, count);
     }
 
     @Test
-    public void list_minBy() throws Exception {
+    public void list_minBy() {
         Optional<Integer> min = streamList()
                 .collect(DistributedCollectors.minBy(DistributedComparator.naturalOrder()));
 
@@ -250,18 +252,18 @@ public class CollectorsTest extends AbstractStreamTest {
     }
 
     @Test
-    public void empty_minBy() throws Exception {
-        IStreamList<Integer> list = getList();
+    public void empty_minBy() {
+        IListJet<Integer> list = getList();
 
-        Optional<Integer> min = list
-                .stream()
+        Optional<Integer> min = DistributedStream
+                .fromList(list)
                 .collect(DistributedCollectors.minBy(DistributedComparator.naturalOrder()));
 
         assertFalse(min.isPresent());
     }
 
     @Test
-    public void list_maxBy() throws Exception {
+    public void list_maxBy() {
         Optional<Integer> max = streamList()
                 .collect(DistributedCollectors.maxBy(DistributedComparator.naturalOrder()));
 
@@ -270,60 +272,60 @@ public class CollectorsTest extends AbstractStreamTest {
     }
 
     @Test
-    public void empty_maxBy() throws Exception {
-        IStreamList<Integer> list = getList();
+    public void empty_maxBy() {
+        IListJet<Integer> list = getList();
 
-        Optional<Integer> max = list
-                .stream()
+        Optional<Integer> max = DistributedStream
+                .fromList(list)
                 .collect(DistributedCollectors.maxBy(DistributedComparator.naturalOrder()));
 
         assertFalse(max.isPresent());
     }
 
     @Test
-    public void list_summingInt() throws Exception {
+    public void list_summingInt() {
         int sum = streamList().collect(DistributedCollectors.summingInt(m -> m));
 
         assertEquals((COUNT * (COUNT - 1)) / 2, sum);
     }
 
     @Test
-    public void list_summingLong() throws Exception {
+    public void list_summingLong() {
         long sum = streamList().collect(DistributedCollectors.summingLong(m -> (long) m));
 
         assertEquals((COUNT * (COUNT - 1)) / 2, sum);
     }
 
     @Test
-    public void list_summingDouble() throws Exception {
+    public void list_summingDouble() {
         double sum = streamList().collect(DistributedCollectors.summingDouble(m -> (double) m));
 
         assertEquals((COUNT * (COUNT - 1)) / 2, sum, 0.0);
     }
 
     @Test
-    public void list_averagingInt() throws Exception {
+    public void list_averagingInt() {
         double avg = streamList().collect(DistributedCollectors.averagingInt(m -> m));
 
         assertEquals((COUNT - 1) / 2d, avg, 0.0);
     }
 
     @Test
-    public void list_averagingLong() throws Exception {
+    public void list_averagingLong() {
         double avg = streamList().collect(DistributedCollectors.averagingLong(m -> (long) m));
 
         assertEquals((COUNT - 1) / 2d, avg, 0.0);
     }
 
     @Test
-    public void list_averagingDouble() throws Exception {
+    public void list_averagingDouble() {
         double avg = streamList().collect(DistributedCollectors.averagingDouble(m -> (double) m));
 
         assertEquals((COUNT - 1) / 2d, avg, 0.0);
     }
 
     @Test
-    public void map_reducing() throws Exception {
+    public void map_reducing() {
         Optional<Integer> sum = streamMap()
                 .map(Entry::getValue)
                 .collect(DistributedCollectors.reducing((a, b) -> a + b));
@@ -333,7 +335,7 @@ public class CollectorsTest extends AbstractStreamTest {
     }
 
     @Test
-    public void cache_reducing() throws Exception {
+    public void cache_reducing() {
         Optional<Integer> sum = streamCache()
                 .map(Entry::getValue)
                 .collect(DistributedCollectors.reducing((a, b) -> a + b));
@@ -343,29 +345,30 @@ public class CollectorsTest extends AbstractStreamTest {
     }
 
     @Test
-    public void map_empty_reducing() throws Exception {
-        IStreamMap<String, Integer> map = getMap();
+    public void map_empty_reducing() {
+        IMapJet<String, Integer> map = getMap();
 
-        Optional<Integer> sum = map.stream()
-                                              .map(Entry::getValue)
-                                              .collect(DistributedCollectors.reducing((a, b) -> a + b));
-
-        assertFalse(sum.isPresent());
-    }
-
-    @Test
-    public void cache_empty_reducing() throws Exception {
-        IStreamCache<String, Integer> cache = getCache();
-
-        Optional<Integer> sum = cache.stream()
-                                                .map(Entry::getValue)
-                                                .collect(DistributedCollectors.reducing((a, b) -> a + b));
+        Optional<Integer> sum = DistributedStream
+                .fromMap(map)
+                .map(Entry::getValue)
+                .collect(DistributedCollectors.reducing((a, b) -> a + b));
 
         assertFalse(sum.isPresent());
     }
 
     @Test
-    public void map_reducingWithIdentity() throws Exception {
+    public void cache_empty_reducing() {
+        ICacheJet<String, Integer> cache = getCache();
+
+        Optional<Integer> sum = cache.distributedStream()
+                                     .map(Entry::getValue)
+                                     .collect(DistributedCollectors.reducing((a, b) -> a + b));
+
+        assertFalse(sum.isPresent());
+    }
+
+    @Test
+    public void map_reducingWithIdentity() {
         int sum = streamMap()
                 .map(Entry::getValue)
                 .collect(DistributedCollectors.reducing(0, (a, b) -> a + b));
@@ -374,7 +377,7 @@ public class CollectorsTest extends AbstractStreamTest {
     }
 
     @Test
-    public void cache_reducingWithIdentity() throws Exception {
+    public void cache_reducingWithIdentity() {
         int sum = streamCache()
                 .map(Entry::getValue)
                 .collect(DistributedCollectors.reducing(0, (a, b) -> a + b));
@@ -383,7 +386,7 @@ public class CollectorsTest extends AbstractStreamTest {
     }
 
     @Test
-    public void map_reducingWithMappingAndIdentity() throws Exception {
+    public void map_reducingWithMappingAndIdentity() {
         long sum = streamMap()
                 .map(Entry::getValue)
                 .collect(DistributedCollectors.reducing(0L, n -> (long) n, (a, b) -> a + b));
@@ -392,7 +395,7 @@ public class CollectorsTest extends AbstractStreamTest {
     }
 
     @Test
-    public void cache_reducingWithMappingAndIdentity() throws Exception {
+    public void cache_reducingWithMappingAndIdentity() {
         long sum = streamCache()
                 .map(Entry::getValue)
                 .collect(DistributedCollectors.reducing(0L, n -> (long) n, (a, b) -> a + b));
@@ -518,7 +521,7 @@ public class CollectorsTest extends AbstractStreamTest {
     }
 
     @Test
-    public void map_collect() throws Exception {
+    public void map_collect() {
         Integer[] collected = streamMap().collect(
                 () -> new Integer[]{0},
                 (r, e) -> r[0] += e.getValue(),
@@ -529,7 +532,7 @@ public class CollectorsTest extends AbstractStreamTest {
     }
 
     @Test
-    public void cache_collect() throws Exception {
+    public void cache_collect() {
         Integer[] collected = streamCache().collect(
                 () -> new Integer[]{0},
                 (r, e) -> r[0] += e.getValue(),
@@ -540,7 +543,7 @@ public class CollectorsTest extends AbstractStreamTest {
     }
 
     @Test
-    public void map_customCollector() throws Exception {
+    public void map_customCollector() {
         int sum = streamMap().collect(
                 DistributedCollector.of(
                         () -> new Integer[]{0},
@@ -557,7 +560,7 @@ public class CollectorsTest extends AbstractStreamTest {
     }
 
     @Test
-    public void cache_customCollector() throws Exception {
+    public void cache_customCollector() {
         int sum = streamCache().collect(
                 DistributedCollector.of(
                         () -> new Integer[]{0},
@@ -574,7 +577,7 @@ public class CollectorsTest extends AbstractStreamTest {
     }
 
     @Test
-    public void list_collect() throws Exception {
+    public void list_collect() {
         Integer[] collected = streamList().collect(
                 () -> new Integer[]{0},
                 (r, e) -> r[0] += e,
@@ -585,7 +588,7 @@ public class CollectorsTest extends AbstractStreamTest {
     }
 
     @Test
-    public void list_customCollector() throws Exception {
+    public void list_customCollector() {
         Integer[] collected = streamList().collect(
                 DistributedCollector.of(
                         () -> new Integer[]{0},

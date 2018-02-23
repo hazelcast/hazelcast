@@ -29,7 +29,7 @@ import com.hazelcast.jet.core.JobRestartWithSnapshotTest.SequencesInPartitionsMe
 import com.hazelcast.jet.impl.SnapshotRepository;
 import com.hazelcast.jet.impl.execution.SnapshotRecord;
 import com.hazelcast.jet.impl.execution.SnapshotRecord.SnapshotStatus;
-import com.hazelcast.jet.stream.IStreamMap;
+import com.hazelcast.jet.IMapJet;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.Before;
 import org.junit.Rule;
@@ -82,7 +82,7 @@ public class SnapshotFailureTest extends JetTestSupport {
     public void when_snapshotFails_then_jobShouldNotFail() throws Exception {
         int numPartitions = 2;
         int numElements = 10;
-        IStreamMap<Object, Object> results = instance1.getMap("results");
+        IMapJet<Object, Object> results = instance1.getMap("results");
 
         DAG dag = new DAG();
         SequencesInPartitionsMetaSupplier sup = new SequencesInPartitionsMetaSupplier(numPartitions, numElements);

@@ -24,9 +24,9 @@ import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.JetTestInstanceFactory;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.impl.JetService;
-import com.hazelcast.jet.stream.IStreamCache;
-import com.hazelcast.jet.stream.IStreamList;
-import com.hazelcast.jet.stream.IStreamMap;
+import com.hazelcast.jet.ICacheJet;
+import com.hazelcast.jet.IListJet;
+import com.hazelcast.jet.IMapJet;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.AssertTask;
@@ -82,11 +82,11 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
         return instanceFactory.newMember(config, blockedAddress);
     }
 
-    protected static <K, V> IStreamMap<K, V> getMap(JetInstance instance) {
+    protected static <K, V> IMapJet<K, V> getMap(JetInstance instance) {
         return instance.getMap(randomName());
     }
 
-    protected static <K, V> IStreamCache<K, V> getCache(JetInstance instance) {
+    protected static <K, V> ICacheJet<K, V> getCache(JetInstance instance) {
         return instance.getCacheManager().getCache(randomName());
     }
 
@@ -101,7 +101,7 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
         }
     }
 
-    protected static <E> IStreamList<E> getList(JetInstance instance) {
+    protected static <E> IListJet<E> getList(JetInstance instance) {
         return instance.getList(randomName());
     }
 

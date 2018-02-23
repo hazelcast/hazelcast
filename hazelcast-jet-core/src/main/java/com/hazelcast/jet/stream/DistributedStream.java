@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet.stream;
 
+import com.hazelcast.jet.IListJet;
+import com.hazelcast.jet.IMapJet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
@@ -30,28 +32,31 @@ import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.function.DistributedToDoubleFunction;
 import com.hazelcast.jet.function.DistributedToIntFunction;
 import com.hazelcast.jet.function.DistributedToLongFunction;
+import com.hazelcast.jet.impl.pipeline.transform.BatchSourceTransform;
+import com.hazelcast.jet.pipeline.BatchSource;
+import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.jet.stream.DistributedCollector.Reducer;
+import com.hazelcast.jet.stream.impl.IListDecorator;
+import com.hazelcast.jet.stream.impl.IMapDecorator;
 import com.hazelcast.jet.stream.impl.pipeline.AbstractSourcePipe;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 import com.hazelcast.jet.stream.impl.reducers.CollectorReducer;
-import com.hazelcast.util.UuidUtil;
 
 import javax.annotation.Nonnull;
 import java.util.Comparator;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.IntBinaryOperator;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
 import java.util.function.ToIntFunction;
 import java.util.function.ToLongFunction;
 import java.util.stream.Collector;
-import java.util.stream.Collectors;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
@@ -68,21 +73,79 @@ import java.util.stream.Stream;
 public interface DistributedStream<T> extends Stream<T> {
 
     /**
-     * Returns a distributed {@code Stream} with given processors as its source.
+     * Returns a distributed {@code Stream} with the given {@link BatchSource} as
+     * the source.
+     *
+     * @param instance  the instance where the stream will be executed on
+     * @param source    source of the stream
+     * @param isOrdered whether the source should be treated as ordered or unordered. An ordered stream
+     *                  will not have any parallelism.
      */
-    static <T> DistributedStream<T> fromSource(JetInstance instance, ProcessorMetaSupplier metaSupplier) {
+    static <T> DistributedStream<T> fromSource(JetInstance instance, BatchSource<T> source, boolean isOrdered) {
         return new AbstractSourcePipe<T>(new StreamContext(instance)) {
             @Override
             protected ProcessorMetaSupplier getSourceMetaSupplier() {
-                return metaSupplier;
+                return ((BatchSourceTransform) source).metaSupplier;
             }
 
             @Override
             protected String getName() {
-                return UuidUtil.newUnsecureUuidString();
+                return source.name();
+            }
+
+            @Override
+            public boolean isOrdered() {
+                return isOrdered;
             }
         };
     }
+
+    /**
+     * Returns a {@link DistributedStream} with this map as its source.
+     * <p>
+     * If the underlying map is being concurrently modified, there are no
+     * guarantees given with respect to missing or duplicate items in a
+     * stream operation.
+     */
+    @Nonnull
+    static <K, V> DistributedStream<Entry<K, V>> fromMap(@Nonnull IMapJet<K, V> map) {
+        IMapDecorator decorator = (IMapDecorator) map;
+        return fromSource(decorator.getInstance(), Sources.map(map.getName()), false);
+    }
+
+    /**
+     * Returns a {@link DistributedStream} with this map as its source.
+     * Entries will be filtered and mapped according to the given predicate
+     * and projection.
+     * <p>
+     * If the underlying map is being concurrently modified, there are no
+     * guarantees given with respect to missing or duplicate items in a
+     * stream operation.
+     * <p>
+     * To create a {@code Predicate} instance you might prefer to use Jet's
+     * {@link com.hazelcast.jet.GenericPredicates}.
+     */
+    @Nonnull
+    static <K, V, T> DistributedStream<T> fromMap(
+            @Nonnull IMapJet<K, V> map,
+            @Nonnull com.hazelcast.query.Predicate<K, V> predicate,
+            @Nonnull DistributedFunction<Entry<K, V>, T> projectionFn
+    ) {
+        IMapDecorator decorator = (IMapDecorator) map;
+        return fromSource(decorator.getInstance(), Sources.map(map.getName(), predicate, projectionFn), false);
+    }
+
+    /**
+     * Returns an ordered {@link DistributedStream} with this list as its
+     * source.
+     */
+    @Nonnull
+    static <T> DistributedStream<T> fromList(IListJet<T> list) {
+        IListDecorator decorator = (IListDecorator<T>) list;
+        return fromSource(decorator.getInstance(), Sources.list(list.getName()), true);
+    }
+
+    ;
 
     /**
      * {@code Serializable} variant of
@@ -234,13 +297,13 @@ public interface DistributedStream<T> extends Stream<T> {
     /**
      * Terminate the stream using a reduction performed by the given {@link Reducer}
      * and return the resulting value.
-     *
+     * <p>
      * A {@link Reducer} is specific to Jet, and is responsible for building
      * and executing the underlying DAG. It can't be used as a downstream collector in a
      * collector cascade.
      *
      * @param reducer the reducer
-     * @param <R> type of the return value
+     * @param <R>     type of the return value
      * @return the result of the reduction operation
      */
     <R> R collect(Reducer<? super T, R> reducer);
@@ -297,8 +360,7 @@ public interface DistributedStream<T> extends Stream<T> {
     @Override
     DistributedStream<T> filter(Predicate<? super T> predicate);
 
-    @Override
-    <R> DistributedStream<R> map(Function<? super T, ? extends R> mapper);
+    @Override <R> DistributedStream<R> map(Function<? super T, ? extends R> mapper);
 
     @Override
     DistributedIntStream mapToInt(ToIntFunction<? super T> mapper);

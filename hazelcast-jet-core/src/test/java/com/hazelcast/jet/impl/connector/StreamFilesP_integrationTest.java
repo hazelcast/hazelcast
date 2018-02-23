@@ -21,7 +21,7 @@ import com.hazelcast.jet.Util;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.Vertex;
-import com.hazelcast.jet.stream.IStreamList;
+import com.hazelcast.jet.IListJet;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -59,7 +59,7 @@ public class StreamFilesP_integrationTest extends JetTestSupport {
 
     private JetInstance instance;
     private File directory;
-    private IStreamList<Entry<String, String>> list;
+    private IListJet<Entry<String, String>> list;
 
     @Before
     public void setup() throws Exception {

@@ -17,6 +17,7 @@
 package com.hazelcast.jet.stream;
 
 
+import com.hazelcast.jet.IListJet;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -38,8 +39,8 @@ public class DistributedStreamCastingTest extends AbstractStreamTest {
 
     @Before
     public void setUp() {
-        List<Integer> list = getList();
-        stream = list.stream();
+        IListJet<Integer> list = getList();
+        stream = DistributedStream.fromList(list);
     }
 
     @Test(expected = IllegalArgumentException.class)

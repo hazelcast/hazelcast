@@ -22,9 +22,6 @@ import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.pipeline.Pipeline;
-import com.hazelcast.jet.stream.IStreamList;
-import com.hazelcast.jet.stream.IStreamMap;
-import com.hazelcast.jet.stream.JetCacheManager;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -133,17 +130,16 @@ public interface JetInstance {
      * @return distributed map instance with the specified name
      */
     @Nonnull
-    <K, V> IStreamMap<K, V> getMap(@Nonnull String name);
+    <K, V> IMapJet<K, V> getMap(@Nonnull String name);
 
     /**
      * Returns the distributed list instance with the specified name.
-     * Index-based operations on the list are not supported.
      *
      * @param name name of the distributed list
      * @return distributed list instance with the specified name
      */
     @Nonnull
-    <E> IStreamList<E> getList(@Nonnull String name);
+    <E> IListJet<E> getList(@Nonnull String name);
 
     /**
      * Obtain the {@link JetCacheManager} that provides access to JSR-107 (JCache) caches

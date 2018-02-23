@@ -17,6 +17,7 @@
 package com.hazelcast.jet.stream;
 
 import com.hazelcast.core.IList;
+import com.hazelcast.jet.IMapJet;
 import com.hazelcast.jet.function.DistributedDoubleUnaryOperator;
 import org.junit.Before;
 import org.junit.Test;
@@ -37,17 +38,17 @@ import static org.junit.Assert.assertTrue;
 
 public class DoubleStreamTest extends AbstractStreamTest {
 
-    private IStreamMap<String, Double> map;
+    private IMapJet<String, Double> map;
     private DistributedDoubleStream stream;
 
     @Before
     public void setupMap() {
         map = getMap();
         fillMapDoubles(map);
-        stream = map.stream().mapToDouble(Map.Entry::getValue);
+        stream = DistributedStream.fromMap(map).mapToDouble(Map.Entry::getValue);
     }
 
-    private static long fillMapDoubles(IStreamMap<String, Double> map) {
+    private static long fillMapDoubles(IMapJet<String, Double> map) {
         for (double i = 0D; i < COUNT; i++) {
             map.put("key-" + i, i);
         }
@@ -56,7 +57,10 @@ public class DoubleStreamTest extends AbstractStreamTest {
 
     @Test
     public void flatMapToDouble() {
-        double[] values = map.stream().flatMapToDouble(e -> DoubleStream.of(e.getValue(), e.getValue())).toArray();
+        double[] values = DistributedStream
+                .fromMap(map)
+                .flatMapToDouble(e -> DoubleStream.of(e.getValue(), e.getValue()))
+                .toArray();
         Arrays.sort(values);
 
         for (int i = 0; i < COUNT * 2; i += 2) {

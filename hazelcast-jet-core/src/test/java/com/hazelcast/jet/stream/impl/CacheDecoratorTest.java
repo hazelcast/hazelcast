@@ -36,12 +36,12 @@ import static org.mockito.Mockito.mock;
 public class CacheDecoratorTest {
 
     private ICache<String, String> cacheMock;
-    private CacheDecorator deco;
+    private ICacheDecorator deco;
 
     @Before
     public void before() {
         cacheMock = mock(ICache.class);
-        deco = new CacheDecorator(cacheMock, mock(JetInstance.class));
+        deco = new ICacheDecorator(cacheMock, mock(JetInstance.class));
     }
 
     @Test

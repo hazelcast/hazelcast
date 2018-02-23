@@ -23,7 +23,6 @@ import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.impl.connector.kafka.KafkaTestSupport;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sources;
-import com.hazelcast.jet.stream.IStreamMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -57,7 +56,7 @@ public class KafkaSinkTest extends KafkaTestSupport {
     private String brokerConnectionString;
     private JetInstance instance;
     private String topic;
-    private IStreamMap<String, String> sourceIMap;
+    private IMapJet<String, String> sourceIMap;
 
     @Before
     public void setup() throws IOException {

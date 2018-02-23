@@ -24,7 +24,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.function.DistributedFunction;
-import com.hazelcast.jet.stream.IStreamMap;
+import com.hazelcast.jet.IMapJet;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -142,7 +142,7 @@ public class SourcesTest extends PipelineTestSupport {
     public void map_withProjectionToNull_then_nullsSkipped() {
         // given
         String mapName = randomName();
-        IStreamMap<Integer, Entry<Integer, String>> sourceMap = jet().getMap(mapName);
+        IMapJet<Integer, Entry<Integer, String>> sourceMap = jet().getMap(mapName);
         range(0, ITEM_COUNT).forEach(i -> sourceMap.put(i, entry(i, i % 2 == 0 ? null : String.valueOf(i))));
         BatchSource<String> source = Sources.map(mapName, truePredicate(), singleAttribute("value"));
 

@@ -25,9 +25,9 @@ import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.impl.util.Util;
-import com.hazelcast.jet.stream.IStreamList;
-import com.hazelcast.jet.stream.IStreamMap;
-import com.hazelcast.jet.stream.JetCacheManager;
+import com.hazelcast.jet.IListJet;
+import com.hazelcast.jet.IMapJet;
+import com.hazelcast.jet.JetCacheManager;
 
 import javax.annotation.Nonnull;
 import java.lang.reflect.Method;
@@ -201,7 +201,7 @@ public final class JetBootstrap {
         }
 
         @Nonnull @Override
-        public <K, V> IStreamMap<K, V> getMap(@Nonnull String name) {
+        public <K, V> IMapJet<K, V> getMap(@Nonnull String name) {
             return instance.getMap(name);
         }
 
@@ -211,7 +211,7 @@ public final class JetBootstrap {
         }
 
         @Nonnull @Override
-        public <E> IStreamList<E> getList(@Nonnull String name) {
+        public <E> IListJet<E> getList(@Nonnull String name) {
             return instance.getList(name);
         }
 

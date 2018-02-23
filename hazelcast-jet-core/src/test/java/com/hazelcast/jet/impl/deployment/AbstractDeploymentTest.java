@@ -21,17 +21,19 @@ import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.impl.deployment.LoadPersonIsolated.LoadPersonIsolatedMetaSupplier;
 import com.hazelcast.jet.impl.deployment.LoadResource.LoadResourceMetaSupplier;
-import com.hazelcast.jet.stream.IStreamMap;
+import com.hazelcast.jet.stream.DistributedStream;
+import com.hazelcast.jet.IMapJet;
 import com.hazelcast.jet.test.IgnoredForCoverage;
 import com.hazelcast.test.HazelcastTestSupport;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+
 import java.io.Serializable;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
 
 import static com.hazelcast.jet.core.TestUtil.executeAndPeel;
 import static com.hazelcast.jet.stream.DistributedCollectors.toList;
@@ -68,13 +70,13 @@ public abstract class AbstractDeploymentTest extends HazelcastTestSupport {
     public void testStream() throws Throwable {
         createCluster();
 
-        IStreamMap<Integer, Integer> map = getJetInstance().getMap(randomString());
+        IMapJet<Integer, Integer> map = getJetInstance().getMap(randomString());
         range(0, 10).parallel().forEach(i -> map.put(i, i));
 
         JobConfig jobConfig = new JobConfig();
         jobConfig.addClass(MyMapper.class);
-        List<Integer> list = map
-                .stream()
+        List<Integer> list = DistributedStream
+                .fromMap(map)
                 .configure(jobConfig)
                 .map(new MyMapper())
                 .collect(toList());

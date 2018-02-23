@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,10 +14,8 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.stream;
+package com.hazelcast.jet;
 
-
-import com.hazelcast.jet.JetInstance;
 
 /**
  * {@code JetCacheManager} is the entry point to access JSR-107 (JCache) caches
@@ -26,7 +24,7 @@ import com.hazelcast.jet.JetInstance;
  * even when created by different JCache {@link javax.cache.CacheManager}s.
  * <p>
  * Note that this interface is not related to JCache {@link javax.cache.CacheManager}.
- * Its purpose is to host {@code IStreamCache} related methods, separately from
+ * Its purpose is to host {@code ICacheJet} related methods, separately from
  * {@link JetInstance}, in order to allow frameworks that make
  * use of reflection and/or dynamic proxies (e.g. Mockito, Spring etc)
  * to operate on {@link JetInstance} when JCache is not on the classpath.
@@ -54,5 +52,5 @@ public interface JetCacheManager {
      * @throws java.lang.IllegalStateException              if a valid JCache library does not exist in the classpath
      *                                                      ({@code 1.0.0-PFD} or {@code 0.x} versions are not valid)
      */
-    <K, V> IStreamCache<K, V> getCache(String name);
+    <K, V> ICacheJet<K, V> getCache(String name);
 }

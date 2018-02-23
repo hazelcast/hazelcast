@@ -20,7 +20,7 @@ import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.JetTestSupport;
-import com.hazelcast.jet.stream.IStreamMap;
+import com.hazelcast.jet.IMapJet;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -79,7 +79,7 @@ public class StoreSnapshotTaskletTest extends JetTestSupport {
     @Test
     public void when_item_then_storedToMap() {
         init(Collections.singletonList(entry("k", "v")));
-        IStreamMap<Object, Object> map = instance.getMap(sst.currMapName());
+        IMapJet<Object, Object> map = instance.getMap(sst.currMapName());
         assertTrueEventually(() -> {
             sst.call();
             assertEquals("v", map.get("k"));
@@ -102,7 +102,7 @@ public class StoreSnapshotTaskletTest extends JetTestSupport {
         init(asList(entry("k", "v"), new SnapshotBarrier(2)));
         ssContext.startNewSnapshot(2);
         assertEquals(2, sst.pendingSnapshotId);
-        IStreamMap<Object, Object> map = instance.getMap(sst.currMapName());
+        IMapJet<Object, Object> map = instance.getMap(sst.currMapName());
         assertTrueEventually(() -> {
             sst.call();
             assertEquals(3, sst.pendingSnapshotId);

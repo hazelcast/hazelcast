@@ -17,6 +17,7 @@
 package com.hazelcast.jet.stream;
 
 import com.hazelcast.core.IList;
+import com.hazelcast.jet.IListJet;
 import org.junit.Test;
 
 import java.util.Map.Entry;
@@ -28,11 +29,10 @@ public class SortTest extends AbstractStreamTest {
 
     @Test
     public void sourceList() {
-        IStreamList<Integer> list = getList();
+        IListJet<Integer> list = getList();
         fillList(list, IntStream.range(0, COUNT).map(i -> COUNT - i - 1).limit(COUNT).iterator());
 
-        IList<Integer> result = list
-                .stream()
+        IList<Integer> result = DistributedStream.fromList(list)
                 .sorted()
                 .collect(DistributedCollectors.toIList(randomString()));
 

@@ -24,7 +24,7 @@ import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.test.TestInbox;
 import com.hazelcast.jet.core.test.TestProcessorContext;
-import com.hazelcast.jet.stream.IStreamMap;
+import com.hazelcast.jet.IMapJet;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -98,7 +98,7 @@ public class WriteSocketTest extends JetTestSupport {
 
         JetInstance jetInstance = createJetMember();
         createJetMember();
-        IStreamMap<Integer, String> map = jetInstance.getMap("map");
+        IMapJet<Integer, String> map = jetInstance.getMap("map");
         range(0, ITEM_COUNT).forEach(i -> map.put(i, String.valueOf(i)));
 
         DAG dag = new DAG();

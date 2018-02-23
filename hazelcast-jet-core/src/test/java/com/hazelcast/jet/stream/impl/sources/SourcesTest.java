@@ -20,10 +20,12 @@ import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.TestProcessors.ListSource;
+import com.hazelcast.jet.pipeline.BatchSource;
+import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.jet.stream.AbstractStreamTest;
 import com.hazelcast.jet.stream.DistributedCollectors;
 import com.hazelcast.jet.stream.DistributedStream;
-import com.hazelcast.jet.stream.IStreamList;
+import com.hazelcast.jet.IListJet;
 import org.junit.Test;
 
 import javax.annotation.Nonnull;
@@ -37,10 +39,7 @@ import java.util.Collection;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static com.hazelcast.jet.core.ProcessorMetaSupplier.of;
 import static com.hazelcast.jet.core.processor.Processors.noopP;
-import static com.hazelcast.jet.core.processor.SourceProcessors.readFilesP;
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -50,9 +49,8 @@ public class SourcesTest extends AbstractStreamTest {
     @Test
     public void testFile() throws IOException {
         File dir = createTempFile();
-        ProcessorMetaSupplier metaSupplier = readFilesP(dir.getAbsolutePath(), UTF_8, "*", (file, line) -> line);
-        IStreamList<String> sink = DistributedStream
-                .<String>fromSource(getInstance(), metaSupplier)
+        IListJet<String> sink = DistributedStream
+                .fromSource(getInstance(), Sources.files(dir.getAbsolutePath()), false)
                 .flatMap(line -> Arrays.stream(line.split(" ")))
                 .collect(DistributedCollectors.toIList(dir.getName()));
 
@@ -62,9 +60,10 @@ public class SourcesTest extends AbstractStreamTest {
 
     @Test
     public void testCustomSource() {
-        ProcessorMetaSupplier metaSupplier = of(new DummySupplier());
-        IStreamList<String> sink = DistributedStream
-                .<String>fromSource(getInstance(), metaSupplier)
+        BatchSource<String> metaSupplier = Sources.batchFromProcessor("dummy",
+                ProcessorMetaSupplier.of(new DummySupplier()));
+        IListJet<String> sink = DistributedStream
+                .fromSource(getInstance(), metaSupplier, false)
                 .flatMap(line -> Arrays.stream(line.split(" ")))
                 .collect(DistributedCollectors.toIList(randomString()));
 

@@ -19,6 +19,9 @@ package com.hazelcast.jet.stream;
 import com.hazelcast.cache.ICache;
 import com.hazelcast.core.IList;
 import com.hazelcast.core.IMap;
+import com.hazelcast.jet.ICacheJet;
+import com.hazelcast.jet.IListJet;
+import com.hazelcast.jet.IMapJet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.TestInClusterSupport;
 
@@ -36,30 +39,30 @@ public abstract class AbstractStreamTest extends TestInClusterSupport {
     public static final int COUNT = 10000;
 
     protected DistributedStream<Entry<String, Integer>> streamMap() {
-        IStreamMap<String, Integer> map = getMap(testMode.getJet());
+        IMapJet<String, Integer> map = getMap(testMode.getJet());
         fillMap(map);
-        return map.stream();
+        return DistributedStream.fromMap(map);
     }
 
     protected static DistributedStream<Map.Entry<String, Integer>> streamCache() {
-        IStreamCache<String, Integer> cache = getCache();
+        ICacheJet<String, Integer> cache = getCache();
         fillCache(cache);
-        return cache.stream();
+        return cache.distributedStream();
     }
 
     protected DistributedStream<Integer> streamList() {
-        IStreamList<Integer> list = getList(testMode.getJet());
+        IListJet<Integer> list = getList(testMode.getJet());
         fillList(list);
-        return list.stream();
+        return DistributedStream.fromList(list);
     }
 
-    protected <K, V> IStreamMap<K, V> getMap() {
+    protected <K, V> IMapJet<K, V> getMap() {
         return getMap(testMode.getJet());
     }
 
-    static <K, V> IStreamCache<K, V> getCache() {
+    static <K, V> ICacheJet<K, V> getCache() {
         String cacheName = randomName();
-        IStreamCache<K, V> cache = null;
+        ICacheJet<K, V> cache = null;
         for (JetInstance jetInstance : allJetInstances()) {
             cache = jetInstance.getCacheManager().getCache(cacheName);
         }
@@ -70,7 +73,7 @@ public abstract class AbstractStreamTest extends TestInClusterSupport {
         return testMode.getJet();
     }
 
-    protected <E> IStreamList<E> getList() {
+    protected <E> IListJet<E> getList() {
         return getList(testMode.getJet());
     }
 

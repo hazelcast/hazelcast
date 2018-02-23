@@ -38,7 +38,7 @@ import java.util.concurrent.locks.LockSupport;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
 
-import static com.hazelcast.jet.JournalInitialPosition.START_FROM_OLDEST;
+import static com.hazelcast.jet.pipeline.JournalInitialPosition.START_FROM_OLDEST;
 import static com.hazelcast.jet.core.WatermarkEmissionPolicy.suppressDuplicates;
 import static com.hazelcast.jet.core.WatermarkGenerationParams.wmGenParams;
 import static com.hazelcast.jet.core.WatermarkPolicies.limitingLag;

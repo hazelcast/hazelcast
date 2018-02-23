@@ -18,7 +18,7 @@ package com.hazelcast.jet.core.processor;
 
 import com.hazelcast.cache.journal.EventJournalCacheEvent;
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.jet.JournalInitialPosition;
+import com.hazelcast.jet.pipeline.JournalInitialPosition;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.WatermarkGenerationParams;
 import com.hazelcast.jet.function.DistributedBiFunction;

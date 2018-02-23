@@ -19,7 +19,7 @@ package com.hazelcast.jet.impl.pipeline.transform;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.core.IMap;
 import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.JournalInitialPosition;
+import com.hazelcast.jet.pipeline.JournalInitialPosition;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.datamodel.TimestampedItem;

@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet.stream;
 
+import com.hazelcast.jet.IListJet;
+import com.hazelcast.jet.IMapJet;
 import org.junit.Test;
 
 import java.util.Map;
@@ -30,10 +32,11 @@ public class DistributedStreamTest extends AbstractStreamTest {
     @Test
     public void testProjection() {
         String listName = randomString();
-        IStreamMap<String, Integer> map = getMap();
+        IMapJet<String, Integer> map = getMap();
         fillMap(map);
-        IStreamList<String> list = map.stream(e -> true, Map.Entry::getKey)
-                                      .collect(DistributedCollectors.toIList(listName));
+        IListJet<String> list = DistributedStream
+                .fromMap(map, e -> true, Map.Entry::getKey)
+                .collect(DistributedCollectors.toIList(listName));
 
         assertTrue(list.contains("key-0"));
     }
@@ -41,10 +44,11 @@ public class DistributedStreamTest extends AbstractStreamTest {
     @Test
     public void testPredicate() {
         String mapName = randomString();
-        IStreamMap<String, Integer> map = getMap();
+        IMapJet<String, Integer> map = getMap();
         fillMap(map);
-        IStreamMap<String, Integer> filteredMap = map.stream(e -> !e.getValue().equals(0), wholeItem())
-                                                     .collect(DistributedCollectors.toIMap(mapName));
+        IMapJet<String, Integer> filteredMap = DistributedStream
+                .fromMap(map, e -> !e.getValue().equals(0), wholeItem())
+                .collect(DistributedCollectors.toIMap(mapName));
 
         assertEquals(COUNT - 1, filteredMap.size());
         assertNull(filteredMap.get("key-0"));

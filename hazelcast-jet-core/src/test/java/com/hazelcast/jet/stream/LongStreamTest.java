@@ -17,6 +17,7 @@
 package com.hazelcast.jet.stream;
 
 import com.hazelcast.core.IList;
+import com.hazelcast.jet.IMapJet;
 import com.hazelcast.jet.function.DistributedLongUnaryOperator;
 import org.junit.Before;
 import org.junit.Test;
@@ -39,17 +40,17 @@ import static org.junit.Assert.assertTrue;
 
 public class LongStreamTest extends AbstractStreamTest {
 
-    private IStreamMap<String, Long> map;
+    private IMapJet<String, Long> map;
     private DistributedLongStream stream;
 
     @Before
     public void setupMap() {
         map = getMap();
         fillMapLongs(map);
-        stream = map.stream().mapToLong(Map.Entry::getValue);
+        stream = DistributedStream.fromMap(map).mapToLong(Map.Entry::getValue);
     }
 
-    private static long fillMapLongs(IStreamMap<String, Long> map) {
+    private static long fillMapLongs(IMapJet<String, Long> map) {
         for (int i = 0; i < COUNT; i++) {
             map.put("key-" + i, (long) i);
         }
@@ -58,7 +59,10 @@ public class LongStreamTest extends AbstractStreamTest {
 
     @Test
     public void flatMapToLong() {
-        long[] values = map.stream().flatMapToLong(e -> LongStream.of(e.getValue(), e.getValue())).toArray();
+        long[] values = DistributedStream
+                .fromMap(map)
+                .flatMapToLong(e -> LongStream.of(e.getValue(), e.getValue()))
+                .toArray();
         Arrays.sort(values);
 
         for (int i = 0; i < COUNT * 2; i += 2) {

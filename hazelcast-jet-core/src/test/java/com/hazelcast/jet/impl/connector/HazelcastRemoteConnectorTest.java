@@ -33,7 +33,7 @@ import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.processor.SourceProcessors;
-import com.hazelcast.jet.stream.IStreamList;
+import com.hazelcast.jet.IListJet;
 import com.hazelcast.map.journal.EventJournalMapEvent;
 import com.hazelcast.nio.Address;
 import com.hazelcast.projection.Projections;
@@ -49,7 +49,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.jet.JournalInitialPosition.START_FROM_OLDEST;
+import static com.hazelcast.jet.pipeline.JournalInitialPosition.START_FROM_OLDEST;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.WatermarkEmissionPolicy.suppressDuplicates;
 import static com.hazelcast.jet.core.WatermarkGenerationParams.wmGenParams;
@@ -172,7 +172,7 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
         dag.edge(between(source, sink));
 
         executeAndWait(dag);
-        IStreamList<Object> list = jet.getList(SINK_NAME);
+        IListJet<Object> list = jet.getList(SINK_NAME);
         assertEquals(ITEM_COUNT - 1, list.size());
         assertFalse(list.contains(0));
         assertTrue(list.contains(1));
@@ -189,7 +189,7 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
         dag.edge(between(source, sink));
 
         executeAndWait(dag);
-        IStreamList<Object> list = jet.getList(SINK_NAME);
+        IListJet<Object> list = jet.getList(SINK_NAME);
         assertEquals(ITEM_COUNT - 1, list.size());
         assertFalse(list.contains(0));
         assertTrue(list.contains(1));

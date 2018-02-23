@@ -25,7 +25,7 @@ import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.Partition;
 import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.internal.journal.EventJournalReader;
-import com.hazelcast.jet.JournalInitialPosition;
+import com.hazelcast.jet.pipeline.JournalInitialPosition;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.core.AbstractProcessor;
@@ -60,7 +60,7 @@ import java.util.function.Function;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.client.HazelcastClient.newHazelcastClient;
-import static com.hazelcast.jet.JournalInitialPosition.START_FROM_CURRENT;
+import static com.hazelcast.jet.pipeline.JournalInitialPosition.START_FROM_CURRENT;
 import static com.hazelcast.jet.Traversers.traverseStream;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;

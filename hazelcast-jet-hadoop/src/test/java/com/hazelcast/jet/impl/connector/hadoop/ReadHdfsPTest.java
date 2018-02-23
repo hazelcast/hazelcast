@@ -17,6 +17,7 @@
 package com.hazelcast.jet.impl.connector.hadoop;
 
 import com.hazelcast.core.IList;
+import com.hazelcast.jet.HdfsSources;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Util;
 import com.hazelcast.jet.core.DAG;
@@ -25,7 +26,7 @@ import com.hazelcast.jet.function.DistributedBiFunction;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.jet.stream.DistributedCollectors;
 import com.hazelcast.jet.stream.DistributedStream;
-import com.hazelcast.jet.stream.IStreamList;
+import com.hazelcast.jet.IListJet;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -131,8 +132,8 @@ public class ReadHdfsPTest extends HdfsTestSupport {
 
     @Test
     public void testJus() {
-        IStreamList sink = DistributedStream
-                .fromSource(instance, readHdfsP(jobConf, mapperType.mapper))
+        IListJet sink = DistributedStream
+                .fromSource(instance, HdfsSources.hdfs(jobConf, mapperType.mapper), false)
                 .collect(DistributedCollectors.toIList("sink"));
 
         assertEquals(expectedSinkSize(), sink.size());

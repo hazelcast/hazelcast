@@ -25,8 +25,8 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.jet.function.DistributedPredicate;
-import com.hazelcast.jet.stream.IStreamList;
-import com.hazelcast.jet.stream.IStreamMap;
+import com.hazelcast.jet.IListJet;
+import com.hazelcast.jet.IMapJet;
 import com.hazelcast.map.journal.EventJournalMapEvent;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -37,7 +37,7 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.stream.Stream;
 
-import static com.hazelcast.jet.JournalInitialPosition.START_FROM_OLDEST;
+import static com.hazelcast.jet.pipeline.JournalInitialPosition.START_FROM_OLDEST;
 import static com.hazelcast.jet.Util.mapPutEvents;
 import static com.hazelcast.jet.function.DistributedFunctions.entryValue;
 import static com.hazelcast.query.impl.predicates.PredicateTestUtils.entry;
@@ -70,7 +70,7 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
     @Test
     public void mapJournal() {
         String mapName = JOURNALED_MAP_PREFIX + randomName();
-        IStreamMap<String, Integer> map = jet().getMap(mapName);
+        IMapJet<String, Integer> map = jet().getMap(mapName);
         StreamSource<Entry<String, Integer>> source = Sources.mapJournal(mapName, START_FROM_OLDEST);
         testMapJournal(map, source);
     }
@@ -126,7 +126,7 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
         StreamSource<String> source = Sources.mapJournal(mapName, mapPutEvents(),
                 (EventJournalMapEvent<Integer, Entry<Integer, String>> entry) -> entry.getNewValue().getValue(),
                 START_FROM_OLDEST);
-        IStreamMap<Integer, Entry<Integer, String>> sourceMap = jet().getMap(mapName);
+        IMapJet<Integer, Entry<Integer, String>> sourceMap = jet().getMap(mapName);
         range(0, ITEM_COUNT).forEach(i -> sourceMap.put(i, entry(i, i % 2 == 0 ? null : String.valueOf(i))));
 
         // when
@@ -154,7 +154,7 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
         String mapName = JOURNALED_MAP_PREFIX + randomName();
         StreamSource<Entry<Integer, Integer>> source = Sources.mapJournal(mapName, START_FROM_OLDEST);
 
-        IStreamMap<Integer, Integer> sourceMap = jet().getMap(mapName);
+        IMapJet<Integer, Integer> sourceMap = jet().getMap(mapName);
         sourceMap.put(1, 1); // ADDED
         sourceMap.remove(1); // REMOVED - filtered out
         sourceMap.put(1, 2); // ADDED
@@ -166,7 +166,7 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
         jet().newJob(pipeline);
 
         // then
-        IStreamList<Entry<Integer, Integer>> sinkList = jet().getList(sinkName);
+        IListJet<Entry<Integer, Integer>> sinkList = jet().getList(sinkName);
         assertTrueEventually(() -> {
                     assertEquals(2, sinkList.size());
 
@@ -198,7 +198,7 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
         jet().newJob(pipeline);
 
         // then
-        IStreamList<Entry<Integer, Integer>> sinkList = jet().getList(sinkName);
+        IListJet<Entry<Integer, Integer>> sinkList = jet().getList(sinkName);
         assertTrueEventually(() -> {
                     assertEquals(2, sinkList.size());
 
@@ -216,7 +216,7 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
     @Test
     public void mapJournal_withPredicateAndProjection() {
         String mapName = JOURNALED_MAP_PREFIX + randomName();
-        IStreamMap<String, Integer> map = jet().getMap(mapName);
+        IMapJet<String, Integer> map = jet().getMap(mapName);
         DistributedPredicate<EventJournalMapEvent<String, Integer>> p = e -> e.getNewValue() % 2 == 0;
         StreamSource<Integer> source =
                 Sources.mapJournal(mapName, p, EventJournalMapEvent::getNewValue, START_FROM_OLDEST);

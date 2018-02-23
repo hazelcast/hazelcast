@@ -17,6 +17,7 @@
 package com.hazelcast.jet.stream;
 
 import com.hazelcast.core.IList;
+import com.hazelcast.jet.IListJet;
 import org.junit.Test;
 
 import java.util.Map.Entry;
@@ -73,13 +74,14 @@ public class LimitTest extends AbstractStreamTest {
 
     @Test
     public void sourceList() {
-        IStreamList<Integer> list = getList();
+        IListJet<Integer> list = getList();
         fillList(list);
 
         int limit = 10;
-        IList<Integer> result = list.stream()
-                                    .limit(limit)
-                                    .collect(DistributedCollectors.toIList(randomString()));
+        IList<Integer> result = DistributedStream
+                .fromList(list)
+                .limit(limit)
+                .collect(DistributedCollectors.toIList(randomString()));
 
         assertEquals(limit, result.size());
     }

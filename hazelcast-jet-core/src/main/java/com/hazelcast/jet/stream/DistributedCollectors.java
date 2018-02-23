@@ -16,6 +16,9 @@
 
 package com.hazelcast.jet.stream;
 
+import com.hazelcast.jet.ICacheJet;
+import com.hazelcast.jet.IListJet;
+import com.hazelcast.jet.IMapJet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.accumulator.LongAccumulator;
 import com.hazelcast.jet.accumulator.MutableReference;
@@ -504,9 +507,9 @@ public abstract class DistributedCollectors {
      * Variant of {@link Collectors#toMap(Function, Function)
      * java.util.stream.Collectors#toMap(Function,Function)} which, instead of
      * returning a map as the result, writes the results to the distributed
-     * {@link IStreamMap} with the given name.
+     * {@link IMapJet} with the given name.
      */
-    public static <T, K, U> Reducer<T, IStreamMap<K, U>> toIMap(
+    public static <T, K, U> Reducer<T, IMapJet<K, U>> toIMap(
             String mapName, DistributedFunction<? super T, ? extends K> keyMapper,
             DistributedFunction<? super T, ? extends U> valueMapper
     ) {
@@ -518,12 +521,12 @@ public abstract class DistributedCollectors {
      * Variant of {@link Collectors#toMap(Function, Function)
      * java.util.stream.Collectors#toMap(Function,Function)} which, instead of
      * returning a map as the result, writes the results to the distributed
-     * {@link IStreamMap} with the given name.
+     * {@link IMapJet} with the given name.
      * <p>
      * The key and value of the will be used as the respective key and value to
-     * put to the target {@code IStreamMap}.
+     * put to the target {@code IMapJet}.
      */
-    public static <K, U> Reducer<Entry<K, U>, IStreamMap<K, U>> toIMap(String mapName) {
+    public static <K, U> Reducer<Entry<K, U>, IMapJet<K, U>> toIMap(String mapName) {
         return toIMap(mapName, Map.Entry::getKey, Map.Entry::getValue);
     }
 
@@ -531,9 +534,9 @@ public abstract class DistributedCollectors {
      * Variant of {@link Collectors#toMap(Function, Function, BinaryOperator)
      * java.util.stream.Collectors#toMap(Function, Function, BinaryOperator)}
      * which, instead of returning a map as the result, writes the results
-     * to the distributed {@link IStreamMap} with the given name.
+     * to the distributed {@link IMapJet} with the given name.
      */
-    public static <T, K, U> Reducer<T, IStreamMap<K, U>> toIMap(
+    public static <T, K, U> Reducer<T, IMapJet<K, U>> toIMap(
             String mapName, DistributedFunction<? super T, ? extends K> keyMapper,
             DistributedFunction<? super T, ? extends U> valueMapper,
             DistributedBinaryOperator<U> mergeFunction
@@ -546,9 +549,9 @@ public abstract class DistributedCollectors {
      * Variant of {@link Collectors#toMap(Function, Function)
      * java.util.stream.Collectors#toMap(Function, Function)} which, instead of
      * returning a map as the result, writes the results to the distributed
-     * {@link IStreamCache} with the given name.
+     * {@link ICacheJet} with the given name.
      */
-    public static <T, K, U> Reducer<T, IStreamCache<K, U>> toICache(
+    public static <T, K, U> Reducer<T, ICacheJet<K, U>> toICache(
             String cacheName,
             DistributedFunction<? super T, ? extends K> keyMapper,
             DistributedFunction<? super T, ? extends U> valueMapper
@@ -561,9 +564,9 @@ public abstract class DistributedCollectors {
      * Variant of {@link Collectors#toMap(Function, Function)
      * java.util.stream.Collectors#toMap(Function, Function)} which, instead of
      * returning a map as the result, writes the results to the distributed
-     * {@link IStreamCache} with the given name.
+     * {@link ICacheJet} with the given name.
      */
-    public static <K, U> Reducer<Map.Entry<K, U>, IStreamCache<K, U>> toICache(String cacheName) {
+    public static <K, U> Reducer<Map.Entry<K, U>, ICacheJet<K, U>> toICache(String cacheName) {
         return toICache(cacheName, Entry::getKey, Entry::getValue);
     }
 
@@ -571,9 +574,9 @@ public abstract class DistributedCollectors {
      * Variant of {@link Collectors#toMap(Function, Function)
      * java.util.stream.Collectors#toMap(Function, Function)} which, instead of
      * returning a map as the result, writes the results to the distributed
-     * {@link IStreamCache} with the given name.
+     * {@link ICacheJet} with the given name.
      */
-    public static <T, K, U> Reducer<T, IStreamCache<K, U>> toICache(
+    public static <T, K, U> Reducer<T, ICacheJet<K, U>> toICache(
             String cacheName,
             DistributedFunction<? super T, ? extends K> keyMapper,
             DistributedFunction<? super T, ? extends U> valueMapper,
@@ -586,9 +589,9 @@ public abstract class DistributedCollectors {
     /**
      * Variant of {@link Collectors#toList() java.util.stream.Collectors#toList()}
      * which, instead of returning a list as the result, writes the results to the
-     * distributed {@link IStreamList} with the given name.
+     * distributed {@link IListJet} with the given name.
      */
-    public static <T> Reducer<T, IStreamList<T>> toIList(String listName) {
+    public static <T> Reducer<T, IListJet<T>> toIList(String listName) {
         return new IListReducer<>(listName);
     }
 
@@ -596,9 +599,9 @@ public abstract class DistributedCollectors {
      * Variant of {@link Collectors#groupingBy(Function)
      * java.util.stream.Collectors#groupingBy(Function)} which, instead of
      * returning a map as the result, writes the grouped results to the
-     * distributed {@link IStreamMap} with the given name.
+     * distributed {@link IMapJet} with the given name.
      */
-    public static <T, K> Reducer<T, IStreamMap<K, List<T>>> groupingByToIMap(
+    public static <T, K> Reducer<T, IMapJet<K, List<T>>> groupingByToIMap(
             String mapName, DistributedFunction<? super T, ? extends K> classifier
     ) {
         return groupingByToIMap(mapName, classifier, toList());
@@ -608,9 +611,9 @@ public abstract class DistributedCollectors {
      * Variant of {@link Collectors#groupingBy(Function, Collector)
      * java.util.stream.Collectors#groupingBy(Function, Collector)} which, instead of
      * returning a map as the result, writes the grouped results to the distributed
-     * {@link IStreamMap} with the given name.
+     * {@link IMapJet} with the given name.
      */
-    public static <T, K, A, D> Reducer<T, IStreamMap<K, D>> groupingByToIMap(
+    public static <T, K, A, D> Reducer<T, IMapJet<K, D>> groupingByToIMap(
             String mapName, DistributedFunction<? super T, ? extends K> classifier,
             DistributedCollector<? super T, A, D> downstream
     ) {
@@ -622,9 +625,9 @@ public abstract class DistributedCollectors {
      * Variant of {@link Collectors#groupingBy(Function, Collector)
      * java.util.stream.Collectors#groupingBy(Function, Collector)} which, instead of
      * returning a map as the result, writes the grouped results to the distributed
-     * {@link IStreamCache} with the given name.
+     * {@link ICacheJet} with the given name.
      */
-    public static <T, K> Reducer<T, IStreamCache<K, List<T>>> groupingByToICache(
+    public static <T, K> Reducer<T, ICacheJet<K, List<T>>> groupingByToICache(
             String cacheName, DistributedFunction<? super T, ? extends K> classifier
     ) {
         return groupingByToICache(cacheName, classifier, toList());
@@ -634,9 +637,9 @@ public abstract class DistributedCollectors {
      * Variant of {@link Collectors#groupingBy(Function, Collector)
      * java.util.stream.Collectors#groupingBy(Function, Collector)} which, instead of
      * returning a map as the result, writes the grouped results to the distributed
-     * {@link IStreamCache} with the given name.
+     * {@link ICacheJet} with the given name.
      */
-    public static <T, K, A, D> Reducer<T, IStreamCache<K, D>> groupingByToICache(
+    public static <T, K, A, D> Reducer<T, ICacheJet<K, D>> groupingByToICache(
             String cacheName, DistributedFunction<? super T, ? extends K> classifier,
             DistributedCollector<? super T, A, D> downstream
     ) {
@@ -651,7 +654,7 @@ public abstract class DistributedCollectors {
      */
     private static class CacheGetter {
 
-        private static <K, V> DistributedFunction<JetInstance, IStreamCache<K, V>> getCacheFn(String name) {
+        private static <K, V> DistributedFunction<JetInstance, ICacheJet<K, V>> getCacheFn(String name) {
             return instance -> instance.getCacheManager().getCache(name);
         }
     }

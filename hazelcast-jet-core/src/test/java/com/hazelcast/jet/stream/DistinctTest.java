@@ -17,6 +17,7 @@
 package com.hazelcast.jet.stream;
 
 import com.hazelcast.core.IList;
+import com.hazelcast.jet.IListJet;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -26,12 +27,12 @@ public class DistinctTest extends AbstractStreamTest {
 
     @Test
     public void sourceList() {
-        IStreamList<Integer> list = getList();
+        IListJet<Integer> list = getList();
         int modulus = 10;
         fillList(list, i -> i % modulus);
 
-        IList<Integer> result = list
-                .stream()
+        IList<Integer> result = DistributedStream
+                .fromList(list)
                 .distinct()
                 .collect(DistributedCollectors.toIList(randomString()));
 

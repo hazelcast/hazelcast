@@ -22,7 +22,7 @@ import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.impl.JetService;
-import com.hazelcast.jet.stream.IStreamMap;
+import com.hazelcast.jet.IMapJet;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.GroupProperty;
@@ -54,7 +54,7 @@ public class AsyncMapWriterTest extends JetTestSupport {
     private JetInstance instance1;
     private JetInstance instance2;
     private AsyncMapWriter writer;
-    private IStreamMap<Object, Object> map;
+    private IMapJet<Object, Object> map;
     private NodeEngineImpl nodeEngine;
 
 
@@ -210,7 +210,7 @@ public class AsyncMapWriterTest extends JetTestSupport {
         // Given
 
         // make sure map store is initialized
-        IStreamMap<Object, Object> map = instance1.getMap(ALWAYS_FAILING_MAP);
+        IMapJet<Object, Object> map = instance1.getMap(ALWAYS_FAILING_MAP);
         try {
             map.put(1, 1);
             fail("map.put() did not fail.");
@@ -240,7 +240,7 @@ public class AsyncMapWriterTest extends JetTestSupport {
         // Given
 
         // make sure map store is initialized
-        IStreamMap<Object, Object> map = instance1.getMap(RETRYABLE_MAP);
+        IMapJet<Object, Object> map = instance1.getMap(RETRYABLE_MAP);
         map.put(1, 1);
         map.clear();
 

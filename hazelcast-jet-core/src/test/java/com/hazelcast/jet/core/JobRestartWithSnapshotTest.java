@@ -37,7 +37,7 @@ import com.hazelcast.jet.impl.execution.ExecutionContext;
 import com.hazelcast.jet.impl.execution.SnapshotContext;
 import com.hazelcast.jet.impl.execution.SnapshotRecord;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
-import com.hazelcast.jet.stream.IStreamMap;
+import com.hazelcast.jet.IMapJet;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.Before;
@@ -202,7 +202,7 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
         int timeout = (int) (MILLISECONDS.toSeconds(config.getSnapshotIntervalMillis()) + 2);
 
         // wait until we have at least one snapshot
-        IStreamMap<Long, Object> snapshotsMap = snapshotRepository.getSnapshotMap(job.getId());
+        IMapJet<Long, Object> snapshotsMap = snapshotRepository.getSnapshotMap(job.getId());
 
         assertTrueEventually(() -> assertTrue("No snapshot produced", snapshotsMap.entrySet().stream()
                 .anyMatch(en -> en.getValue() instanceof SnapshotRecord
@@ -321,20 +321,20 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
 
         // the first snapshot should succeed
         assertTrueEventually(() -> {
-            IStreamMap<Long, SnapshotRecord> records = getSnapshotsMap(job);
+            IMapJet<Long, SnapshotRecord> records = getSnapshotsMap(job);
             SnapshotRecord record = records.get(0L);
             assertNotNull("no record found for snapshot 0", record);
             assertTrue("snapshot was not successful", record.isSuccessful());
         }, 30);
     }
 
-    private IStreamMap<Long, SnapshotRecord> getSnapshotsMap(Job job) {
+    private IMapJet<Long, SnapshotRecord> getSnapshotsMap(Job job) {
         SnapshotRepository snapshotRepository = new SnapshotRepository(instance1);
         return snapshotRepository.getSnapshotMap(job.getId());
     }
 
     private SnapshotContext getSnapshotContext(Job job) {
-        IStreamMap<Long, Long> randomIdsMap = instance1.getMap(JobRepository.RANDOM_IDS_MAP_NAME);
+        IMapJet<Long, Long> randomIdsMap = instance1.getMap(JobRepository.RANDOM_IDS_MAP_NAME);
         long executionId = randomIdsMap.entrySet().stream()
                                        .filter(e -> e.getValue().equals(job.getId())
                                                && !e.getValue().equals(e.getKey()))
@@ -349,7 +349,7 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
         return executionContext.snapshotContext();
     }
 
-    private void waitForNextSnapshot(IStreamMap<Long, Object> snapshotsMap, int timeoutSeconds) {
+    private void waitForNextSnapshot(IMapJet<Long, Object> snapshotsMap, int timeoutSeconds) {
         SnapshotRecord maxRecord = findMaxRecord(snapshotsMap);
         assertNotNull("no snapshot found", maxRecord);
         // wait until there is at least one more snapshot
@@ -357,7 +357,7 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
                 findMaxRecord(snapshotsMap).snapshotId() > maxRecord.snapshotId()), timeoutSeconds);
     }
 
-    private SnapshotRecord findMaxRecord(IStreamMap<Long, Object> snapshotsMap) {
+    private SnapshotRecord findMaxRecord(IMapJet<Long, Object> snapshotsMap) {
         return snapshotsMap.entrySet().stream()
                            .filter(en -> en.getValue() instanceof SnapshotRecord)
                            .map(en -> (SnapshotRecord) en.getValue())
