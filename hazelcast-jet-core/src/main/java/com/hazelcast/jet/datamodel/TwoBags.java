@@ -27,14 +27,14 @@ import static java.util.Collections.emptyList;
  * type. Bags are identified by their index: 0 and 1. Useful as
  * a container of co-grouped data.
  *
- * @param <E0> type of items in bag-0
- * @param <E1> type of items in bag-1
+ * @param <T0> type of items in bag-0
+ * @param <T1> type of items in bag-1
  */
-public final class TwoBags<E0, E1> {
-    private final Collection<E0> bag0;
-    private final Collection<E1> bag1;
+public final class TwoBags<T0, T1> {
+    private final Collection<T0> bag0;
+    private final Collection<T1> bag1;
 
-    private TwoBags(@Nonnull Collection<E0> bag0, @Nonnull Collection<E1> bag1) {
+    private TwoBags(@Nonnull Collection<T0> bag0, @Nonnull Collection<T1> bag1) {
         this.bag0 = new ArrayList<>(bag0);
         this.bag1 = new ArrayList<>(bag1);
     }
@@ -61,7 +61,7 @@ public final class TwoBags<E0, E1> {
      * Retrieves the bag at index 0.
      */
     @Nonnull
-    public Collection<E0> bag0() {
+    public Collection<T0> bag0() {
         return bag0;
     }
 
@@ -69,7 +69,7 @@ public final class TwoBags<E0, E1> {
      * Retrieves the bag at index 1.
      */
     @Nonnull
-    public Collection<E1> bag1() {
+    public Collection<T1> bag1() {
         return bag1;
     }
 
@@ -77,9 +77,25 @@ public final class TwoBags<E0, E1> {
      * Combines this and the supplied container by merging all the supplied
      * container's data into this one. Leaves the supplied container unchanged.
      */
-    public void combineWith(@Nonnull TwoBags<E0, E1> that) {
+    public void combineWith(@Nonnull TwoBags<T0, T1> that) {
         bag0.addAll(that.bag0());
         bag1.addAll(that.bag1());
+    }
+
+    /**
+     * Deducts the supplied container from this one by removing all the items
+     * that the supplied one contains. Leaves the supplied container unchanged.
+     */
+    public void deduct(@Nonnull TwoBags<T0, T1> that) {
+        bag0.removeAll(that.bag0());
+        bag1.removeAll(that.bag1());
+    }
+
+    /**
+     * Returns a safe copy of this container.
+     */
+    public TwoBags<T0, T1> finish() {
+        return new TwoBags<>(new ArrayList<>(bag0), new ArrayList<>(bag1));
     }
 
     @Override
@@ -96,5 +112,10 @@ public final class TwoBags<E0, E1> {
         int hc = bag0.hashCode();
         hc = 73 * hc + bag1.hashCode();
         return hc;
+    }
+
+    @Override
+    public String toString() {
+        return "TwoBags{bag0=" + bag0 + ", bag1=" + bag1 + '}';
     }
 }

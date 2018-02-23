@@ -27,7 +27,7 @@ import javax.annotation.Nullable;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 public class AggregateOperationImpl<A, R> implements AggregateOperation<A, R> {
-    final DistributedBiConsumer<? super A, ?>[] accumulateFs;
+    final DistributedBiConsumer<? super A, ?>[] accumulateFns;
     private final DistributedSupplier<A> createAccumulatorFn;
     private final DistributedBiConsumer<? super A, ? super A> combineAccumulatorsFn;
     private final DistributedBiConsumer<? super A, ? super A> deductAccumulatorFn;
@@ -35,19 +35,24 @@ public class AggregateOperationImpl<A, R> implements AggregateOperation<A, R> {
 
     public AggregateOperationImpl(
             @Nonnull DistributedSupplier<A> createAccumulatorFn,
-            @Nonnull DistributedBiConsumer<? super A, ?>[] accumulateFs,
+            @Nonnull DistributedBiConsumer<? super A, ?>[] accumulateFns,
             @Nullable DistributedBiConsumer<? super A, ? super A> combineAccumulatorsFn,
             @Nullable DistributedBiConsumer<? super A, ? super A> deductAccumulatorFn,
             @Nonnull DistributedFunction<? super A, R> finishAccumulationFn
     ) {
-        for (Object f : accumulateFs) {
+        for (Object f : accumulateFns) {
             checkNotNull(f, "accumulateFs array contains a null slot");
         }
         this.createAccumulatorFn = createAccumulatorFn;
-        this.accumulateFs = accumulateFs.clone();
+        this.accumulateFns = accumulateFns.clone();
         this.combineAccumulatorsFn = combineAccumulatorsFn;
         this.deductAccumulatorFn = deductAccumulatorFn;
         this.finishAccumulationFn = finishAccumulationFn;
+    }
+
+    @Override
+    public int arity() {
+        return accumulateFns.length;
     }
 
     @Nonnull
@@ -58,11 +63,11 @@ public class AggregateOperationImpl<A, R> implements AggregateOperation<A, R> {
     @Nonnull @Override
     @SuppressWarnings("unchecked")
     public <T> DistributedBiConsumer<? super A, ? super T> accumulateFn(int index) {
-        if (index >= accumulateFs.length) {
-            throw new IllegalArgumentException("This AggregateOperation has " + accumulateFs.length
+        if (index >= accumulateFns.length) {
+            throw new IllegalArgumentException("This AggregateOperation has " + accumulateFns.length
                     + " accumulating functions, but was asked for function at index " + index);
         }
-        return (DistributedBiConsumer<? super A, T>) accumulateFs[index];
+        return (DistributedBiConsumer<? super A, T>) accumulateFns[index];
     }
 
     @Nullable
@@ -80,17 +85,25 @@ public class AggregateOperationImpl<A, R> implements AggregateOperation<A, R> {
         return finishAccumulationFn;
     }
 
-    @Override
+    @Nonnull
+    @SuppressWarnings("unchecked")
+    public AggregateOperation<A, R> withAccumulateFns(
+            DistributedBiConsumer... accumulateFns
+    ) {
+        return new AggregateOperationImpl<>(createFn(), accumulateFns, combineFn(), deductFn(), finishFn());
+    }
+
+    @Nonnull @Override
     public <R1> AggregateOperation<A, R1> withFinishFn(
             @Nonnull DistributedFunction<? super A, R1> finishFn
     ) {
-        return new AggregateOperationImpl<>(createFn(), accumulateFs, combineFn(),
+        return new AggregateOperationImpl<>(createFn(), accumulateFns, combineFn(),
                 deductFn(), finishFn);
     }
 
     @Nonnull
     @SuppressWarnings("unchecked")
-    static <A> DistributedBiConsumer<? super A, ?>[] accumulateFs(DistributedBiConsumer... accFs) {
+    static <A> DistributedBiConsumer<? super A, ?>[] accumulateFns(DistributedBiConsumer... accFs) {
         return (DistributedBiConsumer<? super A, ?>[]) accFs;
     }
 }

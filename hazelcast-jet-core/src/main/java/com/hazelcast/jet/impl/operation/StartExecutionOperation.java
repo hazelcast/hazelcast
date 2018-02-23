@@ -24,6 +24,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
+import java.util.concurrent.CancellationException;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.impl.util.Util.jobAndExecutionId;
@@ -47,7 +48,10 @@ public class StartExecutionOperation extends AsyncOperation {
         getLogger().info("Start execution of "
                 + jobAndExecutionId(jobId(), executionId) + " from coordinator " + coordinator);
         execCtx.beginExecution().whenComplete(withTryCatch(getLogger(), (i, e) -> {
-            if (e != null) {
+            if (e instanceof CancellationException) {
+                getLogger().fine("Execution of " + jobAndExecutionId(jobId(), executionId)
+                        + " was cancelled");
+            } else if (e != null) {
                 getLogger().fine("Execution of " + jobAndExecutionId(jobId(), executionId)
                         + " completed with failure", e);
             } else {

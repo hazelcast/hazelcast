@@ -43,9 +43,8 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.JournalInitialPosition.START_FROM_OLDEST;
-import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.WatermarkGenerationParams.wmGenParams;
-import static com.hazelcast.jet.core.WatermarkPolicies.withFixedLag;
+import static com.hazelcast.jet.core.WatermarkPolicies.limitingLag;
 import static com.hazelcast.jet.core.test.TestSupport.SAME_ITEMS_ANY_ORDER;
 import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
 import static java.util.stream.Collectors.toList;
@@ -80,7 +79,7 @@ public class StreamEventJournalPTest extends JetTestSupport {
 
         supplier = () -> new StreamEventJournalP<>(map, allPartitions, e -> true,
                 EventJournalMapEvent::getNewValue, START_FROM_OLDEST, false,
-                wmGenParams(Integer::intValue, withFixedLag(0), suppressAll(), -1));
+                wmGenParams(Integer::intValue, limitingLag(0), suppressAll(), -1));
     }
 
 
@@ -183,9 +182,8 @@ public class StreamEventJournalPTest extends JetTestSupport {
             map.put(i, i);
         }
 
-        List<Entry> snapshotItems = outbox.snapshotQueue().stream()
-                  .map(e -> entry(e.getKey().getObject(), e.getValue().getObject()))
-                  .collect(Collectors.toList());
+        List<Entry> snapshotItems = new ArrayList<>();
+        outbox.drainSnapshotQueueAndReset(snapshotItems, false);
 
         System.out.println("Restoring journal");
         // restore from snapshot

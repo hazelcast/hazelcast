@@ -44,10 +44,9 @@ import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.processor.SourceProcessors.streamFilesP;
@@ -71,7 +70,7 @@ public class StreamFilesPTest extends JetTestSupport {
 
     private Thread driverThread;
     private TestOutbox outbox;
-    private final List<Entry<String, String>> outboxLines = Collections.synchronizedList(new ArrayList<>());
+    private final List<Entry<String, String>> outboxLines = new CopyOnWriteArrayList<>();
 
     private volatile int fileOffsetsSize;
     private volatile boolean completedNormally;

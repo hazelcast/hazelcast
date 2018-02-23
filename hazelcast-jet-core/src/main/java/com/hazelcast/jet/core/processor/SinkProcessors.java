@@ -28,6 +28,7 @@ import com.hazelcast.jet.function.DistributedIntFunction;
 import com.hazelcast.jet.impl.connector.HazelcastWriters;
 import com.hazelcast.jet.impl.connector.WriteBufferedP;
 import com.hazelcast.jet.impl.connector.WriteFileP;
+import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.map.EntryProcessor;
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -54,7 +55,7 @@ public final class SinkProcessors {
 
     /**
      * Returns a supplier of processors for
-     * {@link com.hazelcast.jet.Sinks#map(String)}.
+     * {@link Sinks#map(String)}.
      */
     @Nonnull
     public static ProcessorMetaSupplier writeMapP(@Nonnull String mapName) {
@@ -63,7 +64,7 @@ public final class SinkProcessors {
 
     /**
      * Returns a supplier of processors for
-     * {@link com.hazelcast.jet.Sinks#remoteMap(String, ClientConfig)}.
+     * {@link Sinks#remoteMap(String, ClientConfig)}.
      */
     @Nonnull
     public static ProcessorMetaSupplier writeRemoteMapP(@Nonnull String mapName, @Nonnull ClientConfig clientConfig) {
@@ -72,7 +73,7 @@ public final class SinkProcessors {
 
     /**
      * Returns a supplier of processors for
-     * {@link com.hazelcast.jet.Sinks#mapWithMerging(String, DistributedFunction, DistributedFunction,
+     * {@link Sinks#mapWithMerging(String, DistributedFunction, DistributedFunction,
      * DistributedBinaryOperator)}.
      */
     @Nonnull
@@ -87,7 +88,7 @@ public final class SinkProcessors {
 
     /**
      * Returns a supplier of processors for
-     * {@link com.hazelcast.jet.Sinks#remoteMapWithMerging(String, ClientConfig, DistributedFunction,
+     * {@link Sinks#remoteMapWithMerging(String, ClientConfig, DistributedFunction,
      * DistributedFunction, DistributedBinaryOperator)}.
      */
     @Nonnull
@@ -103,7 +104,7 @@ public final class SinkProcessors {
 
     /**
      * Returns a supplier of processors for
-     * {@link com.hazelcast.jet.Sinks#mapWithEntryProcessor(String, DistributedFunction, DistributedFunction)} .
+     * {@link Sinks#mapWithEntryProcessor(String, DistributedFunction, DistributedFunction)} .
      */
     @Nonnull
     public static <E, K, V> ProcessorMetaSupplier updateMapP(
@@ -116,7 +117,7 @@ public final class SinkProcessors {
 
     /**
      * Returns a supplier of processors for
-     * {@link com.hazelcast.jet.Sinks#remoteMapWithUpdating(String, ClientConfig, DistributedFunction
+     * {@link Sinks#remoteMapWithUpdating(String, ClientConfig, DistributedFunction
      * , DistributedBiFunction)}.
      */
     @Nonnull
@@ -131,7 +132,7 @@ public final class SinkProcessors {
 
     /**
      * Returns a supplier of processors for
-     * {@link com.hazelcast.jet.Sinks#mapWithEntryProcessor(String, DistributedFunction, DistributedFunction)}.
+     * {@link Sinks#mapWithEntryProcessor(String, DistributedFunction, DistributedFunction)}.
      */
     @Nonnull
     public static <T, K, V> ProcessorMetaSupplier updateMapP(
@@ -145,7 +146,7 @@ public final class SinkProcessors {
 
     /**
      * Returns a supplier of processors for
-     * {@link com.hazelcast.jet.Sinks#remoteMapWithEntryProcessor(String, ClientConfig, DistributedFunction,
+     * {@link Sinks#remoteMapWithEntryProcessor(String, ClientConfig, DistributedFunction,
      * DistributedFunction)}.
      */
     @Nonnull
@@ -160,7 +161,7 @@ public final class SinkProcessors {
 
     /**
      * Returns a supplier of processors for
-     * {@link com.hazelcast.jet.Sinks#cache(String)}.
+     * {@link Sinks#cache(String)}.
      */
     @Nonnull
     public static ProcessorMetaSupplier writeCacheP(@Nonnull String cacheName) {
@@ -169,7 +170,7 @@ public final class SinkProcessors {
 
     /**
      * Returns a supplier of processors for
-     * {@link com.hazelcast.jet.Sinks#remoteCache(String, ClientConfig)}.
+     * {@link Sinks#remoteCache(String, ClientConfig)}.
      */
     @Nonnull
     public static ProcessorMetaSupplier writeRemoteCacheP(
@@ -180,7 +181,7 @@ public final class SinkProcessors {
 
     /**
      * Returns a supplier of processors for
-     * {@link com.hazelcast.jet.Sinks#list(String)}.
+     * {@link Sinks#list(String)}.
      */
     @Nonnull
     public static ProcessorMetaSupplier writeListP(@Nonnull String listName) {
@@ -189,7 +190,7 @@ public final class SinkProcessors {
 
     /**
      * Returns a supplier of processors for
-     * {@link com.hazelcast.jet.Sinks#remoteList(String, ClientConfig)}.
+     * {@link Sinks#remoteList(String, ClientConfig)}.
      */
     @Nonnull
     public static ProcessorMetaSupplier writeRemoteListP(@Nonnull String listName, @Nonnull ClientConfig clientConfig) {
@@ -198,7 +199,7 @@ public final class SinkProcessors {
 
     /**
      * Returns a supplier of processors for
-     * {@link com.hazelcast.jet.Sinks#socket(String, int)}.
+     * {@link Sinks#socket(String, int)}.
      */
     public static <T> ProcessorMetaSupplier writeSocketP(
             @Nonnull String host,
@@ -226,7 +227,7 @@ public final class SinkProcessors {
 
     /**
      * Returns a supplier of processors for
-     * {@link com.hazelcast.jet.Sinks#files(String, DistributedFunction, Charset, boolean)}.
+     * {@link Sinks#files(String, DistributedFunction, Charset, boolean)}.
      */
     @Nonnull
     public static <T> ProcessorMetaSupplier writeFileP(
@@ -240,7 +241,7 @@ public final class SinkProcessors {
 
     /**
      * Returns a supplier of processors for
-     * {@link com.hazelcast.jet.Sinks#files(String, DistributedFunction)}.
+     * {@link Sinks#files(String, DistributedFunction)}.
      */
     @Nonnull
     public static <T> ProcessorMetaSupplier writeFileP(
@@ -251,7 +252,7 @@ public final class SinkProcessors {
 
     /**
      * Returns a supplier of processors for
-     * {@link com.hazelcast.jet.Sinks#files(String)}.
+     * {@link Sinks#files(String)}.
      */
     @Nonnull
     public static ProcessorMetaSupplier writeFileP(@Nonnull String directoryName) {

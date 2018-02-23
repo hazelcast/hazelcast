@@ -16,13 +16,16 @@
 
 package com.hazelcast.jet;
 
-import com.hazelcast.jet.core.WatermarkGenerationParams;
-import com.hazelcast.jet.core.processor.KafkaProcessors;
-import com.hazelcast.jet.function.DistributedBiFunction;
+import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.pipeline.StreamSource;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 
 import javax.annotation.Nonnull;
 import java.util.Map.Entry;
 import java.util.Properties;
+
+import static com.hazelcast.jet.core.processor.KafkaProcessors.streamKafkaP;
+import static com.hazelcast.jet.pipeline.Sources.streamFromProcessorWithWatermarks;
 
 /**
  * Contains factory methods for Apache Kafka sources.
@@ -33,17 +36,15 @@ public final class KafkaSources {
     }
 
     /**
-     * Convenience for {@link #kafka(Properties, DistributedBiFunction,
-     * WatermarkGenerationParams, String...)} wrapping the output in {@code
-     * Map.Entry}.
+     * Convenience for {@link #kafka(Properties, DistributedFunction, String...)}
+     * wrapping the output in {@code Map.Entry}.
      */
     @Nonnull
-    public static <K, V> Source<Entry<K, V>> kafka(
+    public static <K, V> StreamSource<Entry<K, V>> kafka(
             @Nonnull Properties properties,
-            @Nonnull WatermarkGenerationParams<Entry<K, V>> wmGenParams,
             @Nonnull String... topics
     ) {
-        return Sources.fromProcessor("streamKafka", KafkaProcessors.streamKafkaP(properties, wmGenParams, topics));
+        return streamFromProcessorWithWatermarks("streamKafka", w -> streamKafkaP(properties, w, topics));
     }
 
     /**
@@ -83,20 +84,19 @@ public final class KafkaSources {
      * Default local parallelism for this processor is 2 (or less if less CPUs
      * are available).
      *
-     * @param properties consumer properties broker address and key/value deserializers
-     * @param projectionFn function to create output objects from key and value.
+     * @param properties   consumer properties broker address and key/value deserializers
+     * @param projectionFn function to create output objects from the Kafka record.
      *                     If the projection returns a {@code null} for an item, that item
      *                     will be filtered out.
-     * @param topics     the list of topics
+     * @param topics       the list of topics
      */
     @Nonnull
-    public static <K, V, T> Source<T> kafka(
+    public static <K, V, T> StreamSource<T> kafka(
             @Nonnull Properties properties,
-            @Nonnull DistributedBiFunction<K, V, T> projectionFn,
-            @Nonnull WatermarkGenerationParams<T> wmGenParams,
+            @Nonnull DistributedFunction<ConsumerRecord<K, V>, T> projectionFn,
             @Nonnull String... topics
     ) {
-        return Sources.fromProcessor("streamKafka", KafkaProcessors.streamKafkaP(properties, projectionFn, wmGenParams,
-                topics));
+        return streamFromProcessorWithWatermarks("streamKafka",
+                w -> streamKafkaP(properties, projectionFn, w, topics));
     }
 }

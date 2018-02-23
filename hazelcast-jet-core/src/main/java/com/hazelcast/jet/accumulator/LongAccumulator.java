@@ -52,53 +52,74 @@ public class LongAccumulator {
     }
 
     /**
-     * Adds the supplied value to this accumulator.
+     * Adds the supplied value to this accumulator, throwing an exception
+     * in the case of integer overflow.
      */
     public LongAccumulator add(long value) {
-        this.value += value;
-        return this;
-    }
-
-    /**
-     * Adds the value of the supplied accumulator to this accumulator.
-     */
-    public LongAccumulator add(LongAccumulator that) {
-        this.value += that.value;
-        return this;
-    }
-
-    /**
-     * Uses {@link Math#addExact(long, long) Math.addExact()} to add the
-     * supplied value to this accumulator.
-     */
-    public LongAccumulator addExact(long value) {
         this.value = Math.addExact(this.value, value);
         return this;
     }
 
     /**
-     * Uses {@link Math#addExact(long, long) Math.addExact()} to add the value
-     * of the supplied accumulator into this one.
+     * Adds the value of the supplied accumulator to this accumulator, throwing
+     * an exception in the case of integer overflow.
      */
-    public LongAccumulator addExact(LongAccumulator that) {
+    public LongAccumulator add(LongAccumulator that) {
         this.value = Math.addExact(this.value, that.value);
         return this;
     }
 
     /**
-     * Subtracts the value of the supplied accumulator from this one.
+     * Subtracts the supplied value from this accumulator, throwing an
+     * exception in the case of integer overflow.
      */
-    public LongAccumulator subtract(LongAccumulator that) {
-        this.value -= that.value;
+    public LongAccumulator subtract(long value) {
+        this.value = Math.subtractExact(this.value, value);
         return this;
     }
 
     /**
-     * Uses {@link Math#subtractExact(long, long) Math.subtractExact()}
-     * to subtract the value of the supplied accumulator from this one.
+     * Subtracts the value of the supplied accumulator from this one,
+     * throwing an exception in the case of integer overflow.
      */
-    public LongAccumulator subtractExact(LongAccumulator that) {
+    public LongAccumulator subtract(LongAccumulator that) {
         this.value = Math.subtractExact(this.value, that.value);
+        return this;
+    }
+
+    /**
+     * Adds the supplied value to this accumulator, allowing integer overflow.
+     * This removes the (tiny) overhead of overflow checking.
+     */
+    public LongAccumulator addAllowingOverflow(long value) {
+        this.value += value;
+        return this;
+    }
+
+    /**
+     * Adds the value of the supplied accumulator to this accumulator, allowing
+     * integer overflow. This removes the (tiny) overhead of overflow checking.
+     */
+    public LongAccumulator addAllowingOverflow(LongAccumulator that) {
+        this.value += that.value;
+        return this;
+    }
+
+    /**
+     * Subtracts the supplied value from this accumulator, allowing integer
+     * overflow. This removes the (tiny) overhead of overflow checking.
+     */
+    public LongAccumulator subtractAllowingOverflow(long value) {
+        this.value -= value;
+        return this;
+    }
+
+    /**
+     * Subtracts the value of the supplied accumulator from this one, allowing
+     * integer overflow. This removes the (tiny) overhead of overflow checking.
+     */
+    public LongAccumulator subtractAllowingOverflow(LongAccumulator that) {
+        this.value -= that.value;
         return this;
     }
 

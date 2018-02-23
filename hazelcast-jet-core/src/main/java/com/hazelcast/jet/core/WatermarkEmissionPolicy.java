@@ -68,21 +68,21 @@ public interface WatermarkEmissionPolicy extends Serializable {
      * watermark's frame, as per the supplied {@code WindowDefinition}. This
      * emission policy should be employed to drive a downstream processor that
      * computes a sliding/tumbling window
-     * ({@link com.hazelcast.jet.core.processor.Processors#accumulateByFrameP(
-     *      com.hazelcast.jet.function.DistributedFunction,
-     *      com.hazelcast.jet.function.DistributedToLongFunction,
-     *      TimestampKind, WindowDefinition,
-     *      com.hazelcast.jet.aggregate.AggregateOperation1)
+     * ({@link com.hazelcast.jet.core.processor.Processors#accumulateByFrameP
      * accumulateByFrame()} or
-     * {@link com.hazelcast.jet.core.processor.Processors#aggregateToSlidingWindowP(
-     *      com.hazelcast.jet.function.DistributedFunction,
-     *      com.hazelcast.jet.function.DistributedToLongFunction,
-     *      TimestampKind, WindowDefinition,
-     *      com.hazelcast.jet.aggregate.AggregateOperation1)
+     * {@link com.hazelcast.jet.core.processor.Processors#aggregateToSlidingWindowP
      * aggregateToSlidingWindow()}).
      */
     @Nonnull
-    static WatermarkEmissionPolicy emitByFrame(WindowDefinition wDef) {
+    static WatermarkEmissionPolicy emitByFrame(SlidingWindowPolicy wDef) {
         return (currentWm, lastEmittedWm) -> wDef.floorFrameTs(currentWm) > lastEmittedWm;
+    }
+
+    /**
+     * Javadoc pending
+     */
+    @Nonnull
+    static WatermarkEmissionPolicy emitByFrame(long frameSize) {
+        return emitByFrame(SlidingWindowPolicy.slidingWinPolicy(frameSize, frameSize));
     }
 }

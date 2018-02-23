@@ -16,15 +16,15 @@
 
 package com.hazelcast.jet.impl.execution;
 
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.Inbox;
 import com.hazelcast.jet.core.Outbox;
 import com.hazelcast.jet.core.Processor;
-import com.hazelcast.jet.core.test.TestOutbox.MockData;
-import com.hazelcast.jet.core.test.TestOutbox.MockSerializationService;
 import com.hazelcast.jet.impl.execution.init.Contexts.ProcCtx;
 import com.hazelcast.jet.impl.util.ProgressState;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.util.UuidUtil;
 import org.junit.Before;
@@ -72,7 +72,7 @@ public class ProcessorTaskletTest_Snapshots {
     public void setUp() {
         this.mockInput = IntStream.range(0, MOCK_INPUT_SIZE).boxed().collect(toList());
         this.processor = new SnapshottableProcessor();
-        this.context = new ProcCtx(null, new MockSerializationService(), null, null, 0,
+        this.context = new ProcCtx(null, new DefaultSerializationServiceBuilder().build(), null, null, 0,
                 EXACTLY_ONCE);
         this.instreams = new ArrayList<>();
         this.outstreams = new ArrayList<>();
@@ -208,7 +208,7 @@ public class ProcessorTaskletTest_Snapshots {
     }
 
     private Object deserializeEntryValue(Entry e) {
-        return ((MockData) e.getValue()).getObject();
+        return context.getSerializationService().toObject((Data) e.getValue());
     }
 
     private static void callUntil(Tasklet tasklet, ProgressState expectedState) {
@@ -246,7 +246,7 @@ public class ProcessorTaskletTest_Snapshots {
                 if (!outbox.offer(item)) {
                     return;
                 } else {
-                    snapshotQueue.offer(entry(UuidUtil.newUnsecureUUID(), inbox.remove()));
+                    snapshotQueue.offer(entry(UuidUtil.newUnsecureUUID(), inbox.poll()));
                 }
             }
         }

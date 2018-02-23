@@ -44,12 +44,12 @@ public interface Inbox {
     Object poll();
 
     /**
-     * Retrieves and removes the head of this inbox.  This method differs from
-     * {@link #poll} only in that it throws an exception if the inbox is empty.
+     * Removes the head of this inbox. This method throws an exception
+     * if the inbox is empty.
      *
      * @throws NoSuchElementException if this inbox is empty
      */
-    Object remove();
+    void remove();
 
     /**
      * Drains all elements into the provided {@link Collection}.

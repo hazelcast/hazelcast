@@ -48,9 +48,10 @@ public final class SerializerHookConstants {
     public static final int SNAPSHOT_BARRIER = -318;
     public static final int BROADCAST_ENTRY = -319;
     public static final int BROADCAST_KEY_REFERENCE = -320;
-    public static final int SESSION = -321;
+    public static final int WINDOW_RESULT = -321;
     public static final int HASH_MAP = -322;
     public static final int HASH_SET = -323;
+    public static final int JET_EVENT_IMPL = -324;
 
     // reserved for hadoop module: -380 to -390
 

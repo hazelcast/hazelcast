@@ -2,23 +2,23 @@
 
 [Hazelcast Jet](http://jet.hazelcast.org) is a distributed computing
 platform built for high-performance stream processing and fast batch
-processing. It embeds Hazelcast In Memory Data Grid (IMDG) to provide
-a lightweight package of a processor and a scalable in-memory storage.
+processing. It embeds Hazelcast In-Memory Data Grid (IMDG) to provide
+a lightweight, simple-to-deploy package that includes scalable
+in-memory storage.
 
 Visit [jet.hazelcast.org](http://jet.hazelcast.org) to learn more
-about the architecture and use-cases.
+about the architecture and use cases.
 
 ### Features:
 
-* Low latency and distributed general data processing framework with
-high throughput.
+* Low-latency, high-throughput distributed data processing framework.
 * Highly parallel and distributed stream and batch processing of data.
 * Distributed java.util.stream API support for Hazelcast data
 structures such as IMap and IList.
 * Connectors allowing high-velocity ingestion of data from Apache
 Kafka, HDFS, Hazelcast IMDG, sockets and local data files (such as
-logs or CSVs)
-* API for custom connectors
+logs or CSVs).
+* API for custom connectors.
 * Dynamic node discovery for both on-premise and cloud deployments.
 * Virtualization support and resource management via Docker, Apache
 jclouds, Amazon Web Services, Microsoft Azure, Consul, Heroku,
@@ -38,7 +38,7 @@ for some examples.
 
 ### Documentation
 
-See the [Jet Reference Manual](https://docs.hazelcast.org/docs/jet/0.3/).
+See the [Jet Reference Manual](https://docs.hazelcast.org/docs/jet/0.6/).
 
 ### Architecture
 
@@ -47,7 +47,7 @@ See [Jet Architecture](https://jet.hazelcast.org/architecture/).
 ### High Performance Design
 
 See the [write up](https://jet.hazelcast.org/performance/) on our high
-performance secret sauce. 
+performance secret sauce.
 
 ### Releases
 
@@ -87,7 +87,7 @@ Maven snippet:
 ```
 
 ### Building From Source
- 
+
 Pull the latest commits from GitHub (`git pull`) and use Maven to
 build (`mvn clean install`). This will also run all the checks and
 tests: Checkstyle, FindBugs, and JUnit tests.
@@ -107,7 +107,7 @@ discuss.
 Submit your contribution as a pull request on GitHub. Each pull
 request is subject to automatic verification, so make sure your
 contribution passes the `mvn clean install` build locally before
-submitting it. 
+submitting it.
 
 ### Mail Group
 

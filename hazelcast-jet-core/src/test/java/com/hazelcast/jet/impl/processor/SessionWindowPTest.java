@@ -21,7 +21,8 @@ import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.test.TestOutbox;
 import com.hazelcast.jet.core.test.TestProcessorContext;
-import com.hazelcast.jet.datamodel.Session;
+import com.hazelcast.jet.datamodel.WindowResult;
+import com.hazelcast.jet.function.DistributedToLongFunction;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.Repeat;
 import org.junit.After;
@@ -43,6 +44,7 @@ import static com.hazelcast.jet.core.test.TestSupport.verifyProcessor;
 import static com.hazelcast.jet.function.DistributedFunctions.entryKey;
 import static java.util.Arrays.asList;
 import static java.util.Collections.shuffle;
+import static java.util.Collections.singletonList;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertTrue;
@@ -52,15 +54,16 @@ public class SessionWindowPTest {
 
     private static final int SESSION_TIMEOUT = 10;
     private Supplier<Processor> supplier;
-    private SessionWindowP<Entry<String, Long>, String, ?, Long> lastSuppliedProcessor;
+    private SessionWindowP<String, ?, Long, WindowResult<String, Long>> lastSuppliedProcessor;
 
     @Before
     public void before() {
         supplier = () -> lastSuppliedProcessor = new SessionWindowP<>(
                 SESSION_TIMEOUT,
-                Entry::getValue,
-                entryKey(),
-                AggregateOperations.counting());
+                singletonList((DistributedToLongFunction<Entry<Object, Long>>) Entry::getValue),
+                singletonList(entryKey()),
+                AggregateOperations.counting(),
+                WindowResult::new);
     }
 
     @After
@@ -117,9 +120,9 @@ public class SessionWindowPTest {
         verifyProcessor(supplier)
                 .input(inbox)
                 .expectOutput(asList(
-                        new Session("a", 1, 22, 3),
+                        new WindowResult(1, 22, "a", 3),
                         new Watermark(25),
-                        new Session("a", 30, 50, 3)));
+                        new WindowResult(30, 50, "a", 3)));
     }
 
     private void assertCorrectness(List<Object> events) {
@@ -203,10 +206,10 @@ public class SessionWindowPTest {
         ));
     }
 
-    private static Stream<Session<String, Long>> expectedSessions(String key) {
+    private static Stream<WindowResult<String, Long>> expectedSessions(String key) {
         return Stream.of(
-                new Session<>(key, 1, 22, 3L),
-                new Session<>(key, 30, 50, 3L)
+                new WindowResult<>(1, 22, key, 3L),
+                new WindowResult<>(30, 50, key, 3L)
         );
     }
 }

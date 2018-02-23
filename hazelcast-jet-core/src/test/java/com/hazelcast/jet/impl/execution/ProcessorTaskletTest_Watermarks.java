@@ -16,11 +16,11 @@
 
 package com.hazelcast.jet.impl.execution;
 
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.jet.core.Inbox;
 import com.hazelcast.jet.core.Outbox;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.Watermark;
-import com.hazelcast.jet.core.test.TestOutbox.MockSerializationService;
 import com.hazelcast.jet.impl.execution.init.Contexts.ProcCtx;
 import com.hazelcast.jet.impl.util.ProgressState;
 import com.hazelcast.logging.ILogger;
@@ -59,7 +59,7 @@ public class ProcessorTaskletTest_Watermarks {
     @Before
     public void setUp() {
         this.processor = new ProcessorWithWatermarks();
-        this.context = new ProcCtx(null, new MockSerializationService(), null, null, 0,
+        this.context = new ProcCtx(null, new DefaultSerializationServiceBuilder().build(), null, null, 0,
                 EXACTLY_ONCE);
         this.instreams = new ArrayList<>();
         this.outstreams = new ArrayList<>();

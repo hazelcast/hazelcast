@@ -16,11 +16,12 @@
 
 package com.hazelcast.jet.core;
 
+import com.hazelcast.jet.Traverser;
 import org.junit.Test;
 
 import static com.hazelcast.jet.core.WatermarkEmissionPolicy.suppressDuplicates;
 import static com.hazelcast.jet.core.WatermarkGenerationParams.wmGenParams;
-import static com.hazelcast.jet.core.WatermarkPolicies.withFixedLag;
+import static com.hazelcast.jet.core.WatermarkPolicies.limitingLag;
 import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.IDLE_MESSAGE;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.junit.Assert.assertEquals;
@@ -33,71 +34,98 @@ public class WatermarkSourceUtilTest {
     @Test
     public void smokeTest() {
         WatermarkSourceUtil<Long> wsu = new WatermarkSourceUtil<>(
-                wmGenParams(Long::longValue, withFixedLag(LAG), suppressDuplicates(), 5));
+                wmGenParams(Long::longValue, limitingLag(LAG), suppressDuplicates(), 5)
+        );
         wsu.increasePartitionCount(0L, 2);
 
         // all partitions are active initially
-        assertNull(wsu.handleNoEvent(ns(1)));
+        assertTraverser(wsu.handleEvent(ns(1), null, 0));
         // now idle timeout passed for all partitions, IDLE_MESSAGE should be emitted
-        assertEquals(IDLE_MESSAGE, wsu.handleNoEvent(ns(5)));
+        assertTraverser(wsu.handleEvent(ns(5), null, 0), IDLE_MESSAGE);
         // still all partitions are idle, but IDLE_MESSAGE should not be emitted for the second time
-        assertNull(wsu.handleNoEvent(ns(5)));
+        assertTraverser(wsu.handleEvent(ns(5), null, 0));
         // now we observe event on partition0, watermark should be immediately forwarded because the other queue is idle
-        assertEquals(wm(100 - LAG), wsu.handleEvent(ns(5), 0, 100L));
+        assertTraverser(wsu.handleEvent(ns(5), 100L, 0), wm(100 - LAG), 100L);
         // now we'll have a event on the other partition. No WM is emitted because it's older than already emitted one
-        assertNull(wsu.handleEvent(ns(5), 0, 90L));
-        assertEquals(wm(101 - LAG), wsu.handleEvent(ns(5), 0, 101L));
+        assertTraverser(wsu.handleEvent(ns(5), 90L, 0), 90L);
+        assertTraverser(wsu.handleEvent(ns(5), 101L, 0), wm(101 - LAG), 101L);
     }
 
     @Test
     public void smokeTest_disabledIdleTimeout() {
-        WatermarkSourceUtil<Long> wsu = new WatermarkSourceUtil<>(wmGenParams(Long::longValue, withFixedLag(LAG),
-                suppressDuplicates(), -1));
+        WatermarkSourceUtil<Long> wsu = new WatermarkSourceUtil<>(
+                wmGenParams(Long::longValue, limitingLag(LAG), suppressDuplicates(), -1)
+        );
         wsu.increasePartitionCount(2);
 
         // all partitions are active initially
-        assertNull(wsu.handleNoEvent());
+        assertTraverser(wsu.handleNoEvent());
         // let's have events only in partition0. No WM is output because we wait for the other partition indefinitely
-        assertNull(wsu.handleEvent(0, 10L));
-        assertNull(wsu.handleEvent(0, 11L));
+        assertTraverser(wsu.handleEvent(10L, 0), 10L);
+        assertTraverser(wsu.handleEvent(11L, 0), 11L);
         // now have some events in the other partition, wms will be output
-        assertEquals(wm(10 - LAG), wsu.handleEvent(1, 10L));
-        assertEquals(wm(11 - LAG), wsu.handleEvent(1, 11L));
+        assertTraverser(wsu.handleEvent(10L, 1), wm(10 - LAG), 10L);
+        assertTraverser(wsu.handleEvent(11L, 1), wm(11 - LAG), 11L);
         // now partition1 will get ahead of partition0 -> no WM
-        assertNull(wsu.handleEvent(1, 12L));
+        assertTraverser(wsu.handleEvent(12L, 1), 12L);
         // another event in partition0, we'll get the wm
-        assertEquals(wm(12 - LAG), wsu.handleEvent(0, 13L));
+        assertTraverser(wsu.handleEvent(13L, 0), wm(12 - LAG), 13L);
     }
 
     @Test
     public void test_zeroPartitions() {
-        WatermarkSourceUtil<Long> wsu = new WatermarkSourceUtil<>(wmGenParams(Long::longValue,
-                withFixedLag(LAG), suppressDuplicates(), -1));
+        WatermarkSourceUtil<Long> wsu = new WatermarkSourceUtil<>(
+                wmGenParams(Long::longValue, limitingLag(LAG), suppressDuplicates(), -1)
+        );
 
         // it should immediately emit the idle message, even though the idle timeout is -1
-        assertEquals(IDLE_MESSAGE, wsu.handleNoEvent());
-        assertNull(wsu.handleNoEvent());
+        assertTraverser(wsu.handleNoEvent(), IDLE_MESSAGE);
+        assertTraverser(wsu.handleNoEvent());
 
         // after adding a partition and observing an event, WM should be emitted
         wsu.increasePartitionCount(1);
-        assertNull(wsu.handleNoEvent()); // can't send WM here, we don't know what its value would be
-        assertEquals(wm(10 - LAG), wsu.handleEvent(0, 10L));
+        assertTraverser(wsu.handleNoEvent()); // can't send WM here, we don't know what its value would be
+        assertTraverser(wsu.handleEvent(10L, 0), wm(10 - LAG), 10L);
     }
 
     @Test
     public void when_idle_event_idle_then_twoIdleMessagesSent() {
-        WatermarkSourceUtil<Long> wsu = new WatermarkSourceUtil<>(wmGenParams(Long::longValue, withFixedLag(LAG),
-                suppressDuplicates(), 10));
+        WatermarkSourceUtil<Long> wsu = new WatermarkSourceUtil<>(
+                wmGenParams(Long::longValue, limitingLag(LAG), suppressDuplicates(), 10)
+        );
         wsu.increasePartitionCount(1);
-        assertEquals(wm(10 - LAG), wsu.handleEvent(ns(0), 0, 10L));
+        assertTraverser(wsu.handleEvent(ns(0), 10L, 0), wm(10 - LAG), 10L);
 
         // When - become idle
-        assertEquals(IDLE_MESSAGE, wsu.handleNoEvent(ns(10)));
+        assertTraverser(wsu.handleEvent(ns(10), null, 0), IDLE_MESSAGE);
         // When - another event, but no new WM
-        assertNull(wsu.handleEvent(ns(10), 0, 10L));
+        assertTraverser(wsu.handleEvent(ns(10), 10L, 0), 10L);
         // When - become idle again
-        assertNull(wsu.handleNoEvent(ns(10)));
-        assertEquals(IDLE_MESSAGE, wsu.handleNoEvent(ns(20)));
+        assertTraverser(wsu.handleEvent(ns(10), null, 0));
+        assertTraverser(wsu.handleEvent(ns(20), null, 0), IDLE_MESSAGE);
+    }
+
+    @Test
+    public void when_eventInOneOfTwoPartitions_then_wmAndIdleMessageForwardedAfterTimeout() {
+        WatermarkSourceUtil<Long> wsu = new WatermarkSourceUtil<>(
+                wmGenParams(Long::longValue, limitingLag(LAG), suppressDuplicates(), 10)
+        );
+        wsu.increasePartitionCount(ns(0), 2);
+
+        // When
+        assertTraverser(wsu.handleEvent(ns(0), 10L, 0), 10L);
+
+        // Then
+        assertTraverser(wsu.handleEvent(ns(10), null, 0),
+                wm(10 - LAG),
+                IDLE_MESSAGE);
+    }
+
+    private <T> void assertTraverser(Traverser<T> actual, T ... expected) {
+        for (T element : expected) {
+            assertEquals(element, actual.next());
+        }
+        assertNull(actual.next());
     }
 
     private long ns(long ms) {

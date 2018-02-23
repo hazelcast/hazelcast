@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.core.test;
 
+import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -84,5 +85,13 @@ public class TestOutboxTest {
     public void when_offeredToMinusOne_then_offeredToAll() {
         TestOutbox outbox = new TestOutbox(2);
         assertTrue(outbox.offer(-1, "foo"));
+    }
+
+    @Test
+    public void when_notSerializable_then_fails() {
+        // this is meant to test that the object offered to snapshot is actually serialized
+        TestOutbox outbox = new TestOutbox(new int[0], 1);
+        exception.expect(HazelcastSerializationException.class);
+        outbox.offerToSnapshot("k", new Object());
     }
 }

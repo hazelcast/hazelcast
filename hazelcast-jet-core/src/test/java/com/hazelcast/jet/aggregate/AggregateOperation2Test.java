@@ -39,10 +39,10 @@ public class AggregateOperation2Test {
 
         // Given
         DistributedSupplier<LongAccumulator> createFn = LongAccumulator::new;
-        DistributedBiConsumer<LongAccumulator, Object> accFn0 = (acc, item) -> acc.add(1);
-        DistributedBiConsumer<LongAccumulator, Object> accFn1 = (acc, item) -> acc.add(10);
-        DistributedBiConsumer<LongAccumulator, LongAccumulator> combineFn = LongAccumulator::add;
-        DistributedBiConsumer<LongAccumulator, LongAccumulator> deductFn = LongAccumulator::subtract;
+        DistributedBiConsumer<LongAccumulator, Object> accFn0 = (acc, item) -> acc.addAllowingOverflow(1);
+        DistributedBiConsumer<LongAccumulator, Object> accFn1 = (acc, item) -> acc.addAllowingOverflow(10);
+        DistributedBiConsumer<LongAccumulator, LongAccumulator> combineFn = LongAccumulator::addAllowingOverflow;
+        DistributedBiConsumer<LongAccumulator, LongAccumulator> deductFn = LongAccumulator::subtractAllowingOverflow;
         DistributedFunction<LongAccumulator, Long> finishFn = LongAccumulator::get;
 
         // When
@@ -83,8 +83,8 @@ public class AggregateOperation2Test {
         // Given
         AggregateOperation2<Object, Object, LongAccumulator, LongAccumulator> aggrOp = AggregateOperation
                 .withCreate(LongAccumulator::new)
-                .andAccumulate0((acc, item) -> acc.add(1))
-                .andAccumulate1((acc, item) -> acc.add(1))
+                .andAccumulate0((acc, item) -> acc.addAllowingOverflow(1))
+                .andAccumulate1((acc, item) -> acc.addAllowingOverflow(1))
                 .andIdentityFinish();
 
         // When
@@ -100,9 +100,9 @@ public class AggregateOperation2Test {
         // Given
         AggregateOperation2<Object, Object, LongAccumulator, LongAccumulator> aggrOp = AggregateOperation
                 .withCreate(LongAccumulator::new)
-                .andAccumulate0((acc, item) -> acc.add(1))
-                .andAccumulate1((acc, item) -> acc.add(10))
-                .andCombine(LongAccumulator::add)
+                .andAccumulate0((acc, item) -> acc.addAllowingOverflow(1))
+                .andAccumulate1((acc, item) -> acc.addAllowingOverflow(10))
+                .andCombine(LongAccumulator::addAllowingOverflow)
                 .andIdentityFinish();
         AggregateOperation1<LongAccumulator, LongAccumulator, LongAccumulator> combiningAggrOp =
                 aggrOp.withCombiningAccumulateFn(wholeItem());

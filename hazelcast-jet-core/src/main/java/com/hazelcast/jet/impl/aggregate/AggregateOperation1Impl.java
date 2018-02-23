@@ -29,32 +29,38 @@ public class AggregateOperation1Impl<T0, A, R>
         extends AggregateOperationImpl<A, R>
         implements AggregateOperation1<T0, A, R> {
 
-    public AggregateOperation1Impl(@Nonnull DistributedSupplier<A> createAccumulatorFn,
-                                   @Nonnull DistributedBiConsumer<? super A, ? super T0> accumulateItemFn,
-                                   @Nullable DistributedBiConsumer<? super A, ? super A> combineAccumulatorsFn,
-                                   @Nullable DistributedBiConsumer<? super A, ? super A> deductAccumulatorFn,
-                                   @Nonnull DistributedFunction<? super A, R> finishAccumulationFn
+    public AggregateOperation1Impl(@Nonnull DistributedSupplier<A> createFn,
+                                   @Nonnull DistributedBiConsumer<? super A, ? super T0> accumulateFn,
+                                   @Nullable DistributedBiConsumer<? super A, ? super A> combineFn,
+                                   @Nullable DistributedBiConsumer<? super A, ? super A> deductFn,
+                                   @Nonnull DistributedFunction<? super A, R> finishFn
     ) {
-        super(createAccumulatorFn, accumulateFs(accumulateItemFn), combineAccumulatorsFn,
-                deductAccumulatorFn, finishAccumulationFn);
+        super(createFn, accumulateFns(accumulateFn), combineFn, deductFn, finishFn);
     }
 
     @Nonnull
     @SuppressWarnings("unchecked")
     public DistributedBiConsumer<? super A, ? super T0> accumulateFn() {
-        return (DistributedBiConsumer<? super A, ? super T0>) accumulateFs[0];
+        return (DistributedBiConsumer<? super A, ? super T0>) accumulateFns[0];
+    }
+
+    @Nonnull @Override
+    public <NEW_T> AggregateOperation1<NEW_T, A, R> withAccumulateFn(
+            DistributedBiConsumer<? super A, ? super NEW_T> accumulateFn) {
+        return new AggregateOperation1Impl<>(createFn(), accumulateFn, combineFn(), deductFn(), finishFn());
     }
 
     @Nonnull @Override
     @SuppressWarnings("unchecked")
-    public <T> DistributedBiConsumer<? super A, ? super T> accumulateFn(Tag<T> tag) {
+    public <T> DistributedBiConsumer<? super A, ? super T> accumulateFn(@Nonnull Tag<T> tag) {
         if (tag.index() != 0) {
             throw new IllegalArgumentException("AggregateOperation1 recognizes only tag with index 0, but asked for "
                     + tag.index());
         }
-        return (DistributedBiConsumer<? super A, ? super T>) accumulateFs[0];
+        return (DistributedBiConsumer<? super A, ? super T>) accumulateFns[0];
     }
 
+    @Nonnull
     @Override
     public <R1> AggregateOperation1<T0, A, R1> withFinishFn(
             @Nonnull DistributedFunction<? super A, R1> finishFn

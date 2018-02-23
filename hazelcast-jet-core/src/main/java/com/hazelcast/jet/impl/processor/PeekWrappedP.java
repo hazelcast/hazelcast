@@ -33,17 +33,15 @@ import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.impl.execution.init.ExecutionPlan.createLoggerName;
-import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * Internal API, see
  * {@link com.hazelcast.jet.core.processor.DiagnosticProcessors}.
  */
-public final class PeekWrappedP<T> implements Processor {
+public final class PeekWrappedP<T> extends ProcessorWrapper {
 
-    private final Processor wrappedProcessor;
-    private final DistributedFunction<T, String> toStringFn;
-    private final Predicate<T> shouldLogFn;
+    private final DistributedFunction<? super T, ? extends CharSequence> toStringFn;
+    private final Predicate<? super T> shouldLogFn;
     private final LoggingInbox loggingInbox;
     private ILogger logger;
 
@@ -53,13 +51,13 @@ public final class PeekWrappedP<T> implements Processor {
 
     private boolean peekedWatermarkLogged;
 
-    public PeekWrappedP(@Nonnull Processor wrappedProcessor, @Nonnull DistributedFunction<T, String> toStringFn,
-                        @Nonnull Predicate<T> shouldLogFn, boolean peekInput, boolean peekOutput, boolean peekSnapshot) {
-        checkNotNull(wrappedProcessor, "wrappedProcessor");
-        checkNotNull(toStringFn, "toStringFn");
-        checkNotNull(shouldLogFn, "shouldLogFn");
-
-        this.wrappedProcessor = wrappedProcessor;
+    public PeekWrappedP(
+            @Nonnull Processor wrapped,
+            @Nonnull DistributedFunction<? super T, ? extends CharSequence> toStringFn,
+            @Nonnull Predicate<? super T> shouldLogFn,
+            boolean peekInput, boolean peekOutput, boolean peekSnapshot
+    ) {
+        super(wrapped);
         this.toStringFn = toStringFn;
         this.shouldLogFn = shouldLogFn;
         this.peekInput = peekInput;
@@ -80,17 +78,11 @@ public final class PeekWrappedP<T> implements Processor {
             ProcCtx c = (ProcCtx) context;
             NodeEngine nodeEngine = ((HazelcastInstanceImpl) c.jetInstance().getHazelcastInstance()).node.nodeEngine;
             ILogger newLogger = nodeEngine.getLogger(
-                    createLoggerName(wrappedProcessor.getClass().getName(), c.vertexName(), c.globalProcessorIndex()));
+                    createLoggerName(wrapped.getClass().getName(), c.vertexName(), c.globalProcessorIndex()));
             context = new ProcCtx(c.jetInstance(), c.getSerializationService(), newLogger, c.vertexName(),
                     c.globalProcessorIndex(), c.processingGuarantee());
         }
-
-        wrappedProcessor.init(outbox, context);
-    }
-
-    @Override
-    public boolean isCooperative() {
-        return wrappedProcessor.isCooperative();
+        super.init(outbox, context);
     }
 
     @Override
@@ -98,20 +90,10 @@ public final class PeekWrappedP<T> implements Processor {
         if (peekInput) {
             loggingInbox.wrappedInbox = inbox;
             loggingInbox.ordinal = ordinal;
-            wrappedProcessor.process(ordinal, loggingInbox);
+            super.process(ordinal, loggingInbox);
         } else {
-            wrappedProcessor.process(ordinal, inbox);
+            super.process(ordinal, inbox);
         }
-    }
-
-    @Override
-    public boolean tryProcess() {
-        return wrappedProcessor.tryProcess();
-    }
-
-    @Override
-    public boolean complete() {
-        return wrappedProcessor.complete();
     }
 
     private void log(String prefix, T object) {
@@ -122,36 +104,19 @@ public final class PeekWrappedP<T> implements Processor {
     }
 
     @Override
-    public boolean completeEdge(int ordinal) {
-        return wrappedProcessor.completeEdge(ordinal);
-    }
-
-    @Override
-    public boolean saveToSnapshot() {
-        return wrappedProcessor.saveToSnapshot();
-    }
-
-    @Override
-    public void restoreFromSnapshot(@Nonnull Inbox inbox) {
-        wrappedProcessor.restoreFromSnapshot(inbox);
-    }
-
-    @Override
     public boolean tryProcessWatermark(@Nonnull Watermark watermark) {
         if (peekInput && !peekedWatermarkLogged) {
             logger.info("Input: " + watermark);
             peekedWatermarkLogged = true;
         }
-        if (wrappedProcessor.tryProcessWatermark(watermark)) {
+        if (super.tryProcessWatermark(watermark)) {
             peekedWatermarkLogged = false;
+            if (peekOutput) {
+                logger.info("Output forwarded: " + watermark);
+            }
             return true;
         }
         return false;
-    }
-
-    @Override
-    public boolean finishSnapshotRestore() {
-        return wrappedProcessor.finishSnapshotRestore();
     }
 
     private class LoggingInbox implements Inbox {
@@ -187,13 +152,13 @@ public final class PeekWrappedP<T> implements Processor {
         }
 
         private void log(T res) {
-            PeekWrappedP.this.log("Input from " + ordinal, res);
+            PeekWrappedP.this.log("Input from ordinal " + ordinal, res);
         }
 
         @Override
-        public Object remove() {
+        public void remove() {
             peekedItemLogged = false;
-            return wrappedInbox.remove();
+            wrappedInbox.remove();
         }
     }
 
@@ -228,7 +193,7 @@ public final class PeekWrappedP<T> implements Processor {
                 return false;
             }
             if (logOutput) {
-                String prefix = "Output to " + ordinal;
+                String prefix = "Output to ordinal " + ordinal;
                 if (item instanceof Watermark) {
                     logger.info(prefix + ": " + item);
                 } else {

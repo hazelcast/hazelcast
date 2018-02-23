@@ -37,7 +37,7 @@ public class AggregateOperation3Impl<T0, T1, T2, A, R>
                                    @Nullable DistributedBiConsumer<? super A, ? super A> deductAccumulatorFn,
                                    @Nonnull DistributedFunction<? super A, R> finishAccumulationFn
     ) {
-        super(createAccumulatorFn, accumulateFs(accumulateItemF0, accumulateItemF1, accumulateItemF2),
+        super(createAccumulatorFn, accumulateFns(accumulateItemF0, accumulateItemF1, accumulateItemF2),
                 combineAccumulatorsFn, deductAccumulatorFn, finishAccumulationFn);
     }
 
@@ -53,19 +53,43 @@ public class AggregateOperation3Impl<T0, T1, T2, A, R>
     @Nonnull @Override
     @SuppressWarnings("unchecked")
     public DistributedBiConsumer<? super A, ? super T0> accumulateFn0() {
-        return (DistributedBiConsumer<? super A, ? super T0>) accumulateFs[0];
+        return (DistributedBiConsumer<? super A, ? super T0>) accumulateFns[0];
     }
 
     @Nonnull @Override
     @SuppressWarnings("unchecked")
     public DistributedBiConsumer<? super A, ? super T1> accumulateFn1() {
-        return (DistributedBiConsumer<? super A, ? super T1>) accumulateFs[1];
+        return (DistributedBiConsumer<? super A, ? super T1>) accumulateFns[1];
     }
 
     @Nonnull @Override
     @SuppressWarnings("unchecked")
     public DistributedBiConsumer<? super A, ? super T2> accumulateFn2() {
-        return (DistributedBiConsumer<? super A, ? super T2>) accumulateFs[2];
+        return (DistributedBiConsumer<? super A, ? super T2>) accumulateFns[2];
+    }
+
+    @Nonnull @Override
+    public <T0_NEW> AggregateOperation3<T0_NEW, T1, T2, A, R> withAccumulateFn0(
+            @Nonnull DistributedBiConsumer<? super A, ? super T0_NEW> newAccFn0
+    ) {
+        return new AggregateOperation3Impl<>(
+                createFn(), newAccFn0, accumulateFn1(), accumulateFn2(), combineFn(), deductFn(), finishFn());
+    }
+
+    @Nonnull @Override
+    public <T1_NEW> AggregateOperation3<T0, T1_NEW, T2, A, R> withAccumulateFn1(
+            @Nonnull DistributedBiConsumer<? super A, ? super T1_NEW> newAccFn1
+    ) {
+        return new AggregateOperation3Impl<>(
+                createFn(), accumulateFn0(), newAccFn1, accumulateFn2(), combineFn(), deductFn(), finishFn());
+    }
+
+    @Nonnull @Override
+    public <T2_NEW> AggregateOperation3<T0, T1, T2_NEW, A, R> withAccumulateFn2(
+            @Nonnull DistributedBiConsumer<? super A, ? super T2_NEW> newAccFn2
+    ) {
+        return new AggregateOperation3Impl<>(
+                createFn(), accumulateFn0(), accumulateFn1(), newAccFn2, combineFn(), deductFn(), finishFn());
     }
 
     @Nonnull @Override
@@ -75,13 +99,14 @@ public class AggregateOperation3Impl<T0, T1, T2, A, R>
             throw new IllegalArgumentException(
                     "AggregateOperation3 only recognizes tags with index 0, 1 and 2, but asked for " + tag.index());
         }
-        return (DistributedBiConsumer<? super A, T>) accumulateFs[tag.index()];
+        return (DistributedBiConsumer<? super A, T>) accumulateFns[tag.index()];
     }
 
+    @Nonnull
     @Override
     public <R1> AggregateOperation3<T0, T1, T2, A, R1> withFinishFn(
             @Nonnull DistributedFunction<? super A, R1> finishFn
     ) {
-        return new AggregateOperation3Impl<>(createFn(), accumulateFs, combineFn(), deductFn(), finishFn);
+        return new AggregateOperation3Impl<>(createFn(), accumulateFns, combineFn(), deductFn(), finishFn);
     }
 }

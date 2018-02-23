@@ -17,7 +17,7 @@
 package com.hazelcast.jet.accumulator;
 
 /**
- * Mutable container of a {@code double} value.
+ * Accumulator of a {@code double} value.
  */
 public class DoubleAccumulator {
 
@@ -37,13 +37,6 @@ public class DoubleAccumulator {
     }
 
     /**
-     * Returns the current value.
-     */
-    public double get() {
-        return value;
-    }
-
-    /**
      * Sets the value as given.
      */
     public DoubleAccumulator set(double value) {
@@ -51,12 +44,43 @@ public class DoubleAccumulator {
         return this;
     }
 
+    /**
+     * Adds the value to this objects' value.
+     */
+    public DoubleAccumulator accumulate(double v) {
+        value += v;
+        return this;
+    }
+
+    /**
+     * Adds the value of the supplied accumulator to this one.
+     */
+    public DoubleAccumulator combine(DoubleAccumulator that) {
+        value += that.value;
+        return this;
+    }
+
+    /**
+     * Subtracts the value of the supplied accumulator from this one.
+     */
+    public DoubleAccumulator deduct(DoubleAccumulator that) {
+        value -= that.value;
+        return this;
+    }
+
+    /**
+     * Returns the current value.
+     */
+    public double finish() {
+        return value;
+    }
+
     @Override
     public boolean equals(Object o) {
         return this == o ||
                 o != null
-                && this.getClass() == o.getClass()
-                && this.value == ((DoubleAccumulator) o).value;
+                        && this.getClass() == o.getClass()
+                        && this.value == ((DoubleAccumulator) o).value;
     }
 
     @Override
@@ -67,29 +91,5 @@ public class DoubleAccumulator {
     @Override
     public String toString() {
         return "DoubleAccumulator(" + value + ')';
-    }
-
-    /**
-     * Adds the value to this objects' value.
-     */
-    public  DoubleAccumulator add(double v) {
-        value += v;
-        return this;
-    }
-
-    /**
-     * Adds the value of the supplied accumulator to this one.
-     */
-    public DoubleAccumulator add(DoubleAccumulator that) {
-        value += that.value;
-        return this;
-    }
-
-    /**
-     * Subtracts the value of the supplied accumulator from this one.
-     */
-    public DoubleAccumulator subtract(DoubleAccumulator that) {
-        value -= that.value;
-        return this;
     }
 }

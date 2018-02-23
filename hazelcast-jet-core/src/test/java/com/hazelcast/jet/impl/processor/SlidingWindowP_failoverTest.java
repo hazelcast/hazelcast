@@ -16,14 +16,17 @@
 
 package com.hazelcast.jet.impl.processor;
 
+import com.hazelcast.jet.accumulator.LongAccumulator;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.BroadcastKey;
 import com.hazelcast.jet.core.Outbox;
 import com.hazelcast.jet.core.Processor.Context;
-import com.hazelcast.jet.core.WindowDefinition;
+import com.hazelcast.jet.core.SlidingWindowPolicy;
 import com.hazelcast.jet.core.test.TestOutbox;
 import com.hazelcast.jet.core.test.TestProcessorContext;
+import com.hazelcast.jet.datamodel.TimestampedEntry;
+import com.hazelcast.jet.function.DistributedToLongFunction;
 import com.hazelcast.jet.impl.processor.SlidingWindowP.Keys;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -39,6 +42,7 @@ import static com.hazelcast.jet.aggregate.AggregateOperations.counting;
 import static com.hazelcast.jet.config.ProcessingGuarantee.AT_LEAST_ONCE;
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static com.hazelcast.jet.function.DistributedFunctions.entryKey;
+import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -48,12 +52,18 @@ public class SlidingWindowP_failoverTest {
     @Rule
     public ExpectedException exception = ExpectedException.none();
 
-    private SlidingWindowP<Entry<String, Long>, ?, Long> p;
+    private SlidingWindowP<Entry<String, Long>, ?, Long, ?> p;
 
     private void init(ProcessingGuarantee guarantee) {
-        WindowDefinition wDef = WindowDefinition.tumblingWindowDef(1);
-        AggregateOperation1<Object, ?, Long> aggrOp = counting();
-        p = new SlidingWindowP<>(entryKey(), Entry::getValue, wDef, aggrOp, true);
+        SlidingWindowPolicy wDef = SlidingWindowPolicy.tumblingWinPolicy(1);
+        AggregateOperation1<Object, LongAccumulator, Long> aggrOp = counting();
+        p = new SlidingWindowP<>(
+                singletonList(entryKey()),
+                singletonList((DistributedToLongFunction<Entry<?, Long>>) Entry::getValue),
+                wDef,
+                aggrOp,
+                TimestampedEntry::new,
+                true);
 
         Outbox outbox = new TestOutbox(128);
         Context context = new TestProcessorContext()

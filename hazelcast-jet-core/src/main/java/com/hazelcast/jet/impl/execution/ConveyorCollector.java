@@ -18,7 +18,6 @@ package com.hazelcast.jet.impl.execution;
 
 import com.hazelcast.internal.util.concurrent.ConcurrentConveyor;
 import com.hazelcast.jet.impl.util.ProgressState;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 public class ConveyorCollector implements OutboundCollector {
 
@@ -26,7 +25,6 @@ public class ConveyorCollector implements OutboundCollector {
     private final int queueIndex;
     private final int[] partitions;
 
-    @SuppressFBWarnings("EI_EXPOSE_REP")
     public ConveyorCollector(ConcurrentConveyor<Object> conveyor, int queueIndex, int[] partitions) {
         this.conveyor = conveyor;
         this.queueIndex = queueIndex;
@@ -44,7 +42,6 @@ public class ConveyorCollector implements OutboundCollector {
     }
 
     @Override
-    @SuppressFBWarnings("EI_EXPOSE_REP")
     public int[] getPartitions() {
         return partitions;
     }

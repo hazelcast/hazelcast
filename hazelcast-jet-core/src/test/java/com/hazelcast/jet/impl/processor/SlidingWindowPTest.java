@@ -20,11 +20,13 @@ import com.hazelcast.jet.accumulator.LongAccumulator;
 import com.hazelcast.jet.aggregate.AggregateOperation;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.core.Processor;
+import com.hazelcast.jet.core.SlidingWindowPolicy;
 import com.hazelcast.jet.core.TimestampKind;
 import com.hazelcast.jet.core.Watermark;
-import com.hazelcast.jet.core.WindowDefinition;
 import com.hazelcast.jet.datamodel.TimestampedEntry;
+import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedSupplier;
+import com.hazelcast.jet.function.DistributedToLongFunction;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import org.junit.After;
@@ -46,7 +48,7 @@ import java.util.Map.Entry;
 import java.util.stream.LongStream;
 
 import static com.hazelcast.jet.Util.entry;
-import static com.hazelcast.jet.core.WindowDefinition.slidingWindowDef;
+import static com.hazelcast.jet.core.SlidingWindowPolicy.slidingWinPolicy;
 import static com.hazelcast.jet.core.processor.Processors.aggregateToSlidingWindowP;
 import static com.hazelcast.jet.core.processor.Processors.combineToSlidingWindowP;
 import static com.hazelcast.jet.core.test.TestSupport.verifyProcessor;
@@ -73,7 +75,7 @@ public class SlidingWindowPTest {
     public boolean singleStageProcessor;
 
     private DistributedSupplier<Processor> supplier;
-    private SlidingWindowP<?, ?, Long> lastSuppliedProcessor;
+    private SlidingWindowP lastSuppliedProcessor;
 
     @Parameters(name = "hasDeduct={0}, singleStageProcessor={1}")
     public static Collection<Object[]> parameters() {
@@ -87,26 +89,29 @@ public class SlidingWindowPTest {
 
     @Before
     public void before() {
-        WindowDefinition windowDef = slidingWindowDef(4, 1);
+        SlidingWindowPolicy windowDef = slidingWinPolicy(4, 1);
 
         AggregateOperation1<Entry<?, Long>, LongAccumulator, Long> operation = AggregateOperation
                 .withCreate(LongAccumulator::new)
-                .andAccumulate((LongAccumulator acc, Entry<?, Long> item) -> acc.addExact(item.getValue()))
-                .andCombine(LongAccumulator::addExact)
-                .andDeduct(hasDeduct ? LongAccumulator::subtractExact : null)
+                .andAccumulate((LongAccumulator acc, Entry<?, Long> item) -> acc.add(item.getValue()))
+                .andCombine(LongAccumulator::add)
+                .andDeduct(hasDeduct ? LongAccumulator::subtract : null)
                 .andFinish(LongAccumulator::get);
 
+        DistributedFunction<?, Long> keyFn = t -> KEY;
+        DistributedToLongFunction<Entry<Long, Long>> timestampFn = Entry::getKey;
         DistributedSupplier<Processor> procSupplier = singleStageProcessor
                 ? aggregateToSlidingWindowP(
-                            t -> KEY,
-                            Entry<Long, Long>::getKey,
-                            TimestampKind.EVENT,
-                            windowDef,
-                            operation)
-                : combineToSlidingWindowP(windowDef, operation);
+                        singletonList(keyFn),
+                        singletonList(timestampFn),
+                        TimestampKind.EVENT,
+                        windowDef,
+                        operation,
+                        TimestampedEntry::new)
+                : combineToSlidingWindowP(windowDef, operation, TimestampedEntry::new);
 
         // new supplier to save the last supplied instance
-        supplier = () -> lastSuppliedProcessor = (SlidingWindowP<?, ?, Long>) procSupplier.get();
+        supplier = () -> lastSuppliedProcessor = (SlidingWindowP) procSupplier.get();
     }
 
     @After

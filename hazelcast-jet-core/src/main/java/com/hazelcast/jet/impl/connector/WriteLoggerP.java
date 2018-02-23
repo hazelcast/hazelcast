@@ -28,16 +28,16 @@ import java.util.function.Function;
  */
 public class WriteLoggerP<T> extends AbstractProcessor {
 
-    private Function<T, String> toStringFn;
+    private Function<T, ? extends CharSequence> toStringFn;
 
-    public WriteLoggerP(Function<T, String> toStringFn) {
+    public WriteLoggerP(Function<T, ? extends CharSequence> toStringFn) {
         this.toStringFn = toStringFn;
     }
 
     @Override
     @SuppressWarnings("unchecked")
     protected boolean tryProcess(int ordinal, @Nonnull Object item) {
-        getLogger().info(toStringFn.apply((T) item));
+        getLogger().info(toStringFn.apply((T) item).toString());
         return true;
     }
 

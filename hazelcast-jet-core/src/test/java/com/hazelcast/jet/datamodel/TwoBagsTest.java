@@ -101,4 +101,9 @@ public class TwoBagsTest {
         assertNotNull(twoBags(singletonList("100"), singletonList("200")).toString());
         assertNotNull(twoBags().toString());
     }
+
+    @Test
+    public void testMutability() {
+        twoBags().combineWith(twoBags(singletonList("foo"), singletonList("bar")));
+    }
 }

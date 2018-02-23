@@ -55,9 +55,7 @@ public final class WriteBufferedP<B, T> implements Processor, Closeable {
 
     /**
      * This is private API. Call
-     * {@link com.hazelcast.jet.core.processor.SinkProcessors#writeBufferedP(
-     *        DistributedIntFunction, DistributedBiConsumer,
-     *        DistributedConsumer, DistributedConsumer)
+     * {@link com.hazelcast.jet.core.processor.SinkProcessors#writeBufferedP
      * SinkProcessors.writeBuffered()} instead.
      */
     @Nonnull

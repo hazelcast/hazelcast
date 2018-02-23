@@ -21,7 +21,6 @@ import com.hazelcast.jet.impl.util.ProgressState;
 import com.hazelcast.jet.impl.util.ProgressTracker;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.serialization.SerializationService;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
 import java.util.BitSet;
@@ -54,7 +53,6 @@ public class OutboxImpl implements Outbox {
      * @param batchSize Maximum number of items that will be allowed to offer until
      *                  {@link #reset()} is called.
      */
-    @SuppressFBWarnings("EI_EXPOSE_REP")
     public OutboxImpl(OutboundCollector[] outstreams, boolean hasSnapshot, ProgressTracker progTracker,
                       SerializationService serializationService, int batchSize) {
         this.outstreams = outstreams;

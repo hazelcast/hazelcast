@@ -15,7 +15,9 @@
  */
 
 /**
- * Classes intended to be used for accumulator objects in Jet aggregation
- * operations.
+ * Classes intended to be used for accumulator objects in an {@link
+ * com.hazelcast.jet.aggregate.AggregateOperation AggregateOperation}.
+ * They are Hazelcast-serializable via {@link
+ * com.hazelcast.jet.accumulator.AccumulatorSerializerHooks}.
  */
 package com.hazelcast.jet.accumulator;

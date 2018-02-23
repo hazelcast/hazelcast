@@ -24,7 +24,6 @@ import com.hazelcast.jet.core.Processor.Context;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Watermark;
-import com.hazelcast.jet.core.test.TestOutbox.MockData;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingServiceImpl;
 import com.hazelcast.nio.Address;
@@ -42,11 +41,13 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
 import java.util.function.BiPredicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
-import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.test.JetAssert.assertEquals;
 import static com.hazelcast.jet.core.test.JetAssert.assertTrue;
 import static com.hazelcast.jet.function.DistributedFunction.identity;
@@ -191,8 +192,9 @@ public final class TestSupport {
     }
 
     private Supplier<Processor> supplier;
-    private List<?> input = emptyList();
-    private List<?> expectedOutput = emptyList();
+    private List<List<?>> inputs = emptyList();
+    private List<List<?>> expectedOutputs = emptyList();
+    private int[] priorities = {};
     private boolean assertProgress = true;
     private boolean doSnapshots = true;
     private boolean logInputOutput = true;
@@ -246,10 +248,52 @@ public final class TestSupport {
      * <p>
      * Defaults to empty list.
      *
-     * @return {@code this} instance for fluent API.
+     * @return {@code this} instance for fluent API
      */
     public TestSupport input(@Nonnull List<?> input) {
-        this.input = input;
+        this.inputs = singletonList(input);
+        this.priorities = new int[]{0};
+        return this;
+    }
+
+    /**
+     * Sets the input objects for the processor on multiple input ordinals.
+     * Items will be passed to the processor in round-robin fashion:
+     * item0 from input0, item0 from input1, item1 from input0 etc.
+     * <p>
+     * See also:<ul>
+     *     <li>{@link #input(List)} - if you have just one input ordinal
+     *     <li>{@link #inputs(List, int[])} - if you want to specify input
+     *     priorities
+     * </ul>
+     *
+     * @param inputs one list of input items for each input edge
+     * @return {@code this} instance for fluent API
+     */
+    public TestSupport inputs(@Nonnull List<List<?>> inputs) {
+        return inputs(inputs, new int[inputs.size()]);
+    }
+
+    /**
+     * Sets the input objects for the processor on multiple input ordinals.
+     * Items will be passed to the processor according to priority: lower
+     * is higher. If two inputs have the same priority, they will be passed in
+     * round-robin fashion.
+     * <p>
+     * See also:<ul>
+     *     <li>{@link #input(List)} - if you have just one input ordinal
+     *     <li>{@link #inputs(List)} - if all inputs are of equal priority
+     * </ul>
+     *
+     * @param inputs one list of input items for each input edge
+     * @return {@code this} instance for fluent API
+     */
+    public TestSupport inputs(@Nonnull List<List<?>> inputs, int[] priorities) {
+        if (inputs.size() != priorities.length) {
+            throw new IllegalArgumentException("Number of inputs must be equal to number of priorities");
+        }
+        this.inputs = inputs;
+        this.priorities = priorities;
         return this;
     }
 
@@ -263,7 +307,21 @@ public final class TestSupport {
      * @throws AssertionError If some assertion does not hold.
      */
     public void expectOutput(@Nonnull List<?> expectedOutput) {
-        this.expectedOutput = expectedOutput;
+        expectOutputs(singletonList(expectedOutput));
+    }
+
+    /**
+     * Sets the expected outputs and runs the test.
+     * <p>
+     * The {@code expectedOutput} can contain {@link
+     * com.hazelcast.jet.core.Watermark}s. Each Watermark in the input will be
+     * found in the output, as well as other watermarks the processor emits.
+     *
+     * @param expectedOutputs one list for each out output ordinal
+     * @throws AssertionError if some assertion does not hold
+     */
+    public void expectOutputs(@Nonnull List<List<?>> expectedOutputs) {
+        this.expectedOutputs = expectedOutputs;
         runTest(doSnapshots, doSnapshots ? 1 : 0);
     }
 
@@ -271,7 +329,7 @@ public final class TestSupport {
      * Disables checking of progress of processing methods (see {@link
      * TestSupport class javadoc} for information on what is "progress").
      *
-     * @return {@code this} instance for fluent API.
+     * @return {@code this} instance for fluent API
      */
     public TestSupport disableProgressAssertion() {
         this.assertProgress = false;
@@ -298,7 +356,7 @@ public final class TestSupport {
      * disabled}.
      *
      * @param timeoutMillis how long to wait until outputs match
-     * @return {@code this} instance for fluent API.
+     * @return {@code this} instance for fluent API
      */
     public TestSupport disableRunUntilCompleted(long timeoutMillis) {
         this.runUntilCompletedTimeout = timeoutMillis;
@@ -309,7 +367,7 @@ public final class TestSupport {
      * Disable snapshot save and restore before first item and after each
      * {@code process()} and {@code complete()} call.
      *
-     * @return {@code this} instance for fluent API.
+     * @return {@code this} instance for fluent API
      */
     public TestSupport disableSnapshots() {
         this.doSnapshots = false;
@@ -320,7 +378,7 @@ public final class TestSupport {
      * Disables logging of input and output objects. Normally they are logged
      * as they are processed to standard output.
      *
-     * @return {@code this} instance for fluent API.
+     * @return {@code this} instance for fluent API
      */
     public TestSupport disableLogging() {
         this.logInputOutput = false;
@@ -332,7 +390,7 @@ public final class TestSupport {
      * testing of streaming processors to make sure that the flushing code in
      * {@code complete()} method is not executed.
      *
-     * @return {@code this} instance for fluent API.
+     * @return {@code this} instance for fluent API
      */
     public TestSupport disableCompleteCall() {
         this.callComplete = false;
@@ -347,7 +405,7 @@ public final class TestSupport {
      * Default value is {@link #COOPERATIVE_TIME_LIMIT_MS_FAIL} ms. Useful to
      * set to 0 during debugging.
      *
-     * @return {@code this} instance for fluent API.
+     * @return {@code this} instance for fluent API
      */
     public TestSupport cooperativeTimeout(long timeout) {
         this.cooperativeTimeout = timeout;
@@ -363,7 +421,7 @@ public final class TestSupport {
      * contain equal objects in the same order. If the ordering doesn't matter,
      * you can use {@link #SAME_ITEMS_ANY_ORDER}.
      *
-     * @return {@code this} instance for fluent API.
+     * @return {@code this} instance for fluent API
      */
     public TestSupport outputChecker(@Nonnull BiPredicate<? super List<?>, ? super List<?>> outputChecker) {
         this.outputChecker = outputChecker;
@@ -400,12 +458,16 @@ public final class TestSupport {
         System.out.println("### Running the test, mode=" + modeDescription(doSnapshots, doRestoreEvery));
 
         TestInbox inbox = new TestInbox();
+        int inboxOrdinal = -1;
         Processor[] processor = {supplier.get()};
         boolean isCooperative = processor[0].isCooperative();
 
         // we'll use 1-capacity outbox to test outbox rejection
         TestOutbox[] outbox = {createOutbox()};
-        List<Object> actualOutput = new ArrayList<>();
+        List<List<Object>> actualOutputs = new ArrayList<>(expectedOutputs.size());
+        for (int i = 0; i < expectedOutputs.size(); i++) {
+            actualOutputs.add(new ArrayList());
+        }
 
         // create instance of your processor and call the init() method
         initProcessor(processor[0], outbox[0]);
@@ -413,16 +475,19 @@ public final class TestSupport {
         int[] restoreCount = {0};
 
         // do snapshot+restore before processing any item. This will test saveToSnapshot() in this edge case
-        snapshotAndRestore(processor, outbox, actualOutput, doSnapshots, doRestoreEvery, restoreCount);
+        snapshotAndRestore(processor, outbox, actualOutputs, doSnapshots, doRestoreEvery, restoreCount);
 
         // call the process() method
-        Iterator<?> inputIterator = input.iterator();
+        List<ObjectWithOrdinal> input = mixInputs(inputs, priorities);
+        Iterator<ObjectWithOrdinal> inputIterator = input.iterator();
         Watermark[] wmToProcess = {null};
         while (inputIterator.hasNext() || !inbox.isEmpty() || wmToProcess[0] != null) {
             if (inbox.isEmpty() && wmToProcess[0] == null && inputIterator.hasNext()) {
-                inbox.add(inputIterator.next());
+                ObjectWithOrdinal objectWithOrdinal = inputIterator.next();
+                inbox.queue().add(objectWithOrdinal.item);
+                inboxOrdinal = objectWithOrdinal.ordinal;
                 if (logInputOutput) {
-                    System.out.println(LocalTime.now() + " Input: " + inbox.peek());
+                    System.out.println(LocalTime.now() + " Input-" + objectWithOrdinal.ordinal + ": " + inbox.peek());
                 }
             }
             String methodName;
@@ -432,7 +497,7 @@ public final class TestSupport {
                     wmToProcess[0] = null;
                 }
             } else {
-                methodName = processInbox(inbox, isCooperative, processor, wmToProcess);
+                methodName = processInbox(inbox, inboxOrdinal, isCooperative, processor, wmToProcess);
             }
             boolean madeProgress = inbox.isEmpty() || !outbox[0].queue(0).isEmpty();
             assertTrue(methodName + "() call without progress", !assertProgress || madeProgress);
@@ -442,11 +507,11 @@ public final class TestSupport {
                 // processor must be able to cope with this situation and not try to put
                 // more items to the outbox.
                 outbox[0].reset();
-                processInbox(inbox, isCooperative, processor, wmToProcess);
+                processInbox(inbox, inboxOrdinal, isCooperative, processor, wmToProcess);
             }
-            outbox[0].drainQueueAndReset(0, actualOutput, logInputOutput);
+            outbox[0].drainQueuesAndReset(actualOutputs, logInputOutput);
             if (inbox.isEmpty() && wmToProcess[0] == null) {
-                snapshotAndRestore(processor, outbox, actualOutput, doSnapshots, doRestoreEvery, restoreCount);
+                snapshotAndRestore(processor, outbox, actualOutputs, doSnapshots, doRestoreEvery, restoreCount);
             }
         }
 
@@ -459,8 +524,8 @@ public final class TestSupport {
                 checkTime("complete", isCooperative, () -> done[0] = processor[0].complete());
                 boolean madeProgress = done[0] || !outbox[0].queue(0).isEmpty();
                 assertTrue("complete() call without progress", !assertProgress || madeProgress);
-                outbox[0].drainQueueAndReset(0, actualOutput, logInputOutput);
-                snapshotAndRestore(processor, outbox, actualOutput, madeProgress && doSnapshots && !done[0],
+                outbox[0].drainQueuesAndReset(actualOutputs, logInputOutput);
+                snapshotAndRestore(processor, outbox, actualOutputs, madeProgress && doSnapshots && !done[0],
                         doRestoreEvery, restoreCount);
                 idleCount = idle(idler, idleCount, madeProgress);
                 if (runUntilCompletedTimeout > 0) {
@@ -474,18 +539,54 @@ public final class TestSupport {
         }
 
         // assert the outbox
-        if (!outputChecker.test(expectedOutput, actualOutput)) {
-            assertEquals("processor output in mode \"" + modeDescription(doSnapshots, doRestoreEvery)
-                            + "\" doesn't match", listToString(expectedOutput), listToString(actualOutput));
+        for (int i = 0; i < expectedOutputs.size(); i++) {
+            List<?> expectedOutput = expectedOutputs.get(i);
+            List<?> actualOutput = actualOutputs.get(i);
+            if (!outputChecker.test(expectedOutput, actualOutput)) {
+                assertEquals("processor output in mode \"" + modeDescription(doSnapshots, doRestoreEvery)
+                        + "\" doesn't match", listToString(expectedOutput), listToString(actualOutput));
+            }
         }
     }
 
-    private TestOutbox createOutbox() {
-        return new TestOutbox(new int[]{1}, 1);
+    /**
+     * Sorts the objects from multiple inputs into an order in which they will
+     * be passed to processor, based on priorities.
+     */
+    private static List<ObjectWithOrdinal> mixInputs(List<List<?>> inputs, int[] priorities) {
+        SortedMap<Integer, List<Integer>> ordinalsByPriority = new TreeMap<>();
+        for (int i = 0; i < priorities.length; i++) {
+            ordinalsByPriority.computeIfAbsent(priorities[i], k -> new ArrayList<>())
+                            .add(i);
+        }
+
+        List<ObjectWithOrdinal> result = new ArrayList<>();
+        for (List<Integer> ordinals : ordinalsByPriority.values()) {
+            boolean allDone;
+            int index = 0;
+            do {
+                allDone = true;
+                for (Integer ordinal : ordinals) {
+                    if (inputs.get(ordinal).size() > index) {
+                        Object item = inputs.get(ordinal).get(index);
+                        result.add(new ObjectWithOrdinal(ordinal, item));
+                        allDone = false;
+                    }
+                }
+                index++;
+            } while (!allDone);
+        }
+
+        return result;
     }
 
-    private String processInbox(TestInbox inbox, boolean isCooperative, Processor[] processor, Watermark[] wmToEmit) {
-        if (inbox.getFirst() instanceof Watermark) {
+    private TestOutbox createOutbox() {
+        return new TestOutbox(IntStream.generate(() -> 1).limit(expectedOutputs.size()).toArray(), 1);
+    }
+
+    private String processInbox(TestInbox inbox, int inboxOrdinal, boolean isCooperative, Processor[] processor,
+                                Watermark[] wmToEmit) {
+        if (inbox.peek() instanceof Watermark) {
             Watermark wm = ((Watermark) inbox.peek());
             checkTime("tryProcessWatermark", isCooperative, () -> {
                 if (processor[0].tryProcessWatermark(wm)) {
@@ -495,7 +596,7 @@ public final class TestSupport {
             });
             return "tryProcessWatermark";
         } else {
-            checkTime("process", isCooperative, () -> processor[0].process(0, inbox));
+            checkTime("process", isCooperative, () -> processor[0].process(inboxOrdinal, inbox));
             return "process";
         }
     }
@@ -512,7 +613,7 @@ public final class TestSupport {
     private void snapshotAndRestore(
             Processor[] processor,
             TestOutbox[] outbox,
-            List<Object> actualOutput,
+            List<List<Object>> actualOutput,
             boolean doSnapshot,
             int doRestoreEvery,
             int[] restoreCount) {
@@ -527,18 +628,19 @@ public final class TestSupport {
         Set<Object> keys = new HashSet<>();
         do {
             checkTime("saveSnapshot", isCooperative, () -> done[0] = processor[0].saveToSnapshot());
-            for (Entry<MockData, MockData> entry : outbox[0].snapshotQueue()) {
-                Object key = entry.getKey().getObject();
-                assertTrue("Duplicate key produced in saveToSnapshot()\n  " +
-                        "Duplicate: " + key + "\n  Keys so far: " + keys, keys.add(key));
-                snapshotInbox.add(entry(key, entry.getValue().getObject()));
-            }
             assertTrue("saveToSnapshot() call without progress",
                     !assertProgress || done[0] || !outbox[0].snapshotQueue().isEmpty()
                             || !outbox[0].queue(0).isEmpty());
-            outbox[0].drainQueueAndReset(0, actualOutput, logInputOutput);
-            outbox[0].snapshotQueue().clear();
+            outbox[0].drainSnapshotQueueAndReset(snapshotInbox.queue(), false);
+            outbox[0].drainQueuesAndReset(actualOutput, logInputOutput);
         } while (!done[0]);
+
+        // check snapshot for duplicate keys
+        for (Object item : snapshotInbox.queue()) {
+            Entry<Object, Object> item2 = (Entry<Object, Object>) item;
+            assertTrue("Duplicate key produced in saveToSnapshot()\n  " +
+                    "Duplicate: " + item2.getKey() + "\n  Keys so far: " + keys, keys.add(item2.getKey()));
+        }
 
         restoreCount[0]++;
 
@@ -553,23 +655,23 @@ public final class TestSupport {
         outbox[0] = createOutbox();
         initProcessor(processor[0], outbox[0]);
 
-        int lastInboxSize = snapshotInbox.size();
+        int lastInboxSize = snapshotInbox.queue().size();
         while (!snapshotInbox.isEmpty()) {
             checkTime("restoreSnapshot", isCooperative,
                     () -> processor[0].restoreFromSnapshot(snapshotInbox));
             assertTrue("restoreFromSnapshot() call without progress",
                     !assertProgress
-                            || lastInboxSize > snapshotInbox.size()
+                            || lastInboxSize > snapshotInbox.queue().size()
                             || !outbox[0].queue(0).isEmpty());
-            outbox[0].drainQueueAndReset(0, actualOutput, logInputOutput);
-            lastInboxSize = snapshotInbox.size();
+            outbox[0].drainQueuesAndReset(actualOutput, logInputOutput);
+            lastInboxSize = snapshotInbox.queue().size();
         }
         do {
             checkTime("finishSnapshotRestore", isCooperative,
                     () -> done[0] = processor[0].finishSnapshotRestore());
             assertTrue("finishSnapshotRestore() call without progress",
                     !assertProgress || done[0] || !outbox[0].queue(0).isEmpty());
-            outbox[0].drainQueueAndReset(0, actualOutput, logInputOutput);
+            outbox[0].drainQueuesAndReset(actualOutput, logInputOutput);
         } while (!done[0]);
     }
 
@@ -633,7 +735,16 @@ public final class TestSupport {
         return LOGGING_SERVICE.getLogger(clazz);
     }
 
-    private static String listToString(List<?> list) {
+    /**
+     * Converts a list to a string putting {@code toString()} of each element
+     * on separate line. It is useful to transform list inputs to {@code
+     * assertEquals()}: the exception will show the entire collections instead
+     * of just non-equal sizes or the first non-equal element.
+     *
+     * @param list Input list
+     * @return Output string
+     */
+    public static String listToString(List<?> list) {
         return list.stream()
                    .map(String::valueOf)
                    .collect(Collectors.joining("\n"));
@@ -651,5 +762,15 @@ public final class TestSupport {
                 processor1[0] = null;
             }
         };
+    }
+
+    private static class ObjectWithOrdinal {
+        final int ordinal;
+        final Object item;
+
+        ObjectWithOrdinal(int ordinal, Object item) {
+            this.ordinal = ordinal;
+            this.item = item;
+        }
     }
 }

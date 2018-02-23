@@ -38,6 +38,14 @@ public interface AggregateOperation1<T, A, R> extends AggregateOperation<A, R> {
     @Nonnull
     DistributedBiConsumer<? super A, ? super T> accumulateFn();
 
+    /**
+     * Javadoc pending
+     */
+    @Nonnull
+    <NEW_T> AggregateOperation1<NEW_T, A, R> withAccumulateFn(
+            DistributedBiConsumer<? super A, ? super NEW_T> accumulateFn
+    );
+
     // Override with a narrowed return type
     @Nonnull @Override
     <R_NEW> AggregateOperation1<T, A, R_NEW> withFinishFn(

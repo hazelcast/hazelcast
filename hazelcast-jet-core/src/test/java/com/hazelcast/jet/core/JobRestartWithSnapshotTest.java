@@ -20,14 +20,17 @@ import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
+import com.hazelcast.jet.accumulator.LongAccumulator;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
+import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.core.processor.SinkProcessors;
 import com.hazelcast.jet.core.test.TestProcessorMetaSupplierContext;
 import com.hazelcast.jet.core.test.TestSupport;
 import com.hazelcast.jet.datamodel.TimestampedEntry;
+import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.impl.JobRepository;
 import com.hazelcast.jet.impl.SnapshotRepository;
 import com.hazelcast.jet.impl.execution.ExecutionContext;
@@ -61,14 +64,13 @@ import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.TestUtil.throttle;
 import static com.hazelcast.jet.core.WatermarkEmissionPolicy.emitByFrame;
 import static com.hazelcast.jet.core.WatermarkGenerationParams.wmGenParams;
-import static com.hazelcast.jet.core.WatermarkPolicies.withFixedLag;
-import static com.hazelcast.jet.core.processor.Processors.accumulateByFrameP;
-import static com.hazelcast.jet.core.processor.Processors.aggregateToSlidingWindowP;
+import static com.hazelcast.jet.core.WatermarkPolicies.limitingLag;
 import static com.hazelcast.jet.core.processor.Processors.combineToSlidingWindowP;
 import static com.hazelcast.jet.core.processor.Processors.insertWatermarksP;
 import static com.hazelcast.jet.core.processor.Processors.mapP;
 import static com.hazelcast.jet.core.processor.Processors.noopP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeListP;
+import static com.hazelcast.jet.function.DistributedFunction.identity;
 import static com.hazelcast.jet.function.DistributedFunctions.entryKey;
 import static com.hazelcast.jet.impl.util.Util.arrayIndexOf;
 import static com.hazelcast.test.PacketFiltersUtil.delayOperationsFrom;
@@ -140,8 +142,8 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
 
         DAG dag = new DAG();
 
-        WindowDefinition wDef = WindowDefinition.tumblingWindowDef(3);
-        AggregateOperation1<Object, ?, Long> aggrOp = counting();
+        SlidingWindowPolicy wDef = SlidingWindowPolicy.tumblingWinPolicy(3);
+        AggregateOperation1<Object, LongAccumulator, Long> aggrOp = counting();
 
         Map<List<Long>, Long> result = instance1.getMap("result");
         result.clear();
@@ -150,18 +152,22 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
         Vertex generator = dag.newVertex("generator", throttle(sup, 30))
                               .localParallelism(1);
         Vertex insWm = dag.newVertex("insWm", insertWatermarksP(wmGenParams(
-                entry -> ((Entry<Integer, Integer>) entry).getValue(), withFixedLag(0), emitByFrame(wDef), -1)))
+                entry -> ((Entry<Integer, Integer>) entry).getValue(), limitingLag(0), emitByFrame(wDef), -1)))
                           .localParallelism(1);
         Vertex map = dag.newVertex("map",
                 mapP((TimestampedEntry e) -> entry(asList(e.getTimestamp(), (long) (int) e.getKey()), e.getValue())));
         Vertex writeMap = dag.newVertex("writeMap", SinkProcessors.writeMapP("result"));
 
         if (twoStage) {
-            Vertex aggregateStage1 = dag.newVertex("aggregateStage1", accumulateByFrameP(
-                    t -> ((Entry<Integer, Integer>) t).getKey(),
-                    t -> ((Entry<Integer, Integer>) t).getValue(),
-                    TimestampKind.EVENT, wDef, aggrOp));
-            Vertex aggregateStage2 = dag.newVertex("aggregateStage2", combineToSlidingWindowP(wDef, aggrOp));
+            Vertex aggregateStage1 = dag.newVertex("aggregateStage1", Processors.accumulateByFrameP(
+                    singletonList((DistributedFunction<? super Object, ?>) t -> ((Entry<Integer, Integer>) t).getKey()),
+                    singletonList(t1 -> ((Entry<Integer, Integer>) t1).getValue()),
+                    TimestampKind.EVENT,
+                    wDef,
+                    aggrOp.withFinishFn(identity())
+            ));
+            Vertex aggregateStage2 = dag.newVertex("aggregateStage2",
+                    combineToSlidingWindowP(wDef, aggrOp, TimestampedEntry::new));
 
             dag.edge(between(insWm, aggregateStage1)
                     .partitioned(entryKey()))
@@ -170,10 +176,13 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
                        .partitioned(entryKey()))
                .edge(between(aggregateStage2, map));
         } else {
-            Vertex aggregate = dag.newVertex("aggregate", aggregateToSlidingWindowP(
-                    t -> ((Entry<Integer, Integer>) t).getKey(),
-                    t -> ((Entry<Integer, Integer>) t).getValue(),
-                    TimestampKind.EVENT, wDef, aggrOp));
+            Vertex aggregate = dag.newVertex("aggregate", Processors.aggregateToSlidingWindowP(
+                    singletonList((DistributedFunction<Object, Integer>) t -> ((Entry<Integer, Integer>) t).getKey()),
+                    singletonList(t1 -> ((Entry<Integer, Integer>) t1).getValue()),
+                    TimestampKind.EVENT,
+                    wDef,
+                    aggrOp,
+                    TimestampedEntry::new));
 
             dag.edge(between(insWm, aggregate)
                     .distributed()
@@ -218,7 +227,7 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
             long cnt = 0;
             for (long value = 1; value <= sup.elementsInPartition; value++) {
                 cnt++;
-                if (value % wDef.frameLength() == 0) {
+                if (value % wDef.frameSize() == 0) {
                     expectedMap.put(asList(value, partition), cnt);
                     cnt = 0;
                 }

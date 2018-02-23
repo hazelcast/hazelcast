@@ -17,11 +17,11 @@
 package com.hazelcast.jet.impl.util;
 
 /**
- * Tracks the overall progress and completion state of a multi-stage operation.
+ * Tracks the overall progress and completion state of a multi-pipeline operation.
  * <ul><li>
- *     The operation as a whole made progress if any stage made progress.
+ *     The operation as a whole made progress if any pipeline made progress.
  * </li><li>
- *     The operation as a whole is done if each stage is done.
+ *     The operation as a whole is done if each pipeline is done.
  * </li></ul>
  * The initial state of the progress tracker is "done without progress"
  * (equivalent to {@link ProgressState#WAS_ALREADY_DONE}).
@@ -39,14 +39,14 @@ public class ProgressTracker {
     }
 
     /**
-     * Lets this progress tracker know whether some stage made progress.
+     * Lets this progress tracker know whether some pipeline made progress.
      */
     public void madeProgress(boolean isMadeProgress) {
         this.isMadeProgress |= isMadeProgress;
     }
 
     /**
-     * Lets this progress tracker know that some stage made progress.
+     * Lets this progress tracker know that some pipeline made progress.
      */
     public void madeProgress() {
         madeProgress(true);

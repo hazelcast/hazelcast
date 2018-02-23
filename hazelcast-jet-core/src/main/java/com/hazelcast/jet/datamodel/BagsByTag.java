@@ -28,7 +28,7 @@ import java.util.Set;
  * A heterogeneous map from {@code Tag<E>} to {@code Collection<E>}, where
  * {@code E} can be different for each tag. Useful as a container of
  * co-grouped items, where each tag corresponds to one contributing
- * pipeline stage.
+ * pipeline pipeline.
  * <p>
  * This is a less type-safe, but more flexible alternative to the {@link
  * TwoBags} and {@link ThreeBags} containers, which have a fixed (and
@@ -99,6 +99,15 @@ public class BagsByTag {
     @SuppressWarnings("unchecked")
     public void combineWith(@Nonnull BagsByTag that) {
         that.components.forEach((k, v) -> ensureBag(k).addAll(v));
+    }
+
+    /**
+     * Returns a safe copy of this container.
+     */
+    public BagsByTag finish() {
+        BagsByTag copy = new BagsByTag();
+        copy.components.putAll(components);
+        return copy;
     }
 
     @Override

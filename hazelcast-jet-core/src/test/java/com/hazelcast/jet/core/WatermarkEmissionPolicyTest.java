@@ -22,7 +22,7 @@ import org.junit.runner.RunWith;
 
 import static com.hazelcast.jet.core.WatermarkEmissionPolicy.emitByFrame;
 import static com.hazelcast.jet.core.WatermarkEmissionPolicy.emitByMinStep;
-import static com.hazelcast.jet.core.WindowDefinition.tumblingWindowDef;
+import static com.hazelcast.jet.core.SlidingWindowPolicy.tumblingWinPolicy;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -47,7 +47,7 @@ public class WatermarkEmissionPolicyTest {
 
     @Test
     public void when_wmIncreasing_then_throttleByFrame() {
-        p = emitByFrame(tumblingWindowDef(3));
+        p = emitByFrame(tumblingWinPolicy(3));
         assertWm(Long.MIN_VALUE, false);
         assertWm(2, true);
         assertWm(3, true);

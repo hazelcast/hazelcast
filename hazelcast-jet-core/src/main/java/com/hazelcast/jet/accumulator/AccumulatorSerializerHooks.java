@@ -91,7 +91,7 @@ class AccumulatorSerializerHooks {
 
                 @Override
                 public void write(ObjectDataOutput out, DoubleAccumulator object) throws IOException {
-                    out.writeDouble(object.get());
+                    out.writeDouble(object.finish());
                 }
 
                 @Override
@@ -212,8 +212,8 @@ class AccumulatorSerializerHooks {
 
                 @Override
                 public void write(ObjectDataOutput out, LongLongAccumulator object) throws IOException {
-                    out.writeLong(object.getValue1());
-                    out.writeLong(object.getValue2());
+                    out.writeLong(object.get1());
+                    out.writeLong(object.get2());
                 }
 
                 @Override
@@ -250,8 +250,8 @@ class AccumulatorSerializerHooks {
 
                 @Override
                 public void write(ObjectDataOutput out, LongDoubleAccumulator object) throws IOException {
-                    out.writeLong(object.getValue1());
-                    out.writeDouble(object.getValue2());
+                    out.writeLong(object.getLong());
+                    out.writeDouble(object.getDouble());
                 }
 
                 @Override

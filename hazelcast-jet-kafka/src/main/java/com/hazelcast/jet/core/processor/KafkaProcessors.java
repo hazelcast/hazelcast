@@ -16,14 +16,13 @@
 
 package com.hazelcast.jet.core.processor;
 
-import com.hazelcast.jet.Util;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.WatermarkGenerationParams;
-import com.hazelcast.jet.function.DistributedBiFunction;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.impl.connector.kafka.StreamKafkaP;
 import com.hazelcast.jet.impl.connector.kafka.WriteKafkaP;
 import com.hazelcast.util.Preconditions;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.ProducerRecord;
 
 import javax.annotation.Nonnull;
@@ -43,11 +42,11 @@ public final class KafkaProcessors {
     /**
      * Returns a supplier of processors for
      * {@link com.hazelcast.jet.KafkaSources#kafka(Properties,
-     * DistributedBiFunction, WatermarkGenerationParams, String...)}.
+     * DistributedFunction, String...)}.
      */
     public static <K, V, T> ProcessorMetaSupplier streamKafkaP(
             @Nonnull Properties properties,
-            @Nonnull DistributedBiFunction<K, V, T> projectionFn,
+            @Nonnull DistributedFunction<ConsumerRecord<K, V>, T> projectionFn,
             @Nonnull WatermarkGenerationParams<T> wmGenParams,
             @Nonnull String... topics
     ) {
@@ -58,15 +57,16 @@ public final class KafkaProcessors {
 
     /**
      * Returns a supplier of processors for
-     * {@link com.hazelcast.jet.KafkaSources#kafka(Properties,
-     * WatermarkGenerationParams, String...)}.
+     * {@link com.hazelcast.jet.KafkaSources#kafka(Properties, String...)}.
      */
     public static <K, V> ProcessorMetaSupplier streamKafkaP(
             @Nonnull Properties properties,
             @Nonnull WatermarkGenerationParams<Entry<K, V>> wmGenParams,
             @Nonnull String... topics
     ) {
-        return KafkaProcessors.<K, V, Entry<K, V>>streamKafkaP(properties, Util::entry, wmGenParams, topics);
+        return KafkaProcessors.<K, V, Entry<K, V>>streamKafkaP(
+                properties, StreamKafkaP::recordToEntry, wmGenParams, topics
+        );
     }
 
     /**

@@ -27,6 +27,7 @@ import java.util.NoSuchElementException;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 public class ArrayDequeInboxTest {
@@ -37,7 +38,7 @@ public class ArrayDequeInboxTest {
 
     @Before
     public void before() throws Exception {
-        inbox.add(ITEM);
+        inbox.queue().add(ITEM);
     }
 
     @Test
@@ -47,18 +48,19 @@ public class ArrayDequeInboxTest {
 
     @Test
     public void when_pollEmpty_then_getNull() throws Exception {
-        inbox.clear();
+        inbox.queue().clear();
         assertNull(inbox.poll());
     }
 
     @Test
-    public void when_removeNonEmpty_then_getItem() throws Exception {
-        assertEquals(ITEM, inbox.remove());
+    public void when_removeNonEmpty_then_removeItem() throws Exception {
+        inbox.remove();
+        assertTrue(inbox.isEmpty());
     }
 
     @Test(expected = NoSuchElementException.class)
     public void when_removeEmpty_then_getException() throws Exception {
-        inbox.clear();
+        inbox.queue().clear();
         inbox.remove();
     }
 

@@ -16,10 +16,12 @@
 
 package com.hazelcast.jet.core;
 
+import com.hazelcast.jet.Util;
 import com.hazelcast.jet.aggregate.AggregateOperation;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.core.test.TestSupport;
+import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import org.junit.Test;
@@ -31,6 +33,13 @@ import java.util.stream.Stream;
 
 import static com.hazelcast.jet.Traversers.traverseIterable;
 import static com.hazelcast.jet.Util.entry;
+import static com.hazelcast.jet.core.processor.Processors.aggregateByKeyP;
+import static com.hazelcast.jet.core.processor.Processors.combineByKeyP;
+import static com.hazelcast.jet.core.processor.Processors.combineP;
+import static com.hazelcast.jet.core.processor.Processors.filterP;
+import static com.hazelcast.jet.core.processor.Processors.flatMapP;
+import static com.hazelcast.jet.core.processor.Processors.mapP;
+import static com.hazelcast.jet.core.processor.Processors.noopP;
 import static com.hazelcast.jet.function.DistributedFunctions.alwaysTrue;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
@@ -45,7 +54,7 @@ public class ProcessorsTest {
     @Test
     public void map() {
         TestSupport
-                .verifyProcessor(Processors.mapP(Object::toString))
+                .verifyProcessor(mapP(Object::toString))
                 .input(singletonList(1))
                 .expectOutput(singletonList("1"));
     }
@@ -53,7 +62,7 @@ public class ProcessorsTest {
     @Test
     public void filteringWithMap() {
         TestSupport
-                .verifyProcessor(Processors.mapP((Integer i) -> i > 1 ? i : null))
+                .verifyProcessor(mapP((Integer i) -> i > 1 ? i : null))
                 .input(asList(1, 2))
                 .expectOutput(singletonList(2));
     }
@@ -61,7 +70,7 @@ public class ProcessorsTest {
     @Test
     public void filter() {
         TestSupport
-                .verifyProcessor(Processors.filterP(o -> o.equals(1)))
+                .verifyProcessor(filterP(o -> o.equals(1)))
                 .input(asList(1, 2, 1, 2))
                 .expectOutput(asList(1, 1));
     }
@@ -69,15 +78,16 @@ public class ProcessorsTest {
     @Test
     public void flatMap() {
         TestSupport
-                .verifyProcessor(Processors.flatMapP(o -> traverseIterable(asList(o + "a", o + "b"))))
+                .verifyProcessor(flatMapP(o -> traverseIterable(asList(o + "a", o + "b"))))
                 .input(singletonList(1))
                 .expectOutput(asList("1a", "1b"));
     }
 
     @Test
     public void aggregateByKey() {
+        DistributedFunction<Object, String> keyFn = Object::toString;
         TestSupport
-                .verifyProcessor(Processors.aggregateByKeyP(Object::toString, aggregateToListAndString()))
+                .verifyProcessor(aggregateByKeyP(singletonList(keyFn), aggregateToListAndString(), Util::entry))
                 .disableSnapshots()
                 .outputChecker(TestSupport.SAME_ITEMS_ANY_ORDER)
                 .input(asList(1, 1, 2, 2))
@@ -89,8 +99,9 @@ public class ProcessorsTest {
 
     @Test
     public void accumulateByKey() {
+        DistributedFunction<Object, String> keyFn = Object::toString;
         TestSupport
-                .verifyProcessor(Processors.accumulateByKeyP(Object::toString, aggregateToListAndString()))
+                .verifyProcessor(Processors.accumulateByKeyP(singletonList(keyFn), aggregateToListAndString()))
                 .disableSnapshots()
                 .input(asList(1, 1, 2, 2))
                 .outputChecker(TestSupport.SAME_ITEMS_ANY_ORDER)
@@ -103,7 +114,7 @@ public class ProcessorsTest {
     @Test
     public void combineByKey() {
         TestSupport
-                .verifyProcessor(Processors.combineByKeyP(aggregateToListAndString()))
+                .verifyProcessor(combineByKeyP(aggregateToListAndString(), Util::entry))
                 .disableSnapshots()
                 .outputChecker(TestSupport.SAME_ITEMS_ANY_ORDER)
                 .input(asList(
@@ -139,7 +150,7 @@ public class ProcessorsTest {
     @Test
     public void combine() {
         TestSupport
-                .verifyProcessor(Processors.combineP(aggregateToListAndString()))
+                .verifyProcessor(combineP(aggregateToListAndString()))
                 .disableSnapshots()
                 .input(asList(
                         singletonList(1),
@@ -150,7 +161,7 @@ public class ProcessorsTest {
 
     @Test
     public void nonCooperative_ProcessorSupplier() {
-        ProcessorSupplier cooperativeSupplier = ProcessorSupplier.of(Processors.filterP(alwaysTrue()));
+        ProcessorSupplier cooperativeSupplier = ProcessorSupplier.of(filterP(alwaysTrue()));
         ProcessorSupplier nonCooperativeSupplier = Processors.nonCooperativeP(cooperativeSupplier);
         assertTrue(cooperativeSupplier.get(1).iterator().next().isCooperative());
         assertFalse(nonCooperativeSupplier.get(1).iterator().next().isCooperative());
@@ -158,7 +169,7 @@ public class ProcessorsTest {
 
     @Test
     public void nonCooperative_SupplierProcessor() {
-        DistributedSupplier<Processor> cooperativeSupplier = Processors.filterP(alwaysTrue());
+        DistributedSupplier<Processor> cooperativeSupplier = filterP(alwaysTrue());
         DistributedSupplier<Processor> nonCooperativeSupplier = Processors.nonCooperativeP(cooperativeSupplier);
         assertTrue(cooperativeSupplier.get().isCooperative());
         assertFalse(nonCooperativeSupplier.get().isCooperative());
@@ -167,7 +178,7 @@ public class ProcessorsTest {
     @Test
     public void noop() {
         TestSupport
-                .verifyProcessor(Processors.noopP())
+                .verifyProcessor(noopP())
                 .input(Stream.generate(() -> "a").limit(100).collect(toList()))
                 .expectOutput(emptyList());
     }

@@ -84,6 +84,20 @@ public interface Traverser<T> {
     }
 
     /**
+     * Returns a traverser traverser that will apply the given mapping function
+     * to each item retrieved from this traverser and emit all the items from
+     * the resulting traverser(s).
+     * <p>
+     * The traverser returned from the {@code flatMapFn} must be finite. That
+     * is, this operation will not attempt to emit any items after the first
+     * {@code null} item.
+     */
+    @Nonnull
+    default <R> Traverser<R> flatMap(@Nonnull Function<? super T, ? extends Traverser<? extends R>> flatMapFn) {
+        return new FlatMappingTraverser<>(this, flatMapFn);
+    }
+
+    /**
      * Returns a traverser that will emit a prefix of the original traverser,
      * up to the item for which the predicate fails (exclusive).
      */
@@ -176,20 +190,6 @@ public interface Traverser<T> {
                 return item;
             }
         };
-    }
-
-    /**
-     * Returns a traverser traverser that will apply the given mapping function
-     * to each item retrieved from this traverser and emit all the items from
-     * the resulting traverser(s).
-     * <p>
-     * The traverser returned from the {@code flatMapFn} must be finite. That
-     * is, this operation will not attempt to emit any items after the first
-     * {@code null} item.
-     */
-    @Nonnull
-    default <R> Traverser<R> flatMap(@Nonnull Function<? super T, ? extends Traverser<? extends R>> flatMapFn) {
-        return new FlatMappingTraverser<>(this, flatMapFn);
     }
 
     /**

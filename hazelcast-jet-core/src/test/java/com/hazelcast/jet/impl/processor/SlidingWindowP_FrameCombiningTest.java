@@ -30,7 +30,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import static com.hazelcast.jet.aggregate.AggregateOperations.toSet;
-import static com.hazelcast.jet.core.WindowDefinition.slidingWindowDef;
+import static com.hazelcast.jet.core.SlidingWindowPolicy.slidingWinPolicy;
 import static com.hazelcast.jet.core.processor.Processors.combineToSlidingWindowP;
 import static java.util.Arrays.asList;
 
@@ -46,7 +46,7 @@ public class SlidingWindowP_FrameCombiningTest {
     @Test
     public void when_multipleFrames_then_combine() {
         TestSupport
-                .verifyProcessor(combineToSlidingWindowP(slidingWindowDef(8, 4), toSet()))
+                .verifyProcessor(combineToSlidingWindowP(slidingWinPolicy(8, 4), toSet(), TimestampedEntry::new))
                 .input(asList(
                         frame(2, set("a")),
                         frame(4, set("b")),

@@ -44,7 +44,7 @@ public final class WatermarkPolicies {
      *            and the watermark
      */
     @Nonnull
-    public static DistributedSupplier<WatermarkPolicy> withFixedLag(long lag) {
+    public static DistributedSupplier<WatermarkPolicy> limitingLag(long lag) {
         checkNotNegative(lag, "lag must not be negative");
 
         return () -> new WatermarkPolicyBase() {
@@ -108,7 +108,7 @@ public final class WatermarkPolicies {
     public static DistributedSupplier<WatermarkPolicy> limitingTimestampAndWallClockLag(
             long timestampLag, long wallClockLag
     ) {
-        return WatermarkPolicyUtil.limitingTimestampAndWallClockLag(timestampLag, wallClockLag,
+        return () -> WatermarkPolicyUtil.limitingTimestampAndWallClockLag(timestampLag, wallClockLag,
                 System::currentTimeMillis);
     }
 
@@ -138,6 +138,6 @@ public final class WatermarkPolicies {
      */
     @Nonnull
     public static DistributedSupplier<WatermarkPolicy> limitingLagAndLull(long lag, long maxLullMs) {
-        return WatermarkPolicyUtil.limitingLagAndLull(lag, maxLullMs, System::nanoTime);
+        return () -> WatermarkPolicyUtil.limitingLagAndLull(lag, maxLullMs, System::nanoTime);
     }
 }

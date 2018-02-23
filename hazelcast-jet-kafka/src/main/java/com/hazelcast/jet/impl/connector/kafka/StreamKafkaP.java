@@ -17,8 +17,8 @@
 package com.hazelcast.jet.impl.connector.kafka;
 
 import com.hazelcast.jet.Traverser;
+import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.core.AbstractProcessor;
-import com.hazelcast.jet.core.AppendableTraverser;
 import com.hazelcast.jet.core.BroadcastKey;
 import com.hazelcast.jet.core.CloseableProcessorSupplier;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
@@ -26,7 +26,7 @@ import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.WatermarkGenerationParams;
 import com.hazelcast.jet.core.WatermarkSourceUtil;
-import com.hazelcast.jet.function.DistributedBiFunction;
+import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.nio.Address;
 import com.hazelcast.util.Preconditions;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -66,14 +66,14 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor implements Cl
     private static final int POLL_TIMEOUT_MS = 50;
 
     Map<TopicPartition, Integer> currentAssignment = new HashMap<>();
+
     private final Properties properties;
     private final List<String> topics;
-    private final DistributedBiFunction<K, V, T> projectionFn;
+    private final DistributedFunction<ConsumerRecord<K, V>, T> projectionFn;
     private final int globalParallelism;
     private final WatermarkSourceUtil<T> watermarkSourceUtil;
     private boolean snapshottingEnabled;
-    private KafkaConsumer<Object, Object> consumer;
-    private final AppendableTraverser<Object> appendableTraverser = new AppendableTraverser<>(2);
+    private KafkaConsumer<K, V> consumer;
 
     private final int[] partitionCounts;
     private long nextMetadataCheck = Long.MIN_VALUE;
@@ -87,14 +87,14 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor implements Cl
     private Traverser<Entry<BroadcastKey<TopicPartition>, long[]>> snapshotTraverser;
     private int processorIndex;
     private Traverser<Object> traverser;
-    private ConsumerRecord<Object, Object> lastEmittedItem;
+    private ConsumerRecord<K, V> lastEmittedItem;
 
     StreamKafkaP(
             @Nonnull Properties properties,
             @Nonnull List<String> topics,
-            @Nonnull DistributedBiFunction<K, V, T> projectionFn,
+            @Nonnull DistributedFunction<ConsumerRecord<K, V>, T> projectionFn,
             int globalParallelism,
-            @Nonnull WatermarkGenerationParams<T> wmGenParams
+            @Nonnull WatermarkGenerationParams<? super T> wmGenParams
     ) {
         this.properties = properties;
         this.topics = topics;
@@ -171,7 +171,7 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor implements Cl
         assignPartitions(true);
 
         if (traverser == null) {
-            ConsumerRecords<Object, Object> records = null;
+            ConsumerRecords<K, V> records = null;
             if (!currentAssignment.isEmpty()) {
                 try {
                     records = consumer.poll(POLL_TIMEOUT_MS);
@@ -182,31 +182,19 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor implements Cl
                 }
             }
             if (records == null || records.isEmpty()) {
-                Watermark wm = watermarkSourceUtil.handleNoEvent();
-                if (wm != null) {
-                    appendableTraverser.append(wm);
-                    traverser = appendableTraverser;
-                }
+                traverser = watermarkSourceUtil.handleNoEvent();
             } else {
                 traverser = traverseIterable(records)
                         .flatMap(r -> {
                             lastEmittedItem = r;
-                            T projectedRecord = projectionFn.apply((K) r.key(), (V) r.value());
+                            T projectedRecord = projectionFn.apply(r);
+                            if (projectedRecord == null) {
+                                return Traversers.empty();
+                            }
                             TopicPartition topicPartition = new TopicPartition(lastEmittedItem.topic(),
                                     lastEmittedItem.partition());
-                            Watermark wm = watermarkSourceUtil.handleEvent(currentAssignment.get(topicPartition),
-                                    projectedRecord);
-                            if (wm != null) {
-                                appendableTraverser.append(wm);
-                            }
-                            if (projectedRecord != null) {
-                                appendableTraverser.append(projectedRecord);
-                            }
-                            return appendableTraverser;
+                            return watermarkSourceUtil.handleEvent(projectedRecord, currentAssignment.get(topicPartition));
                         });
-            }
-            if (traverser == null) {
-                return false;
             }
 
             traverser = traverser.onFirstNull(() -> traverser = null);
@@ -287,15 +275,15 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor implements Cl
 
         private final Properties properties;
         private final List<String> topics;
-        private final DistributedBiFunction<K, V, T> projectionFn;
-        private final WatermarkGenerationParams<T> wmGenParams;
+        private final DistributedFunction<ConsumerRecord<K, V>, T> projectionFn;
+        private final WatermarkGenerationParams<? super T> wmGenParams;
         private int totalParallelism;
 
         public MetaSupplier(
-                Properties properties,
-                List<String> topics,
-                DistributedBiFunction<K, V, T> projectionFn,
-                @Nonnull WatermarkGenerationParams<T> wmGenParams) {
+                @Nonnull Properties properties,
+                @Nonnull List<String> topics,
+                @Nonnull DistributedFunction<ConsumerRecord<K, V>, T> projectionFn,
+                @Nonnull WatermarkGenerationParams<? super T> wmGenParams) {
             this.properties = new Properties();
             this.properties.putAll(properties);
             this.topics = topics;
@@ -317,7 +305,8 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor implements Cl
         @Override
         public Function<Address, ProcessorSupplier> get(@Nonnull List<Address> addresses) {
             return address -> new CloseableProcessorSupplier<>(
-                    () -> new StreamKafkaP(properties, topics, projectionFn, totalParallelism, wmGenParams));
+                    () -> new StreamKafkaP<>(properties, topics, projectionFn, totalParallelism, wmGenParams)
+            );
         }
     }
 
@@ -354,5 +343,10 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor implements Cl
             int startIndex = topicIndex * Math.max(1, globalParallelism / topics.size());
             return (startIndex + partition) % globalParallelism;
         }
+    }
+
+    @Nonnull
+    public static <K, V> Entry<K, V> recordToEntry(ConsumerRecord<K, V> r) {
+        return entry(r.key(), r.value());
     }
 }

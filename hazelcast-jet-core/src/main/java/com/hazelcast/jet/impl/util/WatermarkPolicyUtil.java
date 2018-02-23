@@ -16,10 +16,9 @@
 
 package com.hazelcast.jet.impl.util;
 
-import com.hazelcast.jet.core.WatermarkPolicy;
 import com.hazelcast.jet.core.WatermarkPolicies;
+import com.hazelcast.jet.core.WatermarkPolicy;
 import com.hazelcast.jet.function.DistributedLongSupplier;
-import com.hazelcast.jet.function.DistributedSupplier;
 
 import javax.annotation.Nonnull;
 
@@ -36,13 +35,13 @@ public final class WatermarkPolicyUtil {
     }
 
     @Nonnull
-    public static DistributedSupplier<WatermarkPolicy> limitingTimestampAndWallClockLag(
+    public static WatermarkPolicy limitingTimestampAndWallClockLag(
             long timestampLag, long wallClockLag, DistributedLongSupplier wallClock
     ) {
         checkNotNegative(timestampLag, "timestampLag must not be negative");
         checkNotNegative(wallClockLag, "wallClockLag must not be negative");
 
-        return () -> new WatermarkPolicyBase() {
+        return new WatermarkPolicyBase() {
 
             @Override
             public long reportEvent(long timestamp) {
@@ -65,13 +64,13 @@ public final class WatermarkPolicyUtil {
     }
 
     @Nonnull
-    public static DistributedSupplier<WatermarkPolicy> limitingLagAndLull(
+    public static WatermarkPolicy limitingLagAndLull(
             long lag, long maxLullMs, DistributedLongSupplier nanoClock
     ) {
         checkNotNegative(lag, "lag must not be negative");
         checkNotNegative(maxLullMs, "maxLullMs must not be negative");
 
-        return () -> new WatermarkPolicyBase() {
+        return new WatermarkPolicyBase() {
 
             private long maxLullAt = Long.MIN_VALUE;
 

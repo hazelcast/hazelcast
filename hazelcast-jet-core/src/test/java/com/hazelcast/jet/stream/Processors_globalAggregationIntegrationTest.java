@@ -23,6 +23,7 @@ import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.TestProcessors.ListSource;
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import org.junit.Test;
@@ -38,8 +39,6 @@ import java.util.List;
 
 import static com.hazelcast.jet.aggregate.AggregateOperations.summingLong;
 import static com.hazelcast.jet.core.Edge.between;
-import static com.hazelcast.jet.core.processor.Processors.accumulateP;
-import static com.hazelcast.jet.core.processor.Processors.aggregateP;
 import static com.hazelcast.jet.core.processor.Processors.combineP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeListP;
 import static java.util.Arrays.asList;
@@ -75,14 +74,14 @@ public class Processors_globalAggregationIntegrationTest extends JetTestSupport 
         Vertex sink = dag.newVertex("sink", writeListP("sink"));
 
         if (singleStageProcessor) {
-            Vertex aggregate = dag.newVertex("aggregate", aggregateP(summingOp))
+            Vertex aggregate = dag.newVertex("aggregate", Processors.aggregateP(summingOp))
                     .localParallelism(1);
             dag
                     .edge(between(source, aggregate).distributed().allToOne())
                     .edge(between(aggregate, sink).isolated());
 
         } else {
-            Vertex accumulate = dag.newVertex("accumulate", accumulateP(summingOp));
+            Vertex accumulate = dag.newVertex("accumulate", Processors.accumulateP(summingOp));
             Vertex combine = dag.newVertex("combine", combineP(summingOp)).localParallelism(1);
             dag
                     .edge(between(source, accumulate))

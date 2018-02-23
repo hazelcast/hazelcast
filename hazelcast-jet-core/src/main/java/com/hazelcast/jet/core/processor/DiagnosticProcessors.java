@@ -61,7 +61,7 @@ public final class DiagnosticProcessors {
      */
     @Nonnull
     public static <T> ProcessorMetaSupplier writeLoggerP(
-            @Nonnull DistributedFunction<T, String> toStringFn
+            @Nonnull DistributedFunction<T, ? extends CharSequence> toStringFn
     ) {
         return dontParallelize(() -> new WriteLoggerP<>(toStringFn));
     }
@@ -109,7 +109,7 @@ public final class DiagnosticProcessors {
      */
     @Nonnull
     public static <T> ProcessorMetaSupplier peekInputP(
-            @Nonnull DistributedFunction<T, String> toStringFn,
+            @Nonnull DistributedFunction<T, ? extends CharSequence> toStringFn,
             @Nonnull DistributedPredicate<T> shouldLogFn,
             @Nonnull ProcessorMetaSupplier wrapped
     ) {
@@ -124,7 +124,7 @@ public final class DiagnosticProcessors {
      */
     @Nonnull
     public static <T> ProcessorSupplier peekInputP(
-            @Nonnull DistributedFunction<T, String> toStringFn,
+            @Nonnull DistributedFunction<T, ? extends CharSequence> toStringFn,
             @Nonnull DistributedPredicate<T> shouldLogFn,
             @Nonnull ProcessorSupplier wrapped
     ) {
@@ -140,7 +140,7 @@ public final class DiagnosticProcessors {
      */
     @Nonnull
     public static <T> DistributedSupplier<Processor> peekInputP(
-            @Nonnull DistributedFunction<T, String> toStringFn,
+            @Nonnull DistributedFunction<T, ? extends CharSequence> toStringFn,
             @Nonnull DistributedPredicate<T> shouldLogFn,
             @Nonnull DistributedSupplier<Processor> wrapped
     ) {
@@ -202,9 +202,17 @@ public final class DiagnosticProcessors {
      * data, but this wrapper only logs the regular data. See {@link
      * #peekSnapshotP(DistributedFunction, DistributedPredicate, ProcessorMetaSupplier)
      * peekSnapshot()}.
-     * <p>
-     * Note: Watermarks are always logged. {@link Watermark} objects are not
-     * passed to {@code shouldLogFn} and {@code toStringFn}.
+     *
+     * <h4>Logging of Watermarks</h4>
+     *
+     * There are two kinds of watermarks:<ol>
+     *     <li>Watermarks originated in the processor, prefixed in the logs
+     *     with {@code "Output to N: "}
+     *     <li>Watermarks received on input, which are forwarded automatically.
+     *     These are prefixed with {@code "Output forwarded: "}
+     * </ol>
+     * Both are always logged. {@link Watermark} objects are not passed to
+     * {@code shouldLogFn} or {@code toStringFn}.
      *
      * @param toStringFn  a function that returns the string representation of the item.
      *                    You can use {@code Object::toString}.
@@ -220,8 +228,8 @@ public final class DiagnosticProcessors {
      */
     @Nonnull
     public static <T> ProcessorMetaSupplier peekOutputP(
-            @Nonnull DistributedFunction<T, String> toStringFn,
-            @Nonnull DistributedPredicate<T> shouldLogFn,
+            @Nonnull DistributedFunction<? super T, ? extends CharSequence> toStringFn,
+            @Nonnull DistributedPredicate<? super T> shouldLogFn,
             @Nonnull ProcessorMetaSupplier wrapped
     ) {
         return new WrappingProcessorMetaSupplier(wrapped, p ->
@@ -235,8 +243,8 @@ public final class DiagnosticProcessors {
      */
     @Nonnull
     public static <T> ProcessorSupplier peekOutputP(
-            @Nonnull DistributedFunction<T, String> toStringFn,
-            @Nonnull DistributedPredicate<T> shouldLogFn,
+            @Nonnull DistributedFunction<? super T, ? extends CharSequence> toStringFn,
+            @Nonnull DistributedPredicate<? super T> shouldLogFn,
             @Nonnull ProcessorSupplier wrapped
     ) {
         return new WrappingProcessorSupplier(wrapped, p ->
@@ -251,8 +259,8 @@ public final class DiagnosticProcessors {
      */
     @Nonnull
     public static <T> DistributedSupplier<Processor> peekOutputP(
-            @Nonnull DistributedFunction<T, String> toStringFn,
-            @Nonnull DistributedPredicate<T> shouldLogFn,
+            @Nonnull DistributedFunction<? super T, ? extends CharSequence> toStringFn,
+            @Nonnull DistributedPredicate<? super T> shouldLogFn,
             @Nonnull DistributedSupplier<Processor> wrapped) {
         return () -> new PeekWrappedP<>(wrapped.get(), toStringFn, shouldLogFn, false, true, false);
     }
@@ -321,8 +329,8 @@ public final class DiagnosticProcessors {
      */
     @Nonnull
     public static <K, V> ProcessorMetaSupplier peekSnapshotP(
-            @Nonnull DistributedFunction<Entry<K, V>, String> toStringFn,
-            @Nonnull DistributedPredicate<Entry<K, V>> shouldLogFn,
+            @Nonnull DistributedFunction<? super Entry<K, V>, ? extends CharSequence> toStringFn,
+            @Nonnull DistributedPredicate<? super Entry<K, V>> shouldLogFn,
             @Nonnull ProcessorMetaSupplier wrapped
     ) {
         return new WrappingProcessorMetaSupplier(wrapped, p ->
@@ -336,8 +344,8 @@ public final class DiagnosticProcessors {
      */
     @Nonnull
     public static <K, V> ProcessorSupplier peekSnapshotP(
-            @Nonnull DistributedFunction<Entry<K, V>, String> toStringFn,
-            @Nonnull DistributedPredicate<Entry<K, V>> shouldLogFn,
+            @Nonnull DistributedFunction<? super Entry<K, V>, ? extends CharSequence> toStringFn,
+            @Nonnull DistributedPredicate<? super Entry<K, V>> shouldLogFn,
             @Nonnull ProcessorSupplier wrapped
     ) {
         return new WrappingProcessorSupplier(wrapped, p ->
@@ -352,8 +360,8 @@ public final class DiagnosticProcessors {
      */
     @Nonnull
     public static <K, V> DistributedSupplier<Processor> peekSnapshotP(
-            @Nonnull DistributedFunction<Entry<K, V>, String> toStringFn,
-            @Nonnull DistributedPredicate<Entry<K, V>> shouldLogFn,
+            @Nonnull DistributedFunction<? super Entry<K, V>, ? extends CharSequence> toStringFn,
+            @Nonnull DistributedPredicate<? super Entry<K, V>> shouldLogFn,
             @Nonnull DistributedSupplier<Processor> wrapped) {
         return () -> new PeekWrappedP<>(wrapped.get(), toStringFn, shouldLogFn, false, false, true);
     }

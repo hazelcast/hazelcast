@@ -40,12 +40,12 @@ import java.util.concurrent.locks.LockSupport;
 import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 
+import static com.hazelcast.jet.core.SlidingWindowPolicy.tumblingWinPolicy;
 import static com.hazelcast.jet.core.WatermarkEmissionPolicy.emitByFrame;
 import static com.hazelcast.jet.core.WatermarkEmissionPolicy.emitByMinStep;
 import static com.hazelcast.jet.core.WatermarkEmissionPolicy.suppressDuplicates;
 import static com.hazelcast.jet.core.WatermarkGenerationParams.wmGenParams;
-import static com.hazelcast.jet.core.WatermarkPolicies.withFixedLag;
-import static com.hazelcast.jet.core.WindowDefinition.tumblingWindowDef;
+import static com.hazelcast.jet.core.WatermarkPolicies.limitingLag;
 import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.IDLE_MESSAGE;
 import static com.hazelcast.jet.impl.util.WatermarkPolicyUtil.limitingTimestampAndWallClockLag;
 import static java.util.Arrays.asList;
@@ -70,7 +70,7 @@ public class InsertWatermarksPTest {
     private TestOutbox outbox;
     private List<Object> resultToCheck = new ArrayList<>();
     private Context context;
-    private DistributedSupplier<WatermarkPolicy> wmPolicy = withFixedLag(LAG);
+    private DistributedSupplier<WatermarkPolicy> wmPolicy = limitingLag(LAG);
     private WatermarkEmissionPolicy wmEmissionPolicy = suppressDuplicates();
 
     @Parameters(name = "outboxCapacity={0}")
@@ -86,7 +86,7 @@ public class InsertWatermarksPTest {
 
     @Test
     public void when_firstEventLate_then_notDropped() {
-        wmPolicy = limitingTimestampAndWallClockLag(0, 0, clock::now);
+        wmPolicy = () -> limitingTimestampAndWallClockLag(0, 0, clock::now);
         doTest(
                 singletonList(item(clock.now - 1)),
                 asList(wm(clock.now), item(clock.now - 1)));
@@ -161,7 +161,7 @@ public class InsertWatermarksPTest {
 
     @Test
     public void when_zeroLag() {
-        wmPolicy = withFixedLag(0);
+        wmPolicy = limitingLag(0);
         doTest(
                 asList(
                         item(10),
@@ -176,7 +176,7 @@ public class InsertWatermarksPTest {
 
     @Test
     public void emitByFrame_when_eventsIncrease_then_wmIncreases() {
-        wmEmissionPolicy = emitByFrame(tumblingWindowDef(2));
+        wmEmissionPolicy = emitByFrame(tumblingWinPolicy(2));
         doTest(
                 asList(
                         item(10),
@@ -198,7 +198,7 @@ public class InsertWatermarksPTest {
 
     @Test
     public void emitByFrame_when_eventsIncreaseAndStartAtVergeOfFrame_then_wmIncreases() {
-        wmEmissionPolicy = emitByFrame(tumblingWindowDef(2));
+        wmEmissionPolicy = emitByFrame(tumblingWinPolicy(2));
         doTest(
                 asList(
                         item(11),
@@ -219,7 +219,7 @@ public class InsertWatermarksPTest {
 
     @Test
     public void emitByFrame_when_eventsNotAtTheVergeOfFrame_then_wmEmittedCorrectly() {
-        wmEmissionPolicy = emitByFrame(tumblingWindowDef(10));
+        wmEmissionPolicy = emitByFrame(tumblingWinPolicy(10));
         doTest(
                 asList(
                         item(14),
@@ -238,7 +238,7 @@ public class InsertWatermarksPTest {
 
     @Test
     public void emitByFrame_when_gapBetweenEvents_then_gapInWms() {
-        wmEmissionPolicy = emitByFrame(tumblingWindowDef(2));
+        wmEmissionPolicy = emitByFrame(tumblingWinPolicy(2));
         doTest(
                 asList(
                         item(11),

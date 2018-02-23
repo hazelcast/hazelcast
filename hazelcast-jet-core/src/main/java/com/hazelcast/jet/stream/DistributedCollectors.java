@@ -201,8 +201,8 @@ public abstract class DistributedCollectors {
     public static <T> DistributedCollector<T, ?, Integer> summingInt(DistributedToIntFunction<? super T> mapper) {
         return new DistributedCollectorImpl<>(
                 LongAccumulator::new,
-                (a, t) -> a.add(mapper.applyAsInt(t)),
-                LongAccumulator::add,
+                (a, t) -> a.addAllowingOverflow(mapper.applyAsInt(t)),
+                LongAccumulator::addAllowingOverflow,
                 a -> Math.toIntExact(a.get()));
     }
 

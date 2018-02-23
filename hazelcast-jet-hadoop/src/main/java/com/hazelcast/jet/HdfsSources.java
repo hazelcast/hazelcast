@@ -18,6 +18,8 @@ package com.hazelcast.jet;
 
 import com.hazelcast.jet.function.DistributedBiFunction;
 import com.hazelcast.jet.impl.connector.hadoop.ReadHdfsP.MetaSupplier;
+import com.hazelcast.jet.pipeline.BatchSource;
+import com.hazelcast.jet.pipeline.Sources;
 import org.apache.hadoop.mapred.JobConf;
 
 import javax.annotation.Nonnull;
@@ -60,11 +62,11 @@ public final class HdfsSources {
      *                     will be filtered out
      */
     @Nonnull
-    public static <K, V, E> Source<E> hdfs(
+    public static <K, V, E> BatchSource<E> hdfs(
             @Nonnull JobConf jobConf,
             @Nonnull DistributedBiFunction<K, V, E> projectionFn
     ) {
-        return Sources.fromProcessor("readHdfs", new MetaSupplier<>(asSerializable(jobConf), projectionFn));
+        return Sources.batchFromProcessor("readHdfs", new MetaSupplier<>(asSerializable(jobConf), projectionFn));
     }
 
     /**
@@ -72,7 +74,7 @@ public final class HdfsSources {
      * with {@link java.util.Map.Entry} as its output type.
      */
     @Nonnull
-    public static <K, V> Source<Entry<K, V>> hdfs(@Nonnull JobConf jobConf) {
+    public static <K, V> BatchSource<Entry<K, V>> hdfs(@Nonnull JobConf jobConf) {
         return hdfs(jobConf, (DistributedBiFunction<K, V, Entry<K, V>>) Util::entry);
     }
 }

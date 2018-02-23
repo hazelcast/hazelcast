@@ -25,9 +25,6 @@ import java.util.Objects;
  */
 public class MutableReference<T> {
 
-    /**
-     * The holder's value.
-     */
     private T value;
 
     /**

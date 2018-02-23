@@ -19,7 +19,10 @@ package com.hazelcast.jet.impl.processor;
 import com.hazelcast.jet.accumulator.LongAccumulator;
 import com.hazelcast.jet.core.TimestampKind;
 import com.hazelcast.jet.core.Watermark;
+import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.datamodel.TimestampedEntry;
+import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.function.DistributedToLongFunction;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import org.junit.After;
@@ -35,9 +38,9 @@ import java.util.Map.Entry;
 
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.aggregate.AggregateOperations.summingLong;
-import static com.hazelcast.jet.core.WindowDefinition.slidingWindowDef;
-import static com.hazelcast.jet.core.processor.Processors.accumulateByFrameP;
+import static com.hazelcast.jet.core.SlidingWindowPolicy.slidingWinPolicy;
 import static com.hazelcast.jet.core.test.TestSupport.verifyProcessor;
+import static com.hazelcast.jet.function.DistributedFunction.identity;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertTrue;
@@ -51,17 +54,19 @@ public class SlidingWindowP_stage1Test {
     @Rule
     public ExpectedException exception = ExpectedException.none();
 
-    private SlidingWindowP<Entry<Long, Long>, Long, ?> processor;
+    private SlidingWindowP processor;
 
     @Before
     @SuppressWarnings("unchecked")
     public void before() {
-        processor = (SlidingWindowP<Entry<Long, Long>, Long, ?>) accumulateByFrameP(
-                x -> KEY,
-                Entry::getKey,
+        DistributedFunction<Entry<Long, Long>, Object> keyFn = x -> KEY;
+        DistributedToLongFunction<Entry<Long, Long>> timestampFn = Entry::getKey;
+        processor = (SlidingWindowP) Processors.accumulateByFrameP(
+                singletonList(keyFn),
+                singletonList(timestampFn),
                 TimestampKind.EVENT,
-                slidingWindowDef(16, 4), // this will get converted to tumblingWindowDef(4)
-                summingLong(Entry<Long, Long>::getValue)
+                slidingWinPolicy(16, 4),
+                summingLong(Entry<Long, Long>::getValue).withFinishFn(identity())
         ).get();
     }
 

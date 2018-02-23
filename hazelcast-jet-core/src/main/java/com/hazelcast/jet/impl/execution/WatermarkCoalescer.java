@@ -108,7 +108,7 @@ public abstract class WatermarkCoalescer {
     }
 
     /**
-     * Special-case implementation for zero inputs.
+     * Special-case implementation for zero inputs (source processors).
      */
     private static final class ZeroInputImpl extends WatermarkCoalescer {
 
@@ -149,6 +149,7 @@ public abstract class WatermarkCoalescer {
         private long lastEmittedWm = Long.MIN_VALUE;
         private long topObservedWm = Long.MIN_VALUE;
         private boolean allInputsAreIdle;
+        private boolean idleMessagePending;
 
         StandardImpl(int maxWatermarkRetainMillis, int queueCount) {
             isIdle = new boolean[queueCount];
@@ -189,9 +190,11 @@ public abstract class WatermarkCoalescer {
                 isIdle[queueIndex] = false;
                 allInputsAreIdle = false;
                 queueWms[queueIndex] = wmValue;
-                if (watermarkHistory != null && wmValue > topObservedWm) {
+                if (wmValue > topObservedWm) {
                     topObservedWm = wmValue;
-                    watermarkHistory.sample(systemTime, topObservedWm);
+                    if (watermarkHistory != null) {
+                        watermarkHistory.sample(systemTime, topObservedWm);
+                    }
                 }
                 return checkObservedWms();
             }
@@ -217,7 +220,19 @@ public abstract class WatermarkCoalescer {
 
             // if the lowest observed wm is MAX_VALUE that means that all inputs are idle
             if (min == Long.MAX_VALUE) {
+                // When all inputs are idle, we should first emit top observed WM.
+                // For example: have 2 queues. Q1 got to wm(1), Q2 to wm(2). Later on, both become idle at the
+                // same moment. Now two things can happen:
+                //   1. Idle-message from Q1 is received first: Q1 is excluded from coalescing, wm(2) is forwarded.
+                //      Then message from Q2 is received, WM stays at wm(2)
+                //   2. Idle-message from Q2 is received first: Q2 is excluded from coalescing, WM stays at wm(1).
+                //      Then message from Q1 is received. Without this condition WM would stay at wm(1). With it,
+                //      wm(2) is forwarded.
                 allInputsAreIdle = true;
+                if (topObservedWm > lastEmittedWm) {
+                    idleMessagePending = notDoneInputCount != 0;
+                    return lastEmittedWm = topObservedWm;
+                }
                 return notDoneInputCount != 0
                         ? IDLE_MESSAGE.timestamp()
                         : NO_NEW_WM;
@@ -234,6 +249,10 @@ public abstract class WatermarkCoalescer {
 
         @Override
         public long checkWmHistory(long systemTime) {
+            if (idleMessagePending) {
+                idleMessagePending = false;
+                return IDLE_MESSAGE.timestamp();
+            }
             if (watermarkHistory == null) {
                 return NO_NEW_WM;
             }
@@ -249,6 +268,5 @@ public abstract class WatermarkCoalescer {
         public long getTime() {
             return watermarkHistory != null ? System.nanoTime() : -1;
         }
-
     }
 }

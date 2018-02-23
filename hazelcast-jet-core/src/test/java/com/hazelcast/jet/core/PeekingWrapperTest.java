@@ -235,16 +235,16 @@ public class PeekingWrapperTest {
         TestInbox inbox = new TestInbox();
         inbox.add(0);
         peekP.process(0, inbox);
-        verify(logger).info("Input from 0: " + format(0));
+        verify(logger).info("Input from ordinal 0: " + format(0));
 
         inbox.add(0);
         peekP.process(1, inbox);
-        verify(logger).info("Input from 1: " + format(0));
+        verify(logger).info("Input from ordinal 1: " + format(0));
 
         inbox.add(1);
         peekP.process(0, inbox);
         if (shouldLogFn == null) {
-            verify(logger).info("Input from 0: " + format(1));
+            verify(logger).info("Input from ordinal 0: " + format(1));
         } else {
             verifyZeroInteractions(logger);
         }
@@ -259,8 +259,8 @@ public class PeekingWrapperTest {
         peekP.init(outbox, context);
 
         peekP.complete();
-        verify(logger).info("Output to 0: " + format(0));
-        verify(logger).info("Output to 1: " + format(0));
+        verify(logger).info("Output to ordinal 0: " + format(0));
+        verify(logger).info("Output to ordinal 1: " + format(0));
 
         outbox.queue(0).clear();
         outbox.queue(1).clear();
@@ -269,8 +269,8 @@ public class PeekingWrapperTest {
         // only one queue has available space, call complete() again to emit another object
         peekP.complete();
         if (shouldLogFn == null) {
-            verify(logger).info("Output to 1: " + format(1));
-            verify(logger).info("Output to 0: " + format(1));
+            verify(logger).info("Output to ordinal 1: " + format(1));
+            verify(logger).info("Output to ordinal 0: " + format(1));
         }
         outbox.queue(0).clear();
         outbox.queue(1).clear();
@@ -279,8 +279,13 @@ public class PeekingWrapperTest {
 
         peekP.complete();
         Watermark wm = new Watermark(2);
-        verify(logger).info("Output to 0: " + wm);
-        verify(logger).info("Output to 1: " + wm);
+        verify(logger).info("Output to ordinal 0: " + wm);
+        verify(logger).info("Output to ordinal 1: " + wm);
+
+        wm = new Watermark(3);
+        peekP.tryProcessWatermark(wm);
+        verify(logger).info("Output forwarded: " + wm);
+        verifyZeroInteractions(logger);
     }
 
     private void assertPeekSnapshot() {
@@ -331,7 +336,7 @@ public class PeekingWrapperTest {
             for (Object o; (o = inbox.peek()) != null; ) {
                 assertNotNull("Inbox returned null object", o);
                 assertEquals("second peek didn't return the same object", inbox.peek(), o);
-                assertEquals("remove didn't return the same object", inbox.remove(), o);
+                assertEquals("remove didn't return the same object", inbox.poll(), o);
             }
             assertNull(inbox.peek());
             try {

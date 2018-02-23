@@ -54,6 +54,30 @@ public interface AggregateOperation3<T0, T1, T2, A, R> extends AggregateOperatio
     @Nonnull
     DistributedBiConsumer<? super A, ? super T2> accumulateFn2();
 
+    /**
+     * Javadoc pending
+     */
+    @Nonnull
+    <T0_NEW> AggregateOperation3<T0_NEW, T1, T2, A, R> withAccumulateFn0(
+            @Nonnull DistributedBiConsumer<? super A, ? super T0_NEW> newAccFn0
+    );
+
+    /**
+     * Javadoc pending
+     */
+    @Nonnull
+    <T1_NEW> AggregateOperation3<T0, T1_NEW, T2, A, R> withAccumulateFn1(
+            @Nonnull DistributedBiConsumer<? super A, ? super T1_NEW> newAccFn1
+    );
+
+    /**
+     * Javadoc pending
+     */
+    @Nonnull
+    <T2_NEW> AggregateOperation3<T0, T1, T2_NEW, A, R> withAccumulateFn2(
+            @Nonnull DistributedBiConsumer<? super A, ? super T2_NEW> newAccFn2
+    );
+
     // Override with a narrowed return type
     @Nonnull @Override
     <R1> AggregateOperation3<T0, T1, T2, A, R1> withFinishFn(

@@ -22,8 +22,13 @@ import com.hazelcast.jet.accumulator.LongAccumulator;
 import com.hazelcast.jet.accumulator.LongDoubleAccumulator;
 import com.hazelcast.jet.accumulator.LongLongAccumulator;
 import com.hazelcast.jet.accumulator.MutableReference;
+import com.hazelcast.jet.aggregate.AggregateOperationBuilder.VarArity;
+import com.hazelcast.jet.datamodel.BagsByTag;
+import com.hazelcast.jet.datamodel.Tag;
+import com.hazelcast.jet.datamodel.ThreeBags;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.datamodel.Tuple3;
+import com.hazelcast.jet.datamodel.TwoBags;
 import com.hazelcast.jet.function.DistributedBiConsumer;
 import com.hazelcast.jet.function.DistributedBiFunction;
 import com.hazelcast.jet.function.DistributedBinaryOperator;
@@ -46,6 +51,7 @@ import java.util.Set;
 
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.datamodel.Tuple3.tuple3;
+import static com.hazelcast.util.Preconditions.checkPositive;
 
 /**
  * Utility class with factory methods for several useful aggregate
@@ -63,9 +69,9 @@ public final class AggregateOperations {
     public static <T> AggregateOperation1<T, LongAccumulator, Long> counting() {
         return AggregateOperation
                 .withCreate(LongAccumulator::new)
-                .andAccumulate((LongAccumulator a, T item) -> a.addExact(1))
-                .andCombine(LongAccumulator::addExact)
-                .andDeduct(LongAccumulator::subtract)
+                .andAccumulate((LongAccumulator a, T item) -> a.add(1))
+                .andCombine(LongAccumulator::add)
+                .andDeduct(LongAccumulator::subtractAllowingOverflow)
                 .andFinish(LongAccumulator::get);
     }
 
@@ -81,9 +87,9 @@ public final class AggregateOperations {
     ) {
         return AggregateOperation
                 .withCreate(LongAccumulator::new)
-                .andAccumulate((LongAccumulator a, T item) -> a.addExact(getLongValueFn.applyAsLong(item)))
-                .andCombine(LongAccumulator::addExact)
-                .andDeduct(LongAccumulator::subtractExact)
+                .andAccumulate((LongAccumulator a, T item) -> a.add(getLongValueFn.applyAsLong(item)))
+                .andCombine(LongAccumulator::add)
+                .andDeduct(LongAccumulator::subtract)
                 .andFinish(LongAccumulator::get);
     }
 
@@ -99,10 +105,10 @@ public final class AggregateOperations {
     ) {
         return AggregateOperation
                 .withCreate(DoubleAccumulator::new)
-                .andAccumulate((DoubleAccumulator a, T item) -> a.add(getDoubleValueFn.applyAsDouble(item)))
-                .andCombine(DoubleAccumulator::add)
-                .andDeduct(DoubleAccumulator::subtract)
-                .andFinish(DoubleAccumulator::get);
+                .andAccumulate((DoubleAccumulator a, T item) -> a.accumulate(getDoubleValueFn.applyAsDouble(item)))
+                .andCombine(DoubleAccumulator::combine)
+                .andDeduct(DoubleAccumulator::deduct)
+                .andFinish(DoubleAccumulator::finish);
     }
 
     /**
@@ -166,21 +172,21 @@ public final class AggregateOperations {
                 .withCreate(LongLongAccumulator::new)
                 .andAccumulate((LongLongAccumulator a, T i) -> {
                     // a bit faster check than in addExact, specialized for increment
-                    if (a.getValue1() == Long.MAX_VALUE) {
+                    if (a.get1() == Long.MAX_VALUE) {
                         throw new ArithmeticException("Counter overflow");
                     }
-                    a.setValue1(a.getValue1() + 1);
-                    a.setValue2(Math.addExact(a.getValue2(), getLongValueFn.applyAsLong(i)));
+                    a.set1(a.get1() + 1);
+                    a.set2(Math.addExact(a.get2(), getLongValueFn.applyAsLong(i)));
                 })
                 .andCombine((a1, a2) -> {
-                    a1.setValue1(Math.addExact(a1.getValue1(), a2.getValue1()));
-                    a1.setValue2(Math.addExact(a1.getValue2(), a2.getValue2()));
+                    a1.set1(Math.addExact(a1.get1(), a2.get1()));
+                    a1.set2(Math.addExact(a1.get2(), a2.get2()));
                 })
                 .andDeduct((a1, a2) -> {
-                    a1.setValue1(Math.subtractExact(a1.getValue1(), a2.getValue1()));
-                    a1.setValue2(Math.subtractExact(a1.getValue2(), a2.getValue2()));
+                    a1.set1(Math.subtractExact(a1.get1(), a2.get1()));
+                    a1.set2(Math.subtractExact(a1.get2(), a2.get2()));
                 })
-                .andFinish(a -> (double) a.getValue2() / a.getValue1());
+                .andFinish(a -> (double) a.get2() / a.get1());
     }
 
     /**
@@ -200,21 +206,21 @@ public final class AggregateOperations {
                 .withCreate(LongDoubleAccumulator::new)
                 .andAccumulate((LongDoubleAccumulator a, T item) -> {
                     // a bit faster check than in addExact, specialized for increment
-                    if (a.getValue1() == Long.MAX_VALUE) {
+                    if (a.getLong() == Long.MAX_VALUE) {
                         throw new ArithmeticException("Counter overflow");
                     }
-                    a.setValue1(a.getValue1() + 1);
-                    a.setValue2(a.getValue2() + getDoubleValueFn.applyAsDouble(item));
+                    a.setLong(a.getLong() + 1);
+                    a.setDouble(a.getDouble() + getDoubleValueFn.applyAsDouble(item));
                 })
                 .andCombine((a1, a2) -> {
-                    a1.setValue1(Math.addExact(a1.getValue1(), a2.getValue1()));
-                    a1.setValue2(a1.getValue2() + a2.getValue2());
+                    a1.setLong(Math.addExact(a1.getLong(), a2.getLong()));
+                    a1.setDouble(a1.getDouble() + a2.getDouble());
                 })
                 .andDeduct((a1, a2) -> {
-                    a1.setValue1(Math.subtractExact(a1.getValue1(), a2.getValue1()));
-                    a1.setValue2(a1.getValue2() - a2.getValue2());
+                    a1.setLong(Math.subtractExact(a1.getLong(), a2.getLong()));
+                    a1.setDouble(a1.getDouble() - a2.getDouble());
                 })
-                .andFinish(a -> a.getValue2() / a.getValue1());
+                .andFinish(a -> a.getDouble() / a.getLong());
     }
 
     /**
@@ -620,6 +626,77 @@ public final class AggregateOperations {
     }
 
     /**
+     * Returns an {@code AggregateOperation} that accumulates the items from
+     * exactly two inputs into {@link TwoBags}: items from <em>inputN</em> are
+     * accumulated into <em>bagN</em>.
+     *
+     * @param <T0> item type on input0
+     * @param <T1> item type on input1
+     *
+     * @see #toThreeBags()
+     * @see #toBagsByTag(Tag[])
+     */
+    @Nonnull
+    public static <T0, T1> AggregateOperation2<T0, T1, TwoBags<T0, T1>, TwoBags<T0, T1>> toTwoBags() {
+        return AggregateOperation
+                .withCreate(TwoBags::<T0, T1>twoBags)
+                .<T0>andAccumulate0((acc, item0) -> acc.bag0().add(item0))
+                .<T1>andAccumulate1((acc, item1) -> acc.bag1().add(item1))
+                .andCombine(TwoBags::combineWith)
+                .andDeduct(TwoBags::deduct)
+                .andFinish(TwoBags::finish);
+    }
+
+    /**
+     * Returns an {@code AggregateOperation} that accumulates the items from
+     * exactly three inputs into {@link ThreeBags}: items from <em>inputN</em>
+     * are accumulated into <em>bagN</em>.
+     *
+     * @param <T0> item type on input0
+     * @param <T1> item type on input1
+     * @param <T2> item type on input2
+     *
+     * @see #toTwoBags()
+     * @see #toBagsByTag(Tag[])
+     */
+    @Nonnull
+    public static <T0, T1, T2>
+    AggregateOperation3<T0, T1, T2, ThreeBags<T0, T1, T2>, ThreeBags<T0, T1, T2>> toThreeBags() {
+        return AggregateOperation
+                .withCreate(ThreeBags::<T0, T1, T2>threeBags)
+                .<T0>andAccumulate0((acc, item0) -> acc.bag0().add(item0))
+                .<T1>andAccumulate1((acc, item1) -> acc.bag1().add(item1))
+                .<T2>andAccumulate2((acc, item2) -> acc.bag2().add(item2))
+                .andCombine(ThreeBags::combineWith)
+                .andDeduct(ThreeBags::deduct)
+                .andFinish(ThreeBags::finish);
+    }
+
+    /**
+     * Returns an {@code AggregateOperation} that accumulates the items from
+     * any number of inputs into {@link BagsByTag}: items from <em>inputN</em>
+     * are accumulated into under <em>tagN</em>.
+     *
+     * @see #toTwoBags()
+     * @see #toThreeBags()
+     */
+    @Nonnull
+    @SuppressWarnings("unchecked")
+    public static AggregateOperation<BagsByTag, BagsByTag> toBagsByTag(@Nonnull Tag<?> ... tags) {
+        checkPositive(tags.length, "At least one tag required");
+        VarArity<BagsByTag> builder = AggregateOperation
+                .withCreate(BagsByTag::new)
+                .andAccumulate(tags[0], (acc, item) -> ((Collection) acc.ensureBag(tags[0])).add(item));
+        for (int i = 1; i < tags.length; i++) {
+            Tag tag = tags[i];
+            builder = builder.andAccumulate(tag, (acc, item) -> acc.ensureBag(tag).add(item));
+        }
+        return builder
+                .andCombine(BagsByTag::combineWith)
+                .andFinish(BagsByTag::finish);
+    }
+
+    /**
      * Returns an {@code AggregateOperation1} that accumulates the items into a
      * {@code HashMap} where the key is the result of applying {@code toKeyFn}
      * and the value is a list of the items with that key.
@@ -716,8 +793,6 @@ public final class AggregateOperations {
         return AggregateOperation.withCreate(createAccMapFn).andAccumulate(accumulateFn)
                 .andCombine(combineFn).andFinish(finisher);
     }
-
-
 
     /**
      * A reducing operation maintains an accumulated value that starts out as

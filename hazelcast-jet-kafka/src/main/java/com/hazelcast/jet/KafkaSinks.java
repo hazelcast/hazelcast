@@ -17,6 +17,8 @@
 package com.hazelcast.jet;
 
 import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.pipeline.Sink;
+import com.hazelcast.jet.pipeline.Sinks;
 import org.apache.kafka.clients.producer.ProducerRecord;
 
 import javax.annotation.Nonnull;

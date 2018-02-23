@@ -188,6 +188,7 @@ public interface ProcessorMetaSupplier extends Serializable {
             DistributedFunction<Address, ProcessorSupplier> addressToSupplier,
             int preferredLocalParallelism
     ) {
+        Vertex.checkLocalParallelism(preferredLocalParallelism);
         return new ProcessorMetaSupplier() {
             @Override
             public int preferredLocalParallelism() {

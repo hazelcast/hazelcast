@@ -19,9 +19,68 @@ package com.hazelcast.jet.core.test;
 import com.hazelcast.jet.core.Inbox;
 
 import java.util.ArrayDeque;
+import java.util.Collection;
+import java.util.Deque;
 
 /**
  * {@link Inbox} implementation suitable to be used in tests.
  */
-public final class TestInbox extends ArrayDeque<Object> implements Inbox {
+public final class TestInbox implements Inbox {
+
+    private final ArrayDeque<Object> queue = new ArrayDeque<>();
+
+    @Override
+    public boolean isEmpty() {
+        return queue.isEmpty();
+    }
+
+    @Override
+    public Object peek() {
+        return queue.peek();
+    }
+
+    @Override
+    public Object poll() {
+        return queue.poll();
+    }
+
+    @Override
+    public void remove() {
+        queue.remove();
+    }
+
+    /**
+     * Retrieves the queue backing the inbox.
+     */
+    public Deque<Object> queue() {
+        return queue;
+    }
+
+    /**
+     * Convenience for {@code inbox.queue().add(o)}
+     */
+    public void add(Object o) {
+        queue.add(o);
+    }
+
+    /**
+     * Convenience for {@code inbox.queue().addAll(collection)}
+     */
+    public void addAll(Collection<?> collection) {
+        queue.addAll(collection);
+    }
+
+    /**
+     * Convenience for {@code inbox.queue().clear()}
+     */
+    public void clear() {
+        queue.clear();
+    }
+
+    /**
+     * Convenience for {@code inbox.queue().size()}
+     */
+    public int size() {
+       return queue.size();
+    }
 }

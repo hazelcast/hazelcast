@@ -30,7 +30,7 @@ public class WatermarkPolicies_limitingLagAndLullTest {
 
     private static final int MAX_LULL_MS = 3;
     private long currTime;
-    private WatermarkPolicy p = limitingLagAndLull(2, MAX_LULL_MS, () -> currTime).get();
+    private WatermarkPolicy p = limitingLagAndLull(2, MAX_LULL_MS, () -> currTime);
 
     @Test
     public void when_outOfOrderEvents_then_monotonicWm() {

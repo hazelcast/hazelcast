@@ -18,6 +18,8 @@ package com.hazelcast.jet;
 
 import com.hazelcast.jet.core.processor.HdfsProcessors;
 import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.pipeline.Sink;
+import com.hazelcast.jet.pipeline.Sinks;
 import org.apache.hadoop.mapred.JobConf;
 
 import javax.annotation.Nonnull;

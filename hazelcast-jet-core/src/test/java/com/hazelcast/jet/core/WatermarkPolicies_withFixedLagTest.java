@@ -20,14 +20,14 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.jet.core.WatermarkPolicies.withFixedLag;
+import static com.hazelcast.jet.core.WatermarkPolicies.limitingLag;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 public class WatermarkPolicies_withFixedLagTest {
 
     private static final long LAG = 10;
-    private WatermarkPolicy p = withFixedLag(LAG).get();
+    private WatermarkPolicy p = limitingLag(LAG).get();
 
     @Test
     public void when_outOfOrderEvents_then_monotonicWm() {

@@ -22,9 +22,12 @@ import com.hazelcast.jet.impl.util.ThrottleWrappedP;
 import com.hazelcast.jet.impl.util.WrappingProcessorMetaSupplier;
 
 import javax.annotation.Nonnull;
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 
 public final class TestUtil {
@@ -75,5 +78,12 @@ public final class TestUtil {
     @Nonnull
     public static ProcessorMetaSupplier throttle(@Nonnull ProcessorMetaSupplier wrapped, long itemsPerSecond) {
         return new WrappingProcessorMetaSupplier(wrapped, p -> new ThrottleWrappedP(p, itemsPerSecond));
+    }
+
+    /**
+     * Create {@code HashSet} from a list of items.
+     */
+    public static <T> Set<T> set(T ... foo) {
+        return new HashSet<>(asList(foo));
     }
 }

@@ -342,7 +342,7 @@
                 </executions>
                 <configuration>
                     <failOnError>true</failOnError>
-                    <excludeFilterFile>${main.basedir}/findbugs/findbugs-exclude.xml</excludeFilterFile>
+                    <excludeFilterFile>${main.basedir}/spotbugs/spotbugs-exclude.xml</excludeFilterFile>
                     <spotbugsXmlOutput>true</spotbugsXmlOutput>
                     <xmlOutput>true</xmlOutput>
                 </configuration>

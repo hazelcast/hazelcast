@@ -41,7 +41,7 @@ import java.util.stream.IntStream;
 import static com.hazelcast.jet.JournalInitialPosition.START_FROM_OLDEST;
 import static com.hazelcast.jet.core.WatermarkEmissionPolicy.suppressDuplicates;
 import static com.hazelcast.jet.core.WatermarkGenerationParams.wmGenParams;
-import static com.hazelcast.jet.core.WatermarkPolicies.withFixedLag;
+import static com.hazelcast.jet.core.WatermarkPolicies.limitingLag;
 import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.IDLE_MESSAGE;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
@@ -90,7 +90,7 @@ public class StreamEventJournalP_WmCoalescingTest extends JetTestSupport {
                    .disableProgressAssertion()
                    .disableRunUntilCompleted(1000)
                    .disableSnapshots()
-                   .expectOutput(asList(10, wm(10), 10));
+                   .expectOutput(asList(wm(10), 10, 10));
     }
 
     @Test
@@ -167,7 +167,7 @@ public class StreamEventJournalP_WmCoalescingTest extends JetTestSupport {
     public Supplier<Processor> createSupplier(List<Integer> assignedPartitions, long idleTimeout) {
         return () -> new StreamEventJournalP<>(map, assignedPartitions, e -> true,
                 EventJournalMapEvent::getNewValue, START_FROM_OLDEST, false,
-                wmGenParams(Integer::intValue, withFixedLag(0), suppressDuplicates(), idleTimeout));
+                wmGenParams(Integer::intValue, limitingLag(0), suppressDuplicates(), idleTimeout));
     }
 
     private Watermark wm(long timestamp) {

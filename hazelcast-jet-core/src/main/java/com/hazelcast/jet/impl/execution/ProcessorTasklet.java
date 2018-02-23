@@ -124,8 +124,10 @@ public class ProcessorTasklet implements Tasklet {
 
     @Override
     public void init() {
-        Object processor2 = context.getSerializationService().getManagedContext().initialize(processor);
-        assert processor2 == processor : "different object returned";
+        if (context.getSerializationService().getManagedContext() != null) {
+            Object processor2 = context.getSerializationService().getManagedContext().initialize(processor);
+            assert processor2 == processor : "different object returned";
+        }
         processor.init(outbox, context);
     }
 
@@ -284,7 +286,7 @@ public class ProcessorTasklet implements Tasklet {
                 instreamCursor.advance();
                 continue;
             }
-            result = currInstream.drainTo(inbox::add);
+            result = currInstream.drainTo(inbox.queue()::add);
             progTracker.madeProgress(result.isMadeProgress());
 
             if (result.isDone()) {
@@ -299,16 +301,16 @@ public class ProcessorTasklet implements Tasklet {
             }
 
             // check if the last drained item is special
-            Object lastItem = inbox.peekLast();
+            Object lastItem = inbox.queue().peekLast();
             if (lastItem instanceof Watermark) {
                 assert pendingWatermark == null;
-                long newWmValue = ((Watermark) inbox.removeLast()).timestamp();
+                long newWmValue = ((Watermark) inbox.queue().removeLast()).timestamp();
                 long wm = watermarkCoalescer.observeWm(now, currInstream.ordinal(), newWmValue);
                 if (wm != NO_NEW_WM) {
                     pendingWatermark = new Watermark(wm);
                 }
             } else if (lastItem instanceof SnapshotBarrier) {
-                SnapshotBarrier barrier = (SnapshotBarrier) inbox.removeLast();
+                SnapshotBarrier barrier = (SnapshotBarrier) inbox.queue().removeLast();
                 observeSnapshot(currInstream.ordinal(), barrier.snapshotId());
             } else if (lastItem != null && !(lastItem instanceof BroadcastItem)) {
                 watermarkCoalescer.observeEvent(currInstream.ordinal());

@@ -80,36 +80,36 @@ class DataModelSerializerHooks {
         }
     }
 
-    public static final class SessionHook implements SerializerHook<Session> {
+    public static final class WindowResultHook implements SerializerHook<WindowResult> {
 
         @Override
-        public Class<Session> getSerializationType() {
-            return Session.class;
+        public Class<WindowResult> getSerializationType() {
+            return WindowResult.class;
         }
 
         @Override
         public Serializer createSerializer() {
-            return new StreamSerializer<Session>() {
+            return new StreamSerializer<WindowResult>() {
                 @Override
-                public void write(ObjectDataOutput out, Session object) throws IOException {
+                public void write(ObjectDataOutput out, WindowResult object) throws IOException {
                     out.writeObject(object.getKey());
                     out.writeLong(object.getStart());
                     out.writeLong(object.getEnd());
-                    out.writeObject(object.getResult());
+                    out.writeObject(object.getValue());
                 }
 
                 @Override
-                public Session read(ObjectDataInput in) throws IOException {
+                public WindowResult read(ObjectDataInput in) throws IOException {
                     Object key = in.readObject();
                     long start = in.readLong();
                     long end = in.readLong();
                     Object result = in.readObject();
-                    return new Session<>(key, start, end, result);
+                    return new WindowResult<>(start, end, key, result);
                 }
 
                 @Override
                 public int getTypeId() {
-                    return SerializerHookConstants.SESSION;
+                    return SerializerHookConstants.WINDOW_RESULT;
                 }
 
                 @Override

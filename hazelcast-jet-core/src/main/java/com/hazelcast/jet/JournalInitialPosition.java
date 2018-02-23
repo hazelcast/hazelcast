@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet;
 
+import com.hazelcast.jet.pipeline.Sources;
+
 /**
  * When passed to an IMap/ICache Event Journal source, specifies which
  * event to start from. You can start from the oldest event still in the

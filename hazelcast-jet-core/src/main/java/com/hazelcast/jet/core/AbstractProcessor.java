@@ -300,6 +300,10 @@ public abstract class AbstractProcessor implements Processor {
         return logger;
     }
 
+    protected final Outbox getOutbox() {
+        return outbox;
+    }
+
     /**
      * Offers the item to the outbox bucket at the supplied ordinal.
      * <p>
@@ -439,7 +443,10 @@ public abstract class AbstractProcessor implements Processor {
      * Convenience for {@link #emitFromTraverser(int, Traverser, Consumer)}
      * which emits to all ordinals.
      */
-    protected final <E> boolean emitFromTraverser(@Nonnull Traverser<E> traverser, @Nullable Consumer<? super E> onEmit) {
+    protected final <E> boolean emitFromTraverser(
+            @Nonnull Traverser<E> traverser,
+            @Nullable Consumer<? super E> onEmit
+    ) {
         return emitFromTraverser(-1, traverser, onEmit);
     }
 
