@@ -227,7 +227,7 @@ public class HazelcastConnectorTest extends JetTestSupport {
         IMapJet<Integer, Entry<Integer, String>> sourceMap = jetInstance.getMap(streamSourceName);
         range(0, ENTRY_COUNT).forEach(i -> sourceMap.put(i, entry(i, i % 2 == 0 ? null : String.valueOf(i))));
 
-        assertTrueEventually(() -> checkContents_projectedToNull(streamSinkName), 3);
+        assertTrueEventually(() -> checkContents_projectedToNull(streamSinkName), 10);
         job.cancel();
     }
 
@@ -350,7 +350,7 @@ public class HazelcastConnectorTest extends JetTestSupport {
             e = sinkList.get(1);
             assertEquals(Integer.valueOf(1), e.getKey());
             assertEquals(Integer.valueOf(2), e.getValue());
-        }, 3);
+        }, 10);
 
         job.cancel();
     }
@@ -382,7 +382,7 @@ public class HazelcastConnectorTest extends JetTestSupport {
             e = sinkList.get(1);
             assertEquals(Integer.valueOf(1), e.getKey());
             assertEquals(Integer.valueOf(2), e.getValue());
-        }, 3);
+        }, 10);
 
         job.cancel();
     }
