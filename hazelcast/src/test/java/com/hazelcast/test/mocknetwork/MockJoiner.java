@@ -50,7 +50,7 @@ class MockJoiner extends AbstractJoiner {
 
         Address previousJoinAddress = null;
         long joinAddressTimeout = 0;
-        while (shouldRetry() && (Clock.currentTimeMillis() - joinStartTime < maxJoinMillis)) {
+        while (Clock.currentTimeMillis() - joinStartTime < maxJoinMillis) {
             synchronized (registry) {
                 Address joinAddress = getJoinAddress();
                 verifyInvariant(joinAddress != null, "joinAddress should not be null");
@@ -78,6 +78,9 @@ class MockJoiner extends AbstractJoiner {
                     joinAddressTimeout = 0;
                     clusterService.setMasterAddressToJoin(null);
                 }
+            }
+            if (!shouldRetry()) {
+                break;
             }
             try {
                 Thread.sleep(500);
