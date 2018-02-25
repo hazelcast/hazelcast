@@ -451,13 +451,13 @@ public abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K,
 
     private void resolveDelayedLoadingClasses() {
         if(serializedFactories != null) {
+            ClassLoader oldThrClassLoader = Thread.currentThread().getContextClassLoader();
             if (classLoader != null) {
                 Thread.currentThread().setContextClassLoader(classLoader);
             }
-            // TODO set tenant so the classes resolve
+            // TODO set tenant so the classes resolve, further overriding above's set TCCL if needed
             ObjectDataInputStream factoriesStrm = null;
             ObjectDataInputStream listenersStrm = null;
-            ClassLoader oldThrClassLoader = Thread.currentThread().getContextClassLoader();
             try {
                 factoriesStrm = new ObjectDataInputStream(new ByteArrayInputStream(serializedFactories), serializationService);
                 doReadFactories(factoriesStrm);
