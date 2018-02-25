@@ -141,9 +141,9 @@ public class CacheTypesConfigTest extends HazelcastTestSupport {
         HazelcastInstance hz2 = factory.newHazelcastInstance(hz2Config);
         assertClusterSize(2, hz1, hz2);
 
-        ICache<String, Person> cache = hz2.getCacheManager().getCache(cacheName);
         expect.expectCause(new RootCauseMatcher(ClassNotFoundException.class, "classloading.domain.PersonCacheLoaderFactory - "
                 + "Package excluded explicitly"));
+        ICache<String, Person> cache = hz2.getCacheManager().getCache(cacheName);
         @SuppressWarnings("unchecked")
         CacheConfig<String, Person> cacheConfig = cache.getConfiguration(CacheConfig.class);
     }
