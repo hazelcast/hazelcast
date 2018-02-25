@@ -90,7 +90,7 @@ public final class NioOutboundPipeline extends NioPipeline implements Runnable {
     public long getLoad() {
         switch (LOAD_TYPE) {
             case LOAD_BALANCING_HANDLE:
-                return handleCount.get();
+                return processCount.get();
             case LOAD_BALANCING_BYTE:
                 return bytesWritten.get() + priorityFramesWritten.get();
             case LOAD_BALANCING_FRAME:
@@ -250,8 +250,8 @@ public final class NioOutboundPipeline extends NioPipeline implements Runnable {
 
     @Override
     @SuppressWarnings("unchecked")
-    public void handle() throws Exception {
-        handleCount.inc();
+    public void process() throws Exception {
+        processCount.inc();
         lastWriteTime = currentTimeMillis();
 
         if (outboundHandler == null && !init()) {
@@ -280,7 +280,7 @@ public final class NioOutboundPipeline extends NioPipeline implements Runnable {
     private boolean init() throws IOException {
         InitResult<ChannelOutboundHandler> init = initializer.initOutbound(channel);
         if (init == null) {
-            // we can't initialize the outbound-handler yet since insufficient data is available.
+            // we can't initialize the outbound-pipeline yet since insufficient data is available.
             unschedule();
             return false;
         }
@@ -344,7 +344,7 @@ public final class NioOutboundPipeline extends NioPipeline implements Runnable {
     @Override
     public void run() {
         try {
-            handle();
+            process();
         } catch (Throwable t) {
             onFailure(t);
         }
@@ -423,12 +423,12 @@ public final class NioOutboundPipeline extends NioPipeline implements Runnable {
         ioThread.bytesTransceived += bytesWritten.get() - bytesReadLastPublish;
         ioThread.framesTransceived += normalFramesWritten.get() - normalFramesReadLastPublish;
         ioThread.priorityFramesTransceived += priorityFramesWritten.get() - priorityFramesReadLastPublish;
-        ioThread.handleCount += handleCount.get() - eventsLastPublish;
+        ioThread.handleCount += processCount.get() - eventsLastPublish;
 
         bytesReadLastPublish = bytesWritten.get();
         normalFramesReadLastPublish = normalFramesWritten.get();
         priorityFramesReadLastPublish = priorityFramesWritten.get();
-        eventsLastPublish = handleCount.get();
+        eventsLastPublish = processCount.get();
     }
 
     private class CloseTask implements Runnable {

@@ -17,7 +17,7 @@
 package com.hazelcast.internal.networking.nio.iobalancer;
 
 import com.hazelcast.instance.BuildInfoProvider;
-import com.hazelcast.internal.networking.nio.MigratableHandler;
+import com.hazelcast.internal.networking.nio.MigratablePipeline;
 import com.hazelcast.internal.networking.nio.NioThread;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.logging.LoggingServiceImpl;
@@ -40,8 +40,8 @@ public class IOBalancerTest {
     @Test
     public void whenChannelAdded_andDisabled_thenSkipTaskCreation() {
         IOBalancer ioBalancer = new IOBalancer(new NioThread[1], new NioThread[1], "foo", 1, loggingService);
-        MigratableHandler readHandler = mock(MigratableHandler.class);
-        MigratableHandler writeHandler = mock(MigratableHandler.class);
+        MigratablePipeline readHandler = mock(MigratablePipeline.class);
+        MigratablePipeline writeHandler = mock(MigratablePipeline.class);
 
         ioBalancer.channelAdded(readHandler, writeHandler);
 
@@ -53,8 +53,8 @@ public class IOBalancerTest {
     @Test
     public void whenChannelRemoved_andDisabled_thenSkipTaskCreation() {
         IOBalancer ioBalancer = new IOBalancer(new NioThread[1], new NioThread[1], "foo", 1, loggingService);
-        MigratableHandler readHandler = mock(MigratableHandler.class);
-        MigratableHandler writeHandler = mock(MigratableHandler.class);
+        MigratablePipeline readHandler = mock(MigratablePipeline.class);
+        MigratablePipeline writeHandler = mock(MigratablePipeline.class);
 
         ioBalancer.channelRemoved(readHandler, writeHandler);
 

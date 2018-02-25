@@ -355,8 +355,8 @@ public class NioThread extends Thread implements OperationHostileThread {
     }
 
     private NioThread getTargetIOThread(Runnable task) {
-        if (task instanceof MigratableHandler) {
-            return ((MigratableHandler) task).getOwner();
+        if (task instanceof MigratablePipeline) {
+            return ((MigratablePipeline) task).getOwner();
         } else {
             return this;
         }
@@ -384,7 +384,7 @@ public class NioThread extends Thread implements OperationHostileThread {
             // we don't need to check for sk.isReadable/sk.isWritable since the pipeline has only registered
             // for events it can handle.
             eventCount.inc();
-            pipeline.handle();
+            pipeline.process();
         } catch (Throwable t) {
             pipeline.onFailure(t);
         }

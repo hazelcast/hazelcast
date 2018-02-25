@@ -30,7 +30,7 @@ import java.nio.channels.SocketChannel;
 import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 
-public abstract class NioPipeline implements MigratableHandler, Closeable {
+public abstract class NioPipeline implements MigratablePipeline, Closeable {
 
     protected static final int LOAD_BALANCING_HANDLE = 0;
     protected static final int LOAD_BALANCING_BYTE = 1;
@@ -40,7 +40,7 @@ public abstract class NioPipeline implements MigratableHandler, Closeable {
     protected static final int LOAD_TYPE = Integer.getInteger("hazelcast.io.load", LOAD_BALANCING_BYTE);
 
     @Probe
-    protected final SwCounter handleCount = newSwCounter();
+    protected final SwCounter processCount = newSwCounter();
     @Probe
     protected final SwCounter completedMigrations = newSwCounter();
     protected final ILogger logger;
@@ -51,7 +51,7 @@ public abstract class NioPipeline implements MigratableHandler, Closeable {
     private final int initialOps;
     private final IOBalancer ioBalancer;
 
-    // shows the ID of the ioThread that is currently owning the handler
+    // shows the ID of the ioThread that is currently owning the pipeline
     @Probe
     private volatile int ioThreadId;
 
@@ -142,17 +142,17 @@ public abstract class NioPipeline implements MigratableHandler, Closeable {
      *
      * @throws Exception
      */
-    public abstract void handle() throws Exception;
+    public abstract void process() throws Exception;
 
     /**
-     * Is called when the {@link #handle()} throws an exception.
+     * Is called when the {@link #process()} throws an exception.
      *
-     * The idiom to use a handler is:
+     * The idiom to use a pipeline is:
      * <code>
      *     try{
-     *         handler.handle();
+     *         pipeline.handle();
      *     } catch(Throwable t) {
-     *         handler.onFailure(t);
+     *         pipeline.onFailure(t);
      *     }
      * </code>
      *
