@@ -233,6 +233,7 @@ public class NioEventLoopGroup implements EventLoopGroup {
         return new NioOutboundPipeline(
                 channel,
                 threads[index],
+                errorHandler,
                 loggingService.getLogger(NioOutboundPipeline.class),
                 ioBalancer,
                 channelInitializer);
@@ -248,6 +249,7 @@ public class NioEventLoopGroup implements EventLoopGroup {
         return new NioInboundPipeline(
                 channel,
                 threads[index],
+                errorHandler,
                 loggingService.getLogger(NioInboundPipeline.class),
                 ioBalancer,
                 channelInitializer);
