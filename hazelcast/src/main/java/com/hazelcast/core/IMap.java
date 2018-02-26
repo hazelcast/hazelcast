@@ -161,9 +161,9 @@ import java.util.concurrent.TimeUnit;
  * <p>
  * Eviction puts a limit on the maximum size of the map. If the size of the map grows larger than the maximum allowed
  * size, an eviction policy decides which item to evict from the map to reduce its size. The maximum allowed size may
- * be configured using the {@code max-size} setting and the eviction policy may be configured using the
- * {@code eviction-policy} setting as well. By default, maps have no restrictions on the size and may grow arbitrarily
- * large.
+ * be configured using the {@link com.hazelcast.config.MaxSizeConfig.MaxSizePolicy max-size} setting and the eviction
+ * policy may be configured using the {@link com.hazelcast.config.EvictionPolicy eviction-policy} setting as well.
+ * By default, maps have no restrictions on the size and may grow arbitrarily large.
  * <p>
  * Eviction may be enabled along with the expiration policies. In such case, the expiration policies continue to work
  * as usual cleaning out the expired entries regardless of the map size.
