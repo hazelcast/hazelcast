@@ -46,32 +46,33 @@ public abstract class NioPipeline implements MigratablePipeline, Closeable {
     protected final SwCounter completedMigrations = newSwCounter();
     protected final ILogger logger;
     protected final Channel channel;
-    protected NioThread ioThread;
+    protected NioThread owner;
     protected SelectionKey selectionKey;
     private final ChannelErrorHandler errorHandler;
     private final SocketChannel socketChannel;
     private final int initialOps;
     private final IOBalancer ioBalancer;
 
-    // shows the ID of the ioThread that is currently owning the pipeline
+    // shows the ID of the owner that is currently owning the handler
     @Probe
-    private volatile int ioThreadId;
+    private volatile int ownerId;
 
     // counts the number of migrations that have happened so far.
     @Probe
     private final SwCounter migrationCount = newSwCounter();
 
     NioPipeline(NioChannel channel,
-                NioThread ioThread,
+                NioThread owner,
                 ChannelErrorHandler errorHandler,
                 int initialOps,
                 ILogger logger,
                 IOBalancer ioBalancer) {
         this.channel = channel;
         this.socketChannel = channel.socketChannel();
-        this.ioThread = ioThread;
         this.errorHandler = errorHandler;
-        this.ioThreadId = ioThread.id;
+        this.ownerId = owner.id;
+        this.owner = owner;
+        this.ownerId = owner.id;
         this.logger = logger;
         this.initialOps = initialOps;
         this.ioBalancer = ioBalancer;
@@ -95,11 +96,11 @@ public abstract class NioPipeline implements MigratablePipeline, Closeable {
 
     @Override
     public NioThread getOwner() {
-        return ioThread;
+        return owner;
     }
 
     public void start() {
-        ioThread.addTaskAndWakeup(new Runnable() {
+        owner.addTaskAndWakeup(new Runnable() {
             @Override
             public void run() {
                 try {
@@ -113,7 +114,7 @@ public abstract class NioPipeline implements MigratablePipeline, Closeable {
 
     SelectionKey getSelectionKey() throws IOException {
         if (selectionKey == null) {
-            selectionKey = socketChannel.register(ioThread.getSelector(), initialOps, this);
+            selectionKey = socketChannel.register(owner.getSelector(), initialOps, this);
         }
         return selectionKey;
     }
@@ -176,8 +177,8 @@ public abstract class NioPipeline implements MigratablePipeline, Closeable {
 
     // This method run on the oldOwner NioThread
     void startMigration(final NioThread newOwner) throws IOException {
-        assert ioThread == Thread.currentThread() : "startMigration can only run on the owning NioThread";
-        assert ioThread != newOwner : "newOwner can't be the same as the existing owner";
+        assert owner == Thread.currentThread() : "startMigration can only run on the owning NioThread";
+        assert owner != newOwner : "newOwner can't be the same as the existing owner";
 
         if (!socketChannel.isOpen()) {
             // if the channel is closed, we are done.
@@ -187,8 +188,8 @@ public abstract class NioPipeline implements MigratablePipeline, Closeable {
         migrationCount.inc();
 
         unregisterOp(initialOps);
-        ioThread = newOwner;
-        ioThreadId = ioThread.id;
+        owner = newOwner;
+        ownerId = owner.id;
         selectionKey.cancel();
         selectionKey = null;
 
@@ -205,7 +206,7 @@ public abstract class NioPipeline implements MigratablePipeline, Closeable {
     }
 
     private void completeMigration(NioThread newOwner) throws IOException {
-        assert ioThread == newOwner;
+        assert owner == newOwner;
 
         completedMigrations.inc();
         ioBalancer.signalMigrationComplete();

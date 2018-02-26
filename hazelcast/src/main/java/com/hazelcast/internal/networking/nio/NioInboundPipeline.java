@@ -56,16 +56,16 @@ public final class NioInboundPipeline extends NioPipeline {
     private volatile long bytesReadLastPublish;
     private volatile long normalFramesReadLastPublish;
     private volatile long priorityFramesReadLastPublish;
-    private volatile long handleCountLastPublish;
+    private volatile long processCountLastPublish;
 
     public NioInboundPipeline(
             NioChannel channel,
-            NioThread ioThread,
+            NioThread owner,
             ChannelErrorHandler errorHandler,
             ILogger logger,
             IOBalancer balancer,
             ChannelInitializer initializer) {
-        super(channel, ioThread, errorHandler, OP_READ, logger, balancer);
+        super(channel, owner, errorHandler, OP_READ, logger, balancer);
         this.initializer = initializer;
     }
 
@@ -112,7 +112,7 @@ public final class NioInboundPipeline extends NioPipeline {
      */
     @Override
     public void requestMigration(NioThread newOwner) {
-        ioThread.addTaskAndWakeup(new StartMigrationTask(newOwner));
+        owner.addTaskAndWakeup(new StartMigrationTask(newOwner));
     }
 
     @Override
@@ -161,31 +161,31 @@ public final class NioInboundPipeline extends NioPipeline {
 
     @Override
     public void publish() {
-        if (Thread.currentThread() != ioThread) {
+        if (Thread.currentThread() != owner) {
             return;
         }
 
-        ioThread.bytesTransceived += bytesRead.get() - bytesReadLastPublish;
-        ioThread.framesTransceived += normalFramesRead.get() - normalFramesReadLastPublish;
-        ioThread.priorityFramesTransceived += priorityFramesRead.get() - priorityFramesReadLastPublish;
-        ioThread.handleCount += processCount.get() - handleCountLastPublish;
+        owner.bytesTransceived += bytesRead.get() - bytesReadLastPublish;
+        owner.framesTransceived += normalFramesRead.get() - normalFramesReadLastPublish;
+        owner.priorityFramesTransceived += priorityFramesRead.get() - priorityFramesReadLastPublish;
+        owner.processCount += processCount.get() - processCountLastPublish;
 
         bytesReadLastPublish = bytesRead.get();
         normalFramesReadLastPublish = normalFramesRead.get();
         priorityFramesReadLastPublish = priorityFramesRead.get();
-        handleCountLastPublish = processCount.get();
+        processCountLastPublish = processCount.get();
     }
 
     @Override
     public void close() {
-        ioThread.addTaskAndWakeup(new Runnable() {
+        owner.addTaskAndWakeup(new Runnable() {
             @Override
             public void run() {
-                if (ioThread != Thread.currentThread()) {
+                if (owner != Thread.currentThread()) {
                     // the NioInboundPipeline has migrated to a different IOThread after the close got called.
-                    // so we need to send the task to the right ioThread. Otherwise multiple ioThreads could be accessing
+                    // so we need to send the task to the right owner. Otherwise multiple ioThreads could be accessing
                     // the same channel.
-                    ioThread.addTaskAndWakeup(this);
+                    owner.addTaskAndWakeup(this);
                     return;
                 }
 
@@ -213,7 +213,7 @@ public final class NioInboundPipeline extends NioPipeline {
         @Override
         public void run() {
             // if there is no change, we are done
-            if (ioThread == newOwner) {
+            if (owner == newOwner) {
                 return;
             }
 
