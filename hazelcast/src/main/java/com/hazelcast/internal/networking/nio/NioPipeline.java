@@ -18,6 +18,7 @@ package com.hazelcast.internal.networking.nio;
 
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.networking.Channel;
+import com.hazelcast.internal.networking.ChannelErrorHandler;
 import com.hazelcast.internal.networking.nio.iobalancer.IOBalancer;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
@@ -47,6 +48,7 @@ public abstract class NioPipeline implements MigratableHandler, Closeable {
     protected final Channel channel;
     protected NioThread ioThread;
     protected SelectionKey selectionKey;
+    private final ChannelErrorHandler errorHandler;
     private final SocketChannel socketChannel;
     private final int initialOps;
     private final IOBalancer ioBalancer;
@@ -61,12 +63,14 @@ public abstract class NioPipeline implements MigratableHandler, Closeable {
 
     NioPipeline(NioChannel channel,
                 NioThread ioThread,
+                ChannelErrorHandler errorHandler,
                 int initialOps,
                 ILogger logger,
                 IOBalancer ioBalancer) {
         this.channel = channel;
         this.socketChannel = channel.socketChannel();
         this.ioThread = ioThread;
+        this.errorHandler = errorHandler;
         this.ioThreadId = ioThread.id;
         this.logger = logger;
         this.initialOps = initialOps;
@@ -167,7 +171,7 @@ public abstract class NioPipeline implements MigratableHandler, Closeable {
             selectionKey.cancel();
         }
 
-        ioThread.getErrorHandler().onError(channel, e);
+        errorHandler.onError(channel, e);
     }
 
     // This method run on the oldOwner NioThread

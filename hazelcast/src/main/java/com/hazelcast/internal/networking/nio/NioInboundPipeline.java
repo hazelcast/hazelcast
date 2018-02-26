@@ -17,6 +17,7 @@
 package com.hazelcast.internal.networking.nio;
 
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.networking.ChannelErrorHandler;
 import com.hazelcast.internal.networking.ChannelInboundHandler;
 import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.networking.InitResult;
@@ -60,10 +61,11 @@ public final class NioInboundPipeline extends NioPipeline {
     public NioInboundPipeline(
             NioChannel channel,
             NioThread ioThread,
+            ChannelErrorHandler errorHandler,
             ILogger logger,
             IOBalancer balancer,
             ChannelInitializer initializer) {
-        super(channel, ioThread, OP_READ, logger, balancer);
+        super(channel, ioThread, errorHandler, OP_READ, logger, balancer);
         this.initializer = initializer;
     }
 

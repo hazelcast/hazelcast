@@ -164,10 +164,6 @@ public class NioThread extends Thread implements OperationHostileThread {
         return selector;
     }
 
-    public ChannelErrorHandler getErrorHandler() {
-        return errorHandler;
-    }
-
     /**
      * Returns the total number of selection-key events that have been processed by this thread.
      *
