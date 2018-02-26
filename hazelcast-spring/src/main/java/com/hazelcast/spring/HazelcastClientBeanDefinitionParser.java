@@ -79,6 +79,9 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
         return springXmlBuilder.handleClient(element);
     }
 
+    /**
+     * Client bean definition builder
+     */
     public class SpringXmlBuilder extends SpringXmlBuilderHelper {
 
         private static final int INITIAL_CAPACITY = 10;
