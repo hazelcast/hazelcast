@@ -21,9 +21,7 @@ import com.hazelcast.jet.pipeline.JournalInitialPosition;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.Sources;
-import com.hazelcast.jet.stream.DistributedStream;
 
-import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 
 /**
@@ -51,13 +49,4 @@ import java.util.concurrent.ConcurrentMap;
  * @see Sinks#cache(String) (String)
  */
 public interface ICacheJet<K, V> extends ICache<K, V> {
-
-    /**
-     * Returns a {@link DistributedStream} with this cache as its source.
-     * <p>
-     * If the underlying cache is is being concurrently modified, there are no
-     * guarantees given with respect to missing or duplicate items in a
-     * stream operation.
-     */
-    DistributedStream<Map.Entry<K, V>> distributedStream();
 }

@@ -20,10 +20,8 @@ import com.hazelcast.cache.CacheStatistics;
 import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.impl.event.CachePartitionLostListener;
 import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.pipeline.Sources;
-import com.hazelcast.jet.stream.DistributedStream;
 import com.hazelcast.jet.ICacheJet;
+import com.hazelcast.jet.JetInstance;
 
 import javax.cache.CacheManager;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
@@ -50,9 +48,8 @@ public class ICacheDecorator<K, V> implements ICacheJet<K, V> {
         this.instance = instance;
     }
 
-    @Override
-    public DistributedStream<Map.Entry<K, V>> distributedStream() {
-        return DistributedStream.fromSource(instance, Sources.cache(getName()), false);
+    public JetInstance getInstance() {
+        return instance;
     }
 
     // ICache decorated methods

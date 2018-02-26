@@ -49,7 +49,7 @@ public class FindFirstTest extends AbstractStreamTest {
         ICacheJet<String, Integer> cache = getCache();
         fillCache(cache);
 
-        Optional<Entry<String, Integer>> first = cache.distributedStream().findFirst();
+        Optional<Entry<String, Integer>> first = DistributedStream.Cache.fromCache(cache).findFirst();
 
         assertTrue(first.isPresent());
         Entry<String, Integer> entry = first.get();
@@ -71,7 +71,7 @@ public class FindFirstTest extends AbstractStreamTest {
     public void sourceEmptyCache() {
         ICacheJet<String, Integer> cache = getCache();
 
-        Optional<Entry<String, Integer>> first = cache.distributedStream().findFirst();
+        Optional<Entry<String, Integer>> first = DistributedStream.Cache.fromCache(cache).findFirst();
 
         assertFalse(first.isPresent());
     }

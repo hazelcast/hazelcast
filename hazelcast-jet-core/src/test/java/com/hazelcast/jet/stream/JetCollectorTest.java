@@ -348,7 +348,7 @@ public class JetCollectorTest extends AbstractStreamTest {
             cache.put("key-" + i, words);
         }
 
-        IMap<String, Integer> collected = cache.distributedStream()
+        IMap<String, Integer> collected = DistributedStream.Cache.fromCache(cache)
                                                .flatMap(m -> Stream.of(m.getValue().split("\\s")))
                                                .collect(toIMap(randomName(), v -> v, v -> 1, (l, r) -> l + r));
 
@@ -367,7 +367,7 @@ public class JetCollectorTest extends AbstractStreamTest {
             cache.put("key-" + i, words);
         }
 
-        ICache<String, Integer> collected = cache.distributedStream()
+        ICache<String, Integer> collected = DistributedStream.Cache.fromCache(cache)
                                                  .flatMap(m -> Stream.of(m.getValue().split("\\s")))
                                                  .collect(toICache(randomName(),
                                                          v -> v, v -> 1, (l, r) -> l + r));
@@ -450,7 +450,9 @@ public class JetCollectorTest extends AbstractStreamTest {
         ICacheJet<String, Integer> cache = getCache();
         fillCache(cache);
 
-        IList<Entry<String, Integer>> collected = cache.distributedStream().collect(toIList(randomString()));
+        IList<Entry<String, Integer>> collected = DistributedStream.Cache
+                .fromCache(cache)
+                .collect(toIList(randomString()));
 
         Cache.Entry<String, Integer>[] expecteds = new Cache.Entry[cache.size()];
         int count = 0;

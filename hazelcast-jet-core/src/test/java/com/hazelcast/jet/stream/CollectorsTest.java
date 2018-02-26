@@ -360,7 +360,7 @@ public class CollectorsTest extends AbstractStreamTest {
     public void cache_empty_reducing() {
         ICacheJet<String, Integer> cache = getCache();
 
-        Optional<Integer> sum = cache.distributedStream()
+        Optional<Integer> sum = DistributedStream.Cache.fromCache(cache)
                                      .map(Entry::getValue)
                                      .collect(DistributedCollectors.reducing((a, b) -> a + b));
 

@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.stream;
 
+import com.hazelcast.jet.ICacheJet;
 import com.hazelcast.jet.IListJet;
 import com.hazelcast.jet.IMapJet;
 import com.hazelcast.jet.JetInstance;
@@ -36,6 +37,7 @@ import com.hazelcast.jet.impl.pipeline.transform.BatchSourceTransform;
 import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.jet.stream.DistributedCollector.Reducer;
+import com.hazelcast.jet.stream.impl.ICacheDecorator;
 import com.hazelcast.jet.stream.impl.IListDecorator;
 import com.hazelcast.jet.stream.impl.IMapDecorator;
 import com.hazelcast.jet.stream.impl.pipeline.AbstractSourcePipe;
@@ -418,4 +420,30 @@ public interface DistributedStream<T> extends Stream<T> {
      * @return the new stream
      */
     DistributedStream<T> configure(JobConfig jobConfig);
+
+    /**
+     * Wrapper class that avoids the runtime dependency of {@code
+     * DistributedStream} on {@code javax.cache}. With this approach the
+     * {@code javax.cache} classes will be required only when calling
+     * {@link #fromCache(ICacheJet)}.
+     */
+    final class Cache {
+
+        private Cache() {
+        }
+
+        /**
+         * Returns a {@link DistributedStream} with the supplied cache as its source.
+         * <p>
+         * If the cache is is being concurrently modified, there are no
+         * guarantees given with respect to missing or duplicate items in a
+         * stream operation.
+         */
+        @Nonnull
+        public static <K, V> DistributedStream<Entry<K, V>> fromCache(@Nonnull ICacheJet<K, V> cache) {
+            ICacheDecorator decorator = (ICacheDecorator) cache;
+            return fromSource(decorator.getInstance(), Sources.cache(cache.getName()), false);
+        }
+
+    }
 }

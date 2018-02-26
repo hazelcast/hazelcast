@@ -50,7 +50,7 @@ public class FindAnyTest extends AbstractStreamTest {
         ICacheJet<String, Integer> cache = getCache();
         fillCache(cache);
 
-        Optional<Entry<String, Integer>> first = cache.distributedStream().findAny();
+        Optional<Entry<String, Integer>> first = DistributedStream.Cache.fromCache(cache).findAny();
 
         assertTrue(first.isPresent());
         Entry<String, Integer> entry = first.get();
@@ -72,7 +72,7 @@ public class FindAnyTest extends AbstractStreamTest {
     public void sourceEmptyCache() {
         ICacheJet<String, Integer> cache = getCache();
 
-        Optional<Entry<String, Integer>> first = cache.distributedStream().findAny();
+        Optional<Entry<String, Integer>> first = DistributedStream.Cache.fromCache(cache).findAny();
 
         assertFalse(first.isPresent());
     }

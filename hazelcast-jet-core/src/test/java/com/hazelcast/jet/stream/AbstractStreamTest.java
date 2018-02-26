@@ -47,7 +47,7 @@ public abstract class AbstractStreamTest extends TestInClusterSupport {
     protected static DistributedStream<Map.Entry<String, Integer>> streamCache() {
         ICacheJet<String, Integer> cache = getCache();
         fillCache(cache);
-        return cache.distributedStream();
+        return DistributedStream.Cache.fromCache(cache);
     }
 
     protected DistributedStream<Integer> streamList() {
