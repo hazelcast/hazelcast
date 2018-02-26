@@ -182,7 +182,8 @@ public final class ScheduledFutureProxy<V>
             return;
         }
 
-        if (handler.isAssignedToMember() && handler.getAddress().equals(event.getMember().getAddress())) {
+        if (handler.isAssignedToMember()
+                && handler.getAddress().equals(event.getMember().getAddress())) {
             this.memberLost.set(true);
         }
     }
@@ -196,8 +197,9 @@ public final class ScheduledFutureProxy<V>
 
         int durability = instance.getConfig().getScheduledExecutorConfig(handler.getSchedulerName()).getDurability();
 
-        if (handler.isAssignedToPartition() && handler.getPartitionId() == event.getPartitionId()
-                && event.getLostBackupCount() == durability) {
+        if (handler.isAssignedToPartition()
+                && handler.getPartitionId() == event.getPartitionId()
+                && event.getLostBackupCount() >= durability) {
             this.partitionLost.set(true);
         }
     }
@@ -205,11 +207,13 @@ public final class ScheduledFutureProxy<V>
     private void checkAccessibleOwner() {
         if (handler.isAssignedToPartition()) {
             if (partitionLost.get()) {
-                throw new IllegalStateException("Partition holding this Scheduled task was lost along with all backups.");
+                throw new IllegalStateException("Partition " + handler.getPartitionId() + ", holding this scheduled task"
+                        + " was lost along with all backups.");
             }
         } else {
             if (memberLost.get()) {
-                throw new IllegalStateException("Member holding this Scheduled task was removed from the cluster.");
+                throw new IllegalStateException("Member with address: " + handler.getAddress() +  ",  holding this scheduled task"
+                        + " is not part of this cluster.");
             }
         }
     }
