@@ -52,6 +52,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static com.hazelcast.scheduledexecutor.TaskUtils.named;
+import static com.hazelcast.spi.partition.IPartition.MAX_BACKUP_COUNT;
+import static java.lang.String.format;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
@@ -596,22 +598,22 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         executorService.schedule(new PlainCallableTask(), delay, SECONDS);
     }
 
-    @Test
-    public void schedule_testPartitionLostEvent() {
+    public void schedule_testPartitionLostEvent(int replicaLostCount) {
         int delay = 1;
 
         HazelcastInstance[] instances = createClusterWithCount(1);
         IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
         final IScheduledFuture future = executorService.schedule(new PlainCallableTask(), delay, SECONDS);
 
-        // used to make sure both futures (on the same handler) get the event. Catching possible equal/hashcode issues in the Map
-        final IScheduledFuture futureCopeInstance = (IScheduledFuture) ((List) executorService.getAllScheduledFutures()
-                .values().toArray()[0]).get(0);
+        // Used to make sure both futures (on the same handler) get the event.
+        // Catching possible equal/hashcode issues in the Map
+        final IScheduledFuture futureCopyInstance = (IScheduledFuture) ((List) executorService.getAllScheduledFutures()
+                                                                                              .values().toArray()[0]).get(0);
 
         ScheduledTaskHandler handler = future.getHandler();
 
         int partitionOwner = handler.getPartitionId();
-        IPartitionLostEvent internalEvent = new IPartitionLostEvent(partitionOwner, 1, null);
+        IPartitionLostEvent internalEvent = new IPartitionLostEvent(partitionOwner, replicaLostCount, null);
         ((InternalPartitionServiceImpl) getNodeEngineImpl(instances[0]).getPartitionService()).onPartitionLost(internalEvent);
 
         assertTrueEventually(new AssertTask() {
@@ -623,15 +625,27 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
                     fail();
                 } catch (IllegalStateException ex) {
                     try {
-                        futureCopeInstance.get();
+                        futureCopyInstance.get();
                         fail();
                     } catch (IllegalStateException ex2) {
-                        assertEquals("Partition holding this Scheduled task was lost along with all backups.", ex.getMessage());
-                        assertEquals("Partition holding this Scheduled task was lost along with all backups.", ex2.getMessage());
+                        assertEquals(format("Partition %d, holding this scheduled task was lost along with all backups.",
+                                future.getHandler().getPartitionId()), ex.getMessage());
+                        assertEquals(format("Partition %d, holding this scheduled task was lost along with all backups.",
+                                future.getHandler().getPartitionId()), ex2.getMessage());
                     }
                 }
             }
         });
+    }
+
+    @Test
+    public void schedule_testPartitionLostEvent_withMaxBackupCount() {
+        schedule_testPartitionLostEvent(MAX_BACKUP_COUNT);
+    }
+
+    @Test
+    public void schedule_testPartitionLostEvent_withDurabilityCount() {
+        schedule_testPartitionLostEvent(1);
     }
 
     @Test
@@ -651,10 +665,14 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
             public void run()
                     throws Exception {
                 try {
-                    future.get();
+                    future.get(0, SECONDS);
                     fail();
                 } catch (IllegalStateException ex) {
-                    assertEquals("Member holding this Scheduled task was removed from the cluster.", ex.getMessage());
+                    System.err.println(ex.getMessage());
+                    assertEquals(format("Member with address: %s,  holding this scheduled task is not part of this cluster.",
+                            future.getHandler().getAddress()), ex.getMessage());
+                } catch (TimeoutException ex) {
+                    ignore(ex);
                 }
             }
         });
