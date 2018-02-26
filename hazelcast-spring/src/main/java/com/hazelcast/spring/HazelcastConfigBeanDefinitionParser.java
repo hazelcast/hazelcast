@@ -163,7 +163,7 @@ import static org.springframework.util.Assert.isTrue;
         "WeakerAccess"})
 public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDefinitionParser {
 
-    protected AbstractBeanDefinition parseInternal(Element element, ParserContext parserContext) {
+    public AbstractBeanDefinition parseInternal(Element element, ParserContext parserContext) {
         SpringXmlConfigBuilder springXmlConfigBuilder = new SpringXmlConfigBuilder(parserContext);
         springXmlConfigBuilder.handleConfig(element);
         return springXmlConfigBuilder.getBeanDefinition();

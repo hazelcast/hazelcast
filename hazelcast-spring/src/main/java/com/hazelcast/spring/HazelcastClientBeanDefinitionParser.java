@@ -51,6 +51,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.hazelcast.util.StringUtil.upperCaseInternal;
+import static org.springframework.beans.factory.support.BeanDefinitionBuilder.rootBeanDefinition;
 
 /**
  * BeanDefinitionParser for Hazelcast Client Configuration.
@@ -72,41 +73,38 @@ import static com.hazelcast.util.StringUtil.upperCaseInternal;
  */
 public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDefinitionParser {
 
-    private static final int INITIAL_CAPACITY = 10;
-
     @Override
     protected AbstractBeanDefinition parseInternal(Element element, ParserContext parserContext) {
         SpringXmlBuilder springXmlBuilder = new SpringXmlBuilder(parserContext);
-        springXmlBuilder.handleClient(element);
-        return springXmlBuilder.getBeanDefinition();
+        return springXmlBuilder.handleClient(element);
     }
 
-    private class SpringXmlBuilder extends SpringXmlBuilderHelper {
+    public class SpringXmlBuilder extends SpringXmlBuilderHelper {
+
+        private static final int INITIAL_CAPACITY = 10;
 
         private final ParserContext parserContext;
         private final BeanDefinitionBuilder builder;
-        private final ManagedMap<String, BeanDefinition> nearCacheConfigMap;
-        private ManagedMap<String, BeanDefinition> flakeIdGeneratorConfigMap;
+        private final ManagedMap<String, BeanDefinition> nearCacheConfigMap = new ManagedMap<String, BeanDefinition>();
+        private final ManagedMap<String, BeanDefinition> flakeIdGeneratorConfigMap = new ManagedMap<String, BeanDefinition>();
 
         SpringXmlBuilder(ParserContext parserContext) {
-            this.parserContext = parserContext;
-            this.builder = BeanDefinitionBuilder.rootBeanDefinition(HazelcastClient.class);
-            this.builder.setFactoryMethod("newHazelcastClient");
-            this.builder.setDestroyMethodName("shutdown");
-            this.nearCacheConfigMap = new ManagedMap<String, BeanDefinition>();
-            this.flakeIdGeneratorConfigMap = new ManagedMap<String, BeanDefinition>();
+            this(parserContext, rootBeanDefinition(HazelcastClient.class)
+                    .setFactoryMethod("newHazelcastClient")
+                    .setDestroyMethodName("shutdown"));
+        }
 
-            this.configBuilder = BeanDefinitionBuilder.rootBeanDefinition(ClientConfig.class);
+        public SpringXmlBuilder(ParserContext parserContext, BeanDefinitionBuilder builder) {
+            this.parserContext = parserContext;
+            this.builder = builder;
+
+            this.configBuilder = rootBeanDefinition(ClientConfig.class);
             configBuilder.addPropertyValue("nearCacheConfigMap", nearCacheConfigMap);
             configBuilder.addPropertyValue("flakeIdGeneratorConfigMap", flakeIdGeneratorConfigMap);
         }
 
-        AbstractBeanDefinition getBeanDefinition() {
-            return builder.getBeanDefinition();
-        }
-
         @SuppressWarnings("checkstyle:cyclomaticcomplexity")
-        void handleClient(Element element) {
+        public AbstractBeanDefinition handleClient(Element element) {
             handleCommonBeanAttributes(element, builder, parserContext);
             handleClientAttributes(element);
             for (Node node : childElements(element)) {
@@ -144,6 +142,7 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
                 }
             }
             builder.addConstructorArgValue(configBuilder.getBeanDefinition());
+                return builder.getBeanDefinition();
         }
 
         private void handleUserCodeDeployment(Node node) {
