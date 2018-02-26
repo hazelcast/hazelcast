@@ -28,9 +28,11 @@ import static com.hazelcast.jet.datamodel.Tag.tag;
 import static com.hazelcast.jet.function.DistributedFunction.identity;
 
 /**
- * Use {@link AggregateOperations#allOfBuilder()} to create.
+ * Offers a step-by-step fluent API to create a composite of multiple
+ * aggregate operations. To obtain it, call {@link
+ * AggregateOperations#allOfBuilder()}.
  *
- * @param <T> the type of the stream item
+ * @param <T> the type of the input items
  */
 public final class AllOfAggregationBuilder<T> {
 
@@ -40,8 +42,9 @@ public final class AllOfAggregationBuilder<T> {
     AllOfAggregationBuilder() { }
 
     /**
-     * Adds one aggregate operation to the composite. Use the returned {@link
-     * Tag} to query the final {@link ItemsByTag}.
+     * Adds the supplied aggregate operation to the composite. Use the returned
+     * {@link Tag} as a key in the {@link ItemsByTag} you get in the result of
+     * the composite aggregation.
      *
      * @param <R> the result type of this operation
      */
@@ -54,8 +57,9 @@ public final class AllOfAggregationBuilder<T> {
     }
 
     /**
-     * Builds the final {@link AggregateOperation1}. The return type will be
-     * {@link ItemsByTag}.
+     * Builds and returns the composite {@link AggregateOperation1}. Its result
+     * type is {@link ItemsByTag} containing all the tags you got from the
+     * {@link #add} method.
      */
     @Nonnull
     public AggregateOperation1<T, Object[], ItemsByTag> build() {
@@ -63,11 +67,14 @@ public final class AllOfAggregationBuilder<T> {
     }
 
     /**
-     * Builds the final {@link AggregateOperation1}.
+     * Builds and returns the composite {@link AggregateOperation1}. It will
+     * call the supplied {@code finishFn} to transform the {@link ItemsByTag}
+     * it creates to the result type it emits as the actual result.
      *
-     * @param finishFn function to convert {@link ItemsByTag} to target result type
+     * @param finishFn function to convert {@link ItemsByTag} to the target result type
      */
     @Nonnull
+    @SuppressWarnings({"unchecked", "ConstantConditions"})
     public <R> AggregateOperation1<T, Object[], R> build(@Nonnull DistributedFunction<ItemsByTag, R> finishFn) {
         return (AggregateOperation1<T, Object[], R>) AggregateOperation
                 .withCreate(() -> {

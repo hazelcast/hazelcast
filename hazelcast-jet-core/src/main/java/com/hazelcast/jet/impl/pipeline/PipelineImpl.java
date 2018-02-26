@@ -48,8 +48,8 @@ public class PipelineImpl implements Pipeline {
 
     @Nonnull @Override
     @SuppressWarnings("unchecked")
-    public <T> BatchStage<T> drawFrom(@Nonnull BatchSource<? extends T> batchSource) {
-        return new BatchStageImpl<>((BatchSourceTransform<? extends T>) batchSource, this);
+    public <T> BatchStage<T> drawFrom(@Nonnull BatchSource<? extends T> source) {
+        return new BatchStageImpl<>((BatchSourceTransform<? extends T>) source, this);
     }
 
     @Nonnull @Override
@@ -60,14 +60,17 @@ public class PipelineImpl implements Pipeline {
     }
 
     @Override
-    public <T> SinkStage drainTo(@Nonnull Sink<T> sink, GeneralStage<?>... stages) {
-        List<Transform> upstream = Arrays.stream(stages)
-                                        .map(s -> (AbstractStage) s)
-                                        .map(s -> s.transform)
-                                        .collect(toList());
+    public <T> SinkStage drainTo(@Nonnull Sink<T> sink, GeneralStage<?>... stagesToDrain) {
+        if (stagesToDrain == null || stagesToDrain.length == 0) {
+            throw new IllegalArgumentException("No stages supplied to Pipeline.drainTo()");
+        }
+        List<Transform> upstream = Arrays.stream(stagesToDrain)
+                                         .map(s -> (AbstractStage) s)
+                                         .map(s -> s.transform)
+                                         .collect(toList());
         int[] ordinalsToAdapt = IntStream
-                .range(0, stages.length)
-                .filter(i -> ((ComputeStageImplBase) stages[i]).fnAdapter == ADAPT_TO_JET_EVENT)
+                .range(0, stagesToDrain.length)
+                .filter(i -> ((ComputeStageImplBase) stagesToDrain[i]).fnAdapter == ADAPT_TO_JET_EVENT)
                 .toArray();
         SinkImpl sinkImpl = (SinkImpl) sink;
         SinkTransform sinkTransform = new SinkTransform(sinkImpl, upstream, ordinalsToAdapt);

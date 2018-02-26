@@ -71,22 +71,22 @@ public class WindowAggregateBuilder<T0> {
     }
 
     /**
-     * Creates and returns a pipeline stage that performs the windowed
-     * co-aggregation of pipeline stages registered with this builder object.
-     * The tags you register with the aggregate operation must match the tags
-     * you registered with this builder. For example,
+     * Creates and returns a pipeline stage that performs a windowed
+     * co-aggregation of the pipeline stages registered with this builder
+     * object. The tags you register with the aggregate operation must match
+     * the tags you registered with this builder. For example,
      * <pre>{@code
      * StageWithWindow<A> stage0 = streamStage0.window(...);
      * StreamStage<B> stage1 = p.drawFrom(Sources.mapJournal("b", ...));
      * StreamStage<C> stage2 = p.drawFrom(Sources.mapJournal("c", ...));
      * StreamStage<D> stage3 = p.drawFrom(Sources.mapJournal("d", ...));
      *
-     * AggregateBuilder<A> builder = stage0.aggregateBuilder();
+     * WindowAggregateBuilder<A> builder = stage0.aggregateBuilder();
      * Tag<A> tagA = builder.tag0();
      * Tag<B> tagB = builder.add(stage1);
      * Tag<C> tagC = builder.add(stage2);
      * Tag<D> tagD = builder.add(stage3);
-     * StreamStage<Result> = builder.build(AggregateOperation
+     * StreamStage<TimestampedItem<Result>> = builder.build(AggregateOperation
      *         .withCreate(MyAccumulator::new)
      *         .andAccumulate(tagA, MyAccumulator::put)
      *         .andAccumulate(tagB, MyAccumulator::put)
@@ -97,7 +97,7 @@ public class WindowAggregateBuilder<T0> {
      * }</pre>
      *
      * @param aggrOp        the aggregate operation to perform
-     * @param mapToOutputfn a function that creates the output item from the aggregation result
+     * @param mapToOutputFn a function that creates the output item from the aggregation result
      * @param <A>           the type of items in the pipeline stage this builder was obtained from
      * @param <R>           the type of the aggregation result
      * @param <OUT>         the type of the output item
@@ -105,15 +105,16 @@ public class WindowAggregateBuilder<T0> {
      */
     public <A, R, OUT> StreamStage<OUT> build(
             @Nonnull AggregateOperation<A, R> aggrOp,
-            @Nonnull WindowResultFunction<? super R, ? extends OUT> mapToOutputfn
+            @Nonnull WindowResultFunction<? super R, ? extends OUT> mapToOutputFn
     ) {
         CreateOutStageFn<OUT, StreamStage<OUT>> createOutStageFn = StreamStageImpl::new;
-        return aggBuilder.build(aggrOp, createOutStageFn, mapToOutputfn);
+        return aggBuilder.build(aggrOp, createOutStageFn, mapToOutputFn);
     }
 
     /**
      * Convenience for {@link #build(AggregateOperation, WindowResultFunction)
      * build(aggrOp, mapToOutputFn)} which emits {@code TimestampedItem}s as output.
+     * The timestamp corresponds to the window's end.
      *
      * @param aggrOp the aggregate operation to perform.
      * @param <A>    the type of items in the pipeline stage this builder was obtained from

@@ -24,12 +24,13 @@ import static com.hazelcast.jet.core.SlidingWindowPolicy.tumblingWinPolicy;
 import static com.hazelcast.jet.pipeline.WindowDefinition.WindowKind.TUMBLING;
 
 /**
- * Javadoc pending.
+ * Represents the definition of a {@link WindowKind#TUMBLING tumbling
+ * window}.
  */
 public class TumblingWindowDef extends SlidingWindowDef {
 
     TumblingWindowDef(long windowSize) {
-        super(windowSize, 1);
+        super(windowSize, windowSize);
     }
 
     @Nonnull @Override
@@ -54,7 +55,7 @@ public class TumblingWindowDef extends SlidingWindowDef {
 
     /**
      * A tumbling window advances in steps equal to its size, therefore this
-     * method always returns 1.
+     * method always returns the same value as {@link #windowSize()}.
      */
     public long slideBy() {
         return super.slideBy();

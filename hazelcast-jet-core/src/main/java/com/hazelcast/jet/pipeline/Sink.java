@@ -17,12 +17,16 @@
 package com.hazelcast.jet.pipeline;
 
 /**
- * The sink of the data in a pipeline.
- * <p>
- * See {@link Sinks} for possible choices.
+ * Represents a data sink in a Jet pipeline. It accepts the data the
+ * pipeline processed and exports it to an external system.
  *
- * @param <T> the type of items the sink will receive
+ * @see Sinks sink factory methods
+ *
+ * @param <T> the type of the data the sink will receive
  */
 public interface Sink<T> {
+    /**
+     * Returns a descriptive name for this sink.
+     */
     String name();
 }

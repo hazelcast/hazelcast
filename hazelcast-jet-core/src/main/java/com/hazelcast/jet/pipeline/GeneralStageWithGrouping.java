@@ -21,10 +21,19 @@ import com.hazelcast.jet.function.DistributedFunction;
 import javax.annotation.Nonnull;
 
 /**
- * Javadoc pending.
+ * Represents an intermediate step when constructing a group-and-aggregate
+ * pipeline stage. This is the base type for the batch and stream variants.
+ *
+ * @param <T> type of the stream item
+ * @param <K> type of the grouping key
  */
 public interface GeneralStageWithGrouping<T, K> {
 
+    /**
+     * Returns the function that extracts the grouping key from stream items.
+     * This function will be used in the aggregating stage you are about to
+     * construct using this object.
+     */
     @Nonnull
     DistributedFunction<? super T, ? extends K> keyFn();
 }

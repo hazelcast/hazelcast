@@ -23,7 +23,16 @@ import javax.annotation.Nonnull;
 
 /**
  * Specialization of {@link AggregateOperation} to the "arity-2" case with
- * two data stream being aggregated over.
+ * two data streams being aggregated over. This example constructs an operation
+ * that sums up {@code long} values from two streams:
+ *
+ * <pre>{@code
+ * AggregateOperation2<Long, Long, LongAccumulator, Long> aggrOp = AggregateOperation
+ *     .withCreate(LongAccumulator::new)
+ *     .<Long>andAccumulate0(LongAccumulator::add)
+ *     .<Long>andAccumulate1(LongAccumulator::add)
+ *     .andFinish(LongAccumulator::get);
+ * }</pre>
  *
  * @param <T0> the type of item in stream-0
  * @param <T1> the type of item in stream-1

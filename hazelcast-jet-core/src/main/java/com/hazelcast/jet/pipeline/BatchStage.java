@@ -34,12 +34,15 @@ import javax.annotation.Nullable;
  * Represents a stage in a distributed computation {@link Pipeline
  * pipeline} that will observe a finite amount of data (a batch). It
  * accepts input from its upstream stages (if any) and passes its output
- * to the downstream stages.
+ * to its downstream stages.
  *
  * @param <T> the type of items coming out of this stage
  */
 public interface BatchStage<T> extends GeneralStage<T> {
 
+    /**
+     * @inheritDoc
+     */
     @Nonnull
     <K> StageWithGrouping<T, K> groupingKey(@Nonnull DistributedFunction<? super T, ? extends K> keyFn);
 
@@ -93,22 +96,67 @@ public interface BatchStage<T> extends GeneralStage<T> {
     <R> BatchStage<R> customTransform(
             @Nonnull String stageName, @Nonnull DistributedSupplier<Processor> procSupplier);
 
+    /**
+     * Attaches to this stage a stage that performs the given aggregate operation
+     * over all the items it receives. The aggregating stage emits a single item.
+     *
+     * @param aggrOp the aggregate operation to perform
+     * @param <A> the type of the accumulator used by the aggregate operation
+     * @param <R> the type of the result
+     */
     @Nonnull
     <A, R> BatchStage<R> aggregate(
             @Nonnull AggregateOperation1<? super T, A, ? extends R> aggrOp
     );
 
+    /**
+     * Attaches to this stage a stage that performs the given aggregate
+     * operation over all the items it receives from both this stage and {@code
+     * stage1} you supply. The aggregate operation must specify a separate
+     * accumulator function for each of the two streams (refer to its {@link
+     * AggregateOperation2 Javadoc} for a simple example).
+     * <p>
+     * The aggregating stage emits a single item.
+     *
+     * @param aggrOp the aggregate operation to perform
+     * @param <T1> type of items in {@code stage1}
+     * @param <A> type of the accumulator used by the aggregate operation
+     * @param <R> type of the result
+     */
     @Nonnull
     <T1, A, R> BatchStage<R> aggregate2(
             @Nonnull BatchStage<T1> stage1,
             @Nonnull AggregateOperation2<? super T, ? super T1, A, ? extends R> aggrOp);
 
+    /**
+     * Attaches to this stage a stage that performs the given aggregate
+     * operation over all the items it receives from this stage as well as
+     * {@code stage1} and {@code stage2} you supply. The aggregate operation
+     * must specify a separate accumulator function for each of the three
+     * streams (refer to its {@link AggregateOperation3 Javadoc} for a simple
+     * example).
+     * <p>
+     * The aggregating stage emits a single item.
+     *
+     * @param aggrOp the aggregate operation to perform
+     * @param <T1> type of items in {@code stage1}
+     * @param <T2> type of items in {@code stage2}
+     * @param <A> type of the accumulator used by the aggregate operation
+     * @param <R> type of the result
+     */
     @Nonnull
     <T1, T2, A, R> BatchStage<R> aggregate3(
             @Nonnull BatchStage<T1> stage1,
             @Nonnull BatchStage<T2> stage2,
             @Nonnull AggregateOperation3<? super T, ? super T1, ? super T2, A, ? extends R> aggrOp);
 
+    /**
+     * Returns a fluent API builder object to construct an aggregating stage
+     * with any number of contributing stages. It is mainly intended to
+     * co-aggregate four or more stages. For up to three stages prefer the
+     * direct {@code stage.aggregateN(...)} calls because they offer more
+     * static type safety.
+     */
     @Nonnull
     default AggregateBuilder<T> aggregateBuilder() {
         return new AggregateBuilder<>(this);

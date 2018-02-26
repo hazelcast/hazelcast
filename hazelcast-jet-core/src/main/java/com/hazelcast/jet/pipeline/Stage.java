@@ -40,19 +40,23 @@ public interface Stage {
     Pipeline getPipeline();
 
     /**
-     * Sets the number of processors running DAG vertices backing this stage
-     * that will be created on each member. Most stages are backed by 1 vertex,
-     * some are backed by multiple vertices or no vertex at all.
+     * Sets the preferred local parallelism (number of workers per Jet
+     * cluster member) this stage will configure its DAG vertices with. Jet
+     * always uses the same number of workers on each member, so the total
+     * parallelism automatically increases if another member joins the cluster.
      * <p>
-     * The value specifies <em>local</em> parallelism, i.e. the number of
-     * parallel workers running on each member. Total (global) parallelism is
-     * determined as <em>localParallelism * numberOfMembers</em>. If a new
-     * member is added, the total parallelism is increased.
+     * Note that, while most stages are backed by 1 vertex, there are exceptions.
+     * If a stage uses two vertices, each of them will have the given local
+     * parallelism, so in total there will be twice as many processing units per
+     * member.
      * <p>
-     * If the value is {@value
-     * com.hazelcast.jet.core.Vertex#LOCAL_PARALLELISM_USE_DEFAULT}, Jet will
-     * determine the vertex's local parallelism during job initialization
-     * from the global default and processor meta-supplier's preferred value.
+     * The default value is {@value
+     * com.hazelcast.jet.core.Vertex#LOCAL_PARALLELISM_USE_DEFAULT} and it signals
+     * to Jet to figure out a default value. Jet will determine the vertex's local
+     * parallelism during job initialization from the global default and the
+     * processor meta-supplier's preferred value.
+     *
+     * @return this stage
      */
     @Nonnull
     Stage setLocalParallelism(int localParallelism);
@@ -68,7 +72,7 @@ public interface Stage {
     Stage setName(@Nonnull String name);
 
     /**
-     * Returns the display name of this stage. It's used in diagnostic output.
+     * Returns the name of this stage. It's used in diagnostic output.
      */
     @Nonnull
     String name();

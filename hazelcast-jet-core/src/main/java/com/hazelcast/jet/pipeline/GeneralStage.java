@@ -68,12 +68,9 @@ public interface GeneralStage<T> extends Stage {
 
     /**
      * Attaches to this stage a flat-mapping stage, one which applies the
-     * supplied function to each input item independently and emits all items
-     * from the {@link Traverser} it returns as the output items.
-     * <p>
-     * The traverser returned from the {@code flatMapFn} must be finite. That
-     * is, this operation will not attempt to emit any items after the first
-     * {@code null} item.
+     * supplied function to each input item independently and emits all the
+     * items from the {@link Traverser} it returns. The traverser must be
+     * <em>null-terminated</em>.
      *
      * @param flatMapFn a stateless flatmapping function, whose result type is
      *                  Jet's {@link Traverser}
@@ -138,22 +135,30 @@ public interface GeneralStage<T> extends Stage {
 
     /**
      * Returns a fluent API builder object to construct a hash join operation
-     * with any number of contributing stages. This object is mainly intended
-     * to build a hash-join of the primary stage with three or more
-     * contributing stages. For one or two stages the direct
-     * {@code stage.hashJoin(...)} calls should be preferred because they offer
+     * with any number of contributing stages. It is mainly intended for
+     * hash-joins with three or more enriching stages. For one or two stages
+     * prefer the direct {@code stage.hashJoinN(...)} calls because they offer
      * more static type safety.
      */
     @Nonnull
     GeneralHashJoinBuilder<T> hashJoinBuilder();
 
+    /**
+     * Specifes the function that will extract the grouping key from the items
+     * in the associated pipeline stage, as first step in the construction of a
+     * group-and-aggregate stage.
+     *
+     * @param keyFn function that extracts the grouping key
+     * @param <K> type of the key
+     */
     @Nonnull
     <K> GeneralStageWithGrouping<T, K> groupingKey(@Nonnull DistributedFunction<? super T, ? extends K> keyFn);
 
     /**
-     * Adds a timestamp to each item in the stream using current system time.
+     * Adds a timestamp to each item in the stream using the current system
+     * time.
      *
-     * @throws IllegalArgumentException if stream already has timestamps assigned
+     * @throws IllegalArgumentException if timestamps were already added to the stream
      */
     @Nonnull
     default StreamStage<T> addTimestamps() {
@@ -161,19 +166,30 @@ public interface GeneralStage<T> extends Stage {
     }
 
     /**
-     * Adds a timestamp to each item in the stream using the supplied function.
-     * A {@code allowedLag} value of greater than 0 can be used to allow
-     * generation of watermarks that lag behind the latest observed event.
-     *
-     * For example, if a stream contains events with timestamps
-     * {@code [4,3,5,4,6,1]} in the given order and lag is configured as {@code 1},
-     * then the event with timestamp {@code 1} would be considered late and would
-     * not be included in windowing calculations.
+     * Adds a timestamp to each item in the stream using the supplied function
+     * and specifies the allowed amount of disorder between them. As the stream
+     * moves on the timestamps must increase, but you can tell Jet to accept
+     * some items that "come in late", i.e., have a lower timestamp than the
+     * items before them. The {@code allowedLag} parameter controls how much
+     * lower the timestamp can be than the highest one observed so far. If
+     * it is even lower, Jet will drop the item as being "too late".
+     * <p>
+     * For example, if the sequence of the timestamps is {@code [1,4,3,2]} and
+     * you configured the allowed lag as {@code 1}, Jet will let through the
+     * event with timestamp {@code 3}, but it will drop the last one (timestamp
+     * {@code 2}).
+     * <p>
+     * The amount of lag you configure strongly influences the latency of Jet's
+     * output. Jet cannot finalize the window until it knows it has observed all
+     * the events belonging to it, and the more lag it must tolerate, the longer
+     * will it have to wait for possible latecomers. On the other hand, if don't
+     * allow enough lag, you face the risk of failing to account for the data
+     * that came in after the results were already emitted.
      *
      * @param timestampFn a function that returns the timestamp for each item
-     * @param allowedLag the allowed lag from the top observed timestamp
+     * @param allowedLag the allowed lag behind the top observed timestamp
      *
-     * @throws IllegalArgumentException if stream already has timestamps assigned
+     * @throws IllegalArgumentException if timestamps were already added to the stream
      */
     @Nonnull
     StreamStage<T> addTimestamps(DistributedToLongFunction<? super T> timestampFn, long allowedLag);

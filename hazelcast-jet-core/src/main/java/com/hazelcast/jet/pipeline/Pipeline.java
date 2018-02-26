@@ -43,19 +43,36 @@ import javax.annotation.Nonnull;
 public interface Pipeline {
 
     /**
-     * Returns a new pipeline stage that has no upstream stages and produces
-     * some output for its downstream stages.
+     * Returns a pipeline stage that represents a bounded (batch) data source. It
+     * has no upstream stages and emits the data (typically coming from an outside
+     * source) to its downstream stages.
      *
-     * @param batchSource the definition of the source from which the stage draws data
+     * @param source the definition of the source from which the stage draws data
      * @param <T> the type of source data items
      */
     @Nonnull
-    <T> BatchStage<T> drawFrom(@Nonnull BatchSource<? extends T> batchSource);
+    <T> BatchStage<T> drawFrom(@Nonnull BatchSource<? extends T> source);
 
+    /**
+     * Returns a pipeline stage that represents an unbounded data source (i.e., an
+     * event stream). It has no upstream stages and emits the data (typically coming
+     * from an outside source) to its downstream stages.
+     *
+     * @param source the definition of the source from which the stage draws data
+     * @param <T> the type of source data items
+     */
     @Nonnull
     <T> StreamStage<T> drawFrom(@Nonnull StreamSource<? extends T> source);
 
-    <T> SinkStage drainTo(@Nonnull Sink<T> sink, GeneralStage<?>... stages);
+    /**
+     * Attaches an arbitrary number of stages to the supplied sink. Returns the
+     * {@code SinkStage} representing the sink. This method is useful mainly when
+     * you want to drain more than one stage to the same sink. In the typical case
+     * you'll use {@link GeneralStage#drainTo(Sink)} instead.
+     *
+     * @param <T> the type of data being drained to the sink
+     */
+    <T> SinkStage drainTo(@Nonnull Sink<T> sink, GeneralStage<?>... stagesToDrain);
 
     /**
      * Transforms the pipeline into a Jet DAG, which can be submitted for

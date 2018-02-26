@@ -27,7 +27,6 @@ import com.hazelcast.jet.pipeline.StageWithGroupingAndWindow;
 import com.hazelcast.jet.pipeline.StreamStage;
 import com.hazelcast.jet.pipeline.StreamStageWithGrouping;
 import com.hazelcast.jet.pipeline.WindowDefinition;
-import com.hazelcast.jet.pipeline.WindowGroupAggregateBuilder;
 
 import javax.annotation.Nonnull;
 
@@ -150,10 +149,5 @@ public class StageWithGroupingAndWindowImpl<T, K>
             @Nonnull AggregateOperation3<? super T, ? super T1, ? super T2, A, R> aggrOp
     ) {
         return aggregate3(stage1, stage2, aggrOp, TimestampedEntry::new);
-    }
-
-    @Nonnull @Override
-    public WindowGroupAggregateBuilder<T, K> aggregateBuilder() {
-        return new WindowGroupAggregateBuilder<>(this);
     }
 }

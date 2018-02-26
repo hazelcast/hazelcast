@@ -28,17 +28,17 @@ import javax.annotation.Nonnull;
 
 /**
  * Represents a stage in a distributed computation {@link Pipeline
- * pipeline} that will observe unbounded amount of data (i.e., an event
+ * pipeline} that will observe an unbounded amount of data (i.e., an event
  * stream). It accepts input from its upstream stages (if any) and passes
- * its output to the downstream stages.
+ * its output to its downstream stages.
  *
  * @param <T> the type of items coming out of this stage
  */
 public interface StreamStage<T> extends GeneralStage<T> {
 
     /**
-     * Adds the given window definition to this stage. This is an intermediate
-     * step in the preparation for an aggregate operation.
+     * Adds the given window definition to this stage, as the first step in the
+     * construction of a pipeline stage that performs windowed aggregation.
      */
     @Nonnull
     StageWithWindow<T> window(WindowDefinition wDef);

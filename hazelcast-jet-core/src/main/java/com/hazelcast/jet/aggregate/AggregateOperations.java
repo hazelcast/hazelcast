@@ -364,34 +364,37 @@ public final class AggregateOperations {
     }
 
     /**
-     * Returns a builder to create a composite of multiple aggregate
-     * operations. It allows you to calculate multiple aggregations over the
-     * same items at once. The number of operations is unbounded. Results are
-     * stored in single {@link com.hazelcast.jet.datamodel.ItemsByTag} object.
+     * Returns a fluent API builder object that helps you create a composite
+     * of multiple aggregate operations. The resulting aggregate operation will
+     * perform all of the constituent operations at the same time and you can
+     * retrieve each result from the {@link com.hazelcast.jet.datamodel.ItemsByTag}
+     * object you'll get in the output.
      * <p>
-     * If you have exactly 2 or 3 operations, you might prefer more type-safe
-     * versions ({@link #allOf(AggregateOperation1, AggregateOperation1) here}
-     * or {@link #allOf(AggregateOperation1, AggregateOperation1,
-     * AggregateOperation1) here}).
+     * The builder object is primarily intended to build a composite of four or more
+     * aggregate operations. For up to three operations, prefer the explicit, more
+     * type-safe variants {@link #allOf(AggregateOperation1, AggregateOperation1) allOf(op1, op2)}
+     * and {@link #allOf(AggregateOperation1, AggregateOperation1,
+     * AggregateOperation1) allOf(op1, op2, op3)}.
      * <p>
-     * Example: to calculate sum and count at the same time, you can use:
+     * Example that calculates the count and the sum of the items:
      * <pre>{@code
-     *     AllOfAggregationBuilder<Long> builder = allOfBuilder();
-     *     Tag<Long> tagSum = builder.add(summingLong(Long::longValue));
-     *     Tag<Long> tagCount = builder.add(counting());
-     *     AggregateOperation1<Long, ?, ItemsByTag> op = builder.build();
+     * AllOfAggregationBuilder<Long> builder = allOfBuilder();
+     * Tag<Long> tagSum = builder.add(summingLong(Long::longValue));
+     * Tag<Long> tagCount = builder.add(counting());
+     * AggregateOperation1<Long, ?, ItemsByTag> compositeAggrOp = builder.build();
      * }</pre>
      *
-     * When you receive the resulting {@link com.hazelcast.jet.datamodel.ItemsByTag}
-     * object, query individual values like this:
+     * When you receive the resulting {@link com.hazelcast.jet.datamodel.ItemsByTag
+     * ItemsByTag}, fetch the individual results using the tags as keys, for example:
      * <pre>{@code
-     *     ItemsByTag result = ...;
+     * batchStage.aggregate(compositeAggrOp).map((ItemsByTag result) -> {
      *     Long sum = result.get(tagSum);
      *     Long count = result.get(tagCount);
+     *     ...
+     * });
      * }</pre>
      *
      * @param <T> type of input items
-     * @return the builder
      */
     @Nonnull
     public static <T> AllOfAggregationBuilder<T> allOfBuilder() {

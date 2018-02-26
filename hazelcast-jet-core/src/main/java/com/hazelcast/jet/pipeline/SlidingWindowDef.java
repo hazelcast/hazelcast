@@ -25,7 +25,8 @@ import static com.hazelcast.jet.pipeline.WindowDefinition.WindowKind.SLIDING;
 import static com.hazelcast.util.Preconditions.checkPositive;
 
 /**
- * Javadoc pending.
+ * Represents the definition of a {@link WindowKind#SLIDING sliding
+ * window}.
  */
 public class SlidingWindowDef implements WindowDefinition {
     private final long windowSize;
@@ -58,12 +59,16 @@ public class SlidingWindowDef implements WindowDefinition {
     }
 
     /**
-     * Returns the length of the frame (equal to the sliding step).
+     * Returns the size of the sliding step.
      */
     public long slideBy() {
         return slideBy;
     }
 
+    /**
+     * Returns the policy object used by the Core API processors to drive the
+     * sliding window logic.
+     * */
     public SlidingWindowPolicy toSlidingWindowPolicy() {
         return slidingWinPolicy(windowSize, slideBy);
     }

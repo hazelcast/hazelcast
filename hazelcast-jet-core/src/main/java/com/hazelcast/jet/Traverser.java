@@ -26,12 +26,9 @@ import java.util.function.Predicate;
 /**
  * Traverses a potentially infinite sequence of non-{@code null} items. Each
  * invocation of {@link #next()} consumes and returns the next item in the
- * sequence if it is available, or returns {@code null} if not. An item may
- * still become available later on.
- * <p>
- * An important special case is traversing a finite sequence. In this case the
- * {@code null} return value means "the sequence is exhausted" and all future
- * {@code next()} calls will return {@code null}.
+ * sequence if available, or {@code null} if not. If the traverser is
+ * <em>null-terminated</em>, getting a {@code null} means it's exhausted and
+ * will keep returning {@code null} forever.
  *
  * @param <T> traversed item type
  */
@@ -39,20 +36,19 @@ import java.util.function.Predicate;
 public interface Traverser<T> {
 
     /**
-     * Returns the next item in the sequence, or {@code null} if there is no next
-     * item to return. If this traverser represents a finite sequence, it will
-     * keep returning {@code null} once exhausted. If it represents an infinite
-     * sequence, {@code null} only means "there is currently no next item", but
-     * trying again later may produce one.
+     * Returns the next item, removing it from this traverser. If no item is
+     * available, returns {@code null}. If this traverser is <em>null-terminated</em>,
+     * getting a {@code null} means it's exhausted and will keep returning
+     * {@code null} forever. Otherwise, trying again later may produce one.
      */
     T next();
 
     /**
-     * Returns a traverser that will emit the results of applying the
-     * mapping function to this traverser's items.
-     * <p>
-     * If the {@code mapFn} returns {@code null}, that item will be filtered
-     * out.
+     * Returns a traverser that will emit the results of applying {@code
+     * mapFn} to this traverser's items. If {@code mapFn} returns {@code null}
+     * for an item, the returned traverser drops it and immediately moves on to
+     * the next item from this traverser. This way {@code mapFn} can perform
+     * filtering in addition to transformation.
      */
     @Nonnull
     default <R> Traverser<R> map(@Nonnull Function<? super T, ? extends R> mapFn) {
@@ -84,13 +80,9 @@ public interface Traverser<T> {
     }
 
     /**
-     * Returns a traverser traverser that will apply the given mapping function
-     * to each item retrieved from this traverser and emit all the items from
-     * the resulting traverser(s).
-     * <p>
-     * The traverser returned from the {@code flatMapFn} must be finite. That
-     * is, this operation will not attempt to emit any items after the first
-     * {@code null} item.
+     * Returns a traverser that will apply the given mapping function to each
+     * item retrieved from this traverser and emit all the items from the
+     * resulting traversers, which must be <em>null-terminated</em>.
      */
     @Nonnull
     default <R> Traverser<R> flatMap(@Nonnull Function<? super T, ? extends Traverser<? extends R>> flatMapFn) {

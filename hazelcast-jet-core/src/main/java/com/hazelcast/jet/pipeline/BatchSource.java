@@ -22,6 +22,8 @@ import javax.annotation.Nonnull;
  * Represents a finite source of data for a Jet pipeline. Finite sources
  * are the only kind that can be used to aggregate data without windowing.
  *
+ * @see Sources source factory methods
+ *
  * @param <T> the stream item type
  */
 public interface BatchSource<T> {

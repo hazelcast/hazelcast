@@ -356,7 +356,7 @@ public final class AggregateOperationBuilder<A> {
          * @param tag the tag of the associated input stream
          * @param accumulateFn the {@code accumulate} primitive
          * @param <T> the expected type of input item
-         * @return a new builder object for variable-arity aggregate operations
+         * @return this
          */
         @Nonnull
         public <T> VarArity<A> andAccumulate(

@@ -40,23 +40,73 @@ import javax.annotation.Nonnull;
  * stage.aggregateN(...)} calls because they offer more static type safety.
  *
  * @param <T0> the type of the stream-0 item
+ * @param <K> type of the key
  */
 public class WindowGroupAggregateBuilder<T0, K> {
     private final GrAggBuilder<K> graggBuilder;
 
-    public WindowGroupAggregateBuilder(StageWithGroupingAndWindow<T0, K> s) {
+    WindowGroupAggregateBuilder(StageWithGroupingAndWindow<T0, K> s) {
         graggBuilder = new GrAggBuilder<>(s);
     }
 
+    /**
+     * Returns the tag corresponding to the pipeline stage this builder
+     * was obtained from. Use this tag to refer to this stage when building
+     * the {@code AggregateOperation} that you'll pass to {@link #build
+     * build(aggrOp)}.
+     */
     public Tag<T0> tag0() {
         return Tag.tag0();
     }
 
+    /**
+     * Adds another stage that will contribute its data to the windowed
+     * group-and-aggregate stage being constructed. Returns the tag you'll use
+     * to refer to this stage when building the {@code AggregateOperation} that
+     * you'll pass to {@link #build build()}.
+     */
     @SuppressWarnings("unchecked")
     public <E> Tag<E> add(StreamStageWithGrouping<E, K> stage) {
         return graggBuilder.add(stage);
     }
 
+    /**
+     * Creates and returns a pipeline stage that performs a windowed
+     * cogroup-and-aggregate of the pipeline stages registered with this builder object.
+     * The tags you register with the aggregate operation must match the tags
+     * you registered with this builder. For example,
+     * <pre>{@code
+     * StageWithGroupingAndWindow<A> stage0 =
+     *         streamStage0.window(...).groupingKey(...);
+     * StreamStageWithGrouping<B> stage1 =
+     *         p.drawFrom(Sources.mapJournal("b", ...)).groupingKey(...);
+     * StreamStageWithGrouping<C> stage2 =
+     *         p.drawFrom(Sources.mapJournal("c", ...)).groupingKey(...);
+     * StreamStageWithGrouping<D> stage3 =
+     *         p.drawFrom(Sources.mapJournal("d", ...)).groupingKey(...);
+     *
+     * WindowGroupAggregateBuilder<A> builder = stage0.aggregateBuilder();
+     * Tag<A> tagA = builder.tag0();
+     * Tag<B> tagB = builder.add(stage1);
+     * Tag<C> tagC = builder.add(stage2);
+     * Tag<D> tagD = builder.add(stage3);
+     * StreamStage<TimestampedEntry<Result>> = builder.build(AggregateOperation
+     *         .withCreate(MyAccumulator::new)
+     *         .andAccumulate(tagA, MyAccumulator::put)
+     *         .andAccumulate(tagB, MyAccumulator::put)
+     *         .andAccumulate(tagC, MyAccumulator::put)
+     *         .andAccumulate(tagD, MyAccumulator::put)
+     *         .andCombine(MyAccumulator::combine)
+     *         .andFinish(MyAccumulator::finish));
+     * }</pre>
+     *
+     * @param aggrOp        the aggregate operation to perform
+     * @param mapToOutputFn a function that creates the output item from the aggregation result
+     * @param <A>           the type of items in the pipeline stage this builder was obtained from
+     * @param <R>           the type of the aggregation result
+     * @param <OUT>         the type of the output item
+     * @return a new stage representing the co-aggregation
+     */
     public <A, R, OUT> StreamStage<OUT> build(
             @Nonnull AggregateOperation<A, R> aggrOp,
             @Nonnull KeyedWindowResultFunction<? super K, ? super R, OUT> mapToOutputFn
@@ -64,6 +114,11 @@ public class WindowGroupAggregateBuilder<T0, K> {
         return graggBuilder.buildStream(aggrOp, mapToOutputFn);
     }
 
+    /**
+     * Convenience for {@link #build(AggregateOperation, KeyedWindowResultFunction)}
+     * which results in a stage that emits {@link TimestampedEntry}s. The timestamp
+     * of the entry corresponds to the timestamp of the window's end.
+     */
     public <A, R> StreamStage<TimestampedEntry<K, R>> build(
             @Nonnull AggregateOperation<A, R> aggrOp
     ) {

@@ -40,7 +40,12 @@ import static java.util.stream.Stream.concat;
 /**
  * Offers a step-by-step fluent API to build a hash-join pipeline stage.
  * To obtain it, call {@link GeneralStage#hashJoinBuilder()} on the primary
- * stage, whose data will be enriched from all other stages.
+ * stage, the one whose data will be enriched from all other stages.
+ * <p>
+ * Collect all the tags returned from {@code add()} and use them to retrieve
+ * the enriching items from {@link ItemsByTag} you get in the result. Retrieve
+ * the tag of the first stage (from which you obtained the builder) by calling
+ * {@link #tag0()}.
  * <p>
  * This object is mainly intended to build a hash-join of the primary stage
  * with three or more contributing stages. For one or two stages, prefer the
@@ -80,12 +85,6 @@ public abstract class GeneralHashJoinBuilder<T0> {
         return tag;
     }
 
-    /**
-     * Builds a new pipeline stage that performs the hash-join operation. The
-     * stage is attached to all the contributing stages.
-     *
-     * @return the hash-join pipeline stage
-     */
     @SuppressWarnings("unchecked")
     <R> GeneralStage<R> build0(DistributedBiFunction<T0, ItemsByTag, R> mapToOutputFn) {
         List<Entry<Tag<?>, TransformAndClause>> orderedClauses = clauses.entrySet().stream()
@@ -113,7 +112,7 @@ public abstract class GeneralHashJoinBuilder<T0> {
     }
 
     @FunctionalInterface
-    public interface CreateOutStageFn<T0> {
+    interface CreateOutStageFn<T0> {
         <R> GeneralStage<R> get(
                 HashJoinTransform<T0, R> hashJoinTransform, FunctionAdapter fnAdapter, PipelineImpl stage);
     }

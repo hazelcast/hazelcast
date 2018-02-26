@@ -19,10 +19,18 @@ package com.hazelcast.jet.pipeline;
 import javax.annotation.Nonnull;
 
 /**
- * Javadoc pending.
+ * Represents an intermediate step while constructing a windowed
+ * group-and-aggregate pipeline stage. It captures the grouping key
+ * and offers a method to specify the window definition.
+ * @param <T> type of the stream items
+ * @param <K> type of the key
  */
 public interface StreamStageWithGrouping<T, K> extends GeneralStageWithGrouping<T, K> {
 
+    /**
+     * Adds the definition of the window to use in the group-and-aggregate
+     * pipeline stage being constructed.
+     */
     @Nonnull
     StageWithGroupingAndWindow<T, K> window(@Nonnull WindowDefinition wDef);
 }

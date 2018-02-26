@@ -21,7 +21,11 @@ import javax.annotation.Nonnull;
 import static com.hazelcast.jet.pipeline.WindowDefinition.WindowKind.SESSION;
 
 /**
- * Javadoc pending.
+ * Represents the definition of a {@link
+ * com.hazelcast.jet.pipeline.WindowDefinition.WindowKind#SESSION
+ * session} window.
+ *
+ * @param <T> type of the stream item
  */
 public class SessionWindowDef<T> implements WindowDefinition {
     private final long sessionTimeout;
@@ -41,6 +45,10 @@ public class SessionWindowDef<T> implements WindowDefinition {
         return this;
     }
 
+    /**
+     * Returns the session timeout, which is the largest difference in the
+     * timestamps of any two consecutive events in the session window.
+     */
     public long sessionTimeout() {
         return sessionTimeout;
     }

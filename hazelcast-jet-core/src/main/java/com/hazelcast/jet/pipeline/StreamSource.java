@@ -24,6 +24,8 @@ import javax.annotation.Nonnull;
  * StreamStage#window window} it into finite subsets over which Jet will
  * perform the aggregation.
  *
+ * @see Sources source factory methods
+ *
  * @param <T> the stream item type
  */
 public interface StreamSource<T> {

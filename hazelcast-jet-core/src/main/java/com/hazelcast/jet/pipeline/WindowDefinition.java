@@ -19,29 +19,83 @@ package com.hazelcast.jet.pipeline;
 import javax.annotation.Nonnull;
 
 /**
- * Javadoc pending.
+ * The definition of the window for a windowed aggregation operation. The
+ * enum {@link WindowKind} enumerates the kinds of window that Jet supports.
+ * To obtain a window definition, use the factory methods provided in this
+ * interface.
  */
 public interface WindowDefinition {
+    /**
+     * Enumerates the kinds of window that Jet supports.
+     */
     enum WindowKind {
-        TUMBLING, SLIDING, SESSION
+        /**
+         * A tumbling window "tumbles" along the time axis so that its consecutive
+         * positions touch each other without overlap. You can specify the size of
+         * the window.
+         */
+        TUMBLING,
+        /**
+         * A sliding window "slides" along the time axis in discrete steps. You can
+         * specify the size and the sliding step. The size of the window must be
+         * divisible by the sliding step.
+         */
+        SLIDING,
+        /**
+         * The session window captures bursts of events delimited by periods of
+         * quiescence. You can specify the duration of the quiet period that causes
+         * the window to close.
+         */
+        SESSION
     }
 
+    /**
+     * Returns what kind of window this definition describes.
+     */
     @Nonnull
     WindowKind kind();
 
+    /**
+     * Returns this window definition downcast to the type determined through
+     * type inference at the call site. It will be an unchecked downcast and
+     * may fail at runtime with a {@code ClassCastException}.
+     *
+     * @param <W> The target type of the downcast
+     * @return this object, downcast into the inferred type
+     */
     @Nonnull
     <W extends WindowDefinition> W downcast();
 
+    /**
+     * Returns a {@link WindowKind#SLIDING sliding} window definition with the
+     * given parameters.
+     *
+     * @param windowSize the size of the window (size of the range of the timestamps it covers)
+     * @param slideBy the size of the sliding step. Window size must be multiple of this number.
+     */
     @Nonnull
     static SlidingWindowDef sliding(long windowSize, long slideBy) {
         return new SlidingWindowDef(windowSize, slideBy);
     }
 
+    /**
+     * Returns a {@link WindowKind#TUMBLING tumbling} window definition with the
+     * given parameters.
+     *
+     * @param windowSize the size of the window (size of the range of the timestamps it covers)
+     */
     @Nonnull
     static TumblingWindowDef tumbling(long windowSize) {
         return new TumblingWindowDef(windowSize);
     }
 
+    /**
+     * Returns a {@link WindowKind#TUMBLING tumbling} window definition with the
+     * given parameters.
+     *
+     * @param sessionTimeout the exclusive upper bound on the difference between any two
+     *                       successive timestamps included in a window.
+     */
     @Nonnull
     static SessionWindowDef session(long sessionTimeout) {
         return new SessionWindowDef(sessionTimeout);
