@@ -17,7 +17,6 @@
 package com.hazelcast.jet.impl.pipeline.transform;
 
 import com.hazelcast.jet.aggregate.AggregateOperation;
-import com.hazelcast.jet.core.Edge;
 import com.hazelcast.jet.core.SlidingWindowPolicy;
 import com.hazelcast.jet.core.TimestampKind;
 import com.hazelcast.jet.core.Vertex;
@@ -138,6 +137,18 @@ public class WindowAggregateTransform<A, R, OUT> extends AbstractTransform {
         p.dag.edge(between(v1, pv2.v).distributed().allToOne());
     }
 
+    //               ---------       ---------
+    //              | source0 | ... | sourceN |
+    //               ---------       ---------
+    //                   |              |
+    //              distributed    distributed
+    //              all-to-one      all-to-one
+    //                   \              /
+    //                    ---\    /-----
+    //                        v  v
+    //             ---------------------------
+    //            | aggregateToSessionWindowP | local parallelism = 1
+    //             ---------------------------
     private void addSessionWindow(Planner p, SessionWindowDef wDef) {
         PlannerVertex pv = p.addVertex(this, p.uniqueVertexName(name(), ""), localParallelism(),
                 aggregateToSessionWindowP(
@@ -146,6 +157,6 @@ public class WindowAggregateTransform<A, R, OUT> extends AbstractTransform {
                         nCopies(aggrOp.arity(), constantKey()),
                         aggrOp,
                         mapToOutputFn.toKeyedWindowResultFn()));
-        p.addEdges(this, pv.v, Edge::allToOne);
+        p.addEdges(this, pv.v, edge -> edge.distributed().allToOne());
     }
 }
