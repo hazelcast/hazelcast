@@ -178,20 +178,12 @@ public abstract class AbstractJoiner implements Joiner {
     }
 
     private void ensureConnectionToAllMembers() {
-        boolean allConnected = false;
         if (clusterService.isJoined()) {
             logger.fine("Waiting for all connections");
             int connectAllWaitSeconds = node.getProperties().getSeconds(GroupProperty.CONNECT_ALL_WAIT_SECONDS);
             int checkCount = 0;
-            while (checkCount++ < connectAllWaitSeconds && !allConnected) {
-                try {
-                    //noinspection BusyWait
-                    TimeUnit.SECONDS.sleep(1);
-                } catch (InterruptedException ignored) {
-                    EmptyStatement.ignore(ignored);
-                }
-
-                allConnected = true;
+            while (checkCount++ < connectAllWaitSeconds) {
+                boolean allConnected = true;
                 Collection<Member> members = clusterService.getMembers();
                 for (Member member : members) {
                     if (!member.localMember() && node.connectionManager.getOrConnect(member.getAddress()) == null) {
@@ -200,6 +192,15 @@ public abstract class AbstractJoiner implements Joiner {
                             logger.fine("Not-connected to " + member.getAddress());
                         }
                     }
+                }
+                if (allConnected) {
+                    break;
+                }
+                try {
+                    //noinspection BusyWait
+                    TimeUnit.SECONDS.sleep(1);
+                } catch (InterruptedException ignored) {
+                    EmptyStatement.ignore(ignored);
                 }
             }
         }
