@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.networking.nio.iobalancer;
 
-import com.hazelcast.internal.networking.nio.MigratableHandler;
+import com.hazelcast.internal.networking.nio.MigratablePipeline;
 import com.hazelcast.internal.networking.nio.NioThread;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -55,28 +55,28 @@ public class LoadTrackerTest {
 
     @Test
     public void testUpdateImbalance() throws Exception {
-        MigratableHandler selector1Handler1 = mock(MigratableHandler.class);
+        MigratablePipeline selector1Handler1 = mock(MigratablePipeline.class);
         when(selector1Handler1.getLoad()).thenReturn(0L)
                 .thenReturn(100L);
         when(selector1Handler1.getOwner())
                 .thenReturn(selector1);
-        loadTracker.addHandler(selector1Handler1);
+        loadTracker.addPipeline(selector1Handler1);
 
-        MigratableHandler selector2Handler1 = mock(MigratableHandler.class);
+        MigratablePipeline selector2Handler1 = mock(MigratablePipeline.class);
         when(selector2Handler1.getLoad())
                 .thenReturn(0L)
                 .thenReturn(200L);
         when(selector2Handler1.getOwner())
                 .thenReturn(selector2);
-        loadTracker.addHandler(selector2Handler1);
+        loadTracker.addPipeline(selector2Handler1);
 
-        MigratableHandler selector2Handler3 = mock(MigratableHandler.class);
+        MigratablePipeline selector2Handler3 = mock(MigratablePipeline.class);
         when(selector2Handler3.getLoad())
                 .thenReturn(0L)
                 .thenReturn(100L);
         when(selector2Handler3.getOwner())
                 .thenReturn(selector2);
-        loadTracker.addHandler(selector2Handler3);
+        loadTracker.addPipeline(selector2Handler3);
 
         LoadImbalance loadImbalance = loadTracker.updateImbalance();
         assertEquals(0, loadImbalance.minimumEvents);
@@ -92,21 +92,21 @@ public class LoadTrackerTest {
     // there is no point in selecting a selector with a single handler as source.
     @Test
     public void testUpdateImbalance_notUsingSingleHandlerSelectorAsSource() throws Exception {
-        MigratableHandler selector1Handler1 = mock(MigratableHandler.class);
+        MigratablePipeline selector1Handler1 = mock(MigratablePipeline.class);
         // the first selector has a handler with a large number of events
         when(selector1Handler1.getLoad()).thenReturn(10000L);
         when(selector1Handler1.getOwner()).thenReturn(selector1);
-        loadTracker.addHandler(selector1Handler1);
+        loadTracker.addPipeline(selector1Handler1);
 
-        MigratableHandler selector2Handler = mock(MigratableHandler.class);
+        MigratablePipeline selector2Handler = mock(MigratablePipeline.class);
         when(selector2Handler.getLoad()).thenReturn(200L);
         when(selector2Handler.getOwner()).thenReturn(selector2);
-        loadTracker.addHandler(selector2Handler);
+        loadTracker.addPipeline(selector2Handler);
 
-        MigratableHandler selector2Handler2 = mock(MigratableHandler.class);
+        MigratablePipeline selector2Handler2 = mock(MigratablePipeline.class);
         when(selector2Handler2.getLoad()).thenReturn(200L);
         when(selector2Handler2.getOwner()).thenReturn(selector2);
-        loadTracker.addHandler(selector2Handler2);
+        loadTracker.addPipeline(selector2Handler2);
 
         LoadImbalance loadImbalance = loadTracker.updateImbalance();
 

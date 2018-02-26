@@ -36,7 +36,7 @@ import static java.nio.channels.SelectionKey.OP_READ;
 
 /**
  * When the {@link NioThread} receives a read event from the {@link java.nio.channels.Selector}, then the
- * {@link #handle()} is called to read out the data from the socket into a bytebuffer and hand it over to the
+ * {@link #process()} is called to read out the data from the socket into a bytebuffer and hand it over to the
  * {@link ChannelInboundHandler} to get processed.
  */
 public final class NioInboundPipeline extends NioPipeline {
@@ -73,7 +73,7 @@ public final class NioInboundPipeline extends NioPipeline {
     public long getLoad() {
         switch (LOAD_TYPE) {
             case LOAD_BALANCING_HANDLE:
-                return handleCount.get();
+                return processCount.get();
             case LOAD_BALANCING_BYTE:
                 return bytesRead.get();
             case LOAD_BALANCING_FRAME:
@@ -101,14 +101,14 @@ public final class NioInboundPipeline extends NioPipeline {
     }
 
     /**
-     * Migrates this handler to a new NioThread.
+     * Migrates this Pipeline to a new NioThread.
      * The migration logic is rather simple:
      * <p><ul>
      * <li>Submit a de-registration task to a current NioThread</li>
      * <li>The de-registration task submits a registration task to the new NioThread</li>
      * </ul></p>
      *
-     * @param newOwner target NioThread this handler migrates to
+     * @param newOwner target NioThread this pipeline migrates to
      */
     @Override
     public void requestMigration(NioThread newOwner) {
@@ -116,8 +116,8 @@ public final class NioInboundPipeline extends NioPipeline {
     }
 
     @Override
-    public void handle() throws Exception {
-        handleCount.inc();
+    public void process() throws Exception {
+        processCount.inc();
         // we are going to set the timestamp even if the channel is going to fail reading. In that case
         // the connection is going to be closed anyway.
         lastReadTime = currentTimeMillis();
@@ -168,12 +168,12 @@ public final class NioInboundPipeline extends NioPipeline {
         ioThread.bytesTransceived += bytesRead.get() - bytesReadLastPublish;
         ioThread.framesTransceived += normalFramesRead.get() - normalFramesReadLastPublish;
         ioThread.priorityFramesTransceived += priorityFramesRead.get() - priorityFramesReadLastPublish;
-        ioThread.handleCount += handleCount.get() - handleCountLastPublish;
+        ioThread.handleCount += processCount.get() - handleCountLastPublish;
 
         bytesReadLastPublish = bytesRead.get();
         normalFramesReadLastPublish = normalFramesRead.get();
         priorityFramesReadLastPublish = priorityFramesRead.get();
-        handleCountLastPublish = handleCount.get();
+        handleCountLastPublish = processCount.get();
     }
 
     @Override

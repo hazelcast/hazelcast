@@ -21,7 +21,7 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.HazelcastInstanceFactory;
-import com.hazelcast.internal.networking.nio.MigratableHandler;
+import com.hazelcast.internal.networking.nio.MigratablePipeline;
 import com.hazelcast.internal.networking.nio.NioChannel;
 import com.hazelcast.internal.networking.nio.NioEventLoopGroup;
 import com.hazelcast.internal.networking.nio.NioInboundPipeline;
@@ -83,12 +83,12 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
     private void assertBalanced(HazelcastInstance hz) {
         TcpIpConnectionManager connectionManager = (TcpIpConnectionManager) getConnectionManager(hz);
 
-        Map<NioThread, Set<MigratableHandler>> handlersPerSelector = getHandlersPerSelector(connectionManager);
+        Map<NioThread, Set<MigratablePipeline>> handlersPerSelector = getHandlersPerSelector(connectionManager);
 
         try {
-            for (Map.Entry<NioThread, Set<MigratableHandler>> entry : handlersPerSelector.entrySet()) {
+            for (Map.Entry<NioThread, Set<MigratablePipeline>> entry : handlersPerSelector.entrySet()) {
                 NioThread selector = entry.getKey();
-                Set<MigratableHandler> handlers = entry.getValue();
+                Set<MigratablePipeline> handlers = entry.getValue();
                 assertBalanced(selector, handlers);
             }
         } catch (AssertionError e) {
@@ -98,8 +98,8 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
         }
     }
 
-    private Map<NioThread, Set<MigratableHandler>> getHandlersPerSelector(TcpIpConnectionManager connectionManager) {
-        Map<NioThread, Set<MigratableHandler>> handlersPerSelector = new HashMap<NioThread, Set<MigratableHandler>>();
+    private Map<NioThread, Set<MigratablePipeline>> getHandlersPerSelector(TcpIpConnectionManager connectionManager) {
+        Map<NioThread, Set<MigratablePipeline>> handlersPerSelector = new HashMap<NioThread, Set<MigratablePipeline>>();
         for (TcpIpConnection connection : connectionManager.getActiveConnections()) {
             NioChannel channel = (NioChannel) connection.getChannel();
             add(handlersPerSelector, channel.getInboundPipeline());
@@ -108,10 +108,10 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
         return handlersPerSelector;
     }
 
-    private void add(Map<NioThread, Set<MigratableHandler>> handlersPerSelector, MigratableHandler handler) {
-        Set<MigratableHandler> handlers = handlersPerSelector.get(handler.getOwner());
+    private void add(Map<NioThread, Set<MigratablePipeline>> handlersPerSelector, MigratablePipeline handler) {
+        Set<MigratablePipeline> handlers = handlersPerSelector.get(handler.getOwner());
         if (handlers == null) {
-            handlers = new HashSet<MigratableHandler>();
+            handlers = new HashSet<MigratablePipeline>();
             handlersPerSelector.put(handler.getOwner(), handlers);
         }
         handlers.add(handler);
@@ -124,16 +124,16 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
      * <li>potentially 1 dead handler (duplicate connection), so event count should be low</li>
      * </ul>
      */
-    private void assertBalanced(NioThread selector, Set<MigratableHandler> handlers) {
+    private void assertBalanced(NioThread selector, Set<MigratablePipeline> handlers) {
         assertTrue("no handlers were found for selector:" + selector, handlers.size() > 0);
         assertTrue("too many handlers were found for selector:" + selector, handlers.size() <= 2);
 
-        Iterator<MigratableHandler> iterator = handlers.iterator();
-        MigratableHandler activeHandler = iterator.next();
+        Iterator<MigratablePipeline> iterator = handlers.iterator();
+        MigratablePipeline activeHandler = iterator.next();
         if (handlers.size() == 2) {
-            MigratableHandler deadHandler = iterator.next();
+            MigratablePipeline deadHandler = iterator.next();
             if (activeHandler.getLoad() < deadHandler.getLoad()) {
-                MigratableHandler tmp = deadHandler;
+                MigratablePipeline tmp = deadHandler;
                 deadHandler = activeHandler;
                 activeHandler = tmp;
             }

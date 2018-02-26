@@ -102,7 +102,7 @@ public abstract class NioThreadAbstractTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                verify(handler).handle();
+                verify(handler).process();
             }
         });
         assertEquals(1, thread.getEventCount());
@@ -134,7 +134,7 @@ public abstract class NioThreadAbstractTest extends HazelcastTestSupport {
         SelectionKey selectionKey = mock(SelectionKey.class);
         selectionKey.attach(handler);
         when(selectionKey.isValid()).thenReturn(true);
-        doThrow(new ExpectedRuntimeException()).when(handler).handle();
+        doThrow(new ExpectedRuntimeException()).when(handler).process();
 
         selector.scheduleSelectAction(selectionKey);
 
@@ -191,7 +191,7 @@ public abstract class NioThreadAbstractTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                verify(handler).handle();
+                verify(handler).process();
             }
         });
     }
