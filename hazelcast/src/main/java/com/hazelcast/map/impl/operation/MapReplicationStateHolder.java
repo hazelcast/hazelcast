@@ -17,7 +17,6 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapServiceContext;
@@ -38,6 +37,7 @@ import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.ServiceNamespace;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ThreadUtil;
+import com.hazelcast.version.Version;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -49,6 +49,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static com.hazelcast.instance.BuildInfoProvider.getBuildInfo;
+import static com.hazelcast.internal.cluster.Versions.V3_9;
 import static com.hazelcast.map.impl.record.Records.applyRecordInfo;
 
 /**
@@ -72,6 +74,10 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
     protected List<MapIndexInfo> mapIndexInfos;
 
     private MapReplicationOperation mapReplicationOperation;
+
+    // on the sending side, indicates the receiving member is capable of handling MapIndexInfos (ie member version 3.9.4+)
+    // on the receiving side, indicates that the received MapReplicationOperation does include map index infos
+    private transient boolean includeMapIndexInfos;
 
     /**
      * This constructor exists solely for instantiation by {@code MapDataSerializerHook}. The object is not ready to use
@@ -227,9 +233,8 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
             out.writeBoolean(loadedEntry.getValue());
         }
 
-        // RU_COMPAT_39, the check can be removed in 3.9+ (the data should be then send unconditionally)
-        // This information is carried over only for 3.9+ cluster versions
-        if (out.getVersion().isGreaterOrEqual(Versions.V3_9)) {
+        // RU_COMPAT_3_10
+        if (mustReplicateMapIndexInfos(out.getVersion())) {
             out.writeInt(mapIndexInfos.size());
             for (MapIndexInfo mapIndexInfo : mapIndexInfos) {
                 out.writeObject(mapIndexInfo);
@@ -260,7 +265,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
 
         // RU_COMPAT_39, the check can be removed in 3.9+ (the data should be then read unconditionally)
         // This information is carried over only for 3.9+ cluster versions
-        if (in.getVersion().isGreaterOrEqual(Versions.V3_9)) {
+        if (mustReplicateMapIndexInfos(in.getVersion())) {
             int mapIndexInfosSize = in.readInt();
             mapIndexInfos = new ArrayList<MapIndexInfo>(mapIndexInfosSize);
             for (int i = 0; i < mapIndexInfosSize; i++) {
@@ -281,5 +286,14 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
     @Override
     public int getId() {
         return MapDataSerializerHook.MAP_REPLICATION_STATE_HOLDER;
+    }
+
+    void setIncludeMapIndexInfos(boolean includeMapIndexInfos) {
+        this.includeMapIndexInfos = includeMapIndexInfos;
+    }
+
+    private boolean mustReplicateMapIndexInfos(Version version) {
+        return !getBuildInfo().isEnterprise()
+                || (version.isGreaterOrEqual(V3_9) && includeMapIndexInfos);
     }
 }

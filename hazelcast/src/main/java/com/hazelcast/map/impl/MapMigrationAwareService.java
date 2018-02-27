@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataGenerator;
+import com.hazelcast.internal.partition.impl.InternalPartitionReplicationEvent;
 import com.hazelcast.map.impl.operation.MapReplicationOperation;
 import com.hazelcast.map.impl.querycache.QueryCacheContext;
 import com.hazelcast.map.impl.querycache.publisher.PublisherContext;
@@ -80,7 +81,8 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
         int partitionId = event.getPartitionId();
         PartitionContainer container = mapServiceContext.getPartitionContainer(partitionId);
 
-        Operation operation = new MapReplicationOperation(container, partitionId, event.getReplicaIndex());
+        Operation operation = new MapReplicationOperation(mapServiceContext.getNodeEngine(),
+                container, (InternalPartitionReplicationEvent) event);
         operation.setService(mapServiceContext.getService());
 
         return operation;
@@ -95,7 +97,8 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
         int partitionId = event.getPartitionId();
         PartitionContainer container = mapServiceContext.getPartitionContainer(partitionId);
 
-        Operation operation = new MapReplicationOperation(container, namespaces, partitionId, event.getReplicaIndex());
+        Operation operation = new MapReplicationOperation(mapServiceContext.getNodeEngine(),
+                container, namespaces, (InternalPartitionReplicationEvent) event);
         operation.setService(mapServiceContext.getService());
 
         return operation;

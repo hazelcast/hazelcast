@@ -21,11 +21,11 @@ import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.internal.partition.impl.InternalMigrationListener.MigrationParticipant;
+import com.hazelcast.internal.partition.impl.InternalPartitionReplicationEvent;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.PartitionMigrationEvent;
-import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.partition.MigrationEndpoint;
@@ -102,8 +102,9 @@ abstract class BaseMigrationSourceOperation extends BaseMigrationOperation {
         }
     }
 
-    final PartitionReplicationEvent getPartitionReplicationEvent() {
-        return new PartitionReplicationEvent(migrationInfo.getPartitionId(), migrationInfo.getDestinationNewReplicaIndex());
+    final InternalPartitionReplicationEvent getPartitionReplicationEvent() {
+        return new InternalPartitionReplicationEvent(migrationInfo.getPartitionId(),
+                migrationInfo.getDestinationNewReplicaIndex(), migrationInfo.getDestination());
     }
 
     final void setFailed() {
