@@ -208,12 +208,11 @@ public class NioEventLoopGroup implements EventLoopGroup {
 
         channels.add(nioChannel);
 
-        nioChannel.setInboundPipeline(inboundPipeline);
-        nioChannel.setOutboundPipeline(outboundPipeline);
+        nioChannel.init(inboundPipeline, outboundPipeline);
 
         ioBalancer.channelAdded(inboundPipeline, outboundPipeline);
 
-        String metricsId = channel.getLocalSocketAddress() + "->" + channel.getRemoteSocketAddress();
+        String metricsId = channel.localSocketAddress() + "->" + channel.remoteSocketAddress();
         metricsRegistry.scanAndRegister(outboundPipeline, "tcp.connection[" + metricsId + "].out");
         metricsRegistry.scanAndRegister(inboundPipeline, "tcp.connection[" + metricsId + "].in");
 
@@ -262,10 +261,10 @@ public class NioEventLoopGroup implements EventLoopGroup {
 
             channels.remove(channel);
 
-            ioBalancer.channelRemoved(nioChannel.getInboundPipeline(), nioChannel.getOutboundPipeline());
+            ioBalancer.channelRemoved(nioChannel.inboundPipeline, nioChannel.outboundPipeline);
 
-            metricsRegistry.deregister(nioChannel.getInboundPipeline());
-            metricsRegistry.deregister(nioChannel.getOutboundPipeline());
+            metricsRegistry.deregister(nioChannel.inboundPipeline);
+            metricsRegistry.deregister(nioChannel.outboundPipeline);
         }
     }
 
@@ -273,7 +272,7 @@ public class NioEventLoopGroup implements EventLoopGroup {
         @Override
         public void run() {
             for (NioChannel channel : channels) {
-                final NioInboundPipeline inboundPipeline = channel.getInboundPipeline();
+                final NioInboundPipeline inboundPipeline = channel.inboundPipeline;
                 NioThread inputThread = inboundPipeline.getOwner();
                 if (inputThread != null) {
                     inputThread.addTaskAndWakeup(new Runnable() {
@@ -284,7 +283,7 @@ public class NioEventLoopGroup implements EventLoopGroup {
                     });
                 }
 
-                final NioOutboundPipeline outboundPipeline = channel.getOutboundPipeline();
+                final NioOutboundPipeline outboundPipeline = channel.outboundPipeline;
                 NioThread outputThread = outboundPipeline.getOwner();
                 if (outputThread != null) {
                     outputThread.addTaskAndWakeup(new Runnable() {

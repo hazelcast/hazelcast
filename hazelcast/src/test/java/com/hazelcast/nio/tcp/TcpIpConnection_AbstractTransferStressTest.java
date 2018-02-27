@@ -138,7 +138,7 @@ public abstract class TcpIpConnection_AbstractTransferStressTest extends TcpIpCo
     private int totalFramesPending(TcpIpConnection connection) {
         Channel channel = connection.getChannel();
         if (channel instanceof NioChannel) {
-            return ((NioChannel) channel).getOutboundPipeline().totalFramesPending();
+            return ((NioChannel) channel).outboundPipeline().totalFramesPending();
         } else {
             throw new RuntimeException();
         }
@@ -147,7 +147,7 @@ public abstract class TcpIpConnection_AbstractTransferStressTest extends TcpIpCo
     private long framesRead(TcpIpConnection connection, boolean priority) {
         Channel channel = connection.getChannel();
         if (channel instanceof NioChannel) {
-            NioInboundPipeline reader = ((NioChannel) channel).getInboundPipeline();
+            NioInboundPipeline reader = ((NioChannel) channel).inboundPipeline();
             return priority ? reader.getPriorityFramesReadCounter().get() : reader.getNormalFramesReadCounter().get();
         } else {
             throw new RuntimeException();

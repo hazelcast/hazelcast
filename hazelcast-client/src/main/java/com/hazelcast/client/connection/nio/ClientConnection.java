@@ -160,7 +160,7 @@ public class ClientConnection implements Connection {
 
     @Override
     public InetSocketAddress getRemoteSocketAddress() {
-        return (InetSocketAddress) channel.getRemoteSocketAddress();
+        return (InetSocketAddress) channel.remoteSocketAddress();
     }
 
     @Override
@@ -177,7 +177,7 @@ public class ClientConnection implements Connection {
     }
 
     public InetSocketAddress getLocalSocketAddress() {
-        return (InetSocketAddress) channel.getLocalSocketAddress();
+        return (InetSocketAddress) channel.localSocketAddress();
     }
 
     @Override

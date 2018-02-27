@@ -78,13 +78,13 @@ public abstract class AbstractChannel implements Channel {
     }
 
     @Override
-    public SocketAddress getRemoteSocketAddress() {
+    public SocketAddress remoteSocketAddress() {
         Socket socket = socket();
         return socket == null ? null : socket.getRemoteSocketAddress();
     }
 
     @Override
-    public SocketAddress getLocalSocketAddress() {
+    public SocketAddress localSocketAddress() {
         Socket socket = socket();
         return socket == null ? null : socket.getLocalSocketAddress();
     }

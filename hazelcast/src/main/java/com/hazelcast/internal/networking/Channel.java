@@ -92,12 +92,12 @@ public interface Channel extends Closeable {
     /**
      * @return the remote address. Returned value could be null.
      */
-    SocketAddress getRemoteSocketAddress();
+    SocketAddress remoteSocketAddress();
 
     /**
      * @return the local address. Returned value could be null
      */
-    SocketAddress getLocalSocketAddress();
+    SocketAddress localSocketAddress();
 
     /**
      * Returns the last {@link com.hazelcast.util.Clock#currentTimeMillis()} a read of the socket was done.
