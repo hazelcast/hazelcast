@@ -76,7 +76,7 @@ public class AggBuilder<T0> {
             @Nonnull CreateOutStageFn<OUT, OUT_STAGE> createOutStageFn,
             @Nullable WindowResultFunction<? super R, ? extends OUT> mapToOutputFn
     ) {
-        AggregateOperation adaptedAggrOp = wDef != null ? aggrOp : adaptAggregateOperation(aggrOp);
+        AggregateOperation adaptedAggrOp = wDef != null ? adaptAggregateOperation(aggrOp) : aggrOp;
         List<Transform> upstreamTransforms = upstreamStages
                 .stream()
                 .map(s -> ((AbstractStage) s).transform)
