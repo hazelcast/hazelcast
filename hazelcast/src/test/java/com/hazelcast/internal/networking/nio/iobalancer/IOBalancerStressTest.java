@@ -102,8 +102,8 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
         Map<NioThread, Set<MigratablePipeline>> handlersPerSelector = new HashMap<NioThread, Set<MigratablePipeline>>();
         for (TcpIpConnection connection : connectionManager.getActiveConnections()) {
             NioChannel channel = (NioChannel) connection.getChannel();
-            add(handlersPerSelector, channel.getInboundPipeline());
-            add(handlersPerSelector, channel.getOutboundPipeline());
+            add(handlersPerSelector, channel.inboundPipeline());
+            add(handlersPerSelector, channel.outboundPipeline());
         }
         return handlersPerSelector;
     }
@@ -157,7 +157,7 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
             sb.append(in).append(": ").append(in.getEventCount()).append("\n");
 
             for (TcpIpConnection connection : connectionManager.getActiveConnections()) {
-                NioInboundPipeline socketReader = ((NioChannel) connection.getChannel()).getInboundPipeline();
+                NioInboundPipeline socketReader = ((NioChannel) connection.getChannel()).inboundPipeline();
                 if (socketReader.getOwner() == in) {
                     sb.append("\t").append(socketReader).append(" eventCount:").append(socketReader.getLoad()).append("\n");
                 }
@@ -168,7 +168,7 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
             sb.append(in).append(": ").append(in.getEventCount()).append("\n");
 
             for (TcpIpConnection connection : connectionManager.getActiveConnections()) {
-                NioOutboundPipeline socketWriter = ((NioChannel) connection.getChannel()).getOutboundPipeline();
+                NioOutboundPipeline socketWriter = ((NioChannel) connection.getChannel()).outboundPipeline();
                 if (socketWriter.getOwner() == in) {
                     sb.append("\t").append(socketWriter).append(" eventCount:").append(socketWriter.getLoad()).append("\n");
                 }

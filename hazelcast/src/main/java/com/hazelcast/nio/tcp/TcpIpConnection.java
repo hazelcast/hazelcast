@@ -114,7 +114,7 @@ public final class TcpIpConnection implements Connection {
 
     @Override
     public InetSocketAddress getRemoteSocketAddress() {
-        return (InetSocketAddress) channel.getRemoteSocketAddress();
+        return (InetSocketAddress) channel.remoteSocketAddress();
     }
 
     @Override
@@ -251,7 +251,7 @@ public final class TcpIpConnection implements Connection {
     @Override
     public String toString() {
         return "Connection[id=" + connectionId
-                + ", " + channel.getLocalSocketAddress() + "->" + channel.getRemoteSocketAddress()
+                + ", " + channel.localSocketAddress() + "->" + channel.remoteSocketAddress()
                 + ", endpoint=" + endPoint
                 + ", alive=" + alive
                 + ", type=" + type

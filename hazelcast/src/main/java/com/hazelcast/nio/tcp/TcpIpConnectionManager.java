@@ -388,7 +388,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
             activeConnections.add(connection);
 
             logger.info("Established socket connection between "
-                    + channel.getLocalSocketAddress() + " and " + channel.getRemoteSocketAddress());
+                    + channel.localSocketAddress() + " and " + channel.remoteSocketAddress());
             openedCount.inc();
 
             eventLoopGroup.register(channel);

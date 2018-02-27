@@ -61,7 +61,7 @@ public class PacketDecoderTest extends TcpIpConnection_AbstractTest {
         dispatcher = new MockPacketDispatcher();
         readHandler = new PacketDecoder(connection, dispatcher);
 
-        channelReader = ((NioChannel) connection.getChannel()).getInboundPipeline();
+        channelReader = ((NioChannel) connection.getChannel()).inboundPipeline();
         oldNormalPacketsRead = channelReader.getNormalFramesReadCounter().get();
         oldPriorityPacketsRead = channelReader.getPriorityFramesReadCounter().get();
     }
