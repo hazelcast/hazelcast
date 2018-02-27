@@ -193,10 +193,8 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMultiTarg
     private AuthenticationStatus authenticate(UsernamePasswordCredentials credentials) {
         GroupConfig groupConfig = nodeEngine.getConfig().getGroupConfig();
         String nodeGroupName = groupConfig.getName();
-        String nodeGroupPassword = groupConfig.getPassword();
         boolean usernameMatch = nodeGroupName.equals(credentials.getUsername());
-        boolean passwordMatch = nodeGroupPassword.equals(credentials.getPassword());
-        return usernameMatch && passwordMatch ? AuthenticationStatus.AUTHENTICATED : AuthenticationStatus.CREDENTIALS_FAILED;
+        return usernameMatch ? AuthenticationStatus.AUTHENTICATED : AuthenticationStatus.CREDENTIALS_FAILED;
     }
 
     private ClientMessage prepareUnauthenticatedClientMessage() {
