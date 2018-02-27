@@ -21,6 +21,8 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.SplitBrainMergePolicy;
+import com.hazelcast.spi.merge.MergingEntryHolder;
+import com.hazelcast.spi.serialization.SerializationService;
 
 import java.io.IOException;
 
@@ -51,7 +53,9 @@ public class MergeOperation
 
     @Override
     public void run() throws Exception {
-        backupValue = getCardinalityEstimatorContainer().merge(createMergeHolder(name, value), mergePolicy);
+        SerializationService serializationService = getNodeEngine().getSerializationService();
+        MergingEntryHolder<String, HyperLogLog> mergingEntry = createMergeHolder(serializationService, name, value);
+        backupValue = getCardinalityEstimatorContainer().merge(mergingEntry, mergePolicy, serializationService);
     }
 
     @Override

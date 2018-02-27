@@ -180,7 +180,7 @@ class ReplicatedMapSplitBrainHandlerService implements SplitBrainHandlerService 
                     entriesPerPartition[partitionId] = entries;
                 }
 
-                MergingEntryHolder<Object, Object> mergingEntry = createMergeHolder(record);
+                MergingEntryHolder<Object, Object> mergingEntry = createMergeHolder(serializationService, record);
                 entries.add(mergingEntry);
 
                 long currentSize = ++counterPerMember[partitionId].value;

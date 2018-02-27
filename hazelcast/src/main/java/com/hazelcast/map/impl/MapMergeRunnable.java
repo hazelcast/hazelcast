@@ -28,7 +28,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.SplitBrainMergePolicy;
-import com.hazelcast.spi.impl.AbstractMergeRunnable;
+import com.hazelcast.spi.impl.merge.AbstractMergeRunnable;
 import com.hazelcast.spi.merge.MergingEntryHolder;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.function.BiConsumer;
@@ -67,7 +67,7 @@ class MapMergeRunnable extends AbstractMergeRunnable<RecordStore, MergingEntryHo
             Record record = iterator.next();
 
             Data dataValue = toData(record.getValue());
-            MergingEntryHolder<Data, Data> mergingEntry = createMergeHolder(record, dataValue);
+            MergingEntryHolder<Data, Data> mergingEntry = createMergeHolder(getSerializationService(), record, dataValue);
             consumer.accept(partitionId, mergingEntry);
         }
     }

@@ -14,19 +14,17 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi.merge;
+package com.hazelcast.spi.serialization;
 
 /**
- * Represents a read-only view a creation time for the merging process after a split-brain.
- *
- * @since 3.10
+ * Used to get a {@link SerializationService} reference injected.
  */
-public interface CreationTimeHolder {
+public interface SerializationServiceAware {
 
     /**
-     * Returns the creation time of the merge data.
+     * Gets the SerializationService reference injected.
      *
-     * @return the creation time of the merge data
+     * @param serializationService the SerializationService reference
      */
-    long getCreationTime();
+    void setSerializationService(SerializationService serializationService);
 }

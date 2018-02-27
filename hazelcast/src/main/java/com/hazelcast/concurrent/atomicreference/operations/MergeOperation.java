@@ -55,8 +55,8 @@ public class MergeOperation extends AtomicReferenceBackupAwareOperation {
         AtomicReferenceService service = getService();
         boolean isExistingContainer = service.containsReferenceContainer(name);
 
-        MergingValueHolder<Data> mergingValue = createMergeHolder(this.mergingValue);
-        backupValue = getReferenceContainer().merge(mergingValue, mergePolicy, isExistingContainer);
+        MergingValueHolder<Data> mergeHolder = createMergeHolder(getNodeEngine().getSerializationService(), mergingValue);
+        backupValue = getReferenceContainer().merge(mergeHolder, mergePolicy, isExistingContainer);
     }
 
     @Override

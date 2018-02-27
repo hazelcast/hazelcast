@@ -243,8 +243,8 @@ public class ScheduledExecutorContainer {
     public ScheduledTaskDescriptor merge(MergingValueHolder<ScheduledTaskDescriptor> mergingValue,
                                          SplitBrainMergePolicy mergePolicy) {
         SerializationService serializationService = nodeEngine.getSerializationService();
+        serializationService.getManagedContext().initialize(mergingValue);
         serializationService.getManagedContext().initialize(mergePolicy);
-        mergingValue.setSerializationService(serializationService);
 
         // try to find an existing item with the same value
         ScheduledTaskDescriptor match = null;
@@ -264,8 +264,7 @@ public class ScheduledExecutorContainer {
             }
         } else {
             // Found a match -> real merge
-            MergingValueHolder<ScheduledTaskDescriptor> existingValue = createMergeHolder(match);
-            existingValue.setSerializationService(serializationService);
+            MergingValueHolder<ScheduledTaskDescriptor> existingValue = createMergeHolder(serializationService, match);
             merged = mergePolicy.merge(mergingValue, existingValue);
             if (merged != null && !merged.equals(match)) {
                 // Cancel matched one, before replacing it

@@ -280,7 +280,7 @@ public abstract class CollectionService implements ManagedService, RemoteService
 
                     mergingValues = new ArrayList<MergingValueHolder<Data>>();
                     for (CollectionItem item : itemList) {
-                        MergingValueHolder<Data> mergingValue = createMergeHolder(item);
+                        MergingValueHolder<Data> mergingValue = createMergeHolder(serializationService, item);
                         mergingValues.add(mergingValue);
                         itemCount++;
 

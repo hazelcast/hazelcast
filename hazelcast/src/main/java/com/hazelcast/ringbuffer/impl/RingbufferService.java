@@ -442,7 +442,7 @@ public class RingbufferService implements ManagedService, RemoteService, Fragmen
                     mergingValues = new ArrayList<MergingValueHolder<Object>>(batchSize);
                     for (long sequence = ringbuffer.headSequence(); sequence <= ringbuffer.tailSequence(); sequence++) {
                         Object item = ringbuffer.read(sequence);
-                        MergingValueHolder<Object> mergingValue = createMergeHolder(sequence, item);
+                        MergingValueHolder<Object> mergingValue = createMergeHolder(serializationService, sequence, item);
                         mergingValues.add(mergingValue);
                         itemCount++;
 

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi.impl;
+package com.hazelcast.spi.impl.merge;
 
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.ExecutionCallback;
@@ -49,8 +49,8 @@ import static java.lang.String.format;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
- * Used by both {@link com.hazelcast.cache.ICache} and {@link com.hazelcast.core.IMap}
- * to provide a shared merge runnable for {@link SplitBrainHandlerService#prepareMergeRunnable()}
+ * Used by {@link com.hazelcast.cache.ICache} and {@link com.hazelcast.core.IMap}
+ * to provide a shared merge runnable for {@link SplitBrainHandlerService#prepareMergeRunnable()}.
  *
  * @param <Store> type of the store in a partition
  */
@@ -58,16 +58,17 @@ public abstract class AbstractMergeRunnable<Store, MergingItem> implements Runna
 
     private static final long TIMEOUT_FACTOR = 500;
 
+    private final Semaphore semaphore = new Semaphore(0);
+
     private final ILogger logger;
     private final String serviceName;
     private final ClusterService clusterService;
-    private final InternalSerializationService ss;
+    private final InternalSerializationService serializationService;
     private final OperationService operationService;
     private final IPartitionService partitionService;
     private final Collection<Store> backupStores;
     private final Map<String, Collection<Store>> collectedStores;
     private final Map<String, Collection<Store>> collectedStoresWithLegacyPolicies;
-    private final Semaphore semaphore = new Semaphore(0);
 
     protected AbstractMergeRunnable(String serviceName, Map<String, Collection<Store>> collectedStores,
                                     Map<String, Collection<Store>> collectedStoresWithLegacyPolicies,
@@ -78,7 +79,7 @@ public abstract class AbstractMergeRunnable<Store, MergingItem> implements Runna
         this.partitionService = nodeEngine.getPartitionService();
         this.clusterService = nodeEngine.getClusterService();
         this.operationService = nodeEngine.getOperationService();
-        this.ss = (InternalSerializationService) nodeEngine.getSerializationService();
+        this.serializationService = (InternalSerializationService) nodeEngine.getSerializationService();
         this.backupStores = backupStores;
         this.collectedStores = collectedStores;
         this.collectedStoresWithLegacyPolicies = collectedStoresWithLegacyPolicies;
@@ -139,12 +140,11 @@ public abstract class AbstractMergeRunnable<Store, MergingItem> implements Runna
 
         for (Map.Entry<String, Collection<Store>> entry : collectedStoresWithLegacyPolicies.entrySet()) {
             String dataStructureName = entry.getKey();
-            Collection<Store> recordStores = entry.getValue();
-
             if (!canLegacyMergeInMemoryFormat(dataStructureName)) {
                 continue;
             }
 
+            Collection<Store> recordStores = entry.getValue();
             for (Store recordStore : recordStores) {
                 consumeStoreLegacy(recordStore, consumer);
             }
@@ -155,7 +155,6 @@ public abstract class AbstractMergeRunnable<Store, MergingItem> implements Runna
 
     private boolean canLegacyMergeInMemoryFormat(String dataStructureName) {
         InMemoryFormat inMemoryFormat = getInMemoryFormat(dataStructureName);
-
         if (inMemoryFormat != NATIVE) {
             return true;
         }
@@ -163,7 +162,6 @@ public abstract class AbstractMergeRunnable<Store, MergingItem> implements Runna
         String msg = "Split brain recovery is not supported for '%s'."
                 + " Because its using legacy merge policy `%s` to merge `%s` data."
                 + " To fix this, use a type of `%s` with a cluster version `%s` or later";
-
         Object mergePolicy = getMergePolicy(dataStructureName);
         logger.warning(format(msg, dataStructureName, mergePolicy.getClass().getName(),
                 NATIVE, SplitBrainMergePolicy.class.getName(), V3_10));
@@ -198,8 +196,7 @@ public abstract class AbstractMergeRunnable<Store, MergingItem> implements Runna
 
         private int mergedCount;
 
-        MergingItemBiConsumer(String dataStructureName,
-                              SplitBrainMergePolicy mergePolicy, int batchSize) {
+        MergingItemBiConsumer(String dataStructureName, SplitBrainMergePolicy mergePolicy, int batchSize) {
             this.dataStructureName = dataStructureName;
             this.batchSize = batchSize;
             this.mergePolicy = mergePolicy;
@@ -207,6 +204,7 @@ public abstract class AbstractMergeRunnable<Store, MergingItem> implements Runna
             this.partitionCount = partitionService.getPartitionCount();
             this.addresses = new Address[partitionCount];
             this.counterPerMember = new MutableLong[partitionCount];
+            //noinspection unchecked
             this.mergingItemsPerPartition = (List<MergingItem>[]) new List[partitionCount];
 
             init();
@@ -251,10 +249,61 @@ public abstract class AbstractMergeRunnable<Store, MergingItem> implements Runna
                 sendBatch(dataStructureName, entry.getValue(), mergingItemsPerPartition, mergePolicy);
             }
         }
+
+        private void sendBatch(String dataStructureName, List<Integer> memberPartitions,
+                               List<MergingItem>[] entriesPerPartition,
+                               SplitBrainMergePolicy mergePolicy) {
+            int size = memberPartitions.size();
+            int[] partitions = new int[size];
+            int index = 0;
+            for (Integer partitionId : memberPartitions) {
+                if (entriesPerPartition[partitionId] != null) {
+                    partitions[index++] = partitionId;
+                }
+            }
+            if (index == 0) {
+                return;
+            }
+            // trim partition array to real size
+            if (index < size) {
+                partitions = Arrays.copyOf(partitions, index);
+                size = index;
+            }
+
+            //noinspection unchecked
+            List<MergingItem>[] entries = new List[size];
+            index = 0;
+            int totalSize = 0;
+            for (int partitionId : partitions) {
+                int batchSize = entriesPerPartition[partitionId].size();
+                entries[index++] = entriesPerPartition[partitionId];
+                totalSize += batchSize;
+                entriesPerPartition[partitionId] = null;
+            }
+            if (totalSize == 0) {
+                return;
+            }
+
+            sendMergingData(dataStructureName, mergePolicy, partitions, entries, totalSize);
+        }
+
+        private void sendMergingData(String dataStructureName, SplitBrainMergePolicy mergePolicy,
+                                     int[] partitions, List<MergingItem>[] entries, int totalSize) {
+            try {
+                OperationFactory factory
+                        = createMergeOperationFactory(dataStructureName, mergePolicy, partitions, entries);
+                operationService.invokeOnPartitions(serviceName, factory, partitions);
+            } catch (Throwable t) {
+                logger.warning("Error while running merge operation: " + t.getMessage());
+                throw rethrow(t);
+            } finally {
+                semaphore.release(totalSize);
+            }
+        }
     }
 
     /**
-     * Consumer to use with legacy merge operations
+     * Consumer to use with legacy merge operations.
      */
     private class LegacyOperationBiConsumer implements BiConsumer<Integer, Operation> {
 
@@ -284,58 +333,6 @@ public abstract class AbstractMergeRunnable<Store, MergingItem> implements Runna
 
             mergedCount++;
         }
-
-    }
-
-    private void sendBatch(String dataStructureName, List<Integer> memberPartitions,
-                           List<MergingItem>[] entriesPerPartition,
-                           SplitBrainMergePolicy mergePolicy) {
-        int size = memberPartitions.size();
-        int[] partitions = new int[size];
-        int index = 0;
-        for (Integer partitionId : memberPartitions) {
-            if (entriesPerPartition[partitionId] != null) {
-                partitions[index++] = partitionId;
-            }
-        }
-        if (index == 0) {
-            return;
-        }
-        // trim partition array to real size
-        if (index < size) {
-            partitions = Arrays.copyOf(partitions, index);
-            size = index;
-        }
-
-        //noinspection unchecked
-        List<MergingItem>[] entries = new List[size];
-        index = 0;
-        int totalSize = 0;
-        for (int partitionId : partitions) {
-            int batchSize = entriesPerPartition[partitionId].size();
-            entries[index++] = entriesPerPartition[partitionId];
-            totalSize += batchSize;
-            entriesPerPartition[partitionId] = null;
-        }
-        if (totalSize == 0) {
-            return;
-        }
-
-        sendMergingData(dataStructureName, mergePolicy, partitions, entries, totalSize);
-    }
-
-    private void sendMergingData(String dataStructureName, SplitBrainMergePolicy mergePolicy,
-                                 int[] partitions, List<MergingItem>[] entries, int totalSize) {
-        try {
-            OperationFactory factory
-                    = createMergeOperationFactory(dataStructureName, mergePolicy, partitions, entries);
-            operationService.invokeOnPartitions(serviceName, factory, partitions);
-        } catch (Throwable t) {
-            logger.warning("Error while running merge operation: " + t.getMessage());
-            throw rethrow(t);
-        } finally {
-            semaphore.release(totalSize);
-        }
     }
 
     @Override
@@ -351,8 +348,12 @@ public abstract class AbstractMergeRunnable<Store, MergingItem> implements Runna
         destroyStores(backupStores);
     }
 
+    protected InternalSerializationService getSerializationService() {
+        return serializationService;
+    }
+
     protected Data toData(Object object) {
-        return ss.toData(object);
+        return serializationService.toData(object);
     }
 
     /**

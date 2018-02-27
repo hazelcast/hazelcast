@@ -1104,8 +1104,8 @@ public class QueueContainer implements IdentifiedDataSerializable {
      */
     public QueueItem merge(MergingValueHolder<Data> mergingValue, SplitBrainMergePolicy mergePolicy) {
         SerializationService serializationService = nodeEngine.getSerializationService();
+        serializationService.getManagedContext().initialize(mergingValue);
         serializationService.getManagedContext().initialize(mergePolicy);
-        mergingValue.setSerializationService(serializationService);
         // try to find an existing item with the same value
         QueueItem existingItem = null;
         for (QueueItem item : getItemQueue()) {
@@ -1125,8 +1125,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
                 }
             }
         } else {
-            MergingValueHolder<Data> existingValue = createMergeHolder(existingItem);
-            existingValue.setSerializationService(serializationService);
+            MergingValueHolder<Data> existingValue = createMergeHolder(serializationService, existingItem);
             Data newValue = mergePolicy.merge(mergingValue, existingValue);
             if (newValue != null && !newValue.equals(existingValue.getValue())) {
                 existingItem.setData(newValue);

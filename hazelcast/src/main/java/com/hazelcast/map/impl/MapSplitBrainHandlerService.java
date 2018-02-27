@@ -22,7 +22,7 @@ import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.merge.IgnoreMergingEntryMapMergePolicy;
 import com.hazelcast.map.merge.MergePolicyProvider;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.impl.AbstractSplitBrainHandlerService;
+import com.hazelcast.spi.impl.merge.AbstractSplitBrainHandlerService;
 
 import java.util.Collection;
 import java.util.Iterator;

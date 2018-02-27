@@ -72,7 +72,8 @@ public class MergeOperation extends MultiMapOperation implements BackupAwareOper
                 continue;
             }
 
-            MergingEntryHolder<Data, MultiMapMergeContainer> dataHolder = createMergeHolder(key, mergeContainer);
+            MergingEntryHolder<Data, MultiMapMergeContainer> dataHolder
+                    = createMergeHolder(getNodeEngine().getSerializationService(), key, mergeContainer);
             MultiMapValue result = container.merge(dataHolder, mergePolicy);
             if (result != null) {
                 resultMap.put(key, result.getCollection(false));

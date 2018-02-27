@@ -16,14 +16,12 @@
 
 package com.hazelcast.spi.merge;
 
-import com.hazelcast.nio.serialization.DataSerializable;
-
 /**
  * Represents a read-only view access hits for the merging process after a split-brain.
  *
  * @since 3.10
  */
-public interface HitsHolder extends DataSerializable {
+public interface HitsHolder {
 
     /**
      * Returns the access hits of the merge data.

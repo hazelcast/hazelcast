@@ -78,7 +78,8 @@ class MapReplicationSupportingService implements ReplicationSupportingService {
 
         MapOperation operation;
         if (mergePolicy instanceof SplitBrainMergePolicy) {
-            MergingEntryHolder<Data, Data> mergingEntry = createMergeHolder(replicationUpdate.getEntryView());
+            MergingEntryHolder<Data, Data> mergingEntry = createMergeHolder(nodeEngine.getSerializationService(),
+                    replicationUpdate.getEntryView());
             operation = operationProvider.createMergeOperation(mapName, mergingEntry, (SplitBrainMergePolicy) mergePolicy, true);
         } else {
             EntryView<Data, Data> entryView = replicationUpdate.getEntryView();

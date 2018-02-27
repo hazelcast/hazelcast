@@ -28,7 +28,7 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.SplitBrainMergePolicy;
-import com.hazelcast.spi.impl.AbstractMergeRunnable;
+import com.hazelcast.spi.impl.merge.AbstractMergeRunnable;
 import com.hazelcast.spi.merge.MergingEntryHolder;
 import com.hazelcast.util.function.BiConsumer;
 
@@ -65,7 +65,7 @@ class CacheMergeRunnable extends AbstractMergeRunnable<ICacheRecordStore, Mergin
             CacheRecord record = entry.getValue();
             Data dataValue = toData(record.getValue());
 
-            consumer.accept(partitionId, createMergeHolder(key, dataValue, record));
+            consumer.accept(partitionId, createMergeHolder(getSerializationService(), key, dataValue, record));
         }
     }
 

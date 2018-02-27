@@ -410,7 +410,8 @@ public class DistributedScheduledExecutorService
 
                         mergingEntries = new ArrayList<MergingEntryHolder<String, ScheduledTaskDescriptor>>();
                         for (ScheduledTaskDescriptor descriptor : tasks) {
-                            MergingEntryHolder<String, ScheduledTaskDescriptor> mergingEntry = createMergeHolder(descriptor);
+                            MergingEntryHolder<String, ScheduledTaskDescriptor> mergingEntry
+                                    = createMergeHolder(nodeEngine.getSerializationService(), descriptor);
                             mergingEntries.add(mergingEntry);
                             size++;
 

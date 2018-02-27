@@ -16,14 +16,12 @@
 
 package com.hazelcast.spi.merge;
 
-import com.hazelcast.nio.serialization.DataSerializable;
-
 /**
  * Represents a read-only view of a version for the merging process after a split-brain.
  *
  * @since 3.10
  */
-public interface VersionHolder extends DataSerializable {
+public interface VersionHolder {
 
     /**
      * Returns the version of the merge data.

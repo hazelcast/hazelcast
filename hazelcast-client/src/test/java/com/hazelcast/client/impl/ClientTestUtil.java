@@ -17,6 +17,7 @@
 package com.hazelcast.client.impl;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.spi.serialization.SerializationService;
 
 public final class ClientTestUtil {
 
@@ -30,4 +31,7 @@ public final class ClientTestUtil {
         return impl;
     }
 
+    public static SerializationService getClientSerializationService(HazelcastInstance hz) {
+        return getHazelcastClientInstanceImpl(hz).getSerializationService();
+    }
 }
