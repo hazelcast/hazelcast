@@ -505,4 +505,10 @@ public interface ICacheRecordStore {
      * @return the used {@link CacheRecord} if merge is applied, otherwise {@code null}
      */
     CacheRecord merge(MergingEntryHolder<Data, Data> mergingEntry, SplitBrainMergePolicy mergePolicy);
+
+
+    /**
+     * @return partition ID of this store
+     */
+    int getPartitionId();
 }

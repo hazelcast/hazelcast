@@ -21,8 +21,6 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.test.backup.BackupAccessor;
-import com.hazelcast.test.backup.TestBackupUtils;
 import com.hazelcast.spi.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.DiscardMergePolicy;
 import com.hazelcast.spi.merge.HigherHitsMergePolicy;
@@ -34,6 +32,8 @@ import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.SplitBrainTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.backup.BackupAccessor;
+import com.hazelcast.test.backup.TestBackupUtils;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -70,6 +70,8 @@ import static org.junit.Assert.fail;
 @SuppressWarnings("WeakerAccess")
 public class MapSplitBrainTest extends SplitBrainTestSupport {
 
+    private static final int[] BRAINS = new int[]{3, 3};
+
     @Parameters(name = "format:{0}, mergePolicy:{1}")
     public static Collection<Object[]> parameters() {
         return asList(new Object[][]{
@@ -101,6 +103,11 @@ public class MapSplitBrainTest extends SplitBrainTestSupport {
     private BackupAccessor<Object, Object> backupMapA;
     private BackupAccessor<Object, Object> backupMapB;
     private MergeLifecycleListener mergeLifecycleListener;
+
+    @Override
+    protected int[] brains() {
+        return BRAINS;
+    }
 
     @Override
     protected Config config() {

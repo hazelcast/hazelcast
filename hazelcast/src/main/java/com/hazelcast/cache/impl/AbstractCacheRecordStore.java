@@ -1673,4 +1673,9 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     public ObjectNamespace getObjectNamespace() {
         return objectNamespace;
     }
+
+    @Override
+    public int getPartitionId() {
+        return partitionId;
+    }
 }
