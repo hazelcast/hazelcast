@@ -175,12 +175,6 @@ public class PostJoinMapOperation extends Operation implements IdentifiedDataSer
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        // RU_COMPAT_3_9
-        // fix for PostJoinMapOperation not being Versioned in 3.9.x: write 0 index info count
-        Version outputVersion = out.getVersion();
-        if (outputVersion.isUnknown() || outputVersion.isEqualTo(V3_9)) {
-            out.writeInt(0);
-        }
         out.writeInt(interceptorInfoList.size());
         for (InterceptorInfo interceptorInfo : interceptorInfoList) {
             interceptorInfo.writeData(out);
