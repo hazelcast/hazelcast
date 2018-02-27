@@ -46,6 +46,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import static com.hazelcast.instance.BuildInfoProvider.getBuildInfo;
 import static com.hazelcast.internal.cluster.Versions.V3_9;
 import static com.hazelcast.util.MapUtil.createHashMap;
 
@@ -190,9 +191,9 @@ public class PostJoinMapOperation extends Operation implements IdentifiedDataSer
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         // RU_COMPAT_39
-        // Version 3.9.x still sends index info's because PostJoinMapOperation was not marked Versioned
+        // Version 3.9.x still sends index info's from EE because PostJoinMapOperation was not marked Versioned
         Version inputversion = in.getVersion();
-        if (inputversion.isUnknown() || inputversion.isEqualTo(V3_9)) {
+        if ((inputversion.isUnknown() || inputversion.isEqualTo(V3_9)) && getBuildInfo().isEnterprise()) {
             // just consume the bytes
             int indexesCount = in.readInt();
             for (int i = 0; i < indexesCount; i++) {
