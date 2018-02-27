@@ -27,9 +27,11 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.net.Socket;
 import java.nio.channels.SocketChannel;
 
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -45,6 +47,8 @@ public class NioChannelFactoryTest extends HazelcastTestSupport {
     @Test
     public void wrapSocketChannel() throws Exception {
         SocketChannel socketChannel = mock(SocketChannel.class);
+        Socket socket = mock(Socket.class);
+        when(socketChannel.socket()).thenReturn(socket);
         Channel wrapper = factory.create(socketChannel, false, false);
 
         assertInstanceOf(NioChannel.class, wrapper);
