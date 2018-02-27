@@ -19,7 +19,7 @@ package com.hazelcast.jet.datamodel;
 import javax.annotation.Nonnull;
 import java.io.Serializable;
 
-import static com.hazelcast.jet.impl.util.Util.toLocalDateTime;
+import static com.hazelcast.jet.impl.util.Util.toLocalTime;
 
 /**
  * Javadoc pending
@@ -84,8 +84,7 @@ public final class TimestampedItem<T> implements Serializable {
 
     @Override
     public String toString() {
-        return "TimestampedItem{ts=" + timestamp
-                + ", formattedTs=" + toLocalDateTime(timestamp)
-                + ", value=" + item + '}';
+        return "TimestampedItem{ts=" + toLocalTime(timestamp)
+                + ", value='" + item + "'}";
     }
 }

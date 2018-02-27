@@ -19,7 +19,7 @@ package com.hazelcast.jet.core;
 import com.hazelcast.jet.impl.execution.BroadcastItem;
 
 import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.IDLE_MESSAGE;
-import static com.hazelcast.jet.impl.util.Util.toLocalDateTime;
+import static com.hazelcast.jet.impl.util.Util.toLocalTime;
 
 /**
  * Watermark is an item occasionally inserted into a disordered
@@ -63,6 +63,6 @@ public final class Watermark implements BroadcastItem {
     public String toString() {
         return timestamp == IDLE_MESSAGE.timestamp
                 ? "Watermark{IDLE_MESSAGE}"
-                : "Watermark{ts=" + timestamp + ", formattedTs=" + toLocalDateTime(timestamp) + '}';
+                : "Watermark{ts=" + toLocalTime(timestamp) + '}';
     }
 }

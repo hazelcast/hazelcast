@@ -19,6 +19,8 @@ package com.hazelcast.jet.impl.pipeline;
 import javax.annotation.Nonnull;
 import java.util.Objects;
 
+import static com.hazelcast.jet.impl.util.Util.toLocalTime;
+
 /**
  * Javadoc pending.
  */
@@ -48,7 +50,9 @@ public final class JetEventImpl<T> implements JetEvent<T> {
 
     @Override
     public String toString() {
-        return String.format("JetEvent (t=%,d) %s", timestamp, payload);
+        return "JetEvent{ts=" + toLocalTime(timestamp)
+                + ", payload=" + payload
+                + "}";
     }
 
     @Override

@@ -19,7 +19,7 @@ package com.hazelcast.jet.datamodel;
 import javax.annotation.Nonnull;
 import java.util.Map;
 
-import static com.hazelcast.jet.impl.util.Util.toLocalDateTime;
+import static com.hazelcast.jet.impl.util.Util.toLocalTime;
 
 /**
  * A {@code Map.Entry} extended with a {@code long timestamp}, used for
@@ -99,9 +99,6 @@ public final class TimestampedEntry<K, V> implements Map.Entry<K, V> {
 
     @Override
     public String toString() {
-        return "TimestampedEntry{ts=" + timestamp
-                + ", formattedTs=" + toLocalDateTime(timestamp)
-                + ", key=" + key +
-                ", value=" + value + '}';
+        return String.format("TimestampedEntry{ts=%s, key='%s', value='%s'}", toLocalTime(timestamp), key, value);
     }
 }

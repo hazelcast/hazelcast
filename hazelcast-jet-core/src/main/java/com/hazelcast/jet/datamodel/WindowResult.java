@@ -19,6 +19,8 @@ package com.hazelcast.jet.datamodel;
 import javax.annotation.Nonnull;
 import java.util.Map;
 
+import static com.hazelcast.jet.impl.util.Util.toLocalTime;
+
 /**
  * Holds the result of a group-and-aggregate operation performed in a time
  * window.
@@ -103,6 +105,7 @@ public class WindowResult<K, R> implements Map.Entry<K, R> {
 
     @Override
     public String toString() {
-        return "[" + start + ".." + end + "]: " + key + " = " + result;
+        return String.format(
+                "WindowResult{start=%s, end=%s, key='%s', value='%s'}", toLocalTime(start), toLocalTime(end), key, result);
     }
 }

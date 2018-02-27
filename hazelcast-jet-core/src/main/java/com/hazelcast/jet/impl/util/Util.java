@@ -49,6 +49,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -72,6 +73,7 @@ public final class Util {
 
     private static final int BUFFER_SIZE = 1 << 15;
     private static final char[] ID_TEMPLATE = "0000-0000-0000-0000".toCharArray();
+    private static final DateTimeFormatter LOCAL_TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss.SSS");
 
     private Util() {
     }
@@ -307,6 +309,10 @@ public final class Util {
 
     public static LocalDateTime toLocalDateTime(long timestamp) {
         return toZonedDateTime(timestamp).toLocalDateTime();
+    }
+
+    public static String toLocalTime(long timestamp) {
+        return toZonedDateTime(timestamp).toLocalTime().format(LOCAL_TIME_FORMATTER);
     }
 
     @SuppressWarnings("checkstyle:magicnumber")
