@@ -225,6 +225,13 @@ public final class ProxyManager {
         return objects;
     }
 
+    public void createDistributedObjects() throws Exception {
+        for (ObjectNamespace namespace : proxies.keySet()) {
+            ClientCreateRequest request = new ClientCreateRequest(namespace.getObjectName(), namespace.getServiceName());
+            new ClientInvocation(client, request).invoke().get();
+        }
+    }
+
     public void destroy() {
         for (ClientProxyFuture future : proxies.values()) {
             future.get().onShutdown();

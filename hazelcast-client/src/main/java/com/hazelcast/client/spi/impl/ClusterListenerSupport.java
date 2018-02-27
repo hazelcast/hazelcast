@@ -227,6 +227,7 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
                 ownerConnectionAddress = connection.getEndPoint();
                 clientMembershipListener.listenMembershipEvents(ownerConnectionAddress);
                 clientListenerService.triggerFailedListeners();
+                client.getProxyManager().createDistributedObjects();
                 fireConnectionEvent(LifecycleEvent.LifecycleState.CLIENT_CONNECTED);
                 return true;
             } catch (Exception e) {
