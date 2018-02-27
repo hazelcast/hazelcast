@@ -17,10 +17,12 @@
 package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectEvent;
 import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ITopic;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -29,7 +31,10 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Collection;
 import java.util.concurrent.CountDownLatch;
+
+import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -64,6 +69,30 @@ public class DistributedObjectListenerTest extends HazelcastTestSupport {
         assertOpenEventually(createdLatch, 10);
         topic.destroy();
         assertOpenEventually(destroyedLatch, 10);
+    }
+
+    @Test
+    public void distributedObjectsCreatedBack_whenClusterRestart() {
+        final HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
+
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient();
+
+        client.getMap("test");
+
+        Collection<DistributedObject> distributedObjects = instance.getDistributedObjects();
+        assertEquals(1, distributedObjects.size());
+
+        instance.shutdown();
+
+        final HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance();
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                Collection<DistributedObject> distributedObjects = instance2.getDistributedObjects();
+                assertEquals(1, distributedObjects.size());
+            }
+        });
     }
 
 }

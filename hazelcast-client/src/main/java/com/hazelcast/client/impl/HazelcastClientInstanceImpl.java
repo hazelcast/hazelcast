@@ -528,6 +528,10 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         return credentials;
     }
 
+    public ProxyManager getProxyManager() {
+        return proxyManager;
+    }
+
     @Override
     public void shutdown() {
         getLifecycleService().shutdown();
