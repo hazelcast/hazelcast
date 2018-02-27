@@ -17,7 +17,10 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.test.annotation.Repeat;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.io.Serializable;
 import java.util.Arrays;
@@ -36,14 +39,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static com.hazelcast.test.TimeConstants.MINUTE;
 import static java.lang.String.format;
 import static java.util.Collections.singleton;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -95,6 +93,7 @@ public class MapLoaderTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Ignore
     public void testMapLoaderLoadUpdatingIndex() throws Exception {
         final int nodeCount = 3;
         String mapName = randomString();
