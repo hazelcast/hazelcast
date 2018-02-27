@@ -44,7 +44,6 @@ import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.UuidUtil;
 import com.hazelcast.util.executor.StripedExecutor;
 import com.hazelcast.util.function.Supplier;
-import com.hazelcast.version.Version;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -58,7 +57,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.logging.Level;
 
-import static com.hazelcast.internal.cluster.Versions.V3_9;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.util.InvocationUtil.invokeOnStableClusterSerial;
 import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
@@ -604,10 +602,6 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
 
     @Override
     public Operation getPreJoinOperation() {
-        Version clusterVersion = nodeEngine.getClusterService().getClusterVersion();
-        if (clusterVersion.isLessThan(V3_9)) {
-            return null;
-        }
         // pre-join operations are only sent by master member
         return getOnJoinRegistrationOperation();
     }
@@ -615,10 +609,6 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
     @Override
     public Operation getPostJoinOperation() {
         ClusterService clusterService = nodeEngine.getClusterService();
-        Version clusterVersion = clusterService.getClusterVersion();
-        if (clusterVersion.isLessThan(V3_9)) {
-            return getOnJoinRegistrationOperation();
-        }
         // Send post join registration operation only if this is the newly joining member.
         // Master will send registrations with pre-join operation.
         return clusterService.isMaster() ? null : getOnJoinRegistrationOperation();
