@@ -16,8 +16,12 @@
 
 package com.hazelcast.jet.impl.connector;
 
+import com.hazelcast.jet.IListJet;
+import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.test.TestSupport;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -27,7 +31,14 @@ import java.util.stream.IntStream;
 import static java.util.stream.Collectors.toList;
 
 @RunWith(HazelcastParallelClassRunner.class)
-public class ReadIListPTest {
+public class ReadIListPTest extends JetTestSupport {
+
+    private JetInstance instance;
+
+    @Before
+    public void setUp() {
+        instance = this.createJetMember();
+    }
 
     @Test
     public void when_sizeLessThanFetchSize_then_readAll() {
@@ -39,10 +50,13 @@ public class ReadIListPTest {
         testReader(ReadIListP.FETCH_SIZE * 3 / 2);
     }
 
-    private static void testReader(int listLength) {
+    private void testReader(int listLength) {
+        IListJet<Object> list = instance.getList(randomName());
         List<Object> data = IntStream.range(0, listLength).boxed().collect(toList());
+        list.addAll(data);
         TestSupport
-                .verifyProcessor(new ReadIListP(data))
+                .verifyProcessor(new ReadIListP(list.getName(), null))
+                .jetInstance(instance)
                 .disableSnapshots()
                 .disableLogging()
                 .expectOutput(data);

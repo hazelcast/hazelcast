@@ -21,11 +21,15 @@ import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
+import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 
 import javax.annotation.Nonnull;
 import java.io.Serializable;
 import java.util.List;
 import java.util.function.Function;
+
+import static com.hazelcast.util.UuidUtil.newUnsecureUuidString;
+import static java.util.Collections.singletonList;
 
 /**
  * Factory of {@link ProcessorSupplier} instances. The starting point of
@@ -120,31 +124,11 @@ public interface ProcessorMetaSupplier extends Serializable {
     /**
      * Wraps the provided {@code ProcessorSupplier} into a meta-supplier that
      * will always return it. The {@link #preferredLocalParallelism()} of
-     * the meta-supplier will be one, i.e., no local parallelization.
-     */
-    static ProcessorMetaSupplier dontParallelize(ProcessorSupplier supplier) {
-        return of(supplier, 1);
-    }
-
-    /**
-     * Wraps the provided {@code ProcessorSupplier} into a meta-supplier that
-     * will always return it. The {@link #preferredLocalParallelism()} of
      * the meta-supplier will be {@link Vertex#LOCAL_PARALLELISM_USE_DEFAULT}.
      */
     @Nonnull
     static ProcessorMetaSupplier of(@Nonnull ProcessorSupplier procSupplier) {
         return of(procSupplier, Vertex.LOCAL_PARALLELISM_USE_DEFAULT);
-    }
-
-    /**
-     * Factory method that wraps the given {@code Supplier<Processor>}
-     * and uses it as the supplier of all {@code Processor} instances.
-     * Specifically, returns a meta-supplier that will always return the
-     * result of calling {@link ProcessorSupplier#of(DistributedSupplier)}.
-     */
-    @Nonnull
-    static ProcessorMetaSupplier dontParallelize(@Nonnull DistributedSupplier<? extends Processor> procSupplier) {
-        return of(ProcessorSupplier.of(procSupplier), 1);
     }
 
     /**
@@ -210,6 +194,101 @@ public interface ProcessorMetaSupplier extends Serializable {
      */
     static ProcessorMetaSupplier of(DistributedFunction<Address, ProcessorSupplier> addressToSupplier) {
         return of(addressToSupplier, Vertex.LOCAL_PARALLELISM_USE_DEFAULT);
+    }
+
+
+    /**
+     * Wraps the provided {@code ProcessorSupplier} into a meta-supplier that
+     * will always return it. The {@link #preferredLocalParallelism()} of
+     * the meta-supplier will be one, i.e., no local parallelization.
+     * <p>
+     * The parallelism will be overriden if the {@link Vertex#localParallelism(int)} is
+     * set to a specific value.
+     */
+    static ProcessorMetaSupplier preferLocalParallelismOne(ProcessorSupplier supplier) {
+        return of(supplier, 1);
+    }
+
+    /**
+     * Variant of {@link #preferLocalParallelismOne(ProcessorSupplier)} where
+     * the supplied {@code DistributedSupplier<Processor>} will be
+     * wrapped into a {@link ProcessorSupplier}.
+     */
+    @Nonnull
+    static ProcessorMetaSupplier preferLocalParallelismOne(
+            @Nonnull DistributedSupplier<? extends Processor> procSupplier
+    ) {
+        return of(ProcessorSupplier.of(procSupplier), 1);
+    }
+
+    /**
+     * Variant of {@link #forceTotalParallelismOne(ProcessorSupplier, String)} where the node
+     * for the supplier will be chosen randomly.
+     */
+    static ProcessorMetaSupplier forceTotalParallelismOne(ProcessorSupplier supplier) {
+        return forceTotalParallelismOne(supplier, newUnsecureUuidString());
+    }
+
+    /**
+     * Wraps the provided {@code ProcessorSupplier} into a meta-supplier that
+     * will only use the given {@code ProcessorSupplier} on a single node.
+     * The node will be chosen according to the {@code partitionKey} supplied.
+     * This is mainly provided as a convenience for implementing
+     * non-distributed sources where data can't be read in parallel by multiple
+     * consumers. When used as a sink or intermediate vertex, the DAG should ensure
+     * that only the processor instance on the designated node receives any data,
+     * otherwise an {@code IllegalStateException} will be thrown.
+     * <p>
+     * The vertex containing the {@code ProcessorMetaSupplier} must have a local
+     * parallelism setting of 1, otherwise {code IllegalArgumentException} is thrown.
+     *
+     * @param supplier the supplier that will be wrapped
+     * @param partitionKey the supplier will only be created on the node that owns the supplied
+     *                     partition key
+     * @return the wrapped {@code ProcessorMetaSupplier}
+     *
+     * @throws IllegalArgumentException if vertex has local parallelism setting of greater than 1
+     */
+    static ProcessorMetaSupplier forceTotalParallelismOne(ProcessorSupplier supplier, String partitionKey) {
+        return new ProcessorMetaSupplier() {
+
+            private transient Address ownerAddress;
+
+            @Override
+            public void init(@Nonnull Context context) {
+                if (context.localParallelism() != 1) {
+                    throw new IllegalArgumentException(
+                            "Non-distributed vertex had parallelism of " + context.localParallelism()
+                                    + ", should be 1");
+                }
+                String key = StringPartitioningStrategy.getPartitionKey(partitionKey);
+                ownerAddress = context.jetInstance().getHazelcastInstance().getPartitionService()
+                                      .getPartition(key).getOwner().getAddress();
+            }
+
+            @Nonnull @Override
+            public Function<Address, ProcessorSupplier> get(@Nonnull List<Address> addresses) {
+                return addr -> addr.equals(ownerAddress) ?
+                        supplier
+                        :
+                        count -> singletonList(new AbstractProcessor() {
+                            @Override
+                            protected boolean tryProcess(int ordinal, @Nonnull Object item) {
+                                throw new IllegalStateException(
+                                        "This vertex has a total parallelism of one and as such only"
+                                                + " expects input on one node. Edge configuration must be adjusted to"
+                                                + " make sure that only the expected node receives any input."
+                                                + " Unexpected input received from ordinal " + ordinal + ": " + item
+                                );
+                            }
+                        });
+            }
+
+            @Override
+            public int preferredLocalParallelism() {
+                return 1;
+            }
+        };
     }
 
     /**

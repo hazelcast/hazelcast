@@ -97,5 +97,4 @@ public class CloseableProcessorSupplier<E extends Processor & Closeable> impleme
             throw sneakyThrow(firstError);
         }
     }
-
 }

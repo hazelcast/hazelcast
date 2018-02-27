@@ -31,7 +31,7 @@ import com.hazelcast.jet.impl.util.WrappingProcessorSupplier;
 import javax.annotation.Nonnull;
 import java.util.Map.Entry;
 
-import static com.hazelcast.jet.core.ProcessorMetaSupplier.dontParallelize;
+import static com.hazelcast.jet.core.ProcessorMetaSupplier.preferLocalParallelismOne;
 import static com.hazelcast.jet.function.DistributedFunctions.alwaysTrue;
 
 /**
@@ -63,7 +63,7 @@ public final class DiagnosticProcessors {
     public static <T> ProcessorMetaSupplier writeLoggerP(
             @Nonnull DistributedFunction<T, ? extends CharSequence> toStringFn
     ) {
-        return dontParallelize(() -> new WriteLoggerP<>(toStringFn));
+        return preferLocalParallelismOne(() -> new WriteLoggerP<>(toStringFn));
     }
 
     /**

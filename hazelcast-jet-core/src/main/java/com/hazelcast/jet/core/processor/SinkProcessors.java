@@ -37,7 +37,7 @@ import java.net.Socket;
 import java.nio.charset.Charset;
 import javax.annotation.Nonnull;
 
-import static com.hazelcast.jet.core.ProcessorMetaSupplier.dontParallelize;
+import static com.hazelcast.jet.core.ProcessorMetaSupplier.preferLocalParallelismOne;
 import static com.hazelcast.jet.function.DistributedFunctions.noopConsumer;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
@@ -208,7 +208,7 @@ public final class SinkProcessors {
             @Nonnull Charset charset
     ) {
         String charsetName = charset.name();
-        return dontParallelize(writeBufferedP(
+        return preferLocalParallelismOne(writeBufferedP(
                 index -> uncheckCall(
                         () -> new BufferedWriter(new OutputStreamWriter(
                                 new Socket(host, port).getOutputStream(), charsetName))),

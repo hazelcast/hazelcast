@@ -29,7 +29,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 
-import static com.hazelcast.jet.core.ProcessorMetaSupplier.dontParallelize;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeBufferedP;
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
@@ -56,7 +55,7 @@ public final class WriteFileP {
             @Nonnull String charset,
             boolean append) {
 
-        return dontParallelize(writeBufferedP(
+        return ProcessorMetaSupplier.preferLocalParallelismOne(writeBufferedP(
                 globalIndex -> createBufferedWriter(Paths.get(directoryName), globalIndex,
                         charset, append),
                 (fileWriter, item) -> uncheckRun(() -> {

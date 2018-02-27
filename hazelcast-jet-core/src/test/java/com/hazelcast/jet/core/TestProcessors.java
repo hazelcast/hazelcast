@@ -35,7 +35,7 @@ import java.util.stream.Stream;
 
 import static com.hazelcast.jet.Traversers.traverseArray;
 import static com.hazelcast.jet.Traversers.traverseIterable;
-import static com.hazelcast.jet.core.ProcessorMetaSupplier.dontParallelize;
+import static com.hazelcast.jet.core.ProcessorMetaSupplier.preferLocalParallelismOne;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -284,7 +284,7 @@ public class TestProcessors {
          * Returns meta-supplier with default local parallelism of 1
          */
         public static ProcessorMetaSupplier supplier(List<?> list) {
-            return dontParallelize(() -> new ListSource(list));
+            return preferLocalParallelismOne(() -> new ListSource(list));
         }
     }
 

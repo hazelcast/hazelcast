@@ -44,7 +44,7 @@ import java.util.List;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.Edge.from;
-import static com.hazelcast.jet.core.ProcessorMetaSupplier.dontParallelize;
+import static com.hazelcast.jet.core.ProcessorMetaSupplier.preferLocalParallelismOne;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeListP;
 import static com.hazelcast.jet.impl.execution.DoneItem.DONE_ITEM;
 import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.IDLE_MESSAGE;
@@ -327,7 +327,7 @@ public class WatermarkCoalescer_IntegrationTest extends JetTestSupport {
          */
         public static ProcessorMetaSupplier supplier(List<Object> list) {
             List<Object> listClone = replaceWatermarks(list);
-            return dontParallelize(() -> new ListSource(listClone));
+            return preferLocalParallelismOne(() -> new ListSource(listClone));
         }
 
         /**
@@ -339,7 +339,7 @@ public class WatermarkCoalescer_IntegrationTest extends JetTestSupport {
             for (int i = 0; i < lists.length; i++) {
                 lists[i] = replaceWatermarks(lists[i]);
             }
-            return dontParallelize(count -> Arrays.stream(lists).map(ListSource::new).collect(toList()));
+            return preferLocalParallelismOne(count -> Arrays.stream(lists).map(ListSource::new).collect(toList()));
         }
 
         // return a new list with non-serializable Watermark objects replaced.

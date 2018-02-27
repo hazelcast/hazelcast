@@ -57,7 +57,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import static com.hazelcast.client.HazelcastClient.newHazelcastClient;
-import static com.hazelcast.jet.core.ProcessorMetaSupplier.dontParallelize;
+import static com.hazelcast.jet.core.ProcessorMetaSupplier.preferLocalParallelismOne;
 import static com.hazelcast.jet.function.DistributedFunctions.noopConsumer;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.Util.callbackOf;
@@ -100,7 +100,7 @@ public final class HazelcastWriters {
             @Nonnull DistributedBiFunction<V, T, V> updateFn
     ) {
         boolean isLocal = clientConfig == null;
-        return dontParallelize(new HazelcastWriterSupplier<>(
+        return preferLocalParallelismOne(new HazelcastWriterSupplier<>(
                 serializableConfig(clientConfig),
                 index -> new ArrayList<>(),
                 ArrayList::add,
@@ -145,7 +145,7 @@ public final class HazelcastWriters {
             @Nonnull DistributedFunction<T, EntryProcessor<K, V>> toEntryProcessorFn
     ) {
         boolean isLocal = clientConfig == null;
-        return dontParallelize(new EntryProcessorWriterSupplier<>(
+        return preferLocalParallelismOne(new EntryProcessorWriterSupplier<>(
                         name,
                         serializableConfig(clientConfig),
                         toKeyFn,
@@ -160,7 +160,7 @@ public final class HazelcastWriters {
     @SuppressWarnings("unchecked")
     public static ProcessorMetaSupplier writeMapP(@Nonnull String name, @Nullable ClientConfig clientConfig) {
         boolean isLocal = clientConfig == null;
-        return dontParallelize(new HazelcastWriterSupplier<>(
+        return preferLocalParallelismOne(new HazelcastWriterSupplier<>(
                 serializableConfig(clientConfig),
                 index -> new ArrayMap(),
                 ArrayMap::add,
@@ -182,7 +182,7 @@ public final class HazelcastWriters {
     @Nonnull
     public static ProcessorMetaSupplier writeCacheP(@Nonnull String name, @Nullable ClientConfig clientConfig) {
         boolean isLocal = clientConfig == null;
-        return dontParallelize(new HazelcastWriterSupplier<>(
+        return preferLocalParallelismOne(new HazelcastWriterSupplier<>(
                 serializableConfig(clientConfig),
                 index -> new ArrayMap(),
                 ArrayMap::add,
@@ -194,7 +194,7 @@ public final class HazelcastWriters {
     @Nonnull
     public static ProcessorMetaSupplier writeListP(@Nonnull String name, @Nullable ClientConfig clientConfig) {
         boolean isLocal = clientConfig == null;
-        return dontParallelize(new HazelcastWriterSupplier<>(
+        return preferLocalParallelismOne(new HazelcastWriterSupplier<>(
                 serializableConfig(clientConfig),
                 index -> new ArrayList<>(),
                 ArrayList::add,

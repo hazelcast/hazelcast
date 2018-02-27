@@ -18,6 +18,7 @@ package com.hazelcast.jet.core.test;
 
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.instance.BuildInfoProvider;
+import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.core.Outbox;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.Processor.Context;
@@ -199,6 +200,7 @@ public final class TestSupport {
     private boolean doSnapshots = true;
     private boolean logInputOutput = true;
     private boolean callComplete = true;
+    private JetInstance jetInstance;
     private long cooperativeTimeout = COOPERATIVE_TIME_LIMIT_MS_FAIL;
     private long runUntilCompletedTimeout;
 
@@ -425,6 +427,16 @@ public final class TestSupport {
      */
     public TestSupport outputChecker(@Nonnull BiPredicate<? super List<?>, ? super List<?>> outputChecker) {
         this.outputChecker = outputChecker;
+        return this;
+    }
+
+    /**
+     * Use the given instance for {@link Context#jetInstance()}
+     *
+     * @return {@code this} instance for fluent API
+     */
+    public TestSupport jetInstance(@Nonnull JetInstance jetInstance) {
+        this.jetInstance = jetInstance;
         return this;
     }
 
@@ -701,6 +713,7 @@ public final class TestSupport {
 
     private void initProcessor(Processor processor, TestOutbox outbox) {
         TestProcessorContext context = new TestProcessorContext()
+                .setJetInstance(jetInstance)
                 .setLogger(getLogger(processor.getClass().getName()));
         processor.init(outbox, context);
     }
