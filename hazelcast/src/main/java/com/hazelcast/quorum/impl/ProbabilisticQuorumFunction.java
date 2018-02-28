@@ -17,7 +17,6 @@
 package com.hazelcast.quorum.impl;
 
 import com.hazelcast.core.Member;
-import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.internal.cluster.fd.PhiAccrualClusterFailureDetector;
@@ -66,7 +65,8 @@ public class ProbabilisticQuorumFunction extends AbstractPingAwareQuorumFunction
             if (!isAlivePerIcmp(member)) {
                 continue;
             }
-            if (failureDetector.isAlive(member, timestamp)) {
+
+            if (member.localMember() || failureDetector.isAlive(member, timestamp)) {
                 count++;
             }
         }
@@ -74,24 +74,9 @@ public class ProbabilisticQuorumFunction extends AbstractPingAwareQuorumFunction
     }
 
     @Override
-    public void memberAdded(MembershipEvent membershipEvent) {
-        // ensure ping FD has heard at least once from each member
-        if (pingFDEnabled) {
-            pingFailureDetector.heartbeat(membershipEvent.getMember());
-        }
-    }
-
-    @Override
     public void memberRemoved(MembershipEvent membershipEvent) {
-        if (pingFDEnabled) {
-            pingFailureDetector.remove(membershipEvent.getMember());
-        }
+        super.memberRemoved(membershipEvent);
         failureDetector.remove(membershipEvent.getMember());
-    }
-
-    @Override
-    public void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent) {
-        // quorum not affected by member attribute change
     }
 
     @Override

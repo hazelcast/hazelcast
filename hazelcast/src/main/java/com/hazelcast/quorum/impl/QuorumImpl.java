@@ -38,7 +38,6 @@ import com.hazelcast.spi.impl.eventservice.InternalEventService;
 
 import java.util.Collection;
 
-import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.nio.ClassLoaderUtil.newInstance;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 
@@ -73,7 +72,7 @@ public class QuorumImpl implements Quorum {
      */
     private volatile QuorumState quorumState = QuorumState.INITIAL;
 
-    public QuorumImpl(QuorumConfig config, NodeEngineImpl nodeEngine) {
+    QuorumImpl(QuorumConfig config, NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
         this.eventService = nodeEngine.getEventService();
         this.config = config;
@@ -189,16 +188,6 @@ public class QuorumImpl implements Quorum {
     }
 
     /**
-     * Indicates whether the {@link #quorumFunction} is {@link MembershipListener}. If so, then member add, remove and attribute
-     * change events will be published to the {@link #quorumFunction}.
-     *
-     * @return {@code true} when the {@link #quorumFunction} implements {@link MembershipListener}, otherwise {@code false}
-     */
-    boolean isMembershipListener() {
-        return membershipListenerQuorumFunction;
-    }
-
-    /**
      * Returns if quorum is needed for this operation. This is determined by the {@link QuorumConfig#type} and by the type
      * of the operation - {@link ReadonlyOperation} or {@link MutatingOperation}.
      *
@@ -250,12 +239,7 @@ public class QuorumImpl implements Quorum {
     }
 
     private QuorumException newQuorumException() {
-        if (size == 0) {
-            throw new QuorumException("Cluster quorum failed");
-        }
-        Collection<Member> memberList = nodeEngine.getClusterService().getMembers(DATA_MEMBER_SELECTOR);
-        throw new QuorumException("Split brain protection exception: There is not enough members in the cluster. Required size: "
-                + size + ", current size: " + memberList.size());
+        throw new QuorumException("Split brain protection exception: " + quorumName + " has failed!");
     }
 
     private void createAndPublishEvent(Collection<Member> memberList, boolean presence) {

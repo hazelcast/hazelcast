@@ -81,12 +81,11 @@ public class QuorumServiceImpl implements EventPublishingService<QuorumEvent, Qu
 
     private final NodeEngineImpl nodeEngine;
     private final EventService eventService;
-    private boolean inactive;
-    private Map<String, QuorumImpl> quorums;
+    private volatile Map<String, QuorumImpl> quorums;
     // true when at least one configured quorum implementation is HeartbeatAware
-    private boolean heartbeatAware;
+    private volatile boolean heartbeatAware;
     // true when at least one configured quorum implementation is PingAware
-    private boolean pingAware;
+    private volatile boolean pingAware;
 
     public QuorumServiceImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -97,11 +96,10 @@ public class QuorumServiceImpl implements EventPublishingService<QuorumEvent, Qu
         // before starting, no quorums are used, just QuorumService dependency is provided to services which depend on it
         // so it's safe to initialize quorums here (and we have ClusterService already constructed)
         this.quorums = Collections.unmodifiableMap(initializeQuorums());
-        this.inactive = quorums.isEmpty();
         scanQuorums();
         initializeListeners();
 
-        if (inactive) {
+        if (isInactive()) {
             return;
         }
 
@@ -186,7 +184,7 @@ public class QuorumServiceImpl implements EventPublishingService<QuorumEvent, Qu
         }
     }
 
-    // scan quorums for heartbeat- and ping-aware implementations and set corresponding flags
+    // scan quorums for heartbeat-aware and ping-aware implementations and set corresponding flags
     private void scanQuorums() {
         for (QuorumImpl quorum : quorums.values()) {
             if (quorum.isHeartbeatAware()) {
@@ -196,6 +194,10 @@ public class QuorumServiceImpl implements EventPublishingService<QuorumEvent, Qu
                 this.pingAware = true;
             }
         }
+    }
+
+    private boolean isInactive() {
+        return quorums.isEmpty();
     }
 
     public void addQuorumListener(String name, QuorumListener listener) {
@@ -211,7 +213,7 @@ public class QuorumServiceImpl implements EventPublishingService<QuorumEvent, Qu
      * @throws QuorumException if the operation requires a quorum and the quorum is not present
      */
     public void ensureQuorumPresent(Operation op) {
-        if (inactive) {
+        if (isInactive()) {
             return;
         }
 
@@ -223,7 +225,7 @@ public class QuorumServiceImpl implements EventPublishingService<QuorumEvent, Qu
     }
 
     public void ensureQuorumPresent(String quorumName, QuorumType requiredQuorumPermissionType) {
-        if (inactive || quorumName == null) {
+        if (isInactive() || quorumName == null) {
             return;
         }
 
@@ -296,7 +298,7 @@ public class QuorumServiceImpl implements EventPublishingService<QuorumEvent, Qu
 
     @Override
     public void memberAdded(MembershipServiceEvent event) {
-        if (inactive) {
+        if (isInactive()) {
             return;
         }
         nodeEngine.getExecutionService().execute(QUORUM_EXECUTOR, new UpdateQuorums(event));
@@ -304,7 +306,7 @@ public class QuorumServiceImpl implements EventPublishingService<QuorumEvent, Qu
 
     @Override
     public void memberRemoved(MembershipServiceEvent event) {
-        if (inactive) {
+        if (isInactive()) {
             return;
         }
         nodeEngine.getExecutionService().execute(QUORUM_EXECUTOR, new UpdateQuorums(event));
@@ -329,10 +331,7 @@ public class QuorumServiceImpl implements EventPublishingService<QuorumEvent, Qu
 
     @Override
     public void onHeartbeat(Member member, long timestamp) {
-        if (inactive) {
-            return;
-        }
-        if (!heartbeatAware) {
+        if (isInactive() || !heartbeatAware) {
             return;
         }
         nodeEngine.getExecutionService().execute(QUORUM_EXECUTOR, new OnHeartbeat(member, timestamp));
@@ -340,7 +339,7 @@ public class QuorumServiceImpl implements EventPublishingService<QuorumEvent, Qu
 
     @Override
     public void onPingLost(Member member) {
-        if (!pingAware) {
+        if (isInactive() || !pingAware) {
             return;
         }
         nodeEngine.getExecutionService().execute(QUORUM_EXECUTOR, new OnPing(member, false));
@@ -348,7 +347,7 @@ public class QuorumServiceImpl implements EventPublishingService<QuorumEvent, Qu
 
     @Override
     public void onPingRestored(Member member) {
-        if (!pingAware) {
+        if (isInactive() || !pingAware) {
             return;
         }
         nodeEngine.getExecutionService().execute(QUORUM_EXECUTOR, new OnPing(member, true));
@@ -370,7 +369,7 @@ public class QuorumServiceImpl implements EventPublishingService<QuorumEvent, Qu
             ClusterService clusterService = nodeEngine.getClusterService();
             Collection<Member> members = clusterService.getMembers(MemberSelectors.DATA_MEMBER_SELECTOR);
             for (QuorumImpl quorum : quorums.values()) {
-                if (event != null && quorum.isMembershipListener()) {
+                if (event != null) {
                     switch (event.getEventType()) {
                         case MembershipEvent.MEMBER_ADDED:
                             quorum.onMemberAdded(event);
@@ -412,7 +411,7 @@ public class QuorumServiceImpl implements EventPublishingService<QuorumEvent, Qu
         private final Member member;
         private final boolean successful;
 
-        public OnPing(Member member, boolean successful) {
+        OnPing(Member member, boolean successful) {
             this.member = member;
             this.successful = successful;
         }
