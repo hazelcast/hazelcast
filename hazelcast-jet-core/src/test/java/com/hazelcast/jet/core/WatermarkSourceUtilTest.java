@@ -19,7 +19,7 @@ package com.hazelcast.jet.core;
 import com.hazelcast.jet.Traverser;
 import org.junit.Test;
 
-import static com.hazelcast.jet.core.WatermarkEmissionPolicy.suppressDuplicates;
+import static com.hazelcast.jet.core.WatermarkEmissionPolicy.noThrottling;
 import static com.hazelcast.jet.core.WatermarkGenerationParams.wmGenParams;
 import static com.hazelcast.jet.core.WatermarkPolicies.limitingLag;
 import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.IDLE_MESSAGE;
@@ -34,7 +34,7 @@ public class WatermarkSourceUtilTest {
     @Test
     public void smokeTest() {
         WatermarkSourceUtil<Long> wsu = new WatermarkSourceUtil<>(
-                wmGenParams(Long::longValue, limitingLag(LAG), suppressDuplicates(), 5)
+                wmGenParams(Long::longValue, limitingLag(LAG), noThrottling(), 5)
         );
         wsu.increasePartitionCount(0L, 2);
 
@@ -54,7 +54,7 @@ public class WatermarkSourceUtilTest {
     @Test
     public void smokeTest_disabledIdleTimeout() {
         WatermarkSourceUtil<Long> wsu = new WatermarkSourceUtil<>(
-                wmGenParams(Long::longValue, limitingLag(LAG), suppressDuplicates(), -1)
+                wmGenParams(Long::longValue, limitingLag(LAG), noThrottling(), -1)
         );
         wsu.increasePartitionCount(2);
 
@@ -75,7 +75,7 @@ public class WatermarkSourceUtilTest {
     @Test
     public void test_zeroPartitions() {
         WatermarkSourceUtil<Long> wsu = new WatermarkSourceUtil<>(
-                wmGenParams(Long::longValue, limitingLag(LAG), suppressDuplicates(), -1)
+                wmGenParams(Long::longValue, limitingLag(LAG), noThrottling(), -1)
         );
 
         // it should immediately emit the idle message, even though the idle timeout is -1
@@ -91,7 +91,7 @@ public class WatermarkSourceUtilTest {
     @Test
     public void when_idle_event_idle_then_twoIdleMessagesSent() {
         WatermarkSourceUtil<Long> wsu = new WatermarkSourceUtil<>(
-                wmGenParams(Long::longValue, limitingLag(LAG), suppressDuplicates(), 10)
+                wmGenParams(Long::longValue, limitingLag(LAG), noThrottling(), 10)
         );
         wsu.increasePartitionCount(1);
         assertTraverser(wsu.handleEvent(ns(0), 10L, 0), wm(10 - LAG), 10L);
@@ -108,7 +108,7 @@ public class WatermarkSourceUtilTest {
     @Test
     public void when_eventInOneOfTwoPartitions_then_wmAndIdleMessageForwardedAfterTimeout() {
         WatermarkSourceUtil<Long> wsu = new WatermarkSourceUtil<>(
-                wmGenParams(Long::longValue, limitingLag(LAG), suppressDuplicates(), 10)
+                wmGenParams(Long::longValue, limitingLag(LAG), noThrottling(), 10)
         );
         wsu.increasePartitionCount(ns(0), 2);
 

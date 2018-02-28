@@ -66,6 +66,7 @@ import java.util.function.Supplier;
 
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
+import static java.lang.Math.abs;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.mapping;
@@ -363,7 +364,7 @@ public final class Util {
     }
 
     /**
-     * Returns a future which is already completed with the supplied exception
+     * Returns a future which is already completed with the supplied exception.
      */
     public static <T> CompletableFuture<T> exceptionallyCompletedFuture(@Nonnull Throwable exception) {
         CompletableFuture<T> future = new CompletableFuture<>();
@@ -387,5 +388,29 @@ public final class Util {
                     "Late event dropped. currentWatermark=%s, event=%s", new Watermark(currentWm), item
             ));
         }
+    }
+
+    /**
+     * Calculate greatest common divisor of a series of integer numbers. Returns
+     * 0, if the number of values is 0.
+     */
+    public static long gcd(long ... values) {
+        long res = 0;
+        for (long value : values) {
+            res = gcd(res, value);
+        }
+        return res;
+    }
+
+    /**
+     * Calculate greatest common divisor of two integer numbers.
+     */
+    public static long gcd(long a, long b) {
+        a = abs(a);
+        b = abs(b);
+        if (b == 0) {
+            return a;
+        }
+        return gcd(b, a % b);
     }
 }

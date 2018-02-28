@@ -46,7 +46,6 @@ import com.hazelcast.jet.pipeline.StreamStage;
 
 import javax.annotation.Nonnull;
 
-import static com.hazelcast.jet.core.WatermarkEmissionPolicy.suppressDuplicates;
 import static com.hazelcast.jet.core.WatermarkGenerationParams.DEFAULT_IDLE_TIMEOUT;
 import static com.hazelcast.jet.core.WatermarkGenerationParams.wmGenParams;
 import static com.hazelcast.jet.core.WatermarkPolicies.limitingLag;
@@ -62,6 +61,10 @@ public abstract class ComputeStageImplBase<T> extends AbstractStage {
 
     static final FunctionAdapter DONT_ADAPT = new FunctionAdapter();
     static final JetEventFunctionAdapter ADAPT_TO_JET_EVENT = new JetEventFunctionAdapter();
+
+    private static final WatermarkEmissionPolicy THROWING_EMIT_POLICY = (currentWm, lastEmittedWm) -> {
+        throw new IllegalStateException("emit policy should have been replaced");
+    };
 
     @Nonnull
     public FunctionAdapter fnAdapter;
@@ -88,10 +91,9 @@ public abstract class ComputeStageImplBase<T> extends AbstractStage {
     ) {
         checkFalse(hasJetEvents(), "This stage already has timestamps assigned to it.");
 
-        WatermarkEmissionPolicy emissionPolicy = suppressDuplicates(); //TODO
         DistributedSupplier<WatermarkPolicy> wmPolicy = limitingLag(allowedLateness);
         WatermarkGenerationParams<T> wmParams = wmGenParams(
-                timestampFn, JetEventImpl::jetEvent, wmPolicy, emissionPolicy, DEFAULT_IDLE_TIMEOUT
+                timestampFn, JetEventImpl::jetEvent, wmPolicy, THROWING_EMIT_POLICY, DEFAULT_IDLE_TIMEOUT
         );
 
         if (transform instanceof StreamSourceTransform) {

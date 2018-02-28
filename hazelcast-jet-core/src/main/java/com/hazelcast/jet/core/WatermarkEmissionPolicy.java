@@ -29,26 +29,23 @@ import static com.hazelcast.util.Preconditions.checkPositive;
 public interface WatermarkEmissionPolicy extends Serializable {
 
     /**
-     * Decides whether a watermark item with the supplied {@code currentWm}
-     * value should be emitted, given the last emitted value {@code
+     * Decides which watermark to emit based on the supplied {@code currentWm}
+     * value and {@code lastEmittedWm}. We expect the {@code currentWm >
      * lastEmittedWm}.
      */
-    boolean shouldEmit(long currentWm, long lastEmittedWm);
+    long throttleWm(long currentWm, long lastEmittedWm);
 
     /**
-     * Returns a policy that ensures that each emitted watermark has a higher
-     * timestamp than the last one. This protects the basic invariant of
-     * watermark items (that their timestamps are strictly increasing), but
-     * doesn't perform any throttling. Since the timestamps are typically quite
-     * dense (in milliseconds), this emission policy will pass through many
-     * watermark items that have no useful effect in terms of updating the
-     * state of accumulating vertices. It is useful primarily in testing
-     * scenarios or some specific cases where it is known that no watermark
-     * throttling is needed.
+     * Returns a policy that does no throttling: emits each watermark. Since the
+     * timestamps are typically quite dense (in milliseconds), this emission
+     * policy will pass through many watermark items that have no useful effect
+     * in terms of updating the state of accumulating vertices. It is useful
+     * primarily in testing scenarios or some specific cases where it is known
+     * that no watermark throttling is needed.
      */
     @Nonnull
-    static WatermarkEmissionPolicy suppressDuplicates() {
-        return (currentWm, lastEmittedWm) -> currentWm > lastEmittedWm;
+    static WatermarkEmissionPolicy noThrottling() {
+        return (currentWm, lastEmittedWm) -> currentWm;
     }
 
     /**
@@ -58,8 +55,8 @@ public interface WatermarkEmissionPolicy extends Serializable {
      */
     @Nonnull
     static WatermarkEmissionPolicy emitByMinStep(long minStep) {
-        checkPositive(minStep, "minStep");
-        return (currentWm, lastEmittedWm) -> currentWm >= lastEmittedWm + minStep;
+        checkPositive(minStep, "minStep should be > 0");
+        return (currentWm, lastEmittedWm) -> lastEmittedWm + minStep <= currentWm ? currentWm : lastEmittedWm;
     }
 
     /**
@@ -75,14 +72,6 @@ public interface WatermarkEmissionPolicy extends Serializable {
      */
     @Nonnull
     static WatermarkEmissionPolicy emitByFrame(SlidingWindowPolicy wDef) {
-        return (currentWm, lastEmittedWm) -> wDef.floorFrameTs(currentWm) > lastEmittedWm;
-    }
-
-    /**
-     * Javadoc pending
-     */
-    @Nonnull
-    static WatermarkEmissionPolicy emitByFrame(long frameSize) {
-        return emitByFrame(SlidingWindowPolicy.slidingWinPolicy(frameSize, frameSize));
+        return (currentWm, lastEmittedWm) -> Math.max(wDef.floorFrameTs(currentWm), lastEmittedWm);
     }
 }

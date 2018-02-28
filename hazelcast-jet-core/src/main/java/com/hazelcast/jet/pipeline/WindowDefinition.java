@@ -25,16 +25,11 @@ import javax.annotation.Nonnull;
  * interface.
  */
 public interface WindowDefinition {
+
     /**
      * Enumerates the kinds of window that Jet supports.
      */
     enum WindowKind {
-        /**
-         * A tumbling window "tumbles" along the time axis so that its consecutive
-         * positions touch each other without overlap. You can specify the size of
-         * the window.
-         */
-        TUMBLING,
         /**
          * A sliding window "slides" along the time axis in discrete steps. You can
          * specify the size and the sliding step. The size of the window must be
@@ -67,6 +62,11 @@ public interface WindowDefinition {
     <W extends WindowDefinition> W downcast();
 
     /**
+     * Returns the frameLength and offset this window definition needs.
+     */
+    long watermarkFrameSize();
+
+    /**
      * Returns a {@link WindowKind#SLIDING sliding} window definition with the
      * given parameters.
      *
@@ -79,18 +79,19 @@ public interface WindowDefinition {
     }
 
     /**
-     * Returns a {@link WindowKind#TUMBLING tumbling} window definition with the
-     * given parameters.
+     * Returns a tumbling window definition with the given parameters. Tumbling
+     * window is a special case of {@link WindowKind#SLIDING sliding} where the
+     * slide is equal to window size.
      *
      * @param windowSize the size of the window (size of the range of the timestamps it covers)
      */
     @Nonnull
-    static TumblingWindowDef tumbling(long windowSize) {
-        return new TumblingWindowDef(windowSize);
+    static SlidingWindowDef tumbling(long windowSize) {
+        return new SlidingWindowDef(windowSize, windowSize);
     }
 
     /**
-     * Returns a {@link WindowKind#TUMBLING tumbling} window definition with the
+     * Returns a {@link WindowKind#SESSION session} window definition with the
      * given parameters.
      *
      * @param sessionTimeout the exclusive upper bound on the difference between any two

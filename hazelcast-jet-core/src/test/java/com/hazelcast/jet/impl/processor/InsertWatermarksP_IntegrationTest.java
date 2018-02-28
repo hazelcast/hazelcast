@@ -64,6 +64,6 @@ public class InsertWatermarksP_IntegrationTest extends JetTestSupport {
         instance.newJob(dag).join();
 
         Object[] actual = instance.getList("list").toArray();
-        assertArrayEquals(Arrays.toString(actual), new Object[]{"wm(11)", 111L, "wm(122)", 222L, "wm(233)", 333L}, actual);
+        assertArrayEquals(Arrays.toString(actual), new Object[]{"wm(0)", 111L, "wm(100)", 222L, "wm(200)", 333L}, actual);
     }
 }

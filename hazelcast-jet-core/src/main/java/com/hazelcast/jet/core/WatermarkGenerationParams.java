@@ -23,7 +23,7 @@ import com.hazelcast.jet.function.DistributedToLongFunction;
 import javax.annotation.Nonnull;
 import java.io.Serializable;
 
-import static com.hazelcast.jet.core.WatermarkEmissionPolicy.suppressDuplicates;
+import static com.hazelcast.jet.core.WatermarkEmissionPolicy.noThrottling;
 
 /**
  * Wrapper for functions and parameters needed to generate Watermarks.
@@ -124,7 +124,7 @@ public final class WatermarkGenerationParams<T> implements Serializable {
      * this method.
      */
     public static <T> WatermarkGenerationParams<T> noWatermarks() {
-        return wmGenParams(i -> Long.MIN_VALUE, NO_WATERMARK_POLICY, suppressDuplicates(), -1);
+        return wmGenParams(i -> Long.MIN_VALUE, NO_WATERMARK_POLICY, noThrottling(), -1);
     }
 
     /**
@@ -166,5 +166,13 @@ public final class WatermarkGenerationParams<T> implements Serializable {
     @Nonnull
     public DistributedObjLongBiFunction<? super T, ?> wrapFn() {
         return wrapFn;
+    }
+
+    /**
+     * Returns new instance with emit policy replaced with the given argument.
+     */
+    @Nonnull
+    public WatermarkGenerationParams<T> withEmitPolicy(WatermarkEmissionPolicy emitPolicy) {
+        return wmGenParams(timestampFn, wrapFn, newWmPolicyFn, emitPolicy, idleTimeoutMillis);
     }
 }

@@ -21,9 +21,13 @@ import com.hazelcast.jet.core.Edge;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.core.WatermarkEmissionPolicy;
 import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.impl.pipeline.transform.SinkTransform;
+import com.hazelcast.jet.impl.pipeline.transform.StreamSourceTransform;
+import com.hazelcast.jet.impl.pipeline.transform.TimestampTransform;
 import com.hazelcast.jet.impl.pipeline.transform.Transform;
+import com.hazelcast.jet.impl.util.Util;
 
 import javax.annotation.Nonnull;
 import java.util.HashMap;
@@ -36,6 +40,9 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import static com.hazelcast.jet.core.Edge.from;
+import static com.hazelcast.jet.core.SlidingWindowPolicy.tumblingWinPolicy;
+import static com.hazelcast.jet.core.WatermarkEmissionPolicy.emitByFrame;
+import static com.hazelcast.jet.core.WatermarkEmissionPolicy.noThrottling;
 import static com.hazelcast.jet.impl.TopologicalSorter.topologicalSort;
 import static java.util.stream.Collectors.toList;
 
@@ -55,6 +62,29 @@ public class Planner {
     DAG createDag() {
         Map<Transform, List<Transform>> adjacencyMap = pipeline.adjacencyMap();
         validateNoLeakage(adjacencyMap);
+
+        // Calculate greatest common denominator of frame lengths from all transforms in the pipeline
+        long frameSizeGcd = Util.gcd(adjacencyMap.keySet().stream()
+                                                 .map(Transform::watermarkFrameSize)
+                                                 .filter(frameSize -> frameSize > 0)
+                                                 .mapToLong(i -> i)
+                                                 .toArray());
+        WatermarkEmissionPolicy emitPolicy = frameSizeGcd > 0
+                ? emitByFrame(tumblingWinPolicy(frameSizeGcd))
+                : noThrottling();
+        // Replace emission policy
+        for (Transform transform : adjacencyMap.keySet()) {
+            if (transform instanceof StreamSourceTransform) {
+                StreamSourceTransform t = (StreamSourceTransform) transform;
+                if (t.getWmParams() != null) {
+                    t.setWmGenerationParams(t.getWmParams().withEmitPolicy(emitPolicy));
+                }
+            } else if (transform instanceof TimestampTransform) {
+                TimestampTransform t = (TimestampTransform) transform;
+                t.setWmGenerationParams(t.getWmGenParams().withEmitPolicy(emitPolicy));
+            }
+        }
+
         Iterable<Transform> sorted = topologicalSort(adjacencyMap, Object::toString);
         for (Transform transform : sorted) {
             transform.addToDag(this);

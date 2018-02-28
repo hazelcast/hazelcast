@@ -80,6 +80,11 @@ public abstract class AbstractTransform implements Transform {
         return name;
     }
 
+    @Override
+    public long watermarkFrameSize() {
+        return 0;
+    }
+
     public enum Optimization {
         NETWORK_TRAFFIC,
         MEMORY;

@@ -51,7 +51,7 @@ import org.junit.runner.RunWith;
 
 import static com.hazelcast.jet.pipeline.JournalInitialPosition.START_FROM_OLDEST;
 import static com.hazelcast.jet.core.Edge.between;
-import static com.hazelcast.jet.core.WatermarkEmissionPolicy.suppressDuplicates;
+import static com.hazelcast.jet.core.WatermarkEmissionPolicy.noThrottling;
 import static com.hazelcast.jet.core.WatermarkGenerationParams.wmGenParams;
 import static com.hazelcast.jet.core.WatermarkPolicies.limitingLag;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeListP;
@@ -238,7 +238,7 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
     public void when_streamRemoteMap() {
         DAG dag = new DAG();
         Vertex source = dag.newVertex(SOURCE_NAME, streamRemoteMapP(SOURCE_NAME, clientConfig, START_FROM_OLDEST,
-                wmGenParams(Entry<Integer, Integer>::getValue, limitingLag(0), suppressDuplicates(), 10_000)));
+                wmGenParams(Entry<Integer, Integer>::getValue, limitingLag(0), noThrottling(), 10_000)));
         Vertex sink = dag.newVertex(SINK_NAME, writeListP(SINK_NAME));
         dag.edge(between(source, sink));
 
@@ -255,7 +255,7 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
         DAG dag = new DAG();
         Vertex source = dag.newVertex(SOURCE_NAME, SourceProcessors.<Integer, Integer, Integer>streamRemoteMapP(
                 SOURCE_NAME, clientConfig, event -> event.getKey() != 0, EventJournalMapEvent::getKey, START_FROM_OLDEST,
-                wmGenParams(i -> i, limitingLag(0), suppressDuplicates(), 10_000)));
+                wmGenParams(i -> i, limitingLag(0), noThrottling(), 10_000)));
         Vertex sink = dag.newVertex(SINK_NAME, writeListP(SINK_NAME));
         dag.edge(between(source, sink));
 
@@ -274,7 +274,7 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
         DAG dag = new DAG();
         Vertex source = dag.newVertex(SOURCE_NAME,
                 streamRemoteCacheP(SOURCE_NAME, clientConfig, START_FROM_OLDEST,
-                        wmGenParams(Entry<Integer, Integer>::getValue, limitingLag(0), suppressDuplicates(), 10_000))
+                        wmGenParams(Entry<Integer, Integer>::getValue, limitingLag(0), noThrottling(), 10_000))
         ).localParallelism(4);
         Vertex sink = dag.newVertex(SINK_NAME, writeListP(SINK_NAME)).localParallelism(1);
         dag.edge(between(source, sink));
@@ -293,7 +293,7 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
         Vertex source = dag.newVertex(SOURCE_NAME, SourceProcessors.<Integer, Integer, Integer>streamRemoteCacheP(
                 SOURCE_NAME, clientConfig, event -> !event.getKey().equals(0), EventJournalCacheEvent::getKey,
                 START_FROM_OLDEST,
-                wmGenParams(i -> i, limitingLag(0), suppressDuplicates(), 10_000)));
+                wmGenParams(i -> i, limitingLag(0), noThrottling(), 10_000)));
         Vertex sink = dag.newVertex(SINK_NAME, writeListP(SINK_NAME));
         dag.edge(between(source, sink));
 

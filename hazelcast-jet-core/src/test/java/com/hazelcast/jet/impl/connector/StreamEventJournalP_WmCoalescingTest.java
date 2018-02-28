@@ -39,7 +39,7 @@ import java.util.function.Supplier;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.pipeline.JournalInitialPosition.START_FROM_OLDEST;
-import static com.hazelcast.jet.core.WatermarkEmissionPolicy.suppressDuplicates;
+import static com.hazelcast.jet.core.WatermarkEmissionPolicy.noThrottling;
 import static com.hazelcast.jet.core.WatermarkGenerationParams.wmGenParams;
 import static com.hazelcast.jet.core.WatermarkPolicies.limitingLag;
 import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.IDLE_MESSAGE;
@@ -167,7 +167,7 @@ public class StreamEventJournalP_WmCoalescingTest extends JetTestSupport {
     public Supplier<Processor> createSupplier(List<Integer> assignedPartitions, long idleTimeout) {
         return () -> new StreamEventJournalP<>(map, assignedPartitions, e -> true,
                 EventJournalMapEvent::getNewValue, START_FROM_OLDEST, false,
-                wmGenParams(Integer::intValue, limitingLag(0), suppressDuplicates(), idleTimeout));
+                wmGenParams(Integer::intValue, limitingLag(0), noThrottling(), idleTimeout));
     }
 
     private Watermark wm(long timestamp) {

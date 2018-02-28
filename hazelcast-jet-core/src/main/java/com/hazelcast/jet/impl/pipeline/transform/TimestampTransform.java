@@ -29,7 +29,7 @@ import static com.hazelcast.jet.core.processor.Processors.insertWatermarksP;
  */
 public class TimestampTransform<T> extends AbstractTransform {
     @Nonnull
-    public final WatermarkGenerationParams wmGenParams;
+    public WatermarkGenerationParams wmGenParams;
 
     public TimestampTransform(
             @Nonnull Transform upstream,
@@ -46,5 +46,14 @@ public class TimestampTransform<T> extends AbstractTransform {
                 this, p.uniqueVertexName(name(), ""), localParallelism(), insertWatermarksP(wmGenParams)
         );
         p.addEdges(this, pv.v);
+    }
+
+    @Nonnull
+    public WatermarkGenerationParams getWmGenParams() {
+        return wmGenParams;
+    }
+
+    public void setWmGenerationParams(@Nonnull WatermarkGenerationParams wmGenParams) {
+        this.wmGenParams = wmGenParams;
     }
 }

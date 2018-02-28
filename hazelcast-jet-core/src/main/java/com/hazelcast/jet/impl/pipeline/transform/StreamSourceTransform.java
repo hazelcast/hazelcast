@@ -80,6 +80,11 @@ public class StreamSourceTransform<T> extends AbstractTransform implements Strea
         }
     }
 
+    @Nullable
+    public WatermarkGenerationParams<T> getWmParams() {
+        return wmParams;
+    }
+
     public void setWmGenerationParams(WatermarkGenerationParams<T> wmParams) {
         this.wmParams = wmParams;
     }

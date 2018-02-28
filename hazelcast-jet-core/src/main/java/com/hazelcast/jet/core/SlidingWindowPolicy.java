@@ -54,7 +54,8 @@ public class SlidingWindowPolicy implements Serializable {
     SlidingWindowPolicy(long frameSize, long frameOffset, long framesPerWindow) {
         checkPositive(frameSize, "frameLength must be positive");
         checkNotNegative(frameOffset, "frameOffset must not be negative");
-        checkTrue(frameOffset < frameSize, "frameOffset must be less than frameLength");
+        checkTrue(frameOffset < frameSize, "frameOffset must be less than frameSize, offset="
+                + frameOffset + ", size=" + frameSize);
         checkPositive(framesPerWindow, "framesPerWindow must be positive");
 
         this.frameSize = frameSize;

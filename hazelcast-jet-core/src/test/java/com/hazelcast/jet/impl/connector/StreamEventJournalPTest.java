@@ -82,9 +82,8 @@ public class StreamEventJournalPTest extends JetTestSupport {
                 wmGenParams(Integer::intValue, limitingLag(0), suppressAll(), -1));
     }
 
-
     private WatermarkEmissionPolicy suppressAll() {
-        return (wm1, wm2) -> false;
+        return (currentWm, lastEmittedWm) -> lastEmittedWm;
     }
 
     @Test

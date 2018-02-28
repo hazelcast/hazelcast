@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.hazelcast.jet.impl.util.Util.addClamped;
+import static com.hazelcast.jet.impl.util.Util.gcd;
 import static com.hazelcast.jet.impl.util.Util.memoizeConcurrent;
 import static com.hazelcast.jet.impl.util.Util.subtractClamped;
 import static org.junit.Assert.assertEquals;
@@ -103,5 +104,21 @@ public class UtilTest {
         assertEquals("ffff-ffff-ffff-ffff", Util.idToString(-1));
         assertEquals("1122-10f4-7de9-8115", Util.idToString(1234567890123456789L));
         assertEquals("eedd-ef0b-8216-7eeb", Util.idToString(-1234567890123456789L));
+    }
+
+    @Test
+    public void test_calculateGcd2() {
+        assertEquals(2, gcd(0L, 2L));
+        assertEquals(1, gcd(1L, 2L));
+        assertEquals(2, gcd(2L, 4L));
+        assertEquals(2, gcd(-2L, 4L));
+    }
+
+    @Test
+    public void test_calculateGcdN() {
+        assertEquals(0, gcd());
+        assertEquals(4, gcd(4, 4, 4));
+        assertEquals(4, gcd(4, 8, 12));
+        assertEquals(1, gcd(4, 8, 13));
     }
 }

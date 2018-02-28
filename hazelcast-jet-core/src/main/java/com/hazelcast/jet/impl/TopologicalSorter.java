@@ -102,13 +102,13 @@ public final class TopologicalSorter<V> {
             // remains on the stack after it has been visited if and only if there is
             // a path from it to some vertex earlier on the stack.
             assert tarjanStack.isEmpty() : "Broken stack invariant";
-            strongconnect(tv);
+            strongConnect(tv);
         }
         return topologicallySorted;
     }
 
     // method name identical to the one used in the Wikipedia article
-    private void strongconnect(TarjanVertex<V> currTv) {
+    private void strongConnect(TarjanVertex<V> currTv) {
         currTv.visitedAtIndex(nextIndex++);
         push(currTv);
         for (TarjanVertex<V> outTv : adjacencyMap.get(currTv)) {
@@ -118,10 +118,10 @@ public final class TopologicalSorter<V> {
             }
             if (outTv.index == -1) {
                 // outTv not discovered yet, visit it...
-                strongconnect(outTv);
+                strongConnect(outTv);
                 // ... and propagate lowlink computed for it to currTv
                 currTv.lowlink = min(currTv.lowlink, outTv.lowlink);
-            } else if (outTv.onstack) {
+            } else if (outTv.onStack) {
                 // outTv is already on the stack => there is a cycle in the graph.
                 // Proceed with the algorithm until the full extent of the cycle
                 // is known.
@@ -163,13 +163,13 @@ public final class TopologicalSorter<V> {
     }
 
     private void push(TarjanVertex<V> thisTv) {
-        thisTv.onstack = true;
+        thisTv.onStack = true;
         tarjanStack.addLast(thisTv);
     }
 
     private TarjanVertex<V> pop() {
         TarjanVertex<V> popped = tarjanStack.removeLast();
-        popped.onstack = false;
+        popped.onStack = false;
         return popped;
     }
 
@@ -179,7 +179,7 @@ public final class TopologicalSorter<V> {
         // Field names identical to those used in the Wikipedia article:
         int index = -1;
         int lowlink = -1;
-        boolean onstack; // tells whether the vertex is currently on the Tarjan stack
+        boolean onStack; // tells whether the vertex is currently on the Tarjan stack
 
         TarjanVertex(@Nonnull V v) {
             this.v = v;

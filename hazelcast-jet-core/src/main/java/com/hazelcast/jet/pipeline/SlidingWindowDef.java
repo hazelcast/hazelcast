@@ -23,6 +23,7 @@ import javax.annotation.Nonnull;
 import static com.hazelcast.jet.core.SlidingWindowPolicy.slidingWinPolicy;
 import static com.hazelcast.jet.pipeline.WindowDefinition.WindowKind.SLIDING;
 import static com.hazelcast.util.Preconditions.checkPositive;
+import static com.hazelcast.util.Preconditions.checkTrue;
 
 /**
  * Represents the definition of a {@link WindowKind#SLIDING sliding
@@ -35,6 +36,8 @@ public class SlidingWindowDef implements WindowDefinition {
     SlidingWindowDef(long windowSize, long slideBy) {
         checkPositive(windowSize, "windowSize must be positive");
         checkPositive(slideBy, "slideBy must be positive");
+        checkTrue(windowSize % slideBy == 0, "windowSize must be integer multiple of slideBy, mod("
+                + windowSize + ", " + slideBy + ") != 0");
         this.windowSize = windowSize;
         this.slideBy = slideBy;
     }
@@ -48,6 +51,11 @@ public class SlidingWindowDef implements WindowDefinition {
     @SuppressWarnings("unchecked")
     public SlidingWindowDef downcast() {
         return this;
+    }
+
+    @Override
+    public long watermarkFrameSize() {
+        return slideBy;
     }
 
     /**

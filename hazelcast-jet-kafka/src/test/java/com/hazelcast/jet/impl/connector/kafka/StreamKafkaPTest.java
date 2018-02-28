@@ -64,7 +64,7 @@ import java.util.concurrent.Future;
 
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.Edge.between;
-import static com.hazelcast.jet.core.WatermarkEmissionPolicy.suppressDuplicates;
+import static com.hazelcast.jet.core.WatermarkEmissionPolicy.noThrottling;
 import static com.hazelcast.jet.core.WatermarkGenerationParams.noWatermarks;
 import static com.hazelcast.jet.core.WatermarkGenerationParams.wmGenParams;
 import static com.hazelcast.jet.core.WatermarkPolicies.limitingLag;
@@ -317,7 +317,7 @@ public class StreamKafkaPTest extends KafkaTestSupport {
                         :
                         System.currentTimeMillis();
         WatermarkGenerationParams<T> wmParams = wmGenParams(
-                timestampFn, limitingLag(LAG), suppressDuplicates(), idleTimeoutMillis);
+                timestampFn, limitingLag(LAG), noThrottling(), idleTimeoutMillis);
         List<String> topics = numTopics == 1 ?
                 singletonList(topic1Name)
                 :
@@ -391,7 +391,7 @@ public class StreamKafkaPTest extends KafkaTestSupport {
         WatermarkGenerationParams<String> wmParams = wmGenParams(
                 Long::parseLong,
                 limitingLag(0),
-                suppressDuplicates(),
+                noThrottling(),
                 0
         );
         StreamKafkaP processor = new StreamKafkaP<Integer, String, String>(

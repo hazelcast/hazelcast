@@ -20,11 +20,10 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.jet.core.SlidingWindowPolicy.tumblingWinPolicy;
 import static com.hazelcast.jet.core.WatermarkEmissionPolicy.emitByFrame;
 import static com.hazelcast.jet.core.WatermarkEmissionPolicy.emitByMinStep;
-import static com.hazelcast.jet.core.SlidingWindowPolicy.tumblingWinPolicy;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 public class WatermarkEmissionPolicyTest {
@@ -36,35 +35,31 @@ public class WatermarkEmissionPolicyTest {
     @Test
     public void when_wmIncreasing_then_throttleByMinStep() {
         p = emitByMinStep(MIN_STEP);
-        assertWm(2, true);
-        assertWm(3, false);
-        assertWm(4, true);
-        assertWm(6, true);
-        assertWm(9, true);
-        assertWm(10, false);
-        assertWm(11, true);
+        assertWm(2, 2);
+        assertWm(3, 2);
+        assertWm(4, 4);
+        assertWm(6, 6);
+        assertWm(9, 9);
+        assertWm(10, 9);
+        assertWm(11, 11);
     }
 
     @Test
     public void when_wmIncreasing_then_throttleByFrame() {
         p = emitByFrame(tumblingWinPolicy(3));
-        assertWm(Long.MIN_VALUE, false);
-        assertWm(2, true);
-        assertWm(3, true);
-        assertWm(4, false);
-        assertWm(5, false);
-        assertWm(6, true);
-        assertWm(13, true);
-        assertWm(14, false);
-        assertWm(15, true);
+        assertWm(Long.MIN_VALUE, Long.MIN_VALUE);
+        assertWm(2, 0);
+        assertWm(3, 3);
+        assertWm(4, 3);
+        assertWm(5, 3);
+        assertWm(6, 6);
+        assertWm(13, 12);
+        assertWm(14, 12);
+        assertWm(15, 15);
     }
 
-    private void assertWm(long currentWm, boolean expectedToEmit) {
-        if (p.shouldEmit(currentWm, lastEmittedWm)) {
-            assertTrue(expectedToEmit);
-            lastEmittedWm = currentWm;
-        } else {
-            assertFalse(expectedToEmit);
-        }
+    private void assertWm(long currentWm, long expectedToEmit) {
+        lastEmittedWm = p.throttleWm(currentWm, lastEmittedWm);
+        assertEquals(expectedToEmit, lastEmittedWm);
     }
 }
