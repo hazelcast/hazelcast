@@ -6,6 +6,7 @@ com.hazelcast.jet.accumulator.AccumulatorSerializerHooks$LongLongAccHook
 com.hazelcast.jet.accumulator.AccumulatorSerializerHooks$LongDoubleAccHook
 com.hazelcast.jet.core.CoreSerializerHooks$WatermarkHook
 com.hazelcast.jet.datamodel.DataModelSerializerHooks$TimestampedEntryHook
+com.hazelcast.jet.datamodel.DataModelSerializerHooks$TimestampedItemHook
 com.hazelcast.jet.datamodel.DataModelSerializerHooks$WindowResultHook
 com.hazelcast.jet.datamodel.DataModelSerializerHooks$Tuple2Hook
 com.hazelcast.jet.datamodel.DataModelSerializerHooks$Tuple3Hook
