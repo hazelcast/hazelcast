@@ -119,7 +119,7 @@ public class NetworkingImbalancePlugin extends DiagnosticsPlugin {
             totalPriorityFramesReceived += thread.priorityFramesTransceived();
             totalEvents += thread.eventCount();
             totalTaskCount += thread.completedTaskCount();
-            totalHandleCount += thread.handleCount();
+            totalHandleCount += thread.processCount();
         }
 
         for (NioThread thread : threads) {
@@ -133,8 +133,8 @@ public class NetworkingImbalancePlugin extends DiagnosticsPlugin {
             writer.writeKeyValueEntry("bytes", thread.bytesTransceived());
             writer.writeKeyValueEntry("events-percentage", toPercentage(thread.eventCount(), totalEvents));
             writer.writeKeyValueEntry("events", thread.eventCount());
-            writer.writeKeyValueEntry("handle-count-percentage", toPercentage(thread.handleCount(), totalHandleCount));
-            writer.writeKeyValueEntry("handle-count", thread.handleCount());
+            writer.writeKeyValueEntry("handle-count-percentage", toPercentage(thread.processCount(), totalHandleCount));
+            writer.writeKeyValueEntry("handle-count", thread.processCount());
             writer.writeKeyValueEntry("tasks-percentage", toPercentage(thread.completedTaskCount(), totalTaskCount));
             writer.writeKeyValueEntry("tasks", thread.completedTaskCount());
             writer.endSection();
