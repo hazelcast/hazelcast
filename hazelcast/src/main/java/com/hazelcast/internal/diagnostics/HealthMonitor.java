@@ -34,6 +34,7 @@ import static com.hazelcast.spi.properties.GroupProperty.HEALTH_MONITORING_THRES
 import static com.hazelcast.spi.properties.GroupProperty.HEALTH_MONITORING_THRESHOLD_MEMORY_PERCENTAGE;
 import static com.hazelcast.util.ThreadUtil.createThreadName;
 import static java.lang.String.format;
+import static java.lang.Thread.currentThread;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -114,6 +115,7 @@ public class HealthMonitor {
         try {
             monitorThread.join();
         } catch (InterruptedException e) {
+            currentThread().interrupt();
             EmptyStatement.ignore(e);
         }
         logger.finest("HealthMonitor stopped");
@@ -162,6 +164,7 @@ public class HealthMonitor {
                     try {
                         SECONDS.sleep(delaySeconds);
                     } catch (InterruptedException e) {
+                        currentThread().interrupt();
                         return;
                     }
                 }

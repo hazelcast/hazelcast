@@ -25,6 +25,7 @@ import com.hazelcast.util.EmptyStatement;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
+import static java.lang.Thread.currentThread;
 
 /**
  * Provides proxy for the Transactional Queue.
@@ -42,6 +43,7 @@ public class TransactionalQueueProxy<E> extends TransactionalQueueProxySupport<E
         try {
             return offer(e, 0, TimeUnit.MILLISECONDS);
         } catch (InterruptedException ignored) {
+            currentThread().interrupt();
             EmptyStatement.ignore(ignored);
         }
         return false;
@@ -67,7 +69,7 @@ public class TransactionalQueueProxy<E> extends TransactionalQueueProxySupport<E
         try {
             return poll(0, TimeUnit.MILLISECONDS);
         } catch (InterruptedException ignored) {
-            //todo: interrupt status swallowed
+            currentThread().interrupt();
             EmptyStatement.ignore(ignored);
         }
         return null;
@@ -87,7 +89,7 @@ public class TransactionalQueueProxy<E> extends TransactionalQueueProxySupport<E
         try {
             return peek(0, TimeUnit.MILLISECONDS);
         } catch (InterruptedException ignored) {
-            //todo: interrupt status swallowed
+            currentThread().interrupt();
             EmptyStatement.ignore(ignored);
         }
         return null;

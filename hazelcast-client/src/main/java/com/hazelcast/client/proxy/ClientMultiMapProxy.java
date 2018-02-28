@@ -83,6 +83,7 @@ import static com.hazelcast.map.impl.ListenerAdapters.createListenerAdapter;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.Preconditions.checkPositive;
 import static com.hazelcast.util.Preconditions.isNotNull;
+import static java.lang.Thread.currentThread;
 
 /**
  * Proxy implementation of {@link MultiMap}.
@@ -371,6 +372,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         try {
             return tryLock(key, 0, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
+            currentThread().interrupt();
             return false;
         }
     }

@@ -41,6 +41,7 @@ import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTED;
 import static com.hazelcast.util.Preconditions.checkHasText;
 import static com.hazelcast.util.SetUtil.createHashSet;
 import static java.lang.String.format;
+import static java.lang.Thread.currentThread;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -211,6 +212,7 @@ public final class HazelcastInstanceFactory {
                         SECONDS.sleep(ADDITIONAL_SLEEP_SECONDS_FOR_NON_FIRST_MEMBERS);
                     }
                 } catch (InterruptedException ignored) {
+                    currentThread().interrupt();
                     EmptyStatement.ignore(ignored);
                 }
             }
@@ -240,6 +242,7 @@ public final class HazelcastInstanceFactory {
                 // noinspection BusyWait
                 SECONDS.sleep(1);
             } catch (InterruptedException ignored) {
+                currentThread().interrupt();
                 EmptyStatement.ignore(ignored);
             }
         }

@@ -173,6 +173,7 @@ import static com.hazelcast.util.Preconditions.checkNotInstanceOf;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.SortingUtil.getSortedQueryResultSet;
 import static com.hazelcast.util.ThreadUtil.getThreadId;
+import static java.lang.Thread.currentThread;
 import static java.util.Collections.emptyMap;
 
 /**
@@ -640,6 +641,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
         try {
             return tryLock(key, 0, null);
         } catch (InterruptedException e) {
+            currentThread().interrupt();
             return false;
         }
     }

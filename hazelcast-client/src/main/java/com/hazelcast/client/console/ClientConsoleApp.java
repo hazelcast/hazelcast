@@ -70,7 +70,7 @@ import java.util.concurrent.locks.Lock;
 
 import static com.hazelcast.util.StringUtil.lowerCaseInternal;
 import static java.lang.String.format;
-
+import static java.lang.Thread.currentThread;
 
 /**
  * A demo application to demonstrate a Hazelcast client. This is probably NOT something you want to use in production.
@@ -488,6 +488,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
             try {
                 f.get();
             } catch (InterruptedException e) {
+                currentThread().interrupt();
                 e.printStackTrace();
             } catch (ExecutionException e) {
                 e.printStackTrace();
@@ -699,6 +700,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
         try {
             println(getMap().putAsync(args[1], args[2]).get());
         } catch (InterruptedException e) {
+            currentThread().interrupt();
             e.printStackTrace();
         } catch (ExecutionException e) {
             e.printStackTrace();
@@ -721,6 +723,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
         try {
             println(getMap().getAsync(args[1]).get());
         } catch (InterruptedException e) {
+            currentThread().interrupt();
             e.printStackTrace();
         } catch (ExecutionException e) {
             e.printStackTrace();
@@ -815,6 +818,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
             try {
                 locked = getMap().tryLock(key, time, TimeUnit.SECONDS);
             } catch (InterruptedException e) {
+                currentThread().interrupt();
                 locked = false;
             }
         }
@@ -938,6 +942,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
             try {
                 locked = getMultiMap().tryLock(key, time, TimeUnit.SECONDS);
             } catch (InterruptedException e) {
+                currentThread().interrupt();
                 locked = false;
             }
         }
@@ -983,6 +988,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
                     println(lock.tryLock(time, TimeUnit.SECONDS));
                 } catch (InterruptedException e) {
                     e.printStackTrace();
+                    currentThread().interrupt();
                 }
             }
         }
@@ -1191,6 +1197,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
             boolean offered = getQueue().offer(args[1], timeout, TimeUnit.SECONDS);
             println(offered);
         } catch (InterruptedException e) {
+            currentThread().interrupt();
             e.printStackTrace();
         }
     }
@@ -1199,6 +1206,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
         try {
             println(getQueue().take());
         } catch (InterruptedException e) {
+            currentThread().interrupt();
             e.printStackTrace();
         }
     }
@@ -1211,6 +1219,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
         try {
             println(getQueue().poll(timeout, TimeUnit.SECONDS));
         } catch (InterruptedException e) {
+            currentThread().interrupt();
             e.printStackTrace();
         }
     }
@@ -1309,6 +1318,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
             }
             println("Result: " + future.get());
         } catch (InterruptedException e) {
+            currentThread().interrupt();
             e.printStackTrace();
         } catch (ExecutionException e) {
             e.printStackTrace();
@@ -1326,6 +1336,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
                 println(f.get());
             }
         } catch (InterruptedException e) {
+            currentThread().interrupt();
             e.printStackTrace();
         } catch (ExecutionException e) {
             e.printStackTrace();

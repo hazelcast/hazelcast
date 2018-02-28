@@ -64,6 +64,7 @@ import static com.hazelcast.util.Preconditions.isNotNull;
 import static com.hazelcast.util.SetUtil.createHashSet;
 import static java.lang.Math.ceil;
 import static java.lang.Math.log10;
+import static java.lang.Thread.currentThread;
 
 /**
  * Proxy implementation of {@link com.hazelcast.core.ReplicatedMap} interface.
@@ -125,6 +126,7 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
         try {
             TimeUnit.MILLISECONDS.sleep(WAIT_INTERVAL_MILLIS);
         } catch (InterruptedException e) {
+            currentThread().interrupt();
             throw rethrow(e);
         }
     }

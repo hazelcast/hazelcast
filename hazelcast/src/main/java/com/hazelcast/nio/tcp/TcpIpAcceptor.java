@@ -40,6 +40,7 @@ import static com.hazelcast.nio.IOUtil.closeResource;
 import static com.hazelcast.util.ThreadUtil.createThreadPoolName;
 import static java.lang.Math.max;
 import static java.lang.System.currentTimeMillis;
+import static java.lang.Thread.currentThread;
 import static java.nio.channels.SelectionKey.OP_ACCEPT;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -122,6 +123,7 @@ public class TcpIpAcceptor implements MetricsProvider {
         try {
             acceptorThread.join(SHUTDOWN_TIMEOUT_MILLIS);
         } catch (InterruptedException e) {
+            currentThread().interrupt();
             logger.finest(e);
         }
     }

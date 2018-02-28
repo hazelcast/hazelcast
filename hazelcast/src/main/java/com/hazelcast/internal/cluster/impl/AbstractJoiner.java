@@ -52,6 +52,7 @@ import static com.hazelcast.cluster.ClusterState.FROZEN;
 import static com.hazelcast.cluster.ClusterState.IN_TRANSITION;
 import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createEmptyResponseHandler;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
+import static java.lang.Thread.currentThread;
 
 public abstract class AbstractJoiner implements Joiner {
 
@@ -200,6 +201,7 @@ public abstract class AbstractJoiner implements Joiner {
                     //noinspection BusyWait
                     TimeUnit.SECONDS.sleep(1);
                 } catch (InterruptedException ignored) {
+                    currentThread().interrupt();
                     EmptyStatement.ignore(ignored);
                 }
             }
@@ -248,6 +250,7 @@ public abstract class AbstractJoiner implements Joiner {
                 //noinspection BusyWait
                 Thread.sleep(SPLIT_BRAIN_SLEEP_TIME_MILLIS);
             } catch (InterruptedException e) {
+                currentThread().interrupt();
                 EmptyStatement.ignore(e);
                 return null;
             }
