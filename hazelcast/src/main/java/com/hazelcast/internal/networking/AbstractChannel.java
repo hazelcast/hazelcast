@@ -35,8 +35,9 @@ import static java.util.Collections.newSetFromMap;
 import static java.util.concurrent.atomic.AtomicIntegerFieldUpdater.newUpdater;
 
 /**
- * An abstract {@link Channel} implementation. This class is a pure implementation detail, the fact that it exposes some
- * functionality like access to the socket channel is because the current Channel implementations need the SocketChannel.
+ * An abstract {@link Channel} implementation. This class is a pure implementation
+ * detail, the fact that it exposes some functionality like access to the socket
+ * channel is because the current Channel implementations need the SocketChannel.
  */
 public abstract class AbstractChannel implements Channel {
 
@@ -145,8 +146,9 @@ public abstract class AbstractChannel implements Channel {
     }
 
     /**
-     * Template method that is called when the socket channel closed. It is called before the {@code socketChannel} is closed.
-     * <p>
+     * Template method that is called when the socket channel closed. It is
+     * called before the {@code socketChannel} is closed.
+     *
      * It will be called only once.
      */
     protected void onClose() throws IOException {

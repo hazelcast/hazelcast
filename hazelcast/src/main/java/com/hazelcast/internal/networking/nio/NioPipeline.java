@@ -95,8 +95,8 @@ public abstract class NioPipeline implements MigratablePipeline, Closeable {
     }
 
     @Override
-    public NioThread getOwner() {
-        return owner;
+    public NioThread owner() {
+            return owner;
     }
 
     public void start() {

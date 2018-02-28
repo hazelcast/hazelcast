@@ -32,9 +32,10 @@ import static java.lang.Class.forName;
 import static java.lang.System.arraycopy;
 
 /**
- * The SelectorOptimizer optimizes the Selector so less litter is being created. The Selector uses a HashSet, but this creates
- * an object for every add of a selection key. With this SelectorOptimizer a SelectionKeysSet, which contains an  an array,
- * is being used since every key is going to be inserted only once.
+ * The SelectorOptimizer optimizes the Selector so less litter is being created.
+ * The Selector uses a HashSet, but this creates an object for every add of a
+ * selection key. With this SelectorOptimizer a SelectionKeysSet, which contains
+ * an  an array, is being used since every key is going to be inserted only once.
  *
  * This trick comes from Netty.
  */
@@ -51,7 +52,7 @@ public final class SelectorOptimizer {
      * @return the created Selector.
      * @throws NullPointerException if logger is null.
      */
-    public static Selector newSelector(ILogger logger) {
+    static Selector newSelector(ILogger logger) {
         checkNotNull(logger, "logger");
 
         Selector selector;

@@ -109,10 +109,10 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
     }
 
     private void add(Map<NioThread, Set<MigratablePipeline>> handlersPerSelector, MigratablePipeline handler) {
-        Set<MigratablePipeline> handlers = handlersPerSelector.get(handler.getOwner());
+        Set<MigratablePipeline> handlers = handlersPerSelector.get(handler.owner());
         if (handlers == null) {
             handlers = new HashSet<MigratablePipeline>();
-            handlersPerSelector.put(handler.getOwner(), handlers);
+            handlersPerSelector.put(handler.owner(), handlers);
         }
         handlers.add(handler);
     }
@@ -132,7 +132,7 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
         MigratablePipeline activeHandler = iterator.next();
         if (handlers.size() == 2) {
             MigratablePipeline deadHandler = iterator.next();
-            if (activeHandler.getLoad() < deadHandler.getLoad()) {
+            if (activeHandler.load() < deadHandler.load()) {
                 MigratablePipeline tmp = deadHandler;
                 deadHandler = activeHandler;
                 activeHandler = tmp;
@@ -141,11 +141,11 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
             // the maximum number of events seen on the dead connection is 3. 10 should be save to assume the
             // connection is dead.
             assertTrue("at most 10 event should have been received, number of events received:"
-                    + deadHandler.getLoad(), deadHandler.getLoad() < 10);
+                    + deadHandler.load(), deadHandler.load() < 10);
         }
 
-        assertTrue("activeHandlerEvent count should be at least 1000, but was:" + activeHandler.getLoad(),
-                activeHandler.getLoad() > 1000);
+        assertTrue("activeHandlerEvent count should be at least 1000, but was:" + activeHandler.load(),
+                activeHandler.load() > 1000);
     }
 
     private String debug(TcpIpConnectionManager connectionManager) {
@@ -158,8 +158,8 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
 
             for (TcpIpConnection connection : connectionManager.getActiveConnections()) {
                 NioInboundPipeline socketReader = ((NioChannel) connection.getChannel()).inboundPipeline();
-                if (socketReader.getOwner() == in) {
-                    sb.append("\t").append(socketReader).append(" eventCount:").append(socketReader.getLoad()).append("\n");
+                if (socketReader.owner() == in) {
+                    sb.append("\t").append(socketReader).append(" eventCount:").append(socketReader.load()).append("\n");
                 }
             }
         }
@@ -169,8 +169,8 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
 
             for (TcpIpConnection connection : connectionManager.getActiveConnections()) {
                 NioOutboundPipeline socketWriter = ((NioChannel) connection.getChannel()).outboundPipeline();
-                if (socketWriter.getOwner() == in) {
-                    sb.append("\t").append(socketWriter).append(" eventCount:").append(socketWriter.getLoad()).append("\n");
+                if (socketWriter.owner() == in) {
+                    sb.append("\t").append(socketWriter).append(" eventCount:").append(socketWriter.load()).append("\n");
                 }
             }
         }

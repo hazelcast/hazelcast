@@ -168,7 +168,7 @@ public class IOBalancer {
             return new MonkeyMigrationStrategy();
         } else {
             logger.finest("Using normal IO Balancer Strategy.");
-            return new EventCountBasicMigrationStrategy();
+            return new LoadMigrationStrategy();
         }
     }
 

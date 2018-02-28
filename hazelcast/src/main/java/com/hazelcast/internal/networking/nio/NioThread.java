@@ -352,7 +352,7 @@ public class NioThread extends Thread implements OperationHostileThread {
 
     private NioThread getTargetIOThread(Runnable task) {
         if (task instanceof MigratablePipeline) {
-            return ((MigratablePipeline) task).getOwner();
+            return ((MigratablePipeline) task).owner();
         } else {
             return this;
         }

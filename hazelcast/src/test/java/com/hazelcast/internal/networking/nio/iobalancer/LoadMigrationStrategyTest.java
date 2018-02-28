@@ -41,24 +41,24 @@ import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class EventCountBasicMigrationStrategyTest extends HazelcastTestSupport {
+public class LoadMigrationStrategyTest extends HazelcastTestSupport {
 
     private Map<NioThread, Set<MigratablePipeline>> selectorToHandlers;
     private ItemCounter<MigratablePipeline> handlerEventsCounter;
     private LoadImbalance imbalance;
 
-    private EventCountBasicMigrationStrategy strategy;
+    private LoadMigrationStrategy strategy;
 
     @Before
     public void setUp() {
         selectorToHandlers = new HashMap<NioThread, Set<MigratablePipeline>>();
         handlerEventsCounter = new ItemCounter<MigratablePipeline>();
         imbalance = new LoadImbalance(selectorToHandlers, handlerEventsCounter);
-        strategy = new EventCountBasicMigrationStrategy();
+        strategy = new LoadMigrationStrategy();
     }
 
     @Test
-    public void testImbalanceDetected_shouldReturnFalseWhenNoKnownMinimum() throws Exception {
+    public void testImbalanceDetected_shouldReturnFalseWhenNoKnownMinimum() {
         imbalance.minimumEvents = Long.MIN_VALUE;
 
         boolean imbalanceDetected = strategy.imbalanceDetected(imbalance);
@@ -66,7 +66,7 @@ public class EventCountBasicMigrationStrategyTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testImbalanceDetected_shouldReturnFalseWhenNoKnownMaximum() throws Exception {
+    public void testImbalanceDetected_shouldReturnFalseWhenNoKnownMaximum() {
         imbalance.maximumEvents = Long.MAX_VALUE;
 
         boolean imbalanceDetected = strategy.imbalanceDetected(imbalance);
@@ -74,7 +74,7 @@ public class EventCountBasicMigrationStrategyTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testImbalanceDetected_shouldReturnFalseWhenBalanced() throws Exception {
+    public void testImbalanceDetected_shouldReturnFalseWhenBalanced() {
         imbalance.maximumEvents = 1000;
         imbalance.minimumEvents = (long) (1000 * 0.8);
 
@@ -83,7 +83,7 @@ public class EventCountBasicMigrationStrategyTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testImbalanceDetected_shouldReturnTrueWhenNotBalanced() throws Exception {
+    public void testImbalanceDetected_shouldReturnTrueWhenNotBalanced() {
         imbalance.maximumEvents = 1000;
         imbalance.minimumEvents = (long) (1000 * 0.8) - 1;
 
@@ -92,7 +92,7 @@ public class EventCountBasicMigrationStrategyTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testFindHandlerToMigrate() throws Exception {
+    public void testFindPipelinesToMigrate() {
         NioThread sourceSelector = mock(NioThread.class);
         NioThread destinationSelector = mock(NioThread.class);
         imbalance.sourceSelector = sourceSelector;

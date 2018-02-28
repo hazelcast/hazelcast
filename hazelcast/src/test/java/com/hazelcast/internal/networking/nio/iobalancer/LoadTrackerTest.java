@@ -56,25 +56,25 @@ public class LoadTrackerTest {
     @Test
     public void testUpdateImbalance() throws Exception {
         MigratablePipeline selector1Handler1 = mock(MigratablePipeline.class);
-        when(selector1Handler1.getLoad()).thenReturn(0L)
+        when(selector1Handler1.load()).thenReturn(0L)
                 .thenReturn(100L);
-        when(selector1Handler1.getOwner())
+        when(selector1Handler1.owner())
                 .thenReturn(selector1);
         loadTracker.addPipeline(selector1Handler1);
 
         MigratablePipeline selector2Handler1 = mock(MigratablePipeline.class);
-        when(selector2Handler1.getLoad())
+        when(selector2Handler1.load())
                 .thenReturn(0L)
                 .thenReturn(200L);
-        when(selector2Handler1.getOwner())
+        when(selector2Handler1.owner())
                 .thenReturn(selector2);
         loadTracker.addPipeline(selector2Handler1);
 
         MigratablePipeline selector2Handler3 = mock(MigratablePipeline.class);
-        when(selector2Handler3.getLoad())
+        when(selector2Handler3.load())
                 .thenReturn(0L)
                 .thenReturn(100L);
-        when(selector2Handler3.getOwner())
+        when(selector2Handler3.owner())
                 .thenReturn(selector2);
         loadTracker.addPipeline(selector2Handler3);
 
@@ -94,18 +94,18 @@ public class LoadTrackerTest {
     public void testUpdateImbalance_notUsingSingleHandlerSelectorAsSource() throws Exception {
         MigratablePipeline selector1Handler1 = mock(MigratablePipeline.class);
         // the first selector has a handler with a large number of events
-        when(selector1Handler1.getLoad()).thenReturn(10000L);
-        when(selector1Handler1.getOwner()).thenReturn(selector1);
+        when(selector1Handler1.load()).thenReturn(10000L);
+        when(selector1Handler1.owner()).thenReturn(selector1);
         loadTracker.addPipeline(selector1Handler1);
 
         MigratablePipeline selector2Handler = mock(MigratablePipeline.class);
-        when(selector2Handler.getLoad()).thenReturn(200L);
-        when(selector2Handler.getOwner()).thenReturn(selector2);
+        when(selector2Handler.load()).thenReturn(200L);
+        when(selector2Handler.owner()).thenReturn(selector2);
         loadTracker.addPipeline(selector2Handler);
 
         MigratablePipeline selector2Handler2 = mock(MigratablePipeline.class);
-        when(selector2Handler2.getLoad()).thenReturn(200L);
-        when(selector2Handler2.getOwner()).thenReturn(selector2);
+        when(selector2Handler2.load()).thenReturn(200L);
+        when(selector2Handler2.owner()).thenReturn(selector2);
         loadTracker.addPipeline(selector2Handler2);
 
         LoadImbalance loadImbalance = loadTracker.updateImbalance();
