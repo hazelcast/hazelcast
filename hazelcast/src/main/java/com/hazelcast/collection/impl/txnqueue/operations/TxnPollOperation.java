@@ -50,7 +50,7 @@ public class TxnPollOperation extends BaseTxnQueueOperation implements Notifier,
     @Override
     public void afterRun() throws Exception {
         LocalQueueStatsImpl queueStats = getQueueService().getLocalQueueStatsImpl(name);
-        if (response == null) {
+        if (data == null) {
             queueStats.incrementEmptyPolls();
         } else {
             queueStats.incrementPolls();

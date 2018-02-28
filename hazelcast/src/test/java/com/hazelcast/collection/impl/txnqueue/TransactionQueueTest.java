@@ -21,6 +21,8 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.IQueue;
+import com.hazelcast.core.ItemEvent;
+import com.hazelcast.core.ItemListener;
 import com.hazelcast.core.TransactionalQueue;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -628,4 +630,102 @@ public class TransactionQueueTest extends HazelcastTestSupport {
         }
     }
 
+    @Test
+    public void testListener_withOffer() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+        HazelcastInstance hz = factory.newHazelcastInstance();
+
+        final String name = randomName();
+        IQueue<Object> queue = hz.getQueue(name);
+
+        final EventCountingItemListener listener = new EventCountingItemListener();
+        queue.addItemListener(listener, true);
+
+        hz.executeTransaction(new TransactionalTask<Object>() {
+            @Override
+            public Object execute(TransactionalTaskContext ctx) throws TransactionException {
+                TransactionalQueue<Object> queue = ctx.getQueue(name);
+                return queue.offer("item");
+            }
+        });
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertEquals(1, listener.adds.get());
+            }
+        });
+    }
+
+    @Test
+    public void testListener_withPoll() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+        HazelcastInstance hz = factory.newHazelcastInstance();
+
+        final String name = randomName();
+        IQueue<Object> queue = hz.getQueue(name);
+        queue.offer("item");
+
+        final EventCountingItemListener listener = new EventCountingItemListener();
+        queue.addItemListener(listener, true);
+
+        Object item = hz.executeTransaction(new TransactionalTask<Object>() {
+            @Override
+            public Object execute(TransactionalTaskContext ctx) throws TransactionException {
+                TransactionalQueue<Object> queue = ctx.getQueue(name);
+                return queue.poll();
+            }
+        });
+        assertEquals("item", item);
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertEquals(1, listener.removes.get());
+            }
+        });
+    }
+
+    @Test
+    public void testListener_withEmptyPoll() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+        HazelcastInstance hz = factory.newHazelcastInstance();
+
+        final String name = randomName();
+        IQueue<Object> queue = hz.getQueue(name);
+
+        final EventCountingItemListener listener = new EventCountingItemListener();
+        queue.addItemListener(listener, true);
+
+        Object item = hz.executeTransaction(new TransactionalTask<Object>() {
+            @Override
+            public Object execute(TransactionalTaskContext ctx) throws TransactionException {
+                TransactionalQueue<Object> queue = ctx.getQueue(name);
+                return queue.poll();
+            }
+        });
+        assertNull(item);
+
+        assertTrueAllTheTime(new AssertTask() {
+            @Override
+            public void run() {
+                assertEquals(0, listener.removes.get());
+            }
+        }, 5);
+    }
+
+    private static class EventCountingItemListener implements ItemListener<Object> {
+        final AtomicInteger adds = new AtomicInteger();
+        final AtomicInteger removes = new AtomicInteger();
+
+        @Override
+        public void itemAdded(ItemEvent<Object> item) {
+            adds.incrementAndGet();
+        }
+
+        @Override
+        public void itemRemoved(ItemEvent<Object> item) {
+            removes.incrementAndGet();
+        }
+    }
 }
