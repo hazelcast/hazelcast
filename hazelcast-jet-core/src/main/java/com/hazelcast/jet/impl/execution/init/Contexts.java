@@ -19,7 +19,7 @@ package com.hazelcast.jet.impl.execution.init;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.Processor;
-import com.hazelcast.jet.core.ProcessorMetaSupplier.Context;
+import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.serialization.SerializationService;
@@ -31,91 +31,19 @@ public final class Contexts {
     private Contexts() {
     }
 
-    public static class ProcCtx implements Processor.Context {
-
-        private final JetInstance instance;
-        private final ILogger logger;
-        private final String vertexName;
-        private final int index;
-        private final SerializationService serService;
-        private final ProcessingGuarantee processingGuarantee;
-
-        public ProcCtx(JetInstance instance, SerializationService serService, ILogger logger, String vertexName,
-                       int index, ProcessingGuarantee processingGuarantee) {
-            this.instance = instance;
-            this.serService = serService;
-            this.logger = logger;
-            this.vertexName = vertexName;
-            this.index = index;
-            this.processingGuarantee = processingGuarantee;
-        }
-
-        @Nonnull @Override
-        public JetInstance jetInstance() {
-            return instance;
-        }
-
-        @Nonnull @Override
-        public ILogger logger() {
-            return logger;
-        }
-
-        @Override
-        public int globalProcessorIndex() {
-            return index;
-        }
-
-        @Nonnull @Override
-        public String vertexName() {
-            return vertexName;
-        }
-
-        @Override
-        public ProcessingGuarantee processingGuarantee() {
-            return processingGuarantee;
-        }
-
-        public SerializationService getSerializationService() {
-            return serService;
-        }
-    }
-
-    static class ProcSupplierCtx implements ProcessorSupplier.Context {
-        private final JetInstance instance;
-        private final int perNodeParallelism;
-        private final ILogger logger;
-
-        ProcSupplierCtx(JetInstance instance, ILogger logger, int perNodeParallelism) {
-            this.instance = instance;
-            this.perNodeParallelism = perNodeParallelism;
-            this.logger = logger;
-        }
-
-        @Nonnull @Override
-        public JetInstance jetInstance() {
-            return instance;
-        }
-
-        @Override
-        public int localParallelism() {
-            return perNodeParallelism;
-        }
-
-        @Nonnull @Override
-        public ILogger logger() {
-            return logger;
-        }
-    }
-
-    static class MetaSupplierCtx implements Context {
+    static class MetaSupplierCtx implements ProcessorMetaSupplier.Context {
         private final JetInstance jetInstance;
         private final ILogger logger;
-        private final int totalParallelism;
+        private final String vertexName;
         private final int localParallelism;
+        private final int totalParallelism;
 
-        MetaSupplierCtx(JetInstance jetInstance, ILogger logger, int totalParallelism, int localParallelism) {
+        MetaSupplierCtx(
+                JetInstance jetInstance, ILogger logger, String vertexName, int localParallelism, int totalParallelism
+        ) {
             this.jetInstance = jetInstance;
             this.logger = logger;
+            this.vertexName = vertexName;
             this.totalParallelism = totalParallelism;
             this.localParallelism = localParallelism;
         }
@@ -137,10 +65,55 @@ public final class Contexts {
         }
 
         @Nonnull @Override
+        public String vertexName() {
+            return vertexName;
+        }
+
+        @Nonnull @Override
         public ILogger logger() {
             return logger;
         }
 
     }
+
+    static class ProcSupplierCtx extends MetaSupplierCtx implements ProcessorSupplier.Context {
+
+        ProcSupplierCtx(
+                JetInstance jetInstance, ILogger logger, String vertexName, int localParallelism, int totalParallelism) {
+            super(jetInstance, logger, vertexName, localParallelism, totalParallelism);
+        }
+    }
+
+    public static class ProcCtx extends ProcSupplierCtx implements Processor.Context {
+
+        private final int index;
+        private final SerializationService serService;
+        private final ProcessingGuarantee processingGuarantee;
+
+        public ProcCtx(JetInstance instance, SerializationService serService, ILogger logger, String vertexName,
+                       int index, ProcessingGuarantee processingGuarantee, int localParallelism, int totalParallelism) {
+            super(instance, logger, vertexName, localParallelism, totalParallelism);
+            this.serService = serService;
+            this.index = index;
+            this.processingGuarantee = processingGuarantee;
+        }
+
+        @Override
+        public int globalProcessorIndex() {
+            return index;
+        }
+
+        @Override
+        public ProcessingGuarantee processingGuarantee() {
+            return processingGuarantee;
+        }
+
+        public SerializationService getSerializationService() {
+            return serService;
+        }
+    }
+
+
+
 }
 

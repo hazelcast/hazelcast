@@ -21,13 +21,11 @@ import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.BroadcastKey;
 import com.hazelcast.jet.core.CloseableProcessorSupplier;
-import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.WatermarkGenerationParams;
 import com.hazelcast.jet.core.WatermarkSourceUtil;
 import com.hazelcast.jet.function.DistributedFunction;
-import com.hazelcast.nio.Address;
 import com.hazelcast.util.Preconditions;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -45,7 +43,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -70,11 +67,11 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor implements Cl
     private final Properties properties;
     private final List<String> topics;
     private final DistributedFunction<ConsumerRecord<K, V>, T> projectionFn;
-    private final int globalParallelism;
     private final WatermarkSourceUtil<T> watermarkSourceUtil;
+    private int totalParallelism;
     private boolean snapshottingEnabled;
-    private KafkaConsumer<K, V> consumer;
 
+    private KafkaConsumer<K, V> consumer;
     private final int[] partitionCounts;
     private long nextMetadataCheck = Long.MIN_VALUE;
 
@@ -93,14 +90,11 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor implements Cl
             @Nonnull Properties properties,
             @Nonnull List<String> topics,
             @Nonnull DistributedFunction<ConsumerRecord<K, V>, T> projectionFn,
-            int globalParallelism,
             @Nonnull WatermarkGenerationParams<? super T> wmGenParams
     ) {
         this.properties = properties;
         this.topics = topics;
         this.projectionFn = projectionFn;
-        this.globalParallelism = globalParallelism;
-
         watermarkSourceUtil = new WatermarkSourceUtil<>(wmGenParams);
         partitionCounts = new int[topics.size()];
     }
@@ -108,6 +102,7 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor implements Cl
     @Override
     protected void init(@Nonnull Context context) {
         processorIndex = context.globalProcessorIndex();
+        totalParallelism = context.totalParallelism();
         snapshottingEnabled = context.snapshottingEnabled();
         consumer = new KafkaConsumer<>(properties);
         assignPartitions(false);
@@ -127,7 +122,7 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor implements Cl
             return;
         }
 
-        KafkaPartitionAssigner assigner = new KafkaPartitionAssigner(topics, partitionCounts, globalParallelism);
+        KafkaPartitionAssigner assigner = new KafkaPartitionAssigner(topics, partitionCounts, totalParallelism);
         Set<TopicPartition> newAssignments = assigner.topicPartitionsFor(processorIndex);
         logFinest(getLogger(), "Currently assigned partitions: %s", newAssignments);
 
@@ -271,43 +266,16 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor implements Cl
         }
     }
 
-    public static class MetaSupplier<K, V, T> implements ProcessorMetaSupplier {
-
-        private final Properties properties;
-        private final List<String> topics;
-        private final DistributedFunction<ConsumerRecord<K, V>, T> projectionFn;
-        private final WatermarkGenerationParams<? super T> wmGenParams;
-        private int totalParallelism;
-
-        public MetaSupplier(
-                @Nonnull Properties properties,
-                @Nonnull List<String> topics,
-                @Nonnull DistributedFunction<ConsumerRecord<K, V>, T> projectionFn,
-                @Nonnull WatermarkGenerationParams<? super T> wmGenParams) {
-            this.properties = new Properties();
-            this.properties.putAll(properties);
-            this.topics = topics;
-            this.projectionFn = projectionFn;
-            this.wmGenParams = wmGenParams;
-        }
-
-        @Override
-        public int preferredLocalParallelism() {
-            return 2;
-        }
-
-        @Override
-        public void init(@Nonnull Context context) {
-            totalParallelism = context.totalParallelism();
-        }
-
-        @Nonnull
-        @Override
-        public Function<Address, ProcessorSupplier> get(@Nonnull List<Address> addresses) {
-            return address -> new CloseableProcessorSupplier<>(
-                    () -> new StreamKafkaP<>(properties, topics, projectionFn, totalParallelism, wmGenParams)
-            );
-        }
+    @Nonnull
+    public static <K, V, T> ProcessorSupplier processorSupplier(
+            @Nonnull Properties properties,
+            @Nonnull List<String> topics,
+            @Nonnull DistributedFunction<ConsumerRecord<K, V>, T> projectionFn,
+            @Nonnull WatermarkGenerationParams<T> wmGenParams
+    ) {
+        return new CloseableProcessorSupplier<>(() -> new StreamKafkaP<>(
+                properties, topics, projectionFn, wmGenParams
+        ));
     }
 
     /**

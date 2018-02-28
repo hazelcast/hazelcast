@@ -20,17 +20,14 @@ import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 
 import javax.annotation.Nonnull;
 
 /**
  * {@link Processor.Context} implementation suitable to be used in tests.
  */
-public class TestProcessorContext implements Processor.Context {
-    private JetInstance jetInstance;
-    private ILogger logger;
-    private String vertexName = "testVertex";
+public class TestProcessorContext extends TestProcessorSupplierContext implements Processor.Context {
+
     private int globalProcessorIndex;
     private ProcessingGuarantee processingGuarantee = ProcessingGuarantee.NONE;
 
@@ -39,48 +36,6 @@ public class TestProcessorContext implements Processor.Context {
      */
     public TestProcessorContext() {
         globalProcessorIndex = 0;
-    }
-
-    @Nonnull @Override
-    public JetInstance jetInstance() {
-        return jetInstance;
-    }
-
-    /**
-     * Set the jet instance.
-     */
-    public TestProcessorContext setJetInstance(JetInstance jetInstance) {
-        this.jetInstance = jetInstance;
-        return this;
-    }
-
-    @Nonnull @Override
-    public ILogger logger() {
-        if (logger == null) {
-            logger = Logger.getLogger(vertexName + "#" + globalProcessorIndex);
-        }
-        return logger;
-    }
-
-    /**
-     * Set the logger.
-     */
-    public TestProcessorContext setLogger(@Nonnull ILogger logger) {
-        this.logger = logger;
-        return this;
-    }
-
-    @Nonnull @Override
-    public String vertexName() {
-        return vertexName;
-    }
-
-    /**
-     * Set the vertex name.
-     */
-    public TestProcessorContext setVertexName(@Nonnull String vertexName) {
-        this.vertexName = vertexName;
-        return this;
     }
 
     @Override
@@ -104,8 +59,39 @@ public class TestProcessorContext implements Processor.Context {
     /**
      * Sets the processing guarantee.
      */
+    @Nonnull
     public TestProcessorContext setProcessingGuarantee(ProcessingGuarantee processingGuarantee) {
         this.processingGuarantee = processingGuarantee;
         return this;
+    }
+
+    @Nonnull @Override
+    public TestProcessorContext setLogger(@Nonnull ILogger logger) {
+        return (TestProcessorContext) super.setLogger(logger);
+    }
+
+    @Nonnull @Override
+    public TestProcessorContext setJetInstance(@Nonnull JetInstance jetInstance) {
+        return (TestProcessorContext) super.setJetInstance(jetInstance);
+    }
+
+    @Nonnull @Override
+    public TestProcessorContext setTotalParallelism(int totalParallelism) {
+        return (TestProcessorContext) super.setTotalParallelism(totalParallelism);
+    }
+
+    @Nonnull @Override
+    public TestProcessorContext setLocalParallelism(int localParallelism) {
+        return (TestProcessorContext) super.setLocalParallelism(localParallelism);
+    }
+
+    @Nonnull @Override
+    public TestProcessorContext setVertexName(@Nonnull String vertexName) {
+        return (TestProcessorContext) super.setVertexName(vertexName);
+    }
+
+    @Override
+    protected String loggerName() {
+        return vertexName() + "#" + globalProcessorIndex;
     }
 }

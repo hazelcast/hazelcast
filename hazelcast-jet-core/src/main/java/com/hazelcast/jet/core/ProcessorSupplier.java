@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.core;
 
-import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.logging.ILogger;
 
@@ -78,19 +77,7 @@ public interface ProcessorSupplier extends Serializable {
     /**
      * Context passed to the supplier in the {@link #init(Context) init()} call.
      */
-    interface Context {
-
-        /**
-         * Returns the current Jet instance
-         */
-        @Nonnull
-        JetInstance jetInstance();
-
-        /**
-         * Returns the number of processors that the associated {@code ProcessorSupplier}
-         * will be asked to create.
-         */
-        int localParallelism();
+    interface Context extends ProcessorMetaSupplier.Context {
 
         /**
          * Returns a logger for the associated {@code ProcessorSupplier}.

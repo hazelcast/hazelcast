@@ -320,7 +320,13 @@ public interface ProcessorMetaSupplier extends Serializable {
         int localParallelism();
 
         /**
-         * Returns a logger for the associated {@code ProcessorSupplier}.
+         * Returns the name of the associated vertex.
+         */
+        @Nonnull
+        String vertexName();
+
+        /**
+         * Returns a logger for the associated {@code ProcessorMetaSupplier}.
          */
         @Nonnull
         ILogger logger();

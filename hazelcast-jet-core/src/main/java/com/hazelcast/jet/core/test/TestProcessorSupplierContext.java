@@ -22,44 +22,40 @@ import com.hazelcast.logging.ILogger;
 
 import javax.annotation.Nonnull;
 
-import static com.hazelcast.jet.core.test.TestSupport.getLogger;
-
 /**
  * {@link ProcessorSupplier.Context} implementation suitable to be used in tests.
  */
-public class TestProcessorSupplierContext implements ProcessorSupplier.Context {
+public class TestProcessorSupplierContext
+        extends TestProcessorMetaSupplierContext
+        implements ProcessorSupplier.Context {
 
-    private JetInstance jetInstance;
-    private int localParallelism = 1;
-
-    @Override
-    public JetInstance jetInstance() {
-        return jetInstance;
-    }
-
-    /**
-     * Set the jet instance.
-     */
-    public TestProcessorSupplierContext setJetInstance(JetInstance jetInstance) {
-        this.jetInstance = jetInstance;
-        return this;
-    }
-
-    @Override
-    public int localParallelism() {
-        return localParallelism;
+    @Nonnull @Override
+    public TestProcessorSupplierContext setLogger(@Nonnull ILogger logger) {
+        return (TestProcessorContext) super.setLogger(logger);
     }
 
     @Nonnull @Override
-    public ILogger logger() {
-        return getLogger(getClass());
+    public TestProcessorSupplierContext setJetInstance(@Nonnull JetInstance jetInstance) {
+        return (TestProcessorSupplierContext) super.setJetInstance(jetInstance);
     }
 
-    /**
-     * Set local parallelism.
-     */
+    @Nonnull @Override
+    public TestProcessorSupplierContext setVertexName(@Nonnull String vertexName) {
+        return (TestProcessorSupplierContext) super.setVertexName(vertexName);
+    }
+
+    @Nonnull @Override
+    public TestProcessorSupplierContext setTotalParallelism(int totalParallelism) {
+        return (TestProcessorSupplierContext) super.setTotalParallelism(totalParallelism);
+    }
+
+    @Nonnull @Override
     public TestProcessorSupplierContext setLocalParallelism(int localParallelism) {
-        this.localParallelism = localParallelism;
-        return this;
+        return (TestProcessorSupplierContext) super.setLocalParallelism(localParallelism);
+    }
+
+    @Override
+    protected String loggerName() {
+        return vertexName() + "#PS";
     }
 }

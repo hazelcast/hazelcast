@@ -37,26 +37,34 @@ public class VertexDef implements IdentifiedDataSerializable {
     private String name;
     private ProcessorSupplier processorSupplier;
     private int procIdxOffset;
-    private int parallelism;
+    private int localParallelism;
+    private int totalParallelism;
 
     VertexDef() {
     }
 
-    VertexDef(int id, String name, ProcessorSupplier processorSupplier,
-              int procIdxOffset, int parallelism) {
+    VertexDef(
+            int id, String name, ProcessorSupplier processorSupplier, int procIdxOffset,
+            int localParallelism, int totalParallelism
+    ) {
         this.id = id;
         this.name = name;
         this.processorSupplier = processorSupplier;
         this.procIdxOffset = procIdxOffset;
-        this.parallelism = parallelism;
+        this.localParallelism = localParallelism;
+        this.totalParallelism = totalParallelism;
     }
 
     String name() {
         return name;
     }
 
-    int parallelism() {
-        return parallelism;
+    int localParallelism() {
+        return localParallelism;
+    }
+
+    int totalParallelism() {
+        return totalParallelism;
     }
 
     int vertexId() {
@@ -140,7 +148,8 @@ public class VertexDef implements IdentifiedDataSerializable {
         writeList(out, outboundEdges);
         CustomClassLoadedObject.write(out, processorSupplier);
         out.writeInt(procIdxOffset);
-        out.writeInt(parallelism);
+        out.writeInt(localParallelism);
+        out.writeInt(totalParallelism);
     }
 
     @Override
@@ -151,6 +160,7 @@ public class VertexDef implements IdentifiedDataSerializable {
         outboundEdges = readList(in);
         processorSupplier = CustomClassLoadedObject.read(in);
         procIdxOffset = in.readInt();
-        parallelism = in.readInt();
+        localParallelism = in.readInt();
+        totalParallelism = in.readInt();
     }
 }

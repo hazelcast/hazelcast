@@ -52,7 +52,10 @@ public final class KafkaProcessors {
     ) {
         Preconditions.checkPositive(topics.length, "At least one topic must be supplied");
         properties.put("enable.auto.commit", false);
-        return new StreamKafkaP.MetaSupplier<>(properties, Arrays.asList(topics), projectionFn, wmGenParams);
+        return ProcessorMetaSupplier.of(
+                StreamKafkaP.processorSupplier(properties, Arrays.asList(topics), projectionFn, wmGenParams),
+                2
+        );
     }
 
     /**

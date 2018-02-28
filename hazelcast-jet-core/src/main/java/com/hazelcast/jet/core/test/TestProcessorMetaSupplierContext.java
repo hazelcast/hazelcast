@@ -19,19 +19,22 @@ package com.hazelcast.jet.core.test;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 
 import javax.annotation.Nonnull;
-
-import static com.hazelcast.jet.core.test.TestSupport.getLogger;
 
 /**
  * {@link ProcessorMetaSupplier.Context} implementation suitable to be used
  * in tests.
  */
 public class TestProcessorMetaSupplierContext implements ProcessorMetaSupplier.Context {
+
+    protected ILogger logger;
+
     private JetInstance jetInstance;
     private int totalParallelism = 1;
     private int localParallelism = 1;
+    private String vertexName = "testVertex";
 
     @Nonnull @Override
     public JetInstance jetInstance() {
@@ -41,7 +44,8 @@ public class TestProcessorMetaSupplierContext implements ProcessorMetaSupplier.C
     /**
      * Set the jet instance.
      */
-    public TestProcessorMetaSupplierContext setJetInstance(JetInstance jetInstance) {
+    @Nonnull
+    public TestProcessorMetaSupplierContext setJetInstance(@Nonnull JetInstance jetInstance) {
         this.jetInstance = jetInstance;
         return this;
     }
@@ -54,8 +58,25 @@ public class TestProcessorMetaSupplierContext implements ProcessorMetaSupplier.C
     /**
      * Set total parallelism.
      */
+    @Nonnull
     public TestProcessorMetaSupplierContext setTotalParallelism(int totalParallelism) {
         this.totalParallelism = totalParallelism;
+        return this;
+    }
+
+    @Nonnull @Override
+    public ILogger logger() {
+        if (logger == null) {
+            logger = Logger.getLogger(loggerName());
+        }
+        return logger;
+    }
+
+    /**
+     * Set the logger.
+     */
+    public TestProcessorMetaSupplierContext setLogger(@Nonnull ILogger logger) {
+        this.logger = logger;
         return this;
     }
 
@@ -64,16 +85,30 @@ public class TestProcessorMetaSupplierContext implements ProcessorMetaSupplier.C
         return localParallelism;
     }
 
-    @Nonnull @Override
-    public ILogger logger() {
-        return getLogger(getClass());
-    }
-
     /**
      * Set local parallelism.
      */
+    @Nonnull
     public TestProcessorMetaSupplierContext setLocalParallelism(int localParallelism) {
         this.localParallelism = localParallelism;
         return this;
+    }
+
+    @Nonnull @Override
+    public String vertexName() {
+        return vertexName;
+    }
+
+    /**
+     * Set the vertex name.
+     */
+    @Nonnull
+    public TestProcessorMetaSupplierContext setVertexName(@Nonnull String vertexName) {
+        this.vertexName = vertexName;
+        return this;
+    }
+
+    protected String loggerName() {
+        return vertexName() + "#PMS";
     }
 }

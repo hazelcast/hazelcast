@@ -82,7 +82,8 @@ public final class ExecutionPlanBuilder {
                     e -> vertexIdMap.get(e.getDestName()), isJobDistributed);
             final ILogger logger = nodeEngine.getLogger(String.format("%s.%s#ProcessorMetaSupplier",
                     metaSupplier.getClass().getName(), vertex.getName()));
-            metaSupplier.init(new MetaSupplierCtx(instance, logger, totalParallelism, localParallelism));
+            metaSupplier.init(new MetaSupplierCtx(instance, logger, vertex.getName(),
+                    localParallelism, totalParallelism));
 
             Function<Address, ProcessorSupplier> procSupplierFn = metaSupplier.get(addresses);
             int procIdxOffset = 0;
@@ -90,7 +91,8 @@ public final class ExecutionPlanBuilder {
                 final ProcessorSupplier processorSupplier = procSupplierFn.apply(e.getKey().getAddress());
                 checkSerializable(processorSupplier, "ProcessorSupplier in vertex '" + vertex.getName() + '\'');
                 final VertexDef vertexDef = new VertexDef(
-                        vertexId, vertex.getName(), processorSupplier, procIdxOffset, localParallelism);
+                        vertexId, vertex.getName(), processorSupplier, procIdxOffset, localParallelism, totalParallelism
+                );
                 vertexDef.addInboundEdges(inbound);
                 vertexDef.addOutboundEdges(outbound);
                 e.getValue().addVertex(vertexDef);

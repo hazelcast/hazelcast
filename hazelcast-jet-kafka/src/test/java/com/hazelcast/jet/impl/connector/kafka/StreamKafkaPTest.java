@@ -17,6 +17,7 @@
 package com.hazelcast.jet.impl.connector.kafka;
 
 import com.hazelcast.core.IList;
+import com.hazelcast.jet.IMapJet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
@@ -34,7 +35,6 @@ import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedToLongFunction;
 import com.hazelcast.jet.impl.SnapshotRepository;
 import com.hazelcast.jet.impl.execution.SnapshotRecord;
-import com.hazelcast.jet.IMapJet;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -206,7 +206,7 @@ public class StreamKafkaPTest extends KafkaTestSupport {
 
     @Test
     public void when_eventsInAllPartitions_then_watermarkOutputImmediately() {
-        StreamKafkaP processor = createProcessor(1, 1, StreamKafkaP::recordToEntry, 10_000);
+        StreamKafkaP processor = createProcessor(1, StreamKafkaP::recordToEntry, 10_000);
         TestOutbox outbox = new TestOutbox(new int[]{10}, 10);
         processor.init(outbox, new TestProcessorContext());
 
@@ -225,9 +225,11 @@ public class StreamKafkaPTest extends KafkaTestSupport {
     public void when_noAssignedPartitionAndAddedLater_then_resumesFromIdle() throws Exception {
         // we ask to create 5th out of 5 processors, but we have only 4 partitions and 1 topic
         // --> our processor will have nothing assigned
-        StreamKafkaP processor = createProcessor(INITIAL_PARTITION_COUNT + 1, 1, StreamKafkaP::recordToEntry, 10_000);
+        StreamKafkaP processor = createProcessor(1, StreamKafkaP::recordToEntry, 10_000);
         TestOutbox outbox = new TestOutbox(new int[]{10}, 10);
-        processor.init(outbox, new TestProcessorContext().setGlobalProcessorIndex(INITIAL_PARTITION_COUNT));
+        processor.init(outbox, new TestProcessorContext()
+                .setTotalParallelism(INITIAL_PARTITION_COUNT + 1)
+                .setGlobalProcessorIndex(INITIAL_PARTITION_COUNT));
 
         assertTrue(processor.currentAssignment.isEmpty());
         assertEquals(IDLE_MESSAGE, consumeEventually(processor, outbox));
@@ -254,7 +256,7 @@ public class StreamKafkaPTest extends KafkaTestSupport {
     @Test
     public void when_eventsInSinglePartition_then_watermarkAfterIdleTime() {
         // When
-        StreamKafkaP processor = createProcessor(1, 2, StreamKafkaP::recordToEntry, 10_000);
+        StreamKafkaP processor = createProcessor(2, StreamKafkaP::recordToEntry, 10_000);
         TestOutbox outbox = new TestOutbox(new int[]{10}, 10);
         processor.init(outbox, new TestProcessorContext());
         produce(topic1Name, 10, "foo");
@@ -270,7 +272,7 @@ public class StreamKafkaPTest extends KafkaTestSupport {
 
     @Test
     public void when_snapshotSaved_then_offsetsRestored() throws Exception {
-        StreamKafkaP processor = createProcessor(1, 2, StreamKafkaP::recordToEntry, 10_000);
+        StreamKafkaP processor = createProcessor(2, StreamKafkaP::recordToEntry, 10_000);
         TestOutbox outbox = new TestOutbox(new int[]{10}, 10);
         processor.init(outbox, new TestProcessorContext().setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE));
 
@@ -286,7 +288,7 @@ public class StreamKafkaPTest extends KafkaTestSupport {
         assertEquals(entry(1, "1"), consumeEventually(processor, outbox));
 
         // create new processor and restore snapshot
-        processor = createProcessor(1, 2, StreamKafkaP::recordToEntry, 10_000);
+        processor = createProcessor(2, StreamKafkaP::recordToEntry, 10_000);
         outbox = new TestOutbox(new int[]{10}, 10);
         processor.init(outbox, new TestProcessorContext().setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE));
 
@@ -304,7 +306,6 @@ public class StreamKafkaPTest extends KafkaTestSupport {
     }
 
     private <T> StreamKafkaP<Integer, String, T> createProcessor(
-            int globalParallelism,
             int numTopics,
             @Nonnull DistributedFunction<ConsumerRecord<Integer, String>, T> projectionFn,
             long idleTimeoutMillis
@@ -321,13 +322,13 @@ public class StreamKafkaPTest extends KafkaTestSupport {
                 singletonList(topic1Name)
                 :
                 asList(topic1Name, topic2Name);
-        return new StreamKafkaP<>(properties, topics, projectionFn, globalParallelism, wmParams);
+        return new StreamKafkaP<>(properties, topics, projectionFn, wmParams);
     }
 
     @Test
     public void when_partitionAdded_then_consumedFromBeginning() throws Exception {
         properties.setProperty("metadata.max.age.ms", "100");
-        StreamKafkaP processor = createProcessor(1, 2, StreamKafkaP::recordToEntry, 10_000);
+        StreamKafkaP processor = createProcessor(2, StreamKafkaP::recordToEntry, 10_000);
         TestOutbox outbox = new TestOutbox(new int[]{10}, 10);
         processor.init(outbox, new TestProcessorContext());
 
@@ -359,10 +360,11 @@ public class StreamKafkaPTest extends KafkaTestSupport {
 
     @Test
     public void when_noAssignedPartitions_thenEmitIdleMsgImmediately() {
-        // Set global parallelism to higher number than number of partitions
-        StreamKafkaP processor = createProcessor(INITIAL_PARTITION_COUNT * 2 + 1, 2, StreamKafkaP::recordToEntry, 100_000);
+        StreamKafkaP processor = createProcessor(2, StreamKafkaP::recordToEntry, 100_000);
         TestOutbox outbox = new TestOutbox(new int[]{10}, 10);
         TestProcessorContext context = new TestProcessorContext()
+                // Set global parallelism to higher number than number of partitions
+                .setTotalParallelism(INITIAL_PARTITION_COUNT * 2 + 1)
                 .setGlobalProcessorIndex(INITIAL_PARTITION_COUNT * 2);
 
         processor.init(outbox, context);
@@ -374,7 +376,7 @@ public class StreamKafkaPTest extends KafkaTestSupport {
     @Test
     public void when_customProjection_then_used() {
         // When
-        StreamKafkaP processor = createProcessor(1, 2, r -> r.key() + "=" + r.value(), 10_000);
+        StreamKafkaP processor = createProcessor(2, r -> r.key() + "=" + r.value(), 10_000);
         TestOutbox outbox = new TestOutbox(new int[]{10}, 10);
         processor.init(outbox, new TestProcessorContext());
         produce(topic1Name, 0, "0");
@@ -393,7 +395,7 @@ public class StreamKafkaPTest extends KafkaTestSupport {
                 0
         );
         StreamKafkaP processor = new StreamKafkaP<Integer, String, String>(
-                properties, singletonList(topic1Name), r -> "0".equals(r.value()) ? null : r.value(), 1, wmParams
+                properties, singletonList(topic1Name), r -> "0".equals(r.value()) ? null : r.value(), wmParams
         );
         TestOutbox outbox = new TestOutbox(new int[]{10}, 10);
         processor.init(outbox, new TestProcessorContext());
