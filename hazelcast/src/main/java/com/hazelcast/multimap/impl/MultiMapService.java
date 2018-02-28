@@ -89,6 +89,7 @@ import static com.hazelcast.util.MapUtil.createConcurrentHashMap;
 import static com.hazelcast.util.MapUtil.createHashMap;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
+import static java.lang.Thread.currentThread;
 
 public class MultiMapService implements ManagedService, RemoteService, FragmentedMigrationAwareService,
         EventPublishingService<EventData, EntryListener>, TransactionalService, StatisticsAwareService<LocalMultiMapStats>,
@@ -476,6 +477,7 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
             try {
                 Thread.sleep(REPLICA_ADDRESS_SLEEP_WAIT_MILLIS);
             } catch (InterruptedException e) {
+                currentThread().interrupt();
                 throw ExceptionUtil.rethrow(e);
             }
             replicaAddress = partition.getReplicaAddress(replicaIndex);

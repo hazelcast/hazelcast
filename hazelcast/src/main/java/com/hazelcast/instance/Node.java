@@ -105,6 +105,7 @@ import static com.hazelcast.spi.properties.GroupProperty.SHUTDOWNHOOK_ENABLED;
 import static com.hazelcast.spi.properties.GroupProperty.SHUTDOWNHOOK_POLICY;
 import static com.hazelcast.util.StringUtil.isNullOrEmpty;
 import static com.hazelcast.util.ThreadUtil.createThreadName;
+import static java.lang.Thread.currentThread;
 import static java.security.AccessController.doPrivileged;
 
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:visibilitymodifier", "checkstyle:classdataabstractioncoupling",
@@ -549,6 +550,7 @@ public class Node {
             try {
                 Thread.sleep(THREAD_SLEEP_DURATION_MS);
             } catch (InterruptedException e) {
+                currentThread().interrupt();
                 logger.warning("Interrupted while waiting for shutdown!");
                 return;
             }

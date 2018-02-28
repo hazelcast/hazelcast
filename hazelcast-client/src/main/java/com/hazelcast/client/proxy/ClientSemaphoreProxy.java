@@ -29,6 +29,8 @@ import com.hazelcast.core.ISemaphore;
 
 import java.util.concurrent.TimeUnit;
 
+import static java.lang.Thread.currentThread;
+
 /**
  * Proxy implementation of {@link ISemaphore}.
  */
@@ -113,6 +115,7 @@ public class ClientSemaphoreProxy extends PartitionSpecificClientProxy implement
         try {
             return tryAcquire(permits, 0, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
+            currentThread().interrupt();
             return false;
         }
     }

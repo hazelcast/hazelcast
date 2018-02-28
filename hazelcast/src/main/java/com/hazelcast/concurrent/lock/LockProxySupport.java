@@ -32,6 +32,7 @@ import java.util.concurrent.TimeUnit;
 import static com.hazelcast.concurrent.lock.LockServiceImpl.SERVICE_NAME;
 import static com.hazelcast.util.ExceptionUtil.rethrowAllowInterrupted;
 import static com.hazelcast.util.ThreadUtil.getThreadId;
+import static java.lang.Thread.currentThread;
 
 public final class LockProxySupport {
 
@@ -117,6 +118,7 @@ public final class LockProxySupport {
         try {
             return tryLock(nodeEngine, key, 0, TimeUnit.MILLISECONDS, -1, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
+            currentThread().interrupt();
             return false;
         }
     }

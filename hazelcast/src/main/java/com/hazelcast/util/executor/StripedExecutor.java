@@ -191,6 +191,7 @@ public final class StripedExecutor implements Executor {
                     offered = workQueue.offer(command, timeout, timeUnit);
                 }
             } catch (InterruptedException e) {
+                currentThread().interrupt();
                 throw new RejectedExecutionException("Thread is interrupted while offering work");
             }
 

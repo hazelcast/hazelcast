@@ -57,6 +57,7 @@ import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
 import static com.hazelcast.cache.impl.operation.MutableOperation.IGNORE_COMPLETION;
 import static com.hazelcast.util.ExceptionUtil.rethrowAllowedTypeFirst;
 import static com.hazelcast.util.SetUtil.createHashSet;
+import static java.lang.Thread.currentThread;
 
 /**
  * Abstract {@link com.hazelcast.cache.ICache} implementation which provides shared internal implementations
@@ -417,6 +418,7 @@ abstract class AbstractInternalCacheProxy<K, V>
 
             }
         } catch (InterruptedException e) {
+            currentThread().interrupt();
             ExceptionUtil.sneakyThrow(e);
         }
     }

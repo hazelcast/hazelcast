@@ -29,6 +29,8 @@ import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static java.lang.Thread.currentThread;
+
 public class MulticastJoiner extends AbstractJoiner {
 
     private static final long JOIN_RETRY_INTERVAL = 1000L;
@@ -96,6 +98,7 @@ public class MulticastJoiner extends AbstractJoiner {
             try {
                 Thread.sleep(JOIN_RETRY_INTERVAL);
             } catch (InterruptedException e) {
+                currentThread().interrupt();
                 EmptyStatement.ignore(e);
             }
 
@@ -137,6 +140,7 @@ public class MulticastJoiner extends AbstractJoiner {
                 }
             }
         } catch (InterruptedException e) {
+            currentThread().interrupt();
             logger.fine(e);
         } catch (Exception e) {
             logger.warning(e);

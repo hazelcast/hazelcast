@@ -95,6 +95,7 @@ import static com.hazelcast.util.MapUtil.createHashMap;
 import static java.lang.Math.ceil;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
+import static java.lang.Thread.currentThread;
 
 /**
  * The {@link InternalPartitionService} implementation.
@@ -218,6 +219,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             try {
                 Thread.sleep(PARTITION_OWNERSHIP_WAIT_MILLIS);
             } catch (InterruptedException e) {
+                currentThread().interrupt();
                 throw ExceptionUtil.rethrow(e);
             }
         }
@@ -877,6 +879,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                 timeoutMillis -= awaitStep;
             } while (timeoutMillis > 0);
         } catch (InterruptedException e) {
+            currentThread().interrupt();
             logger.info("Safe shutdown is interrupted!");
         }
         return false;
@@ -1251,6 +1254,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                 } catch (MemberLeftException e) {
                     EmptyStatement.ignore(e);
                 } catch (InterruptedException e) {
+                    currentThread().interrupt();
                     logger.fine("FetchMostRecentPartitionTableTask is interrupted.");
                 } catch (ExecutionException e) {
                     Throwable cause = e.getCause();

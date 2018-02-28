@@ -77,6 +77,7 @@ import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.UNKNOWN;
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.VERSION;
 import static com.hazelcast.util.ThreadUtil.createThreadName;
+import static java.lang.Thread.currentThread;
 
 public class TextCommandServiceImpl implements TextCommandService {
 
@@ -325,6 +326,7 @@ public class TextCommandServiceImpl implements TextCommandService {
         try {
             return hazelcast.getQueue(queueName).poll(seconds, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
+            currentThread().interrupt();
             return null;
         }
     }
@@ -397,6 +399,7 @@ public class TextCommandServiceImpl implements TextCommandService {
                         textWriteHandler.enqueue(textCommand);
                     }
                 } catch (InterruptedException e) {
+                    currentThread().interrupt();
                     return;
                 } catch (OutOfMemoryError e) {
                     OutOfMemoryErrorDispatcher.onOutOfMemory(e);

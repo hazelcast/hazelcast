@@ -43,7 +43,6 @@ import com.hazelcast.util.ExceptionUtil;
 import javax.transaction.xa.XAException;
 import javax.transaction.xa.XAResource;
 import javax.transaction.xa.Xid;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -57,6 +56,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.transaction.impl.xa.XAService.SERVICE_NAME;
+import static java.lang.Thread.currentThread;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
@@ -261,6 +261,7 @@ public final class XAResourceImpl extends AbstractDistributedObject<XAService> i
                     xids.add(xid);
                 }
             } catch (InterruptedException e) {
+                currentThread().interrupt();
                 throw new XAException(XAException.XAER_RMERR);
             } catch (MemberLeftException e) {
                 logger.warning("Member left while recovering", e);

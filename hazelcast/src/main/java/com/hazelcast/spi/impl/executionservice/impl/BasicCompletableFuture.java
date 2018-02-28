@@ -27,6 +27,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static com.hazelcast.util.ExceptionUtil.sneakyThrow;
+import static java.lang.Thread.currentThread;
 
 /**
  * Wraps a {@code java.util.concurrent.Future} to make it a {@code com.hazelcast.core.ICompletableFuture}.
@@ -59,6 +60,7 @@ class BasicCompletableFuture<V> extends AbstractCompletableFuture<V> {
         } catch (TimeoutException ex) {
             sneakyThrow(ex);
         } catch (InterruptedException ex) {
+            currentThread().interrupt();
             sneakyThrow(ex);
         } catch (ExecutionException ex) {
             setResult(ex);

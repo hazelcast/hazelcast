@@ -299,8 +299,8 @@ public final class SlowOperationDetector {
             try {
                 detectorThread.join(SLOW_OPERATION_THREAD_MAX_WAIT_TIME_TO_FINISH);
             } catch (InterruptedException ignored) {
+                currentThread().interrupt();
                 EmptyStatement.ignore(ignored);
-                // TODO: Interrupt flag is consumed here
             }
         }
     }

@@ -107,6 +107,7 @@ import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.ServiceLoader.classIterator;
+import static java.lang.Thread.currentThread;
 
 /**
  * The ProxyManager handles client proxy instantiation and retrieval at start and runtime by registering
@@ -366,6 +367,7 @@ public final class ProxyManager {
         try {
             Thread.sleep(invocationRetryPauseMillis);
         } catch (InterruptedException ignored) {
+            currentThread().interrupt();
             EmptyStatement.ignore(ignored);
         }
     }

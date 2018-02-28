@@ -30,6 +30,7 @@ import com.hazelcast.nio.serialization.Data;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.util.ThreadUtil.getThreadId;
+import static java.lang.Thread.currentThread;
 
 /**
  * Proxy implementation of {@link TransactionalQueue}.
@@ -47,6 +48,7 @@ public class ClientTxnQueueProxy<E> extends ClientTxnProxy implements Transactio
         try {
             return offer(e, 0, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e1) {
+            currentThread().interrupt();
             return false;
         }
     }
@@ -72,6 +74,7 @@ public class ClientTxnQueueProxy<E> extends ClientTxnProxy implements Transactio
         try {
             return poll(0, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
+            currentThread().interrupt();
             return null;
         }
     }
@@ -89,6 +92,7 @@ public class ClientTxnQueueProxy<E> extends ClientTxnProxy implements Transactio
         try {
             return peek(0, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
+            currentThread().interrupt();
             return null;
         }
     }
