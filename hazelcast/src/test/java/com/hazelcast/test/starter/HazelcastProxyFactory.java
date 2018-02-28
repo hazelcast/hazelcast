@@ -37,10 +37,12 @@ import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -58,8 +60,14 @@ public class HazelcastProxyFactory {
     // classes in this whitelist will not be proxied, instead instances of the same class (by name)
     // are constructed on target classloader
     private static final Set<String> NO_PROXYING_WHITELIST;
+
     // classes in this whitelist are explicitly selected for subclass proxying
     private static final Set<String> SUBCLASS_PROXYING_WHITELIST;
+
+    // interfaces that have been refactored in the current version
+    // must be mapped both ways (old -> new name and vice versa) in this map
+    private static final Map<String, String> REFACTORED_INTERFACES;
+
     // <Class toProxy, ClassLoader targetClassLoader> -> Class<?> proxy mapping for subclass proxies
     // java.lang.reflect.Proxy already maintains its own cache
     private static final ConcurrentReferenceHashMap<ProxySource, Class<?>> PROXIES
@@ -77,6 +85,8 @@ public class HazelcastProxyFactory {
     private static final String CLASS_NAME_CLIENT_CONFIG = "com.hazelcast.client.config.ClientConfig";
     private static final String CLASS_NAME_ADDRESS = "com.hazelcast.nio.Address";
     private static final String CLASS_NAME_VERSION = "com.hazelcast.version.Version";
+    private static final String CLASS_NAME_EVENT_JOURNAL_READER_39 = "com.hazelcast.journal.EventJournalReader";
+    private static final String CLASS_NAME_EVENT_JOURNAL_READER = "com.hazelcast.internal.journal.EventJournalReader";
 
     static {
         Set<String> notProxiedClasses = new HashSet<String>();
@@ -92,6 +102,12 @@ public class HazelcastProxyFactory {
         subclassProxiedClasses.add(CLASS_NAME_ENTRY_EVENT);
         subclassProxiedClasses.add(CLASS_NAME_LIFECYCLE_EVENT);
         SUBCLASS_PROXYING_WHITELIST = subclassProxiedClasses;
+
+        // RU_COMPAT_3_9 revise refactored interfaces mapping in 3.11 development cycle
+        Map<String, String> refactoredInterfaces = new HashMap<String, String>();
+        refactoredInterfaces.put(CLASS_NAME_EVENT_JOURNAL_READER, CLASS_NAME_EVENT_JOURNAL_READER_39);
+        refactoredInterfaces.put(CLASS_NAME_EVENT_JOURNAL_READER_39, CLASS_NAME_EVENT_JOURNAL_READER);
+        REFACTORED_INTERFACES = refactoredInterfaces;
     }
 
     /**
@@ -185,7 +201,12 @@ public class HazelcastProxyFactory {
                                                 Class<?>[] delegateIfaces) throws ClassNotFoundException {
         for (int j = 0; j < ifaces.length; j++) {
             Class<?> clazz = ifaces[j];
-            Class<?> delegateInterface = targetClassLoader.loadClass(clazz.getName());
+            String className = clazz.getName();
+            String classNameOnTargetClassLoader = className;
+            if (REFACTORED_INTERFACES.containsKey(className)) {
+                classNameOnTargetClassLoader = REFACTORED_INTERFACES.get(className);
+            }
+            Class<?> delegateInterface = targetClassLoader.loadClass(classNameOnTargetClassLoader);
             delegateIfaces[j] = delegateInterface;
         }
         return generateProxyForInterface(arg, targetClassLoader, delegateIfaces);
