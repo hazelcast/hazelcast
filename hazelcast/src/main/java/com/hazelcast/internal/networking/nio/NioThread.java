@@ -70,7 +70,7 @@ public class NioThread extends Thread implements OperationHostileThread {
     @Probe(level = DEBUG)
     volatile long priorityFramesTransceived;
     @Probe(level = DEBUG)
-    volatile long handleCount;
+    volatile long processCount;
 
     @Probe(name = "taskQueueSize")
     private final Queue<Runnable> taskQueue = new ConcurrentLinkedQueue<Runnable>();
@@ -144,7 +144,7 @@ public class NioThread extends Thread implements OperationHostileThread {
     }
 
     public long handleCount() {
-        return handleCount;
+        return processCount;
     }
 
     public long eventCount() {
