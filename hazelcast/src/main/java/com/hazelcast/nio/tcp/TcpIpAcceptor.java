@@ -269,14 +269,14 @@ public class TcpIpAcceptor implements MetricsProvider {
                 final Channel theChannel = channel;
                 logger.info("Accepting socket connection from " + theChannel.socket().getRemoteSocketAddress());
                 if (ioService.isSocketInterceptorEnabled()) {
-                    configureAndAssignSocket(theChannel);
-                } else {
                     ioService.executeAsync(new Runnable() {
                         @Override
                         public void run() {
                             configureAndAssignSocket(theChannel);
                         }
                     });
+                } else {
+                    configureAndAssignSocket(theChannel);
                 }
             }
         }
