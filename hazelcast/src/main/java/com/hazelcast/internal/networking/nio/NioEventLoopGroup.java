@@ -283,7 +283,7 @@ public final class NioEventLoopGroup implements EventLoopGroup {
                     inputThread.addTaskAndWakeup(new Runnable() {
                         @Override
                         public void run() {
-                            inboundPipeline.publish();
+                            inboundPipeline.publishMetrics();
                         }
                     });
                 }
@@ -294,7 +294,7 @@ public final class NioEventLoopGroup implements EventLoopGroup {
                     outputThread.addTaskAndWakeup(new Runnable() {
                         @Override
                         public void run() {
-                            outboundPipeline.publish();
+                            outboundPipeline.publishMetrics();
                         }
                     });
                 }
