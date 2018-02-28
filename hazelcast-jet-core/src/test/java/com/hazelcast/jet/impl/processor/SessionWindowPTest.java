@@ -125,6 +125,18 @@ public class SessionWindowPTest {
                         new WindowResult(30, 50, "a", 3)));
     }
 
+    @Test
+    public void when_lateEvent_then_dropped() {
+        verifyProcessor(supplier)
+                .input(asList(
+                        new Watermark(20),
+                        entry("key", 19L)
+                ))
+                .expectOutput(singletonList(
+                        new Watermark(20)
+                ));
+    }
+
     private void assertCorrectness(List<Object> events) {
         List<Object> expectedOutput = events.stream()
                                                .map(e -> ((Entry<String, Long>) e).getKey())

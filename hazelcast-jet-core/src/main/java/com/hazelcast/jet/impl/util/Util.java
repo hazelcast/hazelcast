@@ -22,8 +22,11 @@ import com.hazelcast.core.Member;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.function.DistributedBiFunction;
 import com.hazelcast.jet.impl.JetService;
+import com.hazelcast.jet.impl.pipeline.JetEvent;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.AbstractEntryProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.nio.Address;
@@ -368,4 +371,21 @@ public final class Util {
         return future;
     }
 
+    public static void logLateEvent(ILogger logger, long currentWm, @Nonnull Object item) {
+        if (!logger.isInfoEnabled()) {
+            return;
+        }
+        if (item instanceof JetEvent) {
+            JetEvent event = (JetEvent) item;
+            logger.info(
+                    String.format("Event dropped, late by %dms. currentWatermark=%s, eventTime=%s, event=%s",
+                            currentWm - event.timestamp(), toLocalTime(currentWm), toLocalTime(event.timestamp()),
+                            event.payload()
+                    ));
+        } else {
+            logger.info(String.format(
+                    "Late event dropped. currentWatermark=%s, event=%s", new Watermark(currentWm), item
+            ));
+        }
+    }
 }

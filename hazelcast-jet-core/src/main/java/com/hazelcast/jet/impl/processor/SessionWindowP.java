@@ -16,9 +16,13 @@
 
 package com.hazelcast.jet.impl.processor;
 
+import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Traverser;
+import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.aggregate.AggregateOperation;
+import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.AbstractProcessor;
+import com.hazelcast.jet.core.BroadcastKey;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.function.KeyedWindowResultFunction;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
@@ -45,8 +49,12 @@ import java.util.function.Function;
 import java.util.function.ToLongFunction;
 import java.util.stream.Stream;
 
-import static com.hazelcast.jet.Traversers.traverseIterable;
 import static com.hazelcast.jet.Traversers.traverseStream;
+import static com.hazelcast.jet.Util.entry;
+import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
+import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
+import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
+import static com.hazelcast.jet.impl.util.Util.logLateEvent;
 import static com.hazelcast.jet.impl.util.Util.toLocalDateTime;
 import static com.hazelcast.util.Preconditions.checkTrue;
 import static java.lang.Math.min;
@@ -69,6 +77,7 @@ public class SessionWindowP<K, A, R, OUT> extends AbstractProcessor {
     // exposed for testing, to check for memory leaks
     final Map<K, Windows<A>> keyToWindows = new HashMap<>();
     final SortedMap<Long, Set<K>> deadlineToKeys = new TreeMap<>();
+    long currentWatermark = Long.MIN_VALUE;
 
     private final long sessionTimeout;
     @Nonnull
@@ -83,8 +92,10 @@ public class SessionWindowP<K, A, R, OUT> extends AbstractProcessor {
     private final KeyedWindowResultFunction<? super K, ? super R, OUT> mapToOutputFn;
     @Nonnull
     private final FlatMapper<Watermark, OUT> closedWindowFlatmapper;
+    private ProcessingGuarantee processingGuarantee;
 
     private Traverser snapshotTraverser;
+    private long minRestoredCurrentWatermark = Long.MAX_VALUE;
 
     @SuppressWarnings("unchecked")
     public SessionWindowP(
@@ -106,9 +117,18 @@ public class SessionWindowP<K, A, R, OUT> extends AbstractProcessor {
     }
 
     @Override
+    protected void init(@Nonnull Context context) {
+        processingGuarantee = context.processingGuarantee();
+    }
+
+    @Override
     protected boolean tryProcess(int ordinal, @Nonnull Object item) {
         @SuppressWarnings("unchecked")
         final long timestamp = timestampFns.get(ordinal).applyAsLong(item);
+        if (timestamp < currentWatermark) {
+            logLateEvent(getLogger(), currentWatermark, item);
+            return true;
+        }
         K key = keyFns.get(ordinal).apply(item);
         addItem(ordinal, keyToWindows.computeIfAbsent(key, k -> new Windows<>()),
                 key, timestamp, item);
@@ -117,6 +137,7 @@ public class SessionWindowP<K, A, R, OUT> extends AbstractProcessor {
 
     @Override
     public boolean tryProcessWatermark(@Nonnull Watermark wm) {
+        currentWatermark = wm.timestamp();
         return closedWindowFlatmapper.tryProcess(wm);
     }
 
@@ -156,7 +177,8 @@ public class SessionWindowP<K, A, R, OUT> extends AbstractProcessor {
     @Override
     public boolean saveToSnapshot() {
         if (snapshotTraverser == null) {
-            snapshotTraverser = traverseIterable(keyToWindows.entrySet())
+            snapshotTraverser = Traversers.<Object>traverseIterable(keyToWindows.entrySet())
+                    .append(entry(broadcastKey(Keys.CURRENT_WATERMARK), currentWatermark))
                     .onFirstNull(() -> snapshotTraverser = null);
         }
         return emitFromTraverserToSnapshot(snapshotTraverser);
@@ -165,6 +187,21 @@ public class SessionWindowP<K, A, R, OUT> extends AbstractProcessor {
     @Override
     @SuppressWarnings("unchecked")
     protected void restoreFromSnapshot(@Nonnull Object key, @Nonnull Object value) {
+        if (key instanceof BroadcastKey) {
+            BroadcastKey bcastKey = (BroadcastKey) key;
+            if (!Keys.CURRENT_WATERMARK.equals(bcastKey.key())) {
+                throw new JetException("Unexpected broadcast key: " + bcastKey.key());
+            }
+            long newCurrentWatermark = (long) value;
+            assert processingGuarantee != EXACTLY_ONCE
+                    || minRestoredCurrentWatermark == Long.MAX_VALUE
+                    || minRestoredCurrentWatermark == newCurrentWatermark
+                    : "different values for currentWatermark restored, before=" + minRestoredCurrentWatermark
+                    + ", new=" + newCurrentWatermark;
+            minRestoredCurrentWatermark = Math.min(newCurrentWatermark, minRestoredCurrentWatermark);
+            return;
+        }
+
         keyToWindows.put((K) key, (Windows) value);
     }
 
@@ -177,6 +214,8 @@ public class SessionWindowP<K, A, R, OUT> extends AbstractProcessor {
                 addToDeadlines(entry.getKey(), end);
             }
         }
+        currentWatermark = minRestoredCurrentWatermark;
+        logFine(getLogger(), "Restored currentWatermark from snapshot to: %s", currentWatermark);
         return true;
     }
 
@@ -322,5 +361,10 @@ public class SessionWindowP<K, A, R, OUT> extends AbstractProcessor {
             }
             return sj.toString();
         }
+    }
+
+    // package-visible for test
+    enum Keys {
+        CURRENT_WATERMARK
     }
 }

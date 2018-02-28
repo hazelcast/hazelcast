@@ -527,6 +527,10 @@ public final class TestSupport {
             }
         }
 
+        if (logInputOutput && !inputs.isEmpty()) {
+            System.out.println(LocalTime.now() + " Input processed, calling complete()");
+        }
+
         // call the complete() method
         if (callComplete) {
             long completeStart = System.nanoTime();
@@ -633,6 +637,14 @@ public final class TestSupport {
             return;
         }
 
+        restoreCount[0]++;
+        boolean willRestore = restoreCount[0] % doRestoreEvery == 0;
+        if (logInputOutput) {
+            System.out.println(LocalTime.now() + (willRestore
+                    ? " Saving & restoring snapshot"
+                    : " Saving snapshot without restoring it"));
+        }
+
         // save state of current processor
         TestInbox snapshotInbox = new TestInbox();
         boolean[] done = {false};
@@ -654,9 +666,7 @@ public final class TestSupport {
                     "Duplicate: " + item2.getKey() + "\n  Keys so far: " + keys, keys.add(item2.getKey()));
         }
 
-        restoreCount[0]++;
-
-        if (restoreCount[0] % doRestoreEvery != 0) {
+        if (!willRestore) {
             return;
         }
 

@@ -26,7 +26,7 @@ import com.hazelcast.jet.core.BroadcastKey;
 import com.hazelcast.jet.core.SlidingWindowPolicy;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.function.KeyedWindowResultFunction;
-import com.hazelcast.jet.impl.pipeline.JetEvent;
+import com.hazelcast.jet.impl.util.Util;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -46,7 +46,6 @@ import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
 import static com.hazelcast.jet.function.DistributedComparator.naturalOrder;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
-import static com.hazelcast.jet.impl.util.Util.toLocalTime;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.Preconditions.checkTrue;
 import static java.lang.Math.max;
@@ -143,9 +142,7 @@ public class SlidingWindowP<K, A, R, OUT> extends AbstractProcessor {
         // into `slidingWindow` and we can't modify the value because that would
         // disturb the value that we'll deduct from `slidingWindow` later on.
         if (frameTs < nextWinToEmit) {
-            if (getLogger().isInfoEnabled()) {
-                logLateEvent(nextWinToEmit, item);
-            }
+            Util.logLateEvent(getLogger(), nextWinToEmit, item);
             return true;
         }
         final K key = keyFns.get(ordinal).apply(item);
@@ -187,7 +184,9 @@ public class SlidingWindowP<K, A, R, OUT> extends AbstractProcessor {
     protected void restoreFromSnapshot(@Nonnull Object key, @Nonnull Object value) {
         if (key instanceof BroadcastKey) {
             BroadcastKey bcastKey = (BroadcastKey) key;
-            assert Keys.NEXT_WIN_TO_EMIT.equals(bcastKey.key()) : "key=" + bcastKey.key();
+            if (!Keys.NEXT_WIN_TO_EMIT.equals(bcastKey.key())) {
+                throw new JetException("Unexpected broadcast key: " + bcastKey.key());
+            }
             long newNextWinToEmit = (long) value;
             assert processingGuarantee != EXACTLY_ONCE
                     || minRestoredNextWinToEmit == Long.MAX_VALUE
@@ -309,20 +308,6 @@ public class SlidingWindowP<K, A, R, OUT> extends AbstractProcessor {
                     .onFirstNull(() -> flushTraverser = null);
         }
         return emitFromTraverser(flushTraverser);
-    }
-
-    private void logLateEvent(long currentWm, @Nonnull Object item) {
-        if (item instanceof JetEvent) {
-            JetEvent event = (JetEvent) item;
-            getLogger().info(
-                    String.format("Event dropped, late by %dms. currentWatermark=%s, eventTime=%s, event=%s",
-                    currentWm - event.timestamp(), toLocalTime(currentWm), toLocalTime(event.timestamp()), event.payload()
-            ));
-        } else {
-            getLogger().info(String.format(
-                    "Late event dropped. currentWatermark=%s, event=%s", new Watermark(currentWm), item
-            ));
-        }
     }
 
     /**
