@@ -42,7 +42,7 @@ public interface MigratablePipeline {
      *
      * @return current owner
      */
-    NioThread getOwner();
+    NioThread owner();
 
     /**
      * Get 'load' recorded by the current pipeline. It can be used to calculate whether
@@ -50,5 +50,5 @@ public interface MigratablePipeline {
      *
      * @return total load recorded by this pipeline
      */
-    long getLoad();
+    long load();
 }

@@ -156,14 +156,14 @@ class LoadTracker {
     private void updateHandlerState(MigratablePipeline pipeline) {
         long pipelineEventCount = getEventCountSinceLastCheck(pipeline);
         handlerEventsCounter.set(pipeline, pipelineEventCount);
-        NioThread owner = pipeline.getOwner();
+        NioThread owner = pipeline.owner();
         selectorEvents.add(owner, pipelineEventCount);
         Set<MigratablePipeline> handlersOwnedBy = selectorToHandlers.get(owner);
         handlersOwnedBy.add(pipeline);
     }
 
     private long getEventCountSinceLastCheck(MigratablePipeline pipeline) {
-        long eventCount = pipeline.getLoad();
+        long eventCount = pipeline.load();
         Long lastEventCount = lastEventCounter.getAndSet(pipeline, eventCount);
         return eventCount - lastEventCount;
     }

@@ -15,7 +15,12 @@
  */
 
 /**
- * Contains the socket connection functionality. So effectively it contains all the networking that is shared between
- * client and server.
+ * Contains the socket connection functionality. So effectively it contains all
+ * the networking that is shared between client and server.
+ *
+ * This package should not contains server/client etc specific behavior. It should
+ * remain neutral, so that the networking package remains reusable for all kinds of
+ * purposes. E.g. if we want to totally isolate WAN replication, it should be
+ * possible without needing to make (many) modifications to this page.
  */
 package com.hazelcast.internal.networking;

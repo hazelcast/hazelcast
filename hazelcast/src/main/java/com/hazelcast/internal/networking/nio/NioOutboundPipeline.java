@@ -89,7 +89,7 @@ public final class NioOutboundPipeline extends NioPipeline implements Runnable {
     }
 
     @Override
-    public long getLoad() {
+    public long load() {
         switch (LOAD_TYPE) {
             case LOAD_BALANCING_HANDLE:
                 return processCount.get();
