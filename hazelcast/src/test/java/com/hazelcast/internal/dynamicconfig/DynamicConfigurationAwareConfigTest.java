@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.dynamicconfig;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -32,13 +33,19 @@ import static org.junit.Assert.fail;
 @Category({QuickTest.class, ParallelTest.class})
 public class DynamicConfigurationAwareConfigTest {
 
+    protected Class<? extends Config> getDynamicConfigClass() {
+        return DynamicConfigurationAwareConfig.class;
+    }
+
     @Test
     public void testDecorateAllPublicMethodsFromTest() {
         // this test makes sure when you add a new method into Config class
         // then you also adds it into the Dynamic Configuration Aware decorator.
 
-        // in other words: if this test is failing then update the DynamicConfigurationAwareConfig
-        Method[] methods = DynamicConfigurationAwareConfig.class.getMethods();
+        // in other words: if this test is failing then update the class returned by
+        // getDynamicConfigClass()
+        Class<? extends Config> dynamicConfigClass = getDynamicConfigClass();
+        Method[] methods = dynamicConfigClass.getMethods();
         for (Method method : methods) {
             if (isMethodStatic(method)) {
                 continue;
@@ -49,10 +56,10 @@ public class DynamicConfigurationAwareConfigTest {
             }
 
             //all other public method should be overridden by the dynamic config aware decorator
-            if (!isMethodDeclaredByClass(method, DynamicConfigurationAwareConfig.class)) {
+            if (!isMethodDeclaredByClass(method, dynamicConfigClass)) {
                 Class<?> declaringClass = method.getDeclaringClass();
                 fail("Method " + method + " is declared by " + declaringClass + " whilst it should be"
-                        + " declared by " + DynamicConfigurationAwareConfig.class);
+                        + " declared by " + dynamicConfigClass);
             }
         }
     }
