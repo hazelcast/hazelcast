@@ -145,7 +145,7 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
                 }
             }
             builder.addConstructorArgValue(configBuilder.getBeanDefinition());
-                return builder.getBeanDefinition();
+            return builder.getBeanDefinition();
         }
 
         private void handleUserCodeDeployment(Node node) {
