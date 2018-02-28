@@ -49,6 +49,9 @@ public class InstanceConfig {
      * processors; each <em>blocking</em> processor is assigned its own thread.
      */
     public InstanceConfig setCooperativeThreadCount(int size) {
+        if (size <= 0) {
+            throw new IllegalArgumentException("cooperativeThreadCount should be a positive number");
+        }
         this.cooperativeThreadCount = size;
         return this;
     }
@@ -85,6 +88,9 @@ public class InstanceConfig {
      * (in milliseconds) of the interval between flow-control ("ack") packets.
      */
     public InstanceConfig setFlowControlPeriodMs(int flowControlPeriodMs) {
+        if (flowControlPeriodMs <= 0) {
+            throw new IllegalArgumentException("flowControlPeriodMs should be a positive number");
+        }
         this.flowControlPeriodMs = flowControlPeriodMs;
         return this;
     }

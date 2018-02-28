@@ -35,6 +35,7 @@
         <module>hazelcast-jet-core</module>
         <module>hazelcast-jet-kafka</module>
         <module>hazelcast-jet-hadoop</module>
+        <module>hazelcast-jet-spring</module>
     </modules>
 
     <repositories>

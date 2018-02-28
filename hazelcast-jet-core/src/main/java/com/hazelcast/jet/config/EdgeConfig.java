@@ -65,6 +65,9 @@ public class EdgeConfig implements Serializable {
      * @return {@code this} instance for fluent API
      */
     public EdgeConfig setQueueSize(int queueSize) {
+        if (queueSize <= 0) {
+            throw new IllegalArgumentException("queueSize should be a positive number");
+        }
         this.queueSize = queueSize;
         return this;
     }
@@ -104,6 +107,9 @@ public class EdgeConfig implements Serializable {
      * @return {@code this} instance for fluent API
      */
     public EdgeConfig setReceiveWindowMultiplier(int receiveWindowMultiplier) {
+        if (receiveWindowMultiplier <= 0) {
+            throw new IllegalArgumentException("receiveWindowMultiplier should be a positive number");
+        }
         this.receiveWindowMultiplier = receiveWindowMultiplier;
         return this;
     }
@@ -131,6 +137,9 @@ public class EdgeConfig implements Serializable {
      * @return {@code this} instance for fluent API
      */
     public EdgeConfig setPacketSizeLimit(int packetSizeLimit) {
+        if (packetSizeLimit <= 0) {
+            throw new IllegalArgumentException("packetSizeLimit should be a positive number");
+        }
         this.packetSizeLimit = packetSizeLimit;
         return this;
     }
