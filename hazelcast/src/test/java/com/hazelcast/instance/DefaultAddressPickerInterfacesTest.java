@@ -19,6 +19,7 @@ package com.hazelcast.instance;
 import com.hazelcast.config.Config;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -28,26 +29,24 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.io.IOException;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 
+import static com.hazelcast.instance.DefaultAddressPicker.PREFER_IPV4_STACK;
 import static com.hazelcast.instance.DefaultAddressPickerInterfacesTest.NetworkInterfaceOptions.builder;
 import static com.hazelcast.instance.TestUtil.setSystemProperty;
 import static com.hazelcast.test.OverridePropertyRule.set;
 import static com.hazelcast.util.Preconditions.checkNotNull;
+import static java.util.Collections.enumeration;
 import static org.hamcrest.CoreMatchers.anyOf;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertEquals;
@@ -55,36 +54,37 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.when;
+import static org.powermock.api.mockito.PowerMockito.mock;
+import static org.powermock.api.mockito.PowerMockito.mockStatic;
 
 /**
- * This class contains PowerMock driven tests which emulate different NetworkInterfaces configurations. The tests check if the
- * DefaultAdddressPicker chooses an expected bind address.
+ * Tests if the {@link DefaultAddressPicker} chooses an expected bind address.
  * <p>
- * Given: Default Hazelcast Config is used and no Interface definition network configuration is set. No system property which
- * could influence address picking is used.
- * </p>
+ * This class contains PowerMock driven tests which emulate different NetworkInterfaces configurations.
+ * <p>
+ * Given: The default Hazelcast Config is used and no Interface definition network configuration is set.
+ * The System property {@link DefaultAddressPicker#PREFER_IPV4_STACK} is set to {@code true}.
  */
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({DefaultAddressPicker.class})
+@PrepareForTest(DefaultAddressPicker.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class DefaultAddressPickerInterfacesTest {
 
-    private static final String SYS_PROP_PREFER_IPV4 = "java.net.preferIPv4Stack";
     private final ILogger logger = Logger.getLogger(AddressPicker.class);
     private final Config config = new Config();
     private final HazelcastProperties hazelcastProperties = new HazelcastProperties(config);
 
     @Rule
-    public final OverridePropertyRule ruleSysPropPreferIpv4 = set(SYS_PROP_PREFER_IPV4, "true");
+    public final OverridePropertyRule ruleSysPropPreferIpv4 = set(PREFER_IPV4_STACK, "true");
     @Rule
-    public final OverridePropertyRule ruleSysPropHzPreferIpv4 = set("hazelcast.prefer.ipv4.stack", "false");
+    public final OverridePropertyRule ruleSysPropHzPreferIpv4 = set(GroupProperty.PREFER_IPv4_STACK.getName(), "false");
 
     /**
      * Enable NetworkInterface static methods mocking before each tests.
      */
     @Before
     public void before() {
-        PowerMockito.mockStatic(NetworkInterface.class);
+        mockStatic(NetworkInterface.class);
     }
 
     /**
@@ -94,10 +94,9 @@ public class DefaultAddressPickerInterfacesTest {
     @Test
     public void testLoopbackFirst() throws Exception {
         List<NetworkInterface> networkInterfaces = new ArrayList<NetworkInterface>();
-        networkInterfaces
-                .add(createNetworkConfig(builder().withName("lo").withLoopback(true).withAddresses("127.0.0.1").build()));
-        networkInterfaces.add(createNetworkConfig(builder().withName("eth0").withAddresses("192.168.1.1").build()));
-        when(NetworkInterface.getNetworkInterfaces()).thenReturn(Collections.enumeration(networkInterfaces));
+        networkInterfaces.add(createNetworkConfig(builder().withName("lo").withLoopback(true).withAddresses("127.0.0.1")));
+        networkInterfaces.add(createNetworkConfig(builder().withName("eth0").withAddresses("192.168.1.1")));
+        when(NetworkInterface.getNetworkInterfaces()).thenReturn(enumeration(networkInterfaces));
 
         InetAddress inetAddress = getInetAddressFromDefaultAddressPicker();
         assertNotNull("Not-null InetAddress is expected", inetAddress);
@@ -111,10 +110,9 @@ public class DefaultAddressPickerInterfacesTest {
     @Test
     public void testLoopbackLast() throws Exception {
         List<NetworkInterface> networkInterfaces = new ArrayList<NetworkInterface>();
-        networkInterfaces.add(createNetworkConfig(builder().withName("eth0").withAddresses("192.168.1.1").build()));
-        networkInterfaces
-                .add(createNetworkConfig(builder().withName("lo").withLoopback(true).withAddresses("127.0.0.1").build()));
-        when(NetworkInterface.getNetworkInterfaces()).thenReturn(Collections.enumeration(networkInterfaces));
+        networkInterfaces.add(createNetworkConfig(builder().withName("eth0").withAddresses("192.168.1.1")));
+        networkInterfaces.add(createNetworkConfig(builder().withName("lo").withLoopback(true).withAddresses("127.0.0.1")));
+        when(NetworkInterface.getNetworkInterfaces()).thenReturn(enumeration(networkInterfaces));
 
         InetAddress inetAddress = getInetAddressFromDefaultAddressPicker();
         assertNotNull("Not-null InetAddress is expected", inetAddress);
@@ -128,10 +126,9 @@ public class DefaultAddressPickerInterfacesTest {
     @Test
     public void testInterfaceDownFirst() throws Exception {
         List<NetworkInterface> networkInterfaces = new ArrayList<NetworkInterface>();
-        networkInterfaces
-                .add(createNetworkConfig(builder().withName("docker").withUp(false).withAddresses("172.17.0.1").build()));
-        networkInterfaces.add(createNetworkConfig(builder().withName("eth0").withAddresses("192.168.1.1").build()));
-        when(NetworkInterface.getNetworkInterfaces()).thenReturn(Collections.enumeration(networkInterfaces));
+        networkInterfaces.add(createNetworkConfig(builder().withName("docker").withUp(false).withAddresses("172.17.0.1")));
+        networkInterfaces.add(createNetworkConfig(builder().withName("eth0").withAddresses("192.168.1.1")));
+        when(NetworkInterface.getNetworkInterfaces()).thenReturn(enumeration(networkInterfaces));
 
         InetAddress inetAddress = getInetAddressFromDefaultAddressPicker();
         assertNotNull("Not-null InetAddress is expected", inetAddress);
@@ -145,10 +142,9 @@ public class DefaultAddressPickerInterfacesTest {
     @Test
     public void testInterfaceDownLast() throws Exception {
         List<NetworkInterface> networkInterfaces = new ArrayList<NetworkInterface>();
-        networkInterfaces.add(createNetworkConfig(builder().withName("eth0").withAddresses("192.168.1.1").build()));
-        networkInterfaces
-                .add(createNetworkConfig(builder().withName("docker").withUp(false).withAddresses("172.17.0.1").build()));
-        when(NetworkInterface.getNetworkInterfaces()).thenReturn(Collections.enumeration(networkInterfaces));
+        networkInterfaces.add(createNetworkConfig(builder().withName("eth0").withAddresses("192.168.1.1")));
+        networkInterfaces.add(createNetworkConfig(builder().withName("docker").withUp(false).withAddresses("172.17.0.1")));
+        when(NetworkInterface.getNetworkInterfaces()).thenReturn(enumeration(networkInterfaces));
 
         InetAddress inetAddress = getInetAddressFromDefaultAddressPicker();
         assertNotNull("Not-null InetAddress is expected", inetAddress);
@@ -162,10 +158,9 @@ public class DefaultAddressPickerInterfacesTest {
     @Test
     public void testInterfaceVirtualFirst() throws Exception {
         List<NetworkInterface> networkInterfaces = new ArrayList<NetworkInterface>();
-        networkInterfaces
-                .add(createNetworkConfig(builder().withName("eth0:0").withVirtual(true).withAddresses("172.17.0.1").build()));
-        networkInterfaces.add(createNetworkConfig(builder().withName("eth0").withAddresses("192.168.1.1").build()));
-        when(NetworkInterface.getNetworkInterfaces()).thenReturn(Collections.enumeration(networkInterfaces));
+        networkInterfaces.add(createNetworkConfig(builder().withName("eth0:0").withVirtual(true).withAddresses("172.17.0.1")));
+        networkInterfaces.add(createNetworkConfig(builder().withName("eth0").withAddresses("192.168.1.1")));
+        when(NetworkInterface.getNetworkInterfaces()).thenReturn(enumeration(networkInterfaces));
 
         InetAddress inetAddress = getInetAddressFromDefaultAddressPicker();
         assertNotNull("Not-null InetAddress is expected", inetAddress);
@@ -179,10 +174,9 @@ public class DefaultAddressPickerInterfacesTest {
     @Test
     public void testInterfaceVirtualLast() throws Exception {
         List<NetworkInterface> networkInterfaces = new ArrayList<NetworkInterface>();
-        networkInterfaces.add(createNetworkConfig(builder().withName("eth0").withAddresses("192.168.1.1").build()));
-        networkInterfaces
-                .add(createNetworkConfig(builder().withName("eth0:0").withVirtual(true).withAddresses("172.17.0.1").build()));
-        when(NetworkInterface.getNetworkInterfaces()).thenReturn(Collections.enumeration(networkInterfaces));
+        networkInterfaces.add(createNetworkConfig(builder().withName("eth0").withAddresses("192.168.1.1")));
+        networkInterfaces.add(createNetworkConfig(builder().withName("eth0:0").withVirtual(true).withAddresses("172.17.0.1")));
+        when(NetworkInterface.getNetworkInterfaces()).thenReturn(enumeration(networkInterfaces));
 
         InetAddress inetAddress = getInetAddressFromDefaultAddressPicker();
         assertNotNull("Not-null InetAddress is expected", inetAddress);
@@ -195,7 +189,7 @@ public class DefaultAddressPickerInterfacesTest {
      */
     @Test
     public void testNoInterface() throws Exception {
-        when(NetworkInterface.getNetworkInterfaces()).thenReturn(Collections.enumeration(Collections.EMPTY_LIST));
+        when(NetworkInterface.getNetworkInterfaces()).thenReturn(enumeration(Collections.<NetworkInterface>emptyList()));
 
         InetAddress inetAddress = getInetAddressFromDefaultAddressPicker();
         assertNull("Null InetAddress is expected when NetworkInterface enumeration is empty", inetAddress);
@@ -208,15 +202,15 @@ public class DefaultAddressPickerInterfacesTest {
     @Test
     public void testNoAddress() throws Exception {
         List<NetworkInterface> networkInterfaces = new ArrayList<NetworkInterface>();
-        networkInterfaces.add(createNetworkConfig(builder().withName("eth0").withAddresses().build()));
-        when(NetworkInterface.getNetworkInterfaces()).thenReturn(Collections.enumeration(networkInterfaces));
+        networkInterfaces.add(createNetworkConfig(builder().withName("eth0").withAddresses()));
+        when(NetworkInterface.getNetworkInterfaces()).thenReturn(enumeration(networkInterfaces));
 
         InetAddress inetAddress = getInetAddressFromDefaultAddressPicker();
         assertNull("Null InetAddress is expected when the available NetworkInterface has no address", inetAddress);
 
         networkInterfaces
-                .add(createNetworkConfig(builder().withName("docker").withUp(false).withAddresses("172.17.0.1").build()));
-        when(NetworkInterface.getNetworkInterfaces()).thenReturn(Collections.enumeration(networkInterfaces));
+                .add(createNetworkConfig(builder().withName("docker").withUp(false).withAddresses("172.17.0.1")));
+        when(NetworkInterface.getNetworkInterfaces()).thenReturn(enumeration(networkInterfaces));
 
         inetAddress = getInetAddressFromDefaultAddressPicker();
         assertNull("Null InetAddress is expected when the available NetworkInterface has no address", inetAddress);
@@ -229,9 +223,9 @@ public class DefaultAddressPickerInterfacesTest {
     @Test
     public void testNoAddressFirst() throws Exception {
         List<NetworkInterface> networkInterfaces = new ArrayList<NetworkInterface>();
-        networkInterfaces.add(createNetworkConfig(builder().withName("eth0").withAddresses().build()));
-        networkInterfaces.add(createNetworkConfig(builder().withName("eth1").withAddresses("192.168.1.1").build()));
-        when(NetworkInterface.getNetworkInterfaces()).thenReturn(Collections.enumeration(networkInterfaces));
+        networkInterfaces.add(createNetworkConfig(builder().withName("eth0").withAddresses()));
+        networkInterfaces.add(createNetworkConfig(builder().withName("eth1").withAddresses("192.168.1.1")));
+        when(NetworkInterface.getNetworkInterfaces()).thenReturn(enumeration(networkInterfaces));
 
         InetAddress inetAddress = getInetAddressFromDefaultAddressPicker();
         assertNotNull("Not-null InetAddress is expected", inetAddress);
@@ -245,9 +239,9 @@ public class DefaultAddressPickerInterfacesTest {
     @Test
     public void testNoAddressLast() throws Exception {
         List<NetworkInterface> networkInterfaces = new ArrayList<NetworkInterface>();
-        networkInterfaces.add(createNetworkConfig(builder().withName("eth1").withAddresses("192.168.1.1").build()));
-        networkInterfaces.add(createNetworkConfig(builder().withName("eth0").withAddresses().build()));
-        when(NetworkInterface.getNetworkInterfaces()).thenReturn(Collections.enumeration(networkInterfaces));
+        networkInterfaces.add(createNetworkConfig(builder().withName("eth1").withAddresses("192.168.1.1")));
+        networkInterfaces.add(createNetworkConfig(builder().withName("eth0").withAddresses()));
+        when(NetworkInterface.getNetworkInterfaces()).thenReturn(enumeration(networkInterfaces));
 
         InetAddress inetAddress = getInetAddressFromDefaultAddressPicker();
         assertNotNull("Not-null InetAddress is expected", inetAddress);
@@ -261,11 +255,9 @@ public class DefaultAddressPickerInterfacesTest {
     @Test
     public void testMoreAddresses() throws Exception {
         List<NetworkInterface> networkInterfaces = new ArrayList<NetworkInterface>();
-        networkInterfaces
-                .add(createNetworkConfig(builder().withName("lo").withLoopback(true).withAddresses("127.0.0.1").build()));
-        networkInterfaces
-                .add(createNetworkConfig(builder().withName("eth0").withAddresses("192.168.1.1", "172.172.172.172").build()));
-        when(NetworkInterface.getNetworkInterfaces()).thenReturn(Collections.enumeration(networkInterfaces));
+        networkInterfaces.add(createNetworkConfig(builder().withName("lo").withLoopback(true).withAddresses("127.0.0.1")));
+        networkInterfaces.add(createNetworkConfig(builder().withName("eth0").withAddresses("192.168.1.1", "172.172.172.172")));
+        when(NetworkInterface.getNetworkInterfaces()).thenReturn(enumeration(networkInterfaces));
 
         InetAddress inetAddress = getInetAddressFromDefaultAddressPicker();
         assertNotNull("Not-null InetAddress is expected", inetAddress);
@@ -280,8 +272,8 @@ public class DefaultAddressPickerInterfacesTest {
     public void testIPv4Preferred() throws Exception {
         List<NetworkInterface> networkInterfaces = new ArrayList<NetworkInterface>();
         networkInterfaces.add(createNetworkConfig(
-                builder().withName("eth0").withAddresses("fe80::9711:82f4:383a:e254", "192.168.1.1", "::cace").build()));
-        when(NetworkInterface.getNetworkInterfaces()).thenReturn(Collections.enumeration(networkInterfaces));
+                builder().withName("eth0").withAddresses("fe80::9711:82f4:383a:e254", "192.168.1.1", "::cace")));
+        when(NetworkInterface.getNetworkInterfaces()).thenReturn(enumeration(networkInterfaces));
 
         InetAddress inetAddress = getInetAddressFromDefaultAddressPicker();
         assertNotNull("Not-null InetAddress is expected", inetAddress);
@@ -294,18 +286,18 @@ public class DefaultAddressPickerInterfacesTest {
      */
     @Test
     public void testIPv6Preferred() throws Exception {
-        String origPref = setSystemProperty(SYS_PROP_PREFER_IPV4, "false");
+        String origPref = setSystemProperty(PREFER_IPV4_STACK, "false");
         try {
             List<NetworkInterface> networkInterfaces = new ArrayList<NetworkInterface>();
             networkInterfaces.add(createNetworkConfig(
-                    builder().withName("eth0").withAddresses("fe80::9711:82f4:383a:e254", "172.17.0.1").build()));
-            when(NetworkInterface.getNetworkInterfaces()).thenReturn(Collections.enumeration(networkInterfaces));
+                    builder().withName("eth0").withAddresses("fe80::9711:82f4:383a:e254", "172.17.0.1")));
+            when(NetworkInterface.getNetworkInterfaces()).thenReturn(enumeration(networkInterfaces));
 
             InetAddress inetAddress = getInetAddressFromDefaultAddressPicker();
             assertNotNull("Not-null InetAddress is expected", inetAddress);
             assertEquals("fe80:0:0:0:9711:82f4:383a:e254", inetAddress.getHostAddress());
         } finally {
-            setSystemProperty(SYS_PROP_PREFER_IPV4, origPref);
+            setSystemProperty(PREFER_IPV4_STACK, origPref);
         }
     }
 
@@ -317,18 +309,15 @@ public class DefaultAddressPickerInterfacesTest {
     @Test
     public void testComplexScenario() throws Exception {
         List<NetworkInterface> networkInterfaces = new ArrayList<NetworkInterface>();
-        networkInterfaces.add(
-                createNetworkConfig(builder().withName("lo").withLoopback(true).withAddresses("127.0.0.1", "::1").build()));
-        networkInterfaces
-                .add(createNetworkConfig(builder().withName("docker0").withUp(false).withAddresses("172.17.0.1").build()));
-        networkInterfaces.add(createNetworkConfig(builder().withName("wlp3s0").withUp(false).build()));
+        networkInterfaces.add(createNetworkConfig(builder().withName("lo").withLoopback(true).withAddresses("127.0.0.1", "::1")));
+        networkInterfaces.add(createNetworkConfig(builder().withName("docker0").withUp(false).withAddresses("172.17.0.1")));
+        networkInterfaces.add(createNetworkConfig(builder().withName("wlp3s0").withUp(false)));
         networkInterfaces.add(createNetworkConfig(
-                builder().withName("eth0:0").withVirtual(true).withAddresses("8.8.8.8", "8.8.4.4").build()));
+                builder().withName("eth0:0").withVirtual(true).withAddresses("8.8.8.8", "8.8.4.4")));
         networkInterfaces.add(createNetworkConfig(
-                builder().withName("enp0s25").withAddresses("fe80::9711:82f4:383a:e254", "192.168.1.4").build()));
-        networkInterfaces
-                .add(createNetworkConfig(builder().withName("virbr1").withUp(false).withAddresses("192.168.42.1").build()));
-        when(NetworkInterface.getNetworkInterfaces()).thenReturn(Collections.enumeration(networkInterfaces));
+                builder().withName("enp0s25").withAddresses("fe80::9711:82f4:383a:e254", "192.168.1.4")));
+        networkInterfaces.add(createNetworkConfig(builder().withName("virbr1").withUp(false).withAddresses("192.168.42.1")));
+        when(NetworkInterface.getNetworkInterfaces()).thenReturn(enumeration(networkInterfaces));
 
         InetAddress inetAddress = getInetAddressFromDefaultAddressPicker();
         assertNotNull("Not-null InetAddress is expected", inetAddress);
@@ -336,51 +325,46 @@ public class DefaultAddressPickerInterfacesTest {
     }
 
     /**
-     * This method uses reflection to execute {@code DefaultAddressPicker.pickMatchingAddress()} and to return
-     * {@code inetAddress} field from the method result object.
+     * This method executes {@code DefaultAddressPicker.pickMatchingAddress()}
+     * and returns the {@code inetAddress} field from the method result
+     * or {@code null} if the result was {@code null}.
      */
     private InetAddress getInetAddressFromDefaultAddressPicker() throws Exception {
         DefaultAddressPicker picker = new DefaultAddressPicker(config, hazelcastProperties, logger);
-        Method method = DefaultAddressPicker.class.getDeclaredMethod("pickMatchingAddress", Collection.class);
-        method.setAccessible(true);
-        Object addressDefinitionObject = method.invoke(picker, new Object[]{null});
-        if (addressDefinitionObject == null) {
-            return null;
-        }
-        Field field = addressDefinitionObject.getClass().getDeclaredField("inetAddress");
-        field.setAccessible(true);
-        InetAddress inetAddress = (InetAddress) field.get(addressDefinitionObject);
-        return inetAddress;
+        DefaultAddressPicker.AddressDefinition addressDefinition = picker.pickMatchingAddress(null);
+        return addressDefinition == null ? null : addressDefinition.inetAddress;
     }
 
     /**
      * Creates a mocked NetworkInterface instance with given configuration.
      */
-    private NetworkInterface createNetworkConfig(NetworkInterfaceOptions networkConfigOptions) throws IOException {
-        NetworkInterface networkInterface = PowerMockito.mock(NetworkInterface.class);
+    private NetworkInterface createNetworkConfig(NetworkInterfaceOptions.Builder builder) throws IOException {
+        NetworkInterfaceOptions networkConfigOptions = builder.build();
+        NetworkInterface networkInterface = mock(NetworkInterface.class);
         when(networkInterface.getName()).thenReturn(networkConfigOptions.name);
         when(networkInterface.isUp()).thenReturn(networkConfigOptions.up);
         when(networkInterface.isLoopback()).thenReturn(networkConfigOptions.loopback);
         when(networkInterface.isVirtual()).thenReturn(networkConfigOptions.virtual);
-        when(networkInterface.getInetAddresses()).thenReturn(createInetAddrs(networkConfigOptions.addresses));
+        when(networkInterface.getInetAddresses()).thenReturn(createInetAddresses(networkConfigOptions.addresses));
         return networkInterface;
     }
 
     /**
      * From given String array creates an enumeration of {@link InetAddress} instances.
      */
-    private Enumeration<InetAddress> createInetAddrs(String[] addresses) throws UnknownHostException {
+    private Enumeration<InetAddress> createInetAddresses(String[] addresses) throws UnknownHostException {
         List<InetAddress> inetAddresses = new ArrayList<InetAddress>();
-        for (String addr : addresses) {
-            inetAddresses.add(InetAddress.getByName(addr));
+        for (String address : addresses) {
+            inetAddresses.add(InetAddress.getByName(address));
         }
-        return Collections.enumeration(inetAddresses);
+        return enumeration(inetAddresses);
     }
 
     /**
      * Configuration object for {@link NetworkInterface} mocking.
      */
     public static class NetworkInterfaceOptions {
+
         private final String name;
         private final boolean up;
         private final boolean loopback;
@@ -407,7 +391,9 @@ public class DefaultAddressPickerInterfacesTest {
         /**
          * Builder to build {@link NetworkInterfaceOptions}.
          */
+        @SuppressWarnings("SameParameterValue")
         public static final class Builder {
+
             private String name;
             private boolean up = true;
             private boolean loopback = false;
@@ -417,32 +403,32 @@ public class DefaultAddressPickerInterfacesTest {
             private Builder() {
             }
 
-            public Builder withName(String name) {
+            Builder withName(String name) {
                 this.name = name;
                 return this;
             }
 
-            public Builder withUp(boolean up) {
+            Builder withUp(boolean up) {
                 this.up = up;
                 return this;
             }
 
-            public Builder withLoopback(boolean loopback) {
+            Builder withLoopback(boolean loopback) {
                 this.loopback = loopback;
                 return this;
             }
 
-            public Builder withVirtual(boolean virtual) {
+            Builder withVirtual(boolean virtual) {
                 this.virtual = virtual;
                 return this;
             }
 
-            public Builder withAddresses(String... addresses) {
+            Builder withAddresses(String... addresses) {
                 this.addresses = addresses;
                 return this;
             }
 
-            public NetworkInterfaceOptions build() {
+            NetworkInterfaceOptions build() {
                 return new NetworkInterfaceOptions(this);
             }
         }

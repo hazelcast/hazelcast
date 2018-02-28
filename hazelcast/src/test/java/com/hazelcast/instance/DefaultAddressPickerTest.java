@@ -17,6 +17,8 @@
 package com.hazelcast.instance;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.instance.DefaultAddressPicker.AddressDefinition;
+import com.hazelcast.instance.DefaultAddressPicker.InterfaceDefinition;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
@@ -37,7 +39,9 @@ import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.Enumeration;
 
+import static java.net.InetAddress.getByName;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeNotNull;
 
@@ -57,13 +61,13 @@ public class DefaultAddressPickerTest {
     private String localAddressValue;
 
     @Before
-    public void setup() throws UnknownHostException {
+    public void setup() {
         properties = new HazelcastProperties(config);
 
         InetAddress publicAddress = null;
         try {
-            loopback = InetAddress.getByName("127.0.0.1");
-            publicAddress = InetAddress.getByName(PUBLIC_HOST);
+            loopback = getByName("127.0.0.1");
+            publicAddress = getByName(PUBLIC_HOST);
         } catch (UnknownHostException e) {
             e.printStackTrace();
         }
@@ -165,6 +169,7 @@ public class DefaultAddressPickerTest {
             new DefaultAddressPicker(config, properties, logger).pickAddress();
             fail("Should fail with 'java.net.BindException: Address already in use'");
         } catch (Exception expected) {
+            // expected exception
         }
     }
 
@@ -230,6 +235,57 @@ public class DefaultAddressPickerTest {
 
         addressPicker = new DefaultAddressPicker(config, properties, logger);
         addressPicker.pickAddress();
+    }
+
+    @Test
+    public void testEqualsAndHashCode() throws Exception {
+        InterfaceDefinition interfaceDefinition = new InterfaceDefinition("localhost", "127.0.0.1");
+        InterfaceDefinition interfaceDefinitionSameAttributes = new InterfaceDefinition("localhost", "127.0.0.1");
+        InterfaceDefinition interfaceDefinitionOtherHost = new InterfaceDefinition("otherHost", "127.0.0.1");
+        InterfaceDefinition interfaceDefinitionOtherAddress = new InterfaceDefinition("localhost", "198.168.1.1");
+
+        InetAddress otherInetAddress = getByName("198.168.1.1");
+        AddressDefinition addressDefinition = new AddressDefinition("localhost", 5701, loopback);
+        AddressDefinition addressDefinitionSameAttributes = new AddressDefinition("localhost", 5701, loopback);
+        AddressDefinition addressDefinitionOtherHost = new AddressDefinition("otherHost", 5701, loopback);
+        AddressDefinition addressDefinitionOtherPort = new AddressDefinition("localhost", 5702, loopback);
+        AddressDefinition addressDefinitionOtherInetAddress = new AddressDefinition("localhost", 5701, otherInetAddress);
+
+        // InterfaceDefinition.equals()
+        assertEquals(interfaceDefinition, interfaceDefinition);
+        assertEquals(interfaceDefinition, interfaceDefinitionSameAttributes);
+
+        assertNotEquals(interfaceDefinition, null);
+        assertNotEquals(interfaceDefinition, new Object());
+
+        assertNotEquals(interfaceDefinition, interfaceDefinitionOtherHost);
+        assertNotEquals(interfaceDefinition, interfaceDefinitionOtherAddress);
+
+        // InterfaceDefinition.hashCode()
+        assertEquals(interfaceDefinition.hashCode(), interfaceDefinition.hashCode());
+        assertEquals(interfaceDefinition.hashCode(), interfaceDefinitionSameAttributes.hashCode());
+
+        assertNotEquals(interfaceDefinition.hashCode(), interfaceDefinitionOtherHost.hashCode());
+        assertNotEquals(interfaceDefinition.hashCode(), interfaceDefinitionOtherAddress.hashCode());
+
+        // AddressDefinition.equals()
+        assertEquals(addressDefinition, addressDefinition);
+        assertEquals(addressDefinition, addressDefinitionSameAttributes);
+
+        assertNotEquals(addressDefinition, null);
+        assertNotEquals(addressDefinition, new Object());
+
+        assertNotEquals(addressDefinition, addressDefinitionOtherHost);
+        assertNotEquals(addressDefinition, addressDefinitionOtherPort);
+        assertNotEquals(addressDefinition, addressDefinitionOtherInetAddress);
+
+        // AddressDefinition.hashCode()
+        assertEquals(addressDefinition.hashCode(), addressDefinition.hashCode());
+        assertEquals(addressDefinition.hashCode(), addressDefinitionSameAttributes.hashCode());
+
+        assertNotEquals(addressDefinition.hashCode(), addressDefinitionOtherHost.hashCode());
+        assertNotEquals(addressDefinition.hashCode(), addressDefinitionOtherPort.hashCode());
+        assertNotEquals(addressDefinition.hashCode(), addressDefinitionOtherInetAddress.hashCode());
     }
 
     private static InetAddress findIPv4NonLoopbackInterface() {
