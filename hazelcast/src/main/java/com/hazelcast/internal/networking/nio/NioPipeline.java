@@ -136,7 +136,7 @@ public abstract class NioPipeline implements MigratablePipeline, Closeable {
         }
     }
 
-    protected abstract void publish();
+    protected abstract void publishMetrics();
 
     /**
      * Called when there are bytes available for reading, or space available to write.

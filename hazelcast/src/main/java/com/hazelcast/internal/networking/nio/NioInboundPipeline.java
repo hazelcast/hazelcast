@@ -160,7 +160,7 @@ public final class NioInboundPipeline extends NioPipeline {
     }
 
     @Override
-    public void publish() {
+    public void publishMetrics() {
         if (Thread.currentThread() != owner) {
             return;
         }
@@ -217,7 +217,7 @@ public final class NioInboundPipeline extends NioPipeline {
                 return;
             }
 
-            publish();
+            publishMetrics();
 
             try {
                 startMigration(newOwner);

@@ -421,7 +421,7 @@ public final class NioOutboundPipeline extends NioPipeline implements Runnable {
     }
 
     @Override
-    protected void publish() {
+    protected void publishMetrics() {
         owner.bytesTransceived += bytesWritten.get() - bytesReadLastPublish;
         owner.framesTransceived += normalFramesWritten.get() - normalFramesReadLastPublish;
         owner.priorityFramesTransceived += priorityFramesWritten.get() - priorityFramesReadLastPublish;
