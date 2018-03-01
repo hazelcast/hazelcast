@@ -411,6 +411,46 @@ public class ClientDynamicClusterConfig extends Config {
     }
 
     @Override
+    public EventJournalConfig findMapEventJournalConfig(String name) {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
+    public EventJournalConfig findCacheEventJournalConfig(String name) {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
+    public EventJournalConfig getMapEventJournalConfig(String name) {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
+    public EventJournalConfig getCacheEventJournalConfig(String name) {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
+    public Map<String, EventJournalConfig> getMapEventJournalConfigs() {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
+    public Map<String, EventJournalConfig> getCacheEventJournalConfigs() {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
+    public Config setMapEventJournalConfigs(Map<String, EventJournalConfig> eventJournalConfigs) {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
+    public Config setCacheEventJournalConfigs(Map<String, EventJournalConfig> eventJournalConfigs) {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
     public Config addFlakeIdGeneratorConfig(FlakeIdGeneratorConfig flakeIdGeneratorConfig) {
         ClientMessage request = DynamicConfigAddFlakeIdGeneratorConfigCodec.encodeRequest(
                 flakeIdGeneratorConfig.getName(),
@@ -819,6 +859,11 @@ public class ClientDynamicClusterConfig extends Config {
     }
 
     @Override
+    public Map<String, SemaphoreConfig> getSemaphoreConfigsAsMap() {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
     public Config setSemaphoreConfigs(Map<String, SemaphoreConfig> semaphoreConfigs) {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
@@ -1115,6 +1160,36 @@ public class ClientDynamicClusterConfig extends Config {
 
     @Override
     public Config setFlakeIdGeneratorConfigs(Map<String, FlakeIdGeneratorConfig> map) {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
+    public MapConfig getMapConfigOrNull(String name) {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
+    public CacheSimpleConfig findCacheConfigOrNull(String name) {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
+    public PNCounterConfig findPNCounterConfig(String name) {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
+    public Map<String, PNCounterConfig> getPNCounterConfigs() {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
+    public PNCounterConfig getPNCounterConfig(String name) {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
+    public Config setPNCounterConfigs(Map<String, PNCounterConfig> pnCounterConfigs) {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
