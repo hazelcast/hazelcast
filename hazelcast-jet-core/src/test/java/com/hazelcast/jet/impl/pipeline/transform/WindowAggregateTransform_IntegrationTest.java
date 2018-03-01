@@ -27,7 +27,9 @@ import com.hazelcast.jet.datamodel.TwoBags;
 import com.hazelcast.jet.datamodel.WindowResult;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
+import com.hazelcast.jet.pipeline.SlidingWindowDef;
 import com.hazelcast.jet.pipeline.Sources;
+import com.hazelcast.jet.pipeline.StageWithWindow;
 import com.hazelcast.jet.pipeline.StreamStage;
 import com.hazelcast.jet.pipeline.WindowDefinition;
 import com.hazelcast.spi.properties.GroupProperty;
@@ -65,6 +67,16 @@ public class WindowAggregateTransform_IntegrationTest extends JetTestSupport {
     }
 
     @Test
+    public void testWindowDefinition() {
+        Pipeline p = Pipeline.create();
+        SlidingWindowDef tumbling = WindowDefinition.tumbling(2);
+        StageWithWindow<Entry<Long, String>> stage =
+                p.drawFrom(Sources.<Long, String>mapJournal("source", START_FROM_OLDEST))
+                 .window(tumbling);
+        assertEquals(tumbling, stage.windowDefinition());
+    }
+
+    @Test
     public void testTumbling() {
         IMap<Long, String> map = instance.getMap("source");
         // key is timestamp
@@ -81,13 +93,11 @@ public class WindowAggregateTransform_IntegrationTest extends JetTestSupport {
          .drainTo(Sinks.list("sink"));
 
         instance.newJob(p);
-        assertTrueEventually(() -> {
-            assertEquals(
-                    listToString(asList(
-                            new TimestampedItem<>(2, set(entry(0L, "foo"), entry(1L, "bar"))),
-                            new TimestampedItem<>(4, set(entry(2L, "baz"))))),
-                    listToString(instance.getHazelcastInstance().getList("sink")));
-        }, 5);
+        assertTrueEventually(() -> assertEquals(
+                listToString(asList(
+                        new TimestampedItem<>(2, set(entry(0L, "foo"), entry(1L, "bar"))),
+                        new TimestampedItem<>(4, set(entry(2L, "baz"))))),
+                listToString(instance.getHazelcastInstance().getList("sink"))), 5);
     }
 
     @Test
@@ -107,13 +117,11 @@ public class WindowAggregateTransform_IntegrationTest extends JetTestSupport {
 
         instance.newJob(p);
 
-        assertTrueEventually(() -> {
-            assertEquals(
-                    listToString(asList(
-                            new WindowResult<>(0, 2, "", set(entry(0L, "foo"))),
-                            new WindowResult<>(3, 6, "", set(entry(3L, "bar"), entry(4L, "baz"))))),
-                    listToString(instance.getHazelcastInstance().getList("sink")));
-        }, 5);
+        assertTrueEventually(() -> assertEquals(
+                listToString(asList(
+                        new WindowResult<>(0, 2, "", set(entry(0L, "foo"))),
+                        new WindowResult<>(3, 6, "", set(entry(3L, "bar"), entry(4L, "baz"))))),
+                listToString(instance.getHazelcastInstance().getList("sink"))), 5);
     }
 
     @Test
@@ -143,20 +151,17 @@ public class WindowAggregateTransform_IntegrationTest extends JetTestSupport {
          .drainTo(Sinks.list("sink"));
 
         instance.newJob(p);
-        assertTrueEventually(() -> {
-            assertEquals(
-                    listToString(asList(
-                            new TimestampedItem<>(2, TwoBags.twoBags(
-                                    asList(entry(0L, "foo")),
-                                    asList(entry(0L, "faa"))
-                            )),
-                            new TimestampedItem<>(4, TwoBags.twoBags(
-                                    asList(entry(2L, "baz")),
-                                    asList(entry(2L, "buu"))
-                            )))),
-                    listToString(instance.getHazelcastInstance().getList("sink")));
-        }, 5);
-
+        assertTrueEventually(() -> assertEquals(
+                listToString(asList(
+                        new TimestampedItem<>(2, TwoBags.twoBags(
+                                asList(entry(0L, "foo")),
+                                asList(entry(0L, "faa"))
+                        )),
+                        new TimestampedItem<>(4, TwoBags.twoBags(
+                                asList(entry(2L, "baz")),
+                                asList(entry(2L, "buu"))
+                        )))),
+                listToString(instance.getHazelcastInstance().getList("sink"))), 5);
     }
 
     @Test
@@ -196,21 +201,18 @@ public class WindowAggregateTransform_IntegrationTest extends JetTestSupport {
          .drainTo(Sinks.list("sink"));
 
         instance.newJob(p);
-        assertTrueEventually(() -> {
-            assertEquals(
-                    listToString(asList(
-                            new TimestampedItem<>(2, ThreeBags.threeBags(
-                                    asList(entry(0L, "foo")),
-                                    asList(entry(0L, "faa")),
-                                    asList(entry(0L, "fzz"))
-                            )),
-                            new TimestampedItem<>(4, ThreeBags.threeBags(
-                                    asList(entry(2L, "caz")),
-                                    asList(entry(2L, "cuu")),
-                                    asList(entry(2L, "ccc"))
-                            )))),
-                    listToString(instance.getHazelcastInstance().getList("sink")));
-        }, 5);
-
+        assertTrueEventually(() -> assertEquals(
+                listToString(asList(
+                        new TimestampedItem<>(2, ThreeBags.threeBags(
+                                asList(entry(0L, "foo")),
+                                asList(entry(0L, "faa")),
+                                asList(entry(0L, "fzz"))
+                        )),
+                        new TimestampedItem<>(4, ThreeBags.threeBags(
+                                asList(entry(2L, "caz")),
+                                asList(entry(2L, "cuu")),
+                                asList(entry(2L, "ccc"))
+                        )))),
+                listToString(instance.getHazelcastInstance().getList("sink"))), 5);
     }
 }

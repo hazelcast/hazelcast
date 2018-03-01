@@ -17,10 +17,8 @@
 package com.hazelcast.jet.impl.pipeline.transform;
 
 import com.hazelcast.jet.impl.pipeline.Planner;
-
-import javax.annotation.Nonnull;
-import java.io.Serializable;
 import java.util.List;
+import javax.annotation.Nonnull;
 
 /**
  * This is a pure data object and holds no implementation code for the
@@ -28,7 +26,7 @@ import java.util.List;
  * Planner} is the implementation class that creates a Core API DAG for a
  * pipeline.
  */
-public interface Transform extends Serializable {
+public interface Transform {
     /**
      * Returns the name of this transformation.
      */

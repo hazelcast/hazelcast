@@ -26,11 +26,9 @@ import com.hazelcast.jet.impl.pipeline.Planner.PlannerVertex;
 import com.hazelcast.jet.impl.processor.HashJoinCollectP;
 import com.hazelcast.jet.impl.processor.HashJoinP;
 import com.hazelcast.jet.pipeline.JoinClause;
-
+import java.util.List;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.List;
-import java.util.function.BiFunction;
 
 import static com.hazelcast.jet.core.Edge.from;
 import static com.hazelcast.jet.impl.pipeline.Planner.tailList;
@@ -38,13 +36,13 @@ import static java.util.stream.Collectors.toList;
 
 public class HashJoinTransform<T0, R> extends AbstractTransform {
     @Nonnull
-    public final List<JoinClause<?, ? super T0, ?, ?>> clauses;
+    private final List<JoinClause<?, ? super T0, ?, ?>> clauses;
     @Nonnull
-    public final List<Tag> tags;
+    private final List<Tag> tags;
     @Nullable
-    public final BiFunction mapToOutputBiFn;
+    private final DistributedBiFunction mapToOutputBiFn;
     @Nullable
-    public final DistributedTriFunction mapToOutputTriFn;
+    private final DistributedTriFunction mapToOutputTriFn;
 
     public HashJoinTransform(
             @Nonnull List<Transform> upstream,
@@ -99,10 +97,14 @@ public class HashJoinTransform<T0, R> extends AbstractTransform {
         String namePrefix = p.uniqueVertexName(this.name(), "");
         PlannerVertex primary = p.xform2vertex.get(this.upstream().get(0));
         List keyFns = this.clauses.stream()
-                                      .map(JoinClause::leftKeyFn)
-                                      .collect(toList());
+                                  .map(JoinClause::leftKeyFn)
+                                  .collect(toList());
+
+        List<Tag> tags = this.tags;
+        DistributedBiFunction mapToOutputBiFn = this.mapToOutputBiFn;
+        DistributedTriFunction mapToOutputTriFn = this.mapToOutputTriFn;
         Vertex joiner = p.addVertex(this, namePrefix + "-joiner", localParallelism(),
-                () -> new HashJoinP(keyFns, this.tags, this.mapToOutputBiFn, this.mapToOutputTriFn)).v;
+                () -> new HashJoinP<>(keyFns, tags, mapToOutputBiFn, mapToOutputTriFn)).v;
         p.dag.edge(from(primary.v, primary.availableOrdinal++).to(joiner, 0));
 
         String collectorName = namePrefix + "-collector";
