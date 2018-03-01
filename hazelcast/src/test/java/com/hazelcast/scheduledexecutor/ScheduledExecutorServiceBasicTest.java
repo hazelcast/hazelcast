@@ -315,30 +315,30 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
 
     @Test
     public void schedule_withMapChanges_durable() throws Exception {
-        int delay = 0;
-
         HazelcastInstance[] instances = createClusterWithCount(2);
         IMap<String, Integer> map = instances[1].getMap("map");
-        for (int i = 0; i < 100000; i++) {
+        for (int i = 0; i < MAP_INCREMENT_TASK_MAX_ENTRIES; i++) {
             map.put(String.valueOf(i), i);
         }
 
         Object key = generateKeyOwnedBy(instances[0]);
-        ICountDownLatch runsCountLatch = instances[1].getCountDownLatch("runsCountLatchName");
-        runsCountLatch.trySetCount(1);
+        ICountDownLatch startedLatch = instances[1].getCountDownLatch("startedLatch");
+        ICountDownLatch finishedLatch = instances[1].getCountDownLatch("finishedLatch");
+        startedLatch.trySetCount(1);
+        finishedLatch.trySetCount(1);
 
         IAtomicLong runEntryCounter = instances[1].getAtomicLong("runEntryCounterName");
 
         IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
-        executorService.scheduleOnKeyOwner(new ICountdownLatchMapIncrementCallableTask("map", "runEntryCounterName",
-                "runsCountLatchName"), key, delay, SECONDS);
+        executorService.scheduleOnKeyOwner(new ICountdownLatchMapIncrementCallableTask("map",
+                "runEntryCounterName", "startedLatch", "finishedLatch"), key, 0, SECONDS);
 
-        sleepSeconds(2);
+        assertOpenEventually(startedLatch);
         instances[0].getLifecycleService().shutdown();
 
-        runsCountLatch.await(2, MINUTES);
+        assertOpenEventually(finishedLatch);
 
-        for (int i = 0; i < 100000; i++) {
+        for (int i = 0; i < 10000; i++) {
             assertEquals(i + 1, (int) map.get(String.valueOf(i)));
         }
 
