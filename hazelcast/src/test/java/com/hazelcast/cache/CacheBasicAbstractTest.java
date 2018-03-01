@@ -22,7 +22,6 @@ import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuil
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.AssertTask;
-import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.SampleableConcurrentHashMap;
 import org.junit.Test;
@@ -823,7 +822,7 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
                     doRun(random);
                     LockSupport.parkNanos(1);
                 } catch (Exception e) {
-                    EmptyStatement.ignore(e);
+                    ignore(e);
                 }
                 firstIterationDone.countDown();
 
@@ -832,7 +831,7 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
                         doRun(random);
                         LockSupport.parkNanos(1);
                     } catch (Exception e) {
-                        EmptyStatement.ignore(e);
+                        ignore(e);
                     }
                 }
             }

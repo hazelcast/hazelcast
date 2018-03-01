@@ -21,7 +21,6 @@ import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.test.ExpectedRuntimeException;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.util.EmptyStatement;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -116,7 +115,7 @@ public abstract class AtomicLongAbstractTest extends HazelcastTestSupport {
             atomicLong.apply(new FailingFunction());
             fail();
         } catch (ExpectedRuntimeException expected) {
-            EmptyStatement.ignore(expected);
+            ignore(expected);
         }
 
         assertEquals(1, atomicLong.get());
@@ -135,7 +134,7 @@ public abstract class AtomicLongAbstractTest extends HazelcastTestSupport {
             atomicLong.alter(new FailingFunction());
             fail();
         } catch (ExpectedRuntimeException expected) {
-            EmptyStatement.ignore(expected);
+            ignore(expected);
         }
 
         assertEquals(10, atomicLong.get());
@@ -161,7 +160,7 @@ public abstract class AtomicLongAbstractTest extends HazelcastTestSupport {
             atomicLong.alterAndGet(new FailingFunction());
             fail();
         } catch (ExpectedRuntimeException expected) {
-            EmptyStatement.ignore(expected);
+            ignore(expected);
         }
 
         assertEquals(10, atomicLong.get());
@@ -187,7 +186,7 @@ public abstract class AtomicLongAbstractTest extends HazelcastTestSupport {
             atomicLong.getAndAlter(new FailingFunction());
             fail();
         } catch (ExpectedRuntimeException expected) {
-            EmptyStatement.ignore(expected);
+            ignore(expected);
         }
 
         assertEquals(10, atomicLong.get());

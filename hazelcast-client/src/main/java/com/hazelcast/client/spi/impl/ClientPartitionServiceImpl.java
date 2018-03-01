@@ -35,7 +35,6 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.NoDataMemberInClusterException;
-import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.HashUtil;
 
 import java.util.Collection;
@@ -44,6 +43,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
+
+import static com.hazelcast.util.EmptyStatement.ignore;
 
 /**
  * The {@link ClientPartitionService} implementation.
@@ -93,7 +94,7 @@ public final class ClientPartitionServiceImpl
             // use internal execution service for all partition refresh process (do not use the user executor thread)
             clientExecutionService.execute(new RefreshTask());
         } catch (RejectedExecutionException ignored) {
-            EmptyStatement.ignore(ignored);
+            ignore(ignored);
         }
     }
 

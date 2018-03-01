@@ -26,13 +26,14 @@ import com.hazelcast.core.DuplicateInstanceNameException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.OutOfMemoryHandler;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
-import com.hazelcast.util.EmptyStatement;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+
+import static com.hazelcast.util.EmptyStatement.ignore;
 
 /**
  * Central manager for all Hazelcast clients of the JVM.
@@ -108,7 +109,7 @@ public final class HazelcastClientManager {
             try {
                 client.shutdown();
             } catch (Throwable ignored) {
-                EmptyStatement.ignore(ignored);
+                ignore(ignored);
             }
         }
         OutOfMemoryErrorDispatcher.clearClients();
@@ -128,7 +129,7 @@ public final class HazelcastClientManager {
             try {
                 client.shutdown();
             } catch (Throwable ignored) {
-                EmptyStatement.ignore(ignored);
+                ignore(ignored);
             } finally {
                 OutOfMemoryErrorDispatcher.deregisterClient(client);
             }
@@ -148,7 +149,7 @@ public final class HazelcastClientManager {
         try {
             client.shutdown();
         } catch (Throwable ignored) {
-            EmptyStatement.ignore(ignored);
+            ignore(ignored);
         } finally {
             OutOfMemoryErrorDispatcher.deregisterClient(client);
         }

@@ -40,7 +40,6 @@ import com.hazelcast.spi.impl.eventservice.impl.operations.OnJoinRegistrationOpe
 import com.hazelcast.spi.impl.eventservice.impl.operations.RegistrationOperationSupplier;
 import com.hazelcast.spi.impl.eventservice.impl.operations.SendEventOperation;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.UuidUtil;
 import com.hazelcast.util.executor.StripedExecutor;
 import com.hazelcast.util.function.Supplier;
@@ -66,6 +65,7 @@ import static com.hazelcast.spi.properties.GroupProperty.EVENT_QUEUE_CAPACITY;
 import static com.hazelcast.spi.properties.GroupProperty.EVENT_QUEUE_TIMEOUT_MILLIS;
 import static com.hazelcast.spi.properties.GroupProperty.EVENT_SYNC_TIMEOUT_MILLIS;
 import static com.hazelcast.spi.properties.GroupProperty.EVENT_THREAD_COUNT;
+import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.ThreadUtil.createThreadName;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -213,7 +213,7 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
         try {
             ((Closeable) listener).close();
         } catch (IOException e) {
-            EmptyStatement.ignore(e);
+            ignore(e);
         }
     }
 

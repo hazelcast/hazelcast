@@ -32,7 +32,6 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.EmptyStatement;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -75,7 +74,7 @@ public class CacheQuorumListenerTest extends HazelcastTestSupport {
             cache.put(generateKeyOwnedBy(instance), 1);
             fail("Expected a QuorumException");
         } catch (QuorumException expected) {
-            EmptyStatement.ignore(expected);
+            ignore(expected);
         }
 
         assertOpenEventually(countDownLatch, 15);
@@ -111,7 +110,7 @@ public class CacheQuorumListenerTest extends HazelcastTestSupport {
             cache.put(generateKeyOwnedBy(instance1), 1);
             fail("Expected a QuorumException");
         } catch (QuorumException expected) {
-            EmptyStatement.ignore(expected);
+            ignore(expected);
         }
         assertOpenEventually(belowLatch, 15);
 
@@ -167,13 +166,13 @@ public class CacheQuorumListenerTest extends HazelcastTestSupport {
             threeNode.put(generateKeyOwnedBy(h1), "bar");
             fail("Expected a QuorumException");
         } catch (QuorumException expected) {
-            EmptyStatement.ignore(expected);
+            ignore(expected);
         }
         try {
             fourNode.put(generateKeyOwnedBy(h1), "bar");
             fail("Expected a QuorumException");
         } catch (QuorumException expected) {
-            EmptyStatement.ignore(expected);
+            ignore(expected);
         }
         assertOpenEventually(quorumFailureLatch, 15);
     }
@@ -213,7 +212,7 @@ public class CacheQuorumListenerTest extends HazelcastTestSupport {
             cache.put(generateKeyOwnedBy(instance), 1);
             fail("Expected a QuorumException");
         } catch (QuorumException expected) {
-            EmptyStatement.ignore(expected);
+            ignore(expected);
         }
 
         assertOpenEventually(countDownLatch, 15);
@@ -251,7 +250,7 @@ public class CacheQuorumListenerTest extends HazelcastTestSupport {
             cache.put(generateKeyOwnedBy(instance1), 1);
             fail("Expected a QuorumException");
         } catch (QuorumException expected) {
-            EmptyStatement.ignore(expected);
+            ignore(expected);
         }
 
         assertOpenEventually(belowLatch, 15);

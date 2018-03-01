@@ -21,7 +21,6 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage.SplitBrainMergeCheckResult;
 import com.hazelcast.nio.Address;
 import com.hazelcast.util.Clock;
-import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.RandomPicker;
 
 import java.util.concurrent.BlockingDeque;
@@ -99,7 +98,6 @@ public class MulticastJoiner extends AbstractJoiner {
                 Thread.sleep(JOIN_RETRY_INTERVAL);
             } catch (InterruptedException e) {
                 currentThread().interrupt();
-                EmptyStatement.ignore(e);
             }
 
             if (isBlacklisted(master)) {

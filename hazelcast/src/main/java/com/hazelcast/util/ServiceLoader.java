@@ -181,7 +181,6 @@ public final class ServiceLoader {
             if (clientClassLoader != classLoader && clientClassLoader != tccl && clientClassLoader != coreClassLoader) {
                 classLoaders.add(clientClassLoader);
             }
-
         } catch (ClassNotFoundException ignore) {
             // ignore since we does not have HazelcastClient in classpath
             ignore(ignore);

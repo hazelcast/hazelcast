@@ -35,7 +35,6 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.util.Clock;
-import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.FutureUtil;
 
 import java.util.ArrayList;
@@ -202,7 +201,6 @@ public abstract class AbstractJoiner implements Joiner {
                     TimeUnit.SECONDS.sleep(1);
                 } catch (InterruptedException ignored) {
                     currentThread().interrupt();
-                    EmptyStatement.ignore(ignored);
                 }
             }
         }
@@ -251,7 +249,6 @@ public abstract class AbstractJoiner implements Joiner {
                 Thread.sleep(SPLIT_BRAIN_SLEEP_TIME_MILLIS);
             } catch (InterruptedException e) {
                 currentThread().interrupt();
-                EmptyStatement.ignore(e);
                 return null;
             }
             conn = node.connectionManager.getConnection(target);

@@ -21,6 +21,8 @@ import java.lang.management.OperatingSystemMXBean;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
+import static com.hazelcast.util.EmptyStatement.ignore;
+
 /**
  * Support class for reading attributes from OperatingSystemMXBean.
  */
@@ -70,7 +72,7 @@ public final class OperatingSystemMXBeanSupport {
         } catch (RuntimeException re) {
             throw re;
         } catch (Exception ignored) {
-            EmptyStatement.ignore(ignored);
+            ignore(ignored);
         }
         return defaultValue;
     }

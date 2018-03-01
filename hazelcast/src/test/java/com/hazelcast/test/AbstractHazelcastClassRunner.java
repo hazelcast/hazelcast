@@ -21,7 +21,6 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.annotation.Repeat;
 import com.hazelcast.test.bounce.BounceMemberRule;
-import com.hazelcast.util.EmptyStatement;
 import net.bytebuddy.agent.ByteBuddyAgent;
 import net.bytebuddy.agent.builder.AgentBuilder;
 import net.bytebuddy.description.type.TypeDescription;
@@ -59,6 +58,7 @@ import java.util.concurrent.TimeUnit;
 import static com.hazelcast.cache.jsr.JsrTestUtil.clearCachingProviderRegistry;
 import static com.hazelcast.cache.jsr.JsrTestUtil.getCachingProviderRegistrySize;
 import static com.hazelcast.test.TestEnvironment.isRunningCompatibilityTest;
+import static com.hazelcast.util.EmptyStatement.ignore;
 import static java.lang.Integer.getInteger;
 
 /**
@@ -97,7 +97,7 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
                 threadMXBean.setThreadCpuTimeEnabled(true);
                 threadCPUTimeInfoAvailable = true;
             } catch (Throwable t) {
-                EmptyStatement.ignore(t);
+                ignore(t);
             }
         }
         THREAD_CPU_TIME_INFO_AVAILABLE = threadCPUTimeInfoAvailable;
@@ -108,7 +108,7 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
                 threadMXBean.setThreadContentionMonitoringEnabled(true);
                 threadContentionInfoAvailable = true;
             } catch (Throwable t) {
-                EmptyStatement.ignore(t);
+                ignore(t);
             }
         }
         THREAD_CONTENTION_INFO_AVAILABLE = threadContentionInfoAvailable;

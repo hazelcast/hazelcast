@@ -48,7 +48,6 @@ public final class MD5Util {
             }
             return sb.toString();
         } catch (NoSuchAlgorithmException ignored) {
-            EmptyStatement.ignore(ignored);
             return null;
         }
     }

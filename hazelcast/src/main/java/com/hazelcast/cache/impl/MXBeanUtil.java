@@ -90,9 +90,8 @@ public final class MXBeanUtil {
                         // https://github.com/hazelcast/hazelcast/issues/11055
                         ignore(e);
                     } catch (Exception e) {
-                        throw new CacheException(
-                                "Error unregistering object instance " + registeredObjectName
-                                        + ". Error was " + e.getMessage(), e);
+                        throw new CacheException("Error unregistering object instance " + registeredObjectName
+                                + ". Error was " + e.getMessage(), e);
                     }
                 }
             }

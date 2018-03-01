@@ -19,7 +19,6 @@ package com.hazelcast.query.impl.getters;
 import com.hazelcast.query.QueryException;
 import com.hazelcast.query.impl.AttributeType;
 import com.hazelcast.query.impl.IndexImpl;
-import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.lang.reflect.Field;
@@ -37,6 +36,7 @@ import static com.hazelcast.query.impl.getters.NullGetter.NULL_GETTER;
 import static com.hazelcast.query.impl.getters.NullMultiValueGetter.NULL_MULTIVALUE_GETTER;
 import static com.hazelcast.query.impl.getters.SuffixModifierUtils.getModifierSuffix;
 import static com.hazelcast.query.impl.getters.SuffixModifierUtils.removeModifierSuffix;
+import static com.hazelcast.util.EmptyStatement.ignore;
 
 /**
  * Scans your classpath, indexes the metadata, allows you to query it on runtime.
@@ -132,7 +132,7 @@ public final class ReflectionHelper {
                             clazz = method.getReturnType();
                             break;
                         } catch (NoSuchMethodException ignored) {
-                            EmptyStatement.ignore(ignored);
+                            ignore(ignored);
                         }
                     }
                     if (localGetter == null) {
@@ -144,7 +144,7 @@ public final class ReflectionHelper {
                             }
                             clazz = field.getType();
                         } catch (NoSuchFieldException ignored) {
-                            EmptyStatement.ignore(ignored);
+                            ignore(ignored);
                         }
                     }
                     if (localGetter == null) {

@@ -17,10 +17,10 @@
 package com.hazelcast.internal.networking.nio.iobalancer;
 
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.util.EmptyStatement;
 
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.ThreadUtil.createThreadName;
 
 class IOBalancerThread extends Thread {
@@ -55,7 +55,7 @@ class IOBalancerThread extends Thread {
         } catch (InterruptedException e) {
             log.finest("IOBalancer thread stopped");
             //this thread is about to exit, no reason restoring the interrupt flag
-            EmptyStatement.ignore(e);
+            ignore(e);
         } catch (Throwable e) {
             log.severe("IOBalancer failed", e);
         }

@@ -53,7 +53,6 @@ import com.hazelcast.mapreduce.impl.task.TransferableJobProcessInformation;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.AbstractCompletableFuture;
-import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.UuidUtil;
 
 import java.util.Collection;
@@ -65,6 +64,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.util.CollectionUtil.objectToDataCollection;
+import static com.hazelcast.util.EmptyStatement.ignore;
 
 /**
  * Proxy implementation of {@link JobTracker} for a client initiated map reduce job.
@@ -252,7 +252,7 @@ public class ClientMapReduceProxy
                 ClientMessage response = invoke(request, jobId);
                 cancelled = MapReduceCancelCodec.decodeResponse(response).response;
             } catch (Exception ignore) {
-                EmptyStatement.ignore(ignore);
+                ignore(ignore);
             }
             return cancelled;
         }
@@ -307,7 +307,7 @@ public class ClientMapReduceProxy
                 JobPartitionState[] partitionStates = responseParameters.jobPartitionStates.toArray(new JobPartitionState[0]);
                 return new TransferableJobProcessInformation(partitionStates, responseParameters.processRecords);
             } catch (Exception ignore) {
-                EmptyStatement.ignore(ignore);
+                ignore(ignore);
             }
             return null;
         }

@@ -75,8 +75,6 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.Clock;
-import com.hazelcast.util.EmptyStatement;
-import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.PhoneHome;
 import com.hazelcast.version.MemberVersion;
 import com.hazelcast.version.Version;
@@ -103,6 +101,8 @@ import static com.hazelcast.spi.properties.GroupProperty.LOGGING_TYPE;
 import static com.hazelcast.spi.properties.GroupProperty.MAX_JOIN_SECONDS;
 import static com.hazelcast.spi.properties.GroupProperty.SHUTDOWNHOOK_ENABLED;
 import static com.hazelcast.spi.properties.GroupProperty.SHUTDOWNHOOK_POLICY;
+import static com.hazelcast.util.EmptyStatement.ignore;
+import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.StringUtil.isNullOrEmpty;
 import static com.hazelcast.util.ThreadUtil.createThreadName;
 import static java.lang.Thread.currentThread;
@@ -187,7 +187,7 @@ public class Node {
         try {
             addressPicker.pickAddress();
         } catch (Throwable e) {
-            throw ExceptionUtil.rethrow(e);
+            throw rethrow(e);
         }
 
         final ServerSocketChannel serverSocketChannel = addressPicker.getServerSocketChannel();
@@ -230,9 +230,9 @@ public class Node {
             try {
                 serverSocketChannel.close();
             } catch (Throwable ignored) {
-                EmptyStatement.ignore(ignored);
+                ignore(ignored);
             }
-            throw ExceptionUtil.rethrow(e);
+            throw rethrow(e);
         }
     }
 
@@ -441,13 +441,13 @@ public class Node {
                 Runtime.getRuntime().removeShutdownHook(shutdownHookThread);
             }
         } catch (Throwable ignored) {
-            EmptyStatement.ignore(ignored);
+            ignore(ignored);
         }
 
         try {
             discoveryService.destroy();
         } catch (Throwable ignored) {
-            EmptyStatement.ignore(ignored);
+            ignore(ignored);
         }
 
         try {
@@ -744,7 +744,7 @@ public class Node {
                     Constructor constructor = clazz.getConstructor(Node.class);
                     return (Joiner) constructor.newInstance(this);
                 } catch (Exception e) {
-                    throw ExceptionUtil.rethrow(e);
+                    throw rethrow(e);
                 }
             }
         }

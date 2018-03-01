@@ -16,10 +16,12 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.StringUtil;
 
 import java.util.Properties;
+
+import static com.hazelcast.util.EmptyStatement.ignore;
+
 /**
  * Configuration for Login Module
  */
@@ -63,7 +65,7 @@ public class LoginModuleConfig {
             try {
                 return LoginModuleUsage.valueOf(v.toUpperCase(StringUtil.LOCALE_INTERNAL));
             } catch (Exception ignore) {
-                EmptyStatement.ignore(ignore);
+                ignore(ignore);
             }
             return REQUIRED;
         }
