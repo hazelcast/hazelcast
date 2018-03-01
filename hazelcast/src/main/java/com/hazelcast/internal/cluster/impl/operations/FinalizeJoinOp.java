@@ -76,17 +76,16 @@ public class FinalizeJoinOp extends MembersUpdateOp {
 
     @Override
     public void run() throws Exception {
-        checkLocalMemberUuid();
-
         ClusterServiceImpl clusterService = getService();
         Address callerAddress = getConnectionEndpointOrThisAddress();
         String callerUuid = getCallerUuid();
+        String targetUuid = getTargetUuid();
 
         checkDeserializationFailure(clusterService);
 
         preparePostOp(preJoinOp);
-        finalized = clusterService.finalizeJoin(getMembersView(), callerAddress, callerUuid,
-                clusterId, clusterState, clusterVersion, clusterStartTime, masterTime, preJoinOp);
+        finalized = clusterService.finalizeJoin(getMembersView(), callerAddress, callerUuid, targetUuid, clusterId, clusterState,
+                clusterVersion, clusterStartTime, masterTime, preJoinOp);
 
         if (!finalized) {
             return;

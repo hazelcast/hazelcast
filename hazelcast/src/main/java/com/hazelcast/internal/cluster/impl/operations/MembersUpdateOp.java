@@ -64,12 +64,10 @@ public class MembersUpdateOp extends AbstractClusterOperation implements Version
 
     @Override
     public void run() throws Exception {
-        checkLocalMemberUuid();
-
         ClusterServiceImpl clusterService = getService();
         Address callerAddress = getConnectionEndpointOrThisAddress();
         String callerUuid = getCallerUuid();
-        if (clusterService.updateMembers(getMembersView(), callerAddress, callerUuid)) {
+        if (clusterService.updateMembers(getMembersView(), callerAddress, callerUuid, targetUuid)) {
             processPartitionState();
         }
     }
@@ -80,6 +78,10 @@ public class MembersUpdateOp extends AbstractClusterOperation implements Version
 
     final MembersView getMembersView() {
         return new MembersView(getMemberListVersion(), unmodifiableList(memberInfos));
+    }
+
+    final String getTargetUuid() {
+        return targetUuid;
     }
 
     final Address getConnectionEndpointOrThisAddress() {
@@ -99,14 +101,6 @@ public class MembersUpdateOp extends AbstractClusterOperation implements Version
         ClusterServiceImpl clusterService = getService();
         Node node = clusterService.getNodeEngine().getNode();
         node.partitionService.processPartitionRuntimeState(partitionRuntimeState);
-    }
-
-    final void checkLocalMemberUuid() {
-        ClusterServiceImpl clusterService = getService();
-        if (!clusterService.getThisUuid().equals(targetUuid)) {
-            String msg = "target UUID " + targetUuid + " is different than this node's UUID " + clusterService.getThisUuid();
-            throw new IllegalStateException(msg);
-        }
     }
 
     @Override
