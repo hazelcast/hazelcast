@@ -17,9 +17,10 @@
 package com.hazelcast.jet.core;
 
 import com.hazelcast.client.map.helpers.AMapStore;
+import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
-import com.hazelcast.core.IMap;
+import com.hazelcast.jet.IMapJet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JetConfig;
@@ -29,7 +30,11 @@ import com.hazelcast.jet.core.JobRestartWithSnapshotTest.SequencesInPartitionsMe
 import com.hazelcast.jet.impl.SnapshotRepository;
 import com.hazelcast.jet.impl.execution.SnapshotRecord;
 import com.hazelcast.jet.impl.execution.SnapshotRecord.SnapshotStatus;
-import com.hazelcast.jet.IMapJet;
+import com.hazelcast.jet.pipeline.JournalInitialPosition;
+import com.hazelcast.jet.pipeline.Pipeline;
+import com.hazelcast.jet.pipeline.Sinks;
+import com.hazelcast.jet.pipeline.Sources;
+import com.hazelcast.map.journal.EventJournalMapEvent;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.Before;
 import org.junit.Rule;
@@ -38,16 +43,14 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.io.Serializable;
-import java.util.concurrent.locks.LockSupport;
 
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.TestUtil.throttle;
 import static com.hazelcast.jet.core.processor.DiagnosticProcessors.peekOutputP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeMapP;
 import static com.hazelcast.jet.impl.SnapshotRepository.snapshotsMapName;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -74,12 +77,15 @@ public class SnapshotFailureTest extends JetTestSupport {
         mapStoreConfig.setImplementation(new FailingMapStore());
         config.getHazelcastConfig().addMapConfig(mapConfig);
 
+        config.getHazelcastConfig().addEventJournalConfig(new EventJournalConfig()
+                .setMapName(SnapshotRepository.SNAPSHOT_NAME_PREFIX + '*'));
+
         JetInstance[] instances = createJetMembers(config, 2);
         instance1 = instances[0];
     }
 
     @Test
-    public void when_snapshotFails_then_jobShouldNotFail() throws Exception {
+    public void when_snapshotFails_then_jobShouldNotFail() {
         int numPartitions = 2;
         int numElements = 10;
         IMapJet<Object, Object> results = instance1.getMap("results");
@@ -97,20 +103,17 @@ public class SnapshotFailureTest extends JetTestSupport {
 
         Job job = instance1.newJob(dag, config);
 
-        IMap<Object, Object> snapshotsMap = instance1.getMap(snapshotsMapName(job.getId()));
-
-        SnapshotRecord[] failedRecord = new SnapshotRecord[1];
-        while (failedRecord[0] == null && !job.getFuture().isDone()) {
-            // find a failed record in snapshots map
-            snapshotsMap
-                    .values().stream()
-                    .filter(r -> r instanceof SnapshotRecord)
-                    .map(r -> (SnapshotRecord) r)
-                    .filter(r -> r.status() == SnapshotStatus.FAILED)
-                    .findFirst()
-                    .ifPresent(r -> failedRecord[0] = r);
-            LockSupport.parkNanos(MILLISECONDS.toNanos(1));
-        }
+        // let's start a second job that will watch the snapshots map and write failed
+        // SnapshotRecords to a list, which we will check for presence of failed snapshot
+        Pipeline p = Pipeline.create();
+        p.drawFrom(Sources.mapJournal(snapshotsMapName(job.getId()),
+                event -> event.getNewValue() instanceof SnapshotRecord
+                        && ((SnapshotRecord) event.getNewValue()).status() == SnapshotStatus.FAILED,
+                EventJournalMapEvent::getNewValue,
+                JournalInitialPosition.START_FROM_OLDEST))
+         .peek()
+         .drainTo(Sinks.list("failed_snapshot_records"));
+        instance1.newJob(p);
 
         job.join();
 
@@ -118,7 +121,7 @@ public class SnapshotFailureTest extends JetTestSupport {
         assertEquals("offset partition 0", numElements - 1, results.get(0));
         assertEquals("offset partition 1", numElements - 1, results.get(1));
         assertTrue("no failure occurred in store", storeFailed);
-        assertNotNull("no failed snapshot appeared in snapshotsMap", failedRecord[0]);
+        assertFalse("no failed snapshot appeared in snapshotsMap", instance1.getList("failed_snapshot_records").isEmpty());
     }
 
     public static class FailingMapStore extends AMapStore implements Serializable {
