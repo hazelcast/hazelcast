@@ -50,7 +50,6 @@ import com.hazelcast.spi.merge.ExpirationTimeHolder;
 import com.hazelcast.spi.merge.MergingEntryHolder;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.Clock;
-import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -80,6 +79,7 @@ import static com.hazelcast.cache.impl.operation.MutableOperation.IGNORE_COMPLET
 import static com.hazelcast.cache.impl.record.CacheRecordFactory.isExpiredAt;
 import static com.hazelcast.internal.config.ConfigValidator.checkEvictionConfig;
 import static com.hazelcast.spi.impl.merge.MergingHolders.createMergeHolder;
+import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.MapUtil.createHashMap;
 import static com.hazelcast.util.Preconditions.checkInstanceOf;
 import static com.hazelcast.util.SetUtil.createHashSet;
@@ -470,7 +470,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
                 }
             }
         } catch (Exception e) {
-            EmptyStatement.ignore(e);
+            ignore(e);
         }
         return expiryTime;
     }
@@ -746,7 +746,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
                 expiryTime = getAdjustedExpireTime(expiryDuration, now);
             }
         } catch (Exception e) {
-            EmptyStatement.ignore(e);
+            ignore(e);
         }
         return updateRecordWithExpiry(key, value, record, expiryTime, now,
                 disableWriteThrough, completionId, source, origin);

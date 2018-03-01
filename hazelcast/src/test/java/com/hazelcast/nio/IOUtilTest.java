@@ -24,7 +24,6 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.EmptyStatement;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -436,14 +435,14 @@ public class IOUtilTest extends HazelcastTestSupport {
             copyFile(source, target, -1);
             fail();
         } catch (HazelcastException expected) {
-            EmptyStatement.ignore(expected);
+            ignore(expected);
         }
 
         delete(source);
     }
 
     @Test
-    public void testCopyFailsWhenSourceCannotBeListed() throws IOException {
+    public void testCopyFailsWhenSourceCannotBeListed() {
         final File source = mock(File.class);
         when(source.exists()).thenReturn(true);
         when(source.isDirectory()).thenReturn(true);
@@ -458,7 +457,7 @@ public class IOUtilTest extends HazelcastTestSupport {
             copy(source, dest);
             fail();
         } catch (HazelcastException expected) {
-            EmptyStatement.ignore(expected);
+            ignore(expected);
         }
 
         delete(dest);
@@ -478,7 +477,7 @@ public class IOUtilTest extends HazelcastTestSupport {
             copyFile(source, new File("target"), -1);
             fail();
         } catch (IllegalArgumentException expected) {
-            EmptyStatement.ignore(expected);
+            ignore(expected);
         }
         delete(source);
     }
@@ -494,14 +493,14 @@ public class IOUtilTest extends HazelcastTestSupport {
             copy(source, target);
             fail();
         } catch (IllegalArgumentException expected) {
-            EmptyStatement.ignore(expected);
+            ignore(expected);
         }
         delete(source);
         delete(target);
     }
 
     @Test
-    public void testCopyRecursiveDirectory() throws IOException {
+    public void testCopyRecursiveDirectory() {
         final File dir = new File("dir");
         final File subdir = new File(dir, "subdir");
         final File f1 = new File(dir, "f1");
@@ -562,12 +561,12 @@ public class IOUtilTest extends HazelcastTestSupport {
         deleteQuietly(file);
     }
 
-    private static File createDirectory(String dirName) throws IOException {
+    private static File createDirectory(String dirName) {
         File dir = new File(dirName);
         return createDirectory(dir);
     }
 
-    private static File createDirectory(File parent, String dirName) throws IOException {
+    private static File createDirectory(File parent, String dirName) {
         File dir = new File(parent, dirName);
         return createDirectory(dir);
     }

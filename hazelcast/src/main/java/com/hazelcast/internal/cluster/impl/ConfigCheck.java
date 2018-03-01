@@ -22,7 +22,6 @@ import com.hazelcast.config.PartitionGroupConfig;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.util.EmptyStatement;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -30,6 +29,7 @@ import java.util.Map;
 
 import static com.hazelcast.spi.properties.GroupProperty.APPLICATION_VALIDATION_TOKEN;
 import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
+import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.MapUtil.createHashMap;
 
 /**
@@ -212,7 +212,7 @@ public final class ConfigCheck implements IdentifiedDataSerializable {
             try {
                 memberGroupType = PartitionGroupConfig.MemberGroupType.valueOf(s);
             } catch (IllegalArgumentException ignored) {
-                EmptyStatement.ignore(ignored);
+                ignore(ignored);
             }
         }
         int propSize = in.readInt();

@@ -18,7 +18,6 @@ package com.hazelcast.spi.impl.executionservice.impl;
 
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.AbstractCompletableFuture;
-import com.hazelcast.util.EmptyStatement;
 
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
@@ -26,6 +25,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.ExceptionUtil.sneakyThrow;
 import static java.lang.Thread.currentThread;
 
@@ -81,9 +81,9 @@ class BasicCompletableFuture<V> extends AbstractCompletableFuture<V> {
             try {
                 ensureResultSet(Long.MAX_VALUE, TimeUnit.DAYS);
             } catch (ExecutionException ignored) {
-                EmptyStatement.ignore(ignored);
+                ignore(ignored);
             } catch (CancellationException ignored) {
-                EmptyStatement.ignore(ignored);
+                ignore(ignored);
             }
             return true;
         } else {

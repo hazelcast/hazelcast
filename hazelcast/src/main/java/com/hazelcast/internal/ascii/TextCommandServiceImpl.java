@@ -41,7 +41,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ascii.TextEncoder;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.Clock;
-import com.hazelcast.util.EmptyStatement;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.nio.ByteBuffer;
@@ -76,6 +75,7 @@ import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.TOUCH;
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.UNKNOWN;
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.VERSION;
+import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.ThreadUtil.createThreadName;
 import static java.lang.Thread.currentThread;
 
@@ -427,7 +427,7 @@ public class TextCommandServiceImpl implements TextCommandService {
                     //noinspection WaitNotInLoop
                     stopObject.wait(WAIT_TIME);
                 } catch (Exception ignored) {
-                    EmptyStatement.ignore(ignored);
+                    ignore(ignored);
                 }
             }
         }

@@ -25,7 +25,6 @@ import com.hazelcast.nio.Disposable;
 import com.hazelcast.spi.CoreService;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.SplitBrainHandlerService;
-import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.Collection;
@@ -35,6 +34,7 @@ import java.util.concurrent.Future;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.MERGED;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.MERGE_FAILED;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.MERGING;
+import static com.hazelcast.util.EmptyStatement.ignore;
 
 /**
  * ClusterMergeTask prepares {@code Node}'s internal state and its services
@@ -188,7 +188,7 @@ class ClusterMergeTask implements Runnable {
             try {
                 waitOnFuture(f);
             } catch (HazelcastInstanceNotActiveException e) {
-                EmptyStatement.ignore(e);
+                ignore(e);
             } catch (Exception e) {
                 node.getLogger(getClass()).severe("While merging...", e);
             }

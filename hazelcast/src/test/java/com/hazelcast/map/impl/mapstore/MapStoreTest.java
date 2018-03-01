@@ -46,7 +46,6 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.EmptyStatement;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -1338,7 +1337,7 @@ public class MapStoreTest extends AbstractMapStoreTest {
                 try {
                     Thread.sleep(sleepStoreAllSeconds * 1000);
                 } catch (InterruptedException e) {
-                    EmptyStatement.ignore(e);
+                    ignore(e);
                 }
             }
             for (Object ignored : map.keySet()) {

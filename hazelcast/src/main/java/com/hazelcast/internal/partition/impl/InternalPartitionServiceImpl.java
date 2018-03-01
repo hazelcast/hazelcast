@@ -62,7 +62,6 @@ import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.spi.partition.IPartitionLostEvent;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.FutureUtil.ExceptionHandler;
 import com.hazelcast.util.HashUtil;
@@ -89,6 +88,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
+import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.FutureUtil.logAllExceptions;
 import static com.hazelcast.util.FutureUtil.returnWithDeadline;
 import static com.hazelcast.util.MapUtil.createHashMap;
@@ -1250,9 +1250,9 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                         allActiveMigrations.add(state.getActiveMigration());
                     }
                 } catch (TargetNotMemberException e) {
-                    EmptyStatement.ignore(e);
+                    ignore(e);
                 } catch (MemberLeftException e) {
-                    EmptyStatement.ignore(e);
+                    ignore(e);
                 } catch (InterruptedException e) {
                     currentThread().interrupt();
                     logger.fine("FetchMostRecentPartitionTableTask is interrupted.");

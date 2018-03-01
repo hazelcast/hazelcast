@@ -64,7 +64,6 @@ import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
-import com.hazelcast.flakeidgen.impl.FlakeIdGeneratorService;
 import com.hazelcast.concurrent.idgen.IdGeneratorService;
 import com.hazelcast.concurrent.lock.LockServiceImpl;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
@@ -80,6 +79,7 @@ import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.crdt.pncounter.PNCounterService;
 import com.hazelcast.durableexecutor.impl.DistributedDurableExecutorService;
 import com.hazelcast.executor.impl.DistributedExecutorService;
+import com.hazelcast.flakeidgen.impl.FlakeIdGeneratorService;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.multimap.impl.MultiMapService;
@@ -93,7 +93,6 @@ import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.topic.impl.reliable.ReliableTopicService;
 import com.hazelcast.transaction.impl.xa.XAService;
-import com.hazelcast.util.EmptyStatement;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
@@ -368,7 +367,6 @@ public final class ProxyManager {
             Thread.sleep(invocationRetryPauseMillis);
         } catch (InterruptedException ignored) {
             currentThread().interrupt();
-            EmptyStatement.ignore(ignored);
         }
     }
 

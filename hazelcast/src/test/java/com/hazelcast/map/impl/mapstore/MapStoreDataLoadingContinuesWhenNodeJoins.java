@@ -31,7 +31,6 @@ import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.SlowTest;
-import com.hazelcast.util.EmptyStatement;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -100,7 +99,7 @@ public class MapStoreDataLoadingContinuesWhenNodeJoins extends HazelcastTestSupp
             try {
                 instances.get(i).getLifecycleService().terminate();
             } catch (Throwable t) {
-                EmptyStatement.ignore(t);
+                ignore(t);
             }
         }
     }
@@ -145,7 +144,7 @@ public class MapStoreDataLoadingContinuesWhenNodeJoins extends HazelcastTestSupp
                     node1FinishedLoading.await(loadTimeMillis, TimeUnit.MILLISECONDS);
                     thread2Finished.set(System.currentTimeMillis());
                 } catch (InterruptedException e) {
-                    EmptyStatement.ignore(e);
+                    ignore(e);
                 }
             }
         }, "Thread 2");
@@ -200,7 +199,7 @@ public class MapStoreDataLoadingContinuesWhenNodeJoins extends HazelcastTestSupp
                     node1FinishedLoading.await(loadTimeMillis, TimeUnit.MILLISECONDS);
                     mapSizeOnNode2.set(map.size());
                 } catch (InterruptedException e) {
-                    EmptyStatement.ignore(e);
+                    ignore(e);
                 }
             }
         }, "Thread 2");
@@ -268,7 +267,7 @@ public class MapStoreDataLoadingContinuesWhenNodeJoins extends HazelcastTestSupp
                     final int loadTimeMillis = MS_PER_LOAD * PRELOAD_SIZE;
                     node1FinishedLoading.await(loadTimeMillis, TimeUnit.MILLISECONDS);
                 } catch (InterruptedException e) {
-                    EmptyStatement.ignore(e);
+                    ignore(e);
                 }
             }
         }, "Thread 2");

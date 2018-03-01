@@ -37,7 +37,6 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.util.EmptyStatement;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -66,6 +65,7 @@ import static com.hazelcast.internal.cluster.impl.ClusterServiceImpl.MEMBERSHIP_
 import static com.hazelcast.internal.cluster.impl.ClusterServiceImpl.SERVICE_NAME;
 import static com.hazelcast.spi.ExecutionService.SYSTEM_EXECUTOR;
 import static com.hazelcast.spi.properties.GroupProperty.MASTERSHIP_CLAIM_TIMEOUT_SECONDS;
+import static com.hazelcast.util.EmptyStatement.ignore;
 import static java.util.Collections.unmodifiableSet;
 
 /**
@@ -741,8 +741,8 @@ public class MembershipManager {
                     } catch (InterruptedException ignored) {
                         Thread.currentThread().interrupt();
                     } catch (ExecutionException ignored) {
-                        // we couldn't learn MembersView of 'address'. It will be removed from the cluster.
-                        EmptyStatement.ignore(ignored);
+                        // we couldn't learn MembersView of 'address'. It will be removed from the cluster
+                        ignore(ignored);
                     }
                 } else if (!isMemberSuspected(address) && latestMembersView.containsAddress(address)) {
                     // we don't suspect from 'address' and we need to learn its response

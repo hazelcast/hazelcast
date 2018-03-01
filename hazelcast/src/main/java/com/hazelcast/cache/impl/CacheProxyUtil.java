@@ -19,13 +19,13 @@ package com.hazelcast.cache.impl;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.Map;
 import java.util.Set;
 
 import static com.hazelcast.internal.config.ConfigValidator.checkCacheConfig;
+import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
@@ -138,13 +138,13 @@ public final class CacheProxyUtil {
             containsNullKey = map.containsKey(null);
         } catch (NullPointerException e) {
             // ignore if null key is not allowed for this map
-            EmptyStatement.ignore(e);
+            ignore(e);
         }
         try {
             containsNullValue = map.containsValue(null);
         } catch (NullPointerException e) {
             // ignore if null value is not allowed for this map
-            EmptyStatement.ignore(e);
+            ignore(e);
         }
         if (containsNullKey) {
             throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);

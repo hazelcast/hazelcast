@@ -37,7 +37,6 @@ import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.util.Clock;
-import com.hazelcast.util.EmptyStatement;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -49,6 +48,7 @@ import static com.hazelcast.mapreduce.JobPartitionState.State.MAPPING;
 import static com.hazelcast.mapreduce.JobPartitionState.State.PROCESSED;
 import static com.hazelcast.mapreduce.JobPartitionState.State.REDUCING;
 import static com.hazelcast.mapreduce.JobPartitionState.State.WAITING;
+import static com.hazelcast.util.EmptyStatement.ignore;
 
 /**
  * This utility class contains a few basic operations that are needed in multiple places
@@ -265,7 +265,7 @@ public final class MapReduceUtil {
                 try {
                     Thread.sleep(RETRY_PARTITION_TABLE_MILLIS);
                 } catch (Exception ignore) {
-                    EmptyStatement.ignore(ignore);
+                    ignore(ignore);
                 }
 
                 if (Clock.currentTimeMillis() - startTime > PARTITION_READY_TIMEOUT) {

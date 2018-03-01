@@ -31,7 +31,6 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.EmptyStatement;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -87,7 +86,7 @@ public class ClientDisconnectTest extends HazelcastTestSupport {
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 } catch (HazelcastInstanceNotActiveException e) {
-                    EmptyStatement.ignore(e);
+                    ignore(e);
                 }
             }
         }).start();
@@ -142,7 +141,7 @@ public class ClientDisconnectTest extends HazelcastTestSupport {
                 try {
                     clientMap.lock(key);
                 } catch (Exception e) {
-                    EmptyStatement.ignore(e);
+                    ignore(e);
                 }
 
             }

@@ -20,7 +20,6 @@ import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.transaction.impl.Transaction;
-import com.hazelcast.util.EmptyStatement;
 
 import java.util.concurrent.TimeUnit;
 
@@ -44,7 +43,6 @@ public class TransactionalQueueProxy<E> extends TransactionalQueueProxySupport<E
             return offer(e, 0, TimeUnit.MILLISECONDS);
         } catch (InterruptedException ignored) {
             currentThread().interrupt();
-            EmptyStatement.ignore(ignored);
         }
         return false;
     }
@@ -70,7 +68,6 @@ public class TransactionalQueueProxy<E> extends TransactionalQueueProxySupport<E
             return poll(0, TimeUnit.MILLISECONDS);
         } catch (InterruptedException ignored) {
             currentThread().interrupt();
-            EmptyStatement.ignore(ignored);
         }
         return null;
     }
@@ -90,7 +87,6 @@ public class TransactionalQueueProxy<E> extends TransactionalQueueProxySupport<E
             return peek(0, TimeUnit.MILLISECONDS);
         } catch (InterruptedException ignored) {
             currentThread().interrupt();
-            EmptyStatement.ignore(ignored);
         }
         return null;
     }

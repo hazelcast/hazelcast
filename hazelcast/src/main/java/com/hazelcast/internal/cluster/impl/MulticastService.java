@@ -29,7 +29,6 @@ import com.hazelcast.nio.NodeIOService;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.util.ByteArrayProcessor;
-import com.hazelcast.util.EmptyStatement;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -43,6 +42,8 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+
+import static com.hazelcast.util.EmptyStatement.ignore;
 
 public final class MulticastService implements Runnable {
 
@@ -160,7 +161,7 @@ public final class MulticastService implements Runnable {
             try {
                 multicastSocket.close();
             } catch (Throwable ignored) {
-                EmptyStatement.ignore(ignored);
+                ignore(ignored);
             }
             running = false;
             if (!stopLatch.await(SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
@@ -178,7 +179,7 @@ public final class MulticastService implements Runnable {
             datagramPacketReceive.setData(new byte[0]);
             datagramPacketSend.setData(new byte[0]);
         } catch (Throwable ignored) {
-            EmptyStatement.ignore(ignored);
+            ignore(ignored);
         }
         stopLatch.countDown();
     }

@@ -37,7 +37,6 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.EmptyStatement;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -102,9 +101,8 @@ public class Invocation_NetworkSplitTest extends HazelcastTestSupport {
         try {
             future.get(1, TimeUnit.MINUTES);
             fail("Future.get() should fail with a MemberLeftException!");
-        } catch (MemberLeftException e) {
-            // expected
-            EmptyStatement.ignore(e);
+        } catch (MemberLeftException expected) {
+            ignore(expected);
         } catch (Exception e) {
             fail(e.getClass().getName() + ": " + e.getMessage());
         }

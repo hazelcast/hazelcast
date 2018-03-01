@@ -27,7 +27,6 @@ import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.management.ManagementCenterConnectionFactory;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.memory.MemoryUnit;
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.spi.properties.GroupProperty;
 
 import java.io.BufferedInputStream;
@@ -49,6 +48,8 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
+import static com.hazelcast.nio.IOUtil.closeResource;
+import static com.hazelcast.util.EmptyStatement.ignore;
 import static java.lang.System.getenv;
 
 /**
@@ -141,9 +142,9 @@ public final class PhoneHome {
                 downloadId = properties.getProperty("hazelcastDownloadId");
             }
         } catch (IOException ignored) {
-            EmptyStatement.ignore(ignored);
+            ignore(ignored);
         } finally {
-            IOUtil.closeResource(is);
+            closeResource(is);
         }
 
         //Calculate native memory usage from native memory config
@@ -201,9 +202,9 @@ public final class PhoneHome {
             conn.setReadTimeout(TIMEOUT * 2);
             in = new BufferedInputStream(conn.getInputStream());
         } catch (IOException ignored) {
-            EmptyStatement.ignore(ignored);
+            ignore(ignored);
         } finally {
-            IOUtil.closeResource(in);
+            closeResource(in);
         }
     }
 
@@ -261,13 +262,12 @@ public final class PhoneHome {
             version = JsonUtil.getString(mcPhoneHomeInfoJson, "mcVersion");
             license = JsonUtil.getString(mcPhoneHomeInfoJson, "mcLicense", null);
         } catch (Exception ignored) {
-            EmptyStatement.ignore(ignored);
             parameterCreator.addParam("mclicense", "MC_NOT_AVAILABLE");
             parameterCreator.addParam("mcver", "MC_NOT_AVAILABLE");
             return;
         } finally {
-            IOUtil.closeResource(reader);
-            IOUtil.closeResource(inputStream);
+            closeResource(reader);
+            closeResource(inputStream);
         }
 
         if (responseCode == HttpURLConnection.HTTP_OK) {

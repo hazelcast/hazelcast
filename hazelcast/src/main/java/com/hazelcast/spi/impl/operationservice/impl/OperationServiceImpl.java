@@ -49,7 +49,6 @@ import com.hazelcast.spi.impl.operationexecutor.impl.OperationExecutorImpl;
 import com.hazelcast.spi.impl.operationexecutor.slowoperationdetector.SlowOperationDetector;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.properties.GroupProperty;
-import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.executor.ExecutorType;
 import com.hazelcast.util.executor.ManagedExecutorService;
 
@@ -481,10 +480,8 @@ public final class OperationServiceImpl implements InternalOperationService, Met
         try {
             invocationMonitor.awaitTermination(TERMINATION_TIMEOUT_MILLIS);
         } catch (InterruptedException e) {
-            //restore the interrupt.
-            //todo: we need a better mechanism for dealing with interruption and waiting for termination
+            // TODO: we need a better mechanism for dealing with interruption and waiting for termination
             Thread.currentThread().interrupt();
-            EmptyStatement.ignore(e);
         }
     }
 

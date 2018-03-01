@@ -16,12 +16,12 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.util.EmptyStatement;
-
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+
+import static com.hazelcast.util.EmptyStatement.ignore;
 
 /**
  * Provides loading service for a configuration.
@@ -75,7 +75,7 @@ public final class ConfigLoader {
             try {
                 return file.toURI().toURL();
             } catch (MalformedURLException ignored) {
-                EmptyStatement.ignore(ignored);
+                ignore(ignored);
             }
         }
         return null;
@@ -85,7 +85,7 @@ public final class ConfigLoader {
         try {
             return new URL(path);
         } catch (MalformedURLException ignored) {
-            EmptyStatement.ignore(ignored);
+            ignore(ignored);
         }
         return null;
     }

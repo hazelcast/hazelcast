@@ -32,6 +32,8 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Set;
 
+import static com.hazelcast.util.EmptyStatement.ignore;
+
 /**
  * AddressUtil contains Address helper methods.
  */
@@ -237,7 +239,7 @@ public final class AddressUtil {
                 addPossibleAddress(inet6Address, possibleAddresses, ni);
             }
         } catch (IOException ignored) {
-            EmptyStatement.ignore(ignored);
+            ignore(ignored);
         }
 
         if (possibleAddresses.isEmpty()) {
