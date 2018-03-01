@@ -23,6 +23,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.merge.CreationTimeHolder;
 import com.hazelcast.spi.merge.MergingEntryHolder;
 import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.spi.serialization.SerializationServiceAware;
 
 import java.io.IOException;
 
@@ -33,13 +34,21 @@ import java.io.IOException;
  * @param <V> the type of value
  * @since 3.10
  */
-public class MergingEntryHolderImpl<K, V> implements MergingEntryHolder<K, V>, CreationTimeHolder, IdentifiedDataSerializable {
+public class MergingEntryHolderImpl<K, V> implements MergingEntryHolder<K, V>, CreationTimeHolder, SerializationServiceAware,
+        IdentifiedDataSerializable {
 
     private K key;
     private V value;
     private long creationTime;
 
     private transient SerializationService serializationService;
+
+    public MergingEntryHolderImpl() {
+    }
+
+    public MergingEntryHolderImpl(SerializationService serializationService) {
+        this.serializationService = serializationService;
+    }
 
     @Override
     public K getKey() {
@@ -66,11 +75,6 @@ public class MergingEntryHolderImpl<K, V> implements MergingEntryHolder<K, V>, C
         return serializationService.toObject(value);
     }
 
-    @Override
-    public void setSerializationService(SerializationService serializationService) {
-        this.serializationService = serializationService;
-    }
-
     public MergingEntryHolderImpl<K, V> setValue(V value) {
         this.value = value;
         return this;
@@ -84,6 +88,11 @@ public class MergingEntryHolderImpl<K, V> implements MergingEntryHolder<K, V>, C
     public MergingEntryHolderImpl<K, V> setCreationTime(long creationTime) {
         this.creationTime = creationTime;
         return this;
+    }
+
+    @Override
+    public void setSerializationService(SerializationService serializationService) {
+        this.serializationService = serializationService;
     }
 
     @Override
@@ -139,7 +148,7 @@ public class MergingEntryHolderImpl<K, V> implements MergingEntryHolder<K, V>, C
 
     @Override
     public String toString() {
-        return "MergeDataHolder{"
+        return "MergingEntryHolder{"
                 + "key=" + key
                 + ", value=" + value
                 + ", creationTime=" + creationTime

@@ -31,6 +31,7 @@ import com.hazelcast.replicatedmap.impl.record.ReplicatedRecord;
 import com.hazelcast.scheduledexecutor.impl.ScheduledTaskDescriptor;
 import com.hazelcast.spi.merge.MergingEntryHolder;
 import com.hazelcast.spi.merge.MergingValueHolder;
+import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.Clock;
 
 /**
@@ -43,20 +44,21 @@ public final class MergingHolders {
     private MergingHolders() {
     }
 
-    public static <V> MergingValueHolder<V> createMergeHolder(V value) {
-        return new MergingValueHolderImpl<V>()
+    public static <V> MergingValueHolder<V> createMergeHolder(SerializationService serializationService, V value) {
+        return new MergingValueHolderImpl<V>(serializationService)
                 .setValue(value);
     }
 
-    public static <K, V> MergingEntryHolder<K, V> createMergeHolder(K key, V value) {
-        return new MergingEntryHolderImpl<K, V>()
+    public static <K, V> MergingEntryHolder<K, V> createMergeHolder(SerializationService serializationService, K key, V value) {
+        return new MergingEntryHolderImpl<K, V>(serializationService)
                 .setKey(key)
                 .setValue(value)
                 .setCreationTime(Clock.currentTimeMillis());
     }
 
-    public static <K, V> MergingEntryHolder<K, V> createMergeHolder(EntryView<K, V> entryView) {
-        return new FullMergingEntryHolderImpl<K, V>()
+    public static <K, V> MergingEntryHolder<K, V> createMergeHolder(SerializationService serializationService,
+                                                                    EntryView<K, V> entryView) {
+        return new FullMergingEntryHolderImpl<K, V>(serializationService)
                 .setKey(entryView.getKey())
                 .setValue(entryView.getValue())
                 .setCreationTime(entryView.getCreationTime())
@@ -69,8 +71,9 @@ public final class MergingHolders {
                 .setCost(entryView.getCost());
     }
 
-    public static <K, V> MergingEntryHolder<K, V> createMergeHolder(CacheEntryView<K, V> entryView) {
-        return new FullMergingEntryHolderImpl<K, V>()
+    public static <K, V> MergingEntryHolder<K, V> createMergeHolder(SerializationService serializationService,
+                                                                    CacheEntryView<K, V> entryView) {
+        return new FullMergingEntryHolderImpl<K, V>(serializationService)
                 .setKey(entryView.getKey())
                 .setValue(entryView.getValue())
                 .setCreationTime(entryView.getCreationTime())
@@ -79,19 +82,20 @@ public final class MergingHolders {
                 .setHits(entryView.getAccessHit());
     }
 
-    public static MergingValueHolder<Data> createMergeHolder(CollectionItem item) {
-        return new MergingValueHolderImpl<Data>()
+    public static MergingValueHolder<Data> createMergeHolder(SerializationService serializationService, CollectionItem item) {
+        return new MergingValueHolderImpl<Data>(serializationService)
                 .setValue(item.getValue());
     }
 
-    public static MergingValueHolder<Data> createMergeHolder(QueueItem item) {
-        return new MergingValueHolderImpl<Data>()
+    public static MergingValueHolder<Data> createMergeHolder(SerializationService serializationService, QueueItem item) {
+        return new MergingValueHolderImpl<Data>(serializationService)
                 .setValue(item.getData());
     }
 
-    public static MergingEntryHolder<Data, Object> createMergeHolder(MultiMapMergeContainer container,
+    public static MergingEntryHolder<Data, Object> createMergeHolder(SerializationService serializationService,
+                                                                     MultiMapMergeContainer container,
                                                                      MultiMapRecord record) {
-        return new FullMergingEntryHolderImpl<Data, Object>()
+        return new FullMergingEntryHolderImpl<Data, Object>(serializationService)
                 .setKey(container.getKey())
                 .setValue(record.getObject())
                 .setCreationTime(container.getCreationTime())
@@ -100,9 +104,10 @@ public final class MergingHolders {
                 .setHits(container.getHits());
     }
 
-    public static MergingEntryHolder<Data, Object> createMergeHolder(MultiMapContainer container, Data key,
+    public static MergingEntryHolder<Data, Object> createMergeHolder(SerializationService serializationService,
+                                                                     MultiMapContainer container, Data key,
                                                                      MultiMapRecord record, int hits) {
-        return new FullMergingEntryHolderImpl<Data, Object>()
+        return new FullMergingEntryHolderImpl<Data, Object>(serializationService)
                 .setKey(key)
                 .setValue(record.getObject())
                 .setCreationTime(container.getCreationTime())
@@ -111,8 +116,9 @@ public final class MergingHolders {
                 .setHits(hits);
     }
 
-    public static MergingEntryHolder<Data, Data> createMergeHolder(Record record, Data dataValue) {
-        return new FullMergingEntryHolderImpl<Data, Data>()
+    public static MergingEntryHolder<Data, Data> createMergeHolder(SerializationService serializationService,
+                                                                   Record record, Data dataValue) {
+        return new FullMergingEntryHolderImpl<Data, Data>(serializationService)
                 .setKey(record.getKey())
                 .setValue(dataValue)
                 .setCreationTime(record.getCreationTime())
@@ -125,8 +131,8 @@ public final class MergingHolders {
                 .setTtl(record.getTtl());
     }
 
-    public static MergingEntryHolder<Data, Object> createMergeHolder(Record record) {
-        return new FullMergingEntryHolderImpl<Data, Object>()
+    public static MergingEntryHolder<Data, Object> createMergeHolder(SerializationService serializationService, Record record) {
+        return new FullMergingEntryHolderImpl<Data, Object>(serializationService)
                 .setKey(record.getKey())
                 .setValue(record.getValue())
                 .setCreationTime(record.getCreationTime())
@@ -139,8 +145,9 @@ public final class MergingHolders {
                 .setTtl(record.getTtl());
     }
 
-    public static <R extends CacheRecord> MergingEntryHolder<Data, Data> createMergeHolder(Data key, Data value, R record) {
-        return new FullMergingEntryHolderImpl<Data, Data>()
+    public static <R extends CacheRecord> MergingEntryHolder<Data, Data> createMergeHolder(
+            SerializationService serializationService, Data key, Data value, R record) {
+        return new FullMergingEntryHolderImpl<Data, Data>(serializationService)
                 .setKey(key)
                 .setValue(value)
                 .setCreationTime(record.getCreationTime())
@@ -149,8 +156,9 @@ public final class MergingHolders {
                 .setLastAccessTime(record.getLastAccessTime());
     }
 
-    public static MergingEntryHolder<Object, Object> createMergeHolder(ReplicatedRecord record) {
-        return new FullMergingEntryHolderImpl<Object, Object>()
+    public static MergingEntryHolder<Object, Object> createMergeHolder(SerializationService serializationService,
+                                                                       ReplicatedRecord record) {
+        return new FullMergingEntryHolderImpl<Object, Object>(serializationService)
                 .setKey(record.getKeyInternal())
                 .setValue(record.getValueInternal())
                 .setCreationTime(record.getCreationTime())
@@ -160,15 +168,17 @@ public final class MergingHolders {
                 .setTtl(record.getTtlMillis());
     }
 
-    public static MergingEntryHolder<String, HyperLogLog> createMergeHolder(String name, HyperLogLog item) {
-        return new MergingEntryHolderImpl<String, HyperLogLog>()
+    public static MergingEntryHolder<String, HyperLogLog> createMergeHolder(SerializationService serializationService,
+                                                                            String name, HyperLogLog item) {
+        return new MergingEntryHolderImpl<String, HyperLogLog>(serializationService)
                 .setKey(name)
                 .setValue(item)
                 .setCreationTime(Clock.currentTimeMillis());
     }
 
-    public static MergingEntryHolder<String, ScheduledTaskDescriptor> createMergeHolder(ScheduledTaskDescriptor task) {
-        return new MergingEntryHolderImpl<String, ScheduledTaskDescriptor>()
+    public static MergingEntryHolder<String, ScheduledTaskDescriptor> createMergeHolder(SerializationService serializationService,
+                                                                                        ScheduledTaskDescriptor task) {
+        return new MergingEntryHolderImpl<String, ScheduledTaskDescriptor>(serializationService)
                 .setKey(task.getDefinition().getName())
                 .setValue(task)
                 .setCreationTime(Clock.currentTimeMillis());

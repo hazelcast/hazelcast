@@ -1451,8 +1451,8 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         final long now = Clock.currentTimeMillis();
         final long start = isStatisticsEnabled() ? System.nanoTime() : 0;
 
+        injectDependencies(mergingEntry);
         injectDependencies(mergePolicy);
-        mergingEntry.setSerializationService(nodeEngine.getSerializationService());
 
         boolean merged = false;
         Data key = mergingEntry.getKey();
@@ -1469,8 +1469,8 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
             }
         } else {
             Data oldValue = nodeEngine.getSerializationService().toData(record.getValue());
-            MergingEntryHolder<Data, Data> existingEntry = createMergeHolder(key, oldValue, record);
-            existingEntry.setSerializationService(nodeEngine.getSerializationService());
+            MergingEntryHolder<Data, Data> existingEntry = createMergeHolder(nodeEngine.getSerializationService(), key, oldValue,
+                    record);
             Data newValue = mergePolicy.merge(mergingEntry, existingEntry);
             if (newValue != null && newValue != oldValue) {
                 merged = updateRecordWithExpiry(key, newValue, record, expiryTime, now, true, IGNORE_COMPLETION);

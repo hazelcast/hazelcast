@@ -14,12 +14,14 @@
  * limitations under the License.
  */
 
-package com.hazelcast.instance;
+package com.hazelcast.client.impl;
 
-import com.hazelcast.config.Config;
+import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.ManagedContext;
+import com.hazelcast.instance.Node;
 import com.hazelcast.spi.NodeAware;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.spi.serialization.SerializationServiceAware;
@@ -27,22 +29,26 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.client.impl.ClientTestUtil.getClientSerializationService;
+import static com.hazelcast.client.impl.ClientTestUtil.getHazelcastClientInstanceImpl;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class HazelcastManagedContextTest extends HazelcastTestSupport {
+public class HazelcastClientManagedContextTest extends HazelcastTestSupport {
 
     private DependencyInjectionUserClass userClass;
     private DependencyInjectionUserManagedContext userContext;
-    private HazelcastInstance hazelcastInstance;
-    private Node node;
+    private TestHazelcastFactory factory;
+    private HazelcastClientInstanceImpl client;
     private SerializationService serializationService;
 
     @Before
@@ -50,20 +56,28 @@ public class HazelcastManagedContextTest extends HazelcastTestSupport {
         userClass = new DependencyInjectionUserClass();
         userContext = new DependencyInjectionUserManagedContext();
 
-        Config config = getConfig()
+        ClientConfig config = new ClientConfig()
                 .setManagedContext(userContext);
 
-        hazelcastInstance = createHazelcastInstance(config);
-        node = getNode(hazelcastInstance);
-        serializationService = getSerializationService(hazelcastInstance);
+        factory = new TestHazelcastFactory();
+        factory.newHazelcastInstance();
+
+        HazelcastInstance hzInstance = factory.newHazelcastClient(config);
+        client = getHazelcastClientInstanceImpl(hzInstance);
+        serializationService = getClientSerializationService(hzInstance);
+    }
+
+    @After
+    public void tearDown() {
+        factory.terminateAll();
     }
 
     @Test
     public void testInitialize() {
         serializationService.getManagedContext().initialize(userClass);
 
-        assertEquals(hazelcastInstance, userClass.hazelcastInstance);
-        assertEquals(node, userClass.node);
+        assertEquals(client, userClass.hazelcastInstance);
+        assertNull("The client doesn't inject the Node", userClass.node);
         assertEquals(serializationService, userClass.serializationService);
         assertTrue(userContext.wasCalled);
     }

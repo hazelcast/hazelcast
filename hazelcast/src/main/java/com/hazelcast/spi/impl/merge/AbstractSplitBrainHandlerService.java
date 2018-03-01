@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi.impl;
+package com.hazelcast.spi.impl.merge;
 
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.SplitBrainHandlerService;
@@ -30,10 +30,11 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Contains common functionality to implement a {@link SplitBrainHandlerService}
+ * Contains common functionality to implement a {@link SplitBrainHandlerService}.
  *
  * @param <Store> store of a partition
  */
+@SuppressWarnings("WeakerAccess")
 public abstract class AbstractSplitBrainHandlerService<Store> implements SplitBrainHandlerService {
 
     private final int partitionCount;
@@ -68,7 +69,6 @@ public abstract class AbstractSplitBrainHandlerService<Store> implements SplitBr
                         Object mergePolicy = getMergePolicy(dataStructureName);
 
                         if (!isDiscardPolicy(mergePolicy)) {
-
                             if (mergePolicy instanceof SplitBrainMergePolicy) {
                                 copyToCollectedStores(store, collectedStores);
                             } else {
@@ -99,11 +99,12 @@ public abstract class AbstractSplitBrainHandlerService<Store> implements SplitBr
         // NOP intentionally, implementations can override this method
     }
 
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     protected boolean isDiscardPolicy(Object mergePolicy) {
         return mergePolicy instanceof DiscardMergePolicy;
     }
 
-    // overridden on ee
+    // overridden on EE
     public void destroyStores(Collection<Store> recordStores) {
         Iterator<Store> iterator = recordStores.iterator();
         while (iterator.hasNext()) {
@@ -128,7 +129,7 @@ public abstract class AbstractSplitBrainHandlerService<Store> implements SplitBr
     }
 
     /**
-     * Destroys provided store
+     * Destroys the provided store.
      */
     protected abstract void destroyStore(Store store);
 

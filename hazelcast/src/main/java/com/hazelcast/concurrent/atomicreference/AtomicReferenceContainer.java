@@ -88,12 +88,11 @@ public class AtomicReferenceContainer {
      * @return the new value if merge is applied, otherwise {@code null}
      */
     public Data merge(MergingValueHolder<Data> mergingValue, SplitBrainMergePolicy mergePolicy, boolean isExistingContainer) {
+        serializationService.getManagedContext().initialize(mergingValue);
         serializationService.getManagedContext().initialize(mergePolicy);
-        mergingValue.setSerializationService(serializationService);
 
         if (isExistingContainer) {
-            MergingValueHolder<Data> existingValue = createMergeHolder(value);
-            existingValue.setSerializationService(serializationService);
+            MergingValueHolder<Data> existingValue = createMergeHolder(serializationService, value);
             Data newValue = mergePolicy.merge(mergingValue, existingValue);
             if (newValue != null && !newValue.equals(value)) {
                 value = newValue;

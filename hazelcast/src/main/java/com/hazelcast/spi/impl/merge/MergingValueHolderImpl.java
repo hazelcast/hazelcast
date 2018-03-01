@@ -22,6 +22,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.merge.MergingValueHolder;
 import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.spi.serialization.SerializationServiceAware;
 
 import java.io.IOException;
 
@@ -31,11 +32,19 @@ import java.io.IOException;
  * @param <V> the type of value
  * @since 3.10
  */
-public class MergingValueHolderImpl<V> implements MergingValueHolder<V>, IdentifiedDataSerializable {
+public class MergingValueHolderImpl<V> implements MergingValueHolder<V>, SerializationServiceAware,
+        IdentifiedDataSerializable {
 
     private V value;
 
     private transient SerializationService serializationService;
+
+    public MergingValueHolderImpl() {
+    }
+
+    public MergingValueHolderImpl(SerializationService serializationService) {
+        this.serializationService = serializationService;
+    }
 
     @Override
     public V getValue() {
@@ -97,7 +106,7 @@ public class MergingValueHolderImpl<V> implements MergingValueHolder<V>, Identif
 
     @Override
     public String toString() {
-        return "MergeDataHolder{"
+        return "MergingValueHolder{"
                 + "value=" + value
                 + '}';
     }

@@ -54,8 +54,8 @@ public class MergeOperation extends AtomicLongBackupAwareOperation {
         AtomicLongService service = getService();
         boolean isExistingContainer = service.containsAtomicLong(name);
 
-        MergingValueHolder<Long> mergingValue = createMergeHolder(this.mergingValue);
-        backupValue = getLongContainer().merge(mergingValue, mergePolicy, isExistingContainer);
+        MergingValueHolder<Long> mergeHolder = createMergeHolder(getNodeEngine().getSerializationService(), mergingValue);
+        backupValue = getLongContainer().merge(mergeHolder, mergePolicy, isExistingContainer);
     }
 
     @Override

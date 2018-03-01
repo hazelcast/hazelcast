@@ -19,7 +19,7 @@ package com.hazelcast.cache.impl;
 import com.hazelcast.cache.impl.merge.policy.CacheMergePolicyProvider;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.impl.AbstractSplitBrainHandlerService;
+import com.hazelcast.spi.impl.merge.AbstractSplitBrainHandlerService;
 
 import java.util.Collection;
 import java.util.Iterator;

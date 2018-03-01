@@ -228,8 +228,8 @@ public class MultiMapContainer extends MultiMapContainerSupport {
      */
     public MultiMapValue merge(MergingEntryHolder<Data, MultiMapMergeContainer> mergingEntry, SplitBrainMergePolicy mergePolicy) {
         SerializationService serializationService = nodeEngine.getSerializationService();
+        serializationService.getManagedContext().initialize(mergingEntry);
         serializationService.getManagedContext().initialize(mergePolicy);
-        mergingEntry.setSerializationService(serializationService);
 
         Data key = mergingEntry.getKey();
         MultiMapMergeContainer mergingContainer = mergingEntry.getValue();
@@ -247,7 +247,8 @@ public class MultiMapContainer extends MultiMapContainerSupport {
 
         MultiMapValue mergedValue = null;
         for (MultiMapRecord mergeRecord : mergingContainer.getRecords()) {
-            MergingEntryHolder<Data, Object> mergingEntry = createMergeHolder(mergingContainer, mergeRecord);
+            MergingEntryHolder<Data, Object> mergingEntry = createMergeHolder(nodeEngine.getSerializationService(),
+                    mergingContainer, mergeRecord);
             Object newValue = mergePolicy.merge(mergingEntry, null);
             if (newValue != null) {
                 MultiMapRecord newRecord = new MultiMapRecord(nextId(), isBinary ? newValue : ss.toObject(newValue));
@@ -268,13 +269,13 @@ public class MultiMapContainer extends MultiMapContainerSupport {
         Collection<MultiMapRecord> existingRecords = existingValue.getCollection(false);
         int existingHits = existingValue.getHits();
         for (MultiMapRecord mergeRecord : mergingContainer.getRecords()) {
-            MergingEntryHolder<Data, Object> mergingEntry = createMergeHolder(mergingContainer, mergeRecord);
+            MergingEntryHolder<Data, Object> mergingEntry = createMergeHolder(nodeEngine.getSerializationService(),
+                    mergingContainer, mergeRecord);
             MergingEntryHolder<Data, Object> existingEntry = null;
             MultiMapRecord existingRecord = null;
             for (MultiMapRecord record : existingRecords) {
                 if (record.getObject().equals(mergeRecord.getObject())) {
-                    existingEntry = createMergeHolder(this, key, record, existingHits);
-                    existingEntry.setSerializationService(ss);
+                    existingEntry = createMergeHolder(nodeEngine.getSerializationService(), this, key, record, existingHits);
                     existingRecord = record;
                 }
             }
