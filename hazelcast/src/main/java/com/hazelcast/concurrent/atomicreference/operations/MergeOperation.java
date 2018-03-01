@@ -23,6 +23,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.MergingValueHolder;
+import com.hazelcast.spi.serialization.SerializationService;
 
 import java.io.IOException;
 
@@ -55,8 +56,9 @@ public class MergeOperation extends AtomicReferenceBackupAwareOperation {
         AtomicReferenceService service = getService();
         boolean isExistingContainer = service.containsReferenceContainer(name);
 
-        MergingValueHolder<Data> mergeHolder = createMergeHolder(getNodeEngine().getSerializationService(), mergingValue);
-        backupValue = getReferenceContainer().merge(mergeHolder, mergePolicy, isExistingContainer);
+        SerializationService serializationService = getNodeEngine().getSerializationService();
+        MergingValueHolder<Data> mergeHolder = createMergeHolder(serializationService, mergingValue);
+        backupValue = getReferenceContainer().merge(mergeHolder, mergePolicy, isExistingContainer, serializationService);
     }
 
     @Override

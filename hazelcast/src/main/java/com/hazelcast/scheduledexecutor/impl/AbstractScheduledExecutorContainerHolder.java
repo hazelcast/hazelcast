@@ -22,6 +22,7 @@ import com.hazelcast.util.ConstructorFunction;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -53,6 +54,10 @@ public abstract class AbstractScheduledExecutorContainerHolder
 
     public Collection<ScheduledExecutorContainer> getContainers() {
         return Collections.unmodifiableCollection(containers.values());
+    }
+
+    public Iterator<ScheduledExecutorContainer> iterator() {
+        return containers.values().iterator();
     }
 
     public void destroy() {

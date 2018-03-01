@@ -41,6 +41,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.internal.cluster.Versions.V3_10;
 import static com.hazelcast.internal.config.ConfigValidator.checkMergePolicySupportsInMemoryFormat;
@@ -57,6 +58,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 public abstract class AbstractMergeRunnable<Store, MergingItem> implements Runnable, Disposable {
 
     private static final long TIMEOUT_FACTOR = 500;
+    private static final long MINIMAL_TIMEOUT_MILLIS = TimeUnit.SECONDS.toMillis(5);
 
     private final Semaphore semaphore = new Semaphore(0);
 
@@ -73,7 +75,6 @@ public abstract class AbstractMergeRunnable<Store, MergingItem> implements Runna
     protected AbstractMergeRunnable(String serviceName, Map<String, Collection<Store>> collectedStores,
                                     Map<String, Collection<Store>> collectedStoresWithLegacyPolicies,
                                     Collection<Store> backupStores, NodeEngine nodeEngine) {
-
         this.serviceName = serviceName;
         this.logger = nodeEngine.getLogger(getClass());
         this.partitionService = nodeEngine.getPartitionService();
@@ -158,7 +159,8 @@ public abstract class AbstractMergeRunnable<Store, MergingItem> implements Runna
 
     private void waitMergeEnd(int mergedCount) {
         try {
-            if (!semaphore.tryAcquire(mergedCount, mergedCount * TIMEOUT_FACTOR, MILLISECONDS)) {
+            long timeoutMillis = Math.max(mergedCount * TIMEOUT_FACTOR, MINIMAL_TIMEOUT_MILLIS);
+            if (!semaphore.tryAcquire(mergedCount, timeoutMillis, MILLISECONDS)) {
                 logger.warning("Split-brain healing didn't finish within the timeout...");
             }
         } catch (InterruptedException e) {

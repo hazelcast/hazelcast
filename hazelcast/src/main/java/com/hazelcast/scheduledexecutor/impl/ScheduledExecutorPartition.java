@@ -21,13 +21,8 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.scheduledexecutor.impl.operations.ReplicationOperation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.SplitBrainMergePolicy;
-import com.hazelcast.spi.merge.DiscardMergePolicy;
-import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
 import com.hazelcast.util.ConstructorFunction;
 
-import java.util.Collection;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -37,7 +32,6 @@ public class ScheduledExecutorPartition
         extends AbstractScheduledExecutorContainerHolder {
 
     private final ILogger logger;
-
     private final int partitionId;
 
     private final ConstructorFunction<String, ScheduledExecutorContainer> containerConstructorFunction =
@@ -54,13 +48,10 @@ public class ScheduledExecutorPartition
                 }
             };
 
-    private final SplitBrainMergePolicyProvider mergePolicyProvider;
-
-    public ScheduledExecutorPartition(NodeEngine nodeEngine, int partitionId, SplitBrainMergePolicyProvider mergePolicyProvider) {
+    ScheduledExecutorPartition(NodeEngine nodeEngine, int partitionId) {
         super(nodeEngine);
         this.logger = nodeEngine.getLogger(getClass());
         this.partitionId = partitionId;
-        this.mergePolicyProvider = mergePolicyProvider;
     }
 
     public Operation prepareReplicationOperation(int replicaIndex, boolean migrationMode) {
@@ -79,29 +70,6 @@ public class ScheduledExecutorPartition
         }
 
         return new ReplicationOperation(map);
-    }
-
-    public Map<String, Collection<ScheduledTaskDescriptor>> prepareOwnedSnapshot() {
-        Map<String, Collection<ScheduledTaskDescriptor>> snapshot = new HashMap<String, Collection<ScheduledTaskDescriptor>>();
-        boolean owner = nodeEngine.getPartitionService().isPartitionOwner(partitionId);
-
-        if (logger.isFinestEnabled()) {
-            logger.finest("[Partition: " + partitionId + "] Prepare snapshot of partition owned tasks.");
-        }
-
-        for (ScheduledExecutorContainer container : getContainers()) {
-            try {
-                SplitBrainMergePolicy mergePolicy = getMergePolicy(container.getName());
-                if (owner && !(mergePolicy instanceof DiscardMergePolicy)) {
-                    snapshot.put(container.getName(), container.prepareForReplication(true).values());
-                }
-            } finally {
-                container.destroy();
-            }
-        }
-
-        containers.clear();
-        return snapshot;
     }
 
     @Override
@@ -141,10 +109,5 @@ public class ScheduledExecutorPartition
         for (ScheduledExecutorContainer container : containers.values()) {
             container.promoteSuspended();
         }
-    }
-
-    private SplitBrainMergePolicy getMergePolicy(String name) {
-        ScheduledExecutorConfig config = nodeEngine.getConfig().findScheduledExecutorConfig(name);
-        return mergePolicyProvider.getMergePolicy(config.getMergePolicyConfig().getPolicy());
     }
 }
