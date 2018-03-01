@@ -219,6 +219,10 @@ public class MultiMapContainer extends MultiMapContainerSupport {
         return objectNamespace;
     }
 
+    public int getPartitionId() {
+        return partitionId;
+    }
+
     /**
      * Merges the given {@link MergingEntryHolder} via the given {@link SplitBrainMergePolicy}.
      *

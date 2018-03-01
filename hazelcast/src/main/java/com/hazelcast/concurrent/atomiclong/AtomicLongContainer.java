@@ -16,8 +16,6 @@
 
 package com.hazelcast.concurrent.atomiclong;
 
-import com.hazelcast.config.AtomicLongConfig;
-import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.MergingValueHolder;
 import com.hazelcast.spi.serialization.SerializationService;
@@ -26,24 +24,9 @@ import static com.hazelcast.spi.impl.merge.MergingHolders.createMergeHolder;
 
 public class AtomicLongContainer {
 
-    private final String name;
-    private final AtomicLongConfig config;
-    private final SerializationService serializationService;
-
     private long value;
 
-    public AtomicLongContainer(String name, NodeEngine nodeEngine) {
-        this.name = name;
-        this.config = nodeEngine.getConfig().findAtomicLongConfig(name);
-        this.serializationService = nodeEngine.getSerializationService();
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public AtomicLongConfig getConfig() {
-        return config;
+    public AtomicLongContainer() {
     }
 
     public long get() {
@@ -82,11 +65,13 @@ public class AtomicLongContainer {
     /**
      * Merges the given {@link MergingValueHolder} via the given {@link SplitBrainMergePolicy}.
      *
-     * @param mergingValue the {@link MergingValueHolder} instance to merge
-     * @param mergePolicy  the {@link SplitBrainMergePolicy} instance to apply
+     * @param mergingValue         the {@link MergingValueHolder} instance to merge
+     * @param mergePolicy          the {@link SplitBrainMergePolicy} instance to apply
+     * @param serializationService the {@link SerializationService} to inject dependencies
      * @return the new value if merge is applied, otherwise {@code null}
      */
-    public Long merge(MergingValueHolder<Long> mergingValue, SplitBrainMergePolicy mergePolicy, boolean isExistingContainer) {
+    public Long merge(MergingValueHolder<Long> mergingValue, SplitBrainMergePolicy mergePolicy, boolean isExistingContainer,
+                      SerializationService serializationService) {
         serializationService.getManagedContext().initialize(mergingValue);
         serializationService.getManagedContext().initialize(mergePolicy);
 

@@ -600,6 +600,13 @@ public class RingbufferContainer<T, E> implements IdentifiedDataSerializable, No
     }
 
     /**
+     * Clears the data in the ringbuffer.
+     */
+    public void clear() {
+        ringbuffer.clear();
+    }
+
+    /**
      * Merges the given {@link MergingValueHolder} via the given {@link SplitBrainMergePolicy}.
      *
      * @param mergingValue the {@link MergingValueHolder} instance to merge

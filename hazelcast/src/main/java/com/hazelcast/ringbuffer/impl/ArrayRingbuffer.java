@@ -154,6 +154,15 @@ public class ArrayRingbuffer<E> implements Ringbuffer<E> {
     }
 
     @Override
+    public void clear() {
+        for (int i = 0; i < ringItems.length; i++) {
+            ringItems[i] = null;
+        }
+        tailSequence = -1;
+        headSequence = tailSequence + 1;
+    }
+
+    @Override
     public void setSerializationService(SerializationService serializationService) {
         this.serializationService = serializationService;
     }

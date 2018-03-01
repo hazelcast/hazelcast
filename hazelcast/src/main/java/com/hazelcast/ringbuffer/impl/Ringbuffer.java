@@ -167,6 +167,11 @@ public interface Ringbuffer<E> {
     void setSerializationService(SerializationService serializationService);
 
     /**
+     * Clears the data in the ringbuffer.
+     */
+    void clear();
+
+    /**
      * Merges the given {@link MergingValueHolder} with the given {@link SplitBrainMergePolicy}.
      *
      * @param mergingValue      the {@link MergingValueHolder} instance to merge
