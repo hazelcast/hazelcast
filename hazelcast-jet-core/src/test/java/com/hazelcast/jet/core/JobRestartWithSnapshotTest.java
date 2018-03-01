@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet.core;
 
+import com.hazelcast.core.IMap;
+import com.hazelcast.jet.IMapJet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.Traverser;
@@ -37,7 +39,6 @@ import com.hazelcast.jet.impl.execution.ExecutionContext;
 import com.hazelcast.jet.impl.execution.SnapshotContext;
 import com.hazelcast.jet.impl.execution.SnapshotRecord;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
-import com.hazelcast.jet.IMapJet;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.Before;
@@ -145,10 +146,10 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
         SlidingWindowPolicy wDef = SlidingWindowPolicy.tumblingWinPolicy(3);
         AggregateOperation1<Object, LongAccumulator, Long> aggrOp = counting();
 
-        Map<List<Long>, Long> result = instance1.getMap("result");
+        IMap<List<Long>, Long> result = instance1.getMap("result");
         result.clear();
 
-        SequencesInPartitionsMetaSupplier sup = new SequencesInPartitionsMetaSupplier(3, 120);
+        SequencesInPartitionsMetaSupplier sup = new SequencesInPartitionsMetaSupplier(3, 180);
         Vertex generator = dag.newVertex("generator", throttle(sup, 30))
                               .localParallelism(1);
         Vertex insWm = dag.newVertex("insWm", insertWatermarksP(wmGenParams(
