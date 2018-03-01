@@ -308,6 +308,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     public void reset(boolean isForceStart) {
         lock.lock();
         try {
+            resetJoinState();
             resetLocalMember(isForceStart);
             resetClusterId();
             clearInternalState();
@@ -359,9 +360,9 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     }
 
     @SuppressWarnings("checkstyle:parameternumber")
-    public boolean finalizeJoin(MembersView membersView, Address callerAddress, String callerUuid,
-                                String clusterId, ClusterState clusterState, Version clusterVersion,
-                                long clusterStartTime, long masterTime, OnJoinOp preJoinOp) {
+    public boolean finalizeJoin(MembersView membersView, Address callerAddress, String callerUuid, String targetUuid,
+                                String clusterId, ClusterState clusterState, Version clusterVersion, long clusterStartTime,
+                                long masterTime, OnJoinOp preJoinOp) {
         lock.lock();
         try {
             if (!checkValidMaster(callerAddress)) {
@@ -383,7 +384,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
                 return false;
             }
 
-            assertMemberUpdateContainsLocalMember(membersView);
+            checkMemberUpdateContainsLocalMember(membersView, targetUuid);
 
             initialClusterState(clusterState, clusterVersion);
             setClusterId(clusterId);
@@ -406,7 +407,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         }
     }
 
-    public boolean updateMembers(MembersView membersView, Address callerAddress, String callerUuid) {
+    public boolean updateMembers(MembersView membersView, Address callerAddress, String callerUuid, String targetUuid) {
         lock.lock();
         try {
             if (!isJoined()) {
@@ -425,7 +426,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
                 return false;
             }
 
-            assertMemberUpdateContainsLocalMember(membersView);
+            checkMemberUpdateContainsLocalMember(membersView, targetUuid);
 
             if (!shouldProcessMemberUpdate(membersView)) {
                 return false;
@@ -438,15 +439,20 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         }
     }
 
-    private void assertMemberUpdateContainsLocalMember(MembersView membersView) {
-        if (!ASSERTION_ENABLED) {
-            return;
+    private void checkMemberUpdateContainsLocalMember(MembersView membersView, String targetUuid) {
+        String thisUuid = getThisUuid();
+        if (!thisUuid.equals(targetUuid)) {
+            String msg = "Not applying member update because target uuid: " + targetUuid + " is different! -> " + membersView
+                    + ", local member: " + localMember;
+            throw new IllegalArgumentException(msg);
         }
 
         Member localMember = getLocalMember();
-        assert membersView.containsMember(localMember.getAddress(), localMember.getUuid())
-                : "Not applying member update because member list doesn't contain us! -> " + membersView
-                + ", local member: " + localMember;
+        if (!membersView.containsMember(localMember.getAddress(), localMember.getUuid())) {
+            String msg = "Not applying member update because member list doesn't contain us! -> " + membersView
+                    + ", local member: " + localMember;
+            throw new IllegalArgumentException(msg);
+        }
     }
 
     private boolean checkValidMaster(Address callerAddress) {
@@ -640,6 +646,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
             clusterHeartbeatManager.reset();
             clusterStateManager.reset();
             clusterJoinManager.reset();
+            resetJoinState();
         } finally {
             lock.unlock();
         }
@@ -1024,7 +1031,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         lock.lock();
         try {
             if (!member.getAddress().equals(master.getAddress())) {
-                updateMembers(view, master.getAddress(), master.getUuid());
+                updateMembers(view, master.getAddress(), master.getUuid(), getThisUuid());
             }
 
             MemberImpl localMemberInMemberList = membershipManager.getMember(member.getAddress());
