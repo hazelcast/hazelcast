@@ -53,6 +53,8 @@ import static com.hazelcast.util.MapUtil.createLinkedHashMap;
 
 class DefaultAddressPicker implements AddressPicker {
 
+    static final String PREFER_IPV4_STACK = "java.net.preferIPv4Stack";
+
     private static final int SOCKET_BACKLOG_LENGTH = 100;
     private static final int SOCKET_TIMEOUT_MILLIS = (int) TimeUnit.SECONDS.toMillis(1);
 
@@ -213,7 +215,7 @@ class DefaultAddressPicker implements AddressPicker {
         return pickMatchingAddress(null);
     }
 
-    private Collection<InterfaceDefinition> getInterfaces() throws UnknownHostException {
+    private Collection<InterfaceDefinition> getInterfaces() {
         NetworkConfig networkConfig = config.getNetworkConfig();
         // address -> domain
         Map<String, String> addressDomainMap;
@@ -328,11 +330,11 @@ class DefaultAddressPicker implements AddressPicker {
     }
 
     private static AddressDefinition pickLoopbackAddress(String host, int defaultPort) throws UnknownHostException {
-        InetAddress adddress = InetAddress.getByName("127.0.0.1");
-        return new AddressDefinition(host, defaultPort, adddress);
+        InetAddress address = InetAddress.getByName("127.0.0.1");
+        return new AddressDefinition(host, defaultPort, address);
     }
 
-    private AddressDefinition pickMatchingAddress(Collection<InterfaceDefinition> interfaces) throws SocketException {
+    AddressDefinition pickMatchingAddress(Collection<InterfaceDefinition> interfaces) throws SocketException {
         Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
         boolean preferIPv4Stack = preferIPv4Stack();
         boolean matchInterfaceDefinition = CollectionUtil.isNotEmpty(interfaces);
@@ -383,7 +385,7 @@ class DefaultAddressPicker implements AddressPicker {
     }
 
     private boolean preferIPv4Stack() {
-        boolean preferIPv4Stack = Boolean.getBoolean("java.net.preferIPv4Stack")
+        boolean preferIPv4Stack = Boolean.getBoolean(PREFER_IPV4_STACK)
                 || hazelcastProperties.getBoolean(GroupProperty.PREFER_IPv4_STACK);
         // AWS does not support IPv6
         JoinConfig join = config.getNetworkConfig().getJoin();
@@ -407,7 +409,7 @@ class DefaultAddressPicker implements AddressPicker {
         return serverSocketChannel;
     }
 
-    private static class InterfaceDefinition {
+    static class InterfaceDefinition {
 
         String host;
         String address;
@@ -435,6 +437,7 @@ class DefaultAddressPicker implements AddressPicker {
             if (o == null || getClass() != o.getClass()) {
                 return false;
             }
+
             InterfaceDefinition that = (InterfaceDefinition) o;
             if (address != null ? !address.equals(that.address) : that.address != null) {
                 return false;
@@ -453,7 +456,7 @@ class DefaultAddressPicker implements AddressPicker {
         }
     }
 
-    private static class AddressDefinition extends InterfaceDefinition {
+    static class AddressDefinition extends InterfaceDefinition {
 
         InetAddress inetAddress;
         int port;
@@ -493,7 +496,6 @@ class DefaultAddressPicker implements AddressPicker {
             if (inetAddress != null ? !inetAddress.equals(that.inetAddress) : that.inetAddress != null) {
                 return false;
             }
-
             return true;
         }
 
