@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.recordstore;
 
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
@@ -72,13 +73,15 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
      * {@link ExecutionService#MAP_LOADER_EXECUTOR} executor.
      */
     @Override
-    public Future<?> loadValues(List<Data> keys, boolean replaceExistingValues) {
+    public ICompletableFuture loadValues(List<Data> keys, boolean replaceExistingValues) {
         Callable task = new GivenKeysLoaderTask(keys, replaceExistingValues);
         return executeTask(MAP_LOADER_EXECUTOR, task);
     }
 
-    private Future<?> executeTask(String executorName, Callable task) {
-        return getExecutionService().submit(executorName, task);
+    private ICompletableFuture executeTask(String executorName, Callable task) {
+        ExecutionService executionService = getExecutionService();
+        Future taskFuture = executionService.submit(executorName, task);
+        return executionService.asCompletableFuture(taskFuture);
     }
 
     private ExecutionService getExecutionService() {

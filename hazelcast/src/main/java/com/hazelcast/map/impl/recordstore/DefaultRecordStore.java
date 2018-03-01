@@ -20,11 +20,14 @@ import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.core.EntryView;
+import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.EntryViews;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.MapKeyLoader;
+import com.hazelcast.map.impl.MapLoadProgressTracker;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.event.EntryEventData;
@@ -51,6 +54,7 @@ import com.hazelcast.spi.merge.MergingEntryHolder;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.CollectionUtil;
+import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.FutureUtil;
 
@@ -107,6 +111,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     private final IPartitionService partitionService;
 
+    private final MapLoadProgressTracker loadProgressTracker;
+
     public DefaultRecordStore(MapContainer mapContainer, int partitionId,
                               MapKeyLoader keyLoader, ILogger logger) {
         super(mapContainer, partitionId);
@@ -115,6 +121,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         this.keyLoader = keyLoader;
         this.recordStoreLoader = createRecordStoreLoader(mapStoreContext);
         this.partitionService = mapServiceContext.getNodeEngine().getPartitionService();
+        this.loadProgressTracker = mapContainer.getLoadProgressTracker();
     }
 
     @Override
@@ -356,6 +363,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     @Override
     public Record loadRecordOrNull(Data key, boolean backup) {
         Record record = null;
+
         Object value = mapDataStore.load(key);
         if (value != null) {
             record = createRecord(value, DEFAULT_TTL, getNow());
@@ -1131,9 +1139,24 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public void loadAllFromStore(List<Data> keys, boolean replaceExistingValues) {
         if (!keys.isEmpty()) {
-            Future f = recordStoreLoader.loadValues(keys, replaceExistingValues);
+            final int countKeysToLoad = keys.size();
+
+            ICompletableFuture f = recordStoreLoader.loadValues(keys, replaceExistingValues);
+            f.andThen(new ExecutionCallback() {
+                @Override
+                public void onResponse(Object response) {
+                    loadProgressTracker.onBatchLoaded(countKeysToLoad);
+                }
+
+                @Override
+                public void onFailure(Throwable ignored) {
+                    // already logged by BasicRecordStoreLoader#loadAndGet()
+                    EmptyStatement.ignore(ignored);
+                }
+            });
             loadingFutures.add(f);
         }
 
@@ -1146,7 +1169,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     public void updateLoadStatus(boolean lastBatch, Throwable exception) {
         keyLoader.trackLoading(lastBatch, exception);
 
-        if (lastBatch) {
+        if (lastBatch && logger.isFinestEnabled()) {
             logger.finest("Completed loading map " + name + " on partitionId=" + partitionId);
         }
     }

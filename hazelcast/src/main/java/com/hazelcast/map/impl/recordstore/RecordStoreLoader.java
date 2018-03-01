@@ -16,10 +16,10 @@
 
 package com.hazelcast.map.impl.recordstore;
 
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.nio.serialization.Data;
 
 import java.util.List;
-import java.util.concurrent.Future;
 
 /**
  * Loader contract for a {@link RecordStore}.
@@ -32,7 +32,7 @@ interface RecordStoreLoader {
      */
     RecordStoreLoader EMPTY_LOADER = new RecordStoreLoader() {
         @Override
-        public Future loadValues(List<Data> keys, boolean replaceExistingValues) {
+        public ICompletableFuture loadValues(List<Data> keys, boolean replaceExistingValues) {
             return null;
         }
     };
@@ -49,5 +49,5 @@ interface RecordStoreLoader {
      *                              be replaced with the loaded values
      * @return future representing the pending completion for the value loading task
      */
-    Future<?> loadValues(List<Data> keys, boolean replaceExistingValues);
+    ICompletableFuture<?> loadValues(List<Data> keys, boolean replaceExistingValues);
 }

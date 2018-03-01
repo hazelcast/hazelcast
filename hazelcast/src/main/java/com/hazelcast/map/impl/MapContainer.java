@@ -97,6 +97,7 @@ public class MapContainer {
     protected volatile Evictor evictor;
     protected volatile MapConfig mapConfig;
     protected final EventJournalConfig eventJournalConfig;
+    protected final MapLoadProgressTracker loadProgressTracker;
 
 
     /**
@@ -127,6 +128,8 @@ public class MapContainer {
         }
         this.mapStoreContext = createMapStoreContext(this);
         this.mapStoreContext.start();
+        this.loadProgressTracker = new MapLoadProgressTracker(name);
+
         initEvictor();
     }
 
@@ -304,6 +307,10 @@ public class MapContainer {
 
     public Evictor getEvictor() {
         return evictor;
+    }
+
+    public MapLoadProgressTracker getLoadProgressTracker() {
+        return loadProgressTracker;
     }
 
     // only used for testing purposes
