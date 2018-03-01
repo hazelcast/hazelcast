@@ -22,6 +22,7 @@ import com.hazelcast.query.Predicate;
  * Generic wrappers for methods in {@link com.hazelcast.query.Predicates}.
  * These classes match 1:1.
  */
+@SuppressWarnings("unchecked")
 public final class GenericPredicates {
     private GenericPredicates() {
     }

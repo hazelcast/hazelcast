@@ -26,7 +26,8 @@ import javax.annotation.Nonnull;
 import java.io.IOException;
 
 /**
- * Javadoc pending.
+ * Represents the key of an item being sent to the snapshot in a
+ * fault-tolerant streaming job.
  */
 public final class SnapshotKey implements PartitionAware<Object>, IdentifiedDataSerializable {
     long timestamp;

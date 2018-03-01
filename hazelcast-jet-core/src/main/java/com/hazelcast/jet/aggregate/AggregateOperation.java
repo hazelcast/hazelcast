@@ -186,6 +186,16 @@ public interface AggregateOperation<A, R> extends Serializable {
     DistributedFunction<? super A, R> finishFn();
 
     /**
+     * Returns a copy of this aggregate operation, but with all the {@code
+     * accumulate} primitives replaced with the ones supplied here. The
+     * argument at position {@code i} replaces the primitive at index {@code
+     * i}, as returned by {@link #accumulateFn(int)}.
+     */
+    @Nonnull
+    @SuppressWarnings("unchecked")
+    AggregateOperation<A, R> withAccumulateFns(DistributedBiConsumer... accumulateFns);
+
+    /**
      * Returns a copy of this aggregate operation, but with the {@code finish}
      * primitive replaced with the supplied one.
      *

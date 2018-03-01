@@ -25,38 +25,40 @@ import com.hazelcast.nio.serialization.StreamSerializer;
 
 import java.io.IOException;
 
+import static com.hazelcast.jet.impl.pipeline.JetEvent.jetEvent;
+
 /**
  * Hazelcast serializer hooks for the classes in the {@code
  * com.hazelcast.jet.impl.pipeline} package. This is not a public API.
  */
 public class PipelineSerializerHooks {
 
-    public static final class JetEventImplHook implements SerializerHook<JetEventImpl> {
+    public static final class JetEventImplHook implements SerializerHook<JetEvent> {
 
         @Override
-        public Class<JetEventImpl> getSerializationType() {
-            return JetEventImpl.class;
+        public Class<JetEvent> getSerializationType() {
+            return JetEvent.class;
         }
 
         @Override
         public Serializer createSerializer() {
-            return new StreamSerializer<JetEventImpl>() {
+            return new StreamSerializer<JetEvent>() {
                 @Override
-                public void write(ObjectDataOutput out, JetEventImpl object) throws IOException {
+                public void write(ObjectDataOutput out, JetEvent object) throws IOException {
                     out.writeObject(object.payload());
                     out.writeLong(object.timestamp());
                 }
 
                 @Override
-                public JetEventImpl read(ObjectDataInput in) throws IOException {
+                public JetEvent read(ObjectDataInput in) throws IOException {
                     Object payload = in.readObject();
                     long timestamp = in.readLong();
-                    return (JetEventImpl) JetEventImpl.jetEvent(payload, timestamp);
+                    return jetEvent(payload, timestamp);
                 }
 
                 @Override
                 public int getTypeId() {
-                    return SerializerHookConstants.JET_EVENT_IMPL;
+                    return SerializerHookConstants.JET_EVENT;
                 }
 
                 @Override

@@ -22,9 +22,6 @@ import com.hazelcast.jet.function.DistributedFunction;
 
 import javax.annotation.Nonnull;
 
-/**
- * Javadoc pending.
- */
 public class StreamStageWithGroupingImpl<T, K>
         extends StageWithGroupingBase<T, K>
         implements StreamStageWithGrouping<T, K> {

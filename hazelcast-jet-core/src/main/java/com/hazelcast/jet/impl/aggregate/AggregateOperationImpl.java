@@ -85,11 +85,9 @@ public class AggregateOperationImpl<A, R> implements AggregateOperation<A, R> {
         return finishAccumulationFn;
     }
 
-    @Nonnull
+    @Nonnull @Override
     @SuppressWarnings("unchecked")
-    public AggregateOperation<A, R> withAccumulateFns(
-            DistributedBiConsumer... accumulateFns
-    ) {
+    public AggregateOperation<A, R> withAccumulateFns(DistributedBiConsumer... accumulateFns) {
         return new AggregateOperationImpl<>(createFn(), accumulateFns, combineFn(), deductFn(), finishFn());
     }
 
@@ -97,8 +95,7 @@ public class AggregateOperationImpl<A, R> implements AggregateOperation<A, R> {
     public <R1> AggregateOperation<A, R1> withFinishFn(
             @Nonnull DistributedFunction<? super A, R1> finishFn
     ) {
-        return new AggregateOperationImpl<>(createFn(), accumulateFns, combineFn(),
-                deductFn(), finishFn);
+        return new AggregateOperationImpl<>(createFn(), accumulateFns, combineFn(), deductFn(), finishFn);
     }
 
     @Nonnull

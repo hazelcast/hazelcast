@@ -22,13 +22,15 @@ import java.io.Serializable;
 import static com.hazelcast.jet.impl.util.Util.toLocalTime;
 
 /**
- * Javadoc pending
+ * Represents a data item with the event timestamp added to it. Used in the
+ * Pipeline API as the default data type to emit from global windowed
+ * aggregation stages (those that aggregate all the data in a window, without
+ * grouping).
  *
  * @param <T> type of the item
  */
 public final class TimestampedItem<T> implements Serializable {
     private final long timestamp;
-    @Nonnull
     private final T item;
 
     /**

@@ -41,7 +41,7 @@ import java.util.Arrays;
 import java.util.BitSet;
 import java.util.function.Function;
 
-import static com.hazelcast.jet.impl.pipeline.JetEventImpl.jetEvent;
+import static com.hazelcast.jet.impl.pipeline.JetEvent.jetEvent;
 import static com.hazelcast.jet.pipeline.JoinClause.onKeys;
 
 

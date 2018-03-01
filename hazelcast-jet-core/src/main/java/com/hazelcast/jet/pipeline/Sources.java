@@ -78,12 +78,8 @@ public final class Sources {
     }
 
     /**
-     * Returns a source constructed directly from the given Core API processor
-     * meta-supplier.
-     * <p>
-     * The {@link ProcessorMetaSupplier#preferredLocalParallelism() default
-     * local parallelism} for this source is specified by the given {@code
-     * metaSupplier}.
+     * Returns a bounded (batch) source constructed directly from the given
+     * Core API processor meta-supplier.
      *
      * @param sourceName user-friendly source name
      * @param metaSupplier the processor meta-supplier
@@ -97,7 +93,19 @@ public final class Sources {
     }
 
     /**
-     * Javadoc pending
+     * Returns an unbounded (event stream) source that will use the supplied
+     * function to create processor meta-suppliers as required by the Core API.
+     * Jet will call the function you supply with the watermark generation
+     * parameters and it must return a meta-supplier of processors that will
+     * act according to these parameters and emit the watermark items as they
+     * specify.
+     * <p>
+     * If you are implementing a custom source processor, be sure to check out
+     * the {@link com.hazelcast.jet.core.WatermarkSourceUtil} class that will
+     * help you correctly implement watermark item emission.
+     *
+     * @param sourceName user-friendly source name
+     * @param metaSupplierFn factory of processor meta-suppliers
      */
     @Nonnull
     public static <T> StreamSource<T> streamFromProcessorWithWatermarks(
@@ -108,7 +116,11 @@ public final class Sources {
     }
 
     /**
-     * Javadoc pending
+     * Returns an unbounded (event stream) source constructed directly from the given
+     * Core API processor meta-supplier.
+     *
+     * @param sourceName user-friendly source name
+     * @param metaSupplier the processor meta-supplier
      */
     @Nonnull
     public static <T> StreamSource<T> streamFromProcessor(

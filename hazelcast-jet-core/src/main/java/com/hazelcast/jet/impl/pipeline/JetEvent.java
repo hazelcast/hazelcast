@@ -17,13 +17,57 @@
 package com.hazelcast.jet.impl.pipeline;
 
 import javax.annotation.Nonnull;
+import java.util.Objects;
+
+import static com.hazelcast.jet.impl.util.Util.toLocalTime;
 
 /**
- * Javadoc pending.
+ * Holds a stream event and its timestamp. Jet processors receive and send
+ * these objects, but the user's lambdas in the Pipeline API don't observe
+ * them.
  */
-public interface JetEvent<T> {
-    long timestamp();
+public final class JetEvent<T> {
+    private final T payload;
+    private final long timestamp;
+
+    private JetEvent(@Nonnull T payload, long timestamp) {
+        this.timestamp = timestamp;
+        this.payload = payload;
+    }
+
+    public static <T> JetEvent<T> jetEvent(T payload, long timestamp) {
+        return new JetEvent<>(payload, timestamp);
+    }
+
+    public long timestamp() {
+        return timestamp;
+    }
 
     @Nonnull
-    T payload();
+    public T payload() {
+        return payload;
+    }
+
+    @Override
+    public String toString() {
+        return "JetEvent{ts=" + toLocalTime(timestamp) + ", payload=" + payload + '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        JetEvent<?> jetEvent = (JetEvent<?>) o;
+        return timestamp == jetEvent.timestamp &&
+                Objects.equals(payload, jetEvent.payload);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(payload, timestamp);
+    }
 }

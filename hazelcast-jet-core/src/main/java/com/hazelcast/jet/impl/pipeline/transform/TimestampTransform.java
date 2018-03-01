@@ -24,9 +24,6 @@ import javax.annotation.Nonnull;
 
 import static com.hazelcast.jet.core.processor.Processors.insertWatermarksP;
 
-/**
- * Javadoc pending.
- */
 public class TimestampTransform<T> extends AbstractTransform {
     @Nonnull
     public WatermarkGenerationParams wmGenParams;

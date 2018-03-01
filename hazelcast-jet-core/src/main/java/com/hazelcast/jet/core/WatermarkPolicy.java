@@ -17,12 +17,23 @@
 package com.hazelcast.jet.core;
 
 /**
- * A policy object that decides on the watermark in a single data
- * (sub)stream. The timestamp of every observed item should be reported
- * to this object and it will respond with the current value of the
- * watermark. Watermark may also advance in the absence of observed
- * events; {@link #getCurrentWatermark()} can be called at any
- * time to see this change.
+ * This object runs inside a Jet processor, inspects the event timestamps
+ * as they occur in the input and and decides on the current value of the
+ * watermark. It controls how much disorder Jet will allow in a data stream
+ * and which events will be marked as "too late" and dropped. It also
+ * decides what to do with the watermark when there are no events for a
+ * while. If just one of the many processors working in parallel doesn't
+ * receive any events, its watermark may fall behind and impede the
+ * progress of the entire DAG. The policy may decide to advance the
+ * watermark based on the passage of time alone.
+ * <p>
+ * The processor must report to this object the timestamp of every event it
+ * receives by calling {@link #reportEvent(long)}. It must also ensure that,
+ * even in the absence of events, it keeps checking the {@link
+ * #getCurrentWatermark() current value} of the watermark. When the
+ * watermark advances far enough (as decided by the {@link
+ * WatermarkEmissionPolicy}, if in use), it must emit a watermark item to
+ * its output edges.
  */
 public interface WatermarkPolicy {
 

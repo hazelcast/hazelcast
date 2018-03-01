@@ -20,7 +20,26 @@ import javax.annotation.Nonnull;
 import java.io.Serializable;
 
 /**
- * Javadoc pending.
+ * Represents the function you pass to a windowed group-and-aggregate
+ * method in the Pipeline API, such as {@link
+ * com.hazelcast.jet.pipeline.StageWithGroupingAndWindow#aggregate stage.aggregate()}.
+ * It creates the item to emit based on the results of a single aggregate
+ * operation performed for a particular window and a particular grouping
+ * key.
+ * <p>
+ * The parameters are:
+ * <ol><li>
+ *     {@code winStart} and {@code winEnd}: the starting and ending timestamp
+ *     of the window (the end timestamp is the exclusive upper bound)
+ * </li><li>
+ *     {@code key} the grouping key
+ * </li><li>
+ *     {@code windowResult} the result of the aggregate operation
+ * </li></ol>
+ *
+ * @param <K> type of the key
+ * @param <R> the type of aggregation result this function receives
+ * @param <OUT> the type of the output item this function returns
  */
 @FunctionalInterface
 public interface KeyedWindowResultFunction<K, R, OUT> extends Serializable {

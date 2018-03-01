@@ -22,8 +22,10 @@ import java.io.Serializable;
 import static com.hazelcast.util.Preconditions.checkPositive;
 
 /**
- * A policy object that decides when when the watermark has advanced
- * enough to emit a new watermark item.
+ * A policy object that decides when the watermark has advanced enough to
+ * require emitting a new watermark item. For example, a sliding/tumbling
+ * window processor doesn't need to observe more than one watermark item
+ * per frame.
  */
 @FunctionalInterface
 public interface WatermarkEmissionPolicy extends Serializable {

@@ -23,9 +23,6 @@ import java.util.List;
 
 import static java.util.Collections.singletonList;
 
-/**
- * Javadoc pending.
- */
 public abstract class AbstractTransform implements Transform {
     @Nonnull
     private String name;

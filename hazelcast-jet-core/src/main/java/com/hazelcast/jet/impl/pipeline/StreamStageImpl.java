@@ -34,9 +34,6 @@ import com.hazelcast.jet.pipeline.WindowDefinition;
 
 import javax.annotation.Nonnull;
 
-/**
- * Javadoc pending.
- */
 public class StreamStageImpl<T> extends ComputeStageImplBase<T> implements StreamStage<T> {
 
     public StreamStageImpl(

@@ -36,9 +36,6 @@ import static com.hazelcast.jet.impl.pipeline.JetEventFunctionAdapter.adaptAggre
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 
-/**
- * Javadoc pending.
- */
 public class StageWithWindowImpl<T> implements StageWithWindow<T> {
 
     @Nonnull

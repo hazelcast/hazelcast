@@ -26,20 +26,42 @@ import java.io.Serializable;
 import static com.hazelcast.jet.core.WatermarkEmissionPolicy.noThrottling;
 
 /**
- * Wrapper for functions and parameters needed to generate Watermarks.
+ * A holder of functions and parameters Jet needs to determine when and how
+ * to insert watermarks into an event stream. These are the components:
+ * <ul><li>
+ *     {@code timestampFn}: extracts the timestamp from an event in the stream
+ * </li><li>
+ *     {@code newWmPolicyFn}: a factory of <em>watermark policy</em> objects.
+ *     Refer to its {@link WatermarkPolicy documentation} for explanation.
+ * </li><li>
+ *     {@code wmEmitPolicy}: a {@link WatermarkEmissionPolicy policy object} that
+ *     allows the processor to filter out redundant watermark items before
+ *     emitting them. For example, a sliding/tumbling window processor doesn't
+ *     need to observe more than one watermark item per frame.
+ * </li><li>
+ *     {@code idleTimeoutMillis}: a measure to mitigate the issue with temporary
+ *     lulls in a distributed event stream. It pertains to each <em>partition
+ *     </em> of a data source independently. If Jet doesn't receive any events
+ *     from a given partition for this long, it will mark it as "idle" and let
+ *     the watermark in downstream vertices advance as if the partition didn't
+ *     exist.
+ * </li><li>
+ *     {@code wrapFn}: a function that transforms a given event and its
+ *     timestamp into the item to emit from the processor. For example, the
+ *     Pipeline API uses this to wrap items into {@code JetEvent}s as a way
+ *     to propagate the event timestamps through the pipeline regardless of
+ *     the transformation the user does on the event objects themselves.
+ * </li></ul>
  *
  * @param <T> event type
  */
 public final class WatermarkGenerationParams<T> implements Serializable {
 
     /**
-     * Default value of idle timeout to use
+     * The default idle timeout in milliseconds.
      */
     public static final long DEFAULT_IDLE_TIMEOUT = 60_000L;
 
-    /**
-     * A watermark policy that will never emit any watermark.
-     */
     private static final DistributedSupplier<WatermarkPolicy> NO_WATERMARK_POLICY = () -> new WatermarkPolicy() {
         @Override
         public long reportEvent(long timestamp) {
@@ -52,37 +74,38 @@ public final class WatermarkGenerationParams<T> implements Serializable {
         }
     };
 
-    private final long idleTimeoutMillis;
     private final DistributedToLongFunction<? super T> timestampFn;
+    private final DistributedObjLongBiFunction<? super T, ?> wrapFn;
     private final DistributedSupplier<WatermarkPolicy> newWmPolicyFn;
     private final WatermarkEmissionPolicy wmEmitPolicy;
-    private final DistributedObjLongBiFunction<? super T, ?> wrapFn;
+    private final long idleTimeoutMillis;
 
     private WatermarkGenerationParams(
             @Nonnull DistributedToLongFunction<? super T> timestampFn,
+            @Nonnull DistributedObjLongBiFunction<? super T, ?> wrapFn,
             @Nonnull DistributedSupplier<WatermarkPolicy> newWmPolicyFn,
             @Nonnull WatermarkEmissionPolicy wmEmitPolicy,
-            @Nonnull DistributedObjLongBiFunction<? super T, ?> wrapFn,
             long idleTimeoutMillis
     ) {
-        this.idleTimeoutMillis = idleTimeoutMillis;
         this.timestampFn = timestampFn;
         this.newWmPolicyFn = newWmPolicyFn;
         this.wmEmitPolicy = wmEmitPolicy;
         this.wrapFn = wrapFn;
+        this.idleTimeoutMillis = idleTimeoutMillis;
     }
 
     /**
-     * Creates new watermark generation parameters. See {@link #noWatermarks()}
-     * if you don't need any watermarks.
-     * @param timestampFn a function to extract timestamps from observed
-     *      events.
-     * @param wrapFn Javadoc pending
-     * @param wmPolicy Javadoc pending
-     * @param wmEmitPolicy watermark emission policy
-     * @param idleTimeoutMillis a timeout after which the source partition will
-     *      be marked as <em>idle</em>. If <=0, partitions will never be marked
-     *      as idle.
+     * Creates and returns new watermark generation parameters. To get
+     * parameters that result in no watermarks being emitted, call {@link
+     * #noWatermarks()}.
+     *
+     * @param timestampFn       function that extracts the timestamp from the event
+     * @param wrapFn            function that transforms the received item and its timestamp into the
+     *                          emitted item
+     * @param wmPolicy          factory of the watermark policy objects
+     * @param wmEmitPolicy      watermark emission policy (decides how to suppress redundant watermarks)
+     * @param idleTimeoutMillis the timeout after which a partition will be marked as <em>idle</em>.
+     *                          If <= 0, partitions will never be marked as idle.
      */
     public static <T> WatermarkGenerationParams<T> wmGenParams(
             @Nonnull DistributedToLongFunction<? super T> timestampFn,
@@ -91,20 +114,19 @@ public final class WatermarkGenerationParams<T> implements Serializable {
             @Nonnull WatermarkEmissionPolicy wmEmitPolicy,
             long idleTimeoutMillis
     ) {
-        return new WatermarkGenerationParams<>(timestampFn, wmPolicy, wmEmitPolicy, wrapFn, idleTimeoutMillis);
+        return new WatermarkGenerationParams<>(timestampFn, wrapFn, wmPolicy, wmEmitPolicy, idleTimeoutMillis);
     }
 
     /**
-     * Creates new watermark generation parameters. See {@link #noWatermarks()}
-     * if you don't need any watermarks.
+     * Creates and returns a watermark generation parameters object. To get
+     * parameters that result in no watermarks being emitted, call {@link
+     * #noWatermarks()}.
      *
-     * @param timestampFn a function to extract timestamps from observed
-     *      events.
-     * @param wmPolicy Javadoc pending
-     * @param wmEmitPolicy watermark emission policy
-     * @param idleTimeoutMillis a timeout after which the source partition will
-     *      be marked as <em>idle</em>. If <=0, partitions will never be marked
-     *      as idle.
+     * @param timestampFn       function that extracts the timestamp from the event
+     * @param wmPolicy          factory of the watermark policy objects
+     * @param wmEmitPolicy      watermark emission policy (decides how to suppress redundant watermarks)
+     * @param idleTimeoutMillis the timeout after which a partition will be marked as <em>idle</em>.
+     *                          If <= 0, partitions will never be marked as idle.
      */
     public static <T> WatermarkGenerationParams<T> wmGenParams(
             @Nonnull DistributedToLongFunction<T> timestampFn,
@@ -112,32 +134,22 @@ public final class WatermarkGenerationParams<T> implements Serializable {
             @Nonnull WatermarkEmissionPolicy wmEmitPolicy,
             long idleTimeoutMillis
     ) {
-        return wmGenParams(timestampFn, (t, l) -> t, wmPolicy, wmEmitPolicy, idleTimeoutMillis);
+        return wmGenParams(timestampFn, (event, timestamp) -> event, wmPolicy, wmEmitPolicy, idleTimeoutMillis);
     }
+
     /**
-     * Returns watermark generation parameters that will never emit any
-     * watermark.
-     * <p>
-     * Only useful when using streaming sources in jobs where there is no
-     * aggregation. For example to stream map journal events to a file etc.
-     * If there is an aggregation in the job, you'll have no output at all with
-     * this method.
+     * Returns watermark generation parameters that result in no watermarks
+     * being emitted. Only useful in jobs with streaming sources that don't do
+     * any aggregation. If there is an aggregation step in the job and you use
+     * these parameters, your job will keep accumulating the data without
+     * producing any output.
      */
     public static <T> WatermarkGenerationParams<T> noWatermarks() {
         return wmGenParams(i -> Long.MIN_VALUE, NO_WATERMARK_POLICY, noThrottling(), -1);
     }
 
     /**
-     * A timeout after which the {@link
-     * com.hazelcast.jet.impl.execution.WatermarkCoalescer#IDLE_MESSAGE} will
-     * be sent. If <=0, partitions will never be marked as idle.
-     */
-    public long idleTimeoutMillis() {
-        return idleTimeoutMillis;
-    }
-
-    /**
-     * Returns the function to extract timestamps from observed events.
+     * Returns the function that extracts the timestamp from the event.
      */
     @Nonnull
     public DistributedToLongFunction<? super T> timestampFn() {
@@ -145,7 +157,16 @@ public final class WatermarkGenerationParams<T> implements Serializable {
     }
 
     /**
-     * Returns watermark policy factory.
+     * Returns the function that transforms the received item and its timestamp
+     * into the emitted item.
+     */
+    @Nonnull
+    public DistributedObjLongBiFunction<? super T, ?> wrapFn() {
+        return wrapFn;
+    }
+
+    /**
+     * Returns the factory of the watermark policy objects.
      */
     @Nonnull
     public DistributedSupplier<WatermarkPolicy> newWmPolicyFn() {
@@ -153,7 +174,8 @@ public final class WatermarkGenerationParams<T> implements Serializable {
     }
 
     /**
-     * Returns watermark emission policy.
+     * Returns the watermark emission policy, which decides how to suppress
+     * redundant watermarks.
      */
     @Nonnull
     public WatermarkEmissionPolicy wmEmitPolicy() {
@@ -161,11 +183,18 @@ public final class WatermarkGenerationParams<T> implements Serializable {
     }
 
     /**
-     * Javadoc pending.
+     * Returns the amount of time allowed to pass without receiving any events
+     * from a partition before marking it as "idle". When the partition
+     * becomes idle, the processor emits an {@link
+     * com.hazelcast.jet.impl.execution.WatermarkCoalescer#IDLE_MESSAGE} to its
+     * output edges. This signals Jet that the watermark can advance as
+     * if the partition didn't exist.
+     * <p>
+     * If supply a zero or negative value, partitions will never be marked as
+     * idle.
      */
-    @Nonnull
-    public DistributedObjLongBiFunction<? super T, ?> wrapFn() {
-        return wrapFn;
+    public long idleTimeoutMillis() {
+        return idleTimeoutMillis;
     }
 
     /**

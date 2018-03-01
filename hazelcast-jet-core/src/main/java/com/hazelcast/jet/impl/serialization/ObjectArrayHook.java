@@ -24,9 +24,6 @@ import com.hazelcast.nio.serialization.StreamSerializer;
 
 import java.io.IOException;
 
-/**
- * Javadoc pending.
- */
 public final class ObjectArrayHook implements SerializerHook<Object[]> {
 
     @Override

@@ -39,7 +39,8 @@ public interface AggregateOperation1<T, A, R> extends AggregateOperation<A, R> {
     DistributedBiConsumer<? super A, ? super T> accumulateFn();
 
     /**
-     * Javadoc pending
+     * Returns a copy of this aggregate operation, but with the {@code
+     * accumulate} primitive replaced with the one supplied here.
      */
     @Nonnull
     <NEW_T> AggregateOperation1<NEW_T, A, R> withAccumulateFn(

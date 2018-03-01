@@ -54,9 +54,6 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 
-/**
- * Javadoc pending.
- */
 public abstract class ComputeStageImplBase<T> extends AbstractStage {
 
     static final FunctionAdapter DONT_ADAPT = new FunctionAdapter();
@@ -93,7 +90,7 @@ public abstract class ComputeStageImplBase<T> extends AbstractStage {
 
         DistributedSupplier<WatermarkPolicy> wmPolicy = limitingLag(allowedLateness);
         WatermarkGenerationParams<T> wmParams = wmGenParams(
-                timestampFn, JetEventImpl::jetEvent, wmPolicy, THROWING_EMIT_POLICY, DEFAULT_IDLE_TIMEOUT
+                timestampFn, JetEvent::jetEvent, wmPolicy, THROWING_EMIT_POLICY, DEFAULT_IDLE_TIMEOUT
         );
 
         if (transform instanceof StreamSourceTransform) {

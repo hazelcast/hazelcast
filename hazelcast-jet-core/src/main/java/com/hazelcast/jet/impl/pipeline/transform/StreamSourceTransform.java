@@ -32,9 +32,6 @@ import static com.hazelcast.jet.core.WatermarkGenerationParams.noWatermarks;
 import static com.hazelcast.jet.core.processor.Processors.insertWatermarksP;
 import static java.util.Collections.emptyList;
 
-/**
- * Javadoc pending.
- */
 public class StreamSourceTransform<T> extends AbstractTransform implements StreamSource<T> {
 
     private final Function<WatermarkGenerationParams<T>, ProcessorMetaSupplier> metaSupplierFn;

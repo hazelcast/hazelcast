@@ -56,7 +56,8 @@ public interface AggregateOperation2<T0, T1, A, R> extends AggregateOperation<A,
     DistributedBiConsumer<? super A, ? super T1> accumulateFn1();
 
     /**
-     * Javadoc pending
+     * Returns a copy of this aggregate operation, but with the {@code
+     * accumulate} primitive at index 0 replaced with the one supplied here.
      */
     @Nonnull
     <T0_NEW> AggregateOperation2<T0_NEW, T1, A, R> withAccumulateFn0(
@@ -64,7 +65,8 @@ public interface AggregateOperation2<T0, T1, A, R> extends AggregateOperation<A,
     );
 
     /**
-     * Javadoc pending
+     * Returns a copy of this aggregate operation, but with the {@code
+     * accumulate} primitive at index 1 replaced with the one supplied here.
      */
     @Nonnull
     <T1_NEW> AggregateOperation2<T0, T1_NEW, A, R> withAccumulateFn1(
