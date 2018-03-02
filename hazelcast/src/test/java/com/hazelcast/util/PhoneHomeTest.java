@@ -16,15 +16,15 @@
 
 package com.hazelcast.util;
 
+import com.hazelcast.config.Config;
+import com.hazelcast.config.ManagementCenterConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.Node;
-import com.hazelcast.instance.TestUtil;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -37,35 +37,26 @@ import java.util.Map;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class PhoneHomeTest extends HazelcastTestSupport {
 
-    private TestHazelcastInstanceFactory factory;
-    private HazelcastInstance hz1;
-
-    @After
-    public void cleanup() {
-        factory.terminateAll();
-    }
-
-    @Before
-    public void init() {
-        factory = new TestHazelcastInstanceFactory(2);
-        hz1 = factory.newHazelcastInstance();
-    }
-
     @Test
-    public void testPhoneHomeParameters() throws Exception {
-        Node node1 = TestUtil.getNode(hz1);
+    public void testPhoneHomeParameters() {
+        HazelcastInstance hz = createHazelcastInstance();
+        Node node = getNode(hz);
         PhoneHome phoneHome = new PhoneHome();
+
         sleepAtLeastMillis(1);
-        Map<String, String> parameters = phoneHome.phoneHome(node1, "test_version", false);
+        Map<String, String> parameters = phoneHome.phoneHome(node, "test_version", false);
         RuntimeMXBean runtimeMxBean = ManagementFactory.getRuntimeMXBean();
         OperatingSystemMXBean osMxBean = ManagementFactory.getOperatingSystemMXBean();
         assertEquals(parameters.get("version"), "test_version");
-        assertEquals(parameters.get("m"), node1.getLocalMember().getUuid());
+        assertEquals(parameters.get("m"), node.getLocalMember().getUuid());
         assertEquals(parameters.get("e"), "false");
         assertEquals(parameters.get("l"), "");
         assertEquals(parameters.get("p"), "source");
@@ -91,8 +82,70 @@ public class PhoneHomeTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testConvertToLetter() throws Exception {
+    public void testPhoneHomeParameters_withManagementCenterConfiguredButNotAvailable() {
+        ManagementCenterConfig managementCenterConfig = new ManagementCenterConfig()
+                .setEnabled(true)
+                .setUrl("http://localhost:11111/mancen");
+        Config config = new Config()
+                .setManagementCenterConfig(managementCenterConfig);
 
+        HazelcastInstance hz = createHazelcastInstance(config);
+        Node node = getNode(hz);
+        PhoneHome phoneHome = new PhoneHome();
+
+        sleepAtLeastMillis(1);
+        Map<String, String> parameters = phoneHome.phoneHome(node, "test_version", false);
+        assertEquals(parameters.get("mcver"), "MC_NOT_AVAILABLE");
+        assertEquals(parameters.get("mclicense"), "MC_NOT_AVAILABLE");
+    }
+
+    @Test
+    @SuppressWarnings("deprecation")
+    public void testScheduling_whenVersionCheckIsDisabled() {
+        Config config = new Config()
+                .setProperty(GroupProperty.VERSION_CHECK_ENABLED.getName(), "false");
+
+        HazelcastInstance hz = createHazelcastInstance(config);
+        Node node = getNode(hz);
+
+        PhoneHome phoneHome = new PhoneHome();
+        phoneHome.check(node, "test_version", false);
+        assertNull(phoneHome.phoneHomeFuture);
+    }
+
+    @Test
+    public void testScheduling_whenPhoneHomeIsDisabled() {
+        Config config = new Config()
+                .setProperty(GroupProperty.PHONE_HOME_ENABLED.getName(), "false");
+
+        HazelcastInstance hz = createHazelcastInstance(config);
+        Node node = getNode(hz);
+
+        PhoneHome phoneHome = new PhoneHome();
+        phoneHome.check(node, "test_version", false);
+        assertNull(phoneHome.phoneHomeFuture);
+    }
+
+    @Test
+    public void testShutdown() {
+        Config config = new Config()
+                .setProperty(GroupProperty.PHONE_HOME_ENABLED.getName(), "true");
+
+        HazelcastInstance hz = createHazelcastInstance(config);
+        Node node = getNode(hz);
+
+        PhoneHome phoneHome = new PhoneHome();
+        phoneHome.check(node, "test_version", false);
+        assertNotNull(phoneHome.phoneHomeFuture);
+        assertFalse(phoneHome.phoneHomeFuture.isDone());
+        assertFalse(phoneHome.phoneHomeFuture.isCancelled());
+
+        phoneHome.shutdown();
+        assertTrue(phoneHome.phoneHomeFuture.isCancelled());
+    }
+
+    @Test
+    public void testConvertToLetter() {
         PhoneHome phoneHome = new PhoneHome();
         assertEquals("A", phoneHome.convertToLetter(4));
         assertEquals("B", phoneHome.convertToLetter(9));
