@@ -20,7 +20,8 @@ import com.hazelcast.config.MapConfig;
 
 import javax.annotation.Nonnull;
 
-import static com.hazelcast.spi.partition.IPartition.MAX_BACKUP_COUNT;
+import static com.hazelcast.util.Preconditions.checkBackupCount;
+import static com.hazelcast.util.Preconditions.checkPositive;
 
 /**
  * General configuration options pertaining to a Jet instance.
@@ -49,9 +50,7 @@ public class InstanceConfig {
      * processors; each <em>blocking</em> processor is assigned its own thread.
      */
     public InstanceConfig setCooperativeThreadCount(int size) {
-        if (size <= 0) {
-            throw new IllegalArgumentException("cooperativeThreadCount should be a positive number");
-        }
+        checkPositive(size, "cooperativeThreadCount should be a positive number");
         this.cooperativeThreadCount = size;
         return this;
     }
@@ -88,9 +87,7 @@ public class InstanceConfig {
      * (in milliseconds) of the interval between flow-control ("ack") packets.
      */
     public InstanceConfig setFlowControlPeriodMs(int flowControlPeriodMs) {
-        if (flowControlPeriodMs <= 0) {
-            throw new IllegalArgumentException("flowControlPeriodMs should be a positive number");
-        }
+        checkPositive(flowControlPeriodMs, "flowControlPeriodMs should be a positive number");
         this.flowControlPeriodMs = flowControlPeriodMs;
         return this;
     }
@@ -112,11 +109,7 @@ public class InstanceConfig {
      * and continued from latest snapshot.
      */
     public InstanceConfig setBackupCount(int newBackupCount) {
-        if (newBackupCount < 0) {
-            throw new IllegalArgumentException("backup count can't be smaller than 0");
-        } else if (newBackupCount > MAX_BACKUP_COUNT) {
-            throw new IllegalArgumentException("backup count can't be larger than than " + MAX_BACKUP_COUNT);
-        }
+        checkBackupCount(newBackupCount, 0);
         this.backupCount = newBackupCount;
         return this;
     }

@@ -29,21 +29,18 @@ import java.util.List;
 class SerializableClientConfig implements Serializable {
 
     private String groupName;
-    private String groupPass;
     private List<String> addresses;
 
     SerializableClientConfig(ClientConfig clientConfig) {
         GroupConfig groupConfig = clientConfig.getGroupConfig();
         List<String> addresses = clientConfig.getNetworkConfig().getAddresses();
         this.groupName = groupConfig.getName();
-        this.groupPass = groupConfig.getPassword();
         this.addresses = addresses;
     }
 
     ClientConfig asClientConfig() {
         ClientConfig config = new ClientConfig();
         config.getGroupConfig().setName(groupName);
-        config.getGroupConfig().setPassword(groupPass);
         config.getNetworkConfig().setAddresses(addresses);
         return config;
     }

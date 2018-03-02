@@ -30,7 +30,7 @@ import static org.springframework.beans.factory.support.BeanDefinitionBuilder.ro
  * <b>Sample Spring XML for Hazelcast Jet Client:</b>
  * <pre>{@code
  *   <jet:client id="client">
- *      <jet:group name="jet" password="jet-pass"/>
+ *      <jet:group name="jet"/>
  *      <jet:network connection-attempt-limit="3"
  *          connection-attempt-period="3000"
  *          connection-timeout="1000"
