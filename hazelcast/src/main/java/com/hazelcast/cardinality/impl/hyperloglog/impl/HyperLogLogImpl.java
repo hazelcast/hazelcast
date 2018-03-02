@@ -104,6 +104,8 @@ public class HyperLogLogImpl implements HyperLogLog {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
+        assert !out.getVersion().isUnknown();
+
         out.writeObject(encoder);
         // RU_COMPAT_3_9
         if (out.getVersion().isGreaterOrEqual(Versions.V3_10)) {
@@ -113,6 +115,8 @@ public class HyperLogLogImpl implements HyperLogLog {
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
+        assert !in.getVersion().isUnknown();
+
         encoder = in.readObject();
         // RU_COMPAT_3_9
         if (in.getVersion().isGreaterOrEqual(Versions.V3_10)) {

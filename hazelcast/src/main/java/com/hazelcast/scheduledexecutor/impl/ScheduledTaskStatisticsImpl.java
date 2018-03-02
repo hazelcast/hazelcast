@@ -110,6 +110,8 @@ public class ScheduledTaskStatisticsImpl
     @Override
     public void writeData(ObjectDataOutput out)
             throws IOException {
+        assert !out.getVersion().isUnknown();
+
         out.writeLong(runs);
         out.writeLong(lastIdleDuration);
         out.writeLong(totalIdleDuration);
@@ -123,6 +125,8 @@ public class ScheduledTaskStatisticsImpl
     @Override
     public void readData(ObjectDataInput in)
             throws IOException {
+        assert !in.getVersion().isUnknown();
+
         runs = in.readLong();
         lastIdleDuration = in.readLong();
         totalIdleDuration = in.readLong();

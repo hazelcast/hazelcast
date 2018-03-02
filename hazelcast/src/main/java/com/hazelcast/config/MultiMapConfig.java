@@ -352,6 +352,8 @@ public class MultiMapConfig implements IdentifiedDataSerializable, Versioned {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
+        assert !out.getVersion().isUnknown();
+
         out.writeUTF(name);
         out.writeUTF(valueCollectionType);
         if (listenerConfigs == null || listenerConfigs.isEmpty()) {
@@ -376,6 +378,8 @@ public class MultiMapConfig implements IdentifiedDataSerializable, Versioned {
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
+        assert !in.getVersion().isUnknown();
+
         name = in.readUTF();
         valueCollectionType = in.readUTF();
         boolean hasListenerConfig = in.readBoolean();

@@ -669,6 +669,7 @@ public class ClusterHeartbeatManager {
                 || clusterService.getClusterVersion().isGreaterThan(V3_9)) {
             return;
         }
+        // RU_COMPAT_3_9
         Address masterAddress = clusterService.getMasterAddress();
         if (masterAddress == null) {
             logger.fine("Could not send MasterConfirmation, master address is null!");

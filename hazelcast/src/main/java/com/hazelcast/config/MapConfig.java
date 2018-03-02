@@ -1048,6 +1048,8 @@ public class MapConfig implements IdentifiedDataSerializable, Versioned {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
+        assert !out.getVersion().isUnknown();
+
         out.writeUTF(name);
         out.writeInt(backupCount);
         out.writeInt(asyncBackupCount);
@@ -1081,6 +1083,8 @@ public class MapConfig implements IdentifiedDataSerializable, Versioned {
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
+        assert !in.getVersion().isUnknown();
+
         name = in.readUTF();
         backupCount = in.readInt();
         asyncBackupCount = in.readInt();

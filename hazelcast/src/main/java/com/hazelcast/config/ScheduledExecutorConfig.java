@@ -244,6 +244,8 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable, Vers
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
+        assert !out.getVersion().isUnknown();
+
         out.writeUTF(name);
         out.writeInt(durability);
         out.writeInt(capacity);
@@ -257,6 +259,8 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable, Vers
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
+        assert !in.getVersion().isUnknown();
+
         name = in.readUTF();
         durability = in.readInt();
         capacity = in.readInt();

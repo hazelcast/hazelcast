@@ -223,6 +223,8 @@ public class SemaphoreConfig implements IdentifiedDataSerializable, Versioned {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
+        assert !out.getVersion().isUnknown();
+
         out.writeUTF(name);
         out.writeInt(initialPermits);
         out.writeInt(backupCount);
@@ -235,6 +237,8 @@ public class SemaphoreConfig implements IdentifiedDataSerializable, Versioned {
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
+        assert !in.getVersion().isUnknown();
+
         name = in.readUTF();
         initialPermits = in.readInt();
         backupCount = in.readInt();

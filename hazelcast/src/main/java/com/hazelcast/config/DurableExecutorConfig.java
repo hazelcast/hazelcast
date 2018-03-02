@@ -214,6 +214,8 @@ public class DurableExecutorConfig implements IdentifiedDataSerializable, Versio
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
+        assert !out.getVersion().isUnknown();
+
         out.writeUTF(name);
         out.writeInt(poolSize);
         out.writeInt(durability);
@@ -226,6 +228,8 @@ public class DurableExecutorConfig implements IdentifiedDataSerializable, Versio
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
+        assert !in.getVersion().isUnknown();
+
         name = in.readUTF();
         poolSize = in.readInt();
         durability = in.readInt();
