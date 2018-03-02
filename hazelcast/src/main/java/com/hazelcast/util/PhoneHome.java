@@ -16,8 +16,8 @@
 
 package com.hazelcast.util;
 
+import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonObject;
-import com.eclipsesource.json.JsonValue;
 import com.hazelcast.config.ManagementCenterConfig;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.core.ClientType;
@@ -45,11 +45,14 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.nio.IOUtil.closeResource;
 import static com.hazelcast.util.EmptyStatement.ignore;
+import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.util.JsonUtil.getString;
 import static java.lang.System.getenv;
 
 /**
@@ -73,9 +76,12 @@ public final class PhoneHome {
     private static final int CONNECTION_TIMEOUT_MILLIS = 3000;
     private static final String FALSE = "false";
 
+    volatile ScheduledFuture<?> phoneHomeFuture;
+
     public PhoneHome() {
     }
 
+    @SuppressWarnings("deprecation")
     public void check(final Node hazelcastNode, final String version, final boolean isEnterprise) {
         ILogger logger = hazelcastNode.getLogger(PhoneHome.class);
         if (!hazelcastNode.getProperties().getBoolean(GroupProperty.VERSION_CHECK_ENABLED)) {
@@ -90,17 +96,20 @@ public final class PhoneHome {
             return;
         }
         try {
-            hazelcastNode.nodeEngine.getExecutionService().scheduleWithRepetition(new Runnable() {
+            phoneHomeFuture = hazelcastNode.nodeEngine.getExecutionService().scheduleWithRepetition("PhoneHome", new Runnable() {
                 public void run() {
                     phoneHome(hazelcastNode, version, isEnterprise);
                 }
             }, 0, 1, TimeUnit.DAYS);
         } catch (RejectedExecutionException e) {
-            logger.warning("Could not schedule phone home! Most probably Hazelcast is failed to start.");
+            logger.warning("Could not schedule phone home task! Most probably Hazelcast failed to start.");
         }
     }
 
     public void shutdown() {
+        if (phoneHomeFuture != null) {
+            phoneHomeFuture.cancel(true);
+        }
     }
 
     public String convertToLetter(int size) {
@@ -127,11 +136,9 @@ public final class PhoneHome {
             letter = "I";
         }
         return letter;
-
     }
 
     public Map<String, String> phoneHome(Node hazelcastNode, String version, boolean isEnterprise) {
-
         String downloadId = "source";
         InputStream is = null;
         try {
@@ -147,34 +154,33 @@ public final class PhoneHome {
             closeResource(is);
         }
 
-        //Calculate native memory usage from native memory config
+        // calculate native memory usage from native memory config
         NativeMemoryConfig memoryConfig = hazelcastNode.getConfig().getNativeMemoryConfig();
-        final ClusterServiceImpl clusterService = hazelcastNode.getClusterService();
-        long totalNativeMemorySize = clusterService.getSize(DATA_MEMBER_SELECTOR)
-                * memoryConfig.getSize().bytes();
-        String nativeMemoryParameter = (isEnterprise)
-                ? Long.toString(MemoryUnit.BYTES.toGigaBytes(totalNativeMemorySize)) : "0";
+        ClusterServiceImpl clusterService = hazelcastNode.getClusterService();
+        long totalNativeMemorySize = clusterService.getSize(DATA_MEMBER_SELECTOR) * memoryConfig.getSize().bytes();
+        String nativeMemoryParameter = (isEnterprise) ? Long.toString(MemoryUnit.BYTES.toGigaBytes(totalNativeMemorySize)) : "0";
 
-        RuntimeMXBean runtimeMxBean = ManagementFactory.getRuntimeMXBean();
-        Long clusterUpTime = clusterService.getClusterClock().getClusterUpTime();
         int clusterSize = clusterService.getMembers().size();
-        PhoneHomeParameterCreator parameterCreator = new PhoneHomeParameterCreator();
-        parameterCreator.addParam("version", version);
-        parameterCreator.addParam("m", hazelcastNode.getThisUuid());
-        parameterCreator.addParam("e", Boolean.toString(isEnterprise));
+        Long clusterUpTime = clusterService.getClusterClock().getClusterUpTime();
+        RuntimeMXBean runtimeMxBean = ManagementFactory.getRuntimeMXBean();
         String licenseKey = hazelcastNode.getConfig().getLicenseKey();
-        parameterCreator.addParam("l", licenseKey == null ? "" : MD5Util.toMD5String(licenseKey));
-        parameterCreator.addParam("p", downloadId);
-        parameterCreator.addParam("c", clusterService.getClusterId());
-        parameterCreator.addParam("crsz", convertToLetter(clusterSize));
-        parameterCreator.addParam("cssz", convertToLetter(hazelcastNode.clientEngine.getClientEndpointCount()));
-        parameterCreator.addParam("hdgb", nativeMemoryParameter);
-        parameterCreator.addParam("cuptm", Long.toString(clusterUpTime));
-        parameterCreator.addParam("nuptm", Long.toString(runtimeMxBean.getUptime()));
-        parameterCreator.addParam("jvmn", runtimeMxBean.getVmName());
-        parameterCreator.addParam("jvmv", System.getProperty("java.version"));
         JetBuildInfo jetBuildInfo = hazelcastNode.getBuildInfo().getJetBuildInfo();
-        parameterCreator.addParam("jetv", jetBuildInfo == null ? "" : jetBuildInfo.getVersion());
+
+        PhoneHomeParameterCreator parameterCreator = new PhoneHomeParameterCreator()
+                .addParam("version", version)
+                .addParam("m", hazelcastNode.getThisUuid())
+                .addParam("e", Boolean.toString(isEnterprise))
+                .addParam("l", licenseKey == null ? "" : MD5Util.toMD5String(licenseKey))
+                .addParam("p", downloadId)
+                .addParam("c", clusterService.getClusterId())
+                .addParam("crsz", convertToLetter(clusterSize))
+                .addParam("cssz", convertToLetter(hazelcastNode.clientEngine.getClientEndpointCount()))
+                .addParam("hdgb", nativeMemoryParameter)
+                .addParam("cuptm", Long.toString(clusterUpTime))
+                .addParam("nuptm", Long.toString(runtimeMxBean.getUptime()))
+                .addParam("jvmn", runtimeMxBean.getVmName())
+                .addParam("jvmv", System.getProperty("java.version"))
+                .addParam("jetv", jetBuildInfo == null ? "" : jetBuildInfo.getVersion());
         addClientInfo(hazelcastNode, parameterCreator);
         addOSInfo(parameterCreator);
 
@@ -211,32 +217,35 @@ public final class PhoneHome {
     private void addOSInfo(PhoneHomeParameterCreator parameterCreator) {
         OperatingSystemMXBean osMxBean = ManagementFactory.getOperatingSystemMXBean();
         try {
-            parameterCreator.addParam("osn", osMxBean.getName());
-            parameterCreator.addParam("osa", osMxBean.getArch());
-            parameterCreator.addParam("osv", osMxBean.getVersion());
+            parameterCreator
+                    .addParam("osn", osMxBean.getName())
+                    .addParam("osa", osMxBean.getArch())
+                    .addParam("osv", osMxBean.getVersion());
         } catch (SecurityException e) {
-            parameterCreator.addParam("osn", "N/A");
-            parameterCreator.addParam("osa", "N/A");
-            parameterCreator.addParam("osv", "N/A");
+            parameterCreator
+                    .addParam("osn", "N/A")
+                    .addParam("osa", "N/A")
+                    .addParam("osv", "N/A");
         }
     }
 
     private void addClientInfo(Node hazelcastNode, PhoneHomeParameterCreator parameterCreator) {
         Map<ClientType, Integer> clusterClientStats = hazelcastNode.clientEngine.getConnectedClientStats();
-
-        parameterCreator.addParam("ccpp", Integer.toString(clusterClientStats.get(ClientType.CPP)));
-        parameterCreator.addParam("cdn", Integer.toString(clusterClientStats.get(ClientType.CSHARP)));
-        parameterCreator.addParam("cjv", Integer.toString(clusterClientStats.get(ClientType.JAVA)));
-        parameterCreator.addParam("cnjs", Integer.toString(clusterClientStats.get(ClientType.NODEJS)));
-        parameterCreator.addParam("cpy", Integer.toString(clusterClientStats.get(ClientType.PYTHON)));
+        parameterCreator
+                .addParam("ccpp", Integer.toString(clusterClientStats.get(ClientType.CPP)))
+                .addParam("cdn", Integer.toString(clusterClientStats.get(ClientType.CSHARP)))
+                .addParam("cjv", Integer.toString(clusterClientStats.get(ClientType.JAVA)))
+                .addParam("cnjs", Integer.toString(clusterClientStats.get(ClientType.NODEJS)))
+                .addParam("cpy", Integer.toString(clusterClientStats.get(ClientType.PYTHON)));
     }
 
     private void addManCenterInfo(Node hazelcastNode, int clusterSize, PhoneHomeParameterCreator parameterCreator) {
-        InputStreamReader reader = null;
-        InputStream inputStream = null;
         int responseCode;
         String version;
         String license;
+
+        InputStream inputStream = null;
+        InputStreamReader reader = null;
         try {
             ManagementCenterConfig managementCenterConfig = hazelcastNode.config.getManagementCenterConfig();
             String manCenterURL = managementCenterConfig.getUrl();
@@ -253,15 +262,19 @@ public final class PhoneHome {
             }
             connection.setConnectTimeout(CONNECTION_TIMEOUT_MILLIS);
             connection.setReadTimeout(CONNECTION_TIMEOUT_MILLIS);
+
             // if management center is not running,
             // connection.getInputStream() throws 'java.net.ConnectException: Connection refused'
             inputStream = connection.getInputStream();
             responseCode = connection.getResponseCode();
+
             reader = new InputStreamReader(inputStream, "UTF-8");
-            JsonObject mcPhoneHomeInfoJson = JsonValue.readFrom(reader).asObject();
-            version = JsonUtil.getString(mcPhoneHomeInfoJson, "mcVersion");
-            license = JsonUtil.getString(mcPhoneHomeInfoJson, "mcLicense", null);
+            JsonObject mcPhoneHomeInfoJson = Json.parse(reader).asObject();
+            version = getString(mcPhoneHomeInfoJson, "mcVersion");
+            license = getString(mcPhoneHomeInfoJson, "mcLicense", null);
         } catch (Exception ignored) {
+            // FindBugs is not happy without this ignore call
+            ignore(ignored);
             parameterCreator.addParam("mclicense", "MC_NOT_AVAILABLE");
             parameterCreator.addParam("mcver", "MC_NOT_AVAILABLE");
             return;
@@ -297,16 +310,16 @@ public final class PhoneHome {
         private final Map<String, String> parameters = new HashMap<String, String>();
         private boolean hasParameterBefore;
 
-        public PhoneHomeParameterCreator() {
+        PhoneHomeParameterCreator() {
             builder = new StringBuilder();
             builder.append("?");
         }
 
-        public Map<String, String> getParameters() {
+        Map<String, String> getParameters() {
             return parameters;
         }
 
-        public PhoneHomeParameterCreator addParam(String key, String value) {
+        PhoneHomeParameterCreator addParam(String key, String value) {
             if (hasParameterBefore) {
                 builder.append("&");
             } else {
@@ -315,13 +328,13 @@ public final class PhoneHome {
             try {
                 builder.append(key).append("=").append(URLEncoder.encode(value, "UTF-8"));
             } catch (UnsupportedEncodingException e) {
-                ExceptionUtil.rethrow(e);
+                throw rethrow(e);
             }
             parameters.put(key, value);
             return this;
         }
 
-        public String build() {
+        String build() {
             return builder.toString();
         }
     }
