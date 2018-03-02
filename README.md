@@ -92,6 +92,11 @@ Pull the latest commits from GitHub (`git pull`) and use Maven to
 build (`mvn clean install`). This will also run all the checks and
 tests: Checkstyle, FindBugs, and JUnit tests.
 
+Java 8 and Java 9 are supported. 
+
+Maven version 3.5.2 is the minimum version required. 
+
+
 ### Contributing to Hazelcast Jet
 
 We encourage pull requests and process them promptly.
