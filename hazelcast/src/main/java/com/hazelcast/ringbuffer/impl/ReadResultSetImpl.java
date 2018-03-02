@@ -19,12 +19,10 @@ package com.hazelcast.ringbuffer.impl;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.IFunction;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
@@ -53,7 +51,7 @@ import static com.hazelcast.ringbuffer.impl.RingbufferDataSerializerHook.READ_RE
  *            is {@code null} or returns the same type as the parameter
  */
 public class ReadResultSetImpl<O, E> extends AbstractList<E>
-        implements IdentifiedDataSerializable, HazelcastInstanceAware, ReadResultSet<E>, Versioned {
+        implements IdentifiedDataSerializable, HazelcastInstanceAware, ReadResultSet<E> {
 
     protected transient SerializationService serializationService;
     private transient int minSize;
@@ -201,9 +199,7 @@ public class ReadResultSetImpl<O, E> extends AbstractList<E>
         for (int k = 0; k < size; k++) {
             out.writeData(items[k]);
         }
-        if (out.getVersion().isGreaterOrEqual(Versions.V3_9)) {
-            out.writeLongArray(seqs);
-        }
+        out.writeLongArray(seqs);
     }
 
     @Override
@@ -214,8 +210,6 @@ public class ReadResultSetImpl<O, E> extends AbstractList<E>
         for (int k = 0; k < size; k++) {
             items[k] = in.readData();
         }
-        if (in.getVersion().isGreaterOrEqual(Versions.V3_9)) {
-            seqs = in.readLongArray();
-        }
+        seqs = in.readLongArray();
     }
 }

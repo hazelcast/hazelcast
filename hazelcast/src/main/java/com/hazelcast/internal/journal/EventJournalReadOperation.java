@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.journal;
 
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -29,7 +28,6 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.ReadonlyOperation;
 import com.hazelcast.spi.WaitNotifyKey;
-import com.hazelcast.version.Version;
 
 import java.io.IOException;
 
@@ -78,12 +76,6 @@ public abstract class EventJournalReadOperation<T, J> extends Operation
      */
     @Override
     public void beforeRun() {
-        final Version clusterVersion = getNodeEngine().getClusterService().getClusterVersion();
-        if (clusterVersion.isLessThan(Versions.V3_9)) {
-            throw new UnsupportedOperationException(
-                    "Event journal actions are not available when cluster version is " + clusterVersion);
-        }
-
         namespace = new DistributedObjectNamespace(getServiceName(), name);
 
         final EventJournal<J> journal = getJournal();
