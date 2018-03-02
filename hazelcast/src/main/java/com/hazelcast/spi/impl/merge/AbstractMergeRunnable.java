@@ -140,9 +140,11 @@ public abstract class AbstractMergeRunnable<Store, MergingItem> implements Runna
 
         for (Map.Entry<String, Collection<Store>> entry : collectedStoresWithLegacyPolicies.entrySet()) {
             String dataStructureName = entry.getKey();
-            if (!canLegacyMergeInMemoryFormat(dataStructureName)) {
-                continue;
-            }
+
+            // although configuration fails fast,
+            // keep this assertion here as a paranoiac check
+            assert getInMemoryFormat(dataStructureName) != NATIVE
+                    : "Legacy policies cannot be used to merge NATIVE data";
 
             Collection<Store> recordStores = entry.getValue();
             for (Store recordStore : recordStores) {
@@ -151,22 +153,6 @@ public abstract class AbstractMergeRunnable<Store, MergingItem> implements Runna
         }
 
         return consumer.mergedCount;
-    }
-
-    private boolean canLegacyMergeInMemoryFormat(String dataStructureName) {
-        InMemoryFormat inMemoryFormat = getInMemoryFormat(dataStructureName);
-        if (inMemoryFormat != NATIVE) {
-            return true;
-        }
-
-        String msg = "Split brain recovery is not supported for '%s'."
-                + " Because its using legacy merge policy `%s` to merge `%s` data."
-                + " To fix this, use a type of `%s` with a cluster version `%s` or later";
-        Object mergePolicy = getMergePolicy(dataStructureName);
-        logger.warning(format(msg, dataStructureName, mergePolicy.getClass().getName(),
-                NATIVE, SplitBrainMergePolicy.class.getName(), V3_10));
-
-        return false;
     }
 
     private void waitMergeEnd(int mergedCount) {

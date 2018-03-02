@@ -239,7 +239,8 @@ public final class CacheProxyUtil {
     }
 
     public static <K, V> void validateCacheConfig(CacheConfig<K, V> cacheConfig) {
-        checkCacheConfig(cacheConfig.getInMemoryFormat(), cacheConfig.getEvictionConfig(), cacheConfig.isStatisticsEnabled(),
+        checkCacheConfig(cacheConfig.getName(), cacheConfig.getInMemoryFormat(),
+                cacheConfig.getEvictionConfig(), cacheConfig.isStatisticsEnabled(),
                 cacheConfig.getMergePolicy());
     }
 }

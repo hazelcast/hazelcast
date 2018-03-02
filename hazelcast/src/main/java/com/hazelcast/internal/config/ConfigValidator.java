@@ -35,10 +35,12 @@ import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.internal.eviction.EvictionPolicyComparator;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.spi.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.HigherHitsMergePolicy;
 import com.hazelcast.spi.merge.HyperLogLogMergePolicy;
 import com.hazelcast.spi.merge.LatestAccessMergePolicy;
 import com.hazelcast.spi.merge.LatestUpdateMergePolicy;
+import com.hazelcast.util.ExceptionUtil;
 
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -51,6 +53,7 @@ import static com.hazelcast.config.MapConfig.DEFAULT_EVICTION_PERCENTAGE;
 import static com.hazelcast.config.MapConfig.DEFAULT_MIN_EVICTION_CHECK_MILLIS;
 import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.INVALIDATE;
 import static com.hazelcast.instance.BuildInfoProvider.getBuildInfo;
+import static com.hazelcast.internal.cluster.Versions.V3_10;
 import static com.hazelcast.util.StringUtil.isNullOrEmpty;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
@@ -92,6 +95,8 @@ public final class ConfigValidator {
     public static void checkMapConfig(MapConfig mapConfig) {
         checkMergePolicy(mapConfig.isStatisticsEnabled(), mapConfig.getMergePolicyConfig().getPolicy());
         checkNotNative(mapConfig.getInMemoryFormat());
+        checkMergePolicySupportsNative(mapConfig.getName(),
+                mapConfig.getMergePolicyConfig().getPolicy(), mapConfig.getInMemoryFormat());
 
         logIgnoredConfig(mapConfig);
     }
@@ -233,22 +238,26 @@ public final class ConfigValidator {
      * @param cacheSimpleConfig the {@link CacheSimpleConfig} to check
      */
     public static void checkCacheConfig(CacheSimpleConfig cacheSimpleConfig) {
-        checkCacheConfig(cacheSimpleConfig.getInMemoryFormat(), cacheSimpleConfig.getEvictionConfig(),
+        checkCacheConfig(cacheSimpleConfig.getName(),
+                cacheSimpleConfig.getInMemoryFormat(), cacheSimpleConfig.getEvictionConfig(),
                 cacheSimpleConfig.isStatisticsEnabled(), cacheSimpleConfig.getMergePolicy());
     }
 
     /**
      * Validates the given parameters in the context of a {@link ICache} config.
      *
+     * @param name                name of data structure
      * @param inMemoryFormat      the in-memory format the {@code Cache} is configured with
      * @param evictionConfig      eviction configuration of {@code Cache}
      * @param isStatisticsEnabled {@code true} if statistics are enabled, {@code false} otherwise
      * @param mergePolicy         the configured merge policy
      */
-    public static void checkCacheConfig(InMemoryFormat inMemoryFormat, EvictionConfig evictionConfig,
+    public static void checkCacheConfig(String name, InMemoryFormat inMemoryFormat, EvictionConfig evictionConfig,
                                         boolean isStatisticsEnabled, String mergePolicy) {
         checkMergePolicy(isStatisticsEnabled, mergePolicy);
         checkNotNative(inMemoryFormat);
+        checkMergePolicySupportsNative(name, mergePolicy, inMemoryFormat);
+
         if (inMemoryFormat == NATIVE) {
             EvictionConfig.MaxSizePolicy maxSizePolicy = evictionConfig.getMaximumSizePolicy();
             if (maxSizePolicy == EvictionConfig.MaxSizePolicy.ENTRY_COUNT) {
@@ -260,6 +269,31 @@ public final class ConfigValidator {
                         + EvictionConfig.MaxSizePolicy.FREE_NATIVE_MEMORY_PERCENTAGE
                         + " are supported.");
             }
+        }
+    }
+
+    /**
+     * Checks {@link InMemoryFormat#NATIVE} data can be merged with the provided {@code mergePolicy}
+     */
+    private static void checkMergePolicySupportsNative(String name, String mergePolicy, InMemoryFormat inMemoryFormat) {
+        if (!getBuildInfo().isEnterprise() || inMemoryFormat != NATIVE) {
+            return;
+        }
+
+        try {
+            if (SplitBrainMergePolicy.class.isAssignableFrom(Class.forName(mergePolicy))) {
+                return;
+            }
+
+            String msg = "Split brain recovery is not supported for '%s',"
+                    + " because it's using merge policy `%s` to merge `%s` data."
+                    + " To fix this, use an implementation of `%s` with a cluster version `%s` or later";
+
+            throw new IllegalArgumentException(format(msg, name, mergePolicy, NATIVE,
+                    SplitBrainMergePolicy.class.getName(), V3_10));
+
+        } catch (ClassNotFoundException e) {
+            throw ExceptionUtil.rethrow(e);
         }
     }
 
