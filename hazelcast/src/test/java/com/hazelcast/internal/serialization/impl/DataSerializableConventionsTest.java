@@ -34,20 +34,19 @@ import org.junit.runner.RunWith;
 
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
-import java.lang.reflect.Modifier;
 import java.security.Permission;
 import java.security.PermissionCollection;
 import java.util.Collections;
 import java.util.EventObject;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
 import static com.hazelcast.test.ReflectionsHelper.REFLECTIONS;
+import static com.hazelcast.test.ReflectionsHelper.filterNonConcreteClasses;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -283,19 +282,6 @@ public class DataSerializableConventionsTest {
                 = REFLECTIONS.getSubTypesOf(IdentifiedDataSerializable.class);
         filterNonConcreteClasses(identifiedDataSerializables);
         return identifiedDataSerializables;
-    }
-
-    /**
-     * Removes abstract classes and interfaces from given Set in-place.
-     */
-    private void filterNonConcreteClasses(Set classes) {
-        Iterator<Class> iterator = classes.iterator();
-        while (iterator.hasNext()) {
-            Class<?> klass = iterator.next();
-            if (klass.isInterface() || Modifier.isAbstract(klass.getModifiers())) {
-                iterator.remove();
-            }
-        }
     }
 
     /**
