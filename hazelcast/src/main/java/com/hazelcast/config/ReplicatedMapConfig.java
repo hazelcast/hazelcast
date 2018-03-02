@@ -21,7 +21,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.impl.Versioned;
-import com.hazelcast.replicatedmap.merge.PutIfAbsentMapMergePolicy;
+import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -57,7 +57,7 @@ public class ReplicatedMapConfig implements IdentifiedDataSerializable, Versione
     /**
      * Default policy for merging
      */
-    public static final String DEFAULT_MERGE_POLICY = PutIfAbsentMapMergePolicy.class.getName();
+    public static final String DEFAULT_MERGE_POLICY = PutIfAbsentMergePolicy.class.getName();
 
     private String name;
     // concurrencyLevel is deprecated and it's not used anymore
