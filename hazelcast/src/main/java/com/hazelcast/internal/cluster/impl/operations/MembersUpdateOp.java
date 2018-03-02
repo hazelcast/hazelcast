@@ -26,7 +26,6 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.Clock;
 
@@ -37,7 +36,7 @@ import java.util.List;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.unmodifiableList;
 
-public class MembersUpdateOp extends AbstractClusterOperation implements Versioned {
+public class MembersUpdateOp extends AbstractClusterOperation {
     /** The master cluster clock time. */
     long masterTime = Clock.currentTimeMillis();
     /** The updated member info collection. */

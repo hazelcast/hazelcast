@@ -23,7 +23,6 @@ import com.hazelcast.internal.partition.impl.PartitionReplicaManager;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.ServiceNamespace;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
@@ -39,7 +38,7 @@ import static com.hazelcast.internal.partition.impl.PartitionDataSerializerHook.
 // should not be an urgent operation. required to be in order with backup operations on target node
 public final class PartitionBackupReplicaAntiEntropyOperation
         extends AbstractPartitionOperation
-        implements PartitionAwareOperation, AllowedDuringPassiveState, Versioned {
+        implements PartitionAwareOperation, AllowedDuringPassiveState {
 
     private Map<ServiceNamespace, Long> versions;
     private boolean returnResponse;

@@ -25,7 +25,6 @@ import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
 import com.hazelcast.internal.partition.impl.PartitionReplicaManager;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.ServiceNamespace;
@@ -41,7 +40,7 @@ import java.util.Collections;
  */
 public class PartitionReplicaSyncRetryResponse
         extends AbstractPartitionOperation
-        implements PartitionAwareOperation, BackupOperation, MigrationCycleOperation, Versioned {
+        implements PartitionAwareOperation, BackupOperation, MigrationCycleOperation {
 
     private Collection<ServiceNamespace> namespaces;
 
