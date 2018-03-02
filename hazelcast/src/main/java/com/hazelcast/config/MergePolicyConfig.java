@@ -34,7 +34,7 @@ public class MergePolicyConfig implements IdentifiedDataSerializable {
     /**
      * Default merge policy.
      */
-    public static final String DEFAULT_MERGE_POLICY = PutIfAbsentMergePolicy.class.getSimpleName();
+    public static final String DEFAULT_MERGE_POLICY = PutIfAbsentMergePolicy.class.getName();
 
     /**
      * Default batch size.
