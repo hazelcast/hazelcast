@@ -665,6 +665,7 @@ public class ClusterHeartbeatManager {
      */
     @Deprecated
     public void sendMasterConfirmation() {
+        // RU_COMPAT_3_9
         if (!clusterService.isJoined() || node.getState() == NodeState.SHUT_DOWN || clusterService.isMaster()
                 || clusterService.getClusterVersion().isGreaterThan(V3_9)) {
             return;
