@@ -404,6 +404,8 @@ public class TextCommandServiceImpl implements TextCommandService {
                 } catch (OutOfMemoryError e) {
                     OutOfMemoryErrorDispatcher.onOutOfMemory(e);
                     throw e;
+                } catch (Throwable t) {
+                    logger.severe("Error while processing Memcache or Rest command.", t);
                 }
             }
         }
