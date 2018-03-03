@@ -89,6 +89,7 @@ import static java.util.Arrays.asList;
 import static java.util.UUID.randomUUID;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -356,11 +357,18 @@ public abstract class HazelcastTestSupport {
      * @param durationSeconds sleep duration in seconds
      */
     public static void sleepAndStop(AtomicBoolean stop, long durationSeconds) {
+        final long startMillis = System.currentTimeMillis();
+
         for (int i = 0; i < durationSeconds; i++) {
             if (stop.get()) {
                 return;
             }
             sleepSeconds(1);
+
+            // if the system or JVM is really stressed we may oversleep to much and get a timeout
+            if (System.currentTimeMillis() - startMillis > SECONDS.toMillis(durationSeconds)) {
+                break;
+            }
         }
         stop.set(true);
     }
