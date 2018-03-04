@@ -587,8 +587,8 @@ public final class IOUtil {
      * @return the debug String
      */
     public static String toDebugString(String name, ByteBuffer byteBuffer) {
-        return name + "(pos:" + byteBuffer.position() + " cap:" + byteBuffer.capacity()
-                + " remain:" + byteBuffer.remaining() + " lim:" + byteBuffer.limit() + ")";
+        return name + "(pos:" + byteBuffer.position() + " lim:" + byteBuffer.limit()
+                + " remain:" + byteBuffer.remaining() + " cap:" + byteBuffer.capacity() + ")";
     }
 
     private static final class ClassLoaderAwareObjectInputStream extends ObjectInputStream {

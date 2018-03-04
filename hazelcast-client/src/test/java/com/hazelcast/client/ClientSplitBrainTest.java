@@ -33,7 +33,6 @@ import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
-import com.hazelcast.util.EmptyStatement;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -129,7 +128,7 @@ public class ClientSplitBrainTest extends ClientTestSupport {
                     try {
                         mapClient.put(1, 1);
                     } catch (Throwable t) {
-                        EmptyStatement.ignore(t);
+                        ignore(t);
                     }
                 }
             }

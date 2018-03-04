@@ -38,13 +38,16 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.scheduledexecutor.TaskUtils.named;
+import static java.lang.Integer.MAX_VALUE;
+import static java.lang.String.valueOf;
 import static java.util.Arrays.asList;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -62,8 +65,9 @@ public class ScheduledExecutorSplitBrainTest extends SplitBrainTestSupport {
 
     private final String name = randomString();
 
-    private final int INITIAL_COUNT = 100;
-    private final int FINAL_COUNT = INITIAL_COUNT + 50;
+    private final int INITIAL_COUNT = 300;
+    private final int AFTER_SPLIT_COMMON_COUNT = INITIAL_COUNT + 50;
+    private final int FINAL_COUNT = AFTER_SPLIT_COMMON_COUNT + 50;
 
     private MergeLifecycleListener mergeLifecycleListener;
 
@@ -78,7 +82,9 @@ public class ScheduledExecutorSplitBrainTest extends SplitBrainTestSupport {
     @Parameter
     public Class<? extends SplitBrainMergePolicy> mergePolicyClass;
 
-    private Map<String, IScheduledFuture<Double>> allScheduledFutures = new HashMap<String, IScheduledFuture<Double>>();
+    // Concurrent map just for the convenience of the putIfAbsent, no real concurrency needs here
+    private ConcurrentMap<String, IScheduledFuture<Double>> allScheduledFutures
+            = new ConcurrentHashMap<String, IScheduledFuture<Double>>();
 
     @Override
     protected Config config() {
@@ -95,12 +101,13 @@ public class ScheduledExecutorSplitBrainTest extends SplitBrainTestSupport {
 
     @Override
     protected void onBeforeSplitBrainCreated(HazelcastInstance[] instances) {
+        waitAllForSafeState(instances);
+
         IScheduledExecutorService executorService = instances[0].getScheduledExecutorService(name);
+
         for (int i = 0; i < INITIAL_COUNT; i++) {
             schedule(executorService, i);
         }
-
-        waitAllForSafeState(instances);
     }
 
     @Override
@@ -109,6 +116,13 @@ public class ScheduledExecutorSplitBrainTest extends SplitBrainTestSupport {
         for (HazelcastInstance instance : secondBrain) {
             instance.getLifecycleService().addLifecycleListener(mergeLifecycleListener);
         }
+
+        // Wait for a few seconds, to allow the event system to finish delivering partition-lost events.
+        // This minimizes the chances of a race condition between handling the event and scheduling a new task.
+        // The IScheduledExecutor allows for tasks to be aware of lost partitions (marking the tasks as stale), hence, if
+        // we schedule a task before handling the event, then the task becomes stale (due to the event).
+        // Similar too: https://github.com/hazelcast/hazelcast/issues/12424
+        sleepSeconds(5);
 
         if (mergePolicyClass == DiscardMergePolicy.class) {
             onAfterSplitDiscardPolicy(firstBrain, secondBrain);
@@ -135,14 +149,14 @@ public class ScheduledExecutorSplitBrainTest extends SplitBrainTestSupport {
 
     private void onAfterSplitDiscardPolicy(HazelcastInstance[] firstBrain, HazelcastInstance[] secondBrain) {
         IScheduledExecutorService scheduledExecutorService = secondBrain[0].getScheduledExecutorService(name);
-        schedule(scheduledExecutorService, Integer.MAX_VALUE);
+        schedule(scheduledExecutorService, MAX_VALUE);
     }
 
     private void onAfterMergeDiscardMergePolicy(HazelcastInstance[] instances) throws Exception {
         IScheduledExecutorService executorService = instances[0].getScheduledExecutorService(name);
 
         // remove the task that was scheduled after the split
-        IScheduledFuture afterSplitScheduledTask = allScheduledFutures.remove(String.valueOf(Integer.MAX_VALUE));
+        IScheduledFuture afterSplitScheduledTask = allScheduledFutures.remove(valueOf(MAX_VALUE));
 
         // assert everything else (ie. tasks created before split) is in order
         assertContents(executorService.<Double>getAllScheduledFutures());
@@ -154,17 +168,22 @@ public class ScheduledExecutorSplitBrainTest extends SplitBrainTestSupport {
             fail();
         } catch (StaleTaskException ste) {
             ignore(ste);
+        } catch (IllegalStateException ise) {
+            assertContains(ise.getMessage(), "was lost along with all backups.");
         }
     }
 
     private void onAfterSplitPutAbsentPolicy(HazelcastInstance[] firstBrain, HazelcastInstance[] secondBrain) {
         IScheduledExecutorService executorService1 = firstBrain[0].getScheduledExecutorService(name);
-        for (int i = INITIAL_COUNT; i < FINAL_COUNT; i++) {
+
+        for (int i = INITIAL_COUNT; i < AFTER_SPLIT_COMMON_COUNT; i++) {
             schedule(executorService1, i);
         }
 
+        // Add up-to AFTER_SPLIT_COMMON_COUNT which should be ignored after merge, due to same name, and up-to FINAL_COUNT
+        // more tasks on top of that, which should be merged, unique names.
         IScheduledExecutorService executorService2 = secondBrain[0].getScheduledExecutorService(name);
-        for (int i = INITIAL_COUNT; i < FINAL_COUNT + 10; i++) {
+        for (int i = INITIAL_COUNT; i < FINAL_COUNT; i++) {
             schedule(executorService2, i);
         }
     }
@@ -177,9 +196,10 @@ public class ScheduledExecutorSplitBrainTest extends SplitBrainTestSupport {
 
     private void schedule(IScheduledExecutorService scheduledExecutorService, int value) {
         // once a task runs, all calls to `.get()` should return 30
-        String name = String.valueOf(value);
-        allScheduledFutures.put(name, scheduledExecutorService.schedule(
-                named(name, new ScheduledExecutorServiceTestSupport.PlainCallableTask(5)), 0, SECONDS));
+        String name = valueOf(value);
+        IScheduledFuture future = scheduledExecutorService.schedule(
+                named(name, new ScheduledExecutorServiceTestSupport.PlainCallableTask(5)), 0, SECONDS);
+        allScheduledFutures.putIfAbsent(name, future);
     }
 
     private void assertContents(Map<Member, List<IScheduledFuture<Double>>> futuresPerMember) throws Exception {

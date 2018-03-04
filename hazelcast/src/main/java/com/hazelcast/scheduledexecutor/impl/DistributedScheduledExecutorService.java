@@ -21,14 +21,15 @@ import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.core.MembershipAdapter;
-import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.partition.PartitionLostEvent;
 import com.hazelcast.partition.PartitionLostListener;
 import com.hazelcast.scheduledexecutor.impl.operations.MergeOperation;
 import com.hazelcast.spi.ManagedService;
+import com.hazelcast.spi.MemberAttributeServiceEvent;
+import com.hazelcast.spi.MembershipAwareService;
+import com.hazelcast.spi.MembershipServiceEvent;
 import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
@@ -71,7 +72,8 @@ import static java.util.Collections.synchronizedSet;
  * Scheduled executor service, middle-man responsible for managing Scheduled Executor containers.
  */
 public class DistributedScheduledExecutorService
-        implements ManagedService, RemoteService, MigrationAwareService, QuorumAwareService, SplitBrainHandlerService {
+        implements ManagedService, RemoteService, MigrationAwareService, QuorumAwareService, SplitBrainHandlerService,
+                   MembershipAwareService {
 
     public static final String SERVICE_NAME = "hz:impl:scheduledExecutorService";
 
@@ -107,8 +109,6 @@ public class DistributedScheduledExecutorService
         }
     };
 
-    private String membershipListenerRegistration;
-
     public DistributedScheduledExecutorService() {
     }
 
@@ -143,12 +143,9 @@ public class DistributedScheduledExecutorService
 
         memberBin = new ScheduledExecutorMemberBin(nodeEngine);
 
+        // Keep using the public API due to the benefit of getting events on all partitions and not just local
         if (partitionLostRegistration == null) {
             registerPartitionListener();
-        }
-
-        if (membershipListenerRegistration == null) {
-            registerMembershipListener();
         }
 
         for (int partitionId = 0; partitionId < partitions.length; partitionId++) {
@@ -170,7 +167,6 @@ public class DistributedScheduledExecutorService
         lossListeners.clear();
 
         unRegisterPartitionListenerIfExists();
-        unRegisterMembershipListenerIfExists();
 
         for (int partitionId = 0; partitionId < partitions.length; partitionId++) {
             if (partitions[partitionId] != null) {
@@ -281,9 +277,9 @@ public class DistributedScheduledExecutorService
         this.partitionLostRegistration =
                 getNodeEngine().getPartitionService().addPartitionLostListener(new PartitionLostListener() {
                     @Override
-                    public void partitionLost(PartitionLostEvent event) {
+                    public void partitionLost(final PartitionLostEvent event) {
                         // use toArray before iteration since it is done under mutex
-                        ScheduledFutureProxy[] futures = lossListeners.toArray(new ScheduledFutureProxy[lossListeners.size()]);
+                        ScheduledFutureProxy[] futures = lossListeners.toArray(new ScheduledFutureProxy[0]);
                         for (ScheduledFutureProxy future : futures) {
                             future.notifyPartitionLost(event);
                         }
@@ -307,33 +303,23 @@ public class DistributedScheduledExecutorService
         this.partitionLostRegistration = null;
     }
 
-    private void registerMembershipListener() {
-        this.membershipListenerRegistration = getNodeEngine().getClusterService().addMembershipListener(new MembershipAdapter() {
-            @Override
-            public void memberRemoved(MembershipEvent event) {
-                // use toArray before iteration since it is done under mutex
-                ScheduledFutureProxy[] futures = lossListeners.toArray(new ScheduledFutureProxy[lossListeners.size()]);
-                for (ScheduledFutureProxy future : futures) {
-                    future.notifyMemberLost(event);
-                }
-            }
-        });
+    @Override
+    public void memberAdded(MembershipServiceEvent event) {
+       // ignore
     }
 
-    private void unRegisterMembershipListenerIfExists() {
-        if (this.membershipListenerRegistration == null) {
-            return;
+    @Override
+    public void memberRemoved(MembershipServiceEvent event) {
+        // use toArray before iteration since it is done under mutex
+        ScheduledFutureProxy[] futures = lossListeners.toArray(new ScheduledFutureProxy[0]);
+        for (ScheduledFutureProxy future : futures) {
+            future.notifyMemberLost(event);
         }
+    }
 
-        try {
-            getNodeEngine().getClusterService().removeMembershipListener(membershipListenerRegistration);
-        } catch (Exception ex) {
-            if (peel(ex, HazelcastInstanceNotActiveException.class, null) instanceof HazelcastInstanceNotActiveException) {
-                throw rethrow(ex);
-            }
-        }
-
-        this.membershipListenerRegistration = null;
+    @Override
+    public void memberAttributeChanged(MemberAttributeServiceEvent event) {
+        // ignore
     }
 
     @Override
@@ -410,7 +396,8 @@ public class DistributedScheduledExecutorService
 
                         mergingEntries = new ArrayList<MergingEntryHolder<String, ScheduledTaskDescriptor>>();
                         for (ScheduledTaskDescriptor descriptor : tasks) {
-                            MergingEntryHolder<String, ScheduledTaskDescriptor> mergingEntry = createMergeHolder(descriptor);
+                            MergingEntryHolder<String, ScheduledTaskDescriptor> mergingEntry
+                                    = createMergeHolder(nodeEngine.getSerializationService(), descriptor);
                             mergingEntries.add(mergingEntry);
                             size++;
 

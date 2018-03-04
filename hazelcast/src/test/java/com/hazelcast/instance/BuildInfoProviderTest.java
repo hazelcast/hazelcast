@@ -26,6 +26,7 @@ import org.junit.runner.RunWith;
 
 import java.util.regex.Pattern;
 
+import static com.hazelcast.instance.BuildInfoProvider.HAZELCAST_INTERNAL_OVERRIDE_ENTERPRISE;
 import static com.hazelcast.instance.BuildInfoProvider.HAZELCAST_INTERNAL_OVERRIDE_VERSION;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -124,5 +125,19 @@ public class BuildInfoProviderTest extends HazelcastTestSupport {
         BuildInfo buildInfo = BuildInfoProvider.getBuildInfo();
         assertEquals("99.99.99", buildInfo.getVersion());
         System.clearProperty(HAZELCAST_INTERNAL_OVERRIDE_VERSION);
+    }
+
+    @Test
+    public void testOverrideEdition() {
+        System.setProperty(HAZELCAST_INTERNAL_OVERRIDE_ENTERPRISE, "true");
+        BuildInfo buildInfo = BuildInfoProvider.getBuildInfo();
+        assertTrue(buildInfo.isEnterprise());
+        System.clearProperty(HAZELCAST_INTERNAL_OVERRIDE_ENTERPRISE);
+    }
+
+    @Test
+    public void testEdition_whenNotOverridden() {
+        BuildInfo buildInfo = BuildInfoProvider.getBuildInfo();
+        assertFalse(buildInfo.isEnterprise());
     }
 }

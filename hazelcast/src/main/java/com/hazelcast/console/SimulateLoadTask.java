@@ -23,6 +23,8 @@ import com.hazelcast.nio.serialization.BinaryInterface;
 import java.io.Serializable;
 import java.util.concurrent.Callable;
 
+import static java.lang.Thread.currentThread;
+
 /**
  * A simulated load test.
  */
@@ -53,6 +55,7 @@ public final class SimulateLoadTask implements Callable, Serializable, Hazelcast
         try {
             Thread.sleep(delay * ONE_THOUSAND);
         } catch (InterruptedException e) {
+            currentThread().interrupt();
             throw new RuntimeException(e);
         }
 

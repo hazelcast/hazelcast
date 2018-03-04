@@ -25,7 +25,9 @@ import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.ILock;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.Member;
+import com.hazelcast.quorum.impl.ProbabilisticQuorumFunction;
 import com.hazelcast.quorum.impl.QuorumServiceImpl;
+import com.hazelcast.quorum.impl.RecentlyActiveQuorumFunction;
 import com.hazelcast.spi.MemberAttributeServiceEvent;
 import com.hazelcast.spi.MembershipAwareService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -88,6 +90,56 @@ public class QuorumTest extends HazelcastTestSupport {
             public void run() {
                 assertTrue(quorum1.isPresent());
                 assertFalse(quorum2.isPresent());
+            }
+        });
+    }
+
+    @Test
+    public void testProbabilisticQuorumConsidersLocalMember() {
+        String quorumName = randomString();
+        QuorumFunction quorumFunction = new ProbabilisticQuorumFunction(1, 100, 1250, 20, 100, 20);
+        QuorumConfig quorumConfig = new QuorumConfig()
+                .setName(quorumName)
+                .setEnabled(true)
+                .setQuorumFunctionImplementation(quorumFunction);
+
+        Config config = new Config()
+                .addQuorumConfig(quorumConfig)
+                .setProperty(GroupProperty.HEARTBEAT_INTERVAL_SECONDS.getName(), "1");
+
+        HazelcastInstance instance = createHazelcastInstance(config);
+
+        final Quorum quorum = instance.getQuorumService().getQuorum(quorumName);
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertTrue(quorum.isPresent());
+            }
+        });
+    }
+
+    @Test
+    public void testRecentlyActiveQuorumConsidersLocalMember() {
+        final String quorumName = randomString();
+        QuorumFunction quorumFunction = new RecentlyActiveQuorumFunction(1, 10000);
+        QuorumConfig quorumConfig = new QuorumConfig()
+                .setName(quorumName)
+                .setEnabled(true)
+                .setQuorumFunctionImplementation(quorumFunction);
+
+        Config config = new Config()
+                .addQuorumConfig(quorumConfig)
+                .setProperty(GroupProperty.HEARTBEAT_INTERVAL_SECONDS.getName(), "1");
+
+        HazelcastInstance instance = createHazelcastInstance(config);
+
+        final Quorum quorum = instance.getQuorumService().getQuorum(quorumName);
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertTrue(quorum.isPresent());
             }
         });
     }

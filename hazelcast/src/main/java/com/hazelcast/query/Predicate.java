@@ -22,15 +22,28 @@ import java.io.Serializable;
 import java.util.Map;
 
 /**
- * Predicate instance must be thread-safe.
- * {@link #apply(java.util.Map.Entry)} is called by multiple threads concurrently.
+ * Represents a map entry predicate. Implementations of this interface are basic
+ * building blocks for performing queries on map entries.
+ * <p>
+ * Implementations <i>must</i> be thread-safe, since the {@link #apply}
+ * method may be called by multiple threads concurrently.
  *
- * @param <K>
- * @param <V>
+ * @param <K> the type of keys the predicate operates on.
+ * @param <V> the type of values the predicate operates on.
  */
 @BinaryInterface
 public interface Predicate<K, V> extends Serializable {
 
+    /**
+     * Applies this predicate to the given map entry.
+     * <p>
+     * Implementations <i>must</i> be thread-safe, since this method may be
+     * called by multiple threads concurrently.
+     *
+     * @param mapEntry the map entry to apply this predicate to.
+     * @return {@code true} if the given map entry matches this predicate,
+     * {@code false} otherwise.
+     */
     boolean apply(Map.Entry<K, V> mapEntry);
 
 }

@@ -22,6 +22,7 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.ICountDownLatch;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.Partition;
 import com.hazelcast.core.PartitionService;
@@ -88,6 +89,7 @@ import static java.util.Arrays.asList;
 import static java.util.UUID.randomUUID;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -355,11 +357,18 @@ public abstract class HazelcastTestSupport {
      * @param durationSeconds sleep duration in seconds
      */
     public static void sleepAndStop(AtomicBoolean stop, long durationSeconds) {
+        final long startMillis = System.currentTimeMillis();
+
         for (int i = 0; i < durationSeconds; i++) {
             if (stop.get()) {
                 return;
             }
             sleepSeconds(1);
+
+            // if the system or JVM is really stressed we may oversleep to much and get a timeout
+            if (System.currentTimeMillis() - startMillis > SECONDS.toMillis(durationSeconds)) {
+                break;
+            }
         }
         stop.set(true);
     }
@@ -1026,15 +1035,27 @@ public abstract class HazelcastTestSupport {
         assertOpenEventually(latch, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
     }
 
+    public static void assertOpenEventually(ICountDownLatch latch) {
+        assertOpenEventually(latch, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
+    }
+
     public static void assertOpenEventually(String message, CountDownLatch latch) {
-        assertOpenEventually(message, latch, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
+        assertOpenEventually(message, new CountdownLatchAdapter(latch), ASSERT_TRUE_EVENTUALLY_TIMEOUT);
     }
 
     public static void assertOpenEventually(CountDownLatch latch, long timeoutSeconds) {
-        assertOpenEventually(null, latch, timeoutSeconds);
+        assertOpenEventually(null, new CountdownLatchAdapter(latch), timeoutSeconds);
+    }
+
+    public static void assertOpenEventually(ICountDownLatch latch, long timeoutSeconds) {
+        assertOpenEventually(null, new ICountdownLatchAdapter(latch), timeoutSeconds);
     }
 
     public static void assertOpenEventually(String message, CountDownLatch latch, long timeoutSeconds) {
+        assertOpenEventually(message, new CountdownLatchAdapter(latch), timeoutSeconds);
+    }
+
+    public static void assertOpenEventually(String message, Latch latch, long timeoutSeconds) {
         try {
             boolean completed = latch.await(timeoutSeconds, TimeUnit.SECONDS);
             if (message == null) {
@@ -1327,6 +1348,54 @@ public abstract class HazelcastTestSupport {
         @Override
         public Object call() throws Exception {
             return null;
+        }
+    }
+
+    private interface Latch {
+        boolean await(long timeout, TimeUnit unit)
+                throws InterruptedException;
+        long getCount();
+    }
+
+    private static class ICountdownLatchAdapter
+            implements Latch {
+
+        private final ICountDownLatch latch;
+
+        ICountdownLatchAdapter(ICountDownLatch latch) {
+            this.latch = latch;
+        }
+
+        @Override
+        public boolean await(long timeout, TimeUnit unit)
+                throws InterruptedException {
+            return latch.await(timeout, unit);
+        }
+
+        @Override
+        public long getCount() {
+            return latch.getCount();
+        }
+    }
+
+    private static class CountdownLatchAdapter
+            implements Latch {
+
+        private final CountDownLatch latch;
+
+        CountdownLatchAdapter(CountDownLatch latch) {
+            this.latch = latch;
+        }
+
+        @Override
+        public boolean await(long timeout, TimeUnit unit)
+                throws InterruptedException {
+            return latch.await(timeout, unit);
+        }
+
+        @Override
+        public long getCount() {
+            return latch.getCount();
         }
     }
 

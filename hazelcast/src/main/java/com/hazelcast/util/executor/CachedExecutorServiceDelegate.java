@@ -18,7 +18,6 @@ package com.hazelcast.util.executor;
 
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.util.EmptyStatement;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.Collection;
@@ -40,6 +39,7 @@ import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import static com.hazelcast.util.EmptyStatement.ignore;
 import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
 
 public final class CachedExecutorServiceDelegate implements ExecutorService, ManagedExecutorService {
@@ -230,7 +230,7 @@ public final class CachedExecutorServiceDelegate implements ExecutorService, Man
                 }
                 while (r != null);
             } catch (InterruptedException ignored) {
-                EmptyStatement.ignore(ignored);
+                ignore(ignored);
             } finally {
                 exit();
             }

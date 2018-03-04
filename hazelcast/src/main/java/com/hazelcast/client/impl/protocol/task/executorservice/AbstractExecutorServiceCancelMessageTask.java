@@ -29,6 +29,8 @@ import java.net.UnknownHostException;
 import java.security.Permission;
 import java.util.concurrent.ExecutionException;
 
+import static java.lang.Thread.currentThread;
+
 public abstract class AbstractExecutorServiceCancelMessageTask<P> extends AbstractCallableMessageTask<P> {
 
     private static final int CANCEL_TRY_COUNT = 50;
@@ -47,6 +49,7 @@ public abstract class AbstractExecutorServiceCancelMessageTask<P> extends Abstra
         try {
             result = (Boolean) future.get();
         } catch (InterruptedException e) {
+            currentThread().interrupt();
             logException(e);
         } catch (ExecutionException e) {
             logException(e);

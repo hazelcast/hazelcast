@@ -41,7 +41,6 @@ import com.hazelcast.core.MultiMap;
 import com.hazelcast.core.Partition;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.util.Clock;
-
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.BufferedReader;
@@ -73,6 +72,7 @@ import static com.hazelcast.util.StringUtil.equalsIgnoreCase;
 import static com.hazelcast.util.StringUtil.lowerCaseInternal;
 import static com.hazelcast.util.StringUtil.trim;
 import static java.lang.String.format;
+import static java.lang.Thread.currentThread;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
@@ -459,6 +459,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
             try {
                 f.get();
             } catch (InterruptedException e) {
+                currentThread().interrupt();
                 e.printStackTrace();
             } catch (ExecutionException e) {
                 e.printStackTrace();
@@ -675,6 +676,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
         try {
             println(getMap().putAsync(args[1], args[2]).get());
         } catch (InterruptedException e) {
+            currentThread().interrupt();
             e.printStackTrace();
         } catch (ExecutionException e) {
             e.printStackTrace();
@@ -697,6 +699,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
         try {
             println(getMap().getAsync(args[1]).get());
         } catch (InterruptedException e) {
+            currentThread().interrupt();
             e.printStackTrace();
         } catch (ExecutionException e) {
             e.printStackTrace();
@@ -794,6 +797,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
             try {
                 locked = getMap().tryLock(key, time, TimeUnit.SECONDS);
             } catch (InterruptedException e) {
+                currentThread().interrupt();
                 locked = false;
             }
         }
@@ -917,6 +921,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
             try {
                 locked = getMultiMap().tryLock(key, time, TimeUnit.SECONDS);
             } catch (InterruptedException e) {
+                currentThread().interrupt();
                 locked = false;
             }
         }
@@ -961,6 +966,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
                 try {
                     println(lock.tryLock(time, TimeUnit.SECONDS));
                 } catch (InterruptedException e) {
+                    currentThread().interrupt();
                     e.printStackTrace();
                 }
             }
@@ -1171,6 +1177,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
             boolean offered = getQueue().offer(args[1], timeout, TimeUnit.SECONDS);
             println(offered);
         } catch (InterruptedException e) {
+            currentThread().interrupt();
             e.printStackTrace();
         }
     }
@@ -1179,6 +1186,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
         try {
             println(getQueue().take());
         } catch (InterruptedException e) {
+            currentThread().interrupt();
             e.printStackTrace();
         }
     }
@@ -1191,6 +1199,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
         try {
             println(getQueue().poll(timeout, TimeUnit.SECONDS));
         } catch (InterruptedException e) {
+            currentThread().interrupt();
             e.printStackTrace();
         }
     }
@@ -1290,6 +1299,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
             }
             println("Result: " + future.get());
         } catch (InterruptedException e) {
+            currentThread().interrupt();
             e.printStackTrace();
         } catch (ExecutionException e) {
             e.printStackTrace();
@@ -1307,6 +1317,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
                 println(f.get());
             }
         } catch (InterruptedException e) {
+            currentThread().interrupt();
             e.printStackTrace();
         } catch (ExecutionException e) {
             e.printStackTrace();

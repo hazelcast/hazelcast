@@ -47,26 +47,31 @@ import static java.util.logging.Level.FINE;
 import static java.util.logging.Level.INFO;
 
 /**
- * A non blocking {@link EventLoopGroup} implementation that makes use of {@link java.nio.channels.Selector} to have a
- * limited set of io threads, handle an arbitrary number of connections.
+ * A non blocking {@link EventLoopGroup} implementation that makes use of
+ * {@link java.nio.channels.Selector} to have a limited set of io threads, handle
+ * an arbitrary number of connections.
  *
  * Each {@link NioChannel} has 2 parts:
  * <ol>
- * <li>{@link NioInboundPipeline}: triggered by the NioThread when data is available in the socket. The NioInboundPipeline
- * takes care of reading data from the socket and calling the appropriate
+ * <li>{@link NioInboundPipeline}: triggered by the NioThread when data is available
+ * in the socket. The NioInboundPipeline takes care of reading data from the socket
+ * and calling the appropriate
  * {@link com.hazelcast.internal.networking.ChannelInboundHandler}</li>
- * <li>{@link NioOutboundPipeline}: triggered by the NioThread when either space is available in the socket for writing,
- * or when there is something that needs to be written e.g. a Packet. The NioOutboundPipeline takes care of calling the
- * appropriate {@link com.hazelcast.internal.networking.ChannelOutboundHandler} to convert the
- * {@link com.hazelcast.internal.networking.OutboundFrame} to bytes in in the ByteBuffer and writing it to the socket.
+ * <li>{@link NioOutboundPipeline}: triggered by the NioThread when either space
+ * is available in the socket for writing, or when there is something that needs to
+ * be written e.g. a Packet. The NioOutboundPipeline takes care of calling the
+ * appropriate {@link com.hazelcast.internal.networking.ChannelOutboundHandler}
+ * to convert the {@link com.hazelcast.internal.networking.OutboundFrame} to bytes
+ * in in the ByteBuffer and writing it to the socket.
  * </li>
  * </ol>
  *
- * By default the {@link NioThread} blocks on the Selector, but it can be put in a 'selectNow' mode that makes it
- * spinning on the selector. This is an experimental feature and will cause the io threads to run hot. For this reason, when
- * this feature is enabled, the number of io threads should be reduced (preferably 1).
+ * By default the {@link NioThread} blocks on the Selector, but it can be put in a
+ * 'selectNow' mode that makes it spinning on the selector. This is an experimental
+ * feature and will cause the io threads to run hot. For this reason, when this feature
+ * is enabled, the number of io threads should be reduced (preferably 1).
  */
-public class NioEventLoopGroup implements EventLoopGroup {
+public final class NioEventLoopGroup implements EventLoopGroup {
 
     private final AtomicInteger nextInputThreadIndex = new AtomicInteger();
     private final AtomicInteger nextOutputThreadIndex = new AtomicInteger();
@@ -208,12 +213,11 @@ public class NioEventLoopGroup implements EventLoopGroup {
 
         channels.add(nioChannel);
 
-        nioChannel.setInboundPipeline(inboundPipeline);
-        nioChannel.setOutboundPipeline(outboundPipeline);
+        nioChannel.init(inboundPipeline, outboundPipeline);
 
         ioBalancer.channelAdded(inboundPipeline, outboundPipeline);
 
-        String metricsId = channel.getLocalSocketAddress() + "->" + channel.getRemoteSocketAddress();
+        String metricsId = channel.localSocketAddress() + "->" + channel.remoteSocketAddress();
         metricsRegistry.scanAndRegister(outboundPipeline, "tcp.connection[" + metricsId + "].out");
         metricsRegistry.scanAndRegister(inboundPipeline, "tcp.connection[" + metricsId + "].in");
 
@@ -233,6 +237,7 @@ public class NioEventLoopGroup implements EventLoopGroup {
         return new NioOutboundPipeline(
                 channel,
                 threads[index],
+                errorHandler,
                 loggingService.getLogger(NioOutboundPipeline.class),
                 ioBalancer,
                 channelInitializer);
@@ -248,6 +253,7 @@ public class NioEventLoopGroup implements EventLoopGroup {
         return new NioInboundPipeline(
                 channel,
                 threads[index],
+                errorHandler,
                 loggingService.getLogger(NioInboundPipeline.class),
                 ioBalancer,
                 channelInitializer);
@@ -260,10 +266,10 @@ public class NioEventLoopGroup implements EventLoopGroup {
 
             channels.remove(channel);
 
-            ioBalancer.channelRemoved(nioChannel.getInboundPipeline(), nioChannel.getOutboundPipeline());
+            ioBalancer.channelRemoved(nioChannel.inboundPipeline, nioChannel.outboundPipeline);
 
-            metricsRegistry.deregister(nioChannel.getInboundPipeline());
-            metricsRegistry.deregister(nioChannel.getOutboundPipeline());
+            metricsRegistry.deregister(nioChannel.inboundPipeline);
+            metricsRegistry.deregister(nioChannel.outboundPipeline);
         }
     }
 
@@ -271,24 +277,24 @@ public class NioEventLoopGroup implements EventLoopGroup {
         @Override
         public void run() {
             for (NioChannel channel : channels) {
-                final NioInboundPipeline inboundPipeline = channel.getInboundPipeline();
-                NioThread inputThread = inboundPipeline.getOwner();
+                final NioInboundPipeline inboundPipeline = channel.inboundPipeline;
+                NioThread inputThread = inboundPipeline.owner();
                 if (inputThread != null) {
                     inputThread.addTaskAndWakeup(new Runnable() {
                         @Override
                         public void run() {
-                            inboundPipeline.publish();
+                            inboundPipeline.publishMetrics();
                         }
                     });
                 }
 
-                final NioOutboundPipeline outboundPipeline = channel.getOutboundPipeline();
-                NioThread outputThread = outboundPipeline.getOwner();
+                final NioOutboundPipeline outboundPipeline = channel.outboundPipeline;
+                NioThread outputThread = outboundPipeline.owner();
                 if (outputThread != null) {
                     outputThread.addTaskAndWakeup(new Runnable() {
                         @Override
                         public void run() {
-                            outboundPipeline.publish();
+                            outboundPipeline.publishMetrics();
                         }
                     });
                 }

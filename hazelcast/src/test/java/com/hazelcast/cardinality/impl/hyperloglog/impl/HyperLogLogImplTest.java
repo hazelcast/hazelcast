@@ -23,6 +23,7 @@ import com.hazelcast.util.HashUtil;
 import com.hazelcast.util.collection.IntHashSet;
 import org.HdrHistogram.Histogram;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -95,6 +96,7 @@ public class HyperLogLogImplTest {
      * </ul>
      */
     @Test
+    @Ignore("https://github.com/hazelcast/hazelcast/issues/11433")
     public void testEstimateErrorRateForBigCardinalities() {
         double stdError = (1.04f / Math.sqrt(1 << precision)) * 100;
         double maxError = Math.ceil(stdError + errorRange);

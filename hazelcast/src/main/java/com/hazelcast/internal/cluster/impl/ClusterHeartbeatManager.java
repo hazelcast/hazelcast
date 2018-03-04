@@ -43,7 +43,6 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.Clock;
-import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ICMPHelper;
 
 import java.io.IOException;
@@ -55,6 +54,7 @@ import java.util.logging.Level;
 
 import static com.hazelcast.internal.cluster.Versions.V3_9;
 import static com.hazelcast.internal.cluster.impl.ClusterServiceImpl.EXECUTOR_NAME;
+import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.StringUtil.timeToString;
 import static java.lang.String.format;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -753,7 +753,7 @@ public class ClusterHeartbeatManager {
                 logger.warning(reason);
                 clusterService.suspectMember(member, reason, true);
             } catch (Throwable ignored) {
-                EmptyStatement.ignore(ignored);
+                ignore(ignored);
             }
         }
 
@@ -767,7 +767,7 @@ public class ClusterHeartbeatManager {
                 }
             } catch (ConnectException ignored) {
                 // no route to host, means we cannot connect anymore
-                EmptyStatement.ignore(ignored);
+                ignore(ignored);
             }
             return false;
         }
@@ -804,9 +804,8 @@ public class ClusterHeartbeatManager {
                     clusterService.suspectMember(member, reason, true);
                 }
             } catch (Throwable ignored) {
-                EmptyStatement.ignore(ignored);
+                ignore(ignored);
             }
         }
     }
-
 }

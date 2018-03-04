@@ -36,7 +36,6 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.EmptyStatement;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -506,7 +505,7 @@ public class CacheConfigTest extends HazelcastTestSupport {
             cacheManager.createCache(cacheName, (Configuration<Object, Object>) null);
             fail("NullPointerException expected");
         } catch (NullPointerException expected) {
-            EmptyStatement.ignore(expected);
+            ignore(expected);
         }
     }
 

@@ -728,8 +728,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         checkIfLoaded();
         long now = getNow();
 
+        serializationService.getManagedContext().initialize(mergingEntry);
         serializationService.getManagedContext().initialize(mergePolicy);
-        mergingEntry.setSerializationService(serializationService);
 
         Data key = mergingEntry.getKey();
         Record record = getRecordOrNull(key, now, false);
@@ -748,8 +748,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                     key, null, record.getValue());
         } else {
             oldValue = record.getValue();
-            MergingEntryHolder<Data, Object> existingEntry = createMergeHolder(record);
-            existingEntry.setSerializationService(serializationService);
+            MergingEntryHolder<Data, Object> existingEntry = createMergeHolder(serializationService, record);
             newValue = mergePolicy.merge(mergingEntry, existingEntry);
             // existing entry will be removed
             if (newValue == null) {

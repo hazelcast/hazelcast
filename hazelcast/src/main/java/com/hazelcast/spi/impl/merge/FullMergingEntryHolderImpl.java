@@ -32,6 +32,7 @@ import com.hazelcast.spi.merge.MergingValueHolder;
 import com.hazelcast.spi.merge.TtlHolder;
 import com.hazelcast.spi.merge.VersionHolder;
 import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.spi.serialization.SerializationServiceAware;
 
 import java.io.IOException;
 
@@ -45,7 +46,7 @@ import java.io.IOException;
 @SuppressWarnings("checkstyle:methodcount")
 public class FullMergingEntryHolderImpl<K, V> implements MergingEntryHolder<K, V>, CostHolder, CreationTimeHolder,
         ExpirationTimeHolder, HitsHolder, LastAccessTimeHolder, LastStoredTimeHolder, LastUpdateTimeHolder, VersionHolder,
-        TtlHolder, IdentifiedDataSerializable {
+        TtlHolder, SerializationServiceAware, IdentifiedDataSerializable {
 
     private V value;
     private K key;
@@ -61,7 +62,11 @@ public class FullMergingEntryHolderImpl<K, V> implements MergingEntryHolder<K, V
 
     private transient SerializationService serializationService;
 
-    FullMergingEntryHolderImpl() {
+    public FullMergingEntryHolderImpl() {
+    }
+
+    public FullMergingEntryHolderImpl(SerializationService serializationService) {
+        this.serializationService = serializationService;
     }
 
     @Override
@@ -72,11 +77,6 @@ public class FullMergingEntryHolderImpl<K, V> implements MergingEntryHolder<K, V
     @Override
     public Object getDeserializedValue() {
         return serializationService.toObject(value);
-    }
-
-    @Override
-    public void setSerializationService(SerializationService serializationService) {
-        this.serializationService = serializationService;
     }
 
     public FullMergingEntryHolderImpl<K, V> setValue(V value) {
@@ -190,6 +190,11 @@ public class FullMergingEntryHolderImpl<K, V> implements MergingEntryHolder<K, V
     }
 
     @Override
+    public void setSerializationService(SerializationService serializationService) {
+        this.serializationService = serializationService;
+    }
+
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         IOUtil.writeObject(out, key);
         IOUtil.writeObject(out, value);
@@ -291,7 +296,7 @@ public class FullMergingEntryHolderImpl<K, V> implements MergingEntryHolder<K, V
 
     @Override
     public String toString() {
-        return "MergeDataHolder{"
+        return "MergingEntryHolder{"
                 + "key=" + key
                 + ", value=" + value
                 + ", cost=" + cost

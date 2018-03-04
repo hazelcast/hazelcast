@@ -21,13 +21,14 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage.SplitBrainMergeCheckResult;
 import com.hazelcast.nio.Address;
 import com.hazelcast.util.Clock;
-import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.RandomPicker;
 
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static java.lang.Thread.currentThread;
 
 public class MulticastJoiner extends AbstractJoiner {
 
@@ -96,7 +97,7 @@ public class MulticastJoiner extends AbstractJoiner {
             try {
                 Thread.sleep(JOIN_RETRY_INTERVAL);
             } catch (InterruptedException e) {
-                EmptyStatement.ignore(e);
+                currentThread().interrupt();
             }
 
             if (isBlacklisted(master)) {
@@ -137,6 +138,7 @@ public class MulticastJoiner extends AbstractJoiner {
                 }
             }
         } catch (InterruptedException e) {
+            currentThread().interrupt();
             logger.fine(e);
         } catch (Exception e) {
             logger.warning(e);

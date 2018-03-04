@@ -21,7 +21,6 @@ import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.util.EmptyStatement;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.concurrent.CancellationException;
@@ -31,6 +30,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
+import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.util.Preconditions.isNotNull;
 import static java.util.concurrent.atomic.AtomicReferenceFieldUpdater.newUpdater;
@@ -192,11 +192,10 @@ public abstract class AbstractCompletableFuture<V> implements ICompletableFuture
             } catch (TimeoutException ignored) {
                 // A timeout here can only be a spurious artifact.
                 // It should never happen and even if it does, we must retry.
-                EmptyStatement.ignore(ignored);
+                ignore(ignored);
             }
         }
     }
-
 
     /**
      * PLEASE NOTE: It's legal to override this method, but please bear in mind that you should call super.get() or

@@ -17,38 +17,38 @@
 package com.hazelcast.internal.networking.nio;
 
 /**
- * A nio event handler that supports migration between {@link NioThread} instances.
+ * A NioPipeline that supports migration between {@link NioThread} instances.
  * This API is called by the {@link com.hazelcast.internal.networking.nio.iobalancer.IOBalancer}.
  */
-public interface MigratableHandler {
+public interface MigratablePipeline {
 
     /**
-     * Requests the MigratableHandler to move to the new NioThread. This call will not wait for the
+     * Requests the MigratablePipeline to move to the new NioThread. This call will not wait for the
      * migration to complete.
      *
      * This method can be called by any thread, and will probably be called by the
      * {@link com.hazelcast.internal.networking.nio.iobalancer.IOBalancer}.
      *
-     * Call is ignored when handler is moving to the same NioThread.
+     * Call is ignored when pipeline is moving to the same NioThread.
      *
-     * @param newOwner the NioThread that is going to own this MigratableHandler
+     * @param newOwner the NioThread that is going to own this MigratablePipeline
      */
     void requestMigration(NioThread newOwner);
 
     /**
-     * Get NioThread currently owning this handler. Handler owner is a thread running this handler.
+     * Get NioThread currently owning this pipeline. Pipeline owner is a thread running this pipeline.
      * {@link com.hazelcast.internal.networking.nio.iobalancer.IOBalancer IOBalancer} can decide to migrate
-     * a handler to another owner.
+     * a pipeline to another owner.
      *
      * @return current owner
      */
-    NioThread getOwner();
+    NioThread owner();
 
     /**
-     * Get 'load' recorded by the current handler. It can be used to calculate whether
-     * this handler should be migrated to a different {@link NioThread}
+     * Get 'load' recorded by the current pipeline. It can be used to calculate whether
+     * this pipeline should be migrated to a different {@link NioThread}
      *
-     * @return total load recorded by this handler
+     * @return total load recorded by this pipeline
      */
-    long getLoad();
+    long load();
 }

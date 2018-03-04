@@ -18,10 +18,12 @@ package com.hazelcast.quorum.impl;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.IcmpFailureDetectorConfig;
-import com.hazelcast.core.Cluster;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.Member;
+import com.hazelcast.core.MemberAttributeEvent;
+import com.hazelcast.core.MembershipEvent;
+import com.hazelcast.core.MembershipListener;
 import com.hazelcast.internal.cluster.fd.PingFailureDetector;
 import com.hazelcast.quorum.PingAware;
 import com.hazelcast.spi.properties.GroupProperty;
@@ -31,10 +33,9 @@ import com.hazelcast.spi.properties.HazelcastProperties;
  * Base class for quorum functions which may use ICMP failure detector information to determine
  * presence of quorum.
  */
-public class AbstractPingAwareQuorumFunction implements PingAware, HazelcastInstanceAware {
-    protected boolean pingFDEnabled;
-    protected PingFailureDetector<Member> pingFailureDetector;
-    protected Cluster cluster;
+public abstract class AbstractPingAwareQuorumFunction implements PingAware, HazelcastInstanceAware, MembershipListener {
+    private boolean pingFDEnabled;
+    private PingFailureDetector<Member> pingFailureDetector;
 
     @Override
     public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
@@ -47,6 +48,7 @@ public class AbstractPingAwareQuorumFunction implements PingAware, HazelcastInst
         boolean icmpParallelMode = icmpEnabled && (icmpFailureDetectorConfig == null
                 ? hazelcastProperties.getBoolean(GroupProperty.ICMP_PARALLEL_MODE)
                 : icmpFailureDetectorConfig.isParallelMode());
+
         // only take into account ping information if ICMP parallel mode is enabled
         if (!icmpEnabled || !icmpParallelMode) {
             return;
@@ -57,7 +59,6 @@ public class AbstractPingAwareQuorumFunction implements PingAware, HazelcastInst
                 : icmpFailureDetectorConfig.getMaxAttempts();
         this.pingFailureDetector = new PingFailureDetector<Member>(icmpMaxAttempts);
         this.pingFDEnabled = true;
-        this.cluster = hazelcastInstance.getCluster();
     }
 
     @Override
@@ -76,13 +77,31 @@ public class AbstractPingAwareQuorumFunction implements PingAware, HazelcastInst
         pingFailureDetector.heartbeat(member);
     }
 
+    @Override
+    public void memberAdded(MembershipEvent membershipEvent) {
+        // ensure ping FD has heard at least once from each member
+        if (pingFDEnabled) {
+            pingFailureDetector.heartbeat(membershipEvent.getMember());
+        }
+    }
+
+    @Override
+    public void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent) {
+        // quorum not affected by member attribute change
+    }
+
+    @Override
+    public void memberRemoved(MembershipEvent membershipEvent) {
+        if (pingFDEnabled) {
+            pingFailureDetector.remove(membershipEvent.getMember());
+        }
+    }
+
     protected boolean isAlivePerIcmp(Member member) {
-        if (!pingFDEnabled) {
+        if (!pingFDEnabled || member.localMember()) {
             return true;
         }
-        if (cluster.getLocalMember().equals(member)) {
-            return true;
-        }
+
         return pingFailureDetector.isAlive(member);
     }
 }

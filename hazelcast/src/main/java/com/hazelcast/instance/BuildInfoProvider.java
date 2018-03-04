@@ -33,6 +33,7 @@ import static com.hazelcast.util.EmptyStatement.ignore;
 public final class BuildInfoProvider {
 
     public static final String HAZELCAST_INTERNAL_OVERRIDE_VERSION = "hazelcast.internal.override.version";
+    public static final String HAZELCAST_INTERNAL_OVERRIDE_ENTERPRISE = "hazelcast.internal.override.enterprise";
     private static final String HAZELCAST_INTERNAL_OVERRIDE_BUILD = "hazelcast.build";
 
     private static final ILogger LOGGER;
@@ -144,14 +145,16 @@ public final class BuildInfoProvider {
     }
 
     private static final class Overrides {
-        private static final Overrides DISABLED = new Overrides(null, -1);
+        private static final Overrides DISABLED = new Overrides(null, -1, null);
 
         private String version;
         private int buildNo;
+        private Boolean enterprise;
 
-        private Overrides(String version, int build) {
+        private Overrides(String version, int build, Boolean enterprise) {
             this.version = version;
             this.buildNo = build;
+            this.enterprise = enterprise;
         }
 
         private BuildInfo apply(String version, String build, String revision, int buildNumber,
@@ -164,20 +167,30 @@ public final class BuildInfoProvider {
                 LOGGER.info("Overriding hazelcast version with system property value " + this.version);
                 version = this.version;
             }
+            if (this.enterprise != null) {
+                LOGGER.info("Overriding hazelcast enterprise flag with system property value " + this.enterprise);
+                enterprise = this.enterprise;
+            }
             return new BuildInfo(version, build, revision, buildNumber, enterprise, serialVersion, upstreamBuildInfo);
 
         }
 
         private static boolean isEnabled() {
             return System.getProperty(HAZELCAST_INTERNAL_OVERRIDE_BUILD) != null
-                    || System.getProperty(HAZELCAST_INTERNAL_OVERRIDE_VERSION) != null;
+                    || System.getProperty(HAZELCAST_INTERNAL_OVERRIDE_VERSION) != null
+                    || System.getProperty(HAZELCAST_INTERNAL_OVERRIDE_ENTERPRISE) != null;
         }
 
         private static Overrides fromProperties() {
             String version = System.getProperty(HAZELCAST_INTERNAL_OVERRIDE_VERSION);
             int build = Integer.getInteger(HAZELCAST_INTERNAL_OVERRIDE_BUILD, -1);
+            Boolean enterprise = null;
+            String enterpriseOverride = System.getProperty(HAZELCAST_INTERNAL_OVERRIDE_ENTERPRISE);
+            if (enterpriseOverride != null) {
+                enterprise = Boolean.valueOf(enterpriseOverride);
+            }
 
-            return new Overrides(version, build);
+            return new Overrides(version, build, enterprise);
         }
     }
 

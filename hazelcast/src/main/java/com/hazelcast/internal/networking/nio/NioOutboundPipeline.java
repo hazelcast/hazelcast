@@ -17,6 +17,7 @@
 package com.hazelcast.internal.networking.nio;
 
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.networking.ChannelErrorHandler;
 import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.networking.ChannelOutboundHandler;
 import com.hazelcast.internal.networking.InitResult;
@@ -75,22 +76,23 @@ public final class NioOutboundPipeline extends NioPipeline implements Runnable {
     private long bytesReadLastPublish;
     private long normalFramesReadLastPublish;
     private long priorityFramesReadLastPublish;
-    private long eventsLastPublish;
+    private long processCountLastPublish;
 
     public NioOutboundPipeline(NioChannel channel,
-                               NioThread ioThread,
-                               ILogger logger,
+                               NioThread owner,
+        ChannelErrorHandler errorHandler,
+        ILogger logger,
                                IOBalancer balancer,
                                ChannelInitializer initializer) {
-        super(channel, ioThread, OP_WRITE, logger, balancer);
+        super(channel, owner, errorHandler, OP_WRITE, logger, balancer);
         this.initializer = initializer;
     }
 
     @Override
-    public long getLoad() {
+    public long load() {
         switch (LOAD_TYPE) {
             case LOAD_BALANCING_HANDLE:
-                return handleCount.get();
+                return processCount.get();
             case LOAD_BALANCING_BYTE:
                 return bytesWritten.get() + priorityFramesWritten.get();
             case LOAD_BALANCING_FRAME:
@@ -139,7 +141,7 @@ public final class NioOutboundPipeline extends NioPipeline implements Runnable {
     }
 
     public void flush() {
-        ioThread.addTaskAndWakeup(this);
+        owner.addTaskAndWakeup(this);
     }
 
     public void write(OutboundFrame frame) {
@@ -196,8 +198,8 @@ public final class NioOutboundPipeline extends NioPipeline implements Runnable {
         }
 
         // We managed to schedule this ChannelOutboundHandler. This means we need to add a task to
-        // the ioThread and give it a kick so that it processes our frames.
-        ioThread.addTaskAndWakeup(this);
+        // the owner and give it a kick so that it processes our frames.
+        owner.addTaskAndWakeup(this);
     }
 
     /**
@@ -242,16 +244,16 @@ public final class NioOutboundPipeline extends NioPipeline implements Runnable {
             return;
         }
 
-        // We managed to reschedule. So lets add ourselves to the ioThread so we are processed again.
+        // We managed to reschedule. So lets add ourselves to the owner so we are processed again.
         // We don't need to call wakeup because the current thread is the IO-thread and the selectionQueue will be processed
         // till it is empty. So it will also pick up tasks that are added while it is processing the selectionQueue.
-        ioThread.addTask(this);
+        owner.addTask(this);
     }
 
     @Override
     @SuppressWarnings("unchecked")
-    public void handle() throws Exception {
-        handleCount.inc();
+    public void process() throws Exception {
+        processCount.inc();
         lastWriteTime = currentTimeMillis();
 
         if (outboundHandler == null && !init()) {
@@ -280,7 +282,7 @@ public final class NioOutboundPipeline extends NioPipeline implements Runnable {
     private boolean init() throws IOException {
         InitResult<ChannelOutboundHandler> init = initializer.initOutbound(channel);
         if (init == null) {
-            // we can't initialize the outbound-handler yet since insufficient data is available.
+            // we can't initialize the outbound-pipeline yet since insufficient data is available.
             unschedule();
             return false;
         }
@@ -344,7 +346,7 @@ public final class NioOutboundPipeline extends NioPipeline implements Runnable {
     @Override
     public void run() {
         try {
-            handle();
+            process();
         } catch (Throwable t) {
             onFailure(t);
         }
@@ -394,7 +396,7 @@ public final class NioOutboundPipeline extends NioPipeline implements Runnable {
      * Triggers the migration when executed by setting the NioOutboundPipeline.newOwner field. When the handle method completes,
      * it checks if this field if set, if so, the migration starts.
      *
-     * If the current ioThread is the same as 'theNewOwner' then the call is ignored.
+     * If the current owner is the same as 'theNewOwner' then the call is ignored.
      */
     private final class StartMigrationTask implements Runnable {
         // field is called 'theNewOwner' to prevent any ambiguity problems with the outboundHandler.newOwner.
@@ -409,7 +411,7 @@ public final class NioOutboundPipeline extends NioPipeline implements Runnable {
         public void run() {
             assert newOwner == null : "No migration can be in progress";
 
-            if (ioThread == theNewOwner) {
+            if (owner == theNewOwner) {
                 // if there is no change, we are done
                 return;
             }
@@ -419,16 +421,16 @@ public final class NioOutboundPipeline extends NioPipeline implements Runnable {
     }
 
     @Override
-    protected void publish() {
-        ioThread.bytesTransceived += bytesWritten.get() - bytesReadLastPublish;
-        ioThread.framesTransceived += normalFramesWritten.get() - normalFramesReadLastPublish;
-        ioThread.priorityFramesTransceived += priorityFramesWritten.get() - priorityFramesReadLastPublish;
-        ioThread.handleCount += handleCount.get() - eventsLastPublish;
+    protected void publishMetrics() {
+        owner.bytesTransceived += bytesWritten.get() - bytesReadLastPublish;
+        owner.framesTransceived += normalFramesWritten.get() - normalFramesReadLastPublish;
+        owner.priorityFramesTransceived += priorityFramesWritten.get() - priorityFramesReadLastPublish;
+        owner.processCount += processCount.get() - processCountLastPublish;
 
         bytesReadLastPublish = bytesWritten.get();
         normalFramesReadLastPublish = normalFramesWritten.get();
         priorityFramesReadLastPublish = priorityFramesWritten.get();
-        eventsLastPublish = handleCount.get();
+        processCountLastPublish = processCount.get();
     }
 
     private class CloseTask implements Runnable {

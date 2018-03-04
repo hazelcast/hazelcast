@@ -16,16 +16,13 @@
 
 package com.hazelcast.spi.merge;
 
-import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.spi.serialization.SerializationService;
-
 /**
  * Represents a read-only view of a data structure value for the merging process after a split-brain.
  *
  * @param <V> the type of the value
  * @since 3.10
  */
-public interface MergingValueHolder<V> extends DataSerializable {
+public interface MergingValueHolder<V> {
 
     /**
      * Returns the merging value in the in-memory format of the backing data structure.
@@ -40,11 +37,4 @@ public interface MergingValueHolder<V> extends DataSerializable {
      * @return the deserialized merging value
      */
     Object getDeserializedValue();
-
-    /**
-     * Sets the {@link SerializationService} to deserialize the value on demand.
-     *
-     * @param serializationService the serialization service
-     */
-    void setSerializationService(SerializationService serializationService);
 }

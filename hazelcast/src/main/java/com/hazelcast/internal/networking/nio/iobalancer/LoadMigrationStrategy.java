@@ -16,22 +16,22 @@
 
 package com.hazelcast.internal.networking.nio.iobalancer;
 
-import com.hazelcast.internal.networking.nio.MigratableHandler;
+import com.hazelcast.internal.networking.nio.MigratablePipeline;
 
 import java.util.Set;
 
 /**
- * Default {@link MigrationStrategy} for {@link MigratableHandler} instances.
+ * Default {@link MigrationStrategy} for {@link MigratablePipeline} instances.
  *
  * It attempts to trigger a migration if a ratio between least busy and most busy selectors
  * exceeds {@link #MIN_MAX_RATIO_MIGRATION_THRESHOLD}.
  *
- * Once a migration is triggered it tries to find the busiest handler registered in
+ * Once a migration is triggered it tries to find the busiest pipeline registered in
  * {@link LoadImbalance#sourceSelector} which wouldn't cause
  * overload of the {@link LoadImbalance#destinationSelector} after a migration.
  *
  */
-class EventCountBasicMigrationStrategy implements MigrationStrategy {
+class LoadMigrationStrategy implements MigrationStrategy {
 
     /**
      * You can use this property to tune whether the migration will be attempted at all. The higher the number is
@@ -44,7 +44,7 @@ class EventCountBasicMigrationStrategy implements MigrationStrategy {
     private static final double MIN_MAX_RATIO_MIGRATION_THRESHOLD = 0.8;
 
     /**
-     * You can use this property to tune a selection process for handler migration. The higher number is the more
+     * You can use this property to tune a selection process for pipeline migration. The higher number is the more
      * aggressive migration process is.
      */
     private static final double MAXIMUM_NO_OF_EVENTS_AFTER_MIGRATION_COEFFICIENT = 0.9;
@@ -68,24 +68,24 @@ class EventCountBasicMigrationStrategy implements MigrationStrategy {
     }
 
     /**
-     * Attempt to find a handler to migrate to a new NioThread.
+     * Attempt to find a pipeline to migrate to a new NioThread.
      *
      * @param imbalance describing a snapshot of NioThread load
-     * @return the handler to migrate to a new NioThread or null if no handler needs to be migrated.
+     * @return the pipeline to migrate to a new NioThread or null if no pipeline needs to be migrated.
      */
     @Override
-    public MigratableHandler findHandlerToMigrate(LoadImbalance imbalance) {
-        Set<? extends MigratableHandler> candidates = imbalance.getHandlersOwnerBy(imbalance.sourceSelector);
+    public MigratablePipeline findPipelineToMigrate(LoadImbalance imbalance) {
+        Set<? extends MigratablePipeline> candidates = imbalance.getPipelinesOwnerBy(imbalance.sourceSelector);
         long migrationThreshold = (long) ((imbalance.maximumEvents - imbalance.minimumEvents)
                 * MAXIMUM_NO_OF_EVENTS_AFTER_MIGRATION_COEFFICIENT);
-        MigratableHandler candidate = null;
+        MigratablePipeline candidate = null;
         long eventCountInSelectedHandler = 0;
-        for (MigratableHandler handler : candidates) {
-            long eventCount = imbalance.getLoad(handler);
+        for (MigratablePipeline migratablePipeline : candidates) {
+            long eventCount = imbalance.getLoad(migratablePipeline);
             if (eventCount > eventCountInSelectedHandler) {
                 if (eventCount < migrationThreshold) {
                     eventCountInSelectedHandler = eventCount;
-                    candidate = handler;
+                    candidate = migratablePipeline;
                 }
             }
         }

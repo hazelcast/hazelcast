@@ -40,17 +40,18 @@ import static com.hazelcast.test.OverridePropertyRule.set;
 @Category(QuickTest.class)
 public class MemberToMemberDiscoveryTest extends HazelcastTestSupport {
 
-    private Config config;
-
     @Rule
-    public final OverridePropertyRule overridePropertyRule = set("hazelcast.wait.seconds.before.join", "10");
+    public final OverridePropertyRule overrideJoinWaitSecondsRule = set("hazelcast.wait.seconds.before.join", "10");
+    @Rule
+    public final OverridePropertyRule overridePreferIpv4Rule = set("java.net.preferIPv4Stack", "true");
+
+    private Config config;
 
     @Before
     public void setUp() {
         String xmlFileName = "hazelcast-multicast-plugin.xml";
         InputStream xmlResource = MulticastDiscoveryStrategy.class.getClassLoader().getResourceAsStream(xmlFileName);
         config = new XmlConfigBuilder(xmlResource).build();
-        System.setProperty("java.net.preferIPv4Stack", "true");
     }
 
     @After
@@ -59,18 +60,18 @@ public class MemberToMemberDiscoveryTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void formClusterWithTwoMembersTest() throws InterruptedException {
+    public void formClusterWithTwoMembersTest() {
         HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
         Hazelcast.newHazelcastInstance(config);
         assertClusterSizeEventually(2, instance);
     }
 
     @Test(expected = ValidationException.class)
-    public void invalidPortPropertyTest() throws InterruptedException {
+    public void invalidPortPropertyTest() {
         String xmlFileName = "hazelcast-multicast-plugin-invalid-port.xml";
         InputStream xmlResource = MulticastDiscoveryStrategy.class.getClassLoader().getResourceAsStream(xmlFileName);
         config = new XmlConfigBuilder(xmlResource).build();
+
         Hazelcast.newHazelcastInstance(config);
     }
-
 }

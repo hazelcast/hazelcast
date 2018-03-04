@@ -21,6 +21,7 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.core.PartitioningStrategy;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.impl.event.MapEventPublisher;
@@ -64,6 +65,7 @@ import com.hazelcast.map.listener.MapPartitionLostListener;
 import com.hazelcast.map.merge.MergePolicyProvider;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.DataType;
 import com.hazelcast.query.impl.IndexCopyBehavior;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.query.impl.predicates.QueryOptimizer;
@@ -132,7 +134,7 @@ class MapServiceContextImpl implements MapServiceContext {
     protected final AtomicInteger writeBehindQueueItemCounter = new AtomicInteger(0);
 
     protected final NodeEngine nodeEngine;
-    protected final SerializationService serializationService;
+    protected final InternalSerializationService serializationService;
     protected final ConstructorFunction<String, MapContainer> mapConstructor;
     protected final PartitionContainer[] partitionContainers;
     protected final ExpirationManager expirationManager;
@@ -155,7 +157,7 @@ class MapServiceContextImpl implements MapServiceContext {
 
     MapServiceContextImpl(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
-        this.serializationService = nodeEngine.getSerializationService();
+        this.serializationService = ((InternalSerializationService) nodeEngine.getSerializationService());
         this.mapConstructor = createMapConstructor();
         this.queryCacheContext = new NodeQueryCacheContext(this);
         this.partitionContainers = createPartitionContainers();
@@ -522,7 +524,7 @@ class MapServiceContextImpl implements MapServiceContext {
 
     @Override
     public Data toData(Object object) {
-        return serializationService.toData(object);
+        return serializationService.toData(object, DataType.HEAP);
     }
 
     @Override

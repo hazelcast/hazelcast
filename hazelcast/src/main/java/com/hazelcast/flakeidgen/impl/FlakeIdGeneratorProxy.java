@@ -35,6 +35,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.Preconditions.checkPositive;
+import static java.lang.Thread.currentThread;
 import static java.util.Collections.newSetFromMap;
 import static java.util.concurrent.TimeUnit.HOURS;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -99,6 +100,7 @@ public class FlakeIdGeneratorProxy
                             try {
                                 Thread.sleep(result.waitTimeMillis);
                             } catch (InterruptedException e) {
+                                currentThread().interrupt();
                                 throw rethrow(e);
                             }
                         }

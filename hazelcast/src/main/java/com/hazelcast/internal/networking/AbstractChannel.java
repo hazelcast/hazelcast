@@ -28,21 +28,27 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static java.lang.String.format;
 import static java.util.Collections.newSetFromMap;
-import static java.util.concurrent.atomic.AtomicIntegerFieldUpdater.newUpdater;
 
 /**
- * An abstract {@link Channel} implementation. This class is a pure implementation detail, the fact that it exposes some
- * functionality like access to the socket channel is because the current Channel implementations need the SocketChannel.
+ * An abstract {@link Channel} implementation. This class is a pure implementation
+ * detail, the fact that it exposes some functionality like access to the socket
+ * channel is because the current Channel implementations need the SocketChannel.
  */
 public abstract class AbstractChannel implements Channel {
 
     private static final int FALSE = 0;
     private static final int TRUE = 1;
-    private static final AtomicIntegerFieldUpdater<AbstractChannel> CLOSED = newUpdater(AbstractChannel.class, "closed");
+    private static final AtomicIntegerFieldUpdater<AbstractChannel> CLOSED
+            = AtomicIntegerFieldUpdater.newUpdater(AbstractChannel.class, "closed");
+    private static final AtomicReferenceFieldUpdater<AbstractChannel, SocketAddress> LOCAL_ADDRESS
+            = AtomicReferenceFieldUpdater.newUpdater(AbstractChannel.class, SocketAddress.class, "localAddress");
+    private static final AtomicReferenceFieldUpdater<AbstractChannel, SocketAddress> REMOTE_ADDRESS
+            = AtomicReferenceFieldUpdater.newUpdater(AbstractChannel.class, SocketAddress.class, "remoteAddress");
 
     protected final SocketChannel socketChannel;
 
@@ -50,7 +56,10 @@ public abstract class AbstractChannel implements Channel {
     private final Set<ChannelCloseListener> closeListeners
             = newSetFromMap(new ConcurrentHashMap<ChannelCloseListener, Boolean>());
     private final boolean clientMode;
-
+    @SuppressWarnings("FieldCanBeLocal")
+    private volatile SocketAddress remoteAddress;
+    @SuppressWarnings("FieldCanBeLocal")
+    private volatile SocketAddress localAddress;
     @SuppressWarnings("FieldCanBeLocal")
     private volatile int closed = FALSE;
 
@@ -78,15 +87,19 @@ public abstract class AbstractChannel implements Channel {
     }
 
     @Override
-    public SocketAddress getRemoteSocketAddress() {
-        Socket socket = socket();
-        return socket == null ? null : socket.getRemoteSocketAddress();
+    public SocketAddress remoteSocketAddress() {
+        if (remoteAddress == null) {
+            REMOTE_ADDRESS.compareAndSet(this, null, socket().getRemoteSocketAddress());
+        }
+        return remoteAddress;
     }
 
     @Override
-    public SocketAddress getLocalSocketAddress() {
-        Socket socket = socket();
-        return socket == null ? null : socket.getLocalSocketAddress();
+    public SocketAddress localSocketAddress() {
+        if (localAddress == null) {
+            LOCAL_ADDRESS.compareAndSet(this, null, socket().getLocalSocketAddress());
+        }
+        return localAddress;
     }
 
     @Override
@@ -145,8 +158,9 @@ public abstract class AbstractChannel implements Channel {
     }
 
     /**
-     * Template method that is called when the socket channel closed. It is called before the {@code socketChannel} is closed.
-     * <p>
+     * Template method that is called when the socket channel closed. It is
+     * called before the {@code socketChannel} is closed.
+     *
      * It will be called only once.
      */
     protected void onClose() throws IOException {

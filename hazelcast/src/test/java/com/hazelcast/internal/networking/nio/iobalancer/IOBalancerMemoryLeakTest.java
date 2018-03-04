@@ -68,8 +68,8 @@ public class IOBalancerMemoryLeakTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                int inHandlerSize = ioBalancer.getInLoadTracker().getHandlers().size();
-                int outHandlerSize = ioBalancer.getOutLoadTracker().getHandlers().size();
+                int inHandlerSize = ioBalancer.getInLoadTracker().getPipelines().size();
+                int outHandlerSize = ioBalancer.getOutLoadTracker().getPipelines().size();
                 assertEquals(0, inHandlerSize);
                 assertEquals(0, outHandlerSize);
             }
@@ -117,8 +117,8 @@ public class IOBalancerMemoryLeakTest extends HazelcastTestSupport {
             public void run() throws Exception {
                 LoadTracker inLoadTracker = ioBalancer.getInLoadTracker();
                 LoadTracker outLoadTracker = ioBalancer.getOutLoadTracker();
-                int inHandlerSize = inLoadTracker.getHandlers().size();
-                int outHandlerSize = outLoadTracker.getHandlers().size();
+                int inHandlerSize = inLoadTracker.getPipelines().size();
+                int outHandlerSize = outLoadTracker.getPipelines().size();
                 int inHandlerEventsCount = inLoadTracker.getHandlerEventsCounter().keySet().size();
                 int outHandlerEventsCount = outLoadTracker.getHandlerEventsCounter().keySet().size();
                 int inLastEventsCount = inLoadTracker.getLastEventCounter().keySet().size();

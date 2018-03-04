@@ -121,7 +121,7 @@
 
         <empty-queue-ttl>-1</empty-queue-ttl>
 
-        <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
+        <merge-policy batch-size="100">com.hazelcast.spi.merge.PutIfAbsentMergePolicy</merge-policy>
     </queue>
     <map name="default">
         <!--
@@ -201,7 +201,7 @@
             com.hazelcast.map.merge.HigherHitsMapMergePolicy ; entry with the higher hits wins.
             com.hazelcast.map.merge.LatestUpdateMapMergePolicy ; entry with the latest update wins.
         -->
-        <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
+        <merge-policy batch-size="100">com.hazelcast.spi.merge.PutIfAbsentMergePolicy</merge-policy>
 
         <!--
            Control caching of de-serialized values. Caching makes query evaluation faster, but it cost memory.
@@ -234,24 +234,24 @@
     <multimap name="default">
         <backup-count>1</backup-count>
         <value-collection-type>SET</value-collection-type>
-        <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
+        <merge-policy batch-size="100">com.hazelcast.spi.merge.PutIfAbsentMergePolicy</merge-policy>
     </multimap>
 
     <replicatedmap name="default">
         <in-memory-format>OBJECT</in-memory-format>
         <async-fillup>true</async-fillup>
         <statistics-enabled>true</statistics-enabled>
-        <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
+        <merge-policy batch-size="100">com.hazelcast.spi.merge.PutIfAbsentMergePolicy</merge-policy>
     </replicatedmap>
 
     <list name="default">
         <backup-count>1</backup-count>
-        <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
+        <merge-policy batch-size="100">com.hazelcast.spi.merge.PutIfAbsentMergePolicy</merge-policy>
     </list>
 
     <set name="default">
         <backup-count>1</backup-count>
-        <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
+        <merge-policy batch-size="100">com.hazelcast.spi.merge.PutIfAbsentMergePolicy</merge-policy>
     </set>
 
     <jobtracker name="default">
@@ -282,7 +282,7 @@
         <async-backup-count>0</async-backup-count>
         <time-to-live-seconds>0</time-to-live-seconds>
         <in-memory-format>BINARY</in-memory-format>
-        <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
+        <merge-policy batch-size="100">com.hazelcast.spi.merge.PutIfAbsentMergePolicy</merge-policy>
     </ringbuffer>
 
     <flake-id-generator name="default">
@@ -293,11 +293,11 @@
     </flake-id-generator>
 
     <atomic-long name="default">
-        <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
+        <merge-policy batch-size="100">com.hazelcast.spi.merge.PutIfAbsentMergePolicy</merge-policy>
     </atomic-long>
 
     <atomic-reference name="default">
-        <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
+        <merge-policy batch-size="100">com.hazelcast.spi.merge.PutIfAbsentMergePolicy</merge-policy>
     </atomic-reference>
 
     <count-down-latch name="default"/>
@@ -320,7 +320,7 @@
         <capacity>100</capacity>
         <durability>1</durability>
         <pool-size>16</pool-size>
-        <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
+        <merge-policy batch-size="100">com.hazelcast.spi.merge.PutIfAbsentMergePolicy</merge-policy>
     </scheduled-executor-service>
 
     <crdt-replication>

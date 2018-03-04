@@ -32,6 +32,7 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.util.Preconditions.checkFalse;
 import static com.hazelcast.util.Preconditions.checkNotNull;
+import static java.lang.Thread.currentThread;
 
 /**
  * Proxy implementation for the Queue.
@@ -62,6 +63,7 @@ public class QueueProxyImpl<E> extends QueueProxySupport implements IQueue<E>, I
         try {
             return offer(e, 0, TimeUnit.SECONDS);
         } catch (InterruptedException ex) {
+            currentThread().interrupt();
             return false;
         }
     }
@@ -139,7 +141,7 @@ public class QueueProxyImpl<E> extends QueueProxySupport implements IQueue<E>, I
         try {
             return poll(0, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
-            //todo: interrupt status is lost
+            currentThread().interrupt();
             return null;
         }
     }

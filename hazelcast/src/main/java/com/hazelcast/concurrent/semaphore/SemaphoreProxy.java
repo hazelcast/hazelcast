@@ -33,6 +33,7 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.util.ExceptionUtil.rethrowAllowInterrupted;
 import static com.hazelcast.util.Preconditions.checkNotNegative;
+import static java.lang.Thread.currentThread;
 
 public class SemaphoreProxy extends AbstractDistributedObject<SemaphoreService> implements ISemaphore {
 
@@ -125,6 +126,7 @@ public class SemaphoreProxy extends AbstractDistributedObject<SemaphoreService> 
         try {
             return tryAcquire(1, 0, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
+            currentThread().interrupt();
             return false;
         }
     }
@@ -134,6 +136,7 @@ public class SemaphoreProxy extends AbstractDistributedObject<SemaphoreService> 
         try {
             return tryAcquire(permits, 0, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
+            currentThread().interrupt();
             return false;
         }
     }

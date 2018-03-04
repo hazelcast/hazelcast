@@ -160,8 +160,8 @@ public class ArrayRingbuffer<E> implements Ringbuffer<E> {
 
     @Override
     public long merge(MergingValueHolder<E> mergingValue, SplitBrainMergePolicy mergePolicy, long remainingCapacity) {
+        serializationService.getManagedContext().initialize(mergingValue);
         serializationService.getManagedContext().initialize(mergePolicy);
-        mergingValue.setSerializationService(serializationService);
 
         // try to find an existing item with the same value
         E existingItem = null;
@@ -186,8 +186,7 @@ public class ArrayRingbuffer<E> implements Ringbuffer<E> {
                 return add(newValue);
             }
         } else {
-            MergingValueHolder<E> existingValue = createMergeHolder(existingSequence, existingItem);
-            existingValue.setSerializationService(serializationService);
+            MergingValueHolder<E> existingValue = createMergeHolder(serializationService, existingSequence, existingItem);
             E newValue = mergePolicy.merge(mergingValue, existingValue);
             if (newValue != null && !newValue.equals(existingItem)) {
                 set(existingSequence, newValue);

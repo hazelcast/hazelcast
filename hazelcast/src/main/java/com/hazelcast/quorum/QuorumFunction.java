@@ -43,6 +43,7 @@ public interface QuorumFunction {
 
     /**
      * Determines if quorum is present based on the current list of members in the cluster.
+     * Lite members are excluded and only data members are provided to this method.
      * <br>
      * This method should not block nor execute time-consuming operations, otherwise it may stall other quorum function
      * invocations.

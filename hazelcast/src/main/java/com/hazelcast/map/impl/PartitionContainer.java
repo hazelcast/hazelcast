@@ -35,6 +35,7 @@ import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ContextMutexFactory;
 
+import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.concurrent.ConcurrentHashMap;
@@ -44,13 +45,12 @@ import static com.hazelcast.map.impl.MapKeyLoaderUtil.getMaxSizePerNode;
 
 public class PartitionContainer {
 
-    final MapService mapService;
-    final int partitionId;
-    final ConcurrentMap<String, RecordStore> maps = new ConcurrentHashMap<String, RecordStore>(1000);
-
-    final ConcurrentMap<String, Indexes> indexes = new ConcurrentHashMap<String, Indexes>(10);
-
-    final ConstructorFunction<String, RecordStore> recordStoreConstructor
+    private final int partitionId;
+    private final MapService mapService;
+    private final ContextMutexFactory contextMutexFactory = new ContextMutexFactory();
+    private final ConcurrentMap<String, RecordStore> maps = new ConcurrentHashMap<String, RecordStore>(1000);
+    private final ConcurrentMap<String, Indexes> indexes = new ConcurrentHashMap<String, Indexes>(10);
+    private final ConstructorFunction<String, RecordStore> recordStoreConstructor
             = new ConstructorFunction<String, RecordStore>() {
 
         @Override
@@ -60,8 +60,7 @@ public class PartitionContainer {
             return recordStore;
         }
     };
-
-    final ConstructorFunction<String, RecordStore> recordStoreConstructorSkipLoading
+    private final ConstructorFunction<String, RecordStore> recordStoreConstructorSkipLoading
             = new ConstructorFunction<String, RecordStore>() {
 
         @Override
@@ -70,7 +69,7 @@ public class PartitionContainer {
         }
     };
 
-    final ConstructorFunction<String, RecordStore> recordStoreConstructorForHotRestart
+    private final ConstructorFunction<String, RecordStore> recordStoreConstructorForHotRestart
             = new ConstructorFunction<String, RecordStore>() {
 
         @Override
@@ -80,11 +79,10 @@ public class PartitionContainer {
     };
     /**
      * Flag to check if there is a {@link com.hazelcast.map.impl.operation.ClearExpiredOperation}
-     * is running on this partition at this moment or not.
+     * running on this partition at this moment or not.
      */
-    volatile boolean hasRunningCleanup;
-
-    volatile long lastCleanupTime;
+    private volatile boolean hasRunningCleanup;
+    private volatile long lastCleanupTime;
 
     /**
      * Used when sorting partition containers in {@link com.hazelcast.map.impl.eviction.ExpirationManager}
@@ -93,9 +91,7 @@ public class PartitionContainer {
      * 1. We need an un-modified field during sorting.
      * 2. Decrease number of volatile reads.
      */
-    long lastCleanupTimeCopy;
-
-    private final ContextMutexFactory contextMutexFactory = new ContextMutexFactory();
+    private long lastCleanupTimeCopy;
 
     public PartitionContainer(final MapService mapService, final int partitionId) {
         this.mapService = mapService;
@@ -180,6 +176,7 @@ public class PartitionContainer {
         return ConcurrencyUtil.getOrPutSynchronized(maps, name, contextMutexFactory, recordStoreConstructorForHotRestart);
     }
 
+    @Nullable
     public RecordStore getExistingRecordStore(String mapName) {
         return maps.get(mapName);
     }
@@ -255,7 +252,6 @@ public class PartitionContainer {
     // By using this method in the context of global index an exception will be thrown.
     // -------------------------------------------------------------------------------------------------------------
     Indexes getIndexes(String name) {
-
         Indexes ixs = indexes.get(name);
         if (ixs == null) {
             MapServiceContext mapServiceContext = mapService.getMapServiceContext();
@@ -273,9 +269,7 @@ public class PartitionContainer {
             if (ixs == null) {
                 ixs = indexesForMap;
             }
-
         }
         return ixs;
     }
-
 }

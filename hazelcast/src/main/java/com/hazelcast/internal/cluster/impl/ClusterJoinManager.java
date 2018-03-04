@@ -727,7 +727,8 @@ public class ClusterJoinManager {
 
                 // member list must be updated on master before preparation of pre-/post-join ops so other operations which have
                 // to be executed on stable cluster can detect the member list version change and retry in case of topology change
-                if (!clusterService.updateMembers(newMembersView, node.getThisAddress(), clusterService.getThisUuid())) {
+                String thisUuid = clusterService.getThisUuid();
+                if (!clusterService.updateMembers(newMembersView, node.getThisAddress(), thisUuid, thisUuid)) {
                     return;
                 }
 
@@ -744,7 +745,7 @@ public class ClusterJoinManager {
                     Operation op = new FinalizeJoinOp(member.getUuid(), newMembersView, preJoinOp, postJoinOp, time,
                             clusterService.getClusterId(), startTime, clusterStateManager.getState(),
                             clusterService.getClusterVersion(), partitionRuntimeState, true);
-                    op.setCallerUuid(clusterService.getThisUuid());
+                    op.setCallerUuid(thisUuid);
                     invokeClusterOp(op, member.getAddress());
                 }
                 for (MemberImpl member : memberMap.getMembers()) {
@@ -753,7 +754,7 @@ public class ClusterJoinManager {
                     }
                     Operation op = new MembersUpdateOp(member.getUuid(), newMembersView, time,
                             partitionRuntimeState, true);
-                    op.setCallerUuid(clusterService.getThisUuid());
+                    op.setCallerUuid(thisUuid);
                     invokeClusterOp(op, member.getAddress());
                 }
 

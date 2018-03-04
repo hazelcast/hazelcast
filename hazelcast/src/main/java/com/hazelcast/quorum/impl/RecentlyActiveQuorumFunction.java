@@ -17,7 +17,6 @@
 package com.hazelcast.quorum.impl;
 
 import com.hazelcast.core.Member;
-import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.quorum.HeartbeatAware;
@@ -59,6 +58,11 @@ public class RecentlyActiveQuorumFunction extends AbstractPingAwareQuorumFunctio
                 continue;
             }
 
+            if (member.localMember()) {
+                count++;
+                continue;
+            }
+
             // apply and onHeartbeat are never executed concurrently
             Long latestTimestamp = latestHeartbeatPerMember.get(member);
             if (latestTimestamp == null) {
@@ -79,24 +83,9 @@ public class RecentlyActiveQuorumFunction extends AbstractPingAwareQuorumFunctio
     }
 
     @Override
-    public void memberAdded(MembershipEvent membershipEvent) {
-        // ensure ping FD has heard at least once from each member
-        if (pingFDEnabled) {
-            pingFailureDetector.heartbeat(membershipEvent.getMember());
-        }
-    }
-
-    @Override
     public void memberRemoved(MembershipEvent membershipEvent) {
-        if (pingFDEnabled) {
-            pingFailureDetector.remove(membershipEvent.getMember());
-        }
+        super.memberRemoved(membershipEvent);
         latestHeartbeatPerMember.remove(membershipEvent.getMember());
-    }
-
-    @Override
-    public void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent) {
-        // quorum not affected by member attribute change
     }
 
     public int getHeartbeatToleranceMillis() {

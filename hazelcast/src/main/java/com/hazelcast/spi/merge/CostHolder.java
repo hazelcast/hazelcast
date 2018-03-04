@@ -16,14 +16,12 @@
 
 package com.hazelcast.spi.merge;
 
-import com.hazelcast.nio.serialization.DataSerializable;
-
 /**
  * Represents a read-only view of memory costs for the merging process after a split-brain.
  *
  * @since 3.10
  */
-public interface CostHolder extends DataSerializable {
+public interface CostHolder {
 
     /**
      * Returns the memory cost of the merge data.

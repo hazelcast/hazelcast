@@ -67,7 +67,13 @@ public class ClientScheduledExecutorServiceBasicTest extends ScheduledExecutorSe
     @Test
     @Ignore("Never supported feature")
     @Override
-    public void schedule_testPartitionLostEvent() {
+    public void schedule_testPartitionLostEvent_withDurabilityCount() {
+    }
+
+    @Test
+    @Ignore("Never supported feature")
+    @Override
+    public void schedule_testPartitionLostEvent_withMaxBackupCount() {
     }
 
     @Test

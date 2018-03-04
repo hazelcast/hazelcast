@@ -41,6 +41,7 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.spi.properties.GroupProperty.TASK_SCHEDULER_REMOVE_ON_CANCEL;
+import static java.lang.Thread.currentThread;
 
 public final class ClientExecutionServiceImpl implements ClientExecutionService, MetricsProvider {
 
@@ -130,6 +131,7 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService,
                         + " seconds");
             }
         } catch (InterruptedException e) {
+            currentThread().interrupt();
             logger.warning(name + " executor await termination is interrupted", e);
         }
     }

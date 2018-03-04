@@ -17,15 +17,28 @@
 package com.hazelcast.query.impl;
 
 /**
- * Provides the context of Query.
+ * Provides the context for queries execution.
  */
 public class QueryContext {
     private final Indexes indexes;
 
+    /**
+     * Creates a new query context with the given available indexes.
+     *
+     * @param indexes the indexes available for the query context.
+     */
     public QueryContext(Indexes indexes) {
         this.indexes = indexes;
     }
 
+    /**
+     * Obtains the index available for the given attribute in this query
+     * context.
+     *
+     * @param attributeName the name of the attribute to obtain the index for.
+     * @return the obtained index or {@code null} if there is no index available
+     * for the given attribute.
+     */
     public Index getIndex(String attributeName) {
         if (indexes == null) {
             return null;

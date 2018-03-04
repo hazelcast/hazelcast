@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.networking.nio.iobalancer;
 
-import com.hazelcast.internal.networking.nio.MigratableHandler;
+import com.hazelcast.internal.networking.nio.MigratablePipeline;
 import com.hazelcast.internal.networking.nio.NioThread;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.util.ItemCounter;
@@ -35,8 +35,8 @@ import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
  * Tracks the load of of NioThread(s) and creates a mapping between NioThread -> Handler.
  * <p/>
  * This class is not thread-safe with the exception of
- * {@link #addHandler(MigratableHandler)}   and
- * {@link #removeHandler(MigratableHandler)}
+ * {@link #addPipeline(MigratablePipeline)}   and
+ * {@link #removePipeline(MigratablePipeline)}
  */
 class LoadTracker {
     final Queue<Runnable> tasks = new LinkedBlockingQueue<Runnable>();
@@ -45,18 +45,18 @@ class LoadTracker {
 
     //all known IO ioThreads. we assume no. of ioThreads is constant during a lifespan of a member
     private final NioThread[] ioThreads;
-    private final Map<NioThread, Set<MigratableHandler>> selectorToHandlers;
+    private final Map<NioThread, Set<MigratablePipeline>> selectorToHandlers;
 
-    //no. of events per handler since an instance started
-    private final ItemCounter<MigratableHandler> lastEventCounter = new ItemCounter<MigratableHandler>();
+    //no. of events per pipeline since an instance started
+    private final ItemCounter<MigratablePipeline> lastEventCounter = new ItemCounter<MigratablePipeline>();
 
     //no. of events per NioThread since last calculation
     private final ItemCounter<NioThread> selectorEvents = new ItemCounter<NioThread>();
-    //no. of events per handler since last calculation
-    private final ItemCounter<MigratableHandler> handlerEventsCounter = new ItemCounter<MigratableHandler>();
+    //no. of events per pipeline since last calculation
+    private final ItemCounter<MigratablePipeline> handlerEventsCounter = new ItemCounter<MigratablePipeline>();
 
-    //contains all known handlers
-    private final Set<MigratableHandler> handlers = new HashSet<MigratableHandler>();
+    //contains all known pipelines
+    private final Set<MigratablePipeline> pipelines = new HashSet<MigratablePipeline>();
 
     private final LoadImbalance imbalance;
 
@@ -68,7 +68,7 @@ class LoadTracker {
 
         this.selectorToHandlers = createHashMap(ioThreads.length);
         for (NioThread selector : ioThreads) {
-            selectorToHandlers.put(selector, new HashSet<MigratableHandler>());
+            selectorToHandlers.put(selector, new HashSet<MigratablePipeline>());
         }
         this.imbalance = new LoadImbalance(selectorToHandlers, handlerEventsCounter);
     }
@@ -98,17 +98,17 @@ class LoadTracker {
     }
 
     // just for testing
-    Set<MigratableHandler> getHandlers() {
-        return handlers;
+    Set<MigratablePipeline> getPipelines() {
+        return pipelines;
     }
 
     // just for testing
-    ItemCounter<MigratableHandler> getLastEventCounter() {
+    ItemCounter<MigratablePipeline> getLastEventCounter() {
         return lastEventCounter;
     }
 
     // just for testing
-    ItemCounter<MigratableHandler> getHandlerEventsCounter() {
+    ItemCounter<MigratablePipeline> getHandlerEventsCounter() {
         return handlerEventsCounter;
     }
 
@@ -123,7 +123,7 @@ class LoadTracker {
 
             if (eventCount > imbalance.maximumEvents && handlerCount > 1) {
                 // if a selector has only 1 handle, there is no point in making it a source selector since
-                // there is no handler that can be migrated anyway. In that case it is better to move on to
+                // there is no pipeline that can be migrated anyway. In that case it is better to move on to
                 // the next selector.
                 imbalance.maximumEvents = eventCount;
                 imbalance.sourceSelector = selector;
@@ -136,54 +136,54 @@ class LoadTracker {
         }
     }
 
-    public void notifyHandlerAdded(MigratableHandler handler) {
-        AddHandlerTask addHandlerTask = new AddHandlerTask(handler);
-        tasks.offer(addHandlerTask);
+    public void notifyHandlerAdded(MigratablePipeline pipeline) {
+        AddPipelineTask addPipelineTask = new AddPipelineTask(pipeline);
+        tasks.offer(addPipelineTask);
     }
 
-    public void notifyHandlerRemoved(MigratableHandler handler) {
-        RemoveHandlerTask removeHandlerTask = new RemoveHandlerTask(handler);
-        tasks.offer(removeHandlerTask);
+    public void notifyHandlerRemoved(MigratablePipeline pipeline) {
+        RemovePipelineTask removePipelineTask = new RemovePipelineTask(pipeline);
+        tasks.offer(removePipelineTask);
     }
 
 
     private void updateNewWorkingImbalance() {
-        for (MigratableHandler handler : handlers) {
-            updateHandlerState(handler);
+        for (MigratablePipeline pipeline : pipelines) {
+            updateHandlerState(pipeline);
         }
     }
 
-    private void updateHandlerState(MigratableHandler handler) {
-        long handlerEventCount = getEventCountSinceLastCheck(handler);
-        handlerEventsCounter.set(handler, handlerEventCount);
-        NioThread owner = handler.getOwner();
-        selectorEvents.add(owner, handlerEventCount);
-        Set<MigratableHandler> handlersOwnedBy = selectorToHandlers.get(owner);
-        handlersOwnedBy.add(handler);
+    private void updateHandlerState(MigratablePipeline pipeline) {
+        long pipelineEventCount = getEventCountSinceLastCheck(pipeline);
+        handlerEventsCounter.set(pipeline, pipelineEventCount);
+        NioThread owner = pipeline.owner();
+        selectorEvents.add(owner, pipelineEventCount);
+        Set<MigratablePipeline> handlersOwnedBy = selectorToHandlers.get(owner);
+        handlersOwnedBy.add(pipeline);
     }
 
-    private long getEventCountSinceLastCheck(MigratableHandler handler) {
-        long eventCount = handler.getLoad();
-        Long lastEventCount = lastEventCounter.getAndSet(handler, eventCount);
+    private long getEventCountSinceLastCheck(MigratablePipeline pipeline) {
+        long eventCount = pipeline.load();
+        Long lastEventCount = lastEventCounter.getAndSet(pipeline, eventCount);
         return eventCount - lastEventCount;
     }
 
     private void clearWorkingImbalance() {
         handlerEventsCounter.reset();
         selectorEvents.reset();
-        for (Set<MigratableHandler> handlerSet : selectorToHandlers.values()) {
+        for (Set<MigratablePipeline> handlerSet : selectorToHandlers.values()) {
             handlerSet.clear();
         }
     }
 
-    void addHandler(MigratableHandler handler) {
-        handlers.add(handler);
+    void addPipeline(MigratablePipeline pipeline) {
+        pipelines.add(pipeline);
     }
 
-    void removeHandler(MigratableHandler handler) {
-        handlers.remove(handler);
-        handlerEventsCounter.remove(handler);
-        lastEventCounter.remove(handler);
+    void removePipeline(MigratablePipeline pipeline) {
+        pipelines.remove(pipeline);
+        handlerEventsCounter.remove(pipeline);
+        lastEventCounter.remove(pipeline);
     }
 
     private void printDebugTable() {
@@ -206,7 +206,7 @@ class LoadTracker {
                 .append(" received ")
                 .append(eventCountPerSelector)
                 .append(" events. ");
-        sb.append("It contains following handlers: ").
+        sb.append("It contains following pipelines: ").
                 append(LINE_SEPARATOR);
         appendSelectorInfo(minThread, selectorToHandlers, sb);
 
@@ -216,7 +216,7 @@ class LoadTracker {
                 .append(" received ")
                 .append(eventCountPerSelector)
                 .append(" events. ");
-        sb.append("It contains following handlers: ")
+        sb.append("It contains following pipelines: ")
                 .append(LINE_SEPARATOR);
         appendSelectorInfo(maxThread, selectorToHandlers, sb);
 
@@ -230,7 +230,7 @@ class LoadTracker {
                         .append(selector)
                         .append(" contains ")
                         .append(eventCountPerSelector)
-                        .append(" and has these handlers: ")
+                        .append(" and has these pipelines: ")
                         .append(LINE_SEPARATOR);
                 appendSelectorInfo(selector, selectorToHandlers, sb);
             }
@@ -242,10 +242,10 @@ class LoadTracker {
 
     private void appendSelectorInfo(
             NioThread minThread,
-            Map<NioThread, Set<MigratableHandler>> threadHandlers,
+            Map<NioThread, Set<MigratablePipeline>> threadHandlers,
             StringBuilder sb) {
-        Set<MigratableHandler> handlerSet = threadHandlers.get(minThread);
-        for (MigratableHandler selectionHandler : handlerSet) {
+        Set<MigratablePipeline> handlerSet = threadHandlers.get(minThread);
+        for (MigratablePipeline selectionHandler : handlerSet) {
             Long eventCountPerHandler = handlerEventsCounter.get(selectionHandler);
             sb.append(selectionHandler)
                     .append(":  ")
@@ -255,41 +255,39 @@ class LoadTracker {
         sb.append(LINE_SEPARATOR);
     }
 
-    class RemoveHandlerTask implements Runnable {
+    class RemovePipelineTask implements Runnable {
 
-        private final MigratableHandler handler;
+        private final MigratablePipeline pipeline;
 
-        public RemoveHandlerTask(MigratableHandler handler) {
-            this.handler = handler;
+        public RemovePipelineTask(MigratablePipeline pipeline) {
+            this.pipeline = pipeline;
         }
 
         @Override
         public void run() {
-
             if (logger.isFinestEnabled()) {
-                logger.finest("Removing handler: " + handler);
+                logger.finest("Removing pipeline: " + pipeline);
             }
 
-            removeHandler(handler);
+            removePipeline(pipeline);
         }
     }
 
-    class AddHandlerTask implements Runnable {
+    class AddPipelineTask implements Runnable {
 
-        private final MigratableHandler handler;
+        private final MigratablePipeline pipeline;
 
-        public AddHandlerTask(MigratableHandler handler) {
-            this.handler = handler;
+        public AddPipelineTask(MigratablePipeline pipeline) {
+            this.pipeline = pipeline;
         }
 
         @Override
         public void run() {
-
             if (logger.isFinestEnabled()) {
-                logger.finest("Adding handler: " + handler);
+                logger.finest("Adding pipeline: " + pipeline);
             }
 
-            addHandler(handler);
+            addPipeline(pipeline);
         }
     }
 

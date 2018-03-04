@@ -475,7 +475,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
 
                     mergingValues = new ArrayList<MergingValueHolder<Data>>(batchSize);
                     for (QueueItem item : itemList) {
-                        MergingValueHolder<Data> mergingValue = createMergeHolder(item);
+                        MergingValueHolder<Data> mergingValue = createMergeHolder(serializationService, item);
                         mergingValues.add(mergingValue);
                         itemCount++;
 

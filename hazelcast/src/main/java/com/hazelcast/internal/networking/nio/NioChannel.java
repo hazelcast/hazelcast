@@ -24,32 +24,30 @@ import java.nio.channels.SocketChannel;
 import static com.hazelcast.nio.IOUtil.closeResource;
 
 /**
- * A {@link com.hazelcast.internal.networking.Channel} implementation tailored for non blocking IO using
- * {@link java.nio.channels.Selector} in combination with a non blocking {@link SocketChannel}.
+ * A {@link com.hazelcast.internal.networking.Channel} implementation tailored
+ * for non blocking IO using {@link java.nio.channels.Selector} in combination
+ * with a non blocking {@link SocketChannel}.
  */
 public class NioChannel extends AbstractChannel {
 
-    private NioInboundPipeline inboundPipeline;
-    private NioOutboundPipeline outboundPipeline;
+    NioInboundPipeline inboundPipeline;
+    NioOutboundPipeline outboundPipeline;
 
     public NioChannel(SocketChannel socketChannel, boolean clientMode) {
         super(socketChannel, clientMode);
     }
 
-    public void setInboundPipeline(NioInboundPipeline inboundPipeline) {
+    public void init(NioInboundPipeline inboundPipeline, NioOutboundPipeline outboundPipeline) {
         this.inboundPipeline = inboundPipeline;
-    }
-
-    public void setOutboundPipeline(NioOutboundPipeline outboundPipeline) {
         this.outboundPipeline = outboundPipeline;
     }
 
-    public NioInboundPipeline getInboundPipeline() {
-        return inboundPipeline;
+    public NioOutboundPipeline outboundPipeline() {
+        return outboundPipeline;
     }
 
-    public NioOutboundPipeline getOutboundPipeline() {
-        return outboundPipeline;
+    public NioInboundPipeline inboundPipeline() {
+        return inboundPipeline;
     }
 
     @Override
@@ -84,6 +82,6 @@ public class NioChannel extends AbstractChannel {
 
     @Override
     public String toString() {
-        return "NioChannel{" + getLocalSocketAddress() + "->" + getRemoteSocketAddress() + '}';
+        return "NioChannel{" + localSocketAddress() + "->" + remoteSocketAddress() + '}';
     }
 }

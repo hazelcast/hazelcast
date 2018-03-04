@@ -87,12 +87,11 @@ public class AtomicLongContainer {
      * @return the new value if merge is applied, otherwise {@code null}
      */
     public Long merge(MergingValueHolder<Long> mergingValue, SplitBrainMergePolicy mergePolicy, boolean isExistingContainer) {
+        serializationService.getManagedContext().initialize(mergingValue);
         serializationService.getManagedContext().initialize(mergePolicy);
-        mergingValue.setSerializationService(serializationService);
 
         if (isExistingContainer) {
-            MergingValueHolder<Long> existingValue = createMergeHolder(value);
-            existingValue.setSerializationService(serializationService);
+            MergingValueHolder<Long> existingValue = createMergeHolder(serializationService, value);
             Long newValue = mergePolicy.merge(mergingValue, existingValue);
             if (newValue != null && !newValue.equals(value)) {
                 value = newValue;

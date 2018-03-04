@@ -16,14 +16,12 @@
 
 package com.hazelcast.spi.merge;
 
-import com.hazelcast.nio.serialization.DataSerializable;
-
 /**
  * Represents a read-only view of a TTL for the merging process after a split-brain.
  *
  * @since 3.10
  */
-public interface TtlHolder extends DataSerializable {
+public interface TtlHolder {
 
     /**
      * Returns the TTL of the merge data.

@@ -33,7 +33,6 @@ import com.hazelcast.util.AddressUtil;
 import com.hazelcast.util.AddressUtil.AddressMatcher;
 import com.hazelcast.util.AddressUtil.InvalidAddressException;
 import com.hazelcast.util.Clock;
-import com.hazelcast.util.EmptyStatement;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -46,6 +45,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.util.AddressUtil.AddressHolder;
+import static com.hazelcast.util.EmptyStatement.ignore;
 
 public class TcpIpJoiner extends AbstractJoiner {
 
@@ -413,7 +413,7 @@ public class TcpIpJoiner extends AbstractJoiner {
                 try {
                     addressMatcher = AddressUtil.getAddressMatcher(addressHolder.getAddress());
                 } catch (InvalidAddressException ignore) {
-                    EmptyStatement.ignore(ignore);
+                    ignore(ignore);
                 }
                 if (addressMatcher != null) {
                     final Collection<String> matchedAddresses;

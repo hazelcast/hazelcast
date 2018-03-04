@@ -47,7 +47,6 @@ import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.transaction.impl.TransactionLogRecord;
 import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
 import com.hazelcast.util.Clock;
-import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
 import org.junit.Rule;
 import org.junit.Test;
@@ -683,7 +682,7 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
                 try {
                     cluster.changeClusterState(newState);
                 } catch (TransactionException e) {
-                    EmptyStatement.ignore(e);
+                    ignore(e);
                 }
                 newState = flipState(newState);
                 sleepMillis(random.nextInt(5) + 1);

@@ -62,7 +62,6 @@ import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.spi.partition.IPartitionLostEvent;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.FutureUtil.ExceptionHandler;
 import com.hazelcast.util.HashUtil;
@@ -89,12 +88,14 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
+import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.FutureUtil.logAllExceptions;
 import static com.hazelcast.util.FutureUtil.returnWithDeadline;
 import static com.hazelcast.util.MapUtil.createHashMap;
 import static java.lang.Math.ceil;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
+import static java.lang.Thread.currentThread;
 
 /**
  * The {@link InternalPartitionService} implementation.
@@ -218,6 +219,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             try {
                 Thread.sleep(PARTITION_OWNERSHIP_WAIT_MILLIS);
             } catch (InterruptedException e) {
+                currentThread().interrupt();
                 throw ExceptionUtil.rethrow(e);
             }
         }
@@ -877,6 +879,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                 timeoutMillis -= awaitStep;
             } while (timeoutMillis > 0);
         } catch (InterruptedException e) {
+            currentThread().interrupt();
             logger.info("Safe shutdown is interrupted!");
         }
         return false;
@@ -1247,10 +1250,11 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                         allActiveMigrations.add(state.getActiveMigration());
                     }
                 } catch (TargetNotMemberException e) {
-                    EmptyStatement.ignore(e);
+                    ignore(e);
                 } catch (MemberLeftException e) {
-                    EmptyStatement.ignore(e);
+                    ignore(e);
                 } catch (InterruptedException e) {
+                    currentThread().interrupt();
                     logger.fine("FetchMostRecentPartitionTableTask is interrupted.");
                 } catch (ExecutionException e) {
                     Throwable cause = e.getCause();

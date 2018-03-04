@@ -21,7 +21,8 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.spi.NodeAware;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.spi.serialization.SerializationServiceAware;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -41,8 +42,8 @@ public class HazelcastManagedContextTest extends HazelcastTestSupport {
     private DependencyInjectionUserClass userClass;
     private DependencyInjectionUserManagedContext userContext;
     private HazelcastInstance hazelcastInstance;
-    private NodeEngine nodeEngine;
     private Node node;
+    private SerializationService serializationService;
 
     @Before
     public void setUp() {
@@ -53,23 +54,25 @@ public class HazelcastManagedContextTest extends HazelcastTestSupport {
                 .setManagedContext(userContext);
 
         hazelcastInstance = createHazelcastInstance(config);
-        nodeEngine = getNodeEngineImpl(hazelcastInstance);
         node = getNode(hazelcastInstance);
+        serializationService = getSerializationService(hazelcastInstance);
     }
 
     @Test
     public void testInitialize() {
-        nodeEngine.getSerializationService().getManagedContext().initialize(userClass);
+        serializationService.getManagedContext().initialize(userClass);
 
         assertEquals(hazelcastInstance, userClass.hazelcastInstance);
         assertEquals(node, userClass.node);
+        assertEquals(serializationService, userClass.serializationService);
         assertTrue(userContext.wasCalled);
     }
 
-    private static class DependencyInjectionUserClass implements HazelcastInstanceAware, NodeAware {
+    private static class DependencyInjectionUserClass implements HazelcastInstanceAware, NodeAware, SerializationServiceAware {
 
         private HazelcastInstance hazelcastInstance;
         private Node node;
+        private SerializationService serializationService;
 
         @Override
         public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
@@ -79,6 +82,11 @@ public class HazelcastManagedContextTest extends HazelcastTestSupport {
         @Override
         public void setNode(Node node) {
             this.node = node;
+        }
+
+        @Override
+        public void setSerializationService(SerializationService serializationService) {
+            this.serializationService = serializationService;
         }
     }
 

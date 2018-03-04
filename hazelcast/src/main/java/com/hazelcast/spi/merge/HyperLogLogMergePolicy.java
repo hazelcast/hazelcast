@@ -17,6 +17,7 @@
 package com.hazelcast.spi.merge;
 
 import com.hazelcast.cardinality.impl.hyperloglog.HyperLogLog;
+import com.hazelcast.spi.impl.merge.AbstractSplitBrainMergePolicy;
 
 import static com.hazelcast.spi.impl.merge.SplitBrainDataSerializerHook.HYPER_LOG_LOG;
 

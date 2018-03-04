@@ -17,6 +17,7 @@
 package com.hazelcast.internal.networking.nio;
 
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.networking.ChannelErrorHandler;
 import com.hazelcast.internal.networking.ChannelInboundHandler;
 import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.networking.InitResult;
@@ -35,7 +36,7 @@ import static java.nio.channels.SelectionKey.OP_READ;
 
 /**
  * When the {@link NioThread} receives a read event from the {@link java.nio.channels.Selector}, then the
- * {@link #handle()} is called to read out the data from the socket into a bytebuffer and hand it over to the
+ * {@link #process()} is called to read out the data from the socket into a bytebuffer and hand it over to the
  * {@link ChannelInboundHandler} to get processed.
  */
 public final class NioInboundPipeline extends NioPipeline {
@@ -55,23 +56,24 @@ public final class NioInboundPipeline extends NioPipeline {
     private volatile long bytesReadLastPublish;
     private volatile long normalFramesReadLastPublish;
     private volatile long priorityFramesReadLastPublish;
-    private volatile long handleCountLastPublish;
+    private volatile long processCountLastPublish;
 
     public NioInboundPipeline(
             NioChannel channel,
-            NioThread ioThread,
+            NioThread owner,
+            ChannelErrorHandler errorHandler,
             ILogger logger,
             IOBalancer balancer,
             ChannelInitializer initializer) {
-        super(channel, ioThread, OP_READ, logger, balancer);
+        super(channel, owner, errorHandler, OP_READ, logger, balancer);
         this.initializer = initializer;
     }
 
     @Override
-    public long getLoad() {
+    public long load() {
         switch (LOAD_TYPE) {
             case LOAD_BALANCING_HANDLE:
-                return handleCount.get();
+                return processCount.get();
             case LOAD_BALANCING_BYTE:
                 return bytesRead.get();
             case LOAD_BALANCING_FRAME:
@@ -99,23 +101,23 @@ public final class NioInboundPipeline extends NioPipeline {
     }
 
     /**
-     * Migrates this handler to a new NioThread.
+     * Migrates this Pipeline to a new NioThread.
      * The migration logic is rather simple:
      * <p><ul>
      * <li>Submit a de-registration task to a current NioThread</li>
      * <li>The de-registration task submits a registration task to the new NioThread</li>
      * </ul></p>
      *
-     * @param newOwner target NioThread this handler migrates to
+     * @param newOwner target NioThread this pipeline migrates to
      */
     @Override
     public void requestMigration(NioThread newOwner) {
-        ioThread.addTaskAndWakeup(new StartMigrationTask(newOwner));
+        owner.addTaskAndWakeup(new StartMigrationTask(newOwner));
     }
 
     @Override
-    public void handle() throws Exception {
-        handleCount.inc();
+    public void process() throws Exception {
+        processCount.inc();
         // we are going to set the timestamp even if the channel is going to fail reading. In that case
         // the connection is going to be closed anyway.
         lastReadTime = currentTimeMillis();
@@ -158,32 +160,32 @@ public final class NioInboundPipeline extends NioPipeline {
     }
 
     @Override
-    public void publish() {
-        if (Thread.currentThread() != ioThread) {
+    public void publishMetrics() {
+        if (Thread.currentThread() != owner) {
             return;
         }
 
-        ioThread.bytesTransceived += bytesRead.get() - bytesReadLastPublish;
-        ioThread.framesTransceived += normalFramesRead.get() - normalFramesReadLastPublish;
-        ioThread.priorityFramesTransceived += priorityFramesRead.get() - priorityFramesReadLastPublish;
-        ioThread.handleCount += handleCount.get() - handleCountLastPublish;
+        owner.bytesTransceived += bytesRead.get() - bytesReadLastPublish;
+        owner.framesTransceived += normalFramesRead.get() - normalFramesReadLastPublish;
+        owner.priorityFramesTransceived += priorityFramesRead.get() - priorityFramesReadLastPublish;
+        owner.processCount += processCount.get() - processCountLastPublish;
 
         bytesReadLastPublish = bytesRead.get();
         normalFramesReadLastPublish = normalFramesRead.get();
         priorityFramesReadLastPublish = priorityFramesRead.get();
-        handleCountLastPublish = handleCount.get();
+        processCountLastPublish = processCount.get();
     }
 
     @Override
     public void close() {
-        ioThread.addTaskAndWakeup(new Runnable() {
+        owner.addTaskAndWakeup(new Runnable() {
             @Override
             public void run() {
-                if (ioThread != Thread.currentThread()) {
+                if (owner != Thread.currentThread()) {
                     // the NioInboundPipeline has migrated to a different IOThread after the close got called.
-                    // so we need to send the task to the right ioThread. Otherwise multiple ioThreads could be accessing
+                    // so we need to send the task to the right owner. Otherwise multiple ioThreads could be accessing
                     // the same channel.
-                    ioThread.addTaskAndWakeup(this);
+                    owner.addTaskAndWakeup(this);
                     return;
                 }
 
@@ -211,11 +213,11 @@ public final class NioInboundPipeline extends NioPipeline {
         @Override
         public void run() {
             // if there is no change, we are done
-            if (ioThread == newOwner) {
+            if (owner == newOwner) {
                 return;
             }
 
-            publish();
+            publishMetrics();
 
             try {
                 startMigration(newOwner);

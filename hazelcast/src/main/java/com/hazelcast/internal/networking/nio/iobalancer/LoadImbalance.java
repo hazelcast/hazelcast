@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.networking.nio.iobalancer;
 
+import com.hazelcast.internal.networking.nio.MigratablePipeline;
 import com.hazelcast.internal.networking.nio.NioPipeline;
-import com.hazelcast.internal.networking.nio.MigratableHandler;
 import com.hazelcast.internal.networking.nio.NioThread;
 import com.hazelcast.util.ItemCounter;
 
@@ -40,11 +40,11 @@ class LoadImbalance {
     //least busy NioThread
     NioThread destinationSelector;
 
-    private final Map<NioThread, Set<MigratableHandler>> selectorToHandlers;
-    private final ItemCounter<MigratableHandler> handlerLoadCounter;
+    private final Map<NioThread, Set<MigratablePipeline>> selectorToHandlers;
+    private final ItemCounter<MigratablePipeline> handlerLoadCounter;
 
-    LoadImbalance(Map<NioThread, Set<MigratableHandler>> selectorToHandlers,
-                  ItemCounter<MigratableHandler> handlerLoadCounter) {
+    LoadImbalance(Map<NioThread, Set<MigratablePipeline>> selectorToHandlers,
+                  ItemCounter<MigratablePipeline> handlerLoadCounter) {
         this.selectorToHandlers = selectorToHandlers;
         this.handlerLoadCounter = handlerLoadCounter;
     }
@@ -53,15 +53,15 @@ class LoadImbalance {
      * @param selector
      * @return A set of Handlers owned by the selector
      */
-    Set<MigratableHandler> getHandlersOwnerBy(NioThread selector) {
+    Set<MigratablePipeline> getPipelinesOwnerBy(NioThread selector) {
         return selectorToHandlers.get(selector);
     }
 
     /**
-     * @param handler
-     * @return number of events recorded by the handler
+     * @param pipeline
+     * @return load recorded by the pipeline
      */
-    long getLoad(MigratableHandler handler) {
-        return handlerLoadCounter.get(handler);
+    long getLoad(MigratablePipeline pipeline) {
+        return handlerLoadCounter.get(pipeline);
     }
 }

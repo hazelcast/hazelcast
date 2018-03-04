@@ -25,7 +25,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.Node;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.util.EmptyStatement;
 import org.junit.After;
 import org.junit.Before;
 
@@ -143,7 +142,7 @@ public abstract class CacheTestSupport extends HazelcastTestSupport {
             assertEquals("there should be no evicted values", 0, cache.getLocalCacheStatistics().getCacheEvictions());
         } catch (UnsupportedOperationException e) {
             // cache statistics are not supported on clients yet
-            EmptyStatement.ignore(e);
+            ignore(e);
         }
     }
 }

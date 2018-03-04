@@ -22,7 +22,6 @@ import com.hazelcast.internal.networking.ChannelErrorHandler;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.operationexecutor.OperationHostileThread;
-import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.concurrent.IdleStrategy;
 
 import java.io.IOException;
@@ -40,6 +39,7 @@ import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static com.hazelcast.internal.networking.nio.SelectorMode.SELECT_NOW;
 import static com.hazelcast.internal.networking.nio.SelectorOptimizer.newSelector;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
+import static com.hazelcast.util.EmptyStatement.ignore;
 import static java.lang.Math.max;
 import static java.lang.System.currentTimeMillis;
 
@@ -70,7 +70,7 @@ public class NioThread extends Thread implements OperationHostileThread {
     @Probe(level = DEBUG)
     volatile long priorityFramesTransceived;
     @Probe(level = DEBUG)
-    volatile long handleCount;
+    volatile long processCount;
 
     @Probe(name = "taskQueueSize")
     private final Queue<Runnable> taskQueue = new ConcurrentLinkedQueue<Runnable>();
@@ -144,7 +144,7 @@ public class NioThread extends Thread implements OperationHostileThread {
     }
 
     public long handleCount() {
-        return handleCount;
+        return processCount;
     }
 
     public long eventCount() {
@@ -162,10 +162,6 @@ public class NioThread extends Thread implements OperationHostileThread {
      */
     public final Selector getSelector() {
         return selector;
-    }
-
-    public ChannelErrorHandler getErrorHandler() {
-        return errorHandler;
     }
 
     /**
@@ -355,8 +351,8 @@ public class NioThread extends Thread implements OperationHostileThread {
     }
 
     private NioThread getTargetIOThread(Runnable task) {
-        if (task instanceof MigratableHandler) {
-            return ((MigratableHandler) task).getOwner();
+        if (task instanceof MigratablePipeline) {
+            return ((MigratablePipeline) task).owner();
         } else {
             return this;
         }
@@ -384,7 +380,7 @@ public class NioThread extends Thread implements OperationHostileThread {
             // we don't need to check for sk.isReadable/sk.isWritable since the pipeline has only registered
             // for events it can handle.
             eventCount.inc();
-            pipeline.handle();
+            pipeline.process();
         } catch (Throwable t) {
             pipeline.onFailure(t);
         }
@@ -428,7 +424,7 @@ public class NioThread extends Thread implements OperationHostileThread {
             } catch (CancelledKeyException e) {
                 // a CancelledKeyException may be thrown in key.interestOps
                 // in this case, since the key is already cancelled, just do nothing
-                EmptyStatement.ignore(e);
+                ignore(e);
             }
             key.cancel();
         }

@@ -26,7 +26,6 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.LifecycleService;
-import com.hazelcast.util.EmptyStatement;
 
 import javax.cache.CacheException;
 import javax.cache.CacheManager;
@@ -47,6 +46,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateCacheConfig;
 import com.hazelcast.nio.serialization.BinaryInterface;
+import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.SetUtil.createLinkedHashSet;
 
@@ -314,7 +314,7 @@ public abstract class AbstractHazelcastCacheManager
             // if hazelcastInstance is terminated already,
             // `lifecycleService.removeLifecycleListener` will throw HazelcastInstanceNotActiveException.
             // We can safely ignore this exception. See TerminatedLifecycleService.
-            EmptyStatement.ignore(e);
+            ignore(e);
         }
     }
 
