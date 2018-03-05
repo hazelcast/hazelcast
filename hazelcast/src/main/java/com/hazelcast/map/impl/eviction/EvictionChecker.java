@@ -106,15 +106,15 @@ public class EvictionChecker {
     }
 
     protected boolean checkPerNodeEviction(RecordStore recordStore) {
-        double maxExpectedRecordStoreSize = calculatePerNodeMaxRecordStoreSize(recordStore);
-        return recordStore.size() > maxExpectedRecordStoreSize;
+        double recordStoreSize = translatePerNodeSizeToRecordStoreSize(recordStore);
+        return recordStore.size() > recordStoreSize;
     }
 
     /**
      * Calculates and returns the expected maximum size of an evicted record-store
      * when {@link com.hazelcast.config.MaxSizeConfig.MaxSizePolicy#PER_NODE PER_NODE} max-size-policy is used.
      */
-    public double calculatePerNodeMaxRecordStoreSize(RecordStore recordStore) {
+    public double translatePerNodeSizeToRecordStoreSize(RecordStore recordStore) {
         MapConfig mapConfig = recordStore.getMapContainer().getMapConfig();
         MaxSizeConfig maxSizeConfig = mapConfig.getMaxSizeConfig();
         NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
@@ -124,11 +124,13 @@ public class EvictionChecker {
         int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
 
         final double perNodeMaxRecordStoreSize = (1D * configuredMaxSize * memberCount / partitionCount);
-        if (perNodeMaxRecordStoreSize < 1 && misconfiguredPerNodeMaxSizeWarningLogged.compareAndSet(false, true)) {
+        if (perNodeMaxRecordStoreSize < 1
+                && misconfiguredPerNodeMaxSizeWarningLogged.compareAndSet(false, true)) {
             int minMaxSize = (int) Math.ceil((1D * partitionCount / memberCount));
-            logger.warning(format("The max size configuration for map \"%s\" does not allow any data in the map. "
-                    + "Given the current cluster size of %d members with %d partitions, max size should be at "
-                            + "least %d.", mapConfig.getName(), memberCount, partitionCount, minMaxSize));
+            String msg = "The max size configuration for map '%s' does not allow "
+                    + " any data in the map. Given the current cluster size of %d "
+                    + "members with %d partitions, max size should be at least %d.";
+            logger.warning(format(msg, mapConfig.getName(), memberCount, partitionCount, minMaxSize));
         }
         return perNodeMaxRecordStoreSize;
     }

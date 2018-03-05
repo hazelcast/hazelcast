@@ -23,7 +23,6 @@ import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordReplicationInfo;
-import com.hazelcast.map.impl.record.Records;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -51,6 +50,8 @@ import java.util.Map;
 import java.util.Set;
 
 import static com.hazelcast.map.impl.record.Records.applyRecordInfo;
+import static com.hazelcast.map.impl.record.Records.getValueOrCachedValue;
+import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_TTL;
 import static com.hazelcast.util.MapUtil.createHashMap;
 import static com.hazelcast.util.SetUtil.createHashSet;
 
@@ -139,7 +140,6 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
             mapIndexInfo.addIndexInfos(indexInfos);
             mapIndexInfos.add(mapIndexInfo);
         }
-
     }
 
     void applyState() {
@@ -177,17 +177,20 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
                 for (RecordReplicationInfo recordReplicationInfo : recordReplicationInfos) {
                     Data key = recordReplicationInfo.getKey();
                     final Data value = recordReplicationInfo.getValue();
-                    Record newRecord = recordStore.createRecord(value, -1L, Clock.currentTimeMillis());
+                    Record newRecord = recordStore.createRecord(value, DEFAULT_TTL, Clock.currentTimeMillis());
                     applyRecordInfo(newRecord, recordReplicationInfo);
                     recordStore.putRecord(key, newRecord);
 
                     if (indexesMustBePopulated) {
-                        final Object valueToIndex = Records.getValueOrCachedValue(newRecord, serializationService);
+                        final Object valueToIndex = getValueOrCachedValue(newRecord, serializationService);
                         if (valueToIndex != null) {
                             final QueryableEntry queryableEntry = mapContainer.newQueryEntry(newRecord.getKey(), valueToIndex);
                             indexes.saveEntryIndex(queryableEntry, null);
                         }
                     }
+
+                    recordStore.evictEntries(key);
+                    recordStore.disposeDeferredBlocks();
                 }
             }
         }
