@@ -183,7 +183,7 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
         final HazelcastInstance hz = instances[instances.length - 1];
         TransactionManagerServiceImpl transactionManagerService = spyTransactionManagerService(hz);
 
-        TransactionOptions options = TransactionOptions.getDefault().setTimeout(30, TimeUnit.SECONDS);
+        TransactionOptions options = TransactionOptions.getDefault().setTimeout(60, TimeUnit.SECONDS);
         when(transactionManagerService.newAllowedDuringPassiveStateTransaction(options)).thenAnswer(new TransactionAnswer() {
             @Override
             protected void beforePrepare() {
@@ -233,7 +233,7 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
         final HazelcastInstance hz = instances[instances.length - 1];
         TransactionManagerServiceImpl transactionManagerService = spyTransactionManagerService(hz);
 
-        TransactionOptions options = new TransactionOptions().setDurability(0).setTimeout(30, TimeUnit.SECONDS);
+        TransactionOptions options = new TransactionOptions().setDurability(0).setTimeout(60, TimeUnit.SECONDS);
         when(transactionManagerService.newAllowedDuringPassiveStateTransaction(options)).thenAnswer(new TransactionAnswer() {
             @Override
             protected void beforePrepare() {
@@ -258,7 +258,7 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
         final HazelcastInstance hz = instances[instances.length - 1];
         TransactionManagerServiceImpl transactionManagerService = spyTransactionManagerService(hz);
 
-        TransactionOptions options = new TransactionOptions().setDurability(0).setTimeout(30, TimeUnit.SECONDS);
+        TransactionOptions options = new TransactionOptions().setDurability(0).setTimeout(60, TimeUnit.SECONDS);
         when(transactionManagerService.newAllowedDuringPassiveStateTransaction(options)).thenAnswer(new TransactionAnswer() {
             @Override
             protected void afterPrepare() {
