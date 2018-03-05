@@ -20,8 +20,10 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
+import com.hazelcast.scheduledexecutor.ScheduledExecutorServiceTestSupport.PlainCallableTask;
 import com.hazelcast.spi.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.DiscardMergePolicy;
+import com.hazelcast.spi.merge.PassThroughMergePolicy;
 import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.SplitBrainTestSupport;
@@ -36,19 +38,21 @@ import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.scheduledexecutor.TaskUtils.named;
 import static java.lang.Integer.MAX_VALUE;
+import static java.lang.Integer.parseInt;
 import static java.lang.String.valueOf;
 import static java.util.Arrays.asList;
+import static java.util.Collections.sort;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
@@ -56,6 +60,7 @@ import static org.hamcrest.Matchers.lessThan;
 import static org.hamcrest.core.AllOf.allOf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @RunWith(Parameterized.class)
@@ -63,18 +68,20 @@ import static org.junit.Assert.fail;
 @Category({QuickTest.class, ParallelTest.class})
 public class ScheduledExecutorSplitBrainTest extends SplitBrainTestSupport {
 
-    private final String name = randomString();
+    private static final int INITIAL_COUNT = 300;
+    private static final int AFTER_SPLIT_COMMON_COUNT = INITIAL_COUNT + 50;
+    private static final int FINAL_COUNT = AFTER_SPLIT_COMMON_COUNT + 50;
 
-    private final int INITIAL_COUNT = 300;
-    private final int AFTER_SPLIT_COMMON_COUNT = INITIAL_COUNT + 50;
-    private final int FINAL_COUNT = AFTER_SPLIT_COMMON_COUNT + 50;
-
-    private MergeLifecycleListener mergeLifecycleListener;
+    // with these values the expected result will be 42.0, the unexpected result 100.0
+    private static final int EXPECTED_VALUE = 17;
+    private static final int UNEXPECTED_VALUE = 75;
+    private static final double EXPECTED_RESULT = PlainCallableTask.calculateResult(EXPECTED_VALUE);
 
     @Parameters(name = "mergePolicy:{0}")
     public static Collection<Object> parameters() {
         return asList(new Object[]{
                 DiscardMergePolicy.class,
+                PassThroughMergePolicy.class,
                 PutIfAbsentMergePolicy.class,
         });
     }
@@ -82,9 +89,16 @@ public class ScheduledExecutorSplitBrainTest extends SplitBrainTestSupport {
     @Parameter
     public Class<? extends SplitBrainMergePolicy> mergePolicyClass;
 
-    // Concurrent map just for the convenience of the putIfAbsent, no real concurrency needs here
-    private ConcurrentMap<String, IScheduledFuture<Double>> allScheduledFutures
+    // the ConcurrentMap just for the convenience of the putIfAbsent(), no real concurrency needs here
+    private final ConcurrentMap<String, IScheduledFuture<Double>> expectedScheduledFutures
             = new ConcurrentHashMap<String, IScheduledFuture<Double>>();
+    private final ConcurrentMap<String, IScheduledFuture<Double>> unexpectedScheduledFutures
+            = new ConcurrentHashMap<String, IScheduledFuture<Double>>();
+
+    private String scheduledExecutorName = randomMapName("scheduledExecutor-");
+    private IScheduledExecutorService scheduledExecutorService1;
+    private IScheduledExecutorService scheduledExecutorService2;
+    private MergeLifecycleListener mergeLifecycleListener;
 
     @Override
     protected Config config() {
@@ -93,7 +107,7 @@ public class ScheduledExecutorSplitBrainTest extends SplitBrainTestSupport {
                 .setBatchSize(10);
 
         Config config = super.config();
-        config.getScheduledExecutorConfig(name)
+        config.getScheduledExecutorConfig(scheduledExecutorName)
                 .setDurability(1)
                 .setMergePolicyConfig(mergePolicyConfig);
         return config;
@@ -103,10 +117,10 @@ public class ScheduledExecutorSplitBrainTest extends SplitBrainTestSupport {
     protected void onBeforeSplitBrainCreated(HazelcastInstance[] instances) {
         waitAllForSafeState(instances);
 
-        IScheduledExecutorService executorService = instances[0].getScheduledExecutorService(name);
+        IScheduledExecutorService executorService = instances[0].getScheduledExecutorService(scheduledExecutorName);
 
         for (int i = 0; i < INITIAL_COUNT; i++) {
-            schedule(executorService, i);
+            schedule(executorService, i, EXPECTED_VALUE);
         }
     }
 
@@ -117,17 +131,24 @@ public class ScheduledExecutorSplitBrainTest extends SplitBrainTestSupport {
             instance.getLifecycleService().addLifecycleListener(mergeLifecycleListener);
         }
 
-        // Wait for a few seconds, to allow the event system to finish delivering partition-lost events.
-        // This minimizes the chances of a race condition between handling the event and scheduling a new task.
-        // The IScheduledExecutor allows for tasks to be aware of lost partitions (marking the tasks as stale), hence, if
-        // we schedule a task before handling the event, then the task becomes stale (due to the event).
-        // Similar too: https://github.com/hazelcast/hazelcast/issues/12424
+        /*
+         * Wait for a few seconds, to allow the event system to finish delivering partition-lost events.
+         * This minimizes the chances of a race condition between handling the event and scheduling a new task.
+         * The IScheduledExecutor allows for tasks to be aware of lost partitions (marking the tasks as stale), hence, if
+         * we schedule a task before handling the event, then the task becomes stale (due to the event).
+         * Similar too: https://github.com/hazelcast/hazelcast/issues/12424
+         */
         sleepSeconds(5);
 
+        scheduledExecutorService1 = firstBrain[0].getScheduledExecutorService(scheduledExecutorName);
+        scheduledExecutorService2 = secondBrain[0].getScheduledExecutorService(scheduledExecutorName);
+
         if (mergePolicyClass == DiscardMergePolicy.class) {
-            onAfterSplitDiscardPolicy(firstBrain, secondBrain);
+            onAfterSplitDiscardPolicy();
+        } else if (mergePolicyClass == PassThroughMergePolicy.class) {
+            onAfterSplitPassThroughPolicy();
         } else if (mergePolicyClass == PutIfAbsentMergePolicy.class) {
-            onAfterSplitPutAbsentPolicy(firstBrain, secondBrain);
+            onAfterSplitPutIfAbsentPolicy();
         } else {
             fail();
         }
@@ -139,67 +160,80 @@ public class ScheduledExecutorSplitBrainTest extends SplitBrainTestSupport {
         mergeLifecycleListener.await();
 
         if (mergePolicyClass == DiscardMergePolicy.class) {
-            onAfterMergeDiscardMergePolicy(instances);
+            onAfterMergeDiscardMergePolicy();
+        } else if (mergePolicyClass == PassThroughMergePolicy.class) {
+            onAfterMergePassThroughMergePolicy();
         } else if (mergePolicyClass == PutIfAbsentMergePolicy.class) {
-            onAfterMergePutAbsentMergePolicy(instances);
+            onAfterMergePutIfAbsentMergePolicy();
         } else {
             fail();
         }
     }
 
-    private void onAfterSplitDiscardPolicy(HazelcastInstance[] firstBrain, HazelcastInstance[] secondBrain) {
-        IScheduledExecutorService scheduledExecutorService = secondBrain[0].getScheduledExecutorService(name);
-        schedule(scheduledExecutorService, MAX_VALUE);
+    private void onAfterSplitDiscardPolicy() {
+        schedule(scheduledExecutorService2, MAX_VALUE, UNEXPECTED_VALUE);
     }
 
-    private void onAfterMergeDiscardMergePolicy(HazelcastInstance[] instances) throws Exception {
-        IScheduledExecutorService executorService = instances[0].getScheduledExecutorService(name);
-
-        // remove the task that was scheduled after the split
-        IScheduledFuture afterSplitScheduledTask = allScheduledFutures.remove(valueOf(MAX_VALUE));
-
+    private void onAfterMergeDiscardMergePolicy() throws Exception {
         // assert everything else (ie. tasks created before split) is in order
-        assertContents(executorService.<Double>getAllScheduledFutures());
+        assertContents(scheduledExecutorService1.<Double>getAllScheduledFutures());
+        assertContents(scheduledExecutorService2.<Double>getAllScheduledFutures());
         assertHandlersAreStillCorrect();
-
-        // attempting to access the task that was scheduled after the split should fail
-        try {
-            afterSplitScheduledTask.isDone();
-            fail();
-        } catch (StaleTaskException ste) {
-            ignore(ste);
-        } catch (IllegalStateException ise) {
-            assertContains(ise.getMessage(), "was lost along with all backups.");
-        }
+        assertDiscardedFutures();
     }
 
-    private void onAfterSplitPutAbsentPolicy(HazelcastInstance[] firstBrain, HazelcastInstance[] secondBrain) {
-        IScheduledExecutorService executorService1 = firstBrain[0].getScheduledExecutorService(name);
-
+    private void onAfterSplitPassThroughPolicy() {
+        // we should not see the tasks with UNEXPECTED_VALUE in the final tasks,
+        // since they will be overridden by the merging tasks with the same name
         for (int i = INITIAL_COUNT; i < AFTER_SPLIT_COMMON_COUNT; i++) {
-            schedule(executorService1, i);
+            schedule(scheduledExecutorService1, i, UNEXPECTED_VALUE);
+            schedule(scheduledExecutorService2, i, EXPECTED_VALUE);
         }
 
-        // Add up-to AFTER_SPLIT_COMMON_COUNT which should be ignored after merge, due to same name, and up-to FINAL_COUNT
-        // more tasks on top of that, which should be merged, unique names.
-        IScheduledExecutorService executorService2 = secondBrain[0].getScheduledExecutorService(name);
-        for (int i = INITIAL_COUNT; i < FINAL_COUNT; i++) {
-            schedule(executorService2, i);
+        // we should not lose these additional tasks, since they have a unique name
+        for (int i = AFTER_SPLIT_COMMON_COUNT; i < FINAL_COUNT; i++) {
+            schedule(scheduledExecutorService2, i, EXPECTED_VALUE);
         }
     }
 
-    private void onAfterMergePutAbsentMergePolicy(HazelcastInstance[] instances) throws Exception {
-        IScheduledExecutorService executorService = instances[0].getScheduledExecutorService(name);
-        assertContents(executorService.<Double>getAllScheduledFutures());
+    private void onAfterMergePassThroughMergePolicy() throws Exception {
+        assertContents(scheduledExecutorService1.<Double>getAllScheduledFutures());
+        assertContents(scheduledExecutorService2.<Double>getAllScheduledFutures());
         assertHandlersAreStillCorrect();
+        assertUnexpectedFuturesHaveMergedValue();
     }
 
-    private void schedule(IScheduledExecutorService scheduledExecutorService, int value) {
-        // once a task runs, all calls to `.get()` should return 30
-        String name = valueOf(value);
-        IScheduledFuture future = scheduledExecutorService.schedule(
-                named(name, new ScheduledExecutorServiceTestSupport.PlainCallableTask(5)), 0, SECONDS);
-        allScheduledFutures.putIfAbsent(name, future);
+    private void onAfterSplitPutIfAbsentPolicy() {
+        // we should not see the tasks with UNEXPECTED_VALUE in the final tasks,
+        // since they have the same name as existing tasks
+        for (int i = INITIAL_COUNT; i < AFTER_SPLIT_COMMON_COUNT; i++) {
+            schedule(scheduledExecutorService1, i, EXPECTED_VALUE);
+            schedule(scheduledExecutorService2, i, UNEXPECTED_VALUE);
+        }
+
+        // we should not lose these additional tasks, since they have a unique name
+        for (int i = AFTER_SPLIT_COMMON_COUNT; i < FINAL_COUNT; i++) {
+            schedule(scheduledExecutorService2, i, EXPECTED_VALUE);
+        }
+    }
+
+    private void onAfterMergePutIfAbsentMergePolicy() throws Exception {
+        assertContents(scheduledExecutorService1.<Double>getAllScheduledFutures());
+        assertContents(scheduledExecutorService2.<Double>getAllScheduledFutures());
+        assertHandlersAreStillCorrect();
+        assertUnexpectedFuturesHaveMergedValue();
+    }
+
+    private void schedule(IScheduledExecutorService scheduledExecutorService, int name, int taskValue) {
+        // once a task runs, all calls to future.get() should return PlainCallableTask.calculateResult(value)
+        String stringName = valueOf(name);
+        Callable<Double> task = named(stringName, new PlainCallableTask(taskValue));
+        IScheduledFuture<Double> future = scheduledExecutorService.schedule(task, 0, SECONDS);
+        if (taskValue == EXPECTED_VALUE) {
+            expectedScheduledFutures.putIfAbsent(stringName, future);
+        } else {
+            unexpectedScheduledFutures.putIfAbsent(stringName, future);
+        }
     }
 
     private void assertContents(Map<Member, List<IScheduledFuture<Double>>> futuresPerMember) throws Exception {
@@ -208,7 +242,7 @@ public class ScheduledExecutorSplitBrainTest extends SplitBrainTestSupport {
             total += memberFutures.size();
         }
 
-        assertEquals(allScheduledFutures.size(), total);
+        assertEquals(expectedScheduledFutures.size(), total);
 
         Set<String> seenSoFar = new HashSet<String>();
         for (List<IScheduledFuture<Double>> memberFutures : futuresPerMember.values()) {
@@ -216,9 +250,9 @@ public class ScheduledExecutorSplitBrainTest extends SplitBrainTestSupport {
                 String taskName = future.getHandler().getTaskName();
                 double value = future.get();
 
-                assertThat(Integer.parseInt(future.getHandler().getTaskName()),
-                        allOf(greaterThanOrEqualTo(0), lessThan(allScheduledFutures.size())));
-                assertEquals(value, 30, 0);
+                assertThat(parseInt(future.getHandler().getTaskName()),
+                        allOf(greaterThanOrEqualTo(0), lessThan(expectedScheduledFutures.size())));
+                assertEquals(EXPECTED_RESULT, value, 0);
                 assertFalse(seenSoFar.contains(taskName));
                 seenSoFar.add(taskName);
             }
@@ -226,21 +260,48 @@ public class ScheduledExecutorSplitBrainTest extends SplitBrainTestSupport {
     }
 
     private void assertHandlersAreStillCorrect() throws Exception {
-        List<IScheduledFuture<Double>> allFutures = new ArrayList<IScheduledFuture<Double>>(allScheduledFutures.values());
-        Collections.sort(allFutures, new Comparator<IScheduledFuture<Double>>() {
+        List<IScheduledFuture<Double>> allFutures = new ArrayList<IScheduledFuture<Double>>(expectedScheduledFutures.values());
+        sort(allFutures, new Comparator<IScheduledFuture<Double>>() {
             @Override
             public int compare(IScheduledFuture<Double> o1, IScheduledFuture<Double> o2) {
-                int a = Integer.parseInt(o1.getHandler().getTaskName());
-                int b = Integer.parseInt(o2.getHandler().getTaskName());
+                int a = parseInt(o1.getHandler().getTaskName());
+                int b = parseInt(o2.getHandler().getTaskName());
                 return new Integer(a).compareTo(b);
             }
         });
 
         int counter = 0;
         for (IScheduledFuture<Double> future : allFutures) {
-            // make sure handler is still valid and no exceptions are thrown
-            assertEquals(counter++, Integer.parseInt(future.getHandler().getTaskName()));
-            assertEquals(30, future.get(), 0);
+            // make sure the handler is still valid and no exceptions are thrown
+            assertEquals(counter++, parseInt(future.getHandler().getTaskName()));
+            assertEquals(EXPECTED_RESULT, future.get(), 0);
+        }
+    }
+
+    private void assertDiscardedFutures() throws Exception {
+        // attempting to access discarded task should fail
+        for (Map.Entry<String, IScheduledFuture<Double>> entry : unexpectedScheduledFutures.entrySet()) {
+            String taskName = entry.getKey();
+            IScheduledFuture<Double> future = entry.getValue();
+            try {
+                future.isDone();
+                fail("The future for task " + taskName + " is still accessible! Result: " + future.get());
+            } catch (StaleTaskException e) {
+                ignore(e);
+            } catch (IllegalStateException e) {
+                assertContains(e.getMessage(), "was lost along with all backups.");
+            }
+        }
+    }
+
+    private void assertUnexpectedFuturesHaveMergedValue() throws Exception {
+        for (Map.Entry<String, IScheduledFuture<Double>> entry : unexpectedScheduledFutures.entrySet()) {
+            String taskName = entry.getKey();
+            IScheduledFuture<Double> future = entry.getValue();
+            assertTrue("Expected the future for task " + taskName + " to be done", future.isDone());
+            assertFalse("Expected the future for task " + taskName + " not to be cancelled", future.isCancelled());
+            assertEquals("Expected the future for task " + taskName + " to have the EXPECTED_RESULT " + EXPECTED_RESULT,
+                    EXPECTED_RESULT, future.get(), 0);
         }
     }
 }
