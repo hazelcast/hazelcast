@@ -30,7 +30,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
@@ -55,7 +54,7 @@ import java.util.Collections;
  * An empty response can be sent if the current replica version is 0.
  */
 public final class PartitionReplicaSyncRequest extends AbstractPartitionOperation
-        implements PartitionAwareOperation, MigrationCycleOperation, Versioned {
+        implements PartitionAwareOperation, MigrationCycleOperation {
 
     private Collection<ServiceNamespace> allNamespaces;
 
