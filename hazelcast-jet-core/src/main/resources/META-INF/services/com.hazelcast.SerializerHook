@@ -19,7 +19,7 @@ com.hazelcast.jet.impl.execution.ExecutionSerializerHooks$SnapshotBarrierHook
 com.hazelcast.jet.impl.execution.ExecutionSerializerHooks$BroadcastEntryHook
 com.hazelcast.jet.impl.execution.ExecutionSerializerHooks$BroadcastKeyReferenceHook
 com.hazelcast.jet.impl.execution.init.CustomClassLoadedObject$Hook
-com.hazelcast.jet.impl.pipeline.PipelineSerializerHooks$JetEventImplHook
+com.hazelcast.jet.impl.pipeline.PipelineSerializerHooks$JetEventHook
 com.hazelcast.jet.impl.serialization.HashMapHook
 com.hazelcast.jet.impl.serialization.HashSetHook
 com.hazelcast.jet.impl.serialization.MapEntryHook

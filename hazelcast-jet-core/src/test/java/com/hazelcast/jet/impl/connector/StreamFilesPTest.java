@@ -97,6 +97,7 @@ public class StreamFilesPTest extends JetTestSupport {
         ProcessorMetaSupplier metaSupplier = streamFilesP(workDir.getAbsolutePath(), UTF_8, "*", Util::entry);
         Address a = new Address();
         ProcessorSupplier supplier = metaSupplier.get(singletonList(a)).apply(a);
+        supplier.init(new TestProcessorContext());
         assertEquals(1, supplier.get(1).size());
         supplier.complete(null);
     }

@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.core;
 
+import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Util;
 import com.hazelcast.jet.aggregate.AggregateOperation;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
@@ -23,6 +24,7 @@ import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.core.test.TestSupport;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedSupplier;
+import com.hazelcast.jet.pipeline.ContextFactory;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -37,14 +39,18 @@ import static com.hazelcast.jet.core.processor.Processors.aggregateByKeyP;
 import static com.hazelcast.jet.core.processor.Processors.combineByKeyP;
 import static com.hazelcast.jet.core.processor.Processors.combineP;
 import static com.hazelcast.jet.core.processor.Processors.filterP;
+import static com.hazelcast.jet.core.processor.Processors.filterUsingContextP;
 import static com.hazelcast.jet.core.processor.Processors.flatMapP;
+import static com.hazelcast.jet.core.processor.Processors.flatMapUsingContextP;
 import static com.hazelcast.jet.core.processor.Processors.mapP;
+import static com.hazelcast.jet.core.processor.Processors.mapUsingContextP;
 import static com.hazelcast.jet.core.processor.Processors.noopP;
 import static com.hazelcast.jet.function.DistributedFunctions.alwaysTrue;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -60,11 +66,41 @@ public class ProcessorsTest {
     }
 
     @Test
+    public void mapUsingContext() {
+        TestSupport
+                .verifyProcessor(mapUsingContextP(
+                        ContextFactory.withCreateFn(context -> new int[1])
+                                      .withDestroyFn(context -> assertEquals(6, context[0])),
+                        (int[] context, Integer item) -> context[0] += item))
+                .disableSnapshots()
+                .input(asList(1, 2, 3))
+                .expectOutput(asList(1, 3, 6));
+    }
+
+    @Test
     public void filteringWithMap() {
         TestSupport
                 .verifyProcessor(mapP((Integer i) -> i > 1 ? i : null))
                 .input(asList(1, 2))
                 .expectOutput(singletonList(2));
+    }
+
+    @Test
+    public void filteringWithMapUsingContext() {
+        TestSupport
+                .verifyProcessor(mapUsingContextP(
+                        ContextFactory.withCreateFn(context -> new int[1])
+                                      .withDestroyFn(context -> assertEquals(3, context[0])),
+                        (int[] context, Integer item) -> {
+                            try {
+                                return context[0] % 2 == 0 ? item : null;
+                            } finally {
+                                context[0] = item;
+                            }
+                        }))
+                .disableSnapshots()
+                .input(asList(1, 2, 3))
+                .expectOutput(asList(1, 3));
     }
 
     @Test
@@ -76,11 +112,46 @@ public class ProcessorsTest {
     }
 
     @Test
+    public void filterUsingContext() {
+        TestSupport
+                .verifyProcessor(filterUsingContextP(
+                        ContextFactory.withCreateFn(context -> new int[1])
+                                      .withDestroyFn(context -> assertEquals(2, context[0])),
+                        (int[] context, Integer item) -> {
+                            try {
+                                // will pass if greater than the previous item
+                                return item > context[0];
+                            } finally {
+                                context[0] = item;
+                            }
+                        }))
+                .input(asList(1, 2, 1, 2))
+                .disableSnapshots()
+                .expectOutput(asList(1, 2, 2));
+    }
+
+    @Test
     public void flatMap() {
         TestSupport
                 .verifyProcessor(flatMapP(o -> traverseIterable(asList(o + "a", o + "b"))))
                 .input(singletonList(1))
                 .expectOutput(asList("1a", "1b"));
+    }
+
+    @Test
+    public void flatMapUsingContext() {
+        int[] context = {0};
+
+        TestSupport
+                .verifyProcessor(flatMapUsingContextP(
+                        ContextFactory.withCreateFn(procContext -> context)
+                                      .withDestroyFn(c -> c[0]++),
+                        (int[] c, Integer item) -> Traverser.over(item, c[0] += item)))
+                .disableSnapshots()
+                .input(asList(1, 2, 3))
+                .expectOutput(asList(1, 1, 2, 3, 3, 6));
+
+        assertEquals(7, context[0]);
     }
 
     @Test

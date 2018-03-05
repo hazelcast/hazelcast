@@ -33,7 +33,7 @@ import static com.hazelcast.jet.impl.pipeline.JetEvent.jetEvent;
  */
 public class PipelineSerializerHooks {
 
-    public static final class JetEventImplHook implements SerializerHook<JetEvent> {
+    public static final class JetEventHook implements SerializerHook<JetEvent> {
 
         @Override
         public Class<JetEvent> getSerializationType() {

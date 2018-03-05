@@ -56,19 +56,19 @@ public interface Processor {
      * <p>
      * A cooperative processor should also not attempt any blocking operations,
      * such as I/O operations, waiting for locks/semaphores or sleep
-     * operations. Violations to this rule will manifest themselves as less
-     * than 100% CPU usage under maximum load. The processor should also return
-     * as soon as an item is rejected by the outbox (that is when the {@link
-     * Outbox#offer(Object) offer()} method returns {@code false}).
+     * operations. Violations of this rule will manifest as less than 100% CPU
+     * usage under maximum load. The processor must also return as soon as the
+     * outbox rejects an item (that is when the {@link Outbox#offer(Object)
+     * offer()} method returns {@code false}).
      * <p>
      * If this processor declares itself cooperative, it will share a thread
      * with other cooperative processors. Otherwise it will run in a dedicated
      * Java thread.
      * <p>
-     * Jet prefers cooperative processors because they result in greater overall
-     * throughput. A processor should be non-cooperative only if it involves
-     * blocking operations, which would cause all other processors on the same
-     * shared thread to starve.
+     * Jet prefers cooperative processors because they result in a greater
+     * overall throughput. A processor should be non-cooperative only if it
+     * involves blocking operations, which would cause all other processors on
+     * the same shared thread to starve.
      * <p>
      * Processor instances on single vertex are allowed to return different
      * value, but single processor instance must return constant value.

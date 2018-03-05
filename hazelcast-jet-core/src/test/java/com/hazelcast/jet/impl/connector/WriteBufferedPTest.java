@@ -30,6 +30,7 @@ import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.processor.SinkProcessors;
 import com.hazelcast.jet.core.test.TestInbox;
+import com.hazelcast.jet.core.test.TestProcessorContext;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.Before;
 import org.junit.Test;
@@ -56,7 +57,9 @@ public class WriteBufferedPTest extends JetTestSupport {
 
     @Test
     public void writeBuffered_smokeTest() throws Exception {
-        Processor p = getLoggingBufferedWriter().get(1).iterator().next();
+        ProcessorSupplier supplier = getLoggingBufferedWriter();
+        supplier.init(new TestProcessorContext());
+        Processor p = supplier.get(1).iterator().next();
         Outbox outbox = mock(Outbox.class);
         p.init(outbox, mock(Context.class));
         TestInbox inbox = new TestInbox();

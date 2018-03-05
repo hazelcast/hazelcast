@@ -25,6 +25,7 @@ import com.hazelcast.jet.core.Processor.Context;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Watermark;
+import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingServiceImpl;
 import com.hazelcast.nio.Address;
@@ -82,6 +83,10 @@ import static java.util.stream.Collectors.toMap;
  *     <li>does snapshot or snapshot+restore each time the {@code complete()}
  *     method returned {@code false} and made a progress
  * </ul>
+ *
+ * The {@code init()} and {@code complete()} methods of {@link
+ * ProcessorSupplier} and {@link ProcessorMetaSupplier} are called if you call
+ * the {@link #verifyProcessor} using one of these.
  *
  * <h3>Snapshot &amp; restore</h3>
  * The {@link #disableSnapshots() optional} snapshot+restore test procedure:
@@ -192,7 +197,7 @@ public final class TestSupport {
         }
     }
 
-    private Supplier<Processor> supplier;
+    private ProcessorSupplier supplier;
     private List<List<?>> inputs = emptyList();
     private List<List<?>> expectedOutputs = emptyList();
     private int[] priorities = {};
@@ -206,7 +211,7 @@ public final class TestSupport {
 
     private BiPredicate<? super List<?>, ? super List<?>> outputChecker = Objects::equals;
 
-    private TestSupport(@Nonnull Supplier<Processor> supplier) {
+    private TestSupport(@Nonnull ProcessorSupplier supplier) {
         this.supplier = supplier;
     }
 
@@ -216,29 +221,30 @@ public final class TestSupport {
      *                  restore.
      */
     public static TestSupport verifyProcessor(Processor processor) {
-        return new TestSupport(singletonSupplier(processor))
+        return new TestSupport(ProcessorSupplier.of(singletonSupplier(processor)))
                 .disableSnapshots();
     }
 
     /**
      * @param supplier a processor supplier create processor instances
      */
-    public static TestSupport verifyProcessor(@Nonnull Supplier<Processor> supplier) {
-        return new TestSupport(supplier);
+    public static TestSupport verifyProcessor(@Nonnull DistributedSupplier<Processor> supplier) {
+        return new TestSupport(ProcessorSupplier.of(supplier));
     }
 
     /**
      * @param supplier a processor supplier create processor instances
      */
     public static TestSupport verifyProcessor(@Nonnull ProcessorSupplier supplier) {
-        return new TestSupport(supplierFrom(supplier));
+        return new TestSupport(supplier);
     }
 
     /**
      * @param supplier a processor supplier create processor instances
      */
     public static TestSupport verifyProcessor(@Nonnull ProcessorMetaSupplier supplier) {
-        return new TestSupport(supplierFrom(supplier));
+        supplier.init(new TestProcessorMetaSupplierContext());
+        return new TestSupport(supplier.get(singletonList(LOCAL_ADDRESS)).apply(LOCAL_ADDRESS));
     }
 
     /**
@@ -323,8 +329,10 @@ public final class TestSupport {
      * @throws AssertionError if some assertion does not hold
      */
     public void expectOutputs(@Nonnull List<List<?>> expectedOutputs) {
+        supplier.init(new TestProcessorSupplierContext());
         this.expectedOutputs = expectedOutputs;
         runTest(doSnapshots, doSnapshots ? 1 : 0);
+        supplier.complete(null);
     }
 
     /**
@@ -471,7 +479,7 @@ public final class TestSupport {
 
         TestInbox inbox = new TestInbox();
         int inboxOrdinal = -1;
-        Processor[] processor = {supplier.get()};
+        Processor[] processor = {newProcessorFromSupplier()};
         boolean isCooperative = processor[0].isCooperative();
 
         // we'll use 1-capacity outbox to test outbox rejection
@@ -563,6 +571,10 @@ public final class TestSupport {
                         + "\" doesn't match", listToString(expectedOutput), listToString(actualOutput));
             }
         }
+    }
+
+    private Processor newProcessorFromSupplier() {
+        return supplier.get(1).iterator().next();
     }
 
     /**
@@ -673,7 +685,7 @@ public final class TestSupport {
         // restore state to new processor
         assert outbox[0].queue(0).isEmpty();
         assert outbox[0].snapshotQueue().isEmpty();
-        processor[0] = supplier.get();
+        processor[0] = newProcessorFromSupplier();
         outbox[0] = createOutbox();
         initProcessor(processor[0], outbox[0]);
 
@@ -723,8 +735,10 @@ public final class TestSupport {
 
     private void initProcessor(Processor processor, TestOutbox outbox) {
         TestProcessorContext context = new TestProcessorContext()
-                .setJetInstance(jetInstance)
                 .setLogger(getLogger(processor.getClass().getName()));
+        if (jetInstance != null) {
+            context.setJetInstance(jetInstance);
+        }
         processor.init(outbox, context);
     }
 
@@ -773,7 +787,7 @@ public final class TestSupport {
                    .collect(Collectors.joining("\n"));
     }
 
-    private static Supplier<Processor> singletonSupplier(Processor processor) {
+    private static DistributedSupplier<Processor> singletonSupplier(Processor processor) {
         Processor[] processor1 = {processor};
         return () -> {
             if (processor1[0] == null) {

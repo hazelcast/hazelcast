@@ -31,6 +31,7 @@ import com.hazelcast.jet.core.TimestampKind;
 import com.hazelcast.jet.core.WatermarkGenerationParams;
 import com.hazelcast.jet.datamodel.TimestampedEntry;
 import com.hazelcast.jet.function.DistributedBiFunction;
+import com.hazelcast.jet.function.DistributedBiPredicate;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedPredicate;
 import com.hazelcast.jet.function.DistributedSupplier;
@@ -41,11 +42,14 @@ import com.hazelcast.jet.impl.processor.InsertWatermarksP;
 import com.hazelcast.jet.impl.processor.SessionWindowP;
 import com.hazelcast.jet.impl.processor.SlidingWindowP;
 import com.hazelcast.jet.impl.processor.TransformP;
+import com.hazelcast.jet.impl.processor.TransformUsingContextP;
 import com.hazelcast.jet.impl.util.WrappingProcessorMetaSupplier;
 import com.hazelcast.jet.impl.util.WrappingProcessorSupplier;
+import com.hazelcast.jet.pipeline.ContextFactory;
+
+import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.Map.Entry;
-import javax.annotation.Nonnull;
 
 import static com.hazelcast.jet.core.TimestampKind.EVENT;
 import static com.hazelcast.jet.function.DistributedFunction.identity;
@@ -681,15 +685,15 @@ public final class Processors {
      * <p>
      * This processor is stateless.
      *
-     * @param predicate a stateless predicate to test each received item against
+     * @param filterFn a stateless predicate to test each received item against
      * @param <T> type of received item
      */
     @Nonnull
-    public static <T> DistributedSupplier<Processor> filterP(@Nonnull DistributedPredicate<T> predicate) {
+    public static <T> DistributedSupplier<Processor> filterP(@Nonnull DistributedPredicate<T> filterFn) {
         return () -> {
             final ResettableSingletonTraverser<T> trav = new ResettableSingletonTraverser<>();
             return new TransformP<T, T>(item -> {
-                trav.accept(predicate.test(item) ? item : null);
+                trav.accept(filterFn.test(item) ? item : null);
                 return trav;
             });
         };
@@ -698,11 +702,8 @@ public final class Processors {
     /**
      * Returns a supplier of processors for a vertex that applies the provided
      * item-to-traverser mapping function to each received item and emits all
-     * the items from the resulting traverser.
-     * <p>
-     * The traverser returned from the {@code flatMapFn} must be finite. That
-     * is, this operation will not attempt to emit any items after the first
-     * {@code null} item.
+     * the items from the resulting traverser. The traverser must be
+     * <em>null-terminated</em>.
      * <p>
      * This processor is stateless.
      *
@@ -715,6 +716,90 @@ public final class Processors {
             @Nonnull DistributedFunction<T, ? extends Traverser<? extends R>> flatMapFn
     ) {
         return () -> new TransformP<>(flatMapFn);
+    }
+
+    /**
+     * Returns a supplier of processors for a vertex which, for each received
+     * item, emits the result of applying the given mapping function to it. The
+     * mapping function receives another parameter, the context object which
+     * Jet will create using the supplied {@code contextFactory}.
+     * <p>
+     * If the mapping result is {@code null}, the vertex emits nothing.
+     * Therefore it can be used to implement filtering semantics as well.
+     * <p>
+     * While it's allowed to store some local state in the context object, it
+     * won't be saved to the snapshot and will misbehave in a fault-tolerant
+     * stream processing job.
+     *
+     * @param contextFactory the context factory
+     * @param mapFn a stateless mapping function
+     * @param <C> type of context object
+     * @param <T> type of received item
+     * @param <R> type of emitted item
+     */
+    @Nonnull
+    public static <C, T, R> ProcessorSupplier mapUsingContextP(
+            @Nonnull ContextFactory<C> contextFactory,
+            @Nonnull DistributedBiFunction<? super C, ? super T, ? extends R> mapFn
+    ) {
+        return TransformUsingContextP.<C, T, R>supplier(contextFactory, (singletonTraverser, context, item) -> {
+            singletonTraverser.accept(mapFn.apply(context, item));
+            return singletonTraverser;
+        });
+    }
+
+    /**
+     * Returns a supplier of processors for a vertex that emits the same items
+     * it receives, but only those that pass the given predicate. The predicate
+     * function receives another parameter, the context object which Jet will
+     * create using the supplied {@code contextFactory}.
+     * <p>
+     * While it's allowed to store some local state in the context object, it
+     * won't be saved to the snapshot and will misbehave in a fault-tolerant
+     * stream processing job.
+     *
+     * @param contextFactory the context factory
+     * @param filterFn a stateless predicate to test each received item against
+     * @param <C> type of context object
+     * @param <T> type of received item
+     */
+    @Nonnull
+    public static <C, T> ProcessorSupplier filterUsingContextP(
+            @Nonnull ContextFactory<C> contextFactory,
+            @Nonnull DistributedBiPredicate<? super C, ? super T> filterFn
+    ) {
+        return TransformUsingContextP.<C, T, T>supplier(contextFactory, (singletonTraverser, context, item) -> {
+            singletonTraverser.accept(filterFn.test(context, item) ? item : null);
+            return singletonTraverser;
+        });
+    }
+
+    /**
+     * Returns a supplier of processors for a vertex that applies the provided
+     * item-to-traverser mapping function to each received item and emits all
+     * the items from the resulting traverser. The traverser must be
+     * <em>null-terminated</em>. The mapping function receives another parameter,
+     * the context object which Jet will create using the supplied {@code
+     * contextFactory}.
+     * <p>
+     * While it's allowed to store some local state in the context object, it
+     * won't be saved to the snapshot and will misbehave in a fault-tolerant
+     * stream processing job.
+     *
+     * @param contextFactory the context factory
+     * @param flatMapFn a stateless function that maps the received item to a traverser over
+     *                  the output items
+     * @param <C> type of context object
+     * @param <T> received item type
+     * @param <R> emitted item type
+     */
+    @Nonnull
+    public static <C, T, R> ProcessorSupplier flatMapUsingContextP(
+            @Nonnull ContextFactory<C> contextFactory,
+            @Nonnull DistributedBiFunction<? super C, ? super T, ? extends Traverser<? extends R>> flatMapFn
+    ) {
+        return TransformUsingContextP.<C, T, R>supplier(contextFactory,
+                (singletonTraverser, context, item) -> flatMapFn.apply(context, item));
     }
 
     /**

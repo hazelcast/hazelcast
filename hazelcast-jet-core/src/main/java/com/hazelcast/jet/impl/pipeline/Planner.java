@@ -20,6 +20,7 @@ import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Edge;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
+import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.WatermarkEmissionPolicy;
 import com.hazelcast.jet.function.DistributedSupplier;
@@ -106,6 +107,11 @@ public class Planner {
 
     public PlannerVertex addVertex(Transform transform, String name, int localParallelism,
                                    DistributedSupplier<Processor> procSupplier) {
+        return addVertex(transform, name, localParallelism, ProcessorMetaSupplier.of(procSupplier));
+    }
+
+    public PlannerVertex addVertex(Transform transform, String name, int localParallelism,
+                                   ProcessorSupplier procSupplier) {
         return addVertex(transform, name, localParallelism, ProcessorMetaSupplier.of(procSupplier));
     }
 

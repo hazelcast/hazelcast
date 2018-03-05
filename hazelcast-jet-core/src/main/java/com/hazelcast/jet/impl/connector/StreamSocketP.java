@@ -157,7 +157,7 @@ public final class StreamSocketP extends AbstractProcessor implements Closeable 
      * Internal API, use {@link SourceProcessors#streamSocketP(String, int, Charset)}.
      */
     public static ProcessorMetaSupplier supplier(String host, int port, @Nonnull String charset) {
-        return ProcessorMetaSupplier.preferLocalParallelismOne(new CloseableProcessorSupplier<>(
+        return ProcessorMetaSupplier.preferLocalParallelismOne(CloseableProcessorSupplier.of(
                 () -> new StreamSocketP(host, port, Charset.forName(charset))));
     }
 }

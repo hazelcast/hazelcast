@@ -89,7 +89,7 @@ public final class ReadIListP extends AbstractProcessor implements Closeable {
     public static ProcessorMetaSupplier metaSupplier(String listName, ClientConfig clientConfig) {
         SerializableClientConfig config = clientConfig != null ? new SerializableClientConfig(clientConfig) : null;
         return forceTotalParallelismOne(
-                new CloseableProcessorSupplier<>(() -> new ReadIListP(listName, config)), listName
+                CloseableProcessorSupplier.of(() -> new ReadIListP(listName, config)), listName
         );
     }
 }

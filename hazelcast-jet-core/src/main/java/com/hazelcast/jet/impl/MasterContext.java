@@ -37,9 +37,9 @@ import com.hazelcast.jet.impl.operation.CompleteExecutionOperation;
 import com.hazelcast.jet.impl.operation.InitExecutionOperation;
 import com.hazelcast.jet.impl.operation.SnapshotOperation;
 import com.hazelcast.jet.impl.operation.StartExecutionOperation;
+import com.hazelcast.jet.impl.util.CompletionToken;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.jet.impl.util.NonCompletableFuture;
-import com.hazelcast.jet.impl.util.CompletionToken;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.ExecutionService;
@@ -211,7 +211,8 @@ public class MasterContext {
         logger.fine("Built execution plans for " + jobIdString());
         Set<MemberInfo> participants = executionPlanMap.keySet();
         Function<ExecutionPlan, Operation> operationCtor = plan ->
-                new InitExecutionOperation(jobId, executionId, membersView.getVersion(), participants, plan);
+                new InitExecutionOperation(jobId, executionId, membersView.getVersion(), participants,
+                        nodeEngine.getSerializationService().toData(plan));
         invoke(operationCtor, this::onInitStepCompleted, null);
     }
 

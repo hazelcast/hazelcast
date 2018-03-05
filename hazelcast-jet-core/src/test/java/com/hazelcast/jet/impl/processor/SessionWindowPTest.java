@@ -22,6 +22,7 @@ import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.test.TestOutbox;
 import com.hazelcast.jet.core.test.TestProcessorContext;
 import com.hazelcast.jet.datamodel.WindowResult;
+import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.function.DistributedToLongFunction;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.Repeat;
@@ -35,7 +36,6 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import static com.hazelcast.jet.Util.entry;
@@ -53,7 +53,7 @@ import static org.junit.Assert.assertTrue;
 public class SessionWindowPTest {
 
     private static final int SESSION_TIMEOUT = 10;
-    private Supplier<Processor> supplier;
+    private DistributedSupplier<Processor> supplier;
     private SessionWindowP<String, ?, Long, WindowResult<String, Long>> lastSuppliedProcessor;
 
     @Before
