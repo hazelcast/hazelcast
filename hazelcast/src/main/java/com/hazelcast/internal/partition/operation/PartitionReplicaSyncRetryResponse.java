@@ -18,7 +18,6 @@ package com.hazelcast.internal.partition.operation;
 
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationCycleOperation;
-import com.hazelcast.internal.partition.NonFragmentedServiceNamespace;
 import com.hazelcast.internal.partition.ReplicaErrorLogger;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
@@ -39,6 +38,8 @@ import java.util.Collections;
  * The response to a {@link PartitionReplicaSyncRequest} that the replica should retry. This will reset the current ongoing
  * synchronization request state and retry the request if this node is still a replica of this partition.
  */
+// RU_COMPAT_39: Do not remove Versioned interface!
+// Version info is needed on 3.9 members while deserializing the operation.
 public class PartitionReplicaSyncRetryResponse
         extends AbstractPartitionOperation
         implements PartitionAwareOperation, BackupOperation, MigrationCycleOperation, Versioned {
@@ -60,13 +61,8 @@ public class PartitionReplicaSyncRetryResponse
         final int replicaIndex = getReplicaIndex();
 
         PartitionReplicaManager replicaManager = partitionService.getReplicaManager();
-        if (namespaces.isEmpty()) {
-            // version 3.8
-            replicaManager.clearReplicaSyncRequest(partitionId, NonFragmentedServiceNamespace.INSTANCE, replicaIndex);
-        } else {
-            for (ServiceNamespace namespace : namespaces) {
-                replicaManager.clearReplicaSyncRequest(partitionId, namespace, replicaIndex);
-            }
+        for (ServiceNamespace namespace : namespaces) {
+            replicaManager.clearReplicaSyncRequest(partitionId, namespace, replicaIndex);
         }
     }
 
