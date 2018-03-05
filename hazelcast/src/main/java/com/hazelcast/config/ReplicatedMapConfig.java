@@ -397,6 +397,8 @@ public class ReplicatedMapConfig implements IdentifiedDataSerializable, Versione
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
+        assert !out.getVersion().isUnknown();
+
         out.writeUTF(name);
         out.writeUTF(inMemoryFormat.name());
         out.writeBoolean(asyncFillup);
@@ -415,6 +417,8 @@ public class ReplicatedMapConfig implements IdentifiedDataSerializable, Versione
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
+        assert !in.getVersion().isUnknown();
+
         name = in.readUTF();
         inMemoryFormat = InMemoryFormat.valueOf(in.readUTF());
         asyncFillup = in.readBoolean();

@@ -272,6 +272,8 @@ public abstract class CollectionConfig<T extends CollectionConfig> implements Id
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
+        assert !out.getVersion().isUnknown();
+
         out.writeUTF(name);
         writeNullableList(listenerConfigs, out);
         out.writeInt(backupCount);
@@ -287,6 +289,8 @@ public abstract class CollectionConfig<T extends CollectionConfig> implements Id
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
+        assert !in.getVersion().isUnknown();
+
         name = in.readUTF();
         listenerConfigs = readNullableList(in);
         backupCount = in.readInt();

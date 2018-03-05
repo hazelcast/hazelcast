@@ -100,6 +100,8 @@ public class MemberInfo implements IdentifiedDataSerializable, Versioned {
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
+        assert !in.getVersion().isUnknown();
+
         address = new Address();
         address.readData(in);
         if (in.readBoolean()) {
@@ -124,6 +126,8 @@ public class MemberInfo implements IdentifiedDataSerializable, Versioned {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
+        assert !out.getVersion().isUnknown();
+
         address.writeData(out);
         boolean hasUuid = uuid != null;
         out.writeBoolean(hasUuid);

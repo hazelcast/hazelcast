@@ -20,6 +20,7 @@ import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -34,7 +35,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 /**
  * Contains the configuration for an {@link com.hazelcast.core.IQueue}.
  */
-public class QueueConfig implements IdentifiedDataSerializable {
+public class QueueConfig implements IdentifiedDataSerializable, Versioned {
 
     /**
      * Default value for the maximum size of the Queue.
@@ -361,6 +362,8 @@ public class QueueConfig implements IdentifiedDataSerializable {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
+        assert !out.getVersion().isUnknown();
+
         out.writeUTF(name);
         writeNullableList(listenerConfigs, out);
         out.writeInt(backupCount);
@@ -378,6 +381,8 @@ public class QueueConfig implements IdentifiedDataSerializable {
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
+        assert !in.getVersion().isUnknown();
+
         name = in.readUTF();
         listenerConfigs = readNullableList(in);
         backupCount = in.readInt();
