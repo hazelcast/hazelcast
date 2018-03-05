@@ -76,28 +76,7 @@ public class ExecuteScriptRequest implements ConsoleRequest {
             Future<Object> future = entry.getValue();
 
             try {
-                Object result = future.get();
-
-                StringBuilder sb = new StringBuilder();
-                if (result instanceof String) {
-                    sb.append(result);
-                } else if (result instanceof List) {
-                    List list = (List) result;
-                    for (Object o : list) {
-                        sb.append(o).append("\n");
-                    }
-                } else if (result instanceof Map) {
-                    Map map = (Map) result;
-                    for (Object o : map.entrySet()) {
-                        Map.Entry e = (Map.Entry) o;
-                        sb.append(e.getKey()).append("->").append(e.getValue()).append("\n");
-                    }
-                } else if (result == null) {
-                    sb.append("error");
-                }
-                sb.append("\n");
-
-                addSuccessResponse(responseJson, scriptResult, address, sb.toString());
+                addSuccessResponse(responseJson, scriptResult, address, prettyPrint(future.get()));
             } catch (ExecutionException e) {
                 addErrorResponse(responseJson, scriptResult, address, e);
             } catch (InterruptedException e) {
@@ -108,6 +87,28 @@ public class ExecuteScriptRequest implements ConsoleRequest {
 
         responseJson.add("scriptResult",  scriptResult.toString());
         root.add("result",  responseJson);
+    }
+
+    private String prettyPrint(Object result) {
+        StringBuilder sb = new StringBuilder();
+        if (result instanceof String) {
+            sb.append(result);
+        } else if (result instanceof List) {
+            List list = (List) result;
+            for (Object o : list) {
+                sb.append(o).append("\n");
+            }
+        } else if (result instanceof Map) {
+            Map map = (Map) result;
+            for (Object o : map.entrySet()) {
+                Map.Entry e = (Map.Entry) o;
+                sb.append(e.getKey()).append("->").append(e.getValue()).append("\n");
+            }
+        } else if (result == null) {
+            sb.append("error");
+        }
+        sb.append("\n");
+        return sb.toString();
     }
 
     @Override
