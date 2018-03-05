@@ -23,7 +23,6 @@ import com.hazelcast.util.HashUtil;
 import com.hazelcast.util.collection.IntHashSet;
 import org.HdrHistogram.Histogram;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -45,7 +44,6 @@ import static org.junit.Assert.fail;
 @Category(SlowTest.class)
 public class HyperLogLogImplTest {
 
-    private static final int PRIME_PRECISION = 25;
     private static final int DEFAULT_RUN_LENGTH = 10000000;
 
     @Parameters(name = "precision:{0}, errorRange:{1}")
@@ -54,7 +52,7 @@ public class HyperLogLogImplTest {
                 {11, 6.5f},
                 {12, 5.5f},
                 {13, 3.5f},
-                {14, 3.5f},
+                {14, 3.0f},
                 {15, 2.5f},
                 {16, 2.0f},
         });
@@ -70,7 +68,7 @@ public class HyperLogLogImplTest {
 
     @Before
     public void setup() {
-        hyperLogLog = new HyperLogLogImpl(precision, PRIME_PRECISION);
+        hyperLogLog = new HyperLogLogImpl(precision);
     }
 
     @Test
@@ -96,7 +94,6 @@ public class HyperLogLogImplTest {
      * </ul>
      */
     @Test
-    @Ignore("https://github.com/hazelcast/hazelcast/issues/11433")
     public void testEstimateErrorRateForBigCardinalities() {
         double stdError = (1.04f / Math.sqrt(1 << precision)) * 100;
         double maxError = Math.ceil(stdError + errorRange);
