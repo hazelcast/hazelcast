@@ -30,6 +30,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.ServiceNamespace;
+import com.hazelcast.spi.serialization.SerializationService;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -93,9 +94,10 @@ public class MapReplicationOperation extends Operation implements IdentifiedData
         mapNearCacheStateHolder.readData(in);
     }
 
-    RecordReplicationInfo createRecordReplicationInfo(Data key, Record record, MapServiceContext mapServiceContext) {
+    RecordReplicationInfo toReplicationInfo(Record record, SerializationService ss) {
         RecordInfo info = buildRecordInfo(record);
-        return new RecordReplicationInfo(key, mapServiceContext.toData(record.getValue()), info);
+        Data dataValue = ss.toData(record.getValue());
+        return new RecordReplicationInfo(record.getKey(), dataValue, info);
     }
 
     RecordStore getRecordStore(String mapName) {
