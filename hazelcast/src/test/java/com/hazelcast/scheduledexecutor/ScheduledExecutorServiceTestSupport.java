@@ -247,6 +247,10 @@ public class ScheduledExecutorServiceTestSupport extends HazelcastTestSupport {
 
         @Override
         public Double call() throws Exception {
+            return calculateResult(delta);
+        }
+
+        public static double calculateResult(int delta) {
             return 5 * 5.0 + delta;
         }
     }

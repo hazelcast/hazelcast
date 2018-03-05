@@ -28,7 +28,7 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.SplitBrainMergePolicy;
 import com.hazelcast.spi.impl.executionservice.InternalExecutionService;
-import com.hazelcast.spi.merge.MergingValueHolder;
+import com.hazelcast.spi.merge.MergingEntryHolder;
 import com.hazelcast.spi.serialization.SerializationService;
 
 import java.util.Collection;
@@ -234,48 +234,49 @@ public class ScheduledExecutorContainer {
     }
 
     /**
-     * Merges the given {@link MergingValueHolder} via the given {@link SplitBrainMergePolicy}.
+     * Merges the given {@link MergingEntryHolder} via the given {@link SplitBrainMergePolicy}.
      *
-     * @param mergingValue the {@link MergingValueHolder} instance to merge
+     * @param mergingEntry the {@link MergingEntryHolder} instance to merge
      * @param mergePolicy  the {@link SplitBrainMergePolicy} instance to apply
      * @return the used {@link ScheduledTaskDescriptor} if merge is applied, otherwise {@code null}
      */
-    public ScheduledTaskDescriptor merge(MergingValueHolder<ScheduledTaskDescriptor> mergingValue,
+    public ScheduledTaskDescriptor merge(MergingEntryHolder<String, ScheduledTaskDescriptor> mergingEntry,
                                          SplitBrainMergePolicy mergePolicy) {
         SerializationService serializationService = nodeEngine.getSerializationService();
-        serializationService.getManagedContext().initialize(mergingValue);
+        serializationService.getManagedContext().initialize(mergingEntry);
         serializationService.getManagedContext().initialize(mergePolicy);
 
-        // try to find an existing item with the same value
-        ScheduledTaskDescriptor match = null;
-        for (ScheduledTaskDescriptor item : tasks.values()) {
-            if (mergingValue.getValue().equals(item)) {
-                match = item;
+        // try to find an existing task with the same definition
+        ScheduledTaskDescriptor mergingTask = mergingEntry.getValue();
+        ScheduledTaskDescriptor existingTask = null;
+        for (ScheduledTaskDescriptor task : tasks.values()) {
+            if (mergingTask.equals(task)) {
+                existingTask = task;
                 break;
             }
         }
-
-        ScheduledTaskDescriptor merged;
-        if (match == null) {
-            // Missing incoming entry
-            merged = mergePolicy.merge(mergingValue, null);
-            if (merged != null) {
-                enqueueSuspended(merged, false);
+        if (existingTask == null) {
+            ScheduledTaskDescriptor newTask = mergePolicy.merge(mergingEntry, null);
+            if (newTask != null) {
+                enqueueSuspended(newTask, false);
+                return newTask;
             }
         } else {
-            // Found a match -> real merge
-            MergingValueHolder<ScheduledTaskDescriptor> existingValue = createMergeHolder(serializationService, match);
-            merged = mergePolicy.merge(mergingValue, existingValue);
-            if (merged != null && !merged.equals(match)) {
-                // Cancel matched one, before replacing it
-                match.cancel(true);
-                enqueueSuspended(merged, true);
-            } else {
-                merged = null;
+            MergingEntryHolder<String, ScheduledTaskDescriptor> existingEntry
+                    = createMergeHolder(serializationService, existingTask);
+            ScheduledTaskDescriptor newTask = mergePolicy.merge(mergingEntry, existingEntry);
+            // we are using == instead of equals() for the task comparison,
+            // since the descriptor may have the same fields for merging and existing entry,
+            // but we still want to be able to choose which one is merged (e.g. PassThroughMergePolicy)
+            if (newTask != null && newTask != existingTask) {
+                // cancel the existing task, before replacing it
+                existingTask.cancel(true);
+                enqueueSuspended(newTask, true);
+                return newTask;
             }
         }
-
-        return merged;
+        // the merging task was already suspended on the original node, so we don't have to cancel it here
+        return null;
     }
 
     ScheduledFuture createContextAndSchedule(TaskDefinition definition) {
