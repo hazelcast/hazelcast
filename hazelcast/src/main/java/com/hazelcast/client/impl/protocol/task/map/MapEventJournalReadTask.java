@@ -19,10 +19,9 @@ package com.hazelcast.client.impl.protocol.task.map;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapEventJournalReadCodec;
 import com.hazelcast.instance.Node;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.journal.EventJournalMapEvent;
 import com.hazelcast.map.impl.journal.MapEventJournalReadOperation;
+import com.hazelcast.map.journal.EventJournalMapEvent;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.projection.Projection;
@@ -60,10 +59,6 @@ public class MapEventJournalReadTask<K, V, T>
 
     @Override
     protected Operation prepareOperation() {
-        if (nodeEngine.getClusterService().getClusterVersion().isLessThan(Versions.V3_9)) {
-            throw new UnsupportedOperationException(
-                    "Event journal actions are available when cluster version is 3.9 or higher");
-        }
         final Projection<? super EventJournalMapEvent<K, V>, T> projection = serializationService.toObject(parameters.projection);
         final Predicate<? super EventJournalMapEvent<K, V>> predicate = serializationService.toObject(parameters.predicate);
         return new MapEventJournalReadOperation<K, V, T>(parameters.name,

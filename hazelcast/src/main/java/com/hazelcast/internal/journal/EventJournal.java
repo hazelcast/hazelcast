@@ -18,7 +18,6 @@ package com.hazelcast.internal.journal;
 
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.RingbufferConfig;
-import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.ringbuffer.StaleSequenceException;
 import com.hazelcast.ringbuffer.impl.ReadResultSetImpl;
 import com.hazelcast.spi.ObjectNamespace;
@@ -155,14 +154,6 @@ public interface EventJournal<E> {
     /**
      * Returns the event journal configuration or {@code null} if there is none or the journal is disabled
      * for the given {@code namespace}.
-     * <p>
-     * <b>NOTE</b><br>
-     * If the {@link ClusterService#getClusterVersion()} is less
-     * than {@link com.hazelcast.internal.cluster.Versions#V3_9},
-     * this method will return {@code null}, regardless of whether
-     * the journal is actually enabled by the configuration. This
-     * is because some members might not know how to save journal
-     * events and respond to subscribe/read operations.
      *
      * @param namespace the object namespace of the specific distributed object
      * @return the journal configuration or {@code null} if the journal is not enabled or available
@@ -173,7 +164,7 @@ public interface EventJournal<E> {
      * Creates a new {@link RingbufferConfig} for a ringbuffer that will keep
      * event journal events for a single partition.
      *
-     * @param config the event journal config
+     * @param config    the event journal config
      * @param namespace the object namespace
      * @return the ringbuffer config for a single partition of the event journal
      */

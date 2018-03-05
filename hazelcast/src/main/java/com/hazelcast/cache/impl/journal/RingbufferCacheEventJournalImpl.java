@@ -23,7 +23,6 @@ import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.RingbufferConfig;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
@@ -163,12 +162,6 @@ public class RingbufferCacheEventJournalImpl implements CacheEventJournal {
      */
     @Override
     public EventJournalConfig getEventJournalConfig(ObjectNamespace namespace) {
-        // when the cluster version is less than 3.9 we act as if the journal is disabled
-        // this is because some members might not know how to save journal events
-        if (nodeEngine.getClusterService().getClusterVersion().isLessThan(Versions.V3_9)) {
-            return null;
-        }
-
         String name = namespace.getObjectName();
         CacheConfig cacheConfig = getCacheService().getCacheConfig(name);
         if (cacheConfig == null) {
@@ -197,10 +190,7 @@ public class RingbufferCacheEventJournalImpl implements CacheEventJournal {
 
     private void addToEventRingbuffer(EventJournalConfig journalConfig, ObjectNamespace namespace, int partitionId,
                                       CacheEventType eventType, Data key, Object oldValue, Object newValue) {
-        // when the cluster version is less than 3.9 we act as if the journal is disabled
-        // this is because some members might not know how to save journal events
-        if (journalConfig == null || !journalConfig.isEnabled()
-                || nodeEngine.getClusterService().getClusterVersion().isLessThan(Versions.V3_9)) {
+        if (journalConfig == null || !journalConfig.isEnabled()) {
             return;
         }
         RingbufferContainer<InternalEventJournalCacheEvent, Object> eventContainer

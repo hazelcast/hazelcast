@@ -49,7 +49,6 @@ import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ContextMutexFactory;
-import com.hazelcast.version.Version;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -176,16 +175,11 @@ public class RingbufferService implements ManagedService, RemoteService, Fragmen
     /**
      * Return the ringbuffer containter for the specified {@code namespace}.
      * If there is no ringbuffer container, create it using the {@code config}.
-     * When the cluster version is less than {@link Versions#V3_9} then the only
-     * supported namespace is for the ringbuffer service, other namespaces will
-     * throw an {@link UnsupportedOperationException}.
      *
      * @param namespace the ringbuffer container namespace
      * @param config    the ringbuffer config. Used to create the container when the container doesn't exist
      * @return the ringbuffer container
-     * @throws UnsupportedOperationException if the cluster version is less than {@link Versions#V3_9} and the service name
-     *                                       in the object namespace is not {@link RingbufferService#SERVICE_NAME}
-     * @throws NullPointerException          if the {@code config} is {@code null}
+     * @throws NullPointerException if the {@code config} is {@code null}
      */
     @SuppressWarnings("unchecked")
     public <T, E> RingbufferContainer<T, E> getOrCreateContainer(int partitionId, ObjectNamespace namespace,
@@ -193,13 +187,6 @@ public class RingbufferService implements ManagedService, RemoteService, Fragmen
         if (config == null) {
             throw new NullPointerException("Ringbuffer config should not be null when ringbuffer is being created");
         }
-        final Version clusterVersion = nodeEngine.getClusterService().getClusterVersion();
-        if (clusterVersion.isLessThan(Versions.V3_9)
-                && !SERVICE_NAME.equals(namespace.getServiceName())) {
-            throw new UnsupportedOperationException("Ringbuffer containers for service "
-                    + namespace.getServiceName() + " are not supported when cluster version is " + clusterVersion);
-        }
-
         final Map<ObjectNamespace, RingbufferContainer> partitionContainers = getOrCreateRingbufferContainers(partitionId);
 
         RingbufferContainer<T, E> ringbuffer = partitionContainers.get(namespace);

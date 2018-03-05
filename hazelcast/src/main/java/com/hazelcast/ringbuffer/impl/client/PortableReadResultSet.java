@@ -16,7 +16,6 @@
 
 package com.hazelcast.ringbuffer.impl.client;
 
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -113,9 +112,7 @@ public class PortableReadResultSet<E> implements Portable, ReadResultSet<E> {
         for (Object item : items) {
             rawDataOutput.writeData((Data) item);
         }
-        if (rawDataOutput.getVersion().isGreaterOrEqual(Versions.V3_9)) {
-            rawDataOutput.writeLongArray(seqs);
-        }
+        rawDataOutput.writeLongArray(seqs);
     }
 
     @Override
@@ -130,8 +127,6 @@ public class PortableReadResultSet<E> implements Portable, ReadResultSet<E> {
             Data item = rawDataInput.readData();
             items.add(item);
         }
-        if (rawDataInput.getVersion().isGreaterOrEqual(Versions.V3_9)) {
-            seqs = rawDataInput.readLongArray();
-        }
+        seqs = rawDataInput.readLongArray();
     }
 }

@@ -21,7 +21,6 @@ import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.VersionAware;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -40,7 +39,6 @@ import java.io.IOException;
 import static com.hazelcast.config.InMemoryFormat.BINARY;
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
 import static com.hazelcast.config.InMemoryFormat.values;
-import static com.hazelcast.internal.cluster.Versions.V3_9;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -506,12 +504,7 @@ public class RingbufferContainer<T, E> implements IdentifiedDataSerializable, No
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        assert !out.getVersion().isUnknown();
         boolean ttlEnabled = expirationPolicy != null;
-        if (!isGreaterOrEqualV39(out)) {
-            // 3.8 requires ringbuffer name at this point
-            out.writeUTF(namespace.getObjectName());
-        }
         out.writeLong(ringbuffer.tailSequence());
         out.writeLong(ringbuffer.headSequence());
         out.writeInt((int) ringbuffer.getCapacity());
@@ -543,10 +536,6 @@ public class RingbufferContainer<T, E> implements IdentifiedDataSerializable, No
     @Override
     @SuppressWarnings("unchecked")
     public void readData(ObjectDataInput in) throws IOException {
-        if (!isGreaterOrEqualV39(in)) {
-            // used to be ringbuffer name, it is replaced with namespace in 3.9 which is set in the constructor
-            in.readUTF();
-        }
         final long tailSequence = in.readLong();
         final long headSequence = in.readLong();
         final int capacity = in.readInt();
@@ -576,10 +565,6 @@ public class RingbufferContainer<T, E> implements IdentifiedDataSerializable, No
                 expirationPolicy.setExpirationAt(seq, delta + now);
             }
         }
-    }
-
-    private static boolean isGreaterOrEqualV39(VersionAware versionAware) {
-        return versionAware.getVersion().isGreaterOrEqual(V3_9);
     }
 
     Ringbuffer<E> getRingbuffer() {
