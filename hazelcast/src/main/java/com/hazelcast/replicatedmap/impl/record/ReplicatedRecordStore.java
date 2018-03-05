@@ -34,6 +34,8 @@ public interface ReplicatedRecordStore {
 
     String getName();
 
+    int getPartitionId();
+
     Object remove(Object key);
 
     Object removeWithVersion(Object key, long version);

@@ -535,6 +535,11 @@ public class LazyIteratorTest extends HazelcastTestSupport {
         }
 
         @Override
+        public int getPartitionId() {
+            return 0;
+        }
+
+        @Override
         public Object remove(Object key) {
             return null;
         }
