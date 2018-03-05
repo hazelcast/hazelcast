@@ -19,6 +19,7 @@ package com.hazelcast.cache;
 import com.hazelcast.cache.impl.CacheProxy;
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.config.CacheConfig;
+import com.hazelcast.config.Config;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
@@ -30,28 +31,34 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import javax.cache.Cache;
 import javax.cache.CacheManager;
 import javax.cache.spi.CachingProvider;
-import java.util.Arrays;
 import java.util.Iterator;
 
+import static java.util.Arrays.asList;
 import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertTrue;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class CachePartitionIteratorTest extends HazelcastTestSupport {
 
-    @Parameterized.Parameter
+    @Parameter
     public boolean prefetchValues;
 
-    @Parameterized.Parameters(name = "prefetchValues:{0}")
-    public static Iterable<Object[]> parameters() {
-        return Arrays.asList(new Object[]{Boolean.TRUE}, new Object[]{Boolean.FALSE});
+    @Parameters(name = "prefetchValues:{0}")
+    public static Iterable<Boolean> parameters() {
+        return asList(
+                Boolean.TRUE,
+                Boolean.FALSE
+        );
     }
 
     private CachingProvider cachingProvider;
@@ -59,7 +66,8 @@ public class CachePartitionIteratorTest extends HazelcastTestSupport {
 
     @Before
     public void init() {
-        server = createHazelcastInstance();
+        Config config = toDefaultProperties(getConfig());
+        server = createHazelcastInstance(config);
         cachingProvider = createCachingProvider();
     }
 
@@ -73,18 +81,17 @@ public class CachePartitionIteratorTest extends HazelcastTestSupport {
         CacheConfig<K, V> config = new CacheConfig<K, V>();
         config.getEvictionConfig().setMaximumSizePolicy(EvictionConfig.MaxSizePolicy.ENTRY_COUNT).setSize(10000000);
         return (CacheProxy<K, V>) cacheManager.createCache(cacheName, config);
-
     }
 
     @Test
-    public void test_HasNext_Returns_False_On_EmptyPartition() throws Exception {
+    public void test_HasNext_Returns_False_On_EmptyPartition() {
         CacheProxy<Integer, Integer> cache = getCacheProxy();
         Iterator<Cache.Entry<Integer, Integer>> iterator = cache.iterator(10, 1, prefetchValues);
         assertFalse(iterator.hasNext());
     }
 
     @Test
-    public void test_HasNext_Returns_True_On_NonEmptyPartition() throws Exception {
+    public void test_HasNext_Returns_True_On_NonEmptyPartition() {
         CacheProxy<String, String> cache = getCacheProxy();
 
         String key = generateKeyForPartition(server, 1);
@@ -96,7 +103,7 @@ public class CachePartitionIteratorTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test_Next_Returns_Value_On_NonEmptyPartition() throws Exception {
+    public void test_Next_Returns_Value_On_NonEmptyPartition() {
         CacheProxy<String, String> cache = getCacheProxy();
 
         String key = generateKeyForPartition(server, 1);
@@ -109,7 +116,7 @@ public class CachePartitionIteratorTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test_Next_Returns_Value_On_NonEmptyPartition_and_HasNext_Returns_False_when_Item_Consumed() throws Exception {
+    public void test_Next_Returns_Value_On_NonEmptyPartition_and_HasNext_Returns_False_when_Item_Consumed() {
         CacheProxy<String, String> cache = getCacheProxy();
 
         String key = generateKeyForPartition(server, 1);
@@ -124,7 +131,7 @@ public class CachePartitionIteratorTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test_Next_Returns_Values_When_FetchSizeExceeds_On_NonEmptyPartition() throws Exception {
+    public void test_Next_Returns_Values_When_FetchSizeExceeds_On_NonEmptyPartition() {
         CacheProxy<String, String> cache = getCacheProxy();
         String value = randomString();
         int count = 1000;
@@ -136,7 +143,6 @@ public class CachePartitionIteratorTest extends HazelcastTestSupport {
         for (int i = 0; i < count; i++) {
             Cache.Entry entry = iterator.next();
             assertEquals(value, entry.getValue());
-
         }
     }
 }

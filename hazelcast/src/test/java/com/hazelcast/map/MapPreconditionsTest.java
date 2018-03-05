@@ -53,9 +53,10 @@ public class MapPreconditionsTest extends HazelcastTestSupport {
 
     @Before
     public void setUp() {
-        Config config = new Config();
-        // default minimum is 100000 * 1.5f
-        config.setProperty(GroupProperty.QUERY_RESULT_SIZE_LIMIT.getName(), "1");
+        Config config = toDefaultProperties(getConfig())
+                // default minimum is 100000 * 1.5f
+                .setProperty(GroupProperty.QUERY_RESULT_SIZE_LIMIT.getName(), "1");
+
         HazelcastInstance hz = createHazelcastInstance(config);
         map = hz.getMap("trial");
     }

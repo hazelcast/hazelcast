@@ -81,6 +81,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.internal.partition.TestPartitionUtils.getPartitionServiceState;
+import static com.hazelcast.spi.properties.GroupProperty.EVENT_THREAD_COUNT;
+import static com.hazelcast.spi.properties.GroupProperty.GENERIC_OPERATION_THREAD_COUNT;
+import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
+import static com.hazelcast.spi.properties.GroupProperty.PARTITION_OPERATION_THREAD_COUNT;
 import static com.hazelcast.test.TestEnvironment.isRunningCompatibilityTest;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static java.lang.Integer.getInteger;
@@ -136,7 +140,20 @@ public abstract class HazelcastTestSupport {
     // ###################################
 
     protected Config getConfig() {
-        return new Config();
+        // make the test instances consume less resources per default
+        return new Config()
+                .setProperty(PARTITION_COUNT.getName(), "11")
+                .setProperty(PARTITION_OPERATION_THREAD_COUNT.getName(), "2")
+                .setProperty(GENERIC_OPERATION_THREAD_COUNT.getName(), "2")
+                .setProperty(EVENT_THREAD_COUNT.getName(), "1");
+    }
+
+    protected Config toDefaultProperties(Config config) {
+        return config
+                .setProperty(PARTITION_COUNT.getName(), PARTITION_COUNT.getDefaultValue())
+                .setProperty(PARTITION_OPERATION_THREAD_COUNT.getName(), PARTITION_OPERATION_THREAD_COUNT.getDefaultValue())
+                .setProperty(GENERIC_OPERATION_THREAD_COUNT.getName(), GENERIC_OPERATION_THREAD_COUNT.getDefaultValue())
+                .setProperty(EVENT_THREAD_COUNT.getName(), EVENT_THREAD_COUNT.getDefaultValue());
     }
 
     // ###############################################
