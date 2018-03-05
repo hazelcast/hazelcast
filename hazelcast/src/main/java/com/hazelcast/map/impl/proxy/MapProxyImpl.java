@@ -590,29 +590,8 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         loadInternal(keys, null, replaceExistingValues);
     }
 
-    /**
-     * This method clears the map and calls deleteAll on MapStore which if connected to a database,
-     * will delete the records from that database.
-     * <p>
-     * If you wish to clear the map only without calling deleteAll, use #clearMapOnly.
-     *
-     * @see #clearMapOnly
-     */
     @Override
     public void clear() {
-        clearInternal();
-    }
-
-    /**
-     * This method clears the map. It does not invoke deleteAll on any associated MapStore.
-     *
-     * @see #clear
-     */
-    //TODO: why is this not tested?
-    //TODO: how come the implementation is the same as clear? I think this code is broken
-    //TODO: This method also isn't part of the IMap API
-    public void clearMapOnly() {
-        // TODO: need a different method here that does not call deleteAll()
         clearInternal();
     }
 
