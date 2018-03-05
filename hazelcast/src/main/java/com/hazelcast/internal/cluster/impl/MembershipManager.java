@@ -179,8 +179,11 @@ public class MembershipManager {
         clusterServiceLock.lock();
         try {
             if (!clusterService.isMaster() || !clusterService.isJoined()) {
-                logger.fine("Cannot publish member list to " + target + ". Is-master: "
-                        + clusterService.isMaster() + ", joined: " + clusterService.isJoined());
+                if (logger.isFineEnabled()) {
+                    logger.fine("Cannot publish member list to " + target + ". Is-master: "
+                            + clusterService.isMaster() + ", joined: " + clusterService.isJoined());
+                }
+
                 return;
             }
             if (clusterService.getThisAddress().equals(target)) {
@@ -190,8 +193,15 @@ public class MembershipManager {
             MemberMap memberMap = memberMapRef.get();
             MemberImpl member = memberMap.getMember(target);
             if (member == null) {
-                logger.fine("Not member: " + target + ", cannot send member list.");
+                if (logger.isFineEnabled()) {
+                    logger.fine("Not member: " + target + ", cannot send member list.");
+                }
+
                 return;
+            }
+
+            if (logger.isFineEnabled()) {
+                logger.fine("Sending member list to member: " + target + " " + memberListString());
             }
 
             MembersUpdateOp op = new MembersUpdateOp(member.getUuid(), memberMap.toMembersView(),
@@ -216,9 +226,13 @@ public class MembershipManager {
     private void sendMemberListToOthers() {
         if (!clusterService.isMaster() || !clusterService.isJoined()
                 || clusterService.getClusterJoinManager().isMastershipClaimInProgress()) {
-            logger.fine("Cannot publish member list to cluster. Is-master: "
-                    + clusterService.isMaster() + ", joined: " + clusterService.isJoined()
-                    + " , mastership claim in progress: " + clusterService.getClusterJoinManager().isMastershipClaimInProgress());
+            if (logger.isFineEnabled()) {
+                logger.fine("Cannot publish member list to cluster. Is-master: "
+                        + clusterService.isMaster() + ", joined: " + clusterService.isJoined()
+                        + " , mastership claim in progress: " + clusterService.getClusterJoinManager()
+                                                                              .isMastershipClaimInProgress());
+            }
+
             return;
         }
 
@@ -230,12 +244,32 @@ public class MembershipManager {
                 continue;
             }
 
+            if (logger.isFineEnabled()) {
+                logger.fine("Sending member list to the non-master nodes: " + memberListString());
+            }
+
             MembersUpdateOp op = new MembersUpdateOp(member.getUuid(), membersView,
                     clusterService.getClusterTime(), null, false);
             op.setCallerUuid(clusterService.getThisUuid());
             nodeEngine.getOperationService().send(op, member.getAddress());
         }
     }
+
+    String memberListString() {
+        MemberMap memberMap = getMemberMap();
+        Collection<MemberImpl> members = memberMap.getMembers();
+        StringBuilder sb = new StringBuilder("\n\nMembers {")
+                .append("size:").append(members.size()).append(", ")
+                .append("ver:").append(memberMap.getVersion())
+                .append("} [");
+
+        for (Member member : members) {
+            sb.append("\n\t").append(member);
+        }
+        sb.append("\n]\n");
+        return sb.toString();
+    }
+
 
     // handles both new and left members
     void updateMembers(MembersView membersView) {
@@ -308,8 +342,10 @@ public class MembershipManager {
             }
         } else if (member.getMemberListJoinVersion() != newMemberInfo.getMemberListJoinVersion()) {
             if (member.getMemberListJoinVersion() != NA_MEMBER_LIST_JOIN_VERSION) {
-                logger.fine("Member list join version of " + member + " is changed to "
-                        + newMemberInfo.getMemberListJoinVersion() + " from " + member.getMemberListJoinVersion());
+                if (logger.isFineEnabled()) {
+                    logger.fine("Member list join version of " + member + " is changed to "
+                            + newMemberInfo.getMemberListJoinVersion() + " from " + member.getMemberListJoinVersion());
+                }
             }
             if (member.localMember()) {
                 setLocalMemberListJoinVersion(newMemberInfo.getMemberListJoinVersion());
@@ -337,8 +373,10 @@ public class MembershipManager {
         MemberImpl localMember = clusterService.getLocalMember();
         if (memberListJoinVersion != NA_MEMBER_LIST_JOIN_VERSION) {
             localMember.setMemberListJoinVersion(memberListJoinVersion);
-            logger.fine("Local member list join version is set to " + memberListJoinVersion);
-        } else {
+            if (logger.isFineEnabled()) {
+                logger.fine("Local member list join version is set to " + memberListJoinVersion);
+            }
+        } else if (logger.isFineEnabled()) {
             logger.fine("No member list join version is available during join. Local member list join version: "
                     + localMember.getMemberListJoinVersion());
         }
@@ -363,7 +401,10 @@ public class MembershipManager {
         while (it.hasNext()) {
             Address suspectedAddress = it.next();
             if (!memberMap.contains(suspectedAddress)) {
-                logger.fine("Removing suspected address " + suspectedAddress + ", it's no longer a member.");
+                if (logger.isFineEnabled()) {
+                    logger.fine("Removing suspected address " + suspectedAddress + ", it's no longer a member.");
+                }
+
                 it.remove();
             }
         }
@@ -383,8 +424,11 @@ public class MembershipManager {
             MemberMap memberMap = getMemberMap();
             Address masterAddress = clusterService.getMasterAddress();
             if (memberMap.isBeforeThan(address, masterAddress)) {
-                logger.fine("Not removing suspicion of " + address + " since it is before than current master "
-                        + masterAddress + " in member list.");
+                if (logger.isFineEnabled()) {
+                    logger.fine("Not removing suspicion of " + address + " since it is before than current master "
+                            + masterAddress + " in member list.");
+                }
+
                 return false;
             }
 
@@ -407,9 +451,12 @@ public class MembershipManager {
             int memberListVersion = getMemberListVersion();
 
             if (!(masterAddress.equals(caller) && memberListVersion == callerMemberListVersion)) {
-                logger.fine("Ignoring explicit suspicion trigger for " + suspectedMembersViewMetadata
-                        + ". Caller: " + caller + ", caller member list version: " + callerMemberListVersion
-                        + ", known master: " + masterAddress + ", local member list version: " + memberListVersion);
+                if (logger.isFineEnabled()) {
+                    logger.fine("Ignoring explicit suspicion trigger for " + suspectedMembersViewMetadata
+                            + ". Caller: " + caller + ", caller member list version: " + callerMemberListVersion
+                            + ", known master: " + masterAddress + ", local member list version: " + memberListVersion);
+                }
+
                 return;
             }
 
@@ -424,14 +471,20 @@ public class MembershipManager {
         try {
             MembersViewMetadata localMembersViewMetadata = createLocalMembersViewMetadata();
             if (!localMembersViewMetadata.equals(expectedMembersViewMetadata)) {
-                logger.fine("Ignoring explicit suspicion of " + suspectedAddress
-                        + ". Expected: " + expectedMembersViewMetadata + ", Local: " + localMembersViewMetadata);
+                if (logger.isFineEnabled()) {
+                    logger.fine("Ignoring explicit suspicion of " + suspectedAddress
+                            + ". Expected: " + expectedMembersViewMetadata + ", Local: " + localMembersViewMetadata);
+                }
+
                 return;
             }
 
             MemberImpl suspectedMember = getMember(suspectedAddress);
             if (suspectedMember == null) {
-                logger.fine("No need for explicit suspicion, " + suspectedAddress + " is not a member.");
+                if (logger.isFineEnabled()) {
+                    logger.fine("No need for explicit suspicion, " + suspectedAddress + " is not a member.");
+                }
+
                 return;
             }
 
@@ -461,7 +514,10 @@ public class MembershipManager {
         clusterServiceLock.lock();
         try {
             if (!clusterService.isJoined()) {
-                logger.fine("Cannot handle suspect of " + suspectedMember + " because this node is not joined...");
+                if (logger.isFineEnabled()) {
+                    logger.fine("Cannot handle suspect of " + suspectedMember + " because this node is not joined...");
+                }
+
                 return;
             }
 
@@ -480,14 +536,7 @@ public class MembershipManager {
             }
 
             localMemberMap = getMemberMap();
-            membersToAsk = new HashSet<Member>();
-            for (MemberImpl member : localMemberMap.getMembers()) {
-                if (member.localMember() || suspectedMembers.contains(member.getAddress())) {
-                    continue;
-                }
-
-                membersToAsk.add(member);
-            }
+            membersToAsk = collectMembersToAsk(localMemberMap);
             logger.info("Local " + localMemberMap.toMembersView() + " with suspected members: "  + suspectedMembers
                     + " and initial addresses to ask: " + membersToAsk);
         } finally {
@@ -496,6 +545,18 @@ public class MembershipManager {
 
         ExecutorService executor = nodeEngine.getExecutionService().getExecutor(SYSTEM_EXECUTOR);
         executor.submit(new DecideNewMembersViewTask(localMemberMap, membersToAsk));
+    }
+
+    private Set<Member> collectMembersToAsk(MemberMap localMemberMap) {
+        Set<Member> membersToAsk = new HashSet<Member>();
+        for (MemberImpl member : localMemberMap.getMembers()) {
+            if (member.localMember() || suspectedMembers.contains(member.getAddress())) {
+                continue;
+            }
+
+            membersToAsk.add(member);
+        }
+        return membersToAsk;
     }
 
     private boolean tryStartMastershipClaim() {
@@ -522,7 +583,10 @@ public class MembershipManager {
             boolean shouldCloseConn) {
 
         if (getMember(suspectedMember.getAddress(), suspectedMember.getUuid()) == null) {
-            logger.fine("Cannot suspect " + suspectedMember + ", since it's not a member.");
+            if (logger.isFineEnabled()) {
+                logger.fine("Cannot suspect " + suspectedMember + ", since it's not a member.");
+            }
+
             return false;
         }
 
@@ -556,7 +620,10 @@ public class MembershipManager {
 
             MemberMap currentMembers = memberMapRef.get();
             if (currentMembers.getMember(member.getAddress(), member.getUuid()) == null) {
-                logger.fine("No need to remove " + member + ", not a member.");
+                if (logger.isFineEnabled()) {
+                    logger.fine("No need to remove " + member + ", not a member.");
+                }
+
                 return;
             }
 
@@ -673,7 +740,9 @@ public class MembershipManager {
         Map<Address, Future<MembersView>> futures = new HashMap<Address, Future<MembersView>>();
         MembersView latestMembersView = fetchLatestMembersView(localMemberMap, members, futures);
 
-        logger.fine("Latest " + latestMembersView + " before final decision...");
+        if (logger.isFineEnabled()) {
+            logger.fine("Latest " + latestMembersView + " before final decision...");
+        }
 
         // within the most recent members view, select the members that have reported their members view successfully
         List<MemberInfo> finalMembers = new ArrayList<MemberInfo>();
@@ -688,27 +757,40 @@ public class MembershipManager {
 
             Future<MembersView> future = futures.get(address);
             if (isMemberSuspected(address)) {
-                logger.fine(memberInfo + " is excluded because suspected");
+                if (logger.isFineEnabled()) {
+                    logger.fine(memberInfo + " is excluded because suspected");
+                }
+
                 continue;
             } else if (future == null || !future.isDone()) {
-                logger.fine(memberInfo + " is excluded because I don't know its response");
+                if (logger.isFineEnabled()) {
+                    logger.fine(memberInfo + " is excluded because I don't know its response");
+                }
+
                 continue;
             }
 
-            try {
-                future.get();
-                finalMembers.add(memberInfo);
-            } catch (InterruptedException ignored) {
-                Thread.currentThread().interrupt();
-            } catch (ExecutionException e) {
-                logger.fine(memberInfo + " is excluded because I couldn't get its acceptance", e);
-            }
+            addAcceptedMemberInfo(finalMembers, memberInfo, future);
         }
 
         int finalVersion = latestMembersView.getVersion() + 1;
         return new MembersView(finalVersion, finalMembers);
     }
 
+    private void addAcceptedMemberInfo(List<MemberInfo> finalMembers, MemberInfo memberInfo, Future<MembersView> future) {
+        try {
+            future.get();
+            finalMembers.add(memberInfo);
+        } catch (InterruptedException ignored) {
+            Thread.currentThread().interrupt();
+        } catch (ExecutionException e) {
+            if (logger.isFineEnabled()) {
+                logger.fine(memberInfo + " is excluded because I couldn't get its acceptance", e);
+            }
+        }
+    }
+
+    @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
     private MembersView fetchLatestMembersView(MemberMap localMemberMap,
                                                Set<Member> members,
                                                Map<Address, Future<MembersView>> futures) {
@@ -734,7 +816,9 @@ public class MembershipManager {
                     long timeout = Math.min(FETCH_MEMBER_LIST_MILLIS, Math.max(mastershipClaimTimeout, 1));
                     MembersView membersView = future.get(timeout, TimeUnit.MILLISECONDS);
                     if (membersView.isLaterThan(latestMembersView)) {
-                        logger.fine("A more recent " + membersView + " is received from " + address);
+                        if (logger.isFineEnabled()) {
+                            logger.fine("A more recent " + membersView + " is received from " + address);
+                        }
                         latestMembersView = membersView;
 
                         // If we discover a new member via a fetched member list, we should also ask for its members view.
@@ -779,7 +863,10 @@ public class MembershipManager {
                     || isMemberSuspected(memberAddress)
                     || futures.containsKey(memberAddress))) {
                 // this is a new member for us. lets ask its members view
-                logger.fine("Asking MembersView of " + memberAddress);
+                if (logger.isFineEnabled()) {
+                    logger.fine("Asking MembersView of " + memberAddress);
+                }
+
                 futures.put(memberAddress, invokeFetchMembersViewOp(memberAddress, memberInfo.getUuid()));
                 isNewMemberPresent = true;
             }
@@ -823,7 +910,9 @@ public class MembershipManager {
 
         membersView = new MembersView(membersView.getVersion(), memberInfos);
 
-        logger.fine("Member list join versions are generated: " + membersView);
+        if (logger.isFineEnabled()) {
+            logger.fine("Member list join versions are generated: " + membersView);
+        }
 
         return membersView;
     }
@@ -886,7 +975,10 @@ public class MembershipManager {
             while (it.hasNext()) {
                 MemberImpl member = it.next();
                 if (memberUuidsToRemove.contains(member.getUuid())) {
-                    logger.fine("Removing " + member + " from members removed in not joinable state.");
+                    if (logger.isFineEnabled()) {
+                        logger.fine("Removing " + member + " from members removed in not joinable state.");
+                    }
+
                     it.remove();
                 }
             }
@@ -923,7 +1015,10 @@ public class MembershipManager {
             }
 
             if (!member.isLiteMember()) {
-                logger.fine(member + " is not lite member, no promotion is required.");
+                if (logger.isFineEnabled()) {
+                    logger.fine(member + " is not lite member, no promotion is required.");
+                }
+
                 return memberMap.toMembersView();
             }
 
@@ -996,14 +1091,20 @@ public class MembershipManager {
 
             MemberMap memberMap = getMemberMap();
             if (memberMap.getVersion() != expectedMemberListVersion) {
-                logger.fine("Ignoring member list version increment since current member list version: " + memberMap.getVersion()
-                        + " is different than expected version: " + expectedMemberListVersion);
+                if (logger.isFineEnabled()) {
+                    logger.fine("Ignoring member list version increment since current member list version: "
+                            + memberMap.getVersion() + " is different than expected version: " + expectedMemberListVersion);
+                }
+
                 return;
             }
 
             MemberImpl[] members = memberMap.getMembers().toArray(new MemberImpl[0]);
             int newVersion = memberMap.getVersion() + 1;
-            logger.fine("Incrementing member list version to " + newVersion);
+            if (logger.isFineEnabled()) {
+                logger.fine("Incrementing member list version to " + newVersion);
+            }
+
             MemberMap newMemberMap = MemberMap.createNew(newVersion, members);
             setMembers(newMemberMap);
             sendMemberListToOthers();
@@ -1094,16 +1195,22 @@ public class MembershipManager {
             clusterServiceLock.lock();
             try {
                 if (!clusterService.isJoined()) {
-                    logger.fine("Ignoring decided members view after mastership claim: " + newMembersView
-                            + ", because not joined!");
+                    if (logger.isFineEnabled()) {
+                        logger.fine("Ignoring decided members view after mastership claim: " + newMembersView
+                                + ", because not joined!");
+                    }
+
                     return;
                 }
 
                 MemberImpl localMember = clusterService.getLocalMember();
                 if (!newMembersView.containsMember(localMember.getAddress(), localMember.getUuid())) {
                     // local member UUID is changed because of force start or split brain merge...
-                    logger.fine("Ignoring decided members view after mastership claim: " + newMembersView
-                            + ", because current local member: " + localMember + " not in decided members view.");
+                    if (logger.isFineEnabled()) {
+                        logger.fine("Ignoring decided members view after mastership claim: " + newMembersView
+                                + ", because current local member: " + localMember + " not in decided members view.");
+                    }
+
                     return;
                 }
 
