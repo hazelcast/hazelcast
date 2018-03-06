@@ -104,12 +104,7 @@ public class RingbufferAddAllReadManyStressTest extends HazelcastTestSupport {
     }
 
     public void test(RingbufferConfig ringbufferConfig) {
-        // make the test instances consume less resources
-        Config config = new Config()
-                .setProperty(PARTITION_COUNT.getName(), "10")
-                .setProperty(PARTITION_OPERATION_THREAD_COUNT.getName(), "2")
-                .setProperty(GENERIC_OPERATION_THREAD_COUNT.getName(), "2")
-                .setProperty(EVENT_THREAD_COUNT.getName(), "1");
+        Config config = smallInstanceConfig();
 
         config.addRingBufferConfig(ringbufferConfig);
         HazelcastInstance[] instances = createHazelcastInstanceFactory(2).newInstances(config);

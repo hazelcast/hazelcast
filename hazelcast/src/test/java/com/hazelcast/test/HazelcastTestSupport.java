@@ -50,6 +50,7 @@ import com.hazelcast.spi.impl.operationparker.impl.OperationParkerImpl;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.partition.IPartition;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.jitter.JitterRule;
@@ -135,8 +136,21 @@ public abstract class HazelcastTestSupport {
     // ########## configuration ##########
     // ###################################
 
-    protected Config getConfig() {
+    public static Config smallInstanceConfig() {
+        // make the test instances consume less resources per default
+        return new Config()
+                .setProperty(GroupProperty.PARTITION_COUNT.getName(), "11")
+                .setProperty(GroupProperty.PARTITION_OPERATION_THREAD_COUNT.getName(), "2")
+                .setProperty(GroupProperty.GENERIC_OPERATION_THREAD_COUNT.getName(), "2")
+                .setProperty(GroupProperty.EVENT_THREAD_COUNT.getName(), "1");
+    }
+
+    public static Config regularInstanceConfig() {
         return new Config();
+    }
+
+    protected Config getConfig() {
+        return regularInstanceConfig();
     }
 
     // ###############################################
