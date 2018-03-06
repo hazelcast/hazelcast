@@ -558,6 +558,8 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         HazelcastInstance hz2 = factory.newHazelcastInstance(config);
         HazelcastInstance hz3 = factory.newHazelcastInstance(config);
 
+        assertClusterSizeEventually(3, hz2);
+
         Node node = getNode(hz1);
         ClusterServiceImpl clusterService = node.getClusterService();
         MembershipManager membershipManager = clusterService.getMembershipManager();
@@ -588,6 +590,8 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         HazelcastInstance hz1 = factory.newHazelcastInstance(config);
         HazelcastInstance hz2 = factory.newHazelcastInstance(config);
         HazelcastInstance hz3 = factory.newHazelcastInstance(config);
+
+        assertClusterSizeEventually(3, hz2);
 
         Node node = getNode(hz1);
         ClusterServiceImpl clusterService = node.getClusterService();
@@ -624,7 +628,7 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         HazelcastInstance hz3 = factory.newHazelcastInstance(config);
         HazelcastInstance hz4 = factory.newHazelcastInstance(config);
 
-        assertClusterSize(4, hz2, hz3);
+        assertClusterSizeEventually(4, hz2, hz3);
 
         dropOperationsBetween(hz1, hz2, F_ID, singletonList(MEMBER_INFO_UPDATE));
 
