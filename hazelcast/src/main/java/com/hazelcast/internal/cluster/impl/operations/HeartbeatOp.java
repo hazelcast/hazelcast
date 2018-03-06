@@ -27,6 +27,8 @@ import com.hazelcast.nio.serialization.impl.Versioned;
 import java.io.IOException;
 
 /** A heartbeat sent from one cluster member to another. The sent timestamp is the cluster clock time of the sending member */
+// RU_COMPAT_39: Do not remove Versioned interface!
+// Version info is needed on 3.9 members while deserializing the operation.
 public final class HeartbeatOp extends AbstractClusterOperation implements Versioned {
 
     private MembersViewMetadata senderMembersViewMetadata;
