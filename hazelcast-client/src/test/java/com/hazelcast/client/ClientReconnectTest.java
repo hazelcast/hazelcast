@@ -137,7 +137,7 @@ public class ClientReconnectTest extends HazelcastTestSupport {
         assertOpenEventually(shutdownLatch);
     }
 
-    @Test(expected = HazelcastClientNotActiveException.class, timeout = 30000)
+    @Test(expected = HazelcastClientNotActiveException.class)
     public void testRequestShouldFailOnShutdown() {
         final HazelcastInstance server = hazelcastFactory.newHazelcastInstance();
         ClientConfig clientConfig = new ClientConfig();
@@ -165,7 +165,7 @@ public class ClientReconnectTest extends HazelcastTestSupport {
         test.get("key");
     }
 
-    @Test(timeout = 10000)
+    @Test
     public void testShutdownClient_whenThereIsNoCluster() {
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getConnectionStrategyConfig().setAsyncStart(true);
