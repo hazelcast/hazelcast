@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.cache.jsr;
 
+import com.hazelcast.cache.jsr.AbstractCacheListenerTest;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
@@ -25,7 +26,7 @@ import org.junit.runner.RunWith;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class CacheListenerTest extends org.jsr107.tck.event.CacheListenerTest {
+public class CacheListenerTest extends AbstractCacheListenerTest {
 
     @BeforeClass
     public static void setup() {
