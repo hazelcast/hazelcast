@@ -17,7 +17,6 @@
 package com.hazelcast.spi.impl.eventservice.impl.operations;
 
 import com.hazelcast.internal.cluster.ClusterService;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.cluster.impl.ClusterTopologyChangedException;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -32,6 +31,8 @@ import java.io.IOException;
 
 import static java.lang.String.format;
 
+// RU_COMPAT_39: Do not remove Versioned interface!
+// Version info is needed on 3.9 members while deserializing the operation.
 abstract class AbstractRegistrationOperation extends Operation
         implements AllowedDuringPassiveState, IdentifiedDataSerializable, Versioned {
 
@@ -53,11 +54,6 @@ abstract class AbstractRegistrationOperation extends Operation
     protected abstract void runInternal() throws Exception;
 
     private void checkMemberListVersion() {
-        if (memberListVersion == -1) {
-            // RU_COMPAT_38
-            // operation sent by a 3.8 member
-            return;
-        }
         ClusterService clusterService = getNodeEngine().getClusterService();
         if (clusterService.isMaster()) {
             int currentMemberListVersion = clusterService.getMemberListVersion();
@@ -71,9 +67,7 @@ abstract class AbstractRegistrationOperation extends Operation
 
     @Override
     protected final void writeInternal(ObjectDataOutput out) throws IOException {
-        if (out.getVersion().isGreaterOrEqual(Versions.V3_9)) {
-            out.writeInt(memberListVersion);
-        }
+        out.writeInt(memberListVersion);
         writeInternalImpl(out);
     }
 
@@ -81,9 +75,7 @@ abstract class AbstractRegistrationOperation extends Operation
 
     @Override
     protected final void readInternal(ObjectDataInput in) throws IOException {
-        if (in.getVersion().isGreaterOrEqual(Versions.V3_9)) {
-            memberListVersion = in.readInt();
-        }
+        memberListVersion = in.readInt();
         readInternalImpl(in);
     }
 
