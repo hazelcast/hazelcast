@@ -58,19 +58,19 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * <pre>{@code
  *   public boolean complete() {
  *       if (traverser == null) {
- *           List<Record> records = poll(); // get a batch of items from external source
+ *           List<Record> records = poll(); // get a batch of events from external source
  *           if (records.isEmpty()) {
  *               traverser = watermarkSourceUtil.handleNoEvent();
  *           } else {
  *               traverser = traverserIterable(records)
- *                   .flatMap(item -> watermarkSourceUtil.handleEvent(item, item.getPartition()));
+ *                   .flatMap(event -> watermarkSourceUtil.handleEvent(event, event.getPartition()));
  *           }
  *           traverser = traverser.onFirstNull(() -> traverser = null);
  *       }
- *       emitFromTraverser(traverser, item -> {
- *           if (!(item instanceof Watermark)) {
- *               // store your offset after item was emitted
- *               offsetsMap.put(item.getPartition(), item.getOffset());
+ *       emitFromTraverser(traverser, event -> {
+ *           if (!(event instanceof Watermark)) {
+ *               // store your offset after event was emitted
+ *               offsetsMap.put(event.getPartition(), event.getOffset());
  *           }
  *       });
  *       return false;
@@ -130,16 +130,16 @@ public class WatermarkSourceUtil<T> {
     }
 
     /**
-     * Flat-maps the given {@code item} by (possibly) prepending it with a
+     * Flat-maps the given {@code event} by (possibly) prepending it with a
      * watermark. Designed to use when emitting from traverser:
      * <pre>{@code
      *     Traverser t = traverserIterable(...)
-     *         .flatMap(item -> watermarkSourceUtil.flatMap(item, item.getPartition()));
+     *         .flatMap(event -> watermarkSourceUtil.flatMap(event, event.getPartition()));
      * }</pre>
      */
     @Nonnull
-    public Traverser<Object> handleEvent(T item, int partitionIndex) {
-        return handleEvent(System.nanoTime(), item, partitionIndex);
+    public Traverser<Object> handleEvent(T event, int partitionIndex) {
+        return handleEvent(System.nanoTime(), event, partitionIndex);
     }
 
     /**
@@ -153,22 +153,20 @@ public class WatermarkSourceUtil<T> {
     }
 
     // package-visible for tests
-    Traverser<Object> handleEvent(long now, @Nullable T item, int partitionIndex) {
+    Traverser<Object> handleEvent(long now, @Nullable T event, int partitionIndex) {
         assert traverser.isEmpty() : "the traverser returned previously not yet drained: remove all " +
                 "items from the traverser before you call this method again.";
-        if (item != null) {
-            handleEventInt(now, partitionIndex, item);
+        if (event != null) {
+            long eventTime = timestampFn.applyAsLong(event);
+            handleEventInt(now, partitionIndex, event, eventTime);
+            traverser.append(wrapFn.apply(event, eventTime));
         } else {
             handleNoEventInt(now);
-        }
-        if (item != null) {
-            traverser.append(wrapFn.apply(item, timestampFn.applyAsLong(item)));
         }
         return traverser;
     }
 
-    private void handleEventInt(long now, int partitionIndex, @Nonnull T event) {
-        long eventTime = timestampFn.applyAsLong(event);
+    private void handleEventInt(long now, int partitionIndex, @Nonnull T event, long eventTime) {
         wmPolicies[partitionIndex].reportEvent(eventTime);
         markIdleAt[partitionIndex] = now + idleTimeoutNanos;
         allAreIdle = false;
