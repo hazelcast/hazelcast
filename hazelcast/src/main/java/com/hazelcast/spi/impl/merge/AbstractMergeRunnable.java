@@ -42,8 +42,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Semaphore;
 
-import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.internal.cluster.Versions.V3_10;
+import static com.hazelcast.internal.config.ConfigValidator.checkMergePolicySupportsInMemoryFormat;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static java.lang.String.format;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -141,14 +141,15 @@ public abstract class AbstractMergeRunnable<Store, MergingItem> implements Runna
         for (Map.Entry<String, Collection<Store>> entry : collectedStoresWithLegacyPolicies.entrySet()) {
             String dataStructureName = entry.getKey();
 
-            // although configuration fails fast,
-            // keep this assertion here as a paranoiac check
-            assert getInMemoryFormat(dataStructureName) != NATIVE
-                    : "Legacy policies cannot be used to merge NATIVE data";
+            if (checkMergePolicySupportsInMemoryFormat(dataStructureName,
+                    getMergePolicy(dataStructureName).getClass().getName(),
+                    getInMemoryFormat(dataStructureName),
+                    clusterService.getClusterVersion(), false, logger)) {
 
-            Collection<Store> recordStores = entry.getValue();
-            for (Store recordStore : recordStores) {
-                consumeStoreLegacy(recordStore, consumer);
+                Collection<Store> recordStores = entry.getValue();
+                for (Store recordStore : recordStores) {
+                    consumeStoreLegacy(recordStore, consumer);
+                }
             }
         }
 

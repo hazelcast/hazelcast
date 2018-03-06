@@ -41,6 +41,7 @@ import com.hazelcast.spi.merge.HyperLogLogMergePolicy;
 import com.hazelcast.spi.merge.LatestAccessMergePolicy;
 import com.hazelcast.spi.merge.LatestUpdateMergePolicy;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.version.Version;
 
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -95,8 +96,6 @@ public final class ConfigValidator {
     public static void checkMapConfig(MapConfig mapConfig) {
         checkMergePolicy(mapConfig.isStatisticsEnabled(), mapConfig.getMergePolicyConfig().getPolicy());
         checkNotNative(mapConfig.getInMemoryFormat());
-        checkMergePolicySupportsNative(mapConfig.getName(),
-                mapConfig.getMergePolicyConfig().getPolicy(), mapConfig.getInMemoryFormat());
 
         logIgnoredConfig(mapConfig);
     }
@@ -238,25 +237,24 @@ public final class ConfigValidator {
      * @param cacheSimpleConfig the {@link CacheSimpleConfig} to check
      */
     public static void checkCacheConfig(CacheSimpleConfig cacheSimpleConfig) {
-        checkCacheConfig(cacheSimpleConfig.getName(),
-                cacheSimpleConfig.getInMemoryFormat(), cacheSimpleConfig.getEvictionConfig(),
+        checkCacheConfig(cacheSimpleConfig.getInMemoryFormat(), cacheSimpleConfig.getEvictionConfig(),
                 cacheSimpleConfig.isStatisticsEnabled(), cacheSimpleConfig.getMergePolicy());
     }
 
     /**
      * Validates the given parameters in the context of a {@link ICache} config.
      *
-     * @param name                name of data structure
      * @param inMemoryFormat      the in-memory format the {@code Cache} is configured with
      * @param evictionConfig      eviction configuration of {@code Cache}
      * @param isStatisticsEnabled {@code true} if statistics are enabled, {@code false} otherwise
      * @param mergePolicy         the configured merge policy
      */
-    public static void checkCacheConfig(String name, InMemoryFormat inMemoryFormat, EvictionConfig evictionConfig,
-                                        boolean isStatisticsEnabled, String mergePolicy) {
+    public static void checkCacheConfig(InMemoryFormat inMemoryFormat,
+                                        EvictionConfig evictionConfig,
+                                        boolean isStatisticsEnabled,
+                                        String mergePolicy) {
         checkMergePolicy(isStatisticsEnabled, mergePolicy);
         checkNotNative(inMemoryFormat);
-        checkMergePolicySupportsNative(name, mergePolicy, inMemoryFormat);
 
         if (inMemoryFormat == NATIVE) {
             EvictionConfig.MaxSizePolicy maxSizePolicy = evictionConfig.getMaximumSizePolicy();
@@ -273,28 +271,56 @@ public final class ConfigValidator {
     }
 
     /**
-     * Checks {@link InMemoryFormat#NATIVE} data can be merged with the provided {@code mergePolicy}
+     * Returns {@code true} if supplied {@code inMemoryFormat} can be merged
+     * with the supplied {@code mergePolicy}, otherwise returns {@code false}.
+     * <p>
+     * When there is a wrong policy detected, it does one of two things: if
+     * fail-fast option is {@code true} and cluster version is 3.10 or later,
+     * it throws {@link IllegalArgumentException} otherwise prints a warning
+     * log.
      */
-    private static void checkMergePolicySupportsNative(String name, String mergePolicy, InMemoryFormat inMemoryFormat) {
-        if (!getBuildInfo().isEnterprise() || inMemoryFormat != NATIVE) {
-            return;
+    public static boolean checkMergePolicySupportsInMemoryFormat(String name,
+                                                                 String mergePolicy,
+                                                                 InMemoryFormat inMemoryFormat,
+                                                                 Version clusterVersion,
+                                                                 boolean failFast,
+                                                                 ILogger logger) {
+
+        if (canMergeWithPolicy(mergePolicy, inMemoryFormat, clusterVersion)) {
+            return true;
+        }
+
+        if (clusterVersion.isGreaterOrEqual(V3_10) && failFast) {
+            throw new IllegalArgumentException(createSplitRecoveryWarningMsg(name, mergePolicy));
+        } else {
+            logger.warning(createSplitRecoveryWarningMsg(name, mergePolicy));
+        }
+
+        return false;
+    }
+
+    private static boolean canMergeWithPolicy(String mergePolicyClassName,
+                                              InMemoryFormat inMemoryFormat,
+                                              Version clusterVersion) {
+        if (inMemoryFormat != NATIVE) {
+            return true;
         }
 
         try {
-            if (SplitBrainMergePolicy.class.isAssignableFrom(Class.forName(mergePolicy))) {
-                return;
-            }
-
-            String msg = "Split brain recovery is not supported for '%s',"
-                    + " because it's using merge policy `%s` to merge `%s` data."
-                    + " To fix this, use an implementation of `%s` with a cluster version `%s` or later";
-
-            throw new IllegalArgumentException(format(msg, name, mergePolicy, NATIVE,
-                    SplitBrainMergePolicy.class.getName(), V3_10));
-
+            return clusterVersion.isGreaterOrEqual(V3_10)
+                    && SplitBrainMergePolicy.class.isAssignableFrom(Class.forName(mergePolicyClassName));
         } catch (ClassNotFoundException e) {
             throw ExceptionUtil.rethrow(e);
         }
+    }
+
+    private static String createSplitRecoveryWarningMsg(String name, String mergePolicy) {
+        String messageTemplate = "Split brain recovery is not supported for '%s',"
+                + " because it's using merge policy `%s` to merge `%s` data."
+                + " To fix this, use an implementation of `%s` with a cluster version `%s` or later";
+
+        return format(messageTemplate, name, mergePolicy, NATIVE,
+                SplitBrainMergePolicy.class.getName(), V3_10);
     }
 
     /**
@@ -369,7 +395,7 @@ public final class ConfigValidator {
      * @param isStatisticsEnabled {@code true} if statistics are enabled, {@code false} otherwise
      * @param mergePolicy         the configured merge policy
      */
-    private static void checkMergePolicy(boolean isStatisticsEnabled, String mergePolicy) {
+    public static void checkMergePolicy(boolean isStatisticsEnabled, String mergePolicy) {
         if (!isStatisticsEnabled && STATISTIC_MERGE_POLICIES.contains(mergePolicy)) {
             throw new IllegalArgumentException("You need to enable statistics to use merge policy " + mergePolicy);
         }

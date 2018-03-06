@@ -67,6 +67,7 @@ import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.cache.impl.AbstractCacheRecordStore.SOURCE_NOT_AVAILABLE;
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateCacheConfig;
+import static com.hazelcast.internal.config.ConfigValidator.checkMergePolicySupportsInMemoryFormat;
 import static com.hazelcast.util.EmptyStatement.ignore;
 
 @SuppressWarnings("checkstyle:classdataabstractioncoupling")
@@ -75,16 +76,24 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
 
     private static final String SETUP_REF = "setupRef";
 
-    /** Map from full prefixed cache name to {@link CacheConfig} */
+    /**
+     * Map from full prefixed cache name to {@link CacheConfig}
+     */
     protected final ConcurrentMap<String, CacheConfig> configs = new ConcurrentHashMap<String, CacheConfig>();
 
-    /** Map from full prefixed cache name to {@link CacheContext} */
+    /**
+     * Map from full prefixed cache name to {@link CacheContext}
+     */
     protected final ConcurrentMap<String, CacheContext> cacheContexts = new ConcurrentHashMap<String, CacheContext>();
 
-    /** Map from full prefixed cache name to {@link CacheStatisticsImpl} */
+    /**
+     * Map from full prefixed cache name to {@link CacheStatisticsImpl}
+     */
     protected final ConcurrentMap<String, CacheStatisticsImpl> statistics = new ConcurrentHashMap<String, CacheStatisticsImpl>();
 
-    /** Map from full prefixed cache name to set of {@link Closeable} resources */
+    /**
+     * Map from full prefixed cache name to set of {@link Closeable} resources
+     */
     protected final ConcurrentMap<String, Set<Closeable>> resources = new ConcurrentHashMap<String, Set<Closeable>>();
     protected final ConcurrentMap<String, Closeable> closeableListeners = new ConcurrentHashMap<String, Closeable>();
     protected final ConcurrentMap<String, CacheOperationProvider> operationProviderCache =
@@ -218,6 +227,12 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
                 }
 
                 validateCacheConfig(cacheConfig);
+                checkMergePolicySupportsInMemoryFormat(cacheConfig.getName(),
+                        cacheConfig.getMergePolicy(),
+                        cacheConfig.getInMemoryFormat(),
+                        nodeEngine.getClusterService().getClusterVersion(),
+                        true, logger);
+
                 putCacheConfigIfAbsent(cacheConfig);
                 // ensure cache config becomes available on all members before the proxy is returned to the caller
                 createCacheConfigOnAllMembers(cacheConfig);
