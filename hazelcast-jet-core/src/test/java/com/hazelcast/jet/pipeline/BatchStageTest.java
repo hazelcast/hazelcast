@@ -42,8 +42,8 @@ import static com.hazelcast.jet.datamodel.ItemsByTag.itemsByTag;
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.datamodel.Tuple3.tuple3;
 import static com.hazelcast.jet.function.DistributedFunctions.wholeItem;
-import static com.hazelcast.jet.pipeline.JoinClause.joinMapEntries;
 import static com.hazelcast.jet.pipeline.ContextFactories.replicatedMapContext;
+import static com.hazelcast.jet.pipeline.JoinClause.joinMapEntries;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
@@ -53,7 +53,7 @@ public class BatchStageTest extends PipelineTestSupport {
 
     @Before
     public void before() {
-        srcStage = pipeline.drawFrom(mapValuesSource(srcName));
+        srcStage = p.drawFrom(mapValuesSource(srcName));
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -63,13 +63,13 @@ public class BatchStageTest extends PipelineTestSupport {
 
     @Test(expected = IllegalArgumentException.class)
     public void when_missingSink_then_exceptionInDagIterator() {
-        pipeline.toDag().iterator();
+        p.toDag().iterator();
     }
 
     @Test
     public void when_minimalPipeline_then_validDag() {
         srcStage.drainTo(sink);
-        assertTrue(pipeline.toDag().iterator().hasNext());
+        assertTrue(p.toDag().iterator().hasNext());
     }
 
     @Test
@@ -141,8 +141,8 @@ public class BatchStageTest extends PipelineTestSupport {
         filteringMap.put(1, 1);
         filteringMap.put(3, 3);
         List<Integer> expected = input.stream()
-                                     .filter(filteringMap::containsKey)
-                                     .collect(toList());
+                                      .filter(filteringMap::containsKey)
+                                      .collect(toList());
 
         // When
         BatchStage<Integer> mapped = srcStage.filterUsingContext(
@@ -221,7 +221,7 @@ public class BatchStageTest extends PipelineTestSupport {
         String enrichingName = HazelcastTestSupport.randomName();
         IMap<Integer, String> enriching = jet().getMap(enrichingName);
         input.forEach(i -> enriching.put(i, i + "A"));
-        BatchStage<Entry<Integer, String>> enrichingStage = pipeline.drawFrom(Sources.map(enrichingName));
+        BatchStage<Entry<Integer, String>> enrichingStage = p.drawFrom(Sources.map(enrichingName));
 
         // When
         BatchStage<Tuple2<Integer, String>> joined = srcStage.hashJoin(
@@ -245,8 +245,8 @@ public class BatchStageTest extends PipelineTestSupport {
         putToSrcMap(input);
         String enriching1Name = HazelcastTestSupport.randomName();
         String enriching2Name = HazelcastTestSupport.randomName();
-        BatchStage<Entry<Integer, String>> enrichingStage1 = pipeline.drawFrom(Sources.map(enriching1Name));
-        BatchStage<Entry<Integer, String>> enrichingStage2 = pipeline.drawFrom(Sources.map(enriching2Name));
+        BatchStage<Entry<Integer, String>> enrichingStage1 = p.drawFrom(Sources.map(enriching1Name));
+        BatchStage<Entry<Integer, String>> enrichingStage2 = p.drawFrom(Sources.map(enriching2Name));
         IMap<Integer, String> enriching1 = jet().getMap(enriching1Name);
         IMap<Integer, String> enriching2 = jet().getMap(enriching2Name);
         input.forEach(i -> enriching1.put(i, i + "A"));
@@ -275,8 +275,8 @@ public class BatchStageTest extends PipelineTestSupport {
         putToSrcMap(input);
         String enriching1Name = HazelcastTestSupport.randomName();
         String enriching2Name = HazelcastTestSupport.randomName();
-        BatchStage<Entry<Integer, String>> enrichingStage1 = pipeline.drawFrom(Sources.map(enriching1Name));
-        BatchStage<Entry<Integer, String>> enrichingStage2 = pipeline.drawFrom(Sources.map(enriching2Name));
+        BatchStage<Entry<Integer, String>> enrichingStage1 = p.drawFrom(Sources.map(enriching1Name));
+        BatchStage<Entry<Integer, String>> enrichingStage2 = p.drawFrom(Sources.map(enriching2Name));
         IMap<Integer, String> enriching1 = jet().getMap(enriching1Name);
         IMap<Integer, String> enriching2 = jet().getMap(enriching2Name);
         input.forEach(i -> enriching1.put(i, i + "A"));
@@ -302,7 +302,7 @@ public class BatchStageTest extends PipelineTestSupport {
     public void coGroupTwo() {
         //Given
         String src1Name = HazelcastTestSupport.randomName();
-        BatchStage<Integer> srcStage1 = pipeline.drawFrom(mapValuesSource(src1Name));
+        BatchStage<Integer> srcStage1 = p.drawFrom(mapValuesSource(src1Name));
         List<Integer> input = IntStream.range(1, 100).boxed()
                                        .flatMap(i -> Collections.nCopies(i, i).stream())
                                        .collect(toList());
@@ -338,8 +338,8 @@ public class BatchStageTest extends PipelineTestSupport {
         putToSrcMap(input);
         String src1Name = HazelcastTestSupport.randomName();
         String src2Name = HazelcastTestSupport.randomName();
-        BatchStage<Integer> src1 = pipeline.drawFrom(mapValuesSource(src1Name));
-        BatchStage<Integer> src2 = pipeline.drawFrom(mapValuesSource(src2Name));
+        BatchStage<Integer> src1 = p.drawFrom(mapValuesSource(src1Name));
+        BatchStage<Integer> src2 = p.drawFrom(mapValuesSource(src2Name));
         putToMap(jet().getMap(src1Name), input);
         putToMap(jet().getMap(src2Name), input);
 
@@ -374,8 +374,8 @@ public class BatchStageTest extends PipelineTestSupport {
         putToSrcMap(input);
         String src1Name = HazelcastTestSupport.randomName();
         String src2Name = HazelcastTestSupport.randomName();
-        BatchStage<Integer> src1 = pipeline.drawFrom(mapValuesSource(src1Name));
-        BatchStage<Integer> src2 = pipeline.drawFrom(mapValuesSource(src2Name));
+        BatchStage<Integer> src1 = p.drawFrom(mapValuesSource(src1Name));
+        BatchStage<Integer> src2 = p.drawFrom(mapValuesSource(src2Name));
         putToMap(jet().getMap(src1Name), input);
         putToMap(jet().getMap(src2Name), input);
 

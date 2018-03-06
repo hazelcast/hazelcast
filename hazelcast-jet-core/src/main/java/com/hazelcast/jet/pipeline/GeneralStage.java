@@ -368,4 +368,5 @@ public interface GeneralStage<T> extends Stage {
     @Nonnull
     <R> GeneralStage<R> customTransform(
             @Nonnull String stageName, @Nonnull DistributedSupplier<Processor> procSupplier);
+
 }

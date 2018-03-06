@@ -17,6 +17,7 @@
 package com.hazelcast.jet.core.processor;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.jet.core.Processor.Context;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.function.DistributedBiConsumer;
@@ -24,18 +25,18 @@ import com.hazelcast.jet.function.DistributedBiFunction;
 import com.hazelcast.jet.function.DistributedBinaryOperator;
 import com.hazelcast.jet.function.DistributedConsumer;
 import com.hazelcast.jet.function.DistributedFunction;
-import com.hazelcast.jet.function.DistributedIntFunction;
 import com.hazelcast.jet.impl.connector.HazelcastWriters;
 import com.hazelcast.jet.impl.connector.WriteBufferedP;
 import com.hazelcast.jet.impl.connector.WriteFileP;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.map.EntryProcessor;
+
+import javax.annotation.Nonnull;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
 import java.nio.charset.Charset;
-import javax.annotation.Nonnull;
 
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.preferLocalParallelismOne;
 import static com.hazelcast.jet.function.DistributedFunctions.noopConsumer;
@@ -268,13 +269,13 @@ public final class SinkProcessors {
      * @param <B>           type of buffer
      * @param <T>           type of received item
      * @param newBufferFn   supplies the buffer. The argument to this function
-     *                      is the global processor index.
+     *                      is the context for the given processor.
      * @param addToBufferFn adds an item to the buffer
      * @param flushBufferFn flushes the buffer
      */
     @Nonnull
     public static <B, T> ProcessorSupplier writeBufferedP(
-            @Nonnull DistributedIntFunction<B> newBufferFn,
+            @Nonnull DistributedFunction<Context, B> newBufferFn,
             @Nonnull DistributedBiConsumer<B, T> addToBufferFn,
             @Nonnull DistributedConsumer<B> flushBufferFn
     ) {
@@ -283,28 +284,27 @@ public final class SinkProcessors {
 
     /**
      * Returns a supplier of processors for a vertex that drains all the items
-     * from the inbox to an intermediate buffer and then flushes the buffer.
-     * As each processor completes, it will dispose of the buffer by calling
-     * {@code disposeBufferFn}.
+     * from the inbox to an internal buffered writer object. As each processor
+     * completes, it will dispose of its writer by calling {@code destroyFn}.
      * <p>
      * This is a useful building block to implement sinks with explicit control
-     * over buffering and flushing.
+     * over resource management, buffering and flushing.
      *
-     * @param <B>             type of buffer
-     * @param <T>             type of received item
-     * @param newBufferFn     supplies the buffer. The argument to this function
-     *                        is the global processor index.
-     * @param addToBufferFn   adds item to buffer
-     * @param flushBufferFn   flushes the buffer
-     * @param disposeBufferFn disposes of the buffer
+     * @param createFn     supplies the buffer. The argument to this function
+     *                     is the context for the given processor.
+     * @param onReceiveFn function that Jet calls upon receiving each item for the sink
+     * @param flushFn     function that flushes the writer
+     * @param destroyFn   function that destroys the writer
+     * @param <W>         type of the writer
+     * @param <T>         type of the received item
      */
     @Nonnull
-    public static <B, T> ProcessorSupplier writeBufferedP(
-            @Nonnull DistributedIntFunction<B> newBufferFn,
-            @Nonnull DistributedBiConsumer<B, T> addToBufferFn,
-            @Nonnull DistributedConsumer<B> flushBufferFn,
-            @Nonnull DistributedConsumer<B> disposeBufferFn
+    public static <W, T> ProcessorSupplier writeBufferedP(
+            @Nonnull DistributedFunction<? super Context, ? extends W> createFn,
+            @Nonnull DistributedBiConsumer<? super W, ? super T> onReceiveFn,
+            @Nonnull DistributedConsumer<? super W> flushFn,
+            @Nonnull DistributedConsumer<? super W> destroyFn
     ) {
-        return WriteBufferedP.supplier(newBufferFn, addToBufferFn, flushBufferFn, disposeBufferFn);
+        return WriteBufferedP.supplier(createFn, onReceiveFn, flushFn, destroyFn);
     }
 }

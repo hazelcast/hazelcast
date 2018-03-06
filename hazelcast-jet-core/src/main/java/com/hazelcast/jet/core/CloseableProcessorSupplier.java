@@ -40,7 +40,7 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
  */
 public abstract class CloseableProcessorSupplier<E extends Processor & Closeable> implements ProcessorSupplier {
 
-    static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
     private DistributedIntFunction<Collection<E>> supplier;
     private transient ILogger logger;
@@ -54,19 +54,8 @@ public abstract class CloseableProcessorSupplier<E extends Processor & Closeable
     }
 
     /**
-     * Constructs an instance which will wrap all the processors the provided
-     * {@code supplier} returns.
-     *
-     * @param supplier supplier of processors. The {@code int} parameter passed to it is the
-     *                 number of processors that should be in the returned collection.
-     */
-    public CloseableProcessorSupplier(DistributedIntFunction<Collection<E>> supplier) {
-        setSupplier(supplier);
-    }
-
-    /**
-     * Initializes this object with the given supplier. May only be invoked if
-     * the supplier property hasn't been initialized yet.
+     * Initializes this object with the given supplier. Must be invoked exactly
+     * once.
      */
     protected void setSupplier(DistributedSupplier<E> simpleSupplier) {
         setSupplier(
@@ -76,8 +65,8 @@ public abstract class CloseableProcessorSupplier<E extends Processor & Closeable
     }
 
     /**
-     * Initializes this object with the given supplier. May only be invoked if
-     * the supplier property hasn't been initialized yet.
+     * Initializes this object with the given supplier. Must be invoked exactly
+     * once.
      */
     protected void setSupplier(DistributedIntFunction<Collection<E>> newSupplier) {
         if (supplier != null) {
@@ -121,7 +110,7 @@ public abstract class CloseableProcessorSupplier<E extends Processor & Closeable
     }
 
     /**
-     * Create {@link CloseableProcessorSupplier} from a simple supplier.
+     * Creates a {@link CloseableProcessorSupplier} from a simple supplier.
      */
     public static <E extends Processor & Closeable> CloseableProcessorSupplier<E> of(
             DistributedSupplier<E> simpleSupplier
@@ -136,8 +125,9 @@ public abstract class CloseableProcessorSupplier<E extends Processor & Closeable
     }
 
     /**
-     * Create {@link CloseableProcessorSupplier} from a count-to-processors
-     * function.
+     * Creates a {@link CloseableProcessorSupplier} from a count-to-processors
+     * function. The function must return as many processor suppliers as its
+     * argument requests.
      */
     public static <E extends Processor & Closeable> CloseableProcessorSupplier<E> of(
             DistributedIntFunction<Collection<E>> supplier

@@ -46,7 +46,7 @@ public abstract class PipelineTestSupport extends TestInClusterSupport {
     final String srcName = randomName();
     final String sinkName = randomName();
 
-    Pipeline pipeline;
+    Pipeline p;
     BatchStage<Integer> srcStage;
     Sink<Object> sink;
 
@@ -57,7 +57,7 @@ public abstract class PipelineTestSupport extends TestInClusterSupport {
 
     @Before
     public void beforePipelineTestSupport() {
-        pipeline = Pipeline.create();
+        p = Pipeline.create();
         srcMap = jet().getMap(srcName);
         srcCache = jet().getCacheManager().getCache(srcName);
         srcList = jet().getList(srcName);
@@ -96,7 +96,7 @@ public abstract class PipelineTestSupport extends TestInClusterSupport {
     }
 
     void execute() {
-        jet().newJob(pipeline).join();
+        jet().newJob(p).join();
     }
 
     Map<Object, Integer> sinkToBag() {

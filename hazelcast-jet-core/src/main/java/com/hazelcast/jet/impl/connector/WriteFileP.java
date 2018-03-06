@@ -56,7 +56,7 @@ public final class WriteFileP {
             boolean append) {
 
         return ProcessorMetaSupplier.preferLocalParallelismOne(writeBufferedP(
-                globalIndex -> createBufferedWriter(Paths.get(directoryName), globalIndex,
+                ctx -> createBufferedWriter(Paths.get(directoryName), ctx.globalProcessorIndex(),
                         charset, append),
                 (fileWriter, item) -> uncheckRun(() -> {
                     fileWriter.write(toStringFn.apply((T) item));

@@ -33,7 +33,6 @@ import com.hazelcast.jet.function.DistributedBiFunction;
 import com.hazelcast.jet.function.DistributedBinaryOperator;
 import com.hazelcast.jet.function.DistributedConsumer;
 import com.hazelcast.jet.function.DistributedFunction;
-import com.hazelcast.jet.function.DistributedIntFunction;
 import com.hazelcast.jet.impl.SerializationConstants;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
@@ -433,26 +432,26 @@ public final class HazelcastWriters {
         static final long serialVersionUID = 1L;
 
         private final SerializableClientConfig clientConfig;
-        private final DistributedFunction<HazelcastInstance, DistributedConsumer<B>> instanceToFlushBuffer;
-        private final DistributedIntFunction<B> bufferSupplier;
-        private final DistributedBiConsumer<B, T> addToBuffer;
-        private final DistributedConsumer<B> disposeBuffer;
+        private final DistributedFunction<HazelcastInstance, DistributedConsumer<B>> instanceToFlushBufferFn;
+        private final DistributedFunction<Processor.Context, B> newBufferFn;
+        private final DistributedBiConsumer<B, T> addToBufferFn;
+        private final DistributedConsumer<B> disposeBufferFn;
 
         private transient DistributedConsumer<B> flushBuffer;
         private transient HazelcastInstance client;
 
         HazelcastWriterSupplier(
                 SerializableClientConfig clientConfig,
-                DistributedIntFunction<B> newBuffer,
-                DistributedBiConsumer<B, T> addToBuffer,
-                DistributedFunction<HazelcastInstance, DistributedConsumer<B>> instanceToFlushBuffer,
-                DistributedConsumer<B> disposeBuffer
+                DistributedFunction<Processor.Context, B> newBufferFn,
+                DistributedBiConsumer<B, T> addToBufferFn,
+                DistributedFunction<HazelcastInstance, DistributedConsumer<B>> instanceToFlushBufferFn,
+                DistributedConsumer<B> disposeBufferFn
         ) {
             this.clientConfig = clientConfig;
-            this.instanceToFlushBuffer = instanceToFlushBuffer;
-            this.bufferSupplier = newBuffer;
-            this.addToBuffer = addToBuffer;
-            this.disposeBuffer = disposeBuffer;
+            this.instanceToFlushBufferFn = instanceToFlushBufferFn;
+            this.newBufferFn = newBufferFn;
+            this.addToBufferFn = addToBufferFn;
+            this.disposeBufferFn = disposeBufferFn;
         }
 
         @Override
@@ -463,7 +462,7 @@ public final class HazelcastWriters {
             } else {
                 instance = context.jetInstance().getHazelcastInstance();
             }
-            flushBuffer = instanceToFlushBuffer.apply(instance);
+            flushBuffer = instanceToFlushBufferFn.apply(instance);
         }
 
         @Override
@@ -479,7 +478,7 @@ public final class HazelcastWriters {
 
         @Override @Nonnull
         public List<Processor> get(int count) {
-            return Stream.generate(() -> new WriteBufferedP<>(bufferSupplier, addToBuffer, flushBuffer, disposeBuffer))
+            return Stream.generate(() -> new WriteBufferedP<>(newBufferFn, addToBufferFn, flushBuffer, disposeBufferFn))
                          .limit(count).collect(toList());
         }
     }

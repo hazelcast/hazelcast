@@ -78,7 +78,7 @@ public class SourcesTest extends PipelineTestSupport {
         putToSrcMap(input);
 
         // When
-        pipeline.<Integer>drawFrom(Sources.batchFromProcessor("test",
+        p.<Integer>drawFrom(Sources.batchFromProcessor("test",
                 readMapP(srcName, truePredicate(),
                         (DistributedFunction<Entry<String, Integer>, Integer>) Entry::getValue)))
                 .drainTo(sink);
@@ -95,8 +95,8 @@ public class SourcesTest extends PipelineTestSupport {
         putToSrcMap(input);
 
         // When
-        pipeline.drawFrom(Sources.map(srcName))
-                .drainTo(sink);
+        p.drawFrom(Sources.map(srcName))
+         .drainTo(sink);
         execute();
 
         // Then
@@ -113,8 +113,8 @@ public class SourcesTest extends PipelineTestSupport {
         putToSrcMap(input);
 
         // When
-        pipeline.drawFrom(Sources.map(srcName, truePredicate(), singleAttribute("value")))
-                .drainTo(sink);
+        p.drawFrom(Sources.map(srcName, truePredicate(), singleAttribute("value")))
+         .drainTo(sink);
         execute();
 
         // Then
@@ -128,10 +128,10 @@ public class SourcesTest extends PipelineTestSupport {
         putToSrcMap(input);
 
         // When
-        pipeline.drawFrom(Sources.map(
+        p.drawFrom(Sources.map(
                 srcName, truePredicate(),
                 (DistributedFunction<Entry<String, Integer>, Integer>) Entry::getValue))
-                .drainTo(sink);
+         .drainTo(sink);
         execute();
 
         // Then
@@ -147,9 +147,9 @@ public class SourcesTest extends PipelineTestSupport {
         BatchSource<String> source = Sources.map(mapName, truePredicate(), singleAttribute("value"));
 
         // when
-        pipeline.drawFrom(source)
-                .drainTo(sink);
-        jet().newJob(pipeline);
+        p.drawFrom(source)
+         .drainTo(sink);
+        jet().newJob(p);
 
         // then
         assertTrueEventually(() -> assertEquals(
@@ -172,8 +172,8 @@ public class SourcesTest extends PipelineTestSupport {
         putToMap(remoteHz.getMap(srcName), input);
 
         // When
-        pipeline.drawFrom(Sources.remoteMap(srcName, clientConfig))
-                .drainTo(sink);
+        p.drawFrom(Sources.remoteMap(srcName, clientConfig))
+         .drainTo(sink);
         execute();
 
         // Then
@@ -190,8 +190,8 @@ public class SourcesTest extends PipelineTestSupport {
         putToMap(remoteHz.getMap(srcName), input);
 
         // When
-        pipeline.drawFrom(Sources.remoteMap(srcName, clientConfig, truePredicate(), singleAttribute("value")))
-                .drainTo(sink);
+        p.drawFrom(Sources.remoteMap(srcName, clientConfig, truePredicate(), singleAttribute("value")))
+         .drainTo(sink);
         execute();
 
         // Then
@@ -205,10 +205,10 @@ public class SourcesTest extends PipelineTestSupport {
         putToMap(remoteHz.getMap(srcName), input);
 
         // When
-        pipeline.drawFrom(Sources.remoteMap(
+        p.drawFrom(Sources.remoteMap(
                 srcName, clientConfig, truePredicate(),
                 (DistributedFunction<Entry<String, Integer>, Integer>) Entry::getValue))
-                .drainTo(sink);
+         .drainTo(sink);
         execute();
 
         // Then
@@ -223,8 +223,8 @@ public class SourcesTest extends PipelineTestSupport {
         putToSrcCache(input);
 
         // When
-        pipeline.drawFrom(Sources.cache(srcName))
-                .drainTo(sink);
+        p.drawFrom(Sources.cache(srcName))
+         .drainTo(sink);
         execute();
 
         // Then
@@ -242,8 +242,8 @@ public class SourcesTest extends PipelineTestSupport {
         putToCache(remoteHz.getCacheManager().getCache(srcName), input);
 
         // When
-        pipeline.drawFrom(Sources.remoteCache(srcName, clientConfig))
-                .drainTo(sink);
+        p.drawFrom(Sources.remoteCache(srcName, clientConfig))
+         .drainTo(sink);
         execute();
 
         // Then
@@ -261,8 +261,8 @@ public class SourcesTest extends PipelineTestSupport {
         addToSrcList(input);
 
         // When
-        pipeline.drawFrom(Sources.list(srcName))
-                .drainTo(sink);
+        p.drawFrom(Sources.list(srcName))
+         .drainTo(sink);
         execute();
 
         // Then
@@ -276,8 +276,8 @@ public class SourcesTest extends PipelineTestSupport {
         addToList(remoteHz.getList(srcName), input);
 
         // When
-        pipeline.drawFrom(Sources.remoteList(srcName, clientConfig))
-                .drainTo(sink);
+        p.drawFrom(Sources.remoteList(srcName, clientConfig))
+         .drainTo(sink);
         execute();
 
         // Then
@@ -309,8 +309,8 @@ public class SourcesTest extends PipelineTestSupport {
             })).start();
 
             // When
-            pipeline.drawFrom(Sources.socket("localhost", 8176, UTF_8))
-                    .drainTo(sink);
+            p.drawFrom(Sources.socket("localhost", 8176, UTF_8))
+             .drainTo(sink);
             execute();
 
             // Then
@@ -329,8 +329,8 @@ public class SourcesTest extends PipelineTestSupport {
         appendToFile(file2, "hello2", "world2");
 
         // When
-        pipeline.drawFrom(Sources.files(directory.getPath()))
-                .drainTo(sink);
+        p.drawFrom(Sources.files(directory.getPath()))
+         .drainTo(sink);
         execute();
 
         // Then
@@ -349,9 +349,9 @@ public class SourcesTest extends PipelineTestSupport {
         sleepAtLeastMillis(50);
 
         // When
-        pipeline.drawFrom(Sources.fileWatcher(directory.getPath()))
-                .drainTo(sink);
-        Job job = jet().newJob(pipeline);
+        p.drawFrom(Sources.fileWatcher(directory.getPath()))
+         .drainTo(sink);
+        Job job = jet().newJob(p);
 
         // wait for the processor to initialize
         assertTrueEventually(() -> assertEquals(JobStatus.RUNNING, job.getStatus()));

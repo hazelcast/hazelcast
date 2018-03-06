@@ -20,10 +20,11 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.datamodel.Tuple3;
+import org.junit.Test;
+
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.stream.Stream;
-import org.junit.Test;
 
 import static com.hazelcast.jet.Traversers.traverseIterable;
 import static com.hazelcast.jet.Util.mapEventNewValue;
@@ -48,7 +49,7 @@ public class StreamStageTest extends PipelineTestSupport {
         String stageName = randomName();
 
         //When
-        StreamStage<Entry<Long, String>> streamStage = pipeline
+        StreamStage<Entry<Long, String>> streamStage = p
                 .drawFrom(Sources.<Long, String>mapJournal(mapName, START_FROM_OLDEST))
                 .setName(stageName);
 
@@ -63,7 +64,7 @@ public class StreamStageTest extends PipelineTestSupport {
         int localParallelism = 10;
 
         //When
-        StreamStage<Entry<Long, String>> streamStage = pipeline
+        StreamStage<Entry<Long, String>> streamStage = p
                 .drawFrom(Sources.<Long, String>mapJournal(mapName, START_FROM_OLDEST))
                 .setLocalParallelism(localParallelism);
 
@@ -82,10 +83,10 @@ public class StreamStageTest extends PipelineTestSupport {
 
 
         // When
-        pipeline.drawFrom(Sources.<Long, String>mapJournal(mapName, START_FROM_OLDEST))
-                .map(e -> e.getValue() + "-x")
-                .drainTo(sink);
-        jet().newJob(pipeline);
+        p.drawFrom(Sources.<Long, String>mapJournal(mapName, START_FROM_OLDEST))
+         .map(e -> e.getValue() + "-x")
+         .drainTo(sink);
+        jet().newJob(p);
 
         // Then
         List<String> expected = map.values().stream()
@@ -105,11 +106,11 @@ public class StreamStageTest extends PipelineTestSupport {
 
 
         // When
-        pipeline.drawFrom(Sources.<Long, String>mapJournal(mapName, START_FROM_OLDEST))
-                .filter(e -> e.getValue().startsWith("f"))
-                .map(entryValue())
-                .drainTo(sink);
-        jet().newJob(pipeline);
+        p.drawFrom(Sources.<Long, String>mapJournal(mapName, START_FROM_OLDEST))
+         .filter(e -> e.getValue().startsWith("f"))
+         .map(entryValue())
+         .drainTo(sink);
+        jet().newJob(p);
 
         // Then
         List<String> expected = map.values().stream()
@@ -127,11 +128,11 @@ public class StreamStageTest extends PipelineTestSupport {
 
 
         // When
-        pipeline.drawFrom(Sources.<Long, String>mapJournal(mapName, START_FROM_OLDEST))
-                .map(entryValue())
-                .flatMap(o -> traverseIterable(asList(o + "A", o + "B")))
-                .drainTo(sink);
-        jet().newJob(pipeline);
+        p.drawFrom(Sources.<Long, String>mapJournal(mapName, START_FROM_OLDEST))
+         .map(entryValue())
+         .flatMap(o -> traverseIterable(asList(o + "A", o + "B")))
+         .drainTo(sink);
+        jet().newJob(p);
 
         // Then
         List<String> expected = map.values().stream()
@@ -151,18 +152,17 @@ public class StreamStageTest extends PipelineTestSupport {
         String enrichingName = randomMapName();
         IMap<Integer, String> enriching = jet().getMap(enrichingName);
         input.forEach(i -> enriching.put(i, i + "A"));
-        BatchStage<Entry<Integer, String>> enrichingStage = pipeline.drawFrom(Sources.map(enrichingName));
+        BatchStage<Entry<Integer, String>> enrichingStage = p.drawFrom(Sources.map(enrichingName));
 
         // When
-        pipeline
-                .drawFrom(Sources.<Integer, String, Integer>mapJournal(mapName, mapPutEvents(), mapEventNewValue(),
-                        START_FROM_OLDEST))
-                .hashJoin(enrichingStage,
-                        joinMapEntries(wholeItem()),
-                        Tuple2::tuple2
-                )
-                .drainTo(sink);
-        jet().newJob(pipeline);
+        p.drawFrom(Sources.<Integer, String, Integer>mapJournal(mapName, mapPutEvents(), mapEventNewValue(),
+                START_FROM_OLDEST))
+         .hashJoin(enrichingStage,
+                 joinMapEntries(wholeItem()),
+                 Tuple2::tuple2
+         )
+         .drainTo(sink);
+        jet().newJob(p);
 
         // Then
         List<Tuple2<Integer, String>> expected = input.stream()
@@ -181,15 +181,15 @@ public class StreamStageTest extends PipelineTestSupport {
 
         String enriching1Name = randomMapName();
         String enriching2Name = randomMapName();
-        BatchStage<Entry<Integer, String>> enrichingStage1 = pipeline.drawFrom(Sources.map(enriching1Name));
-        BatchStage<Entry<Integer, String>> enrichingStage2 = pipeline.drawFrom(Sources.map(enriching2Name));
+        BatchStage<Entry<Integer, String>> enrichingStage1 = p.drawFrom(Sources.map(enriching1Name));
+        BatchStage<Entry<Integer, String>> enrichingStage2 = p.drawFrom(Sources.map(enriching2Name));
         IMap<Integer, String> enriching1 = jet().getMap(enriching1Name);
         IMap<Integer, String> enriching2 = jet().getMap(enriching2Name);
         input.forEach(i -> enriching1.put(i, i + "A"));
         input.forEach(i -> enriching2.put(i, i + "B"));
 
         // When
-        pipeline
+        p
                 .drawFrom(Sources.<Integer, String, Integer>mapJournal(mapName, mapPutEvents(), mapEventNewValue(),
                         START_FROM_OLDEST))
                 .hashJoin2(
@@ -197,7 +197,7 @@ public class StreamStageTest extends PipelineTestSupport {
                         enrichingStage2, joinMapEntries(wholeItem()),
                         Tuple3::tuple3
                 ).drainTo(sink);
-        jet().newJob(pipeline);
+        jet().newJob(p);
 
         // Then
         List<Tuple3<Integer, String, String>> expected = input.stream()
@@ -215,12 +215,12 @@ public class StreamStageTest extends PipelineTestSupport {
         putToMap(map, input);
 
         // When
-        StreamStage<Object> custom = pipeline
+        StreamStage<Object> custom = p
                 .drawFrom(Sources.<Integer, String, Integer>mapJournal(mapName, mapPutEvents(), mapEventNewValue(),
                         START_FROM_OLDEST))
                 .customTransform("map", Processors.mapP(Object::toString));
         custom.drainTo(sink);
-        jet().newJob(pipeline);
+        jet().newJob(p);
 
         // Then
         List<String> expected = input.stream()

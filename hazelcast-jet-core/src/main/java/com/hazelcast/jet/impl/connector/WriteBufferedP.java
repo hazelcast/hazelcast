@@ -23,34 +23,35 @@ import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.function.DistributedBiConsumer;
 import com.hazelcast.jet.function.DistributedConsumer;
-import com.hazelcast.jet.function.DistributedIntFunction;
+import com.hazelcast.jet.function.DistributedFunction;
 
 import javax.annotation.Nonnull;
 import java.io.Closeable;
 
 public final class WriteBufferedP<B, T> implements Processor, Closeable {
 
-    private final DistributedIntFunction<B> newBufferFn;
-    private final DistributedBiConsumer<B, T> addToBufferFn;
-    private final DistributedConsumer<B> flushBufferFn;
-    private final DistributedConsumer<B> disposeBufferFn;
+    private final DistributedFunction<? super Context, B> createFn;
+    private final DistributedBiConsumer<? super B, ? super T> onReceiveFn;
+    private final DistributedConsumer<? super B> flushFn;
+    private final DistributedConsumer<? super B> destroyFn;
 
     private B buffer;
 
-    WriteBufferedP(DistributedIntFunction<B> newBufferFn,
-                   DistributedBiConsumer<B, T> addToBufferFn,
-                   DistributedConsumer<B> flushBufferFn,
-                   DistributedConsumer<B> disposeBufferFn
+    WriteBufferedP(
+            @Nonnull DistributedFunction<? super Context, B> createFn,
+            @Nonnull DistributedBiConsumer<? super B, ? super T> onReceiveFn,
+            @Nonnull DistributedConsumer<? super B> flushFn,
+            @Nonnull DistributedConsumer<? super B> destroyFn
     ) {
-        this.newBufferFn = newBufferFn;
-        this.addToBufferFn = addToBufferFn;
-        this.flushBufferFn = flushBufferFn;
-        this.disposeBufferFn = disposeBufferFn;
+        this.createFn = createFn;
+        this.onReceiveFn = onReceiveFn;
+        this.flushFn = flushFn;
+        this.destroyFn = destroyFn;
     }
 
     @Override
     public void init(@Nonnull Outbox outbox, @Nonnull Context context) {
-        this.buffer = newBufferFn.apply(context.globalProcessorIndex());
+        buffer = createFn.apply(context);
     }
 
     /**
@@ -60,21 +61,20 @@ public final class WriteBufferedP<B, T> implements Processor, Closeable {
      */
     @Nonnull
     public static <B, T> ProcessorSupplier supplier(
-            DistributedIntFunction<B> newBufferFn,
-            DistributedBiConsumer<B, T> addToBufferFn,
-            DistributedConsumer<B> flushBufferFn,
-            DistributedConsumer<B> disposeBufferFn
+            @Nonnull DistributedFunction<? super Context, ? extends B> createFn,
+            @Nonnull DistributedBiConsumer<? super B, ? super T> onReceiveFn,
+            @Nonnull DistributedConsumer<? super B> flushFn,
+            @Nonnull DistributedConsumer<? super B> destroyFn
     ) {
         return CloseableProcessorSupplier.of(
-                () -> new WriteBufferedP<>(newBufferFn, addToBufferFn, flushBufferFn, disposeBufferFn));
+                () -> new WriteBufferedP<>(createFn, onReceiveFn, flushFn, destroyFn)
+        );
     }
 
     @Override
     public void process(int ordinal, @Nonnull Inbox inbox) {
-        inbox.drain(item -> {
-            addToBufferFn.accept(buffer, (T) item);
-        });
-        flushBufferFn.accept(buffer);
+        inbox.drain(item -> onReceiveFn.accept(buffer, (T) item));
+        flushFn.accept(buffer);
     }
 
     @Override
@@ -84,7 +84,7 @@ public final class WriteBufferedP<B, T> implements Processor, Closeable {
     }
 
     public void close() {
-        disposeBufferFn.accept(buffer);
+        destroyFn.accept(buffer);
     }
 
     @Override

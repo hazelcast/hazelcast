@@ -91,10 +91,10 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
         input.forEach(i -> map.put(String.valueOf(key[0]++), Integer.MIN_VALUE + i));
 
         // When we start the job...
-        pipeline.drawFrom(source)
-                .map(entryValue())
-                .drainTo(sink);
-        jet().newJob(pipeline);
+        p.drawFrom(source)
+         .map(entryValue())
+         .drainTo(sink);
+        jet().newJob(p);
 
         // Then eventually we get all the map values in the sink.
         assertSizeEventually(ITEM_COUNT, sinkList);
@@ -130,9 +130,9 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
         range(0, ITEM_COUNT).forEach(i -> sourceMap.put(i, entry(i, i % 2 == 0 ? null : String.valueOf(i))));
 
         // when
-        pipeline.drawFrom(source)
-                .drainTo(sink);
-        jet().newJob(pipeline);
+        p.drawFrom(source)
+         .drainTo(sink);
+        jet().newJob(p);
 
         // then
         assertTrueEventually(() -> assertEquals(
@@ -161,9 +161,9 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
 
 
         // when
-        pipeline.drawFrom(source)
-                .drainTo(sink);
-        jet().newJob(pipeline);
+        p.drawFrom(source)
+         .drainTo(sink);
+        jet().newJob(p);
 
         // then
         IListJet<Entry<Integer, Integer>> sinkList = jet().getList(sinkName);
@@ -193,9 +193,9 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
         sourceMap.put(1, 2); // ADDED
 
         // when
-        pipeline.drawFrom(source)
-                .drainTo(sink);
-        jet().newJob(pipeline);
+        p.drawFrom(source)
+         .drainTo(sink);
+        jet().newJob(p);
 
         // then
         IListJet<Entry<Integer, Integer>> sinkList = jet().getList(sinkName);
@@ -241,9 +241,9 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
         input.forEach(i -> srcMap.put(String.valueOf(key[0]++), Integer.MIN_VALUE + i));
 
         // When we start the job...
-        pipeline.drawFrom(source)
-                .drainTo(sink);
-        jet().newJob(pipeline);
+        p.drawFrom(source)
+         .drainTo(sink);
+        jet().newJob(p);
 
         // Then eventually we get all the map values in the sink.
         assertSizeEventually(ITEM_COUNT / 2, sinkList);
@@ -291,10 +291,10 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
         input.forEach(i -> cache.put(String.valueOf(key[0]++), Integer.MIN_VALUE + i));
 
         // When we start the job...
-        pipeline.drawFrom(source)
-                .map(entryValue())
-                .drainTo(sink);
-        jet().newJob(pipeline);
+        p.drawFrom(source)
+         .map(entryValue())
+         .drainTo(sink);
+        jet().newJob(p);
 
         // Then eventually we get all the cache values in the sink.
         assertSizeEventually(ITEM_COUNT, sinkList);
@@ -350,9 +350,9 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
         input.forEach(i -> srcCache.put(String.valueOf(key[0]++), Integer.MIN_VALUE + i));
 
         // When we start the job...
-        pipeline.drawFrom(source)
-                .drainTo(sink);
-        jet().newJob(pipeline);
+        p.drawFrom(source)
+         .drainTo(sink);
+        jet().newJob(p);
 
         // Then eventually we get all the map values in the sink.
         assertSizeEventually(ITEM_COUNT / 2, sinkList);
