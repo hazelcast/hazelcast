@@ -181,7 +181,6 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                 partitionTableSendInterval, partitionTableSendInterval, TimeUnit.SECONDS);
 
         migrationManager.start();
-        replicaManager.setClusterVersion(node.getClusterService().getClusterVersion());
         replicaManager.scheduleReplicaVersionSync(executionService);
     }
 
@@ -428,9 +427,8 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         }
     }
 
+    @Override
     public void onClusterVersionChange(Version newVersion) {
-        // required for 3.8 -> 3.9 upgrade
-        replicaManager.setClusterVersion(newVersion);
     }
 
     @Override

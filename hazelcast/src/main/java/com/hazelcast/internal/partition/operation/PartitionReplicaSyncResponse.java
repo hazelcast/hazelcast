@@ -57,6 +57,8 @@ import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createError
  * <li>if the node is not a replica anymore it will clear the replica versions for the partition</li>
  * </ul>
  */
+// RU_COMPAT_39: Do not remove Versioned interface!
+// Version info is needed on 3.9 members while deserializing the operation.
 @SuppressFBWarnings("EI_EXPOSE_REP")
 public class PartitionReplicaSyncResponse extends AbstractPartitionOperation
         implements PartitionAwareOperation, BackupOperation, UrgentSystemOperation, AllowedDuringPassiveState, Versioned {

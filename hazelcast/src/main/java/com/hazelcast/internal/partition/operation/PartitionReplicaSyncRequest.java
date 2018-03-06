@@ -54,6 +54,8 @@ import java.util.Collections;
  * </ul>
  * An empty response can be sent if the current replica version is 0.
  */
+// RU_COMPAT_39: Do not remove Versioned interface!
+// Version info is needed on 3.9 members while deserializing the operation.
 public final class PartitionReplicaSyncRequest extends AbstractPartitionOperation
         implements PartitionAwareOperation, MigrationCycleOperation, Versioned {
 
@@ -100,20 +102,14 @@ public final class PartitionReplicaSyncRequest extends AbstractPartitionOperatio
 
         try {
             PartitionReplicationEvent event = new PartitionReplicationEvent(partitionId, replicaIndex);
-            if (allNamespaces.isEmpty()) {
-                // version 3.8
-                Collection<Operation> operations = createAllReplicationOperations(event);
+            if (allNamespaces.remove(NonFragmentedServiceNamespace.INSTANCE)) {
+                Collection<Operation> operations = createNonFragmentedReplicationOperations(event);
                 sendOperations(operations, NonFragmentedServiceNamespace.INSTANCE);
-            } else {
-                if (allNamespaces.remove(NonFragmentedServiceNamespace.INSTANCE)) {
-                    Collection<Operation> operations = createNonFragmentedReplicationOperations(event);
-                    sendOperations(operations, NonFragmentedServiceNamespace.INSTANCE);
-                }
+            }
 
-                for (ServiceNamespace namespace : allNamespaces) {
-                    Collection<Operation> operations = createFragmentReplicationOperations(event, namespace);
-                    sendOperations(operations, namespace);
-                }
+            for (ServiceNamespace namespace : allNamespaces) {
+                Collection<Operation> operations = createFragmentReplicationOperations(event, namespace);
+                sendOperations(operations, namespace);
             }
         } finally {
             partitionService.getReplicaManager().releaseReplicaSyncPermit();
