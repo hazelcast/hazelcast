@@ -90,6 +90,8 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
             instances[i] = factory.newHazelcastInstance();
         }
 
+        assertClusterSizeEventually(instances.length, instances);
+
         HazelcastInstance hz = instances[instances.length - 1];
         TransactionManagerServiceImpl transactionManagerService = spyTransactionManagerService(hz);
 
@@ -125,6 +127,8 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
             instances[i] = factory.newHazelcastInstance();
         }
 
+        assertClusterSizeEventually(instances.length, instances);
+
         HazelcastInstance hz = instances[instances.length - 1];
         TransactionManagerServiceImpl transactionManagerService = spyTransactionManagerService(hz);
 
@@ -153,9 +157,11 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void changeClusterState_shouldFail_whenStateIsAlreadyLocked() throws Exception {
+    public void changeClusterState_shouldFail_whenStateIsAlreadyLocked() {
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
         HazelcastInstance[] instances = factory.newInstances();
+
+        assertClusterSizeEventually(instances.length, instances);
 
         final HazelcastInstance hz = instances[instances.length - 1];
 
@@ -179,6 +185,8 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
     public void changeClusterState_shouldFail_whenInitiatorDies_beforePrepare() throws Exception {
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
         final HazelcastInstance[] instances = factory.newInstances();
+
+        assertClusterSizeEventually(instances.length, instances);
 
         final HazelcastInstance hz = instances[instances.length - 1];
         TransactionManagerServiceImpl transactionManagerService = spyTransactionManagerService(hz);
@@ -205,6 +213,8 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
         final HazelcastInstance[] instances = factory.newInstances();
 
+        assertClusterSizeEventually(instances.length, instances);
+
         final HazelcastInstance hz = instances[instances.length - 1];
         TransactionManagerServiceImpl transactionManagerService = spyTransactionManagerService(hz);
 
@@ -229,6 +239,8 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
     public void changeClusterState_shouldFail_withoutBackup_whenInitiatorDies_beforePrepare() throws Exception {
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
         final HazelcastInstance[] instances = factory.newInstances();
+
+        assertClusterSizeEventually(instances.length, instances);
 
         final HazelcastInstance hz = instances[instances.length - 1];
         TransactionManagerServiceImpl transactionManagerService = spyTransactionManagerService(hz);
@@ -255,6 +267,8 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
         final HazelcastInstance[] instances = factory.newInstances();
 
+        assertClusterSizeEventually(instances.length, instances);
+
         final HazelcastInstance hz = instances[instances.length - 1];
         TransactionManagerServiceImpl transactionManagerService = spyTransactionManagerService(hz);
 
@@ -279,6 +293,8 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
     public void changeClusterState_shouldNotFail_whenNonInitiatorMemberDies_duringCommit() throws Exception {
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
         final HazelcastInstance[] instances = factory.newInstances();
+
+        assertClusterSizeEventually(instances.length, instances);
 
         final HazelcastInstance hz = instances[2];
         TransactionManagerServiceImpl transactionManagerService = spyTransactionManagerService(hz);
@@ -307,6 +323,8 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
     public void changeClusterState_shouldFail_whenNonInitiatorMemberDies_beforePrepare() throws Exception {
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
         final HazelcastInstance[] instances = factory.newInstances();
+
+        assertClusterSizeEventually(instances.length, instances);
 
         final HazelcastInstance hz = instances[2];
         TransactionManagerServiceImpl transactionManagerService = spyTransactionManagerService(hz);
@@ -365,9 +383,11 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void clusterState_shouldBeTheSame_finally_onAllNodes() throws Exception {
+    public void clusterState_shouldBeTheSame_finally_onAllNodes() {
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
         HazelcastInstance[] instances = factory.newInstances();
+
+        assertClusterSizeEventually(instances.length, instances);
 
         CountDownLatch latch = new CountDownLatch(instances.length);
         int iteration = 20;
@@ -432,7 +452,7 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
         HazelcastInstance hz2 = instances[1];
         HazelcastInstance hz3 = instances[2];
 
-        hz2.getCluster().changeClusterState(state);
+        changeClusterStateEventually(hz2, state);
 
         InternalPartitionService partitionService = getPartitionService(hz1);
         exception.expect(IllegalStateException.class);
@@ -464,7 +484,7 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
         HazelcastInstance hz2 = instances[1];
         HazelcastInstance hz3 = instances[2];
 
-        hz2.getCluster().changeClusterState(state);
+        changeClusterStateEventually(hz2, state);
 
         InternalOperationService operationService = getNode(hz3).getNodeEngine().getOperationService();
         Operation op = new AddAndGetOperation(randomName(), 1);
@@ -490,6 +510,8 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
         HazelcastInstance hz1 = instances[0];
         final HazelcastInstance hz2 = instances[1];
         HazelcastInstance hz3 = instances[2];
+
+        assertClusterSizeEventually(instances.length, instances);
 
         final InternalPartitionService partitionService = getNode(hz1).getPartitionService();
         final int initialPartitionStateVersion = partitionService.getPartitionStateVersion();
@@ -538,7 +560,7 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
         HazelcastInstance hz2 = instances[1];
         HazelcastInstance hz3 = instances[2];
 
-        hz2.getCluster().changeClusterState(ClusterState.FROZEN);
+        changeClusterStateEventually(hz2, ClusterState.FROZEN);
 
         final Address owner = getNode(hz1).getThisAddress();
         terminateInstance(hz1);
