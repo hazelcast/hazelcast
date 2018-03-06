@@ -24,6 +24,7 @@ import com.hazelcast.internal.partition.NonFragmentedServiceNamespace;
 import com.hazelcast.internal.partition.PartitionReplicaVersionManager;
 import com.hazelcast.internal.partition.ReplicaErrorLogger;
 import com.hazelcast.internal.partition.impl.InternalPartitionImpl;
+import com.hazelcast.internal.partition.impl.InternalPartitionReplicationEvent;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
 import com.hazelcast.internal.partition.impl.PartitionStateManager;
@@ -100,7 +101,8 @@ public final class PartitionReplicaSyncRequest extends AbstractPartitionOperatio
         }
 
         try {
-            PartitionReplicationEvent event = new PartitionReplicationEvent(partitionId, replicaIndex);
+            PartitionReplicationEvent event = new InternalPartitionReplicationEvent(partitionId,
+                    replicaIndex, this.getCallerAddress());
             if (allNamespaces.isEmpty()) {
                 // version 3.8
                 Collection<Operation> operations = createAllReplicationOperations(event);

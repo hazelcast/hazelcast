@@ -17,25 +17,37 @@
 package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.MapStoreConfig;
+import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapLoader;
 import com.hazelcast.instance.Node;
+import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
+import com.hazelcast.map.impl.query.Query;
+import com.hazelcast.map.impl.query.QueryPartitionOperation;
+import com.hazelcast.map.impl.query.QueryResult;
 import com.hazelcast.map.impl.recordstore.RecordStore;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.query.impl.Indexes;
+import com.hazelcast.spi.CoreService;
+import com.hazelcast.spi.InternalCompletableFuture;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.PostJoinAwareService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.IterationType;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -48,8 +60,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
+import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -70,6 +84,7 @@ public class MapIndexLifecycleTest extends HazelcastTestSupport {
         IMap bookMap = instance1.getMap("default");
         assertEquals(BOOK_COUNT, bookMap.size());
         assertAllPartitionContainersAreInitialized(instance1);
+        assertGlobalIndexesAreInitialized(instance1);
 
         // THEN - destroyed
         bookMap.destroy();
@@ -79,6 +94,62 @@ public class MapIndexLifecycleTest extends HazelcastTestSupport {
         bookMap = instance1.getMap("default");
         assertEquals(BOOK_COUNT, bookMap.size());
         assertAllPartitionContainersAreInitialized(instance1);
+        assertGlobalIndexesAreInitialized(instance1);
+    }
+
+    @Test
+    public void whenIndexConfigured_existsOnAllMembers() {
+        // GIVEN indexes are configured before Hazelcast starts
+        int clusterSize = 3;
+        TestHazelcastInstanceFactory instanceFactory = createHazelcastInstanceFactory(clusterSize);
+        HazelcastInstance[] instances = new HazelcastInstance[clusterSize];
+
+        instances[0] = createNode(instanceFactory);
+        IMap<Integer, Book> bookMap = instances[0].getMap("default");
+        assertEquals(BOOK_COUNT, bookMap.size());
+
+        // THEN indexes are migrated and populated on all members
+        for (int i = 1; i < clusterSize; i++) {
+            instances[i] = createNode(instanceFactory);
+            bookMap = instances[i].getMap("default");
+            assertEquals(BOOK_COUNT, bookMap.keySet().size());
+            assertAllPartitionContainersAreInitialized(instances[i]);
+            assertGlobalIndexesAreInitialized(instances[i]);
+        }
+    }
+
+    @Test(timeout = 120000)
+    public void whenIndexAddedProgrammatically_existsOnAllMembers() {
+        // GIVEN indexes are configured before Hazelcast starts
+        int clusterSize = 3;
+        TestHazelcastInstanceFactory instanceFactory = createHazelcastInstanceFactory(clusterSize);
+        HazelcastInstance[] instances = new HazelcastInstance[clusterSize];
+
+        Config config = getConfig().setProperty(GroupProperty.PARTITION_COUNT.getName(), "4");
+        config.getMapConfig("default")
+              .setMapStoreConfig(new MapStoreConfig().setImplementation(new BookMapLoader()));
+        config.getServicesConfig()
+              .addServiceConfig(
+                      new ServiceConfig()
+                              .setName("SlowPostJoinAwareService")
+                              .setEnabled(true)
+                              .setImplementation(new SlowPostJoinAwareService())
+              );
+
+        instances[0] = instanceFactory.newHazelcastInstance(config);
+        IMap<Integer, Book> bookMap = instances[0].getMap("default");
+        bookMap.addIndex("author", false);
+        bookMap.addIndex("year", true);
+        assertEquals(BOOK_COUNT, bookMap.size());
+
+        // THEN indexes are migrated and populated on all members
+        for (int i = 1; i < clusterSize; i++) {
+            instances[i] = instanceFactory.newHazelcastInstance(config);
+            bookMap = instances[i].getMap("default");
+            assertEquals(BOOK_COUNT, bookMap.keySet().size());
+            assertAllPartitionContainersAreInitialized(instances[i]);
+            assertGlobalIndexesAreInitialized(instances[i]);
+        }
     }
 
     private void assertAllPartitionContainersAreEmpty(HazelcastInstance instance) {
@@ -99,25 +170,76 @@ public class MapIndexLifecycleTest extends HazelcastTestSupport {
     private void assertAllPartitionContainersAreInitialized(HazelcastInstance instance) {
         MapServiceContext context = getMapServiceContext(instance);
         int partitionCount = getPartitionCount(instance);
+        final AtomicInteger authorRecordsCounter = new AtomicInteger();
+        final AtomicInteger yearRecordsCounter = new AtomicInteger();
+        final OperationService operationService = getOperationService(instance);
 
         for (int i = 0; i < partitionCount; i++) {
+            if (!getNode(instance).getPartitionService().isPartitionOwner(i)) {
+                continue;
+            }
+
             PartitionContainer container = context.getPartitionContainer(i);
 
             ConcurrentMap<String, RecordStore> maps = container.getMaps();
             RecordStore recordStore = maps.get("default");
-            assertNotNull("record store is null", recordStore);
+            assertNotNull("record store is null: ", recordStore);
 
             if (context.getMapContainer("default").getMapConfig().getInMemoryFormat().equals(NATIVE)) {
                 ConcurrentMap<String, Indexes> indexes = container.getIndexes();
-                Indexes index = indexes.get("default");
-                assertNotNull("indexes is null", index);
+                final Indexes index = indexes.get("default");
+                assertNotNull("indexes is null", indexes);
+                assertEquals(2, index.getIndexes().length);
+                assertNotNull("There should be a partition index for attribute 'author'",
+                        index.getIndex("author"));
+                assertNotNull("There should be a partition index for attribute 'year'",
+                        index.getIndex("year"));
+
+                authorRecordsCounter.getAndAdd(numberOfPartitionQueryResults(operationService, i, "author", "1"));
+                yearRecordsCounter.getAndAdd(numberOfPartitionQueryResults(operationService, i, "year", 1801));
             }
         }
+
+        if (context.getMapContainer("default").getMapConfig().getInMemoryFormat().equals(NATIVE)) {
+            assertTrue("Author index should contain records", authorRecordsCounter.get() > 0);
+            assertTrue("Year index should contain records", yearRecordsCounter.get() > 0);
+        }
+    }
+
+    private void assertGlobalIndexesAreInitialized(HazelcastInstance instance) {
+        MapServiceContext context = getMapServiceContext(instance);
+        final MapContainer mapContainer = context.getMapContainer("default");
+        if (mapContainer.getMapConfig().getInMemoryFormat().equals(NATIVE)) {
+            return;
+        }
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertEquals(2, mapContainer.getIndexes().getIndexes().length);
+            }
+        });
+        assertNotNull("There should be a global index for attribute 'author'",
+                mapContainer.getIndexes().getIndex("author"));
+        assertNotNull("There should be a global index for attribute 'year'",
+                mapContainer.getIndexes().getIndex("year"));
+        assertTrueEventually(new AssertTask() {
+             @Override
+                public void run() {
+                 assertTrue("Author index should contain records.",
+                         mapContainer.getIndexes()
+                                     .getIndex("author")
+                                     .getRecords("1").size() > 0);
+             }
+         });
+
+
+        assertTrue("Year index should contain records",
+                mapContainer.getIndexes().getIndex("year").getRecords(1801).size() > 0);
     }
 
     private int getPartitionCount(HazelcastInstance instance) {
         Node node = getNode(instance);
-        return node.getProperties().getInteger(GroupProperty.PARTITION_COUNT);
+        return node.getProperties().getInteger(PARTITION_COUNT);
     }
 
     private MapServiceContext getMapServiceContext(HazelcastInstance instance) {
@@ -128,13 +250,24 @@ public class MapIndexLifecycleTest extends HazelcastTestSupport {
 
 
     private HazelcastInstance createNode(TestHazelcastInstanceFactory instanceFactory) {
-        Config config = getConfig();
-        MapConfig mapConfig = config.getMapConfig("default");
-        mapConfig.addMapIndexConfig(new MapIndexConfig("author", false));
-        mapConfig.addMapIndexConfig(new MapIndexConfig("year", true));
-        mapConfig.setBackupCount(1);
-        mapConfig.setMapStoreConfig(new MapStoreConfig().setImplementation(new BookMapLoader()));
+        Config config = getConfig().setProperty(GroupProperty.PARTITION_COUNT.getName(), "4");
+        config.getMapConfig("default")
+              .addMapIndexConfig(new MapIndexConfig("author", false))
+              .addMapIndexConfig(new MapIndexConfig("year", true))
+              .setBackupCount(1)
+              .setMapStoreConfig(new MapStoreConfig().setImplementation(new BookMapLoader()));
         return instanceFactory.newHazelcastInstance(config);
+    }
+
+    private int numberOfPartitionQueryResults(OperationService operationService, int partitionId,
+                                              String attribute, Comparable value) {
+        QueryPartitionOperation queryOp = new QueryPartitionOperation(
+                Query.of().mapName("default")
+                     .iterationType(IterationType.KEY)
+                     .predicate(Predicates.equal(attribute, value)).build());
+        InternalCompletableFuture<QueryResult> future = operationService
+                .invokeOnPartition(MapService.SERVICE_NAME, queryOp, partitionId);
+        return future.join().size();
     }
 
     public static class Book implements Serializable {
@@ -143,9 +276,6 @@ public class MapIndexLifecycleTest extends HazelcastTestSupport {
         private String title;
         private String author;
         private int year;
-
-        private Book() {
-        }
 
         Book(long id, String title, String author, int year) {
             this.id = id;
@@ -195,5 +325,23 @@ public class MapIndexLifecycleTest extends HazelcastTestSupport {
             return keys;
         }
     }
+
+    // This is a CoreService with a slow post-join op.
+    // Its post-join operation will be executed before map's post-join operation so we can ensure
+    // indexes are created even though PostJoinMapOperation has not yet been executed.
+    public static class SlowPostJoinAwareService implements CoreService, PostJoinAwareService {
+        @Override
+        public Operation getPostJoinOperation() {
+            return new SlowOperation();
+        }
+    }
+
+    public static class SlowOperation extends Operation {
+        @Override
+        public void run() {
+            sleepSeconds(60);
+        }
+    }
+
 
 }

@@ -57,6 +57,7 @@ public abstract class Operation implements DataSerializable {
     static final int BITMASK_PARTITION_ID_32_BIT = 1 << 4;
     static final int BITMASK_CALL_TIMEOUT_64_BIT = 1 << 5;
     static final int BITMASK_SERVICE_NAME_SET = 1 << 6;
+    // DO NOT USE BIT MASK 1<<15, see MapReplicationOperation
 
     private static final AtomicLongFieldUpdater<Operation> CALL_ID =
             AtomicLongFieldUpdater.newUpdater(Operation.class, "callId");
