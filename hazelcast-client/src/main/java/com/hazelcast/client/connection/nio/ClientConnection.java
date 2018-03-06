@@ -299,12 +299,7 @@ public class ClientConnection implements Connection {
         }
 
         ClientConnection that = (ClientConnection) o;
-
-        if (connectionId != that.connectionId) {
-            return false;
-        }
-
-        return true;
+        return connectionId == that.connectionId;
     }
 
     @Override
