@@ -248,8 +248,6 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
             checkTrue(isJoined(), candidateAddress + " claims mastership but this node is not joined!");
             checkFalse(isMaster(),
                     candidateAddress + " claims mastership but this node is master!");
-            checkFalse(candidateAddress.equals(getMasterAddress()),
-                    candidateAddress + " claims mastership but it is already the known master!");
 
             MemberImpl masterCandidate = membershipManager.getMember(candidateAddress, candidateUuid);
             checkTrue(masterCandidate != null,

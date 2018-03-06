@@ -55,6 +55,7 @@ import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.MEMB
 import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.PROMOTE_LITE_MEMBER;
 import static com.hazelcast.test.PacketFiltersUtil.dropOperationsBetween;
 import static com.hazelcast.test.PacketFiltersUtil.dropOperationsFrom;
+import static com.hazelcast.test.PacketFiltersUtil.rejectOperationsBetween;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.hamcrest.Matchers.greaterThan;
@@ -296,7 +297,7 @@ public class PromoteLiteMemberTest extends HazelcastTestSupport {
 
         assertClusterSizeEventually(3, hz2);
 
-        dropOperationsBetween(hz3, hz1, F_ID, asList(PROMOTE_LITE_MEMBER, EXPLICIT_SUSPICION));
+        rejectOperationsBetween(hz3, hz1, F_ID, asList(PROMOTE_LITE_MEMBER, EXPLICIT_SUSPICION));
         dropOperationsFrom(hz2, F_ID, asList(MEMBER_INFO_UPDATE, EXPLICIT_SUSPICION));
         dropOperationsFrom(hz1, F_ID, singletonList(HEARTBEAT));
 

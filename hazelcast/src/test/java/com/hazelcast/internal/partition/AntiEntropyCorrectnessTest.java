@@ -74,7 +74,7 @@ public class AntiEntropyCorrectnessTest extends PartitionCorrectnessTestSupport 
     public static void setBackupPacketDropFilter(HazelcastInstance instance, float blockRatio) {
         Node node = getNode(instance);
         FirewallingConnectionManager cm = (FirewallingConnectionManager) node.getConnectionManager();
-        cm.setDroppingPacketFilter(new BackupPacketDropFilter(node.getSerializationService(), blockRatio));
+        cm.setPacketFilter(new BackupPacketDropFilter(node.getSerializationService(), blockRatio));
     }
 
     private static class BackupPacketDropFilter extends OperationPacketFilter implements PacketFilter {
@@ -86,9 +86,9 @@ public class AntiEntropyCorrectnessTest extends PartitionCorrectnessTestSupport 
         }
 
         @Override
-        protected boolean allowOperation(Address endpoint, int factory, int type) {
+        protected Action filterOperation(Address endpoint, int factory, int type) {
             boolean isBackup = factory == SpiDataSerializerHook.F_ID && type == SpiDataSerializerHook.BACKUP;
-            return !isBackup || Math.random() > blockRatio;
+            return !isBackup ? Action.ALLOW : (Math.random() > blockRatio ? Action.ALLOW : Action.DROP);
         }
     }
 }
