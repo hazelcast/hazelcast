@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.partition;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
 import com.hazelcast.test.AssertTask;
@@ -149,4 +150,47 @@ public class MigrationInvocationsSafetyTest extends PartitionCorrectnessTestSupp
         });
 
     }
+
+    @Test
+    public void partitionState_shouldNotBeSafe_duringPartitionTableFetch_whenMasterLeaves() {
+        partitionState_shouldNotBeSafe_duringPartitionTableFetch_whenMasterChanges(false);
+    }
+
+    @Test
+    public void partitionState_shouldNotBeSafe_duringPartitionTableFetch_whenLiteMasterLeaves() {
+        partitionState_shouldNotBeSafe_duringPartitionTableFetch_whenMasterChanges(true);
+    }
+
+    private void partitionState_shouldNotBeSafe_duringPartitionTableFetch_whenMasterChanges(boolean liteMaster) {
+        final HazelcastInstance initialMaster = factory.newHazelcastInstance(new Config().setLiteMember(liteMaster));
+        final HazelcastInstance nextMaster = factory.newHazelcastInstance();
+        final HazelcastInstance slave = factory.newHazelcastInstance();
+
+        assertClusterSizeEventually(3, nextMaster, slave);
+        warmUpPartitions(initialMaster, nextMaster, slave);
+
+        dropOperationsBetween(nextMaster, slave, F_ID, singletonList(FETCH_PARTITION_STATE));
+
+        terminateInstance(initialMaster);
+        assertClusterSizeEventually(2, nextMaster, slave);
+
+        assertTrueAllTheTime(new AssertTask() {
+            @Override
+            public void run() {
+                assertFalse(getPartitionService(nextMaster).isMemberStateSafe());
+                assertFalse(getPartitionService(slave).isMemberStateSafe());
+            }
+        }, 5);
+
+        resetPacketFiltersFrom(nextMaster);
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertTrue(getPartitionService(nextMaster).isMemberStateSafe());
+                assertTrue(getPartitionService(slave).isMemberStateSafe());
+            }
+        });
+    }
+
 }
