@@ -18,7 +18,10 @@ package com.hazelcast.internal.partition;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.partition.service.TestMigrationAwareService;
+import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -35,8 +38,10 @@ import java.util.Set;
 import static com.hazelcast.instance.TestUtil.terminateInstance;
 import static com.hazelcast.internal.partition.impl.PartitionDataSerializerHook.FETCH_PARTITION_STATE;
 import static com.hazelcast.internal.partition.impl.PartitionDataSerializerHook.F_ID;
+import static com.hazelcast.internal.partition.impl.PartitionDataSerializerHook.MIGRATION_COMMIT;
 import static com.hazelcast.internal.partition.impl.PartitionDataSerializerHook.PARTITION_STATE_OP;
 import static com.hazelcast.test.PacketFiltersUtil.dropOperationsBetween;
+import static com.hazelcast.test.PacketFiltersUtil.dropOperationsFrom;
 import static com.hazelcast.test.PacketFiltersUtil.resetPacketFiltersFrom;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
@@ -193,4 +198,106 @@ public class MigrationInvocationsSafetyTest extends PartitionCorrectnessTestSupp
         });
     }
 
+    @Test
+    public void migrationCommit_shouldBeRetried_whenTargetNotResponds() throws Exception {
+        Config config = getConfig(true, true)
+                .setProperty(GroupProperty.MAX_NO_HEARTBEAT_SECONDS.getName(), "5")
+                .setProperty(GroupProperty.HEARTBEAT_INTERVAL_SECONDS.getName(), "1")
+                .setProperty(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), "3000");
+
+        final HazelcastInstance master = factory.newHazelcastInstance(config);
+        final HazelcastInstance slave1 = factory.newHazelcastInstance(config);
+        final HazelcastInstance slave2 = factory.newHazelcastInstance(config);
+
+        assertClusterSizeEventually(3, slave1, slave2);
+        warmUpPartitions(master, slave1, slave2);
+
+        fillData(master);
+        assertSizeAndDataEventually();
+
+        // reject migration commits from master to prevent migrations complete when slave3 joins the cluster
+        dropOperationsFrom(master, F_ID, singletonList(MIGRATION_COMMIT));
+
+        final HazelcastInstance slave3 = factory.newHazelcastInstance(config);
+        assertClusterSizeEventually(4, slave1, slave2);
+
+        dropOperationsBetween(slave3, master, SpiDataSerializerHook.F_ID, singletonList(SpiDataSerializerHook.NORMAL_RESPONSE));
+        resetPacketFiltersFrom(master);
+
+        sleepSeconds(10);
+        resetPacketFiltersFrom(slave3);
+
+        waitAllForSafeState(master, slave1, slave2, slave3);
+
+        final PartitionTableView masterPartitionTable = getPartitionService(master).createPartitionTableView();
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertEquals(masterPartitionTable, getPartitionService(slave1).createPartitionTableView());
+                assertEquals(masterPartitionTable, getPartitionService(slave2).createPartitionTableView());
+                assertEquals(masterPartitionTable, getPartitionService(slave3).createPartitionTableView());
+            }
+        });
+
+        assertSizeAndData();
+
+        assertNoDuplicateMigrations(master);
+        assertNoDuplicateMigrations(slave1);
+        assertNoDuplicateMigrations(slave2);
+        assertNoDuplicateMigrations(slave3);
+    }
+
+    @Test
+    public void migrationCommit_shouldRollback_whenTargetCrashes() throws Exception {
+        Config config = getConfig(true, true)
+                .setProperty(GroupProperty.MAX_NO_HEARTBEAT_SECONDS.getName(), "5")
+                .setProperty(GroupProperty.HEARTBEAT_INTERVAL_SECONDS.getName(), "1")
+                .setProperty(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), "3000");
+
+        final HazelcastInstance master = factory.newHazelcastInstance(config);
+        final HazelcastInstance slave1 = factory.newHazelcastInstance(config);
+        final HazelcastInstance slave2 = factory.newHazelcastInstance(config);
+
+        assertClusterSizeEventually(3, slave1, slave2);
+        warmUpPartitions(master, slave1, slave2);
+
+        fillData(master);
+        assertSizeAndDataEventually();
+
+        // reject migration commits from master to prevent migrations complete when slave3 joins the cluster
+        dropOperationsFrom(master, F_ID, singletonList(MIGRATION_COMMIT));
+
+        final HazelcastInstance slave3 = factory.newHazelcastInstance(config);
+        assertClusterSizeEventually(4, slave1, slave2);
+
+        dropOperationsBetween(slave3, master, SpiDataSerializerHook.F_ID, singletonList(SpiDataSerializerHook.NORMAL_RESPONSE));
+        resetPacketFiltersFrom(master);
+
+        sleepSeconds(10);
+        terminateInstance(slave3);
+
+        waitAllForSafeState(master, slave1, slave2);
+
+        final PartitionTableView masterPartitionTable = getPartitionService(master).createPartitionTableView();
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertEquals(masterPartitionTable, getPartitionService(slave1).createPartitionTableView());
+                assertEquals(masterPartitionTable, getPartitionService(slave2).createPartitionTableView());
+            }
+        });
+
+        assertSizeAndData();
+
+        assertNoDuplicateMigrations(master);
+        assertNoDuplicateMigrations(slave1);
+        assertNoDuplicateMigrations(slave2);
+    }
+
+    private static void assertNoDuplicateMigrations(HazelcastInstance hz) {
+        TestMigrationAwareService service = getNodeEngineImpl(hz).getService(TestMigrationAwareService.SERVICE_NAME);
+        List<PartitionMigrationEvent> events = service.getBeforeEvents();
+        Set<PartitionMigrationEvent> uniqueEvents = new HashSet<PartitionMigrationEvent>(events);
+        assertEquals(uniqueEvents.size(), events.size());
+    }
 }
