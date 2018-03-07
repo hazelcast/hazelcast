@@ -40,6 +40,7 @@ import static com.hazelcast.internal.partition.impl.PartitionDataSerializerHook.
 import static com.hazelcast.internal.partition.impl.PartitionDataSerializerHook.F_ID;
 import static com.hazelcast.internal.partition.impl.PartitionDataSerializerHook.MIGRATION_COMMIT;
 import static com.hazelcast.internal.partition.impl.PartitionDataSerializerHook.PARTITION_STATE_OP;
+import static com.hazelcast.internal.partition.impl.PartitionDataSerializerHook.PROMOTION_COMMIT;
 import static com.hazelcast.test.PacketFiltersUtil.dropOperationsBetween;
 import static com.hazelcast.test.PacketFiltersUtil.rejectOperationsFrom;
 import static com.hazelcast.test.PacketFiltersUtil.resetPacketFiltersFrom;
@@ -292,6 +293,102 @@ public class MigrationInvocationsSafetyTest extends PartitionCorrectnessTestSupp
         assertNoDuplicateMigrations(master);
         assertNoDuplicateMigrations(slave1);
         assertNoDuplicateMigrations(slave2);
+    }
+
+    @Test
+    public void promotionCommit_shouldBeRetried_whenTargetNotResponds() throws Exception {
+        Config config = getConfig(true, true)
+                .setProperty(GroupProperty.MAX_NO_HEARTBEAT_SECONDS.getName(), "5")
+                .setProperty(GroupProperty.HEARTBEAT_INTERVAL_SECONDS.getName(), "1")
+                .setProperty(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), "3000");
+
+        final HazelcastInstance master = factory.newHazelcastInstance(config);
+        final HazelcastInstance slave1 = factory.newHazelcastInstance(config);
+        final HazelcastInstance slave2 = factory.newHazelcastInstance(config);
+        final HazelcastInstance slave3 = factory.newHazelcastInstance(config);
+
+        assertClusterSizeEventually(4, slave1, slave2, slave3);
+        warmUpPartitions(master, slave1, slave2, slave3);
+
+        fillData(master);
+        assertSizeAndDataEventually();
+
+        // reject promotion commits from master to prevent promotions complete when slave3 leaves the cluster
+        rejectOperationsFrom(master, F_ID, singletonList(PROMOTION_COMMIT));
+
+        terminateInstance(slave3);
+        assertClusterSizeEventually(3, slave1, slave2);
+
+        dropOperationsBetween(slave1, master, SpiDataSerializerHook.F_ID, singletonList(SpiDataSerializerHook.NORMAL_RESPONSE));
+        dropOperationsBetween(slave2, master, SpiDataSerializerHook.F_ID, singletonList(SpiDataSerializerHook.NORMAL_RESPONSE));
+        resetPacketFiltersFrom(master);
+
+        sleepSeconds(10);
+        resetPacketFiltersFrom(slave1);
+        resetPacketFiltersFrom(slave2);
+
+        waitAllForSafeState(master, slave1, slave2);
+
+        final PartitionTableView masterPartitionTable = getPartitionService(master).createPartitionTableView();
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertEquals(masterPartitionTable, getPartitionService(slave1).createPartitionTableView());
+                assertEquals(masterPartitionTable, getPartitionService(slave2).createPartitionTableView());
+            }
+        });
+
+        assertSizeAndData();
+
+        assertNoDuplicateMigrations(master);
+        assertNoDuplicateMigrations(slave1);
+        assertNoDuplicateMigrations(slave2);
+    }
+
+    @Test
+    public void promotionCommit_shouldRollback_whenTargetCrashes() throws Exception {
+        Config config = getConfig(true, true)
+                .setProperty(GroupProperty.MAX_NO_HEARTBEAT_SECONDS.getName(), "5")
+                .setProperty(GroupProperty.HEARTBEAT_INTERVAL_SECONDS.getName(), "1")
+                .setProperty(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), "3000");
+
+        final HazelcastInstance master = factory.newHazelcastInstance(config);
+        final HazelcastInstance slave1 = factory.newHazelcastInstance(config);
+        final HazelcastInstance slave2 = factory.newHazelcastInstance(config);
+        final HazelcastInstance slave3 = factory.newHazelcastInstance(config);
+
+        assertClusterSizeEventually(4, slave1, slave2, slave3);
+        warmUpPartitions(master, slave1, slave2, slave3);
+
+        fillData(master);
+        assertSizeAndDataEventually();
+
+        // reject promotion commits from master to prevent promotions complete when slave3 leaves the cluster
+        rejectOperationsFrom(master, F_ID, singletonList(PROMOTION_COMMIT));
+
+        terminateInstance(slave3);
+        assertClusterSizeEventually(3, slave1, slave2);
+
+        dropOperationsBetween(slave2, master, SpiDataSerializerHook.F_ID, singletonList(SpiDataSerializerHook.NORMAL_RESPONSE));
+        resetPacketFiltersFrom(master);
+
+        sleepSeconds(10);
+        terminateInstance(slave2);
+
+        waitAllForSafeState(master, slave1);
+
+        final PartitionTableView masterPartitionTable = getPartitionService(master).createPartitionTableView();
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertEquals(masterPartitionTable, getPartitionService(slave1).createPartitionTableView());
+            }
+        });
+
+        assertSizeAndData();
+
+        assertNoDuplicateMigrations(master);
+        assertNoDuplicateMigrations(slave1);
     }
 
     private static void assertNoDuplicateMigrations(HazelcastInstance hz) {

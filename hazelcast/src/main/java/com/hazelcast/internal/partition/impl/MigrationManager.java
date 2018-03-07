@@ -23,6 +23,7 @@ import com.hazelcast.core.MigrationEvent;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
@@ -106,6 +107,7 @@ public class MigrationManager {
     private volatile MigrationInfo activeMigrationInfo;
     // both reads and updates will be done under lock!
     private final LinkedHashSet<MigrationInfo> completedMigrations = new LinkedHashSet<MigrationInfo>();
+    private final AtomicBoolean promotionPermit = new AtomicBoolean(false);
     @Probe
     private final AtomicLong completedMigrationCounter = new AtomicLong();
     private volatile InternalMigrationListener internalMigrationListener
@@ -258,6 +260,31 @@ public class MigrationManager {
 
     MigrationInfo getActiveMigration() {
         return activeMigrationInfo;
+    }
+
+    /**
+     * Acquires promotion commit permit which is needed while running promotion commit
+     * to prevent concurrent commits.
+     * <p>
+     * Normally, promotions are submitted &amp; executed serially
+     * but when the commit operation timeouts, it's retried which can cause concurrent execution
+     * (promotion commit operation runs on generic operation threads).
+     * <p>
+     * Promotion commit operation is idempotent when executed serially.
+     *
+     * @return true if promotion commit is allowed to run, false otherwise
+     */
+    public boolean acquirePromotionPermit() {
+        return promotionPermit.compareAndSet(false, true);
+    }
+
+    /**
+     * Releases promotion commit permit.
+     *
+     * @see #acquirePromotionPermit()
+     */
+    public void releasePromotionPermit() {
+        promotionPermit.set(false);
     }
 
     /**
@@ -1303,6 +1330,8 @@ public class MigrationManager {
                 logger.warning("Destination " + destination + " is not member anymore");
                 return false;
             }
+            // RU_COMPAT_39
+            boolean idempotentRetry = node.getClusterService().getClusterVersion().isGreaterThan(Versions.V3_9);
             try {
                 if (logger.isFinestEnabled()) {
                     logger.finest("Sending commit operation to " + destination + " for " + migrations);
@@ -1313,7 +1342,7 @@ public class MigrationManager {
                 Future<Boolean> future = nodeEngine.getOperationService()
                         .createInvocationBuilder(SERVICE_NAME, op, destination)
                         .setTryCount(Integer.MAX_VALUE)
-                        .setCallTimeout(Long.MAX_VALUE).invoke();
+                        .setCallTimeout(idempotentRetry ? memberHeartbeatTimeoutMillis : Long.MAX_VALUE).invoke();
 
                 boolean result = future.get();
                 if (logger.isFinestEnabled()) {
@@ -1323,6 +1352,10 @@ public class MigrationManager {
                 return result;
             } catch (Throwable t) {
                 logPromotionCommitFailure(destination, migrations, t);
+
+                if (idempotentRetry && t.getCause() instanceof OperationTimeoutException) {
+                    return commitPromotionsToDestination(destination, migrations);
+                }
             }
             return false;
         }
