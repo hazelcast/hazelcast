@@ -107,6 +107,7 @@ public class ClientMessage
 
     private transient int writeOffset;
     private transient boolean isRetryable;
+    private transient boolean acquiresResource;
     private transient String operationName;
 
     protected ClientMessage() {
@@ -369,6 +370,14 @@ public class ClientMessage
 
     public boolean isRetryable() {
         return isRetryable;
+    }
+
+    public boolean acquiresResource() {
+        return acquiresResource;
+    }
+
+    public void setAcquiresResource(boolean acquiresResource) {
+        this.acquiresResource = acquiresResource;
     }
 
     public void setRetryable(boolean isRetryable) {

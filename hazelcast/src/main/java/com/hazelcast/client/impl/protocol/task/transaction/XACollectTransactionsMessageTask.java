@@ -21,6 +21,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.XATransactionCollectTransactionsCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractMultiTargetMessageTask;
 import com.hazelcast.core.Member;
+import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
@@ -62,6 +63,12 @@ public class XACollectTransactionsMessageTask
     protected Object reduce(Map<Member, Object> map) throws Throwable {
         List<Data> list = new ArrayList<Data>();
         for (Object o : map.values()) {
+            if (o instanceof Throwable) {
+                if (o instanceof MemberLeftException) {
+                    continue;
+                }
+                throw (Throwable) o;
+            }
             SerializableList xidSet = (SerializableList) o;
             list.addAll(xidSet.getCollection());
         }
