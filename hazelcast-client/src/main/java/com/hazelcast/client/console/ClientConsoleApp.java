@@ -41,6 +41,7 @@ import com.hazelcast.core.Message;
 import com.hazelcast.core.MessageListener;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.core.Partition;
+import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.util.Clock;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -554,7 +555,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
         long total = runtime.totalMemory();
         long free = runtime.freeMemory();
         println("Used Memory:" + ((total - free) / ONE_KB / ONE_KB) + "MB");
-        println("# procs: " + runtime.availableProcessors());
+        println("# procs: " + RuntimeAvailableProcessors.get());
         println("OS info: " + ManagementFactory.getOperatingSystemMXBean().getArch()
                 + ' ' + ManagementFactory.getOperatingSystemMXBean().getName() + ' '
                 + ManagementFactory.getOperatingSystemMXBean().getVersion());
