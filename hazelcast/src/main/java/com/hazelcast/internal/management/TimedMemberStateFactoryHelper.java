@@ -25,6 +25,7 @@ import com.hazelcast.internal.management.dto.OperationServiceDTO;
 import com.hazelcast.internal.management.dto.PartitionServiceBeanDTO;
 import com.hazelcast.internal.management.dto.ProxyServiceDTO;
 import com.hazelcast.internal.partition.InternalPartitionService;
+import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.monitor.impl.MemberStateImpl;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.spi.EventService;
@@ -110,7 +111,7 @@ final class TimedMemberStateFactoryHelper {
         MemoryUsage nonHeapMemory = memoryMxBean.getNonHeapMemoryUsage();
         final int propertyCount = 29;
         Map<String, Long> map = createHashMap(propertyCount);
-        map.put("runtime.availableProcessors", Integer.valueOf(runtime.availableProcessors()).longValue());
+        map.put("runtime.availableProcessors", Integer.valueOf(RuntimeAvailableProcessors.get()).longValue());
         map.put("date.startTime", runtimeMxBean.getStartTime());
         map.put("seconds.upTime", runtimeMxBean.getUptime());
         map.put("memory.maxMemory", runtime.maxMemory());

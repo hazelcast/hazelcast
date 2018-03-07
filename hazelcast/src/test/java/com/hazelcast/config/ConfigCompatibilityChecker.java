@@ -20,6 +20,7 @@ import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.util.CollectionUtil;
 import org.apache.commons.lang3.ArrayUtils;
 
@@ -566,7 +567,7 @@ class ConfigCompatibilityChecker {
             }
             int max1 = c1.getMaxThreadSize();
             int max2 = c2.getMaxThreadSize();
-            int availableProcessors = Runtime.getRuntime().availableProcessors();
+            int availableProcessors = RuntimeAvailableProcessors.get();
             return nullSafeEqual(c1.getName(), c2.getName())
                     && (nullSafeEqual(max1, max2) || (Math.min(max1, max2) == 0 && Math.max(max1, max2) == availableProcessors))
                     && nullSafeEqual(c1.getRetryCount(), c2.getRetryCount())
