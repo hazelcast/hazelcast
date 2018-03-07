@@ -130,8 +130,8 @@ public class KafkaPartitionAssignerTest {
         return new TopicPartition("topic-" + topicIndex, partition);
     }
 
-    private static KafkaPartitionAssigner assigner(int globalParallelism, int... partitionCounts) {
+    private static KafkaPartitionAssigner assigner(int totalParallelism, int... partitionCounts) {
         List<String> topics = IntStream.range(0, partitionCounts.length).mapToObj(i -> "topic-" + i).collect(toList());
-        return new KafkaPartitionAssigner(topics, partitionCounts, globalParallelism);
+        return new KafkaPartitionAssigner(topics, partitionCounts, totalParallelism);
     }
 }

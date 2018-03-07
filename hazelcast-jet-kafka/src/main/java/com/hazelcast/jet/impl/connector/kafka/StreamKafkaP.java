@@ -285,14 +285,14 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor implements Cl
 
         private final List<String> topics;
         private final int[] partitionCounts;
-        private final int globalParallelism;
+        private final int totalParallelism;
 
-        KafkaPartitionAssigner(List<String> topics, int[] partitionCounts, int globalParallelism) {
+        KafkaPartitionAssigner(List<String> topics, int[] partitionCounts, int totalParallelism) {
             Preconditions.checkTrue(topics.size() == partitionCounts.length,
                     "Different length between topics and partition counts");
             this.topics = topics;
             this.partitionCounts = partitionCounts;
-            this.globalParallelism = globalParallelism;
+            this.totalParallelism = totalParallelism;
         }
 
         Set<TopicPartition> topicPartitionsFor(int processorIndex) {
@@ -308,8 +308,8 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor implements Cl
         }
 
         private int processorIndexFor(int topicIndex, int partition) {
-            int startIndex = topicIndex * Math.max(1, globalParallelism / topics.size());
-            return (startIndex + partition) % globalParallelism;
+            int startIndex = topicIndex * Math.max(1, totalParallelism / topics.size());
+            return (startIndex + partition) % totalParallelism;
         }
     }
 

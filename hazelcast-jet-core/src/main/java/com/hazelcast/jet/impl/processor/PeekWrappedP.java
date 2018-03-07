@@ -80,7 +80,7 @@ public final class PeekWrappedP<T> extends ProcessorWrapper {
             ILogger newLogger = nodeEngine.getLogger(
                     createLoggerName(wrapped.getClass().getName(), c.vertexName(), c.globalProcessorIndex()));
             context = new ProcCtx(c.jetInstance(), c.getSerializationService(), newLogger, c.vertexName(),
-                    c.globalProcessorIndex(), c.processingGuarantee(), c.localParallelism(), c.globalProcessorIndex());
+                    c.globalProcessorIndex(), c.processingGuarantee(), c.localParallelism(), c.totalParallelism());
         }
         super.init(outbox, context);
     }

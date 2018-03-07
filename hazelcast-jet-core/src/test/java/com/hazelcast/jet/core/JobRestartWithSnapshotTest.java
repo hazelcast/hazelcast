@@ -494,7 +494,7 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
         private final int numPartitions;
         private final int elementsInPartition;
 
-        private int globalParallelism;
+        private int totalParallelism;
         private int localParallelism;
 
         SequencesInPartitionsMetaSupplier(int numPartitions, int elementsInPartition) {
@@ -504,7 +504,7 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
 
         @Override
         public void init(@Nonnull Context context) {
-            globalParallelism = context.totalParallelism();
+            totalParallelism = context.totalParallelism();
             localParallelism = context.localParallelism();
         }
 
@@ -515,7 +515,7 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
                 int startIndex = addresses.indexOf(address) * localParallelism;
                 return count -> IntStream.range(0, count)
                                          .mapToObj(index -> new SequencesInPartitionsGeneratorP(
-                                                 assignedPtions(startIndex + index, globalParallelism, numPartitions),
+                                                 assignedPtions(startIndex + index, totalParallelism, numPartitions),
                                                  elementsInPartition))
                                          .collect(toList());
             };
