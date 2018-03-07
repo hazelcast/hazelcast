@@ -24,6 +24,7 @@ import com.hazelcast.map.impl.proxy.NearCachedMapProxyImpl;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.RemoteService;
 
+import static com.hazelcast.internal.config.ConfigValidator.checkMergePolicySupportsInMemoryFormat;
 import static com.hazelcast.internal.config.ConfigValidator.checkMapConfig;
 import static com.hazelcast.internal.config.ConfigValidator.checkNearCacheConfig;
 
@@ -47,6 +48,11 @@ class MapRemoteService implements RemoteService {
         Config config = nodeEngine.getConfig();
         MapConfig mapConfig = config.findMapConfig(name);
         checkMapConfig(mapConfig);
+        checkMergePolicySupportsInMemoryFormat(name,
+                mapConfig.getMergePolicyConfig().getPolicy(),
+                mapConfig.getInMemoryFormat(),
+                nodeEngine.getClusterService().getClusterVersion(),
+                true, nodeEngine.getLogger(getClass()));
 
         if (mapConfig.isNearCacheEnabled()) {
             checkNearCacheConfig(name, mapConfig.getNearCacheConfig(), config.getNativeMemoryConfig(), false);
