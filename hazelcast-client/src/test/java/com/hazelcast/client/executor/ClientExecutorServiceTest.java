@@ -151,7 +151,7 @@ public class ClientExecutorServiceTest {
     }
 
     @Test
-    @Ignore
+    @Ignore("https://github.com/hazelcast/hazelcast/issues/4677")
     //Ignored because fixing it requires extensive refactoring see ClientExecutorServiceCancelTest
     public void testCancelFutureAfterCancellationAwareTaskTimeOut() throws InterruptedException, ExecutionException, TimeoutException {
         IExecutorService service = client.getExecutorService(randomString());
