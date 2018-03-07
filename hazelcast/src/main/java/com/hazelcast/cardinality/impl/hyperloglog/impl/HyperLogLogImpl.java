@@ -21,41 +21,36 @@ import com.hazelcast.cardinality.impl.hyperloglog.HyperLogLog;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.impl.Versioned;
 
 import java.io.IOException;
 
 import static com.hazelcast.cardinality.impl.hyperloglog.impl.HyperLogLogEncoding.SPARSE;
 
-public class HyperLogLogImpl implements HyperLogLog {
+public class HyperLogLogImpl
+        implements HyperLogLog, Versioned {
 
     private static final int LOWER_P_BOUND = 4;
     private static final int UPPER_P_BOUND = 16;
-    private static final int UPPER_P_PRIME_BOUND = 25;
 
     // [1] shows good cardinality estimation
     private static final int DEFAULT_P = 14;
-    private static final int DEFAULT_P_PRIME = 25;
 
     private int m;
     private HyperLogLogEncoder encoder;
     private Long cachedEstimate;
 
     public HyperLogLogImpl() {
-        this(DEFAULT_P, DEFAULT_P_PRIME);
+        this(DEFAULT_P);
     }
 
-    public HyperLogLogImpl(final int p, final int pPrime) {
+    public HyperLogLogImpl(final int p) {
         if (p < LOWER_P_BOUND || p > UPPER_P_BOUND) {
             throw new IllegalArgumentException("Precision (p) outside valid range [4..16].");
         }
 
-        if (pPrime < p || pPrime > UPPER_P_PRIME_BOUND) {
-            throw new IllegalArgumentException("Prime precision (p') outside "
-                    + "valid range [" + p + ".." + UPPER_P_PRIME_BOUND + "].");
-        }
-
         this.m = 1 << p;
-        this.encoder = new SparseHyperLogLogEncoder(p, pPrime);
+        this.encoder = new SparseHyperLogLogEncoder(p);
     }
 
     @Override
