@@ -28,6 +28,7 @@ import com.hazelcast.spi.ReplicationSupportingService;
 import com.hazelcast.spi.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.MergingEntryHolder;
 import com.hazelcast.wan.WanReplicationEvent;
+import com.hazelcast.wan.WanReplicationService;
 
 import java.util.concurrent.Future;
 
@@ -36,13 +37,14 @@ import static com.hazelcast.spi.impl.merge.MergingHolders.createMergeHolder;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 
 class MapReplicationSupportingService implements ReplicationSupportingService {
-
     private final MapServiceContext mapServiceContext;
     private final NodeEngine nodeEngine;
+    private final WanReplicationService wanService;
 
     MapReplicationSupportingService(MapServiceContext mapServiceContext) {
         this.mapServiceContext = mapServiceContext;
         this.nodeEngine = mapServiceContext.getNodeEngine();
+        this.wanService = nodeEngine.getWanReplicationService();
     }
 
     @Override
@@ -66,6 +68,7 @@ class MapReplicationSupportingService implements ReplicationSupportingService {
             Future future = nodeEngine.getOperationService()
                     .invokeOnPartition(SERVICE_NAME, operation, partitionId);
             future.get();
+            wanService.getReceivedEventCounter(MapService.SERVICE_NAME).incrementRemove(mapName);
         } catch (Throwable t) {
             throw rethrow(t);
         }
@@ -90,6 +93,7 @@ class MapReplicationSupportingService implements ReplicationSupportingService {
             Future future = nodeEngine.getOperationService()
                     .invokeOnPartition(SERVICE_NAME, operation, partitionId);
             future.get();
+            wanService.getReceivedEventCounter(MapService.SERVICE_NAME).incrementUpdate(mapName);
         } catch (Throwable t) {
             throw rethrow(t);
         }

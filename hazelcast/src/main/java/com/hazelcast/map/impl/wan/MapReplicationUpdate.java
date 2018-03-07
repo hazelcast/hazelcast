@@ -22,20 +22,27 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.wan.ReplicationEventObject;
+import com.hazelcast.wan.impl.WanEventCounter;
 import com.hazelcast.wan.impl.WanDataSerializerHook;
 
 import java.io.IOException;
 
+/**
+ * WAN replication object for map update operations.
+ */
 public class MapReplicationUpdate implements ReplicationEventObject, IdentifiedDataSerializable {
-
-    String mapName;
-    Object mergePolicy;
-    EntryView<Data, Data> entryView;
+    private String mapName;
+    /** The policy how to merge the entry on the receiving cluster */
+    private Object mergePolicy;
+    /** The updated entry */
+    private EntryView<Data, Data> entryView;
 
     public MapReplicationUpdate() {
     }
 
-    public MapReplicationUpdate(String mapName, Object mergePolicy, EntryView<Data, Data> entryView) {
+    public MapReplicationUpdate(String mapName,
+                                Object mergePolicy,
+                                EntryView<Data, Data> entryView) {
         this.mergePolicy = mergePolicy;
         this.mapName = mapName;
         this.entryView = entryView;
@@ -87,5 +94,15 @@ public class MapReplicationUpdate implements ReplicationEventObject, IdentifiedD
     @Override
     public int getId() {
         return WanDataSerializerHook.MAP_REPLICATION_UPDATE;
+    }
+
+    @Override
+    public void incrementEventCount(WanEventCounter eventCounter) {
+        eventCounter.incrementUpdate(mapName);
+    }
+
+    @Override
+    public Data getKey() {
+        return entryView.getKey();
     }
 }

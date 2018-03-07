@@ -51,6 +51,7 @@ import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ContextMutexFactory;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.wan.WanReplicationService;
 
 import javax.cache.CacheException;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
@@ -328,6 +329,9 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
         } else {
             closeSegments(cacheNameWithPrefix);
         }
+
+        final WanReplicationService wanService = nodeEngine.getService(WanReplicationService.SERVICE_NAME);
+        wanService.removeWanEventCounters(ICacheService.SERVICE_NAME, cacheNameWithPrefix);
         cacheContexts.remove(cacheNameWithPrefix);
         operationProviderCache.remove(cacheNameWithPrefix);
         deregisterAllListener(cacheNameWithPrefix);
