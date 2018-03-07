@@ -82,7 +82,8 @@ public class DirtyBackupTest extends PartitionCorrectnessTestSupport {
     private static void setBackupPacketReorderFilter(HazelcastInstance instance) {
         Node node = getNode(instance);
         FirewallingConnectionManager cm = (FirewallingConnectionManager) node.getConnectionManager();
-        cm.setDelayingPacketFilter(new BackupPacketReorderFilter(node.getSerializationService()), 100, 1000);
+        cm.setPacketFilter(new BackupPacketReorderFilter(node.getSerializationService()));
+        cm.setDelayMillis(100, 1000);
     }
 
     private static class BackupPacketReorderFilter extends OperationPacketFilter implements PacketFilter {
@@ -92,9 +93,9 @@ public class DirtyBackupTest extends PartitionCorrectnessTestSupport {
         }
 
         @Override
-        protected boolean allowOperation(Address enpoint, int factory, int type) {
+        protected Action filterOperation(Address endpoint, int factory, int type) {
             boolean isBackup = factory == SpiDataSerializerHook.F_ID && type == SpiDataSerializerHook.BACKUP;
-            return !isBackup;
+            return isBackup ? Action.DELAY : Action.ALLOW;
         }
     }
 }

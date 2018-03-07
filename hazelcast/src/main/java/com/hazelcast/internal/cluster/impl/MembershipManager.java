@@ -37,6 +37,7 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
+import com.hazelcast.util.EmptyStatement;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -55,6 +56,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 
@@ -65,7 +67,6 @@ import static com.hazelcast.internal.cluster.impl.ClusterServiceImpl.MEMBERSHIP_
 import static com.hazelcast.internal.cluster.impl.ClusterServiceImpl.SERVICE_NAME;
 import static com.hazelcast.spi.ExecutionService.SYSTEM_EXECUTOR;
 import static com.hazelcast.spi.properties.GroupProperty.MASTERSHIP_CLAIM_TIMEOUT_SECONDS;
-import static com.hazelcast.util.EmptyStatement.ignore;
 import static java.util.Collections.unmodifiableSet;
 
 /**
@@ -77,7 +78,7 @@ import static java.util.Collections.unmodifiableSet;
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity"})
 public class MembershipManager {
 
-    private static final long FETCH_MEMBER_LIST_SLEEP_INTERVAL = 100;
+    private static final long FETCH_MEMBER_LIST_MILLIS = 5000;
 
     private final Node node;
     private final NodeEngineImpl nodeEngine;
@@ -720,44 +721,49 @@ public class MembershipManager {
             futures.put(member.getAddress(), invokeFetchMembersViewOp(member.getAddress(), member.getUuid()));
         }
 
+        long mastershipClaimTimeout = TimeUnit.SECONDS.toMillis(mastershipClaimTimeoutSeconds);
         while (clusterService.isJoined()) {
-            boolean done = true;
 
+            boolean done = true;
             for (Entry<Address, Future<MembersView>> e : new ArrayList<Entry<Address, Future<MembersView>>>(futures.entrySet())) {
                 Address address = e.getKey();
                 Future<MembersView> future = e.getValue();
 
-                if (future.isDone()) {
-                    try {
-                        MembersView membersView = future.get();
-                        if (membersView.isLaterThan(latestMembersView)) {
-                            logger.fine("A more recent " + membersView + " is received from " + address);
-                            latestMembersView = membersView;
+                long start = System.nanoTime();
+                try {
+                    long timeout = Math.min(FETCH_MEMBER_LIST_MILLIS, Math.max(mastershipClaimTimeout, 1));
+                    MembersView membersView = future.get(timeout, TimeUnit.MILLISECONDS);
+                    if (membersView.isLaterThan(latestMembersView)) {
+                        logger.fine("A more recent " + membersView + " is received from " + address);
+                        latestMembersView = membersView;
 
-                            // If we discover a new member via a fetched member list, we should also ask for its members view.
-                            // there are some new members added to the futures map. lets wait for their results.
-                            done &= !fetchMembersViewFromNewMembers(membersView, futures);
-                        }
-                    } catch (InterruptedException ignored) {
-                        Thread.currentThread().interrupt();
-                    } catch (ExecutionException ignored) {
-                        // we couldn't learn MembersView of 'address'. It will be removed from the cluster
-                        ignore(ignored);
+                        // If we discover a new member via a fetched member list, we should also ask for its members view.
+                        // there are some new members added to the futures map. lets wait for their results.
+                        done &= !fetchMembersViewFromNewMembers(membersView, futures);
                     }
-                } else if (!isMemberSuspected(address) && latestMembersView.containsAddress(address)) {
-                    // we don't suspect from 'address' and we need to learn its response
-                    done = false;
+                } catch (InterruptedException ignored) {
+                    Thread.currentThread().interrupt();
+                } catch (ExecutionException ignored) {
+                    // we couldn't learn MembersView of 'address'. It will be removed from the cluster.
+                    EmptyStatement.ignore(ignored);
+                } catch (TimeoutException ignored) {
+                    MemberInfo memberInfo = latestMembersView.getMember(address);
+                    if (mastershipClaimTimeout > 0 && !isMemberSuspected(address) && memberInfo != null) {
+                        // we don't suspect from 'address' and we need to learn its response
+                        done = false;
+                        // Mastership claim is idempotent.
+                        // We will retry our claim to member until it explicitly rejects or accepts our claim.
+                        // We can't just rely on invocation retries, because if connection is dropped while
+                        // our claim is on the wire, invocation won't get any response and will eventually timeout.
+                        futures.put(address, invokeFetchMembersViewOp(address, memberInfo.getUuid()));
+                    }
                 }
+
+                mastershipClaimTimeout -= TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
             }
 
             if (done) {
                 break;
-            }
-
-            try {
-                Thread.sleep(FETCH_MEMBER_LIST_SLEEP_INTERVAL);
-            } catch (InterruptedException ignored) {
-                Thread.currentThread().interrupt();
             }
         }
 

@@ -49,7 +49,7 @@ import static com.hazelcast.spi.properties.GroupProperty.MAX_NO_HEARTBEAT_SECOND
 import static com.hazelcast.spi.properties.GroupProperty.MEMBER_LIST_PUBLISH_INTERVAL_SECONDS;
 import static com.hazelcast.spi.properties.GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS;
 import static com.hazelcast.spi.properties.GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS;
-import static com.hazelcast.test.PacketFiltersUtil.dropOperationsFrom;
+import static com.hazelcast.test.PacketFiltersUtil.rejectOperationsFrom;
 import static com.hazelcast.test.PacketFiltersUtil.resetPacketFiltersFrom;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
@@ -116,11 +116,11 @@ public class MemberListJoinVersionTest extends HazelcastTestSupport {
             }
         });
 
-        dropOperationsFrom(member3, F_ID, asList(HEARTBEAT, SPLIT_BRAIN_MERGE_VALIDATION));
+        rejectOperationsFrom(member3, F_ID, asList(HEARTBEAT, SPLIT_BRAIN_MERGE_VALIDATION));
 
         assertClusterSizeEventually(2, member1, member2);
 
-        dropOperationsFrom(member3, F_ID, singletonList(SPLIT_BRAIN_MERGE_VALIDATION));
+        rejectOperationsFrom(member3, F_ID, singletonList(SPLIT_BRAIN_MERGE_VALIDATION));
 
         assertClusterSizeEventually(1, member3);
 

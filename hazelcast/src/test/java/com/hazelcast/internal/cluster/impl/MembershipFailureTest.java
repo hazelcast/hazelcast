@@ -29,6 +29,7 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -61,6 +62,7 @@ import static com.hazelcast.spi.properties.GroupProperty.MERGE_FIRST_RUN_DELAY_S
 import static com.hazelcast.spi.properties.GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS;
 import static com.hazelcast.test.PacketFiltersUtil.dropOperationsBetween;
 import static com.hazelcast.test.PacketFiltersUtil.dropOperationsFrom;
+import static com.hazelcast.test.PacketFiltersUtil.rejectOperationsBetween;
 import static com.hazelcast.test.PacketFiltersUtil.resetPacketFiltersFrom;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
@@ -72,7 +74,7 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
-@Category({QuickTest.class})
+@Category({QuickTest.class, ParallelTest.class})
 public class MembershipFailureTest extends HazelcastTestSupport {
 
     @Parameterized.Parameters(name = "fd:{0}")
@@ -391,7 +393,7 @@ public class MembershipFailureTest extends HazelcastTestSupport {
         assertClusterSizeEventually(3, slave1);
         assertClusterSize(3, slave2);
 
-        dropOperationsBetween(master, slave1, F_ID, singletonList(MEMBER_INFO_UPDATE));
+        rejectOperationsBetween(master, slave1, F_ID, singletonList(MEMBER_INFO_UPDATE));
 
         HazelcastInstance slave3 = newHazelcastInstance(config);
 
@@ -418,7 +420,7 @@ public class MembershipFailureTest extends HazelcastTestSupport {
         assertClusterSizeEventually(3, slave1);
         // master, slave1, slave2
 
-        dropOperationsBetween(master, slave1, F_ID, singletonList(MEMBER_INFO_UPDATE));
+        rejectOperationsBetween(master, slave1, F_ID, singletonList(MEMBER_INFO_UPDATE));
 
         HazelcastInstance slave3 = newHazelcastInstance(config);
         // master, slave1, slave2, slave3
@@ -426,7 +428,7 @@ public class MembershipFailureTest extends HazelcastTestSupport {
         assertClusterSizeEventually(4, slave3, slave2);
         assertClusterSize(3, slave1);
 
-        dropOperationsBetween(master, asList(slave1, slave2), F_ID, singletonList(MEMBER_INFO_UPDATE));
+        rejectOperationsBetween(master, asList(slave1, slave2), F_ID, singletonList(MEMBER_INFO_UPDATE));
 
         HazelcastInstance slave4 = newHazelcastInstance(config);
         // master, slave1, slave2, slave3, slave4
@@ -435,7 +437,7 @@ public class MembershipFailureTest extends HazelcastTestSupport {
         assertClusterSizeEventually(4, slave2);
         assertClusterSize(3, slave1);
 
-        dropOperationsBetween(master, asList(slave1, slave2, slave3), F_ID, singletonList(MEMBER_INFO_UPDATE));
+        rejectOperationsBetween(master, asList(slave1, slave2, slave3), F_ID, singletonList(MEMBER_INFO_UPDATE));
 
         HazelcastInstance slave5 = newHazelcastInstance(config);
         // master, slave1, slave2, slave3, slave4, slave5
@@ -464,7 +466,7 @@ public class MembershipFailureTest extends HazelcastTestSupport {
 
         assertClusterSize(2, master, slave1);
 
-        dropOperationsBetween(master, slave1, F_ID, singletonList(MEMBER_INFO_UPDATE));
+        rejectOperationsBetween(master, slave1, F_ID, singletonList(MEMBER_INFO_UPDATE));
 
         HazelcastInstance slave2 = newHazelcastInstance(config);
         assertClusterSize(3, master);

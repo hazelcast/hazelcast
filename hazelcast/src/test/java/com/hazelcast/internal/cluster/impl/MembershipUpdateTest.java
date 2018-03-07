@@ -68,7 +68,8 @@ import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.MEMB
 import static com.hazelcast.spi.properties.GroupProperty.MEMBER_LIST_PUBLISH_INTERVAL_SECONDS;
 import static com.hazelcast.test.PacketFiltersUtil.delayOperationsFrom;
 import static com.hazelcast.test.PacketFiltersUtil.dropOperationsBetween;
-import static com.hazelcast.test.PacketFiltersUtil.dropOperationsFrom;
+import static com.hazelcast.test.PacketFiltersUtil.rejectOperationsBetween;
+import static com.hazelcast.test.PacketFiltersUtil.rejectOperationsFrom;
 import static com.hazelcast.test.PacketFiltersUtil.resetPacketFiltersFrom;
 import static com.hazelcast.util.UuidUtil.newUnsecureUuidString;
 import static java.lang.Thread.currentThread;
@@ -404,7 +405,7 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
 
         assertClusterSize(2, hz1, hz2);
 
-        dropOperationsFrom(hz1, F_ID, singletonList(MEMBER_INFO_UPDATE));
+        rejectOperationsFrom(hz1, F_ID, singletonList(MEMBER_INFO_UPDATE));
 
         HazelcastInstance hz3 = factory.newHazelcastInstance(config);
 
@@ -432,7 +433,7 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
 
         assertClusterSize(2, hz1, hz2);
 
-        dropOperationsFrom(hz1, F_ID, singletonList(MEMBER_INFO_UPDATE));
+        rejectOperationsFrom(hz1, F_ID, singletonList(MEMBER_INFO_UPDATE));
 
         HazelcastInstance hz3 = factory.newHazelcastInstance(config);
 
@@ -630,7 +631,7 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
 
         assertClusterSizeEventually(4, hz2, hz3);
 
-        dropOperationsBetween(hz1, hz2, F_ID, singletonList(MEMBER_INFO_UPDATE));
+        rejectOperationsBetween(hz1, hz2, F_ID, singletonList(MEMBER_INFO_UPDATE));
 
         final MemberImpl member3 = getNode(hz3).getLocalMember();
         hz3.getLifecycleService().terminate();
