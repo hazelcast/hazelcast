@@ -26,9 +26,7 @@ import com.hazelcast.client.impl.HazelcastClientProxy;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
-import com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.adapter.DataStructureAdapterMethod;
 import com.hazelcast.internal.adapter.ICacheCacheLoader;
@@ -41,66 +39,39 @@ import com.hazelcast.internal.nearcache.NearCacheTestContextBuilder;
 import com.hazelcast.internal.nearcache.NearCacheTestUtils;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.properties.GroupProperty;
-import com.hazelcast.test.HazelcastParametersRunnerFactory;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameter;
-import org.junit.runners.Parameterized.Parameters;
-import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import javax.cache.configuration.FactoryBuilder;
 import javax.cache.spi.CachingProvider;
-import java.util.Collection;
 
 import static com.hazelcast.client.cache.nearcache.ClientCacheInvalidationListener.createInvalidationEventHandler;
 import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE;
 import static com.hazelcast.config.EvictionPolicy.LRU;
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
+import static com.hazelcast.config.NearCacheConfig.DEFAULT_LOCAL_UPDATE_POLICY;
+import static com.hazelcast.config.NearCacheConfig.DEFAULT_MEMORY_FORMAT;
+import static com.hazelcast.config.NearCacheConfig.DEFAULT_SERIALIZE_KEYS;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.createNearCacheConfig;
-import static java.util.Arrays.asList;
 
 /**
  * Basic Near Cache tests for {@link ICache} on Hazelcast clients.
  */
-@RunWith(Parameterized.class)
-@UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class ClientCacheNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, String> {
 
-    @Parameter
-    public InMemoryFormat inMemoryFormat;
-
-    @Parameter(value = 1)
-    public boolean serializeKeys;
-
-    @Parameter(value = 2)
-    public LocalUpdatePolicy localUpdatePolicy;
-
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
-
-    @Parameters(name = "format:{0} serializeKeys:{1} localUpdatePolicy:{2}")
-    public static Collection<Object[]> parameters() {
-        return asList(new Object[][]{
-                {InMemoryFormat.BINARY, true, LocalUpdatePolicy.INVALIDATE},
-                {InMemoryFormat.BINARY, true, LocalUpdatePolicy.CACHE_ON_UPDATE},
-                {InMemoryFormat.BINARY, false, LocalUpdatePolicy.INVALIDATE},
-                {InMemoryFormat.BINARY, false, LocalUpdatePolicy.CACHE_ON_UPDATE},
-                {InMemoryFormat.OBJECT, true, LocalUpdatePolicy.INVALIDATE},
-                {InMemoryFormat.OBJECT, true, LocalUpdatePolicy.CACHE_ON_UPDATE},
-                {InMemoryFormat.OBJECT, false, LocalUpdatePolicy.INVALIDATE},
-                {InMemoryFormat.OBJECT, false, LocalUpdatePolicy.CACHE_ON_UPDATE},
-        });
-    }
 
     @Before
     public void setUp() {
-        nearCacheConfig = createNearCacheConfig(inMemoryFormat, serializeKeys)
-                .setLocalUpdatePolicy(localUpdatePolicy);
+        nearCacheConfig = createNearCacheConfig(DEFAULT_MEMORY_FORMAT, DEFAULT_SERIALIZE_KEYS)
+                .setLocalUpdatePolicy(DEFAULT_LOCAL_UPDATE_POLICY);
     }
 
     @After
