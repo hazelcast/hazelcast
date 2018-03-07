@@ -22,6 +22,7 @@ import com.hazelcast.client.impl.ClientDataSerializerHook;
 import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.client.impl.client.ClientPrincipal;
 import com.hazelcast.core.MemberLeftException;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.ExceptionAction;
@@ -40,7 +41,6 @@ public class ClientReAuthOperation
 
     private String clientUuid;
     private long authCorrelationId;
-    private boolean clientDisconnectOperationRun;
 
     public ClientReAuthOperation() {
     }
@@ -53,11 +53,19 @@ public class ClientReAuthOperation
     @Override
     public void run() throws Exception {
         ClientEngineImpl engine = getService();
+        //Runs on {@link com.hazelcast.spi.ExecutionService.CLIENT_MANAGEMENT_EXECUTOR}
+        // to work in sync with ClientDisconnectionOperation
+        engine.getClientManagementExecutor().execute(new ClientReauthTask());
+    }
+
+    private boolean doRun() throws Exception {
+        ILogger logger = getLogger();
+        ClientEngineImpl engine = getService();
         String memberUuid = getCallerUuid();
         if (!engine.trySetLastAuthenticationCorrelationId(clientUuid, authCorrelationId)) {
             String message = "Server already processed a newer authentication from client with UUID " + clientUuid
                     + ". Not applying requested ownership change to " + memberUuid;
-            getLogger().info(message);
+            logger.info(message);
             throw new AuthenticationException(message);
         }
         Set<ClientEndpoint> endpoints = engine.getEndpointManager().getEndpoints(clientUuid);
@@ -66,7 +74,12 @@ public class ClientReAuthOperation
             endpoint.authenticated(principal);
         }
         String previousMemberUuid = engine.addOwnershipMapping(clientUuid, memberUuid);
-        clientDisconnectOperationRun = previousMemberUuid == null;
+        return previousMemberUuid == null;
+    }
+
+    @Override
+    public boolean returnsResponse() {
+        return false;
     }
 
     @Override
@@ -82,16 +95,6 @@ public class ClientReAuthOperation
             return THROW_EXCEPTION;
         }
         return super.onInvocationException(throwable);
-    }
-
-    @Override
-    public boolean returnsResponse() {
-        return Boolean.TRUE;
-    }
-
-    @Override
-    public Object getResponse() {
-        return clientDisconnectOperationRun;
     }
 
     @Override
@@ -117,4 +120,16 @@ public class ClientReAuthOperation
     public int getId() {
         return ClientDataSerializerHook.RE_AUTH;
     }
+
+    public class ClientReauthTask implements Runnable {
+        @Override
+        public void run() {
+            try {
+                sendResponse(doRun());
+            } catch (Exception e) {
+                sendResponse(e);
+            }
+        }
+    }
+
 }

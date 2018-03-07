@@ -18,25 +18,22 @@ package com.hazelcast.client.impl.operations;
 
 import com.hazelcast.client.impl.ClientDataSerializerHook;
 import com.hazelcast.client.impl.ClientEngineImpl;
-import com.hazelcast.core.Member;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 
 import static com.hazelcast.util.MapUtil.createHashMap;
 
-public class PostJoinClientOperation extends AbstractClientOperation {
+public class OnJoinClientOperation extends AbstractClientOperation {
 
     private Map<String, String> mappings;
 
-    public PostJoinClientOperation() {
+    public OnJoinClientOperation() {
     }
 
-    public PostJoinClientOperation(Map<String, String> mappings) {
+    public OnJoinClientOperation(Map<String, String> mappings) {
         this.mappings = mappings;
     }
 
@@ -45,19 +42,9 @@ public class PostJoinClientOperation extends AbstractClientOperation {
         if (mappings == null) {
             return;
         }
-
         ClientEngineImpl engine = getService();
-        Set<Member> members = getNodeEngine().getClusterService().getMembers();
-        HashSet<String> uuids = new HashSet<String>();
-        for (Member member : members) {
-            uuids.add(member.getUuid());
-        }
-
         for (Map.Entry<String, String> entry : mappings.entrySet()) {
-            String ownerMemberUuid = entry.getValue();
-            if (uuids.contains(ownerMemberUuid)) {
-                engine.addOwnershipMapping(entry.getKey(), ownerMemberUuid);
-            }
+            engine.addOwnershipMapping(entry.getKey(), entry.getValue());
         }
     }
 
@@ -100,6 +87,6 @@ public class PostJoinClientOperation extends AbstractClientOperation {
 
     @Override
     public int getId() {
-        return ClientDataSerializerHook.POST_JOIN;
+        return ClientDataSerializerHook.ON_JOIN;
     }
 }

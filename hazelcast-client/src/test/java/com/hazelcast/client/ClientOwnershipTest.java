@@ -31,9 +31,13 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
@@ -249,5 +253,40 @@ public class ClientOwnershipTest extends HazelcastTestSupport {
                 assertEquals(0, clientEngine3.getEndpointManager().getEndpoints(clientUuid).size());
             }
         });
+    }
+
+    @Test
+    public void test_ownerShipCarried_inJoin() throws InterruptedException {
+        hazelcastFactory.newHazelcastInstance();
+
+        final AtomicReference<List<String>> clientUUID = new AtomicReference<List<String>>();
+        final int clientCount = 20;
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                List<String> list = new ArrayList<String>();
+                for (int i = 0; i < clientCount; i++) {
+                    ClientConfig config = new ClientConfig();
+                    config.getNetworkConfig().setConnectionTimeout(30000);
+                    HazelcastInstance client = hazelcastFactory.newHazelcastClient(config);
+                    list.add(client.getLocalEndpoint().getUuid());
+                }
+                clientUUID.set(list);
+            }
+        }).start();
+        final HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
+        final ClientEngineImpl clientEngineImpl = getClientEngineImpl(instance);
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                List<String> list = clientUUID.get();
+                assertNotNull(list);
+                for (String clientUuid : list) {
+                    assertNotNull(clientUuid + " " + list.size(), clientEngineImpl.getOwnerUuid(clientUuid));
+                }
+            }
+        });
+
     }
 }
