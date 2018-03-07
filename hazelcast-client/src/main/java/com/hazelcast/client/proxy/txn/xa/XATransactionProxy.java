@@ -72,9 +72,6 @@ public class XATransactionProxy {
 
     void begin() {
         try {
-            if (client.getConnectionManager().getOwnerConnection() == null) {
-                throw new TransactionException("Owner connection needs to be present to begin a transaction");
-            }
             startTime = Clock.currentTimeMillis();
             ClientMessage request = XATransactionCreateCodec.encodeRequest(xid, timeout);
             ClientMessage response = ClientTransactionUtil.invoke(request, txnId, client, connection);

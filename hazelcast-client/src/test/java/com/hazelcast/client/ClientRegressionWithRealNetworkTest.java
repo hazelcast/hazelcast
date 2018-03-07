@@ -225,13 +225,13 @@ public class ClientRegressionWithRealNetworkTest extends ClientTestSupport {
         clientConfig.getConnectionStrategyConfig().setReconnectMode(reconnectMode);
         clientConfig.setProperty(ClientProperty.ALLOW_INVOCATIONS_WHEN_DISCONNECTED.getName(), "true");
         final AtomicBoolean waitFlag = new AtomicBoolean();
-        final CountDownLatch testFinishedSuccessfully = new CountDownLatch(1);
+        final CountDownLatch testFinished = new CountDownLatch(1);
         final AddressProvider addressProvider = new AddressProvider() {
             @Override
             public Collection<Address> loadAddresses() {
                 if (waitFlag.get()) {
                     try {
-                        testFinishedSuccessfully.await();
+                        testFinished.await();
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
@@ -270,7 +270,7 @@ public class ClientRegressionWithRealNetworkTest extends ClientTestSupport {
         clientMap.put(keyOwnedBy2, 1);
         assertEquals(1, clientMap.get(keyOwnedBy2));
 
-        testFinishedSuccessfully.countDown();
+        testFinished.countDown();
 
     }
 }
