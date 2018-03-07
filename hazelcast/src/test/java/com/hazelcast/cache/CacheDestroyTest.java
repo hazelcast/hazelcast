@@ -26,6 +26,7 @@ import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.HazelcastInstanceProxy;
 import com.hazelcast.internal.nearcache.impl.invalidation.Invalidation;
+import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.test.AssertTask;
@@ -188,7 +189,7 @@ public class CacheDestroyTest extends CacheTestSupport {
         final Cache<Integer, Integer> cache = cacheManager.createCache(cacheName, cacheConfig);
 
         final CountDownLatch latch = new CountDownLatch(1);
-        int concurrency = Runtime.getRuntime().availableProcessors();
+        int concurrency = RuntimeAvailableProcessors.get();
         Future[] destroyFutures = new Future[concurrency];
 
         DestroyCacheTask destroyCacheTask = new DestroyCacheTask(cacheName, cacheManager, latch, cache);
@@ -212,7 +213,7 @@ public class CacheDestroyTest extends CacheTestSupport {
         final CacheConfig<Integer, Integer> cacheConfig = createCacheConfig();
 
         final CountDownLatch latch = new CountDownLatch(1);
-        int concurrency = Runtime.getRuntime().availableProcessors() * 4;
+        int concurrency = RuntimeAvailableProcessors.get() * 4;
         Future[] futures = new Future[concurrency];
 
         DestroyCacheTask destroyCacheTask = new DestroyCacheTask(cacheName, cacheManager, latch, null);
