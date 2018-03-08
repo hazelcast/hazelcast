@@ -32,7 +32,7 @@ import org.junit.runner.RunWith;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
 
-import static com.hazelcast.test.PacketFiltersUtil.dropOperationsBetween;
+import static com.hazelcast.test.PacketFiltersUtil.rejectOperationsBetween;
 import static com.hazelcast.test.PacketFiltersUtil.resetPacketFiltersFrom;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
@@ -99,7 +99,7 @@ public class ManualRestartTest extends JetTestSupport {
     @Test
     public void when_jobIsNotBeingExecuted_then_itCannotBeRestarted() {
         // Given that the job execution has not started
-        dropOperationsBetween(instances[0].getHazelcastInstance(), instances[1].getHazelcastInstance(),
+        rejectOperationsBetween(instances[0].getHazelcastInstance(), instances[1].getHazelcastInstance(),
                 JetInitDataSerializerHook.FACTORY_ID, singletonList(JetInitDataSerializerHook.INIT_EXECUTION_OP));
 
         JetInstance client = createJetClient();

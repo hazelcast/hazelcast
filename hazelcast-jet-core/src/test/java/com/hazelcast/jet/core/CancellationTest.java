@@ -36,7 +36,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
-import static com.hazelcast.test.PacketFiltersUtil.dropOperationsBetween;
+import static com.hazelcast.test.PacketFiltersUtil.rejectOperationsBetween;
 import static com.hazelcast.test.PacketFiltersUtil.resetPacketFiltersFrom;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
@@ -184,7 +184,7 @@ public class CancellationTest extends JetTestSupport {
         // Given
         JetInstance instance1 = newInstance();
         JetInstance instance2 = newInstance();
-        dropOperationsBetween(instance1.getHazelcastInstance(), instance2.getHazelcastInstance(),
+        rejectOperationsBetween(instance1.getHazelcastInstance(), instance2.getHazelcastInstance(),
                 JetInitDataSerializerHook.FACTORY_ID, singletonList(JetInitDataSerializerHook.COMPLETE_EXECUTION_OP));
 
         DAG dag = new DAG();

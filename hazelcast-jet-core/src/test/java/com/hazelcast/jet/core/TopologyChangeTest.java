@@ -56,6 +56,7 @@ import static com.hazelcast.jet.core.JobStatus.STARTING;
 import static com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook.INIT_EXECUTION_OP;
 import static com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook.START_EXECUTION_OP;
 import static com.hazelcast.test.PacketFiltersUtil.dropOperationsBetween;
+import static com.hazelcast.test.PacketFiltersUtil.rejectOperationsBetween;
 import static com.hazelcast.test.PacketFiltersUtil.resetPacketFiltersFrom;
 import static java.util.Collections.singletonList;
 import static org.hamcrest.Matchers.empty;
@@ -360,7 +361,7 @@ public class TopologyChangeTest extends JetTestSupport {
             assertClusterSizeEventually(NODE_COUNT + 1, instance.getHazelcastInstance());
         }
 
-        dropOperationsBetween(instances[0].getHazelcastInstance(), instances[2].getHazelcastInstance(),
+        rejectOperationsBetween(instances[0].getHazelcastInstance(), instances[2].getHazelcastInstance(),
                 JetInitDataSerializerHook.FACTORY_ID, singletonList(INIT_EXECUTION_OP));
 
         DAG dag = new DAG().vertex(new Vertex("test", new MockPS(TestProcessors.Identity::new, nodeCount + 1)));
@@ -401,7 +402,7 @@ public class TopologyChangeTest extends JetTestSupport {
 
         dropOperationsBetween(instances[2].getHazelcastInstance(), instances[0].getHazelcastInstance(),
                 PartitionDataSerializerHook.F_ID, singletonList(SHUTDOWN_REQUEST));
-        dropOperationsBetween(instances[0].getHazelcastInstance(), instances[2].getHazelcastInstance(),
+        rejectOperationsBetween(instances[0].getHazelcastInstance(), instances[2].getHazelcastInstance(),
                 JetInitDataSerializerHook.FACTORY_ID, singletonList(INIT_EXECUTION_OP));
 
         // When a job participant starts its shutdown after the job is submitted
@@ -431,7 +432,7 @@ public class TopologyChangeTest extends JetTestSupport {
             warmUpPartitions(instance.getHazelcastInstance());
         }
 
-        dropOperationsBetween(instances[0].getHazelcastInstance(), instances[2].getHazelcastInstance(),
+        rejectOperationsBetween(instances[0].getHazelcastInstance(), instances[2].getHazelcastInstance(),
                 JetInitDataSerializerHook.FACTORY_ID, singletonList(START_EXECUTION_OP));
 
         DAG dag = new DAG().vertex(new Vertex("test", new MockPS(TestProcessors.Identity::new, nodeCount - 1)));
