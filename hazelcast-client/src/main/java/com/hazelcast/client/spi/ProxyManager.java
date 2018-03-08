@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.spi;
 
+import com.hazelcast.cache.CacheNotExistsException;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.cache.impl.JCacheDetector;
 import com.hazelcast.cardinality.impl.CardinalityEstimatorService;
@@ -50,8 +51,8 @@ import com.hazelcast.client.proxy.ClientSemaphoreProxy;
 import com.hazelcast.client.proxy.ClientSetProxy;
 import com.hazelcast.client.proxy.ClientTopicProxy;
 import com.hazelcast.client.proxy.txn.xa.XAResourceProxy;
-import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.AbstractClientInvocationService;
+import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientProxyFactoryWithContext;
 import com.hazelcast.client.spi.impl.ClientServiceNotFoundException;
 import com.hazelcast.client.spi.impl.ListenerMessageCodec;
@@ -76,11 +77,14 @@ import com.hazelcast.core.Member;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.durableexecutor.impl.DistributedDurableExecutorService;
 import com.hazelcast.executor.impl.DistributedExecutorService;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
+import com.hazelcast.nio.Connection;
+import com.hazelcast.replicatedmap.ReplicatedMapCantBeCreatedOnLiteMemberException;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
@@ -89,7 +93,6 @@ import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.topic.impl.reliable.ReliableTopicService;
 import com.hazelcast.transaction.impl.xa.XAService;
-import com.hazelcast.util.EmptyStatement;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
@@ -101,6 +104,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 
+import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.ServiceLoader.classIterator;
 
@@ -146,11 +150,11 @@ public final class ProxyManager {
     private ClientContext context;
     private long invocationRetryPauseMillis;
     private long invocationTimeoutMillis;
-
+    private ILogger logger;
 
     public ProxyManager(HazelcastClientInstanceImpl client) {
         this.client = client;
-
+        this.logger = client.getLoggingService().getLogger(ProxyManager.class);
         List<ListenerConfig> listenerConfigs = client.getClientConfig().getListenerConfigs();
         if (listenerConfigs != null && !listenerConfigs.isEmpty()) {
             for (ListenerConfig listenerConfig : listenerConfigs) {
@@ -359,7 +363,7 @@ public final class ProxyManager {
         try {
             Thread.sleep(invocationRetryPauseMillis);
         } catch (InterruptedException ignored) {
-            EmptyStatement.ignore(ignored);
+            ignore(ignored);
         }
     }
 
@@ -412,6 +416,38 @@ public final class ProxyManager {
     public String addDistributedObjectListener(final DistributedObjectListener listener) {
         final EventHandler<ClientMessage> eventHandler = new DistributedObjectEventHandler(listener, this);
         return client.getListenerService().registerListener(distributedObjectListenerCodec, eventHandler);
+    }
+
+    public void createDistributedObjectsOnCluster(Connection ownerConnection) throws IOException {
+        if (proxies.isEmpty()) {
+            return;
+        }
+        Address initializationTarget = findNextAddressToSendCreateRequest();
+        if (initializationTarget == null) {
+            throw new IOException("Not able to find a member to create proxy on!");
+        }
+        for (ObjectNamespace objectNamespace : proxies.keySet()) {
+            invokeCreateProxy(ownerConnection, objectNamespace, initializationTarget);
+        }
+    }
+
+    private void invokeCreateProxy(Connection ownerConnection, ObjectNamespace namespace, Address initializationTarget) {
+        ClientMessage clientMessage = ClientCreateProxyCodec.encodeRequest(namespace.getObjectName(),
+                namespace.getServiceName(), initializationTarget);
+        try {
+            new ClientInvocation(client, clientMessage, namespace.getServiceName(), ownerConnection).invoke().join();
+        } catch (ReplicatedMapCantBeCreatedOnLiteMemberException e) {
+            ignore(e);
+        } catch (CacheNotExistsException e) {
+            // This can happen when cache destroy event is received
+            // after cache config is replicated during join (pre-join)
+            // but before cache proxy is created (post-join).
+            logger.finest("Could not create Cache[" + namespace.getObjectName()
+                    + "]. It is already destroyed.", e);
+        } catch (Exception e) {
+            logger.severe("Cannot create proxy [" + namespace.getServiceName()
+                    + ":" + namespace.getObjectName() + "]!", e);
+        }
     }
 
     private final class DistributedObjectEventHandler extends ClientAddDistributedObjectListenerCodec.AbstractEventHandler
