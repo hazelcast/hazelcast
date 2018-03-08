@@ -19,7 +19,6 @@ package com.hazelcast.monitor.impl;
 import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
 import com.eclipsesource.json.JsonValue;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.management.JsonSerializable;
 import com.hazelcast.internal.management.dto.ClientEndPointDTO;
 import com.hazelcast.internal.management.dto.ClusterHotRestartStatusDTO;
@@ -319,13 +318,11 @@ public class MemberStateImpl implements MemberState {
         root.add("clusterHotRestartStatus", clusterHotRestartStatus.toJson());
         root.add("wanSyncState", wanSyncState.toJson());
 
-        if (nodeState.getClusterVersion().isGreaterOrEqual(Versions.V3_9)) {
-            JsonObject clientStatsObject = new JsonObject();
-            for (Map.Entry<String, String> entry : clientStats.entrySet()) {
-                clientStatsObject.add(entry.getKey(), entry.getValue());
-            }
-            root.add("clientStats", clientStatsObject);
+        JsonObject clientStatsObject = new JsonObject();
+        for (Map.Entry<String, String> entry : clientStats.entrySet()) {
+            clientStatsObject.add(entry.getKey(), entry.getValue());
         }
+        root.add("clientStats", clientStatsObject);
         return root;
     }
 
@@ -440,10 +437,8 @@ public class MemberStateImpl implements MemberState {
             wanSyncState = new WanSyncStateImpl();
             wanSyncState.fromJson(jsonWanSyncState);
         }
-        if (nodeState.getClusterVersion().isGreaterOrEqual(Versions.V3_9)) {
-            for (JsonObject.Member next : getObject(json, "clientStats")) {
-                clientStats.put(next.getName(), next.getValue().asString());
-            }
+        for (JsonObject.Member next : getObject(json, "clientStats")) {
+            clientStats.put(next.getName(), next.getValue().asString());
         }
     }
 

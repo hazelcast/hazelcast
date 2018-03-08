@@ -109,6 +109,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Mul
                   throw ExceptionUtil.rethrow(throwable);
             }
         } else {
+            // RU_COMPAT_3_9
             throw new UnsupportedOperationException("Delete not supported when cluster version less than 3.10");
         }
     }
