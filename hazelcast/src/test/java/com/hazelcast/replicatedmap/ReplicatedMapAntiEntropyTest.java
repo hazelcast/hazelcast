@@ -43,7 +43,7 @@ import java.util.Collections;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category(value = {QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelTest.class})
 public class ReplicatedMapAntiEntropyTest extends ReplicatedMapAbstractTest {
 
     @After

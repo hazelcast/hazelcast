@@ -79,7 +79,9 @@ class ReplicatedMapSplitBrainHandlerService implements SplitBrainHandlerService 
         for (Integer partition : partitionService.getMemberPartitions(nodeEngine.getThisAddress())) {
             PartitionContainer partitionContainer = service.getPartitionContainer(partition);
             ConcurrentMap<String, ReplicatedRecordStore> stores = partitionContainer.getStores();
-            for (ReplicatedRecordStore store : stores.values()) {
+            Iterator<ReplicatedRecordStore> iterator = stores.values().iterator();
+            while (iterator.hasNext()) {
+                ReplicatedRecordStore store = iterator.next();
                 String name = store.getName();
                 Object mergePolicy = getMergePolicy(service.getReplicatedMapConfig(name).getMergePolicyConfig());
                 if (mergePolicy instanceof DiscardMergePolicy) {
@@ -90,13 +92,14 @@ class ReplicatedMapSplitBrainHandlerService implements SplitBrainHandlerService 
                 if (records == null) {
                     records = new ArrayList<ReplicatedRecord>();
                 }
-                Iterator<ReplicatedRecord> iterator = store.recordIterator();
-                while (iterator.hasNext()) {
-                    ReplicatedRecord record = iterator.next();
+                Iterator<ReplicatedRecord> recordIterator = store.recordIterator();
+                while (recordIterator.hasNext()) {
+                    ReplicatedRecord record = recordIterator.next();
                     records.add(record);
                 }
                 recordMap.put(name, records);
-                store.reset();
+                iterator.remove();
+                store.destroy();
             }
         }
         return new Merger(recordMap);

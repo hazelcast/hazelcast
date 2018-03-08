@@ -59,7 +59,7 @@ public class ClearOperation extends AbstractNamedSerializableOperation implement
 
     @Override
     public void run() throws Exception {
-        if (getNodeEngine().getConfig().isLiteMember()) {
+        if (getNodeEngine().getLocalMember().isLiteMember()) {
             return;
         }
         ReplicatedMapService service = getService();

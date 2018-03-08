@@ -38,7 +38,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category(value = {QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelTest.class})
 public class ReplicatedMapPutSerializationTest extends HazelcastTestSupport {
 
     static AtomicInteger deSerializationCount = new AtomicInteger(0);

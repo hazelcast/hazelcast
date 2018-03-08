@@ -123,13 +123,13 @@ public class ReplicatedMapEventPublishingService implements EventPublishingServi
                     entryListener.mapCleared(mapEvent);
                     break;
                 default:
-                    throw new IllegalArgumentException("Unsupported EntryEventType " + type);
+                    throw new IllegalArgumentException("Unsupported EntryEventType: " + type);
             }
         }
     }
 
     public String addEventListener(EventListener entryListener, EventFilter eventFilter, String mapName) {
-        if (config.isLiteMember()) {
+        if (nodeEngine.getLocalMember().isLiteMember()) {
             throw new ReplicatedMapCantBeCreatedOnLiteMemberException(nodeEngine.getThisAddress());
         }
         EventRegistration registration = eventService.registerLocalListener(SERVICE_NAME, mapName, eventFilter,
@@ -138,7 +138,7 @@ public class ReplicatedMapEventPublishingService implements EventPublishingServi
     }
 
     public boolean removeEventListener(String mapName, String registrationId) {
-        if (config.isLiteMember()) {
+        if (nodeEngine.getLocalMember().isLiteMember()) {
             throw new ReplicatedMapCantBeCreatedOnLiteMemberException(nodeEngine.getThisAddress());
         }
         if (registrationId == null) {
