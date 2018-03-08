@@ -45,7 +45,8 @@ public class LiteMemberTest {
     private HazelcastInstance instance;
 
     @Test
-    public void shouldBeLiteMember() throws InterruptedException {
-        assertTrue(instance.getConfig().isLiteMember());
+    public void shouldBeLiteMember() {
+        assertTrue("Expected Config.isLiteMember() to be true", instance.getConfig().isLiteMember());
+        assertTrue("Expected Member.isLiteMember() to be true", instance.getCluster().getLocalMember().isLiteMember());
     }
 }

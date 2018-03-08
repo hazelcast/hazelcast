@@ -112,7 +112,7 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
         if (!config.isAsyncFillup()) {
             for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
                 ReplicatedRecordStore store = service.getReplicatedRecordStore(name, false, i);
-                while (!store.isLoaded()) {
+                while (store == null || !store.isLoaded()) {
                     if ((retryCount++) % RETRY_INTERVAL_COUNT == 0) {
                         requestDataForPartition(i);
                     }
@@ -199,7 +199,7 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
         isNotNull(key, "key");
         int partitionId = partitionService.getPartitionId(key);
         ReplicatedRecordStore store = service.getReplicatedRecordStore(name, false, partitionId);
-        return store.containsKey(key);
+        return store != null && store.containsKey(key);
     }
 
     @Override
@@ -221,6 +221,9 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
         isNotNull(key, "key");
         int partitionId = partitionService.getPartitionId(key);
         ReplicatedRecordStore store = service.getReplicatedRecordStore(getName(), false, partitionId);
+        if (store == null) {
+            return null;
+        }
         return (V) store.get(key);
     }
 

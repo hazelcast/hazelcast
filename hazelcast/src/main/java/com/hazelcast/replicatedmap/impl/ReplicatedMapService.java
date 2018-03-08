@@ -56,10 +56,8 @@ import com.hazelcast.spi.SplitBrainHandlerService;
 import com.hazelcast.spi.StatisticsAwareService;
 import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
 import com.hazelcast.spi.serialization.SerializationService;
-import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ContextMutexFactory;
-import com.hazelcast.util.ExceptionUtil;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -70,11 +68,15 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.internal.config.ConfigValidator.checkReplicatedMapConfig;
+import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
+import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static java.lang.Math.max;
 
 /**
  * This is the main service implementation to handle proxy creation, event publishing, migration, anti-entropy and
@@ -90,24 +92,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
 
     private static final Object NULL_OBJECT = new Object();
 
-    private final Config config;
-    private final NodeEngine nodeEngine;
-    private final PartitionContainer[] partitionContainers;
-    private final InternalPartitionServiceImpl partitionService;
-    private final ClusterService clusterService;
-    private final OperationService operationService;
-    private final QuorumService quorumService;
-    private final ReplicatedMapEventPublishingService eventPublishingService;
-    private final ReplicatedMapSplitBrainHandlerService splitBrainHandlerService;
-    private ConcurrentHashMap<String, LocalReplicatedMapStatsImpl> statsMap =
-            new ConcurrentHashMap<String, LocalReplicatedMapStatsImpl>();
-    private ConstructorFunction<String, LocalReplicatedMapStatsImpl> constructorFunction =
-            new ConstructorFunction<String, LocalReplicatedMapStatsImpl>() {
-                @Override
-                public LocalReplicatedMapStatsImpl createNew(String arg) {
-                    return new LocalReplicatedMapStatsImpl();
-                }
-            };
+    private final AntiEntropyTask antiEntropyTask = new AntiEntropyTask();
 
     private final ConcurrentMap<String, Object> quorumConfigCache = new ConcurrentHashMap<String, Object>();
     private final ContextMutexFactory quorumConfigCacheMutexFactory = new ContextMutexFactory();
@@ -119,6 +104,28 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
             return quorumName == null ? NULL_OBJECT : quorumName;
         }
     };
+
+    private final ConcurrentHashMap<String, LocalReplicatedMapStatsImpl> statsMap =
+            new ConcurrentHashMap<String, LocalReplicatedMapStatsImpl>();
+    private final ConstructorFunction<String, LocalReplicatedMapStatsImpl> statsConstructorFunction =
+            new ConstructorFunction<String, LocalReplicatedMapStatsImpl>() {
+                @Override
+                public LocalReplicatedMapStatsImpl createNew(String arg) {
+                    return new LocalReplicatedMapStatsImpl();
+                }
+            };
+
+    private final Config config;
+    private final NodeEngine nodeEngine;
+    private final PartitionContainer[] partitionContainers;
+    private final InternalPartitionServiceImpl partitionService;
+    private final ClusterService clusterService;
+    private final OperationService operationService;
+    private final QuorumService quorumService;
+    private final ReplicatedMapEventPublishingService eventPublishingService;
+    private final ReplicatedMapSplitBrainHandlerService splitBrainHandlerService;
+
+    private ScheduledFuture antiEntropyFuture;
 
     public ReplicatedMapService(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -134,58 +141,15 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
 
     @Override
     public void init(NodeEngine nodeEngine, Properties properties) {
-        if (config.isLiteMember()) {
-            return;
-        }
-
         for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
             partitionContainers[i] = new PartitionContainer(this, i);
         }
-        nodeEngine.getExecutionService().getGlobalTaskScheduler().scheduleWithRepetition(new Runnable() {
-            @Override
-            public void run() {
-                triggerAntiEntropy();
-            }
-        }, 0, SYNC_INTERVAL_SECONDS, TimeUnit.SECONDS);
-    }
-
-    /**
-     * Send an operation to all replicas to check their replica versions for all partitions for which this node is the owner
-     */
-    public void triggerAntiEntropy() {
-        if (clusterService.getSize(DATA_MEMBER_SELECTOR) == 1) {
-            return;
-        }
-        Collection<Address> addresses = new ArrayList<Address>(getMemberAddresses(DATA_MEMBER_SELECTOR));
-        addresses.remove(nodeEngine.getThisAddress());
-        for (int i = 0; i < partitionContainers.length; i++) {
-            Address thisAddress = nodeEngine.getThisAddress();
-            InternalPartition partition = partitionService.getPartition(i, false);
-            Address ownerAddress = partition.getOwnerOrNull();
-            if (!thisAddress.equals(ownerAddress)) {
-                continue;
-            }
-            PartitionContainer partitionContainer = partitionContainers[i];
-            if (partitionContainer.isEmpty()) {
-                continue;
-            }
-            for (Address address : addresses) {
-                CheckReplicaVersionOperation checkReplicaVersionOperation = new CheckReplicaVersionOperation(partitionContainer);
-                checkReplicaVersionOperation.setPartitionId(i);
-                checkReplicaVersionOperation.setValidateTarget(false);
-                operationService.createInvocationBuilder(SERVICE_NAME, checkReplicaVersionOperation, address)
-                        .setTryCount(INVOCATION_TRY_COUNT)
-                        .invoke();
-            }
-        }
+        antiEntropyFuture = nodeEngine.getExecutionService().getGlobalTaskScheduler()
+                .scheduleWithRepetition(antiEntropyTask, 0, SYNC_INTERVAL_SECONDS, TimeUnit.SECONDS);
     }
 
     @Override
     public void reset() {
-        if (config.isLiteMember()) {
-            return;
-        }
-
         for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
             ConcurrentMap<String, ReplicatedRecordStore> stores = partitionContainers[i].getStores();
             for (ReplicatedRecordStore store : stores.values()) {
@@ -196,17 +160,18 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
 
     @Override
     public void shutdown(boolean terminate) {
-        if (config.isLiteMember()) {
-            return;
-        }
-
         for (PartitionContainer container : partitionContainers) {
-            container.shutdown();
+            if (container != null) {
+                container.shutdown();
+            }
+        }
+        if (antiEntropyFuture != null) {
+            antiEntropyFuture.cancel(true);
         }
     }
 
     public LocalReplicatedMapStatsImpl getLocalMapStatsImpl(String name) {
-        return ConcurrencyUtil.getOrPutIfAbsent(statsMap, name, constructorFunction);
+        return getOrPutIfAbsent(statsMap, name, statsConstructorFunction);
     }
 
     public LocalReplicatedMapStatsImpl createReplicatedMapStats(String name) {
@@ -223,8 +188,8 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
             Iterator<ReplicatedRecord> iterator = store.recordIterator();
             while (iterator.hasNext()) {
                 ReplicatedRecord record = iterator.next();
-                stats.setLastAccessTime(Math.max(stats.getLastAccessTime(), record.getLastAccessTime()));
-                stats.setLastUpdateTime(Math.max(stats.getLastUpdateTime(), record.getUpdateTime()));
+                stats.setLastAccessTime(max(stats.getLastAccessTime(), record.getLastAccessTime()));
+                stats.setLastUpdateTime(max(stats.getLastUpdateTime(), record.getUpdateTime()));
                 hits += record.getHits();
                 if (isBinary) {
                     memoryUsage += ((HeapData) record.getValueInternal()).getHeapCost();
@@ -242,7 +207,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
     public DistributedObject createDistributedObject(String objectName) {
         ReplicatedMapConfig replicatedMapConfig = getReplicatedMapConfig(objectName);
         checkReplicatedMapConfig(replicatedMapConfig);
-        if (config.isLiteMember()) {
+        if (nodeEngine.getLocalMember().isLiteMember()) {
             throw new ReplicatedMapCantBeCreatedOnLiteMemberException(nodeEngine.getThisAddress());
         }
 
@@ -258,7 +223,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
 
     @Override
     public void destroyDistributedObject(String objectName) {
-        if (config.isLiteMember()) {
+        if (nodeEngine.getLocalMember().isLiteMember()) {
             return;
         }
 
@@ -273,7 +238,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
         eventPublishingService.dispatchEvent(event, listener);
     }
 
-
+    @SuppressWarnings("deprecation")
     public ReplicatedMapConfig getReplicatedMapConfig(String name) {
         return config.getReplicatedMapConfig(name).getAsReadOnly();
     }
@@ -283,7 +248,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
     }
 
     public ReplicatedRecordStore getReplicatedRecordStore(String name, boolean create, int partitionId) {
-        if (config.isLiteMember()) {
+        if (nodeEngine.getLocalMember().isLiteMember()) {
             throw new ReplicatedMapCantBeCreatedOnLiteMemberException(nodeEngine.getThisAddress());
         }
 
@@ -331,7 +296,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
                     listener = ClassLoaderUtil.newInstance(nodeEngine.getConfigClassLoader(),
                             listenerConfig.getClassName());
                 } catch (Exception e) {
-                    throw ExceptionUtil.rethrow(e);
+                    throw rethrow(e);
                 }
             }
             if (listener != null) {
@@ -357,10 +322,9 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
 
     @Override
     public Operation prepareReplicationOperation(PartitionReplicationEvent event) {
-        if (config.isLiteMember()) {
+        if (nodeEngine.getLocalMember().isLiteMember()) {
             return null;
         }
-
         if (event.getReplicaIndex() > 0) {
             return null;
         }
@@ -409,12 +373,55 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
         if (nodeEngine.getClusterService().getClusterVersion().isLessThan(Versions.V3_10)) {
             return null;
         }
-        Object quorumName = getOrPutSynchronized(quorumConfigCache, name, quorumConfigCacheMutexFactory,
-                quorumConfigConstructor);
+        Object quorumName = getOrPutSynchronized(quorumConfigCache, name, quorumConfigCacheMutexFactory, quorumConfigConstructor);
         return quorumName == NULL_OBJECT ? null : (String) quorumName;
     }
 
     public void ensureQuorumPresent(String distributedObjectName, QuorumType requiredQuorumPermissionType) {
         quorumService.ensureQuorumPresent(getQuorumName(distributedObjectName), requiredQuorumPermissionType);
+    }
+
+    // needed for a test
+    public void triggerAntiEntropy() {
+        antiEntropyTask.triggerAntiEntropy();
+    }
+
+    private class AntiEntropyTask implements Runnable {
+
+        @Override
+        public void run() {
+            triggerAntiEntropy();
+        }
+
+        /**
+         * Sends an operation to all replicas to check their replica versions for all partitions for which this node is the owner.
+         */
+        void triggerAntiEntropy() {
+            if (nodeEngine.getLocalMember().isLiteMember() || clusterService.getSize(DATA_MEMBER_SELECTOR) == 1) {
+                return;
+            }
+            Collection<Address> addresses = new ArrayList<Address>(getMemberAddresses(DATA_MEMBER_SELECTOR));
+            addresses.remove(nodeEngine.getThisAddress());
+            for (int i = 0; i < partitionContainers.length; i++) {
+                Address thisAddress = nodeEngine.getThisAddress();
+                InternalPartition partition = partitionService.getPartition(i, false);
+                Address ownerAddress = partition.getOwnerOrNull();
+                if (!thisAddress.equals(ownerAddress)) {
+                    continue;
+                }
+                PartitionContainer partitionContainer = partitionContainers[i];
+                if (partitionContainer.isEmpty()) {
+                    continue;
+                }
+                for (Address address : addresses) {
+                    Operation operation = new CheckReplicaVersionOperation(partitionContainer)
+                            .setPartitionId(i)
+                            .setValidateTarget(false);
+                    operationService.createInvocationBuilder(SERVICE_NAME, operation, address)
+                            .setTryCount(INVOCATION_TRY_COUNT)
+                            .invoke();
+                }
+            }
+        }
     }
 }
