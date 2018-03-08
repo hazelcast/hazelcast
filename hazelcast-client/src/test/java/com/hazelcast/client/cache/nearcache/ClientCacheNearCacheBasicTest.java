@@ -114,7 +114,8 @@ public class ClientCacheNearCacheBasicTest extends AbstractNearCacheBasicTest<Da
 
     protected Config createConfig() {
         return getConfig()
-                .setProperty(GroupProperty.PARTITION_COUNT.getName(), PARTITION_COUNT);
+                .setProperty(GroupProperty.PARTITION_COUNT.getName(), PARTITION_COUNT)
+                .setProperty(GroupProperty.CACHE_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS.getName(), "1");
     }
 
     protected ClientConfig createClientConfig() {

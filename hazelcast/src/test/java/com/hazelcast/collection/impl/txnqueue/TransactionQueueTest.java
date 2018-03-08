@@ -386,8 +386,7 @@ public class TransactionQueueTest extends HazelcastTestSupport {
 
             interruptThreads(instance2Threads);
 
-            jointThreads(instance2Threads, 15);
-            jointThreads(instance1Threads, 15);
+            assertJoinable(instance2Threads);
 
             // When a node goes down, backup of the transaction commits all prepared stated transactions
             // Since it relies on 'memberRemoved' event, it is async. That's why we should assert eventually
@@ -401,6 +400,7 @@ public class TransactionQueueTest extends HazelcastTestSupport {
         } finally {
             interruptThreads(instance1Threads);
             interruptThreads(instance2Threads);
+            assertJoinable(instance1Threads);
         }
     }
 
@@ -411,12 +411,6 @@ public class TransactionQueueTest extends HazelcastTestSupport {
             threads[i] = new Thread(moveMessage);
         }
         return threads;
-    }
-
-    private void jointThreads(Thread[] threads, int seconds) throws InterruptedException {
-        for (Thread thread : threads) {
-            thread.join(SECONDS.toMillis(seconds));
-        }
     }
 
     private void interruptThreads(Thread[] threads) {

@@ -81,7 +81,7 @@ public class LockQuorumWriteTest extends AbstractQuorumTest {
 
     @Test
     public void tryLockTimeout_quorum() throws InterruptedException {
-        lock(0).tryLock(1, TimeUnit.MINUTES);
+        lock(0).tryLock(5, TimeUnit.SECONDS);
     }
 
     @Test(expected = QuorumException.class)
@@ -91,7 +91,7 @@ public class LockQuorumWriteTest extends AbstractQuorumTest {
 
     @Test
     public void tryLockTimeoutLeaseTime_quorum() throws InterruptedException {
-        lock(0).tryLock(1, TimeUnit.MINUTES, 1, TimeUnit.MINUTES);
+        lock(0).tryLock(5, TimeUnit.SECONDS, 5, TimeUnit.SECONDS);
     }
 
     @Test(expected = QuorumException.class)
