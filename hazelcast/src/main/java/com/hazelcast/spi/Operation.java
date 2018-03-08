@@ -88,6 +88,13 @@ public abstract class Operation implements DataSerializable {
         setFlag(true, BITMASK_CALL_TIMEOUT_64_BIT);
     }
 
+    /**
+     * Returns {@code true} if local member is the caller.
+     * <p>
+     * <b>Note:</b> On the caller member this method always returns {@code
+     * true}. It's meant to be used on target member to determine if the
+     * execution is local.
+     */
     public boolean executedLocally() {
         return nodeEngine.getThisAddress().equals(callerAddress);
     }

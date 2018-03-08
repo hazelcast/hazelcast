@@ -3491,7 +3491,7 @@
                     <xs:documentation>
                         Command separated list of prefixes of classes which will be loaded remotely.
 
-                        Use this to enable loading of explcitly selected user classes only and
+                        Use this to enable loading of explicitly selected user classes only and
                         disable remote loading for all other classes. This gives you a fine-grained control
                         over classloading.
                     </xs:documentation>
