@@ -264,6 +264,25 @@ public class PagingPredicateTest extends HazelcastTestSupport {
         assertEquals(0, values.size());
     }
 
+    @Test
+    public void testLargePageSizeIsNotCausingIndexOutBoundsExceptions() {
+        final int[] pageSizesToCheck = new int[]{
+                Integer.MAX_VALUE / 2, Integer.MAX_VALUE - 1000, Integer.MAX_VALUE - 1, Integer.MAX_VALUE};
+
+        final int[] pagesToCheck = {1, 1000,
+                                    Integer.MAX_VALUE / 2, Integer.MAX_VALUE - 1000, Integer.MAX_VALUE - 1, Integer.MAX_VALUE};
+
+        for (int pageSize : pageSizesToCheck) {
+            final PagingPredicate<Integer, Integer> predicate = new PagingPredicate<Integer, Integer>(pageSize);
+
+            assertEquals(size, map.keySet(predicate).size());
+            for (int page : pagesToCheck) {
+                predicate.setPage(page);
+                assertEquals(0, map.keySet(predicate).size());
+            }
+        }
+    }
+
     static class TestComparator implements Comparator<Map.Entry<Integer, Integer>>, Serializable {
 
         int ascending = 1;
