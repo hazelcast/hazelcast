@@ -164,8 +164,6 @@ final class TimedMemberStateFactoryHelper {
                 return (Long) value;
             }
             return defaultValue;
-        } catch (RuntimeException re) {
-            throw re;
         } catch (Exception e) {
             return defaultValue;
         }
