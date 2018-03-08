@@ -303,7 +303,7 @@ public final class SourceProcessors {
 
     /**
      * Returns a supplier of processors for
-     * {@link Sources#files(String, Charset, String)}.
+     * {@link Sources#files(String, Charset, String, DistributedBiFunction)}.
      */
     @Nonnull
     public static ProcessorMetaSupplier readFilesP(
