@@ -111,7 +111,7 @@ final class TimedMemberStateFactoryHelper {
         MemoryUsage nonHeapMemory = memoryMxBean.getNonHeapMemoryUsage();
         final int propertyCount = 29;
         Map<String, Long> map = createHashMap(propertyCount);
-        map.put("runtime.availableProcessors", Integer.valueOf(RuntimeAvailableProcessors.get()).longValue());
+        map.put("runtime.availableProcessors", (long) RuntimeAvailableProcessors.get());
         map.put("date.startTime", runtimeMxBean.getStartTime());
         map.put("seconds.upTime", runtimeMxBean.getUptime());
         map.put("memory.maxMemory", runtime.maxMemory());
