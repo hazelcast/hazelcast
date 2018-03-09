@@ -44,6 +44,7 @@ public class HazelcastCacheManager implements CacheManager {
      * Property name for hazelcast spring-cache related properties.
      */
     public static final String CACHE_PROP = "hazelcast.spring.cache.prop";
+    private static final String CACHE_PROP_NO_VAL = "HZ_CACHE_PROP_NO_VAL";
 
     private final ConcurrentMap<String, Cache> caches = new ConcurrentHashMap<String, Cache>();
 
@@ -160,13 +161,15 @@ public class HazelcastCacheManager implements CacheManager {
     }
 
     /**
-     * Set the cache ead-timeout params
+     * Set the cache read-timeout params
      *
      * @param options cache read-timeout params, auto-wired by Spring automatically by getting value of
      *                hazelcast.spring.cache.prop parameter
      */
     @Autowired
-    public void setCacheOptions(@Value("${" + CACHE_PROP + ":}") String options) {
-        parseOptions(options);
+    public void setCacheOptions(@Value("${" + CACHE_PROP + ":" + CACHE_PROP_NO_VAL + "}") String options) {
+        if (CACHE_PROP_NO_VAL.equals(options)) {
+            parseOptions(options);
+        }
     }
 }
