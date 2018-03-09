@@ -33,7 +33,6 @@ import com.hazelcast.map.impl.querycache.publisher.PublisherContext;
 import com.hazelcast.map.impl.querycache.subscriber.SubscriberContext;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.serialization.SerializationService;
-import com.hazelcast.util.ContextMutexFactory;
 
 import java.util.Collection;
 
@@ -49,7 +48,6 @@ public class ClientQueryCacheContext implements QueryCacheContext {
     private final QueryCacheScheduler queryCacheScheduler;
     private final QueryCacheEventService queryCacheEventService;
     private final QueryCacheConfigurator queryCacheConfigurator;
-    private final ContextMutexFactory mutexFactory = new ContextMutexFactory();
 
     // not final for testing purposes
     private SubscriberContext subscriberContext;
@@ -92,11 +90,6 @@ public class ClientQueryCacheContext implements QueryCacheContext {
     @Override
     public int getPartitionId(Object object) {
         return clientContext.getPartitionService().getPartitionId(object);
-    }
-
-    @Override
-    public ContextMutexFactory getLifecycleMutexFactory() {
-        return mutexFactory;
     }
 
     @Override

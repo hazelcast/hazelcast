@@ -28,7 +28,6 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.util.ContextMutexFactory;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -44,7 +43,6 @@ public class ListService extends CollectionService {
 
     private final ConcurrentMap<String, ListContainer> containerMap = new ConcurrentHashMap<String, ListContainer>();
     private final ConcurrentMap<String, Object> quorumConfigCache = new ConcurrentHashMap<String, Object>();
-    private final ContextMutexFactory quorumConfigCacheMutexFactory = new ContextMutexFactory();
     private final ConstructorFunction<String, Object> quorumConfigConstructor = new ConstructorFunction<String, Object>() {
         @Override
         public Object createNew(String name) {
@@ -112,8 +110,7 @@ public class ListService extends CollectionService {
         if (nodeEngine.getClusterService().getClusterVersion().isLessThan(Versions.V3_10)) {
             return null;
         }
-        Object quorumName = getOrPutSynchronized(quorumConfigCache, name, quorumConfigCacheMutexFactory,
-                quorumConfigConstructor);
+        Object quorumName = getOrPutSynchronized(quorumConfigCache, name, quorumConfigConstructor);
         return quorumName == NULL_OBJECT ? null : (String) quorumName;
     }
 }

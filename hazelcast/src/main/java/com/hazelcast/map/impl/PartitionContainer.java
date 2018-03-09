@@ -33,7 +33,6 @@ import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.util.ContextMutexFactory;
 
 import javax.annotation.Nullable;
 import java.util.Collection;
@@ -47,7 +46,6 @@ public class PartitionContainer {
 
     private final int partitionId;
     private final MapService mapService;
-    private final ContextMutexFactory contextMutexFactory = new ContextMutexFactory();
     private final ConcurrentMap<String, RecordStore> maps = new ConcurrentHashMap<String, RecordStore>(1000);
     private final ConcurrentMap<String, Indexes> indexes = new ConcurrentHashMap<String, Indexes>(10);
     private final ConstructorFunction<String, RecordStore> recordStoreConstructor
@@ -164,7 +162,7 @@ public class PartitionContainer {
     }
 
     public RecordStore getRecordStore(String name) {
-        return ConcurrencyUtil.getOrPutSynchronized(maps, name, contextMutexFactory, recordStoreConstructor);
+        return ConcurrencyUtil.getOrPutSynchronized(maps, name, recordStoreConstructor);
     }
 
     public RecordStore getRecordStore(String name, boolean skipLoadingOnCreate) {
@@ -173,7 +171,7 @@ public class PartitionContainer {
     }
 
     public RecordStore getRecordStoreForHotRestart(String name) {
-        return ConcurrencyUtil.getOrPutSynchronized(maps, name, contextMutexFactory, recordStoreConstructorForHotRestart);
+        return ConcurrencyUtil.getOrPutSynchronized(maps, name, recordStoreConstructorForHotRestart);
     }
 
     @Nullable

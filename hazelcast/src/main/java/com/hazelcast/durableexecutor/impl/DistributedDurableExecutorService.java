@@ -30,7 +30,6 @@ import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.partition.MigrationEndpoint;
 import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.util.ContextMutexFactory;
 
 import java.util.Collections;
 import java.util.Properties;
@@ -54,7 +53,6 @@ public class DistributedDurableExecutorService implements ManagedService, Remote
             = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
 
     private final ConcurrentMap<String, Object> quorumConfigCache = new ConcurrentHashMap<String, Object>();
-    private final ContextMutexFactory quorumConfigCacheMutexFactory = new ContextMutexFactory();
     private final ConstructorFunction<String, Object> quorumConfigConstructor = new ConstructorFunction<String, Object>() {
         @Override
         public Object createNew(String name) {
@@ -159,8 +157,7 @@ public class DistributedDurableExecutorService implements ManagedService, Remote
         if (nodeEngine.getClusterService().getClusterVersion().isLessThan(Versions.V3_10)) {
             return null;
         }
-        Object quorumName = getOrPutSynchronized(quorumConfigCache, name, quorumConfigCacheMutexFactory,
-                quorumConfigConstructor);
+        Object quorumName = getOrPutSynchronized(quorumConfigCache, name, quorumConfigConstructor);
         return quorumName == NULL_OBJECT ? null : (String) quorumName;
     }
 

@@ -80,7 +80,6 @@ import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.util.ContextMutexFactory;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.executor.ManagedExecutorService;
 
@@ -109,6 +108,7 @@ import static com.hazelcast.spi.properties.GroupProperty.AGGREGATION_ACCUMULATIO
 import static com.hazelcast.spi.properties.GroupProperty.INDEX_COPY_BEHAVIOR;
 import static com.hazelcast.spi.properties.GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS;
 import static com.hazelcast.spi.properties.GroupProperty.QUERY_PREDICATE_PARALLEL_EVALUATION;
+import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 
 /**
  * Default implementation of {@link MapServiceContext}.
@@ -121,7 +121,6 @@ class MapServiceContextImpl implements MapServiceContext {
     protected final ConcurrentMap<String, MapContainer> mapContainers = new ConcurrentHashMap<String, MapContainer>();
     protected final AtomicReference<Collection<Integer>> ownedPartitions = new AtomicReference<Collection<Integer>>();
     protected final IndexProvider indexProvider = new DefaultIndexProvider();
-    protected final ContextMutexFactory contextMutexFactory = new ContextMutexFactory();
     protected final Map<InMemoryFormat, RecordComparator> recordComparatorMap
             = new HashMap<InMemoryFormat, RecordComparator>();
 
@@ -279,7 +278,7 @@ class MapServiceContextImpl implements MapServiceContext {
 
     @Override
     public MapContainer getMapContainer(String mapName) {
-        return ConcurrencyUtil.getOrPutSynchronized(mapContainers, mapName, contextMutexFactory, mapConstructor);
+        return getOrPutSynchronized(mapContainers, mapName, mapConstructor);
     }
 
     @Override

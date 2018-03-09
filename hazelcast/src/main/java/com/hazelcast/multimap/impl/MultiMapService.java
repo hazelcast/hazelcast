@@ -64,7 +64,6 @@ import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.util.ContextMutexFactory;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.ArrayList;
@@ -118,7 +117,6 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
     private final QuorumService quorumService;
 
     private final ConcurrentMap<String, Object> quorumConfigCache = new ConcurrentHashMap<String, Object>();
-    private final ContextMutexFactory quorumConfigCacheMutexFactory = new ContextMutexFactory();
     private final ConstructorFunction<String, Object> quorumConfigConstructor = new ConstructorFunction<String, Object>() {
         @Override
         public Object createNew(String name) {
@@ -491,8 +489,7 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
         if (nodeEngine.getClusterService().getClusterVersion().isLessThan(Versions.V3_10)) {
             return null;
         }
-        Object quorumName = getOrPutSynchronized(quorumConfigCache, name, quorumConfigCacheMutexFactory,
-                quorumConfigConstructor);
+        Object quorumName = getOrPutSynchronized(quorumConfigCache, name, quorumConfigConstructor);
         return quorumName == NULL_OBJECT ? null : (String) quorumName;
     }
 

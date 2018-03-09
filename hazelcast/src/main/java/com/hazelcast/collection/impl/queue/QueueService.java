@@ -62,7 +62,6 @@ import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.util.ContextMutexFactory;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
 import com.hazelcast.util.scheduler.EntryTaskSchedulerFactory;
 
@@ -112,7 +111,6 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
     };
 
     private final ConcurrentMap<String, Object> quorumConfigCache = new ConcurrentHashMap<String, Object>();
-    private final ContextMutexFactory quorumConfigCacheMutexFactory = new ContextMutexFactory();
     private final ConstructorFunction<String, Object> quorumConfigConstructor = new ConstructorFunction<String, Object>() {
         @Override
         public Object createNew(String name) {
@@ -383,8 +381,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
 
     @Override
     public String getQuorumName(String name) {
-        Object quorumName = getOrPutSynchronized(quorumConfigCache, name, quorumConfigCacheMutexFactory,
-                quorumConfigConstructor);
+        Object quorumName = getOrPutSynchronized(quorumConfigCache, name, quorumConfigConstructor);
         return quorumName == NULL_OBJECT ? null : (String) quorumName;
     }
 

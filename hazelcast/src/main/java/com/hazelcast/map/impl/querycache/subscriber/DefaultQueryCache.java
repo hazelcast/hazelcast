@@ -39,7 +39,7 @@ import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.spi.EventFilter;
-import com.hazelcast.util.ContextMutexFactory;
+import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.FutureUtil;
 import com.hazelcast.util.MapUtil;
 
@@ -54,7 +54,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.map.impl.querycache.subscriber.AbstractQueryCacheEndToEndConstructor.OPERATION_WAIT_TIMEOUT_MINUTES;
-import static com.hazelcast.nio.IOUtil.closeResource;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 import static com.hazelcast.util.Preconditions.checkNoNullInside;
 import static com.hazelcast.util.Preconditions.checkNotNull;
@@ -184,15 +183,13 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
         removeSubscriberRegistry();
         removeInternalQueryCache();
 
-        ContextMutexFactory.Mutex mutex = context.getLifecycleMutexFactory().mutexFor(mapName);
-        try {
-            synchronized (mutex) {
+        ConcurrencyUtil.executeUnderMutex(mapName, new Runnable() {
+            @Override
+            public void run() {
                 destroyRemoteResources();
                 removeAllUserDefinedListeners();
             }
-        } finally {
-            closeResource(mutex);
-        }
+        });
     }
 
     private void destroyRemoteResources() {

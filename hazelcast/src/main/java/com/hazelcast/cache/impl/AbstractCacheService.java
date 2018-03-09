@@ -49,7 +49,6 @@ import com.hazelcast.spi.partition.MigrationEndpoint;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.util.ContextMutexFactory;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.wan.WanReplicationService;
 
@@ -63,12 +62,15 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.cache.impl.AbstractCacheRecordStore.SOURCE_NOT_AVAILABLE;
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateCacheConfig;
 import static com.hazelcast.internal.config.ConfigValidator.checkMergePolicySupportsInMemoryFormat;
+import static com.hazelcast.util.ConcurrencyUtil.executeUnderMutex;
+import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 import static com.hazelcast.util.EmptyStatement.ignore;
 
 @SuppressWarnings("checkstyle:classdataabstractioncoupling")
@@ -116,7 +118,6 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
                 }
             };
     // mutex factory ensures each Set<Closeable> of cache resources is only constructed and inserted in resources map once
-    protected final ContextMutexFactory cacheResourcesMutexFactory = new ContextMutexFactory();
     protected final ConstructorFunction<String, Set<Closeable>> cacheResourcesConstructorFunction =
             new ConstructorFunction<String, Set<Closeable>>() {
                 @Override
@@ -585,21 +586,17 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
     protected abstract CacheOperationProvider createOperationProvider(String nameWithPrefix, InMemoryFormat inMemoryFormat);
 
     public void addCacheResource(String cacheNameWithPrefix, Closeable resource) {
-        Set<Closeable> cacheResources = ConcurrencyUtil.getOrPutSynchronized(
-                resources, cacheNameWithPrefix, cacheResourcesMutexFactory, cacheResourcesConstructorFunction);
+        Set<Closeable> cacheResources = getOrPutSynchronized(resources, cacheNameWithPrefix, cacheResourcesConstructorFunction);
         cacheResources.add(resource);
     }
 
-    protected void deleteCacheResources(String name) {
-        Set<Closeable> cacheResources;
-        ContextMutexFactory.Mutex mutex = cacheResourcesMutexFactory.mutexFor(name);
-        try {
-            synchronized (mutex) {
-                cacheResources = resources.remove(name);
+    protected void deleteCacheResources(final String name) {
+        Set<Closeable> cacheResources = executeUnderMutex(name, new Callable<Set<Closeable>>() {
+            @Override
+            public Set<Closeable> call() {
+                return resources.remove(name);
             }
-        } finally {
-            mutex.close();
-        }
+        });
 
         if (cacheResources != null) {
             for (Closeable resource : cacheResources) {

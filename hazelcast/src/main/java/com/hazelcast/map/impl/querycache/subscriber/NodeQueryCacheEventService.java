@@ -39,14 +39,15 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.eventservice.impl.Registration;
 import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
 import com.hazelcast.spi.serialization.SerializationService;
-import com.hazelcast.util.ContextMutexFactory;
+import com.hazelcast.util.ConcurrencyUtil;
 
 import java.util.Collection;
+import java.util.concurrent.Callable;
 
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.map.impl.querycache.ListenerRegistrationHelper.generateListenerName;
 import static com.hazelcast.map.impl.querycache.subscriber.QueryCacheEventListenerAdapters.createQueryCacheListenerAdaptor;
-import static com.hazelcast.nio.IOUtil.closeResource;
+import static com.hazelcast.util.ConcurrencyUtil.executeUnderMutex;
 import static com.hazelcast.util.Preconditions.checkHasText;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
@@ -58,14 +59,12 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 public class NodeQueryCacheEventService implements QueryCacheEventService<EventData> {
 
     private final EventService eventService;
-    private final ContextMutexFactory mutexFactory;
     private final MapServiceContext mapServiceContext;
 
-    public NodeQueryCacheEventService(MapServiceContext mapServiceContext, ContextMutexFactory mutexFactory) {
+    public NodeQueryCacheEventService(MapServiceContext mapServiceContext) {
         this.mapServiceContext = mapServiceContext;
         NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         this.eventService = nodeEngine.getEventService();
-        this.mutexFactory = mutexFactory;
     }
 
     // TODO not used order key
@@ -96,25 +95,23 @@ public class NodeQueryCacheEventService implements QueryCacheEventService<EventD
     }
 
     @Override
-    public String addListener(String mapName, String cacheId, MapListener listener, EventFilter filter) {
+    public String addListener(String mapName, String cacheId, MapListener listener, final EventFilter filter) {
         checkHasText(mapName, "mapName");
         checkHasText(cacheId, "cacheId");
         checkNotNull(listener, "listener cannot be null");
 
         ListenerAdapter queryCacheListenerAdaptor = createQueryCacheListenerAdaptor(listener);
-        ListenerAdapter listenerAdaptor = new SimpleQueryCacheListenerAdapter(queryCacheListenerAdaptor);
+        final ListenerAdapter listenerAdaptor = new SimpleQueryCacheListenerAdapter(queryCacheListenerAdaptor);
 
-        String listenerName = generateListenerName(mapName, cacheId);
-        ContextMutexFactory.Mutex mutex = mutexFactory.mutexFor(mapName);
-        try {
-            synchronized (mutex) {
+        final String listenerName = generateListenerName(mapName, cacheId);
+        return executeUnderMutex(mapName, new Callable<String>() {
+            @Override
+            public String call() {
                 EventRegistration registration = eventService.registerLocalListener(SERVICE_NAME, listenerName,
                         filter == null ? TrueEventFilter.INSTANCE : filter, listenerAdaptor);
                 return registration.getId();
             }
-        } finally {
-            closeResource(mutex);
-        }
+        });
     }
 
     @Override
@@ -125,15 +122,13 @@ public class NodeQueryCacheEventService implements QueryCacheEventService<EventD
 
     @Override
     public void removeAllListeners(String mapName, String cacheId) {
-        String listenerName = generateListenerName(mapName, cacheId);
-        ContextMutexFactory.Mutex mutex = mutexFactory.mutexFor(mapName);
-        try {
-            synchronized (mutex) {
+        final String listenerName = generateListenerName(mapName, cacheId);
+        ConcurrencyUtil.executeUnderMutex(mapName, new Runnable() {
+            @Override
+            public void run() {
                 eventService.deregisterAllListeners(SERVICE_NAME, listenerName);
             }
-        } finally {
-            closeResource(mutex);
-        }
+        });
     }
 
     @Override

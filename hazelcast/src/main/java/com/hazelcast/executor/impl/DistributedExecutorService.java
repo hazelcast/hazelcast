@@ -33,7 +33,6 @@ import com.hazelcast.spi.StatisticsAwareService;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.util.ContextMutexFactory;
 import com.hazelcast.util.MapUtil;
 
 import java.util.Collections;
@@ -81,7 +80,6 @@ public class DistributedExecutorService implements ManagedService, RemoteService
     };
 
     private final ConcurrentMap<String, Object> quorumConfigCache = new ConcurrentHashMap<String, Object>();
-    private final ContextMutexFactory quorumConfigCacheMutexFactory = new ContextMutexFactory();
     private final ConstructorFunction<String, Object> quorumConfigConstructor = new ConstructorFunction<String, Object>() {
         @Override
         public Object createNew(String name) {
@@ -247,8 +245,7 @@ public class DistributedExecutorService implements ManagedService, RemoteService
             // see CancellationOperation#getName()
             return null;
         }
-        Object quorumName = getOrPutSynchronized(quorumConfigCache, name, quorumConfigCacheMutexFactory,
-                quorumConfigConstructor);
+        Object quorumName = getOrPutSynchronized(quorumConfigCache, name, quorumConfigConstructor);
         return quorumName == NULL_OBJECT ? null : (String) quorumName;
     }
 

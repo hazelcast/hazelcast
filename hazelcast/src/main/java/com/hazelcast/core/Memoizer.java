@@ -17,7 +17,6 @@
 package com.hazelcast.core;
 
 import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.util.ContextMutexFactory;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -36,9 +35,6 @@ public class Memoizer<K, V> {
 
     private final ConcurrentMap<K, V> cache = new ConcurrentHashMap<K, V>();
 
-    /** Mutex factory for caching the values in {@link #cache} */
-    private final ContextMutexFactory cacheMutexFactory = new ContextMutexFactory();
-
     /** The function for retrieving the value for a specific key */
     private final ConstructorFunction<K, V> constructorFunction;
 
@@ -56,7 +52,7 @@ public class Memoizer<K, V> {
      * necessary.
      */
     public V getOrCalculate(K key) {
-        final V value = getOrPutSynchronized(cache, key, cacheMutexFactory, constructorFunction);
+        final V value = getOrPutSynchronized(cache, key, constructorFunction);
         return value == NULL_OBJECT ? null : value;
     }
 

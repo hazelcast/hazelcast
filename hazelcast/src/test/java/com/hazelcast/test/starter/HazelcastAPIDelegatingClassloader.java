@@ -16,9 +16,8 @@
 
 package com.hazelcast.test.starter;
 
-import com.hazelcast.internal.usercodedeployment.impl.ClassloadingMutexProvider;
+import com.hazelcast.internal.usercodedeployment.impl.ClassloadingLockProvider;
 
-import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -28,7 +27,6 @@ import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Set;
 
-import static com.hazelcast.nio.IOUtil.closeResource;
 import static com.hazelcast.nio.IOUtil.toByteArray;
 import static com.hazelcast.test.compatibility.SamplingSerializationService.isTestClass;
 
@@ -47,7 +45,7 @@ public class HazelcastAPIDelegatingClassloader extends URLClassLoader {
 
     static final Set<String> DELEGATION_WHITE_LIST;
 
-    private ClassloadingMutexProvider mutexFactory = new ClassloadingMutexProvider();
+    private ClassloadingLockProvider mutexProvider = new ClassloadingLockProvider();
 
     static {
         Set<String> alwaysDelegateWhiteList = new HashSet<String>();
@@ -83,29 +81,24 @@ public class HazelcastAPIDelegatingClassloader extends URLClassLoader {
         if (shouldDelegate(name)) {
             return super.loadClass(name, resolve);
         } else {
-            Closeable classMutex = mutexFactory.getMutexForClass(name);
-            try {
-                synchronized (classMutex) {
-                    Class<?> loadedClass = findLoadedClass(name);
+            synchronized (mutexProvider.getMutexForClass(name)) {
+                Class<?> loadedClass = findLoadedClass(name);
+                if (loadedClass == null) {
+                    // locate test class' bytes in the current codebase but load the class in this classloader
+                    // so that the test class implements interfaces from the old Hazelcast version
+                    // eg. EntryListener's, EntryProcessor's etc.
+                    if (isHazelcastTestClass(name)) {
+                        loadedClass = findClassInParentURLs(name);
+                    }
                     if (loadedClass == null) {
-                        // locate test class' bytes in the current codebase but load the class in this classloader
-                        // so that the test class implements interfaces from the old Hazelcast version
-                        // eg. EntryListener's, EntryProcessor's etc.
-                        if (isHazelcastTestClass(name)) {
-                            loadedClass = findClassInParentURLs(name);
-                        }
-                        if (loadedClass == null) {
-                            loadedClass = findClass(name);
-                        }
+                        loadedClass = findClass(name);
                     }
-                    //at this point it's always non-null.
-                    if (resolve) {
-                        resolveClass(loadedClass);
-                    }
-                    return loadedClass;
                 }
-            } finally {
-                closeResource(classMutex);
+                //at this point it's always non-null.
+                if (resolve) {
+                    resolveClass(loadedClass);
+                }
+                return loadedClass;
             }
         }
     }

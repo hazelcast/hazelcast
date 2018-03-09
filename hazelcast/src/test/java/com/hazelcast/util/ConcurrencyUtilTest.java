@@ -36,7 +36,6 @@ import static org.junit.Assert.assertEquals;
 public class ConcurrencyUtilTest extends HazelcastTestSupport {
 
     private final Object mutex = new Object();
-    private final ContextMutexFactory mutexFactory = new ContextMutexFactory();
 
     private final IntIntConstructorFunction constructorFunction = new IntIntConstructorFunction();
 
@@ -80,17 +79,10 @@ public class ConcurrencyUtilTest extends HazelcastTestSupport {
 
     @Test
     public void testGetOrPutSynchronized_withMutexFactory() {
-        int result = ConcurrencyUtil.getOrPutSynchronized(map, 5, mutexFactory, constructorFunction);
+        int result = ConcurrencyUtil.getOrPutSynchronized(map, 5, constructorFunction);
         assertEquals(1005, result);
 
         assertEquals(1, constructorFunction.getConstructions());
-    }
-
-    @SuppressWarnings("ConstantConditions")
-    @Test(expected = NullPointerException.class)
-    public void testGetOrPutSynchronized_whenMutexFactoryIsNull_thenThrowException() {
-        ContextMutexFactory factory = null;
-        ConcurrencyUtil.getOrPutSynchronized(map, 5, factory, constructorFunction);
     }
 
     @Test

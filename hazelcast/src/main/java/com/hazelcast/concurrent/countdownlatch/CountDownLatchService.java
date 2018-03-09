@@ -30,7 +30,6 @@ import com.hazelcast.spi.QuorumAwareService;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.partition.MigrationEndpoint;
 import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.util.ContextMutexFactory;
 
 import java.util.Collection;
 import java.util.Iterator;
@@ -53,7 +52,6 @@ public class CountDownLatchService implements ManagedService, RemoteService, Mig
     private NodeEngine nodeEngine;
 
     private final ConcurrentMap<String, Object> quorumConfigCache = new ConcurrentHashMap<String, Object>();
-    private final ContextMutexFactory quorumConfigCacheMutexFactory = new ContextMutexFactory();
     private final ConstructorFunction<String, Object> quorumConfigConstructor = new ConstructorFunction<String, Object>() {
         @Override
         public Object createNew(String name) {
@@ -213,8 +211,7 @@ public class CountDownLatchService implements ManagedService, RemoteService, Mig
         if (nodeEngine.getClusterService().getClusterVersion().isLessThan(Versions.V3_10)) {
             return null;
         }
-        Object quorumName = getOrPutSynchronized(quorumConfigCache, name, quorumConfigCacheMutexFactory,
-                quorumConfigConstructor);
+        Object quorumName = getOrPutSynchronized(quorumConfigCache, name, quorumConfigConstructor);
         return quorumName == NULL_OBJECT ? null : (String) quorumName;
     }
 }

@@ -16,15 +16,16 @@
 
 package com.hazelcast.map.impl.querycache.subscriber;
 
+import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.util.ContextMutexFactory;
 
 import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.map.impl.querycache.subscriber.NullQueryCache.NULL_QUERY_CACHE;
-import static com.hazelcast.nio.IOUtil.closeResource;
+import static com.hazelcast.util.ConcurrencyUtil.executeUnderMutex;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 
 /**
@@ -33,7 +34,6 @@ import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
  */
 public class QueryCacheEndToEndProvider<K, V> {
 
-    private final ContextMutexFactory mutexFactory;
     private final ConcurrentMap<String, ConcurrentMap<String, InternalQueryCache<K, V>>> mapNameToQueryCaches;
     private final ConstructorFunction<String, ConcurrentMap<String, InternalQueryCache<K, V>>> ctor
             = new ConstructorFunction<String, ConcurrentMap<String, InternalQueryCache<K, V>>>() {
@@ -43,16 +43,17 @@ public class QueryCacheEndToEndProvider<K, V> {
         }
     };
 
-    public QueryCacheEndToEndProvider(ContextMutexFactory mutexFactory) {
-        this.mutexFactory = mutexFactory;
+    public QueryCacheEndToEndProvider() {
         this.mapNameToQueryCaches = new ConcurrentHashMap<String, ConcurrentMap<String, InternalQueryCache<K, V>>>();
     }
 
-    public InternalQueryCache<K, V> getOrCreateQueryCache(String mapName, String cacheId,
-                                                          ConstructorFunction<String, InternalQueryCache<K, V>> constructor) {
-        ContextMutexFactory.Mutex mutex = mutexFactory.mutexFor(mapName);
-        try {
-            synchronized (mutex) {
+    public InternalQueryCache<K, V> getOrCreateQueryCache(
+            final String mapName, final String cacheId,
+            final ConstructorFunction<String, InternalQueryCache<K, V>> constructor) {
+
+        return executeUnderMutex(mapName, new Callable<InternalQueryCache<K, V>>() {
+            @Override
+            public InternalQueryCache<K, V> call() {
                 ConcurrentMap<String, InternalQueryCache<K, V>> cacheIdToQueryCache
                         = getOrPutIfAbsent(mapNameToQueryCaches, mapName, ctor);
                 InternalQueryCache<K, V> queryCache = cacheIdToQueryCache.get(cacheId);
@@ -66,29 +67,25 @@ public class QueryCacheEndToEndProvider<K, V> {
                 }
                 return queryCache;
             }
-        } finally {
-            closeResource(mutex);
-        }
+        });
     }
 
-    public void removeSingleQueryCache(String mapName, String cacheId) {
-        ContextMutexFactory.Mutex mutex = mutexFactory.mutexFor(mapName);
-        try {
-            synchronized (mutex) {
+    public void removeSingleQueryCache(final String mapName, final String cacheId) {
+        ConcurrencyUtil.executeUnderMutex(mapName, new Runnable() {
+            @Override
+            public void run() {
                 Map<String, InternalQueryCache<K, V>> cacheIdToQueryCache = mapNameToQueryCaches.get(mapName);
                 if (cacheIdToQueryCache != null) {
                     cacheIdToQueryCache.remove(cacheId);
                 }
             }
-        } finally {
-            closeResource(mutex);
-        }
+        });
     }
 
-    public void destroyAllQueryCaches(String mapName) {
-        ContextMutexFactory.Mutex mutex = mutexFactory.mutexFor(mapName);
-        try {
-            synchronized (mutex) {
+    public void destroyAllQueryCaches(final String mapName) {
+        ConcurrencyUtil.executeUnderMutex(mapName, new Runnable() {
+            @Override
+            public void run() {
                 Map<String, InternalQueryCache<K, V>> cacheIdToQueryCache = mapNameToQueryCaches.remove(mapName);
                 if (cacheIdToQueryCache != null) {
                     for (InternalQueryCache<K, V> queryCache : cacheIdToQueryCache.values()) {
@@ -96,9 +93,7 @@ public class QueryCacheEndToEndProvider<K, V> {
                     }
                 }
             }
-        } finally {
-            closeResource(mutex);
-        }
+        });
     }
 
     // only used in tests

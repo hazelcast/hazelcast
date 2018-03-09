@@ -24,11 +24,9 @@ import com.hazelcast.internal.usercodedeployment.UserCodeDeploymentService;
 import com.hazelcast.internal.usercodedeployment.impl.operation.ClassDataFinderOperation;
 import com.hazelcast.internal.util.filter.Filter;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
 
-import java.io.Closeable;
 import java.security.PrivilegedAction;
 import java.util.Arrays;
 import java.util.Map;
@@ -58,7 +56,7 @@ public final class ClassLocator {
     private final Filter<Member> memberFilter;
     private final UserCodeDeploymentConfig.ClassCacheMode classCacheMode;
     private final NodeEngine nodeEngine;
-    private final ClassloadingMutexProvider mutexFactory = new ClassloadingMutexProvider();
+    private final ClassloadingLockProvider lockProvider = new ClassloadingLockProvider();
     private final ILogger logger;
 
     public ClassLocator(ConcurrentMap<String, ClassSource> classSourceMap,
@@ -98,75 +96,65 @@ public final class ClassLocator {
     public void defineClassFromClient(final String name, final byte[] classDef) {
         // we need to acquire a classloading lock before defining a class
         // Java 7+ can use locks with per-class granularity while Java 6 has to use a single lock
-        // mutexFactory abstract these differences away
+        // lockProvider abstract these differences away
         String mainClassName = extractMainClassName(name);
-        Closeable classMutex = mutexFactory.getMutexForClass(mainClassName);
-        try {
-            synchronized (classMutex) {
-                ClassSource classSource = clientClassSourceMap.get(mainClassName);
-                if (classSource != null) {
-                    if (classSource.getClazz(name) != null) {
-                        if (!Arrays.equals(classDef, classSource.getClassDefinition(name))) {
-                            throw new IllegalStateException("Class " + name
-                                    + " is already in a local cache and conflicting byte code representation");
-                        } else if (logger.isFineEnabled()) {
-                            logger.finest("Class " + name + " is already in a local cache. ");
-                        }
-                        return;
+        synchronized (lockProvider.getMutexForClass(mainClassName)) {
+            ClassSource classSource = clientClassSourceMap.get(mainClassName);
+            if (classSource != null) {
+                if (classSource.getClazz(name) != null) {
+                    if (!Arrays.equals(classDef, classSource.getClassDefinition(name))) {
+                        throw new IllegalStateException("Class " + name
+                                + " is already in a local cache and conflicting byte code representation");
+                    } else if (logger.isFineEnabled()) {
+                        logger.finest("Class " + name + " is already in a local cache. ");
                     }
-                } else {
-                    classSource = doPrivileged(new PrivilegedAction<ClassSource>() {
-                        @Override
-                        public ClassSource run() {
-                            return new ClassSource(parent, ClassLocator.this);
-                        }
-                    });
-                    clientClassSourceMap.put(mainClassName, classSource);
+                    return;
                 }
-                classSource.define(name, classDef);
+            } else {
+                classSource = doPrivileged(new PrivilegedAction<ClassSource>() {
+                    @Override
+                    public ClassSource run() {
+                        return new ClassSource(parent, ClassLocator.this);
+                    }
+                });
+                clientClassSourceMap.put(mainClassName, classSource);
             }
-        } finally {
-            IOUtil.closeResource(classMutex);
+            classSource.define(name, classDef);
         }
     }
 
     private Class<?> tryToGetClassFromRemote(String name) throws ClassNotFoundException {
         // we need to acquire a classloading lock before defining a class
         // Java 7+ can use locks with per-class granularity while Java 6 has to use a single lock
-        // mutexFactory abstract these differences away
+        // lockProvider abstract these differences away
         String mainClassName = extractMainClassName(name);
-        Closeable classMutex = mutexFactory.getMutexForClass(mainClassName);
-        try {
-            synchronized (classMutex) {
-                ClassSource classSource = classSourceMap.get(mainClassName);
-                if (classSource != null) {
-                    Class clazz = classSource.getClazz(name);
-                    if (clazz != null) {
-                        if (logger.isFineEnabled()) {
-                            logger.finest("Class " + name + " is already in a local cache. ");
-                        }
-                        return clazz;
+        synchronized (lockProvider.getMutexForClass(mainClassName)) {
+            ClassSource classSource = classSourceMap.get(mainClassName);
+            if (classSource != null) {
+                Class clazz = classSource.getClazz(name);
+                if (clazz != null) {
+                    if (logger.isFineEnabled()) {
+                        logger.finest("Class " + name + " is already in a local cache. ");
                     }
-                } else if (ThreadLocalClassCache.getFromCache(mainClassName) != null) {
-                    classSource = ThreadLocalClassCache.getFromCache(mainClassName);
-                } else {
-                    classSource = new ClassSource(parent, this);
+                    return clazz;
                 }
-                ClassData classData = fetchBytecodeFromRemote(name);
-                if (classData == null) {
-                    throw new ClassNotFoundException("Failed to load class " + name + " from other members.");
-                }
-
-                Map<String, byte[]> innerClassDefinitions = classData.getInnerClassDefinitions();
-                classSource.define(name, classData.getMainClassDefinition());
-                for (Map.Entry<String, byte[]> entry : innerClassDefinitions.entrySet()) {
-                    classSource.define(entry.getKey(), entry.getValue());
-                }
-                cacheClass(classSource, mainClassName);
-                return classSource.getClazz(name);
+            } else if (ThreadLocalClassCache.getFromCache(mainClassName) != null) {
+                classSource = ThreadLocalClassCache.getFromCache(mainClassName);
+            } else {
+                classSource = new ClassSource(parent, this);
             }
-        } finally {
-            IOUtil.closeResource(classMutex);
+            ClassData classData = fetchBytecodeFromRemote(name);
+            if (classData == null) {
+                throw new ClassNotFoundException("Failed to load class " + name + " from other members.");
+            }
+
+            Map<String, byte[]> innerClassDefinitions = classData.getInnerClassDefinitions();
+            classSource.define(name, classData.getMainClassDefinition());
+            for (Map.Entry<String, byte[]> entry : innerClassDefinitions.entrySet()) {
+                classSource.define(entry.getKey(), entry.getValue());
+            }
+            cacheClass(classSource, mainClassName);
+            return classSource.getClazz(name);
         }
     }
 

@@ -16,15 +16,20 @@
 
 package com.hazelcast.util;
 
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
+
+import static com.hazelcast.util.HashUtil.hashToIndex;
 
 /**
  * Utility methods to getOrPutSynchronized and getOrPutIfAbsent in a thread safe way
  * from a {@link ConcurrentMap} with a {@link ConstructorFunction}.
  */
 public final class ConcurrencyUtil {
+
+    private final static Object[] LOCK_STRIPE = new Object[Runtime.getRuntime().availableProcessors() * 20];
 
     private ConcurrencyUtil() {
     }
@@ -78,24 +83,41 @@ public final class ConcurrencyUtil {
         return value;
     }
 
-    public static <K, V> V getOrPutSynchronized(ConcurrentMap<K, V> map, K key, ContextMutexFactory contextMutexFactory,
-                                                ConstructorFunction<K, V> func) {
-        if (contextMutexFactory == null) {
-            throw new NullPointerException();
+    public static Object getLock(Object mutexKey) {
+        if (mutexKey == null) {
+            return LOCK_STRIPE[0];
         }
+
+        return LOCK_STRIPE[hashToIndex(mutexKey.hashCode(), LOCK_STRIPE.length)];
+    }
+
+    public static void executeUnderMutex(Object mutexKey, Runnable task) {
+        synchronized (getLock(mutexKey)) {
+            task.run();
+        }
+    }
+
+    public static <E> E executeUnderMutex(Object mutexKey, Callable<E> task) {
+        try {
+            synchronized (getLock(mutexKey)) {
+                return task.call();
+            }
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static <K, V> V getOrPutSynchronized(ConcurrentMap<K, V> map, K key, ConstructorFunction<K, V> func) {
         V value = map.get(key);
         if (value == null) {
-            ContextMutexFactory.Mutex mutex = contextMutexFactory.mutexFor(key);
-            try {
-                synchronized (mutex) {
-                    value = map.get(key);
-                    if (value == null) {
-                        value = func.createNew(key);
-                        map.put(key, value);
-                    }
+            synchronized (getLock(key)) {
+                value = map.get(key);
+                if (value == null) {
+                    value = func.createNew(key);
+                    map.put(key, value);
                 }
-            } finally {
-                mutex.close();
             }
         }
         return value;

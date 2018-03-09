@@ -17,9 +17,7 @@
 package com.hazelcast.internal.usercodedeployment.impl;
 
 import com.hazelcast.internal.util.JavaVersion;
-import com.hazelcast.util.ContextMutexFactory;
-
-import java.io.Closeable;
+import com.hazelcast.util.ConcurrencyUtil;
 
 import static com.hazelcast.internal.util.JavaVersion.JAVA_1_7;
 
@@ -31,16 +29,15 @@ import static com.hazelcast.internal.util.JavaVersion.JAVA_1_7;
  * <p>
  * The provided mutexes are closeable as we want to know when the granular mutexes from Java are no longer needed.
  */
-public class ClassloadingMutexProvider {
+public class ClassloadingLockProvider {
 
     private static final boolean USE_PARALLEL_LOADING = isParallelClassLoadingPossible();
 
-    private final ContextMutexFactory mutexFactory = new ContextMutexFactory();
-    private final GlobalMutex globalMutex = new GlobalMutex();
+    private final Object globalMutex = new Object();
 
-    public Closeable getMutexForClass(String classname) {
+    public Object getMutexForClass(String classname) {
         if (USE_PARALLEL_LOADING) {
-            return mutexFactory.mutexFor(classname);
+            return ConcurrencyUtil.getLock(classname);
         } else {
             return globalMutex;
         }
