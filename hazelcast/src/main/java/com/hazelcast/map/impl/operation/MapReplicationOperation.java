@@ -24,12 +24,15 @@ import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordInfo;
 import com.hazelcast.map.impl.record.RecordReplicationInfo;
 import com.hazelcast.map.impl.recordstore.RecordStore;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.ServiceNamespace;
+import com.hazelcast.spi.impl.operationservice.TargetAware;
 import com.hazelcast.spi.serialization.SerializationService;
 
 import java.io.IOException;
@@ -40,7 +43,7 @@ import static com.hazelcast.map.impl.record.Records.buildRecordInfo;
 /**
  * Replicates all IMap-states of this partition to a replica partition.
  */
-public class MapReplicationOperation extends Operation implements IdentifiedDataSerializable {
+public class MapReplicationOperation extends Operation implements IdentifiedDataSerializable, Versioned, TargetAware {
 
     // keep these fields `protected`, extended in another context.
     protected final MapReplicationStateHolder mapReplicationStateHolder = new MapReplicationStateHolder(this);
@@ -115,5 +118,10 @@ public class MapReplicationOperation extends Operation implements IdentifiedData
     @Override
     public int getId() {
         return MapDataSerializerHook.MAP_REPLICATION;
+    }
+
+    @Override
+    public void setTarget(Address address) {
+        mapReplicationStateHolder.setTarget(address);
     }
 }
