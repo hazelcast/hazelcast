@@ -18,7 +18,6 @@ package com.hazelcast.internal.metrics.metricsets;
 
 import com.hazelcast.internal.metrics.LongProbeFunction;
 import com.hazelcast.internal.metrics.MetricsRegistry;
-import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
@@ -85,7 +84,7 @@ public final class RuntimeMetricSet {
                 new LongProbeFunction<Runtime>() {
                     @Override
                     public long get(Runtime runtime) {
-                        return RuntimeAvailableProcessors.get();
+                        return runtime.availableProcessors();
                     }
                 }
         );

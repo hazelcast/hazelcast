@@ -19,7 +19,6 @@ package com.hazelcast.internal.metrics.metricsets;
 import com.hazelcast.internal.metrics.LongGauge;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
-import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -107,7 +106,7 @@ public class RuntimeMetricSetTest extends HazelcastTestSupport {
     @Test
     public void availableProcessors() {
         LongGauge gauge = metricsRegistry.newLongGauge("runtime.availableProcessors");
-        assertEquals(RuntimeAvailableProcessors.get(), gauge.read());
+        assertEquals(runtime.availableProcessors(), gauge.read());
     }
 
     @Test
