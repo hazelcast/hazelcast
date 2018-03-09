@@ -47,6 +47,7 @@ import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.spi.impl.executionservice.InternalExecutionService;
 import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
+import com.hazelcast.spi.impl.operationservice.TargetAware;
 import com.hazelcast.spi.impl.operationservice.impl.responses.BackupAckResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
@@ -256,6 +257,10 @@ public abstract class Invocation implements OperationResponseHandler {
                 throw new TargetNotMemberException(
                         invTarget, op.getPartitionId(), op.getClass().getName(), op.getServiceName());
             }
+        }
+
+        if (op instanceof TargetAware) {
+            ((TargetAware) op).setTarget(invTarget);
         }
 
         remote = !context.thisAddress.equals(invTarget);
