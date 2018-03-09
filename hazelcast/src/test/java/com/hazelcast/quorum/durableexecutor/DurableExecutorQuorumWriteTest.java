@@ -262,8 +262,8 @@ public class DurableExecutorQuorumWriteTest extends AbstractQuorumTest {
         return generateKeyOwnedBy(cluster.getInstance(index), true);
     }
 
-    private void wait(Collection<Future<?>> futures) throws ExecutionException, InterruptedException {
-        for (Future f : futures) {
+    private void wait(Collection<? extends Future<?>> futures) throws ExecutionException, InterruptedException {
+        for (Future<?> f : futures) {
             f.get();
         }
     }
@@ -286,4 +286,5 @@ public class DurableExecutorQuorumWriteTest extends AbstractQuorumTest {
             return new ExecRunnable();
         }
     }
+
 }

@@ -378,7 +378,6 @@ public class ConfigValidatorTest extends HazelcastTestSupport {
                     return 0;
                 }
 
-                @Override
                 @SuppressWarnings("ComparatorMethodParameterNotUsed")
                 public int compare(Object o1, Object o2) {
                     return 0;
