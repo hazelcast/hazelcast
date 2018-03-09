@@ -20,14 +20,11 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.impl.Versioned;
-import com.hazelcast.version.Version;
 
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-
-import static com.hazelcast.internal.cluster.Versions.V3_9;
 
 /**
  * Carries byte code of a class along with its inner classes.
@@ -77,28 +74,20 @@ public class ClassData implements IdentifiedDataSerializable, Versioned {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeByteArray(mainClassDefinition);
-        if (isGreaterOrEqualV39(out.getVersion())) {
-            out.writeInt(innerClassDefinitions.size());
-            for (Map.Entry<String, byte[]> entry : innerClassDefinitions.entrySet()) {
-                out.writeUTF(entry.getKey());
-                out.writeByteArray(entry.getValue());
-            }
+        out.writeInt(innerClassDefinitions.size());
+        for (Map.Entry<String, byte[]> entry : innerClassDefinitions.entrySet()) {
+            out.writeUTF(entry.getKey());
+            out.writeByteArray(entry.getValue());
         }
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         mainClassDefinition = in.readByteArray();
-        if (isGreaterOrEqualV39(in.getVersion())) {
-            int size = in.readInt();
-            innerClassDefinitions = new HashMap<String, byte[]>();
-            for (int i = 0; i < size; i++) {
-                innerClassDefinitions.put(in.readUTF(), in.readByteArray());
-            }
+        int size = in.readInt();
+        innerClassDefinitions = new HashMap<String, byte[]>();
+        for (int i = 0; i < size; i++) {
+            innerClassDefinitions.put(in.readUTF(), in.readByteArray());
         }
-    }
-
-    private static boolean isGreaterOrEqualV39(Version version) {
-        return version.isGreaterOrEqual(V3_9);
     }
 }

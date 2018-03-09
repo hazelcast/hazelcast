@@ -19,7 +19,6 @@ package com.hazelcast.monitor;
 import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
 import com.eclipsesource.json.JsonValue;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.management.JsonSerializable;
 import com.hazelcast.monitor.impl.MemberStateImpl;
 
@@ -153,12 +152,8 @@ public final class TimedMemberState implements Cloneable, JsonSerializable {
         }
         root.add("memberState", memberState.toJson());
         root.add("sslEnabled", sslEnabled);
-        if (memberState.getNodeState().getClusterVersion().isGreaterOrEqual(Versions.V3_9)) {
-            root.add("lite", lite);
-        }
-        if (memberState.getNodeState().getClusterVersion().isGreaterOrEqual(Versions.V3_9)) {
-            root.add("socketInterceptorEnabled", socketInterceptorEnabled);
-        }
+        root.add("lite", lite);
+        root.add("socketInterceptorEnabled", socketInterceptorEnabled);
         return root;
     }
 
@@ -181,12 +176,8 @@ public final class TimedMemberState implements Cloneable, JsonSerializable {
         memberState = new MemberStateImpl();
         memberState.fromJson(jsonMemberState);
         sslEnabled = getBoolean(json, "sslEnabled", false);
-        if (memberState.getNodeState().getClusterVersion().isGreaterOrEqual(Versions.V3_9)) {
-            lite = getBoolean(json, "lite");
-        }
-        if (memberState.getNodeState().getClusterVersion().isGreaterOrEqual(Versions.V3_9)) {
-            socketInterceptorEnabled = getBoolean(json, "socketInterceptorEnabled");
-        }
+        lite = getBoolean(json, "lite");
+        socketInterceptorEnabled = getBoolean(json, "socketInterceptorEnabled");
     }
 
     @Override
