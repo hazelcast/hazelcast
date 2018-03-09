@@ -30,6 +30,7 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationAccessor;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.operationservice.TargetAware;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.version.Version;
 
@@ -41,7 +42,7 @@ import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createEmpty
 /**
  * Sent by the master to all members to finalize the join operation from a joining/returning node.
  */
-public class FinalizeJoinOp extends MembersUpdateOp {
+public class FinalizeJoinOp extends MembersUpdateOp implements TargetAware {
     /**
      * Operations to be executed before node is marked as joined.
      * @see com.hazelcast.spi.PreJoinAwareService
@@ -203,6 +204,12 @@ public class FinalizeJoinOp extends MembersUpdateOp {
     @Override
     public int getId() {
         return ClusterDataSerializerHook.FINALIZE_JOIN;
+    }
+
+    @Override
+    public void setTarget(Address address) {
+        preJoinOp.setTarget(address);
+        postJoinOp.setTarget(address);
     }
 }
 

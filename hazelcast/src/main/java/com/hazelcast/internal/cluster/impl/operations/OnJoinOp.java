@@ -17,6 +17,7 @@
 package com.hazelcast.internal.cluster.impl.operations;
 
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.NodeEngine;
@@ -24,6 +25,7 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationAccessor;
 import com.hazelcast.spi.OperationResponseHandler;
 import com.hazelcast.spi.UrgentSystemOperation;
+import com.hazelcast.spi.impl.operationservice.TargetAware;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -33,7 +35,7 @@ import static com.hazelcast.util.Preconditions.checkNegative;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 public class OnJoinOp
-        extends AbstractJoinOperation implements UrgentSystemOperation {
+        extends AbstractJoinOperation implements UrgentSystemOperation, TargetAware {
 
     private Operation[] operations;
 
@@ -134,5 +136,14 @@ public class OnJoinOp
     @Override
     public int getId() {
         return ClusterDataSerializerHook.POST_JOIN;
+    }
+
+    @Override
+    public void setTarget(Address address) {
+        for (Operation op : operations) {
+            if (op instanceof TargetAware) {
+                ((TargetAware) op).setTarget(address);
+            }
+        }
     }
 }
