@@ -38,7 +38,12 @@ public class ZuluExcludeRule implements MethodRule {
         String vendor = System.getProperty(vendorPropertyName);
         assertNotNull(vendorPropertyName + " should be set!", vendor);
 
-        int version = Integer.parseInt(versionProperty.split("\\.")[1]);
+        int version;
+        if (versionProperty.contains(".")) {
+            version = Integer.parseInt(versionProperty.split("\\.")[1]);
+        } else {
+            version = Integer.parseInt(versionProperty);
+        }
         EXCLUDED = version < 8 && vendor.startsWith("Azul");
     }
 
