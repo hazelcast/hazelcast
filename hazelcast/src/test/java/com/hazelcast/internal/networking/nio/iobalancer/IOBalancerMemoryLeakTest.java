@@ -67,17 +67,17 @@ public class IOBalancerMemoryLeakTest extends HazelcastTestSupport {
         final IOBalancer ioBalancer = getIoBalancer(connectionManager);
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
-                int inHandlerSize = ioBalancer.getInLoadTracker().getPipelines().size();
-                int outHandlerSize = ioBalancer.getOutLoadTracker().getPipelines().size();
-                assertEquals(0, inHandlerSize);
-                assertEquals(0, outHandlerSize);
+            public void run() {
+                int inPipelineSize = ioBalancer.getInLoadTracker().getPipelines().size();
+                int outPipelineSize = ioBalancer.getOutLoadTracker().getPipelines().size();
+                assertEquals(0, inPipelineSize);
+                assertEquals(0, outPipelineSize);
             }
         });
     }
 
     @Test
-    public void testMemoryLeak_with_SocketConnections() throws IOException {
+    public void testMemoryLeak_with_SocketConnections() {
         Config config = new Config();
         config.getGroupConfig().setName(randomName());
         config.setProperty(GroupProperty.IO_BALANCER_INTERVAL_SECONDS.getName(), "1");
@@ -114,21 +114,21 @@ public class IOBalancerMemoryLeakTest extends HazelcastTestSupport {
         final IOBalancer ioBalancer = getIoBalancer(connectionManager);
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 LoadTracker inLoadTracker = ioBalancer.getInLoadTracker();
                 LoadTracker outLoadTracker = ioBalancer.getOutLoadTracker();
-                int inHandlerSize = inLoadTracker.getPipelines().size();
-                int outHandlerSize = outLoadTracker.getPipelines().size();
-                int inHandlerEventsCount = inLoadTracker.getHandlerEventsCounter().keySet().size();
-                int outHandlerEventsCount = outLoadTracker.getHandlerEventsCounter().keySet().size();
-                int inLastEventsCount = inLoadTracker.getLastEventCounter().keySet().size();
-                int outLastEventsCount = outLoadTracker.getLastEventCounter().keySet().size();
-                assertEquals(0, inHandlerSize);
-                assertEquals(0, outHandlerSize);
-                assertEquals(0, inHandlerEventsCount);
-                assertEquals(0, outHandlerEventsCount);
-                assertEquals(0, inLastEventsCount);
-                assertEquals(0, outLastEventsCount);
+                int inPipelineSize = inLoadTracker.getPipelines().size();
+                int outPipelineSize = outLoadTracker.getPipelines().size();
+                int inLoadCount = inLoadTracker.getPipelineLoadCount().keySet().size();
+                int outLoadCount = outLoadTracker.getPipelineLoadCount().keySet().size();
+                int inLastLoadCount = inLoadTracker.getLastLoadCounter().keySet().size();
+                int outLastLoadCount = outLoadTracker.getLastLoadCounter().keySet().size();
+                assertEquals(0, inPipelineSize);
+                assertEquals(0, outPipelineSize);
+                assertEquals(0, inLoadCount);
+                assertEquals(0, outLoadCount);
+                assertEquals(0, inLastLoadCount);
+                assertEquals(0, outLastLoadCount);
             }
         });
     }

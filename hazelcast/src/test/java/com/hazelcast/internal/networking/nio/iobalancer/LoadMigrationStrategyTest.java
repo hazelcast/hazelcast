@@ -43,74 +43,74 @@ import static org.mockito.Mockito.mock;
 @Category({QuickTest.class, ParallelTest.class})
 public class LoadMigrationStrategyTest extends HazelcastTestSupport {
 
-    private Map<NioThread, Set<MigratablePipeline>> selectorToHandlers;
-    private ItemCounter<MigratablePipeline> handlerEventsCounter;
+    private Map<NioThread, Set<MigratablePipeline>> ownerToPipelines;
+    private ItemCounter<MigratablePipeline> loadCounter;
     private LoadImbalance imbalance;
 
     private LoadMigrationStrategy strategy;
 
     @Before
     public void setUp() {
-        selectorToHandlers = new HashMap<NioThread, Set<MigratablePipeline>>();
-        handlerEventsCounter = new ItemCounter<MigratablePipeline>();
-        imbalance = new LoadImbalance(selectorToHandlers, handlerEventsCounter);
+        ownerToPipelines = new HashMap<NioThread, Set<MigratablePipeline>>();
+        loadCounter = new ItemCounter<MigratablePipeline>();
+        imbalance = new LoadImbalance(ownerToPipelines, loadCounter);
         strategy = new LoadMigrationStrategy();
     }
 
     @Test
-    public void testImbalanceDetected_shouldReturnFalseWhenNoKnownMinimum() {
-        imbalance.minimumEvents = Long.MIN_VALUE;
+    public void testImbalanceDetected_shouldReturnFalseWhenNoKnownMinimum() throws Exception {
+        imbalance.minimumLoad = Long.MIN_VALUE;
 
         boolean imbalanceDetected = strategy.imbalanceDetected(imbalance);
         assertFalse(imbalanceDetected);
     }
 
     @Test
-    public void testImbalanceDetected_shouldReturnFalseWhenNoKnownMaximum() {
-        imbalance.maximumEvents = Long.MAX_VALUE;
+    public void testImbalanceDetected_shouldReturnFalseWhenNoKnownMaximum() throws Exception {
+        imbalance.maximumLoad = Long.MAX_VALUE;
 
         boolean imbalanceDetected = strategy.imbalanceDetected(imbalance);
         assertFalse(imbalanceDetected);
     }
 
     @Test
-    public void testImbalanceDetected_shouldReturnFalseWhenBalanced() {
-        imbalance.maximumEvents = 1000;
-        imbalance.minimumEvents = (long) (1000 * 0.8);
+    public void testImbalanceDetected_shouldReturnFalseWhenBalanced() throws Exception {
+        imbalance.maximumLoad = 1000;
+        imbalance.minimumLoad = (long) (1000 * 0.8);
 
         boolean imbalanceDetected = strategy.imbalanceDetected(imbalance);
         assertFalse(imbalanceDetected);
     }
 
     @Test
-    public void testImbalanceDetected_shouldReturnTrueWhenNotBalanced() {
-        imbalance.maximumEvents = 1000;
-        imbalance.minimumEvents = (long) (1000 * 0.8) - 1;
+    public void testImbalanceDetected_shouldReturnTrueWhenNotBalanced() throws Exception {
+        imbalance.maximumLoad = 1000;
+        imbalance.minimumLoad = (long) (1000 * 0.8) - 1;
 
         boolean imbalanceDetected = strategy.imbalanceDetected(imbalance);
         assertTrue(imbalanceDetected);
     }
 
     @Test
-    public void testFindPipelinesToMigrate() {
-        NioThread sourceSelector = mock(NioThread.class);
-        NioThread destinationSelector = mock(NioThread.class);
-        imbalance.sourceSelector = sourceSelector;
-        imbalance.destinationSelector = destinationSelector;
+    public void testFindPipelineToMigrate() throws Exception {
+        NioThread srcOwner = mock(NioThread.class);
+        NioThread dstOwner = mock(NioThread.class);
+        imbalance.srcOwner = srcOwner;
+        imbalance.dstOwner = dstOwner;
 
-        imbalance.minimumEvents = 100;
-        MigratablePipeline handler1 = mock(MigratablePipeline.class);
-        handlerEventsCounter.set(handler1, 100L);
-        selectorToHandlers.put(destinationSelector, singleton(handler1));
+        imbalance.minimumLoad = 100;
+        MigratablePipeline pipeline1 = mock(MigratablePipeline.class);
+        loadCounter.set(pipeline1, 100L);
+        ownerToPipelines.put(dstOwner, singleton(pipeline1));
 
-        imbalance.maximumEvents = 300;
-        MigratablePipeline handler2 = mock(MigratablePipeline.class);
-        MigratablePipeline handler3 = mock(MigratablePipeline.class);
-        handlerEventsCounter.set(handler2, 200L);
-        handlerEventsCounter.set(handler3, 100L);
-        selectorToHandlers.put(sourceSelector, setOf(handler2, handler3));
+        imbalance.maximumLoad = 300;
+        MigratablePipeline pipeline2 = mock(MigratablePipeline.class);
+        MigratablePipeline pipeline3 = mock(MigratablePipeline.class);
+        loadCounter.set(pipeline2, 200L);
+        loadCounter.set(pipeline3, 100L);
+        ownerToPipelines.put(srcOwner, setOf(pipeline2, pipeline3));
 
-        MigratablePipeline handlerToMigrate = strategy.findPipelineToMigrate(imbalance);
-        assertEquals(handler3, handlerToMigrate);
+        MigratablePipeline pipelineToMigrate = strategy.findPipelineToMigrate(imbalance);
+        assertEquals(pipeline3, pipelineToMigrate);
     }
 }

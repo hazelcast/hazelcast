@@ -34,16 +34,16 @@ class MonkeyMigrationStrategy implements MigrationStrategy {
 
     @Override
     public boolean imbalanceDetected(LoadImbalance imbalance) {
-        Set<? extends MigratablePipeline> candidates = imbalance.getPipelinesOwnerBy(imbalance.sourceSelector);
+        Set<? extends MigratablePipeline> candidates = imbalance.getPipelinesOwnedBy(imbalance.srcOwner);
         //only attempts to migrate if at least 1 pipeline exists
-        return (candidates.size() > 0);
+        return candidates.size() > 0;
     }
 
     @Override
     public MigratablePipeline findPipelineToMigrate(LoadImbalance imbalance) {
-        Set<? extends MigratablePipeline> candidates = imbalance.getPipelinesOwnerBy(imbalance.sourceSelector);
-        int handlerCount = candidates.size();
-        int selected = random.nextInt(handlerCount);
+        Set<? extends MigratablePipeline> candidates = imbalance.getPipelinesOwnedBy(imbalance.srcOwner);
+        int pipelineCount = candidates.size();
+        int selected = random.nextInt(pipelineCount);
         Iterator<? extends MigratablePipeline> iterator = candidates.iterator();
         for (int i = 0; i < selected; i++) {
             iterator.next();
