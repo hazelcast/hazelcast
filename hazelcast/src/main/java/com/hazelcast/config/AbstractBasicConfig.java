@@ -24,6 +24,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  * Provides a basic configuration for a split-brain aware data structure.
  *
  * @param <T> type of the config
+ * @since 3.10
  */
 @SuppressWarnings("WeakerAccess")
 public abstract class AbstractBasicConfig<T extends AbstractBasicConfig> implements IdentifiedDataSerializable {

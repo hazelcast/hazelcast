@@ -32,6 +32,8 @@ import static com.hazelcast.util.Preconditions.checkTrue;
  * The {@code FlakeIdGeneratorConfig} contains the configuration for the member
  * regarding {@link com.hazelcast.core.HazelcastInstance#getFlakeIdGenerator(String)
  * Flake ID Generator}.
+ *
+ * @since 3.10
  */
 public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable {
 
