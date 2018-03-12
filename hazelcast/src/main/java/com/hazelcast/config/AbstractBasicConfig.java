@@ -106,6 +106,7 @@ public abstract class AbstractBasicConfig<T extends AbstractBasicConfig> impleme
      */
     public T setQuorumName(String quorumName) {
         this.quorumName = quorumName;
+        //noinspection unchecked
         return (T) this;
     }
 
@@ -122,5 +123,4 @@ public abstract class AbstractBasicConfig<T extends AbstractBasicConfig> impleme
     public int getFactoryId() {
         return ConfigDataSerializerHook.F_ID;
     }
-
 }
