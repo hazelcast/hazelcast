@@ -31,17 +31,17 @@ public class HigherHitsMergePolicy extends AbstractSplitBrainMergePolicy {
     }
 
     @Override
-    public <V> V merge(MergingValueHolder<V> mergingValue, MergingValueHolder<V> existingValue) {
-        checkInstanceOf(mergingValue, HitsHolder.class);
-        checkInstanceOf(existingValue, HitsHolder.class);
+    public <V> V merge(MergingValue<V> mergingValue, MergingValue<V> existingValue) {
+        checkInstanceOf(mergingValue, MergingHits.class);
+        checkInstanceOf(existingValue, MergingHits.class);
         if (mergingValue == null) {
             return existingValue.getValue();
         }
         if (existingValue == null) {
             return mergingValue.getValue();
         }
-        HitsHolder merging = (HitsHolder) mergingValue;
-        HitsHolder existing = (HitsHolder) existingValue;
+        MergingHits merging = (MergingHits) mergingValue;
+        MergingHits existing = (MergingHits) existingValue;
         if (merging.getHits() >= existing.getHits()) {
             return mergingValue.getValue();
         }

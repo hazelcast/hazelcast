@@ -33,17 +33,17 @@ public class LatestAccessMergePolicy extends AbstractSplitBrainMergePolicy {
     }
 
     @Override
-    public <V> V merge(MergingValueHolder<V> mergingValue, MergingValueHolder<V> existingValue) {
-        checkInstanceOf(mergingValue, LastAccessTimeHolder.class);
-        checkInstanceOf(existingValue, LastAccessTimeHolder.class);
+    public <V> V merge(MergingValue<V> mergingValue, MergingValue<V> existingValue) {
+        checkInstanceOf(mergingValue, MergingLastAccessTime.class);
+        checkInstanceOf(existingValue, MergingLastAccessTime.class);
         if (mergingValue == null) {
             return existingValue.getValue();
         }
         if (existingValue == null) {
             return mergingValue.getValue();
         }
-        LastAccessTimeHolder merging = (LastAccessTimeHolder) mergingValue;
-        LastAccessTimeHolder existing = (LastAccessTimeHolder) existingValue;
+        MergingLastAccessTime merging = (MergingLastAccessTime) mergingValue;
+        MergingLastAccessTime existing = (MergingLastAccessTime) existingValue;
         if (merging.getLastAccessTime() >= existing.getLastAccessTime()) {
             return mergingValue.getValue();
         }

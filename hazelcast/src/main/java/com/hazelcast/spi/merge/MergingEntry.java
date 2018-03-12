@@ -23,7 +23,7 @@ package com.hazelcast.spi.merge;
  * @param <V> the type of the value
  * @since 3.10
  */
-public interface MergingEntryHolder<K, V> extends MergingValueHolder<V> {
+public interface MergingEntry<K, V> extends MergingValue<V> {
 
     /**
      * Returns the merging key in the in-memory format of the backing data structure.

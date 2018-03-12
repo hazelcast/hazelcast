@@ -17,24 +17,16 @@
 package com.hazelcast.spi.merge;
 
 /**
- * Represents a read-only view of a data structure value for the merging process after a split-brain.
+ * Represents a read-only view access hits for the merging process after a split-brain.
  *
- * @param <V> the type of the value
  * @since 3.10
  */
-public interface MergingValueHolder<V> {
+public interface MergingHits {
 
     /**
-     * Returns the merging value in the in-memory format of the backing data structure.
+     * Returns the access hits of the merge data.
      *
-     * @return the merging value
+     * @return the access hits of the merge data
      */
-    V getValue();
-
-    /**
-     * Returns the deserialized merging value.
-     *
-     * @return the deserialized merging value
-     */
-    Object getDeserializedValue();
+    long getHits();
 }

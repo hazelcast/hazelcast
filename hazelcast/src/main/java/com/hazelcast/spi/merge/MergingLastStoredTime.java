@@ -17,16 +17,16 @@
 package com.hazelcast.spi.merge;
 
 /**
- * Represents a read-only view of memory costs for the merging process after a split-brain.
+ * Represents a read-only view of a last stored time for the merging process after a split-brain.
  *
  * @since 3.10
  */
-public interface CostHolder {
+public interface MergingLastStoredTime {
 
     /**
-     * Returns the memory cost of the merge data.
+     * Returns the last stored time of the merge data.
      *
-     * @return the memory cost of the merge data
+     * @return the last stored time of the merge data
      */
-    long getCost();
+    long getLastStoredTime();
 }

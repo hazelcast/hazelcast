@@ -39,7 +39,7 @@ import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.SplitBrainMergePolicy;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
-import com.hazelcast.spi.merge.MergingEntryHolder;
+import com.hazelcast.spi.merge.MergingEntry;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -62,7 +62,7 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.spi.impl.merge.MergingHolders.createMergeHolder;
+import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntry;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -283,7 +283,7 @@ public class WanReplicationTest extends HazelcastTestSupport {
             op = operationProvider.createLegacyMergeOperation(mapName, entryView, new PassThroughMergePolicy(),
                     !enableWANReplicationEvent);
         } else {
-            MergingEntryHolder<Data, Data> mergingEntry = createMergeHolder(serializationService, entryView);
+            MergingEntry<Data, Data> mergingEntry = createMergingEntry(serializationService, entryView);
             SplitBrainMergePolicy mergePolicy = new com.hazelcast.spi.merge.PassThroughMergePolicy();
             op = operationProvider.createMergeOperation(mapName, mergingEntry, mergePolicy, !enableWANReplicationEvent);
         }

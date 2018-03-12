@@ -17,16 +17,16 @@
 package com.hazelcast.spi.merge;
 
 /**
- * Represents a read-only view of a TTL for the merging process after a split-brain.
+ * Represents a read-only view of an expiration time for the merging process after a split-brain.
  *
  * @since 3.10
  */
-public interface TtlHolder {
+public interface MergingExpirationTime {
 
     /**
-     * Returns the TTL of the merge data.
+     * Returns the expiration time of the merge data.
      *
-     * @return the TTL of the merge data
+     * @return the expiration time of the merge data
      */
-    long getTtl();
+    long getExpirationTime();
 }

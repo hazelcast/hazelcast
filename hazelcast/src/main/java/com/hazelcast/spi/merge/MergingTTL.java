@@ -17,16 +17,16 @@
 package com.hazelcast.spi.merge;
 
 /**
- * Represents a read-only view a creation time for the merging process after a split-brain.
+ * Represents a read-only view of a TTL for the merging process after a split-brain.
  *
  * @since 3.10
  */
-public interface CreationTimeHolder {
+public interface MergingTTL {
 
     /**
-     * Returns the creation time of the merge data.
+     * Returns the TTL of the merge data.
      *
-     * @return the creation time of the merge data
+     * @return the TTL of the merge data
      */
-    long getCreationTime();
+    long getTtl();
 }

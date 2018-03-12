@@ -28,8 +28,8 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.impl.merge.FullMergingEntryHolderImpl;
-import com.hazelcast.spi.merge.MergingEntryHolder;
+import com.hazelcast.spi.impl.merge.FullMergingEntryImpl;
+import com.hazelcast.spi.merge.MergingEntry;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
@@ -324,9 +324,9 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
                 mergingEntry.getLastUpdateTime());
     }
 
-    protected void mergeRecordExpiration(Record record, MergingEntryHolder mergingEntry) {
-        checkInstanceOf(FullMergingEntryHolderImpl.class, mergingEntry);
-        FullMergingEntryHolderImpl fullMergingEntry = (FullMergingEntryHolderImpl) mergingEntry;
+    protected void mergeRecordExpiration(Record record, MergingEntry mergingEntry) {
+        checkInstanceOf(FullMergingEntryImpl.class, mergingEntry);
+        FullMergingEntryImpl fullMergingEntry = (FullMergingEntryImpl) mergingEntry;
         mergeRecordExpiration(record, fullMergingEntry.getTtl(), fullMergingEntry.getCreationTime(),
                 fullMergingEntry.getLastAccessTime(), fullMergingEntry.getLastUpdateTime());
     }

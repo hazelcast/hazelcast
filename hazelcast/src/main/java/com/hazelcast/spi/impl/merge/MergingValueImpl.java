@@ -20,49 +20,29 @@ import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.merge.CreationTimeHolder;
-import com.hazelcast.spi.merge.MergingEntryHolder;
+import com.hazelcast.spi.merge.MergingValue;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.spi.serialization.SerializationServiceAware;
 
 import java.io.IOException;
 
 /**
- * Implementation of {@link MergingEntryHolder}.
+ * Implementation of {@link MergingValue}.
  *
- * @param <K> the type of key
  * @param <V> the type of value
  * @since 3.10
  */
-public class MergingEntryHolderImpl<K, V> implements MergingEntryHolder<K, V>, CreationTimeHolder, SerializationServiceAware,
-        IdentifiedDataSerializable {
+public class MergingValueImpl<V> implements MergingValue<V>, SerializationServiceAware, IdentifiedDataSerializable {
 
-    private K key;
     private V value;
-    private long creationTime;
 
     private transient SerializationService serializationService;
 
-    public MergingEntryHolderImpl() {
+    public MergingValueImpl() {
     }
 
-    public MergingEntryHolderImpl(SerializationService serializationService) {
+    public MergingValueImpl(SerializationService serializationService) {
         this.serializationService = serializationService;
-    }
-
-    @Override
-    public K getKey() {
-        return key;
-    }
-
-    @Override
-    public Object getDeserializedKey() {
-        return serializationService.toObject(key);
-    }
-
-    public MergingEntryHolderImpl<K, V> setKey(K key) {
-        this.key = key;
-        return this;
     }
 
     @Override
@@ -75,18 +55,8 @@ public class MergingEntryHolderImpl<K, V> implements MergingEntryHolder<K, V>, C
         return serializationService.toObject(value);
     }
 
-    public MergingEntryHolderImpl<K, V> setValue(V value) {
+    public MergingValueImpl<V> setValue(V value) {
         this.value = value;
-        return this;
-    }
-
-    @Override
-    public long getCreationTime() {
-        return creationTime;
-    }
-
-    public MergingEntryHolderImpl<K, V> setCreationTime(long creationTime) {
-        this.creationTime = creationTime;
         return this;
     }
 
@@ -97,16 +67,12 @@ public class MergingEntryHolderImpl<K, V> implements MergingEntryHolder<K, V>, C
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        IOUtil.writeObject(out, key);
         IOUtil.writeObject(out, value);
-        out.writeLong(creationTime);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        key = IOUtil.readObject(in);
         value = IOUtil.readObject(in);
-        creationTime = in.readLong();
     }
 
     @Override
@@ -116,7 +82,7 @@ public class MergingEntryHolderImpl<K, V> implements MergingEntryHolder<K, V>, C
 
     @Override
     public int getId() {
-        return SplitBrainDataSerializerHook.KEY_MERGE_DATA_HOLDER;
+        return SplitBrainDataSerializerHook.MERGING_VALUE;
     }
 
     @Override
@@ -124,34 +90,23 @@ public class MergingEntryHolderImpl<K, V> implements MergingEntryHolder<K, V>, C
         if (this == o) {
             return true;
         }
-        if (!(o instanceof MergingEntryHolderImpl)) {
+        if (!(o instanceof MergingValueImpl)) {
             return false;
         }
 
-        MergingEntryHolderImpl<?, ?> that = (MergingEntryHolderImpl<?, ?>) o;
-        if (creationTime != that.creationTime) {
-            return false;
-        }
-        if (key != null ? !key.equals(that.key) : that.key != null) {
-            return false;
-        }
+        MergingValueImpl<?> that = (MergingValueImpl<?>) o;
         return value != null ? value.equals(that.value) : that.value == null;
     }
 
     @Override
     public int hashCode() {
-        int result = key != null ? key.hashCode() : 0;
-        result = 31 * result + (value != null ? value.hashCode() : 0);
-        result = 31 * result + (int) (creationTime ^ (creationTime >>> 32));
-        return result;
+        return value != null ? value.hashCode() : 0;
     }
 
     @Override
     public String toString() {
-        return "MergingEntryHolder{"
-                + "key=" + key
-                + ", value=" + value
-                + ", creationTime=" + creationTime
+        return "MergingValue{"
+                + "value=" + value
                 + '}';
     }
 }

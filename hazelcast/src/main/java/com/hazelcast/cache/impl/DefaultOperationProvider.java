@@ -40,7 +40,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.SplitBrainMergePolicy;
-import com.hazelcast.spi.merge.MergingEntryHolder;
+import com.hazelcast.spi.merge.MergingEntry;
 
 import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.processor.EntryProcessor;
@@ -121,14 +121,14 @@ public class DefaultOperationProvider implements CacheOperationProvider {
     }
 
     @Override
-    public Operation createMergeOperation(String name, List<MergingEntryHolder<Data, Data>> mergingEntries,
+    public Operation createMergeOperation(String name, List<MergingEntry<Data, Data>> mergingEntries,
                                           SplitBrainMergePolicy policy) {
         return new CacheMergeOperation(name, mergingEntries, policy);
     }
 
     @Override
     public OperationFactory createMergeOperationFactory(String name, int[] partitions,
-                                                        List<MergingEntryHolder<Data, Data>>[] mergingEntries,
+                                                        List<MergingEntry<Data, Data>>[] mergingEntries,
                                                         SplitBrainMergePolicy policy) {
         return new CacheMergeOperationFactory(name, partitions, mergingEntries, policy);
     }

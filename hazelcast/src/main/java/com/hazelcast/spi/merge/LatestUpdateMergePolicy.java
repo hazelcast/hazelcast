@@ -33,17 +33,17 @@ public class LatestUpdateMergePolicy extends AbstractSplitBrainMergePolicy {
     }
 
     @Override
-    public <V> V merge(MergingValueHolder<V> mergingValue, MergingValueHolder<V> existingValue) {
-        checkInstanceOf(mergingValue, LastUpdateTimeHolder.class);
-        checkInstanceOf(existingValue, LastUpdateTimeHolder.class);
+    public <V> V merge(MergingValue<V> mergingValue, MergingValue<V> existingValue) {
+        checkInstanceOf(mergingValue, MergingLastUpdateTime.class);
+        checkInstanceOf(existingValue, MergingLastUpdateTime.class);
         if (mergingValue == null) {
             return existingValue.getValue();
         }
         if (existingValue == null) {
             return mergingValue.getValue();
         }
-        LastUpdateTimeHolder merging = (LastUpdateTimeHolder) mergingValue;
-        LastUpdateTimeHolder existing = (LastUpdateTimeHolder) existingValue;
+        MergingLastUpdateTime merging = (MergingLastUpdateTime) mergingValue;
+        MergingLastUpdateTime existing = (MergingLastUpdateTime) existingValue;
         if (merging.getLastUpdateTime() >= existing.getLastUpdateTime()) {
             return mergingValue.getValue();
         }

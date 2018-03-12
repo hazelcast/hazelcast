@@ -519,7 +519,7 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
                     SplitBrainMergePolicy mergePolicy = getMergePolicy(container.getConfig().getMergePolicyConfig());
                     int batchSize = container.getConfig().getMergePolicyConfig().getBatchSize();
 
-                    List<MultiMapMergeContainer> mergingData = new ArrayList<MultiMapMergeContainer>(batchSize);
+                    List<MultiMapMergeContainer> mergeContainers = new ArrayList<MultiMapMergeContainer>(batchSize);
                     for (Map.Entry<Data, MultiMapValue> multiMapValueEntry : container.getMultiMapValues().entrySet()) {
                         Data key = multiMapValueEntry.getKey();
                         MultiMapValue multiMapValue = multiMapValueEntry.getValue();
@@ -528,23 +528,23 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
                         MultiMapMergeContainer mergeContainer = new MultiMapMergeContainer(key, records,
                                 container.getCreationTime(), container.getLastAccessTime(), container.getLastUpdateTime(),
                                 multiMapValue.getHits());
-                        mergingData.add(mergeContainer);
+                        mergeContainers.add(mergeContainer);
 
-                        if (mergingData.size() == batchSize) {
-                            sendBatch(partitionId, name, mergePolicy, mergingData);
-                            mergingData = new ArrayList<MultiMapMergeContainer>(batchSize);
+                        if (mergeContainers.size() == batchSize) {
+                            sendBatch(partitionId, name, mergePolicy, mergeContainers);
+                            mergeContainers = new ArrayList<MultiMapMergeContainer>(batchSize);
                         }
                     }
-                    if (mergingData.size() > 0) {
-                        sendBatch(partitionId, name, mergePolicy, mergingData);
+                    if (mergeContainers.size() > 0) {
+                        sendBatch(partitionId, name, mergePolicy, mergeContainers);
                     }
                 }
             }
         }
 
         private void sendBatch(int partitionId, String name, SplitBrainMergePolicy mergePolicy,
-                               List<MultiMapMergeContainer> mergingData) {
-            MergeOperation operation = new MergeOperation(name, mergingData, mergePolicy);
+                               List<MultiMapMergeContainer> mergeContainers) {
+            MergeOperation operation = new MergeOperation(name, mergeContainers, mergePolicy);
             invoke(SERVICE_NAME, operation, partitionId);
         }
     }

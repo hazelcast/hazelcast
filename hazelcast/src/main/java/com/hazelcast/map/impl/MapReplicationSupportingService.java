@@ -26,14 +26,14 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ReplicationSupportingService;
 import com.hazelcast.spi.SplitBrainMergePolicy;
-import com.hazelcast.spi.merge.MergingEntryHolder;
+import com.hazelcast.spi.merge.MergingEntry;
 import com.hazelcast.wan.WanReplicationEvent;
 import com.hazelcast.wan.WanReplicationService;
 
 import java.util.concurrent.Future;
 
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
-import static com.hazelcast.spi.impl.merge.MergingHolders.createMergeHolder;
+import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntry;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 
 class MapReplicationSupportingService implements ReplicationSupportingService {
@@ -81,7 +81,7 @@ class MapReplicationSupportingService implements ReplicationSupportingService {
 
         MapOperation operation;
         if (mergePolicy instanceof SplitBrainMergePolicy) {
-            MergingEntryHolder<Data, Data> mergingEntry = createMergeHolder(nodeEngine.getSerializationService(),
+            MergingEntry<Data, Data> mergingEntry = createMergingEntry(nodeEngine.getSerializationService(),
                     replicationUpdate.getEntryView());
             operation = operationProvider.createMergeOperation(mapName, mergingEntry, (SplitBrainMergePolicy) mergePolicy, true);
         } else {

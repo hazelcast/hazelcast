@@ -20,33 +20,32 @@ import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.merge.CostHolder;
-import com.hazelcast.spi.merge.CreationTimeHolder;
-import com.hazelcast.spi.merge.ExpirationTimeHolder;
-import com.hazelcast.spi.merge.HitsHolder;
-import com.hazelcast.spi.merge.LastAccessTimeHolder;
-import com.hazelcast.spi.merge.LastStoredTimeHolder;
-import com.hazelcast.spi.merge.LastUpdateTimeHolder;
-import com.hazelcast.spi.merge.MergingEntryHolder;
-import com.hazelcast.spi.merge.MergingValueHolder;
-import com.hazelcast.spi.merge.TtlHolder;
-import com.hazelcast.spi.merge.VersionHolder;
+import com.hazelcast.spi.merge.MergingCosts;
+import com.hazelcast.spi.merge.MergingCreationTime;
+import com.hazelcast.spi.merge.MergingEntry;
+import com.hazelcast.spi.merge.MergingExpirationTime;
+import com.hazelcast.spi.merge.MergingHits;
+import com.hazelcast.spi.merge.MergingLastAccessTime;
+import com.hazelcast.spi.merge.MergingLastStoredTime;
+import com.hazelcast.spi.merge.MergingLastUpdateTime;
+import com.hazelcast.spi.merge.MergingTTL;
+import com.hazelcast.spi.merge.MergingVersion;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.spi.serialization.SerializationServiceAware;
 
 import java.io.IOException;
 
 /**
- * Complete implementation of {@link MergingValueHolder} and all other data holder interfaces.
+ * Implementation of {@link MergingEntry} and all other merging type interfaces.
  *
  * @param <K> the type of key
  * @param <V> the type of value
  * @since 3.10
  */
 @SuppressWarnings("checkstyle:methodcount")
-public class FullMergingEntryHolderImpl<K, V> implements MergingEntryHolder<K, V>, CostHolder, CreationTimeHolder,
-        ExpirationTimeHolder, HitsHolder, LastAccessTimeHolder, LastStoredTimeHolder, LastUpdateTimeHolder, VersionHolder,
-        TtlHolder, SerializationServiceAware, IdentifiedDataSerializable {
+public class FullMergingEntryImpl<K, V> implements MergingEntry<K, V>, MergingCosts, MergingCreationTime,
+        MergingExpirationTime, MergingHits, MergingLastAccessTime, MergingLastStoredTime, MergingLastUpdateTime,
+        MergingVersion, MergingTTL, SerializationServiceAware, IdentifiedDataSerializable {
 
     private V value;
     private K key;
@@ -62,10 +61,10 @@ public class FullMergingEntryHolderImpl<K, V> implements MergingEntryHolder<K, V
 
     private transient SerializationService serializationService;
 
-    public FullMergingEntryHolderImpl() {
+    public FullMergingEntryImpl() {
     }
 
-    public FullMergingEntryHolderImpl(SerializationService serializationService) {
+    public FullMergingEntryImpl(SerializationService serializationService) {
         this.serializationService = serializationService;
     }
 
@@ -79,7 +78,7 @@ public class FullMergingEntryHolderImpl<K, V> implements MergingEntryHolder<K, V
         return serializationService.toObject(value);
     }
 
-    public FullMergingEntryHolderImpl<K, V> setValue(V value) {
+    public FullMergingEntryImpl<K, V> setValue(V value) {
         this.value = value;
         return this;
     }
@@ -94,7 +93,7 @@ public class FullMergingEntryHolderImpl<K, V> implements MergingEntryHolder<K, V
         return serializationService.toObject(key);
     }
 
-    public FullMergingEntryHolderImpl<K, V> setKey(K key) {
+    public FullMergingEntryImpl<K, V> setKey(K key) {
         this.key = key;
         return this;
     }
@@ -104,7 +103,7 @@ public class FullMergingEntryHolderImpl<K, V> implements MergingEntryHolder<K, V
         return cost;
     }
 
-    public FullMergingEntryHolderImpl<K, V> setCost(long cost) {
+    public FullMergingEntryImpl<K, V> setCost(long cost) {
         this.cost = cost;
         return this;
     }
@@ -114,7 +113,7 @@ public class FullMergingEntryHolderImpl<K, V> implements MergingEntryHolder<K, V
         return creationTime;
     }
 
-    public FullMergingEntryHolderImpl<K, V> setCreationTime(long creationTime) {
+    public FullMergingEntryImpl<K, V> setCreationTime(long creationTime) {
         this.creationTime = creationTime;
         return this;
     }
@@ -124,7 +123,7 @@ public class FullMergingEntryHolderImpl<K, V> implements MergingEntryHolder<K, V
         return expirationTime;
     }
 
-    public FullMergingEntryHolderImpl<K, V> setExpirationTime(long expirationTime) {
+    public FullMergingEntryImpl<K, V> setExpirationTime(long expirationTime) {
         this.expirationTime = expirationTime;
         return this;
     }
@@ -134,7 +133,7 @@ public class FullMergingEntryHolderImpl<K, V> implements MergingEntryHolder<K, V
         return hits;
     }
 
-    public FullMergingEntryHolderImpl<K, V> setHits(long hits) {
+    public FullMergingEntryImpl<K, V> setHits(long hits) {
         this.hits = hits;
         return this;
     }
@@ -144,7 +143,7 @@ public class FullMergingEntryHolderImpl<K, V> implements MergingEntryHolder<K, V
         return lastAccessTime;
     }
 
-    public FullMergingEntryHolderImpl<K, V> setLastAccessTime(long lastAccessTime) {
+    public FullMergingEntryImpl<K, V> setLastAccessTime(long lastAccessTime) {
         this.lastAccessTime = lastAccessTime;
         return this;
     }
@@ -154,7 +153,7 @@ public class FullMergingEntryHolderImpl<K, V> implements MergingEntryHolder<K, V
         return lastStoredTime;
     }
 
-    public FullMergingEntryHolderImpl<K, V> setLastStoredTime(long lastStoredTime) {
+    public FullMergingEntryImpl<K, V> setLastStoredTime(long lastStoredTime) {
         this.lastStoredTime = lastStoredTime;
         return this;
     }
@@ -164,7 +163,7 @@ public class FullMergingEntryHolderImpl<K, V> implements MergingEntryHolder<K, V
         return lastUpdateTime;
     }
 
-    public FullMergingEntryHolderImpl<K, V> setLastUpdateTime(long lastUpdateTime) {
+    public FullMergingEntryImpl<K, V> setLastUpdateTime(long lastUpdateTime) {
         this.lastUpdateTime = lastUpdateTime;
         return this;
     }
@@ -174,7 +173,7 @@ public class FullMergingEntryHolderImpl<K, V> implements MergingEntryHolder<K, V
         return version;
     }
 
-    public FullMergingEntryHolderImpl<K, V> setVersion(long version) {
+    public FullMergingEntryImpl<K, V> setVersion(long version) {
         this.version = version;
         return this;
     }
@@ -184,7 +183,7 @@ public class FullMergingEntryHolderImpl<K, V> implements MergingEntryHolder<K, V
         return ttl;
     }
 
-    public FullMergingEntryHolderImpl<K, V> setTtl(long ttl) {
+    public FullMergingEntryImpl<K, V> setTtl(long ttl) {
         this.ttl = ttl;
         return this;
     }
@@ -231,7 +230,7 @@ public class FullMergingEntryHolderImpl<K, V> implements MergingEntryHolder<K, V
 
     @Override
     public int getId() {
-        return SplitBrainDataSerializerHook.COMPLETE_MERGE_DATA_HOLDER;
+        return SplitBrainDataSerializerHook.FULL_MERGING_ENTRY;
     }
 
     @Override
@@ -244,7 +243,7 @@ public class FullMergingEntryHolderImpl<K, V> implements MergingEntryHolder<K, V
             return false;
         }
 
-        FullMergingEntryHolderImpl<?, ?> that = (FullMergingEntryHolderImpl<?, ?>) o;
+        FullMergingEntryImpl<?, ?> that = (FullMergingEntryImpl<?, ?>) o;
         if (cost != that.cost) {
             return false;
         }
@@ -296,7 +295,7 @@ public class FullMergingEntryHolderImpl<K, V> implements MergingEntryHolder<K, V
 
     @Override
     public String toString() {
-        return "MergingEntryHolder{"
+        return "FullMergingEntry{"
                 + "key=" + key
                 + ", value=" + value
                 + ", cost=" + cost

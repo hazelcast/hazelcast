@@ -17,16 +17,16 @@
 package com.hazelcast.spi.merge;
 
 /**
- * Represents a read-only view of an expiration time for the merging process after a split-brain.
+ * Represents a read-only view a creation time for the merging process after a split-brain.
  *
  * @since 3.10
  */
-public interface ExpirationTimeHolder {
+public interface MergingCreationTime {
 
     /**
-     * Returns the expiration time of the merge data.
+     * Returns the creation time of the merge data.
      *
-     * @return the expiration time of the merge data
+     * @return the creation time of the merge data
      */
-    long getExpirationTime();
+    long getCreationTime();
 }

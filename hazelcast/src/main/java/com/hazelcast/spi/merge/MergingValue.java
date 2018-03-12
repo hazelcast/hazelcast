@@ -17,16 +17,24 @@
 package com.hazelcast.spi.merge;
 
 /**
- * Represents a read-only view of a last access time for the merging process after a split-brain.
+ * Represents a read-only view of a data structure value for the merging process after a split-brain.
  *
+ * @param <V> the type of the value
  * @since 3.10
  */
-public interface LastAccessTimeHolder {
+public interface MergingValue<V> {
 
     /**
-     * Returns the last access time of the merge data.
+     * Returns the merging value in the in-memory format of the backing data structure.
      *
-     * @return the last access time of the merge data
+     * @return the merging value
      */
-    long getLastAccessTime();
+    V getValue();
+
+    /**
+     * Returns the deserialized merging value.
+     *
+     * @return the deserialized merging value
+     */
+    Object getDeserializedValue();
 }

@@ -30,7 +30,7 @@ public class PutIfAbsentMergePolicy extends AbstractSplitBrainMergePolicy {
     }
 
     @Override
-    public <V> V merge(MergingValueHolder<V> mergingValue, MergingValueHolder<V> existingValue) {
+    public <V> V merge(MergingValue<V> mergingValue, MergingValue<V> existingValue) {
         if (existingValue == null) {
             return mergingValue.getValue();
         }

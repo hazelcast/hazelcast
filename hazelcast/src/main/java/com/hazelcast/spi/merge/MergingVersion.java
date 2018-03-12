@@ -17,16 +17,16 @@
 package com.hazelcast.spi.merge;
 
 /**
- * Represents a read-only view access hits for the merging process after a split-brain.
+ * Represents a read-only view of a version for the merging process after a split-brain.
  *
  * @since 3.10
  */
-public interface HitsHolder {
+public interface MergingVersion {
 
     /**
-     * Returns the access hits of the merge data.
+     * Returns the version of the merge data.
      *
-     * @return the access hits of the merge data
+     * @return the version of the merge data
      */
-    long getHits();
+    long getVersion();
 }
