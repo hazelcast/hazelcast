@@ -26,6 +26,7 @@ import com.hazelcast.config.ConfigPatternMatcher;
 import com.hazelcast.config.ConfigurationException;
 import com.hazelcast.config.CountDownLatchConfig;
 import com.hazelcast.config.DataSeriesConfig;
+import com.hazelcast.config.DictionaryConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.ExecutorConfig;
@@ -185,6 +186,11 @@ public class DynamicConfigurationAwareConfig extends Config {
         return getDataSeriesConfigInternal(name, "default").getAsReadOnly();
     }
 
+    @Override
+    public DictionaryConfig findDictionaryConfig(String name) {
+        return getDictionaryConfigInternal(name, "default").getAsReadOnly();
+    }
+
 
     @Override
     public MapConfig getMapConfig(String name) {
@@ -233,14 +239,29 @@ public class DynamicConfigurationAwareConfig extends Config {
     private DataSeriesConfig getDataSeriesConfigInternal(String name, String fallbackName) {
         String baseName = getBaseName(name);
         Map<String, DataSeriesConfig> staticMapConfigs = staticConfig.getDataSeriesConfigs();
-        DataSeriesConfig mapConfig = lookupByPattern(configPatternMatcher, staticMapConfigs, baseName);
-//        if (mapConfig == null) {
-//            mapConfig = configurationService.findSimpleMapConfig(baseName);
+        DataSeriesConfig dataseriesConfig = lookupByPattern(configPatternMatcher, staticMapConfigs, baseName);
+//        if (dataseriesConfig == null) {
+//            dataseriesConfig = configurationService.findSimpleMapConfig(baseName);
 //        }
-        if (mapConfig == null) {
-            mapConfig = staticConfig.getDataSeriesConfig(fallbackName);
+        if (dataseriesConfig == null) {
+            dataseriesConfig = staticConfig.getDataSeriesConfig(fallbackName);
         }
-        return mapConfig;
+        return dataseriesConfig;
+    }
+
+
+
+    private DictionaryConfig getDictionaryConfigInternal(String name, String fallbackName) {
+        String baseName = getBaseName(name);
+        Map<String, DictionaryConfig> staticConfigs = staticConfig.getDictionaryConfigs();
+        DictionaryConfig dictionaryConfig = lookupByPattern(configPatternMatcher, staticConfigs, baseName);
+//        if (dictionaryConfig == null) {
+//            dictionaryConfig = configurationService.findSimpleMapConfig(baseName);
+//        }
+        if (dictionaryConfig == null) {
+            dictionaryConfig = staticConfig.getDictionaryConfig(fallbackName);
+        }
+        return dictionaryConfig;
     }
 
     @Override

@@ -152,6 +152,8 @@ public final class FactoryIdHelper {
     public static final String DATA_SET_DS_FACTORY = "hazelcast.serialization.ds.dataseries";
     public static final int DATA_SET_DS_FACTORY_ID = -49;
 
+    public static final String DICTIONARY_DS_FACTORY = "hazelcast.serialization.ds.dictionary";
+    public static final int DICTIONARY_DS_FACTORY_ID = -50;
 
     // =========================== portables =============================================
 

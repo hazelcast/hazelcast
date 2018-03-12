@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.dataseries;
 
 
@@ -6,8 +22,6 @@ import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IMap;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.util.function.Supplier;
-
-import java.util.Iterator;
 
 /**
  * broken:
@@ -28,21 +42,21 @@ import java.util.Iterator;
  * - so if a single column is used; the data in the column could be compressed. E.g. if there are 20 zero's
  * instead of having a single row per 'record', it states 'now 20 zero's'
  * - queries
- *      - more advanced query analysis.
- *      - or queries
+ * - more advanced query analysis.
+ * - or queries
  * - mappings
- *      - primitive wrappers (so nullable fields)
- *      - enum fields
- *      - there could be a set of bytes added to each record where a bit is allocated per nullable field. So 8 nullable fields,
- *      can share 1 byte. 9 nullable fields, require 2 bytes.
- *      - string fields
+ * - primitive wrappers (so nullable fields)
+ * - enum fields
+ * - there could be a set of bytes added to each record where a bit is allocated per nullable field. So 8 nullable fields,
+ * can share 1 byte. 9 nullable fields, require 2 bytes.
+ * - string fields
  * - predicates
- *      - for all predicate
- *      - exists predicate
- *      - regular predicates using the domain object
- *      - in predicate
- *      - partition predicate
- *      - between predicate
+ * - for all predicate
+ * - exists predicate
+ * - regular predicates using the domain object
+ * - in predicate
+ * - partition predicate
+ * - between predicate
  * - limited time query: allow certain operations on a segment. For example a query should be allowed to be executed
  * on 8/9h, even though the time currently might be 13h.
  *
@@ -50,8 +64,8 @@ import java.util.Iterator;
  * - aggregation: waiting on the completion of the tenuredsegments, is done on the partition thread. This isn't needed
  *
  * <h1>String</h1>
- * a string can be fixed max length. So if it is defined as 20 chars, then 20 chars storage is allocated. If only 5 chars are used,
- * the remaining 15 chars are zero'd.
+ * a string can be fixed max length. So if it is defined as 20 chars, then 20 chars storage is allocated. If
+ * only 5 chars are used, the remaining 15 chars are zero'd.
  *
  * variable length strings:
  * These are very difficult to deal with in case of a fixed length record.

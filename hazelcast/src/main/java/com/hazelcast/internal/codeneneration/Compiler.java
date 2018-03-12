@@ -1,4 +1,20 @@
-package com.hazelcast.dataseries.impl;
+/*
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.hazelcast.internal.codeneneration;
 
 import javax.tools.Diagnostic;
 import javax.tools.DiagnosticCollector;
@@ -28,8 +44,12 @@ import static java.util.Collections.singletonList;
 public class Compiler {
 
     private final JavaCompiler javaCompiler = ToolProvider.getSystemJavaCompiler();
-    private final File targetDirectory = new File(getUserDir(), "dataseries");
+    private final File targetDirectory;
     private final ConcurrentMap<String, Class> classes = new ConcurrentHashMap<String, Class>();
+
+    public Compiler(String name) {
+        targetDirectory = new File(getUserDir(), name);
+    }
 
     // synchronized is a hack; not very nice. but this is a poc.
     public synchronized Class compile(String className, String javacode) {

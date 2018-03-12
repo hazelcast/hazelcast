@@ -153,16 +153,16 @@ public class DataSeriesConfig {
 
     @Override
     public String toString() {
-        return "DataSeriesConfig{" +
-                "name='" + name + '\'' +
-                ", keyClass=" + keyClass +
-                ", valueClass=" + valueClass +
-                ", initialSegmentSize=" + initialSegmentSize +
-                ", maxSegmentSize=" + maxSegmentSize +
-                ", segmentsPerPartition=" + segmentsPerPartition +
-                ", indices=" + indices +
-                ", tenuringAgeMillis=" + tenuringAgeMillis +
-                ", attachedAggregators=" + attachedAggregators +
-                '}';
+        return "DataSeriesConfig{"
+                + "name='" + name + '\''
+                + ", keyClass=" + keyClass
+                + ", valueClass=" + valueClass
+                + ", initialSegmentSize=" + initialSegmentSize
+                + ", maxSegmentSize=" + maxSegmentSize
+                + ", segmentsPerPartition=" + segmentsPerPartition
+                + ", indices=" + indices
+                + ", tenuringAgeMillis=" + tenuringAgeMillis
+                + ", attachedAggregators=" + attachedAggregators
+                + '}';
     }
 }

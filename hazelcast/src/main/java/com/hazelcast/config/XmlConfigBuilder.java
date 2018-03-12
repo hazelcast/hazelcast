@@ -68,6 +68,7 @@ import static com.hazelcast.config.XmlElements.CACHE;
 import static com.hazelcast.config.XmlElements.CARDINALITY_ESTIMATOR;
 import static com.hazelcast.config.XmlElements.COUNT_DOWN_LATCH;
 import static com.hazelcast.config.XmlElements.CRDT_REPLICATION;
+import static com.hazelcast.config.XmlElements.DATASERIES;
 import static com.hazelcast.config.XmlElements.DURABLE_EXECUTOR_SERVICE;
 import static com.hazelcast.config.XmlElements.EVENT_JOURNAL;
 import static com.hazelcast.config.XmlElements.EXECUTOR_SERVICE;
@@ -102,7 +103,6 @@ import static com.hazelcast.config.XmlElements.SEMAPHORE;
 import static com.hazelcast.config.XmlElements.SERIALIZATION;
 import static com.hazelcast.config.XmlElements.SERVICES;
 import static com.hazelcast.config.XmlElements.SET;
-import static com.hazelcast.config.XmlElements.DATASERIES;
 import static com.hazelcast.config.XmlElements.TOPIC;
 import static com.hazelcast.config.XmlElements.USER_CODE_DEPLOYMENT;
 import static com.hazelcast.config.XmlElements.WAN_REPLICATION;
@@ -394,7 +394,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             handleCardinalityEstimator(node);
         } else if (FLAKE_ID_GENERATOR.isEqual(nodeName)) {
             handleFlakeIdGenerator(node);
-        }  else if (CRDT_REPLICATION.isEqual(nodeName)) {
+        } else if (CRDT_REPLICATION.isEqual(nodeName)) {
             handleCRDTReplication(node);
         } else if (PN_COUNTER.isEqual(nodeName)) {
             handlePNCounter(node);
@@ -1105,7 +1105,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 dataSeriesConfig.setTenuringAgeMillis(getIntegerValue("tenuringagemillis", value));
             } else if ("segmentsperpartition".equals(nodeName)) {
                 dataSeriesConfig.setSegmentsPerPartition(getIntegerValue("segmentsperpartition", value));
-            } else   if ("maxsegmentsize".equals(nodeName)) {
+            } else if ("maxsegmentsize".equals(nodeName)) {
                 dataSeriesConfig.setMaxSegmentSize(getIntegerValue("maxsegmentsize", value));
             } else if ("initialsegmentsize".equals(nodeName)) {
                 dataSeriesConfig.setInitialSegmentSize(getIntegerValue("initialsegmentsize", value));
@@ -1127,9 +1127,9 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                     throw new RuntimeException(e);
                 }
                 dataSeriesConfig.setValueClass(valueClass);
-            } else if("indices".equals(nodeName)){
+            } else if ("indices".equals(nodeName)) {
                 String[] indices = value.split(",");
-                for(String index: indices){
+                for (String index : indices) {
                     dataSeriesConfig.addIndexField(index);
                 }
             }

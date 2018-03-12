@@ -1,4 +1,20 @@
 /*
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/*
  * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -28,6 +44,7 @@ import com.hazelcast.dataseries.impl.entryprocessor.PrepareEntryProcessorOperati
 import com.hazelcast.dataseries.impl.entryprocessor.PrepareEntryProcessorOperationFactory;
 import com.hazelcast.dataseries.impl.operations.CountOperation;
 import com.hazelcast.dataseries.impl.operations.CountOperationFactory;
+import com.hazelcast.dataseries.impl.operations.FillOperation;
 import com.hazelcast.dataseries.impl.operations.FreezeOperation;
 import com.hazelcast.dataseries.impl.operations.FreezeOperationFactory;
 import com.hazelcast.dataseries.impl.operations.InsertOperation;
@@ -35,16 +52,15 @@ import com.hazelcast.dataseries.impl.operations.IteratorOperation;
 import com.hazelcast.dataseries.impl.operations.MemoryUsageOperation;
 import com.hazelcast.dataseries.impl.operations.MemoryUsageOperationFactory;
 import com.hazelcast.dataseries.impl.operations.PopulateOperation;
-import com.hazelcast.dataseries.impl.operations.FillOperation;
-import com.hazelcast.dataseries.impl.projection.PrepareProjectionOperation;
-import com.hazelcast.dataseries.impl.projection.PrepareProjectionOperationFactory;
-import com.hazelcast.dataseries.impl.projection.NewDataSeriesOperation;
-import com.hazelcast.dataseries.impl.projection.NewDataSeriesOperationFactory;
 import com.hazelcast.dataseries.impl.projection.ExecuteProjectionOperation;
 import com.hazelcast.dataseries.impl.projection.ExecuteProjectionOperationFactory;
+import com.hazelcast.dataseries.impl.projection.NewDataSeriesOperation;
+import com.hazelcast.dataseries.impl.projection.NewDataSeriesOperationFactory;
+import com.hazelcast.dataseries.impl.projection.PrepareProjectionOperation;
+import com.hazelcast.dataseries.impl.projection.PrepareProjectionOperationFactory;
+import com.hazelcast.dataseries.impl.query.ExecuteQueryOperationFactory;
 import com.hazelcast.dataseries.impl.query.PrepareQueryOperation;
 import com.hazelcast.dataseries.impl.query.PrepareQueryOperationFactory;
-import com.hazelcast.dataseries.impl.query.ExecuteQueryOperationFactory;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.map.impl.query.QueryOperation;

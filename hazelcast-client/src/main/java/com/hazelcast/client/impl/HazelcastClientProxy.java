@@ -26,6 +26,7 @@ import com.hazelcast.core.Cluster;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.dataseries.DataSeries;
+import com.hazelcast.dictionary.Dictionary;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
@@ -78,6 +79,11 @@ public class HazelcastClientProxy implements HazelcastInstance, SerializationSer
 
     @Override
     public <K, V> DataSeries<K, V> getDataSeries(String name) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public <K, V> Dictionary<K, V> getDictionary(String name) {
         throw new UnsupportedOperationException();
     }
 
