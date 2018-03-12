@@ -54,6 +54,7 @@ import com.hazelcast.monitor.TimedMemberState;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.spi.ExecutionService;
+import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.util.Clock;
@@ -247,24 +248,26 @@ public class ManagementCenterService {
         }
     }
 
-    public Object callOnAddress(Address address, Operation operation) {
+    public InternalCompletableFuture<Object> callOnAddress(Address address, Operation operation) {
         // TODO: why are we always executing on the MapService?
         OperationService operationService = instance.node.nodeEngine.getOperationService();
-        Future future = operationService.invokeOnTarget(MapService.SERVICE_NAME, operation, address);
+        return operationService.invokeOnTarget(MapService.SERVICE_NAME, operation, address);
+    }
+
+    public InternalCompletableFuture<Object> callOnThis(Operation operation) {
+        return callOnAddress(instance.node.getThisAddress(), operation);
+    }
+
+    public InternalCompletableFuture<Object> callOnMember(Member member, Operation operation) {
+        return callOnAddress(member.getAddress(), operation);
+    }
+
+    public static Object resolveFuture(Future<Object> future) {
         try {
             return future.get();
         } catch (Throwable t) {
             return ExceptionUtil.toString(t);
         }
-    }
-
-    public Object callOnThis(Operation operation) {
-        return callOnAddress(instance.node.getThisAddress(), operation);
-    }
-
-    public Object callOnMember(Member member, Operation operation) {
-        Address address = member.getAddress();
-        return callOnAddress(address, operation);
     }
 
     public void send(Address address, Operation operation) {
@@ -637,8 +640,9 @@ public class ManagementCenterService {
             try {
                 Member member = membershipEvent.getMember();
                 if (member != null && instance.node.isMaster() && urlChanged) {
-                    Operation operation = new UpdateManagementCenterUrlOperation(managementCenterUrl);
-                    callOnMember(member, operation);
+                    UpdateManagementCenterUrlOperation operation
+                            = new UpdateManagementCenterUrlOperation(managementCenterUrl);
+                    resolveFuture(callOnMember(member, operation));
                 }
             } catch (Exception e) {
                 logger.warning("Web server url cannot be send to the newly joined member", e);

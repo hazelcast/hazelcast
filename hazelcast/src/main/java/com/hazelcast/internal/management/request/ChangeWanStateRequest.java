@@ -20,6 +20,7 @@ import com.eclipsesource.json.JsonObject;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.management.operation.ChangeWanStateOperation;
 
+import static com.hazelcast.internal.management.ManagementCenterService.resolveFuture;
 import static com.hazelcast.util.JsonUtil.getBoolean;
 import static com.hazelcast.util.JsonUtil.getString;
 
@@ -52,8 +53,9 @@ public class ChangeWanStateRequest implements ConsoleRequest {
     }
 
     @Override
-    public void writeResponse(ManagementCenterService mcs, JsonObject out) throws Exception {
-        Object operationResult = mcs.callOnThis(new ChangeWanStateOperation(schemeName, publisherName, start));
+    public void writeResponse(ManagementCenterService mcs, JsonObject out) {
+        Object operationResult = resolveFuture(
+                mcs.callOnThis(new ChangeWanStateOperation(schemeName, publisherName, start)));
         JsonObject result = new JsonObject();
         if (operationResult == null) {
             result.add("result", SUCCESS);

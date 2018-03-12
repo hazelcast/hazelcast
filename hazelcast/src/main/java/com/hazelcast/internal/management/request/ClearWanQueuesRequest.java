@@ -20,6 +20,7 @@ import com.eclipsesource.json.JsonObject;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.management.operation.ClearWanQueuesOperation;
 
+import static com.hazelcast.internal.management.ManagementCenterService.resolveFuture;
 import static com.hazelcast.util.JsonUtil.getString;
 
 /**
@@ -49,9 +50,9 @@ public class ClearWanQueuesRequest implements ConsoleRequest {
     }
 
     @Override
-    public void writeResponse(ManagementCenterService mcs, JsonObject out) throws Exception {
+    public void writeResponse(ManagementCenterService mcs, JsonObject out) {
         ClearWanQueuesOperation operation = new ClearWanQueuesOperation(schemeName, publisherName);
-        Object operationResult = mcs.callOnThis(operation);
+        Object operationResult = resolveFuture(mcs.callOnThis(operation));
         JsonObject result = new JsonObject();
         if (operationResult == null) {
             result.add("result", SUCCESS);
