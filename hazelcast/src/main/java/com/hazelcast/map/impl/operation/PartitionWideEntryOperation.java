@@ -74,7 +74,7 @@ public class PartitionWideEntryOperation extends MapOperation
     @Override
     public void run() {
         responses = new MapEntries(recordStore.size());
-        operator = operator(this, entryProcessor, getPredicate(), true);
+        operator = operator(this, entryProcessor, getPredicate());
 
         Iterator<Record> iterator = recordStore.iterator(Clock.currentTimeMillis(), false);
         while (iterator.hasNext()) {
@@ -114,7 +114,6 @@ public class PartitionWideEntryOperation extends MapOperation
         PartitionWideEntryBackupOperation backupOperation = null;
         if (backupProcessor != null) {
             backupOperation = new PartitionWideEntryBackupOperation(name, backupProcessor);
-            backupOperation.setWanEventList(operator.getWanEventList());
         }
         return backupOperation;
     }

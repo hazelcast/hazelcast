@@ -49,7 +49,6 @@ public class PartitionWideEntryWithPredicateOperation extends PartitionWideEntry
         PartitionWideEntryWithPredicateBackupOperation backupOperation = null;
         if (backupProcessor != null) {
             backupOperation = new PartitionWideEntryWithPredicateBackupOperation(name, backupProcessor, predicate);
-            backupOperation.setWanEventList(operator.getWanEventList());
         }
         return backupOperation;
     }
