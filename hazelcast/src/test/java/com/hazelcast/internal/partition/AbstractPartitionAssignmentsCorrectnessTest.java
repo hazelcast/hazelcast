@@ -41,8 +41,10 @@ public abstract class AbstractPartitionAssignmentsCorrectnessTest extends Partit
 
         int size = 1;
         while (size < (nodeCount + 1)) {
-            startNodes(config, backupCount + 1);
+            Collection<HazelcastInstance> instances = startNodes(config, backupCount + 1);
             size += (backupCount + 1);
+
+            assertClusterSizeEventually(size, instances);
 
             terminateNodes(backupCount);
             size -= backupCount;
