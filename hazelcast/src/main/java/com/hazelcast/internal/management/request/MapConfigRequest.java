@@ -26,6 +26,7 @@ import com.hazelcast.internal.management.operation.UpdateMapConfigOperation;
 
 import java.util.Set;
 
+import static com.hazelcast.internal.management.ManagementCenterService.resolveFuture;
 import static com.hazelcast.util.JsonUtil.getBoolean;
 import static com.hazelcast.util.JsonUtil.getObject;
 import static com.hazelcast.util.JsonUtil.getString;
@@ -60,11 +61,11 @@ public class MapConfigRequest implements ConsoleRequest {
         if (update) {
             final Set<Member> members = mcs.getHazelcastInstance().getCluster().getMembers();
             for (Member member : members) {
-                mcs.callOnMember(member, new UpdateMapConfigOperation(mapName, config.getMapConfig()));
+                resolveFuture(mcs.callOnMember(member, new UpdateMapConfigOperation(mapName, config.getMapConfig())));
             }
             result.add("updateResult", "success");
         } else {
-            MapConfig cfg = (MapConfig) mcs.callOnThis(new GetMapConfigOperation(mapName));
+            MapConfig cfg = (MapConfig) resolveFuture(mcs.callOnThis(new GetMapConfigOperation(mapName)));
             if (cfg != null) {
                 result.add("hasMapConfig", true);
                 result.add("mapConfig", new MapConfigDTO(cfg).toJson());
