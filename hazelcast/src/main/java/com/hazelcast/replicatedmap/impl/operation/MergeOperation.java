@@ -20,8 +20,8 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
-import com.hazelcast.spi.merge.MergingEntry;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
+import com.hazelcast.spi.merge.SplitBrainMergeTypes.ReplicatedMapMergeTypes;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -35,15 +35,16 @@ import java.util.List;
 public class MergeOperation extends AbstractNamedSerializableOperation {
 
     private String name;
-    private List<MergingEntry<Object, Object>> mergingEntries;
-    private SplitBrainMergePolicy mergePolicy;
+    private List<ReplicatedMapMergeTypes> mergingEntries;
+    private SplitBrainMergePolicy<Object, ReplicatedMapMergeTypes> mergePolicy;
 
     private transient boolean hasMergedValues;
 
     public MergeOperation() {
     }
 
-    MergeOperation(String name, List<MergingEntry<Object, Object>> mergingEntries, SplitBrainMergePolicy mergePolicy) {
+    MergeOperation(String name, List<ReplicatedMapMergeTypes> mergingEntries,
+                   SplitBrainMergePolicy<Object, ReplicatedMapMergeTypes> mergePolicy) {
         this.name = name;
         this.mergingEntries = mergingEntries;
         this.mergePolicy = mergePolicy;
@@ -59,7 +60,7 @@ public class MergeOperation extends AbstractNamedSerializableOperation {
         ReplicatedMapService service = getService();
         ReplicatedRecordStore recordStore = service.getReplicatedRecordStore(name, true, getPartitionId());
 
-        for (MergingEntry<Object, Object> mergingEntry : mergingEntries) {
+        for (ReplicatedMapMergeTypes mergingEntry : mergingEntries) {
             if (recordStore.merge(mergingEntry, mergePolicy)) {
                 hasMergedValues = true;
             }
@@ -76,7 +77,7 @@ public class MergeOperation extends AbstractNamedSerializableOperation {
         super.writeInternal(out);
         out.writeUTF(name);
         out.writeInt(mergingEntries.size());
-        for (MergingEntry<Object, Object> mergingEntry : mergingEntries) {
+        for (ReplicatedMapMergeTypes mergingEntry : mergingEntries) {
             out.writeObject(mergingEntry);
         }
         out.writeObject(mergePolicy);
@@ -87,9 +88,9 @@ public class MergeOperation extends AbstractNamedSerializableOperation {
         super.readInternal(in);
         name = in.readUTF();
         int size = in.readInt();
-        mergingEntries = new ArrayList<MergingEntry<Object, Object>>(size);
+        mergingEntries = new ArrayList<ReplicatedMapMergeTypes>(size);
         for (int i = 0; i < size; i++) {
-            MergingEntry<Object, Object> mergingEntry = in.readObject();
+            ReplicatedMapMergeTypes mergingEntry = in.readObject();
             mergingEntries.add(mergingEntry);
         }
         mergePolicy = in.readObject();

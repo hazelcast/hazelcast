@@ -22,15 +22,17 @@ import com.hazelcast.spi.impl.merge.SplitBrainDataSerializerHook;
 /**
  * Merges only entries from the destination data structure and discards all entries from the source data structure.
  *
+ * @param <V> the type of the merged value
+ * @param <T> the type of the merging value
  * @since 3.10
  */
-public class DiscardMergePolicy extends AbstractSplitBrainMergePolicy {
+public class DiscardMergePolicy<V, T extends MergingValue<V>> extends AbstractSplitBrainMergePolicy<V, T> {
 
     public DiscardMergePolicy() {
     }
 
     @Override
-    public <T> T merge(MergingValue<T> mergingValue, MergingValue<T> existingValue) {
+    public V merge(T mergingValue, T existingValue) {
         if (existingValue == null) {
             return null;
         }

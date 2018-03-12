@@ -33,6 +33,7 @@ import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.SplitBrainHandlerService;
 import com.hazelcast.spi.impl.merge.AbstractContainerMerger;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
+import com.hazelcast.spi.merge.SplitBrainMergeTypes.AtomicReferenceMergeTypes;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.partition.MigrationEndpoint;
 import com.hazelcast.util.ConstructorFunction;
@@ -198,7 +199,7 @@ public class AtomicReferenceService
         return new Merger(collector);
     }
 
-    private class Merger extends AbstractContainerMerger<AtomicReferenceContainer> {
+    private class Merger extends AbstractContainerMerger<AtomicReferenceContainer, Data, AtomicReferenceMergeTypes> {
 
         Merger(AtomicReferenceContainerCollector collector) {
             super(collector, nodeEngine);
@@ -220,7 +221,8 @@ public class AtomicReferenceService
 
                 for (AtomicReferenceContainer container : containerList) {
                     String name = collector.getContainerName(container);
-                    SplitBrainMergePolicy mergePolicy = getMergePolicy(collector.getMergePolicyConfig(container));
+                    SplitBrainMergePolicy<Data, AtomicReferenceMergeTypes> mergePolicy
+                            = getMergePolicy(collector.getMergePolicyConfig(container));
 
                     MergeOperation operation = new MergeOperation(name, mergePolicy, container.get());
                     invoke(SERVICE_NAME, operation, partitionId);

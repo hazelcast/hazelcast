@@ -27,8 +27,8 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.merge.MergingValue;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
+import com.hazelcast.spi.merge.SplitBrainMergeTypes.QueueMergeTypes;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.util.Clock;
@@ -1096,16 +1096,17 @@ public class QueueContainer implements IdentifiedDataSerializable {
     }
 
     /**
-     * Merges the given {@link MergingValue} via the given {@link SplitBrainMergePolicy}.
+     * Merges the given {@link QueueMergeTypes} via the given {@link SplitBrainMergePolicy}.
      *
-     * @param mergingValue the {@link MergingValue} instance to merge
+     * @param mergingValue the {@link QueueMergeTypes} instance to merge
      * @param mergePolicy  the {@link SplitBrainMergePolicy} instance to apply
      * @return the used {@link QueueItem} if merge is applied, otherwise {@code null}
      */
-    public QueueItem merge(MergingValue<Data> mergingValue, SplitBrainMergePolicy mergePolicy) {
+    public QueueItem merge(QueueMergeTypes mergingValue, SplitBrainMergePolicy<Data, QueueMergeTypes> mergePolicy) {
         SerializationService serializationService = nodeEngine.getSerializationService();
         serializationService.getManagedContext().initialize(mergingValue);
         serializationService.getManagedContext().initialize(mergePolicy);
+
         // try to find an existing item with the same value
         QueueItem existingItem = null;
         for (QueueItem item : getItemQueue()) {
@@ -1125,7 +1126,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
                 }
             }
         } else {
-            MergingValue<Data> existingValue = createMergingValue(serializationService, existingItem);
+            QueueMergeTypes existingValue = createMergingValue(serializationService, existingItem);
             Data newValue = mergePolicy.merge(mergingValue, existingValue);
             if (newValue != null && !newValue.equals(existingValue.getValue())) {
                 existingItem.setData(newValue);

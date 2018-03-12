@@ -27,8 +27,6 @@ import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.nio.ClassLoaderUtil.newInstance;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
-import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * A provider for {@link ReplicatedMapMergePolicy} instances.
@@ -45,8 +43,7 @@ public final class MergePolicyProvider {
             try {
                 return newInstance(nodeEngine.getConfigClassLoader(), className);
             } catch (Exception e) {
-                nodeEngine.getLogger(getClass()).severe(e);
-                throw rethrow(e);
+                throw new InvalidConfigurationException("Invalid ReplicatedMapMergePolicy: " + className, e);
             }
         }
     };
@@ -79,7 +76,9 @@ public final class MergePolicyProvider {
      * @return an instance of the merge policy class
      */
     public Object getMergePolicy(String className) {
-        checkNotNull(className, "Class name is mandatory!");
+        if (className == null) {
+            throw new InvalidConfigurationException("Class name is mandatory!");
+        }
         try {
             return policyProvider.getMergePolicy(className);
         } catch (InvalidConfigurationException e) {

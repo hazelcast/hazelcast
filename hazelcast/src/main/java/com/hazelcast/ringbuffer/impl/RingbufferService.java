@@ -40,8 +40,8 @@ import com.hazelcast.spi.ServiceNamespace;
 import com.hazelcast.spi.SplitBrainHandlerService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.merge.AbstractContainerMerger;
-import com.hazelcast.spi.merge.MergingEntry;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
+import com.hazelcast.spi.merge.SplitBrainMergeTypes.RingbufferMergeTypes;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.ConstructorFunction;
@@ -342,7 +342,7 @@ public class RingbufferService implements ManagedService, RemoteService, Fragmen
         return new Merger(collector);
     }
 
-    private class Merger extends AbstractContainerMerger<RingbufferContainer> {
+    private class Merger extends AbstractContainerMerger<RingbufferContainer, Object, RingbufferMergeTypes> {
 
         Merger(RingbufferContainerCollector collector) {
             super(collector, nodeEngine);
@@ -355,7 +355,7 @@ public class RingbufferService implements ManagedService, RemoteService, Fragmen
 
         @Override
         protected void runInternal() {
-            List<MergingEntry<Long, Object>> mergingEntries;
+            List<RingbufferMergeTypes> mergingEntries;
             for (Entry<Integer, Collection<RingbufferContainer>> entry : collector.getCollectedContainers().entrySet()) {
                 int partitionId = entry.getKey();
                 Collection<RingbufferContainer> containerList = entry.getValue();
@@ -363,17 +363,18 @@ public class RingbufferService implements ManagedService, RemoteService, Fragmen
                 for (RingbufferContainer container : containerList) {
                     Ringbuffer ringbuffer = container.getRingbuffer();
                     int batchSize = container.getConfig().getMergePolicyConfig().getBatchSize();
-                    SplitBrainMergePolicy mergePolicy = getMergePolicy(container.getConfig().getMergePolicyConfig());
+                    SplitBrainMergePolicy<Object, RingbufferMergeTypes> mergePolicy
+                            = getMergePolicy(container.getConfig().getMergePolicyConfig());
 
-                    mergingEntries = new ArrayList<MergingEntry<Long, Object>>(batchSize);
+                    mergingEntries = new ArrayList<RingbufferMergeTypes>(batchSize);
                     for (long sequence = ringbuffer.headSequence(); sequence <= ringbuffer.tailSequence(); sequence++) {
                         Object item = ringbuffer.read(sequence);
-                        MergingEntry<Long, Object> mergingEntry = createMergingEntry(serializationService, sequence, item);
+                        RingbufferMergeTypes mergingEntry = createMergingEntry(serializationService, sequence, item);
                         mergingEntries.add(mergingEntry);
 
                         if (mergingEntries.size() == batchSize) {
                             sendBatch(partitionId, container.getNamespace(), mergePolicy, mergingEntries);
-                            mergingEntries = new ArrayList<MergingEntry<Long, Object>>(batchSize);
+                            mergingEntries = new ArrayList<RingbufferMergeTypes>(batchSize);
                         }
                     }
                     if (mergingEntries.size() > 0) {
@@ -383,8 +384,9 @@ public class RingbufferService implements ManagedService, RemoteService, Fragmen
             }
         }
 
-        private void sendBatch(int partitionId, ObjectNamespace namespace, SplitBrainMergePolicy mergePolicy,
-                               List<MergingEntry<Long, Object>> mergingEntries) {
+        private void sendBatch(int partitionId, ObjectNamespace namespace,
+                               SplitBrainMergePolicy<Object, RingbufferMergeTypes> mergePolicy,
+                               List<RingbufferMergeTypes> mergingEntries) {
             MergeOperation operation = new MergeOperation(namespace, mergePolicy, mergingEntries);
             invoke(SERVICE_NAME, operation, partitionId);
         }

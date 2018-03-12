@@ -22,6 +22,7 @@ import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.merge.DiscardMergePolicy;
+import com.hazelcast.spi.merge.ExpirationTimeMergePolicy;
 import com.hazelcast.spi.merge.HigherHitsMergePolicy;
 import com.hazelcast.spi.merge.HyperLogLogMergePolicy;
 import com.hazelcast.spi.merge.LatestAccessMergePolicy;
@@ -47,17 +48,26 @@ public final class SplitBrainDataSerializerHook implements DataSerializerHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(SPLIT_BRAIN_DS_FACTORY, SPLIT_BRAIN_DS_FACTORY_ID);
 
-    public static final int MERGING_VALUE = 0;
-    public static final int MERGING_ENTRY = 1;
-    public static final int FULL_MERGING_ENTRY = 2;
+    public static final int COLLECTION_MERGING_VALUE = 0;
+    public static final int QUEUE_MERGING_VALUE = 1;
+    public static final int ATOMIC_LONG_MERGING_VALUE = 2;
+    public static final int ATOMIC_REFERENCE_MERGING_VALUE = 3;
+    public static final int MAP_MERGING_ENTRY = 4;
+    public static final int CACHE_MERGING_ENTRY = 5;
+    public static final int MULTI_MAP_MERGING_ENTRY = 6;
+    public static final int REPLICATED_MAP_MERGING_ENTRY = 7;
+    public static final int RINGBUFFER_MERGING_ENTRY = 8;
+    public static final int CARDINALITY_ESTIMATOR_MERGING_ENTRY = 9;
+    public static final int SCHEDULED_EXECUTOR_MERGING_ENTRY = 10;
 
-    public static final int DISCARD = 3;
-    public static final int HIGHER_HITS = 4;
-    public static final int HYPER_LOG_LOG = 5;
-    public static final int LATEST_ACCESS = 6;
-    public static final int LATEST_UPDATE = 7;
-    public static final int PASS_THROUGH = 8;
-    public static final int PUT_IF_ABSENT = 9;
+    public static final int DISCARD = 11;
+    public static final int EXPIRATION_TIME = 12;
+    public static final int HIGHER_HITS = 13;
+    public static final int HYPER_LOG_LOG = 14;
+    public static final int LATEST_ACCESS = 15;
+    public static final int LATEST_UPDATE = 16;
+    public static final int PASS_THROUGH = 17;
+    public static final int PUT_IF_ABSENT = 18;
 
     private static final int LEN = PUT_IF_ABSENT + 1;
 
@@ -71,25 +81,70 @@ public final class SplitBrainDataSerializerHook implements DataSerializerHook {
         //noinspection unchecked
         ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors = new ConstructorFunction[LEN];
 
-        constructors[MERGING_VALUE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+        constructors[COLLECTION_MERGING_VALUE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MergingValueImpl();
+                return new CollectionMergingValueImpl();
             }
         };
-        constructors[MERGING_ENTRY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+        constructors[QUEUE_MERGING_VALUE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MergingEntryImpl();
+                return new QueueMergingValueImpl();
             }
         };
-        constructors[FULL_MERGING_ENTRY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+        constructors[ATOMIC_LONG_MERGING_VALUE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
-                return new FullMergingEntryImpl();
+                return new AtomicLongMergingValueImpl();
+            }
+        };
+        constructors[ATOMIC_REFERENCE_MERGING_VALUE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new AtomicReferenceMergingValueImpl();
+            }
+        };
+        constructors[MAP_MERGING_ENTRY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new MapMergingEntryImpl();
+            }
+        };
+        constructors[CACHE_MERGING_ENTRY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CacheMergingEntryImpl();
+            }
+        };
+        constructors[MULTI_MAP_MERGING_ENTRY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new MultiMapMergingEntryImpl();
+            }
+        };
+        constructors[REPLICATED_MAP_MERGING_ENTRY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new ReplicatedMapMergingEntryImpl();
+            }
+        };
+        constructors[RINGBUFFER_MERGING_ENTRY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new RingbufferMergingEntryImpl();
+            }
+        };
+        constructors[CARDINALITY_ESTIMATOR_MERGING_ENTRY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CardinalityEstimatorMergingEntry();
+            }
+        };
+        constructors[SCHEDULED_EXECUTOR_MERGING_ENTRY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new ScheduledExecutorMergingEntryImpl();
             }
         };
 
         constructors[DISCARD] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new DiscardMergePolicy();
+            }
+        };
+        constructors[EXPIRATION_TIME] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new ExpirationTimeMergePolicy();
             }
         };
         constructors[HIGHER_HITS] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {

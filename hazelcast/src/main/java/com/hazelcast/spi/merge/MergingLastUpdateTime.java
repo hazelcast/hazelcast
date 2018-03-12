@@ -19,9 +19,10 @@ package com.hazelcast.spi.merge;
 /**
  * Represents a read-only view of a last update time for the merging process after a split-brain.
  *
+ * @param <V> the type of the value
  * @since 3.10
  */
-public interface MergingLastUpdateTime {
+public interface MergingLastUpdateTime<V> extends MergingValue<V> {
 
     /**
      * Returns the last update time of the merge data.

@@ -48,7 +48,6 @@ class MapRemoteService implements RemoteService {
     public DistributedObject createDistributedObject(String name) {
         Config config = nodeEngine.getConfig();
         MapConfig mapConfig = config.findMapConfig(name);
-
         MergePolicyProvider mergePolicyProvider = mapServiceContext.getMergePolicyProvider();
         checkMapConfig(mapConfig);
 
@@ -58,7 +57,6 @@ class MapRemoteService implements RemoteService {
 
         if (mapConfig.isNearCacheEnabled()) {
             checkNearCacheConfig(name, mapConfig.getNearCacheConfig(), config.getNativeMemoryConfig(), false);
-
             return new NearCachedMapProxyImpl(name, mapServiceContext.getService(), nodeEngine, mapConfig);
         } else {
             return new MapProxyImpl(name, mapServiceContext.getService(), nodeEngine, mapConfig);

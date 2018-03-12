@@ -20,7 +20,6 @@ import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.merge.MergingCreationTime;
 import com.hazelcast.spi.merge.MergingEntry;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.spi.serialization.SerializationServiceAware;
@@ -34,19 +33,19 @@ import java.io.IOException;
  * @param <V> the type of value
  * @since 3.10
  */
-public class MergingEntryImpl<K, V> implements MergingEntry<K, V>, MergingCreationTime, SerializationServiceAware,
-        IdentifiedDataSerializable {
+@SuppressWarnings("WeakerAccess")
+public abstract class AbstractMergingEntryImpl<K, V, T extends AbstractMergingEntryImpl<K, V, T>>
+        implements MergingEntry<K, V>, SerializationServiceAware, IdentifiedDataSerializable {
 
     private K key;
     private V value;
-    private long creationTime;
 
     private transient SerializationService serializationService;
 
-    public MergingEntryImpl() {
+    public AbstractMergingEntryImpl() {
     }
 
-    public MergingEntryImpl(SerializationService serializationService) {
+    public AbstractMergingEntryImpl(SerializationService serializationService) {
         this.serializationService = serializationService;
     }
 
@@ -60,9 +59,9 @@ public class MergingEntryImpl<K, V> implements MergingEntry<K, V>, MergingCreati
         return serializationService.toObject(key);
     }
 
-    public MergingEntryImpl<K, V> setKey(K key) {
+    public T setKey(K key) {
         this.key = key;
-        return this;
+        return (T) this;
     }
 
     @Override
@@ -75,19 +74,9 @@ public class MergingEntryImpl<K, V> implements MergingEntry<K, V>, MergingCreati
         return serializationService.toObject(value);
     }
 
-    public MergingEntryImpl<K, V> setValue(V value) {
+    public T setValue(V value) {
         this.value = value;
-        return this;
-    }
-
-    @Override
-    public long getCreationTime() {
-        return creationTime;
-    }
-
-    public MergingEntryImpl<K, V> setCreationTime(long creationTime) {
-        this.creationTime = creationTime;
-        return this;
+        return (T) this;
     }
 
     @Override
@@ -99,14 +88,12 @@ public class MergingEntryImpl<K, V> implements MergingEntry<K, V>, MergingCreati
     public void writeData(ObjectDataOutput out) throws IOException {
         IOUtil.writeObject(out, key);
         IOUtil.writeObject(out, value);
-        out.writeLong(creationTime);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         key = IOUtil.readObject(in);
         value = IOUtil.readObject(in);
-        creationTime = in.readLong();
     }
 
     @Override
@@ -115,23 +102,15 @@ public class MergingEntryImpl<K, V> implements MergingEntry<K, V>, MergingCreati
     }
 
     @Override
-    public int getId() {
-        return SplitBrainDataSerializerHook.MERGING_ENTRY;
-    }
-
-    @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof MergingEntryImpl)) {
+        if (!(o instanceof AbstractMergingEntryImpl)) {
             return false;
         }
 
-        MergingEntryImpl<?, ?> that = (MergingEntryImpl<?, ?>) o;
-        if (creationTime != that.creationTime) {
-            return false;
-        }
+        AbstractMergingEntryImpl<?, ?, ?> that = (AbstractMergingEntryImpl<?, ?, ?>) o;
         if (key != null ? !key.equals(that.key) : that.key != null) {
             return false;
         }
@@ -142,7 +121,6 @@ public class MergingEntryImpl<K, V> implements MergingEntry<K, V>, MergingCreati
     public int hashCode() {
         int result = key != null ? key.hashCode() : 0;
         result = 31 * result + (value != null ? value.hashCode() : 0);
-        result = 31 * result + (int) (creationTime ^ (creationTime >>> 32));
         return result;
     }
 
@@ -151,7 +129,6 @@ public class MergingEntryImpl<K, V> implements MergingEntry<K, V>, MergingCreati
         return "MergingEntry{"
                 + "key=" + key
                 + ", value=" + value
-                + ", creationTime=" + creationTime
                 + '}';
     }
 }

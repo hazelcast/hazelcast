@@ -25,8 +25,9 @@ import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ReplicationSupportingService;
-import com.hazelcast.spi.merge.MergingEntry;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
+import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
+import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.wan.WanReplicationEvent;
 import com.hazelcast.wan.WanReplicationService;
 
@@ -81,9 +82,11 @@ class MapReplicationSupportingService implements ReplicationSupportingService {
 
         MapOperation operation;
         if (mergePolicy instanceof SplitBrainMergePolicy) {
-            MergingEntry<Data, Data> mergingEntry = createMergingEntry(nodeEngine.getSerializationService(),
-                    replicationUpdate.getEntryView());
-            operation = operationProvider.createMergeOperation(mapName, mergingEntry, (SplitBrainMergePolicy) mergePolicy, true);
+            SerializationService serializationService = nodeEngine.getSerializationService();
+            MapMergeTypes mergingEntry = createMergingEntry(serializationService, replicationUpdate.getEntryView());
+            //noinspection unchecked
+            operation = operationProvider.createMergeOperation(mapName, mergingEntry,
+                    (SplitBrainMergePolicy<Data, MapMergeTypes>) mergePolicy, true);
         } else {
             EntryView<Data, Data> entryView = replicationUpdate.getEntryView();
             operation = operationProvider.createLegacyMergeOperation(mapName, entryView, (MapMergePolicy) mergePolicy, true);
