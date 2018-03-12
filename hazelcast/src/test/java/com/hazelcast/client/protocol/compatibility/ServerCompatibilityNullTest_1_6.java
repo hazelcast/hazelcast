@@ -1524,7 +1524,7 @@ public class ServerCompatibilityNullTest_1_6 {
             assertTrue(isEqual(null, params.projection));
 }
 {
-    ClientMessage clientMessage = MapEventJournalReadCodec.encodeResponse(    anInt ,    datas ,    null   );
+    ClientMessage clientMessage = MapEventJournalReadCodec.encodeResponse(    anInt ,    datas ,    null ,    aLong   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
@@ -5252,7 +5252,7 @@ public class ServerCompatibilityNullTest_1_6 {
             assertTrue(isEqual(null, params.projection));
 }
 {
-    ClientMessage clientMessage = CacheEventJournalReadCodec.encodeResponse(    anInt ,    datas ,    null   );
+    ClientMessage clientMessage = CacheEventJournalReadCodec.encodeResponse(    anInt ,    datas ,    null ,    aLong   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
@@ -5653,7 +5653,7 @@ public class ServerCompatibilityNullTest_1_6 {
             assertTrue(isEqual(null, params.filter));
 }
 {
-    ClientMessage clientMessage = RingbufferReadManyCodec.encodeResponse(    anInt ,    datas ,    null   );
+    ClientMessage clientMessage = RingbufferReadManyCodec.encodeResponse(    anInt ,    datas ,    null ,    aLong   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);

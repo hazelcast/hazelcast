@@ -86,7 +86,7 @@ public class CacheEventJournalReadTask<K, V, T>
             seqs[k] = resultSet.getSequence(k);
         }
 
-        return CacheEventJournalReadCodec.encodeResponse(resultSet.readCount(), items, seqs);
+        return CacheEventJournalReadCodec.encodeResponse(resultSet.readCount(), items, seqs, resultSet.getNextSequenceToReadFrom());
     }
 
     @Override

@@ -1168,7 +1168,7 @@ public class BinaryCompatibilityNullFileGenerator {
      outputStream.write(clientMessage.buffer().byteArray(), 0 , clientMessage.getFrameLength());
 }
 {
-    ClientMessage clientMessage = MapEventJournalReadCodec.encodeResponse(   anInt ,   datas ,   null   );
+    ClientMessage clientMessage = MapEventJournalReadCodec.encodeResponse(   anInt ,   datas ,   null ,   aLong   );
     outputStream.writeInt(clientMessage.getFrameLength());
     outputStream.write(clientMessage.buffer().byteArray(), 0 , clientMessage.getFrameLength());
 }
@@ -4019,7 +4019,7 @@ public class BinaryCompatibilityNullFileGenerator {
      outputStream.write(clientMessage.buffer().byteArray(), 0 , clientMessage.getFrameLength());
 }
 {
-    ClientMessage clientMessage = CacheEventJournalReadCodec.encodeResponse(   anInt ,   datas ,   null   );
+    ClientMessage clientMessage = CacheEventJournalReadCodec.encodeResponse(   anInt ,   datas ,   null ,   aLong   );
     outputStream.writeInt(clientMessage.getFrameLength());
     outputStream.write(clientMessage.buffer().byteArray(), 0 , clientMessage.getFrameLength());
 }
@@ -4331,7 +4331,7 @@ public class BinaryCompatibilityNullFileGenerator {
      outputStream.write(clientMessage.buffer().byteArray(), 0 , clientMessage.getFrameLength());
 }
 {
-    ClientMessage clientMessage = RingbufferReadManyCodec.encodeResponse(   anInt ,   datas ,   null   );
+    ClientMessage clientMessage = RingbufferReadManyCodec.encodeResponse(   anInt ,   datas ,   null ,   aLong   );
     outputStream.writeInt(clientMessage.getFrameLength());
     outputStream.write(clientMessage.buffer().byteArray(), 0 , clientMessage.getFrameLength());
 }

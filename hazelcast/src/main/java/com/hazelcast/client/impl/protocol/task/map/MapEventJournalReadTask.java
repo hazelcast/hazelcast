@@ -36,17 +36,18 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Reads from the map event journal in batches. You may specify the start sequence,
- * the minumum required number of items in the response, the maximum number of items
- * in the response, a predicate that the events should pass and a projection to
- * apply to the events in the journal.
- * If the event journal currently contains less events than the required minimum, the
- * call will wait until it has sufficient items.
- * The predicate, filter and projection may be {@code null} in which case all elements are returned
- * and no projection is applied.
+ * Reads from the map event journal in batches. You may specify the start
+ * sequence, the minumum required number of items in the response, the
+ * maximum number of items in the response, a predicate that the events
+ * should pass and a projection to apply to the events in the journal.
+ * If the event journal currently contains less events than the required
+ * minimum, the call will wait until it has sufficient items.
+ * The predicate, filter and projection may be {@code null} in which case
+ * all elements are returned and no projection is applied.
  *
- * @param <T> the return type of the projection. It is equal to the journal event type
- *            if the projection is {@code null} or it is the identity projection
+ * @param <T> the return type of the projection. It is equal to the journal
+ *            event type if the projection is {@code null} or it is the
+ *            identity projection
  * @see MapEventJournalReadOperation
  * @since 3.9
  */
@@ -61,8 +62,9 @@ public class MapEventJournalReadTask<K, V, T>
     protected Operation prepareOperation() {
         final Projection<? super EventJournalMapEvent<K, V>, T> projection = serializationService.toObject(parameters.projection);
         final Predicate<? super EventJournalMapEvent<K, V>> predicate = serializationService.toObject(parameters.predicate);
-        return new MapEventJournalReadOperation<K, V, T>(parameters.name,
-                parameters.startSequence, parameters.minSize, parameters.maxSize, predicate, projection);
+        return new MapEventJournalReadOperation<K, V, T>(
+                parameters.name, parameters.startSequence, parameters.minSize,
+                parameters.maxSize, predicate, projection);
     }
 
     @Override
@@ -83,7 +85,7 @@ public class MapEventJournalReadTask<K, V, T>
             seqs[k] = resultSet.getSequence(k);
         }
 
-        return MapEventJournalReadCodec.encodeResponse(resultSet.readCount(), items, seqs);
+        return MapEventJournalReadCodec.encodeResponse(resultSet.readCount(), items, seqs, resultSet.getNextSequenceToReadFrom());
     }
 
     @Override
@@ -108,6 +110,6 @@ public class MapEventJournalReadTask<K, V, T>
     @Override
     public Object[] getParameters() {
         return new Object[]{
-                parameters.startSequence, parameters.maxSize, getPartitionId(), parameters.predicate, parameters.projection, };
+                parameters.startSequence, parameters.maxSize, getPartitionId(), parameters.predicate, parameters.projection,};
     }
 }

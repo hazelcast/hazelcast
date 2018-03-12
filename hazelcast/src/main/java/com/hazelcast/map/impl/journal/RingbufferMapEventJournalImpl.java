@@ -94,6 +94,11 @@ public class RingbufferMapEventJournalImpl implements MapEventJournal {
     }
 
     @Override
+    public boolean isPersistenceEnabled(ObjectNamespace namespace, int partitionId) {
+        return getRingbufferOrFail(namespace, partitionId).getStore().isEnabled();
+    }
+
+    @Override
     public void destroy(ObjectNamespace namespace, int partitionId) {
         RingbufferService service;
         try {

@@ -59,6 +59,7 @@ public interface EventJournalReader<E> {
      * @param <T>           the return type of the projection. It is equal to the journal event type
      *                      if the projection is {@code null} or it is the identity projection
      * @return the future with the filtered and projected journal items
+     * @throws IllegalArgumentException if {@code maxSize} is less than {@code minSize}
      * @since 3.9
      */
     <T> ICompletableFuture<ReadResultSet<T>> readFromEventJournal(

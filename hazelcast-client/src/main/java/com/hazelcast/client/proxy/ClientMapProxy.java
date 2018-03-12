@@ -106,9 +106,9 @@ import com.hazelcast.core.IMapEvent;
 import com.hazelcast.core.MapEvent;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.ReadOnly;
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.internal.journal.EventJournalReader;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapInterceptor;
@@ -252,8 +252,9 @@ public class ClientMapProxy<K, V> extends ClientProxy
             @Override
             public ReadResultSet<?> decodeClientMessage(ClientMessage message) {
                 final MapEventJournalReadCodec.ResponseParameters params = MapEventJournalReadCodec.decodeResponse(message);
-                final PortableReadResultSet<?> resultSet
-                        = new PortableReadResultSet<Object>(params.readCount, params.items, params.itemSeqs);
+                final PortableReadResultSet<?> resultSet = new PortableReadResultSet<Object>(
+                        params.readCount, params.items, params.itemSeqs,
+                        params.nextSeqExist ? params.nextSeq : ReadResultSet.SEQUENCE_UNAVAILABLE);
                 resultSet.setSerializationService(getSerializationService());
                 return resultSet;
             }
@@ -1664,6 +1665,10 @@ public class ClientMapProxy<K, V> extends ClientProxy
             com.hazelcast.util.function.Predicate<? super EventJournalMapEvent<K, V>> predicate,
             Projection<? super EventJournalMapEvent<K, V>, ? extends T> projection
     ) {
+        if (maxSize < minSize){
+            throw new IllegalArgumentException("maxSize " + maxSize
+                    + " must be greater or equal to minSize " + minSize);
+        }
         final SerializationService ss = getSerializationService();
         final ClientMessage request = MapEventJournalReadCodec.encodeRequest(
                 name, startSequence, minSize, maxSize, ss.toData(predicate), ss.toData(projection));

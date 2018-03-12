@@ -57,6 +57,19 @@ public interface EventJournal<E> {
     long oldestSequence(ObjectNamespace namespace, int partitionId);
 
     /**
+     * Returns {@code true} if the event journal has persistence enabled and
+     * can be queried for events older than the
+     * {@link #oldestSequence(ObjectNamespace, int)}. If the journal is not
+     * backed by a persistent store, this method will return {@code false}.
+     *
+     * @param namespace   the object namespace
+     * @param partitionId the partition ID of the event journal
+     * @return if the journal is backed by a persistent store and can serve events older than the oldest sequence
+     * @throws IllegalStateException if there is no event journal configured for this object
+     */
+    boolean isPersistenceEnabled(ObjectNamespace namespace, int partitionId);
+
+    /**
      * Destroys the event journal for the given object and partition ID.
      *
      * @param namespace   the object namespace
