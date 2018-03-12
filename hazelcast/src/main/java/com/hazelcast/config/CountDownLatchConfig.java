@@ -28,6 +28,8 @@ import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
  * Contains the configuration for an {@link com.hazelcast.core.ICountDownLatch}.
+ *
+ * @since 3.10
  */
 public class CountDownLatchConfig implements IdentifiedDataSerializable, Versioned {
 
