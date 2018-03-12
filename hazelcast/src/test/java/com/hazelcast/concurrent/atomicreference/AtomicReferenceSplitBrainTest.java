@@ -24,7 +24,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.DiscardMergePolicy;
-import com.hazelcast.spi.merge.MergingValueHolder;
+import com.hazelcast.spi.merge.MergingValue;
 import com.hazelcast.spi.merge.PassThroughMergePolicy;
 import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
@@ -209,7 +209,7 @@ public class AtomicReferenceSplitBrainTest extends SplitBrainTestSupport {
     private static class MergeInstanceOfIntegerMergePolicy implements SplitBrainMergePolicy {
 
         @Override
-        public <T> T merge(MergingValueHolder<T> mergingValue, MergingValueHolder<T> existingValue) {
+        public <T> T merge(MergingValue<T> mergingValue, MergingValue<T> existingValue) {
             if (mergingValue.getValue() instanceof Integer) {
                 return mergingValue.getValue();
             }

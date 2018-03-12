@@ -18,10 +18,10 @@ package com.hazelcast.ringbuffer.impl;
 
 import com.hazelcast.ringbuffer.StaleSequenceException;
 import com.hazelcast.spi.SplitBrainMergePolicy;
-import com.hazelcast.spi.merge.MergingValueHolder;
+import com.hazelcast.spi.merge.MergingEntry;
 import com.hazelcast.spi.serialization.SerializationService;
 
-import static com.hazelcast.spi.impl.merge.MergingHolders.createMergeHolder;
+import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntry;
 
 /**
  * The ArrayRingbuffer is responsible for storing the actual content of a ringbuffer.
@@ -168,8 +168,8 @@ public class ArrayRingbuffer<E> implements Ringbuffer<E> {
     }
 
     @Override
-    public long merge(MergingValueHolder<E> mergingValue, SplitBrainMergePolicy mergePolicy, long remainingCapacity) {
-        serializationService.getManagedContext().initialize(mergingValue);
+    public long merge(MergingEntry<Long, E> mergingEntry, SplitBrainMergePolicy mergePolicy, long remainingCapacity) {
+        serializationService.getManagedContext().initialize(mergingEntry);
         serializationService.getManagedContext().initialize(mergePolicy);
 
         // try to find an existing item with the same value
@@ -177,7 +177,7 @@ public class ArrayRingbuffer<E> implements Ringbuffer<E> {
         long existingSequence = -1;
         for (long sequence = headSequence; sequence <= tailSequence; sequence++) {
             E item = read(sequence);
-            if (mergingValue.getValue().equals(item)) {
+            if (mergingEntry.getValue().equals(item)) {
                 existingItem = item;
                 existingSequence = sequence;
                 break;
@@ -190,13 +190,13 @@ public class ArrayRingbuffer<E> implements Ringbuffer<E> {
                 return -1L;
             }
 
-            E newValue = mergePolicy.merge(mergingValue, null);
+            E newValue = mergePolicy.merge(mergingEntry, null);
             if (newValue != null) {
                 return add(newValue);
             }
         } else {
-            MergingValueHolder<E> existingValue = createMergeHolder(serializationService, existingSequence, existingItem);
-            E newValue = mergePolicy.merge(mergingValue, existingValue);
+            MergingEntry<Long, E> existingEntry = createMergingEntry(serializationService, existingSequence, existingItem);
+            E newValue = mergePolicy.merge(mergingEntry, existingEntry);
             if (newValue != null && !newValue.equals(existingItem)) {
                 set(existingSequence, newValue);
                 return existingSequence;

@@ -30,7 +30,7 @@ public class PassThroughMergePolicy extends AbstractSplitBrainMergePolicy {
     }
 
     @Override
-    public <V> V merge(MergingValueHolder<V> mergingValue, MergingValueHolder<V> existingValue) {
+    public <V> V merge(MergingValue<V> mergingValue, MergingValue<V> existingValue) {
         if (mergingValue == null) {
             return existingValue.getValue();
         }

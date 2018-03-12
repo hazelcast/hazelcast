@@ -18,7 +18,7 @@ package com.hazelcast.replicatedmap.impl.record;
 
 import com.hazelcast.replicatedmap.merge.ReplicatedMapMergePolicy;
 import com.hazelcast.spi.SplitBrainMergePolicy;
-import com.hazelcast.spi.merge.MergingEntryHolder;
+import com.hazelcast.spi.merge.MergingEntry;
 import com.hazelcast.util.scheduler.ScheduledEntry;
 
 import java.util.Collection;
@@ -108,11 +108,11 @@ public interface ReplicatedRecordStore {
     boolean merge(Object key, ReplicatedMapEntryView entryView, ReplicatedMapMergePolicy mergePolicy);
 
     /**
-     * Merges the given {@link MergingEntryHolder} via the given {@link SplitBrainMergePolicy}.
+     * Merges the given {@link MergingEntry} via the given {@link SplitBrainMergePolicy}.
      *
-     * @param mergingEntry the {@link MergingEntryHolder} instance to merge
+     * @param mergingEntry the {@link MergingEntry} instance to merge
      * @param mergePolicy  the {@link SplitBrainMergePolicy} instance to apply
      * @return {@code true} if merge is applied, otherwise {@code false}
      */
-    boolean merge(MergingEntryHolder<Object, Object> mergingEntry, SplitBrainMergePolicy mergePolicy);
+    boolean merge(MergingEntry<Object, Object> mergingEntry, SplitBrainMergePolicy mergePolicy);
 }

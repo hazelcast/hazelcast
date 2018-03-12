@@ -30,7 +30,7 @@ public class DiscardMergePolicy extends AbstractSplitBrainMergePolicy {
     }
 
     @Override
-    public <T> T merge(MergingValueHolder<T> mergingValue, MergingValueHolder<T> existingValue) {
+    public <T> T merge(MergingValue<T> mergingValue, MergingValue<T> existingValue) {
         if (existingValue == null) {
             return null;
         }

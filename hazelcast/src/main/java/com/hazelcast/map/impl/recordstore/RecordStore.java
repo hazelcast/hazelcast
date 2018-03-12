@@ -31,7 +31,7 @@ import com.hazelcast.monitor.LocalRecordStoreStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.SplitBrainMergePolicy;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
-import com.hazelcast.spi.merge.MergingEntryHolder;
+import com.hazelcast.spi.merge.MergingEntry;
 
 import java.util.Iterator;
 import java.util.List;
@@ -178,13 +178,13 @@ public interface RecordStore<R extends Record> {
     boolean merge(Data dataKey, EntryView mergingEntry, MapMergePolicy mergePolicy);
 
     /**
-     * Merges the given {@link MergingEntryHolder} via the given {@link SplitBrainMergePolicy}.
+     * Merges the given {@link MergingEntry} via the given {@link SplitBrainMergePolicy}.
      *
-     * @param mergingEntry the {@link MergingEntryHolder} instance to merge
+     * @param mergingEntry the {@link MergingEntry} instance to merge
      * @param mergePolicy  the {@link SplitBrainMergePolicy} instance to apply
      * @return {@code true} if merge is applied, otherwise {@code false}
      */
-    boolean merge(MergingEntryHolder<Data, Object> mergingEntry, SplitBrainMergePolicy mergePolicy);
+    boolean merge(MergingEntry<Data, Object> mergingEntry, SplitBrainMergePolicy mergePolicy);
 
     R getRecord(Data key);
 

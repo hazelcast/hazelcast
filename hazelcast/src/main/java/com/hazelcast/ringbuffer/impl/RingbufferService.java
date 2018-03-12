@@ -41,7 +41,7 @@ import com.hazelcast.spi.SplitBrainHandlerService;
 import com.hazelcast.spi.SplitBrainMergePolicy;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.merge.AbstractContainerMerger;
-import com.hazelcast.spi.merge.MergingValueHolder;
+import com.hazelcast.spi.merge.MergingEntry;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.ConstructorFunction;
@@ -62,7 +62,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.internal.config.ConfigValidator.checkRingbufferConfig;
-import static com.hazelcast.spi.impl.merge.MergingHolders.createMergeHolder;
+import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntry;
 import static com.hazelcast.spi.partition.MigrationEndpoint.DESTINATION;
 import static com.hazelcast.spi.partition.MigrationEndpoint.SOURCE;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
@@ -355,7 +355,7 @@ public class RingbufferService implements ManagedService, RemoteService, Fragmen
 
         @Override
         protected void runInternal() {
-            List<MergingValueHolder<Object>> mergingValues;
+            List<MergingEntry<Long, Object>> mergingEntries;
             for (Entry<Integer, Collection<RingbufferContainer>> entry : collector.getCollectedContainers().entrySet()) {
                 int partitionId = entry.getKey();
                 Collection<RingbufferContainer> containerList = entry.getValue();
@@ -365,27 +365,27 @@ public class RingbufferService implements ManagedService, RemoteService, Fragmen
                     int batchSize = container.getConfig().getMergePolicyConfig().getBatchSize();
                     SplitBrainMergePolicy mergePolicy = getMergePolicy(container.getConfig().getMergePolicyConfig());
 
-                    mergingValues = new ArrayList<MergingValueHolder<Object>>(batchSize);
+                    mergingEntries = new ArrayList<MergingEntry<Long, Object>>(batchSize);
                     for (long sequence = ringbuffer.headSequence(); sequence <= ringbuffer.tailSequence(); sequence++) {
                         Object item = ringbuffer.read(sequence);
-                        MergingValueHolder<Object> mergingValue = createMergeHolder(serializationService, sequence, item);
-                        mergingValues.add(mergingValue);
+                        MergingEntry<Long, Object> mergingEntry = createMergingEntry(serializationService, sequence, item);
+                        mergingEntries.add(mergingEntry);
 
-                        if (mergingValues.size() == batchSize) {
-                            sendBatch(partitionId, container.getNamespace(), mergePolicy, mergingValues);
-                            mergingValues = new ArrayList<MergingValueHolder<Object>>(batchSize);
+                        if (mergingEntries.size() == batchSize) {
+                            sendBatch(partitionId, container.getNamespace(), mergePolicy, mergingEntries);
+                            mergingEntries = new ArrayList<MergingEntry<Long, Object>>(batchSize);
                         }
                     }
-                    if (mergingValues.size() > 0) {
-                        sendBatch(partitionId, container.getNamespace(), mergePolicy, mergingValues);
+                    if (mergingEntries.size() > 0) {
+                        sendBatch(partitionId, container.getNamespace(), mergePolicy, mergingEntries);
                     }
                 }
             }
         }
 
         private void sendBatch(int partitionId, ObjectNamespace namespace, SplitBrainMergePolicy mergePolicy,
-                               List<MergingValueHolder<Object>> mergingValues) {
-            MergeOperation operation = new MergeOperation(namespace, mergePolicy, mergingValues);
+                               List<MergingEntry<Long, Object>> mergingEntries) {
+            MergeOperation operation = new MergeOperation(namespace, mergePolicy, mergingEntries);
             invoke(SERVICE_NAME, operation, partitionId);
         }
     }

@@ -47,16 +47,16 @@ public class DiscardMergePolicyTest {
     @Test
     @SuppressWarnings("ConstantConditions")
     public void merge_existingValueAbsent() {
-        MergingValueHolder existing = null;
-        MergingValueHolder merging = mergingValueWithGivenValue(MERGING);
+        MergingValue existing = null;
+        MergingValue merging = mergingValueWithGivenValue(MERGING);
 
         assertNull(mergePolicy.merge(merging, existing));
     }
 
     @Test
     public void merge_existingValuePresent() {
-        MergingValueHolder existing = mergingValueWithGivenValue(EXISTING);
-        MergingValueHolder merging = mergingValueWithGivenValue(MERGING);
+        MergingValue existing = mergingValueWithGivenValue(EXISTING);
+        MergingValue merging = mergingValueWithGivenValue(MERGING);
 
         assertEquals(EXISTING, mergePolicy.merge(merging, existing));
     }
@@ -64,22 +64,22 @@ public class DiscardMergePolicyTest {
     @Test
     @SuppressWarnings("ConstantConditions")
     public void merge_mergingNull() {
-        MergingValueHolder existing = mergingValueWithGivenValue(EXISTING);
-        MergingValueHolder merging = null;
+        MergingValue existing = mergingValueWithGivenValue(EXISTING);
+        MergingValue merging = null;
 
         assertEquals(EXISTING, mergePolicy.merge(merging, existing));
     }
 
     @Test
     public void merge_bothValuesNull() {
-        MergingValueHolder existing = mergingValueWithGivenValue(null);
-        MergingValueHolder merging = mergingValueWithGivenValue(null);
+        MergingValue existing = mergingValueWithGivenValue(null);
+        MergingValue merging = mergingValueWithGivenValue(null);
 
         assertNull(mergePolicy.merge(merging, existing));
     }
 
-    private MergingValueHolder mergingValueWithGivenValue(String value) {
-        MergingValueHolder mergingValue = mock(MergingValueHolder.class);
+    private MergingValue mergingValueWithGivenValue(String value) {
+        MergingValue mergingValue = mock(MergingValue.class);
         try {
             when(mergingValue.getValue()).thenReturn(value);
             return mergingValue;

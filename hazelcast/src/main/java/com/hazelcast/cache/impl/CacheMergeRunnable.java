@@ -29,7 +29,7 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.SplitBrainMergePolicy;
 import com.hazelcast.spi.impl.merge.AbstractMergeRunnable;
-import com.hazelcast.spi.merge.MergingEntryHolder;
+import com.hazelcast.spi.merge.MergingEntry;
 import com.hazelcast.util.function.BiConsumer;
 
 import java.util.Collection;
@@ -38,9 +38,9 @@ import java.util.Map;
 
 import static com.hazelcast.cache.impl.ICacheService.SERVICE_NAME;
 import static com.hazelcast.config.MergePolicyConfig.DEFAULT_BATCH_SIZE;
-import static com.hazelcast.spi.impl.merge.MergingHolders.createMergeHolder;
+import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntry;
 
-class CacheMergeRunnable extends AbstractMergeRunnable<ICacheRecordStore, MergingEntryHolder<Data, Data>> {
+class CacheMergeRunnable extends AbstractMergeRunnable<ICacheRecordStore, MergingEntry<Data, Data>> {
 
     private final CacheService cacheService;
     private final CacheSplitBrainHandlerService cacheSplitBrainHandlerService;
@@ -57,7 +57,7 @@ class CacheMergeRunnable extends AbstractMergeRunnable<ICacheRecordStore, Mergin
     }
 
     @Override
-    protected void consumeStore(ICacheRecordStore store, BiConsumer<Integer, MergingEntryHolder<Data, Data>> consumer) {
+    protected void consumeStore(ICacheRecordStore store, BiConsumer<Integer, MergingEntry<Data, Data>> consumer) {
         int partitionId = store.getPartitionId();
 
         for (Map.Entry<Data, CacheRecord> entry : store.getReadOnlyRecords().entrySet()) {
@@ -65,7 +65,7 @@ class CacheMergeRunnable extends AbstractMergeRunnable<ICacheRecordStore, Mergin
             CacheRecord record = entry.getValue();
             Data dataValue = toData(record.getValue());
 
-            consumer.accept(partitionId, createMergeHolder(getSerializationService(), key, dataValue, record));
+            consumer.accept(partitionId, createMergingEntry(getSerializationService(), key, dataValue, record));
         }
     }
 
@@ -117,7 +117,7 @@ class CacheMergeRunnable extends AbstractMergeRunnable<ICacheRecordStore, Mergin
     protected OperationFactory createMergeOperationFactory(String dataStructureName,
                                                            SplitBrainMergePolicy mergePolicy,
                                                            int[] partitions,
-                                                           List<MergingEntryHolder<Data, Data>>[] entries) {
+                                                           List<MergingEntry<Data, Data>>[] entries) {
         CacheConfig cacheConfig = cacheService.getCacheConfig(dataStructureName);
         CacheOperationProvider operationProvider
                 = cacheService.getCacheOperationProvider(dataStructureName, cacheConfig.getInMemoryFormat());

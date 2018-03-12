@@ -20,13 +20,13 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.spi.merge.MergingEntryHolder;
-import com.hazelcast.spi.merge.MergingValueHolder;
+import com.hazelcast.spi.merge.MergingEntry;
+import com.hazelcast.spi.merge.MergingValue;
 
 /**
  * Policy for merging data structure values after a split-brain has been healed.
  * <p>
- * The values of merging and existing {@link MergingValueHolder}s are always in the in-memory format of the
+ * The values of merging and existing {@link MergingValue}s are always in the in-memory format of the
  * backing data structure. This can be a serialized format, so the content cannot be processed without deserialization.
  * For most merge policies this will be fine, since the key or value are not used.
  * <p>
@@ -37,8 +37,8 @@ import com.hazelcast.spi.merge.MergingValueHolder;
  * So you can put entries from a client by using {@link com.hazelcast.config.InMemoryFormat#BINARY} with a different
  * classpath on client and server. In this case a deserialization could throw a {@link java.lang.ClassNotFoundException}.</li>
  * </ul>
- * If you need the deserialized data you can call {@link MergingValueHolder#getDeserializedValue()} or
- * {@link MergingEntryHolder#getDeserializedKey()}, which will deserialize the data lazily.
+ * If you need the deserialized data you can call {@link MergingValue#getDeserializedValue()} or
+ * {@link MergingEntry#getDeserializedKey()}, which will deserialize the data lazily.
  * <p>
  * A merge policy can implement {@link HazelcastInstanceAware} to get the {@link HazelcastInstance} injected.
  * This can be used to retrieve the user context via {@link HazelcastInstance#getUserContext()},
@@ -51,16 +51,16 @@ import com.hazelcast.spi.merge.MergingValueHolder;
 public interface SplitBrainMergePolicy extends DataSerializable {
 
     /**
-     * Selects the value of either the merging or the existing {@link MergingValueHolder} which should be merged.
+     * Selects the value of either the merging or the existing {@link MergingValue} which should be merged.
      * <p>
-     * Note that the existing {@link MergingValueHolder} instance may be {@code null}
-     * if no matching data could be found to the merging {@link MergingValueHolder}.
+     * Note that the existing {@link MergingValue} instance may be {@code null}
+     * if no matching data could be found to the merging {@link MergingValue}.
      *
-     * @param mergingValue  {@link MergingValueHolder} instance that has the merging data of the smaller sub-cluster
-     * @param existingValue {@link MergingValueHolder} instance that has the existing data
+     * @param mergingValue  {@link MergingValue} instance that has the merging data of the smaller sub-cluster
+     * @param existingValue {@link MergingValue} instance that has the existing data
      *                      or {@code null} if no matching data exists
      * @param <V>           the type of the value
      * @return the selected value for merging
      */
-    <V> V merge(MergingValueHolder<V> mergingValue, MergingValueHolder<V> existingValue);
+    <V> V merge(MergingValue<V> mergingValue, MergingValue<V> existingValue);
 }

@@ -30,7 +30,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.tcp.FirewallingConnectionManager;
 import com.hazelcast.spi.SplitBrainMergePolicy;
-import com.hazelcast.spi.merge.MergingValueHolder;
+import com.hazelcast.spi.merge.MergingValue;
 import com.hazelcast.spi.properties.GroupProperty;
 import org.junit.Before;
 import org.junit.Test;
@@ -446,7 +446,7 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
     protected static class MergeIntegerValuesMergePolicy implements SplitBrainMergePolicy {
 
         @Override
-        public <T> T merge(MergingValueHolder<T> mergingValue, MergingValueHolder<T> existingValue) {
+        public <T> T merge(MergingValue<T> mergingValue, MergingValue<T> existingValue) {
             if (mergingValue.getDeserializedValue() instanceof Integer) {
                 return mergingValue.getValue();
             }

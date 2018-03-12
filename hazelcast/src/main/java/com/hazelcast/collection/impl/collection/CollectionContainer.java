@@ -24,7 +24,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.SplitBrainMergePolicy;
-import com.hazelcast.spi.merge.MergingValueHolder;
+import com.hazelcast.spi.merge.MergingValue;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.transaction.TransactionException;
 
@@ -37,7 +37,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static com.hazelcast.spi.impl.merge.MergingHolders.createMergeHolder;
+import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingValue;
 import static com.hazelcast.util.MapUtil.createHashMap;
 
 @SuppressWarnings("checkstyle:methodcount")
@@ -344,13 +344,13 @@ public abstract class CollectionContainer implements IdentifiedDataSerializable 
     protected abstract void onDestroy();
 
     /**
-     * Merges the given {@link MergingValueHolder} via the given {@link SplitBrainMergePolicy}.
+     * Merges the given {@link MergingValue} via the given {@link SplitBrainMergePolicy}.
      *
-     * @param mergingValue the {@link MergingValueHolder} instance to merge
+     * @param mergingValue the {@link MergingValue} instance to merge
      * @param mergePolicy  the {@link SplitBrainMergePolicy} instance to apply
      * @return the used {@link CollectionItem} if merge is applied, otherwise {@code null}
      */
-    public CollectionItem merge(MergingValueHolder<Data> mergingValue, SplitBrainMergePolicy mergePolicy) {
+    public CollectionItem merge(MergingValue<Data> mergingValue, SplitBrainMergePolicy mergePolicy) {
         SerializationService serializationService = nodeEngine.getSerializationService();
         serializationService.getManagedContext().initialize(mergingValue);
         serializationService.getManagedContext().initialize(mergePolicy);
@@ -374,7 +374,7 @@ public abstract class CollectionContainer implements IdentifiedDataSerializable 
                 }
             }
         } else {
-            MergingValueHolder<Data> existingValue = createMergeHolder(serializationService, existingItem);
+            MergingValue<Data> existingValue = createMergingValue(serializationService, existingItem);
             Data newValue = mergePolicy.merge(mergingValue, existingValue);
             if (newValue != null && !newValue.equals(existingValue.getValue())) {
                 existingItem.setValue(newValue);

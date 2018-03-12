@@ -17,16 +17,16 @@
 package com.hazelcast.spi.merge;
 
 /**
- * Represents a read-only view of a version for the merging process after a split-brain.
+ * Represents a read-only view of memory costs for the merging process after a split-brain.
  *
  * @since 3.10
  */
-public interface VersionHolder {
+public interface MergingCosts {
 
     /**
-     * Returns the version of the merge data.
+     * Returns the memory cost of the merge data.
      *
-     * @return the version of the merge data
+     * @return the memory cost of the merge data
      */
-    long getVersion();
+    long getCost();
 }
