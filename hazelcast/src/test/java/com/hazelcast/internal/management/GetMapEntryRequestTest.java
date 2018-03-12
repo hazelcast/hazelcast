@@ -46,7 +46,7 @@ public class GetMapEntryRequestTest extends HazelcastTestSupport {
 
     @Test
     public void testGetMapEntry() throws Exception {
-        GetMapEntryRequest request = new GetMapEntryRequest("string", "map", "key");
+        GetMapEntryRequest request = new GetMapEntryRequest("map", "key");
         IMap<String, String> map = hz.getMap("map");
         map.put("key", "value");
 
