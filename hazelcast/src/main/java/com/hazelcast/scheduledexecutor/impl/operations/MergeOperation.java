@@ -21,8 +21,8 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.scheduledexecutor.impl.ScheduledExecutorContainer;
 import com.hazelcast.scheduledexecutor.impl.ScheduledTaskDescriptor;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.MergingEntry;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 
 import java.io.IOException;
 import java.util.ArrayList;

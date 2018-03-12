@@ -24,6 +24,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -33,7 +34,7 @@ import java.util.Map;
 import static com.hazelcast.util.MapUtil.createHashMap;
 
 /**
- * Contains multiple backup entries for split-brain healing with a {@link com.hazelcast.spi.SplitBrainMergePolicy}.
+ * Contains multiple backup entries for split-brain healing with a {@link SplitBrainMergePolicy}.
  *
  * @since 3.10
  */

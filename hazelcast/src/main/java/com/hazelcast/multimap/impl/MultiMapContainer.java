@@ -21,8 +21,8 @@ import com.hazelcast.concurrent.lock.LockStore;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.DistributedObjectNamespace;
 import com.hazelcast.spi.ObjectNamespace;
-import com.hazelcast.spi.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.MergingEntry;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.serialization.SerializationService;
 
 import java.util.Collection;

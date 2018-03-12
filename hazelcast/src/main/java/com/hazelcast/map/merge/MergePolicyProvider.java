@@ -18,6 +18,7 @@ package com.hazelcast.map.merge;
 
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
 import com.hazelcast.util.ConstructorFunction;
 
@@ -68,7 +69,7 @@ public final class MergePolicyProvider {
     /**
      * Returns an instance of a merge policy by its classname.
      * <p>
-     * First tries to resolve the classname as {@link com.hazelcast.spi.SplitBrainMergePolicy},
+     * First tries to resolve the classname as {@link SplitBrainMergePolicy},
      * then as {@link com.hazelcast.map.merge.MapMergePolicy}.
      * <p>
      * If no merge policy matches an exception is thrown.

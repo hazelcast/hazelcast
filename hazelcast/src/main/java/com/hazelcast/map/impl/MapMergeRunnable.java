@@ -27,9 +27,9 @@ import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
-import com.hazelcast.spi.SplitBrainMergePolicy;
 import com.hazelcast.spi.impl.merge.AbstractMergeRunnable;
 import com.hazelcast.spi.merge.MergingEntry;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.function.BiConsumer;
 

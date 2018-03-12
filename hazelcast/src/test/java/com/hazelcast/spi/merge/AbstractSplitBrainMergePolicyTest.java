@@ -16,7 +16,6 @@
 
 package com.hazelcast.spi.merge;
 
-import com.hazelcast.spi.SplitBrainMergePolicy;
 import com.hazelcast.spi.impl.merge.FullMergingEntryImpl;
 import org.junit.Before;
 import org.junit.Test;

@@ -17,8 +17,8 @@
 package com.hazelcast.ringbuffer.impl;
 
 import com.hazelcast.ringbuffer.StaleSequenceException;
-import com.hazelcast.spi.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.MergingEntry;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.serialization.SerializationService;
 
 /**

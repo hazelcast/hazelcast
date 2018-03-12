@@ -23,8 +23,8 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.MergingValue;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 
 import java.io.IOException;
 import java.util.ArrayList;

@@ -18,7 +18,6 @@ package com.hazelcast.spi.merge;
 
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.SplitBrainMergePolicy;
 import com.hazelcast.util.ConstructorFunction;
 
 import java.util.HashMap;

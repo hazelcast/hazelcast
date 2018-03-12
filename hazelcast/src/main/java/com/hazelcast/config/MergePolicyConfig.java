@@ -20,6 +20,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 
 import java.io.IOException;
 
@@ -27,7 +28,7 @@ import static com.hazelcast.util.Preconditions.checkHasText;
 import static com.hazelcast.util.Preconditions.checkPositive;
 
 /**
- * Configuration for {@link com.hazelcast.spi.SplitBrainMergePolicy}.
+ * Configuration for {@link SplitBrainMergePolicy}.
  */
 public class MergePolicyConfig implements IdentifiedDataSerializable {
 
@@ -60,7 +61,7 @@ public class MergePolicyConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * Returns the classname of the {@link com.hazelcast.spi.SplitBrainMergePolicy}.
+     * Returns the classname of the {@link SplitBrainMergePolicy}.
      *
      * @return the classname of the merge policy
      */
@@ -69,7 +70,7 @@ public class MergePolicyConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * Sets the classname of your {@link com.hazelcast.spi.SplitBrainMergePolicy}.
+     * Sets the classname of your {@link SplitBrainMergePolicy}.
      * <p>
      * For the out-of-the-box merge policies the simple classname is sufficient, e.g. {@code PutIfAbsentMergePolicy}.
      * But also the fully qualified classname is fine, e.g. com.hazelcast.spi.merge.PutIfAbsentMergePolicy.

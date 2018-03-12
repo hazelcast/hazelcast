@@ -14,14 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi;
+package com.hazelcast.spi.merge;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.spi.merge.MergingEntry;
-import com.hazelcast.spi.merge.MergingValue;
+import com.hazelcast.spi.NodeAware;
 
 /**
  * Policy for merging data structure values after a split-brain has been healed.

@@ -26,6 +26,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.impl.Versioned;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.partition.IPartition;
 
 import java.io.IOException;
@@ -555,7 +556,7 @@ public class MapConfig implements IdentifiedDataSerializable, Versioned {
     /**
      * Sets the merge policy.
      * <p>
-     * Accepts a classname of {@link com.hazelcast.spi.SplitBrainMergePolicy}
+     * Accepts a classname of {@link SplitBrainMergePolicy}
      * or the deprecated {@link com.hazelcast.map.merge.MapMergePolicy}.
      *
      * @param mergePolicy the merge policy classname to set

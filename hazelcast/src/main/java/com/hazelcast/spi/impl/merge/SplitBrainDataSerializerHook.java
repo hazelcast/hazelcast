@@ -28,6 +28,7 @@ import com.hazelcast.spi.merge.LatestAccessMergePolicy;
 import com.hazelcast.spi.merge.LatestUpdateMergePolicy;
 import com.hazelcast.spi.merge.PassThroughMergePolicy;
 import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.util.ConstructorFunction;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.SPLIT_BRAIN_DS_FACTORY;
@@ -36,7 +37,7 @@ import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.SPLIT_BR
 /**
  * Contains all the ID hooks for {@link IdentifiedDataSerializable} classes used by the split-brain framework.
  * <p>
- * {@link com.hazelcast.spi.SplitBrainMergePolicy} classes are mapped here. This factory class is used by the
+ * {@link SplitBrainMergePolicy} classes are mapped here. This factory class is used by the
  * internal serialization system to create {@link IdentifiedDataSerializable} classes without using reflection.
  *
  * @since 3.10

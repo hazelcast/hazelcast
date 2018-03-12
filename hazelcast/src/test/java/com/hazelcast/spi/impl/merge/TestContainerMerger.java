@@ -19,7 +19,7 @@ package com.hazelcast.spi.impl.merge;
 import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.SplitBrainMergePolicy;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 
 import static org.junit.Assert.assertNotNull;
 
