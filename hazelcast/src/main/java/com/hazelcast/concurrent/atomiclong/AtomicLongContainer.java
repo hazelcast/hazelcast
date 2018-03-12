@@ -16,8 +16,8 @@
 
 package com.hazelcast.concurrent.atomiclong;
 
-import com.hazelcast.spi.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.MergingValue;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.serialization.SerializationService;
 
 import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingValue;
