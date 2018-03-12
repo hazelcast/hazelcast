@@ -640,7 +640,9 @@ public class ManagementCenterService {
             try {
                 Member member = membershipEvent.getMember();
                 if (member != null && instance.node.isMaster() && urlChanged) {
-                    resolveFuture(callOnMember(member, new UpdateManagementCenterUrlOperation(managementCenterUrl)));
+                    UpdateManagementCenterUrlOperation operation
+                            = new UpdateManagementCenterUrlOperation(managementCenterUrl);
+                    resolveFuture(callOnMember(member, operation));
                 }
             } catch (Exception e) {
                 logger.warning("Web server url cannot be send to the newly joined member", e);

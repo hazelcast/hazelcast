@@ -79,6 +79,8 @@ public class ScriptExecutorOperation extends AbstractManagementOperation {
     protected void readInternal(ObjectDataInput in) throws IOException {
         engineName = in.readUTF();
         script = in.readUTF();
+        // kept for compatibility
+        in.readInt();
     }
 
     @Override
