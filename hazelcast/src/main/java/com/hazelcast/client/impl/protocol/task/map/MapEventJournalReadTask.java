@@ -110,6 +110,7 @@ public class MapEventJournalReadTask<K, V, T>
     @Override
     public Object[] getParameters() {
         return new Object[]{
-                parameters.startSequence, parameters.maxSize, getPartitionId(), parameters.predicate, parameters.projection,};
+                parameters.startSequence, parameters.maxSize, getPartitionId(),
+                parameters.predicate, parameters.projection, };
     }
 }

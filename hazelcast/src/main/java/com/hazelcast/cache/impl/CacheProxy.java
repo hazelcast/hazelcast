@@ -391,7 +391,7 @@ public class CacheProxy<K, V> extends AbstractCacheProxy<K, V>
             Predicate<? super EventJournalCacheEvent<K, V>> predicate,
             Projection<? super EventJournalCacheEvent<K, V>, ? extends T> projection
     ) {
-        if (maxSize < minSize){
+        if (maxSize < minSize) {
             throw new IllegalArgumentException("maxSize " + maxSize
                     + " must be greater or equal to minSize " + minSize);
         }
