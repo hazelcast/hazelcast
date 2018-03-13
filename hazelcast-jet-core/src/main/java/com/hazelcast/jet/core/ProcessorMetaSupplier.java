@@ -99,9 +99,11 @@ public interface ProcessorMetaSupplier extends Serializable {
      * If there is an exception during the creation of the execution plan, this
      * method will be called regardless of whether the {@link #init(Context)
      * init()} or {@link #get(List) get()} method have been called or not.
+     * If this method throws an exception, it will be logged and ignored; it
+     * won't be reported as a job failure.
      * <p>
      * If you rely on the fact that this method is run once per cluster, it can
-     * happen that it is not called, if the coordinator member crashed.
+     * happen that it is not called at all, if the coordinator member crashed.
      *
      * @param error the exception (if any) that caused the job to fail;
      *              {@code null} in the case of successful job completion

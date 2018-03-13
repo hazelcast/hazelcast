@@ -50,10 +50,14 @@ public interface ProcessorSupplier extends Serializable {
     Collection<? extends Processor> get(int count);
 
     /**
-     * Called after the execution has finished on all members, successfully
-     * or not, or immediately, when the execution was <em>aborted</em> due to
-     * a member leaving the cluster. If called immediately, it can happen that
-     * the job is still running on some member.
+     * Called after the execution has finished on all members - successfully or
+     * not. It is called immediately when the execution was <em>aborted</em>
+     * due to a member leaving the cluster. If called immediately, it can
+     * happen that the job is still running on some other member (but not on
+     * this member).
+     * <p>
+     * If this method throws an exception, it will be logged and ignored; it
+     * won't be reported as a job failure.
      * <p>
      * Note: this method can be called even if {@link #init(Context) init()} or
      * {@link #get(int) get()} were not called yet in case the job fails during

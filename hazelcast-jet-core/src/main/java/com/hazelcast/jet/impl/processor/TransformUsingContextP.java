@@ -129,6 +129,8 @@ public final class TransformUsingContextP<C, T, R> extends AbstractProcessor imp
 
         @Override
         public void complete(Throwable error) {
+            // Super implementation closes the processor instances - it cleans up non-shared
+            // context objects.
             super.complete(error);
 
             if (contextObject != null) {

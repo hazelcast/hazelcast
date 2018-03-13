@@ -81,8 +81,12 @@ public final class KafkaSources {
      * issue of Kafka (KAFKA-1894).
      * Refer to Kafka documentation for details.
      * <p>
-     * Default local parallelism for this processor is 2 (or less if less CPUs
-     * are available).
+     * Default local parallelism for this processor is 4 (or less if less CPUs
+     * are available). Note that deserialization is done inside {@code
+     * KafkaConsumer}. If you have high traffic, the deserialization might
+     * become a bottleneck - increase the local parallelism or use {@code
+     * byte[]} for messages and deserialize manually in a subsequent mapping
+     * step.
      *
      * @param properties   consumer properties broker address and key/value deserializers
      * @param projectionFn function to create output objects from the Kafka record.

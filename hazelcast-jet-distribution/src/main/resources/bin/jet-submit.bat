@@ -14,7 +14,7 @@ ECHO # CLASSPATH=%CLASSPATH%
 ECHO # starting now....
 ECHO ########################################
 
-"%RUN_JAVA%" -cp "%CLASSPATH%";"%JAR_FILE%" com.hazelcast.jet.server.JetBootstrap %JAR_FILE% %2 %3 %4 %5 %6 %7 %8 %9
+"%RUN_JAVA%" -cp "%CLASSPATH%";"%JAR_FILE%" com.hazelcast.jet.server.JetBootstrap %*
 goto endofscript 
 
 :error

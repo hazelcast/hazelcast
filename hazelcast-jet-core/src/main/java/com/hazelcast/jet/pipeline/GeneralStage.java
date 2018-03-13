@@ -234,6 +234,23 @@ public interface GeneralStage<T> extends Stage {
     /**
      * Adds a timestamp to each item in the stream using the current system
      * time.
+     * <p>
+     * Note: if this stage is added directly after the source, the watermarks
+     * can be added by the source. In this case, watermarks are generated for
+     * each source partition and are coalesced. If watermarks are not added in
+     * the source but are added later, it can happen that the watermarks are
+     * added after streams from several source partitions are split or merged.
+     * This is problematic when "catching up" after a restart.
+     * <p>
+     * For example: say the source has two partitions P1 and P2. After a
+     * restart, each of them contains one event. P1 contains very recent event
+     * and P2 contains very late event. Assume that their time difference is
+     * higher than the allowed lag. If at the point where watermarks are added
+     * we receive the event from P1 before the event from P2, the event from P2
+     * can be dropped as late. If watermarks would have been generated at the
+     * source, each event will cause its own watermark and, thanks to
+     * coalescing, the resulting watermark will not advance beyond the event
+     * from P2.
      *
      * @throws IllegalArgumentException if timestamps were already added to the stream
      */
@@ -262,6 +279,23 @@ public interface GeneralStage<T> extends Stage {
      * will it have to wait for possible latecomers. On the other hand, if don't
      * allow enough lag, you face the risk of failing to account for the data
      * that came in after the results were already emitted.
+     * <p>
+     * Note: if this stage is added directly after the source, the watermarks
+     * can be added by the source. In this case, watermarks are generated for
+     * each source partition and are coalesced. If watermarks are not added in
+     * the source but are added later, it can happen that the watermarks are
+     * added after streams from several source partitions are split or merged.
+     * This is problematic when "catching up" after a restart.
+     * <p>
+     * For example: say the source has two partitions P1 and P2. After a
+     * restart, each of them contains one event. P1 contains very recent event
+     * and P2 contains very late event. Assume that their time difference is
+     * higher than the allowed lag. If at the point where watermarks are added
+     * we receive the event from P1 before the event from P2, the event from P2
+     * can be dropped as late. If watermarks would have been generated at the
+     * source, each event will cause its own watermark and, thanks to
+     * coalescing, the resulting watermark will not advance beyond the event
+     * from P2.
      *
      * @param timestampFn a function that returns the timestamp for each item
      * @param allowedLag the allowed lag behind the top observed timestamp

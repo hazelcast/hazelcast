@@ -36,6 +36,8 @@ import java.util.Properties;
  */
 public final class KafkaProcessors {
 
+    private static final int PREFERRED_LOCAL_PARALLELISM = 4;
+
     private KafkaProcessors() {
     }
 
@@ -54,7 +56,7 @@ public final class KafkaProcessors {
         properties.put("enable.auto.commit", false);
         return ProcessorMetaSupplier.of(
                 StreamKafkaP.processorSupplier(properties, Arrays.asList(topics), projectionFn, wmGenParams),
-                2
+                PREFERRED_LOCAL_PARALLELISM
         );
     }
 
