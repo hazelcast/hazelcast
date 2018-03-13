@@ -330,7 +330,7 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
             closeSegments(cacheNameWithPrefix);
         }
 
-        final WanReplicationService wanService = nodeEngine.getService(WanReplicationService.SERVICE_NAME);
+        WanReplicationService wanService = nodeEngine.getWanReplicationService();
         wanService.removeWanEventCounters(ICacheService.SERVICE_NAME, cacheNameWithPrefix);
         cacheContexts.remove(cacheNameWithPrefix);
         operationProviderCache.remove(cacheNameWithPrefix);
