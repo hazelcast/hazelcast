@@ -23,20 +23,20 @@ import com.hazelcast.internal.management.ManagementCenterService;
 
 import static com.hazelcast.util.JsonUtil.getString;
 
+import java.lang.reflect.Constructor;
+
 /**
  * Request for fetching map entries.
  */
 public class GetMapEntryRequest implements ConsoleRequest {
 
     private String mapName;
-    private String type;
     private String key;
 
     public GetMapEntryRequest() {
     }
 
-    public GetMapEntryRequest(String type, String mapName, String key) {
-        this.type = type;
+    public GetMapEntryRequest(String mapName, String key) {
         this.mapName = mapName;
         this.key = key;
     }
@@ -48,17 +48,16 @@ public class GetMapEntryRequest implements ConsoleRequest {
 
     @Override
     public void writeResponse(ManagementCenterService mcs, JsonObject root) throws Exception {
-        IMap map = mcs.getHazelcastInstance().getMap(mapName);
+        root.add("result", writeResult(mcs.getHazelcastInstance().getMap(mapName)));
+    }
+    
+    private <K, V> JsonObject writeResult(IMap<K, V> map) throws Exception {
         JsonObject result = new JsonObject();
-        EntryView entry = null;
-        if (type.equals("string")) {
-            entry = map.getEntryView(key);
-        } else if (type.equals("long")) {
-            entry = map.getEntryView(Long.valueOf(key));
-        } else if (type.equals("integer")) {
-            entry = map.getEntryView(Integer.valueOf(key));
-        }
-        if (entry != null) {
+        if (!map.isEmpty()) {
+            @SuppressWarnings("unchecked")
+            Class<K> keyType = (Class<K>) map.keySet().iterator().next().getClass();
+            Constructor<K> constructor = keyType.getDeclaredConstructor(String.class);
+            EntryView<K, V> entry = map.getEntryView(constructor.newInstance(key));
             Object value = entry.getValue();
             result.add("browse_value", value != null ? value.toString() : "null");
             result.add("browse_class", value != null ? value.getClass().getName() : "null");
@@ -70,13 +69,12 @@ public class GetMapEntryRequest implements ConsoleRequest {
             result.add("date_update_time", Long.toString(entry.getLastUpdateTime()));
             result.add("browse_version", Long.toString(entry.getVersion()));
         }
-        root.add("result", result);
+        return result;
     }
 
     @Override
     public void fromJson(JsonObject json) {
         mapName = getString(json, "mapName");
-        type = getString(json, "type");
         key = getString(json, "key");
     }
 }
