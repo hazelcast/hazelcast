@@ -34,15 +34,20 @@ public class SetOperation extends BasePutOperation {
     }
 
     @Override
+    public void run() {
+        Object oldValue = recordStore.set(dataKey, dataValue, ttl);
+        newRecord = oldValue == null;
+
+        if (recordStore.hasQueryCache()) {
+            dataOldValue = mapServiceContext.toData(oldValue);
+        }
+    }
+
+    @Override
     public void afterRun() {
         eventType = newRecord ? ADDED : UPDATED;
 
         super.afterRun();
-    }
-
-    @Override
-    public void run() {
-        newRecord = recordStore.set(dataKey, dataValue, ttl);
     }
 
     @Override

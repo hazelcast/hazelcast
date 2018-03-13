@@ -756,7 +756,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     /**
      * @return {@code true} if this IMap has any query-cache, otherwise return {@code false}
      */
-    private boolean hasQueryCache() {
+    @Override
+    public boolean hasQueryCache() {
         QueryCacheContext queryCacheContext = mapServiceContext.getQueryCacheContext();
         PublisherContext publisherContext = queryCacheContext.getPublisherContext();
         MapPublisherRegistry mapPublisherRegistry = publisherContext.getMapPublisherRegistry();
@@ -769,6 +770,11 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                 record.getKey(), mapServiceContext.toData(record.getValue()), null, null, ADDED.getType());
 
         mapEventPublisher.addEventToQueryCache(eventData);
+    }
+
+    @Override
+    public Object set(Data dataKey, Object value, long ttl) {
+        return putInternal(dataKey, value, ttl, false);
     }
 
     @Override
@@ -984,12 +990,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         }
 
         return true;
-    }
-
-    @Override
-    public boolean set(Data dataKey, Object value, long ttl) {
-        Object oldValue = putInternal(dataKey, value, ttl, false);
-        return oldValue == null;
     }
 
     @Override

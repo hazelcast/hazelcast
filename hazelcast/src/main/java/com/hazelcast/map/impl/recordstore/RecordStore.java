@@ -47,6 +47,16 @@ public interface RecordStore<R extends Record> extends LocalRecordStoreStats {
 
     String getName();
 
+    /**
+     * @return oldValue only if it exists in memory, otherwise just returns
+     * null and doesn't try to load it from {@link com.hazelcast.core.MapLoader}
+     */
+    Object set(Data dataKey, Object value, long ttl);
+
+    /**
+     * @return oldValue if it exists in memory otherwise tries to load oldValue
+     * by using {@link com.hazelcast.core.MapLoader}
+     */
     Object put(Data dataKey, Object dataValue, long ttl);
 
     Object putIfAbsent(Data dataKey, Object value, long ttl);
@@ -61,13 +71,6 @@ public interface RecordStore<R extends Record> extends LocalRecordStoreStats {
      * @return previous record if exists otherwise null.
      */
     R putBackup(Data key, Object value, long ttl, boolean putTransient);
-
-    /**
-     * Returns {@code true} if key doesn't exist previously, otherwise returns {@code false}.
-     *
-     * @see com.hazelcast.core.IMap#set(Object, Object)
-     */
-    boolean set(Data dataKey, Object value, long ttl);
 
     Object remove(Data dataKey);
 
@@ -117,10 +120,9 @@ public interface RecordStore<R extends Record> extends LocalRecordStoreStats {
 
     Object replace(Data dataKey, Object update);
 
-
     /**
      * Sets the value to the given updated value
-     * if {@link com.hazelcast.map.impl.record.RecordFactory#isEquals} comparison
+     * if {@link com.hazelcast.map.impl.record.RecordComparator#isEqual} comparison
      * of current value and expected value is {@code true}.
      *
      * @param dataKey key which's value is requested to be replaced.
@@ -409,4 +411,10 @@ public interface RecordStore<R extends Record> extends LocalRecordStoreStats {
     boolean isKeyLoadFinished();
 
     InvalidationQueue<ExpiredKey> getExpiredKeys();
+
+    /**
+     * @return true if there is a {@link com.hazelcast.map.QueryCache} defined
+     * for this map.
+     */
+    boolean hasQueryCache();
 }
