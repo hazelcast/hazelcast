@@ -34,6 +34,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
+import static com.hazelcast.jet.impl.execution.DoneItem.DONE_ITEM;
 import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.IDLE_MESSAGE;
 import static com.hazelcast.jet.impl.util.ProgressState.MADE_PROGRESS;
 import static com.hazelcast.jet.impl.util.ProgressState.NO_PROGRESS;
@@ -264,6 +265,22 @@ public class ProcessorTaskletTest_Watermarks {
         callUntil(400, tasklet, NO_PROGRESS);
         // Then2
         assertEquals(asList("wm(101)-0", wm(101)), outstream1.getBuffer());
+    }
+
+    @Test
+    public void when_oneEdgeWaitsForWmAndThenDone_then_wmForwarded() {
+        MockInboundStream instream1 = new MockInboundStream(0, singletonList(wm(100)), 1000);
+        MockInboundStream instream2 = new MockInboundStream(0, singletonList(DONE_ITEM), 1000);
+        MockOutboundStream outstream1 = new MockOutboundStream(0, 128);
+        instreams.add(instream1);
+        instreams.add(instream2);
+        outstreams.add(outstream1);
+        ProcessorTasklet tasklet = createTasklet(16);
+
+        callUntil(400, tasklet, NO_PROGRESS);
+
+        // Then
+        assertEquals(asList("wm(100)-0", wm(100)), outstream1.getBuffer());
     }
 
     private ProcessorTasklet createTasklet(int maxWatermarkRetainMillis) {

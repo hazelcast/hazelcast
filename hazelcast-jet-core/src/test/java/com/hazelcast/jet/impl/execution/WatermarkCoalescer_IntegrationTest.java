@@ -302,7 +302,7 @@ public class WatermarkCoalescer_IntegrationTest extends JetTestSupport {
                 if (item instanceof SerializableWm) {
                     item = new Watermark(((SerializableWm) item).timestamp);
                 } else if (item instanceof Delay) {
-                    getLogger().info("will wait " + MILLISECONDS.toNanos(((Delay) item).millis) + " ms");
+                    getLogger().info("will wait " + ((Delay) item).millis + " ms");
                     nextItemAt = System.nanoTime() + MILLISECONDS.toNanos(((Delay) item).millis);
                     pos++;
                     return false;

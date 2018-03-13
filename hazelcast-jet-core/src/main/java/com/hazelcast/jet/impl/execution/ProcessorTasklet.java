@@ -271,6 +271,9 @@ public class ProcessorTasklet implements Tasklet {
     }
 
     private void fillInbox(long now) {
+        assert inbox.isEmpty() : "inbox is not empty";
+        assert pendingWatermark == null : "null wm expected, but was " + pendingWatermark;
+
         if (instreamCursor == null) {
             return;
         }
@@ -289,21 +292,9 @@ public class ProcessorTasklet implements Tasklet {
             result = currInstream.drainTo(inbox.queue()::add);
             progTracker.madeProgress(result.isMadeProgress());
 
-            if (result.isDone()) {
-                assert pendingWatermark == null;
-                receivedBarriers.clear(currInstream.ordinal());
-                long wm = watermarkCoalescer.queueDone(currInstream.ordinal());
-                if (wm != NO_NEW_WM) {
-                    pendingWatermark = new Watermark(wm);
-                }
-                instreamCursor.remove();
-                numActiveOrdinals--;
-            }
-
             // check if the last drained item is special
             Object lastItem = inbox.queue().peekLast();
             if (lastItem instanceof Watermark) {
-                assert pendingWatermark == null;
                 long newWmValue = ((Watermark) inbox.queue().removeLast()).timestamp();
                 long wm = watermarkCoalescer.observeWm(now, currInstream.ordinal(), newWmValue);
                 if (wm != NO_NEW_WM) {
@@ -314,6 +305,20 @@ public class ProcessorTasklet implements Tasklet {
                 observeSnapshot(currInstream.ordinal(), barrier.snapshotId());
             } else if (lastItem != null && !(lastItem instanceof BroadcastItem)) {
                 watermarkCoalescer.observeEvent(currInstream.ordinal());
+            }
+
+            if (result.isDone()) {
+                receivedBarriers.clear(currInstream.ordinal());
+                long wm = watermarkCoalescer.queueDone(currInstream.ordinal());
+                // Note that there can be a WM received from upstream and the result can be done after single drain.
+                // In this case we might overwrite the WM here, but that's fine since the second WM should be newer.
+                if (wm != NO_NEW_WM) {
+                    assert pendingWatermark == null || pendingWatermark.timestamp() < wm
+                            : "trying to assign lower WM. Old=" + pendingWatermark.timestamp() + ", new=" + wm;
+                    pendingWatermark = new Watermark(wm);
+                }
+                instreamCursor.remove();
+                numActiveOrdinals--;
             }
 
             // pop current priority group
@@ -348,7 +353,8 @@ public class ProcessorTasklet implements Tasklet {
      * otherwise to PROCESS_INBOX.
      */
     private ProcessorState initialProcessingState() {
-        return instreamCursor == null ? COMPLETE : PROCESS_INBOX;
+        return pendingWatermark != null ? PROCESS_WATERMARK
+                : instreamCursor == null ? COMPLETE : PROCESS_INBOX;
     }
 
     /**

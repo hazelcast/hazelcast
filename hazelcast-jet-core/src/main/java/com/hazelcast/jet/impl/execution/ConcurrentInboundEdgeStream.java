@@ -30,6 +30,7 @@ import java.util.function.Consumer;
 
 import static com.hazelcast.jet.impl.execution.DoneItem.DONE_ITEM;
 import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.NO_NEW_WM;
+import static com.hazelcast.jet.impl.util.ProgressState.DONE;
 import static com.hazelcast.jet.impl.util.ProgressState.MADE_PROGRESS;
 
 /**
@@ -107,7 +108,7 @@ public class ConcurrentInboundEdgeStream implements InboundEdgeStream {
                 receivedBarriers.clear(queueIndex);
                 numActiveQueues--;
                 if (maybeEmitWm(watermarkCoalescer.queueDone(queueIndex), dest)) {
-                    return MADE_PROGRESS;
+                    return numActiveQueues == 0 ? DONE : MADE_PROGRESS;
                 }
             } else if (itemDetector.item instanceof Watermark) {
                 long wmTimestamp = ((Watermark) itemDetector.item).timestamp();
