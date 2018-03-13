@@ -61,6 +61,15 @@ import java.util.concurrent.TimeUnit;
  * <li>Methods, including but not limited to {@code keySet}, {@code values}, {@code entrySet}, return a collection
  * clone of the values. The collection is <b>NOT</b> backed by the map, so changes to the map are <b>NOT</b> reflected
  * in the collection, and vice-versa.</li>
+ * <li>Currently, updates performed on the map having
+ * {@link com.hazelcast.config.InMemoryFormat#OBJECT OBJECT} or
+ * {@link com.hazelcast.config.InMemoryFormat#BINARY BINARY} in-memory format
+ * are reflected in the indexes in a non-atomic way. Therefore, if there are
+ * indexes configured for the map, their state may slightly lag behind the state
+ * of the map. Use map listeners if you need to observe the state when the map
+ * and its indexes are consistent about the state of a particular map entry, see
+ * {@link #addEntryListener(MapListener, boolean) addEntryListener} for more
+ * details.</li>
  * </ul>
  * <p>
  * This class does <em>not</em> allow {@code null} to be used as a key or value.
