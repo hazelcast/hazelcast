@@ -50,7 +50,7 @@ public class ClientQueryCacheUpdateTest extends HazelcastTestSupport {
 
     @Before
     public void setUp() {
-        factory.newHazelcastInstance();
+        factory.newHazelcastInstance(getConfig());
 
         QueryCacheConfig queryCacheConfig = new QueryCacheConfig(queryCacheName);
         queryCacheConfig.getPredicateConfig().setImplementation(new SqlPredicate("id=1"));
