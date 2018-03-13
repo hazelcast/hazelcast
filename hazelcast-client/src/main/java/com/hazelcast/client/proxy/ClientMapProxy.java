@@ -1665,7 +1665,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
             com.hazelcast.util.function.Predicate<? super EventJournalMapEvent<K, V>> predicate,
             Projection<? super EventJournalMapEvent<K, V>, ? extends T> projection
     ) {
-        if (maxSize < minSize){
+        if (maxSize < minSize) {
             throw new IllegalArgumentException("maxSize " + maxSize
                     + " must be greater or equal to minSize " + minSize);
         }
