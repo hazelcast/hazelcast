@@ -122,8 +122,7 @@ public class LiteMemberClientMapNearCacheBasicTest extends AbstractNearCacheBasi
     }
 
     protected ClientConfig createClientConfig() {
-        return new ClientConfig()
-                .addNearCacheConfig(nearCacheConfig);
+        return new ClientConfig();
     }
 
     private <K, V> NearCacheTestContextBuilder<K, V, Data, String> createNearCacheContextBuilder(IMapMapStore mapStore) {
