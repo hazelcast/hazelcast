@@ -23,6 +23,7 @@ import com.hazelcast.hotrestart.InternalHotRestartService;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.MemberInfo;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.cluster.impl.operations.FetchMembersViewOp;
 import com.hazelcast.internal.cluster.impl.operations.MembersUpdateOp;
 import com.hazelcast.logging.ILogger;
@@ -835,11 +836,15 @@ public class MembershipManager {
                     if (mastershipClaimTimeout > 0 && !isMemberSuspected(address) && memberInfo != null) {
                         // we don't suspect from 'address' and we need to learn its response
                         done = false;
-                        // Mastership claim is idempotent.
-                        // We will retry our claim to member until it explicitly rejects or accepts our claim.
-                        // We can't just rely on invocation retries, because if connection is dropped while
-                        // our claim is on the wire, invocation won't get any response and will eventually timeout.
-                        futures.put(address, invokeFetchMembersViewOp(address, memberInfo.getUuid()));
+
+                        // RU_COMPAT_39
+                        if (clusterService.getClusterVersion().isGreaterThan(Versions.V3_9)) {
+                            // Mastership claim is idempotent.
+                            // We will retry our claim to member until it explicitly rejects or accepts our claim.
+                            // We can't just rely on invocation retries, because if connection is dropped while
+                            // our claim is on the wire, invocation won't get any response and will eventually timeout.
+                            futures.put(address, invokeFetchMembersViewOp(address, memberInfo.getUuid()));
+                        }
                     }
                 }
 
