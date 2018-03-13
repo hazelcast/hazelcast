@@ -86,11 +86,13 @@ import java.util.concurrent.TimeUnit;
  * <li>Be careful while using default interface method implementations from {@link ConcurrentMap} and {@link Map}. Under
  * the hood they are typically implemented as a sequence of more primitive map operations, therefore the operations won't
  * be executed atomically.</li>
- * <li>Currently, updates performed on the map are reflected in the indexes in
- * a non-atomic way. Therefore, if there are indexes configured for the map,
- * their state may slightly lag behind the state of the map. Use map listeners
- * if you need to observe the state when the map and its indexes are consistent
- * about the state of a particular map entry, see
+ * <li>Currently, updates performed on the map having
+ * {@link com.hazelcast.config.InMemoryFormat#OBJECT OBJECT} or
+ * {@link com.hazelcast.config.InMemoryFormat#BINARY BINARY} in-memory format
+ * are reflected in the indexes in a non-atomic way. Therefore, if there are
+ * indexes configured for the map, their state may slightly lag behind the state
+ * of the map. Use map listeners if you need to observe the state when the map
+ * and its indexes are consistent about the state of a particular map entry, see
  * {@link #addEntryListener(MapListener, boolean) addEntryListener} for more
  * details.</li>
  * </ul>
