@@ -26,6 +26,7 @@ import com.hazelcast.map.impl.journal.MapEventJournal;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.ringbuffer.impl.RingbufferContainer;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.spi.ObjectNamespace;
@@ -40,7 +41,7 @@ import static com.hazelcast.ringbuffer.impl.RingbufferDataSerializerHook.REPLICA
 import static com.hazelcast.ringbuffer.impl.RingbufferService.SERVICE_NAME;
 import static com.hazelcast.util.MapUtil.createHashMap;
 
-public class ReplicationOperation extends Operation implements IdentifiedDataSerializable {
+public class ReplicationOperation extends Operation implements IdentifiedDataSerializable, Versioned {
 
     private Map<ObjectNamespace, RingbufferContainer> migrationData;
 
