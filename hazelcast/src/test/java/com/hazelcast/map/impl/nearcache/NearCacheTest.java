@@ -804,13 +804,19 @@ public class NearCacheTest extends NearCacheTestSupport {
 
     @Test
     public void testNearCacheTTLRecordsExpired() {
-        NearCacheConfig nearCacheConfig = newNearCacheConfig().setTimeToLiveSeconds(MAX_TTL_SECONDS);
+        NearCacheConfig nearCacheConfig = newNearCacheConfig()
+                .setTimeToLiveSeconds(MAX_TTL_SECONDS)
+                .setInvalidateOnChange(false);
+
         testNearCacheExpiration(nearCacheConfig);
     }
 
     @Test
     public void testNearCacheMaxIdleRecordsExpired() {
-        NearCacheConfig nearCacheConfig = newNearCacheConfig().setMaxIdleSeconds(MAX_IDLE_SECONDS);
+        NearCacheConfig nearCacheConfig = newNearCacheConfig()
+                .setMaxIdleSeconds(MAX_IDLE_SECONDS)
+                .setInvalidateOnChange(false);
+
         testNearCacheExpiration(nearCacheConfig);
     }
 
@@ -821,8 +827,8 @@ public class NearCacheTest extends NearCacheTestSupport {
         Config config = getConfig();
         HazelcastInstance instance1 = factory.newHazelcastInstance(config);
 
-        IMap<Integer, Integer> noNearCachedMap = instance1.getMap(mapName);
-        populateMap(noNearCachedMap, MAX_CACHE_SIZE);
+        IMap<Integer, Integer> mapWithoutNearCache = instance1.getMap(mapName);
+        populateMap(mapWithoutNearCache, MAX_CACHE_SIZE);
 
         Config configWithNearCache = getConfig();
         nearCacheConfig.setCacheLocalEntries(true);
