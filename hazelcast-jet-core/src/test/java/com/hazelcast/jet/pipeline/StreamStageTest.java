@@ -18,17 +18,19 @@ package com.hazelcast.jet.pipeline;
 
 import com.hazelcast.core.IMap;
 import com.hazelcast.jet.core.processor.Processors;
+import com.hazelcast.jet.datamodel.ItemsByTag;
+import com.hazelcast.jet.datamodel.Tag;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.datamodel.Tuple3;
-import org.junit.Test;
-
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.stream.Stream;
+import org.junit.Test;
 
 import static com.hazelcast.jet.Traversers.traverseIterable;
 import static com.hazelcast.jet.Util.mapEventNewValue;
 import static com.hazelcast.jet.Util.mapPutEvents;
+import static com.hazelcast.jet.datamodel.ItemsByTag.itemsByTag;
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.datamodel.Tuple3.tuple3;
 import static com.hazelcast.jet.function.DistributedFunctions.entryValue;
@@ -203,6 +205,44 @@ public class StreamStageTest extends PipelineTestSupport {
         List<Tuple3<Integer, String, String>> expected = input.stream()
                                                               .map(i -> tuple3(i, i + "A", i + "B"))
                                                               .collect(toList());
+        assertTrueEventually(() -> assertEquals(toBag(expected), sinkToBag()));
+    }
+
+
+    @Test
+    public void hashJoinBuilder() {
+        // Given
+        List<Integer> input = sequence(ITEM_COUNT);
+        String mapName = JOURNALED_MAP_PREFIX + randomMapName();
+        IMap<String, Integer> map = jet().getMap(mapName);
+        putToMap(map, input);
+
+        String enriching1Name = randomMapName();
+        String enriching2Name = randomMapName();
+        BatchStage<Entry<Integer, String>> enrichingStage1 = p.drawFrom(Sources.map(enriching1Name));
+        BatchStage<Entry<Integer, String>> enrichingStage2 = p.drawFrom(Sources.map(enriching2Name));
+        IMap<Integer, String> enriching1 = jet().getMap(enriching1Name);
+        IMap<Integer, String> enriching2 = jet().getMap(enriching2Name);
+        input.forEach(i -> enriching1.put(i, i + "A"));
+        input.forEach(i -> enriching2.put(i, i + "B"));
+
+        // When
+        StreamHashJoinBuilder<Integer> b = p
+                .drawFrom(Sources.<Integer, String, Integer>mapJournal(mapName, mapPutEvents(), mapEventNewValue(),
+                        START_FROM_OLDEST))
+                .hashJoinBuilder();
+
+        Tag<String> tagA = b.add(enrichingStage1, joinMapEntries(wholeItem()));
+        Tag<String> tagB = b.add(enrichingStage2, joinMapEntries(wholeItem()));
+        GeneralStage<Tuple2<Integer, ItemsByTag>> joined = b.build((t1, t2) -> tuple2(t1, t2));
+        joined.drainTo(sink);
+        jet().newJob(p);
+
+        // Then
+        List<Tuple2<Integer, ItemsByTag>> expected = input
+                .stream()
+                .map(i -> tuple2(i, itemsByTag(tagA, i + "A", tagB, i + "B")))
+                .collect(toList());
         assertTrueEventually(() -> assertEquals(toBag(expected), sinkToBag()));
     }
 

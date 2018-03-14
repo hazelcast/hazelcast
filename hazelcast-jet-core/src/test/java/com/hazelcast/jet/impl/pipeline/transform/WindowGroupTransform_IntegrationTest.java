@@ -17,10 +17,13 @@
 package com.hazelcast.jet.impl.pipeline.transform;
 
 import com.hazelcast.config.EventJournalConfig;
+import com.hazelcast.core.IList;
 import com.hazelcast.core.IMap;
 import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.aggregate.AggregateOperation;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.core.JetTestSupport;
+import com.hazelcast.jet.datamodel.Tag;
 import com.hazelcast.jet.datamodel.ThreeBags;
 import com.hazelcast.jet.datamodel.TimestampedEntry;
 import com.hazelcast.jet.datamodel.TwoBags;
@@ -33,6 +36,7 @@ import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.jet.pipeline.StageWithGroupingAndWindow;
 import com.hazelcast.jet.pipeline.StreamStageWithGrouping;
 import com.hazelcast.jet.pipeline.WindowDefinition;
+import com.hazelcast.jet.pipeline.WindowGroupAggregateBuilder;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -233,6 +237,78 @@ public class WindowGroupTransform_IntegrationTest extends JetTestSupport {
 
     }
 
+    @Test
+    public void testSliding_windowFirst_aggregate3_with_aggregateBuilder() {
+        IMap<Long, String> map = instance.getMap("source");
+        // key is timestamp
+        map.put(0L, "foo");
+        map.put(2L, "taz");
+        map.put(10L, "flush-item");
+
+        IMap<Long, String> map1 = instance.getMap("source1");
+        // key is timestamp
+        map1.put(0L, "faa");
+        map1.put(2L, "tuu");
+        map1.put(10L, "flush-item");
+
+        IMap<Long, String> map2 = instance.getMap("source2");
+        // key is timestamp
+        map2.put(0L, "fzz");
+        map2.put(2L, "tcc");
+        map2.put(10L, "flush-item");
+
+        Pipeline p = Pipeline.create();
+        StreamStageWithGrouping<Entry<Long, String>, Character> stage1 =
+                p.drawFrom(
+                        Sources.<Long, String>mapJournal("source1", START_FROM_OLDEST))
+                 .addTimestamps(Entry::getKey, 0)
+                 .groupingKey(entry -> entry.getValue().charAt(0));
+        StreamStageWithGrouping<Entry<Long, String>, Character> stage2 =
+                p.drawFrom(
+                        Sources.<Long, String>mapJournal("source2", START_FROM_OLDEST))
+                 .addTimestamps(Entry::getKey, 0)
+                 .groupingKey(entry -> entry.getValue().charAt(0));
+
+        WindowGroupAggregateBuilder<Entry<Long, String>, Character> b =
+                p.drawFrom(Sources.<Long, String>mapJournal("source", START_FROM_OLDEST))
+                 .addTimestamps(Entry::getKey, 0)
+                 .window(WindowDefinition.tumbling(2))
+                 .groupingKey(entry -> entry.getValue().charAt(0))
+                 .aggregateBuilder();
+
+        Tag<Entry<Long, String>> tag0 = b.tag0();
+        Tag<Entry<Long, String>> tag1 = b.add(stage1);
+        Tag<Entry<Long, String>> tag2 = b.add(stage2);
+
+        b.build(AggregateOperation
+                .withCreate(ThreeBags::threeBags)
+                .andAccumulate(tag0, (acc, item0) -> acc.bag0().add(item0))
+                .andAccumulate(tag1, (acc, item1) -> acc.bag1().add(item1))
+                .andAccumulate(tag2, (acc, item2) -> acc.bag2().add(item2))
+                .andCombine(ThreeBags::combineWith)
+                .andDeduct(ThreeBags::deduct)
+                .andFinish(ThreeBags::finish))
+         .peek()
+         .drainTo(Sinks.list("sink"));
+
+        instance.newJob(p);
+        assertTrueEventually(() -> {
+            assertEquals(
+                    listToString(asList(
+                            new TimestampedEntry<>(2, 'f', ThreeBags.threeBags(
+                                    asList(entry(0L, "foo")),
+                                    asList(entry(0L, "faa")),
+                                    asList(entry(0L, "fzz"))
+                            )),
+                            new TimestampedEntry<>(4, 't', ThreeBags.threeBags(
+                                    asList(entry(2L, "taz")),
+                                    asList(entry(2L, "tuu")),
+                                    asList(entry(2L, "tcc"))
+                            )))),
+                    listToString(instance.getHazelcastInstance().getList("sink")));
+        }, 5);
+    }
+
 
     @Test
     public void testSession_windowFirst() {
@@ -277,6 +353,37 @@ public class WindowGroupTransform_IntegrationTest extends JetTestSupport {
                             new WindowResult<>(1, 3, 'b', set(entry(1L, "bar"))),
                             new WindowResult<>(4, 7, 'b', set(entry(4L, "baz"),
                                     entry(5L, "booze")))),
+                    new HashSet<>(instance.getHazelcastInstance().getList("sink")));
+        }, 5);
+    }
+
+    @Test
+    public void testSliding_groupingFirst_withNonStreamingSource() {
+        IList<Entry<Long, String>> list = instance.getList("source");
+        list.add(entry(0L, "foo"));
+        list.add(entry(1L, "bar"));
+        list.add(entry(2L, "baz"));
+        list.add(entry(3L, "booze"));
+
+        Pipeline p = Pipeline.create();
+        p.drawFrom(Sources.<Entry<Long, String>>list("source"))
+         .addTimestamps(Entry::getKey, 0)
+         .groupingKey(entry -> entry.getValue().charAt(0))
+         .window(WindowDefinition.tumbling(2))
+         .aggregate(toSet())
+         .drainTo(Sinks.list("sink"));
+
+        instance.newJob(p).join();
+
+        assertTrueEventually(() -> {
+            assertEquals(
+                    set(
+                            new TimestampedEntry<>(2, 'f', set(entry(0L, "foo"))),
+                            new TimestampedEntry<>(2, 'b', set(entry(1L, "bar"))),
+                            new TimestampedEntry<>(4, 'b', set(
+                                    entry(2L, "baz"),
+                                    entry(3L, "booze"))
+                            )),
                     new HashSet<>(instance.getHazelcastInstance().getList("sink")));
         }, 5);
     }

@@ -19,8 +19,10 @@ package com.hazelcast.jet.impl.pipeline.transform;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.core.IMap;
 import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.aggregate.AggregateOperation;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.core.JetTestSupport;
+import com.hazelcast.jet.datamodel.Tag;
 import com.hazelcast.jet.datamodel.ThreeBags;
 import com.hazelcast.jet.datamodel.TimestampedItem;
 import com.hazelcast.jet.datamodel.TwoBags;
@@ -31,6 +33,7 @@ import com.hazelcast.jet.pipeline.SlidingWindowDef;
 import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.jet.pipeline.StageWithWindow;
 import com.hazelcast.jet.pipeline.StreamStage;
+import com.hazelcast.jet.pipeline.WindowAggregateBuilder;
 import com.hazelcast.jet.pipeline.WindowDefinition;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -147,6 +150,58 @@ public class WindowAggregateTransform_IntegrationTest extends JetTestSupport {
          .addTimestamps(Entry::getKey, 0)
          .window(WindowDefinition.tumbling(2))
          .aggregate2(stage1, toTwoBags())
+         .peek()
+         .drainTo(Sinks.list("sink"));
+
+        instance.newJob(p);
+        assertTrueEventually(() -> assertEquals(
+                listToString(asList(
+                        new TimestampedItem<>(2, TwoBags.twoBags(
+                                asList(entry(0L, "foo")),
+                                asList(entry(0L, "faa"))
+                        )),
+                        new TimestampedItem<>(4, TwoBags.twoBags(
+                                asList(entry(2L, "baz")),
+                                asList(entry(2L, "buu"))
+                        )))),
+                listToString(instance.getHazelcastInstance().getList("sink"))), 5);
+    }
+
+    @Test
+    public void test_aggregate2_with_aggregateBuilder() {
+        IMap<Long, String> map = instance.getMap("source");
+        // key is timestamp
+        map.put(0L, "foo");
+        map.put(2L, "baz");
+        map.put(10L, "flush-item");
+
+        IMap<Long, String> map2 = instance.getMap("source1");
+        // key is timestamp
+        map2.put(0L, "faa");
+        map2.put(2L, "buu");
+        map2.put(10L, "flush-item");
+
+        Pipeline p = Pipeline.create();
+        StreamStage<Entry<Long, String>> stage1 = p.drawFrom(
+                Sources.<Long, String>mapJournal("source1", START_FROM_OLDEST));
+        stage1.addTimestamps(Entry::getKey, 0);
+
+        WindowAggregateBuilder<Entry<Long, String>> b =
+                p.drawFrom(Sources.<Long, String>mapJournal("source", START_FROM_OLDEST))
+                 .addTimestamps(Entry::getKey, 0)
+                 .window(WindowDefinition.tumbling(2))
+                 .aggregateBuilder();
+
+        Tag<Entry<Long, String>> tag0 = b.tag0();
+        Tag<Entry<Long, String>> tag1 = b.add(stage1);
+
+        b.build(AggregateOperation
+                .withCreate(TwoBags::twoBags)
+                .andAccumulate(tag0, (acc, item0) -> acc.bag0().add(item0))
+                .andAccumulate(tag1, (acc, item1) -> acc.bag1().add(item1))
+                .andCombine(TwoBags::combineWith)
+                .andDeduct(TwoBags::deduct)
+                .andFinish(TwoBags::finish))
          .peek()
          .drainTo(Sinks.list("sink"));
 
