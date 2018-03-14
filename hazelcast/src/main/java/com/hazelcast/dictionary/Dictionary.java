@@ -21,6 +21,9 @@ import com.hazelcast.core.ICompletableFuture;
 
 /**
  * todo:
+ * - should the offset table be on the segment?
+ *      - the advantage is that is a lot easier to control the total datasize
+ *      and the data section can grow until it runs into the footer.
  * - the offset table can't grow
  * - for put/get the key isn't checked; just the hashcode.
  * - remove
@@ -37,6 +40,10 @@ import com.hazelcast.core.ICompletableFuture;
  *  - there should not be any need for explicit support for primitive wrappers for keys
  *  - currently the segment size increases with a fixed factor of 2, this should be configurable.
  *  - type checking should be added to the codec.
+ *  - add optional statistics to the map entry
+ *          hits
+ *          lastAccessTime
+ *          lastUpdateTime
  *
  * done:
  * - map.put overwrite not implemented
