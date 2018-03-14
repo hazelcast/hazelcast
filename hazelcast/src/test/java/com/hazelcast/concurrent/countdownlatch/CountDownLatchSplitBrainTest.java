@@ -35,12 +35,6 @@ public class CountDownLatchSplitBrainTest extends SplitBrainTestSupport {
     private int count = 5;
 
     @Override
-    protected int[] brains() {
-        // 2nd merges to the 1st
-        return new int[]{2, 1};
-    }
-
-    @Override
     protected void onBeforeSplitBrainCreated(HazelcastInstance[] instances) {
         warmUpPartitions(instances);
         name = generateKeyOwnedBy(instances[instances.length - 1]);
