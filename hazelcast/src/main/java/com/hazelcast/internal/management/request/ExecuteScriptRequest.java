@@ -26,7 +26,6 @@ import com.hazelcast.util.AddressUtil;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.MapUtil;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -71,22 +70,20 @@ public class ExecuteScriptRequest implements ConsoleRequest {
         }
 
         JsonObject responseJson = new JsonObject();
-        StringBuilder scriptResult = new StringBuilder();
         for (Map.Entry<Address, Future<Object>> entry : futures.entrySet()) {
             Address address = entry.getKey();
             Future<Object> future = entry.getValue();
 
             try {
-                addSuccessResponse(responseJson, scriptResult, address, prettyPrint(future.get()));
+                addSuccessResponse(responseJson, address, prettyPrint(future.get()));
             } catch (ExecutionException e) {
-                addErrorResponse(responseJson, scriptResult, address, e);
+                addErrorResponse(responseJson, address, e);
             } catch (InterruptedException e) {
-                addErrorResponse(responseJson, scriptResult, address, e);
+                addErrorResponse(responseJson, address, e);
                 Thread.currentThread().interrupt();
             }
         }
 
-        responseJson.add("scriptResult",  scriptResult.toString());
         root.add("result",  responseJson);
     }
 
@@ -123,25 +120,20 @@ public class ExecuteScriptRequest implements ConsoleRequest {
         }
     }
 
-    private static void addSuccessResponse(JsonObject root, StringBuilder scriptResult,
-                                           Address address, String result) {
+    private static void addSuccessResponse(JsonObject root, Address address, String result) {
 
-        addResponse(root, scriptResult, address, true, result);
+        addResponse(root, address, true, result);
     }
 
-    private static void addErrorResponse(JsonObject root, StringBuilder scriptResult,
-                                         Address address, Exception e) {
-        addResponse(root, scriptResult, address, false, ExceptionUtil.toString(e));
+    private static void addErrorResponse(JsonObject root, Address address, Exception e) {
+        addResponse(root, address, false, ExceptionUtil.toString(e));
     }
 
-    private static void addResponse(JsonObject root, StringBuilder scriptResult,
-                                    Address address, boolean success, String result) {
+    private static void addResponse(JsonObject root, Address address, boolean success, String result) {
 
         JsonObject json = new JsonObject();
         json.add("success", success);
         json.add("result", result);
         root.add(address.toString(), json);
-
-        scriptResult.append(result);
     }
 }
