@@ -65,12 +65,14 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.JobStatus.COMPLETED;
 import static com.hazelcast.jet.core.JobStatus.FAILED;
 import static com.hazelcast.jet.core.JobStatus.NOT_STARTED;
 import static com.hazelcast.jet.core.JobStatus.RESTARTING;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.STARTING;
+import static com.hazelcast.jet.core.processor.Processors.mapP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.readMapP;
 import static com.hazelcast.jet.function.DistributedFunctions.entryKey;
 import static com.hazelcast.jet.impl.SnapshotRepository.snapshotDataMapName;
@@ -82,7 +84,6 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.impl.util.Util.idToString;
 import static com.hazelcast.jet.impl.util.Util.jobAndExecutionId;
-import static com.hazelcast.query.TruePredicate.truePredicate;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.partitioningBy;
 import static java.util.stream.Collectors.toList;
@@ -226,13 +227,19 @@ public class MasterContext {
             // Processor.finishSnapshotRestore() method is always called on all vertices in
             // a job which is restored from a snapshot.
             String mapName = snapshotDataMapName(jobId, snapshotId, vertex.getName());
-            Vertex readSnapshotVertex = dag.newVertex("__read_snapshot." + vertex.getName(),
-                    readMapP(mapName, truePredicate(), projection));
+            Vertex readSnapshotVertex = dag.newVertex("__snapshot_read." + vertex.getName(), readMapP(mapName));
+            // We need a separate mapping vertex and can't use readMapP's projectionFn:
+            // the projection will cause key/value deserialization on partition thread, which doesn't have job's
+            // class loader. If the key/value uses a custom object, it will fail. For example, StreamKafkaP uses
+            // TopicPartition as the key or a custom processor can use custom key.
+            Vertex mapSnapshotVertex = dag.newVertex("__snapshot_map_." + vertex.getName(), mapP(projection));
 
             readSnapshotVertex.localParallelism(vertex.getLocalParallelism());
+            mapSnapshotVertex.localParallelism(vertex.getLocalParallelism());
 
             int destOrdinal = dag.getInboundEdges(vertex.getName()).size();
-            dag.edge(new SnapshotRestoreEdge(readSnapshotVertex, vertex, destOrdinal));
+            dag.edge(between(readSnapshotVertex, mapSnapshotVertex).isolated())
+               .edge(new SnapshotRestoreEdge(mapSnapshotVertex, vertex, destOrdinal));
         }
     }
 
