@@ -29,6 +29,8 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
+import static com.hazelcast.internal.cluster.Versions.V3_10;
+
 /**
  * Operation to execute script on the node.
  */
@@ -71,16 +73,18 @@ public class ScriptExecutorOperation extends AbstractManagementOperation {
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeUTF(engineName);
         out.writeUTF(script);
-        // kept for compatibility
-        out.writeInt(0);
+        if (out.getVersion().isLessThan(V3_10)) {
+            out.writeInt(0);
+        }
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         engineName = in.readUTF();
         script = in.readUTF();
-        // kept for compatibility
-        in.readInt();
+        if (in.getVersion().isLessThan(V3_10)) {
+            in.readInt();
+        }
     }
 
     @Override
