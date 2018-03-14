@@ -92,6 +92,10 @@ class MockJoiner extends AbstractJoiner {
     }
 
     private Address getJoinAddress() {
+        final Address targetAddress = getTargetAddress();
+        if (targetAddress != null) {
+            return targetAddress;
+        }
         Address joinAddress = node.getMasterAddress();
         logger.fine("Known master address is: " + joinAddress);
         if (joinAddress == null) {
