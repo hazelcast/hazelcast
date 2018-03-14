@@ -36,6 +36,9 @@ public class IdentifiedFactory implements DataSerializableFactory {
         if (typeId == DistortInvalidationMetadataEntryProcessor.CLASS_ID) {
             return new DistortInvalidationMetadataEntryProcessor();
         }
+        if (typeId == PrefixFilter.CLASS_ID) {
+            return new PrefixFilter();
+        }
         return null;
     }
 }
