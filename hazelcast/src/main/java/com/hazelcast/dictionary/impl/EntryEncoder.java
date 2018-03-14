@@ -41,7 +41,7 @@ public abstract class EntryEncoder<K, V> {
      */
     public abstract int writeEntry(K key, V value, long address, int length);
 
-    public abstract long writeValue(V value, long address);
+    public abstract long writeValue(V value, long entryAddress);
 
     public abstract V readValue(long address);
 

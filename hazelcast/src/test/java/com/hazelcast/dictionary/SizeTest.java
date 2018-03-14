@@ -10,8 +10,7 @@ import static org.junit.Assert.assertEquals;
 
 public class SizeTest extends HazelcastTestSupport {
 
-    @Test
-    public void whenUntouched() {
+    private Dictionary<Long, Long> createDictionary() {
         Config config = new Config();
         config.addDictionaryConfig(
                 new DictionaryConfig("foo")
@@ -20,21 +19,19 @@ public class SizeTest extends HazelcastTestSupport {
 
         HazelcastInstance hz = createHazelcastInstance(config);
 
-        Dictionary<Long, Long> dictionary = hz.getDictionary("foo");
-        assertEquals(0, dictionary.size());
+        return hz.getDictionary("foo");
     }
 
     @Test
+    public void whenUntouched() {
+        Dictionary<Long, Long> dictionary = createDictionary();
+        assertEquals(0, dictionary.size());
+    }
+
+
+    @Test
     public void whenManyItems() {
-        Config config = new Config();
-        config.addDictionaryConfig(
-                new DictionaryConfig("foo")
-                        .setKeyClass(Long.class)
-                        .setValueClass(Long.class));
-
-        HazelcastInstance hz = createHazelcastInstance(config);
-
-        Dictionary<Long, Long> dictionary = hz.getDictionary("foo");
+        Dictionary<Long, Long> dictionary = createDictionary();
 
         for (long k = 0; k < 100; k++) {
             dictionary.put(k, 10L);

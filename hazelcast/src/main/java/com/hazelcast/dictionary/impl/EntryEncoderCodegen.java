@@ -141,10 +141,10 @@ public class EntryEncoderCodegen {
     }
 
     private void generateWriteValue() {
-        add("    public long writeValue(%s value, long address){\n", model.valueClassName());
+        add("    public long writeValue(%s value, long entryAddress){\n", model.valueClassName());
         if (model.fixedLengthValue()) {
-            valueToOffheap("address");
-            add("        return address + %s;\n", model.valueLength());
+            valueToOffheap("entryAddress+"+model.keyLength());
+            add("        return entryAddress + %s;\n", model.valueLength());
         } else {
             throw new UnsupportedOperationException();
         }

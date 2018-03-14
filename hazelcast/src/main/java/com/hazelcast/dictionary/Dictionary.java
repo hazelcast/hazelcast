@@ -26,7 +26,6 @@ import com.hazelcast.core.ICompletableFuture;
  * - remove
  * - memory info
  * - concurrent access segment
- * - map.put overwrite not implemented
  * - get segment usage data
  *      - number of items
  *      - memory allocated
@@ -40,7 +39,8 @@ import com.hazelcast.core.ICompletableFuture;
  *  - type checking should be added to the codec.
  *
  * done:
- *  - there is no upper bound for the segment size
+ * - map.put overwrite not implemented
+ * - there is no upper bound for the segment size
  * - entry model: fields are stored based on fieldname, but this causes problems with shadow fields.
  * - clear
  * - primitive wrappers don't need to be supported explicitly for values

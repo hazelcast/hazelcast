@@ -2,7 +2,6 @@ package com.hazelcast.dictionary;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.DictionaryConfig;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Test;
@@ -18,7 +17,7 @@ public class PutTest extends HazelcastTestSupport {
                         .setKeyClass(Long.class)
                         .setValueClass(Long.class));
 
-        HazelcastInstance hz = Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance hz = createHazelcastInstance(config);
         return hz.getDictionary("foo");
     }
 
@@ -48,8 +47,8 @@ public class PutTest extends HazelcastTestSupport {
     public void whenFirstTimePut() {
         Dictionary<Long, Long> dictionary = newDictionary();
 
-        Long key=1L;
-        Long value=123L;
+        Long key = 1L;
+        Long value = 123L;
         dictionary.put(key, value);
 
         assertEquals(1, dictionary.size());
@@ -58,6 +57,15 @@ public class PutTest extends HazelcastTestSupport {
 
     @Test
     public void whenOverwriteExistingPut() {
+        Dictionary<Long, Long> dictionary = newDictionary();
 
+        Long key = 1L;
+        Long oldValue = 2L;
+        Long newValue = 3L;
+        dictionary.put(key, oldValue);
+        dictionary.put(key, newValue);
+
+        assertEquals(1, dictionary.size());
+        assertEquals(newValue, dictionary.get(key));
     }
 }

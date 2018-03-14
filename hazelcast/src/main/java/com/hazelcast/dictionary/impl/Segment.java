@@ -138,13 +138,14 @@ public class Segment {
         for (; ; ) {
             if (offset == -1) {
                 count++;
-                long bytesWritten = encoder.writeEntry(key, value, dataAddress + freeOffset, dataAvailable);
+                int bytesWritten = encoder.writeEntry(key, value, dataAddress + freeOffset, dataAvailable);
                 if (bytesWritten == -1) {
                     expandData();
                     continue;
                 }
 
                 offsetInsert(keyData, partitionHash, freeOffset);
+                System.out.println("Inserted offset:"+freeOffset);
 
                 System.out.println("bytes written:" + bytesWritten);
                 dataAvailable -= bytesWritten;
@@ -155,7 +156,9 @@ public class Segment {
 
                 break;
             } else {
-                throw new RuntimeException();
+                System.out.println("put existing record found, overwriting value, found offset:"+offset);
+                encoder.writeValue(value, dataAddress + offset);
+                break;
             }
         }
 
@@ -170,13 +173,6 @@ public class Segment {
 
         Object key = serializationService.toObject(keyData);
         int offset = offsetSearch(key, partitionHash);
-        System.out.println("Found offset:" + offset);
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
         return offset == -1 ? null : encoder.readValue(dataAddress + offset + model.keyLength());
         //todo: inclusion of  keyLength here sucks
     }
