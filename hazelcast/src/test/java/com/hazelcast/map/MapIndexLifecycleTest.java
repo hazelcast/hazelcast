@@ -17,8 +17,6 @@
 package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.ServiceConfig;
@@ -177,9 +175,13 @@ public class MapIndexLifecycleTest extends HazelcastTestSupport {
             }
         });
 
-
-        assertTrue("Year index should contain records",
-                mapContainer.getIndexes().getIndex("year").getRecords(1801).size() > 0);
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertTrue("Year index should contain records",
+                        mapContainer.getIndexes().getIndex("year").getRecords(1801).size() > 0);
+            }
+        });
     }
 
     private int numberOfPartitionQueryResults(OperationService operationService, int partitionId,
