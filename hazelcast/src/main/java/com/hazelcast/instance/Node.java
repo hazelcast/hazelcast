@@ -232,6 +232,11 @@ public class Node {
             } catch (Throwable ignored) {
                 ignore(ignored);
             }
+            try {
+                shutdownServices(true);
+            } catch (Throwable ignored) {
+                ignore(ignored);
+            }
             throw rethrow(e);
         }
     }
@@ -471,32 +476,49 @@ public class Node {
         replicationMigrationService.syncReplicateDirtyCRDTs();
     }
 
+    @SuppressWarnings("checkstyle:npathcomplexity")
     private void shutdownServices(boolean terminate) {
-        nodeExtension.beforeShutdown();
-        phoneHome.shutdown();
+        if (nodeExtension != null) {
+            nodeExtension.beforeShutdown();
+        }
+        if (phoneHome != null) {
+            phoneHome.shutdown();
+        }
         if (managementCenterService != null) {
             managementCenterService.shutdown();
         }
 
-        textCommandService.stop();
+        if (textCommandService != null) {
+            textCommandService.stop();
+        }
         if (multicastService != null) {
             logger.info("Shutting down multicast service...");
             multicastService.stop();
         }
-        logger.info("Shutting down connection manager...");
-        connectionManager.shutdown();
+        if (connectionManager != null) {
+            logger.info("Shutting down connection manager...");
+            connectionManager.shutdown();
+        }
 
-        logger.info("Shutting down node engine...");
-        nodeEngine.shutdown(terminate);
+        if (nodeEngine != null) {
+            logger.info("Shutting down node engine...");
+            nodeEngine.shutdown(terminate);
+        }
 
         if (securityContext != null) {
             securityContext.destroy();
         }
-        logger.finest("Destroying serialization service...");
-        serializationService.dispose();
+        if (serializationService != null) {
+            logger.finest("Destroying serialization service...");
+            serializationService.dispose();
+        }
 
-        nodeExtension.shutdown();
-        healthMonitor.stop();
+        if (nodeExtension != null) {
+            nodeExtension.shutdown();
+        }
+        if (healthMonitor != null) {
+            healthMonitor.stop();
+        }
     }
 
     private void mergeEnvironmentProvidedMemberMetadata() {
