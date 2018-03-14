@@ -21,9 +21,6 @@ import com.hazelcast.core.ICompletableFuture;
 
 /**
  * todo:
- * - should the offset table be on the segment?
- *      - the advantage is that is a lot easier to control the total datasize
- *      and the data section can grow until it runs into the footer.
  * - the offset table can't grow
  * - for put/get the key isn't checked; just the hashcode.
  * - remove
@@ -46,6 +43,9 @@ import com.hazelcast.core.ICompletableFuture;
  *          lastUpdateTime
  *
  * done:
+ * - should the offset table be on the segment?
+ *      - the advantage is that is a lot easier to control the total datasize
+ *      and the data section can grow until it runs into the footer.
  * - map.put overwrite not implemented
  * - there is no upper bound for the segment size
  * - entry model: fields are stored based on fieldname, but this causes problems with shadow fields.

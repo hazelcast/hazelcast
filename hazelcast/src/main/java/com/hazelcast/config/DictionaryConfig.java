@@ -16,6 +16,19 @@
 
 package com.hazelcast.config;
 
+
+/**
+ * This segment contains a single chunk of memory contolled by
+ * {@link #setInitialSegmentSize(int)} and
+ * {@link #setMaxSegmentSize(int)}. This chunk of memory contains the actual
+ * map entries, but also hashtable(s) for lookup.
+ *
+ * In the default configuration a single partition uses 16384*256=4MB. But
+ * segment memory allocation is done lazily.
+ *
+ * todo:
+ * add option for eager memory allocation segment.
+ */
 public class DictionaryConfig {
 
     private static final int DEFAULT_INITIAL_SEGMENT_SIZE_BYTES = 16 * 1024;
