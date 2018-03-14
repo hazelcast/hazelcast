@@ -80,7 +80,6 @@ public class ExecuteScriptRequestTest extends HazelcastTestSupport {
         JsonObject json = getObject(result, nodeAddressWithBrackets);
         assertTrue(getBoolean(json, "success"));
         assertEquals("error\n", getString(json, "result"));
-        assertEquals("error\n", getString(result, "scriptResult"));
     }
 
     @Test
@@ -92,7 +91,7 @@ public class ExecuteScriptRequestTest extends HazelcastTestSupport {
         request.writeResponse(managementCenterService, jsonObject);
 
         JsonObject result = (JsonObject) jsonObject.get("result");
-        assertEquals("", getString(result, "scriptResult"));
+        assertTrue(result.isEmpty());
     }
 
     @Test
@@ -107,8 +106,6 @@ public class ExecuteScriptRequestTest extends HazelcastTestSupport {
         JsonObject json = getObject(result, nodeAddressWithBrackets);
         assertFalse(getBoolean(json, "success"));
         assertContains(getString(json, "result"), "IllegalArgumentException");
-
-        assertContains(getString(result, "scriptResult"), "IllegalArgumentException");
     }
 
     @Test
@@ -123,7 +120,5 @@ public class ExecuteScriptRequestTest extends HazelcastTestSupport {
         JsonObject json = getObject(result, nodeAddressWithBrackets);
         assertFalse(getBoolean(json, "success"));
         assertContains(getString(json, "result"), "ScriptException");
-
-        assertContains(getString(result, "scriptResult"), "ScriptException");
     }
 }
