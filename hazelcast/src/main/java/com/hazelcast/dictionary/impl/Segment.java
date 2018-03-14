@@ -46,10 +46,11 @@ public class Segment {
     private final EntryEncoder encoder;
 
     // the number of bytes of memory in this segment.
-    private int dataLength;
+    private int segmentLength;
     // the address of the first byte of memory where key/values are stored.
-    private long dataAddress = 0;
-    private int freeOffset;
+    private long segmentAddress = 0;
+    // the offset of the first free byes to store data (key/values)
+    private int dataFreeOffset;
     // the bytes available for writing key/values
     private int dataAvailable;
 
@@ -57,10 +58,10 @@ public class Segment {
     // is volatile so it can be read by different threads concurrently
     // will never be modified concurrently
     private volatile int count;
-    //
-    private long offsetTableAddress;
-    private int offsetTableSize;
-    private int offsetTableSlots;
+
+    private int keyTableOffset;
+    private int keyTableLength;
+    private int keyTableSlots;
 
     public Segment(SerializationService serializationService,
                    EntryModel model,
@@ -70,54 +71,61 @@ public class Segment {
         this.config = config;
         this.model = model;
         this.encoder = encoder;
-        this.dataLength = config.getInitialSegmentSize();
+        this.segmentLength = config.getInitialSegmentSize();
     }
 
     private void ensureAllocated() {
-        if (dataAddress == 0) {
+        if (segmentAddress == 0) {
             alloc();
         }
     }
 
     private void alloc() {
-        this.dataAddress = unsafe.allocateMemory(dataLength);
-        this.dataAvailable = dataLength;
-        this.freeOffset = 0;
+        this.segmentAddress = unsafe.allocateMemory(segmentLength);
+        // we assume keytable is 1/8 of the segment size for now
+        this.keyTableLength = segmentLength / 2;
+        this.keyTableOffset = segmentLength - keyTableLength;
+        this.dataAvailable = segmentLength - keyTableLength;
+        this.dataFreeOffset = 0;
 
-        // todo: data size should not be used to determine the size of the offset-table
-        this.offsetTableSize = dataLength;
-        this.offsetTableAddress = unsafe.allocateMemory(offsetTableSize);
-        this.offsetTableSlots = dataLength / OFFSET_TABLE_SLOT_BYTES;
-        long address = offsetTableAddress;
-        for (int k = 0; k < offsetTableSlots; k++) {
+        this.keyTableSlots = keyTableLength / OFFSET_TABLE_SLOT_BYTES;
+
+        long address = segmentAddress + keyTableOffset;
+        for (int k = 0; k < keyTableSlots; k++) {
             unsafe.putInt(address, 0);
             address += OFFSET_TABLE_SLOT_BYTES;
         }
     }
 
     private void expandData() {
-        System.out.println("growing");
-
-        if (dataLength == config.getMaxSegmentSize()) {
+        if (segmentLength == config.getMaxSegmentSize()) {
             throw new IllegalStateException(
                     "Can't grow segment beyond configured maxSegmentSize of " + config.getMaxSegmentSize());
         }
 
-        long newDataLength = Math.min(config.getMaxSegmentSize(), dataLength * 2L);
+        long newSegmentLength = Math.min(config.getMaxSegmentSize(), segmentLength * 2L);
+        System.out.println("expanding from:" + segmentLength + " to:" + newSegmentLength);
 
-        if (newDataLength > Integer.MAX_VALUE) {
+
+        if (newSegmentLength > Integer.MAX_VALUE) {
             throw new IllegalStateException("Can't grow beyond 2GB");
         }
 
-        long newDataAddress = unsafe.allocateMemory(newDataLength);
-        unsafe.copyMemory(dataAddress, newDataAddress, dataLength);
-        unsafe.freeMemory(dataAddress);
+        long newSegmentAddress = unsafe.allocateMemory(newSegmentLength);
+        // copy the data
+        unsafe.copyMemory(segmentAddress, newSegmentAddress, dataFreeOffset);
 
-        int dataConsumed = dataLength - dataAvailable;
+        // copy the keytable
+        unsafe.copyMemory(segmentAddress + keyTableOffset, newSegmentAddress + (newSegmentLength - keyTableLength), keyTableLength);
 
-        this.dataAvailable = (int) (newDataLength - dataConsumed);
-        this.dataLength = (int) newDataLength;
-        this.dataAddress = newDataAddress;
+        unsafe.freeMemory(segmentAddress);
+
+        int dataConsumed = segmentLength - dataAvailable;
+
+        this.dataAvailable = (int) (newSegmentLength - keyTableLength - dataConsumed);
+
+        this.segmentLength = (int) newSegmentLength;
+        this.segmentAddress = newSegmentAddress;
     }
 
     // todo: count could be volatile size it can be accessed by any thread.
@@ -137,43 +145,43 @@ public class Segment {
 
         for (; ; ) {
             if (offset == -1) {
-                count++;
-                int bytesWritten = encoder.writeEntry(key, value, dataAddress + freeOffset, dataAvailable);
+                // System.out.println("offset not found");
+                int bytesWritten = encoder.writeEntry(key, value, segmentAddress + dataFreeOffset, dataAvailable);
                 if (bytesWritten == -1) {
                     expandData();
                     continue;
                 }
+                count++;
+                offsetInsert(keyData, partitionHash, dataFreeOffset);
+                // System.out.println("Inserted offset:" + dataFreeOffset);
 
-                offsetInsert(keyData, partitionHash, freeOffset);
-                System.out.println("Inserted offset:"+freeOffset);
-
-                System.out.println("bytes written:" + bytesWritten);
+                //  System.out.println("bytes written:" + bytesWritten);
                 dataAvailable -= bytesWritten;
-                freeOffset += bytesWritten;
-                System.out.println("address after value insert:" + freeOffset);
-                System.out.println("count:" + count);
+                dataFreeOffset += bytesWritten;
+                // System.out.println("address after value insert:" + dataFreeOffset);
+                // System.out.println("count:" + count);
                 // no item exists, so we need to allocate new
 
                 break;
             } else {
-                System.out.println("put existing record found, overwriting value, found offset:"+offset);
-                encoder.writeValue(value, dataAddress + offset);
+                // System.out.println("put existing record found, overwriting value, found offset:" + offset);
+                encoder.writeValue(value, segmentAddress + offset);
                 break;
             }
         }
 
-        System.out.println("added");
+        //System.out.println("added");
     }
 
     public Object get(Data keyData, int partitionHash) {
-        if (dataAddress == 0) {
+        if (segmentAddress == 0) {
             // no memory has been allocated, so no items are stored.
             return null;
         }
 
         Object key = serializationService.toObject(keyData);
         int offset = offsetSearch(key, partitionHash);
-        return offset == -1 ? null : encoder.readValue(dataAddress + offset + model.keyLength());
+        return offset == -1 ? null : encoder.readValue(segmentAddress + offset + model.keyLength());
         //todo: inclusion of  keyLength here sucks
     }
 
@@ -189,13 +197,13 @@ public class Segment {
         int hash = correctPartitionHash(partitionHash);
         for (; ; ) {
             int slot = slot(hash, i);
-            int foundHash = unsafe.getInt(offsetTableAddress + OFFSET_TABLE_SLOT_BYTES * slot);
-            System.out.println("hash in slot:" + foundHash);
+            int foundHash = unsafe.getInt(segmentAddress + keyTableOffset + OFFSET_TABLE_SLOT_BYTES * slot);
+            ///System.out.println("hash in slot:" + foundHash);
             if (foundHash == 0) {
                 return -1;
             } else if (foundHash == hash) {
-                System.out.println("reading offset");
-                return unsafe.getInt(offsetTableAddress + OFFSET_TABLE_SLOT_BYTES * slot + INT_SIZE_IN_BYTES);
+                // System.out.println("reading offset");
+                return unsafe.getInt(segmentAddress + keyTableOffset + OFFSET_TABLE_SLOT_BYTES * slot + INT_SIZE_IN_BYTES);
             }
             i++;
         }
@@ -204,16 +212,16 @@ public class Segment {
     private void offsetInsert(Object key, int partitionHash, int offset) {
         int i = 0;
         int hash = correctPartitionHash(partitionHash);
-        System.out.println("writing hash:" + hash);
-        System.out.println("writing offset:" + offset);
+        // System.out.println("writing hash:" + hash);
+        // System.out.println("writing offset:" + offset);
         for (; ; ) {
             int slot = slot(hash, i);
-            int foundHash = unsafe.getInt(offsetTableAddress + OFFSET_TABLE_SLOT_BYTES * slot);
+            int foundHash = unsafe.getInt(segmentAddress + keyTableOffset + OFFSET_TABLE_SLOT_BYTES * slot);
 
             if (foundHash == 0) {
                 // empty slot
-                unsafe.putInt(offsetTableAddress + OFFSET_TABLE_SLOT_BYTES * slot, hash);
-                unsafe.putInt(offsetTableAddress + OFFSET_TABLE_SLOT_BYTES * slot + INT_SIZE_IN_BYTES, offset);
+                unsafe.putInt(segmentAddress + keyTableOffset + OFFSET_TABLE_SLOT_BYTES * slot, hash);
+                unsafe.putInt(segmentAddress + keyTableOffset + OFFSET_TABLE_SLOT_BYTES * slot + INT_SIZE_IN_BYTES, offset);
                 return;
             }
             i++;
@@ -231,7 +239,7 @@ public class Segment {
     }
 
     public int slot(int partitionHash, int i) {
-        return (Math.abs(partitionHash) + i) % offsetTableSlots;
+        return (Math.abs(partitionHash) + i) % keyTableSlots;
     }
 
     /**
@@ -249,7 +257,7 @@ public class Segment {
 
     public void clear() {
         count = 0;
-        freeOffset = 0;
-        dataAvailable = dataLength;
+        dataFreeOffset = 0;
+        dataAvailable = segmentLength;
     }
 }
