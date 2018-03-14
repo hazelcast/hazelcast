@@ -114,7 +114,8 @@ public class ReadManyOperation<O> extends AbstractRingBufferOperation implements
                 seqs[k] = resultSet.getSequence(k);
             }
 
-            final PortableReadResultSet portableReadResultSet = new PortableReadResultSet(resultSet.readCount(), items, seqs);
+            final PortableReadResultSet portableReadResultSet = new PortableReadResultSet(
+                    resultSet.readCount(), items, seqs, resultSet.getNextSequenceToReadFrom());
             return getNodeEngine().toData(portableReadResultSet);
         }
 

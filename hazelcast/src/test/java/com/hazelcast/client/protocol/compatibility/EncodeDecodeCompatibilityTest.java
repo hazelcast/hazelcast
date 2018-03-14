@@ -1316,11 +1316,12 @@ public class EncodeDecodeCompatibilityTest {
             assertTrue(isEqual(aData, params.projection));
 }
 {
-    ClientMessage clientMessage = MapEventJournalReadCodec.encodeResponse(    anInt ,    datas ,    arrLongs   );
+    ClientMessage clientMessage = MapEventJournalReadCodec.encodeResponse(    anInt ,    datas ,    arrLongs ,    aLong   );
     MapEventJournalReadCodec.ResponseParameters params = MapEventJournalReadCodec.decodeResponse(ClientMessage.createForDecode(clientMessage.buffer(), 0));
             assertTrue(isEqual(anInt, params.readCount));
             assertTrue(isEqual(datas, params.items));
             assertTrue(isEqual(arrLongs, params.itemSeqs));
+            assertTrue(isEqual(aLong, params.nextSeq));
 }
 {
     ClientMessage clientMessage = MultiMapPutCodec.encodeRequest(    aString ,    aData ,    aData ,    aLong   );
@@ -4308,11 +4309,12 @@ public class EncodeDecodeCompatibilityTest {
             assertTrue(isEqual(aData, params.projection));
 }
 {
-    ClientMessage clientMessage = CacheEventJournalReadCodec.encodeResponse(    anInt ,    datas ,    arrLongs   );
+    ClientMessage clientMessage = CacheEventJournalReadCodec.encodeResponse(    anInt ,    datas ,    arrLongs ,    aLong   );
     CacheEventJournalReadCodec.ResponseParameters params = CacheEventJournalReadCodec.decodeResponse(ClientMessage.createForDecode(clientMessage.buffer(), 0));
             assertTrue(isEqual(anInt, params.readCount));
             assertTrue(isEqual(datas, params.items));
             assertTrue(isEqual(arrLongs, params.itemSeqs));
+            assertTrue(isEqual(aLong, params.nextSeq));
 }
 {
     ClientMessage clientMessage = XATransactionClearRemoteCodec.encodeRequest(    anXid   );
@@ -4614,11 +4616,12 @@ public class EncodeDecodeCompatibilityTest {
             assertTrue(isEqual(aData, params.filter));
 }
 {
-    ClientMessage clientMessage = RingbufferReadManyCodec.encodeResponse(    anInt ,    datas ,    arrLongs   );
+    ClientMessage clientMessage = RingbufferReadManyCodec.encodeResponse(    anInt ,    datas ,    arrLongs ,    aLong   );
     RingbufferReadManyCodec.ResponseParameters params = RingbufferReadManyCodec.decodeResponse(ClientMessage.createForDecode(clientMessage.buffer(), 0));
             assertTrue(isEqual(anInt, params.readCount));
             assertTrue(isEqual(datas, params.items));
             assertTrue(isEqual(arrLongs, params.itemSeqs));
+            assertTrue(isEqual(aLong, params.nextSeq));
 }
 {
     ClientMessage clientMessage = DurableExecutorShutdownCodec.encodeRequest(    aString   );

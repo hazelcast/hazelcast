@@ -16,6 +16,7 @@
 
 package com.hazelcast.ringbuffer.impl.client;
 
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -36,6 +37,7 @@ import static com.hazelcast.ringbuffer.impl.client.RingbufferPortableHook.READ_R
 import static java.util.Collections.unmodifiableList;
 
 public class PortableReadResultSet<E> implements Portable, ReadResultSet<E> {
+    private long nextSeq;
     private List<Data> items;
     private int readCount;
     private SerializationService serializationService;
@@ -45,10 +47,11 @@ public class PortableReadResultSet<E> implements Portable, ReadResultSet<E> {
     }
 
     @SuppressFBWarnings("EI_EXPOSE_REP2")
-    public PortableReadResultSet(int readCount, List<Data> items, long[] seqs) {
+    public PortableReadResultSet(int readCount, List<Data> items, long[] seqs, long nextSeq) {
         this.readCount = readCount;
         this.items = items;
         this.seqs = seqs;
+        this.nextSeq = nextSeq;
     }
 
     public List<Data> getDataItems() {
@@ -81,15 +84,17 @@ public class PortableReadResultSet<E> implements Portable, ReadResultSet<E> {
 
     @Override
     public long getSequence(int index) {
-        if (seqs == null) {
-            throw new UnsupportedOperationException("Sequence IDs are not available when the cluster version is lower than 3.9");
-        }
         return seqs[index];
     }
 
     @Override
     public int size() {
         return items.size();
+    }
+
+    @Override
+    public long getNextSequenceToReadFrom() {
+        return nextSeq;
     }
 
     @Override
@@ -113,6 +118,10 @@ public class PortableReadResultSet<E> implements Portable, ReadResultSet<E> {
             rawDataOutput.writeData((Data) item);
         }
         rawDataOutput.writeLongArray(seqs);
+        // RU_COMPAT_3_9
+        if (rawDataOutput.getVersion().isGreaterOrEqual(Versions.V3_10)) {
+            rawDataOutput.writeLong(nextSeq);
+        }
     }
 
     @Override
@@ -128,5 +137,9 @@ public class PortableReadResultSet<E> implements Portable, ReadResultSet<E> {
             items.add(item);
         }
         seqs = rawDataInput.readLongArray();
+        // RU_COMPAT_3_9
+        if (rawDataInput.getVersion().isGreaterOrEqual(Versions.V3_10)) {
+            nextSeq = rawDataInput.readLong();
+        }
     }
 }

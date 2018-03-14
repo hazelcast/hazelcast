@@ -52,6 +52,7 @@ import static com.hazelcast.journal.EventJournalEventAdapter.EventType.ADDED;
 import static com.hazelcast.journal.EventJournalEventAdapter.EventType.EVICTED;
 import static com.hazelcast.util.MapUtil.createHashMap;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -103,25 +104,7 @@ public abstract class AbstractEventJournalBasicTest<EJ_TYPE> extends HazelcastTe
         final Integer value = RANDOM.nextInt();
         final CountDownLatch latch = new CountDownLatch(1);
 
-        final ExecutionCallback<ReadResultSet<EJ_TYPE>> ec
-                = new ExecutionCallback<ReadResultSet<EJ_TYPE>>() {
-            @Override
-            public void onResponse(ReadResultSet<EJ_TYPE> response) {
-                assertEquals(1, response.size());
-                final EventJournalEventAdapter<String, Integer, EJ_TYPE> journalAdapter = context.eventJournalAdapter;
-                final EJ_TYPE e = response.get(0);
-
-                assertEquals(ADDED, journalAdapter.getType(e));
-                assertEquals(key, journalAdapter.getKey(e));
-                assertEquals(value, journalAdapter.getNewValue(e));
-                latch.countDown();
-            }
-
-            @Override
-            public void onFailure(Throwable t) {
-                t.printStackTrace();
-            }
-        };
+        final ExecutionCallback<ReadResultSet<EJ_TYPE>> ec = addEventExecutionCallback(context, key, value, latch);
         readFromEventJournal(context.dataAdapter, 0, 100, partitionId, TRUE_PREDICATE, IDENTITY_PROJECTION).andThen(ec);
         readFromEventJournal(context.dataAdapter, 0, 100, partitionId + 1, TRUE_PREDICATE, IDENTITY_PROJECTION).andThen(ec);
         readFromEventJournal(context.dataAdapter, 0, 100, partitionId + 2, TRUE_PREDICATE, IDENTITY_PROJECTION).andThen(ec);
@@ -330,6 +313,116 @@ public abstract class AbstractEventJournalBasicTest<EJ_TYPE> extends HazelcastTe
         for (Entry<String, Integer> e : entries) {
             assertTrue(ints.contains(e.getValue() + 100));
         }
+    }
+
+    @Test
+    public void skipEventsWhenFallenBehind() throws Exception {
+        final EventJournalTestContext<String, Integer, EJ_TYPE> context = createContext();
+
+        final int count = 1000;
+        assertEventJournalSize(context.dataAdapter, 0);
+
+        for (int i = 0; i < count; i++) {
+            context.dataAdapter.put(randomPartitionKey(), i);
+        }
+
+        final EventJournalInitialSubscriberState state = subscribeToEventJournal(context.dataAdapter, partitionId);
+
+        assertEquals(500, state.getOldestSequence());
+        assertEquals(999, state.getNewestSequence());
+        assertEventJournalSize(context.dataAdapter, 500);
+
+        final int startSequence = 0;
+        final ReadResultSet<EJ_TYPE> resultSet = readFromEventJournal(
+                context.dataAdapter, startSequence, 1, partitionId, TRUE_PREDICATE, IDENTITY_PROJECTION).get();
+
+        assertEquals(1, resultSet.size());
+        assertEquals(1, resultSet.readCount());
+        assertNotEquals(startSequence + resultSet.readCount(), resultSet.getNextSequenceToReadFrom());
+        assertEquals(501, resultSet.getNextSequenceToReadFrom());
+        final long lostCount = resultSet.getNextSequenceToReadFrom() - resultSet.readCount() - startSequence;
+        assertEquals(500, lostCount);
+    }
+
+    @Test
+    public void allowReadingWithFutureSeq() throws Exception {
+        final EventJournalTestContext<String, Integer, EJ_TYPE> context = createContext();
+
+        final EventJournalInitialSubscriberState state = subscribeToEventJournal(context.dataAdapter, partitionId);
+        assertEquals(0, state.getOldestSequence());
+        assertEquals(-1, state.getNewestSequence());
+        assertEventJournalSize(context.dataAdapter, 0);
+
+        final String key = randomPartitionKey();
+        final Integer value = RANDOM.nextInt();
+        final CountDownLatch latch = new CountDownLatch(1);
+        final int startSequence = 1;
+
+        final ExecutionCallback<ReadResultSet<EJ_TYPE>> callback = new ExecutionCallback<ReadResultSet<EJ_TYPE>>() {
+            @Override
+            public void onResponse(ReadResultSet<EJ_TYPE> response) {
+                assertEquals(1, response.size());
+                final EventJournalEventAdapter<String, Integer, EJ_TYPE> journalAdapter = context.eventJournalAdapter;
+                final EJ_TYPE e = response.get(0);
+
+                assertEquals(ADDED, journalAdapter.getType(e));
+                assertEquals(key, journalAdapter.getKey(e));
+                assertEquals(value, journalAdapter.getNewValue(e));
+                assertNotEquals(startSequence + response.readCount(), response.getNextSequenceToReadFrom());
+                assertEquals(1, response.getNextSequenceToReadFrom());
+                latch.countDown();
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+                t.printStackTrace();
+            }
+        };
+        readFromEventJournal(context.dataAdapter, startSequence, 1, partitionId, TRUE_PREDICATE, IDENTITY_PROJECTION)
+                .andThen(callback);
+
+        context.dataAdapter.put(key, value);
+
+        assertOpenEventually(latch, 30);
+        assertEventJournalSize(context.dataAdapter, 1);
+    }
+
+    /**
+     * Returns an execution callback for an event journal read operation. The
+     * callback expects a single
+     * {@link com.hazelcast.journal.EventJournalEventAdapter.EventType#ADDED}
+     * event for a provided {@code expectedKey} and with the provided
+     * {@code expectedValue} as the new entry expectedValue.
+     *
+     * @param context       the data-structure specific context for the running test
+     * @param expectedKey   the expected key
+     * @param expectedValue the expected value
+     * @param latch         the latch to open when the event has been received
+     * @return an execution callback
+     */
+    private ExecutionCallback<ReadResultSet<EJ_TYPE>> addEventExecutionCallback(
+            final EventJournalTestContext<String, Integer, EJ_TYPE> context,
+            final String expectedKey,
+            final Integer expectedValue,
+            final CountDownLatch latch) {
+        return new ExecutionCallback<ReadResultSet<EJ_TYPE>>() {
+            @Override
+            public void onResponse(ReadResultSet<EJ_TYPE> response) {
+                assertEquals(1, response.size());
+                final EventJournalEventAdapter<String, Integer, EJ_TYPE> journalAdapter = context.eventJournalAdapter;
+                final EJ_TYPE e = response.get(0);
+
+                assertEquals(ADDED, journalAdapter.getType(e));
+                assertEquals(expectedKey, journalAdapter.getKey(e));
+                assertEquals(expectedValue, journalAdapter.getNewValue(e));
+                latch.countDown();
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+                t.printStackTrace();
+            }
+        };
     }
 
     /**

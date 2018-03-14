@@ -895,6 +895,10 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
             int partitionId,
             com.hazelcast.util.function.Predicate<? super EventJournalMapEvent<K, V>> predicate,
             Projection<? super EventJournalMapEvent<K, V>, ? extends T> projection) {
+        if (maxSize < minSize) {
+            throw new IllegalArgumentException("maxSize " + maxSize
+                    + " must be greater or equal to minSize " + minSize);
+        }
         final ManagedContext context = serializationService.getManagedContext();
         context.initialize(predicate);
         context.initialize(projection);
