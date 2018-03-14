@@ -101,6 +101,7 @@
 
         <h2.version>1.3.160</h2.version>
         <atomikos.version>3.9.3</atomikos.version>
+        <extraVmArgs />
     </properties>
     <licenses>
         <license>
@@ -249,6 +250,7 @@
                         -Dhazelcast.phone.home.enabled=false
                         -Dhazelcast.mancenter.enabled=false
                         -Dhazelcast.test.use.network=false
+                        ${extraVmArgs}
                     </argLine>
                     <includes>
                         <include>**/**.java</include>
@@ -341,6 +343,7 @@
                                         -Dhazelcast.logging.type=none
                                         -Dhazelcast.test.use.network=false
                                         -Dhazelcast.test.multiple.jvm=true
+                                        ${extraVmArgs}
                                     </argLine>
                                     <includes>
                                         <include>**/**.java</include>
@@ -422,6 +425,7 @@
                                 -Dhazelcast.phone.home.enabled=false
                                 -Dhazelcast.mancenter.enabled=false
                                 -Dhazelcast.test.use.network=false
+                                ${extraVmArgs}
                             </argLine>
                             <includes>
                                 <include>**/**.java</include>
@@ -518,6 +522,7 @@
                                 -Dhazelcast.logging.type=none
                                 -Dhazelcast.test.use.network=false
                                 -Dlog4j.skipJansi=true
+                                ${extraVmArgs}
                             </argLine>
                             <includes>
                                 <include>**/YourTestFileHear.java</include>
@@ -554,6 +559,7 @@
                     -Dhazelcast.logging.type=none
                     -Dhazelcast.test.use.network=false
                     -Dlog4j.skipJansi=true
+                    ${extraVmArgs}
                 </argLine>
             </properties>
             <build>
@@ -625,6 +631,7 @@
                                 -Dhazelcast.mancenter.enabled=false
                                 -Dhazelcast.logging.type=none
                                 -Dhazelcast.test.use.network=true
+                                ${extraVmArgs}
                             </argLine>
                             <groups>
                                 com.hazelcast.test.annotation.QuickTest,
@@ -726,6 +733,7 @@
                                 -Dhazelcast.logging.type=none
                                 -Dhazelcast.test.use.network=false
                                 -Dlog4j.skipJansi=true
+                                ${extraVmArgs}
                             </argLine>
 
                             <includes>
@@ -987,6 +995,7 @@
                                 -Dhazelcast.logging.type=none
                                 -Dhazelcast.test.use.network=false
                                 -Dlog4j.skipJansi=true
+                                ${extraVmArgs}
                             </argLine>
                             <includes>
                                 <include>**/**.java</include>
@@ -1060,6 +1069,7 @@
                                 -Dhazelcast.logging.type=none
                                 -Dhazelcast.test.use.network=false
                                 -Dlog4j.skipJansi=true
+                                ${extraVmArgs}
                             </argLine>
                             <includes>
                                 <include>**/**.java</include>
@@ -1135,6 +1145,7 @@
                                 -Dhazelcast.phone.home.enabled=false
                                 -Dhazelcast.mancenter.enabled=false
                                 -Dhazelcast.test.use.network=false
+                                ${extraVmArgs}
                             </argLine>
                             <includes>
                                 <include>**/**.java</include>
@@ -1186,6 +1197,7 @@
                                 -Dhazelcast.mancenter.enabled=false
                                 -Dhazelcast.test.use.network=false
                                 -Dhazelcast.test.sample.serialized.objects=${target.dir}/serialized-objects-${project.version}-
+                                ${extraVmArgs}
                             </argLine>
                             <includes>
                                 <include>**/**.java</include>
