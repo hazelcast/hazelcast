@@ -72,7 +72,8 @@ public class ClientCacheMetaDataFetcher extends MetaDataFetcher {
                 futures.add(invocation.invoke());
             } catch (Exception e) {
                 if (logger.isWarningEnabled()) {
-                    logger.warning("Cant fetch invalidation meta-data from address + " + address + " + [" + e.getMessage() + "]", e);
+                    logger.warning("Can't fetch invalidation meta-data from address "
+                            + address + " [" + e.getMessage() + "]", e);
                 }
             }
         }
