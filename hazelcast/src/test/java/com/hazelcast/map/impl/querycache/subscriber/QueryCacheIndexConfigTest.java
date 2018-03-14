@@ -26,14 +26,9 @@ public class QueryCacheIndexConfigTest extends HazelcastTestSupport {
     @Test
     public void testIndexConfigIsRespected() {
         final Config config = new Config();
-        // @formatter:off
-        final MapConfig mapConfig = new MapConfig("map")
-                .addQueryCacheConfig(new QueryCacheConfig()
-                        .setName("query-cache")
-                        .setPredicateConfig(new PredicateConfig(TruePredicate.INSTANCE))
-                        .addIndexConfig(new MapIndexConfig("field", true))
-                );
-        // @formatter:on
+        final MapConfig mapConfig = new MapConfig("map").addQueryCacheConfig(
+                new QueryCacheConfig().setName("query-cache").setPredicateConfig(new PredicateConfig(TruePredicate.INSTANCE))
+                                      .addIndexConfig(new MapIndexConfig("field", true)));
         config.addMapConfig(mapConfig);
 
         final HazelcastInstance instance = createHazelcastInstance(config);
