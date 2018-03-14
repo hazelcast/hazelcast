@@ -334,7 +334,8 @@ public class ScheduledExecutorContainer {
     void checkNotAtCapacity() {
         if (capacity != 0 && tasks.size() >= capacity) {
             throw new RejectedExecutionException(
-                    "Maximum capacity (" + capacity + ") of tasks reached, " + "for scheduled executor (" + name + ")");
+                    "Maximum capacity (" + capacity + ") of tasks reached, " + "for scheduled executor (" + name + "). "
+                            + "Reminder that tasks must be disposed if not needed.");
         }
     }
 
