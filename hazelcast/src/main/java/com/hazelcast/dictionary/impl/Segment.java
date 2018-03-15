@@ -38,7 +38,6 @@ import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
 public class Segment {
 
     private final static Unsafe unsafe = UnsafeUtil.UNSAFE;
-    private static final int OFFSET_TABLE_SLOT_BYTES = INT_SIZE_IN_BYTES + INT_SIZE_IN_BYTES;
     private final AtomicReference<SegmentTask> ref = new AtomicReference<>();
     private final SerializationService serializationService;
     private final DictionaryConfig config;
@@ -58,10 +57,7 @@ public class Segment {
     // is volatile so it can be read by different threads concurrently
     // will never be modified concurrently
     private volatile int count;
-
-    private int keyTableOffset;
-    private int keyTableLength;
-    private int keyTableSlots;
+    private KeyTable keyTable;
 
     public Segment(SerializationService serializationService,
                    EntryModel model,
@@ -72,29 +68,22 @@ public class Segment {
         this.model = model;
         this.encoder = encoder;
         this.segmentLength = config.getInitialSegmentSize();
+        //todo: this part is ugly
+        this.keyTable = new KeyTable(config.getInitialSegmentSize());
     }
 
     private void ensureAllocated() {
         if (segmentAddress == 0) {
             alloc();
+            keyTable.alloc();
         }
     }
 
     private void alloc() {
         this.segmentAddress = unsafe.allocateMemory(segmentLength);
         // we assume keytable is 1/8 of the segment size for now
-        this.keyTableLength = segmentLength / 2;
-        this.keyTableOffset = segmentLength - keyTableLength;
-        this.dataAvailable = segmentLength - keyTableLength;
+        this.dataAvailable = segmentLength;
         this.dataFreeOffset = 0;
-
-        this.keyTableSlots = keyTableLength / OFFSET_TABLE_SLOT_BYTES;
-
-        long address = segmentAddress + keyTableOffset;
-        for (int k = 0; k < keyTableSlots; k++) {
-            unsafe.putInt(address, 0);
-            address += OFFSET_TABLE_SLOT_BYTES;
-        }
     }
 
     private void expandData() {
@@ -115,15 +104,11 @@ public class Segment {
         // copy the data
         unsafe.copyMemory(segmentAddress, newSegmentAddress, dataFreeOffset);
 
-        // copy the keytable
-        unsafe.copyMemory(segmentAddress + keyTableOffset, newSegmentAddress + (newSegmentLength - keyTableLength), keyTableLength);
-
-        unsafe.freeMemory(segmentAddress);
+         unsafe.freeMemory(segmentAddress);
 
         int dataConsumed = segmentLength - dataAvailable;
 
-        this.dataAvailable = (int) (newSegmentLength - keyTableLength - dataConsumed);
-
+        this.dataAvailable = (int) (newSegmentLength - dataConsumed);
         this.segmentLength = (int) newSegmentLength;
         this.segmentAddress = newSegmentAddress;
     }
@@ -141,7 +126,7 @@ public class Segment {
         Object key = serializationService.toObject(keyData);
         Object value = serializationService.toObject(valueData);
 
-        int offset = offsetSearch(key, partitionHash);
+        int offset = keyTable.offsetSearch(key, partitionHash);
 
         for (; ; ) {
             if (offset == -1) {
@@ -152,7 +137,7 @@ public class Segment {
                     continue;
                 }
                 count++;
-                offsetInsert(keyData, partitionHash, dataFreeOffset);
+                keyTable.offsetInsert(keyData, partitionHash, dataFreeOffset);
                 // System.out.println("Inserted offset:" + dataFreeOffset);
 
                 //  System.out.println("bytes written:" + bytesWritten);
@@ -180,67 +165,11 @@ public class Segment {
         }
 
         Object key = serializationService.toObject(keyData);
-        int offset = offsetSearch(key, partitionHash);
+        int offset = keyTable.offsetSearch(key, partitionHash);
         return offset == -1 ? null : encoder.readValue(segmentAddress + offset + model.keyLength());
         //todo: inclusion of  keyLength here sucks
     }
 
-    /**
-     * Gets the offset of entry.
-     *
-     * @param key           the key of the entry
-     * @param partitionHash the hashcode of the entry (comes from Data).
-     * @return the offset or -1 if the key isn't found in the segment.
-     */
-    private int offsetSearch(Object key, int partitionHash) {
-        int i = 0;
-        int hash = correctPartitionHash(partitionHash);
-        for (; ; ) {
-            int slot = slot(hash, i);
-            int foundHash = unsafe.getInt(segmentAddress + keyTableOffset + OFFSET_TABLE_SLOT_BYTES * slot);
-            ///System.out.println("hash in slot:" + foundHash);
-            if (foundHash == 0) {
-                return -1;
-            } else if (foundHash == hash) {
-                // System.out.println("reading offset");
-                return unsafe.getInt(segmentAddress + keyTableOffset + OFFSET_TABLE_SLOT_BYTES * slot + INT_SIZE_IN_BYTES);
-            }
-            i++;
-        }
-    }
-
-    private void offsetInsert(Object key, int partitionHash, int offset) {
-        int i = 0;
-        int hash = correctPartitionHash(partitionHash);
-        // System.out.println("writing hash:" + hash);
-        // System.out.println("writing offset:" + offset);
-        for (; ; ) {
-            int slot = slot(hash, i);
-            int foundHash = unsafe.getInt(segmentAddress + keyTableOffset + OFFSET_TABLE_SLOT_BYTES * slot);
-
-            if (foundHash == 0) {
-                // empty slot
-                unsafe.putInt(segmentAddress + keyTableOffset + OFFSET_TABLE_SLOT_BYTES * slot, hash);
-                unsafe.putInt(segmentAddress + keyTableOffset + OFFSET_TABLE_SLOT_BYTES * slot + INT_SIZE_IN_BYTES, offset);
-                return;
-            }
-            i++;
-        }
-    }
-
-    private int correctPartitionHash(int partitionHash) {
-        if (partitionHash > 0) {
-            return partitionHash;
-        } else if (partitionHash < 0) {
-            return partitionHash == Integer.MIN_VALUE ? partitionHash - 1 : partitionHash;
-        } else {
-            return Integer.MAX_VALUE;
-        }
-    }
-
-    public int slot(int partitionHash, int i) {
-        return (Math.abs(partitionHash) + i) % keyTableSlots;
-    }
 
     /**
      * Executes the task on this segment.
