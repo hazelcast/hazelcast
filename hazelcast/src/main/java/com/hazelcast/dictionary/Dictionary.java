@@ -42,6 +42,11 @@ import com.hazelcast.core.ICompletableFuture;
  *          hits
  *          lastAccessTime
  *          lastUpdateTime
+ *  - how to deal with finding a particular field in a non fixed length record?
+ *  so imagine there are 2 byte-array fields, then the second byte array can only be found if the first
+ *  byte-array is known, unless a table is kept. For fixed length fields this is less of an issue; they
+ *  can be written first. Perhaps keeping such a table should be optional; makes sense if you don't need
+ *  all fields and can deal with some extra memory consumption
  *
  * done:
  * - should the offset table be on the segment?
