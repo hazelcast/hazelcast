@@ -60,6 +60,15 @@ import java.util.Set;
  * event of that operation.
  * </li>
  * <li>
+ * Currently, updates performed on the entries are reflected in the indexes in a
+ * non-atomic way. Therefore, if there are indexes configured for the query
+ * cache, their state may slightly lag behind the state of the entries.
+ * Use map listeners if you need to observe the state when the entry store and
+ * its indexes are consistent about the state of a particular entry, see
+ * {@link IMap#addEntryListener(MapListener, boolean) addEntryListener} for more
+ * details.
+ * </li>
+ * <li>
  * There are some gotchas same with underlying {@link com.hazelcast.core.IMap IMap} implementation,
  * one should take care of them before using this {@code QueryCache}.
  * Please check gotchas section in {@link com.hazelcast.core.IMap IMap} class for them.
