@@ -19,21 +19,20 @@ package com.hazelcast.ringbuffer.impl.operations;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.ringbuffer.impl.ReadResultSetImpl;
 import com.hazelcast.ringbuffer.impl.RingbufferContainer;
-import com.hazelcast.ringbuffer.impl.client.PortableReadResultSet;
 import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.ReadonlyOperation;
 import com.hazelcast.spi.WaitNotifyKey;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
+import static com.hazelcast.internal.cluster.Versions.V3_10;
 import static com.hazelcast.ringbuffer.impl.RingbufferDataSerializerHook.READ_MANY_OPERATION;
 
-public class ReadManyOperation<O> extends AbstractRingBufferOperation implements BlockingOperation, ReadonlyOperation {
+public class ReadManyOperation<O> extends AbstractRingBufferOperation
+        implements BlockingOperation, ReadonlyOperation, Versioned {
     transient long sequence;
 
     private int minSize;
@@ -41,24 +40,17 @@ public class ReadManyOperation<O> extends AbstractRingBufferOperation implements
     private long startSequence;
     private IFunction<O, Boolean> filter;
 
-    private boolean returnPortable;
     private transient ReadResultSetImpl<O, O> resultSet;
 
     public ReadManyOperation() {
     }
 
     public ReadManyOperation(String name, long startSequence, int minSize, int maxSize, IFunction<O, Boolean> filter) {
-        this(name, startSequence, minSize, maxSize, filter, false);
-    }
-
-    public ReadManyOperation(String name, long startSequence, int minSize, int maxSize, IFunction<O, Boolean> filter,
-                             boolean returnPortable) {
         super(name);
         this.minSize = minSize;
         this.maxSize = maxSize;
         this.startSequence = startSequence;
         this.filter = filter;
-        this.returnPortable = returnPortable;
     }
 
     @Override
@@ -104,21 +96,6 @@ public class ReadManyOperation<O> extends AbstractRingBufferOperation implements
 
     @Override
     public Object getResponse() {
-        if (returnPortable) {
-            final List<Data> items = new ArrayList<Data>(resultSet.size());
-            final long[] seqs = new long[resultSet.size()];
-            final Data[] dataItems = resultSet.getDataItems();
-
-            for (int k = 0; k < resultSet.size(); k++) {
-                items.add(dataItems[k]);
-                seqs[k] = resultSet.getSequence(k);
-            }
-
-            final PortableReadResultSet portableReadResultSet = new PortableReadResultSet(
-                    resultSet.readCount(), items, seqs, resultSet.getNextSequenceToReadFrom());
-            return getNodeEngine().toData(portableReadResultSet);
-        }
-
         return resultSet;
     }
 
@@ -145,7 +122,10 @@ public class ReadManyOperation<O> extends AbstractRingBufferOperation implements
         out.writeInt(minSize);
         out.writeInt(maxSize);
         out.writeObject(filter);
-        out.writeBoolean(returnPortable);
+        // RU_COMPAT_3_9
+        if (out.getVersion().isUnknownOrLessThan(V3_10)) {
+            out.writeBoolean(false);
+        }
     }
 
     @Override
@@ -155,6 +135,10 @@ public class ReadManyOperation<O> extends AbstractRingBufferOperation implements
         minSize = in.readInt();
         maxSize = in.readInt();
         filter = in.readObject();
-        returnPortable = in.readBoolean();
+        // RU_COMPAT_3_9
+        if (in.getVersion().isUnknownOrLessThan(V3_10)) {
+            // consume an unused boolean
+            in.readBoolean();
+        }
     }
 }

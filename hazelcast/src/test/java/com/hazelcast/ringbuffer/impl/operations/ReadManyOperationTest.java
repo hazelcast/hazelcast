@@ -276,29 +276,6 @@ public class ReadManyOperationTest extends HazelcastTestSupport {
         assertEquals(3, response.readCount());
     }
 
-    @Test
-    public void whenEnoughItemsAvailableAndReturnPortable() throws Exception {
-        long startSequence = ringbuffer.tailSequence() + 1;
-        final ReadManyOperation<String> op = new ReadManyOperation<String>(ringbuffer.getName(), startSequence, 1, 3, null, true);
-        op.setPartitionId(ringbufferService.getRingbufferPartitionId(ringbuffer.getName()));
-        op.setNodeEngine(nodeEngine);
-
-        ringbuffer.add("item1");
-        ringbuffer.add("item2");
-        ringbuffer.add("item3");
-        ringbuffer.add("item4");
-        ringbuffer.add("item5");
-
-        assertFalse(op.shouldWait());
-        HeapData response = assertInstanceOf(HeapData.class, op.getResponse());
-        PortableReadResultSet readResultSet = serializationService.toObject(response);
-        assertEquals(startSequence + 3, op.sequence);
-        assertEquals(3, readResultSet.readCount());
-        assertEquals(3, readResultSet.getDataItems().size());
-        readResultSet.setSerializationService(serializationService);
-        assertIterableEquals(readResultSet, "item1", "item2", "item3");
-    }
-
     private ReadResultSetImpl getReadResultSet(ReadManyOperation op) {
         return (ReadResultSetImpl) op.getResponse();
     }
