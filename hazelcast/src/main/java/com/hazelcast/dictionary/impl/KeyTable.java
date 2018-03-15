@@ -4,6 +4,7 @@ import com.hazelcast.internal.memory.impl.UnsafeUtil;
 import sun.misc.Unsafe;
 
 import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
+import static java.lang.Math.abs;
 
 public class KeyTable {
     private static final int SLOT_BYTES = INT_SIZE_IN_BYTES + INT_SIZE_IN_BYTES;
@@ -39,7 +40,7 @@ public class KeyTable {
      * @param partitionHash the hashcode of the entry (comes from Data).
      * @return the offset or -1 if the key isn't found in the segment.
      */
-    public int offsetSearch(Object key, int partitionHash) {
+    public int search(Object key, int partitionHash) {
         int i = 0;
         int hash = correctPartitionHash(partitionHash);
         for (; ; ) {
@@ -56,7 +57,7 @@ public class KeyTable {
         }
     }
 
-    public void offsetInsert(Object key, int partitionHash, int offset) {
+    public void insert(Object key, int partitionHash, int offset) {
         int i = 0;
         int hash = correctPartitionHash(partitionHash);
         // System.out.println("writing hash:" + hash);
@@ -86,7 +87,9 @@ public class KeyTable {
     }
 
     private int slot(int partitionHash, int i) {
-        return (Math.abs(partitionHash) + i) % slots;
+        return (abs(partitionHash) + i) % slots;
     }
 
+    public void clear() {
+    }
 }
