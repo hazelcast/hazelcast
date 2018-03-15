@@ -94,5 +94,6 @@ public class FlakeIdGenerator_MemberIntegrationTest extends HazelcastTestSupport
         assertTrue(stats.containsKey("gen"));
         LocalFlakeIdGeneratorStats genStats = stats.get("gen");
         assertEquals(1L, genStats.getBatchCount());
+        assertTrue(genStats.getIdCount() > 0);
     }
 }
