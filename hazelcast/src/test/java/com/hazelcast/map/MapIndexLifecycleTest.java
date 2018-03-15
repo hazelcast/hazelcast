@@ -17,8 +17,6 @@
 package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.ServiceConfig;
@@ -65,6 +63,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
+import static java.util.Arrays.copyOfRange;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -110,6 +109,7 @@ public class MapIndexLifecycleTest extends HazelcastTestSupport {
         // THEN indexes are migrated and populated on all members
         for (int i = 1; i < clusterSize; i++) {
             instances[i] = createNode(instanceFactory);
+            waitAllForSafeState(copyOfRange(instances, 0, i + 1));
             bookMap = instances[i].getMap("default");
             assertEquals(BOOK_COUNT, bookMap.keySet().size());
             assertAllPartitionContainersAreInitialized(instances[i]);
@@ -144,6 +144,7 @@ public class MapIndexLifecycleTest extends HazelcastTestSupport {
         // THEN indexes are migrated and populated on all members
         for (int i = 1; i < clusterSize; i++) {
             instances[i] = instanceFactory.newHazelcastInstance(config);
+            waitAllForSafeState(copyOfRange(instances, 0, i + 1));
             bookMap = instances[i].getMap("default");
             assertEquals(BOOK_COUNT, bookMap.keySet().size());
             assertAllPartitionContainersAreInitialized(instances[i]);
