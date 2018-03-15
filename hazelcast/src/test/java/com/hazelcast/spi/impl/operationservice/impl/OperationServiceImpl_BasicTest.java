@@ -35,7 +35,6 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -93,7 +92,6 @@ public class OperationServiceImpl_BasicTest extends HazelcastTestSupport {
     // there was a memory leak caused by the invocation not releasing the backup registration
     // when Future.get() is not called.
     @Test
-    @Ignore("https://github.com/hazelcast/hazelcast/issues/12598")
     public void testAsyncOpsMultiMember() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         HazelcastInstance hz = factory.newHazelcastInstance();

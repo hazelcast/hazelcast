@@ -65,8 +65,8 @@ public class FinalizeJoinOp extends MembersUpdateOp implements TargetAware {
     @SuppressWarnings("checkstyle:parameternumber")
     public FinalizeJoinOp(String targetUuid, MembersView members, OnJoinOp preJoinOp, OnJoinOp postJoinOp,
                           long masterTime, String clusterId, long clusterStartTime, ClusterState clusterState,
-                          Version clusterVersion, PartitionRuntimeState partitionRuntimeState, boolean sendResponse) {
-        super(targetUuid, members, masterTime, partitionRuntimeState, sendResponse);
+                          Version clusterVersion, PartitionRuntimeState partitionRuntimeState) {
+        super(targetUuid, members, masterTime, partitionRuntimeState, true);
         this.preJoinOp = preJoinOp;
         this.postJoinOp = postJoinOp;
         this.clusterId = clusterId;
@@ -113,13 +113,14 @@ public class FinalizeJoinOp extends MembersUpdateOp implements TargetAware {
         }
 
         sendPostJoinOperations();
-        preparePostOp(postJoinOp);
-        getNodeEngine().getOperationService().run(postJoinOp);
+        if (preparePostOp(postJoinOp)) {
+            getNodeEngine().getOperationService().run(postJoinOp);
+        }
     }
 
-    private void preparePostOp(Operation postOp) {
+    private boolean preparePostOp(Operation postOp) {
         if (postOp == null) {
-            return;
+            return false;
         }
 
         ClusterServiceImpl clusterService = getService();
@@ -129,6 +130,7 @@ public class FinalizeJoinOp extends MembersUpdateOp implements TargetAware {
         OperationAccessor.setCallerAddress(postOp, getCallerAddress());
         OperationAccessor.setConnection(postOp, getConnection());
         postOp.setOperationResponseHandler(createEmptyResponseHandler());
+        return true;
     }
 
     private void sendPostJoinOperations() {
@@ -208,8 +210,12 @@ public class FinalizeJoinOp extends MembersUpdateOp implements TargetAware {
 
     @Override
     public void setTarget(Address address) {
-        preJoinOp.setTarget(address);
-        postJoinOp.setTarget(address);
+        if (preJoinOp != null) {
+            preJoinOp.setTarget(address);
+        }
+        if (postJoinOp != null) {
+            postJoinOp.setTarget(address);
+        }
     }
 }
 
