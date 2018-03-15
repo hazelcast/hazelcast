@@ -16,9 +16,15 @@
 
 package com.hazelcast.dictionary.impl;
 
+import com.hazelcast.dataseries.MemoryInfo;
+import com.hazelcast.dataseries.impl.DataSeriesService;
+import com.hazelcast.dataseries.impl.operations.MemoryUsageOperation;
+import com.hazelcast.dataseries.impl.operations.MemoryUsageOperationFactory;
 import com.hazelcast.dictionary.Dictionary;
 import com.hazelcast.dictionary.impl.operations.ClearOperationFactory;
 import com.hazelcast.dictionary.impl.operations.GetOperation;
+import com.hazelcast.dictionary.impl.operations.MemoryInfoOperation;
+import com.hazelcast.dictionary.impl.operations.MemoryInfoOperationFactory;
 import com.hazelcast.dictionary.impl.operations.PutOperation;
 import com.hazelcast.dictionary.impl.operations.RemoveOperation;
 import com.hazelcast.dictionary.impl.operations.SizeOperationFactory;
@@ -136,5 +142,35 @@ public class DictionaryProxy<K, V>
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    public MemoryInfo memoryInfo() {
+        try {
+            Map<Integer, Object> result = operationService.invokeOnAllPartitions(
+                    DictionaryService.SERVICE_NAME, new MemoryInfoOperationFactory(name));
+
+            long allocated = 0;
+            long consumed = 0;
+            long count = 0;
+            int segmentsUsed = 0;
+            for (Object value : result.values()) {
+                MemoryInfo memoryInfo = (MemoryInfo) value;
+                allocated += memoryInfo.allocatedBytes();
+                consumed += memoryInfo.consumedBytes();
+                segmentsUsed += memoryInfo.segmentsInUse();
+                count += memoryInfo.count();
+            }
+            return new MemoryInfo(consumed, allocated, segmentsUsed, count);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public MemoryInfo memoryInfo(int partitionId) {
+        Operation op = new MemoryInfoOperation(name).setPartitionId(partitionId);
+        InternalCompletableFuture<MemoryInfo> f = operationService.invokeOnPartition(op);
+        return f.join();
     }
 }

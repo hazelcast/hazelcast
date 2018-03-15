@@ -11,7 +11,7 @@ public class DataRegion {
     private final EntryModel model;
 
     // the number of bytes of memory in this segment.
-    private int length;
+    private volatile int length;
     // the address of the first byte of memory where key/values are stored.
     private long address = 0;
     // the offset of the first free byes to store data (key/values)
@@ -100,5 +100,9 @@ public class DataRegion {
 
     public int count() {
         return count;
+    }
+
+    public long allocated() {
+        return length;
     }
 }

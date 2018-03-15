@@ -17,7 +17,7 @@ public class OffsetRegion {
     private static final int EMPTY_HASH = 0;
 
     private long address;
-    private int length;
+    private volatile int length;
     private int slotCount;
     private int slotsOccupied;
     private float maxLoadFactor = 0.5f;
@@ -142,5 +142,9 @@ public class OffsetRegion {
     public void clear() {
         slotsOccupied = 0;
         clearMemory(address);
+    }
+
+    public long allocated() {
+        return length;
     }
 }

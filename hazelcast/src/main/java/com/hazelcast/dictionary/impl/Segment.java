@@ -38,7 +38,8 @@ public class Segment {
 
     private OffsetRegion offsetRegion;
     private DataRegion dataRegion;
-    private boolean allocated;
+    private volatile boolean allocated;
+
 
     public Segment(SerializationService serializationService,
                    EntryModel model,
@@ -48,6 +49,14 @@ public class Segment {
         this.dataRegion = new DataRegion(config, encoder, model);
         //todo: this part is ugly
         this.offsetRegion = new OffsetRegion(config.getInitialSegmentSize());
+    }
+
+    public long allocated(){
+        return offsetRegion.allocated()+dataRegion.allocated();
+    }
+
+    public boolean isAllocated() {
+        return allocated;
     }
 
     private void ensureAllocated() {

@@ -17,18 +17,19 @@
 package com.hazelcast.dictionary;
 
 import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.dataseries.MemoryInfo;
 
 
 /**
  * todo:
  * - for put/get the key isn't checked; just the hashcode.
  * - remove
- * - memory info
  * - 64 bit hash; 32bit hash only effectively maps up tp 4.3B items
  * - concurrent access segment
  * - get segment usage data
  *      - number of items
  *      - memory allocated
+ *      - memory used
  *      - load factor
  *  - in IMap the serialized bytes of the key are stored, but in the
  *    dictionary the content of the object is stored as key
@@ -48,29 +49,7 @@ import com.hazelcast.core.ICompletableFuture;
  *  all fields and can deal with some extra memory consumption
  *
  * done:
- * - the offset table can't grow
- * - keytable loadfactor
- * - keytable has own memory
- * - data-region introduced
- * - keytable-introduced
- * - should the offset table be on the segment?
- *      - the advantage is that is a lot easier to control the total datasize
- *      and the data section can grow until it runs into the footer.
- * - map.put overwrite not implemented
- * - there is no upper bound for the segment size
- * - entry model: fields are stored based on fieldname, but this causes problems with shadow fields.
- * - clear
- * - primitive wrappers don't need to be supported explicitly for values
- * - support for private fields of pojo's.
- * - growing of segment
- * - size
- * - compiler make use of dictionary directory
- * - lazy allocation of memory to the segment.
- *  - the encoder doesn't know the end address when writing, so it doesn't know
- *  when the segment is full.
- * - get
- * - create the key hashtable
- * - put should update key hashtable
+ * - memory info
  *
  * @param <K>
  * @param <V>
@@ -123,4 +102,8 @@ public interface Dictionary<K, V> {
      * Clears the Dictionary.
      */
     void clear();
+
+    MemoryInfo memoryInfo();
+
+    MemoryInfo memoryInfo(int partitionId);
 }

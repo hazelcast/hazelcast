@@ -17,6 +17,8 @@
 package com.hazelcast.dictionary.impl;
 
 import com.hazelcast.dictionary.impl.operations.GetOperation;
+import com.hazelcast.dictionary.impl.operations.MemoryInfoOperation;
+import com.hazelcast.dictionary.impl.operations.MemoryInfoOperationFactory;
 import com.hazelcast.dictionary.impl.operations.PutOperation;
 import com.hazelcast.dictionary.impl.operations.RemoveOperation;
 import com.hazelcast.dictionary.impl.operations.SizeOperation;
@@ -39,6 +41,8 @@ public class DictionaryDataSerializerHook implements DataSerializerHook {
     public static final int SIZE_OPERATION_FACTORY = 4;
     public static final int CLEAR_OPERATION = 5;
     public static final int CLEAR_OPERATION_FACTORY = 6;
+    public static final int MEMORY_INFO_OPERATION = 7;
+    public static final int MEMORY_INFO_OPERATION_FACTORY = 8;
 
     @Override
     public int getFactoryId() {
@@ -59,6 +63,10 @@ public class DictionaryDataSerializerHook implements DataSerializerHook {
                     return new SizeOperation();
                 case SIZE_OPERATION_FACTORY:
                     return new SizeOperationFactory();
+                case MEMORY_INFO_OPERATION:
+                    return new MemoryInfoOperation();
+                case MEMORY_INFO_OPERATION_FACTORY:
+                    return new MemoryInfoOperationFactory();
                 default:
                     return null;
             }

@@ -96,5 +96,7 @@ public class PutTest extends HazelcastTestSupport {
         for (long k = 0; k < count; k++) {
             assertEquals(new Long(2 * k), dictionary.get(k));
         }
+
+        System.out.println(dictionary.memoryInfo());
     }
 }

@@ -17,6 +17,7 @@
 package com.hazelcast.dictionary.impl;
 
 import com.hazelcast.config.DictionaryConfig;
+import com.hazelcast.dataseries.MemoryInfo;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.serialization.SerializationService;
 
@@ -48,5 +49,22 @@ public class Partition {
 
     public Segment segment(int hash) {
         return segments[hashToIndex(hash, segments.length)];
+    }
+
+    public MemoryInfo memoryInfo() {
+        long consumedBytes = 0;
+        long allocatedBytes = 0;
+        int segmentsInUse = 0;
+        long count = 0;
+
+        for (Segment segment : segments) {
+            if (segment.isAllocated()) {
+                segmentsInUse++;
+            }
+            count += segment.count();
+            allocatedBytes += segment.allocated();
+        }
+
+        return new MemoryInfo(-1, allocatedBytes, segmentsInUse, count);
     }
 }
