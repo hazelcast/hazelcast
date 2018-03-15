@@ -181,9 +181,19 @@ public class RingbufferCacheEventJournalImpl implements CacheEventJournal {
         return config;
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @throws CacheNotExistsException if the cache configuration was not found
+     */
     @Override
     public RingbufferConfig toRingbufferConfig(EventJournalConfig config, ObjectNamespace namespace) {
         CacheConfig cacheConfig = getCacheService().getCacheConfig(namespace.getObjectName());
+        if (cacheConfig == null) {
+            throw new CacheNotExistsException("Cache " + namespace.getObjectName()
+                    + " is already destroyed or not created yet, on "
+                    + nodeEngine.getLocalMember());
+        }
         int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
         return new RingbufferConfig()
                 .setAsyncBackupCount(cacheConfig.getAsyncBackupCount())
@@ -255,6 +265,7 @@ public class RingbufferCacheEventJournalImpl implements CacheEventJournal {
      * @param namespace     the cache namespace, containing the full prefixed cache name
      * @param partitionId   the cache partition ID
      * @return the cache partition event journal or {@code null} if no journal is configured for this cache
+     * @throws CacheNotExistsException if the cache configuration was not found
      * @see #getEventJournalConfig(ObjectNamespace)
      */
     private RingbufferContainer<InternalEventJournalCacheEvent, Object> getRingbufferOrNull(
