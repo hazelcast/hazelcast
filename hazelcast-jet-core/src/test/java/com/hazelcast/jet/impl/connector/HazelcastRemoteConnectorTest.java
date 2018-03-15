@@ -25,6 +25,7 @@ import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.jet.IListJet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.JetTestInstanceFactory;
 import com.hazelcast.jet.Job;
@@ -33,13 +34,11 @@ import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.processor.SourceProcessors;
-import com.hazelcast.jet.IListJet;
 import com.hazelcast.map.journal.EventJournalMapEvent;
 import com.hazelcast.nio.Address;
 import com.hazelcast.projection.Projections;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.IntStream;
@@ -49,26 +48,21 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.jet.pipeline.JournalInitialPosition.START_FROM_OLDEST;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.WatermarkEmissionPolicy.noThrottling;
 import static com.hazelcast.jet.core.WatermarkGenerationParams.wmGenParams;
 import static com.hazelcast.jet.core.WatermarkPolicies.limitingLag;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeListP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeRemoteCacheP;
-import static com.hazelcast.jet.core.processor.SinkProcessors.writeRemoteListP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeRemoteMapP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.readCacheP;
-import static com.hazelcast.jet.core.processor.SourceProcessors.readListP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.readMapP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.readRemoteCacheP;
-import static com.hazelcast.jet.core.processor.SourceProcessors.readRemoteListP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.readRemoteMapP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.streamRemoteCacheP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.streamRemoteMapP;
-import static java.util.stream.Collectors.toList;
+import static com.hazelcast.jet.pipeline.JournalInitialPosition.START_FROM_OLDEST;
 import static java.util.stream.Collectors.toMap;
-import static java.util.stream.IntStream.range;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -131,31 +125,6 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
         hz.getDistributedObjects().forEach(DistributedObject::destroy);
     }
 
-    @Test
-    public void when_readRemoteList() {
-        populateList(hz.getList(SOURCE_NAME));
-
-        DAG dag = new DAG();
-        Vertex source = dag.newVertex(SOURCE_NAME, readRemoteListP(SOURCE_NAME, clientConfig)).localParallelism(1);
-        Vertex sink = dag.newVertex(SINK_NAME, writeListP(SINK_NAME));
-        dag.edge(between(source, sink));
-
-        executeAndWait(dag);
-        assertEquals(ITEM_COUNT, jet.getList(SINK_NAME).size());
-    }
-
-    @Test
-    public void when_writeRemoteList() {
-        populateList(jet.getList(SOURCE_NAME));
-
-        DAG dag = new DAG();
-        Vertex source = dag.newVertex(SOURCE_NAME, readListP(SOURCE_NAME)).localParallelism(1);
-        Vertex sink = dag.newVertex(SINK_NAME, writeRemoteListP(SINK_NAME, clientConfig));
-        dag.edge(between(source, sink));
-
-        executeAndWait(dag);
-        assertEquals(ITEM_COUNT, hz.getList(SINK_NAME).size());
-    }
 
     @Test
     public void when_readRemoteMap_withNativePredicateAndProjection() {
@@ -311,9 +280,6 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
         assertCompletesEventually(jet.newJob(dag).getFuture());
     }
 
-    private static void populateList(List<Object> list) {
-        list.addAll(range(0, ITEM_COUNT).boxed().collect(toList()));
-    }
 
     private static void populateMap(Map<Object, Object> map) {
         map.putAll(IntStream.range(0, ITEM_COUNT).boxed().collect(toMap(m -> m, m -> m)));

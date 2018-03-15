@@ -41,6 +41,7 @@ import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.impl.pipeline.AbstractStage.transformOf;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.IntStream.range;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -70,8 +71,9 @@ public class SinksTest extends PipelineTestSupport {
         String stageName = randomName();
 
         //When
-        BatchStage<Object> stage = p
+        SinkStage stage = p
                 .drawFrom(Sources.list(sinkName))
+                .drainTo(Sinks.list(sinkName))
                 .setName(stageName);
 
         //Then
@@ -85,8 +87,9 @@ public class SinksTest extends PipelineTestSupport {
         int localParallelism = 5;
 
         //When
-        BatchStage<Object> stage = p
+        SinkStage stage = p
                 .drawFrom(Sources.list(sinkName))
+                .drainTo(Sinks.list(sinkName))
                 .setLocalParallelism(localParallelism);
 
         //Then
@@ -524,6 +527,38 @@ public class SinksTest extends PipelineTestSupport {
         Sink<Object> sink = Sinks.list(sinkName);
         stage1.drainTo(sink);
         stage2.drainTo(sink);
+    }
+
+    @Test
+    public void when_readRemoteList() {
+        // Given
+        populateList(remoteHz.getList(srcName));
+
+        // When
+        p.drawFrom(Sources.remoteList(srcName, clientConfig))
+         .drainTo(Sinks.list(sinkName));
+        execute();
+
+        // Then
+        assertEquals(ITEM_COUNT, sinkList.size());
+    }
+
+    @Test
+    public void when_writeRemoteList() {
+        // Given
+        populateList(srcList);
+
+        // When
+        p.drawFrom(Sources.list(srcName))
+         .drainTo(Sinks.remoteList(sinkName, clientConfig));
+        execute();
+
+        // Then
+        assertEquals(ITEM_COUNT, remoteHz.getList(sinkName).size());
+    }
+
+    private static void populateList(List<Object> list) {
+        list.addAll(range(0, ITEM_COUNT).boxed().collect(toList()));
     }
 
     private static class IncrementEntryProcessor<K> extends AbstractEntryProcessor<K, Integer> {

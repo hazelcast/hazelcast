@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl.connector;
 
+import com.hazelcast.jet.IListJet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.core.AbstractProcessor;
@@ -23,15 +24,11 @@ import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.function.DistributedFunction;
-import com.hazelcast.jet.IListJet;
+import com.hazelcast.jet.pipeline.Pipeline;
+import com.hazelcast.jet.pipeline.Sinks;
+import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -39,8 +36,12 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Semaphore;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeFileP;
@@ -69,24 +70,26 @@ public class WriteFilePTest extends JetTestSupport {
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         IOUtil.delete(directory.toFile());
     }
 
     @Test
     public void when_localParallelismMoreThan1_then_multipleFiles() throws Exception {
         // Given
-        DAG dag = buildDag(null, null, false);
-        dag.getVertex("writer").localParallelism(2);
+        Pipeline p = Pipeline.create();
+        p.drawFrom(Sources.<String>list(list.getName()))
+         .drainTo(Sinks.files(directory.toString()))
+         .setLocalParallelism(2);
         addItemsToList(0, 10);
 
         // When
-        instance.newJob(dag).join();
+        instance.newJob(p).join();
 
         // Then
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(directory)) {
             int[] count = {0};
-            stream.forEach(p -> count[0]++);
+            stream.forEach(path -> count[0]++);
             assertEquals(2, count[0]);
         }
     }
@@ -95,17 +98,17 @@ public class WriteFilePTest extends JetTestSupport {
     @Ignore // the test keeps failing on Jenkins, even though it runs without failure hundreds of times locally
     public void when_twoMembers_then_twoFiles() throws Exception {
         // Given
-        DAG dag = buildDag(null, null, false);
+        Pipeline p = buildPipeline(null, null, false);
         addItemsToList(0, 10);
         createJetMember();
 
         // When
-        instance.newJob(dag).join();
+        instance.newJob(p).join();
 
         // Then
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(directory)) {
             int[] count = {0};
-            stream.forEach(p -> count[0]++);
+            stream.forEach(path -> count[0]++);
             assertEquals(2, count[0]);
         }
     }
@@ -113,11 +116,11 @@ public class WriteFilePTest extends JetTestSupport {
     @Test
     public void smokeTest_smallFile() throws Exception {
         // Given
-        DAG dag = buildDag(null, null, false);
+        Pipeline p = buildPipeline(null, null, false);
         addItemsToList(0, 10);
 
         // When
-        instance.newJob(dag).join();
+        instance.newJob(p).join();
 
         // Then
         checkFileContents(StandardCharsets.UTF_8, 10);
@@ -126,11 +129,11 @@ public class WriteFilePTest extends JetTestSupport {
     @Test
     public void smokeTest_bigFile() throws Exception {
         // Given
-        DAG dag = buildDag(null, null, false);
+        Pipeline p = buildPipeline(null, null, false);
         addItemsToList(0, 100_000);
 
         // When
-        instance.newJob(dag).join();
+        instance.newJob(p).join();
 
         // Then
         checkFileContents(StandardCharsets.UTF_8, 100_000);
@@ -139,7 +142,7 @@ public class WriteFilePTest extends JetTestSupport {
     @Test
     public void when_append_then_previousContentsOfFileIsKept() throws Exception {
         // Given
-        DAG dag = buildDag(null, null, true);
+        Pipeline p = buildPipeline(null, null, true);
         addItemsToList(1, 10);
         try (BufferedWriter writer = Files.newBufferedWriter(file)) {
             writer.write("0");
@@ -147,7 +150,7 @@ public class WriteFilePTest extends JetTestSupport {
         }
 
         // When
-        instance.newJob(dag).join();
+        instance.newJob(p).join();
 
         // Then
         checkFileContents(StandardCharsets.UTF_8, 10);
@@ -156,7 +159,7 @@ public class WriteFilePTest extends JetTestSupport {
     @Test
     public void when_overwrite_then_previousContentsOverwritten() throws Exception {
         // Given
-        DAG dag = buildDag(null, null, false);
+        Pipeline p = buildPipeline(null, null, false);
         addItemsToList(0, 10);
         try (BufferedWriter writer = Files.newBufferedWriter(file)) {
             writer.write("bla bla");
@@ -164,14 +167,14 @@ public class WriteFilePTest extends JetTestSupport {
         }
 
         // When
-        instance.newJob(dag).join();
+        instance.newJob(p).join();
 
         // Then
         checkFileContents(StandardCharsets.UTF_8, 10);
     }
 
     @Test
-    public void when_slowSource_then_fileFlushedAfterEachItem() throws Exception {
+    public void when_slowSource_then_fileFlushedAfterEachItem() {
         // Given
         int numItems = 10;
 
@@ -199,22 +202,22 @@ public class WriteFilePTest extends JetTestSupport {
     }
 
     @Test
-    public void testCharset() throws ExecutionException, InterruptedException, IOException {
+    public void testCharset() throws IOException {
         // Given
         Charset charset = Charset.forName("iso-8859-2");
-        DAG dag = buildDag(null, charset, true);
+        Pipeline p = buildPipeline(null, charset, true);
         String text = "ľščťž";
         list.add(text);
 
         // When
-        instance.newJob(dag).join();
+        instance.newJob(p).join();
 
         // Then
         assertEquals(text + System.getProperty("line.separator"), new String(Files.readAllBytes(file), charset));
     }
 
     @Test
-    public void test_createDirectories() throws Exception {
+    public void test_createDirectories() {
         // Given
         Path myFile = directory.resolve("subdir1/subdir2/" + file.getFileName());
 
@@ -238,11 +241,13 @@ public class WriteFilePTest extends JetTestSupport {
     @Test
     public void when_toStringF_then_used() throws Exception {
         // Given
-        DAG dag = buildDag(val -> Integer.toString(Integer.parseInt(val) - 1), null, false);
+        Pipeline p = Pipeline.create();
+        p.drawFrom(Sources.<String>list(list.getName()))
+         .drainTo(Sinks.files(directory.toString(), val -> Integer.toString(Integer.parseInt(val) - 1)));
         addItemsToList(1, 11);
 
         // When
-        instance.newJob(dag).join();
+        instance.newJob(p).join();
 
         // Then
         checkFileContents(StandardCharsets.UTF_8, 10);
@@ -293,20 +298,17 @@ public class WriteFilePTest extends JetTestSupport {
         }
     }
 
-    private DAG buildDag(DistributedFunction<String, String> toStringFn, Charset charset, boolean append) {
+    private Pipeline buildPipeline(DistributedFunction<String, String> toStringFn, Charset charset, boolean append) {
         if (toStringFn == null) {
             toStringFn = Object::toString;
         }
         if (charset == null) {
             charset = StandardCharsets.UTF_8;
         }
-        DAG dag = new DAG();
-        Vertex reader = dag.newVertex("reader", readListP(list.getName()))
-                           .localParallelism(1);
-        Vertex writer = dag.newVertex("writer", writeFileP(directory.toString(), toStringFn, charset, append))
-                           .localParallelism(1);
-        dag.edge(between(reader, writer));
-        return dag;
+        Pipeline p = Pipeline.create();
+        p.drawFrom(Sources.<String>list(list.getName()))
+         .drainTo(Sinks.files(directory.toString(), toStringFn, charset, append));
+        return p;
     }
 
 }

@@ -19,10 +19,10 @@ package com.hazelcast.jet.impl.pipeline;
 import com.hazelcast.jet.impl.pipeline.transform.Transform;
 import com.hazelcast.jet.pipeline.GeneralStage;
 import com.hazelcast.jet.pipeline.Pipeline;
+import com.hazelcast.jet.pipeline.SinkStage;
 import com.hazelcast.jet.pipeline.Stage;
-
-import javax.annotation.Nonnull;
 import java.util.ArrayList;
+import javax.annotation.Nonnull;
 
 import static java.util.Collections.emptyList;
 
@@ -38,6 +38,10 @@ public abstract class AbstractStage implements Stage {
     }
 
     public static Transform transformOf(GeneralStage stage) {
+        return ((AbstractStage) stage).transform;
+    }
+
+    public static Transform transformOf(SinkStage stage) {
         return ((AbstractStage) stage).transform;
     }
 

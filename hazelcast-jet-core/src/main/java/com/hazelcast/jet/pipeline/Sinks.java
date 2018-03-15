@@ -465,7 +465,7 @@ public final class Sinks {
             int port,
             @Nonnull DistributedFunction<T, String> toStringFn
     ) {
-        return fromProcessor("socketSink(" + host + ':' + port + ')', writeSocketP(host, port, toStringFn, UTF_8));
+        return socket(host, port, toStringFn, UTF_8);
     }
 
     /**
@@ -475,8 +475,7 @@ public final class Sinks {
      */
     @Nonnull
     public static <T> Sink<T> socket(@Nonnull String host, int port) {
-        return fromProcessor("socketSink(" + host + ':' + port + ')',
-                writeSocketP(host, port, Object::toString, UTF_8));
+        return socket(host, port, Object::toString);
     }
 
     /**

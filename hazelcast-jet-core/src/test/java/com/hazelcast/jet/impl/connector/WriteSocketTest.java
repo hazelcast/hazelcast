@@ -16,28 +16,26 @@
 
 package com.hazelcast.jet.impl.connector;
 
+import com.hazelcast.jet.IMapJet;
 import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.Outbox;
 import com.hazelcast.jet.core.Processor;
-import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.test.TestInbox;
 import com.hazelcast.jet.core.test.TestProcessorContext;
-import com.hazelcast.jet.IMapJet;
+import com.hazelcast.jet.pipeline.Pipeline;
+import com.hazelcast.jet.pipeline.Sinks;
+import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
-import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeSocketP;
-import static com.hazelcast.jet.core.processor.SourceProcessors.readMapP;
 import static com.hazelcast.jet.core.test.TestSupport.supplierFrom;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -101,14 +99,11 @@ public class WriteSocketTest extends JetTestSupport {
         IMapJet<Integer, String> map = jetInstance.getMap("map");
         range(0, ITEM_COUNT).forEach(i -> map.put(i, String.valueOf(i)));
 
-        DAG dag = new DAG();
-        Vertex source = dag.newVertex("source", readMapP("map"));
-        Vertex sink = dag.newVertex("sink", writeSocketP(
-                "localhost", serverSocket.getLocalPort(), Object::toString, UTF_8));
+        Pipeline p = Pipeline.create();
+        p.drawFrom(Sources.map("map"))
+         .drainTo(Sinks.socket("localhost", serverSocket.getLocalPort()));
 
-        dag.edge(between(source, sink));
-
-        jetInstance.newJob(dag).join();
+        jetInstance.newJob(p).join();
         assertTrueEventually(() -> assertEquals(ITEM_COUNT, counter.get()));
         serverSocket.close();
         // wait a little to check, if the counter doesn't get too far
