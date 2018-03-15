@@ -176,13 +176,15 @@ public final class PartitionReplicaSyncRequest extends AbstractPartitionOperatio
             logger.finest("Sending sync response to -> " + target + " for partitionId="
                     + getPartitionId() + ", replicaIndex=" + getReplicaIndex() + ", namespaces=" + ns);
         }
+
+        // PartitionReplicaSyncResponse is TargetAware and sent directly without invocation system.
+        syncResponse.setTarget(target);
+
         OperationService operationService = nodeEngine.getOperationService();
         operationService.send(syncResponse, target);
     }
 
-    private PartitionReplicaSyncResponse createResponse(Collection<Operation> operations, ServiceNamespace ns)
-            throws IOException {
-
+    private PartitionReplicaSyncResponse createResponse(Collection<Operation> operations, ServiceNamespace ns) {
         int partitionId = getPartitionId();
         int replicaIndex = getReplicaIndex();
         InternalPartitionService partitionService = getService();
