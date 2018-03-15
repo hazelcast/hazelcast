@@ -21,7 +21,6 @@ import com.hazelcast.core.ICompletableFuture;
 
 /**
  * todo:
- * - the offset table can't grow
  * - for put/get the key isn't checked; just the hashcode.
  * - remove
  * - memory info
@@ -49,6 +48,11 @@ import com.hazelcast.core.ICompletableFuture;
  *  all fields and can deal with some extra memory consumption
  *
  * done:
+ * - the offset table can't grow
+ * - keytable loadfactor
+ * - keytable has own memory
+ * - data-region introduced
+ * - keytable-introduced
  * - should the offset table be on the segment?
  *      - the advantage is that is a lot easier to control the total datasize
  *      and the data section can grow until it runs into the footer.

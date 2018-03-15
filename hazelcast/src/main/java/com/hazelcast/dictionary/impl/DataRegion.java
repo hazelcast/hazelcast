@@ -30,7 +30,7 @@ public class DataRegion {
         this.encoder = encoder;
     }
 
-    public void alloc() {
+    public void init() {
         this.address = unsafe.allocateMemory(length);
         this.available = length;
         this.freeOffset = 0;

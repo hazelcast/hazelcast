@@ -35,12 +35,8 @@ public class Segment {
 
     private final AtomicReference<SegmentTask> ref = new AtomicReference<>();
     private final SerializationService serializationService;
-    private final DictionaryConfig config;
-    private final EntryModel model;
-    private final EntryEncoder encoder;
 
-
-    private KeyTable keyTable;
+    private OffsetRegion offsetRegion;
     private DataRegion dataRegion;
     private boolean allocated;
 
@@ -49,19 +45,16 @@ public class Segment {
                    EntryEncoder encoder,
                    DictionaryConfig config) {
         this.serializationService = serializationService;
-        this.config = config;
-        this.model = model;
-        this.encoder = encoder;
         this.dataRegion = new DataRegion(config, encoder, model);
         //todo: this part is ugly
-        this.keyTable = new KeyTable(config.getInitialSegmentSize());
+        this.offsetRegion = new OffsetRegion(config.getInitialSegmentSize());
     }
 
     private void ensureAllocated() {
         if (!allocated) {
             allocated = true;
-            dataRegion.alloc();
-            keyTable.alloc();
+            dataRegion.init();
+            offsetRegion.init();
         }
     }
 
@@ -78,12 +71,12 @@ public class Segment {
         Object key = serializationService.toObject(keyData);
         Object value = serializationService.toObject(valueData);
 
-        int offset = keyTable.search(key, partitionHash);
+        int offset = offsetRegion.search(key, partitionHash);
 
         if (offset == -1) {
             //System.out.println("previous value not found, inserting");
             offset = dataRegion.insert(key, value);
-            keyTable.insert(key, partitionHash, offset);
+            offsetRegion.insert(key, partitionHash, offset);
         } else {
             //System.out.println("previous value found, overwriting");
             // todo: we assume that we can overwrite; but with variable length records this doesn't need to be the case
@@ -98,7 +91,7 @@ public class Segment {
         }
 
         Object key = serializationService.toObject(keyData);
-        int offset = keyTable.search(key, partitionHash);
+        int offset = offsetRegion.search(key, partitionHash);
         return offset == -1 ? null : dataRegion.readValue(offset);
     }
 
@@ -117,6 +110,6 @@ public class Segment {
 
     public void clear() {
         dataRegion.clear();
-        keyTable.clear();
+        offsetRegion.clear();
     }
 }

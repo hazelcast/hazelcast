@@ -19,9 +19,11 @@ public class Main2 {
 
         HazelcastInstance hz = Hazelcast.newHazelcastInstance(config);
         Dictionary<Long, SomeRecord> dictionary = hz.getDictionary("foo");
-        for (long k = 0; k < 1000; k++) {
+
+        for (long k = 0; k < 10000; k++) {
             dictionary.put(k, new SomeRecord());
         }
+
         System.out.println("size:" + dictionary.size());
         System.out.println("done");
         System.exit(0);
