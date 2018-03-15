@@ -26,14 +26,14 @@ import com.hazelcast.jet.datamodel.Tag;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.datamodel.Tuple3;
 import com.hazelcast.test.HazelcastTestSupport;
-import org.junit.Before;
-import org.junit.Test;
-
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import org.junit.Before;
+import org.junit.Test;
 
 import static com.hazelcast.jet.Traversers.traverseIterable;
 import static com.hazelcast.jet.Util.entry;
@@ -42,6 +42,7 @@ import static com.hazelcast.jet.datamodel.ItemsByTag.itemsByTag;
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.datamodel.Tuple3.tuple3;
 import static com.hazelcast.jet.function.DistributedFunctions.wholeItem;
+import static com.hazelcast.jet.pipeline.ContextFactories.iMapContext;
 import static com.hazelcast.jet.pipeline.ContextFactories.replicatedMapContext;
 import static com.hazelcast.jet.pipeline.JoinClause.joinMapEntries;
 import static java.util.Arrays.asList;
@@ -132,7 +133,7 @@ public class BatchStageTest extends PipelineTestSupport {
     }
 
     @Test
-    public void filterUsingContext() {
+    public void filterUsingReplicatedMapContext() {
         // Given
         List<Integer> input = sequence(ITEM_COUNT);
         putToSrcMap(input);
@@ -148,6 +149,30 @@ public class BatchStageTest extends PipelineTestSupport {
         BatchStage<Integer> mapped = srcStage.filterUsingContext(
                 replicatedMapContext(filteringMapName),
                 ReplicatedMap::containsKey);
+        mapped.drainTo(sink);
+        execute();
+
+        // Then
+        assertEquals(toBag(expected), sinkToBag());
+    }
+
+    @Test
+    public void filterUsingIMapContext() {
+        // Given
+        List<Integer> input = sequence(ITEM_COUNT);
+        putToSrcMap(input);
+        String filteringMapName = randomMapName();
+        Map<Integer, Integer> filteringMap = jet().getMap(filteringMapName);
+        filteringMap.put(1, 1);
+        filteringMap.put(3, 3);
+        List<Integer> expected = input.stream()
+                                      .filter(filteringMap::containsKey)
+                                      .collect(toList());
+
+        // When
+        BatchStage<Integer> mapped = srcStage.filterUsingContext(
+                iMapContext(filteringMapName),
+                IMap::containsKey);
         mapped.drainTo(sink);
         execute();
 
@@ -412,6 +437,20 @@ public class BatchStageTest extends PipelineTestSupport {
 
         // When
         srcStage.peek().drainTo(sink);
+        execute();
+
+        // Then
+        assertEquals(toBag(input), sinkToBag());
+    }
+
+    @Test
+    public void peekWithToStringFunctionIsTransparent() {
+        // Given
+        List<Integer> input = sequence(50);
+        putToSrcMap(input);
+
+        // When
+        srcStage.peek(Object::toString).drainTo(sink);
         execute();
 
         // Then

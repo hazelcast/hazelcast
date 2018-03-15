@@ -23,9 +23,7 @@ import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.BroadcastKey;
-import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Processor;
-import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.WatermarkGenerationParams;
 import com.hazelcast.jet.core.test.TestInbox;
@@ -35,8 +33,23 @@ import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedToLongFunction;
 import com.hazelcast.jet.impl.SnapshotRepository;
 import com.hazelcast.jet.impl.execution.SnapshotRecord;
+import com.hazelcast.jet.kafka.KafkaSources;
+import com.hazelcast.jet.pipeline.Pipeline;
+import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
+import java.util.AbstractMap.SimpleImmutableEntry;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Properties;
+import java.util.Set;
+import java.util.concurrent.Future;
+import javax.annotation.Nonnull;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.TopicPartition;
@@ -49,27 +62,10 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
-import javax.annotation.Nonnull;
-import java.util.AbstractMap.SimpleImmutableEntry;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Properties;
-import java.util.Set;
-import java.util.concurrent.Future;
-
 import static com.hazelcast.jet.Util.entry;
-import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.WatermarkEmissionPolicy.noThrottling;
-import static com.hazelcast.jet.core.WatermarkGenerationParams.noWatermarks;
 import static com.hazelcast.jet.core.WatermarkGenerationParams.wmGenParams;
 import static com.hazelcast.jet.core.WatermarkPolicies.limitingLag;
-import static com.hazelcast.jet.kafka.KafkaProcessors.streamKafkaP;
-import static com.hazelcast.jet.core.processor.SinkProcessors.writeListP;
 import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.IDLE_MESSAGE;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
@@ -107,6 +103,32 @@ public class StreamKafkaPTest extends KafkaTestSupport {
     }
 
     @Test
+    public void when_projectionFunctionProvided_thenAppliedToReadRecords() throws Exception {
+        int messageCount = 20;
+        JetInstance[] instances = new JetInstance[2];
+        Arrays.setAll(instances, i -> createJetMember());
+
+        Pipeline p = Pipeline.create();
+        p.drawFrom(KafkaSources.<Integer, String, String>kafka(properties, rec -> rec.value() + "-x", topic1Name))
+         .drainTo(Sinks.list("sink"));
+
+        Job job = instances[0].newJob(p);
+        sleepAtLeastSeconds(3);
+        for (int i = 0; i < messageCount; i++) {
+            produce(topic1Name, i, Integer.toString(i));
+        }
+        IList<String> list = instances[0].getList("sink");
+        assertTrueEventually(() -> {
+            assertEquals(messageCount , list.size());
+            for (int i = 0; i < messageCount; i++) {
+                String value = Integer.toString(i) + "-x";
+                assertTrue("missing entry: " + value, list.contains(value));
+            }
+        }, 5);
+
+    }
+
+    @Test
     public void integrationTest_noSnapshotting() throws Exception {
         integrationTest(ProcessingGuarantee.NONE);
     }
@@ -120,20 +142,15 @@ public class StreamKafkaPTest extends KafkaTestSupport {
         int messageCount = 20;
         JetInstance[] instances = new JetInstance[2];
         Arrays.setAll(instances, i -> createJetMember());
-        DAG dag = new DAG();
 
-        Vertex source = dag.newVertex("source",
-                streamKafkaP(properties, noWatermarks(), topic1Name, topic2Name)).localParallelism(4);
-
-        Vertex sink = dag.newVertex("sink", writeListP("sink"))
-                         .localParallelism(1);
-
-        dag.edge(between(source, sink));
+        Pipeline p = Pipeline.create();
+        p.drawFrom(KafkaSources.kafka(properties, topic1Name, topic2Name))
+         .drainTo(Sinks.list("sink"));
 
         JobConfig config = new JobConfig();
         config.setProcessingGuarantee(guarantee);
         config.setSnapshotIntervalMillis(500);
-        Job job = instances[0].newJob(dag, config);
+        Job job = instances[0].newJob(p, config);
         sleepAtLeastSeconds(3);
         for (int i = 0; i < messageCount; i++) {
             produce(topic1Name, i, Integer.toString(i));

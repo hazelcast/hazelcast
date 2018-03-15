@@ -75,6 +75,31 @@ public class StreamStageTest extends PipelineTestSupport {
     }
 
     @Test
+    public void peekWithToStringFunctionIsTransparent() {
+        // Given
+        String mapName = JOURNALED_MAP_PREFIX + randomMapName();
+        IMap<Long, String> map = jet().getMap(mapName);
+        map.put(0L, "foo");
+        map.put(1L, "bar");
+        map.put(2L, "baz");
+
+
+        // When
+        p.drawFrom(Sources.<Long, String>mapJournal(mapName, START_FROM_OLDEST))
+         .filter(e -> e.getValue().startsWith("f"))
+         .map(entryValue())
+         .peek(Object::toString)
+         .drainTo(sink);
+        jet().newJob(p);
+
+        // Then
+        List<String> expected = map.values().stream()
+                                   .filter(e -> e.startsWith("f"))
+                                   .collect(toList());
+        assertTrueEventually(() -> assertEquals(toBag(expected), sinkToBag()));
+    }
+
+    @Test
     public void map() {
         // Given
         String mapName = JOURNALED_MAP_PREFIX + randomMapName();
@@ -255,10 +280,10 @@ public class StreamStageTest extends PipelineTestSupport {
         putToMap(map, input);
 
         // When
-        StreamStage<Object> custom = p
+        StreamStage<String> custom = p
                 .drawFrom(Sources.<Integer, String, Integer>mapJournal(mapName, mapPutEvents(), mapEventNewValue(),
                         START_FROM_OLDEST))
-                .customTransform("map", Processors.mapP(Object::toString));
+                .customTransform("map", Processors.<Integer, String>mapP(o -> Integer.toString(o)));
         custom.drainTo(sink);
         jet().newJob(p);
 

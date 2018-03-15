@@ -23,23 +23,23 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.jet.Job;
 import com.hazelcast.jet.IMapJet;
+import com.hazelcast.jet.Job;
 import com.hazelcast.map.AbstractEntryProcessor;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import java.io.IOException;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
+import static com.hazelcast.jet.impl.pipeline.AbstractStage.transformOf;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -60,6 +60,56 @@ public class SinksTest extends PipelineTestSupport {
     @AfterClass
     public static void after() {
         Hazelcast.shutdownAll();
+    }
+
+
+    @Test
+    public void setName() {
+        //Given
+        String sinkName = randomName();
+        String stageName = randomName();
+
+        //When
+        BatchStage<Object> stage = p
+                .drawFrom(Sources.list(sinkName))
+                .setName(stageName);
+
+        //Then
+        assertEquals(stageName, stage.name());
+    }
+
+    @Test
+    public void setLocalParallelism() {
+        //Given
+        String sinkName = randomName();
+        int localParallelism = 5;
+
+        //When
+        BatchStage<Object> stage = p
+                .drawFrom(Sources.list(sinkName))
+                .setLocalParallelism(localParallelism);
+
+        //Then
+        assertEquals(localParallelism, transformOf(stage).localParallelism());
+    }
+
+
+    @Test
+    public void whenDrainToMultipleStagesToSingleSink_thenAllItemsShouldBeOnSink() {
+        // Given
+        String secondSourceName = randomName();
+        List<Integer> input = sequence(ITEM_COUNT);
+        addToSrcList(input);
+        addToList(jet().getList(secondSourceName), input);
+
+        // When
+        BatchStage<Entry<Object, Object>> firstSource = p.drawFrom(Sources.list(srcName));
+        BatchStage<Entry<Object, Object>> secondSource = p.drawFrom(Sources.list(secondSourceName));
+        p.drainTo(Sinks.list(sinkName), firstSource, secondSource);
+        execute();
+
+        // Then
+        assertEquals(ITEM_COUNT * 2, sinkList.size());
     }
 
     @Test
@@ -153,9 +203,9 @@ public class SinksTest extends PipelineTestSupport {
         // When
         p.drawFrom(Sources.<String, Integer>map(srcName))
          .drainTo(Sinks.mapWithMerging(srcName,
-                        Entry::getKey,
-                        Entry::getValue,
-                        (Integer oldValue, Integer newValue) -> oldValue + newValue));
+                 Entry::getKey,
+                 Entry::getValue,
+                 (Integer oldValue, Integer newValue) -> oldValue + newValue));
         execute();
 
         // Then
@@ -209,7 +259,7 @@ public class SinksTest extends PipelineTestSupport {
         p.drawFrom(Sources.<Integer>list(srcName))
          .map(e -> entry("listSum", e))
          .drainTo(Sinks.<Entry<String, Integer>, Integer>mapWithMerging(srcName,
-                        (oldValue, newValue) -> oldValue + newValue));
+                 (oldValue, newValue) -> oldValue + newValue));
         execute();
 
         // Then
@@ -228,9 +278,9 @@ public class SinksTest extends PipelineTestSupport {
         // When
         p.drawFrom(Sources.<String, Integer>remoteMap(srcName, clientConfig))
          .drainTo(Sinks.remoteMapWithMerging(srcName, clientConfig,
-                        Entry::getKey,
-                        Entry::getValue,
-                        (Integer oldValue, Integer newValue) -> oldValue + newValue));
+                 Entry::getKey,
+                 Entry::getValue,
+                 (Integer oldValue, Integer newValue) -> oldValue + newValue));
         execute();
 
         // Then
@@ -251,7 +301,7 @@ public class SinksTest extends PipelineTestSupport {
         // When
         p.drawFrom(Sources.<String, Integer>remoteMap(srcName, clientConfig))
          .drainTo(Sinks.remoteMapWithMerging(srcName, clientConfig,
-                        (Integer oldValue, Integer newValue) -> null));
+                 (Integer oldValue, Integer newValue) -> null));
         execute();
 
         // Then
@@ -269,8 +319,8 @@ public class SinksTest extends PipelineTestSupport {
         // When
         p.drawFrom(Sources.<String, Integer>map(srcName))
          .drainTo(Sinks.mapWithUpdating(srcName,
-                        Entry::getKey,
-                        (Integer value, Entry<String, Integer> item) -> value + 10));
+                 Entry::getKey,
+                 (Integer value, Entry<String, Integer> item) -> value + 10));
         execute();
 
         // Then
@@ -291,7 +341,7 @@ public class SinksTest extends PipelineTestSupport {
         // When
         p.drawFrom(Sources.<String, Integer>map(srcName))
          .drainTo(Sinks.mapWithUpdating(srcName,
-                        (Integer value, Entry<String, Integer> item) -> null));
+                 (Integer value, Entry<String, Integer> item) -> null));
         execute();
 
         // Then
@@ -309,8 +359,8 @@ public class SinksTest extends PipelineTestSupport {
         // When
         p.drawFrom(Sources.<String, DataSerializableObject>map(srcName))
          .drainTo(Sinks.mapWithUpdating(srcName,
-                        (DataSerializableObject value, Entry<String, DataSerializableObject> item) ->
-                                new DataSerializableObject(value.value + item.getValue().value)));
+                 (DataSerializableObject value, Entry<String, DataSerializableObject> item) ->
+                         new DataSerializableObject(value.value + item.getValue().value)));
         execute();
 
         // Then
@@ -332,7 +382,7 @@ public class SinksTest extends PipelineTestSupport {
         // When
         p.drawFrom(Sources.<String, Integer>map(srcName))
          .drainTo(Sinks.mapWithUpdating(srcName,
-                        (Integer value, Entry<String, Integer> item) -> 2));
+                 (Integer value, Entry<String, Integer> item) -> 2));
         execute();
 
         // Then
@@ -349,8 +399,8 @@ public class SinksTest extends PipelineTestSupport {
         // When
         p.drawFrom(Sources.<String, Integer>remoteMap(srcName, clientConfig))
          .drainTo(Sinks.remoteMapWithUpdating(srcName, clientConfig,
-                        Entry::getKey,
-                        (Integer value, Entry<String, Integer> item) -> value + 10));
+                 Entry::getKey,
+                 (Integer value, Entry<String, Integer> item) -> value + 10));
         execute();
 
         // Then
@@ -371,7 +421,7 @@ public class SinksTest extends PipelineTestSupport {
         // When
         p.drawFrom(Sources.<String, Integer>remoteMap(srcName, clientConfig))
          .drainTo(Sinks.remoteMapWithUpdating(srcName, clientConfig,
-                        (Integer value, Entry<String, Integer> item) -> null));
+                 (Integer value, Entry<String, Integer> item) -> null));
         execute();
 
         // Then
@@ -389,8 +439,8 @@ public class SinksTest extends PipelineTestSupport {
         // When
         p.drawFrom(Sources.<String, DataSerializableObject>remoteMap(srcName, clientConfig))
          .drainTo(Sinks.remoteMapWithUpdating(srcName, clientConfig,
-                        (DataSerializableObject value, Entry<String, DataSerializableObject> item) ->
-                                new DataSerializableObject(value.value + item.getValue().value)));
+                 (DataSerializableObject value, Entry<String, DataSerializableObject> item) ->
+                         new DataSerializableObject(value.value + item.getValue().value)));
         execute();
 
         // Then
@@ -433,7 +483,7 @@ public class SinksTest extends PipelineTestSupport {
         // When
         p.drawFrom(Sources.<String, Integer>remoteMap(srcName, clientConfig))
          .drainTo(Sinks.remoteMapWithEntryProcessor(srcName, clientConfig, Entry::getKey,
-                        entry -> new IncrementEntryProcessor<>(10)));
+                 entry -> new IncrementEntryProcessor<>(10)));
         execute();
 
         // Then
@@ -455,7 +505,7 @@ public class SinksTest extends PipelineTestSupport {
         // When
         p.drawFrom(Sources.<String, Integer>map(srcName))
          .drainTo(Sinks.mapWithEntryProcessor(srcName, Entry::getKey,
-                        entry -> new IncrementEntryProcessor<>(10)));
+                 entry -> new IncrementEntryProcessor<>(10)));
         Job job = jet().newJob(p);
 
         // Then

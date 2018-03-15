@@ -18,13 +18,21 @@ package com.hazelcast.jet.hadoop.impl;
 
 import com.hazelcast.core.IList;
 import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.Util;
-import com.hazelcast.jet.core.DAG;
-import com.hazelcast.jet.core.Vertex;
-import com.hazelcast.jet.hadoop.HdfsProcessors;
+import com.hazelcast.jet.hadoop.HdfsSinks;
+import com.hazelcast.jet.hadoop.HdfsSources;
+import com.hazelcast.jet.pipeline.Pipeline;
+import com.hazelcast.jet.pipeline.Sinks;
+import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Map;
+import java.util.concurrent.Future;
+import java.util.stream.IntStream;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapred.FileInputFormat;
@@ -42,19 +50,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.concurrent.Future;
-import java.util.stream.IntStream;
-
-import static com.hazelcast.jet.core.Edge.between;
-import static com.hazelcast.jet.hadoop.HdfsProcessors.readHdfsP;
-import static com.hazelcast.jet.core.processor.SinkProcessors.writeListP;
-import static com.hazelcast.jet.core.processor.SourceProcessors.readMapP;
 import static java.util.stream.Collectors.toMap;
 import static org.junit.Assert.assertEquals;
 
@@ -88,10 +83,6 @@ public class WriteHdfsPTest extends HdfsTestSupport {
                                                      .collect(toMap(IntWritable::new, IntWritable::new));
         instance.getMap(mapName).putAll(map);
 
-        DAG dag = new DAG();
-        Vertex producer = dag.newVertex("producer", readMapP(mapName))
-                             .localParallelism(1);
-
         Path path = getPath();
 
         JobConf conf = new JobConf();
@@ -102,29 +93,24 @@ public class WriteHdfsPTest extends HdfsTestSupport {
 
         FileOutputFormat.setOutputPath(conf, path);
 
-        Vertex consumer = dag.newVertex("consumer",
-                HdfsProcessors.<Entry<IntWritable, IntWritable>, IntWritable, IntWritable>writeHdfsP(
-                        conf, Entry::getKey, Entry::getValue))
-                             .localParallelism(4);
 
-        dag.edge(between(producer, consumer));
+        Pipeline p = Pipeline.create();
+        p.drawFrom(Sources.map(mapName))
+         .drainTo(HdfsSinks.hdfs(conf));
 
-        Future<Void> future = instance.newJob(dag).getFuture();
+        Future<Void> future = instance.newJob(p).getFuture();
         assertCompletesEventually(future);
 
 
-        dag = new DAG();
         JobConf readJobConf = new JobConf();
         readJobConf.setInputFormat(inputFormatClass);
         FileInputFormat.addInputPath(readJobConf, path);
-        producer = dag.newVertex("producer", readHdfsP(readJobConf, Util::entry))
-                      .localParallelism(8);
 
-        consumer = dag.newVertex("consumer", writeListP("results"))
-                      .localParallelism(1);
+        p = Pipeline.create();
+        p.drawFrom(HdfsSources.hdfs(readJobConf))
+         .drainTo(Sinks.list("results"));
 
-        dag.edge(between(producer, consumer));
-        future = instance.newJob(dag).getFuture();
+        future = instance.newJob(p).getFuture();
         assertCompletesEventually(future);
 
 
