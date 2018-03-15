@@ -134,7 +134,7 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
      * @return the default Hazelcast configuration
      */
     protected Config config() {
-        return new Config()
+        return smallInstanceConfig()
                 .setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "5")
                 .setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "5");
     }
