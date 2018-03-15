@@ -16,7 +16,6 @@
 
 package com.hazelcast.ringbuffer.impl.client;
 
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -36,12 +35,14 @@ import static com.hazelcast.ringbuffer.impl.client.RingbufferPortableHook.F_ID;
 import static com.hazelcast.ringbuffer.impl.client.RingbufferPortableHook.READ_RESULT_SET;
 import static java.util.Collections.unmodifiableList;
 
+// This class is not used in serialized form since at least 3.9, however is still
+// maintained as Portable for compatibility
 public class PortableReadResultSet<E> implements Portable, ReadResultSet<E> {
-    private long nextSeq;
+    private transient long nextSeq;
+    private transient long[] seqs;
     private List<Data> items;
     private int readCount;
     private SerializationService serializationService;
-    private long[] seqs;
 
     public PortableReadResultSet() {
     }
@@ -117,11 +118,6 @@ public class PortableReadResultSet<E> implements Portable, ReadResultSet<E> {
         for (Object item : items) {
             rawDataOutput.writeData((Data) item);
         }
-        rawDataOutput.writeLongArray(seqs);
-        // RU_COMPAT_3_9
-        if (rawDataOutput.getVersion().isGreaterOrEqual(Versions.V3_10)) {
-            rawDataOutput.writeLong(nextSeq);
-        }
     }
 
     @Override
@@ -135,11 +131,6 @@ public class PortableReadResultSet<E> implements Portable, ReadResultSet<E> {
         for (int k = 0; k < size; k++) {
             Data item = rawDataInput.readData();
             items.add(item);
-        }
-        seqs = rawDataInput.readLongArray();
-        // RU_COMPAT_3_9
-        if (rawDataInput.getVersion().isGreaterOrEqual(Versions.V3_10)) {
-            nextSeq = rawDataInput.readLong();
         }
     }
 }
