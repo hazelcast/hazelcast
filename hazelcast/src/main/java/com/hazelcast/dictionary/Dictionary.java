@@ -25,6 +25,7 @@ import com.hazelcast.core.ICompletableFuture;
  * - for put/get the key isn't checked; just the hashcode.
  * - remove
  * - memory info
+ * - 64 bit hash; 32bit hash only effectively maps up tp 4.3B items
  * - concurrent access segment
  * - get segment usage data
  *      - number of items
