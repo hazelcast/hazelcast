@@ -47,6 +47,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -104,19 +105,6 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
         }
         if (eventType != null) {
             EventPublisherHelper.publishEntryEvent(context, mapName, cacheId, keyData, null, oldRecord, eventType);
-        }
-    }
-
-    @Override
-    public void clearInternal(EntryEventType eventType) {
-        int removedCount = recordStore.clear();
-        if (removedCount < 1) {
-            return;
-        }
-
-        if (eventType != null) {
-            EventPublisherHelper.publishCacheWideEvent(context, mapName, cacheId,
-                    removedCount, eventType);
         }
     }
 
@@ -480,7 +468,6 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
         return cacheName;
     }
 
-
     @Override
     public IMap getDelegate() {
         return delegate;
@@ -489,6 +476,24 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
     @Override
     public Indexes getIndexes() {
         return indexes;
+    }
+
+    @Override
+    public int removeEntriesOf(int partitionId) {
+        int removedEntryCount = 0;
+
+        Set<Data> keys = recordStore.keySet();
+        Iterator<Data> iterator = keys.iterator();
+        while (iterator.hasNext()) {
+            Data keyData = iterator.next();
+            if (context.getPartitionId(keyData) == partitionId) {
+                if (recordStore.remove(keyData) != null) {
+                    removedEntryCount++;
+                }
+            }
+        }
+
+        return removedEntryCount;
     }
 
     @Override
