@@ -16,7 +16,6 @@
 
 package com.hazelcast.cache.impl;
 
-import com.hazelcast.cache.CacheUtil;
 import com.hazelcast.cache.HazelcastCacheManager;
 import com.hazelcast.cache.ICache;
 import com.hazelcast.config.CacheConfig;
@@ -43,7 +42,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.hazelcast.cache.impl.CacheProxyUtil.validateCacheConfig;
+import static com.hazelcast.cache.CacheUtil.getPrefix;
+import static com.hazelcast.internal.config.ConfigValidator.checkCacheConfig;
 import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.SetUtil.createLinkedHashSet;
@@ -54,13 +54,14 @@ import static com.hazelcast.util.SetUtil.createLinkedHashSet;
  * provides shared functionality to server and client cache managers.
  * There are two cache managers which can be accessed via their providers.
  * <ul>
- *     <li>Client: HazelcastClientCacheManager.</li>
- *     <li>Server: HazelcastServerCacheManager.</li>
+ * <li>Client: HazelcastClientCacheManager.</li>
+ * <li>Server: HazelcastServerCacheManager.</li>
  * </ul>
  * </p>
  * <p>
- *    {@link AbstractHazelcastCacheManager} manages the lifecycle of the caches created or accessed through itself.
+ * {@link AbstractHazelcastCacheManager} manages the lifecycle of the caches created or accessed through itself.
  * </p>
+ *
  * @see HazelcastCacheManager
  * @see CacheManager
  */
@@ -106,14 +107,16 @@ public abstract class AbstractHazelcastCacheManager
         this.lifecycleListenerRegistrationId = registerLifecycleListener();
     }
 
-    private <K, V, C extends Configuration<K, V>> ICacheInternal<K, V> createCacheInternal(String cacheName,
-            C configuration) throws IllegalArgumentException {
+    private <K, V, C extends Configuration<K, V>> ICacheInternal<K, V> createCacheInternal(String cacheName, C configuration)
+            throws IllegalArgumentException {
         ensureOpen();
         checkNotNull(cacheName, "cacheName must not be null");
         checkNotNull(configuration, "configuration must not be null");
 
         CacheConfig<K, V> newCacheConfig = createCacheConfig(cacheName, configuration);
-        validateCacheConfig(newCacheConfig);
+        checkCacheConfig(newCacheConfig.getInMemoryFormat(), newCacheConfig.getEvictionConfig(),
+                newCacheConfig.isStatisticsEnabled(), newCacheConfig.getMergePolicy());
+
         if (caches.containsKey(newCacheConfig.getNameWithPrefix())) {
             throw new CacheException("A cache named '" + cacheName + "' already exists.");
         }
@@ -203,7 +206,7 @@ public abstract class AbstractHazelcastCacheManager
         return null;
     }
 
-    public <K, V>  ICache<K, V> getOrCreateCache(String cacheName, CacheConfig<K, V> cacheConfig) {
+    public <K, V> ICache<K, V> getOrCreateCache(String cacheName, CacheConfig<K, V> cacheConfig) {
         ensureOpen();
         String cacheNameWithPrefix = getCacheNameWithPrefix(cacheName);
         ICacheInternal<?, ?> cache = caches.get(cacheNameWithPrefix);
@@ -327,7 +330,7 @@ public abstract class AbstractHazelcastCacheManager
             cache.close();
         }
         postClose();
-        // TODO do we need to clear it as "caches.clear();"
+        // TODO: do we need to clear it as "caches.clear();"?
     }
 
     /**
@@ -372,10 +375,9 @@ public abstract class AbstractHazelcastCacheManager
      * @return the calculated cache prefix.
      */
     protected String cacheNamePrefix() {
-        String cacheNamePrefix =
-                CacheUtil.getPrefix(
-                        isDefaultURI ? null : uri,
-                        isDefaultClassLoader ? null : getClassLoader());
+        String cacheNamePrefix = getPrefix(
+                isDefaultURI ? null : uri,
+                isDefaultClassLoader ? null : getClassLoader());
         if (cacheNamePrefix == null) {
             return HazelcastCacheManager.CACHE_MANAGER_PREFIX;
         } else {
