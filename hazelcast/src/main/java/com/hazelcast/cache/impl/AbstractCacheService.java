@@ -21,6 +21,7 @@ import com.hazelcast.cache.HazelcastCacheManager;
 import com.hazelcast.cache.impl.event.CachePartitionLostEventFilter;
 import com.hazelcast.cache.impl.journal.CacheEventJournal;
 import com.hazelcast.cache.impl.journal.RingbufferCacheEventJournalImpl;
+import com.hazelcast.cache.impl.operation.AddCacheConfigOperationSupplier;
 import com.hazelcast.cache.impl.merge.policy.CacheMergePolicyProvider;
 import com.hazelcast.cache.impl.operation.CacheCreateConfigOperation;
 import com.hazelcast.cache.impl.operation.OnJoinCacheOperation;
@@ -29,7 +30,9 @@ import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.Member;
+import com.hazelcast.internal.util.InvocationUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.serialization.Data;
@@ -52,6 +55,8 @@ import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ContextMutexFactory;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.FutureUtil;
+import com.hazelcast.version.Version;
 import com.hazelcast.wan.WanReplicationService;
 
 import javax.cache.CacheException;
@@ -69,8 +74,12 @@ import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.cache.impl.AbstractCacheRecordStore.SOURCE_NOT_AVAILABLE;
 import static com.hazelcast.internal.config.ConfigValidator.checkCacheConfig;
+import static com.hazelcast.cache.impl.PreJoinCacheConfig.asCacheConfig;
+import static com.hazelcast.internal.cluster.Versions.V3_10;
 import static com.hazelcast.internal.config.ConfigValidator.checkMergePolicySupportsInMemoryFormat;
 import static com.hazelcast.util.EmptyStatement.ignore;
+import static com.hazelcast.util.FutureUtil.RETHROW_EVERYTHING;
+import static java.util.Collections.singleton;
 
 @SuppressWarnings("checkstyle:classdataabstractioncoupling")
 public abstract class AbstractCacheService implements ICacheService, PreJoinAwareService,
@@ -236,9 +245,13 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
                 checkMergePolicySupportsInMemoryFormat(cacheConfig.getName(), mergePolicy, cacheConfig.getInMemoryFormat(),
                         nodeEngine.getClusterService().getClusterVersion(), true, logger);
 
-                putCacheConfigIfAbsent(cacheConfig);
-                // ensure cache config becomes available on all members before the proxy is returned to the caller
-                createCacheConfigOnAllMembers(cacheConfig);
+                if (putCacheConfigIfAbsent(cacheConfig) == null) {
+                    // if the cache config was not previously known, ensure the new cache config
+                    // becomes available on all members before the proxy is returned to the caller
+                    // TODO ensure the PreJoinCacheConfig is properly constructed here,
+                    // eg what are the semantics of resolved flag?? how can we know whether to set it true or false?
+                    createCacheConfigOnAllMembers(PreJoinCacheConfig.of(cacheConfig, false));
+                }
 
                 return new CacheProxy(cacheConfig, nodeEngine, this);
             }
@@ -345,17 +358,19 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
 
     @Override
     public CacheConfig putCacheConfigIfAbsent(CacheConfig config) {
-        CacheConfig localConfig = configs.putIfAbsent(config.getNameWithPrefix(), config);
+        // ensure all configs registered in CacheService are not PreJoinCacheConfig's
+        CacheConfig cacheConfig = asCacheConfig(config);
+        CacheConfig localConfig = configs.putIfAbsent(cacheConfig.getNameWithPrefix(), cacheConfig);
         if (localConfig == null) {
-            if (config.isStatisticsEnabled()) {
-                setStatisticsEnabled(config, config.getNameWithPrefix(), true);
+            if (cacheConfig.isStatisticsEnabled()) {
+                setStatisticsEnabled(cacheConfig, cacheConfig.getNameWithPrefix(), true);
             }
-            if (config.isManagementEnabled()) {
-                setManagementEnabled(config, config.getNameWithPrefix(), true);
+            if (cacheConfig.isManagementEnabled()) {
+                setManagementEnabled(cacheConfig, cacheConfig.getNameWithPrefix(), true);
             }
         }
         if (localConfig == null) {
-            logger.info("Added cache config: " + config);
+            logger.info("Added cache config: " + cacheConfig);
         }
         return localConfig;
     }
@@ -742,20 +757,28 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
     }
 
     // creates the given CacheConfig on all members of the cluster synchronously
-    private <K, V> void createCacheConfigOnAllMembers(CacheConfig<K, V> cacheConfig) {
-        OperationService operationService = nodeEngine.getOperationService();
-        // wrap the CacheConfig in a PreJoinCacheConfig with KV type class names instead of implementations,
-        // to prevent de-serialization failures on remote nodes
-        CacheCreateConfigOperation op = new CacheCreateConfigOperation(
-                new PreJoinCacheConfig(cacheConfig, false), true, true);
-        try {
-            InternalCompletableFuture future = operationService.invokeOnTarget(CacheService.SERVICE_NAME, op,
-                    nodeEngine.getThisAddress());
-            future.join();
-        } catch (HazelcastInstanceNotActiveException e) {
-            // do not fail the cache proxy creation if the operation invocation fails
-            // (eg node is in PASSIVE state due to being restored from hot restart),
-            ignore(e);
+    private <K, V> void createCacheConfigOnAllMembers(PreJoinCacheConfig<K, V> cacheConfig) {
+        Version version = getNodeEngine().getClusterService().getClusterVersion();
+        if (version.isGreaterOrEqual(V3_10)) {
+            ICompletableFuture future = InvocationUtil.invokeOnStableClusterSerial(getNodeEngine(),
+                    new AddCacheConfigOperationSupplier(cacheConfig),
+                    MAX_ADD_CACHE_CONFIG_RETRIES);
+            FutureUtil.waitForever(singleton(future), RETHROW_EVERYTHING);
+        } else {
+            // RU_COMPAT_3_9
+            OperationService operationService = nodeEngine.getOperationService();
+            // wrap the CacheConfig in a PreJoinCacheConfig with KV type class names instead of implementations,
+            // to prevent de-serialization failures on remote nodes
+            CacheCreateConfigOperation op = new CacheCreateConfigOperation(cacheConfig, true, true);
+            try {
+                InternalCompletableFuture future = operationService.invokeOnTarget(CacheService.SERVICE_NAME, op,
+                        nodeEngine.getThisAddress());
+                future.join();
+            } catch (HazelcastInstanceNotActiveException e) {
+                // do not fail the cache proxy creation if the operation invocation fails
+                // (eg node is in PASSIVE state due to being restored from hot restart),
+                ignore(e);
+            }
         }
     }
 }

@@ -17,17 +17,20 @@
 package com.hazelcast.cache.impl;
 
 import com.hazelcast.cache.HazelcastCachingProvider;
+import com.hazelcast.cache.impl.operation.AddCacheConfigOperationSupplier;
 import com.hazelcast.cache.impl.operation.CacheCreateConfigOperation;
 import com.hazelcast.cache.impl.operation.CacheGetConfigOperation;
 import com.hazelcast.cache.impl.operation.CacheManagementConfigOperation;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.HazelcastInstanceProxy;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
+import com.hazelcast.version.Version;
 
 import java.net.URI;
 import java.util.ArrayList;
@@ -36,8 +39,13 @@ import java.util.Properties;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.internal.cluster.Versions.V3_10;
+import static com.hazelcast.internal.util.InvocationUtil.invokeOnStableClusterSerial;
+import static com.hazelcast.util.FutureUtil.RETHROW_EVERYTHING;
+import static com.hazelcast.util.FutureUtil.waitForever;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 import static com.hazelcast.util.Preconditions.checkNotNull;
+import static java.util.Collections.singleton;
 
 /**
  * <p>
@@ -147,24 +155,32 @@ public class HazelcastServerCacheManager
     }
 
     @Override
-    protected <K, V> CacheConfig<K, V> createCacheConfig(String cacheName,
-                                                         CacheConfig<K, V> config,
-                                                         boolean createAlsoOnOthers,
-                                                         boolean syncCreate) {
-        CacheConfig<K, V> currentCacheConfig = cacheService.getCacheConfig(cacheName);
-        OperationService operationService = nodeEngine.getOperationService();
-        // Create cache config on all nodes.
-        CacheCreateConfigOperation op =
-                new CacheCreateConfigOperation(config, createAlsoOnOthers);
-        // Run "CacheCreateConfigOperation" on this node. Its itself handles interaction with other nodes.
-        // This operation doesn't block operation thread even "syncCreate" is specified.
-        // In that case, scheduled thread is used, not operation thread.
-        InternalCompletableFuture future =
-                operationService.invokeOnTarget(CacheService.SERVICE_NAME, op, nodeEngine.getThisAddress());
-        if (syncCreate) {
-            return (CacheConfig<K, V>) future.join();
+    protected <K, V> void createCacheConfig(String cacheName,
+                                            CacheConfig<K, V> config,
+                                            boolean createAlsoOnOthers,
+                                            boolean syncCreate) {
+        Version clusterVersion = nodeEngine.getClusterService().getClusterVersion();
+        if (clusterVersion.isGreaterOrEqual(V3_10)) {
+            AddCacheConfigOperationSupplier operationSupplier = new AddCacheConfigOperationSupplier(
+                    PreJoinCacheConfig.of(config, false));
+            ICompletableFuture future = invokeOnStableClusterSerial(nodeEngine,
+                    operationSupplier, cacheService.MAX_ADD_CACHE_CONFIG_RETRIES);
+            if (syncCreate) {
+                waitForever(singleton(future), RETHROW_EVERYTHING);
+            }
         } else {
-            return currentCacheConfig;
+            // RU_COMPAT_3_9
+            OperationService operationService = nodeEngine.getOperationService();
+            // Create cache config on all nodes.
+            CacheCreateConfigOperation op = new CacheCreateConfigOperation(config, createAlsoOnOthers);
+            // Run "CacheCreateConfigOperation" on this node. Its itself handles interaction with other nodes.
+            // This operation doesn't block operation thread even "syncCreate" is specified.
+            // In that case, scheduled thread is used, not operation thread.
+            InternalCompletableFuture future =
+                    operationService.invokeOnTarget(CacheService.SERVICE_NAME, op, nodeEngine.getThisAddress());
+            if (syncCreate) {
+                future.join();
+            }
         }
     }
 

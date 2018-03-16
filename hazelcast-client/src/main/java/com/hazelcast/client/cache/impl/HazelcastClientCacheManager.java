@@ -133,9 +133,9 @@ public final class HazelcastClientCacheManager extends AbstractHazelcastCacheMan
     }
 
     @Override
-    protected <K, V> CacheConfig<K, V> createCacheConfig(String cacheName, CacheConfig<K, V> config,
+    protected <K, V> void createCacheConfig(String cacheName, CacheConfig<K, V> config,
                                                          boolean createAlsoOnOthers, boolean syncCreate) {
-        return ClientCacheHelper.createCacheConfig(client, clientCacheProxyFactory.getCacheConfig(cacheName), config,
+        ClientCacheHelper.createCacheConfig(client, clientCacheProxyFactory.getCacheConfig(cacheName), config,
                 createAlsoOnOthers, syncCreate);
     }
 
