@@ -20,7 +20,7 @@ import com.hazelcast.dataseries.MemoryInfo;
 import com.hazelcast.dictionary.AggregationRecipe;
 import com.hazelcast.dictionary.Dictionary;
 import com.hazelcast.dictionary.PreparedAggregation;
-import com.hazelcast.dictionary.impl.operations.RemoveAllOperationFactory;
+import com.hazelcast.dictionary.impl.operations.ClearOperationFactory;
 import com.hazelcast.dictionary.impl.operations.GetOperation;
 import com.hazelcast.dictionary.impl.operations.MemoryInfoOperation;
 import com.hazelcast.dictionary.impl.operations.MemoryInfoOperationFactory;
@@ -124,11 +124,11 @@ public class DictionaryProxy<K, V>
 
     @Override
     public boolean remove(K key) {
-       throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("Not implemented yet");
     }
 
     @Override
-    public InternalCompletableFuture<V> removeAsync(K key) {
+    public InternalCompletableFuture<Boolean> removeAsync(K key) {
         checkNotNull(key, "key can't be null");
 
         Data keyData = toData(key);
@@ -157,7 +157,12 @@ public class DictionaryProxy<K, V>
 
     @Override
     public void clear() {
-
+        try {
+            operationService.invokeOnAllPartitions(
+                    DictionaryService.SERVICE_NAME, new ClearOperationFactory(name));
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
@@ -219,139 +224,129 @@ public class DictionaryProxy<K, V>
     private String newPreparationId() {
         return name + "_" + UuidUtil.newUnsecureUuidString().replace("-", "");
     }
-
-    @Override
-    public String getPrefixedName() {
-        return name;
-    }
-
+    
     @Override
     public Map<K, V> getAll(Set<? extends K> keys) {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("Not implemented yet");
     }
 
     @Override
     public boolean containsKey(K key) {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("Not implemented yet");
     }
 
     @Override
     public void loadAll(Set<? extends K> keys, boolean replaceExistingValues, CompletionListener completionListener) {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("Not implemented yet");
     }
 
     @Override
     public V getAndPut(K key, V value) {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("Not implemented yet");
     }
 
     @Override
     public void putAll(Map<? extends K, ? extends V> map) {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("Not implemented yet");
     }
 
     @Override
     public boolean putIfAbsent(K key, V value) {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("Not implemented yet");
     }
 
     @Override
     public boolean remove(K key, V oldValue) {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("Not implemented yet");
     }
 
     @Override
     public V getAndRemove(K key) {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("Not implemented yet");
     }
 
     @Override
     public boolean replace(K key, V oldValue, V newValue) {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("Not implemented yet");
     }
 
     @Override
     public boolean replace(K key, V value) {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("Not implemented yet");
     }
 
     @Override
     public V getAndReplace(K key, V value) {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("Not implemented yet");
     }
 
     @Override
     public void removeAll(Set<? extends K> keys) {
-        try {
-            operationService.invokeOnAllPartitions(
-                    DictionaryService.SERVICE_NAME, new RemoveAllOperationFactory(name));
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        throw new UnsupportedOperationException("Not implemented yet");
     }
 
     @Override
     public void removeAll() {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("Not implemented yet");
     }
 
     @Override
     public <C extends Configuration<K, V>> C getConfiguration(Class<C> clazz) {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("Not implemented yet");
     }
 
     @Override
     public <T> T invoke(K key, EntryProcessor<K, V, T> entryProcessor, Object... arguments) throws EntryProcessorException {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("Not implemented yet");
     }
 
     @Override
     public <T> Map<K, EntryProcessorResult<T>> invokeAll(Set<? extends K> keys, EntryProcessor<K, V, T> entryProcessor, Object... arguments) {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("Not implemented yet");
     }
 
     @Override
     public CacheManager getCacheManager() {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("Not implemented yet");
     }
 
     @Override
     public void close() {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("Not implemented yet");
     }
 
     @Override
     public boolean isClosed() {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("Not implemented yet");
     }
 
     @Override
     public <T> T unwrap(Class<T> clazz) {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("Not implemented yet");
     }
 
     @Override
     public void registerCacheEntryListener(CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("Not implemented yet");
     }
 
     @Override
     public void deregisterCacheEntryListener(CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("Not implemented yet");
     }
 
     @Override
     public Iterator<Entry<K, V>> iterator() {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("Not implemented yet");
     }
 
     @Override
     public void forEach(Consumer<? super Entry<K, V>> action) {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("Not implemented yet");
     }
 
     @Override
     public Spliterator<Entry<K, V>> spliterator() {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("Not implemented yet");
     }
 }

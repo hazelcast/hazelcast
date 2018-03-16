@@ -16,8 +16,8 @@
 
 package com.hazelcast.dictionary;
 
+import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.core.PrefixedDistributedObject;
 import com.hazelcast.dataseries.MemoryInfo;
 
 import javax.cache.Cache;
@@ -56,17 +56,19 @@ import javax.cache.Cache;
  * done:
  * - memory info
  * - index growing
+ * - memory info doesn't contain consumed bytes
+ * - added memory info consumed bytes per entry
  *
  * @param <K>
  * @param <V>
  */
-public interface Dictionary<K, V> extends Cache<K, V>, PrefixedDistributedObject {
+public interface Dictionary<K, V> extends Cache<K, V>, DistributedObject {
 
     ICompletableFuture<V> getAsync(K key);
 
     ICompletableFuture<Void> putAsync(K key, V value);
 
-    ICompletableFuture<V> removeAsync(K key);
+    ICompletableFuture<Boolean> removeAsync(K key);
 
     /**
      * Returns the number of items in the dictionary.

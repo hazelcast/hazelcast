@@ -62,8 +62,8 @@ public class DataRegion {
         }
     }
 
-    public Object readValue(int offset){
-       return encoder.readValue(address + offset + model.keyLength());
+    public Object readValue(int offset) {
+        return encoder.readValue(address + offset + model.keyLength());
     }
 
     private void expand() {
@@ -104,5 +104,9 @@ public class DataRegion {
 
     public long allocated() {
         return length;
+    }
+
+    public long consumed() {
+        return length - available;
     }
 }

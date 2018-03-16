@@ -62,14 +62,15 @@ public class Partition {
             if (segment.isAllocated()) {
                 segmentsInUse++;
             }
+            consumedBytes += segment.consumed();
             count += segment.count();
             allocatedBytes += segment.allocated();
         }
 
-        return new MemoryInfo(-1, allocatedBytes, segmentsInUse, count);
+        return new MemoryInfo(consumedBytes, allocatedBytes, segmentsInUse, count);
     }
 
-    public void prepareAggregation(String preparationId, AggregationRecipe aggregationRecipe) {
-
+    public void prepareAggregation(String preparationId, AggregationRecipe recipe) {
+        //todo
     }
 }

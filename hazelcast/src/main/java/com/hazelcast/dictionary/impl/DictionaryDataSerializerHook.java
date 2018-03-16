@@ -22,8 +22,8 @@ import com.hazelcast.dictionary.impl.operations.MemoryInfoOperationFactory;
 import com.hazelcast.dictionary.impl.operations.PrepareAggregationOperation;
 import com.hazelcast.dictionary.impl.operations.PrepareAggregationOperationFactory;
 import com.hazelcast.dictionary.impl.operations.PutOperation;
-import com.hazelcast.dictionary.impl.operations.RemoveAllOperation;
-import com.hazelcast.dictionary.impl.operations.RemoveAllOperationFactory;
+import com.hazelcast.dictionary.impl.operations.ClearOperation;
+import com.hazelcast.dictionary.impl.operations.ClearOperationFactory;
 import com.hazelcast.dictionary.impl.operations.RemoveOperation;
 import com.hazelcast.dictionary.impl.operations.SizeOperation;
 import com.hazelcast.dictionary.impl.operations.SizeOperationFactory;
@@ -43,8 +43,8 @@ public class DictionaryDataSerializerHook implements DataSerializerHook {
     public static final int REMOVE_OPERATION = 2;
     public static final int SIZE_OPERATION = 3;
     public static final int SIZE_OPERATION_FACTORY = 4;
-    public static final int REMOVE_ALL_OPERATION = 5;
-    public static final int REMOVE_ALL_OPERATION_FACTORY = 6;
+    public static final int CLEAR_OPERATION = 5;
+    public static final int CLEAR_OPERATION_FACTORY = 6;
     public static final int MEMORY_INFO_OPERATION = 7;
     public static final int MEMORY_INFO_OPERATION_FACTORY = 8;
     public static final int PREPARE_AGGREGATION_OPERATION = 9;
@@ -65,10 +65,10 @@ public class DictionaryDataSerializerHook implements DataSerializerHook {
                     return new PutOperation();
                 case REMOVE_OPERATION:
                     return new RemoveOperation();
-                case REMOVE_ALL_OPERATION:
-                    return new RemoveAllOperation();
-                case REMOVE_ALL_OPERATION_FACTORY:
-                    return new RemoveAllOperationFactory();
+                case CLEAR_OPERATION:
+                    return new ClearOperation();
+                case CLEAR_OPERATION_FACTORY:
+                    return new ClearOperationFactory();
                 case SIZE_OPERATION:
                     return new SizeOperation();
                 case SIZE_OPERATION_FACTORY:

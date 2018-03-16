@@ -147,4 +147,8 @@ public class OffsetRegion {
     public long allocated() {
         return length;
     }
+
+    public long consumed() {
+        return slotCount * SLOT_SIZE;
+    }
 }

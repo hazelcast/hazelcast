@@ -6,7 +6,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 
-import static com.hazelcast.dataseries.impl.DataSeriesDataSerializerHook.PREPARE_AGGREGATION;
 import static com.hazelcast.dictionary.impl.DictionaryDataSerializerHook.PREPARE_AGGREGATION_OPERATION;
 
 public class PrepareAggregationOperation extends DictionaryOperation {

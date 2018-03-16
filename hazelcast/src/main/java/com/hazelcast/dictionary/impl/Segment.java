@@ -121,4 +121,8 @@ public class Segment {
         dataRegion.clear();
         offsetRegion.clear();
     }
+
+    public long consumed() {
+        return dataRegion.consumed()+offsetRegion.consumed();
+    }
 }
