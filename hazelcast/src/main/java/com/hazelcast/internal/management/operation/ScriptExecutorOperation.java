@@ -21,6 +21,7 @@ import com.hazelcast.internal.management.ManagementDataSerializerHook;
 import com.hazelcast.internal.management.ScriptEngineManagerContext;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.io.IOException;
@@ -34,7 +35,7 @@ import static com.hazelcast.internal.cluster.Versions.V3_10;
 /**
  * Operation to execute script on the node.
  */
-public class ScriptExecutorOperation extends AbstractManagementOperation {
+public class ScriptExecutorOperation extends AbstractManagementOperation implements Versioned {
 
     private String engineName;
     private String script;
