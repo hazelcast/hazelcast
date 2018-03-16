@@ -15,17 +15,15 @@
  */
 package classloading.domain;
 
-import java.util.Collection;
 import javax.cache.Cache;
 import javax.cache.configuration.Factory;
 import javax.cache.integration.CacheWriter;
 import javax.cache.integration.CacheWriterException;
+import java.util.Collection;
 
-/**
- *
- * @author lprimak
- */
 public class PersonCacheWriterFactory implements Factory<CacheWriter<String, Person>> {
+    private static final long serialVersionUID = 1L;
+
     @Override
     public CacheWriter<String, Person> create() {
         return new CacheWriter<String, Person>() {
@@ -51,5 +49,8 @@ public class PersonCacheWriterFactory implements Factory<CacheWriter<String, Per
         };
     }
 
-    private static final long serialVersionUID = 1L;
+    @Override
+    public boolean equals(Object obj) {
+        return obj instanceof PersonCacheWriterFactory;
+    }
 }

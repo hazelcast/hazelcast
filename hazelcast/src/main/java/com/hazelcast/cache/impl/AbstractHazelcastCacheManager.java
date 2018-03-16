@@ -121,7 +121,7 @@ public abstract class AbstractHazelcastCacheManager
             throw new CacheException("A cache named '" + cacheName + "' already exists.");
         }
         // Create cache config on all nodes as sync
-        createCacheConfig(cacheName, newCacheConfig, true, true);
+        createCacheConfig(cacheName, newCacheConfig);
         // Create cache proxy object with cache config
         ICacheInternal<K, V> cacheProxy = createCacheProxy(newCacheConfig);
         // Add created cache config to local configurations map
@@ -237,7 +237,7 @@ public abstract class AbstractHazelcastCacheManager
         String cacheNameWithPrefix = getCacheNameWithPrefix(cacheName);
         ICacheInternal<?, ?> cache = caches.get(cacheNameWithPrefix);
         if (cache == null) {
-            CacheConfig<K, V> cacheConfig = findCacheConfig(cacheNameWithPrefix, cacheName, true, true);
+            CacheConfig<K, V> cacheConfig = findCacheConfig(cacheNameWithPrefix, cacheName);
             if (cacheConfig == null) {
                 // No cache found
                 return null;
@@ -427,14 +427,10 @@ public abstract class AbstractHazelcastCacheManager
     protected abstract <K, V> ICacheInternal<K, V> createCacheProxy(CacheConfig<K, V> cacheConfig);
 
     protected abstract <K, V> CacheConfig<K, V> findCacheConfig(String cacheName,
-                                                                String simpleCacheName,
-                                                                boolean createAlsoOnOthers,
-                                                                boolean syncCreate);
+                                                                String simpleCacheName);
 
     protected abstract <K, V> void createCacheConfig(String cacheName,
-                                                     CacheConfig<K, V> config,
-                                                     boolean createAlsoOnOthers,
-                                                     boolean syncCreate);
+                                                     CacheConfig<K, V> config);
 
     protected abstract <K, V> CacheConfig<K, V> getCacheConfig(String cacheName,
                                                                String simpleCacheName);

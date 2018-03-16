@@ -22,11 +22,9 @@ import javax.cache.event.CacheEntryEventFilter;
 import javax.cache.event.CacheEntryListener;
 import javax.cache.event.CacheEntryListenerException;
 
-/**
- *
- * @author lprimak
- */
 public class PersonCacheEntryListenerConfiguration implements CacheEntryListenerConfiguration<String, Person> {
+
+    private static final long serialVersionUID = 1L;
 
     @Override
     public Factory<CacheEntryListener<? super String, ? super Person>> getCacheEntryListenerFactory() {
@@ -52,8 +50,9 @@ public class PersonCacheEntryListenerConfiguration implements CacheEntryListener
             public CacheEntryEventFilter<? super String, ? super Person> create() {
                 return new CacheEntryEventFilter<String, Person>() {
                     @Override
-                    public boolean evaluate(CacheEntryEvent<? extends String, ? extends Person> cee) throws CacheEntryListenerException {
-                        throw new UnsupportedOperationException("Not supported yet.");
+                    public boolean evaluate(CacheEntryEvent<? extends String, ? extends Person> cee)
+                            throws CacheEntryListenerException {
+                        return true;
                     }
                 };
             }
@@ -65,6 +64,9 @@ public class PersonCacheEntryListenerConfiguration implements CacheEntryListener
     public boolean isSynchronous() {
         return false;
     }
-    private static final long serialVersionUID = 1L;
 
+    @Override
+    public boolean equals(Object obj) {
+        return obj instanceof PersonCacheEntryListenerConfiguration;
+    }
 }
