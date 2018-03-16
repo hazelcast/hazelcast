@@ -17,15 +17,12 @@
 package com.hazelcast.nio;
 
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -64,6 +61,7 @@ import static com.hazelcast.nio.IOUtil.readObject;
 import static com.hazelcast.nio.IOUtil.toFileName;
 import static com.hazelcast.nio.IOUtil.writeByteArray;
 import static com.hazelcast.nio.IOUtil.writeObject;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -84,21 +82,7 @@ public class IOUtilTest extends HazelcastTestSupport {
     private static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
     private static final int SIZE = 3;
 
-    private static TestHazelcastInstanceFactory hazelcastInstanceFactory;
-    private static InternalSerializationService serializationService;
-
-    @BeforeClass
-    public static void setUp() {
-        hazelcastInstanceFactory = new TestHazelcastInstanceFactory();
-
-        HazelcastInstance hazelcastInstance = hazelcastInstanceFactory.newHazelcastInstance();
-        serializationService = getSerializationService(hazelcastInstance);
-    }
-
-    @AfterClass
-    public static void tearDown() {
-        hazelcastInstanceFactory.shutdownAll();
-    }
+    private static final InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
 
     @Test
     public void testConstructor() {
@@ -356,13 +340,21 @@ public class IOUtilTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testCompressAndDecompress_withEmptyString() throws Exception {
-        String expected = "";
-
-        byte[] compressed = compress(expected.getBytes());
+    public void testCompressAndDecompress_withEmptyInput() throws Exception {
+        byte[] compressed = compress(EMPTY_BYTE_ARRAY);
         byte[] decompressed = decompress(compressed);
 
-        assertEquals(expected, new String(decompressed));
+        assertArrayEquals(EMPTY_BYTE_ARRAY, decompressed);
+    }
+
+    @Test
+    public void testCompressAndDecompress_withSingleByte() throws Exception {
+        byte[] input = new byte[] {111};
+
+        byte[] compressed = compress(input);
+        byte[] decompressed = decompress(compressed);
+
+        assertArrayEquals(input, decompressed);
     }
 
     @Test
