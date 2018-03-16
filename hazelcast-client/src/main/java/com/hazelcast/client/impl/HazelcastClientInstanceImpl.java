@@ -455,6 +455,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         partitionService.listenPartitionTable(ownerConnection);
         clusterService.listenMembershipEvents(ownerConnection);
         userCodeDeploymentService.deploy(this, ownerConnection);
+        proxyManager.createDistributedObjectsOnCluster(ownerConnection);
     }
 
     public MetricsRegistryImpl getMetricsRegistry() {
