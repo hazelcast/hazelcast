@@ -23,7 +23,7 @@ public class Main {
         }
         System.out.println("Finished inserting");
 
-        System.out.println(map.aggregate(Aggregators.count()));
+        System.out.println(" count:"+map.aggregate(Aggregators.count()));
     }
 
     static class Foo implements Serializable{

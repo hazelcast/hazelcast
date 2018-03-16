@@ -56,7 +56,7 @@ public class AggregationResult implements Result<AggregationResult>, IdentifiedD
     @Override
     public void add(Object o) {
         aggregator.accumulate(o);
-        System.out.println(aggregator);
+     //   System.out.println(aggregator);
     }
 
     @Override
