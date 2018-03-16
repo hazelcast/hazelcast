@@ -78,6 +78,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.client.proxy.ClientMapProxy.NULL_LISTENER_IS_NOT_ALLOWED;
 import static com.hazelcast.map.impl.ListenerAdapters.createListenerAdapter;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.Preconditions.checkPositive;
@@ -258,7 +259,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
 
     @Override
     public String addEntryListener(EntryListener<K, V> listener, final boolean includeValue) {
-        isNotNull(listener, "listener");
+        isNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         EventHandler<ClientMessage> handler = createHandler(listener);
         return registerListener(createEntryListenerCodec(includeValue), handler);
     }
@@ -294,6 +295,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
 
     @Override
     public String addEntryListener(EntryListener<K, V> listener, K key, final boolean includeValue) {
+        isNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         final Data keyData = toData(key);
         EventHandler<ClientMessage> handler = createHandler(listener);
         return registerListener(createEntryListenerToKeyCodec(includeValue, keyData), handler);
