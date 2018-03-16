@@ -218,12 +218,14 @@ public final class IOUtil {
         if (input.length == 0) {
             return new byte[0];
         }
+        int len = Math.max(input.length / 10, 10);
+
         Deflater compressor = new Deflater();
         compressor.setLevel(Deflater.BEST_SPEED);
         compressor.setInput(input);
         compressor.finish();
-        ByteArrayOutputStream bos = new ByteArrayOutputStream(input.length / 10);
-        byte[] buf = new byte[input.length / 10];
+        ByteArrayOutputStream bos = new ByteArrayOutputStream(len);
+        byte[] buf = new byte[len];
         while (!compressor.finished()) {
             int count = compressor.deflate(buf);
             bos.write(buf, 0, count);
