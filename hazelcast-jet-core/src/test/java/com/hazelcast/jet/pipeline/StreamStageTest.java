@@ -23,10 +23,11 @@ import com.hazelcast.jet.datamodel.ItemsByTag;
 import com.hazelcast.jet.datamodel.Tag;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.datamodel.Tuple3;
+import org.junit.Test;
+
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.stream.Stream;
-import org.junit.Test;
 
 import static com.hazelcast.jet.Traversers.traverseIterable;
 import static com.hazelcast.jet.Util.mapEventNewValue;
@@ -373,5 +374,26 @@ public class StreamStageTest extends PipelineTestSupport {
                                      .map(String::valueOf)
                                      .collect(toList());
         assertTrueEventually(() -> assertEquals(toBag(expected), sinkToBag()));
+    }
+
+    @Test
+    public void peek_when_addedTimestamp_then_unwrapsJetEvent() {
+        // Given
+        List<Integer> input = sequence(ITEM_COUNT);
+        String mapName = JOURNALED_MAP_PREFIX + randomMapName();
+        IMap<String, Integer> map = jet().getMap(mapName);
+        putToMap(map, input);
+
+        // When
+        StreamStage<Integer> custom = p
+                .drawFrom(Sources.<Integer, String, Integer>mapJournal(mapName, mapPutEvents(), mapEventNewValue(),
+                        START_FROM_OLDEST))
+                .addTimestamps()
+                .peek((Integer i) -> true, (Integer i) -> String.valueOf(i));
+        custom.drainTo(sink);
+        jet().newJob(p);
+
+        // Then
+        assertTrueEventually(() -> assertEquals(toBag(input), sinkToBag()), 10);
     }
 }

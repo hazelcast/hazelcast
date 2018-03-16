@@ -89,6 +89,12 @@ public class FunctionAdapter {
     }
 
     @Nonnull
+    @SuppressWarnings("unchecked")
+    DistributedFunction<?, ?> adaptToStringFn(@Nonnull DistributedFunction<?, ? extends CharSequence> mapFn) {
+        return mapFn;
+    }
+
+    @Nonnull
     public JoinClause adaptJoinClause(@Nonnull JoinClause joinClause) {
         return joinClause;
     }
@@ -230,6 +236,11 @@ class JetEventFunctionAdapter extends FunctionAdapter {
                 (DistributedBiFunction<C, Object, Traverser>) (BiFunction) flatMapFn;
         return (context, e) -> fn.apply(context, ((JetEvent) e).payload())
                                  .map(r -> jetEvent(r, ((JetEvent) e).timestamp()));
+    }
+
+    @Nonnull @Override
+    DistributedFunction<?, ?> adaptToStringFn(@Nonnull DistributedFunction mapFn) {
+        return e -> mapFn.apply(((JetEvent) e).payload());
     }
 
     @Nonnull @Override
