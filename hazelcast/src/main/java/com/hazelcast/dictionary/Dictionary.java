@@ -20,6 +20,8 @@ import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.PrefixedDistributedObject;
 import com.hazelcast.dataseries.MemoryInfo;
 
+import javax.cache.Cache;
+
 
 /**
  * todo:
@@ -58,29 +60,9 @@ import com.hazelcast.dataseries.MemoryInfo;
  * @param <K>
  * @param <V>
  */
-public interface Dictionary<K, V> extends javax.cache.Cache<K, V>, PrefixedDistributedObject {
-
-    /**
-     * Gets the value with the given key.
-     *
-     * @param key the key
-     * @return the found item or null if item not found.
-     * @throws NullPointerException if key is null.
-     */
-    V get(K key);
+public interface Dictionary<K, V> extends Cache<K, V>, PrefixedDistributedObject {
 
     ICompletableFuture<V> getAsync(K key);
-
-    /**
-     * Puts an entry in the dictionary.
-     *
-     * If the item already exists, it is overwritten.
-     *
-     * @param key
-     * @param value
-     * @throws NullPointerException if key or value is null.
-     */
-    void put(K key, V value);
 
     ICompletableFuture<Void> putAsync(K key, V value);
 
