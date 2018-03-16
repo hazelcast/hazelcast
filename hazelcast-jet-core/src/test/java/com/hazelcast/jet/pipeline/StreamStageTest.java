@@ -17,6 +17,7 @@
 package com.hazelcast.jet.pipeline;
 
 import com.hazelcast.core.IMap;
+import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.datamodel.ItemsByTag;
 import com.hazelcast.jet.datamodel.Tag;
@@ -33,9 +34,11 @@ import static com.hazelcast.jet.Util.mapPutEvents;
 import static com.hazelcast.jet.datamodel.ItemsByTag.itemsByTag;
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.datamodel.Tuple3.tuple3;
+import static com.hazelcast.jet.function.DistributedFunctions.entryKey;
 import static com.hazelcast.jet.function.DistributedFunctions.entryValue;
 import static com.hazelcast.jet.function.DistributedFunctions.wholeItem;
 import static com.hazelcast.jet.impl.pipeline.AbstractStage.transformOf;
+import static com.hazelcast.jet.pipeline.ContextFactories.replicatedMapContext;
 import static com.hazelcast.jet.pipeline.JoinClause.joinMapEntries;
 import static com.hazelcast.jet.pipeline.JournalInitialPosition.START_FROM_OLDEST;
 import static java.util.Arrays.asList;
@@ -83,7 +86,6 @@ public class StreamStageTest extends PipelineTestSupport {
         map.put(1L, "bar");
         map.put(2L, "baz");
 
-
         // When
         p.drawFrom(Sources.<Long, String>mapJournal(mapName, START_FROM_OLDEST))
          .filter(e -> e.getValue().startsWith("f"))
@@ -108,7 +110,6 @@ public class StreamStageTest extends PipelineTestSupport {
         map.put(1L, "bar");
         map.put(2L, "baz");
 
-
         // When
         p.drawFrom(Sources.<Long, String>mapJournal(mapName, START_FROM_OLDEST))
          .map(e -> e.getValue() + "-x")
@@ -123,6 +124,35 @@ public class StreamStageTest extends PipelineTestSupport {
     }
 
     @Test
+    public void mapUsingContext() {
+        // Given
+        String mapName = JOURNALED_MAP_PREFIX + randomMapName();
+        IMap<Long, String> map = jet().getMap(mapName);
+        map.put(0L, "foo");
+        map.put(1L, "bar");
+        map.put(2L, "baz");
+        String transformMapName = randomMapName();
+        ReplicatedMap<Long, String> transformMap = jet().getHazelcastInstance().getReplicatedMap(transformMapName);
+        List<String> expected = map.keySet().stream()
+                                   .peek(i -> transformMap.put(i, String.valueOf(i)))
+                                   .map(String::valueOf)
+                                   .collect(toList());
+
+        // When
+        p.drawFrom(Sources.<Long, String>mapJournal(mapName, START_FROM_OLDEST))
+         .map(entryKey())
+         .mapUsingContext(
+                 ContextFactories.<Long, String>replicatedMapContext(transformMapName),
+                 ReplicatedMap::get)
+         .drainTo(sink);
+        jet().newJob(p);
+
+        // Then
+        assertTrueEventually(() -> assertEquals(toBag(expected), sinkToBag()));
+    }
+
+
+    @Test
     public void filter() {
         // Given
         String mapName = JOURNALED_MAP_PREFIX + randomMapName();
@@ -130,7 +160,6 @@ public class StreamStageTest extends PipelineTestSupport {
         map.put(0L, "foo");
         map.put(1L, "bar");
         map.put(2L, "baz");
-
 
         // When
         p.drawFrom(Sources.<Long, String>mapJournal(mapName, START_FROM_OLDEST))
@@ -147,12 +176,40 @@ public class StreamStageTest extends PipelineTestSupport {
     }
 
     @Test
+    public void filterWithContext() {
+        // Given
+        String mapName = JOURNALED_MAP_PREFIX + randomMapName();
+        IMap<Long, String> map = jet().getMap(mapName);
+        map.put(0L, "foo");
+        map.put(1L, "bar");
+        map.put(2L, "baz");
+        String filteringMapName = randomMapName();
+        ReplicatedMap<Long, Long> filteringMap = jet().getHazelcastInstance().getReplicatedMap(filteringMapName);
+        filteringMap.put(1L, 1L);
+        filteringMap.put(2L, 2L);
+
+        // When
+        p.drawFrom(Sources.<Long, String>mapJournal(mapName, START_FROM_OLDEST))
+         .map(entryKey())
+         .filterUsingContext(
+                 replicatedMapContext(filteringMapName),
+                 ReplicatedMap::containsKey)
+         .drainTo(sink);
+        jet().newJob(p);
+
+        // Then
+        List<Long> expected = map.keySet().stream()
+                                 .filter(filteringMap::containsKey)
+                                 .collect(toList());
+        assertTrueEventually(() -> assertEquals(toBag(expected), sinkToBag()));
+    }
+
+    @Test
     public void flatMap() {
         // Given
         String mapName = JOURNALED_MAP_PREFIX + randomMapName();
         IMap<Long, String> map = jet().getMap(mapName);
         map.put(0L, "foo");
-
 
         // When
         p.drawFrom(Sources.<Long, String>mapJournal(mapName, START_FROM_OLDEST))
@@ -167,6 +224,30 @@ public class StreamStageTest extends PipelineTestSupport {
                                    .collect(toList());
         assertTrueEventually(() -> assertEquals(toBag(expected), sinkToBag()));
     }
+
+    @Test
+    public void flatMapUsingContext() {
+        // Given
+        String mapName = JOURNALED_MAP_PREFIX + randomMapName();
+        IMap<Long, String> map = jet().getMap(mapName);
+        map.put(0L, "foo");
+
+        // When
+        p.drawFrom(Sources.<Long, String>mapJournal(mapName, START_FROM_OLDEST))
+         .map(entryValue())
+         .flatMapUsingContext(
+                 ContextFactory.withCreateFn(procCtx -> asList("A", "B")),
+                 (ctx, o) -> traverseIterable(asList(o + ctx.get(0), o + ctx.get(1))))
+         .drainTo(sink);
+        jet().newJob(p);
+
+        // Then
+        List<String> expected = map.values().stream()
+                                   .flatMap(o -> Stream.of(o + "A", o + "B"))
+                                   .collect(toList());
+        assertTrueEventually(() -> assertEquals(toBag(expected), sinkToBag()));
+    }
+
 
     @Test
     public void hashJoinTwo() {

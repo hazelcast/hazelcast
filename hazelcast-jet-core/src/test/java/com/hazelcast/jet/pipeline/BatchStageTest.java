@@ -42,6 +42,7 @@ import static com.hazelcast.jet.datamodel.ItemsByTag.itemsByTag;
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.datamodel.Tuple3.tuple3;
 import static com.hazelcast.jet.function.DistributedFunctions.wholeItem;
+import static com.hazelcast.jet.impl.pipeline.AbstractStage.transformOf;
 import static com.hazelcast.jet.pipeline.ContextFactories.iMapContext;
 import static com.hazelcast.jet.pipeline.ContextFactories.replicatedMapContext;
 import static com.hazelcast.jet.pipeline.JoinClause.joinMapEntries;
@@ -71,6 +72,30 @@ public class BatchStageTest extends PipelineTestSupport {
     public void when_minimalPipeline_then_validDag() {
         srcStage.drainTo(sink);
         assertTrue(p.toDag().iterator().hasNext());
+    }
+
+    @Test
+    public void setName() {
+        //Given
+        String stageName = randomName();
+
+        //When
+        srcStage.setName(stageName);
+
+        //Then
+        assertEquals(stageName, srcStage.name());
+    }
+
+    @Test
+    public void setLocalParallelism() {
+        //Given
+        int localParallelism = 10;
+
+        //When
+        srcStage.setLocalParallelism(localParallelism);
+
+        //Then
+        assertEquals(localParallelism, transformOf(srcStage).localParallelism());
     }
 
     @Test
