@@ -204,9 +204,9 @@ public class IOBalancer {
         }
 
         NioThread dstOwner = loadImbalance.dstOwner;
-        if (logger.isFinestEnabled()) {
+        if (logger.isInfoEnabled()) {
             NioThread srcOwner = loadImbalance.srcOwner;
-            logger.finest("Scheduling migration of pipeline " + pipeline
+            logger.info("Scheduling migration of pipeline " + pipeline
                     + " from " + srcOwner + " to " + dstOwner);
         }
         pipeline.requestMigration(dstOwner);

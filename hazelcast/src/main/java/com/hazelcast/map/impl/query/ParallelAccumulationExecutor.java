@@ -54,7 +54,11 @@ public class ParallelAccumulationExecutor implements AccumulationExecutor {
     @SuppressWarnings("unchecked")
     public AggregationResult execute(
             Aggregator aggregator, Collection<QueryableEntry> entries, Collection<Integer> partitionIds) {
+
+        System.out.println("Items pulled in memory:"+entries.size());
+
         Collection<Aggregator> chunkAggregators = accumulateParallel(aggregator, entries);
+
 
         Aggregator resultAggregator = clone(aggregator);
         try {
@@ -118,6 +122,7 @@ public class ParallelAccumulationExecutor implements AccumulationExecutor {
 
         @Override
         public Aggregator call() throws Exception {
+            System.out.println(Thread.currentThread().getName()+ "  processing entries.size:"+entries.size());
             try {
                 for (QueryableEntry entry : entries) {
                     aggregator.accumulate(entry);

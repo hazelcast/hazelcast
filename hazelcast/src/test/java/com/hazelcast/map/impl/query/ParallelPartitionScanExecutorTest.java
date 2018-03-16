@@ -63,38 +63,38 @@ public class ParallelPartitionScanExecutorTest {
         );
         return new ParallelPartitionScanExecutor(runner, pool, 60000);
     }
-
-    @Test
-    public void execute_success() throws Exception {
-        PartitionScanRunner runner = mock(PartitionScanRunner.class);
-        ParallelPartitionScanExecutor executor = executor(runner);
-        Predicate predicate = Predicates.equal("attribute", 1);
-
-        List<QueryableEntry> result = executor.execute("Map", predicate, asList(1, 2, 3));
-        assertEquals(0, result.size());
-    }
-
-    @Test
-    public void execute_fail() throws Exception {
-        PartitionScanRunner runner = mock(PartitionScanRunner.class);
-        ParallelPartitionScanExecutor executor = executor(runner);
-        Predicate predicate = Predicates.equal("attribute", 1);
-
-        when(runner.run(anyString(), eq(predicate), anyInt())).thenThrow(new QueryException());
-
-        expected.expect(QueryException.class);
-        executor.execute("Map", predicate, asList(1, 2, 3));
-    }
-
-    @Test
-    public void execute_fail_retryable() throws Exception {
-        PartitionScanRunner runner = mock(PartitionScanRunner.class);
-        ParallelPartitionScanExecutor executor = executor(runner);
-        Predicate predicate = Predicates.equal("attribute", 1);
-
-        when(runner.run(anyString(), eq(predicate), anyInt())).thenThrow(new RetryableHazelcastException());
-
-        expected.expect(RetryableHazelcastException.class);
-        executor.execute("Map", predicate, asList(1, 2, 3));
-    }
+//
+//    @Test
+//    public void execute_success() throws Exception {
+//        PartitionScanRunner runner = mock(PartitionScanRunner.class);
+//        ParallelPartitionScanExecutor executor = executor(runner);
+//        Predicate predicate = Predicates.equal("attribute", 1);
+//
+//        List<QueryableEntry> result = executor.execute("Map", predicate, asList(1, 2, 3));
+//        assertEquals(0, result.size());
+//    }
+//
+//    @Test
+//    public void execute_fail() throws Exception {
+//        PartitionScanRunner runner = mock(PartitionScanRunner.class);
+//        ParallelPartitionScanExecutor executor = executor(runner);
+//        Predicate predicate = Predicates.equal("attribute", 1);
+//
+//        when(runner.run(anyString(), eq(predicate), anyInt())).thenThrow(new QueryException());
+//
+//        expected.expect(QueryException.class);
+//        executor.execute("Map", predicate, asList(1, 2, 3));
+//    }
+//
+//    @Test
+//    public void execute_fail_retryable() throws Exception {
+//        PartitionScanRunner runner = mock(PartitionScanRunner.class);
+//        ParallelPartitionScanExecutor executor = executor(runner);
+//        Predicate predicate = Predicates.equal("attribute", 1);
+//
+//        when(runner.run(anyString(), eq(predicate), anyInt())).thenThrow(new RetryableHazelcastException());
+//
+//        expected.expect(RetryableHazelcastException.class);
+//        executor.execute("Map", predicate, asList(1, 2, 3));
+//    }
 }

@@ -31,6 +31,8 @@ public interface Result<T extends Result> extends IdentifiedDataSerializable {
 
     void setPartitionIds(Collection<Integer> partitionIds);
 
+    void add(Object o);
+
     void combine(T result);
 
     void onCombineFinished();

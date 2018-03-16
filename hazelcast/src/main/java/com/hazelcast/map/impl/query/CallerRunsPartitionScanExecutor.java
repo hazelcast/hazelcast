@@ -37,12 +37,12 @@ public class CallerRunsPartitionScanExecutor implements PartitionScanExecutor {
     }
 
     @Override
-    public Collection<QueryableEntry> execute(String mapName, Predicate predicate, Collection<Integer> partitions) {
+    public void execute(String mapName, Predicate predicate, Collection<Integer> partitions, Result result) {
         RetryableHazelcastException storedException = null;
-        Collection<QueryableEntry> result = new ArrayList<QueryableEntry>();
+
         for (Integer partitionId : partitions) {
             try {
-                result.addAll(partitionScanRunner.run(mapName, predicate, partitionId));
+                partitionScanRunner.run(mapName, predicate, partitionId, result);
             } catch (RetryableHazelcastException e) {
                 // RetryableHazelcastException are stored and re-thrown later. this is to ensure all partitions
                 // are touched as when the parallel execution was used.
@@ -55,7 +55,6 @@ public class CallerRunsPartitionScanExecutor implements PartitionScanExecutor {
         if (storedException != null) {
             throw storedException;
         }
-        return result;
     }
 
     @Override
@@ -63,3 +62,5 @@ public class CallerRunsPartitionScanExecutor implements PartitionScanExecutor {
         return partitionScanRunner.run(mapName, predicate, partitionId, tableIndex, fetchSize);
     }
 }
+
+

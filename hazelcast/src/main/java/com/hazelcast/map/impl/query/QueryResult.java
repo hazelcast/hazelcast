@@ -85,6 +85,11 @@ public class QueryResult implements Result<QueryResult>, IdentifiedDataSerializa
         rows.add(row);
     }
 
+    @Override
+    public void add(Object o) {
+        rows.add((QueryResultRow)o);
+    }
+
     public void add(QueryableEntry entry, Projection projection, SerializationService serializationService) {
         if (++resultSize > resultLimit) {
             throw new QueryResultSizeExceededException();
