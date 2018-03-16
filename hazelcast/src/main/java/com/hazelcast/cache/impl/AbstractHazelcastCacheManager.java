@@ -431,10 +431,10 @@ public abstract class AbstractHazelcastCacheManager
                                                                 boolean createAlsoOnOthers,
                                                                 boolean syncCreate);
 
-    protected abstract <K, V> CacheConfig<K, V> createCacheConfig(String cacheName,
-                                                                  CacheConfig<K, V> config,
-                                                                  boolean createAlsoOnOthers,
-                                                                  boolean syncCreate);
+    protected abstract <K, V> void createCacheConfig(String cacheName,
+                                                     CacheConfig<K, V> config,
+                                                     boolean createAlsoOnOthers,
+                                                     boolean syncCreate);
 
     protected abstract <K, V> CacheConfig<K, V> getCacheConfig(String cacheName,
                                                                String simpleCacheName);

@@ -45,8 +45,8 @@ public class CacheCreateConfigMessageTask
 
     @Override
     protected Operation prepareOperation() {
+        // todo THIS MUST MIGRATE FROM PARTITION TO GENERIC OPERATION
         CacheConfig cacheConfig = extractCacheConfigFromMessage();
-
         return new CacheCreateConfigOperation(cacheConfig, parameters.createAlsoOnOthers);
     }
 

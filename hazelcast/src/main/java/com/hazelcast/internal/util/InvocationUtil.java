@@ -63,7 +63,7 @@ public final class InvocationUtil {
      * is interrupted and the exception is propagated to the caller.
      */
     public static ICompletableFuture<Object> invokeOnStableClusterSerial(NodeEngine nodeEngine,
-                                                                         Supplier<Operation> operationSupplier,
+                                                                         Supplier<? extends Operation> operationSupplier,
                                                                          int maxRetries) {
 
         ClusterService clusterService = nodeEngine.getClusterService();
@@ -120,13 +120,13 @@ public final class InvocationUtil {
     private static class InvokeOnMemberFunction implements IFunction<Member, ICompletableFuture<Object>> {
         private static final long serialVersionUID = 2903680336421872278L;
 
-        private final transient Supplier<Operation> operationSupplier;
+        private final transient Supplier<? extends Operation> operationSupplier;
         private final transient NodeEngine nodeEngine;
         private final transient RestartingMemberIterator memberIterator;
         private final long retryDelayMillis;
         private volatile int lastRetryCount;
 
-        InvokeOnMemberFunction(Supplier<Operation> operationSupplier, NodeEngine nodeEngine,
+        InvokeOnMemberFunction(Supplier<? extends Operation> operationSupplier, NodeEngine nodeEngine,
                 RestartingMemberIterator memberIterator) {
             this.operationSupplier = operationSupplier;
             this.nodeEngine = nodeEngine;

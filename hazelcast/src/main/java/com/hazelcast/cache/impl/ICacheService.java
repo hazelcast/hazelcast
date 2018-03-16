@@ -43,6 +43,11 @@ public interface ICacheService
     String SERVICE_NAME = "hz:impl:cacheService";
 
     /**
+     * Maximum retries for adding cache config cluster-wide on stable cluster
+     */
+    int MAX_ADD_CACHE_CONFIG_RETRIES = 100;
+
+    /**
      * Gets or creates a cache record store with the prefixed {@code cacheNameWithPrefix}
      * and partition ID.
      *
