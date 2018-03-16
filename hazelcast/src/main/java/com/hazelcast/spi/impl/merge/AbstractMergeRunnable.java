@@ -141,16 +141,14 @@ public abstract class AbstractMergeRunnable<Store, MergingItem> implements Runna
 
         for (Map.Entry<String, Collection<Store>> entry : collectedStoresWithLegacyPolicies.entrySet()) {
             String dataStructureName = entry.getKey();
+            if (!checkMergePolicySupportsInMemoryFormat(dataStructureName, getMergePolicy(dataStructureName),
+                    getInMemoryFormat(dataStructureName), clusterService.getClusterVersion(), false, logger)) {
+                continue;
+            }
 
-            if (checkMergePolicySupportsInMemoryFormat(dataStructureName,
-                    getMergePolicy(dataStructureName).getClass().getName(),
-                    getInMemoryFormat(dataStructureName),
-                    clusterService.getClusterVersion(), false, logger)) {
-
-                Collection<Store> recordStores = entry.getValue();
-                for (Store recordStore : recordStores) {
-                    consumeStoreLegacy(recordStore, consumer);
-                }
+            Collection<Store> recordStores = entry.getValue();
+            for (Store recordStore : recordStores) {
+                consumeStoreLegacy(recordStore, consumer);
             }
         }
 

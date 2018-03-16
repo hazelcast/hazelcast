@@ -50,6 +50,10 @@ class CacheSplitBrainHandlerService extends AbstractSplitBrainHandlerService<ICa
         this.cacheService = nodeEngine.getService(SERVICE_NAME);
     }
 
+    public CacheMergePolicyProvider getMergePolicyProvider() {
+        return mergePolicyProvider;
+    }
+
     @Override
     protected Runnable newMergeRunnable(Map<String, Collection<ICacheRecordStore>> collectedStores,
                                         Map<String, Collection<ICacheRecordStore>> collectedStoresWithLegacyPolicies,

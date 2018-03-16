@@ -21,6 +21,7 @@ import com.hazelcast.cache.HazelcastCacheManager;
 import com.hazelcast.cache.impl.event.CachePartitionLostEventFilter;
 import com.hazelcast.cache.impl.journal.CacheEventJournal;
 import com.hazelcast.cache.impl.journal.RingbufferCacheEventJournalImpl;
+import com.hazelcast.cache.impl.merge.policy.CacheMergePolicyProvider;
 import com.hazelcast.cache.impl.operation.CacheCreateConfigOperation;
 import com.hazelcast.cache.impl.operation.OnJoinCacheOperation;
 import com.hazelcast.config.CacheConfig;
@@ -67,7 +68,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.cache.impl.AbstractCacheRecordStore.SOURCE_NOT_AVAILABLE;
-import static com.hazelcast.cache.impl.CacheProxyUtil.validateCacheConfig;
+import static com.hazelcast.internal.config.ConfigValidator.checkCacheConfig;
 import static com.hazelcast.internal.config.ConfigValidator.checkMergePolicySupportsInMemoryFormat;
 import static com.hazelcast.util.EmptyStatement.ignore;
 
@@ -128,7 +129,7 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
     protected NodeEngine nodeEngine;
     protected CachePartitionSegment[] segments;
     protected CacheEventHandler cacheEventHandler;
-    protected SplitBrainHandlerService splitBrainHandlerService;
+    protected CacheSplitBrainHandlerService splitBrainHandlerService;
     protected RingbufferCacheEventJournalImpl eventJournal;
     protected ILogger logger;
 
@@ -148,7 +149,7 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
     }
 
     // this method is overridden on ee
-    protected SplitBrainHandlerService newSplitBrainHandlerService(NodeEngine nodeEngine) {
+    protected CacheSplitBrainHandlerService newSplitBrainHandlerService(NodeEngine nodeEngine) {
         return new CacheSplitBrainHandlerService(nodeEngine, configs, segments);
     }
 
@@ -227,12 +228,13 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
                     cacheConfig.setManagerPrefix(HazelcastCacheManager.CACHE_MANAGER_PREFIX);
                 }
 
-                validateCacheConfig(cacheConfig);
-                checkMergePolicySupportsInMemoryFormat(cacheConfig.getName(),
-                        cacheConfig.getMergePolicy(),
-                        cacheConfig.getInMemoryFormat(),
-                        nodeEngine.getClusterService().getClusterVersion(),
-                        true, logger);
+                CacheMergePolicyProvider mergePolicyProvider = splitBrainHandlerService.getMergePolicyProvider();
+                checkCacheConfig(cacheConfig.getInMemoryFormat(), cacheConfig.getEvictionConfig(),
+                        cacheConfig.isStatisticsEnabled(), cacheConfig.getMergePolicy());
+
+                Object mergePolicy = mergePolicyProvider.getMergePolicy(cacheConfig.getMergePolicy());
+                checkMergePolicySupportsInMemoryFormat(cacheConfig.getName(), mergePolicy, cacheConfig.getInMemoryFormat(),
+                        nodeEngine.getClusterService().getClusterVersion(), true, logger);
 
                 putCacheConfigIfAbsent(cacheConfig);
                 // ensure cache config becomes available on all members before the proxy is returned to the caller

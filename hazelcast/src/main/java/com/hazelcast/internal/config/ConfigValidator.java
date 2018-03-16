@@ -40,7 +40,6 @@ import com.hazelcast.spi.merge.HyperLogLogMergePolicy;
 import com.hazelcast.spi.merge.LatestAccessMergePolicy;
 import com.hazelcast.spi.merge.LatestUpdateMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
-import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.version.Version;
 
 import java.util.ArrayList;
@@ -271,47 +270,31 @@ public final class ConfigValidator {
     }
 
     /**
-     * Returns {@code true} if supplied {@code inMemoryFormat} can be merged
-     * with the supplied {@code mergePolicy}, otherwise returns {@code false}.
+     * Checks if the given {@link InMemoryFormat} can be merged by the given
+     * {@code mergePolicy} instance.
      * <p>
-     * When there is a wrong policy detected, it does one of two things: if
-     * fail-fast option is {@code true} and cluster version is 3.10 or later,
-     * it throws {@link IllegalArgumentException} otherwise prints a warning
-     * log.
+     * When a wrong policy is detected, it does one of two things:
+     * if {@code failFast} is {@code true} and the cluster version is 3.10 or later,
+     * it throws an {@link IllegalArgumentException}, otherwise it logs a warning.
+     *
+     * @return {@code true} if the given {@code inMemoryFormat} can be merged by
+     * the supplied {@code mergePolicy}, {@code false} otherwise
      */
-    public static boolean checkMergePolicySupportsInMemoryFormat(String name,
-                                                                 String mergePolicy,
-                                                                 InMemoryFormat inMemoryFormat,
-                                                                 Version clusterVersion,
-                                                                 boolean failFast,
-                                                                 ILogger logger) {
-
-        if (canMergeWithPolicy(mergePolicy, inMemoryFormat, clusterVersion)) {
-            return true;
-        }
-
-        if (clusterVersion.isGreaterOrEqual(V3_10) && failFast) {
-            throw new IllegalArgumentException(createSplitRecoveryWarningMsg(name, mergePolicy));
-        } else {
-            logger.warning(createSplitRecoveryWarningMsg(name, mergePolicy));
-        }
-
-        return false;
-    }
-
-    private static boolean canMergeWithPolicy(String mergePolicyClassName,
-                                              InMemoryFormat inMemoryFormat,
-                                              Version clusterVersion) {
+    public static boolean checkMergePolicySupportsInMemoryFormat(String name, Object mergePolicy, InMemoryFormat inMemoryFormat,
+                                                                 Version clusterVersion, boolean failFast, ILogger logger) {
         if (inMemoryFormat != NATIVE) {
             return true;
         }
-
-        try {
-            return clusterVersion.isGreaterOrEqual(V3_10)
-                    && SplitBrainMergePolicy.class.isAssignableFrom(Class.forName(mergePolicyClassName));
-        } catch (ClassNotFoundException e) {
-            throw ExceptionUtil.rethrow(e);
+        // RU_COMPAT_3_9 (in 3.11 just check instanceof SplitBrainMergePolicy)
+        if (mergePolicy instanceof SplitBrainMergePolicy && clusterVersion.isGreaterOrEqual(V3_10)) {
+            return true;
         }
+        // RU_COMPAT_3_9 (in 3.11 just check failFast)
+        if (failFast && clusterVersion.isGreaterOrEqual(V3_10)) {
+            throw new IllegalArgumentException(createSplitRecoveryWarningMsg(name, mergePolicy.getClass().getName()));
+        }
+        logger.warning(createSplitRecoveryWarningMsg(name, mergePolicy.getClass().getName()));
+        return false;
     }
 
     private static String createSplitRecoveryWarningMsg(String name, String mergePolicy) {

@@ -24,7 +24,6 @@ import com.hazelcast.util.ExceptionUtil;
 import java.util.Map;
 import java.util.Set;
 
-import static com.hazelcast.internal.config.ConfigValidator.checkCacheConfig;
 import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
@@ -237,12 +236,4 @@ public final class CacheProxyUtil {
             }
         }
     }
-
-    public static <K, V> void validateCacheConfig(CacheConfig<K, V> cacheConfig) {
-        checkCacheConfig(cacheConfig.getInMemoryFormat(),
-                cacheConfig.getEvictionConfig(),
-                cacheConfig.isStatisticsEnabled(),
-                cacheConfig.getMergePolicy());
-    }
-
 }
