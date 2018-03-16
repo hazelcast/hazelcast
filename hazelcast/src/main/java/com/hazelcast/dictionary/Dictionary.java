@@ -17,44 +17,48 @@
 package com.hazelcast.dictionary;
 
 import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.core.PrefixedDistributedObject;
 import com.hazelcast.dataseries.MemoryInfo;
 
 
 /**
  * todo:
+ * - mechanism for fast loading huge quantities of data.
+ * - mechanism to constrain the total memory of a segment
  * - for put/get the key isn't checked; just the hashcode.
  * - remove
  * - 64 bit hash; 32bit hash only effectively maps up tp 4.3B items
  * - concurrent access segment
  * - get segment usage data
- *      - number of items
- *      - memory allocated
- *      - memory used
- *      - load factor
- *  - in IMap the serialized bytes of the key are stored, but in the
- *    dictionary the content of the object is stored as key
- *  - support for byte-array value
- *  - support for byte-array key
- *  - there should not be any need for explicit support for primitive wrappers for keys
- *  - currently the segment size increases with a fixed factor of 2, this should be configurable.
- *  - type checking should be added to the codec.
- *  - add optional statistics to the map entry
- *          hits
- *          lastAccessTime
- *          lastUpdateTime
- *  - how to deal with finding a particular field in a non fixed length record?
- *  so imagine there are 2 byte-array fields, then the second byte array can only be found if the first
- *  byte-array is known, unless a table is kept. For fixed length fields this is less of an issue; they
- *  can be written first. Perhaps keeping such a table should be optional; makes sense if you don't need
- *  all fields and can deal with some extra memory consumption
+ * - number of items
+ * - memory allocated
+ * - memory used
+ * - load factor
+ * - in IMap the serialized bytes of the key are stored, but in the
+ * dictionary the content of the object is stored as key
+ * - support for byte-array value
+ * - support for byte-array key
+ * - there should not be any need for explicit support for primitive wrappers for keys
+ * - currently the segment size increases with a fixed factor of 2, this should be configurable.
+ * - type checking should be added to the codec.
+ * - add optional statistics to the map entry
+ * hits
+ * lastAccessTime
+ * lastUpdateTime
+ * - how to deal with finding a particular field in a non fixed length record?
+ * so imagine there are 2 byte-array fields, then the second byte array can only be found if the first
+ * byte-array is known, unless a table is kept. For fixed length fields this is less of an issue; they
+ * can be written first. Perhaps keeping such a table should be optional; makes sense if you don't need
+ * all fields and can deal with some extra memory consumption
  *
  * done:
  * - memory info
+ * - index growing
  *
  * @param <K>
  * @param <V>
  */
-public interface Dictionary<K, V> {
+public interface Dictionary<K, V> extends javax.cache.Cache<K, V>, PrefixedDistributedObject {
 
     /**
      * Gets the value with the given key.
@@ -80,15 +84,6 @@ public interface Dictionary<K, V> {
 
     ICompletableFuture<Void> putAsync(K key, V value);
 
-    /**
-     * Removes the entry with the given key.
-     *
-     * @param key
-     * @return the item removed, or null if item didn't exist.
-     * @throws NullPointerException if key is null.
-     */
-    V remove(K key);
-
     ICompletableFuture<V> removeAsync(K key);
 
     /**
@@ -99,11 +94,24 @@ public interface Dictionary<K, V> {
     long size();
 
     /**
-     * Clears the Dictionary.
+     * Gets the MemoryInfo of all partitions for this dictionary.
+     *
+     * @return the MemoryInfo.
      */
-    void clear();
-
     MemoryInfo memoryInfo();
 
+    /**
+     * Gets the memory info of a specific partition.
+     *
+     * @param partitionId
+     * @return
+     */
     MemoryInfo memoryInfo(int partitionId);
+
+    /**
+     * Creates a prepared aggregation.
+     *
+     * @return the prepared aggregation.
+     */
+    PreparedAggregation prepare(AggregationRecipe recipe);
 }

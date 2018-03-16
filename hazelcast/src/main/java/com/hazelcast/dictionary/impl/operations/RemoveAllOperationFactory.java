@@ -25,20 +25,20 @@ import com.hazelcast.spi.OperationFactory;
 
 import java.io.IOException;
 
-public class ClearOperationFactory implements OperationFactory {
+public class RemoveAllOperationFactory implements OperationFactory {
 
     private String name;
 
-    public ClearOperationFactory() {
+    public RemoveAllOperationFactory() {
     }
 
-    public ClearOperationFactory(String name) {
+    public RemoveAllOperationFactory(String name) {
         this.name = name;
     }
 
     @Override
     public Operation createOperation() {
-        return new ClearOperation(name);
+        return new RemoveAllOperation(name);
     }
 
     @Override
@@ -48,7 +48,7 @@ public class ClearOperationFactory implements OperationFactory {
 
     @Override
     public int getId() {
-        return DictionaryDataSerializerHook.CLEAR_OPERATION_FACTORY;
+        return DictionaryDataSerializerHook.REMOVE_ALL_OPERATION_FACTORY;
     }
 
     @Override

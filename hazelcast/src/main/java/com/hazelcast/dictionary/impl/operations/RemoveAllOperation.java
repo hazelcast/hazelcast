@@ -19,12 +19,12 @@ package com.hazelcast.dictionary.impl.operations;
 import com.hazelcast.dictionary.impl.DictionaryDataSerializerHook;
 import com.hazelcast.dictionary.impl.Segment;
 
-public class ClearOperation extends DictionaryOperation {
+public class RemoveAllOperation extends DictionaryOperation {
 
-    public ClearOperation(){
+    public RemoveAllOperation(){
     }
 
-    public ClearOperation(String name) {
+    public RemoveAllOperation(String name) {
         super(name);
     }
 
@@ -37,6 +37,6 @@ public class ClearOperation extends DictionaryOperation {
 
     @Override
     public int getId() {
-        return DictionaryDataSerializerHook.CLEAR_OPERATION;
+        return DictionaryDataSerializerHook.REMOVE_ALL_OPERATION;
     }
 }

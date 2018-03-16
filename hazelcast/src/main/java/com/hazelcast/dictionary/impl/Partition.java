@@ -18,6 +18,7 @@ package com.hazelcast.dictionary.impl;
 
 import com.hazelcast.config.DictionaryConfig;
 import com.hazelcast.dataseries.MemoryInfo;
+import com.hazelcast.dictionary.AggregationRecipe;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.serialization.SerializationService;
 
@@ -66,5 +67,9 @@ public class Partition {
         }
 
         return new MemoryInfo(-1, allocatedBytes, segmentsInUse, count);
+    }
+
+    public void prepareAggregation(String preparationId, AggregationRecipe aggregationRecipe) {
+
     }
 }

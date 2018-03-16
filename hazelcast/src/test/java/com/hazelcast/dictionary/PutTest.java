@@ -70,10 +70,24 @@ public class PutTest extends HazelcastTestSupport {
         assertEquals(newValue, dictionary.get(key));
     }
 
+
+    @Test
+    public void whenOverwritingValueManyTimes() {
+        Dictionary<Long, Long> dictionary = newDictionary();
+
+        Long key = 1L;
+        for (long k = 100000; k > 0; k--) {
+            dictionary.put(key, k);
+        }
+
+        assertEquals(1, dictionary.size());
+        assertEquals(new Long(1), dictionary.get(key));
+    }
+
     @Test
     public void whenPuttingMany() {
         Config config = new Config()
-                .setProperty(GroupProperty.PARTITION_COUNT.getName(),"1");
+                .setProperty(GroupProperty.PARTITION_COUNT.getName(), "1");
 
         config.addDictionaryConfig(
                 new DictionaryConfig("foo")
@@ -85,7 +99,7 @@ public class PutTest extends HazelcastTestSupport {
         HazelcastInstance hz = createHazelcastInstance(config);
         Dictionary<Long, Long> dictionary = hz.getDictionary("foo");
 
-        int count = 1 * 1000;
+        int count = 10 * 1000;
         for (long k = 0; k < count; k++) {
             dictionary.put(k, 2 * k);
             //System.out.println(" at : "+k);
