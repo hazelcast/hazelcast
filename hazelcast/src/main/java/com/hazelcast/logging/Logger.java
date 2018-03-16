@@ -216,7 +216,7 @@ public final class Logger {
     }
 
     private static LoggerFactory createLoggerFactory(String preferredType) {
-        final LoggerFactory createdFactory;
+        LoggerFactory createdFactory;
 
         if ("log4j".equals(preferredType)) {
             createdFactory = tryToCreateLoggerFactory("com.hazelcast.logging.Log4jFactory");
@@ -229,6 +229,14 @@ public final class Logger {
         } else if ("none".equals(preferredType)) {
             createdFactory = new NoLogFactory();
         } else {
+            if (!StringUtil.isNullOrEmpty(preferredType)) {
+                logError("Unexpected logging type '" + preferredType + "', falling back to JDK logging.", null);
+            }
+            createdFactory = new StandardLoggerFactory();
+        }
+
+        if (createdFactory == null) {
+            logError("Falling back to JDK logging.", null);
             createdFactory = new StandardLoggerFactory();
         }
 
@@ -239,9 +247,19 @@ public final class Logger {
         try {
             return ClassLoaderUtil.newInstance(null, className);
         } catch (Exception e) {
-            // since we don't have a logger available, lets log it to the System.err
-            e.printStackTrace();
+            logError("Failed to create '" + className + "' logger factory:", e);
             return null;
+        }
+    }
+
+    private static void logError(String message, Throwable cause) {
+        // We may try to use the existing shared logger factory here, but in
+        // this case the error may end up in a pretty unexpected place. Just log
+        // to stderr.
+
+        System.err.println(message);
+        if (cause != null) {
+            cause.printStackTrace();
         }
     }
 
