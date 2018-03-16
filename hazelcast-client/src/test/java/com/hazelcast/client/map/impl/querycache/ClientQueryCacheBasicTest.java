@@ -93,6 +93,8 @@ public class ClientQueryCacheBasicTest extends HazelcastTestSupport {
         clientConfig.addQueryCacheConfig(TEST_MAP_NAME, new QueryCacheConfig(QUERY_CACHE_NAME)
                 .setPredicateConfig(new PredicateConfig(predicate))
                 .setIncludeValue(includeValues));
+        clientConfig.getNetworkConfig()
+                    .setConnectionAttemptLimit(Integer.MAX_VALUE);
         if (useNearCache) {
             clientConfig.addNearCacheConfig(new NearCacheConfig()
                     .setName(TEST_MAP_NAME)
