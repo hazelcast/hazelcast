@@ -248,9 +248,7 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
                 if (putCacheConfigIfAbsent(cacheConfig) == null) {
                     // if the cache config was not previously known, ensure the new cache config
                     // becomes available on all members before the proxy is returned to the caller
-                    // TODO ensure the PreJoinCacheConfig is properly constructed here,
-                    // eg what are the semantics of resolved flag?? how can we know whether to set it true or false?
-                    createCacheConfigOnAllMembers(PreJoinCacheConfig.of(cacheConfig, false));
+                    createCacheConfigOnAllMembers(PreJoinCacheConfig.of(cacheConfig));
                 }
 
                 return new CacheProxy(cacheConfig, nodeEngine, this);
@@ -756,8 +754,8 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
         return eventJournal;
     }
 
-    // creates the given CacheConfig on all members of the cluster synchronously
-    private <K, V> void createCacheConfigOnAllMembers(PreJoinCacheConfig<K, V> cacheConfig) {
+    @Override
+    public <K, V> void createCacheConfigOnAllMembers(PreJoinCacheConfig<K, V> cacheConfig) {
         Version version = getNodeEngine().getClusterService().getClusterVersion();
         if (version.isGreaterOrEqual(V3_10)) {
             ICompletableFuture future = InvocationUtil.invokeOnStableClusterSerial(getNodeEngine(),
@@ -769,7 +767,7 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
             OperationService operationService = nodeEngine.getOperationService();
             // wrap the CacheConfig in a PreJoinCacheConfig with KV type class names instead of implementations,
             // to prevent de-serialization failures on remote nodes
-            CacheCreateConfigOperation op = new CacheCreateConfigOperation(cacheConfig, true, true);
+            CacheCreateConfigOperation op = new CacheCreateConfigOperation(cacheConfig, true, false);
             try {
                 InternalCompletableFuture future = operationService.invokeOnTarget(CacheService.SERVICE_NAME, op,
                         nodeEngine.getThisAddress());

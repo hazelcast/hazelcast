@@ -15,17 +15,15 @@
  */
 package classloading.domain;
 
-import java.util.HashMap;
-import java.util.Map;
 import javax.cache.configuration.Factory;
 import javax.cache.integration.CacheLoader;
 import javax.cache.integration.CacheLoaderException;
+import java.util.HashMap;
+import java.util.Map;
 
-/**
- *
- * @author lprimak
- */
 public class PersonCacheLoaderFactory implements Factory<CacheLoader<String, Person>> {
+    private static final long serialVersionUID = 1L;
+
     @Override
     public CacheLoader<String, Person> create() {
         return new CacheLoader<String, Person>() {
@@ -45,5 +43,8 @@ public class PersonCacheLoaderFactory implements Factory<CacheLoader<String, Per
         };
     }
 
-    private static final long serialVersionUID = 1L;
+    @Override
+    public boolean equals(Object obj) {
+        return obj instanceof PersonCacheLoaderFactory;
+    }
 }

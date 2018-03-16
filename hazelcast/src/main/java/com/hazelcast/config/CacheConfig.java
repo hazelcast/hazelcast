@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.cache.impl.DeferredValue;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig.ExpiryPolicyType;
@@ -35,11 +36,15 @@ import javax.cache.expiry.AccessedExpiryPolicy;
 import javax.cache.expiry.CreatedExpiryPolicy;
 import javax.cache.expiry.Duration;
 import javax.cache.expiry.EternalExpiryPolicy;
+import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.expiry.ModifiedExpiryPolicy;
 import javax.cache.expiry.TouchedExpiryPolicy;
+import javax.cache.integration.CacheLoader;
+import javax.cache.integration.CacheWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import static com.hazelcast.config.CacheSimpleConfig.DEFAULT_BACKUP_COUNT;
 import static com.hazelcast.config.CacheSimpleConfig.DEFAULT_IN_MEMORY_FORMAT;
@@ -47,10 +52,6 @@ import static com.hazelcast.config.CacheSimpleConfig.MIN_BACKUP_COUNT;
 import static com.hazelcast.util.Preconditions.checkAsyncBackupCount;
 import static com.hazelcast.util.Preconditions.checkBackupCount;
 import static com.hazelcast.util.Preconditions.isNotNull;
-import java.util.Set;
-import javax.cache.expiry.ExpiryPolicy;
-import javax.cache.integration.CacheLoader;
-import javax.cache.integration.CacheWriter;
 
 /**
  * Contains all the configuration for the {@link com.hazelcast.cache.ICache}.
@@ -117,6 +118,8 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
             this.quorumName = config.quorumName;
             this.mergePolicy = config.mergePolicy;
             this.disablePerEntryInvalidationEvents = config.disablePerEntryInvalidationEvents;
+            this.serializationService = config.serializationService;
+            this.classLoader = config.classLoader;
         }
     }
 
@@ -133,18 +136,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
         this.isManagementEnabled = simpleConfig.isManagementEnabled();
         this.isReadThrough = simpleConfig.isReadThrough();
         this.isWriteThrough = simpleConfig.isWriteThrough();
-        if (simpleConfig.getCacheLoaderFactory() != null) {
-            setCacheLoaderFactory(ClassLoaderUtil.<Factory<? extends CacheLoader<K,V>>>newInstance(null, simpleConfig.getCacheLoaderFactory()));
-        }
-        if (simpleConfig.getCacheLoader() != null) {
-            setCacheLoaderFactory(FactoryBuilder.<CacheLoader<K,V>>factoryOf(simpleConfig.getCacheLoader()));
-        }
-        if (simpleConfig.getCacheWriterFactory() != null) {
-            setCacheWriterFactory(ClassLoaderUtil.<Factory<? extends CacheWriter<K,V>>>newInstance(null, simpleConfig.getCacheWriterFactory()));
-        }
-        if (simpleConfig.getCacheWriter() != null) {
-            setCacheWriterFactory(FactoryBuilder.<CacheWriter<K,V>>factoryOf(simpleConfig.getCacheWriter()));
-        }
+        copyFactories(simpleConfig);
         initExpiryPolicyFactoryConfig(simpleConfig);
         this.asyncBackupCount = simpleConfig.getAsyncBackupCount();
         this.backupCount = simpleConfig.getBackupCount();
@@ -156,25 +148,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
         if (simpleConfig.getWanReplicationRef() != null) {
             this.wanReplicationRef = new WanReplicationRef(simpleConfig.getWanReplicationRef());
         }
-        for (CacheSimpleEntryListenerConfig simpleListener : simpleConfig.getCacheEntryListeners()) {
-            Factory<? extends CacheEntryListener<? super K, ? super V>> listenerFactory = null;
-            Factory<? extends CacheEntryEventFilter<? super K, ? super V>> filterFactory = null;
-            if (simpleListener.getCacheEntryListenerFactory() != null) {
-                listenerFactory = ClassLoaderUtil.newInstance(null, simpleListener.getCacheEntryListenerFactory());
-            }
-            if (simpleListener.getCacheEntryEventFilterFactory() != null) {
-                filterFactory = ClassLoaderUtil.newInstance(null, simpleListener.getCacheEntryEventFilterFactory());
-            }
-            boolean isOldValueRequired = simpleListener.isOldValueRequired();
-            boolean synchronous = simpleListener.isSynchronous();
-            MutableCacheEntryListenerConfiguration<K, V> listenerConfiguration =
-                    new MutableCacheEntryListenerConfiguration<K, V>(
-                            listenerFactory, filterFactory, isOldValueRequired, synchronous);
-            addCacheEntryListenerConfiguration(listenerConfiguration);
-        }
-        for (CachePartitionLostListenerConfig listenerConfig : simpleConfig.getPartitionLostListenerConfigs()) {
-            getPartitionLostListenerConfigs().add(listenerConfig);
-        }
+        copyListeners(simpleConfig);
         this.quorumName = simpleConfig.getQuorumName();
         this.mergePolicy = simpleConfig.getMergePolicy();
         this.hotRestartConfig = new HotRestartConfig(simpleConfig.getHotRestartConfig());
@@ -186,7 +160,12 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
                 simpleConfig.getExpiryPolicyFactoryConfig();
         if (expiryPolicyFactoryConfig != null) {
             if (expiryPolicyFactoryConfig.getClassName() != null) {
-                setExpiryPolicyFactory(ClassLoaderUtil.<Factory<? extends ExpiryPolicy>>newInstance(null, expiryPolicyFactoryConfig.getClassName()));
+                setExpiryPolicyFactory(
+                        ClassLoaderUtil.<Factory<? extends ExpiryPolicy>>newInstance(
+                                null,
+                                expiryPolicyFactoryConfig.getClassName()
+                        )
+                );
             } else {
                 TimedExpiryPolicyFactoryConfig timedExpiryPolicyConfig =
                         expiryPolicyFactoryConfig.getTimedExpiryPolicyFactoryConfig();
@@ -653,13 +632,8 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
     }
 
     protected void readFactories(ObjectDataInput in) throws IOException {
-        doReadFactories(in);
-    }
-
-    @Override
-    protected void doReadFactories(ObjectDataInput in) throws IOException {
-        setCacheLoaderFactory(in.<Factory<? extends CacheLoader<K,V>>>readObject());
-        setCacheWriterFactory(in.<Factory<? extends CacheWriter<? super K,? super V>>>readObject());
+        setCacheLoaderFactory(in.<Factory<? extends CacheLoader<K, V>>>readObject());
+        setCacheWriterFactory(in.<Factory<? extends CacheWriter<? super K, ? super V>>>readObject());
         setExpiryPolicyFactory(in.<Factory<? extends ExpiryPolicy>>readObject());
     }
 
@@ -671,19 +645,13 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
     }
 
     protected void readListenerConfigurations(ObjectDataInput in) throws IOException {
-        doReadListenerConfigurations(in);
-    }
-
-    @Override
-    protected void doReadListenerConfigurations(ObjectDataInput in) throws IOException {
         final int size = in.readInt();
-        Set<CacheEntryListenerConfiguration<K,V>> lc = createConcurrentSet();
+        Set<DeferredValue<CacheEntryListenerConfiguration<K, V>>> lc = createConcurrentSet();
         for (int i = 0; i < size; i++) {
-            lc.add((CacheEntryListenerConfiguration<K, V>) in.readObject());
+            lc.add(DeferredValue.withValue((CacheEntryListenerConfiguration<K, V>) in.readObject()));
         }
-        setListenerConfigurations(lc);
+        listenerConfigurations = lc;
     }
-
 
     /**
      * Copy this CacheConfig to given {@code target} object whose type extends CacheConfig.
@@ -705,21 +673,20 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
         if (resolved) {
             target.setKeyType(getKeyType());
             target.setValueType(getValueType());
-
-            target.setCacheLoaderFactory(getCacheLoaderFactory());
-            target.setCacheWriterFactory(getCacheWriterFactory());
-            target.setExpiryPolicyFactory(getExpiryPolicyFactory());
-            Iterable<CacheEntryListenerConfiguration<K, V>> entryListenerConfigs = getCacheEntryListenerConfigurations();
-            for (CacheEntryListenerConfiguration<K, V> entryListenerConfig : entryListenerConfigs) {
-                target.addCacheEntryListenerConfiguration(entryListenerConfig);
-            }
         } else {
             target.setKeyClassName(getKeyClassName());
             target.setValueClassName(getValueClassName());
-
-            target.serializedFactories = serializedFactories;
-            target.serializedListenerConfigurations = serializedListenerConfigurations;
         }
+
+        target.cacheLoaderFactory = cacheLoaderFactory.shallowCopy();
+        target.cacheWriterFactory = cacheWriterFactory.shallowCopy();
+        target.expiryPolicyFactory = expiryPolicyFactory.shallowCopy();
+
+        target.listenerConfigurations = createConcurrentSet();
+        for (DeferredValue<CacheEntryListenerConfiguration<K, V>> lazyEntryListenerConfig : listenerConfigurations) {
+            target.listenerConfigurations.add(lazyEntryListenerConfig.shallowCopy());
+        }
+
         target.setManagementEnabled(isManagementEnabled());
         target.setManagerPrefix(getManagerPrefix());
         target.setMergePolicy(getMergePolicy());
@@ -735,5 +702,53 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
         target.setClassLoader(classLoader);
         target.serializationService = serializationService;
         return target;
+    }
+
+    private void copyListeners(CacheSimpleConfig simpleConfig)
+            throws Exception {
+        for (CacheSimpleEntryListenerConfig simpleListener : simpleConfig.getCacheEntryListeners()) {
+            Factory<? extends CacheEntryListener<? super K, ? super V>> listenerFactory = null;
+            Factory<? extends CacheEntryEventFilter<? super K, ? super V>> filterFactory = null;
+            if (simpleListener.getCacheEntryListenerFactory() != null) {
+                listenerFactory = ClassLoaderUtil.newInstance(null, simpleListener.getCacheEntryListenerFactory());
+            }
+            if (simpleListener.getCacheEntryEventFilterFactory() != null) {
+                filterFactory = ClassLoaderUtil.newInstance(null, simpleListener.getCacheEntryEventFilterFactory());
+            }
+            boolean isOldValueRequired = simpleListener.isOldValueRequired();
+            boolean synchronous = simpleListener.isSynchronous();
+            MutableCacheEntryListenerConfiguration<K, V> listenerConfiguration =
+                    new MutableCacheEntryListenerConfiguration<K, V>(
+                            listenerFactory, filterFactory, isOldValueRequired, synchronous);
+            addCacheEntryListenerConfiguration(listenerConfiguration);
+        }
+        for (CachePartitionLostListenerConfig listenerConfig : simpleConfig.getPartitionLostListenerConfigs()) {
+            getPartitionLostListenerConfigs().add(listenerConfig);
+        }
+    }
+
+    private void copyFactories(CacheSimpleConfig simpleConfig) throws Exception {
+        if (simpleConfig.getCacheLoaderFactory() != null) {
+            setCacheLoaderFactory(
+                    ClassLoaderUtil.<Factory<? extends CacheLoader<K, V>>>newInstance(
+                            null,
+                            simpleConfig.getCacheLoaderFactory()
+                    )
+            );
+        }
+        if (simpleConfig.getCacheLoader() != null) {
+            setCacheLoaderFactory(FactoryBuilder.<CacheLoader<K, V>>factoryOf(simpleConfig.getCacheLoader()));
+        }
+        if (simpleConfig.getCacheWriterFactory() != null) {
+            setCacheWriterFactory(
+                    ClassLoaderUtil.<Factory<? extends CacheWriter<K, V>>>newInstance(
+                            null,
+                            simpleConfig.getCacheWriterFactory()
+                    )
+            );
+        }
+        if (simpleConfig.getCacheWriter() != null) {
+            setCacheWriterFactory(FactoryBuilder.<CacheWriter<K, V>>factoryOf(simpleConfig.getCacheWriter()));
+        }
     }
 }

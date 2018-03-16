@@ -19,7 +19,6 @@ package com.hazelcast.cache.impl.operation;
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.config.CacheConfig;
-import com.hazelcast.cache.impl.PreJoinCacheConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -60,14 +59,7 @@ public class OnJoinCacheOperation extends Operation implements IdentifiedDataSer
         if (isJCacheAvailable(getNodeEngine().getConfigClassLoader())) {
             ICacheService cacheService = getService();
             for (CacheConfig cacheConfig : configs) {
-                // RU_COMPAT_38 since 3.9, configs are instances of PreJoinCacheConfig
-                CacheConfig cacheConfigToAdd;
-                if (cacheConfig instanceof PreJoinCacheConfig) {
-                    cacheConfigToAdd = ((PreJoinCacheConfig) cacheConfig).asCacheConfig();
-                } else {
-                    cacheConfigToAdd = cacheConfig;
-                }
-                cacheService.putCacheConfigIfAbsent(cacheConfigToAdd);
+                cacheService.putCacheConfigIfAbsent(cacheConfig);
             }
         } else {
             // if JCache is not in classpath and no Cache configurations need to be processed, do not fail the operation

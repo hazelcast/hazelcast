@@ -65,7 +65,7 @@ public final class JCacheDetector {
         });
         // try the class loader that loaded Hazelcast/JCacheDetector class
         // if the thread-context class loader is too narrowly defined and doesn't contain JCache
-        return isJCacheAvailableInternal(classLoader, null) || isJCacheAvailableInternal(backupClassLoader, null);
+        return isJCacheAvailableInternal(classLoader, logger) || isJCacheAvailableInternal(backupClassLoader, logger);
     }
 
     private static boolean isJCacheAvailableInternal(ClassLoader classLoader, ILogger logger) {

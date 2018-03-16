@@ -18,7 +18,6 @@ package com.hazelcast.cache.impl.operation;
 
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.impl.ICacheService;
-import com.hazelcast.cache.impl.PreJoinCacheConfig;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.Member;
@@ -92,9 +91,7 @@ public class CacheCreateConfigOperation
     public void run() throws Exception {
         ICacheService service = getService();
         if (!ignoreLocal) {
-            CacheConfig cacheConfig =
-                    config instanceof PreJoinCacheConfig ? ((PreJoinCacheConfig) config).asCacheConfig() : config;
-            response = service.putCacheConfigIfAbsent(cacheConfig);
+            response = service.putCacheConfigIfAbsent(config);
         }
         if (createAlsoOnOthers) {
             NodeEngine nodeEngine = getNodeEngine();
