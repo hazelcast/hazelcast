@@ -361,6 +361,7 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
     @Override
     public String addEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate) {
         isNotNull(listener, "listener");
+        isNotNull(predicate, "predicate");
         EventFilter eventFilter = new ReplicatedQueryEventFilter(null, predicate);
         return eventPublishingService.addEventListener(listener, eventFilter, name);
     }
@@ -368,6 +369,7 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
     @Override
     public String addEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate, K key) {
         isNotNull(listener, "listener");
+        isNotNull(predicate, "predicate");
         EventFilter eventFilter = new ReplicatedQueryEventFilter(serializationService.toData(key), predicate);
         return eventPublishingService.addEventListener(listener, eventFilter, name);
     }

@@ -57,8 +57,10 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.client.proxy.ClientMapProxy.NULL_LISTENER_IS_NOT_ALLOWED;
 import static com.hazelcast.util.CollectionUtil.objectToDataCollection;
 import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
  * Proxy implementation of {@link IQueue}.
@@ -73,6 +75,7 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
 
     @Override
     public String addItemListener(final ItemListener<E> listener, final boolean includeValue) {
+        isNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         EventHandler<ClientMessage> eventHandler = new ItemEventHandler(includeValue, listener);
         return registerListener(createItemListenerCodec(includeValue), eventHandler);
     }

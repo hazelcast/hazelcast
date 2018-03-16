@@ -51,14 +51,16 @@ import com.hazelcast.core.ItemListener;
 import com.hazelcast.core.Member;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.UnmodifiableLazyList;
-import com.hazelcast.util.Preconditions;
 
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 
+import static com.hazelcast.client.proxy.ClientMapProxy.NULL_LISTENER_IS_NOT_ALLOWED;
 import static com.hazelcast.util.CollectionUtil.objectToDataCollection;
+import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
  * Proxy implementation of {@link IList}.
@@ -73,7 +75,7 @@ public class ClientListProxy<E> extends PartitionSpecificClientProxy implements 
 
     @Override
     public boolean addAll(int index, Collection<? extends E> c) {
-        Preconditions.checkNotNull(c);
+        checkNotNull(c);
         Collection<Data> dataCollection = objectToDataCollection(c, getSerializationService());
         ClientMessage request = ListAddAllWithIndexCodec.encodeRequest(name, index, dataCollection);
         ClientMessage response = invokeOnPartition(request);
@@ -92,7 +94,7 @@ public class ClientListProxy<E> extends PartitionSpecificClientProxy implements 
 
     @Override
     public E set(int index, E element) {
-        Preconditions.checkNotNull(element);
+        checkNotNull(element);
         Data value = toData(element);
         ClientMessage request = ListSetCodec.encodeRequest(name, index, value);
         ClientMessage response = invokeOnPartition(request);
@@ -102,7 +104,7 @@ public class ClientListProxy<E> extends PartitionSpecificClientProxy implements 
 
     @Override
     public void add(int index, E element) {
-        Preconditions.checkNotNull(element);
+        checkNotNull(element);
         Data value = toData(element);
         ClientMessage request = ListAddWithIndexCodec.encodeRequest(name, index, value);
         invokeOnPartition(request);
@@ -134,7 +136,7 @@ public class ClientListProxy<E> extends PartitionSpecificClientProxy implements 
 
     @Override
     public boolean contains(Object o) {
-        Preconditions.checkNotNull(o);
+        checkNotNull(o);
         Data value = toData(o);
         ClientMessage request = ListContainsCodec.encodeRequest(name, value);
         ClientMessage response = invokeOnPartition(request);
@@ -163,7 +165,7 @@ public class ClientListProxy<E> extends PartitionSpecificClientProxy implements 
 
     @Override
     public boolean add(E e) {
-        Preconditions.checkNotNull(e);
+        checkNotNull(e);
         Data element = toData(e);
         ClientMessage request = ListAddCodec.encodeRequest(name, element);
         ClientMessage response = invokeOnPartition(request);
@@ -173,7 +175,7 @@ public class ClientListProxy<E> extends PartitionSpecificClientProxy implements 
 
     @Override
     public boolean remove(Object o) {
-        Preconditions.checkNotNull(o);
+        checkNotNull(o);
         Data value = toData(o);
         ClientMessage request = ListRemoveCodec.encodeRequest(name, value);
         ClientMessage response = invokeOnPartition(request);
@@ -183,7 +185,7 @@ public class ClientListProxy<E> extends PartitionSpecificClientProxy implements 
 
     @Override
     public boolean containsAll(Collection<?> c) {
-        Preconditions.checkNotNull(c);
+        checkNotNull(c);
         Collection<Data> dataCollection = objectToDataCollection(c, getSerializationService());
         ClientMessage request = ListContainsAllCodec.encodeRequest(name, dataCollection);
         ClientMessage response = invokeOnPartition(request);
@@ -193,7 +195,7 @@ public class ClientListProxy<E> extends PartitionSpecificClientProxy implements 
 
     @Override
     public boolean addAll(Collection<? extends E> c) {
-        Preconditions.checkNotNull(c);
+        checkNotNull(c);
         Collection<Data> dataCollection = objectToDataCollection(c, getSerializationService());
         ClientMessage request = ListAddAllCodec.encodeRequest(name, dataCollection);
         ClientMessage response = invokeOnPartition(request);
@@ -203,7 +205,7 @@ public class ClientListProxy<E> extends PartitionSpecificClientProxy implements 
 
     @Override
     public boolean removeAll(Collection<?> c) {
-        Preconditions.checkNotNull(c);
+        checkNotNull(c);
         Collection<Data> dataCollection = objectToDataCollection(c, getSerializationService());
         ClientMessage request = ListCompareAndRemoveAllCodec.encodeRequest(name, dataCollection);
         ClientMessage response = invokeOnPartition(request);
@@ -214,7 +216,7 @@ public class ClientListProxy<E> extends PartitionSpecificClientProxy implements 
 
     @Override
     public boolean retainAll(Collection<?> c) {
-        Preconditions.checkNotNull(c);
+        checkNotNull(c);
         Collection<Data> dataCollection = objectToDataCollection(c, getSerializationService());
         ClientMessage request = ListCompareAndRetainAllCodec.encodeRequest(name, dataCollection);
         ClientMessage response = invokeOnPartition(request);
@@ -231,6 +233,7 @@ public class ClientListProxy<E> extends PartitionSpecificClientProxy implements 
 
     @Override
     public String addItemListener(ItemListener<E> listener, boolean includeValue) {
+        isNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         EventHandler<ClientMessage> eventHandler = new ItemEventHandler(listener);
         return registerListener(createItemListenerCodec(includeValue), eventHandler);
     }
@@ -273,7 +276,7 @@ public class ClientListProxy<E> extends PartitionSpecificClientProxy implements 
 
     @Override
     public int lastIndexOf(Object o) {
-        Preconditions.checkNotNull(o);
+        checkNotNull(o);
         Data value = toData(o);
         ClientMessage request = ListLastIndexOfCodec.encodeRequest(name, value);
         ClientMessage response = invokeOnPartition(request);
@@ -283,7 +286,7 @@ public class ClientListProxy<E> extends PartitionSpecificClientProxy implements 
 
     @Override
     public int indexOf(Object o) {
-        Preconditions.checkNotNull(o);
+        checkNotNull(o);
         Data value = toData(o);
         ClientMessage request = ListIndexOfCodec.encodeRequest(name, value);
         ClientMessage response = invokeOnPartition(request);

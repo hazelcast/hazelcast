@@ -48,7 +48,9 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
+import static com.hazelcast.client.proxy.ClientMapProxy.NULL_LISTENER_IS_NOT_ALLOWED;
 import static com.hazelcast.util.CollectionUtil.objectToDataCollection;
+import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
  * Proxy implementation of {@link ISet}.
@@ -170,6 +172,7 @@ public class ClientSetProxy<E> extends PartitionSpecificClientProxy implements I
 
     @Override
     public String addItemListener(final ItemListener<E> listener, final boolean includeValue) {
+        isNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         EventHandler<ClientMessage> eventHandler = new ItemEventHandler(listener);
         return registerListener(createItemListenerCodec(includeValue), eventHandler);
     }
