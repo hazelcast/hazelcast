@@ -42,7 +42,7 @@ public class PartitionWideEntryBackupOperation extends AbstractMultipleEntryBack
     @Override
     public void run() {
         responses = new MapEntries(recordStore.size());
-        EntryOperator operator = operator(this, backupProcessor, getPredicate(), true);
+        EntryOperator operator = operator(this, backupProcessor, getPredicate());
 
         Iterator<Record> iterator = recordStore.iterator(Clock.currentTimeMillis(), true);
         while (iterator.hasNext()) {
