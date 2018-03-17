@@ -289,7 +289,7 @@ public class TestHazelcastInstanceFactory {
         return addresses;
     }
 
-    private int nextAvailablePort(int port) {
+    public int nextAvailablePort(int port) {
         while (!OCCUPIED_PORTS.add(port)) {
             port++;
         }
