@@ -172,7 +172,7 @@ public class ExecutionLifecycleTest extends JetTestSupport {
             fail("Job execution should fail");
         } catch (Exception expected) {
             assertExceptionInCauses(e, expected);
-            String expectedMessage = "vertex=" + vertexName + "";
+            String expectedMessage = vertexName + "#";
             assertTrue("Error message does not contain vertex name.\nExpected: " + expectedMessage
                             + "\nActual: " + expected,
                     expected.getMessage() != null && expected.getMessage().contains(expectedMessage));

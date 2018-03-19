@@ -17,9 +17,12 @@
 package com.hazelcast.jet.impl.execution;
 
 import com.hazelcast.internal.util.concurrent.MPSCQueue;
+import com.hazelcast.jet.impl.util.LoggingUtil;
 import com.hazelcast.jet.impl.util.ObjectWithPartitionId;
 import com.hazelcast.jet.impl.util.ProgressState;
 import com.hazelcast.jet.impl.util.ProgressTracker;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.util.concurrent.IdleStrategy;
 
@@ -37,6 +40,8 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * Receives from a remote member the data associated with a single edge.
  */
 public class ReceiverTasklet implements Tasklet {
+
+    public static final ILogger LOG = Logger.getLogger(ReceiverTasklet.class);
 
     /**
      * The {@code ackedSeq} atomic array holds, per sending member, the sequence
@@ -185,6 +190,7 @@ public class ReceiverTasklet implements Tasklet {
             final int targetRwin = rwinMultiplier * (int) ceil(ackedSeqsPerAckPeriod);
             final int rwinDiff = targetRwin - receiveWindowCompressed;
             receiveWindowCompressed += rwinDiff / 2;
+            LoggingUtil.logFinest(LOG, "receiveWindowCompressed=%d", receiveWindowCompressed);
         }
         return ackedSeqCompressed + receiveWindowCompressed;
     }

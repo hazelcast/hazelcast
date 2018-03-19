@@ -135,7 +135,8 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
             Arrays.setAll(snapshotQueues, i -> new OneToOneConcurrentArrayQueue<>(SNAPSHOT_QUEUE_SIZE));
             ConcurrentConveyor<Object> ssConveyor = ConcurrentConveyor.concurrentConveyor(null, snapshotQueues);
             StoreSnapshotTasklet ssTasklet = new StoreSnapshotTasklet(snapshotContext, jobId,
-                    new ConcurrentInboundEdgeStream(ssConveyor, 0, 0, lastSnapshotId, true, -1),
+                    new ConcurrentInboundEdgeStream(ssConveyor, 0, 0, lastSnapshotId, true, -1,
+                            "ssFrom:" + vertex.name()),
                     nodeEngine, vertex.name(), vertex.isHigherPriorityUpstream());
             tasklets.add(ssTasklet);
 
@@ -312,7 +313,9 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
             for (Address destAddr : remoteMembers.get()) {
                 final ConcurrentConveyor<Object> conveyor = createConveyorArray(
                         1, edge.sourceVertex().localParallelism(), edge.getConfig().getQueueSize())[0];
-                final ConcurrentInboundEdgeStream inboundEdgeStream = newEdgeStream(edge, conveyor);
+                final ConcurrentInboundEdgeStream inboundEdgeStream = newEdgeStream(edge, conveyor,
+                        "sender-toVertex:" + edge.destVertex().name() + "-toMember:"
+                                + destAddr.toString().replace('.', '-'));
                 final int destVertexId = edge.destVertex().vertexId();
                 final SenderTasklet t = new SenderTasklet(inboundEdgeStream, nodeEngine,
                         destAddr, executionId, destVertexId, edge.getConfig().getPacketSizeLimit());
@@ -452,15 +455,17 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
         for (EdgeDef inEdge : srcVertex.inboundEdges()) {
             // each tasklet has one input conveyor per edge
             final ConcurrentConveyor<Object> conveyor = localConveyorMap.get(inEdge.edgeId())[processorIdx];
-            inboundStreams.add(newEdgeStream(inEdge, conveyor));
+            inboundStreams.add(newEdgeStream(inEdge, conveyor,
+                    "inputTo:" + inEdge.destVertex().name() + '#' + processorIdx));
         }
         return inboundStreams;
     }
 
-    private ConcurrentInboundEdgeStream newEdgeStream(EdgeDef inEdge, ConcurrentConveyor<Object> conveyor) {
+    private ConcurrentInboundEdgeStream newEdgeStream(EdgeDef inEdge, ConcurrentConveyor<Object> conveyor,
+                                                      String debugName) {
         return new ConcurrentInboundEdgeStream(conveyor, inEdge.destOrdinal(), inEdge.priority(),
                 lastSnapshotId, jobConfig.getProcessingGuarantee() == ProcessingGuarantee.EXACTLY_ONCE,
-                jobConfig.getMaxWatermarkRetainMillis());
+                jobConfig.getMaxWatermarkRetainMillis(), debugName);
     }
 
     public List<Processor> getProcessors() {

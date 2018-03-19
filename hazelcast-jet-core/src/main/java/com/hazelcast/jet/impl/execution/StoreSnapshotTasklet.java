@@ -147,7 +147,7 @@ public class StoreSnapshotTasklet implements Tasklet {
 
     @Override
     public String toString() {
-        return StoreSnapshotTasklet.class.getSimpleName() + ", vertex:" + vertexName;
+        return StoreSnapshotTasklet.class.getSimpleName() + '{' + vertexName + '}';
     }
 
     enum State {

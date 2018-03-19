@@ -60,7 +60,7 @@ public class ConcurrentInboundEdgeStreamTest_WmRetainEnabled {
     }
 
     private ConcurrentInboundEdgeStream createCies(boolean waitForSnapshot) {
-        return new ConcurrentInboundEdgeStream(conveyor, 0, 0, -1, waitForSnapshot, 16);
+        return new ConcurrentInboundEdgeStream(conveyor, 0, 0, -1, waitForSnapshot, 16, "cies");
     }
 
     @Test

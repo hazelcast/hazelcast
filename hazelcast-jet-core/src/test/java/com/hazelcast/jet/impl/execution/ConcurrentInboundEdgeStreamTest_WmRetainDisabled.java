@@ -77,7 +77,7 @@ public class ConcurrentInboundEdgeStreamTest_WmRetainDisabled {
         //noinspection unchecked
         conveyor = ConcurrentConveyor.concurrentConveyor(senderGone, q1, q2);
 
-        stream = new ConcurrentInboundEdgeStream(conveyor, 0, 0, -1, false, maxWatermarkRetainMillis);
+        stream = new ConcurrentInboundEdgeStream(conveyor, 0, 0, -1, false, maxWatermarkRetainMillis, "cies");
     }
 
     @Test
@@ -150,7 +150,7 @@ public class ConcurrentInboundEdgeStreamTest_WmRetainDisabled {
 
     @Test
     public void when_receivingBarriers_then_waitForBarrier() {
-        stream = new ConcurrentInboundEdgeStream(conveyor, 0, 0, -1, true, maxWatermarkRetainMillis);
+        stream = new ConcurrentInboundEdgeStream(conveyor, 0, 0, -1, true, maxWatermarkRetainMillis, "cies");
 
         add(q1, barrier(0));
         add(q2, 1);
@@ -166,7 +166,7 @@ public class ConcurrentInboundEdgeStreamTest_WmRetainDisabled {
 
     @Test
     public void when_receivingBarriersWhileDone_then_coalesce() {
-        stream = new ConcurrentInboundEdgeStream(conveyor, 0, 0, -1, true, maxWatermarkRetainMillis);
+        stream = new ConcurrentInboundEdgeStream(conveyor, 0, 0, -1, true, maxWatermarkRetainMillis, "cies");
 
         add(q1, 1, barrier(0));
         add(q2, DONE_ITEM);

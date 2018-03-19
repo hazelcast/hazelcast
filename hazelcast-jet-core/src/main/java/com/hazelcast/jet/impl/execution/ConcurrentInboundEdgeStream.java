@@ -23,6 +23,8 @@ import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.impl.util.ProgressState;
 import com.hazelcast.jet.impl.util.ProgressTracker;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.util.function.Predicate;
 
 import java.util.BitSet;
@@ -49,6 +51,7 @@ public class ConcurrentInboundEdgeStream implements InboundEdgeStream {
 
     private final WatermarkCoalescer watermarkCoalescer;
     private final BitSet receivedBarriers; // indicates if current snapshot is received on the queue
+    private final ILogger logger;
     private long pendingSnapshotId; // next snapshot barrier to emit
     private long numActiveQueues; // number of active queues remaining
 
@@ -58,7 +61,8 @@ public class ConcurrentInboundEdgeStream implements InboundEdgeStream {
      *                        vs. at-least-once, if it is false.
      */
     public ConcurrentInboundEdgeStream(ConcurrentConveyor<Object> conveyor, int ordinal, int priority,
-                                       long lastSnapshotId, boolean waitForSnapshot, int maxWatermarkRetainMillis) {
+                                       long lastSnapshotId, boolean waitForSnapshot, int maxWatermarkRetainMillis,
+                                       String debugName) {
         this.conveyor = conveyor;
         this.ordinal = ordinal;
         this.priority = priority;
@@ -69,6 +73,7 @@ public class ConcurrentInboundEdgeStream implements InboundEdgeStream {
         numActiveQueues = conveyor.queueCount();
         receivedBarriers = new BitSet(conveyor.queueCount());
         pendingSnapshotId = lastSnapshotId + 1;
+        logger = Logger.getLogger(ConcurrentInboundEdgeStream.class.getName() + "." + debugName);
     }
 
     @Override
@@ -112,7 +117,12 @@ public class ConcurrentInboundEdgeStream implements InboundEdgeStream {
                 }
             } else if (itemDetector.item instanceof Watermark) {
                 long wmTimestamp = ((Watermark) itemDetector.item).timestamp();
-                if (maybeEmitWm(watermarkCoalescer.observeWm(now, queueIndex, wmTimestamp), dest)) {
+                boolean forwarded = maybeEmitWm(watermarkCoalescer.observeWm(now, queueIndex, wmTimestamp), dest);
+                if (logger.isFinestEnabled()) {
+                    logger.finest("Received " + itemDetector.item + " from queue " + queueIndex + '/'
+                            + conveyor.queueCount() + (forwarded ? ", forwarded" : ", not forwarded"));
+                }
+                if (forwarded) {
                     return MADE_PROGRESS;
                 }
             } else if (itemDetector.item instanceof SnapshotBarrier) {
