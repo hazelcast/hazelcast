@@ -14,19 +14,14 @@
  * limitations under the License.
  */
 
-package com.hazelcast.util;
+package com.hazelcast.client.spi.impl;
+
+import com.hazelcast.client.connection.nio.ClientConnection;
+import com.hazelcast.client.impl.protocol.ClientMessage;
 
 /**
- * Mutable integer which can be used for counting purposes.
- * <p/>
- * This class is not thread-safe.
+ * Responsible for handling responses to invocations.
  */
-public class MutableInteger {
-
-    //CHECKSTYLE:OFF
-    public int value;
-
-    public int getAndInc(){
-        return value++;
-    }
+public interface ClientResponseHandler {
+    void handle(ClientMessage message, ClientConnection connection);
 }

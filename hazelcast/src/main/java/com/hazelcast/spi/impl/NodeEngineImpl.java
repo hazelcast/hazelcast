@@ -144,7 +144,7 @@ public class NodeEngineImpl implements NodeEngine {
             this.packetDispatcher = new PacketDispatcher(
                     logger,
                     operationService.getOperationExecutor(),
-                    operationService.getAsyncInboundResponseHandler(),
+                    operationService.getInboundResponseHandlerSupplier().get(),
                     operationService.getInvocationMonitor(),
                     eventService,
                     new ConnectionManagerPacketHandler(),

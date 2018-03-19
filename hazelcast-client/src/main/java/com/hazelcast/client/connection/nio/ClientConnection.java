@@ -19,7 +19,7 @@ package com.hazelcast.client.connection.nio;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.spi.ClientInvocationService;
+import com.hazelcast.client.spi.impl.ClientResponseHandler;
 import com.hazelcast.client.spi.impl.listener.AbstractClientListenerService;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.instance.BuildInfo;
@@ -60,6 +60,7 @@ public class ClientConnection implements Connection {
     private final LifecycleService lifecycleService;
     private final HazelcastClientInstanceImpl client;
     private final long startTime = System.currentTimeMillis();
+    private final ClientResponseHandler responseHandler;
 
     private volatile Address remoteEndpoint;
     private volatile boolean isHeartBeating = true;
@@ -77,6 +78,7 @@ public class ClientConnection implements Connection {
 
     public ClientConnection(HazelcastClientInstanceImpl client, int connectionId, Channel channel) {
         this.client = client;
+        this.responseHandler = client.getInvocationService().getResponseHandler();
         this.connectionManager = (ClientConnectionManagerImpl) client.getConnectionManager();
         this.lifecycleService = client.getLifecycleService();
         this.channel = channel;
@@ -87,6 +89,7 @@ public class ClientConnection implements Connection {
 
     public ClientConnection(HazelcastClientInstanceImpl client, int connectionId) {
         this.client = client;
+        this.responseHandler = client.getInvocationService().getResponseHandler();
         this.connectionManager = (ClientConnectionManagerImpl) client.getConnectionManager();
         this.lifecycleService = client.getLifecycleService();
         this.connectionId = connectionId;
@@ -246,13 +249,12 @@ public class ClientConnection implements Connection {
     }
 
     public void handleClientMessage(ClientMessage message) {
-        ClientInvocationService invocationService = client.getInvocationService();
         incrementPendingPacketCount();
         if (message.isFlagSet(ClientMessage.LISTENER_EVENT_FLAG)) {
             AbstractClientListenerService listenerService = (AbstractClientListenerService) client.getListenerService();
             listenerService.handleClientMessage(message, this);
         } else {
-            invocationService.handleClientMessage(message, this);
+            responseHandler.handle(message, this);
         }
     }
 

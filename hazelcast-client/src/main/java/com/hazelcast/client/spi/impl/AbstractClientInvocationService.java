@@ -21,7 +21,6 @@ import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.ErrorCodec;
 import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.client.spi.ClientPartitionService;
@@ -29,45 +28,36 @@ import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.listener.AbstractClientListenerService;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
-import com.hazelcast.internal.util.concurrent.MPSCQueue;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.client.spi.properties.ClientProperty.INVOCATION_RETRY_PAUSE_MILLIS;
 import static com.hazelcast.client.spi.properties.ClientProperty.INVOCATION_TIMEOUT_SECONDS;
-import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.onOutOfMemory;
-import static com.hazelcast.spi.impl.operationservice.impl.AsyncInboundResponseHandler.getIdleStrategy;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 public abstract class AbstractClientInvocationService implements ClientInvocationService {
 
-    private static final HazelcastProperty IDLE_STRATEGY
-            = new HazelcastProperty("hazelcast.client.responsequeue.idlestrategy", "block");
-
     private static final HazelcastProperty CLEAN_RESOURCES_MILLIS
-            = new HazelcastProperty("hazelcast.client.internal.clean.resources.millis",
-            100, TimeUnit.MILLISECONDS);
+            = new HazelcastProperty("hazelcast.client.internal.clean.resources.millis", 100, MILLISECONDS);
 
     protected final HazelcastClientInstanceImpl client;
-    protected final ILogger invocationLogger;
 
     protected ClientConnectionManager connectionManager;
     protected ClientPartitionService partitionService;
+    final ILogger invocationLogger;
     private AbstractClientListenerService clientListenerService;
 
     @Probe(name = "pendingCalls", level = ProbeLevel.MANDATORY)
     private ConcurrentMap<Long, ClientInvocation> invocations = new ConcurrentHashMap<Long, ClientInvocation>();
 
-    private ResponseThread responseThread;
+    private ClientResponseHandlerSupplier responseHandlerSupplier;
 
     private volatile boolean isShutdown;
     private final long invocationTimeoutMillis;
@@ -78,6 +68,7 @@ public abstract class AbstractClientInvocationService implements ClientInvocatio
         this.invocationLogger = client.getLoggingService().getLogger(ClientInvocationService.class);
         this.invocationTimeoutMillis = initInvocationTimeoutMillis();
         this.invocationRetryPauseMillis = initInvocationRetryPauseMillis();
+        this.responseHandlerSupplier = new ClientResponseHandlerSupplier(this);
         client.getMetricsRegistry().scanAndRegister(this, "invocations");
     }
 
@@ -95,9 +86,7 @@ public abstract class AbstractClientInvocationService implements ClientInvocatio
         connectionManager = client.getConnectionManager();
         clientListenerService = (AbstractClientListenerService) client.getListenerService();
         partitionService = client.getClientPartitionService();
-        ClassLoader classLoader = client.getClientConfig().getClassLoader();
-        responseThread = new ResponseThread(client.getName() + ".response-", classLoader);
-        responseThread.start();
+        responseHandlerSupplier.start();
         ClientExecutionService executionService = client.getClientExecutionService();
         long cleanResourcesMillis = client.getProperties().getMillis(CLEAN_RESOURCES_MILLIS);
         if (cleanResourcesMillis <= 0) {
@@ -105,7 +94,12 @@ public abstract class AbstractClientInvocationService implements ClientInvocatio
 
         }
         executionService.scheduleWithRepetition(new CleanResourcesTask(), cleanResourcesMillis,
-                cleanResourcesMillis, TimeUnit.MILLISECONDS);
+                cleanResourcesMillis, MILLISECONDS);
+    }
+
+    @Override
+    public ClientResponseHandler getResponseHandler() {
+        return responseHandlerSupplier.get();
     }
 
     @Override
@@ -170,7 +164,7 @@ public abstract class AbstractClientInvocationService implements ClientInvocatio
         }
     }
 
-    private ClientInvocation deRegisterCallId(long callId) {
+    ClientInvocation deRegisterCallId(long callId) {
         return invocations.remove(callId);
     }
 
@@ -180,13 +174,21 @@ public abstract class AbstractClientInvocationService implements ClientInvocatio
 
     public void shutdown() {
         isShutdown = true;
-        responseThread.interrupt();
+        responseHandlerSupplier.shutdown();
         Iterator<ClientInvocation> iterator = invocations.values().iterator();
         while (iterator.hasNext()) {
             ClientInvocation invocation = iterator.next();
             iterator.remove();
             invocation.notifyException(new HazelcastClientNotActiveException("Client is shutting down"));
         }
+    }
+
+    public long getInvocationTimeoutMillis() {
+        return invocationTimeoutMillis;
+    }
+
+    public long getInvocationRetryPauseMillis() {
+        return invocationRetryPauseMillis;
     }
 
     private class CleanResourcesTask implements Runnable {
@@ -214,11 +216,10 @@ public abstract class AbstractClientInvocationService implements ClientInvocatio
 
         private void notifyException(ClientInvocation invocation, ClientConnection connection) {
             Exception ex;
-            /**
-             * Connection may be closed(e.g. remote member shutdown) in which case the isAlive is set to false or the
-             * heartbeat failure occurs. The order of the following check matters. We need to first check for isAlive since
-             * the connection.isHeartBeating also checks for isAlive as well.
-             */
+
+            // Connection may be closed(e.g. remote member shutdown) in which case the isAlive is set to false or the
+            // heartbeat failure occurs. The order of the following check matters. We need to first check for isAlive since
+            // the connection.isHeartBeating also checks for isAlive as well.
             if (!connection.isAlive()) {
                 ex = new TargetDisconnectedException(connection.getCloseReason(), connection.getCloseCause());
             } else {
@@ -226,101 +227,6 @@ public abstract class AbstractClientInvocationService implements ClientInvocatio
             }
 
             invocation.notifyException(ex);
-        }
-
-    }
-
-    @Override
-    public void handleClientMessage(ClientMessage message, Connection connection) {
-        responseThread.responseQueue.add(new ClientPacket((ClientConnection) connection, message));
-    }
-
-    public long getInvocationTimeoutMillis() {
-        return invocationTimeoutMillis;
-    }
-
-    public long getInvocationRetryPauseMillis() {
-        return invocationRetryPauseMillis;
-    }
-
-    private static class ClientPacket {
-
-        private final ClientConnection clientConnection;
-        private final ClientMessage clientMessage;
-
-        ClientPacket(ClientConnection clientConnection, ClientMessage clientMessage) {
-            this.clientConnection = clientConnection;
-            this.clientMessage = clientMessage;
-        }
-
-        private ClientConnection getClientConnection() {
-            return clientConnection;
-        }
-
-        private ClientMessage getClientMessage() {
-            return clientMessage;
-        }
-    }
-
-    private class ResponseThread extends Thread {
-
-        private final BlockingQueue<ClientPacket> responseQueue;
-
-        ResponseThread(String name, ClassLoader classLoader) {
-            super(name);
-            setContextClassLoader(classLoader);
-
-            this.responseQueue = new MPSCQueue<ClientPacket>(this, getIdleStrategy(client.getProperties(), IDLE_STRATEGY));
-        }
-
-        @Override
-        public void run() {
-            try {
-                doRun();
-            } catch (OutOfMemoryError e) {
-                onOutOfMemory(e);
-            } catch (Throwable t) {
-                invocationLogger.severe(t);
-            }
-        }
-
-        private void doRun() {
-            while (!isShutdown) {
-                ClientPacket task;
-                try {
-                    task = responseQueue.take();
-                } catch (InterruptedException e) {
-                    continue;
-                }
-                process(task);
-            }
-        }
-
-        private void process(ClientPacket packet) {
-            final ClientConnection conn = packet.getClientConnection();
-            try {
-                handleClientMessage(packet.getClientMessage());
-            } catch (Exception e) {
-                invocationLogger.severe("Failed to process task: " + packet + " on responseThread: " + getName(), e);
-            } finally {
-                conn.decrementPendingPacketCount();
-            }
-        }
-
-        private void handleClientMessage(ClientMessage clientMessage) {
-            long correlationId = clientMessage.getCorrelationId();
-
-            final ClientInvocation future = deRegisterCallId(correlationId);
-            if (future == null) {
-                invocationLogger.warning("No call for callId: " + correlationId + ", response: " + clientMessage);
-                return;
-            }
-            if (ErrorCodec.TYPE == clientMessage.getMessageType()) {
-                Throwable exception = client.getClientExceptionFactory().createException(clientMessage);
-                future.notifyException(exception);
-            } else {
-                future.notify(clientMessage);
-            }
         }
     }
 }
