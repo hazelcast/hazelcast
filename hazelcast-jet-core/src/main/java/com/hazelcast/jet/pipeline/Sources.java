@@ -184,6 +184,17 @@ public final class Sources {
      * The default local parallelism for this processor is 2 (or 1 if just 1
      * CPU is available).
      *
+     * <h4>Predicate/projection class requirements</h4>
+     *
+     * The classes implementing {@code predicate} and {@code projection} need
+     * to be available on the cluster's classpath, or loaded using
+     * <em>Hazelcast User Code Deployment</em>. It's not enough to add them to
+     * job classpath in {@link com.hazelcast.jet.config.JobConfig}. Same is
+     * true for the class of the objects stored in the map itself. If you
+     * cannot fulfill these conditions, use {@link #map(String)} and add a
+     * subsequent {@link GeneralStage#map map} or {@link GeneralStage#filter
+     * filter} stage.
+     *
      * @param mapName the name of the map
      * @param predicate the predicate to filter the events. If you want to specify just the
      *                  projection, use {@link
@@ -239,6 +250,17 @@ public final class Sources {
      * <p>
      * The default local parallelism for this processor is 2 (or 1 if just 1
      * CPU is available).
+     *
+     * <h4>Predicate/projection class requirements</h4>
+     *
+     * The classes implementing {@code predicateFn} and {@code projectionFn}
+     * need to be available on the cluster's classpath, or loaded using
+     * <em>Hazelcast User Code Deployment</em>. It's not enough to add them to
+     * job classpath in {@link com.hazelcast.jet.config.JobConfig}. Same is
+     * true for the class of the objects stored in the map itself. If you
+     * cannot fulfill these conditions, use {@link #mapJournal(String,
+     * JournalInitialPosition)} and add a subsequent {@link GeneralStage#map
+     * map} or {@link GeneralStage#filter filter} stage.
      *
      * @param mapName the name of the map
      * @param predicateFn the predicate to filter the events. If you want to specify just the
@@ -329,6 +351,17 @@ public final class Sources {
      * <p>
      * The default local parallelism for this processor is 1.
      *
+     * <h4>Predicate/projection class requirements</h4>
+     *
+     * The classes implementing {@code predicate} and {@code projection} need
+     * to be available on the remote cluster's classpath, or loaded using
+     * <em>Hazelcast User Code Deployment</em>. It's not enough to add them to
+     * job classpath in {@link com.hazelcast.jet.config.JobConfig}. Same is
+     * true for the class of the objects stored in the map itself. If you
+     * cannot fulfill these conditions, use {@link #remoteMap(String,
+     * ClientConfig)} and add a subsequent {@link GeneralStage#map map} or
+     * {@link GeneralStage#filter filter} stage.
+     *
      * @param mapName the name of the map
      * @param predicate the predicate to filter the events. If you want to specify just the
      *                  projection, use {@link
@@ -383,6 +416,17 @@ public final class Sources {
      * exactly-once guarantee (unless the journal has overflowed).
      * <p>
      * The default local parallelism for this processor is 1.
+     *
+     * <h4>Predicate/projection class requirements</h4>
+     *
+     * The classes implementing {@code predicateFn} and {@code projectionFn}
+     * need to be available on the remote cluster's classpath, or loaded using
+     * <em>Hazelcast User Code Deployment</em>. It's not enough to add them to
+     * job classpath in {@link com.hazelcast.jet.config.JobConfig}. Same is
+     * true for the class of the objects stored in the map itself. If you
+     * cannot fulfill these conditions, use {@link #remoteMapJournal(String,
+     * ClientConfig, JournalInitialPosition)} and add a subsequent {@link
+     * GeneralStage#map map} or {@link GeneralStage#filter filter} stage.
      *
      * @param mapName the name of the map
      * @param clientConfig configuration for the client to connect to the remote cluster
@@ -472,6 +516,17 @@ public final class Sources {
      * The default local parallelism for this processor is 2 (or 1 if just 1
      * CPU is available).
      *
+     * <h4>Predicate/projection class requirements</h4>
+     *
+     * The classes implementing {@code predicateFn} and {@code projectionFn}
+     * need to be available on the cluster's classpath, or loaded using
+     * <em>Hazelcast User Code Deployment</em>. It's not enough to add them to
+     * job classpath in {@link com.hazelcast.jet.config.JobConfig}. Same is
+     * true for the class of the objects stored in the cache itself. If you
+     * cannot fulfill these conditions, use {@link #cacheJournal(String,
+     * JournalInitialPosition)} and add a subsequent {@link GeneralStage#map
+     * map} or {@link GeneralStage#filter filter} stage.
+     *
      * @param cacheName the name of the cache
      * @param predicateFn the predicate to filter the events. You may use {@link
      *                    Util#cachePutEvents()} to pass only {@link
@@ -553,6 +608,17 @@ public final class Sources {
      * exactly-once guarantee (unless the journal has overflowed).
      * <p>
      * The default local parallelism for this processor is 1.
+     *
+     * <h4>Predicate/projection class requirements</h4>
+     *
+     * The classes implementing {@code predicateFn} and {@code projectionFn}
+     * need to be available on the cluster's classpath, or loaded using
+     * <em>Hazelcast User Code Deployment</em>. It's not enough to add them to
+     * job classpath in {@link com.hazelcast.jet.config.JobConfig}. Same is
+     * true for the class of the objects stored in the cache itself. If you
+     * cannot fulfill these conditions, use {@link #remoteCacheJournal(String,
+     * ClientConfig, JournalInitialPosition)} and add a subsequent {@link
+     * GeneralStage#map map} or {@link GeneralStage#filter filter} stage.
      *
      * @param cacheName the name of the cache
      * @param clientConfig configuration for the client to connect to the remote cluster
