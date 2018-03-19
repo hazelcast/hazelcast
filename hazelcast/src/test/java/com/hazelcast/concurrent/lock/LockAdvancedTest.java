@@ -446,6 +446,22 @@ public class LockAdvancedTest extends HazelcastTestSupport {
         }, 30);
     }
 
+    @Test
+    public void testLockLease_withStringPartitionAwareName() throws Exception {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+        HazelcastInstance hz = factory.newHazelcastInstance();
+        final ILock lock = hz.getLock(randomName() + "@hazelcast");
+
+        spawn(new Runnable() {
+            @Override
+            public void run() {
+                lock.lock(5, TimeUnit.SECONDS);
+            }
+        }).get();
+
+        assertTrue("Lock should have been released after lease expires", lock.tryLock(2, TimeUnit.MINUTES));
+    }
+
     @Test(expected = IllegalArgumentException.class)
     public void testLockFail_whenGreaterThanMaxLeaseTimeUsed() {
         Config config = new Config();
