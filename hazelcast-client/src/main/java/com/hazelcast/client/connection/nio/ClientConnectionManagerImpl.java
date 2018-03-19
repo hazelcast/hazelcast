@@ -894,7 +894,13 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
 
         LinkedHashSet<Address> providerAddresses = new LinkedHashSet<Address>();
         for (AddressProvider addressProvider : addressProviders) {
-            providerAddresses.addAll(addressProvider.loadAddresses());
+            try {
+                providerAddresses.addAll(addressProvider.loadAddresses());
+            } catch (NullPointerException e) {
+                throw e;
+            } catch (Exception e) {
+                logger.warning("Exception from AddressProvider: " + addressProvider, e);
+            }
         }
 
         if (shuffleMemberList) {
