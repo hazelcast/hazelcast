@@ -22,20 +22,48 @@ import com.hazelcast.map.impl.querycache.accumulator.AccumulatorHandler;
 import com.hazelcast.map.impl.querycache.event.QueryCacheEventData;
 import com.hazelcast.nio.serialization.Data;
 
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicReferenceArray;
+
+import static com.hazelcast.map.impl.querycache.subscriber.EventPublisherHelper.publishCacheWideEvent;
+
 /**
- * This handler is used to process event data in {@link SubscriberAccumulator}.
+ * - Processes accumulated event-data of {@link SubscriberAccumulator}.
+ * - Multiple thread can access this class.
+ * - Created per query-cache
  */
 class SubscriberAccumulatorHandler implements AccumulatorHandler<QueryCacheEventData> {
 
-    private final InternalQueryCache queryCache;
+    // if a thread has this permission, that thread can process queues.
+    private static final Queue<Integer> POLL_PERMIT = new ConcurrentLinkedQueue<Integer>();
+
+    private final int partitionCount;
     private final boolean includeValue;
+    private final InternalQueryCache queryCache;
     private final InternalSerializationService serializationService;
+    private final AtomicReferenceArray<Queue<Integer>> clearAllRemovedEntryCounts;
+    private final AtomicReferenceArray<Queue<Integer>> evictAllRemovedEntryCounts;
 
     public SubscriberAccumulatorHandler(boolean includeValue, InternalQueryCache queryCache,
                                         InternalSerializationService serializationService) {
         this.includeValue = includeValue;
         this.queryCache = queryCache;
         this.serializationService = serializationService;
+        this.partitionCount = ((DefaultQueryCache) queryCache).context.getPartitionCount();
+        this.clearAllRemovedEntryCounts = initRemovedEntryCounts(partitionCount);
+        this.evictAllRemovedEntryCounts = initRemovedEntryCounts(partitionCount);
+    }
+
+    private static AtomicReferenceArray<Queue<Integer>> initRemovedEntryCounts(int partitionCount) {
+        AtomicReferenceArray<Queue<Integer>> removedEntryCounts
+                = new AtomicReferenceArray<Queue<Integer>>(partitionCount + 1);
+        for (int i = 0; i < partitionCount; i++) {
+            removedEntryCounts.set(i, new ConcurrentLinkedQueue<Integer>());
+        }
+        removedEntryCounts.set(partitionCount, POLL_PERMIT);
+
+        return removedEntryCounts;
     }
 
     @Override
@@ -57,13 +85,63 @@ class SubscriberAccumulatorHandler implements AccumulatorHandler<QueryCacheEvent
             case EVICTED:
                 queryCache.deleteInternal(keyData, false, entryEventType);
                 break;
-            // TODO: if we want strongly consistent clear & evict, removal can be made based on sequence and partition ID
             case CLEAR_ALL:
+                handleMapWideEvent(eventData, entryEventType, clearAllRemovedEntryCounts);
+                break;
             case EVICT_ALL:
-                queryCache.clearInternal(entryEventType);
+                handleMapWideEvent(eventData, entryEventType, evictAllRemovedEntryCounts);
                 break;
             default:
                 throw new IllegalArgumentException("Not a known type EntryEventType." + entryEventType);
         }
+    }
+
+    private void handleMapWideEvent(QueryCacheEventData eventData, EntryEventType eventType,
+                                    AtomicReferenceArray<Queue<Integer>> removedEntryCounts) {
+
+        int partitionId = eventData.getPartitionId();
+        int removedEntryCount = queryCache.removeEntriesOf(partitionId);
+
+        // add this `removedEntryCount` to partitions' removed-entry-count-holder queue
+        removedEntryCounts.get(partitionId).offer(removedEntryCount);
+
+        if (!hasMissingCount(removedEntryCounts)) {
+            if (removedEntryCounts.compareAndSet(partitionCount, POLL_PERMIT, null)) {
+                try {
+                    int totalRemovedEntryCount = pollRemovedEntryCounts(removedEntryCounts);
+                    publishCacheWideEvent(((DefaultQueryCache) queryCache).context,
+                            ((DefaultQueryCache) queryCache).mapName,
+                            ((DefaultQueryCache) queryCache).cacheId,
+                            totalRemovedEntryCount,
+                            eventType);
+                } finally {
+                    removedEntryCounts.set(partitionCount, POLL_PERMIT);
+                }
+            }
+        }
+    }
+
+    /**
+     * @return {@code true} if we have removed entries from all partitions,
+     * otherwise return {@code false} to indicate there is still
+     * not-received events for some partitions.
+     */
+    private boolean hasMissingCount(AtomicReferenceArray<Queue<Integer>> removedEntryCounts) {
+        for (int i = 0; i < partitionCount; i++) {
+            if (removedEntryCounts.get(i).size() < 1) {
+                // we don't receive any map-wide event for this partition
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // should be called when `hasMissingCount` `false`, otherwise polling can cause NPE
+    private int pollRemovedEntryCounts(AtomicReferenceArray<Queue<Integer>> removedEntryCounts) {
+        int count = 0;
+        for (int i = 0; i < partitionCount; i++) {
+            count += removedEntryCounts.get(i).poll();
+        }
+        return count;
     }
 }
