@@ -856,9 +856,6 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
      */
     public <R> Iterator<R> iterator(int fetchSize, int partitionId, Projection<Map.Entry<K, V>, R> projection,
                                     Predicate<K, V> predicate) {
-        if (getNodeEngine().getClusterService().getClusterVersion().isLessThan(Versions.V3_9)) {
-            throw new UnsupportedOperationException("Iterate map by query is available when cluster version is 3.9 or higher");
-        }
         if (predicate instanceof PagingPredicate) {
             throw new IllegalArgumentException("Paging predicate is not allowed when iterating map by query");
         }

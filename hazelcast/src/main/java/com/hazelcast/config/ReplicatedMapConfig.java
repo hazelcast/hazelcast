@@ -421,7 +421,7 @@ public class ReplicatedMapConfig implements IdentifiedDataSerializable, Versione
         asyncFillup = in.readBoolean();
         statisticsEnabled = in.readBoolean();
         // RU_COMPAT_3_9
-        if (in.getVersion().isLessThan(Versions.V3_10)) {
+        if (in.getVersion().isUnknownOrLessThan(Versions.V3_10)) {
             mergePolicyConfig.setPolicy(in.readUTF());
         }
         listenerConfigs = readNullableList(in);

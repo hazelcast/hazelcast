@@ -122,7 +122,7 @@ public class SparseHyperLogLogEncoder
     public void readData(ObjectDataInput in) throws IOException {
         int p = in.readInt();
         // RU_COMPAT_3_9
-        if (in.getVersion().isLessThan(V3_10)) {
+        if (in.getVersion().isUnknownOrLessThan(V3_10)) {
             in.readInt();
         }
         int total = in.readInt();
