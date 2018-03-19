@@ -18,7 +18,6 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.impl.MapDataSerializerHook;
-import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -41,7 +40,6 @@ public class PartitionWideEntryBackupOperation extends AbstractMultipleEntryBack
 
     @Override
     public void run() {
-        responses = new MapEntries(recordStore.size());
         EntryOperator operator = operator(this, backupProcessor, getPredicate());
 
         Iterator<Record> iterator = recordStore.iterator(Clock.currentTimeMillis(), true);
