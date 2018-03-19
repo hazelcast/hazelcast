@@ -96,6 +96,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.junit.Assume.assumeFalse;
 
 /**
  * Base class for Hazelcast tests which provides a big number of convenient test methods.
@@ -1445,5 +1446,10 @@ public abstract class HazelcastTestSupport {
 
     protected MapOperationProvider getMapOperationProvider() {
         return new DefaultMapOperationProvider();
+    }
+
+    public static void assumeThatNoJDK6() {
+        String javaVersion = System.getProperty("java.version");
+        assumeFalse("Java 6 used", javaVersion.startsWith("1.6."));
     }
 }

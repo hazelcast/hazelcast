@@ -871,7 +871,6 @@ public final class GroupProperty {
     public static final HazelcastProperty INDEX_COPY_BEHAVIOR
             = new HazelcastProperty("hazelcast.index.copy.behavior", IndexCopyBehavior.COPY_ON_READ.toString());
 
-
     /**
      * Forces the JCache provider, which can have values client or server, to force the provider type.
      * If not provided, the provider will be client or server, whichever is found on the classpath first respectively.
@@ -936,12 +935,27 @@ public final class GroupProperty {
             new HazelcastProperty("hazelcast.nio.tcp.spoofing.checks", false);
 
     /**
-     * Controls whether the task scheduler removes tasks immediately upon cancellation.
-     * This is disabled by default, because it can cause severe delays on other operations. By default all cancelled
-     * tasks will eventually get removed by scheduler workers.
+     * This is a Java 6 specific property. In Java 7+ tasks are always removed
+     * on cancellation due to the explicit
+     * {@code java.util.concurrent.ScheduledThreadPoolExecutor#setRemoveOnCancelPolicy(boolean)}
+     * and constant time removal.
+     *
+     * In Java 6 there is no out-of-the-box support for removal of cancelled tasks,
+     * and the only way to implement this is using a linear scan of all pending
+     * tasks. Therefore in Java 6 there is a performance penalty.
+     *
+     * Using this property, in Java 6, one can control if cancelled tasks are removed.
+     * By default tasks are removed, because it can lead to temporary retention
+     * of memory if there a large volume of pending cancelled tasks. And this can
+     * lead to gc/performance problems as we saw with the transaction tests.
+     *
+     * However if this automatic removal of cancelled tasks start to become a
+     * performance problem, it can be disabled in Java 6.
+     *
+     * For more information see the {@link com.hazelcast.util.executor.LoggingScheduledExecutor}.
      */
     public static final HazelcastProperty TASK_SCHEDULER_REMOVE_ON_CANCEL =
-            new HazelcastProperty("hazelcast.executionservice.taskscheduler.remove.oncancel", false);
+            new HazelcastProperty("hazelcast.executionservice.taskscheduler.remove.oncancel", true);
 
     private GroupProperty() {
     }
