@@ -25,7 +25,6 @@ import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.Partition;
 import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.internal.journal.EventJournalReader;
-import com.hazelcast.jet.pipeline.JournalInitialPosition;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.core.AbstractProcessor;
@@ -40,11 +39,11 @@ import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.core.processor.SourceProcessors;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedPredicate;
+import com.hazelcast.jet.pipeline.JournalInitialPosition;
 import com.hazelcast.map.journal.EventJournalMapEvent;
 import com.hazelcast.nio.Address;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.ringbuffer.ReadResultSet;
-import com.hazelcast.ringbuffer.StaleSequenceException;
 import com.hazelcast.util.function.Predicate;
 
 import javax.annotation.Nonnull;
@@ -60,7 +59,6 @@ import java.util.function.Function;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.client.HazelcastClient.newHazelcastClient;
-import static com.hazelcast.jet.pipeline.JournalInitialPosition.START_FROM_CURRENT;
 import static com.hazelcast.jet.Traversers.traverseStream;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
@@ -69,6 +67,7 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFinest;
 import static com.hazelcast.jet.impl.util.Util.arrayIndexOf;
 import static com.hazelcast.jet.impl.util.Util.processorToPartitions;
+import static com.hazelcast.jet.pipeline.JournalInitialPosition.START_FROM_CURRENT;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toList;
@@ -100,6 +99,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
     // outbox is full we can still poll for new items.
     @Nonnull
     private final long[] emitOffsets;
+
     @Nonnull
     private final long[] readOffsets;
 
@@ -266,13 +266,21 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
             if (!future.isDone()) {
                 continue;
             }
-            resultSet = toResultSet(currentPartitionIndex, future);
+            resultSet = toResultSet(future);
+            int partitionId = partitionIds[currentPartitionIndex];
             if (resultSet != null) {
                 assert resultSet.size() > 0 : "empty resultSet";
-                readOffsets[currentPartitionIndex] += resultSet.readCount();
+                long prevSequence = readOffsets[currentPartitionIndex];
+                long lostCount = resultSet.getNextSequenceToReadFrom() - resultSet.readCount() - prevSequence;
+                if (lostCount > 0) {
+                    getLogger().warning(lostCount +  " events lost for partition " +
+                            partitionId + " due to journal overflow when reading from event journal." +
+                            " Increase journal size to avoid this error.");
+                }
+                readOffsets[currentPartitionIndex] = resultSet.getNextSequenceToReadFrom();
             }
             // make another read on the same partition
-            readFutures[currentPartitionIndex] = readFromJournal(partitionIds[currentPartitionIndex],
+            readFutures[currentPartitionIndex] = readFromJournal(partitionId,
                     readOffsets[currentPartitionIndex]);
         }
 
@@ -282,7 +290,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
         }
     }
 
-    private ReadResultSet<T> toResultSet(int partitionIdx, ICompletableFuture<ReadResultSet<T>> future) {
+    private ReadResultSet<T> toResultSet(ICompletableFuture<ReadResultSet<T>> future) {
         try {
             return future.get();
         } catch (ExecutionException e) {
@@ -290,15 +298,6 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
             if (ex instanceof HazelcastInstanceNotActiveException && !isRemoteReader) {
                 // This exception can be safely ignored - it means the instance was shutting down,
                 // so we shouldn't unnecessarily throw an exception here.
-                return null;
-            } else if (ex instanceof StaleSequenceException) {
-                long headSeq = ((StaleSequenceException) e.getCause()).getHeadSeq();
-                // move both read and emitted offsets to the new head
-                long oldOffset = readOffsets[partitionIdx];
-                readOffsets[partitionIdx] = emitOffsets[partitionIdx] = headSeq;
-                getLogger().warning("Events lost for partition " + partitionIds[partitionIdx]
-                        + " due to journal overflow when reading from event journal. Increase journal size to " +
-                        "avoid this error. Requested was: " + oldOffset + ", current head is: " + headSeq);
                 return null;
             } else {
                 throw rethrow(ex);

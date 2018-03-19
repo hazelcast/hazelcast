@@ -56,10 +56,14 @@ import static org.junit.Assert.assertTrue;
 public class StreamEventJournalPTest extends JetTestSupport {
 
     private static final int NUM_PARTITIONS = 2;
-    private static final int JOURNAL_CAPACITY = 10;
+    private static final int CAPACITY_PER_PARTITION = 5;
+    private static final int JOURNAL_CAPACITY = NUM_PARTITIONS * CAPACITY_PER_PARTITION;
 
-    private MapProxyImpl<Integer, Integer> map;
+    private MapProxyImpl<String, Integer> map;
     private DistributedSupplier<Processor> supplier;
+    private JetInstance instance;
+    private String key0;
+    private String key1;
 
     @Before
     public void setUp() {
@@ -72,14 +76,19 @@ public class StreamEventJournalPTest extends JetTestSupport {
 
         config.getHazelcastConfig().setProperty(PARTITION_COUNT.getName(), String.valueOf(NUM_PARTITIONS));
         config.getHazelcastConfig().addEventJournalConfig(journalConfig);
-        JetInstance instance = this.createJetMember(config);
+        instance = this.createJetMember(config);
 
-        map = (MapProxyImpl<Integer, Integer>) instance.getHazelcastInstance().<Integer, Integer>getMap("test");
+        map = (MapProxyImpl<String, Integer>) instance.getHazelcastInstance().<String, Integer>getMap("test");
+
         List<Integer> allPartitions = IntStream.range(0, NUM_PARTITIONS).boxed().collect(toList());
 
         supplier = () -> new StreamEventJournalP<>(map, allPartitions, e -> true,
                 EventJournalMapEvent::getNewValue, START_FROM_OLDEST, false,
                 wmGenParams(Integer::intValue, limitingLag(0), suppressAll(), -1));
+
+        key0 = generateKeyForPartition(instance.getHazelcastInstance(), 0);
+        key1 = generateKeyForPartition(instance.getHazelcastInstance(), 1);
+
     }
 
     private WatermarkEmissionPolicy suppressAll() {
@@ -88,9 +97,7 @@ public class StreamEventJournalPTest extends JetTestSupport {
 
     @Test
     public void smokeTest() {
-        for (int i = 0; i < 4; i++) {
-            map.put(i, i);
-        }
+        fillJournal(2);
 
         TestSupport.verifyProcessor(supplier)
                    .disableProgressAssertion() // no progress assertion because of async calls
@@ -107,60 +114,47 @@ public class StreamEventJournalPTest extends JetTestSupport {
 
         p.init(outbox, new TestProcessorContext());
 
-        // putting JOURNAL_CAPACITY can overflow as capacity is per map and partitions
-        // can be unbalanced.
-        int batchSize = JOURNAL_CAPACITY / 2 + 1;
-        int i;
-        for (i = 0; i < batchSize; i++) {
-            map.put(i, i);
-        }
+        fillJournal(CAPACITY_PER_PARTITION);
+
         // consume
         assertTrueEventually(() -> {
             assertFalse("Processor should never complete", p.complete());
             outbox.drainQueueAndReset(0, actual, true);
-            assertEquals("consumed more items than expected", batchSize, actual.size());
-            assertEquals(IntStream.range(0, batchSize).boxed().collect(Collectors.toSet()), new HashSet<>(actual));
+            assertEquals("consumed different number of items than expected", JOURNAL_CAPACITY, actual.size());
+            assertEquals(IntStream.range(0, JOURNAL_CAPACITY).boxed().collect(Collectors.toSet()), new HashSet<>(actual));
         }, 3);
 
-        for (; i < batchSize * 2; i++) {
-            map.put(i, i);
-        }
+        fillJournal(CAPACITY_PER_PARTITION);
 
         // consume again
         assertTrueEventually(() -> {
             assertFalse("Processor should never complete", p.complete());
             outbox.drainQueueAndReset(0, actual, true);
-            assertEquals("consumed more items than expected", JOURNAL_CAPACITY + 2, actual.size());
-            assertEquals(IntStream.range(0, batchSize * 2).boxed().collect(Collectors.toSet()), new HashSet<>(actual));
+            assertEquals("consumed different number of items than expected", JOURNAL_CAPACITY + 2, actual.size());
+            assertEquals(IntStream.range(0, JOURNAL_CAPACITY).boxed().collect(Collectors.toSet()), new HashSet<>(actual));
         }, 3);
     }
 
     @Test
-    public void when_staleSequence() {
+    public void when_lostItems() {
         TestOutbox outbox = new TestOutbox(new int[]{16}, 16);
         Processor p = supplier.get();
         p.init(outbox, new TestProcessorContext());
 
-        // overflow journal
-        for (int i = 0; i < JOURNAL_CAPACITY * 2; i++) {
-            map.put(i, i);
-        }
+        // overflow the journal
+        fillJournal(CAPACITY_PER_PARTITION + 1);
 
         // fill and consume
         List<Object> actual = new ArrayList<>();
         assertTrueEventually(() -> {
             assertFalse("Processor should never complete", p.complete());
             outbox.drainQueueAndReset(0, actual, true);
-            assertTrue("consumed less items than expected", actual.size() >= JOURNAL_CAPACITY);
+            assertTrue("consumed different number of items than expected", actual.size() == JOURNAL_CAPACITY);
         }, 3);
-
-        for (int i = 0; i < JOURNAL_CAPACITY; i++) {
-            map.put(i, i);
-        }
     }
 
     @Test
-    public void when_staleSequence_afterRestore() {
+    public void when_lostItems_afterRestore() {
         TestOutbox outbox = new TestOutbox(new int[]{16}, 16);
         final Processor p = supplier.get();
         p.init(outbox, new TestProcessorContext());
@@ -169,7 +163,7 @@ public class StreamEventJournalPTest extends JetTestSupport {
         assertTrueEventually(() -> {
             assertFalse("Processor should never complete", p.complete());
             outbox.drainQueueAndReset(0, output, true);
-            assertTrue("consumed more items than expected", output.size() == 0);
+            assertTrue("consumed different number of items than expected", output.size() == 0);
         }, 3);
 
         assertTrueEventually(() -> {
@@ -177,9 +171,7 @@ public class StreamEventJournalPTest extends JetTestSupport {
         }, 3);
 
         // overflow journal
-        for (int i = 0; i < JOURNAL_CAPACITY * 2; i++) {
-            map.put(i, i);
-        }
+        fillJournal(CAPACITY_PER_PARTITION + 1);
 
         List<Entry> snapshotItems = new ArrayList<>();
         outbox.drainSnapshotQueueAndReset(snapshotItems, false);
@@ -187,6 +179,49 @@ public class StreamEventJournalPTest extends JetTestSupport {
         System.out.println("Restoring journal");
         // restore from snapshot
         assertRestore(snapshotItems);
+    }
+
+    @Test
+    public void when_futureSequence_thenResetOffset() {
+        TestOutbox outbox = new TestOutbox(new int[]{16}, 16);
+        StreamEventJournalP p = (StreamEventJournalP) supplier.get();
+
+        // fill journal so that it overflows
+        fillJournal(CAPACITY_PER_PARTITION + 1);
+
+        // initial offsets will be 5, since capacity per partition is 5
+        p.init(outbox, new TestProcessorContext());
+
+        // clear partitions before doing any read, but after initializing offsets
+        map.destroy();
+
+        // when we consume, we should not retrieve anything because we will ask for
+        // offset 5, but current head is 0. This should not cause any error
+        List<Object> actual = new ArrayList<>();
+
+        // we should not receive any items, but the offset should be reset back to 0
+        assertTrueFiveSeconds(() -> {
+            assertFalse("Processor should never complete", p.complete());
+            outbox.drainQueueAndReset(0, actual, true);
+            assertTrue("consumed different number of items than expected", actual.size() == 0);
+        });
+
+        // add one item to each partition
+        fillJournal(1);
+
+        // receive the items we just added
+        assertTrueEventually(() -> {
+            assertFalse("Processor should never complete", p.complete());
+            outbox.drainQueueAndReset(0, actual, true);
+            assertTrue("consumed different number of items than expected", actual.size() == 2);
+        });
+    }
+
+    private void fillJournal(int countPerPartition) {
+        for (int i = 0; i < countPerPartition; i++) {
+            map.put(key0, i * 2);
+            map.put(key1, i * 2 + 1);
+        }
     }
 
     private void assertRestore(List<Entry> snapshotItems) {
