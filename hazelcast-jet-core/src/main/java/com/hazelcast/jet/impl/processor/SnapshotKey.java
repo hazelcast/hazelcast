@@ -22,6 +22,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
+import java.util.Objects;
 import javax.annotation.Nonnull;
 import java.io.IOException;
 
@@ -74,13 +75,13 @@ public final class SnapshotKey implements PartitionAware<Object>, IdentifiedData
         return this == o
                 || o instanceof SnapshotKey
                 && this.timestamp == (that = (SnapshotKey) o).timestamp
-                && this.key.equals(that.key);
+                && Objects.equals(this.key, that.key);
     }
 
     @Override
     public int hashCode() {
         int hc = (int) (timestamp ^ (timestamp >>> 32));
-        hc = 73 * hc + key.hashCode();
+        hc = 73 * hc + Objects.hashCode(key);
         return hc;
     }
 

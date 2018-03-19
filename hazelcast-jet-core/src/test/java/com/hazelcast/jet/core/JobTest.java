@@ -277,7 +277,7 @@ public class JobTest extends JetTestSupport {
 
     @Test
     public void when_jobIsRunning_then_itIsQueriedByName() throws InterruptedException {
-        testGetJobByNameWhenJobIsRunning(instance1);
+        testGetJobByNameWhenJobIsRunning(instance2);
     }
 
     @Test

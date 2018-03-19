@@ -18,21 +18,17 @@ package com.hazelcast.jet.kafka.impl;
 
 import com.hazelcast.jet.kafka.impl.StreamKafkaP.KafkaPartitionAssigner;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
-import org.apache.kafka.common.TopicPartition;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-
 import java.util.HashSet;
 import java.util.List;
 import java.util.stream.IntStream;
+import org.apache.kafka.common.TopicPartition;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 
-@Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
 public class KafkaPartitionAssignerTest {
 

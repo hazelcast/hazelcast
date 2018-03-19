@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.datamodel;
 
+import java.util.Objects;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.HashMap;
@@ -83,12 +84,12 @@ public class ItemsByTag {
     @Override
     public boolean equals(Object o) {
         return o instanceof ItemsByTag
-                && this.map.equals(((ItemsByTag) o).map);
+                && Objects.equals(this.map, ((ItemsByTag) o).map);
     }
 
     @Override
     public int hashCode() {
-        return map.hashCode();
+        return Objects.hashCode(map);
     }
 
     @Override

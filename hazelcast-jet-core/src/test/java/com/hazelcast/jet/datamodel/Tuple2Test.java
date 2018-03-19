@@ -82,4 +82,5 @@ public class Tuple2Test {
         assertNotNull(tuple2("a", "b").toString());
         assertNotNull(tuple2(null, null).toString());
     }
+
 }

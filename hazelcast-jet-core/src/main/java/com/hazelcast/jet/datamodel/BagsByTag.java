@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.datamodel;
 
+import java.util.Objects;
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -114,12 +115,12 @@ public class BagsByTag {
     public boolean equals(Object o) {
         return this == o
                 || o instanceof BagsByTag
-                && this.components.equals(((BagsByTag) o).components);
+                && Objects.equals(this.components, ((BagsByTag) o).components);
     }
 
     @Override
     public int hashCode() {
-        return components.hashCode();
+        return Objects.hashCode(components);
     }
 
     @Override

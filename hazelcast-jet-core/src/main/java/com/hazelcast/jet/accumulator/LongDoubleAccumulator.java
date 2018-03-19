@@ -72,7 +72,7 @@ public class LongDoubleAccumulator {
                 o != null
                 && this.getClass() == o.getClass()
                 && this.longValue == ((LongDoubleAccumulator) o).longValue
-                && this.doubleValue == ((LongDoubleAccumulator) o).doubleValue;
+                && Double.compare(this.doubleValue, ((LongDoubleAccumulator) o).doubleValue) == 0;
     }
 
     @Override

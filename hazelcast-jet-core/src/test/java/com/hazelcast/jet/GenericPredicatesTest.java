@@ -28,12 +28,12 @@ import com.hazelcast.query.impl.predicates.ILikePredicate;
 import com.hazelcast.query.impl.predicates.PredicateDataSerializerHook;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.instance.TestUtil.toData;
+import static com.hazelcast.jet.GenericPredicates.alwaysFalse;
+import static com.hazelcast.jet.GenericPredicates.alwaysTrue;
 import static com.hazelcast.jet.GenericPredicates.and;
 import static com.hazelcast.jet.GenericPredicates.between;
 import static com.hazelcast.jet.GenericPredicates.equal;
@@ -45,7 +45,10 @@ import static com.hazelcast.jet.GenericPredicates.instanceOf;
 import static com.hazelcast.jet.GenericPredicates.lessEqual;
 import static com.hazelcast.jet.GenericPredicates.lessThan;
 import static com.hazelcast.jet.GenericPredicates.like;
+import static com.hazelcast.jet.GenericPredicates.not;
+import static com.hazelcast.jet.GenericPredicates.notEqual;
 import static com.hazelcast.jet.GenericPredicates.or;
+import static com.hazelcast.jet.GenericPredicates.regex;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertFalse;
@@ -56,7 +59,6 @@ import static org.junit.Assert.assertTrue;
  * This is a stripped-down version of {@code com.hazelcast.query.impl.predicates.PredicatesTest}.
  */
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
 public class GenericPredicatesTest extends HazelcastTestSupport {
 
     private static final String ATTRIBUTE = "DUMMY_ATTRIBUTE_IGNORED";
@@ -64,9 +66,35 @@ public class GenericPredicatesTest extends HazelcastTestSupport {
     private final InternalSerializationService ss = new DefaultSerializationServiceBuilder().build();
 
     @Test
+    public void testAlwaysTrue() {
+        assertPredicateTrue(alwaysTrue(), "value");
+    }
+
+    @Test
+    public void testAlwaysFalse() {
+        assertPredicateFalse(alwaysFalse(), "value");
+    }
+
+    @Test
+    public void testNot() {
+        assertPredicateFalse(not(alwaysTrue()), "value");
+    }
+
+    @Test
+    public void testRegex() {
+        assertPredicateTrue(regex(ATTRIBUTE, "\\w+"), "value");
+    }
+
+    @Test
     public void testEqual() {
         assertPredicateTrue(equal(ATTRIBUTE, "value"), "value");
         assertPredicateFalse(equal(ATTRIBUTE, "value1"), "value");
+    }
+
+    @Test
+    public void testNotEqual() {
+        assertPredicateTrue(notEqual(ATTRIBUTE, "value"), "value1");
+        assertPredicateFalse(notEqual(ATTRIBUTE, "value"), "value");
     }
 
     @Test

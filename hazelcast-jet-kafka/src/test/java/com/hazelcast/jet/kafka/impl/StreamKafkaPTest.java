@@ -37,7 +37,6 @@ import com.hazelcast.jet.kafka.KafkaSources;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.Arrays;
 import java.util.Collection;
@@ -58,7 +57,6 @@ import org.apache.kafka.common.serialization.StringDeserializer;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
@@ -77,7 +75,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-@Category(QuickTest.class)
 @RunWith(HazelcastSerialClassRunner.class)
 public class StreamKafkaPTest extends KafkaTestSupport {
 
@@ -119,7 +116,7 @@ public class StreamKafkaPTest extends KafkaTestSupport {
         }
         IList<String> list = instances[0].getList("sink");
         assertTrueEventually(() -> {
-            assertEquals(messageCount , list.size());
+            assertEquals(messageCount, list.size());
             for (int i = 0; i < messageCount; i++) {
                 String value = Integer.toString(i) + "-x";
                 assertTrue("missing entry: " + value, list.contains(value));

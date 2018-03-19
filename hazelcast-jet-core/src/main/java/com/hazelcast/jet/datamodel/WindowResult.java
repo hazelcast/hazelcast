@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.datamodel;
 
+import java.util.Objects;
 import javax.annotation.Nonnull;
 import java.util.Map;
 
@@ -89,8 +90,8 @@ public class WindowResult<K, R> implements Map.Entry<K, R> {
                 || obj instanceof WindowResult
                     && this.start == (that = (WindowResult) obj).start
                     && this.end == that.end
-                    && this.key.equals(that.key)
-                    && this.result.equals(that.result);
+                    && Objects.equals(this.key, that.key)
+                    && Objects.equals(this.result, that.result);
     }
 
     @Override
@@ -98,8 +99,8 @@ public class WindowResult<K, R> implements Map.Entry<K, R> {
         int hc = 17;
         hc = 73 * hc + Long.hashCode(start);
         hc = 73 * hc + Long.hashCode(end);
-        hc = 73 * hc + key.hashCode();
-        hc = 73 * hc + result.hashCode();
+        hc = 73 * hc + Objects.hashCode(key);
+        hc = 73 * hc + Objects.hashCode(result);
         return hc;
     }
 

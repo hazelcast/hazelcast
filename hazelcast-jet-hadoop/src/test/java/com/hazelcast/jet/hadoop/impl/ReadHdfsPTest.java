@@ -17,19 +17,28 @@
 package com.hazelcast.jet.hadoop.impl;
 
 import com.hazelcast.core.IList;
-import com.hazelcast.jet.hadoop.HdfsSources;
+import com.hazelcast.jet.IListJet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Util;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.function.DistributedBiFunction;
+import com.hazelcast.jet.hadoop.HdfsSources;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.jet.stream.DistributedCollectors;
 import com.hazelcast.jet.stream.DistributedStream;
-import com.hazelcast.jet.IListJet;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelTest;
-import com.hazelcast.test.annotation.QuickTest;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.nio.file.Files;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.concurrent.Future;
+import java.util.stream.IntStream;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocalFileSystem;
@@ -50,20 +59,9 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.nio.file.Files;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.concurrent.Future;
-import java.util.stream.IntStream;
-
 import static com.hazelcast.jet.core.Edge.between;
-import static com.hazelcast.jet.hadoop.HdfsProcessors.readHdfsP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeListP;
+import static com.hazelcast.jet.hadoop.HdfsProcessors.readHdfsP;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static java.lang.Integer.parseInt;
 import static java.util.stream.IntStream.range;
@@ -72,7 +70,7 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category(ParallelTest.class)
 public class ReadHdfsPTest extends HdfsTestSupport {
 
     private static final String[] ENTRIES = range(0, 4)

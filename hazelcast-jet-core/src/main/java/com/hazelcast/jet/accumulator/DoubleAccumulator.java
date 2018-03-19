@@ -80,7 +80,7 @@ public class DoubleAccumulator {
         return this == o ||
                 o != null
                         && this.getClass() == o.getClass()
-                        && this.value == ((DoubleAccumulator) o).value;
+                        && Double.compare(this.value, ((DoubleAccumulator) o).value) == 0;
     }
 
     @Override

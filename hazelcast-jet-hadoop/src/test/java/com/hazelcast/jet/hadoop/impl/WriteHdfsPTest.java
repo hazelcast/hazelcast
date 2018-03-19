@@ -25,7 +25,6 @@ import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelTest;
-import com.hazelcast.test.annotation.QuickTest;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Arrays;
@@ -55,7 +54,7 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category(ParallelTest.class)
 public class WriteHdfsPTest extends HdfsTestSupport {
 
     @Parameterized.Parameter(0)

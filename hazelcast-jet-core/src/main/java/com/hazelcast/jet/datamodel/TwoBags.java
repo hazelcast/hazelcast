@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.datamodel;
 
+import java.util.Objects;
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -103,14 +104,14 @@ public final class TwoBags<T0, T1> {
         TwoBags<?, ?> that;
         return this == o ||
                 o instanceof TwoBags
-                        && this.bag0.equals((that = (TwoBags<?, ?>) o).bag0)
-                        && this.bag1.equals(that.bag1);
+                        && Objects.equals(this.bag0, (that = (TwoBags<?, ?>) o).bag0)
+                        && Objects.equals(this.bag1, that.bag1);
     }
 
     @Override
     public int hashCode() {
-        int hc = bag0.hashCode();
-        hc = 73 * hc + bag1.hashCode();
+        int hc = Objects.hashCode(bag0);
+        hc = 73 * hc + Objects.hashCode(bag1);
         return hc;
     }
 

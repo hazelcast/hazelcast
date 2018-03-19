@@ -81,9 +81,9 @@ public final class Tuple3<E0, E1, E2> {
     @Override
     public int hashCode() {
         int hc = 17;
-        hc = 73 * hc + f0.hashCode();
-        hc = 73 * hc + f1.hashCode();
-        hc = 73 * hc + f2.hashCode();
+        hc = 73 * hc + Objects.hashCode(f0);
+        hc = 73 * hc + Objects.hashCode(f1);
+        hc = 73 * hc + Objects.hashCode(f2);
         return hc;
     }
 

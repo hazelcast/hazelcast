@@ -32,6 +32,7 @@ import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.Arrays;
 import java.util.Collection;
 
+import static com.hazelcast.jet.impl.pipeline.JetEvent.jetEvent;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotSame;
@@ -48,7 +49,8 @@ public class SerializerHooksTest {
     public static Collection<Object> data() throws Exception {
         return Arrays.asList(
                 new Object[]{new String[]{"a", "b", "c"}},
-                new SimpleImmutableEntry<>("key", "value")
+                new SimpleImmutableEntry<>("key", "value"),
+                jetEvent("payload", System.currentTimeMillis())
         );
     }
 

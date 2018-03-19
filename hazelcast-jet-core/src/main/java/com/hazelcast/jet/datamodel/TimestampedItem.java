@@ -16,8 +16,9 @@
 
 package com.hazelcast.jet.datamodel;
 
-import javax.annotation.Nonnull;
 import java.io.Serializable;
+import java.util.Objects;
+import javax.annotation.Nonnull;
 
 import static com.hazelcast.jet.impl.util.Util.toLocalTime;
 
@@ -71,7 +72,7 @@ public final class TimestampedItem<T> implements Serializable {
     public int hashCode() {
         int hc = 17;
         hc = 73 * hc + Long.hashCode(timestamp);
-        hc = 73 * hc + item.hashCode();
+        hc = 73 * hc + Objects.hashCode(item);
         return hc;
     }
 
@@ -81,7 +82,7 @@ public final class TimestampedItem<T> implements Serializable {
         return this == obj
                 || obj instanceof TimestampedItem
                 && this.timestamp == (that = (TimestampedItem) obj).timestamp
-                && this.item.equals(that.item);
+                && Objects.equals(this.item, that.item);
     }
 
     @Override

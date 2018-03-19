@@ -19,12 +19,11 @@ package com.hazelcast.jet.core.test;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
-import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-
-import javax.annotation.Nonnull;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import java.util.Collection;
+import javax.annotation.Nonnull;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import static com.hazelcast.jet.core.processor.Processors.noopP;
 import static com.hazelcast.jet.core.test.TestSupport.SAME_ITEMS_ANY_ORDER;
@@ -35,7 +34,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-@Category(QuickTest.class)
+@RunWith(HazelcastParallelClassRunner.class)
 public class TestSupportTest {
 
     @Test

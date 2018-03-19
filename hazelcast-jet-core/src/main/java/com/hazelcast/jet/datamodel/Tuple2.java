@@ -89,7 +89,7 @@ public final class Tuple2<E0, E1> implements Map.Entry<E0, E1> {
     @Override
     public int hashCode() {
         // This implementation is specified by Map.Entry and must not be changed
-        return  f0.hashCode() ^ f1.hashCode();
+        return Objects.hashCode(f0) ^ Objects.hashCode(f1);
     }
 
     @Override

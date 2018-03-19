@@ -21,16 +21,15 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelTest;
+import java.io.Serializable;
+import java.util.Collection;
+import java.util.Map;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
-
-import java.io.Serializable;
-import java.util.Collection;
-import java.util.Map;
 
 import static com.hazelcast.jet.datamodel.BagsByTag.bagsByTag;
 import static com.hazelcast.jet.datamodel.ItemsByTag.itemsByTag;
@@ -59,6 +58,7 @@ public class DataModelSerializerHooksTest {
     public static Collection<Object> data() throws Exception {
         return asList(
                 new TimestampedEntry<>(1, "key", "value"),
+                new WindowResult<>(1, 2, "key", "value"),
                 tuple2("value-0", "value-1"),
                 tuple3("value-0", "value-1", "value-2"),
                 twoBags(asList("v1", "v2"), asList("v3", "v4")),
