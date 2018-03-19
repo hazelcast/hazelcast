@@ -19,11 +19,11 @@ package com.hazelcast.map.impl.query;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.QueryableEntriesSegment;
-import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.util.executor.ManagedExecutorService;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -32,7 +32,6 @@ import java.util.concurrent.Future;
 import static com.hazelcast.query.PagingPredicateAccessor.getNearestAnchorEntry;
 import static com.hazelcast.util.FutureUtil.RETHROW_EVERYTHING;
 import static com.hazelcast.util.FutureUtil.returnWithDeadline;
-import static com.hazelcast.util.SortingUtil.getSortedSubList;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
@@ -45,21 +44,20 @@ public class ParallelPartitionScanExecutor implements PartitionScanExecutor {
     private final ManagedExecutorService executor;
     private final int timeoutInMillis;
 
-    public ParallelPartitionScanExecutor(
-            PartitionScanRunner partitionScanRunner, ManagedExecutorService executor, int timeoutInMillis) {
+    public ParallelPartitionScanExecutor(PartitionScanRunner partitionScanRunner, ManagedExecutorService executor,
+                                         int timeoutInMillis) {
         this.partitionScanRunner = partitionScanRunner;
         this.executor = executor;
         this.timeoutInMillis = timeoutInMillis;
     }
 
     @Override
-    public List<QueryableEntry> execute(String mapName, Predicate predicate, Collection<Integer> partitions) {
-        List<QueryableEntry> result = runUsingPartitionScanWithoutPaging(mapName, predicate, partitions);
+    public void execute(String mapName, Predicate predicate, Collection<Integer> partitions, Result result) {
+        runUsingPartitionScanWithoutPaging(mapName, predicate, partitions, result);
         if (predicate instanceof PagingPredicate) {
             Map.Entry<Integer, Map.Entry> nearestAnchorEntry = getNearestAnchorEntry((PagingPredicate) predicate);
-            result = getSortedSubList(result, (PagingPredicate) predicate, nearestAnchorEntry);
+            result.orderAndLimit((PagingPredicate) predicate, nearestAnchorEntry);
         }
-        return result;
     }
 
     /**
@@ -71,47 +69,48 @@ public class ParallelPartitionScanExecutor implements PartitionScanExecutor {
         return partitionScanRunner.run(mapName, predicate, partitionId, tableIndex, fetchSize);
     }
 
-    protected List<QueryableEntry> runUsingPartitionScanWithoutPaging(
-            String name, Predicate predicate, Collection<Integer> partitions) {
-
-        List<Future<Collection<QueryableEntry>>> futures = new ArrayList<Future<Collection<QueryableEntry>>>(partitions.size());
+    protected void runUsingPartitionScanWithoutPaging(String name, Predicate predicate, Collection<Integer> partitions,
+                                                      Result result) {
+        List<Future<Result>> futures = new ArrayList<Future<Result>>(partitions.size());
 
         for (Integer partitionId : partitions) {
-            Future<Collection<QueryableEntry>> future = runPartitionScanForPartition(name, predicate, partitionId);
+            Future<Result> future = runPartitionScanForPartition(name, predicate, partitionId, result.createSubResult());
             futures.add(future);
         }
 
-        Collection<Collection<QueryableEntry>> returnedResults = waitForResult(futures, timeoutInMillis);
-        List<QueryableEntry> result = new ArrayList<QueryableEntry>();
-        for (Collection<QueryableEntry> returnedResult : returnedResults) {
-            result.addAll(returnedResult);
+        Collection<Result> subResults = waitForResult(futures, timeoutInMillis);
+        for (Result subResult : subResults) {
+            result.combine(subResult);
         }
-        return result;
     }
 
-    protected Future<Collection<QueryableEntry>> runPartitionScanForPartition(String name, Predicate predicate, int partitionId) {
-        QueryPartitionCallable task = new QueryPartitionCallable(name, predicate, partitionId);
+    protected Future<Result> runPartitionScanForPartition(String name, Predicate predicate, int partitionId, Result result) {
+        QueryPartitionCallable task = new QueryPartitionCallable(name, predicate, partitionId, result);
         return executor.submit(task);
     }
 
-    private static <T> Collection<Collection<T>> waitForResult(List<Future<Collection<T>>> lsFutures, int timeoutInMillis) {
+    private static Collection<Result> waitForResult(List<Future<Result>> lsFutures, int timeoutInMillis) {
         return returnWithDeadline(lsFutures, timeoutInMillis, MILLISECONDS, RETHROW_EVERYTHING);
     }
 
-    private final class QueryPartitionCallable implements Callable<Collection<QueryableEntry>> {
+    private final class QueryPartitionCallable implements Callable<Result> {
         protected final int partition;
         protected final String name;
         protected final Predicate predicate;
+        protected final Result result;
 
-        private QueryPartitionCallable(String name, Predicate predicate, int partitionId) {
+        private QueryPartitionCallable(String name, Predicate predicate, int partitionId, Result result) {
             this.name = name;
             this.predicate = predicate;
             this.partition = partitionId;
+            this.result = result;
         }
 
         @Override
-        public Collection<QueryableEntry> call() throws Exception {
-            return partitionScanRunner.run(name, predicate, partition);
+        public Result call() {
+            partitionScanRunner.run(name, predicate, partition, result);
+            result.setPartitionIds(Collections.singletonList(partition));
+            return result;
         }
     }
 }

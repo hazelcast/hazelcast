@@ -190,27 +190,30 @@ public class MapQueryEngineImpl implements MapQueryEngine {
     private void addResultsOfPredicate(List<Future<Result>> futures, Result result,
                                        BitSet finishedPartitionIds, boolean rethrowAll) {
         for (Future<Result> future : futures) {
+            Result queryResult = null;
+
             try {
-                Result queryResult = future.get();
-                if (queryResult == null) {
-                    continue;
-                }
-                Collection<Integer> queriedPartitionIds = queryResult.getPartitionIds();
-                if (queriedPartitionIds != null) {
-                    if (!hasAllBitsSet(finishedPartitionIds, queriedPartitionIds)) {
-                        // do not take into account results that contain partition IDs already removed from partitionIds
-                        // collection as this means that we will count results from a single partition twice
-                        // see also https://github.com/hazelcast/hazelcast/issues/6471
-                        continue;
-                    }
-                    BitSetUtils.unsetBits(finishedPartitionIds, queriedPartitionIds);
-                    result.combine(queryResult);
-                }
+                queryResult = future.get();
             } catch (Throwable t) {
                 if (t.getCause() instanceof QueryResultSizeExceededException || rethrowAll) {
                     throw rethrow(t);
                 }
                 logger.fine("Could not get query results", t);
+            }
+
+            if (queryResult == null) {
+                continue;
+            }
+            Collection<Integer> queriedPartitionIds = queryResult.getPartitionIds();
+            if (queriedPartitionIds != null) {
+                if (!hasAllBitsSet(finishedPartitionIds, queriedPartitionIds)) {
+                    // do not take into account results that contain partition IDs already removed from partitionIds
+                    // collection as this means that we will count results from a single partition twice
+                    // see also https://github.com/hazelcast/hazelcast/issues/6471
+                    continue;
+                }
+                BitSetUtils.unsetBits(finishedPartitionIds, queriedPartitionIds);
+                result.combine(queryResult);
             }
         }
     }
