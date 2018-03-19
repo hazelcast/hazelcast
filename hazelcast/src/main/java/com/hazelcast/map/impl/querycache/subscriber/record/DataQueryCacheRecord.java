@@ -24,14 +24,11 @@ import com.hazelcast.spi.serialization.SerializationService;
  */
 class DataQueryCacheRecord extends AbstractQueryCacheRecord {
 
-    private final Data keyData;
-
     private final Data valueData;
 
     private final SerializationService serializationService;
 
-    public DataQueryCacheRecord(Data keyData, Data valueData, SerializationService serializationService) {
-        this.keyData = keyData;
+    public DataQueryCacheRecord(Data valueData, SerializationService serializationService) {
         this.valueData = valueData;
         this.serializationService = serializationService;
     }
@@ -41,8 +38,4 @@ class DataQueryCacheRecord extends AbstractQueryCacheRecord {
         return serializationService.toObject(valueData);
     }
 
-    @Override
-    public final Data getKey() {
-        return keyData;
-    }
 }

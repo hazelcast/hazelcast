@@ -34,7 +34,7 @@ import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
  */
 public class MapPublisherRegistry implements Registry<String, PublisherRegistry> {
 
-    private ConstructorFunction<String, PublisherRegistry> registryConstructorFunction =
+    private final ConstructorFunction<String, PublisherRegistry> registryConstructorFunction =
             new ConstructorFunction<String, PublisherRegistry>() {
                 @Override
                 public PublisherRegistry createNew(String mapName) {
@@ -70,7 +70,7 @@ public class MapPublisherRegistry implements Registry<String, PublisherRegistry>
         return cachePublishersPerIMap.remove(id);
     }
 
-    protected PublisherRegistry createPublisherRegistry(String mapName) {
+    private PublisherRegistry createPublisherRegistry(String mapName) {
         return new PublisherRegistry(context, mapName);
     }
 }

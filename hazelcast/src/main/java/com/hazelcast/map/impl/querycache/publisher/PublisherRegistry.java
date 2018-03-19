@@ -92,7 +92,7 @@ public class PublisherRegistry implements Registry<String, PartitionAccumulatorR
 
         private final AccumulatorFactory accumulatorFactory;
 
-        public PublisherAccumulatorConstructor(AccumulatorInfo info, AccumulatorFactory accumulatorFactory) {
+        PublisherAccumulatorConstructor(AccumulatorInfo info, AccumulatorFactory accumulatorFactory) {
             this.info = info;
             this.accumulatorFactory = accumulatorFactory;
         }
@@ -110,7 +110,7 @@ public class PublisherRegistry implements Registry<String, PartitionAccumulatorR
         return infoSupplier.getAccumulatorInfoOrNull(mapName, cacheId);
     }
 
-    protected PublisherAccumulatorFactory createPublisherAccumulatorFactory() {
+    private PublisherAccumulatorFactory createPublisherAccumulatorFactory() {
         return new PublisherAccumulatorFactory(context);
     }
 }

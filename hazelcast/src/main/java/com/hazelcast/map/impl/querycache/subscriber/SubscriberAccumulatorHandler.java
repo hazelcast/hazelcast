@@ -27,6 +27,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 
 import static com.hazelcast.map.impl.querycache.subscriber.EventPublisherHelper.publishCacheWideEvent;
+import static java.lang.String.format;
 
 /**
  * - Processes accumulated event-data of {@link SubscriberAccumulator}.
@@ -75,6 +76,10 @@ class SubscriberAccumulatorHandler implements AccumulatorHandler<QueryCacheEvent
 
         int eventType = eventData.getEventType();
         EntryEventType entryEventType = EntryEventType.getByType(eventType);
+        if (entryEventType == null) {
+            throwException(format("No matching EntryEventType found for event type id `%d`", eventType));
+        }
+
         switch (entryEventType) {
             case ADDED:
             case UPDATED:
@@ -92,7 +97,7 @@ class SubscriberAccumulatorHandler implements AccumulatorHandler<QueryCacheEvent
                 handleMapWideEvent(eventData, entryEventType, evictAllRemovedEntryCounts);
                 break;
             default:
-                throw new IllegalArgumentException("Not a known type EntryEventType." + entryEventType);
+                throwException(format("Unexpected EntryEventType was found: `%s`", entryEventType));
         }
     }
 
@@ -143,5 +148,9 @@ class SubscriberAccumulatorHandler implements AccumulatorHandler<QueryCacheEvent
             count += removedEntryCounts.get(i).poll();
         }
         return count;
+    }
+
+    private static void throwException(String msg) {
+        throw new IllegalArgumentException(msg);
     }
 }

@@ -28,7 +28,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 /**
  * Internal listener adapter for the listener of a {@code QueryCache}.
  */
-public class InternalQueryCacheListenerAdapter implements ListenerAdapter<IMapEvent> {
+class InternalQueryCacheListenerAdapter implements ListenerAdapter<IMapEvent> {
 
     private final ListenerAdapter[] listenerAdapters;
 

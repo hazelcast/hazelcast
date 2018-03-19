@@ -47,10 +47,11 @@ public abstract class AbstractQueryCacheEndToEndConstructor implements QueryCach
     protected final SubscriberContext subscriberContext;
     protected final ILogger logger = Logger.getLogger(getClass());
 
-    protected Predicate predicate;
     protected boolean includeValue;
     protected InternalQueryCache queryCache;
-    protected String publisherListenerId;
+
+    private Predicate predicate;
+    private String publisherListenerId;
 
     public AbstractQueryCacheEndToEndConstructor(QueryCacheRequest request) {
         this.request = request;
@@ -131,7 +132,7 @@ public abstract class AbstractQueryCacheEndToEndConstructor implements QueryCach
         return context.toObject(data);
     }
 
-    protected QueryCacheConfig initQueryCacheConfig(QueryCacheRequest request) {
+    private QueryCacheConfig initQueryCacheConfig(QueryCacheRequest request) {
         Predicate predicate = request.getPredicate();
 
         QueryCacheConfig queryCacheConfig;
