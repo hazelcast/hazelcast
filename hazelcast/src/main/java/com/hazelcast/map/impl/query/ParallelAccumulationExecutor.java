@@ -65,7 +65,7 @@ public class ParallelAccumulationExecutor implements AccumulationExecutor {
             resultAggregator.onCombinationFinished();
         }
 
-        AggregationResult result = new AggregationResult(resultAggregator);
+        AggregationResult result = new AggregationResult(resultAggregator, serializationService);
         result.setPartitionIds(partitionIds);
         return result;
     }

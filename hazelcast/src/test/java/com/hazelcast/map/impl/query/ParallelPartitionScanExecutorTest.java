@@ -19,11 +19,11 @@ package com.hazelcast.map.impl.query;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.QueryException;
-import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.IterationType;
 import com.hazelcast.util.executor.NamedThreadPoolExecutor;
 import com.hazelcast.util.executor.PoolExecutorThreadFactory;
 import org.junit.Rule;
@@ -43,8 +43,9 @@ import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Matchers.isA;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -54,47 +55,48 @@ public class ParallelPartitionScanExecutorTest {
     public ExpectedException expected = ExpectedException.none();
 
     private ParallelPartitionScanExecutor executor(PartitionScanRunner runner) {
-        PoolExecutorThreadFactory threadFactory
-                = new PoolExecutorThreadFactory(UUID.randomUUID().toString(), currentThread().getContextClassLoader());
-        NamedThreadPoolExecutor pool = new NamedThreadPoolExecutor(UUID.randomUUID().toString(), 1, 1,
-                100, TimeUnit.SECONDS,
-                new LinkedBlockingQueue<Runnable>(100),
-                threadFactory
-        );
+        PoolExecutorThreadFactory threadFactory = new PoolExecutorThreadFactory(UUID.randomUUID().toString(),
+                currentThread().getContextClassLoader());
+        NamedThreadPoolExecutor pool = new NamedThreadPoolExecutor(UUID.randomUUID().toString(), 1, 1, 100, TimeUnit.SECONDS,
+                new LinkedBlockingQueue<Runnable>(100), threadFactory);
         return new ParallelPartitionScanExecutor(runner, pool, 60000);
     }
 
     @Test
-    public void execute_success() throws Exception {
+    public void execute_success() {
         PartitionScanRunner runner = mock(PartitionScanRunner.class);
         ParallelPartitionScanExecutor executor = executor(runner);
         Predicate predicate = Predicates.equal("attribute", 1);
+        QueryResult queryResult = new QueryResult(IterationType.ENTRY, null, null, Long.MAX_VALUE, false);
 
-        List<QueryableEntry> result = executor.execute("Map", predicate, asList(1, 2, 3));
+        executor.execute("Map", predicate, asList(1, 2, 3), queryResult);
+        List<QueryResultRow> result = queryResult.getRows();
         assertEquals(0, result.size());
     }
 
     @Test
-    public void execute_fail() throws Exception {
+    public void execute_fail() {
         PartitionScanRunner runner = mock(PartitionScanRunner.class);
         ParallelPartitionScanExecutor executor = executor(runner);
         Predicate predicate = Predicates.equal("attribute", 1);
+        QueryResult queryResult = new QueryResult(IterationType.ENTRY, null, null, Long.MAX_VALUE, false);
 
-        when(runner.run(anyString(), eq(predicate), anyInt())).thenThrow(new QueryException());
+        doThrow(new QueryException()).when(runner).run(anyString(), eq(predicate), anyInt(), isA(QueryResult.class));
 
         expected.expect(QueryException.class);
-        executor.execute("Map", predicate, asList(1, 2, 3));
+        executor.execute("Map", predicate, asList(1, 2, 3), queryResult);
     }
 
     @Test
-    public void execute_fail_retryable() throws Exception {
+    public void execute_fail_retryable() {
         PartitionScanRunner runner = mock(PartitionScanRunner.class);
         ParallelPartitionScanExecutor executor = executor(runner);
         Predicate predicate = Predicates.equal("attribute", 1);
+        QueryResult queryResult = new QueryResult(IterationType.ENTRY, null, null, Long.MAX_VALUE, false);
 
-        when(runner.run(anyString(), eq(predicate), anyInt())).thenThrow(new RetryableHazelcastException());
+        doThrow(new RetryableHazelcastException()).when(runner).run(anyString(), eq(predicate), anyInt(), isA(QueryResult.class));
 
         expected.expect(RetryableHazelcastException.class);
-        executor.execute("Map", predicate, asList(1, 2, 3));
+        executor.execute("Map", predicate, asList(1, 2, 3), queryResult);
     }
 }
