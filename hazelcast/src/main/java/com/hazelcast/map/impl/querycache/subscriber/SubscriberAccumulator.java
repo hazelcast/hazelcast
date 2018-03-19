@@ -56,6 +56,10 @@ public class SubscriberAccumulator extends BasicAccumulator<QueryCacheEventData>
         this.sequenceProvider = createSequencerProvider();
     }
 
+    public ConcurrentMap<Integer, Long> getBrokenSequences() {
+        return brokenSequences;
+    }
+
     @Override
     public void accumulate(QueryCacheEventData event) {
         if (logger.isFinestEnabled()) {
@@ -186,15 +190,11 @@ public class SubscriberAccumulator extends BasicAccumulator<QueryCacheEventData>
         handler.handle(eventData, false);
     }
 
-    protected SubscriberSequencerProvider createSequencerProvider() {
+    private SubscriberSequencerProvider createSequencerProvider() {
         return new DefaultSubscriberSequencerProvider();
     }
 
-    public ConcurrentMap<Integer, Long> getBrokenSequences() {
-        return brokenSequences;
-    }
-
-    public boolean isEndEvent(QueryCacheEventData event) {
+    private boolean isEndEvent(QueryCacheEventData event) {
         return event.getSequence() == -1L;
     }
 }

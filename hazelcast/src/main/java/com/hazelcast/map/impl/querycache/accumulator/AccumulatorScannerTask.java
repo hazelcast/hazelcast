@@ -125,7 +125,7 @@ public class AccumulatorScannerTask implements Runnable {
 
         private Map<Integer, Queue<Accumulator>> partitionAccumulators;
 
-        public ScannerConsumer() {
+        ScannerConsumer() {
         }
 
         void consume(Accumulator accumulator, int partitionId) {
@@ -141,7 +141,7 @@ public class AccumulatorScannerTask implements Runnable {
             accumulators.add(accumulator);
         }
 
-        public Map<Integer, Queue<Accumulator>> getPartitionAccumulators() {
+        Map<Integer, Queue<Accumulator>> getPartitionAccumulators() {
             return partitionAccumulators;
         }
 

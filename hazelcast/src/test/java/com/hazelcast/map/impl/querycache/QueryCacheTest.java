@@ -17,7 +17,6 @@
 package com.hazelcast.map.impl.querycache;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
@@ -90,10 +89,12 @@ public class QueryCacheTest extends AbstractQueryCacheTestSupport {
 
     @Test
     public void testQueryCache_withLocalListener() {
-        IMap<Integer, Integer> map = getMap(instances[0], mapName);
+        Config config = new Config().setProperty(GroupProperty.PARTITION_COUNT.getName(), "1");
 
-        String cacheName = randomString();
-        config = new Config().setProperty(GroupProperty.PARTITION_COUNT.getName(), "1");
+        QueryCacheConfig queryCacheConfig = new QueryCacheConfig(cacheName);
+        config.getMapConfig(mapName).addQueryCacheConfig(queryCacheConfig);
+
+        IMap<Integer, Integer> map = getIMap(config);
 
         for (int i = 0; i < 30; i++) {
             map.put(i, i);
@@ -139,8 +140,8 @@ public class QueryCacheTest extends AbstractQueryCacheTestSupport {
 
     @Test
     public void testQueryCacheCleared_afterCalling_IMap_evictAll() {
-        String cacheName = randomString();
-        QueryCache<Integer, Employee> queryCache = map.getQueryCache(cacheName, TRUE_PREDICATE, false);
+        final IMap<Integer, Employee> map = getIMapWithDefaultConfig(TRUE_PREDICATE);
+        QueryCache<Integer, Employee> queryCache = map.getQueryCache(cacheName);
 
         populateMap(map, 1000);
 
@@ -157,8 +158,8 @@ public class QueryCacheTest extends AbstractQueryCacheTestSupport {
 
     @Test
     public void testQueryCacheCleared_afterCalling_IMap_clear() {
-        String cacheName = randomString();
-        final QueryCache<Integer, Employee> queryCache = map.getQueryCache(cacheName, TRUE_PREDICATE, false);
+        final IMap<Integer, Employee> map = getIMapWithDefaultConfig(TRUE_PREDICATE);
+        final QueryCache<Integer, Employee> queryCache = map.getQueryCache(cacheName);
 
         populateMap(map, 1000);
 
@@ -176,8 +177,8 @@ public class QueryCacheTest extends AbstractQueryCacheTestSupport {
 
     @Test
     public void testGetName() {
-        String cacheName = "cache-name";
-        QueryCache<Integer, Employee> queryCache = map.getQueryCache(cacheName, TRUE_PREDICATE, false);
+        IMap<Integer, Employee> map = getIMapWithDefaultConfig(TRUE_PREDICATE);
+        QueryCache<Integer, Employee> queryCache = map.getQueryCache(cacheName);
 
         assertEquals(cacheName, queryCache.getName());
     }
@@ -186,7 +187,7 @@ public class QueryCacheTest extends AbstractQueryCacheTestSupport {
     public void testDestroy_emptiesQueryCache() {
         int entryCount = 1000;
         final CountDownLatch numberOfAddEvents = new CountDownLatch(entryCount);
-        String cacheName = randomString();
+        IMap<Integer, Employee> map = getIMapWithDefaultConfig(TRUE_PREDICATE);
         QueryCache<Integer, Employee> queryCache
                 = map.getQueryCache(cacheName, new EntryAddedListener<Integer, Employee>() {
             @Override
@@ -206,8 +207,8 @@ public class QueryCacheTest extends AbstractQueryCacheTestSupport {
 
     @Test(expected = NullPointerException.class)
     public void getAll_throws_exception_when_supplied_keySet_contains_null_key() {
-        String cacheName = "cache-name";
-        QueryCache<Integer, Employee> queryCache = map.getQueryCache(cacheName, TRUE_PREDICATE, false);
+        IMap<Integer, Employee> map = getIMapWithDefaultConfig(TRUE_PREDICATE);
+        QueryCache<Integer, Employee> queryCache = map.getQueryCache(cacheName);
 
         Set<Integer> keySet = new HashSet<Integer>();
         keySet.add(1);
@@ -217,9 +218,27 @@ public class QueryCacheTest extends AbstractQueryCacheTestSupport {
         queryCache.getAll(keySet);
     }
 
+    @Test
+    public void getAll_with_non_existent_keys() {
+        IMap<Integer, Employee> map = getIMapWithDefaultConfig(TRUE_PREDICATE);
+        QueryCache<Integer, Employee> queryCache = map.getQueryCache(cacheName);
+
+        Set<Integer> keySet = new HashSet<Integer>();
+        keySet.add(1);
+        keySet.add(2);
+
+        queryCache.getAll(keySet);
+    }
+
     @SuppressWarnings("unchecked")
     private void testQueryCache(boolean includeValue) {
-        IMap<Integer, Integer> map = getMap(instances[0], mapName);
+        QueryCacheConfig queryCacheConfig = new QueryCacheConfig(cacheName);
+        queryCacheConfig.setIncludeValue(includeValue);
+
+        Config config = new Config();
+        config.getMapConfig(mapName).addQueryCacheConfig(queryCacheConfig);
+
+        IMap<Integer, Integer> map = getIMap(config);
 
         String cacheName = randomString();
 
@@ -237,26 +256,21 @@ public class QueryCacheTest extends AbstractQueryCacheTestSupport {
         assertQueryCacheSizeEventually(expected, cache);
     }
 
-    private void testWithInitialPopulation(boolean enableInitialPopulation, int expectedSize, int numberOfElementsToPut) {
-        String cacheName = randomString();
-        initConfig(mapName, cacheName, enableInitialPopulation);
+    private void testWithInitialPopulation(boolean enableInitialPopulation,
+                                           int expectedSize, int numberOfElementsToPut) {
+
+        QueryCacheConfig queryCacheConfig = new QueryCacheConfig(cacheName);
+        queryCacheConfig.setPopulate(enableInitialPopulation);
+
+        Config config = new Config();
+        config.getMapConfig(mapName).addQueryCacheConfig(queryCacheConfig);
+
+        IMap<Integer, Employee> map = getIMap(config);
 
         populateMap(map, numberOfElementsToPut);
         QueryCache<Integer, Employee> queryCache = map.getQueryCache(cacheName, TRUE_PREDICATE, true);
 
         assertEquals(expectedSize, queryCache.size());
-    }
-
-    private void initConfig(String mapName, String cacheName, boolean enableInitialPopulation) {
-        QueryCacheConfig queryCacheConfig = new QueryCacheConfig(cacheName);
-        queryCacheConfig
-                .setPopulate(enableInitialPopulation)
-                .getPredicateConfig().setImplementation(TRUE_PREDICATE);
-
-        MapConfig mapConfig = new MapConfig(mapName)
-                .addQueryCacheConfig(queryCacheConfig);
-
-        config.addMapConfig(mapConfig);
     }
 
     @SuppressWarnings("SameParameterValue")
