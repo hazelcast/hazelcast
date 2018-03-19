@@ -18,7 +18,6 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.map.EntryBackupProcessor;
-import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.impl.Versioned;
@@ -32,8 +31,7 @@ import java.io.IOException;
  */
 abstract class AbstractMultipleEntryBackupOperation extends MapOperation implements Versioned {
 
-    protected MapEntries responses;
-    protected EntryBackupProcessor backupProcessor;
+    EntryBackupProcessor backupProcessor;
 
     public AbstractMultipleEntryBackupOperation() {
     }
