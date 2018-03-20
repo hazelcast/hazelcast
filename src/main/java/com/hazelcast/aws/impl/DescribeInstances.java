@@ -16,6 +16,7 @@
 
 package com.hazelcast.aws.impl;
 
+import com.hazelcast.aws.exception.AwsConnectionException;
 import com.hazelcast.aws.security.EC2RequestSigner;
 import com.hazelcast.aws.utility.CloudyUtility;
 import com.hazelcast.aws.utility.Environment;
@@ -33,6 +34,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Scanner;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
@@ -51,13 +53,16 @@ import static com.hazelcast.nio.IOUtil.closeResource;
  * for AWS API details.
  */
 public class DescribeInstances {
-
     /**
      * URI to fetch container credentials (when IAM role is enabled)
      *
      * see http://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-iam-roles.html
      */
     public static final String IAM_TASK_ROLE_ENDPOINT = "http://169.254.170.2";
+
+    private static final int MIN_HTTP_CODE_FOR_AWS_ERROR = 400;
+    private static final int MAX_HTTP_CODE_FOR_AWS_ERROR = 600;
+    private static final String UTF8_ENCODING = "UTF-8";
 
     private EC2RequestSigner rs;
     private AwsConfig awsConfig;
@@ -236,12 +241,47 @@ public class DescribeInstances {
     InputStream callService(String endpoint) throws Exception {
         String query = getRequestSigner().getCanonicalizedQueryString(attributes);
         URL url = new URL("https", endpoint, -1, "/?" + query);
+
         HttpURLConnection httpConnection = (HttpURLConnection) (url.openConnection());
         httpConnection.setRequestMethod(Constants.GET);
         httpConnection.setConnectTimeout((int) TimeUnit.SECONDS.toMillis(awsConfig.getConnectionTimeoutSeconds()));
         httpConnection.setDoOutput(false);
         httpConnection.connect();
+
+        checkNoAwsErrors(httpConnection);
+
         return httpConnection.getInputStream();
+    }
+
+    // visible for testing
+    void checkNoAwsErrors(HttpURLConnection httpConnection)
+            throws IOException {
+        int responseCode = httpConnection.getResponseCode();
+        if (isAwsError(responseCode)) {
+            String errorMessage = extractErrorMessage(httpConnection);
+            throw new AwsConnectionException(responseCode, errorMessage);
+        }
+    }
+
+    /**
+     * AWS response codes for client and server errors are specified here:
+     * {@see http://docs.aws.amazon.com/AWSEC2/latest/APIReference/errors-overview.html}.
+     */
+    private static boolean isAwsError(int responseCode) {
+        return responseCode >= MIN_HTTP_CODE_FOR_AWS_ERROR && responseCode < MAX_HTTP_CODE_FOR_AWS_ERROR;
+    }
+
+    private static String extractErrorMessage(HttpURLConnection httpConnection) {
+        InputStream errorStream = httpConnection.getErrorStream();
+        if (errorStream == null) {
+            return "";
+        }
+        return readFrom(errorStream);
+    }
+
+    private static String readFrom(InputStream stream) {
+        Scanner scanner = new Scanner(stream, UTF8_ENCODING).useDelimiter("\\A");
+        return scanner.hasNext() ? scanner.next() : "";
     }
 
     public EC2RequestSigner getRequestSigner() {

@@ -16,6 +16,7 @@
 
 package com.hazelcast.aws.impl;
 
+import com.hazelcast.aws.exception.AwsConnectionException;
 import com.hazelcast.aws.utility.Environment;
 import com.hazelcast.config.AwsConfig;
 import com.hazelcast.config.InvalidConfigurationException;
@@ -27,13 +28,21 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
 import java.net.SocketTimeoutException;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.aws.utility.MetadataUtil.IAM_SECURITY_CREDENTIALS_URI;
 import static com.hazelcast.aws.utility.MetadataUtil.INSTANCE_METADATA_URI;
+import static org.hamcrest.core.StringContains.containsString;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
+import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -95,8 +104,8 @@ public class DescribeInstancesTest {
         doReturn(mockedEnv).when(descriptor).getEnvironment();
         descriptor.fillKeysFromIamRoles();
 
-        Assert.assertEquals("Could not parse access key from IAM role", accessKeyId, awsConfig.getAccessKey());
-        Assert.assertEquals("Could not parse secret key from IAM role", secretAccessKey, awsConfig.getSecretKey());
+        assertEquals("Could not parse access key from IAM role", accessKeyId, awsConfig.getAccessKey());
+        assertEquals("Could not parse secret key from IAM role", secretAccessKey, awsConfig.getSecretKey());
 
         // test when <iam-role></iam-role>
         awsConfig = new AwsConfig();
@@ -107,8 +116,8 @@ public class DescribeInstancesTest {
         doReturn(someDummyIamRole).when(descriptor).retrieveRoleFromURI(roleUri);
         descriptor.fillKeysFromIamRoles();
 
-        Assert.assertEquals("Could not parse access key from IAM role", accessKeyId, awsConfig.getAccessKey());
-        Assert.assertEquals("Could not parse secret key from IAM role", secretAccessKey, awsConfig.getSecretKey());
+        assertEquals("Could not parse access key from IAM role", accessKeyId, awsConfig.getAccessKey());
+        assertEquals("Could not parse secret key from IAM role", secretAccessKey, awsConfig.getSecretKey());
 
         // test when no <iam-role></iam-role> defined, BUT default IAM role has been assigned
         awsConfig = new AwsConfig();
@@ -118,8 +127,8 @@ public class DescribeInstancesTest {
         doReturn(someDummyIamRole).when(descriptor).retrieveRoleFromURI(roleUri);
         descriptor.fillKeysFromIamRoles();
 
-        Assert.assertEquals("Could not parse access key from IAM role", accessKeyId, awsConfig.getAccessKey());
-        Assert.assertEquals("Could not parse secret key from IAM role", secretAccessKey, awsConfig.getSecretKey());
+        assertEquals("Could not parse access key from IAM role", accessKeyId, awsConfig.getAccessKey());
+        assertEquals("Could not parse secret key from IAM role", secretAccessKey, awsConfig.getSecretKey());
 
     }
 
@@ -161,8 +170,8 @@ public class DescribeInstancesTest {
         doReturn(someDummyIamRole).when(descriptor).retrieveRoleFromURI(uri);
         descriptor.fillKeysFromIamRoles();
 
-        Assert.assertEquals("Could not parse access key from IAM role", accessKeyId, awsConfig.getAccessKey());
-        Assert.assertEquals("Could not parse secret key from IAM role", secretAccessKey, awsConfig.getSecretKey());
+        assertEquals("Could not parse access key from IAM role", accessKeyId, awsConfig.getAccessKey());
+        assertEquals("Could not parse secret key from IAM role", secretAccessKey, awsConfig.getSecretKey());
 
     }
 
@@ -201,8 +210,8 @@ public class DescribeInstancesTest {
 
         descriptor.fillKeysFromIamRoles();
 
-        Assert.assertEquals("Could not parse access key from IAM task role", accessKeyId, awsConfig.getAccessKey());
-        Assert.assertEquals("Could not parse secret key from IAM task role", secretAccessKey, awsConfig.getSecretKey());
+        assertEquals("Could not parse access key from IAM task role", accessKeyId, awsConfig.getAccessKey());
+        assertEquals("Could not parse secret key from IAM task role", secretAccessKey, awsConfig.getSecretKey());
 
     }
 
@@ -255,6 +264,79 @@ public class DescribeInstancesTest {
         describeInstances.callService(nonRoutable);
     }
 
+    @Test
+    public void test_CheckNoAwsErrors_NoAwsErrors() throws Exception {
+        // given
+        int httpResponseCode = 200;
+
+        HttpURLConnection httpConnection = mock(HttpURLConnection.class);
+        given(httpConnection.getResponseCode()).willReturn(httpResponseCode);
+
+        AwsConfig awsConfig = new AwsConfig();
+        DescribeInstances describeInstances = new DescribeInstances(awsConfig);
+
+        // when
+        describeInstances.checkNoAwsErrors(httpConnection);
+
+        // then
+        // no exceptions thrown
+    }
+
+    @Test
+    public void test_CheckNoAwsErrors_ConnectionFailed() throws Exception {
+        // given
+        int httpResponseCode = 401;
+        String errorMessage = "Error message retrived from AWS";
+
+        HttpURLConnection httpConnection = mock(HttpURLConnection.class);
+        given(httpConnection.getResponseCode()).willReturn(httpResponseCode);
+        given(httpConnection.getErrorStream()).willReturn(toInputStream(errorMessage));
+
+        AwsConfig awsConfig = new AwsConfig();
+        DescribeInstances describeInstances = new DescribeInstances(awsConfig);
+
+        // when & then
+        try {
+            describeInstances.checkNoAwsErrors(httpConnection);
+            fail("AwsConnectionFailed exception was not thrown");
+        }
+        catch (AwsConnectionException e) {
+            assertEquals(httpResponseCode, e.getHttpReponseCode());
+            assertEquals(errorMessage, e.getErrorMessage());
+            assertThat(e.getMessage(), containsString(Integer.toString(httpResponseCode)));
+            assertThat(e.getMessage(), containsString(errorMessage));
+
+        }
+    }
+
+    private static InputStream toInputStream(String s) throws Exception {
+        return new ByteArrayInputStream(s.getBytes("UTF-8"));
+    }
+
+    @Test
+    public void test_CheckNoAwsErrors_ConnectionFailedAndNullErrorStream() throws Exception {
+        // given
+        int httpResponseCode = 401;
+
+        HttpURLConnection httpConnection = mock(HttpURLConnection.class);
+        given(httpConnection.getResponseCode()).willReturn(httpResponseCode);
+        given(httpConnection.getErrorStream()).willReturn(null);
+
+        AwsConfig awsConfig = new AwsConfig();
+        DescribeInstances describeInstances = new DescribeInstances(awsConfig);
+
+        // when & then
+        try {
+            describeInstances.checkNoAwsErrors(httpConnection);
+            fail("AwsConnectionFailed exception was not thrown");
+        }
+        catch (AwsConnectionException e) {
+            assertEquals(httpResponseCode, e.getHttpReponseCode());
+            assertEquals("", e.getErrorMessage());
+            assertThat(e.getMessage(), containsString(Integer.toString(httpResponseCode)));
+        }
+    }
+
     @Test(timeout = TIMEOUT_FACTOR * CALL_SERVICE_TIMEOUT, expected = InvalidConfigurationException.class)
     public void test_RetrieveMetaData_Timeout() {
         final String nonRoutable = "http://10.255.255.254";
@@ -270,7 +352,7 @@ public class DescribeInstancesTest {
         DescribeInstances describeInstances = new DescribeInstances(awsConfig, awsConfig.getHostHeader());
         Map<String, String> result = describeInstances.execute();
         Assert.assertNotNull(result);
-        Assert.assertEquals(1, result.size());
+        assertEquals(1, result.size());
         String expectedPrivateIp = System.getenv("HZ_TEST_AWS_INSTANCE_PRIVATE_IP");
         Assert.assertNotNull(expectedPrivateIp);
         Assert.assertNotNull(result.get(expectedPrivateIp));
