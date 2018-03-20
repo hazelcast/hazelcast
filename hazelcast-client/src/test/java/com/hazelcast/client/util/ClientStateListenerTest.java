@@ -42,8 +42,8 @@ import static com.hazelcast.core.LifecycleEvent.LifecycleState.CLIENT_CONNECTED;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.CLIENT_DISCONNECTED;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTDOWN;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTING;
+import static com.hazelcast.test.TimeConstants.MINUTE;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -59,7 +59,7 @@ public class ClientStateListenerTest extends ClientTestSupport {
         hazelcastFactory.terminateAll();
     }
 
-    @Test
+    @Test(timeout = MINUTE * 10)
     public void testWithUnusedClientConfig()
             throws InterruptedException {
         ClientConfig clientConfig = new ClientConfig();
@@ -78,7 +78,7 @@ public class ClientStateListenerTest extends ClientTestSupport {
         assertEquals(STARTING, listener.getCurrentState());
     }
 
-    @Test
+    @Test(timeout = MINUTE * 10)
     public void testClientASYNCStartConnected() throws InterruptedException {
         ClientConfig clientConfig = new ClientConfig();
         ClientStateListener listener = new ClientStateListener(clientConfig);
@@ -88,7 +88,7 @@ public class ClientStateListenerTest extends ClientTestSupport {
 
         hazelcastFactory.newHazelcastClient(clientConfig);
 
-        assertTrue(listener.awaitConnected(5, SECONDS));
+        assertTrue(listener.awaitConnected());
 
         assertFalse(listener.awaitDisconnected(1, MILLISECONDS));
 
@@ -101,7 +101,7 @@ public class ClientStateListenerTest extends ClientTestSupport {
         assertEquals(CLIENT_CONNECTED, listener.getCurrentState());
     }
 
-    @Test
+    @Test(timeout = MINUTE * 10)
     public void testClientReconnectModeAsyncConnected() throws InterruptedException {
         ClientConfig clientConfig = new ClientConfig();
         ClientStateListener listener = new ClientStateListener(clientConfig);
@@ -114,7 +114,7 @@ public class ClientStateListenerTest extends ClientTestSupport {
 
         hazelcastInstance.shutdown();
 
-        assertTrue(listener.awaitDisconnected(5, SECONDS));
+        assertTrue(listener.awaitDisconnected());
 
         assertFalse(listener.isConnected());
 
@@ -126,7 +126,7 @@ public class ClientStateListenerTest extends ClientTestSupport {
 
         hazelcastFactory.newHazelcastInstance();
 
-        assertTrue(listener.awaitConnected(5, SECONDS));
+        assertTrue(listener.awaitConnected());
 
         assertTrue(listener.isConnected());
 
@@ -137,7 +137,7 @@ public class ClientStateListenerTest extends ClientTestSupport {
         assertEquals(CLIENT_CONNECTED, listener.getCurrentState());
     }
 
-    @Test
+    @Test(timeout = MINUTE * 10)
     public void testClientReconnectModeAsyncConnectedMultipleThreads() throws InterruptedException {
         int numThreads = 10;
         ExecutorService executor = Executors.newFixedThreadPool(numThreads);
@@ -159,7 +159,7 @@ public class ClientStateListenerTest extends ClientTestSupport {
                 @Override
                 public void run() {
                     try {
-                        assertTrue(listener.awaitDisconnected(5, SECONDS));
+                        assertTrue(listener.awaitDisconnected());
                     } catch (InterruptedException e) {
                         fail("Should not be interrupted");
                     }
@@ -175,7 +175,7 @@ public class ClientStateListenerTest extends ClientTestSupport {
             }));
         }
 
-        FutureUtil.waitWithDeadline(futures, 10, SECONDS);
+        FutureUtil.waitForever(futures);
         assertTrue(FutureUtil.allDone(futures));
 
         hazelcastFactory.newHazelcastInstance();
@@ -186,7 +186,7 @@ public class ClientStateListenerTest extends ClientTestSupport {
                 @Override
                 public void run() {
                     try {
-                        listener.awaitConnected(5, SECONDS);
+                        listener.awaitConnected();
                     } catch (InterruptedException e) {
                         fail("Should not be interrupted");
                     }
@@ -202,11 +202,11 @@ public class ClientStateListenerTest extends ClientTestSupport {
             }));
         }
 
-        FutureUtil.waitWithDeadline(futures, 10, SECONDS);
+        FutureUtil.waitForever(futures);
         assertTrue(FutureUtil.allDone(futures));
     }
 
-    @Test
+    @Test(timeout = MINUTE * 10)
     public void testClientReconnectModeOffDisconnected() throws InterruptedException {
         ClientConfig clientConfig = new ClientConfig();
         final ClientStateListener listener = new ClientStateListener(clientConfig);
@@ -220,7 +220,7 @@ public class ClientStateListenerTest extends ClientTestSupport {
 
         hazelcastFactory.newHazelcastInstance();
 
-        assertTrue(listener.awaitDisconnected(2, SECONDS));
+        assertTrue(listener.awaitDisconnected());
 
         assertFalse(listener.isConnected());
 
@@ -235,7 +235,7 @@ public class ClientStateListenerTest extends ClientTestSupport {
         assertFalse(listener.isStarted());
     }
 
-    @Test
+    @Test(timeout = MINUTE * 10)
     public void testClientConnectedWithTimeout() throws InterruptedException {
         ClientConfig clientConfig = new ClientConfig();
         ClientStateListener listener = new ClientStateListener(clientConfig);
@@ -243,7 +243,7 @@ public class ClientStateListenerTest extends ClientTestSupport {
         hazelcastFactory.newHazelcastInstance();
 
         hazelcastFactory.newHazelcastClient(clientConfig);
-        assertTrue(listener.awaitConnected(30, SECONDS));
+        assertTrue(listener.awaitConnected());
 
         assertFalse(listener.awaitDisconnected(1, MILLISECONDS));
 
@@ -256,7 +256,7 @@ public class ClientStateListenerTest extends ClientTestSupport {
         assertEquals(CLIENT_CONNECTED, listener.getCurrentState());
     }
 
-    @Test
+    @Test(timeout = MINUTE * 10)
     public void testClientConnectedWithoutTimeout() throws InterruptedException {
         ClientConfig clientConfig = new ClientConfig();
         ClientStateListener listener = new ClientStateListener(clientConfig);
@@ -278,7 +278,7 @@ public class ClientStateListenerTest extends ClientTestSupport {
         assertFalse(listener.isShutdown());
     }
 
-    @Test
+    @Test(timeout = MINUTE * 10)
     public void testClientDisconnectedWithTimeout() throws InterruptedException {
         ClientConfig clientConfig = new ClientConfig();
         ClientStateListener listener = new ClientStateListener(clientConfig);
@@ -300,7 +300,7 @@ public class ClientStateListenerTest extends ClientTestSupport {
         assertEquals(SHUTDOWN, listener.getCurrentState());
     }
 
-    @Test
+    @Test(timeout = MINUTE * 10)
     public void testClientDisconnectedWithoutTimeout() throws InterruptedException {
         ClientConfig clientConfig = new ClientConfig();
         ClientStateListener listener = new ClientStateListener(clientConfig);
