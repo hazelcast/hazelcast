@@ -17,6 +17,7 @@
 package com.hazelcast.util.executor;
 
 import com.hazelcast.logging.ILogger;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.lang.reflect.Method;
 import java.util.concurrent.Callable;
@@ -111,6 +112,7 @@ public class LoggingScheduledExecutor extends ScheduledThreadPoolExecutor {
         }
     }
 
+    @SuppressFBWarnings("REC_CATCH_EXCEPTION")
     private boolean trySetRemoveOnCancelPolicy() {
         try {
             Method method = ScheduledThreadPoolExecutor.class.getMethod("setRemoveOnCancelPolicy", Boolean.TYPE);
