@@ -574,14 +574,16 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
 
     @Test
     public void memberListOrder_shouldBeSame_whenMemberRestartedWithSameIdentity() {
-        Config config = new Config();
-        config.setProperty(GroupProperty.MEMBER_LIST_PUBLISH_INTERVAL_SECONDS.getName(), "5");
-        config.setProperty(GroupProperty.MAX_JOIN_SECONDS.getName(), "5");
+        Config configMaster = new Config();
+        configMaster.setProperty(GroupProperty.MEMBER_LIST_PUBLISH_INTERVAL_SECONDS.getName(), "5");
+        // Needed only on master to prevent accepting stale join requests.
+        // See ClusterJoinManager#checkRecentlyJoinedMemberUuidBeforeJoin(target, uuid)
+        configMaster.setProperty(GroupProperty.MAX_JOIN_SECONDS.getName(), "5");
+        final HazelcastInstance hz1 = factory.newHazelcastInstance(configMaster);
 
-        final HazelcastInstance hz1 = factory.newHazelcastInstance(config);
-        final HazelcastInstance hz2 = factory.newHazelcastInstance(config);
-        HazelcastInstance hz3 = factory.newHazelcastInstance(config);
-        HazelcastInstance hz4 = factory.newHazelcastInstance(config);
+        final HazelcastInstance hz2 = factory.newHazelcastInstance();
+        HazelcastInstance hz3 = factory.newHazelcastInstance();
+        HazelcastInstance hz4 = factory.newHazelcastInstance();
 
         assertClusterSize(4, hz2, hz3);
 
@@ -593,7 +595,7 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         assertClusterSizeEventually(3, hz1, hz4);
         assertClusterSize(4, hz2);
 
-        hz3 = newHazelcastInstance(config, "test-instance", new StaticMemberNodeContext(factory, member3));
+        hz3 = newHazelcastInstance(new Config(), "test-instance", new StaticMemberNodeContext(factory, member3));
 
         assertClusterSizeEventually(4, hz1, hz4);
 
