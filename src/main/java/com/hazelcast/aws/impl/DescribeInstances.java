@@ -253,8 +253,6 @@ public class DescribeInstances {
         return httpConnection.getInputStream();
     }
 
-    // TODO: Consider using this check for other connections in the hazelcast-aws project.
-    // TODO: Refactor class to use DI and avoid visible for testing
     // visible for testing
     void checkNoAwsErrors(HttpURLConnection httpConnection)
             throws IOException {
