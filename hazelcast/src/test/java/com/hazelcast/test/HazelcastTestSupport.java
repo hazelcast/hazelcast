@@ -97,6 +97,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeFalse;
+import static org.junit.Assume.assumeTrue;
 
 /**
  * Base class for Hazelcast tests which provides a big number of convenient test methods.
@@ -108,6 +109,8 @@ import static org.junit.Assume.assumeFalse;
  */
 @SuppressWarnings({"unused", "SameParameterValue", "WeakerAccess"})
 public abstract class HazelcastTestSupport {
+
+    private static final boolean EXPECT_DIFFERENT_HASHCODES = (new Object().hashCode() != new Object().hashCode());
 
     public static final int ASSERT_TRUE_EVENTUALLY_TIMEOUT;
 
@@ -1451,5 +1454,13 @@ public abstract class HazelcastTestSupport {
     public static void assumeThatNoJDK6() {
         String javaVersion = System.getProperty("java.version");
         assumeFalse("Java 6 used", javaVersion.startsWith("1.6."));
+    }
+
+    /**
+     * Throws {@link org.junit.AssumptionViolatedException} if two new Objects have the same hashCode (e.g. when running tests
+     * with static hashCode ({@code -XX:hashCode=2}).
+     */
+    public static void assumeDifferentHashCodes() {
+        assumeTrue("Hash codes are equal for different objects", EXPECT_DIFFERENT_HASHCODES);
     }
 }

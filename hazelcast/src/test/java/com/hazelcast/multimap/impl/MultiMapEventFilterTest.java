@@ -25,6 +25,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.test.HazelcastTestSupport.assumeDifferentHashCodes;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -77,6 +78,7 @@ public class MultiMapEventFilterTest {
         assertEquals(multiMapEventFilter.hashCode(), multiMapEventFilter.hashCode());
         assertEquals(multiMapEventFilter.hashCode(), multiMapEventFilterSameAttributes.hashCode());
 
+        assumeDifferentHashCodes();
         assertNotEquals(multiMapEventFilter.hashCode(), multiMapEventFilterOtherIncludeValue.hashCode());
         assertNotEquals(multiMapEventFilter.hashCode(), multiMapEventFilterOtherKey.hashCode());
         assertNotEquals(multiMapEventFilter.hashCode(), multiMapEventFilterDefaultParameters.hashCode());

@@ -76,6 +76,7 @@ public class CacheSimpleConfigTest extends HazelcastTestSupport {
 
     @Test
     public void testEqualsAndHashCode() {
+        assumeDifferentHashCodes();
         CacheSimpleEntryListenerConfig redEntryListenerConfig = new CacheSimpleEntryListenerConfig();
         redEntryListenerConfig.setCacheEntryListenerFactory("red");
         CacheSimpleEntryListenerConfig blackEntryListenerConfig = new CacheSimpleEntryListenerConfig();

@@ -83,6 +83,7 @@ public class MapMaxSizeConfigTest extends HazelcastTestSupport {
 
     @Test
     public void testEquals() {
+        assumeDifferentHashCodes();
         EqualsVerifier.forClass(MaxSizeConfig.class)
                 .allFieldsShouldBeUsedExcept("readOnly")
                 .suppress(Warning.NONFINAL_FIELDS)

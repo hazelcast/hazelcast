@@ -31,6 +31,7 @@ import org.junit.runner.RunWith;
 
 import java.util.Locale;
 
+import static com.hazelcast.test.HazelcastTestSupport.assumeDifferentHashCodes;
 import static org.junit.Assert.assertSame;
 
 /**
@@ -68,6 +69,7 @@ public class MultiMapConfigTest {
 
     @Test
     public void testEqualsAndHashCode() {
+        assumeDifferentHashCodes();
         EqualsVerifier.forClass(MultiMapConfig.class)
                 .allFieldsShouldBeUsedExcept("readOnly")
                 .suppress(Warning.NONFINAL_FIELDS, Warning.NULL_FIELDS)

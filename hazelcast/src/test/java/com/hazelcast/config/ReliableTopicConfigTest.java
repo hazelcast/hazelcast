@@ -31,6 +31,7 @@ import java.util.concurrent.Executor;
 import static com.hazelcast.config.ReliableTopicConfig.DEFAULT_READ_BATCH_SIZE;
 import static com.hazelcast.config.ReliableTopicConfig.DEFAULT_STATISTICS_ENABLED;
 import static com.hazelcast.config.ReliableTopicConfig.DEFAULT_TOPIC_OVERLOAD_POLICY;
+import static com.hazelcast.test.HazelcastTestSupport.assumeDifferentHashCodes;
 import static com.hazelcast.topic.TopicOverloadPolicy.DISCARD_NEWEST;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
@@ -228,6 +229,7 @@ public class ReliableTopicConfigTest {
 
     @Test
     public void testEqualsAndHashCode() {
+        assumeDifferentHashCodes();
         EqualsVerifier.forClass(ReliableTopicConfig.class)
                 .allFieldsShouldBeUsed()
                 .suppress(Warning.NULL_FIELDS, Warning.NONFINAL_FIELDS)
