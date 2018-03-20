@@ -112,7 +112,7 @@ public final class GroupProperty {
      * With this property, client has a window to connect back and prevent cleaning up its resources.
      */
     public static final HazelcastProperty CLIENT_ENDPOINT_REMOVE_DELAY_SECONDS
-            = new HazelcastProperty("hazelcast.client.endpoint.remove.delay.seconds", 10);
+            = new HazelcastProperty("hazelcast.client.endpoint.remove.delay.seconds", 60);
     /**
      * Number of threads for the {@link com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl} executor.
      * The executor is responsible for executing the events. If you process a lot of events and have many cores, setting
