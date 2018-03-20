@@ -49,7 +49,7 @@ abstract class AbstractMultipleEntryBackupOperation extends MapOperation impleme
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         // RU_COMPAT_3_9
-        if (out.getVersion().isLessThan(Versions.V3_10)) {
+        if (out.getVersion().isUnknownOrLessThan(Versions.V3_10)) {
             out.writeInt(0);
         }
     }
@@ -58,8 +58,16 @@ abstract class AbstractMultipleEntryBackupOperation extends MapOperation impleme
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         // RU_COMPAT_3_9
-        if (in.getVersion().isLessThan(Versions.V3_10)) {
-            in.readInt();
+        if (in.getVersion().isUnknownOrLessThan(Versions.V3_10)) {
+            final int size = in.readInt();
+            for (int i = 0; i < size; i++) {
+                // key
+                in.readData();
+                // value
+                in.readData();
+                // event type
+                in.readInt();
+            }
         }
     }
 }
