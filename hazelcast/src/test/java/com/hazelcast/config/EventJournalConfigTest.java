@@ -22,6 +22,9 @@ import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import nl.jqno.equalsverifier.EqualsVerifier;
 import nl.jqno.equalsverifier.Warning;
+
+import static com.hazelcast.test.HazelcastTestSupport.assumeDifferentHashCodes;
+
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -57,6 +60,7 @@ public class EventJournalConfigTest {
 
     @Test
     public void testEqualsAndHashCode() {
+        assumeDifferentHashCodes();
         EqualsVerifier.forClass(EventJournalConfig.class)
                 .suppress(Warning.NONFINAL_FIELDS)
                 .verify();

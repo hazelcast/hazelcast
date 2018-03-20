@@ -26,6 +26,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.test.HazelcastTestSupport.assumeDifferentHashCodes;
 import static com.hazelcast.version.MemberVersion.MAJOR_MINOR_VERSION_COMPARATOR;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -139,6 +140,7 @@ public class MemberVersionTest {
         assertEquals(version.hashCode(), version.hashCode());
         assertEquals(version.hashCode(), versionSameAttributes.hashCode());
 
+        assumeDifferentHashCodes();
         assertNotEquals(version.hashCode(), versionOtherMajor.hashCode());
         assertNotEquals(version.hashCode(), versionOtherMinor.hashCode());
         assertNotEquals(version.hashCode(), versionOtherPath.hashCode());

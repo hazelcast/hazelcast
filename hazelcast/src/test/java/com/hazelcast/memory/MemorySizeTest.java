@@ -18,12 +18,16 @@ package com.hazelcast.memory;
 
 import nl.jqno.equalsverifier.EqualsVerifier;
 import nl.jqno.equalsverifier.Warning;
+
+import static com.hazelcast.test.HazelcastTestSupport.assumeDifferentHashCodes;
+
 import org.junit.Test;
 
 public class MemorySizeTest {
 
     @Test
     public void testEqualsAndHashCode() {
+        assumeDifferentHashCodes();
         EqualsVerifier.forClass(MemorySize.class)
                 .allFieldsShouldBeUsed()
                 .suppress(Warning.NONFINAL_FIELDS)

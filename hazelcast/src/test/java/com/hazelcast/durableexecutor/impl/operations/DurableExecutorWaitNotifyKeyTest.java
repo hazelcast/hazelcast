@@ -24,6 +24,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.test.HazelcastTestSupport.assumeDifferentHashCodes;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 
@@ -64,6 +65,7 @@ public class DurableExecutorWaitNotifyKeyTest {
         assertEquals(notifyKey.hashCode(), notifyKey.hashCode());
         assertEquals(notifyKey.hashCode(), notifyKeySameAttributes.hashCode());
 
+        assumeDifferentHashCodes();
         assertNotEquals(notifyKey.hashCode(), notifyKeyOtherUniqueId.hashCode());
         assertNotEquals(notifyKey.hashCode(), notifyKeyOtherName.hashCode());
     }

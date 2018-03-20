@@ -233,6 +233,7 @@ public class LoggingScheduledExecutorTest extends HazelcastTestSupport {
         assertNotEquals(future1, null);
 
         assertEquals(future1.hashCode(), future1.hashCode());
+        assumeDifferentHashCodes();
         assertNotEquals(future1.hashCode(), future2.hashCode());
     }
 

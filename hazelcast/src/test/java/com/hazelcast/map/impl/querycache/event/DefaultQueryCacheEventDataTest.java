@@ -26,6 +26,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.test.HazelcastTestSupport.assumeDifferentHashCodes;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
@@ -216,6 +217,7 @@ public class DefaultQueryCacheEventDataTest {
         assertEquals(queryCacheEventData.hashCode(), queryCacheEventData.hashCode());
         assertEquals(queryCacheEventData.hashCode(), queryCacheEventDataSameAttributes.hashCode());
 
+        assumeDifferentHashCodes();
         assertNotEquals(queryCacheEventData.hashCode(), queryCacheEventDataOtherSequence.hashCode());
         assertNotEquals(queryCacheEventData.hashCode(), queryCacheEventDataOtherEventType.hashCode());
         assertNotEquals(queryCacheEventData.hashCode(), queryCacheEventDataOtherPartitionId.hashCode());

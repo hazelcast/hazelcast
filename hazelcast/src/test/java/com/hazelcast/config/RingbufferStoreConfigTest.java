@@ -36,6 +36,7 @@ import org.junit.runner.RunWith;
 import java.util.Properties;
 
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
+import static com.hazelcast.test.HazelcastTestSupport.assumeDifferentHashCodes;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -110,6 +111,7 @@ public class RingbufferStoreConfigTest {
 
     @Test
     public void testEqualsAndHashCode() {
+        assumeDifferentHashCodes();
         EqualsVerifier.forClass(RingbufferStoreConfig.class)
                 .allFieldsShouldBeUsedExcept("readOnly")
                 .suppress(Warning.NONFINAL_FIELDS)

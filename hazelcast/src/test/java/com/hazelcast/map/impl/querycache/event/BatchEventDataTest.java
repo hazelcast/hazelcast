@@ -166,6 +166,7 @@ public class BatchEventDataTest extends HazelcastTestSupport {
 
         assertEquals(batchEventData.hashCode(), batchEventDataOtherSource.hashCode());
         assertEquals(batchEventData.hashCode(), batchEventDataOtherPartitionId.hashCode());
+        assumeDifferentHashCodes();
         assertNotEquals(batchEventData.hashCode(), batchEventDataOtherEvent.hashCode());
         assertNotEquals(batchEventData.hashCode(), batchEventDataNoEvent.hashCode());
     }

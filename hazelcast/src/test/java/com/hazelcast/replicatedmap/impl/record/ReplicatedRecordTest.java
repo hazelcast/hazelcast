@@ -24,6 +24,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.test.HazelcastTestSupport.assumeDifferentHashCodes;
 import static com.hazelcast.test.HazelcastTestSupport.sleepAtLeastMillis;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -180,6 +181,7 @@ public class ReplicatedRecordTest {
         assertEquals(replicatedRecord.hashCode(), replicatedRecord.hashCode());
         assertEquals(replicatedRecord.hashCode(), replicatedRecordSameAttributes.hashCode());
 
+        assumeDifferentHashCodes();
         assertNotEquals(replicatedRecord.hashCode(), replicatedRecordOtherKey.hashCode());
         assertNotEquals(replicatedRecord.hashCode(), replicatedRecordOtherValue.hashCode());
         assertNotEquals(replicatedRecord.hashCode(), replicatedRecordOtherTtl.hashCode());

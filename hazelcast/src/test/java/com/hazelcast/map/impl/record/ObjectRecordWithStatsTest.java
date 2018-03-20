@@ -25,6 +25,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.test.HazelcastTestSupport.assumeDifferentHashCodes;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.mockito.Mockito.mock;
@@ -104,6 +105,7 @@ public class ObjectRecordWithStatsTest {
         assertEquals(record.hashCode(), record.hashCode());
         assertEquals(record.hashCode(), recordSameAttributes.hashCode());
 
+        assumeDifferentHashCodes();
         assertNotEquals(record.hashCode(), dataRecord.hashCode());
         assertNotEquals(record.hashCode(), recordOtherLastStoredTime.hashCode());
         assertNotEquals(record.hashCode(), recordOtherExpirationTime.hashCode());
