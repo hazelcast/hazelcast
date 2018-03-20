@@ -74,7 +74,7 @@ public class ScriptExecutorOperation extends AbstractManagementOperation impleme
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeUTF(engineName);
         out.writeUTF(script);
-        if (out.getVersion().isLessThan(V3_10)) {
+        if (out.getVersion().isUnknownOrLessThan(V3_10)) {
             out.writeInt(0);
         }
     }
@@ -83,7 +83,7 @@ public class ScriptExecutorOperation extends AbstractManagementOperation impleme
     protected void readInternal(ObjectDataInput in) throws IOException {
         engineName = in.readUTF();
         script = in.readUTF();
-        if (in.getVersion().isLessThan(V3_10)) {
+        if (in.getVersion().isUnknownOrLessThan(V3_10)) {
             in.readInt();
         }
     }
