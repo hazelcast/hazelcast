@@ -216,7 +216,7 @@ public class ClientMapTest extends HazelcastTestSupport {
         IMap<Long, String> map = client.getMap("flushMap");
         map.put(1L, "value");
         map.flush();
-        assertOpenEventually(flushMapStore.latch, 5);
+        assertOpenEventually(flushMapStore.latch);
     }
 
     @Test
@@ -362,7 +362,7 @@ public class ClientMapTest extends HazelcastTestSupport {
             }
         }.start();
 
-        assertTrue(latch.await(20, TimeUnit.SECONDS));
+        assertOpenEventually(latch);
         assertEquals("value1", map.get("key1"));
         assertEquals("value2", map.get("key2"));
         map.forceUnlock("key1");
@@ -448,7 +448,7 @@ public class ClientMapTest extends HazelcastTestSupport {
                 latch.countDown();
             }
         }.start();
-        assertTrue(latch.await(5, TimeUnit.SECONDS));
+        assertOpenEventually(latch);
         assertEquals("value1", map.get("key1"));
         map.forceUnlock("key1");
     }
@@ -471,7 +471,7 @@ public class ClientMapTest extends HazelcastTestSupport {
                 }
             }
         }.start();
-        assertTrue(latch.await(100, TimeUnit.SECONDS));
+        assertOpenEventually(latch);
         assertTrue(map.isLocked("key1"));
 
         final CountDownLatch latch2 = new CountDownLatch(1);
@@ -489,7 +489,7 @@ public class ClientMapTest extends HazelcastTestSupport {
         }.start();
         Thread.sleep(1000);
         map.unlock("key1");
-        assertTrue(latch2.await(100, TimeUnit.SECONDS));
+        assertOpenEventually(latch2);
         assertTrue(map.isLocked("key1"));
         map.forceUnlock("key1");
     }
@@ -507,7 +507,7 @@ public class ClientMapTest extends HazelcastTestSupport {
                 latch.countDown();
             }
         }.start();
-        assertTrue(latch.await(100, TimeUnit.SECONDS));
+        assertOpenEventually(latch);
         assertFalse(map.isLocked("key1"));
     }
 
@@ -592,7 +592,7 @@ public class ClientMapTest extends HazelcastTestSupport {
         };
 
         map.submitToKey(1, new IncrementerEntryProcessor(), executionCallback);
-        assertTrue(latch.await(5, TimeUnit.SECONDS));
+        assertOpenEventually(latch);
         assertEquals(2, result.get());
 
         int actual = map.get(1);
@@ -645,10 +645,10 @@ public class ClientMapTest extends HazelcastTestSupport {
         map.remove("key1");
         map.remove("key3");
 
-        assertTrue(latch1Add.await(10, TimeUnit.SECONDS));
-        assertTrue(latch1Remove.await(10, TimeUnit.SECONDS));
-        assertTrue(latch2Add.await(5, TimeUnit.SECONDS));
-        assertTrue(latch2Remove.await(5, TimeUnit.SECONDS));
+        assertOpenEventually(latch1Add);
+        assertOpenEventually(latch1Remove);
+        assertOpenEventually(latch2Add);
+        assertOpenEventually(latch2Remove);
     }
 
     @Test
@@ -792,12 +792,12 @@ public class ClientMapTest extends HazelcastTestSupport {
         clientMap.put(2, new Deal(1));
         clientMap.evictAll();
 
-        assertTrue(gateAdd.await(10, TimeUnit.SECONDS));
-        assertTrue(gateRemove.await(10, TimeUnit.SECONDS));
-        assertTrue(gateEvict.await(10, TimeUnit.SECONDS));
-        assertTrue(gateUpdate.await(10, TimeUnit.SECONDS));
-        assertTrue(gateClearAll.await(10, TimeUnit.SECONDS));
-        assertTrue(gateEvictAll.await(10, TimeUnit.SECONDS));
+        assertOpenEventually(gateAdd);
+        assertOpenEventually(gateRemove);
+        assertOpenEventually(gateEvict);
+        assertOpenEventually(gateUpdate);
+        assertOpenEventually(gateClearAll);
+        assertOpenEventually(gateEvictAll);
     }
 
     @Test
@@ -837,7 +837,7 @@ public class ClientMapTest extends HazelcastTestSupport {
 
         serverMap.put("A", "B");
         clientMap.delete("A");
-        assertOpenEventually(latch, 10);
+        assertOpenEventually(latch);
     }
 
     protected ClientConfig getClientConfig() {
