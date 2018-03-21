@@ -82,13 +82,23 @@ public class CacheReadWriteThroughTest extends HazelcastTestSupport {
         return instance;
     }
 
+    /**
+     * Hook for adding additional setup steps in child classes.
+     */
+    protected void onSetup() {
+    }
+
     @Before
     public void setup() {
+        onSetup();
         factory = createInstanceFactory(2);
         hz = getInstance();
         cachingProvider = createCachingProvider(hz);
     }
 
+    /**
+     * Hook for adding additional teardown steps in child classes.
+     */
     protected void onTearDown() {
     }
 
