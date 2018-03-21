@@ -26,11 +26,10 @@ public interface QueryCacheRecordFactory {
     /**
      * Creates new {@link QueryCacheRecord}.
      *
-     * @param key   {@link Data} key
      * @param value {@link Data} value
      * @return an instance of {@link QueryCacheRecord}
      */
-    QueryCacheRecord createEntry(Data key, Data value);
+    QueryCacheRecord createRecord(Data value);
 
     boolean isEquals(Object cacheRecordValue, Object value);
 }

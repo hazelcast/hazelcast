@@ -298,9 +298,10 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
         for (K key : keys) {
             Data keyData = toData(key);
             QueryCacheRecord record = recordStore.get(keyData);
-            Object valueInRecord = record.getValue();
-            V value = toObject(valueInRecord);
-            map.put(key, value);
+            if (record != null) {
+                V value = toObject(record.getValue());
+                map.put(key, value);
+            }
         }
         return map;
     }
