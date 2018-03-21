@@ -21,6 +21,7 @@ import com.hazelcast.core.IMapEvent;
 import com.hazelcast.core.MapEvent;
 import com.hazelcast.core.Member;
 import com.hazelcast.map.EventLostEvent;
+import com.hazelcast.map.QueryCache;
 import com.hazelcast.map.impl.DataAwareEntryEvent;
 import com.hazelcast.map.impl.EntryEventFilter;
 import com.hazelcast.map.impl.event.EventData;
@@ -45,7 +46,7 @@ public final class EventPublisherHelper {
      * Publishes event upon a change on a key in {@code QueryCache}.
      *
      * @param mapName      the name of underlying map.
-     * @param cacheId    the name of {@code QueryCache}
+     * @param cacheId      the name of {@code QueryCache}
      * @param dataKey      the key in {@code Data} format.
      * @param dataNewValue the value in {@code Data} format.
      * @param oldRecord    the relevant {@code QueryCacheEntry}
@@ -53,10 +54,11 @@ public final class EventPublisherHelper {
      */
     static void publishEntryEvent(QueryCacheContext context, String mapName, String cacheId, Data dataKey, Data dataNewValue,
                                   QueryCacheRecord oldRecord, EntryEventType eventType) {
-        QueryCacheEventService eventService = getQueryCacheEventService(context);
-        if (!eventService.hasListener(mapName, cacheId)) {
+        if (!hasListener(context, mapName, cacheId)) {
             return;
         }
+
+        QueryCacheEventService eventService = getQueryCacheEventService(context);
 
         Object oldValue = getOldValue(oldRecord);
 
@@ -65,14 +67,37 @@ public final class EventPublisherHelper {
         eventService.publish(mapName, cacheId, eventData, dataKey.hashCode());
     }
 
-    static void publishCacheWideEvent(QueryCacheContext context, String mapName, String cacheId,
-                                      int numberOfEntriesAffected, EntryEventType eventType) {
+    public static boolean hasListener(QueryCache queryCache) {
+        DefaultQueryCache defaultQueryCache = (DefaultQueryCache) queryCache;
+
+        QueryCacheEventService eventService = getQueryCacheEventService(defaultQueryCache.context);
+        return eventService.hasListener(defaultQueryCache.mapName, defaultQueryCache.cacheId);
+    }
+
+    private static boolean hasListener(QueryCacheContext context, String mapName, String cacheId) {
         QueryCacheEventService eventService = getQueryCacheEventService(context);
-        if (!eventService.hasListener(mapName, cacheId)) {
+        return eventService.hasListener(mapName, cacheId);
+    }
+
+    /**
+     * As a result of map-wide events like {@link EntryEventType#CLEAR_ALL} or {@link EntryEventType#EVICT_ALL}
+     * we also publish a matching event for query-cache listeners.
+     */
+    static void publishCacheWideEvent(QueryCache queryCache, int numberOfEntriesAffected, EntryEventType eventType) {
+        if (!hasListener(queryCache)) {
             return;
         }
 
-        LocalCacheWideEventData eventData = new LocalCacheWideEventData(cacheId, eventType.getType(), numberOfEntriesAffected);
+        DefaultQueryCache defaultQueryCache = (DefaultQueryCache) queryCache;
+        QueryCacheContext context = defaultQueryCache.context;
+        String mapName = defaultQueryCache.mapName;
+        String cacheId = defaultQueryCache.cacheId;
+
+        QueryCacheEventService eventService = getQueryCacheEventService(context);
+
+        LocalCacheWideEventData eventData
+                = new LocalCacheWideEventData(cacheId, eventType.getType(), numberOfEntriesAffected);
+
         eventService.publish(mapName, cacheId, eventData, cacheId.hashCode());
     }
 
