@@ -84,6 +84,25 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
             // 2. Populate non-global partitioned indexes.
             populateIndexes(event, TargetIndexes.NON_GLOBAL);
         }
+
+        flushAndRemoveQueryCaches(event);
+    }
+
+    /**
+     * Flush and remove query cache on this source partition.
+     */
+    private void flushAndRemoveQueryCaches(PartitionMigrationEvent event) {
+        if (event.getMigrationEndpoint() != MigrationEndpoint.SOURCE) {
+            return;
+        }
+
+        QueryCacheContext queryCacheContext = mapServiceContext.getQueryCacheContext();
+        PublisherContext publisherContext = queryCacheContext.getPublisherContext();
+
+        int partitionId = event.getPartitionId();
+
+        flushAccumulator(publisherContext, partitionId);
+        removeAccumulator(publisherContext, partitionId);
     }
 
     @Override
@@ -144,15 +163,6 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
             recordStore.startLoading();
         }
         mapServiceContext.reloadOwnedPartitions();
-
-        QueryCacheContext queryCacheContext = mapServiceContext.getQueryCacheContext();
-        PublisherContext publisherContext = queryCacheContext.getPublisherContext();
-
-        if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
-            int partitionId = event.getPartitionId();
-            flushAccumulator(publisherContext, partitionId);
-            removeAccumulator(publisherContext, partitionId);
-        }
     }
 
     @Override
