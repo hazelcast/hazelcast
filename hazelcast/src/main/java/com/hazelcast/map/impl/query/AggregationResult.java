@@ -54,6 +54,12 @@ public class AggregationResult implements Result<AggregationResult>, IdentifiedD
     }
 
     @Override
+    public void add(Object o) {
+        aggregator.accumulate(o);
+     //   System.out.println(aggregator);
+    }
+
+    @Override
     public void combine(AggregationResult result) {
         Collection<Integer> otherPartitionIds = result.getPartitionIds();
         if (otherPartitionIds == null) {

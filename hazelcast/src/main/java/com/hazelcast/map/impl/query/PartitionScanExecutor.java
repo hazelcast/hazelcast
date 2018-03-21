@@ -29,7 +29,7 @@ import java.util.Collection;
  */
 public interface PartitionScanExecutor {
 
-    Collection<QueryableEntry> execute(String mapName, Predicate predicate, Collection<Integer> partitions);
+    void execute(String mapName, Predicate predicate, Collection<Integer> partitions, Result result);
 
     /**
      * Executes the predicate on a partition chunk. The offset in the partition is defined by the {@code tableIndex}

@@ -53,13 +53,15 @@ public class ParallelPartitionScanExecutor implements PartitionScanExecutor {
     }
 
     @Override
-    public List<QueryableEntry> execute(String mapName, Predicate predicate, Collection<Integer> partitions) {
-        List<QueryableEntry> result = runUsingPartitionScanWithoutPaging(mapName, predicate, partitions);
-        if (predicate instanceof PagingPredicate) {
-            Map.Entry<Integer, Map.Entry> nearestAnchorEntry = getNearestAnchorEntry((PagingPredicate) predicate);
-            result = getSortedSubList(result, (PagingPredicate) predicate, nearestAnchorEntry);
-        }
-        return result;
+    public void execute(String mapName, Predicate predicate, Collection<Integer> partitions, Result result) {
+//        List<QueryableEntry> result = runUsingPartitionScanWithoutPaging(mapName, predicate, partitions);
+//        if (predicate instanceof PagingPredicate) {
+//            Map.Entry<Integer, Map.Entry> nearestAnchorEntry = getNearestAnchorEntry((PagingPredicate) predicate);
+//            result = getSortedSubList(result, (PagingPredicate) predicate, nearestAnchorEntry);
+//        }
+//        return result;
+
+        throw new RuntimeException();
     }
 
     /**
@@ -111,7 +113,8 @@ public class ParallelPartitionScanExecutor implements PartitionScanExecutor {
 
         @Override
         public Collection<QueryableEntry> call() throws Exception {
-            return partitionScanRunner.run(name, predicate, partition);
+           // return partitionScanRunner.run(name, predicate, partition);
+            throw new RuntimeException();
         }
     }
 }

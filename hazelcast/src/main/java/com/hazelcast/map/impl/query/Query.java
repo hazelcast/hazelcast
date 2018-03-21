@@ -61,6 +61,10 @@ public class Query implements IdentifiedDataSerializable {
         return mapName;
     }
 
+    public Result createResult(){
+        return isAggregationQuery() ? new AggregationResult(getAggregator()) : new QueryResult();
+    }
+
     public Predicate getPredicate() {
         return predicate;
     }

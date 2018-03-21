@@ -75,9 +75,8 @@ public class PartitionScanRunner {
     }
 
     @SuppressWarnings("unchecked")
-    public Collection<QueryableEntry> run(String mapName, Predicate predicate, int partitionId) {
+    public void run(String mapName, Predicate predicate, int partitionId, Result result) {
         PagingPredicate pagingPredicate = predicate instanceof PagingPredicate ? (PagingPredicate) predicate : null;
-        List<QueryableEntry> resultList = new LinkedList<QueryableEntry>();
 
         PartitionContainer partitionContainer = mapServiceContext.getPartitionContainer(partitionId);
         MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
@@ -97,10 +96,10 @@ public class PartitionScanRunner {
             QueryableEntry queryEntry = new LazyMapEntry(key, value, serializationService, extractors);
 
             if (predicate.apply(queryEntry) && compareAnchor(pagingPredicate, queryEntry, nearestAnchorEntry)) {
-                resultList.add(queryEntry);
+                result.add(queryEntry);
             }
         }
-        return getSortedSubList(resultList, pagingPredicate, nearestAnchorEntry);
+
     }
 
     /**

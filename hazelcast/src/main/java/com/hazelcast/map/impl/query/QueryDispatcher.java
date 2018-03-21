@@ -98,6 +98,7 @@ final class QueryDispatcher {
         List<Future<Result>> futures = new ArrayList<Future<Result>>(members.size());
         for (Member member : members) {
             Operation operation = createQueryOperation(query, clusterService.getClusterVersion());
+            System.out.println(operation.getClass());
             Future<Result> future = operationService.invokeOnTarget(
                     MapService.SERVICE_NAME, operation, member.getAddress());
             futures.add(future);

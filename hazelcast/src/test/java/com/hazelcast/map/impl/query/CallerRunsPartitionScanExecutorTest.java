@@ -46,38 +46,38 @@ public class CallerRunsPartitionScanExecutorTest {
 
     @Rule
     public ExpectedException expected = ExpectedException.none();
-
-    @Test
-    public void execute_success() throws Exception {
-        PartitionScanRunner runner = mock(PartitionScanRunner.class);
-        CallerRunsPartitionScanExecutor executor = new CallerRunsPartitionScanExecutor(runner);
-        Predicate predicate = Predicates.equal("attribute", 1);
-
-        Collection<QueryableEntry> result = executor.execute("Map", predicate, asList(1, 2, 3));
-        assertEquals(0, result.size());
-    }
-
-    @Test
-    public void execute_fail() throws Exception {
-        PartitionScanRunner runner = mock(PartitionScanRunner.class);
-        CallerRunsPartitionScanExecutor executor = new CallerRunsPartitionScanExecutor(runner);
-        Predicate predicate = Predicates.equal("attribute", 1);
-
-        when(runner.run(anyString(), eq(predicate), anyInt())).thenThrow(new QueryException());
-
-        expected.expect(QueryException.class);
-        executor.execute("Map", predicate, asList(1, 2, 3));
-    }
-
-    @Test
-    public void execute_fail_retryable() throws Exception {
-        PartitionScanRunner runner = mock(PartitionScanRunner.class);
-        CallerRunsPartitionScanExecutor executor = new CallerRunsPartitionScanExecutor(runner);
-        Predicate predicate = Predicates.equal("attribute", 1);
-
-        when(runner.run(anyString(), eq(predicate), anyInt())).thenThrow(new RetryableHazelcastException());
-
-        expected.expect(RetryableHazelcastException.class);
-        executor.execute("Map", predicate, asList(1, 2, 3));
-    }
+//
+//    @Test
+//    public void execute_success() throws Exception {
+//        PartitionScanRunner runner = mock(PartitionScanRunner.class);
+//        CallerRunsPartitionScanExecutor executor = new CallerRunsPartitionScanExecutor(runner);
+//        Predicate predicate = Predicates.equal("attribute", 1);
+//
+//        Collection<QueryableEntry> result = executor.execute("Map", predicate, asList(1, 2, 3));
+//        assertEquals(0, result.size());
+//    }
+//
+//    @Test
+//    public void execute_fail() throws Exception {
+//        PartitionScanRunner runner = mock(PartitionScanRunner.class);
+//        CallerRunsPartitionScanExecutor executor = new CallerRunsPartitionScanExecutor(runner);
+//        Predicate predicate = Predicates.equal("attribute", 1);
+//
+//        when(runner.run(anyString(), eq(predicate), anyInt())).thenThrow(new QueryException());
+//
+//        expected.expect(QueryException.class);
+//        executor.execute("Map", predicate, asList(1, 2, 3));
+//    }
+//
+//    @Test
+//    public void execute_fail_retryable() throws Exception {
+//        PartitionScanRunner runner = mock(PartitionScanRunner.class);
+//        CallerRunsPartitionScanExecutor executor = new CallerRunsPartitionScanExecutor(runner);
+//        Predicate predicate = Predicates.equal("attribute", 1);
+//
+//        when(runner.run(anyString(), eq(predicate), anyInt())).thenThrow(new RetryableHazelcastException());
+//
+//        expected.expect(RetryableHazelcastException.class);
+//        executor.execute("Map", predicate, asList(1, 2, 3));
+//    }
 }
