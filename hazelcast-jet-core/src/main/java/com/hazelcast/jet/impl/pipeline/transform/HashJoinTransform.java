@@ -105,7 +105,7 @@ public class HashJoinTransform<T0, R> extends AbstractTransform {
         DistributedTriFunction mapToOutputTriFn = this.mapToOutputTriFn;
         Vertex joiner = p.addVertex(this, namePrefix + "-joiner", localParallelism(),
                 () -> new HashJoinP<>(keyFns, tags, mapToOutputBiFn, mapToOutputTriFn)).v;
-        p.dag.edge(from(primary.v, primary.availableOrdinal++).to(joiner, 0));
+        p.dag.edge(from(primary.v, primary.nextAvailableOrdinal()).to(joiner, 0));
 
         String collectorName = namePrefix + "-collector";
         int collectorOrdinal = 1;
@@ -119,7 +119,7 @@ public class HashJoinTransform<T0, R> extends AbstractTransform {
             Vertex collector = p.dag.newVertex(collectorName + collectorOrdinal,
                     () -> new HashJoinCollectP(getKeyFn, projectFn));
             collector.localParallelism(1);
-            p.dag.edge(from(fromPv.v, fromPv.availableOrdinal++)
+            p.dag.edge(from(fromPv.v, fromPv.nextAvailableOrdinal())
                     .to(collector, 0)
                     .distributed().broadcast());
             p.dag.edge(from(collector, 0)

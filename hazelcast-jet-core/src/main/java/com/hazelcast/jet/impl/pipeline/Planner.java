@@ -127,7 +127,7 @@ public class Planner {
         int destOrdinal = 0;
         for (Transform fromTransform : transform.upstream()) {
             PlannerVertex fromPv = xform2vertex.get(fromTransform);
-            Edge edge = from(fromPv.v, fromPv.availableOrdinal++).to(toVertex, destOrdinal);
+            Edge edge = from(fromPv.v, fromPv.nextAvailableOrdinal()).to(toVertex, destOrdinal);
             dag.edge(edge);
             configureEdgeFn.accept(edge, destOrdinal);
             destOrdinal++;
@@ -164,9 +164,9 @@ public class Planner {
     }
 
     public static class PlannerVertex {
-        public Vertex v;
+        public final Vertex v;
 
-        public int availableOrdinal;
+        private int availableOrdinal;
 
         PlannerVertex(Vertex v) {
             this.v = v;
@@ -175,6 +175,10 @@ public class Planner {
         @Override
         public String toString() {
             return v.toString();
+        }
+
+        public int nextAvailableOrdinal() {
+            return availableOrdinal++;
         }
     }
 }
