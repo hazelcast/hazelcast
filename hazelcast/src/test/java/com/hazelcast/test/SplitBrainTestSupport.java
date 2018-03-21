@@ -32,6 +32,7 @@ import com.hazelcast.nio.tcp.FirewallingConnectionManager;
 import com.hazelcast.spi.merge.MergingValue;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.properties.GroupProperty;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -112,11 +113,23 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
         instances = startInitialCluster(config, clusterSize);
     }
 
+    @After
+    public final void tearDown() {
+        onTearDown();
+    }
+
     /**
      * Override this method to execute initialization that may be required before instantiating the cluster. This is the
      * first method executed by {@code @Before SplitBrainTestSupport.setupInternals}.
      */
     protected void onBeforeSetup() {
+    }
+
+    /**
+     * Override this method to execute clean up that may be required after finishing the test. This is the
+     * first method executed by {@code @After SplitBrainTestSupport.tearDown}.
+     */
+    protected void onTearDown() {
     }
 
     /**
