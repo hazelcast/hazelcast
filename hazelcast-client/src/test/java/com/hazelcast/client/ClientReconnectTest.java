@@ -154,7 +154,6 @@ public class ClientReconnectTest extends HazelcastTestSupport {
     public void testExceptionAfterClientShutdown() throws Exception {
         hazelcastFactory.newHazelcastInstance();
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getNetworkConfig().setConnectionAttemptLimit(1);
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
 
         IMap<Object, Object> test = client.getMap("test");
@@ -277,6 +276,7 @@ public class ClientReconnectTest extends HazelcastTestSupport {
         ClientConfig clientConfig = new ClientConfig();
         //first authentication should be able to retried by invocation system. No need to do a second invocation.
         //By setting attempt limit to one, we are expecting client to connect in first attempt.
+        clientConfig.getNetworkConfig().setConnectionTimeout(30000);
         clientConfig.getNetworkConfig().setConnectionAttemptLimit(1);
         clientConfig.setCredentials(new CustomCredentials_retried("dev", "dev-pass"));
         clientConfig.setSerializationConfig(serializationConfig);
