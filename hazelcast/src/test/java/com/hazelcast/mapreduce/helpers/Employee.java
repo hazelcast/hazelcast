@@ -21,6 +21,8 @@ import java.util.Random;
 
 public class Employee implements Serializable, Comparable<Employee> {
 
+    public static final long serialVersionUID = 5850489412220165243l;
+
     public static final int MAX_AGE = 75;
     public static final double MAX_SALARY = 1000.0;
 
