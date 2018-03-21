@@ -454,7 +454,11 @@
                         <configuration>
                             <testFailureIgnore>true</testFailureIgnore>
                             <argLine>@{argLine}</argLine>
-                            <excludedGroups>com.hazelcast.jet.test.IgnoredForCoverage</excludedGroups>
+                            <excludedGroups>
+                                com.hazelcast.test.annotation.SlowTest,
+                                com.hazelcast.test.annotation.NightlyTest,
+                                com.hazelcast.jet.test.IgnoredForCoverage
+                            </excludedGroups>
                         </configuration>
                     </plugin>
                     <plugin>
