@@ -34,6 +34,7 @@ import com.hazelcast.jet.impl.MasterContext;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.jet.impl.operation.InitExecutionOperation;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -380,6 +381,16 @@ public class TopologyChangeTest extends JetTestSupport {
 
         // When
         long executionId = masterContext.getExecutionId();
+
+        assertTrueEventually(() -> {
+            Arrays.stream(instances)
+                  .filter(instance -> !instance.getHazelcastInstance().getCluster().getLocalMember().isLiteMember())
+                  .filter(instance ->  instance != instances[2])
+                  .map(JetTestSupport::getJetService)
+                  .map(service -> service.getJobExecutionService().getExecutionContext(executionId))
+                  .forEach(Assert::assertNotNull);
+        });
+
         newInstance.getHazelcastInstance().getLifecycleService().terminate();
         for (JetInstance instance : instances) {
             assertClusterSizeEventually(NODE_COUNT, instance.getHazelcastInstance());
