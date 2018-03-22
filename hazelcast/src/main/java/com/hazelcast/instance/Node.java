@@ -20,6 +20,7 @@ import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Joiner;
 import com.hazelcast.cluster.impl.TcpIpJoiner;
+import com.hazelcast.concurrent.lock.LockServiceImpl;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.JoinConfig;
@@ -144,6 +145,7 @@ public class Node {
     private final PhoneHome phoneHome = new PhoneHome();
 
     private final InternalSerializationService serializationService;
+    private final LockServiceImpl lockService;
 
     private final ClassLoader configClassLoader;
 
@@ -223,6 +225,7 @@ public class Node {
             clusterService = new ClusterServiceImpl(this, localMember);
             textCommandService = new TextCommandServiceImpl(this);
             multicastService = createMulticastService(addressPicker.getBindAddress(), this, config, logger);
+            lockService = new LockServiceImpl(nodeEngine);
             joiner = nodeContext.createJoiner(this);
 
             config.setClusterService(clusterService);
@@ -353,6 +356,10 @@ public class Node {
         return partitionService;
     }
 
+    public LockServiceImpl getLockService() {
+        return lockService;
+    }
+
     public Address getMasterAddress() {
         return clusterService.getMasterAddress();
     }
@@ -476,8 +483,11 @@ public class Node {
         replicationMigrationService.syncReplicateDirtyCRDTs();
     }
 
-    @SuppressWarnings("checkstyle:npathcomplexity")
+    @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity"})
     private void shutdownServices(boolean terminate) {
+        if (lockService != null) {
+            lockService.shutdown(true);
+        }
         if (nodeExtension != null) {
             nodeExtension.beforeShutdown();
         }

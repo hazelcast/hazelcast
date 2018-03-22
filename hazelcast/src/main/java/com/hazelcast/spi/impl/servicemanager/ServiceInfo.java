@@ -22,8 +22,6 @@ import com.hazelcast.spi.ManagedService;
 
 /**
  * Contains the name of the service and the actual service.
- *
- * @author mdogan 6/8/13
  */
 public final class ServiceInfo {
 
@@ -70,11 +68,9 @@ public final class ServiceInfo {
         }
 
         ServiceInfo that = (ServiceInfo) o;
-
         if (name != null ? !name.equals(that.name) : that.name != null) {
             return false;
         }
-
         return true;
     }
 

@@ -16,7 +16,6 @@
 
 package com.hazelcast.multimap.impl;
 
-import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.lock.LockStore;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.DistributedObjectNamespace;
@@ -26,7 +25,6 @@ import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.serialization.SerializationService;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Map;
@@ -60,42 +58,41 @@ public class MultiMapContainer extends MultiMapContainerSupport {
         super(name, service.getNodeEngine());
         this.partitionId = partitionId;
         this.lockNamespace = new DistributedObjectNamespace(MultiMapService.SERVICE_NAME, name);
-        LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
-        this.lockStore = lockService == null ? null : lockService.createLockStore(partitionId, lockNamespace);
+        this.lockStore = nodeEngine.getLockService().createLockStore(partitionId, lockNamespace);
         this.creationTime = currentTimeMillis();
         this.objectNamespace = new DistributedObjectNamespace(MultiMapService.SERVICE_NAME, name);
     }
 
     public boolean canAcquireLock(Data dataKey, String caller, long threadId) {
-        return lockStore != null && lockStore.canAcquireLock(dataKey, caller, threadId);
+        return lockStore.canAcquireLock(dataKey, caller, threadId);
     }
 
     public boolean isLocked(Data dataKey) {
-        return lockStore != null && lockStore.isLocked(dataKey);
+        return lockStore.isLocked(dataKey);
     }
 
     public boolean isTransactionallyLocked(Data key) {
-        return lockStore != null && lockStore.shouldBlockReads(key);
+        return lockStore.shouldBlockReads(key);
     }
 
     public boolean txnLock(Data key, String caller, long threadId, long referenceId, long ttl, boolean blockReads) {
-        return lockStore != null && lockStore.txnLock(key, caller, threadId, referenceId, ttl, blockReads);
+        return lockStore.txnLock(key, caller, threadId, referenceId, ttl, blockReads);
     }
 
     public boolean unlock(Data key, String caller, long threadId, long referenceId) {
-        return lockStore != null && lockStore.unlock(key, caller, threadId, referenceId);
+        return lockStore.unlock(key, caller, threadId, referenceId);
     }
 
     public boolean forceUnlock(Data key) {
-        return lockStore != null && lockStore.forceUnlock(key);
+        return lockStore.forceUnlock(key);
     }
 
     public boolean extendLock(Data key, String caller, long threadId, long ttl) {
-        return lockStore != null && lockStore.extendLeaseTime(key, caller, threadId, ttl);
+        return lockStore.extendLeaseTime(key, caller, threadId, ttl);
     }
 
     public String getLockOwnerInfo(Data dataKey) {
-        return lockStore != null ? lockStore.getOwnerInfo(dataKey) : null;
+        return lockStore.getOwnerInfo(dataKey);
     }
 
     public long nextId() {
@@ -169,7 +166,7 @@ public class MultiMapContainer extends MultiMapContainerSupport {
     }
 
     public int clear() {
-        Collection<Data> locks = lockStore != null ? lockStore.getLockedKeys() : Collections.<Data>emptySet();
+        Collection<Data> locks = lockStore.getLockedKeys();
         Map<Data, MultiMapValue> lockedKeys = createHashMap(locks.size());
         for (Data key : locks) {
             MultiMapValue multiMapValue = multiMapValues.get(key);
@@ -184,10 +181,7 @@ public class MultiMapContainer extends MultiMapContainerSupport {
     }
 
     public void destroy() {
-        LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
-        if (lockService != null) {
-            lockService.clearLockStore(partitionId, lockNamespace);
-        }
+        nodeEngine.getLockService().clearLockStore(partitionId, lockNamespace);
         multiMapValues.clear();
     }
 

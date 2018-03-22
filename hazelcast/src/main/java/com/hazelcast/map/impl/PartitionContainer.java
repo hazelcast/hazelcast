@@ -16,7 +16,6 @@
 
 package com.hazelcast.map.impl;
 
-import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.impl.query.IndexProvider;
@@ -205,12 +204,9 @@ public class PartitionContainer {
     }
 
     private void clearLockStore(String name) {
-        final NodeEngine nodeEngine = mapService.getMapServiceContext().getNodeEngine();
-        final LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
-        if (lockService != null) {
-            final ObjectNamespace namespace = MapService.getObjectNamespace(name);
-            lockService.clearLockStore(partitionId, namespace);
-        }
+        NodeEngine nodeEngine = mapService.getMapServiceContext().getNodeEngine();
+        ObjectNamespace objectNamespace = MapService.getObjectNamespace(name);
+        nodeEngine.getLockService().clearLockStore(partitionId, objectNamespace);
     }
 
     public void clear(boolean onShutdown) {
