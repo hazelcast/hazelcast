@@ -22,7 +22,6 @@ import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuil
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.spi.impl.PacketHandler;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.test.AssertTask;
@@ -31,6 +30,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.function.Consumer;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -46,14 +46,14 @@ import static org.mockito.Mockito.verifyZeroInteractions;
 @Category({QuickTest.class, ParallelTest.class})
 public class AsyncInboundResponseHandlerTest extends HazelcastTestSupport {
 
-    private PacketHandler responsePacketHandler;
+    private Consumer<Packet> responsePacketHandler;
     private AsyncInboundResponseHandler asyncHandler;
     private InternalSerializationService serializationService;
 
     @Before
     public void setup() {
         ILogger logger = Logger.getLogger(getClass());
-        responsePacketHandler = mock(PacketHandler.class);
+        responsePacketHandler = mock(Consumer.class);
         asyncHandler = new AsyncInboundResponseHandler(getClass().getClassLoader(), "hz", logger,
                 responsePacketHandler, new HazelcastProperties(new Config()));
         asyncHandler.start();
@@ -61,22 +61,22 @@ public class AsyncInboundResponseHandlerTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void whenNoProblemPacket() throws Exception {
+    public void whenNoProblemPacket() {
         final Packet packet = new Packet(serializationService.toBytes(new NormalResponse("foo", 1, 0, false)))
                 .setPacketType(Packet.Type.OPERATION)
                 .raiseFlags(FLAG_OP_RESPONSE);
-        asyncHandler.handle(packet);
+        asyncHandler.accept(packet);
 
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                verify(responsePacketHandler).handle(packet);
+                verify(responsePacketHandler).accept(packet);
             }
         });
     }
 
     @Test
-    public void whenPacketThrowsException() throws Exception {
+    public void whenPacketThrowsException() {
         final Packet badPacket = new Packet(serializationService.toBytes(new NormalResponse("bad", 1, 0, false)))
                 .setPacketType(Packet.Type.OPERATION)
                 .raiseFlags(FLAG_OP_RESPONSE);
@@ -85,21 +85,21 @@ public class AsyncInboundResponseHandlerTest extends HazelcastTestSupport {
                 .setPacketType(Packet.Type.OPERATION)
                 .raiseFlags(FLAG_OP_RESPONSE);
 
-        doThrow(new ExpectedRuntimeException()).when(responsePacketHandler).handle(badPacket);
+        doThrow(new ExpectedRuntimeException()).when(responsePacketHandler).accept(badPacket);
 
-        asyncHandler.handle(badPacket);
-        asyncHandler.handle(goodPacket);
+        asyncHandler.accept(badPacket);
+        asyncHandler.accept(goodPacket);
 
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                verify(responsePacketHandler).handle(goodPacket);
+                verify(responsePacketHandler).accept(goodPacket);
             }
         });
     }
 
     @Test
-    public void whenShutdown() throws InterruptedException {
+    public void whenShutdown() {
         asyncHandler.shutdown();
 
         // we need to wait for the responseThread to die first.
@@ -109,7 +109,7 @@ public class AsyncInboundResponseHandlerTest extends HazelcastTestSupport {
                 .setPacketType(Packet.Type.OPERATION)
                 .raiseFlags(FLAG_OP_RESPONSE);
 
-        asyncHandler.handle(packet);
+        asyncHandler.accept(packet);
 
         assertTrueFiveSeconds(new AssertTask() {
             @Override

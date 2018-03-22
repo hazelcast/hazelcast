@@ -28,8 +28,8 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.PacketHandler;
 import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
+import com.hazelcast.util.function.Consumer;
 
 import java.nio.ByteOrder;
 
@@ -48,7 +48,7 @@ import static com.hazelcast.spi.impl.operationservice.impl.responses.Response.OF
  * Responsible for handling responses for invocations. Based on the content of the response packet, it will lookup the
  * Invocation from the InvocationRegistry and notify the Invocation.
  */
-public final class InboundResponseHandler implements PacketHandler, MetricsProvider {
+public final class InboundResponseHandler implements Consumer<Packet>, MetricsProvider {
 
     private final ILogger logger;
     private final InternalSerializationService serializationService;
@@ -83,7 +83,7 @@ public final class InboundResponseHandler implements PacketHandler, MetricsProvi
     }
 
     @Override
-    public void handle(Packet packet) throws Exception {
+    public void accept(Packet packet) {
         byte[] bytes = packet.toByteArray();
         int typeId = Bits.readInt(bytes, OFFSET_TYPE_ID, useBigEndian);
         long callId = Bits.readLong(bytes, OFFSET_CALL_ID, useBigEndian);

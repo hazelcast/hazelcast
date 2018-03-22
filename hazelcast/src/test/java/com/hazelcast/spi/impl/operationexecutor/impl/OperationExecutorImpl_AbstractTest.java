@@ -29,7 +29,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.UrgentSystemOperation;
-import com.hazelcast.spi.impl.PacketHandler;
 import com.hazelcast.spi.impl.operationexecutor.OperationHostileThread;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunnerFactory;
@@ -37,6 +36,7 @@ import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.util.function.Consumer;
 import org.junit.After;
 import org.junit.Before;
 import org.mockito.Mockito;
@@ -68,7 +68,7 @@ public abstract class OperationExecutorImpl_AbstractTest extends HazelcastTestSu
     DefaultNodeExtension nodeExtension;
     OperationRunnerFactory handlerFactory;
     InternalSerializationService serializationService;
-    PacketHandler responsePacketHandler;
+    Consumer<Packet> responsePacketHandler;
     OperationExecutorImpl executor;
     Config config;
 
@@ -105,13 +105,13 @@ public abstract class OperationExecutorImpl_AbstractTest extends HazelcastTestSu
         });
     }
 
-    class DummyResponsePacketHandler implements PacketHandler {
+    class DummyResponsePacketHandler implements Consumer<Packet> {
 
         List<Packet> packets = synchronizedList(new LinkedList<Packet>());
         List<Response> responses = synchronizedList(new LinkedList<Response>());
 
         @Override
-        public void handle(Packet packet) throws Exception {
+        public void accept(Packet packet)  {
             packets.add(packet);
             Response response = serializationService.toObject(packet);
             responses.add(response);
