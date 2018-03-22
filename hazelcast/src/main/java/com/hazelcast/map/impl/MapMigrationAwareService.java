@@ -73,7 +73,26 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
 
     @Override
     public void beforeMigration(PartitionMigrationEvent event) {
+        flushAndRemoveQueryCaches(event);
     }
+
+    /**
+     * Flush and remove query cache on this source partition.
+     */
+    private void flushAndRemoveQueryCaches(PartitionMigrationEvent event) {
+        if (event.getMigrationEndpoint() != MigrationEndpoint.SOURCE) {
+            return;
+        }
+
+        QueryCacheContext queryCacheContext = mapServiceContext.getQueryCacheContext();
+        PublisherContext publisherContext = queryCacheContext.getPublisherContext();
+
+        int partitionId = event.getPartitionId();
+
+        flushAccumulator(publisherContext, partitionId);
+        removeAccumulator(publisherContext, partitionId);
+    }
+
 
     @Override
     public Operation prepareReplicationOperation(PartitionReplicationEvent event) {
@@ -128,15 +147,6 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
             recordStore.startLoading();
         }
         mapServiceContext.reloadOwnedPartitions();
-
-        QueryCacheContext queryCacheContext = mapServiceContext.getQueryCacheContext();
-        PublisherContext publisherContext = queryCacheContext.getPublisherContext();
-
-        if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
-            int partitionId = event.getPartitionId();
-            flushAccumulator(publisherContext, partitionId);
-            removeAccumulator(publisherContext, partitionId);
-        }
     }
 
     @Override
