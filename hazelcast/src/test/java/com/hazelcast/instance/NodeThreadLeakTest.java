@@ -16,20 +16,6 @@
 
 package com.hazelcast.instance;
 
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.not;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
-
-import java.util.Set;
-
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
-
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastException;
@@ -38,18 +24,31 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
 import com.hazelcast.spi.impl.executionservice.impl.ExecutionServiceImpl;
 import com.hazelcast.spi.impl.operationparker.impl.OperationParkerImpl;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
+
+import java.util.Set;
+
+import static classloading.ThreadLeakTestUtils.assertHazelcastThreadShutdown;
+import static classloading.ThreadLeakTestUtils.getThreads;
+import static org.junit.Assert.fail;
 
 /**
- * Tests that exception in Node constructor leads to properly finished services.
+ * Tests that an exception in the {@link Node} and {@link NodeEngineImpl} constructor leads to properly finished services.
  */
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({ DefaultNodeContext.class, NodeEngineImpl.class })
+@PrepareForTest({DefaultNodeContext.class, NodeEngineImpl.class})
 @Category(QuickTest.class)
-public class NodeThreadLeakTest {
+public class NodeThreadLeakTest extends HazelcastTestSupport {
 
-    private static final HazelcastException HAZELCAST_EXCEPTION = new HazelcastException(
-            "Test exception - Emulates service failure.");
+    private static final HazelcastException HAZELCAST_EXCEPTION
+            = new HazelcastException("Test exception - Emulates service failure.");
 
     @Test
     public void testLeakWhenCreatingConnectionManager() throws Exception {
@@ -73,18 +72,18 @@ public class NodeThreadLeakTest {
 
     private void mockConstructorAndTest(Class<?> clazzToMock) throws Exception {
         PowerMockito.whenNew(clazzToMock).withAnyArguments().thenThrow(HAZELCAST_EXCEPTION);
+
+        Set<Thread> threads = getThreads();
         try {
             Config config = new Config();
             config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
+
             Hazelcast.newHazelcastInstance(config);
             fail("Starting the member should have failed");
         } catch (HazelcastException expected) {
+            ignore(expected);
         }
-        Set<Thread> threads = Thread.getAllStackTraces().keySet();
-        for (Thread thread : threads) {
-            String threadName = thread.getName();
-            assertThat(threadName, not(containsString("hz._hzInstance_")));
-        }
-    }
 
+        assertHazelcastThreadShutdown("There are still Hazelcast threads running after failed service initialization!", threads);
+    }
 }

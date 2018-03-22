@@ -55,7 +55,11 @@ public final class ThreadLeakTestUtils {
     }
 
     public static void assertHazelcastThreadShutdown(Set<Thread> oldThreads) {
-        Thread[] joinableThreads = getAndLogThreads("There are still Hazelcast threads running after shutdown!", oldThreads);
+        assertHazelcastThreadShutdown("There are still Hazelcast threads running after shutdown!", oldThreads);
+    }
+
+    public static void assertHazelcastThreadShutdown(String message, Set<Thread> oldThreads) {
+        Thread[] joinableThreads = getAndLogThreads(message, oldThreads);
         if (joinableThreads == null) {
             return;
         }
