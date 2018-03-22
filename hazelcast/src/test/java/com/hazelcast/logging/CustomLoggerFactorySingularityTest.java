@@ -43,22 +43,28 @@ public class CustomLoggerFactorySingularityTest extends HazelcastTestSupport {
     private static final String LOGGING_CLASS_PROP_NAME = "hazelcast.logging.class";
 
     private static final Field LOGGER_FACTORY_FIELD = getField("loggerFactory");
+    private static final Field LOGGER_FACTORY_CLASS_OR_TYPE_FIELD = getField("loggerFactoryClassOrType");
     private static final Field FACTORY_LOCK_FIELD = getField("FACTORY_LOCK");
 
     private String originalLoggingClass;
     private LoggerFactory originalLoggerFactory;
+    private String originalLoggerFactoryClassOrType;
 
     @Before
     public void setUp() throws Exception {
         originalLoggingClass = System.getProperty(LOGGING_CLASS_PROP_NAME);
         originalLoggerFactory = (LoggerFactory) LOGGER_FACTORY_FIELD.get(null);
+        originalLoggerFactoryClassOrType = (String) LOGGER_FACTORY_CLASS_OR_TYPE_FIELD.get(null);
+
         LOGGER_FACTORY_FIELD.set(null, null);
+        LOGGER_FACTORY_CLASS_OR_TYPE_FIELD.set(null, null);
     }
 
     @After
     public void tearDown() throws Exception {
         restoreProperty(LOGGING_CLASS_PROP_NAME, originalLoggingClass);
         LOGGER_FACTORY_FIELD.set(null, originalLoggerFactory);
+        LOGGER_FACTORY_CLASS_OR_TYPE_FIELD.set(null, originalLoggerFactoryClassOrType);
     }
 
     @Test
