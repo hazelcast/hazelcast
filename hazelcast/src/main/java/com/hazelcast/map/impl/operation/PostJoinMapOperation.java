@@ -252,7 +252,7 @@ public class PostJoinMapOperation extends Operation implements IdentifiedDataSer
         Version inputversion = in.getVersion();
         // read index info when object input comes from 3.9 EE (version UNKNOWN)
         // or 3.10 EE on cluster version 3.9 (inputVersion < 3.10)
-        if ((inputversion.isUnknown() || inputversion.isLessThan(V3_10)) && getBuildInfo().isEnterprise()) {
+        if (inputversion.isUnknownOrLessThan(V3_10) && getBuildInfo().isEnterprise()) {
             int indexesCount = in.readInt();
             for (int i = 0; i < indexesCount; i++) {
                 MapIndexInfo mapIndexInfo = new MapIndexInfo();
