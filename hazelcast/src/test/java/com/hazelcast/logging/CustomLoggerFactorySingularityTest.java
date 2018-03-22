@@ -18,14 +18,13 @@ package com.hazelcast.logging;
 
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.IsolatedLoggingRule;
 import com.hazelcast.test.annotation.NightlyTest;
-import org.junit.After;
-import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.lang.reflect.Field;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -40,30 +39,12 @@ public class CustomLoggerFactorySingularityTest extends HazelcastTestSupport {
     private static final int TEST_DURATION_SECONDS = 5;
     private static final int THREAD_COUNT = 4;
 
-    private static final String LOGGING_CLASS_PROP_NAME = "hazelcast.logging.class";
-
-    private static final Field LOGGER_FACTORY_FIELD = getField("loggerFactory");
-    private static final Field FACTORY_LOCK_FIELD = getField("FACTORY_LOCK");
-
-    private String originalLoggingClass;
-    private LoggerFactory originalLoggerFactory;
-
-    @Before
-    public void setUp() throws Exception {
-        originalLoggingClass = System.getProperty(LOGGING_CLASS_PROP_NAME);
-        originalLoggerFactory = (LoggerFactory) LOGGER_FACTORY_FIELD.get(null);
-        LOGGER_FACTORY_FIELD.set(null, null);
-    }
-
-    @After
-    public void tearDown() throws Exception {
-        restoreProperty(LOGGING_CLASS_PROP_NAME, originalLoggingClass);
-        LOGGER_FACTORY_FIELD.set(null, originalLoggerFactory);
-    }
+    @Rule
+    public final IsolatedLoggingRule isolatedLoggingRule = new IsolatedLoggingRule();
 
     @Test
     public void testCustomLoggerFactorySingularity() throws Exception {
-        System.setProperty(LOGGING_CLASS_PROP_NAME, CustomLoggerFactory.class.getName());
+        isolatedLoggingRule.setLoggingClass(CustomLoggerFactory.class);
 
         long deadLine = System.currentTimeMillis() + SECONDS.toMillis(TEST_DURATION_SECONDS);
         TestThread[] threads = startThreads(deadLine);
@@ -74,32 +55,13 @@ public class CustomLoggerFactorySingularityTest extends HazelcastTestSupport {
             }
 
             // begin the new round of a factory creation
-            synchronized (FACTORY_LOCK_FIELD.get(null)) {
+            synchronized (isolatedLoggingRule.getLoggerFactoryLock()) {
                 CustomLoggerFactory.INSTANCE_COUNT.set(0);
-                LOGGER_FACTORY_FIELD.set(null, null);
+                isolatedLoggingRule.setLoggerFactory(null);
             }
         }
 
         assertThreadsEventuallyFinishesWithoutException(threads);
-    }
-
-    private static Field getField(String name) {
-        Field field;
-        try {
-            field = Logger.class.getDeclaredField(name);
-        } catch (NoSuchFieldException e) {
-            throw new AssertionError(name + " field not found");
-        }
-        field.setAccessible(true);
-        return field;
-    }
-
-    private static void restoreProperty(String name, String value) {
-        if (value == null) {
-            System.clearProperty(name);
-        } else {
-            System.setProperty(name, value);
-        }
     }
 
     private static TestThread[] startThreads(long deadLine) {
