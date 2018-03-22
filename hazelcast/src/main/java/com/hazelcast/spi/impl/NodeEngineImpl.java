@@ -164,7 +164,6 @@ public class NodeEngineImpl implements NodeEngine {
             }
             throw rethrow(e);
         }
-
     }
 
     private MetricsRegistryImpl newMetricRegistry(Node node) {
