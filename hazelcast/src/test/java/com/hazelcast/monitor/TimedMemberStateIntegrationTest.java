@@ -25,11 +25,10 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-
-import java.util.List;
 
 import static com.hazelcast.instance.TestUtil.getHazelcastInstanceImpl;
 import static org.junit.Assert.assertEquals;
@@ -53,16 +52,7 @@ public class TimedMemberStateIntegrationTest extends HazelcastTestSupport {
         hz.getExecutorService("trial");
 
         TimedMemberState timedMemberState = factory.createTimedMemberState();
-        List<String> instanceNames = timedMemberState.getInstanceNames();
-
         assertEquals("dev", timedMemberState.clusterName);
-        assertContains(instanceNames, "c:trial");
-        assertContains(instanceNames, "m:trial");
-        assertContains(instanceNames, "q:trial");
-        assertContains(instanceNames, "t:trial");
-        assertContains(instanceNames, "rt:trial");
-        assertContains(instanceNames, "r:trial");
-        assertContains(instanceNames, "e:trial");
     }
 
     @Test
@@ -79,10 +69,7 @@ public class TimedMemberStateIntegrationTest extends HazelcastTestSupport {
         hz.getReliableTopic("trial").publish("Hello");
 
         TimedMemberState timedMemberState = factory.createTimedMemberState();
-        List<String> instanceNames = timedMemberState.getInstanceNames();
-
         assertEquals("dev", timedMemberState.clusterName);
-        assertEquals(3, instanceNames.size());
     }
 
     @Test

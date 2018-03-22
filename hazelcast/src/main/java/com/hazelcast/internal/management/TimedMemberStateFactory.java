@@ -72,7 +72,6 @@ import com.hazelcast.wan.WanReplicationService;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -126,7 +125,7 @@ public class TimedMemberStateFactory {
         Collection<StatisticsAwareService> services = instance.node.nodeEngine.getServices(StatisticsAwareService.class);
 
         TimedMemberState timedMemberState = new TimedMemberState();
-        createMemberState(timedMemberState, memberState, services);
+        createMemberState(memberState, services);
         timedMemberState.setMaster(instance.node.isMaster());
         timedMemberState.setMemberList(new ArrayList<String>());
         if (timedMemberState.isMaster()) {
@@ -158,7 +157,7 @@ public class TimedMemberStateFactory {
         return new LocalOperationStatsImpl(instance.node);
     }
 
-    private void createMemberState(TimedMemberState timedMemberState, MemberStateImpl memberState,
+    private void createMemberState(MemberStateImpl memberState,
                                    Collection<StatisticsAwareService> services) {
         Node node = instance.node;
 
@@ -189,7 +188,7 @@ public class TimedMemberStateFactory {
         memberState.setLocalMemoryStats(getMemoryStats());
         memberState.setOperationStats(getOperationStats());
         TimedMemberStateFactoryHelper.createRuntimeProps(memberState);
-        createMemState(timedMemberState, memberState, services);
+        createMemState(memberState, services);
 
         createNodeState(memberState);
         createHotRestartState(memberState);
@@ -229,36 +228,33 @@ public class TimedMemberStateFactory {
         }
     }
 
-    private void createMemState(TimedMemberState timedMemberState, MemberStateImpl memberState,
+    private void createMemState(MemberStateImpl memberState,
                                 Collection<StatisticsAwareService> services) {
         int count = 0;
         Config config = instance.getConfig();
-        LinkedList<String> longInstanceNames = new LinkedList<String>();
         for (StatisticsAwareService service : services) {
             if (count < maxVisibleInstanceCount) {
                 if (service instanceof MapService) {
-                    count = handleMap(memberState, count, config, ((MapService) service).getStats(), longInstanceNames);
+                    count = handleMap(memberState, count, config, ((MapService) service).getStats());
                 } else if (service instanceof MultiMapService) {
-                    count = handleMultimap(memberState, count, config, ((MultiMapService) service).getStats(), longInstanceNames);
+                    count = handleMultimap(memberState, count, config, ((MultiMapService) service).getStats());
                 } else if (service instanceof QueueService) {
-                    count = handleQueue(memberState, count, config, ((QueueService) service).getStats(), longInstanceNames);
+                    count = handleQueue(memberState, count, config, ((QueueService) service).getStats());
                 } else if (service instanceof TopicService) {
-                    count = handleTopic(memberState, count, config, ((TopicService) service).getStats(), longInstanceNames);
+                    count = handleTopic(memberState, count, config, ((TopicService) service).getStats());
                 } else if (service instanceof ReliableTopicService) {
                     count = handleReliableTopic(memberState, count, config,
-                            ((ReliableTopicService) service).getStats(), longInstanceNames);
+                            ((ReliableTopicService) service).getStats());
                 } else if (service instanceof DistributedExecutorService) {
                     count = handleExecutorService(memberState, count, config,
-                            ((DistributedExecutorService) service).getStats(), longInstanceNames);
+                            ((DistributedExecutorService) service).getStats());
                 } else if (service instanceof ReplicatedMapService) {
-                    count = handleReplicatedMap(memberState, count, config, ((ReplicatedMapService) service).getStats(),
-                            longInstanceNames);
+                    count = handleReplicatedMap(memberState, count, config, ((ReplicatedMapService) service).getStats());
                 } else if (service instanceof PNCounterService) {
-                    count = handlePNCounter(memberState, count, config, ((PNCounterService) service).getStats(),
-                            longInstanceNames);
+                    count = handlePNCounter(memberState, count, config, ((PNCounterService) service).getStats());
                 } else if (service instanceof FlakeIdGeneratorService) {
                     count = handleFlakeIdGenerator(memberState, count, config,
-                            ((FlakeIdGeneratorService) service).getStats(), longInstanceNames);
+                            ((FlakeIdGeneratorService) service).getStats());
                 }
             }
         }
@@ -266,7 +262,7 @@ public class TimedMemberStateFactory {
         WanReplicationService wanReplicationService = instance.node.nodeEngine.getWanReplicationService();
         Map<String, LocalWanStats> wanStats = wanReplicationService.getStats();
         if (wanStats != null) {
-            count = handleWan(memberState, count, wanStats, longInstanceNames);
+            count = handleWan(memberState, count, wanStats);
         }
 
         if (cacheServiceEnabled) {
@@ -277,16 +273,15 @@ public class TimedMemberStateFactory {
                     //Statistics can be null for a short period of time since config is created at first then stats map
                     //is filled.git
                     if (statistics != null) {
-                        count = handleCache(memberState, count, cacheConfig, statistics, longInstanceNames);
+                        count = handleCache(memberState, count, cacheConfig, statistics);
                     }
                 }
             }
         }
-        timedMemberState.setInstanceNames(longInstanceNames);
     }
 
     private int handleFlakeIdGenerator(MemberStateImpl memberState, int count, Config config,
-            Map<String, LocalFlakeIdGeneratorStats> flakeIdstats, List<String> longInstanceNames) {
+            Map<String, LocalFlakeIdGeneratorStats> flakeIdstats) {
         for (Map.Entry<String, LocalFlakeIdGeneratorStats> entry : flakeIdstats.entrySet()) {
             String name = entry.getKey();
             if (count >= maxVisibleInstanceCount) {
@@ -294,7 +289,6 @@ public class TimedMemberStateFactory {
             } else if (config.findFlakeIdGeneratorConfig(name).isStatisticsEnabled()) {
                 LocalFlakeIdGeneratorStats stats = entry.getValue();
                 memberState.putLocalFlakeIdStats(name, stats);
-                longInstanceNames.add("f:" + name);
                 ++count;
             }
         }
@@ -302,8 +296,7 @@ public class TimedMemberStateFactory {
     }
 
     private int handleExecutorService(MemberStateImpl memberState, int count, Config config,
-                                      Map<String, LocalExecutorStats> executorServices,
-                                      List<String> longInstanceNames) {
+                                      Map<String, LocalExecutorStats> executorServices) {
 
         for (Map.Entry<String, LocalExecutorStats> entry : executorServices.entrySet()) {
             String name = entry.getKey();
@@ -312,15 +305,13 @@ public class TimedMemberStateFactory {
             } else if (config.findExecutorConfig(name).isStatisticsEnabled()) {
                 LocalExecutorStats stats = entry.getValue();
                 memberState.putLocalExecutorStats(name, stats);
-                longInstanceNames.add("e:" + name);
                 ++count;
             }
         }
         return count;
     }
 
-    private int handleMultimap(MemberStateImpl memberState, int count, Config config, Map<String, LocalMultiMapStats> multiMaps,
-                               List<String> longInstanceNames) {
+    private int handleMultimap(MemberStateImpl memberState, int count, Config config, Map<String, LocalMultiMapStats> multiMaps) {
         for (Map.Entry<String, LocalMultiMapStats> entry : multiMaps.entrySet()) {
             String name = entry.getKey();
             if (count >= maxVisibleInstanceCount) {
@@ -328,7 +319,6 @@ public class TimedMemberStateFactory {
             } else if (config.findMultiMapConfig(name).isStatisticsEnabled()) {
                 LocalMultiMapStats stats = entry.getValue();
                 memberState.putLocalMultiMapStats(name, stats);
-                longInstanceNames.add("m:" + name);
                 ++count;
             }
         }
@@ -336,7 +326,7 @@ public class TimedMemberStateFactory {
     }
 
     private int handleReplicatedMap(MemberStateImpl memberState, int count, Config
-            config, Map<String, LocalReplicatedMapStats> replicatedMaps, List<String> longInstanceNames) {
+            config, Map<String, LocalReplicatedMapStats> replicatedMaps) {
         for (Map.Entry<String, LocalReplicatedMapStats> entry : replicatedMaps.entrySet()) {
             String name = entry.getKey();
             if (count >= maxVisibleInstanceCount) {
@@ -344,7 +334,6 @@ public class TimedMemberStateFactory {
             } else if (config.findReplicatedMapConfig(name).isStatisticsEnabled()) {
                 LocalReplicatedMapStats stats = entry.getValue();
                 memberState.putLocalReplicatedMapStats(name, stats);
-                longInstanceNames.add("r:" + name);
                 ++count;
             }
         }
@@ -352,8 +341,7 @@ public class TimedMemberStateFactory {
     }
 
     private int handlePNCounter(MemberStateImpl memberState, int count, Config config,
-                                Map<String, LocalPNCounterStats> counters,
-                                List<String> longInstanceNames) {
+                                Map<String, LocalPNCounterStats> counters) {
         for (Map.Entry<String, LocalPNCounterStats> entry : counters.entrySet()) {
             String name = entry.getKey();
             if (count >= maxVisibleInstanceCount) {
@@ -361,15 +349,13 @@ public class TimedMemberStateFactory {
             } else if (config.findPNCounterConfig(name).isStatisticsEnabled()) {
                 LocalPNCounterStats stats = entry.getValue();
                 memberState.putLocalPNCounterStats(name, stats);
-                longInstanceNames.add("pnc:" + name);
                 ++count;
             }
         }
         return count;
     }
 
-    private int handleReliableTopic(MemberStateImpl memberState, int count, Config config, Map<String, LocalTopicStats> topics,
-                                    List<String> longInstanceNames) {
+    private int handleReliableTopic(MemberStateImpl memberState, int count, Config config, Map<String, LocalTopicStats> topics) {
         for (Map.Entry<String, LocalTopicStats> entry : topics.entrySet()) {
             String name = entry.getKey();
             if (count >= maxVisibleInstanceCount) {
@@ -377,15 +363,13 @@ public class TimedMemberStateFactory {
             } else if (config.findReliableTopicConfig(name).isStatisticsEnabled()) {
                 LocalTopicStats stats = entry.getValue();
                 memberState.putLocalReliableTopicStats(name, stats);
-                longInstanceNames.add("rt:" + name);
                 ++count;
             }
         }
         return count;
     }
 
-    private int handleTopic(MemberStateImpl memberState, int count, Config config, Map<String, LocalTopicStats> topics,
-                            List<String> longInstanceNames) {
+    private int handleTopic(MemberStateImpl memberState, int count, Config config, Map<String, LocalTopicStats> topics) {
         for (Map.Entry<String, LocalTopicStats> entry : topics.entrySet()) {
             String name = entry.getKey();
             if (count >= maxVisibleInstanceCount) {
@@ -393,15 +377,13 @@ public class TimedMemberStateFactory {
             } else if (config.findTopicConfig(name).isStatisticsEnabled()) {
                 LocalTopicStats stats = entry.getValue();
                 memberState.putLocalTopicStats(name, stats);
-                longInstanceNames.add("t:" + name);
                 ++count;
             }
         }
         return count;
     }
 
-    private int handleQueue(MemberStateImpl memberState, int count, Config config, Map<String, LocalQueueStats> queues,
-                            List<String> longInstanceNames) {
+    private int handleQueue(MemberStateImpl memberState, int count, Config config, Map<String, LocalQueueStats> queues) {
         for (Map.Entry<String, LocalQueueStats> entry : queues.entrySet()) {
             String name = entry.getKey();
             if (count >= maxVisibleInstanceCount) {
@@ -409,15 +391,13 @@ public class TimedMemberStateFactory {
             } else if (config.findQueueConfig(name).isStatisticsEnabled()) {
                 LocalQueueStats stats = entry.getValue();
                 memberState.putLocalQueueStats(name, stats);
-                longInstanceNames.add("q:" + name);
                 ++count;
             }
         }
         return count;
     }
 
-    private int handleMap(MemberStateImpl memberState, int count, Config config, Map<String, LocalMapStats> maps,
-                          List<String> longInstanceNames) {
+    private int handleMap(MemberStateImpl memberState, int count, Config config, Map<String, LocalMapStats> maps) {
         for (Map.Entry<String, LocalMapStats> entry : maps.entrySet()) {
             String name = entry.getKey();
             if (count >= maxVisibleInstanceCount) {
@@ -425,29 +405,24 @@ public class TimedMemberStateFactory {
             } else if (config.findMapConfig(name).isStatisticsEnabled()) {
                 LocalMapStats stats = entry.getValue();
                 memberState.putLocalMapStats(name, stats);
-                longInstanceNames.add("c:" + name);
                 ++count;
             }
         }
         return count;
     }
 
-    private int handleWan(MemberStateImpl memberState, int count, Map<String, LocalWanStats> wans,
-                          List<String> longInstanceNames) {
+    private int handleWan(MemberStateImpl memberState, int count, Map<String, LocalWanStats> wans) {
         for (Map.Entry<String, LocalWanStats> entry : wans.entrySet()) {
             String schemeName = entry.getKey();
             LocalWanStats stats = entry.getValue();
             memberState.putLocalWanStats(schemeName, stats);
-            longInstanceNames.add("w:" + schemeName);
             count++;
         }
         return count;
     }
 
-    private int handleCache(MemberStateImpl memberState, int count, CacheConfig config, CacheStatistics cacheStatistics,
-                            List<String> longInstanceNames) {
+    private int handleCache(MemberStateImpl memberState, int count, CacheConfig config, CacheStatistics cacheStatistics) {
         memberState.putLocalCacheStats(config.getNameWithPrefix(), new LocalCacheStatsImpl(cacheStatistics));
-        longInstanceNames.add("j:" + config.getNameWithPrefix());
         return ++count;
     }
 
