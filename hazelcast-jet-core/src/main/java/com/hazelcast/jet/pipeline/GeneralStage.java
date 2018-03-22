@@ -162,7 +162,7 @@ public interface GeneralStage<T> extends Stage {
     /**
      * Attaches to both this and the supplied stage a hash-joining stage and
      * returns it. This stage plays the role of the <em>primary stage</em> in
-     * the hash-join. Please refer to the {@link com.hazelcast.jet
+     * the hash-join. Please refer to the {@link com.hazelcast.jet.pipeline
      * package Javadoc} for a detailed description of the hash-join transform.
      *
      * @param stage1        the stage to hash-join with this one
