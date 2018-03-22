@@ -240,13 +240,13 @@ public class MembershipManager {
         MemberMap memberMap = getMemberMap();
         MembersView membersView = memberMap.toMembersView();
 
+        if (logger.isFineEnabled()) {
+            logger.fine("Sending member list to the non-master nodes: " + memberListString());
+        }
+
         for (MemberImpl member : memberMap.getMembers()) {
             if (member.localMember()) {
                 continue;
-            }
-
-            if (logger.isFineEnabled()) {
-                logger.fine("Sending member list to the non-master nodes: " + memberListString());
             }
 
             MembersUpdateOp op = new MembersUpdateOp(member.getUuid(), membersView,
