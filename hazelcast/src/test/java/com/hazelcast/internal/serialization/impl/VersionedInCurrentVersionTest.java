@@ -32,6 +32,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.reflections.Reflections;
@@ -59,6 +60,7 @@ import static org.mockito.Mockito.when;
 // the version of an incoming stream from a previous-version member) instead of using
 // in.getVersion.isUnknownOrLessThan(CURRENT)
 @RunWith(PowerMockRunner.class)
+@PowerMockIgnore({"javax.net.ssl.*", "javax.security.*"})
 @PrepareForTest(Version.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class VersionedInCurrentVersionTest {
