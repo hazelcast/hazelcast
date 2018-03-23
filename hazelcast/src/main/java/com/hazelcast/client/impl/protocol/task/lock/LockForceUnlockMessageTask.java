@@ -25,6 +25,7 @@ import com.hazelcast.concurrent.lock.operations.UnlockOperation;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.LockPermission;
 import com.hazelcast.spi.Operation;
@@ -40,7 +41,7 @@ public class LockForceUnlockMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        final Data key = serializationService.toData(parameters.name);
+        final Data key = serializationService.toData(parameters.name, StringPartitioningStrategy.INSTANCE);
         return new UnlockOperation(new InternalLockNamespace(parameters.name), key, -1, true, parameters.referenceId);
     }
 

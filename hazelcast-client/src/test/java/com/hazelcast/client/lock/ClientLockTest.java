@@ -26,6 +26,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.ExceptionUtil;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -324,4 +325,41 @@ public class ClientLockTest extends HazelcastTestSupport {
         lock.lock(ttl, TimeUnit.MILLISECONDS);
     }
 
+    @Test
+    public void testLockLease_withStringPartitionAwareName() throws Exception {
+        factory.newHazelcastInstance();
+        HazelcastInstance hz = factory.newHazelcastClient();
+        final ILock lock = hz.getLock(randomName() + "@hazelcast");
+
+        spawn(new Runnable() {
+            @Override
+            public void run() {
+                lock.lock(5, TimeUnit.SECONDS);
+            }
+        }).get();
+
+        assertTrue("Lock should have been released after lease expires", lock.tryLock(2, TimeUnit.MINUTES));
+    }
+
+    @Test
+    public void testTryLockLease_withStringPartitionAwareName() throws Exception {
+        factory.newHazelcastInstance();
+        HazelcastInstance hz = factory.newHazelcastClient();
+        final ILock lock = hz.getLock(randomName() + "@hazelcast");
+
+        spawn(new Runnable() {
+            @Override
+            public void run() {
+                long timeout = 10;
+                long lease = 5;
+                try {
+                    assertTrue(lock.tryLock(timeout, TimeUnit.SECONDS, lease, TimeUnit.SECONDS));
+                } catch (InterruptedException e) {
+                    throw ExceptionUtil.rethrow(e);
+                }
+            }
+        }).get();
+
+        assertTrue("Lock should have been released after lease expires", lock.tryLock(2, TimeUnit.MINUTES));
+    }
 }
