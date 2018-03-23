@@ -96,6 +96,18 @@ public final class GroupProperty {
             = new HazelcastProperty("hazelcast.operation.priority.generic.thread.count", 1);
 
     /**
+     * The number of threads that processes responses.
+     *
+     * By default there are 2 response threads; this gives stable and good performance.
+     *
+     * If set to 0, the response threads are bypassed and the response handling is done
+     * on the IO threads. Under certain conditions this can give a higher throughput, but
+     * setting to 0 should be regarded an experimental feature.
+     */
+    public static final HazelcastProperty RESPONSE_THREAD_COUNT
+            = new HazelcastProperty("hazelcast.operation.response.thread.count", 2);
+
+    /**
      * The number of threads that the client engine has available for processing requests that are not partition specific.
      * Most of the requests, such as map.put and map.get, are partition specific and will use a partition-operation-thread, but
      * there are also requests that can't be executed on a partition-specific operation-thread, such as multimap.contain(value);

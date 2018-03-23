@@ -167,6 +167,22 @@ public final class ClientProperty {
     public static final HazelcastProperty IO_BALANCER_INTERVAL_SECONDS
             = new HazelcastProperty("hazelcast.client.io.balancer.interval.seconds", 20, SECONDS);
 
+    /**
+     * The number of response threads.
+     *
+     * By default there are 2 response threads; this gives stable and good performance.
+     *
+     * If set to 0, the response threads are bypassed and the response handling is done
+     * on the IO threads. Under certain conditions this can give a higher throughput, but
+     * setting to 0 should be regarded an experimental feature.
+     *
+     * If set to 0, the IO_OUTPUT_THREAD_COUNT is really going to matter because the
+     * inbound thread will have more work to do. By default when TLS isn't enable,
+     * there is just 1 inbound thread.
+     */
+    public static final HazelcastProperty RESPONSE_THREAD_COUNT
+            = new HazelcastProperty("hazelcast.client.response.thread.count", 2);
+
     private ClientProperty() {
     }
 }
