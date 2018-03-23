@@ -20,6 +20,7 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.core.MigrationEvent;
+import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.Versions;
@@ -115,6 +116,7 @@ public class MigrationManager {
     private final Lock partitionServiceLock;
     private final MigrationPlanner migrationPlanner;
     private final boolean fragmentedMigrationEnabled;
+    private final long memberHeartbeatTimeoutMillis;
 
     MigrationManager(Node node, InternalPartitionServiceImpl service, Lock partitionServiceLock) {
         this.node = node;
@@ -141,6 +143,7 @@ public class MigrationManager {
                 resumeMigration();
             }
         });
+        this.memberHeartbeatTimeoutMillis = properties.getMillis(GroupProperty.MAX_NO_HEARTBEAT_SECONDS);
     }
 
     @Probe(name = "migrationActive")
@@ -351,7 +354,7 @@ public class MigrationManager {
             Future<Boolean> future = nodeEngine.getOperationService()
                     .createInvocationBuilder(SERVICE_NAME, operation, destination)
                     .setTryCount(Integer.MAX_VALUE)
-                    .setCallTimeout(Long.MAX_VALUE).invoke();
+                    .setCallTimeout(memberHeartbeatTimeoutMillis).invoke();
 
             boolean result = future.get();
             if (logger.isFinestEnabled()) {
@@ -360,6 +363,10 @@ public class MigrationManager {
             return result;
         } catch (Throwable t) {
             logMigrationCommitFailure(destination, migration, t);
+
+            if (t.getCause() instanceof OperationTimeoutException) {
+                return commitMigrationToDestination(destination, migration);
+            }
         }
         return false;
     }

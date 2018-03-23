@@ -50,6 +50,7 @@ public class PartitionStateManager {
 
     private final Node node;
     private final ILogger logger;
+    private final InternalPartitionServiceImpl partitionService;
 
     private final int partitionCount;
     private final InternalPartitionImpl[] partitions;
@@ -72,6 +73,7 @@ public class PartitionStateManager {
         this.node = node;
         this.logger = node.getLogger(getClass());
 
+        this.partitionService = partitionService;
         partitionCount = partitionService.getPartitionCount();
         this.partitions = new InternalPartitionImpl[partitionCount];
 
@@ -178,6 +180,10 @@ public class PartitionStateManager {
         ClusterState clusterState = node.getClusterService().getClusterState();
         if (!clusterState.isMigrationAllowed()) {
             logger.warning("Partitions can't be assigned since cluster-state= " + clusterState);
+            return false;
+        }
+        if (partitionService.isFetchMostRecentPartitionTableTaskRequired()) {
+            logger.warning("Partitions can't be assigned since most recent partition table is not decided yet.");
             return false;
         }
         return true;
