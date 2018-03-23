@@ -114,6 +114,7 @@ import static java.security.AccessController.doPrivileged;
 public class Node {
 
     private static final int THREAD_SLEEP_DURATION_MS = 500;
+    private static final int MIN_PROCESSORS = 8;
 
     public final HazelcastInstanceImpl hazelcastInstance;
 
@@ -238,6 +239,16 @@ public class Node {
                 ignore(ignored);
             }
             throw rethrow(e);
+        }
+
+        coresCheck();
+    }
+
+    private void coresCheck() {
+        int availableProcessors = Runtime.getRuntime().availableProcessors();
+        if (availableProcessors < MIN_PROCESSORS) {
+            logger.warning(availableProcessors + " processors are detected. "
+                    + "For production environments the minimum recommended number of processors is " + MIN_PROCESSORS + ".");
         }
     }
 
