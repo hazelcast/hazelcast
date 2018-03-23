@@ -94,6 +94,7 @@ import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_S
 import static com.hazelcast.instance.MemberImpl.NA_MEMBER_LIST_JOIN_VERSION;
 import static com.hazelcast.instance.NodeShutdownHelper.shutdownNodeByFiringEvents;
 import static com.hazelcast.internal.cluster.impl.MulticastService.createMulticastService;
+import static com.hazelcast.nio.IOUtil.closeResource;
 import static com.hazelcast.spi.properties.GroupProperty.DISCOVERY_SPI_ENABLED;
 import static com.hazelcast.spi.properties.GroupProperty.DISCOVERY_SPI_PUBLIC_IP_ENABLED;
 import static com.hazelcast.spi.properties.GroupProperty.GRACEFUL_SHUTDOWN_MAX_WAIT;
@@ -227,11 +228,7 @@ public class Node {
 
             config.setClusterService(clusterService);
         } catch (Throwable e) {
-            try {
-                serverSocketChannel.close();
-            } catch (Throwable ignored) {
-                ignore(ignored);
-            }
+            closeResource(serverSocketChannel);
             try {
                 shutdownServices(true);
             } catch (Throwable ignored) {
