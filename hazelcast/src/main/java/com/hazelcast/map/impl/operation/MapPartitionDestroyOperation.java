@@ -19,29 +19,31 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.PartitionContainer;
-import com.hazelcast.spi.impl.PartitionSpecificRunnable;
+import com.hazelcast.spi.AbstractLocalOperation;
+import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 
-import java.util.concurrent.Semaphore;
-
-public class MapPartitionDestroyTask implements PartitionSpecificRunnable {
+/**
+ * Operation to destroy the map data on the partition thread
+ */
+public class MapPartitionDestroyOperation extends AbstractLocalOperation
+        implements PartitionAwareOperation, AllowedDuringPassiveState {
     private final PartitionContainer partitionContainer;
     private final MapContainer mapContainer;
-    private Semaphore semaphore;
 
-    public MapPartitionDestroyTask(PartitionContainer container, MapContainer mapContainer, Semaphore semaphore) {
+    public MapPartitionDestroyOperation(PartitionContainer container, MapContainer mapContainer) {
         this.partitionContainer = container;
         this.mapContainer = mapContainer;
-        this.semaphore = semaphore;
+        setPartitionId(partitionContainer.getPartitionId());
     }
 
     @Override
     public void run() {
         partitionContainer.destroyMap(mapContainer);
-        semaphore.release();
     }
 
     @Override
-    public int getPartitionId() {
-        return partitionContainer.getPartitionId();
+    public boolean validatesTarget() {
+        return false;
     }
 }
