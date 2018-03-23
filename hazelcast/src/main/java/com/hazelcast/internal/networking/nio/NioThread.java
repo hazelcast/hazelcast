@@ -39,6 +39,7 @@ import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static com.hazelcast.internal.networking.nio.SelectorMode.SELECT_NOW;
 import static com.hazelcast.internal.networking.nio.SelectorOptimizer.newSelector;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
+import static com.hazelcast.nio.IOUtil.closeResource;
 import static com.hazelcast.util.EmptyStatement.ignore;
 import static java.lang.Math.max;
 import static java.lang.System.currentTimeMillis;
@@ -391,11 +392,7 @@ public class NioThread extends Thread implements OperationHostileThread {
             logger.finest("Closing selector for:" + getName());
         }
 
-        try {
-            selector.close();
-        } catch (Exception e) {
-            logger.finest("Failed to close selector", e);
-        }
+        closeResource(selector);
     }
 
     public final void shutdown() {
