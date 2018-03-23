@@ -25,6 +25,7 @@ import com.hazelcast.concurrent.lock.operations.LockOperation;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.LockPermission;
 import com.hazelcast.spi.Operation;
@@ -41,7 +42,7 @@ public class LockLockMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        Data key = serializationService.toData(parameters.name);
+        Data key = serializationService.toData(parameters.name, StringPartitioningStrategy.INSTANCE);
         return new LockOperation(new InternalLockNamespace(parameters.name)
                 , key, parameters.threadId, parameters.leaseTime, -1, parameters.referenceId);
     }
