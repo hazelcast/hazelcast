@@ -184,16 +184,16 @@ public class WatermarkCoalescer_IntegrationTest extends JetTestSupport {
         dag = createDag(mode, singletonList(wm(100)), singletonList(wm(150)));
 
         JobConfig config = new JobConfig().setMaxWatermarkRetainMillis(5000);
+        long time = System.nanoTime();
         instance.newJob(dag, config);
-
         assertTrueEventually(() -> assertEquals(1, sinkList.size()), 3);
         assertEquals("wm(100)", sinkList.get(0));
-        long time = System.nanoTime();
 
         assertTrueEventually(() -> assertEquals(2, sinkList.size()), 6);
+
         assertEquals("wm(150)", sinkList.get(1));
         long elapsedMs = NANOSECONDS.toMillis(System.nanoTime() - time);
-        assertTrue("Too little elapsed time, WM probably emitted immediately", elapsedMs > 3000);
+        assertTrue("Too little elapsed time, WM probably emitted immediately: " + elapsedMs, elapsedMs > 3000);
     }
 
     @Test
