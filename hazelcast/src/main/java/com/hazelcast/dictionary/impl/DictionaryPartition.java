@@ -24,20 +24,23 @@ import com.hazelcast.spi.serialization.SerializationService;
 
 import static com.hazelcast.util.HashUtil.hashToIndex;
 
-public class Partition {
+/**
+ * Contains all the data for a single partition of the
+ * {@link com.hazelcast.dictionary.Dictionary}.
+ *
+ * A DictionaryPartition is build up out of a fixed number
+ * of segments. Segments are 'threadsafe' self contained units
+ * this contain the hashtable for the key, the dataregion for
+ * the key/value storage.
+ */
+public class DictionaryPartition {
 
-    private final NodeEngine nodeEngine;
-    private final SerializationService serializationService;
-    private final DictionaryConfig config;
     private Segment[] segments;
 
-    public Partition(NodeEngine nodeEngine,
-                     DictionaryConfig config,
-                     EntryModel model,
-                     EntryEncoder encoder) {
-        this.nodeEngine = nodeEngine;
-        this.serializationService = nodeEngine.getSerializationService();
-        this.config = config;
+    public DictionaryPartition(NodeEngine nodeEngine,
+                               DictionaryConfig config,
+                               EntryModel model,
+                               EntryEncoder encoder) {
         this.segments = new Segment[config.getSegmentsPerPartition()];
         for (int k = 0; k < segments.length; k++) {
             segments[k] = new Segment(nodeEngine.getSerializationService(), model, encoder, config);

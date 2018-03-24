@@ -4,6 +4,20 @@ import com.hazelcast.config.DictionaryConfig;
 import com.hazelcast.internal.memory.impl.UnsafeUtil;
 import sun.misc.Unsafe;
 
+/**
+ * A DataRegion is the region of memory in {@link Segment} where the
+ * actual key/values are stored.
+ *
+ * Currently a DataRegion contains a single block of memory that gets
+ * increased or decreased in side by copying the data into a larger or
+ * smaller block of memory.
+ *
+ * In the future the DataRegion could become smarter and instead of
+ * having a single block of memory, a set of blocks is used. Blocks
+ * can be added and removed. The advantage would be that a memory a
+ * allocation that doesn't fit into the existing claimed memory, doesn't
+ * ;ead to a full copy of the whole data region.
+ */
 public class DataRegion {
     private final static Unsafe unsafe = UnsafeUtil.UNSAFE;
     private final DictionaryConfig config;
@@ -17,7 +31,7 @@ public class DataRegion {
     // the offset of the first free byes to store data (key/values)
     private int freeOffset;
     // the bytes available for writing key/values
-    private int available;
+    private volatile int available;
     // contains the number of entries in this segment.
     // is volatile so it can be read by different threads concurrently
     // will never be modified concurrently

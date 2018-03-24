@@ -22,17 +22,20 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.lang.reflect.Constructor;
 
+/**
+ * A container for a single {@link com.hazelcast.dictionary.Dictionary}.
+ */
 public class DictionaryContainer {
     private final DictionaryConfig config;
     private final NodeEngineImpl nodeEngine;
-    private final Partition[] partitions;
+    private final DictionaryPartition[] partitions;
     private final EntryModel entryModel;
     private final Compiler compiler;
 
     public DictionaryContainer(DictionaryConfig dictionaryConfig, NodeEngineImpl nodeEngine, Compiler compiler) {
         this.config = dictionaryConfig;
         this.nodeEngine = nodeEngine;
-        this.partitions = new Partition[nodeEngine.getPartitionService().getPartitionCount()];
+        this.partitions = new DictionaryPartition[nodeEngine.getPartitionService().getPartitionCount()];
         this.entryModel = new EntryModel(dictionaryConfig);
         this.compiler = compiler;
 
@@ -40,7 +43,7 @@ public class DictionaryContainer {
 
         System.out.println("DictionaryContainer " + dictionaryConfig.getName() + " created");
         for (int k = 0; k < partitions.length; k++) {
-            this.partitions[k] = new Partition(nodeEngine, dictionaryConfig, entryModel, entryEncoder);
+            this.partitions[k] = new DictionaryPartition(nodeEngine, dictionaryConfig, entryModel, entryEncoder);
         }
     }
 
@@ -56,7 +59,7 @@ public class DictionaryContainer {
         }
     }
 
-    public Partition getPartition(int partitionId) {
+    public DictionaryPartition getPartition(int partitionId) {
         return partitions[partitionId];
     }
 }

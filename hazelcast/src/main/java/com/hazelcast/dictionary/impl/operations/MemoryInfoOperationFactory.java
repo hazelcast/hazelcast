@@ -47,7 +47,7 @@ public class MemoryInfoOperationFactory implements OperationFactory {
 
     @Override
     public int getId() {
-        return DictionaryDataSerializerHook.MEMORY_INFO_OPERATION;
+        return DictionaryDataSerializerHook.MEMORY_INFO_OPERATION_FACTORY;
     }
 
     @Override

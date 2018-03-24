@@ -18,8 +18,8 @@ package com.hazelcast.dictionary.impl.operations;
 
 import com.hazelcast.dictionary.impl.DictionaryContainer;
 import com.hazelcast.dictionary.impl.DictionaryDataSerializerHook;
+import com.hazelcast.dictionary.impl.DictionaryPartition;
 import com.hazelcast.dictionary.impl.DictionaryService;
-import com.hazelcast.dictionary.impl.Partition;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -35,7 +35,7 @@ public abstract class DictionaryOperation
     private String name;
     protected DictionaryService dataSeriesService;
     protected DictionaryContainer container;
-    protected Partition partition;
+    protected DictionaryPartition partition;
 
     public DictionaryOperation() {
     }
