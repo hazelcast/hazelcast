@@ -16,21 +16,6 @@
 
 package com.hazelcast.query.impl.extractor.predicates;
 
-import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.query.Predicates;
-import com.hazelcast.query.impl.extractor.AbstractExtractionTest;
-import com.hazelcast.test.HazelcastParametersRunnerFactory;
-import com.hazelcast.test.annotation.ParallelTest;
-import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameters;
-import org.junit.runners.Parameterized.UseParametersRunnerFactory;
-
-import java.util.Collection;
-
 import static com.hazelcast.config.InMemoryFormat.BINARY;
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
 import static com.hazelcast.query.impl.extractor.AbstractExtractionSpecification.Index.NO_INDEX;
@@ -41,7 +26,22 @@ import static com.hazelcast.query.impl.extractor.AbstractExtractionSpecification
 import static com.hazelcast.query.impl.extractor.predicates.CollectionDataStructure.Person;
 import static com.hazelcast.query.impl.extractor.predicates.CollectionDataStructure.limb;
 import static com.hazelcast.query.impl.extractor.predicates.CollectionDataStructure.person;
+import static com.hazelcast.query.impl.extractor.predicates.CollectionDataStructure.tatoo;
 import static java.util.Arrays.asList;
+
+import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.query.Predicates;
+import com.hazelcast.query.impl.extractor.AbstractExtractionTest;
+import com.hazelcast.test.HazelcastParametersRunnerFactory;
+import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.QuickTest;
+import java.util.Collection;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 /**
  * Tests whether all predicates work with the extraction in collections.
@@ -68,8 +68,10 @@ import static java.util.Arrays.asList;
 @Category({QuickTest.class, ParallelTest.class})
 public class CollectionAllPredicatesReflectionTest extends AbstractExtractionTest {
 
-    private static final Person BOND = person(limb("left", 49), limb("right", 51));
-    private static final Person KRUEGER = person(limb("links", 27), limb("rechts", 29));
+    private static final Person BOND = person(limb("left", 49), limb("right", 51))
+            .withTatoos(tatoo("back", 2, "dragon"), tatoo("leg", 1, "spider"));
+    private static final Person KRUEGER = person(limb("links", 27), limb("rechts", 29))
+            .withTatoos(tatoo("back", 3, "angel"), tatoo("arm", 1, "spider"));
 
     @Parameters(name = "{index}: {0}, {1}, {2}")
     public static Collection<Object[]> data() {
@@ -194,5 +196,49 @@ public class CollectionAllPredicatesReflectionTest extends AbstractExtractionTes
         execute(Input.of(BOND, KRUEGER),
                 Query.of(Predicates.regex("limbs_[any].name", "li.*"), mv),
                 Expected.of(KRUEGER));
+    }
+
+    @Test
+    public void givenTwoPersonsWhenMapIsQuiredBySpecificKeyThenCorrectPersonIsChosen() {
+        execute(Input.of(BOND, KRUEGER),
+                Query.of(Predicates.equal("tatoos['back'].size", 2), mv),
+                Expected.of(BOND));
+    }
+
+    @Test
+    public void givenTwoPersonsWhenMapIsQuiredBySpecificWrongKeyThenCorrectPersonIsChosen() {
+        execute(Input.of(BOND, KRUEGER),
+                Query.of(Predicates.greaterThan("tatoos['ear'].size", 0), mv),
+                Expected.empty());
+    }
+
+    @Test
+    public void givenTwoPersonsWhenMapIsQueriedByAnyKeyWithMatchingByOneOfElementsConditionThenEverybodyAreExtracted() {
+        execute(Input.of(BOND, KRUEGER),
+                Query.of(Predicates.greaterThan("tatoos['back'].size", 1), mv),
+                Expected.of(BOND, KRUEGER));
+    }
+
+    @Test
+    public void givenTwoPersonsWhenMapIsQueriedByAnyKeyWithMatchingConditionThenEverybodyAreExtracted() {
+        execute(Input.of(BOND, KRUEGER),
+                Query.of(Predicates.equal("tatoos[any].image", "spider"), mv),
+                Expected.of(BOND, KRUEGER));
+    }
+
+    @Test
+    public void givenTwoPersonsWhenMapIsQuireidByAnyKeyWithUnmatchingConditionThenNooneIsExtracted() {
+        execute(Input.of(BOND, KRUEGER),
+                Query.of(Predicates.greaterThan("tatoos[any].size", 4), mv),
+                Expected.empty());
+    }
+
+    @Test
+    public void givenInputWithEmptyMapsFieldsWhenMapIsQuireidByAnyKeyWithUnmatchingConditionThenn() {
+        Person guyWithoutTatoos = person();
+
+        execute(Input.of(guyWithoutTatoos),
+                Query.of(Predicates.greaterThan("tatoos[any].size", 0), mv),
+                Expected.empty());
     }
 }

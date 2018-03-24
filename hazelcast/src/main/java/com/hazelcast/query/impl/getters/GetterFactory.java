@@ -16,28 +16,72 @@
 
 package com.hazelcast.query.impl.getters;
 
-import com.hazelcast.util.CollectionUtil;
-
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.util.Collection;
-
+import static com.hazelcast.query.impl.getters.AbstractMultiValueGetter.validateMapKey;
 import static com.hazelcast.query.impl.getters.AbstractMultiValueGetter.validateModifier;
 import static com.hazelcast.query.impl.getters.NullGetter.NULL_GETTER;
 import static com.hazelcast.query.impl.getters.NullMultiValueGetter.NULL_MULTIVALUE_GETTER;
 
+import com.hazelcast.util.CollectionUtil;
+import java.lang.reflect.AccessibleObject;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Map.Entry;
+
 public final class GetterFactory {
 
     private static final String ANY_POSTFIX = "[any]";
+    private static final AccessType<Field> FIELD = new AccessType<Field>() {
+        @Override
+        public Object getObject(Field field, Object fromObject) throws IllegalAccessException {
+            return field.get(fromObject);
+        }
+
+        @Override
+        public Class<?> getType(Field field) {
+            return field.getType();
+        }
+
+        @Override
+        public Getter createGetter(Getter parentGetter, Field field, String modifierSuffix, Class<?> returnType) {
+            return new FieldGetter(parentGetter, field, modifierSuffix, returnType);
+        }
+    };
+
+    private static final AccessType<Method> METHOD = new AccessType<Method>() {
+        @Override
+        public Object getObject(Method method, Object fromObject)
+                throws IllegalAccessException, InvocationTargetException {
+            return method.invoke(fromObject);
+        }
+
+        @Override
+        public Class<?> getType(Method method) {
+            return method.getReturnType();
+        }
+
+        @Override
+        public Getter createGetter(Getter parentGetter, Method method, String modifierSuffix, Class<?> returnType) {
+            return new MethodGetter(parentGetter, method, modifierSuffix, returnType);
+        }
+    };
 
     private GetterFactory() {
     }
 
     public static Getter newFieldGetter(Object object, Getter parentGetter, Field field, String modifierSuffix)
             throws Exception {
-        Class<?> fieldType = field.getType();
+        return createGetterForAccessibleObject(FIELD, field, object, parentGetter, modifierSuffix);
+    }
+
+    private static Getter createGetterForAccessibleObject(AccessType accessType, AccessibleObject accessibleObject,
+            Object object, Getter parentGetter,
+            String modifierSuffix) throws Exception {
+        Class<?> objectType = accessType.getType(accessibleObject);
         Class<?> returnType = null;
-        if (isExtractingFromCollection(fieldType, modifierSuffix)) {
+        if (isExtractingFromCollection(objectType, modifierSuffix)) {
             validateModifier(modifierSuffix);
             Object currentObject = getCurrentObject(object, parentGetter);
             if (currentObject == null) {
@@ -45,9 +89,9 @@ public final class GetterFactory {
             }
             if (currentObject instanceof MultiResult) {
                 MultiResult multiResult = (MultiResult) currentObject;
-                returnType = extractTypeFromMultiResult(field, multiResult);
+                returnType = extractTypeFromMultiResult(accessibleObject, multiResult, accessType);
             } else {
-                Collection collection = (Collection) field.get(currentObject);
+                Collection collection = (Collection) accessType.getObject(accessibleObject, currentObject);
                 returnType = getCollectionType(collection);
             }
             if (returnType == null) {
@@ -56,23 +100,29 @@ public final class GetterFactory {
                 }
                 return NULL_GETTER;
             }
-        } else if (isExtractingFromArray(fieldType, modifierSuffix)) {
+        } else if (isExtractingFromArray(objectType, modifierSuffix)) {
             validateModifier(modifierSuffix);
             Object currentObject = getCurrentObject(object, parentGetter);
             if (currentObject == null) {
                 return NULL_GETTER;
             }
+        } else if (isExtractingFromMap(objectType, modifierSuffix)) {
+            returnType = defineReturnTypeForMap(object, parentGetter, accessibleObject, modifierSuffix, accessType);
+            if (returnType == null) {
+                return getNullGetterOrMultivalueNullGetter(modifierSuffix);
+            }
         }
-        return new FieldGetter(parentGetter, field, modifierSuffix, returnType);
+        return accessType.createGetter(parentGetter, accessibleObject, modifierSuffix, returnType);
     }
 
-    private static Class<?> extractTypeFromMultiResult(Field field, MultiResult multiResult) throws Exception {
+    private static Class<?> extractTypeFromMultiResult(AccessibleObject accessibleObject, MultiResult multiResult,
+            AccessType accessType) throws Exception {
         Class<?> returnType = null;
         for (Object o : multiResult.getResults()) {
             if (o == null) {
                 continue;
             }
-            Collection collection = (Collection) field.get(o);
+            Collection collection = (Collection) accessType.getObject(accessibleObject, o);
             returnType = getCollectionType(collection);
             if (returnType != null) {
                 break;
@@ -83,50 +133,14 @@ public final class GetterFactory {
 
     public static Getter newMethodGetter(Object object, Getter parentGetter, Method method, String modifierSuffix)
             throws Exception {
-        Class<?> methodReturnType = method.getReturnType();
-        Class<?> returnType = null;
-        if (isExtractingFromCollection(methodReturnType, modifierSuffix)) {
-            validateModifier(modifierSuffix);
-            Object currentObject = getCurrentObject(object, parentGetter);
-            if (currentObject == null) {
-                return NULL_GETTER;
-            }
-            if (currentObject instanceof MultiResult) {
-                MultiResult multiResult = (MultiResult) currentObject;
-                returnType = extractTypeFromMultiResult(method, multiResult);
-            } else {
-                Collection collection = (Collection) method.invoke(currentObject);
-                returnType = getCollectionType(collection);
-            }
-            if (returnType == null) {
-                if (modifierSuffix.equals(ANY_POSTFIX)) {
-                    return NULL_MULTIVALUE_GETTER;
-                }
-                return NULL_GETTER;
-            }
-        } else if (isExtractingFromArray(methodReturnType, modifierSuffix)) {
-            validateModifier(modifierSuffix);
-            Object currentObject = getCurrentObject(object, parentGetter);
-            if (currentObject == null) {
-                return NULL_GETTER;
-            }
-        }
-        return new MethodGetter(parentGetter, method, modifierSuffix, returnType);
+        return createGetterForAccessibleObject(METHOD, method, object, parentGetter, modifierSuffix);
     }
 
-    private static Class<?> extractTypeFromMultiResult(Method method, MultiResult multiResult) throws Exception {
-        Class<?> returnType = null;
-        for (Object o : multiResult.getResults()) {
-            if (o == null) {
-                continue;
-            }
-            Collection collection = (Collection) method.invoke(o);
-            returnType = getCollectionType(collection);
-            if (returnType != null) {
-                break;
-            }
+    private static Getter getNullGetterOrMultivalueNullGetter(String modifierSuffix) {
+        if (modifierSuffix.equals(ANY_POSTFIX)) {
+            return NULL_MULTIVALUE_GETTER;
         }
-        return returnType;
+        return NULL_GETTER;
     }
 
     public static Getter newThisGetter(Getter parent, Object object) {
@@ -149,6 +163,30 @@ public final class GetterFactory {
         return targetObject.getClass();
     }
 
+    private static Class<?> defineReturnTypeForMap(Object object, Getter parentGetter,
+            AccessibleObject accessibleObject, String modifierSuffix, AccessType accessType) throws Exception {
+        validateMapKey(modifierSuffix);
+        Object currentObject = getCurrentObject(object, parentGetter);
+        if (currentObject == null) {
+            return null;
+        }
+        Map<?, ?> map = (Map<?, ?>) accessType.getObject(accessibleObject, currentObject);
+        if (map.isEmpty()) {
+            return null;
+        }
+        return getMapValueType(map);
+    }
+
+    private static Class<?> getMapValueType(Map<?, ?> map) {
+        for (Entry<?, ?> entry : map.entrySet()) {
+            Object value = entry.getValue();
+            if (value != null) {
+                return value.getClass();
+            }
+        }
+        return null;
+    }
+
     private static boolean isExtractingFromCollection(Class<?> type, String modifierSuffix) {
         return modifierSuffix != null && Collection.class.isAssignableFrom(type);
     }
@@ -157,8 +195,21 @@ public final class GetterFactory {
         return modifierSuffix != null && type.isArray();
     }
 
+    private static boolean isExtractingFromMap(Class<?> type, String modifierSuffix) {
+        return modifierSuffix != null && Map.class.isAssignableFrom(type);
+    }
+
     private static Object getCurrentObject(Object obj, Getter parent) throws Exception {
         return parent == null ? obj : parent.getValue(obj);
     }
 
+    private interface AccessType<T extends AccessibleObject> {
+
+        Object getObject(T accessibleObject, Object fromObject)
+                throws IllegalAccessException, InvocationTargetException;
+
+        Class<?> getType(T field);
+
+        Getter createGetter(Getter parentGetter, T accessObject, String modifierSuffix, Class<?> returnType);
+    }
 }

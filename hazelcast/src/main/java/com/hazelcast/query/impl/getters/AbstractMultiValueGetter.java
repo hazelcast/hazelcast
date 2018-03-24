@@ -18,31 +18,107 @@ package com.hazelcast.query.impl.getters;
 
 import com.hazelcast.util.CollectionUtil;
 import com.hazelcast.util.collection.ArrayUtils;
-
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
+import java.util.Map;
 
 
 public abstract class AbstractMultiValueGetter extends Getter {
+
     public static final String REDUCER_ANY_TOKEN = "any";
+    public static final String REDUCER_ANY_TOKEN_EMBRACED = "[any]";
 
     public static final int DO_NOT_REDUCE = -1;
     public static final int REDUCE_EVERYTHING = -2;
+    public static final int MODIFIER_NOT_USED = -3;
+
+    static final String WRONG_MODIFIER_SUFFIX_ERROR = "Only non-empty reducers allowed for maps. ['value'] or"
+            + " [any]. Not: %s";
+
+    private static final String UNSET_VALUE = "";
+
+    private static final int STRING_OFFSET = 2;
+    private static final int BRACKETS_LENGTH = 4;
 
     private final int modifier;
+    private final String mapKey;
+    private final ReduceType reduceType;
     private final Class resultType;
 
     public AbstractMultiValueGetter(Getter parent, String modifierSuffix, Class<?> inputType, Class resultType) {
         super(parent);
+
+        reduceType = determineReduceType(inputType, modifierSuffix);
+
+        switch (reduceType) {
+            case REDUCE_BY_INDEX:
+                modifier = parseModifier(modifierSuffix);
+                mapKey = UNSET_VALUE;
+                break;
+            case REDUCE_BY_MAP_KEY:
+                modifier = MODIFIER_NOT_USED;
+                mapKey = parseMapKey(modifierSuffix);
+                break;
+            case DO_NOT_REDUCE:
+                modifier = DO_NOT_REDUCE;
+                mapKey = UNSET_VALUE;
+                break;
+            case REDUCE_EVERYTHING:
+                modifier = REDUCE_EVERYTHING;
+                mapKey = UNSET_VALUE;
+                break;
+            default:
+                throw new IllegalStateException("Getter incorrectly initialized `reduceType` to " + reduceType);
+        }
+
+        this.resultType = getResultType(inputType, resultType);
+    }
+
+    private ReduceType determineReduceType(Class<?> inputType, String modifierSuffix) {
+        if (modifierSuffix == null) {
+            return ReduceType.DO_NOT_REDUCE;
+        }
         boolean isArray = inputType.isArray();
         boolean isCollection = Collection.class.isAssignableFrom(inputType);
-        if (modifierSuffix == null) {
-            modifier = DO_NOT_REDUCE;
-        } else {
-            modifier = parseModifier(modifierSuffix, isArray, isCollection);
+        boolean isMap = Map.class.isAssignableFrom(inputType);
+        if (isMap || isArray || isCollection) {
+            String stringValue = removeBrackets(modifierSuffix);
+            if (REDUCER_ANY_TOKEN.equals(stringValue)) {
+                return ReduceType.REDUCE_EVERYTHING;
+            }
+            if (isMap) {
+                return ReduceType.REDUCE_BY_MAP_KEY;
+            } else {
+                return ReduceType.REDUCE_BY_INDEX;
+            }
         }
-        this.resultType = getResultType(inputType, resultType);
+
+        throw new IllegalArgumentException("Reducer is allowed only when extracting from arrays, collections or maps");
+    }
+
+    private static String removeBrackets(String modifierSuffix) {
+        return modifierSuffix.substring(1, modifierSuffix.length() - 1);
+    }
+
+    private String parseMapKey(String modifierSuffix) {
+        validateMapKeyIsString(modifierSuffix);
+        return modifierSuffix.substring(STRING_OFFSET, modifierSuffix.length() - STRING_OFFSET);
+    }
+
+    public static void validateMapKey(String modifierSuffix) {
+        if (REDUCER_ANY_TOKEN_EMBRACED.equals(modifierSuffix)) {
+            return;
+        }
+
+        validateMapKeyIsString(modifierSuffix);
+    }
+
+    private static void validateMapKeyIsString(String modifierSuffix) {
+        if (!modifierSuffix.startsWith("['") || !modifierSuffix.endsWith("']")
+                || modifierSuffix.length() <= BRACKETS_LENGTH) {
+            throw new IllegalArgumentException(String.format(WRONG_MODIFIER_SUFFIX_ERROR, modifierSuffix));
+        }
     }
 
     protected abstract Object extractFrom(Object parentObject) throws IllegalAccessException, InvocationTargetException;
@@ -63,15 +139,27 @@ public abstract class AbstractMultiValueGetter extends Getter {
         }
 
         Object o = extractFrom(parentObject);
-        if (modifier == DO_NOT_REDUCE) {
-            return o;
+        switch (reduceType) {
+            case DO_NOT_REDUCE:
+                return o;
+            case REDUCE_EVERYTHING:
+                MultiResult collector = new MultiResult();
+                reduceInto(collector, o);
+                return collector;
+            case REDUCE_BY_INDEX:
+                return getItemAtPositionOrNull(o, (Integer) modifier);
+            case REDUCE_BY_MAP_KEY:
+                return getFromMapByKey(o, mapKey);
+            default:
+                throw new IllegalStateException("Getter incorrectly initialized `reduceType` to " + reduceType);
         }
-        if (modifier == REDUCE_EVERYTHING) {
-            MultiResult collector = new MultiResult();
-            reduceInto(collector, o);
-            return collector;
+    }
+
+    private Object getFromMapByKey(Object o, String mapKey) {
+        if (!(o instanceof Map)) {
+            throw new IllegalArgumentException("Can get from object " + o + "only if it's a map for key " + mapKey);
         }
-        return getItemAtPositionOrNull(o, modifier);
+        return ((Map) o).get(mapKey);
     }
 
     protected int getModifier() {
@@ -86,7 +174,7 @@ public abstract class AbstractMultiValueGetter extends Getter {
             return resultType;
         }
 
-        if (modifier == DO_NOT_REDUCE) {
+        if (reduceType == ReduceType.DO_NOT_REDUCE) {
             //We are returning the object as it is.
             //No modifier suffix was defined
             return inputType;
@@ -129,14 +217,7 @@ public abstract class AbstractMultiValueGetter extends Getter {
     }
 
     private boolean shouldReduce() {
-        return modifier != DO_NOT_REDUCE;
-    }
-
-    private int parseModifier(String modifierSuffix, boolean isArray, boolean isCollection) {
-        if (!isArray && !isCollection) {
-            throw new IllegalArgumentException("Reducer is allowed only when extracting from arrays or collections");
-        }
-        return parseModifier(modifierSuffix);
+        return reduceType != ReduceType.DO_NOT_REDUCE;
     }
 
 
@@ -193,14 +274,27 @@ public abstract class AbstractMultiValueGetter extends Getter {
     }
 
     protected void reduceInto(MultiResult collector, Object currentObject) {
-        if (modifier != REDUCE_EVERYTHING) {
+        if (reduceType == ReduceType.REDUCE_BY_INDEX) {
             Object item = getItemAtPositionOrNull(currentObject, modifier);
             collector.add(item);
+            return;
+        }
+        if (reduceType == ReduceType.REDUCE_BY_MAP_KEY) {
+            collector.add(getFromMapByKey(currentObject, mapKey));
             return;
         }
 
         if (currentObject == null) {
             collector.addNullOrEmptyTarget();
+            return;
+        }
+
+        reduceAllEntriesInto(collector, currentObject);
+    }
+
+    private void reduceAllEntriesInto(MultiResult collector, Object currentObject) {
+        if (currentObject instanceof Map) {
+            reduceMapInto(collector, (Map) currentObject);
         } else if (currentObject instanceof Collection) {
             reduceCollectionInto(collector, (Collection) currentObject);
         } else if (currentObject instanceof Object[]) {
@@ -213,11 +307,18 @@ public abstract class AbstractMultiValueGetter extends Getter {
         }
     }
 
+    private void reduceMapInto(MultiResult collector, Map currentObject) {
+        for (Object value : currentObject.values()) {
+            if (value != null) {
+                collector.add(value);
+            }
+        }
+    }
 
     private static int parseModifier(String modifier) {
-        String stringValue = modifier.substring(1, modifier.length() - 1);
+        String stringValue = removeBrackets(modifier);
         if (REDUCER_ANY_TOKEN.equals(stringValue)) {
-            return REDUCE_EVERYTHING;
+            return MODIFIER_NOT_USED;
         }
 
         int pos = Integer.parseInt(stringValue);
@@ -231,4 +332,7 @@ public abstract class AbstractMultiValueGetter extends Getter {
         parseModifier(modifier);
     }
 
+    private enum ReduceType {
+        DO_NOT_REDUCE, REDUCE_EVERYTHING, REDUCE_BY_INDEX, REDUCE_BY_MAP_KEY
+    }
 }

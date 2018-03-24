@@ -17,14 +17,15 @@
 package com.hazelcast.query.impl.extractor.predicates;
 
 import com.hazelcast.test.ObjectTestUtils;
-
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
- * Data structure used in the tests of extraction in multi-value attributes (in collections and arrays)
+ * Data structure used in the tests of extraction in multi-value attributes (in collections, arrays and maps)
  * Each multi-value attribute is present as both an array and as a collection, for example:
  * limbs_list & limbs_array, so that both extraction in arrays and in collections may be tested.
  */
@@ -35,22 +36,49 @@ public class CollectionDataStructure {
         List<Limb> limbs_list = new ArrayList<Limb>();
         Limb[] limbs_array = null;
 
+        private Map<String, Tatoo> tatoos = new HashMap<String, Tatoo>();
+
         @Override
         public boolean equals(Object o) {
-            if (!(o instanceof Person)) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
                 return false;
             }
-            final Person other = (Person) o;
-            return ObjectTestUtils.equals(this.limbs_list, other.limbs_list);
+            Person person = (Person) o;
+            return ObjectTestUtils.equals(limbs_list, person.limbs_list) &&
+                    Arrays.equals(limbs_array, person.limbs_array) &&
+                    ObjectTestUtils.equals(tatoos, person.tatoos);
         }
 
         @Override
         public int hashCode() {
-            return ObjectTestUtils.hashCode(limbs_list);
+
+            int result = ObjectTestUtils.hash(limbs_list, tatoos);
+            result = 31 * result + Arrays.hashCode(limbs_array);
+            return result;
+        }
+
+        @Override
+        public String toString() {
+            return "Person{" +
+                    "limbs_list=" + limbs_list +
+                    ", limbs_array=" + Arrays.toString(limbs_array) +
+                    ", tatoos=" + tatoos +
+                    '}';
+        }
+
+        public Person withTatoos(Tatoo... tatoos) {
+            for (Tatoo tatoo : tatoos) {
+                this.tatoos.put(tatoo.location, tatoo);
+            }
+            return this;
         }
     }
 
     public static class Limb implements Serializable {
+
         String name;
         public Integer power;
 
@@ -67,6 +95,71 @@ public class CollectionDataStructure {
         public int hashCode() {
             return ObjectTestUtils.hash(name, power);
         }
+
+        @Override
+        public String toString() {
+            return "Limb{" +
+                    "name='" + name + '\'' +
+                    ", power=" + power +
+                    '}';
+        }
+    }
+
+    public static class Tatoo implements Serializable {
+
+        private final String location;
+        private final int size;
+        private final String image;
+
+        public Tatoo(String location, int size, String image) {
+            this.location = location;
+            this.size = size;
+            this.image = image;
+        }
+
+        public String getLocation() {
+            return location;
+        }
+
+        public int getSize() {
+            return size;
+        }
+
+        public String getImage() {
+            return image;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            Tatoo tatoo = (Tatoo) o;
+            return size == tatoo.size &&
+                    ObjectTestUtils.equals(location, tatoo.location) &&
+                    ObjectTestUtils.equals(image, tatoo.image);
+        }
+
+        @Override
+        public int hashCode() {
+            return ObjectTestUtils.hash(location, size, image);
+        }
+
+        @Override
+        public String toString() {
+            return "Tatoo{" +
+                    "location='" + location + '\'' +
+                    ", size=" + size +
+                    ", image='" + image + '\'' +
+                    '}';
+        }
+    }
+
+    public static Tatoo tatoo(String location, int size, String image) {
+        return new Tatoo(location, size, image);
     }
 
     public static Limb limb(String name, Integer power) {
@@ -74,6 +167,10 @@ public class CollectionDataStructure {
         limb.name = name;
         limb.power = power;
         return limb;
+    }
+
+    public static Person person() {
+        return new Person();
     }
 
     public static Person person(Limb... limbs) {
