@@ -170,7 +170,14 @@ public class MasterContext {
             return;
         }
 
-        DAG dag = deserializeDAG();
+        DAG dag;
+        try {
+            dag = deserializeDAG();
+        } catch (Exception e) {
+            logger.warning("DAG deserialization failed", e);
+            finalizeJob(e);
+            return;
+        }
         // save a copy of the vertex list, because it is going to change
         vertices = new HashSet<>();
         dag.iterator().forEachRemaining(vertices::add);
@@ -197,13 +204,12 @@ public class MasterContext {
         MembersView membersView = getMembersView();
         ClassLoader previousCL = swapContextClassLoader(coordinationService.getClassLoader(jobId));
         try {
-            logger.info("Start executing " + jobIdString() + ", status " + jobStatus()
-                    + "\n" + dag);
+            logger.info("Start executing " + jobIdString() + ", status " + jobStatus() + "\n" + dag);
             logger.fine("Building execution plan for " + jobIdString());
             executionPlanMap = createExecutionPlans(nodeEngine, membersView, dag, getJobConfig(), lastSnapshotId);
         } catch (Exception e) {
             logger.severe("Exception creating execution plan for " + jobIdString(), e);
-            onCompleteStepCompleted(e);
+            finalizeJob(e);
             return;
         } finally {
             Thread.currentThread().setContextClassLoader(previousCL);
@@ -256,7 +262,7 @@ public class MasterContext {
 
         if (cancellationToken.isCompleted()) {
             logger.fine("Skipping init job " + idToString(jobId) + ": is already cancelled.");
-            onCompleteStepCompleted(new CancellationException());
+            finalizeJob(new CancellationException());
             return false;
         }
 
@@ -530,36 +536,33 @@ public class MasterContext {
         }
 
         Function<ExecutionPlan, Operation> operationCtor = plan -> new CompleteExecutionOperation(executionId, finalError);
-        invoke(operationCtor, responses -> onCompleteStepCompleted(error), null);
+        invoke(operationCtor, responses -> finalizeJob(error), null);
     }
 
     // Called as callback when all CompleteOperation invocations are done
-    private void onCompleteStepCompleted(@Nullable Throwable failure) {
+    private void finalizeJob(@Nullable Throwable failure) {
         if (assertJobNotAlreadyDone(failure)) {
             return;
         }
 
         completeVertices(failure);
 
-        long completionTime = System.currentTimeMillis();
         if (shouldRestart(failure)) {
             scheduleRestart();
             return;
         }
 
-        long elapsed = completionTime - jobStartTime;
+        long elapsed = System.currentTimeMillis() - jobStartTime;
         if (isSuccess(failure)) {
-            logger.info("Execution of " + jobIdString() + " completed in " + elapsed + " ms");
+            logger.info(String.format("Execution of %s completed in %,d ms", jobIdString(), elapsed));
         } else {
-            logger.warning("Execution of " + jobIdString()
-                    + " failed in " + elapsed + " ms", failure);
+            logger.warning(String.format("Execution of %s failed after %,d ms", jobIdString(), elapsed), failure);
         }
 
         try {
-            coordinationService.completeJob(this, executionId, completionTime, failure);
+            coordinationService.completeJob(this, executionId, System.currentTimeMillis(), failure);
         } catch (RuntimeException e) {
-            logger.warning("Completion of " + jobIdString()
-                    + " failed in " + elapsed + " ms", failure);
+            logger.warning("Completion of " + jobIdString() + " failed", failure);
         } finally {
             setFinalResult(failure);
         }
