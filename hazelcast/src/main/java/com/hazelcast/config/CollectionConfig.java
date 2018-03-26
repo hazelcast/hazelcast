@@ -21,6 +21,8 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.impl.Versioned;
+import com.hazelcast.spi.merge.SplitBrainMergeTypeProvider;
+import com.hazelcast.spi.merge.SplitBrainMergeTypes;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -37,7 +39,8 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  *
  * @param <T> Type of Collection such as List, Set
  */
-public abstract class CollectionConfig<T extends CollectionConfig> implements IdentifiedDataSerializable, Versioned {
+public abstract class CollectionConfig<T extends CollectionConfig>
+        implements SplitBrainMergeTypeProvider, IdentifiedDataSerializable, Versioned {
 
     /**
      * Default maximum size for the Configuration.
@@ -263,6 +266,11 @@ public abstract class CollectionConfig<T extends CollectionConfig> implements Id
     public T setMergePolicyConfig(MergePolicyConfig mergePolicyConfig) {
         this.mergePolicyConfig = checkNotNull(mergePolicyConfig, "mergePolicyConfig cannot be null");
         return (T) this;
+    }
+
+    @Override
+    public Class getProvidedMergeTypes() {
+        return SplitBrainMergeTypes.CollectionMergeTypes.class;
     }
 
     @Override

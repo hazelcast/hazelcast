@@ -21,8 +21,8 @@ import com.hazelcast.cache.HazelcastCacheManager;
 import com.hazelcast.cache.impl.event.CachePartitionLostEventFilter;
 import com.hazelcast.cache.impl.journal.CacheEventJournal;
 import com.hazelcast.cache.impl.journal.RingbufferCacheEventJournalImpl;
-import com.hazelcast.cache.impl.operation.AddCacheConfigOperationSupplier;
 import com.hazelcast.cache.impl.merge.policy.CacheMergePolicyProvider;
+import com.hazelcast.cache.impl.operation.AddCacheConfigOperationSupplier;
 import com.hazelcast.cache.impl.operation.CacheCreateConfigOperation;
 import com.hazelcast.cache.impl.operation.OnJoinCacheOperation;
 import com.hazelcast.config.CacheConfig;
@@ -73,10 +73,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.cache.impl.AbstractCacheRecordStore.SOURCE_NOT_AVAILABLE;
-import static com.hazelcast.internal.config.ConfigValidator.checkCacheConfig;
 import static com.hazelcast.cache.impl.PreJoinCacheConfig.asCacheConfig;
 import static com.hazelcast.internal.cluster.Versions.V3_10;
-import static com.hazelcast.internal.config.ConfigValidator.checkMergePolicySupportsInMemoryFormat;
+import static com.hazelcast.internal.config.ConfigValidator.checkCacheConfig;
+import static com.hazelcast.internal.config.MergePolicyValidator.checkMergePolicySupportsInMemoryFormat;
 import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.FutureUtil.RETHROW_EVERYTHING;
 import static java.util.Collections.singleton;
@@ -238,8 +238,7 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
                 }
 
                 CacheMergePolicyProvider mergePolicyProvider = splitBrainHandlerService.getMergePolicyProvider();
-                checkCacheConfig(cacheConfig.getInMemoryFormat(), cacheConfig.getEvictionConfig(),
-                        cacheConfig.isStatisticsEnabled(), cacheConfig.getMergePolicy());
+                checkCacheConfig(cacheConfig, mergePolicyProvider);
 
                 Object mergePolicy = mergePolicyProvider.getMergePolicy(cacheConfig.getMergePolicy());
                 checkMergePolicySupportsInMemoryFormat(cacheConfig.getName(), mergePolicy, cacheConfig.getInMemoryFormat(),
@@ -743,6 +742,10 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
     @Override
     public Runnable prepareMergeRunnable() {
         return splitBrainHandlerService.prepareMergeRunnable();
+    }
+
+    public CacheMergePolicyProvider getCacheMergePolicyProvider() {
+        return splitBrainHandlerService.getMergePolicyProvider();
     }
 
     public CacheEventHandler getCacheEventHandler() {

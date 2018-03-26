@@ -259,7 +259,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
     @Override
     public QueueProxyImpl createDistributedObject(String objectId) {
         QueueConfig queueConfig = nodeEngine.getConfig().findQueueConfig(objectId);
-        checkQueueConfig(queueConfig);
+        checkQueueConfig(queueConfig, nodeEngine.getSplitBrainMergePolicyProvider());
 
         return new QueueProxyImpl(objectId, this, nodeEngine, queueConfig);
     }

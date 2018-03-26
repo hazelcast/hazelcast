@@ -18,6 +18,7 @@ package com.hazelcast.internal.config;
 
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.internal.eviction.EvictableEntryView;
 import com.hazelcast.internal.eviction.EvictionPolicyComparator;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -176,6 +177,30 @@ public class ConfigValidatorEvictionConfigTest extends HazelcastTestSupport {
     @Test
     public void checkEvictionConfig_whenNoneOfTheComparatorAndComparatorClassNameAreSetIfEvictionPolicyIsNull_forNearCache() {
         checkEvictionConfig(null, null, null, true);
+    }
+
+    @Test
+    public void checkEvictionConfig_withEntryCountMaxSizePolicy_OBJECT() {
+        EvictionConfig evictionConfig = new EvictionConfig()
+                .setMaximumSizePolicy(EvictionConfig.MaxSizePolicy.ENTRY_COUNT);
+
+        checkEvictionConfig(InMemoryFormat.OBJECT, evictionConfig);
+    }
+
+    @Test
+    public void checkEvictionConfig_withEntryCountMaxSizePolicy_BINARY() {
+        EvictionConfig evictionConfig = new EvictionConfig()
+                .setMaximumSizePolicy(EvictionConfig.MaxSizePolicy.ENTRY_COUNT);
+
+        checkEvictionConfig(InMemoryFormat.BINARY, evictionConfig);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void checkEvictionConfig_withEntryCountMaxSizePolicy_NATIVE() {
+        EvictionConfig evictionConfig = new EvictionConfig()
+                .setMaximumSizePolicy(EvictionConfig.MaxSizePolicy.ENTRY_COUNT);
+
+        checkEvictionConfig(InMemoryFormat.NATIVE, evictionConfig);
     }
 
     private EvictionConfig getEvictionConfig(boolean setComparatorClass, boolean setComparator) {

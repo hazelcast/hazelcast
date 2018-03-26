@@ -111,7 +111,7 @@ public class AtomicReferenceService
     @Override
     public AtomicReferenceProxy createDistributedObject(String name) {
         AtomicReferenceConfig atomicReferenceConfig = nodeEngine.getConfig().findAtomicReferenceConfig(name);
-        checkBasicConfig(atomicReferenceConfig);
+        checkBasicConfig(atomicReferenceConfig, nodeEngine.getSplitBrainMergePolicyProvider());
 
         return new AtomicReferenceProxy(name, nodeEngine, this);
     }

@@ -169,7 +169,7 @@ public class DistributedScheduledExecutorService
     @Override
     public DistributedObject createDistributedObject(String name) {
         ScheduledExecutorConfig executorConfig = nodeEngine.getConfig().findScheduledExecutorConfig(name);
-        checkScheduledExecutorConfig(executorConfig);
+        checkScheduledExecutorConfig(executorConfig, nodeEngine.getSplitBrainMergePolicyProvider());
 
         return new ScheduledExecutorServiceProxy(name, nodeEngine, this);
     }

@@ -26,8 +26,8 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.RemoteService;
 
 import static com.hazelcast.internal.config.ConfigValidator.checkMapConfig;
-import static com.hazelcast.internal.config.ConfigValidator.checkMergePolicySupportsInMemoryFormat;
 import static com.hazelcast.internal.config.ConfigValidator.checkNearCacheConfig;
+import static com.hazelcast.internal.config.MergePolicyValidator.checkMergePolicySupportsInMemoryFormat;
 
 /**
  * Defines remote service behavior of map service.
@@ -49,7 +49,7 @@ class MapRemoteService implements RemoteService {
         Config config = nodeEngine.getConfig();
         MapConfig mapConfig = config.findMapConfig(name);
         MergePolicyProvider mergePolicyProvider = mapServiceContext.getMergePolicyProvider();
-        checkMapConfig(mapConfig);
+        checkMapConfig(mapConfig, mergePolicyProvider);
 
         Object mergePolicy = mergePolicyProvider.getMergePolicy(mapConfig.getMergePolicyConfig().getPolicy());
         checkMergePolicySupportsInMemoryFormat(name, mergePolicy, mapConfig.getInMemoryFormat(),

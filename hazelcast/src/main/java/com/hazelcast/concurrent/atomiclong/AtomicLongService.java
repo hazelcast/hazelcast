@@ -109,7 +109,7 @@ public class AtomicLongService
     @Override
     public AtomicLongProxy createDistributedObject(String name) {
         AtomicLongConfig atomicLongConfig = nodeEngine.getConfig().findAtomicLongConfig(name);
-        checkBasicConfig(atomicLongConfig);
+        checkBasicConfig(atomicLongConfig, nodeEngine.getSplitBrainMergePolicyProvider());
 
         return new AtomicLongProxy(name, nodeEngine, this);
     }

@@ -16,19 +16,15 @@
 
 package com.hazelcast.internal.config;
 
+import com.hazelcast.cache.impl.merge.policy.CacheMergePolicyProvider;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.NativeMemoryConfig;
-import com.hazelcast.internal.cluster.Versions;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.map.merge.MergePolicyProvider;
-import com.hazelcast.map.merge.PutIfAbsentMapMergePolicy;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -45,19 +41,15 @@ import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
 import static com.hazelcast.internal.config.ConfigValidator.checkCacheConfig;
 import static com.hazelcast.internal.config.ConfigValidator.checkMapConfig;
-import static com.hazelcast.internal.config.ConfigValidator.checkMergePolicySupportsInMemoryFormat;
 import static com.hazelcast.internal.config.ConfigValidator.checkNearCacheNativeMemoryConfig;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class ConfigValidatorTest extends HazelcastTestSupport {
 
-    private static final ILogger LOGGER = Logger.getLogger(ConfigValidatorTest.class);
-
     private MergePolicyProvider mapMergePolicyProvider;
+    private CacheMergePolicyProvider cacheMergePolicyProvider;
 
     @Before
     public void setUp() {
@@ -69,6 +61,7 @@ public class ConfigValidatorTest extends HazelcastTestSupport {
         when(nodeEngine.getSplitBrainMergePolicyProvider()).thenReturn(splitBrainMergePolicyProvider);
 
         mapMergePolicyProvider = new MergePolicyProvider(nodeEngine);
+        cacheMergePolicyProvider = new CacheMergePolicyProvider(nodeEngine);
     }
 
     @Test
@@ -78,12 +71,12 @@ public class ConfigValidatorTest extends HazelcastTestSupport {
 
     @Test
     public void checkMapConfig_BINARY() {
-        checkMapConfig(getMapConfig(BINARY));
+        checkMapConfig(getMapConfig(BINARY), mapMergePolicyProvider);
     }
 
     @Test
     public void checkMapConfig_OBJECT() {
-        checkMapConfig(getMapConfig(OBJECT));
+        checkMapConfig(getMapConfig(OBJECT), mapMergePolicyProvider);
     }
 
     /**
@@ -91,7 +84,7 @@ public class ConfigValidatorTest extends HazelcastTestSupport {
      */
     @Test(expected = IllegalArgumentException.class)
     public void checkMapConfig_NATIVE() {
-        checkMapConfig(getMapConfig(NATIVE));
+        checkMapConfig(getMapConfig(NATIVE), mapMergePolicyProvider);
     }
 
     @Test
@@ -99,7 +92,8 @@ public class ConfigValidatorTest extends HazelcastTestSupport {
     public void checkMapConfig_withIgnoredConfigMinEvictionCheckMillis() {
         MapConfig mapConfig = getMapConfig(BINARY)
                 .setMinEvictionCheckMillis(100);
-        checkMapConfig(mapConfig);
+
+        checkMapConfig(mapConfig, mapMergePolicyProvider);
     }
 
     @Test
@@ -107,7 +101,8 @@ public class ConfigValidatorTest extends HazelcastTestSupport {
     public void checkMapConfig_withIgnoredConfigEvictionPercentage() {
         MapConfig mapConfig = getMapConfig(BINARY)
                 .setEvictionPercentage(50);
-        checkMapConfig(mapConfig);
+
+        checkMapConfig(mapConfig, mapMergePolicyProvider);
     }
 
     private MapConfig getMapConfig(InMemoryFormat inMemoryFormat) {
@@ -123,7 +118,7 @@ public class ConfigValidatorTest extends HazelcastTestSupport {
                 .setInMemoryFormat(OBJECT)
                 .setEvictionConfig(evictionConfig);
 
-        checkCacheConfig(cacheSimpleConfig);
+        checkCacheConfig(cacheSimpleConfig, cacheMergePolicyProvider);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -134,7 +129,7 @@ public class ConfigValidatorTest extends HazelcastTestSupport {
                 .setInMemoryFormat(NATIVE)
                 .setEvictionConfig(evictionConfig);
 
-        checkCacheConfig(cacheSimpleConfig);
+        checkCacheConfig(cacheSimpleConfig, cacheMergePolicyProvider);
     }
 
     @Test
@@ -163,93 +158,5 @@ public class ConfigValidatorTest extends HazelcastTestSupport {
     @Test(expected = IllegalArgumentException.class)
     public void checkNearCacheNativeMemoryConfig_shouldThrowExceptionWithoutNativeMemoryConfig_NATIVE_onEE() {
         checkNearCacheNativeMemoryConfig(NATIVE, null, true);
-    }
-
-    @Test
-    public void testCheckMergePolicySupportsInMemoryFormat_withMergePolicy_with310_OBJECT() {
-        Object mergePolicy = mapMergePolicyProvider.getMergePolicy(PutIfAbsentMergePolicy.class.getName());
-        assertTrue(checkMergePolicySupportsInMemoryFormat("myMap", mergePolicy, OBJECT, Versions.V3_10, false, LOGGER));
-    }
-
-    @Test
-    public void testCheckMergePolicySupportsInMemoryFormat_withLegacyMergePolicy_with310_OBJECT() {
-        Object legacyMergePolicy = mapMergePolicyProvider.getMergePolicy(PutIfAbsentMapMergePolicy.class.getName());
-        assertTrue(checkMergePolicySupportsInMemoryFormat("myMap", legacyMergePolicy, OBJECT, Versions.V3_10, false, LOGGER));
-    }
-
-    @Test
-    public void testCheckMergePolicySupportsInMemoryFormat_withMergePolicy_with310_NATIVE() {
-        Object mergePolicy = mapMergePolicyProvider.getMergePolicy(PutIfAbsentMergePolicy.class.getName());
-        assertTrue(checkMergePolicySupportsInMemoryFormat("myMap", mergePolicy, NATIVE, Versions.V3_10, false, LOGGER));
-    }
-
-    /**
-     * A legacy merge policy cannot merge NATIVE maps.
-     */
-    @Test
-    public void testCheckMergePolicySupportsInMemoryFormat_withLegacyMergePolicy_with310_NATIVE() {
-        Object legacyMergePolicy = mapMergePolicyProvider.getMergePolicy(PutIfAbsentMapMergePolicy.class.getName());
-        assertFalse(checkMergePolicySupportsInMemoryFormat("myMap", legacyMergePolicy, NATIVE, Versions.V3_10, false, LOGGER));
-    }
-
-    /**
-     * A legacy merge policy cannot merge NATIVE maps.
-     */
-    @Test(expected = IllegalArgumentException.class)
-    public void testCheckMergePolicySupportsInMemoryFormat_withLegacyMergePolicy_with310_NATIVE_failFast() {
-        Object legacyMergePolicy = mapMergePolicyProvider.getMergePolicy(PutIfAbsentMapMergePolicy.class.getName());
-        checkMergePolicySupportsInMemoryFormat("myMap", legacyMergePolicy, NATIVE, Versions.V3_10, true, LOGGER);
-    }
-
-    @Test
-    public void testCheckMergePolicySupportsInMemoryFormat_withMergePolicy_with39_OBJECT() {
-        Object mergePolicy = mapMergePolicyProvider.getMergePolicy(PutIfAbsentMergePolicy.class.getName());
-        assertTrue(checkMergePolicySupportsInMemoryFormat("myMap", mergePolicy, OBJECT, Versions.V3_9, false, LOGGER));
-    }
-
-    @Test
-    public void testCheckMergePolicySupportsInMemoryFormat_withLegacyMergePolicy_with39_OBJECT() {
-        Object legacyMergePolicy = mapMergePolicyProvider.getMergePolicy(PutIfAbsentMapMergePolicy.class.getName());
-        assertTrue(checkMergePolicySupportsInMemoryFormat("myMap", legacyMergePolicy, OBJECT, Versions.V3_9, false, LOGGER));
-    }
-
-    /**
-     * A 3.9 cluster cannot merge NATIVE maps.
-     */
-    @Test
-    public void testCheckMergePolicySupportsInMemoryFormat_withMergePolicy_with39_NATIVE() {
-        Object mergePolicy = mapMergePolicyProvider.getMergePolicy(PutIfAbsentMergePolicy.class.getName());
-        assertFalse(checkMergePolicySupportsInMemoryFormat("myMap", mergePolicy, NATIVE, Versions.V3_9, false, LOGGER));
-    }
-
-    /**
-     * A 3.9 cluster cannot merge NATIVE maps.
-     */
-    @Test
-    public void testCheckMergePolicySupportsInMemoryFormat_withLegacyMergePolicy_with39_NATIVE() {
-        Object legacyMergePolicy = mapMergePolicyProvider.getMergePolicy(PutIfAbsentMapMergePolicy.class.getName());
-        assertFalse(checkMergePolicySupportsInMemoryFormat("myMap", legacyMergePolicy, NATIVE, Versions.V3_9, false, LOGGER));
-    }
-
-    /**
-     * A 3.9 cluster cannot merge NATIVE maps, but will not throw an exception, even if fail-fast is configured.
-     * <p>
-     * This is for compatibility with existing setups.
-     */
-    @Test
-    public void testCheckMergePolicySupportsInMemoryFormat_withMergePolicy_with39_NATIVE_failFast() {
-        Object mergePolicy = mapMergePolicyProvider.getMergePolicy(PutIfAbsentMergePolicy.class.getName());
-        assertFalse(checkMergePolicySupportsInMemoryFormat("myMap", mergePolicy, NATIVE, Versions.V3_9, true, LOGGER));
-    }
-
-    /**
-     * A 3.9 cluster cannot merge NATIVE maps, but will not throw an exception, even if fail-fast is configured.
-     * <p>
-     * This is for compatibility with existing setups.
-     */
-    @Test
-    public void testCheckMergePolicySupportsInMemoryFormat_withLegacyMergePolicy_with39_NATIVE_failFast() {
-        Object legacyMergePolicy = mapMergePolicyProvider.getMergePolicy(PutIfAbsentMapMergePolicy.class.getName());
-        assertFalse(checkMergePolicySupportsInMemoryFormat("myMap", legacyMergePolicy, NATIVE, Versions.V3_9, true, LOGGER));
     }
 }

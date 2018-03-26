@@ -17,16 +17,20 @@
 package com.hazelcast.internal.config;
 
 import com.hazelcast.cache.ICache;
+import com.hazelcast.cache.impl.merge.policy.CacheMergePolicyProvider;
 import com.hazelcast.config.AbstractBasicConfig;
+import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CollectionConfig;
 import com.hazelcast.config.EvictionConfig;
+import com.hazelcast.config.EvictionConfig.MaxSizePolicy;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy;
 import com.hazelcast.config.NearCachePreloaderConfig;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
@@ -35,16 +39,11 @@ import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.internal.eviction.EvictionPolicyComparator;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.spi.merge.HigherHitsMergePolicy;
-import com.hazelcast.spi.merge.HyperLogLogMergePolicy;
-import com.hazelcast.spi.merge.LatestAccessMergePolicy;
-import com.hazelcast.spi.merge.LatestUpdateMergePolicy;
-import com.hazelcast.spi.merge.SplitBrainMergePolicy;
-import com.hazelcast.version.Version;
+import com.hazelcast.map.merge.MergePolicyProvider;
+import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
+import com.hazelcast.spi.merge.SplitBrainMergeTypeProvider;
 
-import java.util.ArrayList;
 import java.util.EnumSet;
-import java.util.List;
 
 import static com.hazelcast.config.EvictionPolicy.LFU;
 import static com.hazelcast.config.EvictionPolicy.LRU;
@@ -53,10 +52,12 @@ import static com.hazelcast.config.MapConfig.DEFAULT_EVICTION_PERCENTAGE;
 import static com.hazelcast.config.MapConfig.DEFAULT_MIN_EVICTION_CHECK_MILLIS;
 import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.INVALIDATE;
 import static com.hazelcast.instance.BuildInfoProvider.getBuildInfo;
-import static com.hazelcast.internal.cluster.Versions.V3_10;
+import static com.hazelcast.internal.config.MergePolicyValidator.checkCacheMergePolicy;
+import static com.hazelcast.internal.config.MergePolicyValidator.checkMapMergePolicy;
+import static com.hazelcast.internal.config.MergePolicyValidator.checkMergePolicy;
+import static com.hazelcast.internal.config.MergePolicyValidator.checkReplicatedMapMergePolicy;
 import static com.hazelcast.util.StringUtil.isNullOrEmpty;
 import static java.lang.String.format;
-import static java.util.Arrays.asList;
 
 /**
  * Validates a Hazelcast configuration in a specific context like OS vs. EE or client vs. member nodes.
@@ -65,52 +66,48 @@ public final class ConfigValidator {
 
     private static final ILogger LOGGER = Logger.getLogger(ConfigValidator.class);
 
-    private static final EnumSet<EvictionConfig.MaxSizePolicy> SUPPORTED_ON_HEAP_NEAR_CACHE_MAXSIZE_POLICIES
-            = EnumSet.of(EvictionConfig.MaxSizePolicy.ENTRY_COUNT);
+    private static final EnumSet<MaxSizePolicy> SUPPORTED_ON_HEAP_NEAR_CACHE_MAXSIZE_POLICIES
+            = EnumSet.of(MaxSizePolicy.ENTRY_COUNT);
 
     private static final EnumSet<EvictionPolicy> SUPPORTED_EVICTION_POLICIES = EnumSet.of(LRU, LFU);
-
-    private static final List<String> STATISTIC_MERGE_POLICIES = new ArrayList<String>(asList(
-            HigherHitsMergePolicy.class.getName(),
-            HigherHitsMergePolicy.class.getSimpleName(),
-            LatestAccessMergePolicy.class.getName(),
-            LatestAccessMergePolicy.class.getSimpleName(),
-            LatestUpdateMergePolicy.class.getName(),
-            LatestUpdateMergePolicy.class.getSimpleName()
-    ));
-
-    private static final List<String> CARDINALITY_MERGE_POLICY = new ArrayList<String>(asList(
-            HyperLogLogMergePolicy.class.getName(),
-            HyperLogLogMergePolicy.class.getSimpleName()
-    ));
 
     private ConfigValidator() {
     }
 
     /**
-     * Checks preconditions to create a map proxy.
+     * Validates the given {@link MapConfig}.
      *
-     * @param mapConfig the {@link MapConfig}
+     * @param mapConfig           the {@link MapConfig}
+     * @param mergePolicyProvider the {@link MergePolicyProvider} to resolve merge policy classes
      */
-    public static void checkMapConfig(MapConfig mapConfig) {
-        checkMergePolicy(mapConfig.isStatisticsEnabled(), mapConfig.getMergePolicyConfig().getPolicy());
-        checkNotNative(mapConfig.getInMemoryFormat());
-
+    public static void checkMapConfig(MapConfig mapConfig, MergePolicyProvider mergePolicyProvider) {
+        checkNotNativeWhenOpenSource(mapConfig.getInMemoryFormat());
+        checkMapMergePolicy(mapConfig, mergePolicyProvider);
         logIgnoredConfig(mapConfig);
+    }
+
+    @SuppressWarnings("deprecation")
+    private static void logIgnoredConfig(MapConfig mapConfig) {
+        if (mapConfig.getMinEvictionCheckMillis() != DEFAULT_MIN_EVICTION_CHECK_MILLIS
+                || mapConfig.getEvictionPercentage() != DEFAULT_EVICTION_PERCENTAGE) {
+            LOGGER.warning("As of Hazelcast version 3.7 `minEvictionCheckMillis` and `evictionPercentage`"
+                    + " are deprecated due to a change of the eviction mechanism."
+                    + " The new eviction mechanism uses a probabilistic algorithm based on sampling."
+                    + " Please see documentation for further details.");
+        }
     }
 
     /**
      * Checks preconditions to create a map proxy with Near Cache.
      *
-     * @param mapName         name of the map that Near Cache will be created for
-     * @param nearCacheConfig the {@link NearCacheConfig} to be checked
-     * @param isClient        {@code true} if the config is for a Hazelcast client, {@code false} otherwise
+     * @param mapName            name of the map that Near Cache will be created for
+     * @param nearCacheConfig    the {@link NearCacheConfig} to be checked
+     * @param nativeMemoryConfig the {@link NativeMemoryConfig} of the Hazelcast instance
+     * @param isClient           {@code true} if the config is for a Hazelcast client, {@code false} otherwise
      */
     public static void checkNearCacheConfig(String mapName, NearCacheConfig nearCacheConfig,
                                             NativeMemoryConfig nativeMemoryConfig, boolean isClient) {
-        InMemoryFormat inMemoryFormat = nearCacheConfig.getInMemoryFormat();
-
-        checkNotNative(inMemoryFormat);
+        checkNotNativeWhenOpenSource(nearCacheConfig.getInMemoryFormat());
         checkLocalUpdatePolicy(mapName, nearCacheConfig.getLocalUpdatePolicy());
         checkEvictionConfig(nearCacheConfig.getEvictionConfig(), true);
         checkOnHeapNearCacheMaxSizePolicy(nearCacheConfig);
@@ -124,49 +121,12 @@ public final class ConfigValidator {
     }
 
     /**
-     * Checks precondition to use {@link InMemoryFormat#NATIVE}
-     *
-     * @param nativeMemoryConfig native memory configuration
-     */
-    // not private for testing
-    static void checkNearCacheNativeMemoryConfig(InMemoryFormat inMemoryFormat, NativeMemoryConfig nativeMemoryConfig,
-                                                 boolean isEnterprise) {
-        if (!isEnterprise) {
-            return;
-        }
-
-        if (inMemoryFormat != NATIVE) {
-            return;
-        }
-
-        if (nativeMemoryConfig != null && nativeMemoryConfig.isEnabled()) {
-            return;
-        }
-
-        throw new IllegalArgumentException("Enable native memory config to use NATIVE in-memory-format for Near Cache");
-    }
-
-    private static void checkOnHeapNearCacheMaxSizePolicy(NearCacheConfig nearCacheConfig) {
-        InMemoryFormat inMemoryFormat = nearCacheConfig.getInMemoryFormat();
-        if (inMemoryFormat == NATIVE) {
-            return;
-        }
-
-        EvictionConfig.MaxSizePolicy maxSizePolicy = nearCacheConfig.getEvictionConfig().getMaximumSizePolicy();
-        if (!SUPPORTED_ON_HEAP_NEAR_CACHE_MAXSIZE_POLICIES.contains(maxSizePolicy)) {
-            throw new IllegalArgumentException(format("Near Cache maximum size policy %s cannot be used with %s storage."
-                            + " Supported maximum size policies are: %s",
-                    maxSizePolicy, inMemoryFormat, SUPPORTED_ON_HEAP_NEAR_CACHE_MAXSIZE_POLICIES));
-        }
-    }
-
-    /**
-     * Checks IMaps' supported Near Cache local update policy configuration.
+     * Checks IMap's supported Near Cache local update policy configuration.
      *
      * @param mapName           name of the map that Near Cache will be created for
      * @param localUpdatePolicy local update policy
      */
-    public static void checkLocalUpdatePolicy(String mapName, NearCacheConfig.LocalUpdatePolicy localUpdatePolicy) {
+    private static void checkLocalUpdatePolicy(String mapName, LocalUpdatePolicy localUpdatePolicy) {
         if (localUpdatePolicy != INVALIDATE) {
             throw new IllegalArgumentException(format("Wrong `local-update-policy` option is selected for `%s` map Near Cache."
                     + " Only `%s` option is supported but found `%s`", mapName, INVALIDATE, localUpdatePolicy));
@@ -191,6 +151,41 @@ public final class ConfigValidator {
         checkEvictionConfig(evictionPolicy, comparatorClassName, comparator, isNearCache);
     }
 
+    private static void checkOnHeapNearCacheMaxSizePolicy(NearCacheConfig nearCacheConfig) {
+        InMemoryFormat inMemoryFormat = nearCacheConfig.getInMemoryFormat();
+        if (inMemoryFormat == NATIVE) {
+            return;
+        }
+
+        MaxSizePolicy maxSizePolicy = nearCacheConfig.getEvictionConfig().getMaximumSizePolicy();
+        if (!SUPPORTED_ON_HEAP_NEAR_CACHE_MAXSIZE_POLICIES.contains(maxSizePolicy)) {
+            throw new IllegalArgumentException(format("Near Cache maximum size policy %s cannot be used with %s storage."
+                            + " Supported maximum size policies are: %s",
+                    maxSizePolicy, inMemoryFormat, SUPPORTED_ON_HEAP_NEAR_CACHE_MAXSIZE_POLICIES));
+        }
+    }
+
+    /**
+     * Checks precondition to use {@link InMemoryFormat#NATIVE}.
+     *
+     * @param inMemoryFormat     the {@link InMemoryFormat} of the Near Cache
+     * @param nativeMemoryConfig the {@link NativeMemoryConfig} of the Hazelcast instance
+     * @param isEnterprise       {@code true} if the Hazelcast instance is EE, {@code false} otherwise
+     */
+    static void checkNearCacheNativeMemoryConfig(InMemoryFormat inMemoryFormat, NativeMemoryConfig nativeMemoryConfig,
+                                                 boolean isEnterprise) {
+        if (!isEnterprise) {
+            return;
+        }
+        if (inMemoryFormat != NATIVE) {
+            return;
+        }
+        if (nativeMemoryConfig != null && nativeMemoryConfig.isEnabled()) {
+            return;
+        }
+        throw new IllegalArgumentException("Enable native memory config to use NATIVE in-memory-format for Near Cache");
+    }
+
     /**
      * Checks if parameters for an {@link EvictionConfig} are valid in their context.
      *
@@ -199,15 +194,12 @@ public final class ConfigValidator {
      * @param comparator          the comparator implementation for the {@link EvictionConfig}
      * @param isNearCache         {@code true} if the config is for a Near Cache, {@code false} otherwise
      */
-    public static void checkEvictionConfig(EvictionPolicy evictionPolicy,
-                                           String comparatorClassName,
-                                           Object comparator,
+    public static void checkEvictionConfig(EvictionPolicy evictionPolicy, String comparatorClassName, Object comparator,
                                            boolean isNearCache) {
         if (comparatorClassName != null && comparator != null) {
             throw new IllegalArgumentException("Only one of the `comparator class name` and `comparator`"
                     + " can be configured in the eviction configuration!");
         }
-
         if (!isNearCache && !SUPPORTED_EVICTION_POLICIES.contains(evictionPolicy)) {
             if (isNullOrEmpty(comparatorClassName) && comparator == null) {
 
@@ -223,8 +215,7 @@ public final class ConfigValidator {
                             "Only one of the `eviction policy` and `comparator class name` can be configured!");
                 }
                 if (comparator != null) {
-                    throw new IllegalArgumentException(
-                            "Only one of the `eviction policy` and `comparator` can be configured!");
+                    throw new IllegalArgumentException("Only one of the `eviction policy` and `comparator` can be configured!");
                 }
             }
         }
@@ -233,166 +224,149 @@ public final class ConfigValidator {
     /**
      * Validates the given {@link CacheSimpleConfig}.
      *
-     * @param cacheSimpleConfig the {@link CacheSimpleConfig} to check
+     * @param cacheSimpleConfig   the {@link CacheSimpleConfig} to check
+     * @param mergePolicyProvider the {@link CacheMergePolicyProvider} to resolve merge policy classes
      */
-    public static void checkCacheConfig(CacheSimpleConfig cacheSimpleConfig) {
+    public static void checkCacheConfig(CacheSimpleConfig cacheSimpleConfig, CacheMergePolicyProvider mergePolicyProvider) {
         checkCacheConfig(cacheSimpleConfig.getInMemoryFormat(), cacheSimpleConfig.getEvictionConfig(),
-                cacheSimpleConfig.isStatisticsEnabled(), cacheSimpleConfig.getMergePolicy());
+                cacheSimpleConfig.getMergePolicy(), cacheSimpleConfig, mergePolicyProvider);
     }
 
     /**
-     * Validates the given parameters in the context of a {@link ICache} config.
+     * Validates the given {@link CacheConfig}.
      *
-     * @param inMemoryFormat      the in-memory format the {@code Cache} is configured with
-     * @param evictionConfig      eviction configuration of {@code Cache}
-     * @param isStatisticsEnabled {@code true} if statistics are enabled, {@code false} otherwise
-     * @param mergePolicy         the configured merge policy
+     * @param cacheConfig         the {@link CacheConfig} to check
+     * @param mergePolicyProvider the {@link CacheMergePolicyProvider} to resolve merge policy classes
      */
-    public static void checkCacheConfig(InMemoryFormat inMemoryFormat,
-                                        EvictionConfig evictionConfig,
-                                        boolean isStatisticsEnabled,
-                                        String mergePolicy) {
-        checkMergePolicy(isStatisticsEnabled, mergePolicy);
-        checkNotNative(inMemoryFormat);
+    public static void checkCacheConfig(CacheConfig cacheConfig, CacheMergePolicyProvider mergePolicyProvider) {
+        checkCacheConfig(cacheConfig.getInMemoryFormat(), cacheConfig.getEvictionConfig(), cacheConfig.getMergePolicy(),
+                cacheConfig, mergePolicyProvider);
+    }
 
+    /**
+     * Validates the given parameters in the context of an {@link ICache} config.
+     *
+     * @param inMemoryFormat       the {@link InMemoryFormat} of the cache
+     * @param evictionConfig       the {@link EvictionConfig} of the cache
+     * @param mergePolicyClassname the configured merge policy of the cache
+     * @param mergeTypeProvider    the {@link SplitBrainMergeTypeProvider} of the cache
+     * @param mergePolicyProvider  the {@link CacheMergePolicyProvider} to resolve merge policy classes
+     */
+    public static void checkCacheConfig(InMemoryFormat inMemoryFormat, EvictionConfig evictionConfig, String mergePolicyClassname,
+                                        SplitBrainMergeTypeProvider mergeTypeProvider,
+                                        CacheMergePolicyProvider mergePolicyProvider) {
+        checkNotNativeWhenOpenSource(inMemoryFormat);
+        checkEvictionConfig(inMemoryFormat, evictionConfig);
+        checkCacheMergePolicy(mergePolicyClassname, mergeTypeProvider, mergePolicyProvider);
+    }
+
+    /**
+     * Checks the merge policy configuration in the context of an {@link ICache}.
+     *
+     * @param inMemoryFormat the {@link InMemoryFormat} of the cache
+     * @param evictionConfig the {@link EvictionConfig} of the cache
+     */
+    static void checkEvictionConfig(InMemoryFormat inMemoryFormat, EvictionConfig evictionConfig) {
         if (inMemoryFormat == NATIVE) {
-            EvictionConfig.MaxSizePolicy maxSizePolicy = evictionConfig.getMaximumSizePolicy();
-            if (maxSizePolicy == EvictionConfig.MaxSizePolicy.ENTRY_COUNT) {
+            MaxSizePolicy maxSizePolicy = evictionConfig.getMaximumSizePolicy();
+            if (maxSizePolicy == MaxSizePolicy.ENTRY_COUNT) {
                 throw new IllegalArgumentException("Invalid max-size policy "
                         + '(' + maxSizePolicy + ") for NATIVE in-memory format! Only "
-                        + EvictionConfig.MaxSizePolicy.USED_NATIVE_MEMORY_SIZE + ", "
-                        + EvictionConfig.MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE + ", "
-                        + EvictionConfig.MaxSizePolicy.FREE_NATIVE_MEMORY_SIZE + ", "
-                        + EvictionConfig.MaxSizePolicy.FREE_NATIVE_MEMORY_PERCENTAGE
+                        + MaxSizePolicy.USED_NATIVE_MEMORY_SIZE + ", "
+                        + MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE + ", "
+                        + MaxSizePolicy.FREE_NATIVE_MEMORY_SIZE + ", "
+                        + MaxSizePolicy.FREE_NATIVE_MEMORY_PERCENTAGE
                         + " are supported.");
             }
         }
     }
 
     /**
-     * Checks if the given {@link InMemoryFormat} can be merged by the given
-     * {@code mergePolicy} instance.
-     * <p>
-     * When a wrong policy is detected, it does one of two things:
-     * if {@code failFast} is {@code true} and the cluster version is 3.10 or later,
-     * it throws an {@link IllegalArgumentException}, otherwise it logs a warning.
-     *
-     * @return {@code true} if the given {@code inMemoryFormat} can be merged by
-     * the supplied {@code mergePolicy}, {@code false} otherwise
-     */
-    public static boolean checkMergePolicySupportsInMemoryFormat(String name, Object mergePolicy, InMemoryFormat inMemoryFormat,
-                                                                 Version clusterVersion, boolean failFast, ILogger logger) {
-        if (inMemoryFormat != NATIVE) {
-            return true;
-        }
-        // RU_COMPAT_3_9 (in 3.11 just check instanceof SplitBrainMergePolicy)
-        if (mergePolicy instanceof SplitBrainMergePolicy && clusterVersion.isGreaterOrEqual(V3_10)) {
-            return true;
-        }
-        // RU_COMPAT_3_9 (in 3.11 just check failFast)
-        if (failFast && clusterVersion.isGreaterOrEqual(V3_10)) {
-            throw new IllegalArgumentException(createSplitRecoveryWarningMsg(name, mergePolicy.getClass().getName()));
-        }
-        logger.warning(createSplitRecoveryWarningMsg(name, mergePolicy.getClass().getName()));
-        return false;
-    }
-
-    private static String createSplitRecoveryWarningMsg(String name, String mergePolicy) {
-        String messageTemplate = "Split brain recovery is not supported for '%s',"
-                + " because it's using merge policy `%s` to merge `%s` data."
-                + " To fix this, use an implementation of `%s` with a cluster version `%s` or later";
-
-        return format(messageTemplate, name, mergePolicy, NATIVE,
-                SplitBrainMergePolicy.class.getName(), V3_10);
-    }
-
-    /**
      * Validates the given {@link ReplicatedMapConfig}.
      *
      * @param replicatedMapConfig the {@link ReplicatedMapConfig} to check
+     * @param mergePolicyProvider the {@link com.hazelcast.replicatedmap.merge.MergePolicyProvider}
+     *                            to resolve merge policy classes
      */
-    public static void checkReplicatedMapConfig(ReplicatedMapConfig replicatedMapConfig) {
-        checkMergePolicy(replicatedMapConfig.isStatisticsEnabled(), replicatedMapConfig.getMergePolicyConfig().getPolicy());
+    public static void checkReplicatedMapConfig(ReplicatedMapConfig replicatedMapConfig,
+                                                com.hazelcast.replicatedmap.merge.MergePolicyProvider mergePolicyProvider) {
+        checkReplicatedMapMergePolicy(replicatedMapConfig, mergePolicyProvider);
     }
 
     /**
      * Validates the given {@link MultiMapConfig}.
      *
-     * @param multiMapConfig the {@link MultiMapConfig} to check
+     * @param multiMapConfig      the {@link MultiMapConfig} to check
+     * @param mergePolicyProvider the {@link SplitBrainMergePolicyProvider} to resolve merge policy classes
      */
-    public static void checkMultiMapConfig(MultiMapConfig multiMapConfig) {
-        checkMergePolicy(multiMapConfig.isStatisticsEnabled(), multiMapConfig.getMergePolicyConfig().getPolicy());
+    public static void checkMultiMapConfig(MultiMapConfig multiMapConfig,
+                                           SplitBrainMergePolicyProvider mergePolicyProvider) {
+        checkMergePolicy(multiMapConfig, mergePolicyProvider, multiMapConfig.getMergePolicyConfig().getPolicy());
     }
 
     /**
      * Validates the given {@link QueueConfig}.
      *
-     * @param queueConfig the {@link QueueConfig} to check
+     * @param queueConfig         the {@link QueueConfig} to check
+     * @param mergePolicyProvider the {@link SplitBrainMergePolicyProvider} to resolve merge policy classes
      */
-    public static void checkQueueConfig(QueueConfig queueConfig) {
-        // the queue statistics do not provide the necessary data for the merge policies
-        checkMergePolicy(false, queueConfig.getMergePolicyConfig().getPolicy());
+    public static void checkQueueConfig(QueueConfig queueConfig, SplitBrainMergePolicyProvider mergePolicyProvider) {
+        checkMergePolicy(queueConfig, mergePolicyProvider, queueConfig.getMergePolicyConfig().getPolicy());
     }
 
     /**
      * Validates the given {@link CollectionConfig}.
      *
-     * @param collectionConfig the {@link CollectionConfig} to check
+     * @param collectionConfig    the {@link CollectionConfig} to check
+     * @param mergePolicyProvider the {@link SplitBrainMergePolicyProvider} to resolve merge policy classes
      */
-    public static void checkCollectionConfig(CollectionConfig collectionConfig) {
-        // the collection statistics do not provide the necessary data for the merge policies
-        checkMergePolicy(false, collectionConfig.getMergePolicyConfig().getPolicy());
+    public static void checkCollectionConfig(CollectionConfig collectionConfig,
+                                             SplitBrainMergePolicyProvider mergePolicyProvider) {
+        checkMergePolicy(collectionConfig, mergePolicyProvider, collectionConfig.getMergePolicyConfig().getPolicy());
     }
 
     /**
      * Validates the given {@link RingbufferConfig}.
      *
-     * @param ringbufferConfig the {@link RingbufferConfig} to check
+     * @param ringbufferConfig    the {@link RingbufferConfig} to check
+     * @param mergePolicyProvider the {@link SplitBrainMergePolicyProvider} to resolve merge policy classes
      */
-    public static void checkRingbufferConfig(RingbufferConfig ringbufferConfig) {
-        checkMergePolicy(false, ringbufferConfig.getMergePolicyConfig().getPolicy());
+    public static void checkRingbufferConfig(RingbufferConfig ringbufferConfig,
+                                             SplitBrainMergePolicyProvider mergePolicyProvider) {
+        checkMergePolicy(ringbufferConfig, mergePolicyProvider, ringbufferConfig.getMergePolicyConfig().getPolicy());
     }
 
     /**
-     * Validates the given {@link AbstractBasicConfig}.
+     * Validates the given {@link AbstractBasicConfig} implementation.
      *
-     * @param basicConfig the {@link AbstractBasicConfig} to check
+     * @param basicConfig         the {@link AbstractBasicConfig} to check
+     * @param mergePolicyProvider the {@link SplitBrainMergePolicyProvider} to resolve merge policy classes
+     * @param <C>                 type of the {@link AbstractBasicConfig}
      */
-    @SuppressWarnings("checkstyle:illegaltype")
-    public static void checkBasicConfig(AbstractBasicConfig basicConfig) {
-        checkMergePolicy(false, basicConfig.getMergePolicyConfig().getPolicy());
+    public static <C extends AbstractBasicConfig> void checkBasicConfig(C basicConfig,
+                                                                        SplitBrainMergePolicyProvider mergePolicyProvider) {
+        checkMergePolicy(basicConfig, mergePolicyProvider, basicConfig.getMergePolicyConfig().getPolicy());
     }
 
     /**
      * Validates the given {@link ScheduledExecutorConfig}.
      *
      * @param scheduledExecutorConfig the {@link ScheduledExecutorConfig} to check
+     * @param mergePolicyProvider     the {@link SplitBrainMergePolicyProvider} to resolve merge policy classes
      */
-    public static void checkScheduledExecutorConfig(ScheduledExecutorConfig scheduledExecutorConfig) {
-        checkMergePolicy(false, scheduledExecutorConfig.getMergePolicyConfig().getPolicy());
+    public static void checkScheduledExecutorConfig(ScheduledExecutorConfig scheduledExecutorConfig,
+                                                    SplitBrainMergePolicyProvider mergePolicyProvider) {
+        String mergePolicyClassName = scheduledExecutorConfig.getMergePolicyConfig().getPolicy();
+        checkMergePolicy(scheduledExecutorConfig, mergePolicyProvider, mergePolicyClassName);
     }
 
     /**
-     * Throws {@link IllegalArgumentException} if the supplied merge policy needs statistics to be enabled.
-     *
-     * @param isStatisticsEnabled {@code true} if statistics are enabled, {@code false} otherwise
-     * @param mergePolicy         the configured merge policy
-     */
-    public static void checkMergePolicy(boolean isStatisticsEnabled, String mergePolicy) {
-        if (!isStatisticsEnabled && STATISTIC_MERGE_POLICIES.contains(mergePolicy)) {
-            throw new IllegalArgumentException("You need to enable statistics to use merge policy " + mergePolicy);
-        }
-        if (CARDINALITY_MERGE_POLICY.contains(mergePolicy)) {
-            throw new IllegalArgumentException("The " + mergePolicy + " is only available for the CardinalityEstimator");
-        }
-    }
-
-    /**
-     * Throws {@link IllegalArgumentException} if the supplied {@link InMemoryFormat} is {@link InMemoryFormat#NATIVE}.
+     * Throws {@link IllegalArgumentException} if the given {@link InMemoryFormat}
+     * is {@link InMemoryFormat#NATIVE} and Hazelcast is OS.
      *
      * @param inMemoryFormat supplied inMemoryFormat
      */
-    private static void checkNotNative(InMemoryFormat inMemoryFormat) {
+    private static void checkNotNativeWhenOpenSource(InMemoryFormat inMemoryFormat) {
         if (inMemoryFormat == NATIVE && !getBuildInfo().isEnterprise()) {
             throw new IllegalArgumentException("NATIVE storage format is supported in Hazelcast Enterprise only."
                     + " Make sure you have Hazelcast Enterprise JARs on your classpath!");
@@ -400,7 +374,7 @@ public final class ConfigValidator {
     }
 
     /**
-     * Throws {@link IllegalArgumentException} if the supplied {@link NearCacheConfig}
+     * Throws {@link IllegalArgumentException} if the given {@link NearCacheConfig}
      * has an invalid {@link NearCachePreloaderConfig}.
      *
      * @param nearCacheConfig supplied NearCacheConfig
@@ -409,17 +383,6 @@ public final class ConfigValidator {
     private static void checkPreloaderConfig(NearCacheConfig nearCacheConfig, boolean isClient) {
         if (!isClient && nearCacheConfig.getPreloaderConfig().isEnabled()) {
             throw new IllegalArgumentException("The Near Cache pre-loader is just available on Hazelcast clients!");
-        }
-    }
-
-    @SuppressWarnings("deprecation")
-    private static void logIgnoredConfig(MapConfig mapConfig) {
-        if (mapConfig.getMinEvictionCheckMillis() != DEFAULT_MIN_EVICTION_CHECK_MILLIS
-                || mapConfig.getEvictionPercentage() != DEFAULT_EVICTION_PERCENTAGE) {
-            LOGGER.warning("As of Hazelcast version 3.7 `minEvictionCheckMillis` and `evictionPercentage`"
-                    + " are deprecated due to a change of the eviction mechanism."
-                    + " The new eviction mechanism uses a probabilistic algorithm based on sampling."
-                    + " Please see documentation for further details.");
         }
     }
 }

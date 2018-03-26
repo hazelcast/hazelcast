@@ -190,7 +190,7 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
     @Override
     public DistributedObject createDistributedObject(String name) {
         MultiMapConfig multiMapConfig = nodeEngine.getConfig().findMultiMapConfig(name);
-        checkMultiMapConfig(multiMapConfig);
+        checkMultiMapConfig(multiMapConfig, nodeEngine.getSplitBrainMergePolicyProvider());
 
         return new ObjectMultiMapProxy(multiMapConfig, this, nodeEngine, name);
     }

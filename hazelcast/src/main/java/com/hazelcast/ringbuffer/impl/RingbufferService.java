@@ -132,7 +132,7 @@ public class RingbufferService implements ManagedService, RemoteService, Fragmen
     @Override
     public DistributedObject createDistributedObject(String objectName) {
         RingbufferConfig ringbufferConfig = getRingbufferConfig(objectName);
-        checkRingbufferConfig(ringbufferConfig);
+        checkRingbufferConfig(ringbufferConfig, nodeEngine.getSplitBrainMergePolicyProvider());
 
         return new RingbufferProxy(nodeEngine, this, objectName, ringbufferConfig);
     }

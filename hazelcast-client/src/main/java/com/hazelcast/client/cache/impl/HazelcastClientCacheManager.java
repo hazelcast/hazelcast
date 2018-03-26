@@ -33,6 +33,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
 
+import static com.hazelcast.internal.config.ConfigValidator.checkCacheConfig;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
@@ -160,6 +161,11 @@ public final class HazelcastClientCacheManager extends AbstractHazelcastCacheMan
             clientCacheProxyFactory.removeCacheConfig(cacheName);
             iter.remove();
         }
+    }
+
+    @Override
+    protected <K, V> void validateCacheConfig(CacheConfig<K, V> cacheConfig) {
+        checkCacheConfig(cacheConfig, null);
     }
 
     @Override

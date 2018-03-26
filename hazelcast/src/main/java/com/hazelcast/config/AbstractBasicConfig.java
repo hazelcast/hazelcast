@@ -17,6 +17,7 @@
 package com.hazelcast.config;
 
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.merge.SplitBrainMergeTypeProvider;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
@@ -27,7 +28,8 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  * @since 3.10
  */
 @SuppressWarnings("WeakerAccess")
-public abstract class AbstractBasicConfig<T extends AbstractBasicConfig> implements IdentifiedDataSerializable {
+public abstract class AbstractBasicConfig<T extends AbstractBasicConfig>
+        implements SplitBrainMergeTypeProvider, IdentifiedDataSerializable {
 
     protected String name;
     protected String quorumName;
