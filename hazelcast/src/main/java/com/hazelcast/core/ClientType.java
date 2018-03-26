@@ -26,5 +26,6 @@ public enum ClientType {
     PYTHON,
     RUBY,
     NODEJS,
+    GO,
     OTHER
 }
