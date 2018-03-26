@@ -108,7 +108,7 @@ public class NodeQueryCacheEndToEndConstructor extends AbstractQueryCacheEndToEn
     private void populateWithValues(InternalQueryCache queryCache, Collection<QueryResult> resultSets) {
         for (QueryResult queryResult : resultSets) {
             try {
-                if (queryResult == null) {
+                if (queryResult == null || queryResult.isEmpty()) {
                     continue;
                 }
                 for (QueryResultRow row : queryResult) {
