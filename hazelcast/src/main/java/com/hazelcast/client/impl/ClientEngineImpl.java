@@ -545,6 +545,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
         return liveMappings.isEmpty() ? null : new OnJoinClientOperation(liveMappings);
     }
 
+    @SuppressWarnings("checkstyle:methodlength")
     @Override
     public Map<ClientType, Integer> getConnectedClientStats() {
 
