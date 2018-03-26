@@ -32,8 +32,11 @@ abstract class AbstractCacheClientNearCacheInvalidationListener extends Abstract
     private final CacheContext cacheContext;
 
     AbstractCacheClientNearCacheInvalidationListener(ClientEndpoint endpoint,
-                                                     CacheContext cacheContext, String localMemberUuid) {
-        super(localMemberUuid);
+                                                     CacheContext cacheContext,
+                                                     String localMemberUuid,
+                                                     long correlationId) {
+        super(localMemberUuid, correlationId);
+
         this.endpoint = endpoint;
         this.cacheContext = cacheContext;
     }

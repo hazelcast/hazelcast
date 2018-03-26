@@ -75,7 +75,9 @@ public class MapAddNearCacheInvalidationListenerMessageTask
 
     @Override
     protected Object newMapListener() {
-        return new NearCacheInvalidationListener(endpoint, nodeEngine.getLocalMember().getUuid());
+        String uuid = nodeEngine.getLocalMember().getUuid();
+        long correlationId = clientMessage.getCorrelationId();
+        return new NearCacheInvalidationListener(endpoint, uuid, correlationId);
     }
 
     @Override
@@ -85,8 +87,8 @@ public class MapAddNearCacheInvalidationListenerMessageTask
 
     private final class NearCacheInvalidationListener extends AbstractMapClientNearCacheInvalidationListener {
 
-        NearCacheInvalidationListener(ClientEndpoint endpoint, String localMemberUuid) {
-            super(endpoint, localMemberUuid);
+        NearCacheInvalidationListener(ClientEndpoint endpoint, String localMemberUuid, long correlationId) {
+            super(endpoint, localMemberUuid, correlationId);
         }
 
         @Override

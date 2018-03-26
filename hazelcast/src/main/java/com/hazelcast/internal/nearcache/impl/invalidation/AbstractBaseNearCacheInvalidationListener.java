@@ -18,6 +18,7 @@ package com.hazelcast.internal.nearcache.impl.invalidation;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.util.HashUtil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,8 +35,8 @@ public abstract class AbstractBaseNearCacheInvalidationListener {
      */
     private final int batchOrderKey;
 
-    public AbstractBaseNearCacheInvalidationListener(String localMemberUuid) {
-        this.batchOrderKey = localMemberUuid.hashCode();
+    public AbstractBaseNearCacheInvalidationListener(String localMemberUuid, long correlationId) {
+        this.batchOrderKey = HashUtil.hashCode(localMemberUuid, correlationId);
     }
 
     protected abstract ClientMessage encodeBatchInvalidation(String name, List<Data> keys, List<String> sourceUuids,
