@@ -25,7 +25,6 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.memory.MemorySize;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.util.StringUtil;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
@@ -48,8 +47,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.net.URL;
 import java.nio.ByteOrder;
-import java.text.DecimalFormat;
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Map;
@@ -465,7 +462,6 @@ public abstract class AbstractXmlConfigHelper {
         }
     }
 
-    @SuppressFBWarnings("DM_BOXED_PRIMITIVE_FOR_PARSING")
     protected void fillNativeMemoryConfig(Node node, NativeMemoryConfig nativeMemoryConfig) {
         final NamedNodeMap atts = node.getAttributes();
         final Node enabledNode = atts.getNamedItem("enabled");
@@ -485,7 +481,7 @@ public abstract class AbstractXmlConfigHelper {
                 final NamedNodeMap attrs = n.getAttributes();
                 final String value = getTextContent(attrs.getNamedItem("value"));
                 final MemoryUnit unit = MemoryUnit.valueOf(getTextContent(attrs.getNamedItem("unit")));
-                MemorySize memorySize = new MemorySize(Long.valueOf(value), unit);
+                MemorySize memorySize = new MemorySize(Long.parseLong(value), unit);
                 nativeMemoryConfig.setSize(memorySize);
             } else if ("min-block-size".equals(nodeName)) {
                 String value = getTextContent(n);
@@ -495,13 +491,7 @@ public abstract class AbstractXmlConfigHelper {
                 nativeMemoryConfig.setPageSize(Integer.parseInt(value));
             } else if ("metadata-space-percentage".equals(nodeName)) {
                 String value = getTextContent(n);
-                try {
-                    Number percentage = new DecimalFormat("##.#").parse(value);
-                    nativeMemoryConfig.setMetadataSpacePercentage(percentage.floatValue());
-                } catch (ParseException e) {
-                    LOGGER.info("Metadata space percentage, [" + value
-                            + "], is not a proper value. Default value will be used!");
-                }
+                nativeMemoryConfig.setMetadataSpacePercentage(Float.parseFloat(value));
             }
         }
     }
