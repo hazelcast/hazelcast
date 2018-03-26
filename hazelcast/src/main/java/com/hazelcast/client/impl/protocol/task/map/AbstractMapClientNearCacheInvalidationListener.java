@@ -29,8 +29,9 @@ abstract class AbstractMapClientNearCacheInvalidationListener
 
     private final ClientEndpoint endpoint;
 
-    AbstractMapClientNearCacheInvalidationListener(ClientEndpoint endpoint, String localMemberUuid) {
-        super(localMemberUuid);
+    AbstractMapClientNearCacheInvalidationListener(ClientEndpoint endpoint,
+                                                   String localMemberUuid, long correlationId) {
+        super(localMemberUuid, correlationId);
         this.endpoint = endpoint;
     }
 
