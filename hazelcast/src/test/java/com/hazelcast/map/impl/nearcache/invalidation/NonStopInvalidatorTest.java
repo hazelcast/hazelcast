@@ -23,7 +23,6 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.RequireAssertEnabled;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
@@ -50,14 +49,12 @@ public class NonStopInvalidatorTest extends HazelcastTestSupport {
         invalidator = new NonStopInvalidator(MapService.SERVICE_NAME, TRUE_FILTER, nodeEngineImpl);
     }
 
-    @RequireAssertEnabled
-    @Test(expected = AssertionError.class)
+    @Test(expected = NullPointerException.class)
     public void testInvalidate_withInvalidMapName() {
         invalidator.invalidateKey(key, null, null);
     }
 
-    @RequireAssertEnabled
-    @Test(expected = AssertionError.class)
+    @Test(expected = NullPointerException.class)
     public void testClear_withInvalidMapName() {
         invalidator.invalidateAllKeys(null, null);
     }
