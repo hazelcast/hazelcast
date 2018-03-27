@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -38,10 +38,12 @@
                 <xs:element name="proxy-factories" type="proxy-factories" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="load-balancer" type="load-balancer" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="near-cache" type="near-cache-client" minOccurs="0" maxOccurs="unbounded"/>
-                <xs:element name="query-caches" type="query-caches" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="query-caches" type="query-caches" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="connection-strategy" type="connection-strategy" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="instance-name" type="xs:string" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="user-code-deployment" type="user-code-deployment" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="flake-id-generator" type="flake-id-generator" minOccurs="0"
+                            maxOccurs="unbounded"/>
             </xs:choice>
             <xs:attribute name="id" type="xs:string" use="optional" default="default"/>
         </xs:complexType>
@@ -85,6 +87,7 @@
             <xs:element name="aws" type="aws" minOccurs="0" maxOccurs="1"/>
             <xs:element name="discovery-strategies" type="discovery-strategies" minOccurs="0" maxOccurs="1"/>
             <xs:element name="outbound-ports" type="outbound-ports" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="icmp-ping" type="icmp-ping" minOccurs="0" maxOccurs="1"/>
         </xs:all>
     </xs:complexType>
 
@@ -94,6 +97,18 @@
             <xs:element name="discovery-strategy" type="discovery-strategy" minOccurs="0" maxOccurs="unbounded"/>
         </xs:sequence>
     </xs:complexType>
+
+    <xs:complexType name="icmp-ping">
+        <xs:all>
+            <xs:element name="timeout-milliseconds" type="xs:long" minOccurs="0" maxOccurs="1" default="1000"/>
+            <xs:element name="interval-milliseconds" type="xs:long" minOccurs="0" maxOccurs="1" default="1000"/>
+            <xs:element name="ttl" type="xs:int" minOccurs="0" maxOccurs="1" default="255"/>
+            <xs:element name="max-attempts" type="xs:int" minOccurs="0" maxOccurs="1" default="2"/>
+            <xs:element name="echo-fail-fast-on-startup" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true"/>
+        </xs:all>
+        <xs:attribute name="enabled" type="xs:boolean" default="false"/>
+    </xs:complexType>
+
     <xs:complexType name="discovery-node-filter">
         <xs:attribute name="class" type="xs:string" use="required"/>
     </xs:complexType>
@@ -614,5 +629,44 @@
         <xs:sequence>
             <xs:element name="ports" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
         </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="flake-id-generator">
+        <xs:all>
+            <xs:element name="prefetch-count" minOccurs="0" default="100">
+                <xs:annotation>
+                    <xs:documentation>
+                        How many IDs are pre-fetched on the background when one call to newId() is made.
+                        Value must be in the range 1..100,000, default is 100.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:simpleType>
+                    <xs:restriction base="xs:int">
+                        <xs:minInclusive value="1"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="prefetch-validity-millis" type="xs:long" minOccurs="0" default="600000">
+                <xs:annotation>
+                    <xs:documentation>
+                        For how long the pre-fetched IDs can be used. If this time elapses, new IDs will be fetched.
+                        Time unit is milliseconds.
+                        If value is &lt;= 0, validity is unlimited. Default value is 600,000 (10 minutes).
+                        The IDs contain timestamp component, which ensures rough global ordering of IDs. If an ID
+                        is assigned to an event that occurred much later, it will be much out of order.
+                        If you don't need ordering, set this value to 0.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:all>
+        <xs:attribute name="name" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    Name of the ID generator.
+                </xs:documentation>
+            </xs:annotation>
+            <xs:simpleType>
+                <xs:restriction base="xs:string"/>
+            </xs:simpleType>
+        </xs:attribute>
     </xs:complexType>
 </xs:schema>

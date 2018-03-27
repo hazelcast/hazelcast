@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,7 +57,8 @@ public class PacketIOHelperTest extends HazelcastTestSupport {
     private PacketIOHelper packetWriter;
     private PacketIOHelper packetReader;
 
-    private final Person person = new Person(111, 123L, 89.56d, "test-person", new SerializationConcurrencyTest.Address("street", 987));
+    private final Person person
+            = new Person(111, 123L, 89.56d, "test-person", new SerializationConcurrencyTest.Address("street", 987));
 
     private final PortablePerson portablePerson = new PortablePerson(222, 456L, "portable-person",
             new PortableAddress("street", 567));

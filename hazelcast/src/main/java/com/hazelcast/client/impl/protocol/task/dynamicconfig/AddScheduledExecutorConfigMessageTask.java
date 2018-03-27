@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.hazelcast.client.impl.protocol.task.dynamicconfig;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddScheduledExecutorConfigCodec;
+import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
@@ -42,8 +43,14 @@ public class AddScheduledExecutorConfigMessageTask
 
     @Override
     protected IdentifiedDataSerializable getConfig() {
-        ScheduledExecutorConfig config = new ScheduledExecutorConfig(parameters.name, parameters.durability,
-                parameters.capacity, parameters.poolSize);
+        ScheduledExecutorConfig config = new ScheduledExecutorConfig();
+        config.setPoolSize(parameters.poolSize);
+        config.setDurability(parameters.durability);
+        config.setCapacity(parameters.capacity);
+        config.setName(parameters.name);
+        MergePolicyConfig mergePolicyConfig = mergePolicyConfig(parameters.mergePolicyExist, parameters.mergePolicy,
+                parameters.mergeBatchSize);
+        config.setMergePolicyConfig(mergePolicyConfig);
         return config;
     }
 

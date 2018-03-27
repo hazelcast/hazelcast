@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,6 +39,7 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.SimpleExecutionCallback;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
 
 import java.io.IOException;
@@ -112,6 +113,21 @@ public class MigrationRequestOperation extends BaseMigrationSourceOperation {
             setFailed();
         } finally {
             migrationInfo.doneProcessing();
+        }
+    }
+
+    @Override
+    void onMigrationStart() {
+        ((OperationServiceImpl) getNodeEngine().getOperationService()).onStartAsyncOperation(this);
+        super.onMigrationStart();
+    }
+
+    @Override
+    void onMigrationComplete(boolean result) {
+        try {
+            super.onMigrationComplete(result);
+        } finally {
+            ((OperationServiceImpl) getNodeEngine().getOperationService()).onCompletionAsyncOperation(this);
         }
     }
 

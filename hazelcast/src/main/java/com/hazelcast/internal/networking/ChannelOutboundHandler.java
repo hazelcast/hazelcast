@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,9 @@ import java.nio.ByteBuffer;
  *
  * For more information about the ChannelOutboundHandler (and handlers in generally), have a look at the
  * {@link ChannelInboundHandler}.
+ *
+ * If the main task of a ChannelOutboundHandler is to encode a message (e.g. a Packet), it is best to call this handler
+ * an encoder. For example PacketEncoder.
  *
  * @param <F>
  * @see EventLoopGroup

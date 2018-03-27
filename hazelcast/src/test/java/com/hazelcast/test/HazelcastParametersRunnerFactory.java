@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,12 +24,10 @@ import org.junit.runners.parameterized.ParametersRunnerFactory;
 import org.junit.runners.parameterized.TestWithParameters;
 
 /**
- * ParametersRunnerFactory implementation which creates either {@link HazelcastSerialClassRunner}
- * or {@link HazelcastParallelClassRunner}, depending on existence of {@link ParallelTest} category.
- *
- * When {@link ParallelTest} category is used, test class will be run with parallel method execution
- * either on a single JVM or on multiple JVMs depending on the maven profile selected.
- * Otherwise it will be run in full isolation (single JVM, serial method execution).
+ * {@link ParametersRunnerFactory} implementation which creates either {@link HazelcastSerialClassRunner}
+ * or {@link HazelcastParallelClassRunner}, depending on the presence of the {@link ParallelTest} category.
+ * <p>
+ * See {@link com.hazelcast.test package documentation} for runners overview.
  */
 public class HazelcastParametersRunnerFactory implements ParametersRunnerFactory {
 
@@ -46,7 +44,7 @@ public class HazelcastParametersRunnerFactory implements ParametersRunnerFactory
         return getSerialClassRunner(testClass, parameters, testName);
     }
 
-    private boolean isParallel(Class<?> testClass) {
+    protected boolean isParallel(Class<?> testClass) {
         Category category = testClass.getAnnotation(Category.class);
         if (category == null) {
             return false;

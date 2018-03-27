@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
-import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.MapEvent;
 import com.hazelcast.core.MultiMap;
@@ -36,14 +35,15 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
+import static java.util.Collections.newSetFromMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -481,7 +481,7 @@ public class MultiMapListenerTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testListeners() throws Exception {
+    public void testListeners_local() {
         int count = 4;
         String name = randomMapName();
         Config config = new Config();
@@ -489,71 +489,115 @@ public class MultiMapListenerTest extends HazelcastTestSupport {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(count);
         HazelcastInstance[] instances = factory.newInstances(config);
 
-        final Set<String> keys = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
-        EntryListener<String, String> listener = new EntryAdapter<String, String>() {
-            public void entryAdded(EntryEvent<String, String> event) {
-                keys.add(event.getKey());
-            }
+        HazelcastInstance localInstance = instances[0];
+        final MultiMap<String, String> localMultiMap = localInstance.getMultiMap(name);
+        final KeyCollectingListener<String> listener = new KeyCollectingListener<String>();
+        localMultiMap.addLocalEntryListener(listener);
+        localMultiMap.put("key1", "val1");
+        localMultiMap.put("key2", "val2");
+        localMultiMap.put("key3", "val3");
+        localMultiMap.put("key4", "val4");
+        localMultiMap.put("key5", "val5");
+        localMultiMap.put("key6", "val6");
+        localMultiMap.put("key7", "val7");
 
-            public void entryRemoved(EntryEvent<String, String> event) {
-                keys.remove(event.getKey());
-            }
+        //we want at least one key to be guaranteed to trigger the local listener
+        localMultiMap.put(generateKeyOwnedBy(localInstance), "val8");
 
-            @Override
-            public void mapCleared(MapEvent event) {
-                keys.clear();
-            }
-        };
+        //see if the local listener was called for all local entries
+        assertContainsAllEventually(listener.keys, localMultiMap.localKeySet());
 
+        //remove something -> this should remove the key from the listener
+        String keyToRemove = listener.keys.iterator().next();
+        System.out.println("Local key set: " + localMultiMap.localKeySet());
+        System.out.println("Removing " + keyToRemove);
+        localMultiMap.remove(keyToRemove);
+        System.out.println("Local key set: " + localMultiMap.localKeySet());
+        assertContainsAllEventually(localMultiMap.localKeySet(), listener.keys);
+
+        localInstance.getMultiMap(name).clear();
+        assertSizeEventually(0, listener.keys);
+    }
+
+    @Test
+    public void testListeners_distributed() {
+        int count = 4;
+        String name = randomMapName();
+        Config config = new Config();
+        config.getMultiMapConfig(name).setValueCollectionType(MultiMapConfig.ValueCollectionType.LIST);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(count);
+        HazelcastInstance[] instances = factory.newInstances(config);
         final MultiMap<String, String> multiMap = instances[0].getMultiMap(name);
-        final String id = multiMap.addLocalEntryListener(listener);
-        multiMap.put("key1", "val1");
-        multiMap.put("key2", "val2");
-        multiMap.put("key3", "val3");
-        multiMap.put("key4", "val4");
-        multiMap.put("key5", "val5");
-        multiMap.put("key6", "val6");
-        multiMap.put("key7", "val7");
-        multiMap.put("key8", "val8");
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertContainsAll(multiMap.localKeySet(), keys);
-            }
-        });
-        if (keys.size() != 0) {
-            multiMap.remove(keys.iterator().next());
-        }
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertContainsAll(multiMap.localKeySet(), keys);
-            }
-        });
-        multiMap.removeEntryListener(id);
-        getMultiMap(instances, name).clear();
-        keys.clear();
 
+        final KeyCollectingListener<String> listener = new KeyCollectingListener<String>();
         final String id2 = multiMap.addEntryListener(listener, true);
         getMultiMap(instances, name).put("key3", "val3");
         getMultiMap(instances, name).put("key3", "val33");
         getMultiMap(instances, name).put("key4", "val4");
         getMultiMap(instances, name).remove("key3", "val33");
-        assertSizeEventually(1, keys);
+
+        // awaitEventCount() acts as a barrier.
+        // without this barrier assertSize(-eventually) could pass just after receiving the very first
+        // event when inserting the first entry ("key3", "val3"). Events triggered by the other
+        // entries could be re-ordered with sub-sequent map.clear()
+        listener.awaitEventCount(4);
+        assertEquals(1, listener.size());
+
         getMultiMap(instances, name).clear();
-        assertSizeEventually(0, keys);
+        //it should fire the mapCleared event and listener will remove everything
+        assertSizeEventually(0, listener.keys);
 
         multiMap.removeEntryListener(id2);
         multiMap.addEntryListener(listener, "key7", true);
+
         getMultiMap(instances, name).put("key2", "val2");
         getMultiMap(instances, name).put("key3", "val3");
         getMultiMap(instances, name).put("key7", "val7");
 
-        assertSizeEventually(1, keys);
+        assertSizeEventually(1, listener.keys);
+    }
+
+    private <T> void assertContainsAllEventually(final Collection<T> collection, final Collection<T> expected) {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertContainsAll(collection, expected);
+            }
+        });
     }
 
     private MultiMap<String, String> getMultiMap(HazelcastInstance[] instances, String name) {
         final Random rnd = new Random();
         return instances[rnd.nextInt(instances.length)].getMultiMap(name);
+    }
+
+    private static class KeyCollectingListener<V> extends EntryAdapter<String, V> {
+        private final Set<String> keys = newSetFromMap(new ConcurrentHashMap<String, Boolean>());
+        private final AtomicInteger eventCount = new AtomicInteger();
+
+        public void entryAdded(EntryEvent<String, V> event) {
+            keys.add(event.getKey());
+            eventCount.incrementAndGet();
+        }
+
+        public void entryRemoved(EntryEvent<String, V> event) {
+            keys.remove(event.getKey());
+            eventCount.incrementAndGet();
+        }
+
+        @Override
+        public void mapCleared(MapEvent event) {
+            keys.clear();
+            eventCount.incrementAndGet();
+        }
+
+        private int size() {
+            return keys.size();
+        }
+
+        private void awaitEventCount(int expectedEventCount) {
+            assertEqualsEventually(expectedEventCount, eventCount);
+        }
+
     }
 }

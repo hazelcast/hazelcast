@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ public interface MapEventPublisher {
      * @param mapName   the map name
      * @param entryView the updated entry
      */
-    void publishWanReplicationUpdate(String mapName, EntryView entryView);
+    void publishWanReplicationUpdate(String mapName, EntryView<Data, Data> entryView);
 
     /**
      * Notifies the WAN subsystem of a map entry removal on a replica owner.

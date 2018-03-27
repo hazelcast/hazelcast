@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,28 +16,22 @@
 
 package com.hazelcast.map.impl.operation;
 
-import com.hazelcast.core.EntryEventType;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.map.EntryBackupProcessor;
-import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.query.Predicate;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 
 /**
  * Provides common backup operation functionality for {@link com.hazelcast.map.EntryProcessor}
  * that can run on multiple entries.
  */
-abstract class AbstractMultipleEntryBackupOperation extends MapOperation {
+abstract class AbstractMultipleEntryBackupOperation extends MapOperation implements Versioned {
 
-    protected MapEntries responses;
-    protected EntryBackupProcessor backupProcessor;
-    protected List<WanEventHolder> wanEventList = Collections.emptyList();
+    EntryBackupProcessor backupProcessor;
 
     public AbstractMultipleEntryBackupOperation() {
     }
@@ -51,34 +45,28 @@ abstract class AbstractMultipleEntryBackupOperation extends MapOperation {
         return null;
     }
 
-    protected void setWanEventList(List<WanEventHolder> wanEventList) {
-        assert wanEventList != null;
-
-        this.wanEventList = wanEventList;
-    }
-
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeInt(wanEventList.size());
-        for (WanEventHolder wanEventHolder : wanEventList) {
-            out.writeData(wanEventHolder.getKey());
-            out.writeData(wanEventHolder.getValue());
-            out.writeInt(wanEventHolder.getEventType().getType());
+        // RU_COMPAT_3_9
+        if (out.getVersion().isUnknownOrLessThan(Versions.V3_10)) {
+            out.writeInt(0);
         }
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        int size = in.readInt();
-        if (size > 0) {
-            wanEventList = new ArrayList<WanEventHolder>(size);
+        // RU_COMPAT_3_9
+        if (in.getVersion().isUnknownOrLessThan(Versions.V3_10)) {
+            final int size = in.readInt();
             for (int i = 0; i < size; i++) {
-                Data key = in.readData();
-                Data value = in.readData();
-                EntryEventType entryEventType = EntryEventType.getByType(in.readInt());
-                wanEventList.add(new WanEventHolder(key, value, entryEventType));
+                // key
+                in.readData();
+                // value
+                in.readData();
+                // event type
+                in.readInt();
             }
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,8 +25,9 @@ import com.hazelcast.scheduledexecutor.impl.ScheduledExecutorPartition;
 import com.hazelcast.scheduledexecutor.impl.ScheduledTaskDescriptor;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
+
+import static com.hazelcast.util.MapUtil.createHashMap;
 
 public class ReplicationOperation
         extends AbstractSchedulerOperation {
@@ -41,7 +42,8 @@ public class ReplicationOperation
     }
 
     @Override
-    public void run() throws Exception {
+    public void run()
+            throws Exception {
         DistributedScheduledExecutorService service = getService();
         ScheduledExecutorPartition partition = service.getPartition(getPartitionId());
         for (Map.Entry<String, Map<String, ScheduledTaskDescriptor>> entry : map.entrySet()) {
@@ -51,14 +53,15 @@ public class ReplicationOperation
                 ScheduledTaskDescriptor descriptor = descriptorEntry.getValue();
 
                 if (!container.has(taskName)) {
-                    container.stash(descriptor);
+                    container.enqueueSuspended(descriptor, false);
                 }
             }
         }
     }
 
     @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
+    protected void writeInternal(ObjectDataOutput out)
+            throws IOException {
         out.writeInt(map.size());
         for (Map.Entry<String, Map<String, ScheduledTaskDescriptor>> entry : map.entrySet()) {
             out.writeUTF(entry.getKey());
@@ -71,14 +74,14 @@ public class ReplicationOperation
     }
 
     @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
+    protected void readInternal(ObjectDataInput in)
+            throws IOException {
         int size = in.readInt();
-        map = new HashMap<String, Map<String, ScheduledTaskDescriptor>>(size);
+        map = createHashMap(size);
         for (int i = 0; i < size; i++) {
             String key = in.readUTF();
             int subSize = in.readInt();
-            Map<String, ScheduledTaskDescriptor> subMap =
-                    new HashMap<String, ScheduledTaskDescriptor>(subSize);
+            Map<String, ScheduledTaskDescriptor> subMap = createHashMap(subSize);
             map.put(key, subMap);
             for (int k = 0; k < subSize; k++) {
                 subMap.put(in.readUTF(), (ScheduledTaskDescriptor) in.readObject());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,11 @@
 
 package com.hazelcast.util.executor;
 
-import com.hazelcast.util.EmptyStatement;
-
 import java.util.Queue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static com.hazelcast.util.EmptyStatement.ignore;
 
 public final class PoolExecutorThreadFactory extends AbstractExecutorThreadFactory {
 
@@ -58,7 +58,7 @@ public final class PoolExecutorThreadFactory extends AbstractExecutorThreadFacto
             try {
                 idQ.offer(id);
             } catch (Throwable ignored) {
-                EmptyStatement.ignore(ignored);
+                ignore(ignored);
             }
         }
     }

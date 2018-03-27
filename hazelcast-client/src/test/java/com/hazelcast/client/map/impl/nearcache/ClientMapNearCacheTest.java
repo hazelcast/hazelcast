@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
-import com.hazelcast.test.HazelcastParametersRunnerFactory;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -45,10 +45,6 @@ import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameter;
-import org.junit.runners.Parameterized.Parameters;
-import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -60,30 +56,16 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.hazelcast.spi.properties.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_ENABLED;
-import static java.lang.Boolean.FALSE;
-import static java.lang.Boolean.TRUE;
 import static java.lang.String.format;
-import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(Parameterized.class)
-@UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-@SuppressWarnings("WeakerAccess")
 public class ClientMapNearCacheTest extends NearCacheTestSupport {
-
-    @Parameter
-    public boolean batchInvalidationEnabled;
-
-    @Parameters(name = "batchInvalidationEnabled:{0}")
-    public static Iterable<Object[]> parameters() {
-        return asList(new Object[]{TRUE}, new Object[]{FALSE});
-    }
 
     protected final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
@@ -110,7 +92,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
             nodeMap.put(i, i);
         }
 
-        // 3. add client with near cache
+        // 3. add client with Near Cache
         NearCacheConfig nearCacheConfig = newNearCacheConfig()
                 .setInvalidateOnChange(true)
                 .setName(mapName);
@@ -120,13 +102,13 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
 
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
 
-        // 4. populate client near cache
+        // 4. populate client Near Cache
         final IMap<Integer, Integer> clientMap = client.getMap(mapName);
         for (int i = 0; i < mapSize; i++) {
             assertNotNull(clientMap.get(i));
         }
 
-        // 5. assert number of entries in client near cache
+        // 5. assert number of entries in client Near Cache
         assertEquals(mapSize, ((NearCachedClientMapProxy) clientMap).getNearCache().size());
     }
 
@@ -1127,7 +1109,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
             public void run() {
                 NearCache<Object, Object> nearCache = ((NearCachedClientMapProxy<Integer, Integer>) clientMap).getNearCache();
                 for (int i = 0; i < 1000; i++) {
-                    assertNull("Near-cache should be empty", nearCache.get(i));
+                    assertNull("Near Cache should be empty", nearCache.get(i));
                 }
             }
         });
@@ -1156,7 +1138,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
             public void run() {
                 NearCache<Object, Object> nearCache = ((NearCachedClientMapProxy<Integer, Integer>) clientMap).getNearCache();
                 for (int i = 0; i < 1000; i++) {
-                    assertNull("Near-cache should be empty", nearCache.get(i));
+                    assertNull("Near Cache should be empty", nearCache.get(i));
                 }
             }
         });
@@ -1277,8 +1259,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
     }
 
     protected Config newConfig() {
-        return getConfig()
-                .setProperty(MAP_INVALIDATION_MESSAGE_BATCH_ENABLED.getName(), String.valueOf(batchInvalidationEnabled));
+        return getConfig();
     }
 
     protected NearCacheConfig newNoInvalidationNearCacheConfig() {

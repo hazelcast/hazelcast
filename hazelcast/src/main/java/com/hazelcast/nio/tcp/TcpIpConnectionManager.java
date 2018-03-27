@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -388,7 +388,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
             activeConnections.add(connection);
 
             logger.info("Established socket connection between "
-                    + channel.getLocalSocketAddress() + " and " + channel.getRemoteSocketAddress());
+                    + channel.localSocketAddress() + " and " + channel.remoteSocketAddress());
             openedCount.inc();
 
             eventLoopGroup.register(channel);

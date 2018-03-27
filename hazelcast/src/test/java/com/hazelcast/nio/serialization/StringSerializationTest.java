@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -102,7 +102,8 @@ public class StringSerializationTest {
     @Test
     public void testLargeStringEncodeDecode() {
         StringBuilder sb = new StringBuilder();
-        int i = 0, j = 0;
+        int i = 0;
+        int j = 0;
         while (j < TEST_STR_SIZE) {
             int ch = i++ % Character.MAX_VALUE;
             if (Character.isLetter(ch)) {

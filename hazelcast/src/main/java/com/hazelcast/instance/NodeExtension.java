@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -234,7 +234,7 @@ public interface NodeExtension {
     /**
      * Creates a UUID for local member
      * @param address address of local member
-     * @return new uuid
+     * @return new UUID
      */
     String createMemberUuid(Address address);
 

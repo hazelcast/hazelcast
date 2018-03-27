@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,9 +30,11 @@ public class CacheEventJournalReadResultSetImpl<K, V, T> extends ReadResultSetIm
     public CacheEventJournalReadResultSetImpl() {
     }
 
-    CacheEventJournalReadResultSetImpl(int minSize, int maxSize, SerializationService serializationService,
-                                       final Predicate<? super EventJournalCacheEvent<K, V>> predicate,
-                                       final Projection<? super EventJournalCacheEvent<K, V>, T> projection) {
+    CacheEventJournalReadResultSetImpl(
+            int minSize, int maxSize, SerializationService serializationService,
+            final Predicate<? super EventJournalCacheEvent<K, V>> predicate,
+            final Projection<? super EventJournalCacheEvent<K, V>, ? extends T> projection
+    ) {
         super(minSize, maxSize, serializationService,
                 predicate == null ? null : new Predicate<InternalEventJournalCacheEvent>() {
                     @Override
@@ -67,9 +69,9 @@ public class CacheEventJournalReadResultSetImpl<K, V, T> extends ReadResultSetIm
     @SerializableByConvention
     private static class ProjectionAdapter<K, V, T> extends Projection<InternalEventJournalCacheEvent, T> {
 
-        private final Projection<? super EventJournalCacheEvent<K, V>, T> projection;
+        private final Projection<? super EventJournalCacheEvent<K, V>, ? extends T> projection;
 
-        ProjectionAdapter(Projection<? super EventJournalCacheEvent<K, V>, T> projection) {
+        ProjectionAdapter(Projection<? super EventJournalCacheEvent<K, V>, ? extends T> projection) {
             this.projection = projection;
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,13 +21,32 @@ import com.hazelcast.core.Member;
 import java.util.Collection;
 
 /**
- * A function that can be used for conclude absence/presence of quorum.
- * This function is triggered when any change happens to member list.
+ * A function that can be used to conclude absence/presence of quorum.
+ * The quorum function is consulted:<br/>
+ * <ul>
+ *     <li>When a cluster membership change occurs (member added or removed)</li>
+ *     <li>Whenever a hearbeat is received from a member, in case the {@code QuorumFunction} also
+ *     implements {@link HeartbeatAware}</li>
+ * </ul>
+ *
+ * A {@code QuorumFunction} that implements {@link HeartbeatAware} will be also notified of heartbeats.
+ * Additionally, a {@code QuorumFunction} that implements {@link com.hazelcast.core.MembershipListener}
+ * will be notified of membership events. All listener invocations are executed before the
+ * {@code QuorumFunction}'s {@link #apply(Collection)} method is invoked.
+ *
+ * IMPORTANT: The term "quorum" simply refers to the count of members in the cluster required for an operation to succeed.
+ * It does NOT refer to an implementation of Paxos or Raft protocols as used in many NoSQL and distributed systems.
+ * The mechanism it provides in Hazelcast protects the user in case the number of nodes in a cluster drops below the
+ * specified one.
  */
 public interface QuorumFunction {
 
     /**
-     * Determines if quorum is present based on the member-list.
+     * Determines if quorum is present based on the current list of members in the cluster.
+     * Lite members are excluded and only data members are provided to this method.
+     * <br>
+     * This method should not block nor execute time-consuming operations, otherwise it may stall other quorum function
+     * invocations.
      *
      * @param members snapshot of current member list
      * @return boolean presence/absence of quorum

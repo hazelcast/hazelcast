@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,8 @@ import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.spi.merge.MergingEntry;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 
 import java.util.List;
 import java.util.Set;
@@ -144,6 +146,13 @@ abstract class MapOperationProviderDelegator implements MapOperationProvider {
     }
 
     @Override
+    public OperationFactory createMergeOperationFactory(String name, int[] partitions,
+                                                        List<MergingEntry<Data, Data>>[] mergingEntries,
+                                                        SplitBrainMergePolicy mergePolicy) {
+        return getDelegate().createMergeOperationFactory(name, partitions, mergingEntries, mergePolicy);
+    }
+
+    @Override
     public MapOperation createPutFromLoadAllOperation(String name, List<Data> keyValueSequence) {
         return getDelegate().createPutFromLoadAllOperation(name, keyValueSequence);
     }
@@ -165,9 +174,15 @@ abstract class MapOperationProviderDelegator implements MapOperationProvider {
     }
 
     @Override
-    public MapOperation createMergeOperation(String name, Data dataKey, EntryView<Data, Data> entryView,
-                                             MapMergePolicy policy, boolean disableWanReplicationEvent) {
-        return getDelegate().createMergeOperation(name, dataKey, entryView, policy, disableWanReplicationEvent);
+    public MapOperation createLegacyMergeOperation(String name, EntryView<Data, Data> mergingEntry,
+                                                   MapMergePolicy policy, boolean disableWanReplicationEvent) {
+        return getDelegate().createLegacyMergeOperation(name, mergingEntry, policy, disableWanReplicationEvent);
+    }
+
+    @Override
+    public MapOperation createMergeOperation(String name, MergingEntry<Data, Data> mergingValue,
+                                             SplitBrainMergePolicy mergePolicy, boolean disableWanReplicationEvent) {
+        return getDelegate().createMergeOperation(name, mergingValue, mergePolicy, disableWanReplicationEvent);
     }
 
     @Override

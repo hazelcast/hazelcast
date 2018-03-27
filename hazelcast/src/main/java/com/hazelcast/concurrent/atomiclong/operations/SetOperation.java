@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,14 +17,16 @@
 package com.hazelcast.concurrent.atomiclong.operations;
 
 import com.hazelcast.concurrent.atomiclong.AtomicLongContainer;
-import com.hazelcast.concurrent.atomiclong.AtomicLongDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
 
-public class SetOperation extends AtomicLongBackupAwareOperation {
+import static com.hazelcast.concurrent.atomiclong.AtomicLongDataSerializerHook.SET_OPERATION;
+
+public class SetOperation extends AtomicLongBackupAwareOperation implements MutatingOperation {
 
     private long newValue;
 
@@ -38,8 +40,8 @@ public class SetOperation extends AtomicLongBackupAwareOperation {
 
     @Override
     public void run() throws Exception {
-        AtomicLongContainer atomicLongContainer = getLongContainer();
-        atomicLongContainer.set(newValue);
+        AtomicLongContainer container = getLongContainer();
+        container.set(newValue);
     }
 
     @Override
@@ -49,7 +51,7 @@ public class SetOperation extends AtomicLongBackupAwareOperation {
 
     @Override
     public int getId() {
-        return AtomicLongDataSerializerHook.SET_OPERATION;
+        return SET_OPERATION;
     }
 
     @Override

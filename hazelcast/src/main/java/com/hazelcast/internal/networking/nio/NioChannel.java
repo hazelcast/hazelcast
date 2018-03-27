@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,32 +24,30 @@ import java.nio.channels.SocketChannel;
 import static com.hazelcast.nio.IOUtil.closeResource;
 
 /**
- * A {@link com.hazelcast.internal.networking.Channel} implementation tailored for non blocking IO using
- * {@link java.nio.channels.Selector} in combination with a non blocking {@link SocketChannel}.
+ * A {@link com.hazelcast.internal.networking.Channel} implementation tailored
+ * for non blocking IO using {@link java.nio.channels.Selector} in combination
+ * with a non blocking {@link SocketChannel}.
  */
 public class NioChannel extends AbstractChannel {
 
-    private NioChannelReader reader;
-    private NioChannelWriter writer;
+    NioInboundPipeline inboundPipeline;
+    NioOutboundPipeline outboundPipeline;
 
     public NioChannel(SocketChannel socketChannel, boolean clientMode) {
         super(socketChannel, clientMode);
     }
 
-    public void setReader(NioChannelReader reader) {
-        this.reader = reader;
+    public void init(NioInboundPipeline inboundPipeline, NioOutboundPipeline outboundPipeline) {
+        this.inboundPipeline = inboundPipeline;
+        this.outboundPipeline = outboundPipeline;
     }
 
-    public void setWriter(NioChannelWriter writer) {
-        this.writer = writer;
+    public NioOutboundPipeline outboundPipeline() {
+        return outboundPipeline;
     }
 
-    public NioChannelReader getReader() {
-        return reader;
-    }
-
-    public NioChannelWriter getWriter() {
-        return writer;
+    public NioInboundPipeline inboundPipeline() {
+        return inboundPipeline;
     }
 
     @Override
@@ -57,33 +55,33 @@ public class NioChannel extends AbstractChannel {
         if (isClosed()) {
             return false;
         }
-        writer.write(frame);
+        outboundPipeline.write(frame);
         return true;
     }
 
     @Override
     public long lastReadTimeMillis() {
-        return reader.lastReadTimeMillis();
+        return inboundPipeline.lastReadTimeMillis();
     }
 
     @Override
     public long lastWriteTimeMillis() {
-        return writer.lastWriteTimeMillis();
+        return outboundPipeline.lastWriteTimeMillis();
     }
 
     @Override
     public void flush() {
-        writer.flush();
+        outboundPipeline.flush();
     }
 
     @Override
     protected void onClose() {
-        closeResource(reader);
-        closeResource(writer);
+        closeResource(inboundPipeline);
+        closeResource(outboundPipeline);
     }
 
     @Override
     public String toString() {
-        return "NioChannel{" + getLocalSocketAddress() + "->" + getRemoteSocketAddress() + '}';
+        return "NioChannel{" + localSocketAddress() + "->" + remoteSocketAddress() + '}';
     }
 }

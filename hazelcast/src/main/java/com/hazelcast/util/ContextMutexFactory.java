@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ import java.util.Map;
  * Typical usage would allow, for example, synchronizing access to a {@link java.util.concurrent.ConcurrentMap} on a
  * per-key basis, to avoid blocking other threads which could perform updates on other entries of the {@link Map}.
  *
- * <pre>
+ * <pre>{@code
  *    class Test {
  *
  *        private final ContextMutexFactory mutexFactory = new ContextMutexFactory();
@@ -55,6 +55,7 @@ import java.util.Map;
  *                mutex.close();
  *            }
  *        }
+ *    }
  * }</pre>
  */
 public final class ContextMutexFactory {

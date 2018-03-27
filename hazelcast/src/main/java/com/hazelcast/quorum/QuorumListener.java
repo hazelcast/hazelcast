@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,11 @@ import java.util.EventListener;
 
 /**
  * Listener to get notified when a quorum state is changed
+ *
+ * IMPORTANT: The term "quorum" simply refers to the count of members in the cluster required for an operation to succeed.
+ * It does NOT refer to an implementation of Paxos or Raft protocols as used in many NoSQL and distributed systems.
+ * The mechanism it provides in Hazelcast protects the user in case the number of nodes in a cluster drops below the
+ * specified one.
  */
 public interface QuorumListener extends EventListener {
 

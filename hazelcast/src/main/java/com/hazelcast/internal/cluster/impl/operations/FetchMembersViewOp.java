@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,8 +52,8 @@ public class FetchMembersViewOp extends AbstractClusterOperation implements Join
         ClusterServiceImpl service = getService();
         String thisUuid = service.getLocalMember().getUuid();
         if (!targetUuid.equals(thisUuid)) {
-            throw new IllegalStateException("Rejecting mastership claim, since target uuid[" + targetUuid
-                    + "] is not matching local member uuid[" + thisUuid + "].");
+            throw new IllegalStateException("Rejecting mastership claim, since target UUID[" + targetUuid
+                    + "] is not matching local member UUID[" + thisUuid + "].");
         }
         membersView = service.handleMastershipClaim(getCallerAddress(), getCallerUuid());
     }

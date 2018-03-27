@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,11 @@
 
 package com.hazelcast.concurrent.lock;
 
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.DistributedObjectNamespace;
 import com.hazelcast.spi.ObjectNamespace;
-import com.hazelcast.version.Version;
 
 import java.io.IOException;
 
@@ -38,21 +36,10 @@ public final class ObjectNamespaceSerializationHelper {
     }
 
     public static void writeNamespaceCompatibly(ObjectNamespace namespace, ObjectDataOutput out) throws IOException {
-        Version version = out.getVersion();
-        assert !version.isUnknown();
-
-        if (version.isGreaterOrEqual(Versions.V3_9)) {
-            if (namespace.getClass() == DefaultObjectNamespace.class) {
-                out.writeObject(new DistributedObjectNamespace(namespace));
-            } else {
-                out.writeObject(namespace);
-            }
+        if (namespace.getClass() == DefaultObjectNamespace.class) {
+            out.writeObject(new DistributedObjectNamespace(namespace));
         } else {
-            if (namespace.getClass() == DistributedObjectNamespace.class) {
-                out.writeObject(new DefaultObjectNamespace(namespace));
-            } else {
-                out.writeObject(namespace);
-            }
+            out.writeObject(namespace);
         }
     }
 

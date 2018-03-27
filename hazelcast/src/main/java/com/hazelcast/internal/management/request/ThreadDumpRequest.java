@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,10 @@ package com.hazelcast.internal.management.request;
 import com.eclipsesource.json.JsonObject;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.management.operation.ThreadDumpOperation;
+import com.hazelcast.spi.InternalCompletableFuture;
+import com.hazelcast.util.ExceptionUtil;
+
+import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.util.JsonUtil.getBoolean;
 
@@ -44,18 +48,32 @@ public class ThreadDumpRequest implements ConsoleRequest {
     @Override
     public void writeResponse(ManagementCenterService mcs, JsonObject root) {
         final JsonObject result = new JsonObject();
-        String threadDump = (String) mcs.callOnThis(new ThreadDumpOperation(dumpDeadlocks));
-        if (threadDump != null) {
-            result.add("hasDump", true);
-            result.add("dump", threadDump);
-        } else {
-            result.add("hasDump", false);
+        InternalCompletableFuture<Object> future = mcs.callOnThis(new ThreadDumpOperation(dumpDeadlocks));
+        try {
+            String threadDump = (String) future.get();
+            if (threadDump != null) {
+                result.add("hasDump", true);
+                result.add("dump", threadDump);
+            } else {
+                result.add("hasDump", false);
+            }
+        } catch (ExecutionException e) {
+            addError(result, e);
+        } catch (InterruptedException e) {
+            addError(result, e);
+            Thread.currentThread().interrupt();
         }
+
         root.add("result", result);
     }
 
     @Override
     public void fromJson(JsonObject json) {
         dumpDeadlocks = getBoolean(json, "dumpDeadlocks", false);
+    }
+
+    private static void addError(JsonObject root, Exception e) {
+        root.add("hasDump", false);
+        root.add("error", ExceptionUtil.toString(e));
     }
 }

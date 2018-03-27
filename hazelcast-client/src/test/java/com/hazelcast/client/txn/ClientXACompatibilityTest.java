@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -172,8 +172,9 @@ public class ClientXACompatibilityTest extends HazelcastTestSupport {
         try {
             secondXaResource.rollback(xid);
         } catch (XAException xaerr) {
-            assertTrue("rollback of unknown xid gives unexpected errorCode: " + xaerr.errorCode, ((XAException.XA_RBBASE <= xaerr.errorCode) && (xaerr.errorCode <= XAException.XA_RBEND))
-                    || xaerr.errorCode == XAException.XAER_NOTA);
+            assertTrue("rollback of unknown xid gives unexpected errorCode: " + xaerr.errorCode,
+                    ((XAException.XA_RBBASE <= xaerr.errorCode) && (xaerr.errorCode <= XAException.XA_RBEND))
+                            || xaerr.errorCode == XAException.XAER_NOTA);
         }
     }
 
@@ -436,5 +437,4 @@ public class ClientXACompatibilityTest extends HazelcastTestSupport {
 
         xaResource.commit(xid, false);
     }
-
 }

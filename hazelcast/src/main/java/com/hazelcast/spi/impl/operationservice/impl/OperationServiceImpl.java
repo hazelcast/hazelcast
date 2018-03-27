@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,20 +42,17 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.PacketHandler;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
 import com.hazelcast.spi.impl.operationexecutor.impl.OperationExecutorImpl;
 import com.hazelcast.spi.impl.operationexecutor.slowoperationdetector.SlowOperationDetector;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.properties.GroupProperty;
-import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.executor.ExecutorType;
 import com.hazelcast.util.executor.ManagedExecutorService;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -70,6 +67,7 @@ import static com.hazelcast.spi.impl.operationutil.Operations.isJoinOperation;
 import static com.hazelcast.spi.properties.GroupProperty.FAIL_ON_INDETERMINATE_OPERATION_STATE;
 import static com.hazelcast.spi.properties.GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS;
 import static com.hazelcast.util.CollectionUtil.toIntegerList;
+import static com.hazelcast.util.MapUtil.createHashMap;
 import static com.hazelcast.util.Preconditions.checkNotNegative;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static java.util.Collections.newSetFromMap;
@@ -125,9 +123,8 @@ public final class OperationServiceImpl implements InternalOperationService, Met
 
     private final InvocationMonitor invocationMonitor;
     private final SlowOperationDetector slowOperationDetector;
-    private final AsyncInboundResponseHandler asyncInboundResponseHandler;
+    private final InboundResponseHandlerSupplier inboundResponseHandlerSupplier;
     private final InternalSerializationService serializationService;
-    private final InboundResponseHandler inboundResponseHandler;
     private final int invocationMaxRetryCount;
     private final long invocationRetryPauseMillis;
     private final boolean failOnIndeterminateOperationState;
@@ -167,12 +164,9 @@ public final class OperationServiceImpl implements InternalOperationService, Met
         this.backupHandler = new OperationBackupHandler(this, outboundOperationHandler);
 
         String hzName = nodeEngine.getHazelcastInstance().getName();
-        this.inboundResponseHandler = new InboundResponseHandler(
-                node.getLogger(InboundResponseHandler.class), node.getSerializationService(), invocationRegistry, nodeEngine);
         ClassLoader configClassLoader = node.getConfigClassLoader();
-        this.asyncInboundResponseHandler = new AsyncInboundResponseHandler(configClassLoader, hzName,
-                node.getLogger(AsyncInboundResponseHandler.class),
-                inboundResponseHandler, node.getProperties());
+        this.inboundResponseHandlerSupplier = new InboundResponseHandlerSupplier(
+                configClassLoader, invocationRegistry, hzName, nodeEngine);
 
         this.operationExecutor = new OperationExecutorImpl(
                 node.getProperties(), node.loggingService, thisAddress, new OperationRunnerFactoryImpl(this),
@@ -187,8 +181,8 @@ public final class OperationServiceImpl implements InternalOperationService, Met
         return outboundResponseHandler;
     }
 
-    public PacketHandler getAsyncInboundResponseHandler() {
-        return asyncInboundResponseHandler;
+    public InboundResponseHandlerSupplier getInboundResponseHandlerSupplier() {
+        return inboundResponseHandlerSupplier;
     }
 
     public InvocationMonitor getInvocationMonitor() {
@@ -204,8 +198,8 @@ public final class OperationServiceImpl implements InternalOperationService, Met
         return invocationRegistry;
     }
 
-    public InboundResponseHandler getInboundResponseHandler() {
-        return inboundResponseHandler;
+    public InboundResponseHandler getBackupHandler() {
+        return inboundResponseHandlerSupplier.backupHandler();
     }
 
     @Override
@@ -249,12 +243,12 @@ public final class OperationServiceImpl implements InternalOperationService, Met
 
     @Override
     public int getResponseQueueSize() {
-        return asyncInboundResponseHandler.getQueueSize();
+        return inboundResponseHandlerSupplier.responseQueueSize();
     }
 
     @Override
     public void populate(LiveOperations liveOperations) {
-        operationExecutor.scan(liveOperations);
+        operationExecutor.populate(liveOperations);
 
         for (Operation op : asyncOperations) {
             liveOperations.add(op.getCallerAddress(), op.getCallId());
@@ -387,7 +381,7 @@ public final class OperationServiceImpl implements InternalOperationService, Met
     public Map<Integer, Object> invokeOnPartitions(String serviceName, OperationFactory operationFactory,
                                                    Collection<Integer> partitions) throws Exception {
 
-        Map<Address, List<Integer>> memberPartitions = new HashMap<Address, List<Integer>>(3);
+        Map<Address, List<Integer>> memberPartitions = createHashMap(3);
         InternalPartitionService partitionService = nodeEngine.getPartitionService();
         for (int partition : partitions) {
             Address owner = partitionService.getPartitionOwnerOrWait(partition);
@@ -425,8 +419,7 @@ public final class OperationServiceImpl implements InternalOperationService, Met
     @Override
     public void provideMetrics(MetricsRegistry registry) {
         registry.scanAndRegister(this, "operation");
-        registry.collectMetrics(invocationRegistry, invocationMonitor, inboundResponseHandler, asyncInboundResponseHandler,
-                operationExecutor);
+        registry.collectMetrics(invocationRegistry, invocationMonitor, inboundResponseHandlerSupplier, operationExecutor);
     }
 
     public void start() {
@@ -436,7 +429,7 @@ public final class OperationServiceImpl implements InternalOperationService, Met
 
         invocationMonitor.start();
         operationExecutor.start();
-        asyncInboundResponseHandler.start();
+        inboundResponseHandlerSupplier.start();
         slowOperationDetector.start();
     }
 
@@ -476,15 +469,13 @@ public final class OperationServiceImpl implements InternalOperationService, Met
 
         invocationRegistry.shutdown();
         invocationMonitor.shutdown();
-        asyncInboundResponseHandler.shutdown();
+        inboundResponseHandlerSupplier.shutdown();
 
         try {
             invocationMonitor.awaitTermination(TERMINATION_TIMEOUT_MILLIS);
         } catch (InterruptedException e) {
-            //restore the interrupt.
-            //todo: we need a better mechanism for dealing with interruption and waiting for termination
+            // TODO: we need a better mechanism for dealing with interruption and waiting for termination
             Thread.currentThread().interrupt();
-            EmptyStatement.ignore(e);
         }
     }
 

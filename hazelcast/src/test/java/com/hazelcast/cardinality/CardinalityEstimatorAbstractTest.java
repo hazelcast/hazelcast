@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,18 +26,19 @@ import com.hazelcast.nio.serialization.StreamSerializer;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Collection;
 
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assume.assumeTrue;
 
 public abstract class CardinalityEstimatorAbstractTest extends HazelcastTestSupport {
 
-    @Parameterized.Parameters(name = "config:{0}")
+    @Parameters(name = "config:{0}")
     public static Collection<Object[]> params() {
         final Config config = new Config();
         final SerializerConfig serializerConfig = new SerializerConfig();
@@ -45,8 +46,9 @@ public abstract class CardinalityEstimatorAbstractTest extends HazelcastTestSupp
         serializerConfig.setTypeClass(CustomObject.class);
         config.getSerializationConfig().addSerializerConfig(serializerConfig);
 
-        return Arrays.asList(new Object[][]{
-                {null}, {config}
+        return asList(new Object[][]{
+                {null},
+                {config},
         });
     }
 
@@ -54,7 +56,7 @@ public abstract class CardinalityEstimatorAbstractTest extends HazelcastTestSupp
 
     private CardinalityEstimator estimator;
 
-    @Parameterized.Parameter(0)
+    @Parameter(0)
     public Config config;
 
     @Before

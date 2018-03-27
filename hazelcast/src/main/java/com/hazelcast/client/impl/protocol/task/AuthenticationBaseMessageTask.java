@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.impl.protocol.task;
 
+import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.ClientTypes;
 import com.hazelcast.client.impl.ClientEndpointImpl;
 import com.hazelcast.client.impl.ReAuthenticationOperationSupplier;
@@ -24,7 +25,6 @@ import com.hazelcast.client.impl.protocol.AuthenticationStatus;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.Member;
-import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -40,24 +40,18 @@ import com.hazelcast.util.function.Supplier;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 import java.security.Permission;
-import java.util.ArrayList;
-import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
-import java.util.Map;
-
-import static java.util.Collections.synchronizedList;
 
 /**
  * Base authentication task
  */
-public abstract class AuthenticationBaseMessageTask<P> extends AbstractMultiTargetMessageTask<P> {
-
+public abstract class AuthenticationBaseMessageTask<P> extends AbstractStableClusterMessageTask<P> {
 
     protected transient ClientPrincipal principal;
     protected transient Credentials credentials;
     protected transient byte clientSerializationVersion;
     protected transient String clientVersion;
-    private final List<Member> cleanedUpMembers = synchronizedList(new ArrayList<Member>());
 
     public AuthenticationBaseMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -69,33 +63,17 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMultiTarg
     }
 
     @Override
-    protected Object reduce(Map<Member, Object> map) throws Throwable {
-        for (Map.Entry<Member, Object> entry : map.entrySet()) {
-            Member member = entry.getKey();
-            Object response = entry.getValue();
-            if (response instanceof Throwable) {
-                if (response instanceof MemberLeftException) {
-                    cleanedUpMembers.add(member);
-                    continue;
-                }
-                throw (Throwable) response;
-            }
-            boolean isClientDisconnectOperationRun = (Boolean) response;
-            if (isClientDisconnectOperationRun) {
-                cleanedUpMembers.add(member);
-            }
-        }
+    protected Object resolve(Object response) {
         return prepareAuthenticatedClientMessage();
     }
 
     @Override
-    public Collection<Member> getTargets() {
-        return clientEngine.getClusterService().getMembers();
-    }
-
-    @Override
     protected ClientEndpointImpl getEndpoint() {
-        return new ClientEndpointImpl(clientEngine, connection);
+        ClientEndpoint endpoint = endpointManager.getEndpoint(connection);
+        if (endpoint != null) {
+            return (ClientEndpointImpl) endpoint;
+        }
+        return new ClientEndpointImpl(clientEngine, nodeEngine, connection);
     }
 
     @Override
@@ -131,7 +109,7 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMultiTarg
     private void prepareAndSendResponse(AuthenticationStatus authenticationStatus) {
         boolean isNotMember = clientEngine.getClusterService().getMember(principal.getOwnerUuid()) == null;
         if (isNotMember) {
-            logger.warning("Member having uuid " + principal.getOwnerUuid()
+            logger.warning("Member having UUID " + principal.getOwnerUuid()
                     + " is not part of the cluster. Client Authentication rejected.");
             authenticationStatus = AuthenticationStatus.CREDENTIALS_FAILED;
         }
@@ -222,7 +200,7 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMultiTarg
         final Address thisAddress = clientEngine.getThisAddress();
         byte status = AuthenticationStatus.AUTHENTICATED.getId();
         return encodeAuth(status, thisAddress, principal.getUuid(), principal.getOwnerUuid(),
-                serializationService.getVersion(), cleanedUpMembers);
+                serializationService.getVersion(), Collections.<Member>emptyList());
     }
 
     private void setConnectionType() {
@@ -239,6 +217,8 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMultiTarg
             connection.setType(ConnectionType.RUBY_CLIENT);
         } else if (ClientTypes.NODEJS.equals(type)) {
             connection.setType(ConnectionType.NODEJS_CLIENT);
+        } else if (ClientTypes.GO.equals(type)) {
+            connection.setType(ConnectionType.GO_CLIENT);
         } else {
             clientEngine.getLogger(getClass()).info("Unknown client type: " + type);
             connection.setType(ConnectionType.BINARY_CLIENT);

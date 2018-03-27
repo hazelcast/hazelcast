@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -75,10 +75,17 @@ public class QuickMathTest {
     @Test
     public void testModPowerOfTwo() {
         int[] aParams = new int[]{
-                0, 1, Integer.MAX_VALUE / 2, Integer.MAX_VALUE
+                0,
+                1,
+                Integer.MAX_VALUE / 2,
+                Integer.MAX_VALUE,
         };
         int[] bParams = new int[]{
-                1, 2, 1024, powerOfTwo(10), powerOfTwo(20)
+                1,
+                2,
+                1024,
+                powerOfTwo(10),
+                powerOfTwo(20),
         };
 
         for (int a : aParams) {

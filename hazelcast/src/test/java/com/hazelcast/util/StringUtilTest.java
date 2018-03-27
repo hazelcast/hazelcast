@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,11 +24,41 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Locale;
+
+import static com.hazelcast.util.StringUtil.VERSION_PATTERN;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class StringUtilTest extends HazelcastTestSupport {
+
+    @Test
+    public void testVersionPattern() {
+        assertTrue(VERSION_PATTERN.matcher("3.1").matches());
+        assertTrue(VERSION_PATTERN.matcher("3.1-SNAPSHOT").matches());
+        assertTrue(VERSION_PATTERN.matcher("3.1-RC").matches());
+        assertTrue(VERSION_PATTERN.matcher("3.1-RC1-SNAPSHOT").matches());
+        assertTrue(VERSION_PATTERN.matcher("3.1.1").matches());
+        assertTrue(VERSION_PATTERN.matcher("3.1.1-RC").matches());
+        assertTrue(VERSION_PATTERN.matcher("3.1.1-SNAPSHOT").matches());
+        assertTrue(VERSION_PATTERN.matcher("3.1.1-RC1-SNAPSHOT").matches());
+
+        assertFalse(VERSION_PATTERN.matcher("${project.version}").matches());
+        assertFalse(VERSION_PATTERN.matcher("project.version").matches());
+        assertFalse(VERSION_PATTERN.matcher("3").matches());
+        assertFalse(VERSION_PATTERN.matcher("3.RC").matches());
+        assertFalse(VERSION_PATTERN.matcher("3.SNAPSHOT").matches());
+        assertFalse(VERSION_PATTERN.matcher("3-RC").matches());
+        assertFalse(VERSION_PATTERN.matcher("3-SNAPSHOT").matches());
+        assertFalse(VERSION_PATTERN.matcher("3.").matches());
+        assertFalse(VERSION_PATTERN.matcher("3.1.RC").matches());
+        assertFalse(VERSION_PATTERN.matcher("3.1.SNAPSHOT").matches());
+    }
 
     @Test
     public void getterIntoProperty_whenNull_returnNull() throws Exception {
@@ -55,7 +85,6 @@ public class StringUtilTest extends HazelcastTestSupport {
         assertEquals("f", StringUtil.getterIntoProperty("getF"));
     }
 
-
     @Test
     public void getterIntoProperty_whenGetNumber_returnNumber() throws Exception {
         assertEquals("8", StringUtil.getterIntoProperty("get8"));
@@ -64,5 +93,58 @@ public class StringUtilTest extends HazelcastTestSupport {
     @Test
     public void getterIntoProperty_whenPropertyIsLowerCase_DoNotChange() throws Exception {
         assertEquals("getfoo", StringUtil.getterIntoProperty("getfoo"));
+    }
+
+    @Test
+    public void testSplitByComma() throws Exception {
+        assertNull(StringUtil.splitByComma(null, true));
+        assertArrayEquals(arr(""), StringUtil.splitByComma("", true));
+        assertArrayEquals(arr(""), StringUtil.splitByComma(" ", true));
+        assertArrayEquals(arr(), StringUtil.splitByComma(" ", false));
+        assertArrayEquals(arr("a"), StringUtil.splitByComma("a", true));
+        assertArrayEquals(arr("a"), StringUtil.splitByComma("a", false));
+        assertArrayEquals(arr("aa", "bbb", "c"), StringUtil.splitByComma("aa,bbb,c", true));
+        assertArrayEquals(arr("aa", "bbb", "c", ""), StringUtil.splitByComma(" aa\t,\nbbb   ,\r c,  ", true));
+        assertArrayEquals(arr("aa", "bbb", "c"), StringUtil.splitByComma("  aa ,\n,\r\tbbb  ,c , ", false));
+    }
+
+    @Test
+    public void testArrayIntersection() throws Exception {
+        assertArrayEquals(arr("test"), StringUtil.intersection(arr("x", "test", "y", "z"), arr("a", "b", "test")));
+        assertArrayEquals(arr(""), StringUtil.intersection(arr("", "z"), arr("a", "")));
+        assertArrayEquals(arr(), StringUtil.intersection(arr("", "z"), arr("a")));
+    }
+
+    @Test
+    public void testArraySubraction() throws Exception {
+        assertNull(StringUtil.subraction(null, arr("a", "test", "b", "a")));
+        assertArrayEquals(arr("a", "test", "b", "a"), StringUtil.subraction(arr("a", "test", "b", "a"), null));
+        assertArrayEquals(arr("test"), StringUtil.subraction(arr("a", "test", "b", "a"), arr("a", "b")));
+        assertArrayEquals(arr(), StringUtil.subraction(arr(), arr("a", "b")));
+        assertArrayEquals(arr("a", "b"), StringUtil.subraction(arr("a", "b"), arr()));
+        assertArrayEquals(arr(), StringUtil.subraction(arr("a", "test", "b", "a"), arr("a", "b", "test")));
+    }
+
+    @Test
+    public void testEqualsIgnoreCase() throws Exception {
+        assertFalse(StringUtil.equalsIgnoreCase(null, null));
+        assertFalse(StringUtil.equalsIgnoreCase(null, "a"));
+        assertFalse(StringUtil.equalsIgnoreCase("a", null));
+        assertTrue(StringUtil.equalsIgnoreCase("TEST", "test"));
+        assertTrue(StringUtil.equalsIgnoreCase("test", "TEST"));
+        assertFalse(StringUtil.equalsIgnoreCase("test", "TEST2"));
+
+        Locale defaultLocale = Locale.getDefault();
+        Locale.setDefault(new Locale("tr"));
+        try {
+            assertTrue(StringUtil.equalsIgnoreCase("EXIT", "exit"));
+            assertFalse(StringUtil.equalsIgnoreCase("exıt", "EXIT"));
+        } finally {
+            Locale.setDefault(defaultLocale);
+        }
+    }
+
+    private String[] arr(String... strings) {
+        return strings;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,8 @@ import com.hazelcast.scheduledexecutor.impl.operations.GetResultOperation;
 import com.hazelcast.scheduledexecutor.impl.operations.GetStatisticsOperation;
 import com.hazelcast.scheduledexecutor.impl.operations.IsCanceledOperation;
 import com.hazelcast.scheduledexecutor.impl.operations.IsDoneOperation;
+import com.hazelcast.scheduledexecutor.impl.operations.MergeBackupOperation;
+import com.hazelcast.scheduledexecutor.impl.operations.MergeOperation;
 import com.hazelcast.scheduledexecutor.impl.operations.ReplicationOperation;
 import com.hazelcast.scheduledexecutor.impl.operations.ResultReadyNotifyOperation;
 import com.hazelcast.scheduledexecutor.impl.operations.ScheduleTaskBackupOperation;
@@ -43,10 +45,10 @@ import com.hazelcast.scheduledexecutor.impl.operations.SyncStateOperation;
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.SCHEDULED_EXECUTOR_DS_FACTORY;
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.SCHEDULED_EXECUTOR_DS_FACTORY_ID;
 
-public class    ScheduledExecutorDataSerializerHook implements DataSerializerHook {
+public class ScheduledExecutorDataSerializerHook
+        implements DataSerializerHook {
 
-    public static final int F_ID = FactoryIdHelper.getFactoryId(
-            SCHEDULED_EXECUTOR_DS_FACTORY, SCHEDULED_EXECUTOR_DS_FACTORY_ID);
+    public static final int F_ID = FactoryIdHelper.getFactoryId(SCHEDULED_EXECUTOR_DS_FACTORY, SCHEDULED_EXECUTOR_DS_FACTORY_ID);
 
     public static final int TASK_HANDLER = 1;
     public static final int TASK_DESCRIPTOR = 2;
@@ -86,6 +88,10 @@ public class    ScheduledExecutorDataSerializerHook implements DataSerializerHoo
     public static final int SHUTDOWN = 23;
 
     public static final int TASK_RESOLUTION = 24;
+
+    public static final int MERGE = 27;
+
+    public static final int MERGE_BACKUP = 28;
 
     @Override
     public int getFactoryId() {
@@ -150,6 +156,10 @@ public class    ScheduledExecutorDataSerializerHook implements DataSerializerHoo
                         return new GetAllScheduledOnPartitionOperation();
                     case GET_ALL_SCHEDULED_ON_PARTITION_OPERATION_FACTORY:
                         return new GetAllScheduledOnPartitionOperationFactory();
+                    case MERGE:
+                        return new MergeOperation();
+                    case MERGE_BACKUP:
+                        return new MergeBackupOperation();
                     default:
                         throw new IllegalArgumentException("Illegal Scheduled Executor serializer type ID: " + typeId);
                 }

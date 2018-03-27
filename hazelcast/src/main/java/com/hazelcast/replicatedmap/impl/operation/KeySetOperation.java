@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.client.ReplicatedMapKeys;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
+import com.hazelcast.spi.ReadonlyOperation;
 import com.hazelcast.spi.serialization.SerializationService;
 
 import java.io.IOException;
@@ -29,9 +30,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-public class KeySetOperation extends AbstractSerializableOperation {
+public class KeySetOperation extends AbstractNamedSerializableOperation implements ReadonlyOperation {
 
     private String name;
+
     private transient Object response;
 
     public KeySetOperation() {
@@ -45,7 +47,7 @@ public class KeySetOperation extends AbstractSerializableOperation {
     public void run() throws Exception {
         ReplicatedMapService service = getService();
         Collection<ReplicatedRecordStore> stores = service.getAllReplicatedRecordStores(name);
-        List keys = new ArrayList();
+        List<Object> keys = new ArrayList<Object>();
         for (ReplicatedRecordStore store : stores) {
             keys.addAll(store.keySet(false));
         }
@@ -75,5 +77,10 @@ public class KeySetOperation extends AbstractSerializableOperation {
     @Override
     public int getId() {
         return ReplicatedMapDataSerializerHook.KEY_SET;
+    }
+
+    @Override
+    public String getName() {
+        return name;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ import com.hazelcast.map.impl.querycache.publisher.PublisherContext;
 import com.hazelcast.map.impl.querycache.subscriber.SubscriberContext;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.util.ContextMutexFactory;
 
 import java.util.Collection;
 
@@ -44,10 +45,11 @@ import java.util.Collection;
 public class ClientQueryCacheContext implements QueryCacheContext {
 
     private final ClientContext clientContext;
+    private final InvokerWrapper invokerWrapper;
+    private final QueryCacheScheduler queryCacheScheduler;
     private final QueryCacheEventService queryCacheEventService;
     private final QueryCacheConfigurator queryCacheConfigurator;
-    private final QueryCacheScheduler queryCacheScheduler;
-    private final InvokerWrapper invokerWrapper;
+    private final ContextMutexFactory mutexFactory = new ContextMutexFactory();
 
     // not final for testing purposes
     private SubscriberContext subscriberContext;
@@ -90,6 +92,16 @@ public class ClientQueryCacheContext implements QueryCacheContext {
     @Override
     public int getPartitionId(Object object) {
         return clientContext.getPartitionService().getPartitionId(object);
+    }
+
+    @Override
+    public int getPartitionCount() {
+        return clientContext.getPartitionService().getPartitionCount();
+    }
+
+    @Override
+    public ContextMutexFactory getLifecycleMutexFactory() {
+        return mutexFactory;
     }
 
     @Override

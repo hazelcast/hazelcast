@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,6 @@ import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.util.Clock;
-import com.hazelcast.util.EmptyStatement;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -49,6 +48,7 @@ import static com.hazelcast.mapreduce.JobPartitionState.State.MAPPING;
 import static com.hazelcast.mapreduce.JobPartitionState.State.PROCESSED;
 import static com.hazelcast.mapreduce.JobPartitionState.State.REDUCING;
 import static com.hazelcast.mapreduce.JobPartitionState.State.WAITING;
+import static com.hazelcast.util.EmptyStatement.ignore;
 
 /**
  * This utility class contains a few basic operations that are needed in multiple places
@@ -265,7 +265,7 @@ public final class MapReduceUtil {
                 try {
                     Thread.sleep(RETRY_PARTITION_TABLE_MILLIS);
                 } catch (Exception ignore) {
-                    EmptyStatement.ignore(ignore);
+                    ignore(ignore);
                 }
 
                 if (Clock.currentTimeMillis() - startTime > PARTITION_READY_TIMEOUT) {

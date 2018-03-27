@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,8 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.merge.FullMergingEntryImpl;
+import com.hazelcast.spi.merge.MergingEntry;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
@@ -46,6 +48,7 @@ import static com.hazelcast.map.impl.ExpirationTimeSetter.getLifeStartTime;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.setExpirationTime;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.map.impl.eviction.Evictor.NULL_EVICTOR;
+import static com.hazelcast.util.Preconditions.checkInstanceOf;
 
 
 /**
@@ -82,17 +85,17 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
      * for expiration (idle or tll) otherwise returns {@code false}.
      */
     private boolean isRecordStoreExpirable() {
-        final MapConfig mapConfig = mapContainer.getMapConfig();
+        MapConfig mapConfig = mapContainer.getMapConfig();
         return hasEntryWithCustomTTL || mapConfig.getMaxIdleSeconds() > 0
                 || mapConfig.getTimeToLiveSeconds() > 0;
     }
 
     @Override
     public void evictExpiredEntries(int percentage, boolean backup) {
-        final long now = getNow();
-        final int size = size();
-        final int maxIterationCount = getMaxIterationCount(size, percentage);
-        final int maxRetry = 3;
+        long now = getNow();
+        int size = size();
+        int maxIterationCount = getMaxIterationCount(size, percentage);
+        int maxRetry = 3;
         int loop = 0;
         int evictedEntryCount = 0;
         while (true) {
@@ -174,9 +177,22 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     }
 
     protected void markRecordStoreExpirable(long ttl) {
-        if (ttl > 0L && ttl < Long.MAX_VALUE) {
+        if (!isInfiniteTTL(ttl)) {
             hasEntryWithCustomTTL = true;
         }
+
+        if (isRecordStoreExpirable()) {
+            mapServiceContext.getExpirationManager().scheduleExpirationTask();
+        }
+    }
+
+    /**
+     * @return {@code true} if the supplied ttl doesn't not represent infinity and as a result entry should be
+     * removed after some time, otherwise return {@code false} to indicate entry should live forever.
+     */
+    // this method is overridden on ee
+    protected boolean isInfiniteTTL(long ttl) {
+        return !(ttl > 0L && ttl < Long.MAX_VALUE);
     }
 
     /**
@@ -193,7 +209,7 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         if (record == null) {
             return null;
         }
-        final Data key = record.getKey();
+        Data key = record.getKey();
         if (isLocked(key)) {
             return record;
         }
@@ -234,7 +250,7 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
             return false;
         }
         long ttl = record.getTtl();
-        // when ttl is zero or negative or Long.MAX_VALUE, it should remain eternally.
+        // when ttl is zero or negative or Long.MAX_VALUE, entry should live forever.
         if (ttl < 1L || ttl == Long.MAX_VALUE) {
             return false;
         }
@@ -304,19 +320,25 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     }
 
     protected void mergeRecordExpiration(Record record, EntryView mergingEntry) {
-        final long ttlMillis = mergingEntry.getTtl();
+        mergeRecordExpiration(record, mergingEntry.getTtl(), mergingEntry.getCreationTime(), mergingEntry.getLastAccessTime(),
+                mergingEntry.getLastUpdateTime());
+    }
+
+    protected void mergeRecordExpiration(Record record, MergingEntry mergingEntry) {
+        checkInstanceOf(FullMergingEntryImpl.class, mergingEntry);
+        FullMergingEntryImpl fullMergingEntry = (FullMergingEntryImpl) mergingEntry;
+        mergeRecordExpiration(record, fullMergingEntry.getTtl(), fullMergingEntry.getCreationTime(),
+                fullMergingEntry.getLastAccessTime(), fullMergingEntry.getLastUpdateTime());
+    }
+
+    private void mergeRecordExpiration(Record record, long ttlMillis, long creationTime, long lastAccessTime,
+                                       long lastUpdateTime) {
         record.setTtl(ttlMillis);
-
-        final long creationTime = mergingEntry.getCreationTime();
         record.setCreationTime(creationTime);
-
-        final long lastAccessTime = mergingEntry.getLastAccessTime();
         record.setLastAccessTime(lastAccessTime);
-
-        final long lastUpdateTime = mergingEntry.getLastUpdateTime();
         record.setLastUpdateTime(lastUpdateTime);
 
-        final long maxIdleMillis = calculateMaxIdleMillis(mapContainer.getMapConfig());
+        long maxIdleMillis = calculateMaxIdleMillis(mapContainer.getMapConfig());
         setExpirationTime(record, maxIdleMillis);
 
         markRecordStoreExpirable(record.getTtl());
@@ -371,9 +393,9 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         }
 
         private void advance() {
-            final long now = this.now;
-            final boolean checkExpiration = this.checkExpiration;
-            final Iterator<Record> iterator = this.iterator;
+            long now = this.now;
+            boolean checkExpiration = this.checkExpiration;
+            Iterator<Record> iterator = this.iterator;
 
             while (iterator.hasNext()) {
                 nextRecord = iterator.next();

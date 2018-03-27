@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.cache;
 
+import com.hazelcast.cache.impl.AbstractHazelcastCachingProvider;
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.config.ClasspathXmlConfig;
 import com.hazelcast.config.Config;
@@ -32,15 +33,21 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import javax.cache.CacheException;
+import javax.cache.CacheManager;
+import javax.cache.Caching;
 import javax.cache.spi.CachingProvider;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Collection;
 
 import static com.hazelcast.cache.HazelcastCachingProvider.propertiesByInstanceItself;
 import static com.hazelcast.cache.HazelcastCachingProvider.propertiesByInstanceName;
 import static com.hazelcast.cache.HazelcastCachingProvider.propertiesByLocation;
+import static com.hazelcast.cache.jsr.JsrTestUtil.cleanup;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -194,6 +201,45 @@ public class CachingProviderTest extends HazelcastTestSupport {
         assertCacheManagerInstance(cacheManager, instance3);
     }
 
+    @Test
+    public void whenDefaultCacheManager_withUnnamedDefaultInstance_thenNoSharedNameHazelcastInstanceExists() {
+        cleanupForDefaultCacheManagerTest();
+        try {
+            System.setProperty(AbstractHazelcastCachingProvider.NAMED_JCACHE_HZ_INSTANCE, "false");
+            CachingProvider defaultCachingProvider = Caching.getCachingProvider();
+            CacheManager defaultCacheManager = defaultCachingProvider.getCacheManager();
+            Collection<HazelcastInstance> instances = getStartedInstances();
+            for (HazelcastInstance instance : instances) {
+                if (AbstractHazelcastCachingProvider.SHARED_JCACHE_INSTANCE_NAME.equals(instance.getName())) {
+                    fail("The default named HazelcastInstance shouldn't have been started");
+                }
+            }
+            defaultCachingProvider.close();
+        } finally {
+            cleanup();
+        }
+    }
+
+    @Test
+    public void whenDefaultCacheManager_thenSharedNameHazelcastInstanceExists() {
+        cleanupForDefaultCacheManagerTest();
+        try {
+            CachingProvider defaultCachingProvider = Caching.getCachingProvider();
+            CacheManager defaultCacheManager = defaultCachingProvider.getCacheManager();
+            Collection<HazelcastInstance> instances = getStartedInstances();
+            boolean sharedInstanceStarted = false;
+            for (HazelcastInstance instance : instances) {
+                if (instance.getName().equals(AbstractHazelcastCachingProvider.SHARED_JCACHE_INSTANCE_NAME)) {
+                    sharedInstanceStarted = true;
+                }
+            }
+            assertTrue("The default named HazelcastInstance should have been started", sharedInstanceStarted);
+            defaultCachingProvider.close();
+        } finally {
+            cleanup();
+        }
+    }
+
     protected void assertCacheManagerInstance(HazelcastCacheManager cacheManager, HazelcastInstance instance) {
         assertEquals(instance, cacheManager.getHazelcastInstance());
     }
@@ -202,5 +248,14 @@ public class CachingProviderTest extends HazelcastTestSupport {
         HazelcastInstance otherInstance = Hazelcast.getHazelcastInstanceByName(instanceName);
         assertNotNull(otherInstance);
         otherInstance.getLifecycleService().terminate();
+    }
+
+    protected Collection<HazelcastInstance> getStartedInstances() {
+        return Hazelcast.getAllHazelcastInstances();
+    }
+
+    // tests for the default cache manager require cleanup before running which must be overridden for client-side tests
+    protected void cleanupForDefaultCacheManagerTest() {
+        cleanup();
     }
 }

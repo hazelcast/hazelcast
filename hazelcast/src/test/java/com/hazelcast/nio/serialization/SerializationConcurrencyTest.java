@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -89,7 +89,8 @@ public class SerializationConcurrencyTest {
                             Data dataPortableAddress = ss.toData(portableAddress);
                             Assert.assertEquals(portableAddress, ss.toObject(dataPortableAddress));
 
-                            PortablePerson portablePerson = new PortablePerson(63 + rnd(), 167L + rnd(), "ahmet", portableAddress);
+                            PortablePerson portablePerson = new PortablePerson(
+                                    63 + rnd(), 167L + rnd(), "ahmet", portableAddress);
                             Data dataPortablePerson = ss.toData(portablePerson);
                             Assert.assertEquals(portablePerson, ss.toObject(dataPortablePerson));
                         }

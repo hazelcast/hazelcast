@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,165 +16,85 @@
 
 package com.hazelcast.cache.impl;
 
-import com.hazelcast.cache.CacheEntryView;
-import com.hazelcast.cache.CacheMergePolicy;
-import com.hazelcast.cache.impl.merge.entry.DefaultCacheEntryView;
 import com.hazelcast.cache.impl.merge.policy.CacheMergePolicyProvider;
-import com.hazelcast.cache.impl.operation.CacheMergeOperation;
-import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.config.CacheConfig;
-import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.SplitBrainHandlerService;
-import com.hazelcast.spi.partition.IPartitionService;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.spi.impl.merge.AbstractSplitBrainHandlerService;
 
-import java.util.HashMap;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.concurrent.Semaphore;
-import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.cache.impl.AbstractCacheRecordStore.SOURCE_NOT_AVAILABLE;
+import static com.hazelcast.cache.impl.ICacheService.SERVICE_NAME;
+import static com.hazelcast.config.InMemoryFormat.NATIVE;
+import static java.util.Collections.singletonList;
 
 /**
  * Handles split-brain functionality for cache.
  */
-class CacheSplitBrainHandlerService implements SplitBrainHandlerService {
+class CacheSplitBrainHandlerService extends AbstractSplitBrainHandlerService<ICacheRecordStore> {
 
-    private final NodeEngine nodeEngine;
-    private final Map<String, CacheConfig> configs;
+    private final CacheService cacheService;
     private final CachePartitionSegment[] segments;
+    private final Map<String, CacheConfig> configs;
     private final CacheMergePolicyProvider mergePolicyProvider;
 
-    CacheSplitBrainHandlerService(NodeEngine nodeEngine, Map<String, CacheConfig> configs, CachePartitionSegment[] segments) {
-        this.nodeEngine = nodeEngine;
+    CacheSplitBrainHandlerService(NodeEngine nodeEngine,
+                                  Map<String, CacheConfig> configs,
+                                  CachePartitionSegment[] segments) {
+        super(nodeEngine);
         this.configs = configs;
         this.segments = segments;
         this.mergePolicyProvider = new CacheMergePolicyProvider(nodeEngine);
+        this.cacheService = nodeEngine.getService(SERVICE_NAME);
+    }
+
+    public CacheMergePolicyProvider getMergePolicyProvider() {
+        return mergePolicyProvider;
     }
 
     @Override
-    public Runnable prepareMergeRunnable() {
-        final Map<String, Map<Data, CacheRecord>> recordMap = new HashMap<String, Map<Data, CacheRecord>>(configs.size());
-        final IPartitionService partitionService = nodeEngine.getPartitionService();
-        final int partitionCount = partitionService.getPartitionCount();
-        final Address thisAddress = nodeEngine.getClusterService().getThisAddress();
-
-        for (int i = 0; i < partitionCount; i++) {
-            // add your owned entries so they will be merged
-            if (thisAddress.equals(partitionService.getPartitionOwner(i))) {
-                CachePartitionSegment segment = segments[i];
-                Iterator<ICacheRecordStore> iterator = segment.recordStoreIterator();
-                while (iterator.hasNext()) {
-                    ICacheRecordStore cacheRecordStore = iterator.next();
-                    if (!(cacheRecordStore instanceof SplitBrainAwareCacheRecordStore)) {
-                        continue;
-                    }
-                    String cacheName = cacheRecordStore.getName();
-                    Map<Data, CacheRecord> records = recordMap.get(cacheName);
-                    if (records == null) {
-                        records = new HashMap<Data, CacheRecord>(cacheRecordStore.size());
-                        recordMap.put(cacheName, records);
-                    }
-                    for (Map.Entry<Data, CacheRecord> cacheRecordEntry : cacheRecordStore.getReadOnlyRecords().entrySet()) {
-                        Data key = cacheRecordEntry.getKey();
-                        CacheRecord cacheRecord = cacheRecordEntry.getValue();
-                        records.put(key, cacheRecord);
-                    }
-                    // clear all records either owned or backup
-                    cacheRecordStore.clear();
-
-                    // send the cache invalidation event regardless if any actually cleared or not
-                    // (no need to know how many actually cleared)
-                    final CacheService cacheService = nodeEngine.getService(CacheService.SERVICE_NAME);
-                    cacheService.sendInvalidationEvent(cacheName, null, AbstractCacheRecordStore.SOURCE_NOT_AVAILABLE);
-                }
-            }
-        }
-        return new CacheMerger(nodeEngine, configs, recordMap, mergePolicyProvider);
+    protected Runnable newMergeRunnable(Map<String, Collection<ICacheRecordStore>> collectedStores,
+                                        Map<String, Collection<ICacheRecordStore>> collectedStoresWithLegacyPolicies,
+                                        Collection<ICacheRecordStore> backupStores,
+                                        NodeEngine nodeEngine) {
+        return new CacheMergeRunnable(collectedStores, collectedStoresWithLegacyPolicies,
+                backupStores, this, nodeEngine);
     }
 
-    private static class CacheMerger implements Runnable {
+    @Override
+    public String getDataStructureName(ICacheRecordStore recordStore) {
+        return recordStore.getName();
+    }
 
-        private static final int TIMEOUT_FACTOR = 500;
+    @Override
+    protected Object getMergePolicy(String dataStructureName) {
+        CacheConfig cacheConfig = configs.get(dataStructureName);
+        String mergePolicyName = cacheConfig.getMergePolicy();
+        return mergePolicyProvider.getMergePolicy(mergePolicyName);
+    }
 
-        private final NodeEngine nodeEngine;
-        private final Map<String, CacheConfig> configs;
-        private final Map<String, Map<Data, CacheRecord>> recordMap;
-        private final CacheMergePolicyProvider mergePolicyProvider;
-        private final ILogger logger;
-
-        CacheMerger(NodeEngine nodeEngine, Map<String, CacheConfig> configs, Map<String, Map<Data, CacheRecord>> recordMap,
-                    CacheMergePolicyProvider mergePolicyProvider) {
-            this.nodeEngine = nodeEngine;
-            this.configs = configs;
-            this.recordMap = recordMap;
-            this.mergePolicyProvider = mergePolicyProvider;
-            this.logger = nodeEngine.getLogger(CacheService.class);
+    @Override
+    protected void onPrepareMergeRunnableEnd(Collection<String> dataStructureNames) {
+        for (String cacheName : dataStructureNames) {
+            cacheService.sendInvalidationEvent(cacheName, null, SOURCE_NOT_AVAILABLE);
         }
+    }
 
-        @Override
-        public void run() {
-            final Semaphore semaphore = new Semaphore(0);
-            int recordCount = 0;
+    @Override
+    protected Collection<Iterator<ICacheRecordStore>> iteratorsOf(int partitionId) {
+        return singletonList(segments[partitionId].recordStoreIterator());
+    }
 
-            ExecutionCallback<Object> mergeCallback = new ExecutionCallback<Object>() {
-                @Override
-                public void onResponse(Object response) {
-                    semaphore.release(1);
-                }
+    @Override
+    protected void destroyStore(ICacheRecordStore store) {
+        assert store.getConfig().getInMemoryFormat() != NATIVE;
 
-                @Override
-                public void onFailure(Throwable t) {
-                    logger.warning("Error while running merge operation: " + t.getMessage());
-                    semaphore.release(1);
-                }
-            };
+        store.destroy();
+    }
 
-            SerializationService serializationService = nodeEngine.getSerializationService();
-
-            for (Map.Entry<String, Map<Data, CacheRecord>> recordMapEntry : recordMap.entrySet()) {
-                String cacheName = recordMapEntry.getKey();
-                CacheConfig cacheConfig = configs.get(cacheName);
-                Map<Data, CacheRecord> records = recordMapEntry.getValue();
-                String mergePolicyName = cacheConfig.getMergePolicy();
-                final CacheMergePolicy cacheMergePolicy = mergePolicyProvider.getMergePolicy(mergePolicyName);
-                for (Map.Entry<Data, CacheRecord> recordEntry : records.entrySet()) {
-                    Data key = recordEntry.getKey();
-                    CacheRecord record = recordEntry.getValue();
-                    recordCount++;
-                    CacheEntryView<Data, Data> entryView = new DefaultCacheEntryView(
-                            key,
-                            serializationService.toData(record.getValue()),
-                            record.getCreationTime(),
-                            record.getExpirationTime(),
-                            record.getLastAccessTime(),
-                            record.getAccessHit());
-                    CacheMergeOperation operation = new CacheMergeOperation(
-                            cacheName,
-                            key,
-                            entryView,
-                            cacheMergePolicy);
-                    try {
-                        int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-                        ICompletableFuture<Object> future = nodeEngine.getOperationService()
-                                .invokeOnPartition(ICacheService.SERVICE_NAME, operation, partitionId);
-                        future.andThen(mergeCallback);
-                    } catch (Throwable t) {
-                        throw rethrow(t);
-                    }
-                }
-            }
-            try {
-                semaphore.tryAcquire(recordCount, recordCount * TIMEOUT_FACTOR, TimeUnit.MILLISECONDS);
-            } catch (InterruptedException e) {
-                logger.finest("Interrupted while waiting merge operation...");
-            }
-        }
+    public Map<String, CacheConfig> getConfigs() {
+        return configs;
     }
 }

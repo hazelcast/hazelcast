@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import java.sql.Timestamp;
 import java.util.Date;
 
 public final class TypeConverters {
+
     public static final TypeConverter BIG_INTEGER_CONVERTER = new BigIntegerConverter();
     public static final TypeConverter BIG_DECIMAL_CONVERTER = new BigDecimalConverter();
     public static final TypeConverter DOUBLE_CONVERTER = new DoubleConverter();
@@ -195,7 +196,7 @@ public final class TypeConverters {
             }
             if (isFloatingPointDataType(value)) {
                 Number number = (Number) value;
-                return new BigDecimal(number.doubleValue());
+                return BigDecimal.valueOf(number.doubleValue());
             }
             if (value instanceof Boolean) {
                 return ((Boolean) value) ? BigDecimal.ONE : BigDecimal.ZERO;
@@ -316,12 +317,15 @@ public final class TypeConverters {
             if (value instanceof Character) {
                 return value;
             }
-            if (value instanceof String) {
-                return ((String) value).charAt(0);
-            }
             if (value instanceof Number) {
                 Number number = (Number) value;
-                return number.intValue();
+                return (char) number.intValue();
+            }
+            if (value instanceof String) {
+                final String string = (String) value;
+                if (!string.isEmpty()) {
+                    return string.charAt(0);
+                }
             }
             throw new IllegalArgumentException("Cannot convert [" + value + "] to char");
         }

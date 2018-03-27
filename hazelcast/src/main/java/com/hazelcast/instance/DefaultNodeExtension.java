@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.SecurityConfig;
 import com.hazelcast.config.SerializationConfig;
+import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.PartitioningStrategy;
@@ -57,7 +58,6 @@ import com.hazelcast.internal.networking.ChannelFactory;
 import com.hazelcast.internal.networking.ChannelInboundHandler;
 import com.hazelcast.internal.networking.ChannelOutboundHandler;
 import com.hazelcast.internal.networking.nio.NioChannelFactory;
-import com.hazelcast.internal.networking.spinning.SpinningChannelFactory;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
@@ -69,8 +69,8 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.MemberSocketInterceptor;
-import com.hazelcast.nio.tcp.MemberChannelInboundHandler;
-import com.hazelcast.nio.tcp.MemberChannelOutboundHandler;
+import com.hazelcast.nio.tcp.PacketDecoder;
+import com.hazelcast.nio.tcp.PacketEncoder;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
 import com.hazelcast.security.SecurityContext;
@@ -124,6 +124,12 @@ public class DefaultNodeExtension implements NodeExtension {
                 throw new IllegalStateException("Security requires Hazelcast Enterprise Edition");
             }
         }
+        SymmetricEncryptionConfig symmetricEncryptionConfig = node.getConfig().getNetworkConfig().getSymmetricEncryptionConfig();
+        if (symmetricEncryptionConfig != null && symmetricEncryptionConfig.isEnabled()) {
+            if (!BuildInfoProvider.getBuildInfo().isEnterprise()) {
+                throw new IllegalStateException("Symmetric Encryption requires Hazelcast Enterprise Edition");
+            }
+        }
     }
 
     @Override
@@ -141,7 +147,7 @@ public class DefaultNodeExtension implements NodeExtension {
         }
         systemLogger.info("Hazelcast " + buildInfo.getVersion()
                 + " (" + build + ") starting at " + node.getThisAddress());
-        systemLogger.info("Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.");
+        systemLogger.info("Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.");
         systemLogger.info("Configured Hazelcast Serialization version: " + buildInfo.getSerializationVersion());
     }
 
@@ -244,19 +250,18 @@ public class DefaultNodeExtension implements NodeExtension {
 
     @Override
     public ChannelFactory getChannelFactory() {
-        boolean spinning = Boolean.getBoolean("hazelcast.io.spinning");
-        return spinning ? new SpinningChannelFactory() : new NioChannelFactory();
+        return new NioChannelFactory();
     }
 
     @Override
     public ChannelInboundHandler createInboundHandler(TcpIpConnection connection, IOService ioService) {
         NodeEngineImpl nodeEngine = node.nodeEngine;
-        return new MemberChannelInboundHandler(connection, nodeEngine.getPacketDispatcher());
+        return new PacketDecoder(connection, nodeEngine.getPacketDispatcher());
     }
 
     @Override
     public ChannelOutboundHandler createOutboundHandler(TcpIpConnection connection, IOService ioService) {
-        return new MemberChannelOutboundHandler();
+        return new PacketEncoder();
     }
 
     @Override

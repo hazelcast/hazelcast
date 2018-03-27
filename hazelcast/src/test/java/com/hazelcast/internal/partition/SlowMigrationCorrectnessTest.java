@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,7 +59,7 @@ public class SlowMigrationCorrectnessTest extends AbstractMigrationCorrectnessTe
                 {3, 4, true},
                 {3, InternalPartition.MAX_REPLICA_COUNT, true},
                 {3, 4, false},
-                {3, InternalPartition.MAX_REPLICA_COUNT, false}
+                {3, InternalPartition.MAX_REPLICA_COUNT, false},
         });
     }
 

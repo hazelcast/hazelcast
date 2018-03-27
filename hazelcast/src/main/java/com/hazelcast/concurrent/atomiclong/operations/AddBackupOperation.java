@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,12 +17,13 @@
 package com.hazelcast.concurrent.atomiclong.operations;
 
 import com.hazelcast.concurrent.atomiclong.AtomicLongContainer;
-import com.hazelcast.concurrent.atomiclong.AtomicLongDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.BackupOperation;
 
 import java.io.IOException;
+
+import static com.hazelcast.concurrent.atomiclong.AtomicLongDataSerializerHook.ADD_BACKUP;
 
 public class AddBackupOperation extends AbstractAtomicLongOperation implements BackupOperation {
 
@@ -38,13 +39,13 @@ public class AddBackupOperation extends AbstractAtomicLongOperation implements B
 
     @Override
     public void run() throws Exception {
-        AtomicLongContainer atomicLongContainer = getLongContainer();
-        atomicLongContainer.addAndGet(delta);
+        AtomicLongContainer container = getLongContainer();
+        container.addAndGet(delta);
     }
 
     @Override
     public int getId() {
-        return AtomicLongDataSerializerHook.ADD_BACKUP;
+        return ADD_BACKUP;
     }
 
     @Override

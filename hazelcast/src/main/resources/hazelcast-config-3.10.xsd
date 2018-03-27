@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -57,6 +57,9 @@
                 <xs:element name="semaphore" type="semaphore" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="lock" type="lock" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="ringbuffer" type="ringbuffer" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="atomic-long" type="atomic-long" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="atomic-reference" type="atomic-reference" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="count-down-latch" type="count-down-latch" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="listeners" type="listeners" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="serialization" type="serialization" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="native-memory" type="native-memory" minOccurs="0" maxOccurs="1"/>
@@ -68,6 +71,9 @@
                 <xs:element name="hot-restart-persistence" type="hot-restart-persistence" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="user-code-deployment" type="user-code-deployment" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="cardinality-estimator" type="cardinality-estimator" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="flake-id-generator" type="flake-id-generator" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="crdt-replication" type="crdt-replication" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="pn-counter" type="pn-counter" minOccurs="0" maxOccurs="unbounded"/>
             </xs:choice>
             <xs:attribute name="id" type="xs:string" use="optional" default="default"/>
         </xs:complexType>
@@ -269,29 +275,7 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="merge-policy" type="xs:string" minOccurs="0" maxOccurs="1">
-                <xs:annotation>
-                    <xs:documentation>
-                        While recovering from split-brain (network partitioning), map entries in the small cluster
-                        merge into the bigger cluster
-                        based on the policy set here. When an entry merges into the cluster, an
-                        entry with the same key might already exist in the cluster.
-                        The values of these entries might be different for that same key. Which value should be set for the
-                        key?
-                        The conflict is resolved by the policy set here.
-                        <p>
-                            <br/>There are built-in merge policies, such as:
-                            <br/>com.hazelcast.map.merge.PassThroughMergePolicy: the entry will be added if there is no
-                            existing entry for the key.
-                            <br/>com.hazelcast.map.merge.PutIfAbsentMapMergePolicy: the entry will be added if the merging
-                            entry doesn't exist in the cluster.
-                            <br/>com.hazelcast.map.merge.HigherHitsMapMergePolicy: the entry with the higher number of hits wins.
-                            <br/>com.hazelcast.map.merge.LatestUpdateMapMergePolicy: the entry with the latest update wins.
-                            <br/>Default policy is 'com.hazelcast.map.merge.PutIfAbsentMapMergePolicy'
-                        </p>
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
+            <xs:element name="merge-policy" type="merge-policy" minOccurs="0" maxOccurs="1"/>
             <xs:element name="read-backup-data" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false">
                 <xs:annotation>
                     <xs:documentation>
@@ -320,7 +304,18 @@
             <xs:element name="entry-listeners" type="entry-listeners" minOccurs="0" maxOccurs="1"/>
             <xs:element name="partition-lost-listeners" type="partition-lost-listeners" minOccurs="0" maxOccurs="1"/>
             <xs:element name="partition-strategy" type="xs:string" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="quorum-ref" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="quorum-ref" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Adds the Split Brain Protection for this data-structure which you configure using the quorum element.
+                        You should set the quorum-ref's value as the quorum's name.
+                        IMPORTANT: The term "quorum" simply refers to the count of members in the cluster required for an operation to succeed.
+                        It does NOT refer to an implementation of Paxos or Raft protocols as used in many NoSQL and distributed systems.
+                        The mechanism it provides in Hazelcast protects the user in case the number of nodes in a cluster drops below the
+                        specified one.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:element name="query-caches" type="query-caches" minOccurs="0" maxOccurs="1"/>
         </xs:all>
         <xs:attribute name="name" use="required">
@@ -557,7 +552,18 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="quorum-ref" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="quorum-ref" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Adds the Split Brain Protection for this data-structure which you configure using the quorum element.
+                        You should set the quorum-ref's value as the quorum's name.
+                        IMPORTANT: The term "quorum" simply refers to the count of members in the cluster required for an operation to succeed.
+                        It does NOT refer to an implementation of Paxos or Raft protocols as used in many NoSQL and distributed systems.
+                        The mechanism it provides in Hazelcast protects the user in case the number of nodes in a cluster drops below the
+                        specified one.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:element name="partition-lost-listeners" type="partition-lost-listeners" minOccurs="0" maxOccurs="1"/>
             <xs:element name="merge-policy" type="xs:string" minOccurs="0" maxOccurs="1">
                 <xs:annotation>
@@ -685,7 +691,19 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="quorum-ref" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="quorum-ref" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Adds the Split Brain Protection for this data-structure which you configure using the quorum element.
+                        You should set the quorum-ref's value as the quorum's name.
+                        IMPORTANT: The term "quorum" simply refers to the count of members in the cluster required for an operation to succeed.
+                        It does NOT refer to an implementation of Paxos or Raft protocols as used in many NoSQL and distributed systems.
+                        The mechanism it provides in Hazelcast protects the user in case the number of nodes in a cluster drops below the
+                        specified one.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="merge-policy" type="merge-policy" minOccurs="0" maxOccurs="1"/>
         </xs:all>
         <xs:attribute name="name" use="optional" default="default">
             <xs:annotation>
@@ -747,6 +765,19 @@
                     </xs:sequence>
                 </xs:complexType>
             </xs:element>
+            <xs:element name="quorum-ref" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Adds the Split Brain Protection for this data-structure which you configure using the quorum element.
+                        You should set the quorum-ref's value as the quorum's name.
+                        IMPORTANT: The term "quorum" simply refers to the count of members in the cluster required for an operation to succeed.
+                        It does NOT refer to an implementation of Paxos or Raft protocols as used in many NoSQL and distributed systems.
+                        The mechanism it provides in Hazelcast protects the user in case the number of nodes in a cluster drops below the
+                        specified one.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="merge-policy" type="merge-policy" minOccurs="0" maxOccurs="1"/>
         </xs:all>
         <xs:attribute name="name" use="optional" default="default">
             <xs:annotation>
@@ -808,6 +839,19 @@
                     </xs:sequence>
                 </xs:complexType>
             </xs:element>
+            <xs:element name="quorum-ref" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Adds the Split Brain Protection for this data-structure which you configure using the quorum element.
+                        You should set the quorum-ref's value as the quorum's name.
+                        IMPORTANT: The term "quorum" simply refers to the count of members in the cluster required for an operation to succeed.
+                        It does NOT refer to an implementation of Paxos or Raft protocols as used in many NoSQL and distributed systems.
+                        The mechanism it provides in Hazelcast protects the user in case the number of nodes in a cluster drops below the
+                        specified one.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="merge-policy" type="merge-policy" minOccurs="0" maxOccurs="1"/>
         </xs:all>
         <xs:attribute name="name" use="optional" default="default">
             <xs:annotation>
@@ -888,7 +932,19 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <!--<xs:element name="partition-strategy" type="xs:string" minOccurs="0" maxOccurs="1" />-->
+            <xs:element name="quorum-ref" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Adds the Split Brain Protection for this data-structure which you configure using the quorum element.
+                        You should set the quorum-ref's value as the quorum's name.
+                        IMPORTANT: The term "quorum" simply refers to the count of members in the cluster required for an operation to succeed.
+                        It does NOT refer to an implementation of Paxos or Raft protocols as used in many NoSQL and distributed systems.
+                        The mechanism it provides in Hazelcast protects the user in case the number of nodes in a cluster drops below the
+                        specified one.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="merge-policy" type="merge-policy" minOccurs="0" maxOccurs="1"/>
         </xs:all>
         <xs:attribute name="name" use="required">
             <xs:annotation>
@@ -973,6 +1029,19 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="quorum-ref" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Adds the Split Brain Protection for this data-structure which you configure using the quorum element.
+                        You should set the quorum-ref's value as the quorum's name.
+                        IMPORTANT: The term "quorum" simply refers to the count of members in the cluster required for an operation to succeed.
+                        It does NOT refer to an implementation of Paxos or Raft protocols as used in many NoSQL and distributed systems.
+                        The mechanism it provides in Hazelcast protects the user in case the number of nodes in a cluster drops below the
+                        specified one.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="merge-policy" type="merge-policy" minOccurs="0" maxOccurs="1"/>
         </xs:all>
         <xs:attribute name="name" use="required">
             <xs:annotation>
@@ -1191,6 +1260,18 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="quorum-ref" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Adds the Split Brain Protection for this data-structure which you configure using the quorum element.
+                        You should set the quorum-ref's value as the quorum's name.
+                        IMPORTANT: The term "quorum" simply refers to the count of members in the cluster required for an operation to succeed.
+                        It does NOT refer to an implementation of Paxos or Raft protocols as used in many NoSQL and distributed systems.
+                        The mechanism it provides in Hazelcast protects the user in case the number of nodes in a cluster drops below the
+                        specified one.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
         </xs:all>
         <xs:attribute name="name" use="required">
             <xs:annotation>
@@ -1206,7 +1287,18 @@
 
     <xs:complexType name="lock">
         <xs:all>
-            <xs:element name="quorum-ref" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="quorum-ref" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Adds the Split Brain Protection for this data-structure which you configure using the quorum element.
+                        You should set the quorum-ref's value as the quorum's name.
+                        IMPORTANT: The term "quorum" simply refers to the count of members in the cluster required for an operation to succeed.
+                        It does NOT refer to an implementation of Paxos or Raft protocols as used in many NoSQL and distributed systems.
+                        The mechanism it provides in Hazelcast protects the user in case the number of nodes in a cluster drops below the
+                        specified one.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
         </xs:all>
         <xs:attribute name="name" use="optional" default="default">
             <xs:annotation>
@@ -1284,6 +1376,19 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="quorum-ref" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Adds the Split Brain Protection for this data-structure which you configure using the quorum element.
+                        You should set the quorum-ref's value as the quorum's name.
+                        IMPORTANT: The term "quorum" simply refers to the count of members in the cluster required for an operation to succeed.
+                        It does NOT refer to an implementation of Paxos or Raft protocols as used in many NoSQL and distributed systems.
+                        The mechanism it provides in Hazelcast protects the user in case the number of nodes in a cluster drops below the
+                        specified one.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="merge-policy" type="merge-policy" minOccurs="0" maxOccurs="1"/>
         </xs:all>
         <xs:attribute name="name" use="required">
             <xs:annotation>
@@ -1295,6 +1400,113 @@
                 <xs:restriction base="xs:string"/>
             </xs:simpleType>
         </xs:attribute>
+    </xs:complexType>
+    <xs:complexType name="atomic-long">
+        <xs:all>
+            <xs:element name="merge-policy" type="merge-policy" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="quorum-ref" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Adds the Split Brain Protection for this data-structure which you configure using the quorum element.
+                        You should set the quorum-ref's value as the quorum's name.
+                        IMPORTANT: The term "quorum" simply refers to the count of members in the cluster required for an operation to succeed.
+                        It does NOT refer to an implementation of Paxos or Raft protocols as used in many NoSQL and distributed systems.
+                        The mechanism it provides in Hazelcast protects the user in case the number of nodes in a cluster drops below the
+                        specified one.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:all>
+        <xs:attribute name="name" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    The name of the IAtomicLong. Required.
+                </xs:documentation>
+            </xs:annotation>
+            <xs:simpleType>
+                <xs:restriction base="xs:string"/>
+            </xs:simpleType>
+        </xs:attribute>
+    </xs:complexType>
+    <xs:complexType name="atomic-reference">
+        <xs:all>
+            <xs:element name="merge-policy" type="merge-policy" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="quorum-ref" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Adds the Split Brain Protection for this data-structure which you configure using the quorum element.
+                        You should set the quorum-ref's value as the quorum's name.
+                        IMPORTANT: The term "quorum" simply refers to the count of members in the cluster required for an operation to succeed.
+                        It does NOT refer to an implementation of Paxos or Raft protocols as used in many NoSQL and distributed systems.
+                        The mechanism it provides in Hazelcast protects the user in case the number of nodes in a cluster drops below the
+                        specified one.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:all>
+        <xs:attribute name="name" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    The name of the IAtomicReference. Required.
+                </xs:documentation>
+            </xs:annotation>
+            <xs:simpleType>
+                <xs:restriction base="xs:string"/>
+            </xs:simpleType>
+        </xs:attribute>
+    </xs:complexType>
+    <xs:complexType name="count-down-latch">
+        <xs:all>
+            <xs:element name="quorum-ref" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Adds the Split Brain Protection for this data-structure which you configure using the quorum element.
+                        You should set the quorum-ref's value as the quorum's name.
+                        IMPORTANT: The term "quorum" simply refers to the count of members in the cluster required for an operation to succeed.
+                        It does NOT refer to an implementation of Paxos or Raft protocols as used in many NoSQL and distributed systems.
+                        The mechanism it provides in Hazelcast protects the user in case the number of nodes in a cluster drops below the
+                        specified one.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:all>
+        <xs:attribute name="name" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    The name of the CountDownLatch. Required.
+                </xs:documentation>
+            </xs:annotation>
+            <xs:simpleType>
+                <xs:restriction base="xs:string"/>
+            </xs:simpleType>
+        </xs:attribute>
+    </xs:complexType>
+    <xs:complexType name="merge-policy">
+        <xs:annotation>
+            <xs:documentation>
+                While recovering from split-brain (network partitioning), data structure entries in the small cluster
+                merge into the bigger cluster based on the policy set here. When an entry merges into the cluster,
+                an entry with the same key (or value) might already exist in the cluster.
+                The merge policy resolves these conflicts with different out-of-the-box or custom strategies.
+                The out-of-the-box merge polices can be references by their simple class name.
+                For custom merge policies you have to provide a fully qualified class name.
+                <p>
+                    The out-of-the-box policies are:
+                    <br/>DiscardMergePolicy: the entry from the smaller cluster will be discarded.
+                    <br/>HigherHitsMergePolicy: the entry with the higher number of hits wins.
+                    <br/>LatestAccessMergePolicy: the entry with the latest access wins.
+                    <br/>LatestUpdateMergePolicy: the entry with the latest update wins.
+                    <br/>PassThroughMergePolicy: the entry from the smaller cluster wins.
+                    <br/>PutIfAbsentMergePolicy: the entry from the smaller cluster wins if it doesn't exist in the cluster.
+                    <br/>The default policy is: PutIfAbsentMergePolicy
+                </p>
+            </xs:documentation>
+        </xs:annotation>
+        <xs:simpleContent>
+            <xs:extension base="xs:string">
+                <xs:attribute name="batch-size" default="100" type="xs:positiveInteger" use="optional"/>
+            </xs:extension>
+        </xs:simpleContent>
     </xs:complexType>
     <xs:complexType name="network">
         <xs:all>
@@ -1386,6 +1598,7 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="failure-detector" type="failure-detector" minOccurs="0" maxOccurs="1"/>
         </xs:all>
     </xs:complexType>
     <xs:complexType name="tcp-ip">
@@ -1700,6 +1913,18 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="quorum-ref" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Adds the Split Brain Protection for this data-structure which you configure using the quorum element.
+                        You should set the quorum-ref's value as the quorum's name.
+                        IMPORTANT: The term "quorum" simply refers to the count of members in the cluster required for an operation to succeed.
+                        It does NOT refer to an implementation of Paxos or Raft protocols as used in many NoSQL and distributed systems.
+                        The mechanism it provides in Hazelcast protects the user in case the number of nodes in a cluster drops below the
+                        specified one.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
         </xs:all>
         <xs:attribute name="name" type="xs:string" use="optional" default="default">
             <xs:annotation>
@@ -1730,6 +1955,18 @@
                 <xs:annotation>
                     <xs:documentation>
                         Capacity of the executor task per partition.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="quorum-ref" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Adds the Split Brain Protection for this data-structure which you configure using the quorum element.
+                        You should set the quorum-ref's value as the quorum's name.
+                        IMPORTANT: The term "quorum" simply refers to the count of members in the cluster required for an operation to succeed.
+                        It does NOT refer to an implementation of Paxos or Raft protocols as used in many NoSQL and distributed systems.
+                        The mechanism it provides in Hazelcast protects the user in case the number of nodes in a cluster drops below the
+                        specified one.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -1767,6 +2004,19 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="quorum-ref" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Adds the Split Brain Protection for this data-structure which you configure using the quorum element.
+                        You should set the quorum-ref's value as the quorum's name.
+                        IMPORTANT: The term "quorum" simply refers to the count of members in the cluster required for an operation to succeed.
+                        It does NOT refer to an implementation of Paxos or Raft protocols as used in many NoSQL and distributed systems.
+                        The mechanism it provides in Hazelcast protects the user in case the number of nodes in a cluster drops below the
+                        specified one.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="merge-policy" type="merge-policy" minOccurs="0" maxOccurs="1"/>
         </xs:all>
         <xs:attribute name="name" type="xs:string" use="optional" default="default">
             <xs:annotation>
@@ -1797,6 +2047,37 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="quorum-ref" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Adds the Split Brain Protection for this data-structure which you configure using the quorum element.
+                        You should set the quorum-ref's value as the quorum's name.
+                        IMPORTANT: The term "quorum" simply refers to the count of members in the cluster required for an operation to succeed.
+                        It does NOT refer to an implementation of Paxos or Raft protocols as used in many NoSQL and distributed systems.
+                        The mechanism it provides in Hazelcast protects the user in case the number of nodes in a cluster drops below the
+                        specified one.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="merge-policy" type="merge-policy" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        While recovering from split-brain (network partitioning), CardinalityEstimator in the small cluster
+                        merge into the bigger cluster based on the policy set here. When an estimator merges into the cluster,
+                        an estimator with the same name might already exist in the cluster.
+                        The merge policy resolves these conflicts with different out-of-the-box strategies.
+                        The out-of-the-box merge polices can be references by their simple class name.
+                        <p>
+                            The out-of-the-box policies are:
+                            <br/>DiscardMergePolicy: the estimator from the smaller cluster will be discarded.
+                            <br/>HyperLogLogMergePolicy: the estimator will merge with the existing one, using the algorithmic merge for HyperLogLog.
+                            <br/>PassThroughMergePolicy: the estimator from the smaller cluster wins.
+                            <br/>PutIfAbsentMergePolicy: the estimator from the smaller cluster wins if it doesn't exist in the cluster.
+                            <br/>The default policy is: HyperLogLogMergePolicy
+                        </p>
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
         </xs:all>
         <xs:attribute name="name" type="xs:string" use="optional" default="default">
             <xs:annotation>
@@ -1821,6 +2102,12 @@
     <xs:simpleType name="concurrency-level">
         <xs:restriction base="xs:int">
             <xs:minInclusive value="0"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="crdt-replica-count">
+        <xs:restriction base="xs:int">
+            <xs:minInclusive value="1"/>
+            <xs:maxInclusive value="2147483647"/>
         </xs:restriction>
     </xs:simpleType>
 
@@ -1868,6 +2155,65 @@
                 <xs:documentation>
                     True to enable symmetric encryption, false to disable.
                 </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+    <xs:complexType name="failure-detector">
+        <xs:all>
+            <xs:element name="icmp" type="icmp"/>
+        </xs:all>
+    </xs:complexType>
+    <xs:complexType name="icmp">
+        <xs:annotation>
+            <xs:documentation>
+                ICMP can be used in addition to the other detectors. It operates at layer 3 detects network
+                and hardware issues more quickly
+            </xs:documentation>
+        </xs:annotation>
+        <xs:all>
+            <xs:element name="timeout-milliseconds" type="xs:integer" minOccurs="0" maxOccurs="1" default="1000">
+                <xs:annotation>
+                    <xs:documentation>Timeout in Milliseconds before declaring a failed ping</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="ttl" type="xs:integer" minOccurs="0" maxOccurs="1" default="255">
+                <xs:annotation>
+                    <xs:documentation>
+                        Maximum number of times the IP Datagram (ping) can be forwarded, in most cases
+                        all Hazelcast cluster members would be within one network switch/router therefore
+                        default of 0 is usually sufficient
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="parallel-mode" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true">
+                <xs:annotation>
+                    <xs:documentation>Run ICMP detection in parallel with the Heartbeat failure detector</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="fail-fast-on-startup" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true">
+                <xs:annotation>
+                    <xs:documentation>
+                        Cluster Member will fail to start if it is unable to action an ICMP ping command when ICMP is enabled.
+                        Failure is usually due to OS level restrictions.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="max-attempts" type="xs:integer" minOccurs="0" maxOccurs="1" default="2">
+                <xs:annotation>
+                    <xs:documentation>
+                        Maximum number of consecutive failed attempts before declaring a member suspect
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="interval-milliseconds" type="xs:integer" minOccurs="0" maxOccurs="1" default="1000">
+                <xs:annotation>
+                    <xs:documentation>Time in milliseconds between each ICMP ping</xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:all>
+        <xs:attribute name="enabled" default="false">
+            <xs:annotation>
+                <xs:documentation>Enables ICMP Pings to detect and suspect dead members</xs:documentation>
             </xs:annotation>
         </xs:attribute>
     </xs:complexType>
@@ -2355,6 +2701,7 @@
                         maxOccurs="unbounded"/>
             <xs:element name="cardinality-estimator-permission" type="instance-permission" minOccurs="0" maxOccurs="unbounded"/>
             <xs:element name="scheduled-executor-permission" type="instance-permission" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="pn-counter-permission" type="instance-permission" minOccurs="0" maxOccurs="unbounded"/>
             <xs:element name="transaction-permission" type="base-permission" minOccurs="0" maxOccurs="1"/>
             <xs:element name="cache-permission" type="instance-permission" minOccurs="0" maxOccurs="unbounded"/>
             <xs:element name="config-permission" type="base-permission" minOccurs="0" maxOccurs="1"/>
@@ -2825,6 +3172,12 @@
         </xs:simpleContent>
     </xs:complexType>
     <xs:complexType name="properties">
+        <xs:annotation>
+            <xs:documentation>
+                A full list of available properties can be found at
+                http://docs.hazelcast.org/docs/latest/manual/html-single/index.html#system-properties
+            </xs:documentation>
+        </xs:annotation>
         <xs:sequence minOccurs="0" maxOccurs="unbounded">
             <xs:element name="property" type="property"/>
         </xs:sequence>
@@ -2913,7 +3266,7 @@
                         entry key.
 
                         4 merge policy implementations for IMap and 2 merge policy implementations for
-                        ICache are provided out of the box.
+                        ICache are provided out-of-the-box.
 
                         IMap has the following merge policies:
                         com.hazelcast.map.merge.PutIfAbsentMapMergePolicy: Incoming entry merges from the
@@ -2961,7 +3314,7 @@
                     <xs:documentation>
                         The minimum number of members required in a cluster for the cluster to remain in an
                         operational state. If the number of members is below the defined minimum at any time,
-                        the operations are rejected and the rejected operations return a QuorumException to
+                        the operations are rejected and the rejected operations throw a QuorumException to
                         their callers.
                     </xs:documentation>
                 </xs:annotation>
@@ -2982,6 +3335,7 @@
                     </xs:sequence>
                 </xs:complexType>
             </xs:element>
+            <xs:element ref="choice-of-quorum-function" minOccurs="0" maxOccurs="1" />
         </xs:all>
         <xs:attribute name="enabled" type="xs:boolean" use="required"/>
         <xs:attribute name="name" use="required">
@@ -2990,6 +3344,68 @@
             </xs:simpleType>
         </xs:attribute>
     </xs:complexType>
+
+    <xs:element name="choice-of-quorum-function" abstract="true"/>
+
+    <xs:element name="member-count-quorum" substitutionGroup="choice-of-quorum-function">
+        <xs:complexType>
+            <xs:annotation>
+                <xs:documentation>
+                    Determines quorum based on the number of currently live cluster members.
+                    The minimum number of members required in a cluster for the cluster to remain in an
+                    operational state is configured separately in <code>&lt;quorum-size&gt;</code> element.
+                    If the number of members is below the defined minimum at any time,
+                    the operations are rejected and the rejected operations throw a QuorumException to
+                    their callers.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="probabilistic-quorum" substitutionGroup="choice-of-quorum-function">
+        <xs:complexType>
+            <xs:annotation>
+                <xs:documentation>
+                    A probabilistic quorum function based on Phi Accrual failure detector. See
+                    com.hazelcast.internal.cluster.fd.PhiAccrualClusterFailureDetector for implementation
+                    details. Configuration:<br/>
+                    - <code>acceptable-heartbeat-pause-millis</code>: duration in milliseconds corresponding to number
+                    of potentially lost/delayed heartbeats that will be accepted before considering it to be an anomaly.
+                    This margin is important to be able to survive sudden, occasional, pauses in heartbeat arrivals,
+                    due to for example garbage collection or network drops.<br/>
+                    - <code>suspicion-threshold</code>: threshold for suspicion level. A low threshold is prone to generate
+                    many wrong suspicions but ensures a quick detection in the event of a real crash. Conversely, a high
+                    threshold generates fewer mistakes but needs more time to detect actual crashes.<br/>
+                    - <code>max-sample-size</code>: number of samples to use for calculation of mean and standard
+                    deviation of inter-arrival times.<br/>
+                    - <code>heartbeat-interval-millis</code>: bootstrap the stats with heartbeats that corresponds to
+                    this duration in milliseconds, with a rather high standard deviation (since environment is unknown
+                    in the beginning)<br/>
+                    - <code>min-std-deviation-millis</code>: minimum standard deviation (in milliseconds) to use for the normal
+                    distribution used when calculating phi. Too low standard deviation might result in too much
+                    sensitivity for sudden, but normal, deviations in heartbeat inter arrival times.
+                </xs:documentation>
+            </xs:annotation>
+            <xs:attribute name="acceptable-heartbeat-pause-millis" type="xs:unsignedLong" use="optional" default="60000"/>
+            <xs:attribute name="suspicion-threshold" type="xs:double" use="optional" default="10" />
+            <xs:attribute name="max-sample-size" type="xs:unsignedInt" use="optional" default="200"/>
+            <xs:attribute name="min-std-deviation-millis" type="xs:unsignedLong" use="optional" default="100" />
+            <xs:attribute name="heartbeat-interval-millis" type="xs:unsignedLong" use="optional" default="5000"/>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="recently-active-quorum" substitutionGroup="choice-of-quorum-function">
+        <xs:complexType>
+            <xs:annotation>
+                <xs:documentation>
+                    A quorum function that keeps track of the last heartbeat timestamp per each member. For a member
+                    to be considered live (for the purpose of determining presence of quorum), a heartbeat must have
+                    been received at most <code>heartbeat-tolerance</code> milliseconds before current time.
+                </xs:documentation>
+            </xs:annotation>
+            <xs:attribute name="heartbeat-tolerance-millis" type="xs:unsignedInt" default="5000"/>
+        </xs:complexType>
+    </xs:element>
 
     <xs:simpleType name="quorum-type">
         <xs:restriction base="xs:string">
@@ -3075,7 +3491,7 @@
                     <xs:documentation>
                         Command separated list of prefixes of classes which will be loaded remotely.
 
-                        Use this to enable loading of explcitly selected user classes only and
+                        Use this to enable loading of explicitly selected user classes only and
                         disable remote loading for all other classes. This gives you a fine-grained control
                         over classloading.
                     </xs:documentation>
@@ -3178,6 +3594,35 @@
         </xs:attribute>
     </xs:complexType>
 
+    <xs:complexType name="crdt-replication">
+        <xs:all>
+            <xs:element name="replication-period-millis" type="xs:unsignedInt" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        The period between two replications of CRDT states in milliseconds.
+                        A lower value will increase the speed at which changes are disseminated
+                        to other cluster members at the expense of burst-like behaviour - less
+                        updates will be batched together in one replication message and one
+                        update to a CRDT may cause a sudden burst of replication messages in a
+                        short time interval.
+                        The value must be a positive non-null integer.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="max-concurrent-replication-targets" type="xs:unsignedInt" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        The maximum number of target members that we replicate the CRDT states
+                        to in one period. A higher count will lead to states being disseminated
+                        more rapidly at the expense of burst-like behaviour - one update to a
+                        CRDT will lead to a sudden burst in the number of replication messages
+                        in a short time interval.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:all>
+    </xs:complexType>
+
     <xs:complexType name="hot-restart">
         <xs:all>
             <xs:element name="fsync" type="xs:boolean" default="false">
@@ -3276,4 +3721,118 @@
             <xs:enumeration value="THROW_EXCEPTION_ONLY_IF_REPLICATION_ACTIVE"/>
         </xs:restriction>
     </xs:simpleType>
+
+    <xs:complexType name="flake-id-generator">
+        <xs:all>
+            <xs:element name="prefetch-count" minOccurs="0" default="100">
+                <xs:annotation>
+                    <xs:documentation>
+                        Sets how many IDs are pre-fetched on the background when one call to
+                        FlakeIdGenerator.newId() is made. Value must be in the range 1..100,000, default
+                        is 100.
+
+                        This setting pertains only to newId() calls made on the member that configured it.
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:simpleType>
+                    <xs:restriction base="xs:int">
+                        <xs:minInclusive value="1" />
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+
+            <xs:element name="prefetch-validity-millis" type="xs:long" minOccurs="0" default="600000">
+                <xs:annotation>
+                    <xs:documentation>
+                        Sets for how long the pre-fetched IDs can be used. If this time elapses, a new batch of IDs
+                        will be fetched. Time unit is milliseconds, default is 600,000 (10 minutes).
+
+                        The IDs contain timestamp component, which ensures rough global ordering of IDs. If an
+                        ID is assigned to an object that was created much later, it will be much out of order. If you
+                        don't care about ordering, set this value to 0.
+
+                        This setting pertains only to newId() calls made on the member that configured it.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+
+            <xs:element name="id-offset" type="xs:long" minOccurs="0" default="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Sets the offset that will be added to the returned IDs. Default value is 0. Setting might be
+                        useful when migrating from IdGenerator, default value works for all green-field projects.
+
+                        For example: Largest ID returned from IdGenerator is 150. FlakeIdGenerator now returns
+                        100. If you configure idOffset of 50 and stop using the IdGenerator, the next ID from
+                        FlakeIdGenerator will be 151 or larger and no duplicate IDs will be generated. In real-life,
+                        the IDs are much larger. You also need to add a reserve to the offset because the IDs
+                        from FlakeIdGenerator are only roughly ordered. Recommended reserve is 2^38, that is
+                        274877906944.
+
+                        Negative values are allowed to increase the lifespan of the generator, however keep in
+                        mind that the generated IDs might also be negative.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+
+            <xs:element name="statistics-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true">
+                <xs:annotation>
+                    <xs:documentation>
+                        True (default) if statistics gathering is enabled on the Flake ID Generator, false otherwise.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:all>
+        <xs:attribute name="name" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    Name of the ID generator.
+                </xs:documentation>
+            </xs:annotation>
+            <xs:simpleType>
+                <xs:restriction base="xs:string"/>
+            </xs:simpleType>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="pn-counter">
+        <xs:all>
+            <xs:element name="replica-count" type="crdt-replica-count" minOccurs="0" maxOccurs="1" default="2147483647">
+                <xs:annotation>
+                    <xs:documentation>
+                        Number of replicas on which the CRDT state will be kept. The updates are replicated
+                        asynchronously between replicas.
+                        The number must be greater than 1 and up to 2147483647 (Integer.MAX_VALUE).
+                        The default value is 2147483647 (Integer.MAX_VALUE).
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="quorum-ref" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Adds the Split Brain Protection for this data-structure which you configure using the quorum element.
+                        You should set the quorum-ref's value as the quorum's name.
+                        IMPORTANT: The term "quorum" simply refers to the count of members in the cluster required for an operation to succeed.
+                        It does NOT refer to an implementation of Paxos or Raft protocols as used in many NoSQL and distributed systems.
+                        The mechanism it provides in Hazelcast protects the user in case the number of nodes in a cluster drops below the
+                        specified one.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="statistics-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true">
+                <xs:annotation>
+                    <xs:documentation>
+                        True (default) if statistics gathering is enabled on the PN counter, false otherwise.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:all>
+        <xs:attribute name="name" type="xs:string" use="optional" default="default">
+            <xs:annotation>
+                <xs:documentation>
+                    Name of the PN counter.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
 </xs:schema>

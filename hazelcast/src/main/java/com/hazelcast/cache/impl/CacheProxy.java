@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,13 +21,13 @@ import com.hazelcast.cache.impl.event.CachePartitionLostListener;
 import com.hazelcast.cache.impl.event.InternalCachePartitionLostListenerAdapter;
 import com.hazelcast.cache.impl.journal.CacheEventJournalReadOperation;
 import com.hazelcast.cache.impl.journal.CacheEventJournalSubscribeOperation;
-import com.hazelcast.cache.journal.EventJournalCacheEvent;
 import com.hazelcast.cache.impl.operation.CacheListenerRegistrationOperation;
+import com.hazelcast.cache.journal.EventJournalCacheEvent;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.Member;
-import com.hazelcast.journal.EventJournalInitialSubscriberState;
-import com.hazelcast.journal.EventJournalReader;
+import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
+import com.hazelcast.internal.journal.EventJournalReader;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.projection.Projection;
@@ -49,15 +49,15 @@ import javax.cache.processor.EntryProcessor;
 import javax.cache.processor.EntryProcessorException;
 import javax.cache.processor.EntryProcessorResult;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
 import static com.hazelcast.util.ExceptionUtil.rethrowAllowedTypeFirst;
+import static com.hazelcast.util.MapUtil.createHashMap;
 import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.util.SetUtil.createHashSet;
 
 /**
  * <h1>ICache implementation</h1>
@@ -78,7 +78,8 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  * @param <V> the type of value.
  */
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity"})
-public class CacheProxy<K, V> extends AbstractCacheProxy<K, V> implements EventJournalReader<EventJournalCacheEvent<K, V>> {
+public class CacheProxy<K, V> extends AbstractCacheProxy<K, V>
+        implements EventJournalReader<EventJournalCacheEvent<K, V>> {
 
     protected final ILogger logger;
 
@@ -116,7 +117,7 @@ public class CacheProxy<K, V> extends AbstractCacheProxy<K, V> implements EventJ
         for (K key : keys) {
             CacheProxyUtil.validateConfiguredTypes(cacheConfig, key);
         }
-        HashSet<Data> keysData = new HashSet<Data>(keys.size());
+        Set<Data> keysData = createHashSet(keys.size());
         for (K key : keys) {
             validateNotNull(key);
             keysData.add(serializationService.toData(key));
@@ -258,7 +259,7 @@ public class CacheProxy<K, V> extends AbstractCacheProxy<K, V> implements EventJ
         ensureOpen();
         validateNotNull(keys);
         checkNotNull(entryProcessor, "Entry Processor is null");
-        Map<K, EntryProcessorResult<T>> allResult = new HashMap<K, EntryProcessorResult<T>>();
+        Map<K, EntryProcessorResult<T>> allResult = createHashMap(keys.size());
         for (K key : keys) {
             validateNotNull(key);
             CacheEntryProcessorResult<T> ceResult;
@@ -388,7 +389,12 @@ public class CacheProxy<K, V> extends AbstractCacheProxy<K, V> implements EventJ
             int maxSize,
             int partitionId,
             Predicate<? super EventJournalCacheEvent<K, V>> predicate,
-            Projection<? super EventJournalCacheEvent<K, V>, T> projection) {
+            Projection<? super EventJournalCacheEvent<K, V>, ? extends T> projection
+    ) {
+        if (maxSize < minSize) {
+            throw new IllegalArgumentException("maxSize " + maxSize
+                    + " must be greater or equal to minSize " + minSize);
+        }
         final CacheEventJournalReadOperation<K, V, T> op = new CacheEventJournalReadOperation<K, V, T>(
                 nameWithPrefix, startSequence, minSize, maxSize, predicate, projection);
         op.setPartitionId(partitionId);

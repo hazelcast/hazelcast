@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,11 +26,11 @@ import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableWriter;
 
 import java.io.IOException;
-import java.util.HashSet;
 import java.util.Set;
 
 import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.nio.Bits.NULL_ARRAY_LENGTH;
+import static com.hazelcast.util.SetUtil.createHashSet;
 
 public class DefaultPortableWriter implements PortableWriter {
 
@@ -40,14 +40,14 @@ public class DefaultPortableWriter implements PortableWriter {
     private final int begin;
     private final int offset;
     private final Set<String> writtenFields;
+
     private boolean raw;
 
-    public DefaultPortableWriter(PortableSerializer serializer, BufferObjectDataOutput out, ClassDefinition cd)
-            throws IOException {
+    DefaultPortableWriter(PortableSerializer serializer, BufferObjectDataOutput out, ClassDefinition cd) throws IOException {
         this.serializer = serializer;
         this.out = out;
         this.cd = cd;
-        this.writtenFields = new HashSet<String>(cd.getFieldCount());
+        this.writtenFields = createHashSet(cd.getFieldCount());
         this.begin = out.position();
 
         // room for final offset
@@ -161,8 +161,7 @@ public class DefaultPortableWriter implements PortableWriter {
     }
 
     @Override
-    public void writeBooleanArray(String fieldName, boolean[] booleans)
-            throws IOException {
+    public void writeBooleanArray(String fieldName, boolean[] booleans) throws IOException {
         setPosition(fieldName, FieldType.BOOLEAN_ARRAY);
         out.writeBooleanArray(booleans);
     }
@@ -204,8 +203,7 @@ public class DefaultPortableWriter implements PortableWriter {
     }
 
     @Override
-    public void writeUTFArray(String fieldName, String[] values)
-            throws IOException {
+    public void writeUTFArray(String fieldName, String[] values) throws IOException {
         setPosition(fieldName, FieldType.UTF_ARRAY);
         out.writeUTFArray(values);
     }
@@ -222,7 +220,7 @@ public class DefaultPortableWriter implements PortableWriter {
         if (len > 0) {
             final int offset = out.position();
             out.writeZeroBytes(len * 4);
-            for (int i = 0; i < portables.length; i++) {
+            for (int i = 0; i < len; i++) {
                 Portable portable = portables[i];
                 checkPortableAttributes(fd, portable);
                 int position = out.position();

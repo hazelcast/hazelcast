@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.querycache.subscriber;
 
+import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.PartitioningStrategy;
@@ -30,6 +31,7 @@ import com.hazelcast.map.impl.querycache.subscriber.record.QueryCacheRecord;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.CachedQueryEntry;
+import com.hazelcast.query.impl.IndexCopyBehavior;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.getters.Extractors;
 
@@ -52,14 +54,14 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
     protected final String cacheId;
     protected final String cacheName;
     protected final IMap delegate;
+    protected final Indexes indexes;
     protected final QueryCacheContext context;
     protected final QueryCacheRecordStore recordStore;
-    protected final Indexes indexes;
     protected final InternalSerializationService serializationService;
     protected final PartitioningStrategy partitioningStrategy;
 
     /**
-     * Id of registered listener on publisher side.
+     * ID of registered listener on publisher side.
      */
     protected String publisherListenerId;
 
@@ -72,12 +74,21 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
         this.serializationService = context.getSerializationService();
         // We are not using injected index provider since we're not supporting off-heap indexes in CQC due
         // to threading incompatibility. If we injected the IndexProvider from the MapServiceContext
-        // the EE side would create HD indexes which is undesired
-        this.indexes = new Indexes(serializationService, new DefaultIndexProvider(), Extractors.empty(), true);
+        // the EE side would create HD indexes which is undesired.
+        this.indexes = new Indexes(serializationService, new DefaultIndexProvider(), Extractors.empty(), true,
+                IndexCopyBehavior.COPY_ON_READ);
         this.includeValue = isIncludeValue();
         this.partitioningStrategy = getPartitioningStrategy();
         this.recordStore = new DefaultQueryCacheRecordStore(serializationService, indexes, getQueryCacheConfig(),
                 getEvictionListener());
+
+        for (MapIndexConfig indexConfig : getQueryCacheConfig().getIndexConfigs()) {
+            indexes.addOrGetIndex(indexConfig.getAttribute(), indexConfig.isOrdered());
+        }
+    }
+
+    public QueryCacheContext getContext() {
+        return context;
     }
 
     @Override

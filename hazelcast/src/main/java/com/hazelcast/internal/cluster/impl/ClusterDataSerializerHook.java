@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.cluster.impl;
 
+import com.hazelcast.cluster.impl.VectorClock;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.operations.AuthenticationFailureOp;
@@ -36,7 +37,6 @@ import com.hazelcast.internal.cluster.impl.operations.MasterConfirmationOp;
 import com.hazelcast.internal.cluster.impl.operations.WhoisMasterOp;
 import com.hazelcast.internal.cluster.impl.operations.MemberAttributeChangedOp;
 import com.hazelcast.internal.cluster.impl.operations.MembersUpdateOp;
-import com.hazelcast.internal.cluster.impl.operations.MemberRemoveOperation;
 import com.hazelcast.internal.cluster.impl.operations.MergeClustersOp;
 import com.hazelcast.internal.cluster.impl.operations.OnJoinOp;
 import com.hazelcast.internal.cluster.impl.operations.RollbackClusterStateOp;
@@ -81,7 +81,7 @@ public final class ClusterDataSerializerHook implements DataSerializerHook {
     public static final int MASTER_CONFIRM = 17;
     public static final int WHOIS_MASTER = 18;
     public static final int MEMBER_ATTR_CHANGED = 19;
-    public static final int MEMBER_REMOVE = 20;
+    // MemberRemoveOperation was assigned to 20th index. Now it is gone.
     public static final int MERGE_CLUSTERS = 21;
     public static final int POST_JOIN = 22;
     public static final int ROLLBACK_CLUSTER_STATE = 23;
@@ -104,8 +104,9 @@ public final class ClusterDataSerializerHook implements DataSerializerHook {
     public static final int MEMBERS_VIEW_METADATA = 40;
     public static final int HEARTBEAT_COMPLAINT = 41;
     public static final int PROMOTE_LITE_MEMBER = 42;
+    public static final int VECTOR_CLOCK = 43;
 
-    static final int LEN = PROMOTE_LITE_MEMBER + 1;
+    static final int LEN = VECTOR_CLOCK + 1;
 
     @Override
     public int getFactoryId() {
@@ -214,11 +215,6 @@ public final class ClusterDataSerializerHook implements DataSerializerHook {
         constructors[MEMBER_ATTR_CHANGED] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new MemberAttributeChangedOp();
-            }
-        };
-        constructors[MEMBER_REMOVE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MemberRemoveOperation();
             }
         };
         constructors[MERGE_CLUSTERS] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
@@ -336,6 +332,11 @@ public final class ClusterDataSerializerHook implements DataSerializerHook {
         constructors[PROMOTE_LITE_MEMBER] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new PromoteLiteMemberOp();
+            }
+        };
+        constructors[VECTOR_CLOCK] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new VectorClock();
             }
         };
         return new ArrayDataSerializableFactory(constructors);

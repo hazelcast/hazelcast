@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -119,6 +119,8 @@ public class MapOperationProviderDelegatorTest extends HazelcastTestSupport {
                 parameters[i] = new MapEntries();
             } else if (parameterType.equals(MapEntries[].class)) {
                 parameters[i] = new MapEntries[0];
+            } else if (parameterType.equals(List[].class)) {
+                parameters[i] = new List[0];
             } else {
                 try {
                     parameters[i] = mock(parameterType);

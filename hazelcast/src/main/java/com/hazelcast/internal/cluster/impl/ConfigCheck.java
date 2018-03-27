@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,12 +19,9 @@ package com.hazelcast.internal.cluster.impl;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.PartitionGroupConfig;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.util.EmptyStatement;
-import com.hazelcast.version.Version;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -32,6 +29,8 @@ import java.util.Map;
 
 import static com.hazelcast.spi.properties.GroupProperty.APPLICATION_VALIDATION_TOKEN;
 import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
+import static com.hazelcast.util.EmptyStatement.ignore;
+import static com.hazelcast.util.MapUtil.createHashMap;
 
 /**
  * Contains enough information about Hazelcast Config, to do a validation check so that clusters with different configurations
@@ -43,13 +42,9 @@ public final class ConfigCheck implements IdentifiedDataSerializable {
 
     private String groupName;
 
-    private String groupPassword;
-
     private String joinerType;
 
     private boolean partitionGroupEnabled;
-
-    private Version clusterVersion = Version.UNKNOWN;
 
     private PartitionGroupConfig.MemberGroupType memberGroupType;
 
@@ -65,12 +60,7 @@ public final class ConfigCheck implements IdentifiedDataSerializable {
     }
 
     public ConfigCheck(Config config, String joinerType) {
-        this(config, joinerType, Version.UNKNOWN);
-    }
-
-    public ConfigCheck(Config config, String joinerType, Version clusterVersion) {
         this.joinerType = joinerType;
-        this.clusterVersion = clusterVersion;
 
         // Copying all properties relevant for checking
         properties.put(PARTITION_COUNT.getName(), config.getProperty(PARTITION_COUNT.getName()));
@@ -80,7 +70,6 @@ public final class ConfigCheck implements IdentifiedDataSerializable {
         GroupConfig groupConfig = config.getGroupConfig();
         if (groupConfig != null) {
             this.groupName = groupConfig.getName();
-            this.groupPassword = config.getGroupConfig().getPassword();
         }
 
         // Partition-group settings
@@ -183,14 +172,9 @@ public final class ConfigCheck implements IdentifiedDataSerializable {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(groupName);
+
         //TODO @tkountis remove in 4.0
-        if (clusterVersion.isUnknownOrLessThan(Versions.V3_9)) {
-            // Rolling upgrades support - allow 3.9 Nodes to join 3.8 cluster -
-            // however versions above 3.8.2 already know to ignore the password validation
-            out.writeUTF(groupPassword);
-        } else {
-            out.writeUTF(EMPTY_PWD);
-        }
+        out.writeUTF(EMPTY_PWD);
         out.writeUTF(joinerType);
         out.writeBoolean(partitionGroupEnabled);
         if (partitionGroupEnabled) {
@@ -228,11 +212,11 @@ public final class ConfigCheck implements IdentifiedDataSerializable {
             try {
                 memberGroupType = PartitionGroupConfig.MemberGroupType.valueOf(s);
             } catch (IllegalArgumentException ignored) {
-                EmptyStatement.ignore(ignored);
+                ignore(ignored);
             }
         }
         int propSize = in.readInt();
-        properties = new HashMap<String, String>(propSize);
+        properties = createHashMap(propSize);
         for (int k = 0; k < propSize; k++) {
             String key = in.readUTF();
             String value = in.readUTF();

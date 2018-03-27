@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,10 +25,10 @@ import com.hazelcast.scheduledexecutor.impl.ScheduledTaskStatisticsImpl;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
 
 import static com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService.MEMBER_BIN;
+import static com.hazelcast.util.MapUtil.createHashMap;
 
 public class SyncStateOperation
         extends AbstractBackupAwareSchedulerOperation {
@@ -46,8 +46,8 @@ public class SyncStateOperation
     public SyncStateOperation() {
     }
 
-    public SyncStateOperation(String schedulerName, String taskName, Map state,
-                              ScheduledTaskStatisticsImpl stats, ScheduledTaskResult result) {
+    public SyncStateOperation(String schedulerName, String taskName, Map state, ScheduledTaskStatisticsImpl stats,
+                              ScheduledTaskResult result) {
         super(schedulerName);
         this.taskName = taskName;
         this.state = state;
@@ -107,7 +107,7 @@ public class SyncStateOperation
         super.readInternal(in);
         this.taskName = in.readUTF();
         int stateSize = in.readInt();
-        this.state = new HashMap(stateSize);
+        this.state = createHashMap(stateSize);
         for (int i = 0; i < stateSize; i++) {
             this.state.put(in.readObject(), in.readObject());
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,7 +51,7 @@ public class ExtractorsTest {
     public static Collection<Object[]> parameters() {
         return asList(new Object[][]{
                 {false},
-                {true}
+                {true},
         });
     }
 
@@ -88,7 +88,8 @@ public class ExtractorsTest {
     @Test
     public void getGetter_extractor_cachingWorks() {
         // GIVEN
-        MapAttributeConfig config = new MapAttributeConfig("gimmePower", "com.hazelcast.query.impl.getters.ExtractorsTest$PowerExtractor");
+        MapAttributeConfig config
+                = new MapAttributeConfig("gimmePower", "com.hazelcast.query.impl.getters.ExtractorsTest$PowerExtractor");
         Extractors extractors = new Extractors(singletonList(config), useClassloader ? this.getClass().getClassLoader() : null);
 
         // WHEN
@@ -103,7 +104,8 @@ public class ExtractorsTest {
     @Test
     public void extract_extractor_correctValue() {
         // GIVEN
-        MapAttributeConfig config = new MapAttributeConfig("gimmePower", "com.hazelcast.query.impl.getters.ExtractorsTest$PowerExtractor");
+        MapAttributeConfig config
+                = new MapAttributeConfig("gimmePower", "com.hazelcast.query.impl.getters.ExtractorsTest$PowerExtractor");
         Extractors extractors = new Extractors(singletonList(config), useClassloader ? this.getClass().getClassLoader() : null);
 
         // WHEN

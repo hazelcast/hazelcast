@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,6 @@
 package com.hazelcast.spi.impl.sequence;
 
 import com.hazelcast.core.HazelcastOverloadException;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.operationservice.impl.DummyBackupAwareOperation;
-import com.hazelcast.spi.impl.operationservice.impl.DummyOperation;
-import com.hazelcast.spi.impl.operationservice.impl.DummyPriorityOperation;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.RequireAssertEnabled;
@@ -30,11 +26,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.concurrent.CountDownLatch;
-
-import static com.hazelcast.spi.OperationAccessor.setCallId;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -56,7 +48,7 @@ public class FailFastCallIdSequenceTest extends HazelcastTestSupport {
         assertEquals(oldSequence + 1, sequence.getLastCallId());
     }
 
-    @Test (expected = HazelcastOverloadException.class)
+    @Test(expected = HazelcastOverloadException.class)
     public void next_whenNoCapacity_thenThrowException() throws InterruptedException {
         CallIdSequence sequence = new FailFastCallIdSequence(1);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import com.hazelcast.nio.serialization.Data;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.util.ThreadUtil.getThreadId;
+import static java.lang.Thread.currentThread;
 
 /**
  * Proxy implementation of {@link TransactionalQueue}.
@@ -47,6 +48,7 @@ public class ClientTxnQueueProxy<E> extends ClientTxnProxy implements Transactio
         try {
             return offer(e, 0, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e1) {
+            currentThread().interrupt();
             return false;
         }
     }
@@ -72,6 +74,7 @@ public class ClientTxnQueueProxy<E> extends ClientTxnProxy implements Transactio
         try {
             return poll(0, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
+            currentThread().interrupt();
             return null;
         }
     }
@@ -89,6 +92,7 @@ public class ClientTxnQueueProxy<E> extends ClientTxnProxy implements Transactio
         try {
             return peek(0, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
+            currentThread().interrupt();
             return null;
         }
     }

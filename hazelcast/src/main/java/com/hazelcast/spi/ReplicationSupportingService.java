@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,10 +19,15 @@ package com.hazelcast.spi;
 import com.hazelcast.wan.WanReplicationEvent;
 
 /**
- * An interface that can be implemented by SPI services to give them the ability to listen to
- * Replication Events.
+ * An interface that can be implemented by SPI services to give them the
+ * ability to listen to WAN replication events.
  */
 public interface ReplicationSupportingService {
 
+    /**
+     * Processes a WAN replication event
+     *
+     * @param replicationEvent the event
+     */
     void onReplicationEvent(WanReplicationEvent replicationEvent);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,6 +72,9 @@ public interface MapLoader<K, V> {
      *
      * The given collection should not contain any <code>null</code> keys.
      * The returned Map should not contain any <code>null</code> keys or values.
+     * <p>
+     * Loading other items than what provided in <code>keys</code>
+     * prevents the map from being filled from the map store.
      *
      * @param keys keys of the values entries to load
      * @return map of loaded key-value pairs.

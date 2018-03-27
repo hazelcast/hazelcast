@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.HazelcastInstanceProxy;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.serialization.impl.SerializationServiceV1;
 import com.hazelcast.map.AbstractEntryProcessor;
 import com.hazelcast.map.impl.LazyMapEntry;
 import com.hazelcast.nio.serialization.Data;
@@ -289,21 +288,28 @@ public class DefaultPortableReaderQuickTest extends HazelcastTestSupport {
 
     @Test
     public void portableArrayFirst_withAny_primitiveArrayAtTheEnd2() throws IOException {
-        Portable[] expected = new Portable[]{((WheelPortable) PORSCHE.wheels[0]).chip,
-                ((WheelPortable) PORSCHE.wheels[1]).chip};
+        Portable[] expected = new Portable[]{
+                ((WheelPortable) PORSCHE.wheels[0]).chip,
+                ((WheelPortable) PORSCHE.wheels[1]).chip,
+        };
         assertArrayEquals(expected, reader(PORSCHE).readPortableArray("wheels[any].chip"));
     }
 
     @Test
     public void portableArrayFirst_withAny_primitiveArrayAtTheEnd3() throws IOException {
-        Portable[] expected = new Portable[]{((WheelPortable) PORSCHE.wheels[0]).chips[1],
-                ((WheelPortable) PORSCHE.wheels[1]).chips[1]};
+        Portable[] expected = new Portable[]{
+                ((WheelPortable) PORSCHE.wheels[0]).chips[1],
+                ((WheelPortable) PORSCHE.wheels[1]).chips[1],
+        };
         assertArrayEquals(expected, reader(PORSCHE).readPortableArray("wheels[any].chips[1]"));
     }
 
     @Test
     public void portableArrayFirst_withAny_primitiveArrayAtTheEnd5() throws IOException {
-        String[] expected = {"front", "rear"};
+        String[] expected = {
+                "front",
+                "rear",
+        };
         assertArrayEquals(expected, reader(PORSCHE).readUTFArray("wheels[any].name"));
     }
 
@@ -345,7 +351,7 @@ public class DefaultPortableReaderQuickTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void reusingTheReader_multipleCalls_stateResetCorreclty() throws IOException {
+    public void reusingTheReader_multipleCalls_stateResetCorrectly() throws IOException {
         PortableReader reader = reader(PORSCHE);
         assertEquals("rear", reader.readUTF("wheels[1].name"));
         assertEquals(300, reader.readInt("engine.power"));

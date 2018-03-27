@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,17 +17,26 @@
 package com.hazelcast.concurrent.atomiclong;
 
 import com.hazelcast.concurrent.atomiclong.operations.AtomicLongReplicationOperation;
+import com.hazelcast.concurrent.atomiclong.operations.MergeOperation;
+import com.hazelcast.config.AtomicLongConfig;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PartitionReplicationEvent;
+import com.hazelcast.spi.QuorumAwareService;
 import com.hazelcast.spi.RemoteService;
+import com.hazelcast.spi.SplitBrainHandlerService;
+import com.hazelcast.spi.impl.merge.AbstractContainerMerger;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.partition.MigrationEndpoint;
 import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.util.ContextMutexFactory;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -35,14 +44,18 @@ import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import static com.hazelcast.internal.config.ConfigValidator.checkBasicConfig;
 import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getPartitionKey;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
+import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 
-public class AtomicLongService implements ManagedService, RemoteService, MigrationAwareService {
+public class AtomicLongService
+        implements ManagedService, RemoteService, MigrationAwareService, QuorumAwareService, SplitBrainHandlerService {
 
     public static final String SERVICE_NAME = "hz:impl:atomicLongService";
 
-    private NodeEngine nodeEngine;
+    private static final Object NULL_OBJECT = new Object();
+
     private final ConcurrentMap<String, AtomicLongContainer> containers = new ConcurrentHashMap<String, AtomicLongContainer>();
     private final ConstructorFunction<String, AtomicLongContainer> atomicLongConstructorFunction =
             new ConstructorFunction<String, AtomicLongContainer>() {
@@ -51,6 +64,21 @@ public class AtomicLongService implements ManagedService, RemoteService, Migrati
                 }
             };
 
+    private final ConcurrentMap<String, Object> quorumConfigCache = new ConcurrentHashMap<String, Object>();
+    private final ContextMutexFactory quorumConfigCacheMutexFactory = new ContextMutexFactory();
+    private final ConstructorFunction<String, Object> quorumConfigConstructor = new ConstructorFunction<String, Object>() {
+        @Override
+        public Object createNew(String name) {
+            AtomicLongConfig config = nodeEngine.getConfig().findAtomicLongConfig(name);
+            String quorumName = config.getQuorumName();
+            // the quorumName will be null if there is no quorum defined for this data structure,
+            // but the QuorumService is active, due to another data structure with a quorum configuration
+            return quorumName == null ? NULL_OBJECT : quorumName;
+        }
+    };
+
+    private NodeEngine nodeEngine;
+
     public AtomicLongService() {
     }
 
@@ -58,7 +86,6 @@ public class AtomicLongService implements ManagedService, RemoteService, Migrati
         return getOrPutIfAbsent(containers, name, atomicLongConstructorFunction);
     }
 
-    // need for testing..
     public boolean containsAtomicLong(String name) {
         return containers.containsKey(name);
     }
@@ -80,12 +107,16 @@ public class AtomicLongService implements ManagedService, RemoteService, Migrati
 
     @Override
     public AtomicLongProxy createDistributedObject(String name) {
+        AtomicLongConfig atomicLongConfig = nodeEngine.getConfig().findAtomicLongConfig(name);
+        checkBasicConfig(atomicLongConfig);
+
         return new AtomicLongProxy(name, nodeEngine, this);
     }
 
     @Override
     public void destroyDistributedObject(String name) {
         containers.remove(name);
+        quorumConfigCache.remove(name);
     }
 
     @Override
@@ -142,6 +173,55 @@ public class AtomicLongService implements ManagedService, RemoteService, Migrati
             String name = iterator.next();
             if (getPartitionId(name) == partitionId) {
                 iterator.remove();
+            }
+        }
+    }
+
+    @Override
+    public String getQuorumName(String name) {
+        // RU_COMPAT_3_9
+        if (nodeEngine.getClusterService().getClusterVersion().isLessThan(Versions.V3_10)) {
+            return null;
+        }
+        Object quorumName = getOrPutSynchronized(quorumConfigCache, name, quorumConfigCacheMutexFactory,
+                quorumConfigConstructor);
+        return quorumName == NULL_OBJECT ? null : (String) quorumName;
+    }
+
+    @Override
+    public Runnable prepareMergeRunnable() {
+        AtomicLongContainerCollector collector = new AtomicLongContainerCollector(nodeEngine, containers);
+        collector.run();
+        return new Merger(collector);
+    }
+
+    private class Merger extends AbstractContainerMerger<AtomicLongContainer> {
+
+        Merger(AtomicLongContainerCollector collector) {
+            super(collector, nodeEngine);
+        }
+
+        @Override
+        protected String getLabel() {
+            return "AtomicLong";
+        }
+
+        @Override
+        public void runInternal() {
+            AtomicLongContainerCollector collector = (AtomicLongContainerCollector) this.collector;
+            for (Map.Entry<Integer, Collection<AtomicLongContainer>> entry : collector.getCollectedContainers().entrySet()) {
+                // TODO: add batching (which is a bit complex, since AtomicLong is a single-value data structure,
+                // so we need an operation for multiple AtomicLong instances, which doesn't exist so far)
+                int partitionId = entry.getKey();
+                Collection<AtomicLongContainer> containerList = entry.getValue();
+
+                for (AtomicLongContainer container : containerList) {
+                    String name = collector.getContainerName(container);
+                    SplitBrainMergePolicy mergePolicy = getMergePolicy(collector.getMergePolicyConfig(container));
+
+                    MergeOperation operation = new MergeOperation(name, mergePolicy, container.get());
+                    invoke(SERVICE_NAME, operation, partitionId);
+                }
             }
         }
     }

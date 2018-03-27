@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -82,7 +82,7 @@ public class EventJournalConfig implements IdentifiedDataSerializable {
      * The capacity is shared equally between all partitions.
      * This is done by assigning each partition {@code getCapacity() / partitionCount}
      * available slots in the event journal. Because of this, the effective total
-     * capacity may be somewhat lower and you must take into account that the
+     * capacity may be somewhat lower and you must make sure that the
      * configured capacity is at least greater than the partition count.
      *
      * @return the capacity.
@@ -100,7 +100,7 @@ public class EventJournalConfig implements IdentifiedDataSerializable {
      * The capacity is shared equally between all partitions.
      * This is done by assigning each partition {@code getCapacity() / partitionCount}
      * available slots in the event journal. Because of this, the effective total
-     * capacity may be somewhat lower and you must take into account that the
+     * capacity may be somewhat lower and you must make sure that the
      * configured capacity is at least greater than the partition count.
      *
      * @param capacity the capacity.
@@ -129,7 +129,7 @@ public class EventJournalConfig implements IdentifiedDataSerializable {
      * The events are removed on journal read and write actions, not while the journal is idle.
      * <p>
      * Time to live can be disabled by setting timeToLiveSeconds to 0. This means that the
-     * events never expire but they can be overwritten when the capacity of the journal is exceeed.
+     * events never expire but they can be overwritten when the capacity of the journal is exceeded.
      *
      * @param timeToLiveSeconds the time to live period in seconds
      * @return the updated config

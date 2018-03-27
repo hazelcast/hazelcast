@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -70,6 +70,9 @@ final class TransactionProxy {
 
     void begin() {
         try {
+            if (client.getConnectionManager().getOwnerConnection() == null) {
+                throw new TransactionException("Owner connection needs to be present to begin a transaction");
+            }
             if (state == ACTIVE) {
                 throw new IllegalStateException("Transaction is already active");
             }

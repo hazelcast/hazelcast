@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,19 +37,22 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.concurrent.Callable;
 
 import static com.hazelcast.map.impl.querycache.AbstractQueryCacheTestSupport.getMap;
+import static java.util.Arrays.asList;
 
 /**
  * Test basic QueryCache operation: create a map, put/update/remove values and assert size of query cache.
  * Parametrized with QueryCache option includeValues true/false & using default and query-cache-natural filtering strategies.
  */
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class QueryCacheBasicTest extends HazelcastTestSupport {
 
@@ -62,18 +65,18 @@ public class QueryCacheBasicTest extends HazelcastTestSupport {
     private IMap<Integer, Person> map;
     private QueryCache queryCache;
 
-    @Parameterized.Parameter
+    @Parameter
     public boolean includeValues;
 
-    @Parameterized.Parameter(1)
+    @Parameter(1)
     public boolean useQueryCacheNaturalFilteringStrategy;
 
-    @Parameterized.Parameter(2)
+    @Parameter(2)
     public boolean useNearCache;
 
-    @Parameterized.Parameters(name = "includeValues: {0}, useQueryCacheFilteringStrategy: {1}, nearCache: {2}")
+    @Parameters(name = "includeValues: {0}, useQueryCacheFilteringStrategy: {1}, nearCache: {2}")
     public static Collection<Object[]> parameters() {
-        return Arrays.asList(new Object[][]{
+        return asList(new Object[][]{
                 {false, false, false},
                 {false, false, true},
                 {false, true, false},
@@ -81,7 +84,7 @@ public class QueryCacheBasicTest extends HazelcastTestSupport {
                 {true, false, false},
                 {true, false, true},
                 {true, true, false},
-                {true, true, true}
+                {true, true, true},
         });
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,13 +20,15 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
+import com.hazelcast.spi.ReadonlyOperation;
 
 import java.io.IOException;
 import java.util.Collection;
 
-public class IsEmptyOperation extends AbstractSerializableOperation {
+public class IsEmptyOperation extends AbstractNamedSerializableOperation implements ReadonlyOperation {
 
     private String name;
+
     private transient boolean response;
 
     public IsEmptyOperation() {
@@ -67,5 +69,10 @@ public class IsEmptyOperation extends AbstractSerializableOperation {
     @Override
     public int getId() {
         return ReplicatedMapDataSerializerHook.IS_EMPTY;
+    }
+
+    @Override
+    public String getName() {
+        return name;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,7 +43,7 @@ public class MapEventConstructor extends AbstractStarterObjectConstructor {
         Integer eventTypeId = (Integer) entryEventType.getClass().getMethod("getType").invoke(entryEventType);
         Object numberOfKeysAffected = getFieldValueReflectively(delegate, "numberOfEntriesAffected");
 
-        Object[] args = new Object[] {source, member, eventTypeId.intValue(), numberOfKeysAffected};
+        Object[] args = new Object[]{source, member, eventTypeId.intValue(), numberOfKeysAffected};
 
         Object[] proxiedArgs = proxyArgumentsIfNeeded(args, starterClassLoader);
 

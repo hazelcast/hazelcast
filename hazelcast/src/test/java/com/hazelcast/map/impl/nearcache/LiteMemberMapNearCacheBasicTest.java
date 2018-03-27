@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -123,6 +123,7 @@ public class LiteMemberMapNearCacheBasicTest extends AbstractNearCacheBasicTest<
     protected Config createConfig(IMapMapStore mapStore, boolean liteMember) {
         Config config = getConfig()
                 .setProperty(GroupProperty.PARTITION_COUNT.getName(), PARTITION_COUNT)
+                .setProperty(GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS.getName(), "1")
                 .setLiteMember(liteMember);
 
         MapConfig mapConfig = config.getMapConfig(DEFAULT_NEAR_CACHE_NAME);

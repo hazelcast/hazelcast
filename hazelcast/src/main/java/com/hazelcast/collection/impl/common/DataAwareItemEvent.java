@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ import java.io.ObjectOutputStream;
 /**
  * An {@link ItemEvent} that is able to store a {@link Data}.
  */
-public class DataAwareItemEvent extends ItemEvent {
+public class DataAwareItemEvent<E> extends ItemEvent<E> {
 
     private static final long serialVersionUID = 1;
 
@@ -44,7 +44,7 @@ public class DataAwareItemEvent extends ItemEvent {
     }
 
     @Override
-    public Object getItem() {
+    public E getItem() {
         if (item == null && dataItem != null) {
             item = serializationService.toObject(dataItem);
         }

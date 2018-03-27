@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,32 +13,53 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.hazelcast.map.impl.query;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.SampleTestObjects;
 import com.hazelcast.query.SampleTestObjects.Employee;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.query.impl.IndexCopyBehavior;
+import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 
-@RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@RunWith(Parameterized.class)
+@UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@Category(QuickTest.class)
 public class QueryNullIndexingTest extends HazelcastTestSupport {
+
+    @Parameter(0)
+    public IndexCopyBehavior copyBehavior;
+
+    @Parameters(name = "copyBehavior: {0}")
+    public static Collection<Object[]> parameters() {
+        return asList(new Object[][]{
+                {IndexCopyBehavior.COPY_ON_READ},
+                {IndexCopyBehavior.COPY_ON_WRITE},
+                {IndexCopyBehavior.NEVER},
+        });
+    }
 
     @Test
     public void testIndexedNullValueOnUnorderedIndexStoreWithLessPredicate() {
@@ -111,7 +132,9 @@ public class QueryNullIndexingTest extends HazelcastTestSupport {
     }
 
     private List<Long> queryIndexedDateFieldAsNullValue(boolean ordered, Predicate pred) {
-        HazelcastInstance instance = createHazelcastInstance();
+        Config config = getConfig();
+        config.setProperty(GroupProperty.INDEX_COPY_BEHAVIOR.getName(), copyBehavior.name());
+        HazelcastInstance instance = createHazelcastInstance(config);
         IMap<Integer, SampleTestObjects.Employee> map = instance.getMap("default");
 
         map.addIndex("date", ordered);

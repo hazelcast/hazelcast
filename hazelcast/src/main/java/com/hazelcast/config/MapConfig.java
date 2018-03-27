@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.map.eviction.LFUEvictionPolicy;
 import com.hazelcast.map.eviction.LRUEvictionPolicy;
 import com.hazelcast.map.eviction.MapEvictionPolicy;
@@ -24,6 +25,8 @@ import com.hazelcast.map.merge.PutIfAbsentMapMergePolicy;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.partition.IPartition;
 
 import java.io.IOException;
@@ -41,7 +44,7 @@ import static com.hazelcast.util.Preconditions.isNotNull;
 /**
  * Contains the configuration for an {@link com.hazelcast.core.IMap}.
  */
-public class MapConfig implements IdentifiedDataSerializable {
+public class MapConfig implements IdentifiedDataSerializable, Versioned {
 
     /**
      * The number of minimum backup counter
@@ -132,7 +135,7 @@ public class MapConfig implements IdentifiedDataSerializable {
 
     private CacheDeserializedValues cacheDeserializedValues = DEFAULT_CACHED_DESERIALIZED_VALUES;
 
-    private String mergePolicy = DEFAULT_MAP_MERGE_POLICY;
+    private MergePolicyConfig mergePolicyConfig = new MergePolicyConfig();
 
     private InMemoryFormat inMemoryFormat = DEFAULT_IN_MEMORY_FORMAT;
 
@@ -188,7 +191,7 @@ public class MapConfig implements IdentifiedDataSerializable {
         this.readBackupData = config.readBackupData;
         this.cacheDeserializedValues = config.cacheDeserializedValues;
         this.statisticsEnabled = config.statisticsEnabled;
-        this.mergePolicy = config.mergePolicy;
+        this.mergePolicyConfig = config.mergePolicyConfig;
         this.wanReplicationRef = config.wanReplicationRef != null ? new WanReplicationRef(config.wanReplicationRef) : null;
         this.entryListenerConfigs = new ArrayList<EntryListenerConfig>(config.getEntryListenerConfigs());
         this.partitionLostListenerConfigs =
@@ -334,7 +337,7 @@ public class MapConfig implements IdentifiedDataSerializable {
      * When maximum size is reached, the specified percentage of the map will be evicted.
      * Any integer between 0 and 100 is allowed.
      * For example, if 25 is set, 25% of the entries will be evicted.
-     *
+     * <p>
      * Beware that eviction mechanism is different for NATIVE in-memory format (It uses a probabilistic algorithm
      * based on sampling. Please see documentation for further details) and this parameter has no effect.
      *
@@ -356,7 +359,7 @@ public class MapConfig implements IdentifiedDataSerializable {
 
     /**
      * Returns the minimum milliseconds which should pass before asking if a partition of this map is evictable or not.
-     *
+     * <p>
      * Default value is {@value #DEFAULT_MIN_EVICTION_CHECK_MILLIS} milliseconds.
      *
      * @return number of milliseconds that should pass before asking for the next eviction
@@ -370,9 +373,9 @@ public class MapConfig implements IdentifiedDataSerializable {
 
     /**
      * Sets the minimum time in milliseconds which should pass before asking if a partition of this map is evictable or not.
-     *
+     * <p>
      * Default value is {@value #DEFAULT_MIN_EVICTION_CHECK_MILLIS} milliseconds.
-     *
+     * <p>
      * Beware that eviction mechanism is different for NATIVE in-memory format (It uses a probabilistic algorithm
      * based on sampling. Please see documentation for further details) and this parameter has no effect.
      *
@@ -490,7 +493,7 @@ public class MapConfig implements IdentifiedDataSerializable {
 
     /**
      * Sets custom eviction policy implementation for this map.
-     *
+     * <p>
      * Internal eviction algorithm finds most appropriate entry to evict from this map by using supplied policy.
      *
      * @param mapEvictionPolicy custom eviction policy implementation
@@ -541,22 +544,46 @@ public class MapConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * Gets the map merge policy {@link com.hazelcast.map.merge.MapMergePolicy}
+     * Gets the merge policy.
      *
-     * @return the updated map configuration
+     * @return the merge policy classname
+     * @deprecated since 3.10, please use {@link #getMergePolicyConfig()} and {@link MergePolicyConfig#getPolicy()}
      */
     public String getMergePolicy() {
-        return mergePolicy;
+        return mergePolicyConfig.getPolicy();
     }
 
     /**
-     * Sets the map merge policy {@link com.hazelcast.map.merge.MapMergePolicy}
+     * Sets the merge policy.
+     * <p>
+     * Accepts a classname of {@link SplitBrainMergePolicy}
+     * or the deprecated {@link com.hazelcast.map.merge.MapMergePolicy}.
      *
-     * @param mergePolicy the map merge policy to set
+     * @param mergePolicy the merge policy classname to set
      * @return the updated map configuration
+     * @deprecated since 3.10, please use {@link #setMergePolicyConfig(MergePolicyConfig)}
      */
     public MapConfig setMergePolicy(String mergePolicy) {
-        this.mergePolicy = mergePolicy;
+        this.mergePolicyConfig.setPolicy(mergePolicy);
+        return this;
+    }
+
+    /**
+     * Gets the {@link MergePolicyConfig} for this map.
+     *
+     * @return the {@link MergePolicyConfig} for this map
+     */
+    public MergePolicyConfig getMergePolicyConfig() {
+        return mergePolicyConfig;
+    }
+
+    /**
+     * Sets the {@link MergePolicyConfig} for this map.
+     *
+     * @return the updated map configuration
+     */
+    public MapConfig setMergePolicyConfig(MergePolicyConfig mergePolicyConfig) {
+        this.mergePolicyConfig = checkNotNull(mergePolicyConfig, "mergePolicyConfig cannot be null!");
         return this;
     }
 
@@ -874,90 +901,87 @@ public class MapConfig implements IdentifiedDataSerializable {
             return false;
         }
 
-        MapConfig mapConfig = (MapConfig) o;
-
-        if (backupCount != mapConfig.backupCount) {
+        MapConfig that = (MapConfig) o;
+        if (backupCount != that.backupCount) {
             return false;
         }
-        if (asyncBackupCount != mapConfig.asyncBackupCount) {
+        if (asyncBackupCount != that.asyncBackupCount) {
             return false;
         }
-        if (timeToLiveSeconds != mapConfig.timeToLiveSeconds) {
+        if (timeToLiveSeconds != that.timeToLiveSeconds) {
             return false;
         }
-        if (maxIdleSeconds != mapConfig.maxIdleSeconds) {
+        if (maxIdleSeconds != that.maxIdleSeconds) {
             return false;
         }
-        if (readBackupData != mapConfig.readBackupData) {
+        if (readBackupData != that.readBackupData) {
             return false;
         }
-        if (statisticsEnabled != mapConfig.statisticsEnabled) {
+        if (statisticsEnabled != that.statisticsEnabled) {
             return false;
         }
-        if (!name.equals(mapConfig.name)) {
+        if (!name.equals(that.name)) {
             return false;
         }
-        if (maxSizeConfig != null ? !maxSizeConfig.equals(mapConfig.maxSizeConfig) : mapConfig.maxSizeConfig != null) {
+        if (maxSizeConfig != null ? !maxSizeConfig.equals(that.maxSizeConfig) : that.maxSizeConfig != null) {
             return false;
         }
-        if (evictionPolicy != mapConfig.evictionPolicy) {
+        if (evictionPolicy != that.evictionPolicy) {
             return false;
         }
-        if (mapEvictionPolicy != null ? !mapEvictionPolicy.equals(mapConfig.mapEvictionPolicy)
-                : mapConfig.mapEvictionPolicy != null) {
+        if (mapEvictionPolicy != null ? !mapEvictionPolicy.equals(that.mapEvictionPolicy)
+                : that.mapEvictionPolicy != null) {
             return false;
         }
-        if (mapStoreConfig != null ? !mapStoreConfig.equals(mapConfig.mapStoreConfig)
-                : mapConfig.mapStoreConfig != null) {
+        if (mapStoreConfig != null ? !mapStoreConfig.equals(that.mapStoreConfig)
+                : that.mapStoreConfig != null) {
             return false;
         }
-        if (nearCacheConfig != null ? !nearCacheConfig.equals(mapConfig.nearCacheConfig)
-                : mapConfig.nearCacheConfig != null) {
+        if (nearCacheConfig != null ? !nearCacheConfig.equals(that.nearCacheConfig)
+                : that.nearCacheConfig != null) {
             return false;
         }
-        if (cacheDeserializedValues != mapConfig.cacheDeserializedValues) {
+        if (cacheDeserializedValues != that.cacheDeserializedValues) {
             return false;
         }
-        if (mergePolicy != null ? !mergePolicy.equals(mapConfig.mergePolicy) : mapConfig.mergePolicy != null) {
+        if (mergePolicyConfig != null ? !mergePolicyConfig.equals(that.mergePolicyConfig) : that.mergePolicyConfig != null) {
             return false;
         }
-        if (inMemoryFormat != mapConfig.inMemoryFormat) {
+        if (inMemoryFormat != that.inMemoryFormat) {
             return false;
         }
-        if (wanReplicationRef != null ? !wanReplicationRef.equals(mapConfig.wanReplicationRef)
-                : mapConfig.wanReplicationRef != null) {
+        if (wanReplicationRef != null ? !wanReplicationRef.equals(that.wanReplicationRef) : that.wanReplicationRef != null) {
             return false;
         }
-        if (!getEntryListenerConfigs().equals(mapConfig.getEntryListenerConfigs())) {
+        if (!getEntryListenerConfigs().equals(that.getEntryListenerConfigs())) {
             return false;
         }
-        if (!getPartitionLostListenerConfigs().equals(mapConfig.getPartitionLostListenerConfigs())) {
+        if (!getPartitionLostListenerConfigs().equals(that.getPartitionLostListenerConfigs())) {
             return false;
         }
-        if (!getMapIndexConfigs().equals(mapConfig.getMapIndexConfigs())) {
+        if (!getMapIndexConfigs().equals(that.getMapIndexConfigs())) {
             return false;
         }
-        if (!getMapAttributeConfigs().equals(mapConfig.getMapAttributeConfigs())) {
+        if (!getMapAttributeConfigs().equals(that.getMapAttributeConfigs())) {
             return false;
         }
-        if (!getQueryCacheConfigs().equals(mapConfig.getQueryCacheConfigs())) {
+        if (!getQueryCacheConfigs().equals(that.getQueryCacheConfigs())) {
             return false;
         }
         if (partitioningStrategyConfig != null
-                ? !partitioningStrategyConfig.equals(mapConfig.partitioningStrategyConfig)
-                : mapConfig.partitioningStrategyConfig != null) {
+                ? !partitioningStrategyConfig.equals(that.partitioningStrategyConfig)
+                : that.partitioningStrategyConfig != null) {
             return false;
         }
-        if (quorumName != null ? !quorumName.equals(mapConfig.quorumName) : mapConfig.quorumName != null) {
+        if (quorumName != null ? !quorumName.equals(that.quorumName) : that.quorumName != null) {
             return false;
         }
-        return hotRestartConfig != null ? hotRestartConfig.equals(mapConfig.hotRestartConfig)
-                : mapConfig.hotRestartConfig == null;
+        return hotRestartConfig != null ? hotRestartConfig.equals(that.hotRestartConfig) : that.hotRestartConfig == null;
     }
 
     @Override
     public final int hashCode() {
-        int result = name.hashCode();
+        int result = (name != null ? name.hashCode() : 0);
         result = 31 * result + backupCount;
         result = 31 * result + asyncBackupCount;
         result = 31 * result + timeToLiveSeconds;
@@ -969,11 +993,10 @@ public class MapConfig implements IdentifiedDataSerializable {
         result = 31 * result + (nearCacheConfig != null ? nearCacheConfig.hashCode() : 0);
         result = 31 * result + (readBackupData ? 1 : 0);
         result = 31 * result + cacheDeserializedValues.hashCode();
-        result = 31 * result + (mergePolicy != null ? mergePolicy.hashCode() : 0);
+        result = 31 * result + (mergePolicyConfig != null ? mergePolicyConfig.hashCode() : 0);
         result = 31 * result + inMemoryFormat.hashCode();
         result = 31 * result + (wanReplicationRef != null ? wanReplicationRef.hashCode() : 0);
         result = 31 * result + getEntryListenerConfigs().hashCode();
-        result = 31 * result + getPartitioningStrategyConfig().hashCode();
         result = 31 * result + getMapIndexConfigs().hashCode();
         result = 31 * result + getMapAttributeConfigs().hashCode();
         result = 31 * result + getQueryCacheConfigs().hashCode();
@@ -1003,7 +1026,7 @@ public class MapConfig implements IdentifiedDataSerializable {
                 + ", hotRestart=" + hotRestartConfig
                 + ", nearCacheConfig=" + nearCacheConfig
                 + ", mapStoreConfig=" + mapStoreConfig
-                + ", mergePolicyConfig='" + mergePolicy + '\''
+                + ", mergePolicyConfig=" + mergePolicyConfig
                 + ", wanReplicationRef=" + wanReplicationRef
                 + ", entryListenerConfigs=" + entryListenerConfigs
                 + ", mapIndexConfigs=" + mapIndexConfigs
@@ -1038,7 +1061,12 @@ public class MapConfig implements IdentifiedDataSerializable {
         out.writeObject(nearCacheConfig);
         out.writeBoolean(readBackupData);
         out.writeUTF(cacheDeserializedValues.name());
-        out.writeUTF(mergePolicy);
+        // RU_COMPAT_3_9
+        if (out.getVersion().isGreaterOrEqual(Versions.V3_10)) {
+            out.writeObject(mergePolicyConfig);
+        } else {
+            out.writeUTF(mergePolicyConfig.getPolicy());
+        }
         out.writeUTF(inMemoryFormat.name());
         out.writeObject(wanReplicationRef);
         writeNullableList(entryListenerConfigs, out);
@@ -1066,7 +1094,12 @@ public class MapConfig implements IdentifiedDataSerializable {
         nearCacheConfig = in.readObject();
         readBackupData = in.readBoolean();
         cacheDeserializedValues = CacheDeserializedValues.valueOf(in.readUTF());
-        mergePolicy = in.readUTF();
+        // RU_COMPAT_3_9
+        if (in.getVersion().isGreaterOrEqual(Versions.V3_10)) {
+            mergePolicyConfig = in.readObject();
+        } else {
+            mergePolicyConfig.setPolicy(in.readUTF());
+        }
         inMemoryFormat = InMemoryFormat.valueOf(in.readUTF());
         wanReplicationRef = in.readObject();
         entryListenerConfigs = readNullableList(in);

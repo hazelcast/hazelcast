@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package com.hazelcast.internal.ascii.rest;
 
 import com.hazelcast.internal.ascii.NoOpCommand;
 import com.hazelcast.nio.IOUtil;
-import com.hazelcast.nio.ascii.TextChannelInboundHandler;
+import com.hazelcast.nio.ascii.TextDecoder;
 import com.hazelcast.util.StringUtil;
 
 import java.nio.BufferOverflowException;
@@ -38,7 +38,7 @@ public class HttpPostCommand extends HttpCommand {
     private static final byte LINE_FEED = 0x0A;
     private static final byte CARRIAGE_RETURN = 0x0D;
 
-    private final TextChannelInboundHandler readHandler;
+    private final TextDecoder decoder;
 
     private boolean chunked;
     private boolean nextLine;
@@ -47,9 +47,9 @@ public class HttpPostCommand extends HttpCommand {
     private String contentType;
     private ByteBuffer lineBuffer = ByteBuffer.allocate(INITIAL_CAPACITY);
 
-    public HttpPostCommand(TextChannelInboundHandler readHandler, String uri) {
+    public HttpPostCommand(TextDecoder decoder, String uri) {
         super(HTTP_POST, uri);
-        this.readHandler = readHandler;
+        this.decoder = decoder;
     }
 
     /**
@@ -230,7 +230,7 @@ public class HttpPostCommand extends HttpCommand {
         } else if (!chunked && currentLine.startsWith(HEADER_CHUNKED)) {
             chunked = true;
         } else if (currentLine.startsWith(HEADER_EXPECT_100)) {
-            readHandler.sendResponse(new NoOpCommand(RES_100));
+            decoder.sendResponse(new NoOpCommand(RES_100));
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,8 +43,8 @@ import com.hazelcast.client.util.ClientDelegatingFuture;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.Member;
-import com.hazelcast.journal.EventJournalInitialSubscriberState;
-import com.hazelcast.journal.EventJournalReader;
+import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
+import com.hazelcast.internal.journal.EventJournalReader;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.projection.Projection;
@@ -110,8 +110,9 @@ public class ClientCacheProxy<K, V> extends AbstractClientCacheProxy<K, V>
             @Override
             public ReadResultSet<?> decodeClientMessage(ClientMessage message) {
                 final CacheEventJournalReadCodec.ResponseParameters params = CacheEventJournalReadCodec.decodeResponse(message);
-                final PortableReadResultSet<?> resultSet
-                        = new PortableReadResultSet<Object>(params.readCount, params.items, params.itemSeqs);
+                final PortableReadResultSet<?> resultSet = new PortableReadResultSet<Object>(
+                        params.readCount, params.items, params.itemSeqs,
+                        params.nextSeqExist ? params.nextSeq : ReadResultSet.SEQUENCE_UNAVAILABLE);
                 resultSet.setSerializationService(getSerializationService());
                 return resultSet;
             }
@@ -533,7 +534,12 @@ public class ClientCacheProxy<K, V> extends AbstractClientCacheProxy<K, V>
             int maxSize,
             int partitionId,
             Predicate<? super EventJournalCacheEvent<K, V>> predicate,
-            Projection<? super EventJournalCacheEvent<K, V>, T> projection) {
+            Projection<? super EventJournalCacheEvent<K, V>, ? extends T> projection
+    ) {
+        if (maxSize < minSize) {
+            throw new IllegalArgumentException("maxSize " + maxSize
+                    + " must be greater or equal to minSize " + minSize);
+        }
         final SerializationService ss = getSerializationService();
         final ClientMessage request = CacheEventJournalReadCodec.encodeRequest(
                 nameWithPrefix, startSequence, minSize, maxSize, ss.toData(predicate), ss.toData(projection));

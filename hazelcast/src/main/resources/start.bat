@@ -25,10 +25,10 @@ if NOT "%MAX_HEAP_SIZE%" == "" (
 
 set "CLASSPATH=%~dp0..\lib\hazelcast-all-${project.version}.jar"
 
-FOR /F "tokens=* USEBACKQ" %%F IN (`tasklist /FI "WINDOWTITLE eq hazelcast %CLASSPATH%" 2^>NUL ^| find /I /C "java"`) DO (
-SET COUNT=%%F
+FOR /F "tokens=2 delims=," %%F in ('tasklist /NH /FI "WINDOWTITLE eq hazelcast %CLASSPATH%" /fo csv') DO (
+SET PID=%%F
 )
-IF NOT "%COUNT%"=="0" (
+IF NOT "%PID%"=="" (
     goto alreadyrunning
 )
 
@@ -46,7 +46,7 @@ ECHO JAVA_HOME environment variable must be set!
 pause
 
 :alreadyrunning
-ECHO Another Hazelcast instance is already started in this folder. To start a new instance, please unzip the zip file in a new folder.
+ECHO Another Hazelcast instance (PID=%PID%) is already started in this folder. To start a new instance, please unzip the zip file in a new folder.
 pause
 
 :endofscript

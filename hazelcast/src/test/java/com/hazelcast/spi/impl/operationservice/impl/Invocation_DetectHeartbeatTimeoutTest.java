@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -120,7 +120,7 @@ public class Invocation_DetectHeartbeatTimeoutTest extends HazelcastTestSupport 
     /**
      * This test checks if the invocation expires eventually after the operation did manage to execute and did manage to send
      * some heartbeats but for whatever reason the response was not received.
-     *
+     * <p>
      * We do this by sending in a void operation that runs for an long period (so there are heartbeats) but on completion it
      * doesn't send a response.
      */

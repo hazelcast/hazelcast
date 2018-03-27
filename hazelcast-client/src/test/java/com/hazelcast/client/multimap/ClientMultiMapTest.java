@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -64,6 +64,7 @@ public class ClientMultiMapTest {
 
         assertTrue(mm.put(key, 1));
     }
+
 
     @Test(expected = NullPointerException.class)
     public void testPut_withNullValue() {
@@ -218,6 +219,16 @@ public class ClientMultiMapTest {
             boolean result = mm.remove(key, i);
             assertTrue(result);
         }
+    }
+
+    @Test
+    public void testVoidDelete() {
+        String key = "key";
+        MultiMap mm = client.getMultiMap(randomString());
+        mm.put(key, 4);
+        assertTrue(!mm.get(key).isEmpty());
+        mm.delete(key);
+        assertTrue(mm.get(key).isEmpty());
     }
 
     @Test(expected = UnsupportedOperationException.class)

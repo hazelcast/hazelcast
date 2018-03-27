@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.serialization.impl.bufferpool;
 
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.HeapData;
@@ -26,6 +27,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.version.Version;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -104,6 +106,16 @@ public class BufferPoolTest extends HazelcastTestSupport {
         verify(out, times(1)).close();
     }
 
+    @Test
+    public void takeOutputBuffer_whenPooledInstanceWithVersionSetIsReturned() {
+        BufferObjectDataOutput found1 = bufferPool.takeOutputBuffer();
+        assertEquals(Version.UNKNOWN, found1.getVersion());
+        found1.setVersion(Versions.CURRENT_CLUSTER_VERSION);
+        bufferPool.returnOutputBuffer(found1);
+        BufferObjectDataOutput found2 = bufferPool.takeOutputBuffer();
+        assertEquals(Version.UNKNOWN, found2.getVersion());
+    }
+
     // ======================= in ==========================================
 
     @Test
@@ -155,5 +167,17 @@ public class BufferPoolTest extends HazelcastTestSupport {
     public void returnInputBuffer_whenNull() {
         bufferPool.returnInputBuffer(null);
         assertEquals(0, bufferPool.inputQueue.size());
+    }
+
+    @Test
+    public void takeInputBuffer_whenPooledInstanceWithVersionSetIsReturned() {
+        Data data = new HeapData(new byte[]{});
+        BufferObjectDataInput found1 = bufferPool.takeInputBuffer(data);
+        assertEquals(Version.UNKNOWN, found1.getVersion());
+        found1.setVersion(Versions.CURRENT_CLUSTER_VERSION);
+
+        bufferPool.returnInputBuffer(found1);
+        BufferObjectDataInput found2 = bufferPool.takeInputBuffer(data);
+        assertEquals(Version.UNKNOWN, found2.getVersion());
     }
 }

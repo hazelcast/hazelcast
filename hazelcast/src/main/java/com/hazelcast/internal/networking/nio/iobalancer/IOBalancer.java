@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,9 @@
 package com.hazelcast.internal.networking.nio.iobalancer;
 
 import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.internal.networking.nio.MigratableHandler;
-import com.hazelcast.internal.networking.nio.NioChannelWriter;
-import com.hazelcast.internal.networking.nio.NioChannelReader;
+import com.hazelcast.internal.networking.nio.MigratablePipeline;
+import com.hazelcast.internal.networking.nio.NioInboundPipeline;
+import com.hazelcast.internal.networking.nio.NioOutboundPipeline;
 import com.hazelcast.internal.networking.nio.NioThread;
 import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.internal.util.counters.SwCounter;
@@ -35,22 +35,26 @@ import static com.hazelcast.spi.properties.GroupProperty.IO_THREAD_COUNT;
 /**
  * It attempts to detect and fix a selector imbalance problem.
  *
- * By default Hazelcast uses 3 threads to read data from TCP connections and 3 threads to write data to connections.
- * We have measured significant fluctuations of performance when the threads are not utilized equally.
+ * By default Hazelcast uses 3 threads to read data from TCP connections and
+ * 3 threads to write data to connections. We have measured significant fluctuations
+ * of performance when the threads are not utilized equally.
  *
- * <code>IOBalancer</code> tries to detect such situations and fix them by moving {@link NioChannelReader} and
- * {@link NioChannelWriter} between {@link NioThread} instances.
+ * <code>IOBalancer</code> tries to detect such situations and fix them by moving
+ * {@link NioInboundPipeline} and {@link NioOutboundPipeline} between {@link NioThread}
+ * instances.
  *
- * It measures number of events serviced by each handler in a given interval and if imbalance is detected then it
- * schedules handler migration to fix the situation. The exact migration strategy can be customized via
+ * It measures number of events serviced by each pipeline in a given interval and
+ * if imbalance is detected then it schedules pipeline migration to fix the situation.
+ * The exact migration strategy can be customized via
  * {@link com.hazelcast.internal.networking.nio.iobalancer.MigrationStrategy}.
  *
  * Measuring interval can be customized via {@link GroupProperty#IO_BALANCER_INTERVAL_SECONDS}
  *
  * It doesn't leverage {@link com.hazelcast.nio.ConnectionListener} capability
- * provided by {@link com.hazelcast.nio.ConnectionManager} to observe connections as it has to be notified
- * right after a physical TCP connection is created whilst <code>ConnectionListener</code> is notified only
- * after a successful (Hazelcast) binding process.
+ * provided by {@link com.hazelcast.nio.ConnectionManager} to observe connections
+ * as it has to be notified right after a physical TCP connection is created whilst
+ * <code>ConnectionListener</code> is notified only after a successful (Hazelcast)
+ * binding process.
  */
 public class IOBalancer {
     private static final String PROP_MONKEY_BALANCER = "hazelcast.io.balancer.monkey";
@@ -99,26 +103,26 @@ public class IOBalancer {
         return outLoadTracker;
     }
 
-    public void channelAdded(MigratableHandler readHandler, MigratableHandler writeHandler) {
+    public void channelAdded(MigratablePipeline inboundPipeline, MigratablePipeline outboundPipeline) {
         // if not enabled, then don't schedule tasks that will not get processed.
         // See https://github.com/hazelcast/hazelcast/issues/11501
         if (!enabled) {
             return;
         }
 
-        inLoadTracker.notifyHandlerAdded(readHandler);
-        outLoadTracker.notifyHandlerAdded(writeHandler);
+        inLoadTracker.notifyPipelineAdded(inboundPipeline);
+        outLoadTracker.notifyPipelineAdded(outboundPipeline);
     }
 
-    public void channelRemoved(MigratableHandler readHandler, MigratableHandler writeHandler) {
+    public void channelRemoved(MigratablePipeline inboundPipeline, MigratablePipeline outboundPipeline) {
         // if not enabled, then don't schedule tasks that will not get processed.
         // See https://github.com/hazelcast/hazelcast/issues/11501
         if (!enabled) {
             return;
         }
 
-        inLoadTracker.notifyHandlerRemoved(readHandler);
-        outLoadTracker.notifyHandlerRemoved(writeHandler);
+        inLoadTracker.notifyPipelineRemoved(inboundPipeline);
+        outLoadTracker.notifyPipelineRemoved(outboundPipeline);
     }
 
     public void start() {
@@ -134,11 +138,11 @@ public class IOBalancer {
         }
     }
 
-    void checkWriteHandlers() {
+    void checkOutboundPipelines() {
         scheduleMigrationIfNeeded(outLoadTracker);
     }
 
-    void checkReadHandlers() {
+    void checkInboundPipelines() {
         scheduleMigrationIfNeeded(inLoadTracker);
     }
 
@@ -149,10 +153,10 @@ public class IOBalancer {
             tryMigrate(loadImbalance);
         } else {
             if (logger.isFinestEnabled()) {
-                long min = loadImbalance.minimumEvents;
-                long max = loadImbalance.maximumEvents;
+                long min = loadImbalance.minimumLoad;
+                long max = loadImbalance.maximumLoad;
                 if (max == Long.MIN_VALUE) {
-                    logger.finest("There is at most 1 handler associated with each thread. "
+                    logger.finest("There is at most 1 pipeline associated with each thread. "
                             + "There is nothing to balance");
                 } else {
                     logger.finest("No imbalance has been detected. Max. events: " + max + " Min events: " + min + ".");
@@ -168,7 +172,7 @@ public class IOBalancer {
             return new MonkeyMigrationStrategy();
         } else {
             logger.finest("Using normal IO Balancer Strategy.");
-            return new EventCountBasicMigrationStrategy();
+            return new LoadMigrationStrategy();
         }
     }
 
@@ -193,23 +197,22 @@ public class IOBalancer {
     }
 
     private void tryMigrate(LoadImbalance loadImbalance) {
-        MigratableHandler handler = strategy.findHandlerToMigrate(loadImbalance);
-        if (handler == null) {
+        MigratablePipeline pipeline = strategy.findPipelineToMigrate(loadImbalance);
+        if (pipeline == null) {
             logger.finest("I/O imbalance is detected, but no suitable migration candidate is found.");
             return;
         }
 
-        NioThread destinationSelector = loadImbalance.destinationSelector;
+        NioThread dstOwner = loadImbalance.dstOwner;
         if (logger.isFinestEnabled()) {
-            NioThread sourceSelector = loadImbalance.sourceSelector;
-            logger.finest("Scheduling migration of handler " + handler
-                    + " from selector thread " + sourceSelector + " to " + destinationSelector);
+            NioThread srcOwner = loadImbalance.srcOwner;
+            logger.finest("Scheduling migration of pipeline " + pipeline
+                    + " from " + srcOwner + " to " + dstOwner);
         }
-        handler.requestMigration(destinationSelector);
+        pipeline.requestMigration(dstOwner);
     }
 
     public void signalMigrationComplete() {
         migrationCompletedCount.inc();
     }
-
 }

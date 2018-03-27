@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,7 +43,7 @@ public class ClientConfigValidatorTest extends HazelcastTestSupport {
     @Rule
     public ExpectedException thrown = ExpectedException.none();
 
-    private TestHazelcastFactory factory = new TestHazelcastFactory();;
+    private TestHazelcastFactory factory = new TestHazelcastFactory();
 
     @Test
     public void getMap_throws_illegalArgumentException_whenLocalUpdatePolicy_is_cacheOnUpdate() {

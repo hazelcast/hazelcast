@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -77,10 +77,7 @@ public abstract class OperationExecutorImpl_AbstractTest extends HazelcastTestSu
         loggingService = new LoggingServiceImpl("foo", "jdk", new BuildInfo("1", "1", "1", 1, false, (byte) 1));
 
         serializationService = new DefaultSerializationServiceBuilder().build();
-        config = new Config();
-        config.setProperty(PARTITION_COUNT.getName(), "10");
-        config.setProperty(PARTITION_OPERATION_THREAD_COUNT.getName(), "10");
-        config.setProperty(GENERIC_OPERATION_THREAD_COUNT.getName(), "10");
+        config = smallInstanceConfig();
         thisAddress = new Address("localhost", 5701);
         Node node = Mockito.mock(Node.class);
         when(node.getConfig()).thenReturn(config);

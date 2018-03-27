@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,14 +24,11 @@ import com.hazelcast.spi.serialization.SerializationService;
  */
 class DataQueryCacheRecord extends AbstractQueryCacheRecord {
 
-    private final Data keyData;
-
     private final Data valueData;
 
     private final SerializationService serializationService;
 
-    public DataQueryCacheRecord(Data keyData, Data valueData, SerializationService serializationService) {
-        this.keyData = keyData;
+    public DataQueryCacheRecord(Data valueData, SerializationService serializationService) {
         this.valueData = valueData;
         this.serializationService = serializationService;
     }
@@ -41,8 +38,4 @@ class DataQueryCacheRecord extends AbstractQueryCacheRecord {
         return serializationService.toObject(valueData);
     }
 
-    @Override
-    public final Data getKey() {
-        return keyData;
-    }
 }

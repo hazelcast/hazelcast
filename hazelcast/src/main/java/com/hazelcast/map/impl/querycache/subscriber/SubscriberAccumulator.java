@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,6 +54,10 @@ public class SubscriberAccumulator extends BasicAccumulator<QueryCacheEventData>
 
         this.handler = createAccumulatorHandler();
         this.sequenceProvider = createSequencerProvider();
+    }
+
+    public ConcurrentMap<Integer, Long> getBrokenSequences() {
+        return brokenSequences;
     }
 
     @Override
@@ -186,15 +190,11 @@ public class SubscriberAccumulator extends BasicAccumulator<QueryCacheEventData>
         handler.handle(eventData, false);
     }
 
-    protected SubscriberSequencerProvider createSequencerProvider() {
+    private SubscriberSequencerProvider createSequencerProvider() {
         return new DefaultSubscriberSequencerProvider();
     }
 
-    public ConcurrentMap<Integer, Long> getBrokenSequences() {
-        return brokenSequences;
-    }
-
-    public boolean isEndEvent(QueryCacheEventData event) {
+    private boolean isEndEvent(QueryCacheEventData event) {
         return event.getSequence() == -1L;
     }
 }

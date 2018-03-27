@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.ICountDownLatch;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.Partition;
 import com.hazelcast.core.PartitionService;
@@ -32,6 +33,7 @@ import com.hazelcast.instance.NodeExtension;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.impl.PartitionServiceState;
 import com.hazelcast.internal.serialization.InternalSerializationService;
@@ -48,6 +50,7 @@ import com.hazelcast.spi.impl.operationparker.impl.OperationParkerImpl;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.partition.IPartition;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.jitter.JitterRule;
@@ -87,11 +90,14 @@ import static java.util.Arrays.asList;
 import static java.util.UUID.randomUUID;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.junit.Assume.assumeFalse;
+import static org.junit.Assume.assumeTrue;
 
 /**
  * Base class for Hazelcast tests which provides a big number of convenient test methods.
@@ -103,6 +109,8 @@ import static org.junit.Assert.fail;
  */
 @SuppressWarnings({"unused", "SameParameterValue", "WeakerAccess"})
 public abstract class HazelcastTestSupport {
+
+    private static final boolean EXPECT_DIFFERENT_HASHCODES = (new Object().hashCode() != new Object().hashCode());
 
     public static final int ASSERT_TRUE_EVENTUALLY_TIMEOUT;
 
@@ -132,8 +140,21 @@ public abstract class HazelcastTestSupport {
     // ########## configuration ##########
     // ###################################
 
-    protected Config getConfig() {
+    public static Config smallInstanceConfig() {
+        // make the test instances consume less resources per default
+        return new Config()
+                .setProperty(GroupProperty.PARTITION_COUNT.getName(), "11")
+                .setProperty(GroupProperty.PARTITION_OPERATION_THREAD_COUNT.getName(), "2")
+                .setProperty(GroupProperty.GENERIC_OPERATION_THREAD_COUNT.getName(), "2")
+                .setProperty(GroupProperty.EVENT_THREAD_COUNT.getName(), "1");
+    }
+
+    public static Config regularInstanceConfig() {
         return new Config();
+    }
+
+    protected Config getConfig() {
+        return regularInstanceConfig();
     }
 
     // ###############################################
@@ -260,6 +281,21 @@ public abstract class HazelcastTestSupport {
                 .setConn(connectionManager.getConnection(getAddress(remote)));
     }
 
+    public static HazelcastInstance getFirstBackupInstance(HazelcastInstance[] instances, int partitionId) {
+        return getBackupInstance(instances, partitionId, 1);
+    }
+
+    public static HazelcastInstance getBackupInstance(HazelcastInstance[] instances, int partitionId, int replicaIndex) {
+        InternalPartition partition = getPartitionService(instances[0]).getPartition(partitionId);
+        Address backupAddress = partition.getReplicaAddress(replicaIndex);
+        for (HazelcastInstance instance : instances) {
+            if (instance.getCluster().getLocalMember().getAddress().equals(backupAddress)) {
+                return instance;
+            }
+        }
+        throw new AssertionError("Could not find backup member for partition " + partitionId);
+    }
+
     // #####################################
     // ########## generic utility ##########
     // #####################################
@@ -329,9 +365,9 @@ public abstract class HazelcastTestSupport {
 
     /**
      * Sleeps for the given amount of time and after that, sets stop to true.
-     *
+     * <p>
      * If stop is changed to true while sleeping, the calls returns before waiting the full sleeping period.
-     *
+     * <p>
      * This method is very useful for stress tests that run for a certain amount of time. But if one of the stress tests
      * runs into a failure, the test should be aborted immediately. This is done by letting the thread set stop to true.
      *
@@ -339,11 +375,18 @@ public abstract class HazelcastTestSupport {
      * @param durationSeconds sleep duration in seconds
      */
     public static void sleepAndStop(AtomicBoolean stop, long durationSeconds) {
+        final long startMillis = System.currentTimeMillis();
+
         for (int i = 0; i < durationSeconds; i++) {
             if (stop.get()) {
                 return;
             }
             sleepSeconds(1);
+
+            // if the system or JVM is really stressed we may oversleep to much and get a timeout
+            if (System.currentTimeMillis() - startMillis > SECONDS.toMillis(durationSeconds)) {
+                break;
+            }
         }
         stop.set(true);
     }
@@ -879,6 +922,15 @@ public abstract class HazelcastTestSupport {
         });
     }
 
+    public static void assertCompletesEventually(final Future future, long timeoutSeconds) {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertTrue("Future has not completed", future.isDone());
+            }
+        }, timeoutSeconds);
+    }
+
     public static void assertSizeEventually(int expectedSize, Collection collection) {
         assertSizeEventually(expectedSize, collection, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
     }
@@ -935,10 +987,10 @@ public abstract class HazelcastTestSupport {
     }
 
     public static void assertClusterSize(int expectedSize, HazelcastInstance... instances) {
-        for (HazelcastInstance instance : instances) {
-            int clusterSize = getClusterSize(instance);
+        for (int i = 0; i < instances.length; i++) {
+            int clusterSize = getClusterSize(instances[i]);
             if (expectedSize != clusterSize) {
-                fail(format("Cluster size is not correct. Expected: %d Actual: %d", expectedSize, clusterSize));
+                fail(format("Cluster size is not correct. Expected: %d, actual: %d, instance index: %d", expectedSize, clusterSize, i));
             }
         }
     }
@@ -949,6 +1001,12 @@ public abstract class HazelcastTestSupport {
     }
 
     public static void assertClusterSizeEventually(int expectedSize, HazelcastInstance... instances) {
+        for (HazelcastInstance instance : instances) {
+            assertClusterSizeEventually(expectedSize, instance, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
+        }
+    }
+
+    public static void assertClusterSizeEventually(int expectedSize, Collection<HazelcastInstance> instances) {
         for (HazelcastInstance instance : instances) {
             assertClusterSizeEventually(expectedSize, instance, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
         }
@@ -1001,15 +1059,27 @@ public abstract class HazelcastTestSupport {
         assertOpenEventually(latch, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
     }
 
+    public static void assertOpenEventually(ICountDownLatch latch) {
+        assertOpenEventually(latch, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
+    }
+
     public static void assertOpenEventually(String message, CountDownLatch latch) {
-        assertOpenEventually(message, latch, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
+        assertOpenEventually(message, new CountdownLatchAdapter(latch), ASSERT_TRUE_EVENTUALLY_TIMEOUT);
     }
 
     public static void assertOpenEventually(CountDownLatch latch, long timeoutSeconds) {
-        assertOpenEventually(null, latch, timeoutSeconds);
+        assertOpenEventually(null, new CountdownLatchAdapter(latch), timeoutSeconds);
+    }
+
+    public static void assertOpenEventually(ICountDownLatch latch, long timeoutSeconds) {
+        assertOpenEventually(null, new ICountdownLatchAdapter(latch), timeoutSeconds);
     }
 
     public static void assertOpenEventually(String message, CountDownLatch latch, long timeoutSeconds) {
+        assertOpenEventually(message, new CountdownLatchAdapter(latch), timeoutSeconds);
+    }
+
+    public static void assertOpenEventually(String message, Latch latch, long timeoutSeconds) {
         try {
             boolean completed = latch.await(timeoutSeconds, TimeUnit.SECONDS);
             if (message == null) {
@@ -1175,6 +1245,16 @@ public abstract class HazelcastTestSupport {
         assertEquals(format(message, expected, actual), expected, actual);
     }
 
+    public static void assertBetween(String label, long actualValue, long lowerBound, long upperBound) {
+        assertTrue(format("Expected %s between %d and %d, but was %d", label, lowerBound, upperBound, actualValue),
+                actualValue >= lowerBound && actualValue <= upperBound);
+    }
+
+    public static void assertGreaterOrEquals(String label, long actualValue, long lowerBound) {
+        assertTrue(format("Expected %s greater or equals %d, but was %d", label, lowerBound, actualValue),
+                actualValue >= lowerBound);
+    }
+
     public static void assertExactlyOneSuccessfulRun(AssertTask task) {
         assertExactlyOneSuccessfulRun(task, ASSERT_TRUE_EVENTUALLY_TIMEOUT, TimeUnit.SECONDS);
     }
@@ -1295,6 +1375,54 @@ public abstract class HazelcastTestSupport {
         }
     }
 
+    private interface Latch {
+        boolean await(long timeout, TimeUnit unit)
+                throws InterruptedException;
+        long getCount();
+    }
+
+    private static class ICountdownLatchAdapter
+            implements Latch {
+
+        private final ICountDownLatch latch;
+
+        ICountdownLatchAdapter(ICountDownLatch latch) {
+            this.latch = latch;
+        }
+
+        @Override
+        public boolean await(long timeout, TimeUnit unit)
+                throws InterruptedException {
+            return latch.await(timeout, unit);
+        }
+
+        @Override
+        public long getCount() {
+            return latch.getCount();
+        }
+    }
+
+    private static class CountdownLatchAdapter
+            implements Latch {
+
+        private final CountDownLatch latch;
+
+        CountdownLatchAdapter(CountDownLatch latch) {
+            this.latch = latch;
+        }
+
+        @Override
+        public boolean await(long timeout, TimeUnit unit)
+                throws InterruptedException {
+            return latch.await(timeout, unit);
+        }
+
+        @Override
+        public long getCount() {
+            return latch.getCount();
+        }
+    }
+
     // ############################################
     // ########## read from backup utils ##########
     // ############################################
@@ -1321,5 +1449,18 @@ public abstract class HazelcastTestSupport {
 
     protected MapOperationProvider getMapOperationProvider() {
         return new DefaultMapOperationProvider();
+    }
+
+    public static void assumeThatNoJDK6() {
+        String javaVersion = System.getProperty("java.version");
+        assumeFalse("Java 6 used", javaVersion.startsWith("1.6."));
+    }
+
+    /**
+     * Throws {@link org.junit.AssumptionViolatedException} if two new Objects have the same hashCode (e.g. when running tests
+     * with static hashCode ({@code -XX:hashCode=2}).
+     */
+    public static void assumeDifferentHashCodes() {
+        assumeTrue("Hash codes are equal for different objects", EXPECT_DIFFERENT_HASHCODES);
     }
 }

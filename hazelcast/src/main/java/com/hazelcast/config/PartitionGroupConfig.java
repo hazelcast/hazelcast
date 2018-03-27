@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -253,6 +253,34 @@ public class PartitionGroupConfig {
         this.memberGroupConfigs.clear();
         this.memberGroupConfigs.addAll(memberGroupConfigs);
         return this;
+    }
+
+    @Override
+    public final boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || !(o instanceof PartitionGroupConfig)) {
+            return false;
+        }
+
+        PartitionGroupConfig that = (PartitionGroupConfig) o;
+
+        if (enabled != that.enabled) {
+            return false;
+        }
+        if (groupType != that.groupType) {
+            return false;
+        }
+        return memberGroupConfigs.equals(that.memberGroupConfigs);
+    }
+
+    @Override
+    public final int hashCode() {
+        int result = (enabled ? 1 : 0);
+        result = 31 * result + (groupType != null ? groupType.hashCode() : 0);
+        result = 31 * result + memberGroupConfigs.hashCode();
+        return result;
     }
 
     @Override

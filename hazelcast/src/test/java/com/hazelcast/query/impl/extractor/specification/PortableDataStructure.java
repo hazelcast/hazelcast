@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,8 +39,12 @@ public class PortableDataStructure {
         public CarPortable(String name, EnginePortable engine) {
             this.name = name;
             this.engine = engine;
-            this.wheels = new Portable[]{new WheelPortable("FL"), new WheelPortable("FR"),
-                    new WheelPortable("RL"), new WheelPortable("RR")};
+            this.wheels = new Portable[]{
+                    new WheelPortable("FL"),
+                    new WheelPortable("FR"),
+                    new WheelPortable("RL"),
+                    new WheelPortable("RR"),
+            };
             this.model = new String[]{"911", "GT"};
         }
 
@@ -381,5 +385,4 @@ public class PortableDataStructure {
             }
         }
     }
-
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,13 +39,10 @@ import com.hazelcast.spi.impl.eventservice.impl.operations.DeregistrationOperati
 import com.hazelcast.spi.impl.eventservice.impl.operations.OnJoinRegistrationOperation;
 import com.hazelcast.spi.impl.eventservice.impl.operations.RegistrationOperationSupplier;
 import com.hazelcast.spi.impl.eventservice.impl.operations.SendEventOperation;
-import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.UuidUtil;
 import com.hazelcast.util.executor.StripedExecutor;
 import com.hazelcast.util.function.Supplier;
-import com.hazelcast.version.Version;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -59,12 +56,15 @@ import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.logging.Level;
 
-import static com.hazelcast.internal.cluster.Versions.V3_9;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.util.InvocationUtil.invokeOnStableClusterSerial;
 import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
+import static com.hazelcast.spi.properties.GroupProperty.EVENT_QUEUE_CAPACITY;
+import static com.hazelcast.spi.properties.GroupProperty.EVENT_QUEUE_TIMEOUT_MILLIS;
+import static com.hazelcast.spi.properties.GroupProperty.EVENT_SYNC_TIMEOUT_MILLIS;
+import static com.hazelcast.spi.properties.GroupProperty.EVENT_THREAD_COUNT;
+import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
-import static com.hazelcast.util.FutureUtil.ExceptionHandler;
 import static com.hazelcast.util.ThreadUtil.createThreadName;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
@@ -132,9 +132,6 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
     final ILogger logger;
     final NodeEngineImpl nodeEngine;
 
-    /** The exception handler for remote listener registrations (those sent to other cluster members) */
-    private final ExceptionHandler registrationExceptionHandler;
-    private final ExceptionHandler deregistrationExceptionHandler;
     /** Service name to event service segment map */
     private final ConcurrentMap<String, EventServiceSegment> segments;
     /** The executor responsible for processing events */
@@ -170,33 +167,31 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
         this.serializationService = (InternalSerializationService) nodeEngine.getSerializationService();
         this.logger = nodeEngine.getLogger(EventService.class.getName());
         HazelcastProperties hazelcastProperties = nodeEngine.getProperties();
-        this.eventThreadCount = hazelcastProperties.getInteger(GroupProperty.EVENT_THREAD_COUNT);
-        this.eventQueueCapacity = hazelcastProperties.getInteger(GroupProperty.EVENT_QUEUE_CAPACITY);
-        this.eventQueueTimeoutMs = hazelcastProperties.getMillis(GroupProperty.EVENT_QUEUE_TIMEOUT_MILLIS);
-        int eventSyncFrequency;
-        try {
-            eventSyncFrequency = Integer.parseInt(System.getProperty(EVENT_SYNC_FREQUENCY_PROP));
-            if (eventSyncFrequency <= 0) {
-                eventSyncFrequency = EVENT_SYNC_FREQUENCY;
-            }
-        } catch (Exception e) {
-            eventSyncFrequency = EVENT_SYNC_FREQUENCY;
-        }
-
-        this.sendEventSyncTimeoutMillis = hazelcastProperties.getInteger(GroupProperty.EVENT_SYNC_TIMEOUT_MILLIS);
-
-        this.eventSyncFrequency = eventSyncFrequency;
+        this.eventThreadCount = hazelcastProperties.getInteger(EVENT_THREAD_COUNT);
+        this.eventQueueCapacity = hazelcastProperties.getInteger(EVENT_QUEUE_CAPACITY);
+        this.eventQueueTimeoutMs = hazelcastProperties.getMillis(EVENT_QUEUE_TIMEOUT_MILLIS);
+        this.sendEventSyncTimeoutMillis = hazelcastProperties.getInteger(EVENT_SYNC_TIMEOUT_MILLIS);
+        this.eventSyncFrequency = loadEventSyncFrequency();
 
         this.eventExecutor = new StripedExecutor(
                 nodeEngine.getNode().getLogger(EventServiceImpl.class),
                 createThreadName(nodeEngine.getHazelcastInstance().getName(), "event"),
                 eventThreadCount,
                 eventQueueCapacity);
-        this.registrationExceptionHandler
-                = new FutureUtilExceptionHandler(logger, "Member left while registering listener...");
-        this.deregistrationExceptionHandler
-                = new FutureUtilExceptionHandler(logger, "Member left while de-registering listener...");
         this.segments = new ConcurrentHashMap<String, EventServiceSegment>();
+    }
+
+
+    private static int loadEventSyncFrequency() {
+        try {
+            int eventSyncFrequency = Integer.parseInt(System.getProperty(EVENT_SYNC_FREQUENCY_PROP));
+            if (eventSyncFrequency <= 0) {
+                eventSyncFrequency = EVENT_SYNC_FREQUENCY;
+            }
+            return eventSyncFrequency;
+        } catch (Exception e) {
+            return EVENT_SYNC_FREQUENCY;
+        }
     }
 
     @Override
@@ -216,7 +211,7 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
         try {
             ((Closeable) listener).close();
         } catch (IOException e) {
-            EmptyStatement.ignore(e);
+            ignore(e);
         }
     }
 
@@ -307,16 +302,16 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
 
     @Override
     public boolean deregisterListener(String serviceName, String topic, Object id) {
-        final EventServiceSegment segment = getSegment(serviceName, false);
-        if (segment != null) {
-            final Registration reg = segment.removeRegistration(topic, String.valueOf(id));
-            if (reg != null && !reg.isLocalOnly()) {
-                Supplier<Operation> supplier = new DeregistrationOperationSupplier(reg, nodeEngine.getClusterService());
-                invokeOnAllMembers(supplier);
-            }
-            return reg != null;
+        EventServiceSegment segment = getSegment(serviceName, false);
+        if (segment == null) {
+            return false;
         }
-        return false;
+        Registration reg = segment.removeRegistration(topic, String.valueOf(id));
+        if (reg != null && !reg.isLocalOnly()) {
+            Supplier<Operation> supplier = new DeregistrationOperationSupplier(reg, nodeEngine.getClusterService());
+            invokeOnAllMembers(supplier);
+        }
+        return reg != null;
     }
 
     private void invokeOnAllMembers(Supplier<Operation> operationSupplier) {
@@ -333,7 +328,7 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
 
     @Override
     public void deregisterAllListeners(String serviceName, String topic) {
-        final EventServiceSegment segment = getSegment(serviceName, false);
+        EventServiceSegment segment = getSegment(serviceName, false);
         if (segment != null) {
             segment.removeRegistrations(topic);
         }
@@ -345,16 +340,16 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
 
     @Override
     public EventRegistration[] getRegistrationsAsArray(String serviceName, String topic) {
-        final EventServiceSegment segment = getSegment(serviceName, false);
-        if (segment != null) {
-            final Collection<Registration> registrations = segment.getRegistrations(topic, false);
-            if (registrations == null || registrations.isEmpty()) {
-                return EMPTY_REGISTRATIONS;
-            } else {
-                return registrations.toArray(new Registration[registrations.size()]);
-            }
+        EventServiceSegment segment = getSegment(serviceName, false);
+        if (segment == null) {
+            return EMPTY_REGISTRATIONS;
         }
-        return EMPTY_REGISTRATIONS;
+        Collection<Registration> registrations = segment.getRegistrations(topic, false);
+        if (registrations == null || registrations.isEmpty()) {
+            return EMPTY_REGISTRATIONS;
+        } else {
+            return registrations.toArray(new Registration[registrations.size()]);
+        }
     }
 
     /**
@@ -367,25 +362,26 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
      */
     @Override
     public Collection<EventRegistration> getRegistrations(String serviceName, String topic) {
-        final EventServiceSegment segment = getSegment(serviceName, false);
-        if (segment != null) {
-            final Collection<Registration> registrations = segment.getRegistrations(topic, false);
-            if (registrations == null || registrations.isEmpty()) {
-                return Collections.<EventRegistration>emptySet();
-            } else {
-                return Collections.<EventRegistration>unmodifiableCollection(registrations);
-            }
+        EventServiceSegment segment = getSegment(serviceName, false);
+        if (segment == null) {
+            return Collections.emptySet();
         }
-        return Collections.emptySet();
+
+        Collection<Registration> registrations = segment.getRegistrations(topic, false);
+        if (registrations == null || registrations.isEmpty()) {
+            return Collections.<EventRegistration>emptySet();
+        } else {
+            return Collections.<EventRegistration>unmodifiableCollection(registrations);
+        }
     }
 
     @Override
     public boolean hasEventRegistration(String serviceName, String topic) {
-        final EventServiceSegment segment = getSegment(serviceName, false);
-        if (segment != null) {
-            return segment.hasRegistration(topic);
+        EventServiceSegment segment = getSegment(serviceName, false);
+        if (segment == null) {
+            return false;
         }
-        return false;
+        return segment.hasRegistration(topic);
     }
 
     @Override
@@ -467,22 +463,24 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
      * @see LocalEventDispatcher
      */
     private void executeLocal(String serviceName, Object event, EventRegistration registration, int orderKey) {
-        if (nodeEngine.isRunning()) {
-            Registration reg = (Registration) registration;
-            try {
-                if (reg.getListener() != null) {
-                    eventExecutor.execute(new LocalEventDispatcher(this, serviceName, event, reg.getListener()
-                            , orderKey, eventQueueTimeoutMs));
-                } else {
-                    logger.warning("Something seems wrong! Listener instance is null! -> " + reg);
-                }
-            } catch (RejectedExecutionException e) {
-                rejectedCount.inc();
+        if (!nodeEngine.isRunning()) {
+            return;
+        }
 
-                if (eventExecutor.isLive()) {
-                    logFailure("EventQueue overloaded! %s failed to publish to %s:%s",
-                            event, reg.getServiceName(), reg.getTopic());
-                }
+        Registration reg = (Registration) registration;
+        try {
+            if (reg.getListener() != null) {
+                eventExecutor.execute(new LocalEventDispatcher(this, serviceName, event, reg.getListener()
+                        , orderKey, eventQueueTimeoutMs));
+            } else {
+                logger.warning("Something seems wrong! Listener instance is null! -> " + reg);
+            }
+        } catch (RejectedExecutionException e) {
+            rejectedCount.inc();
+
+            if (eventExecutor.isLive()) {
+                logFailure("EventQueue overloaded! %s failed to publish to %s:%s",
+                        event, reg.getServiceName(), reg.getTopic());
             }
         }
     }
@@ -497,8 +495,8 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
      * exception (see {@link RemoteEventProcessor})
      */
     private void sendEvent(Address subscriber, EventEnvelope eventEnvelope, int orderKey) {
-        final String serviceName = eventEnvelope.getServiceName();
-        final EventServiceSegment segment = getSegment(serviceName, true);
+        String serviceName = eventEnvelope.getServiceName();
+        EventServiceSegment segment = getSegment(serviceName, true);
         boolean sync = segment.incrementPublish() % eventSyncFrequency == 0;
 
         if (sync) {
@@ -564,15 +562,16 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
      */
     @Override
     public void executeEventCallback(Runnable callback) {
-        if (nodeEngine.isRunning()) {
-            try {
-                eventExecutor.execute(callback);
-            } catch (RejectedExecutionException e) {
-                rejectedCount.inc();
+        if (!nodeEngine.isRunning()) {
+            return;
+        }
+        try {
+            eventExecutor.execute(callback);
+        } catch (RejectedExecutionException e) {
+            rejectedCount.inc();
 
-                if (eventExecutor.isLive()) {
-                    logFailure("EventQueue overloaded! Failed to execute event callback: %s", callback);
-                }
+            if (eventExecutor.isLive()) {
+                logFailure("EventQueue overloaded! Failed to execute event callback: %s", callback);
             }
         }
     }
@@ -603,10 +602,6 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
 
     @Override
     public Operation getPreJoinOperation() {
-        Version clusterVersion = nodeEngine.getClusterService().getClusterVersion();
-        if (clusterVersion.isLessThan(V3_9)) {
-            return null;
-        }
         // pre-join operations are only sent by master member
         return getOnJoinRegistrationOperation();
     }
@@ -614,10 +609,6 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
     @Override
     public Operation getPostJoinOperation() {
         ClusterService clusterService = nodeEngine.getClusterService();
-        Version clusterVersion = clusterService.getClusterVersion();
-        if (clusterVersion.isLessThan(V3_9)) {
-            return getOnJoinRegistrationOperation();
-        }
         // Send post join registration operation only if this is the newly joining member.
         // Master will send registrations with pre-join operation.
         return clusterService.isMaster() ? null : getOnJoinRegistrationOperation();
@@ -629,14 +620,9 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
      * @return the on join operation containing all non-local registrations
      */
     private OnJoinRegistrationOperation getOnJoinRegistrationOperation() {
-        final Collection<Registration> registrations = new LinkedList<Registration>();
+        Collection<Registration> registrations = new LinkedList<Registration>();
         for (EventServiceSegment segment : segments.values()) {
-            //todo: this should be moved into the Segment.
-            for (Registration reg : (Iterable<Registration>) segment.getRegistrationIdMap().values()) {
-                if (!reg.isLocalOnly()) {
-                    registrations.add(reg);
-                }
-            }
+            segment.collectRemoteRegistrations(registrations);
         }
         return registrations.isEmpty() ? null : new OnJoinRegistrationOperation(registrations);
     }
@@ -651,7 +637,7 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
     }
 
     public void onMemberLeft(MemberImpl member) {
-        final Address address = member.getAddress();
+        Address address = member.getAddress();
         for (EventServiceSegment segment : segments.values()) {
             segment.onMemberLeft(address);
         }

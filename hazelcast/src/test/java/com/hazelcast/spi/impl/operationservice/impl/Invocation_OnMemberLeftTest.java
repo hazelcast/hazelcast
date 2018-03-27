@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -89,12 +89,12 @@ public class Invocation_OnMemberLeftTest extends HazelcastTestSupport {
 
     @Test
     public void whenMemberRestarts_withSameAddress() throws Exception {
-       whenMemberRestarts(new Runnable() {
-           @Override
-           public void run() {
-               remote = instanceFactory.newHazelcastInstance(remoteMember.getAddress());
-           }
-       });
+        whenMemberRestarts(new Runnable() {
+            @Override
+            public void run() {
+                remote = instanceFactory.newHazelcastInstance(remoteMember.getAddress());
+            }
+        });
     }
 
     @Test

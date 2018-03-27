@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -124,7 +124,8 @@ public class TxnMapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, S
     private void waitForExpectedClusterSize() {
         Collection<HazelcastInstance> allHazelcastInstances = hazelcastFactory.getAllHazelcastInstances();
         List<HazelcastInstance> hazelcastInstanceList = new ArrayList<HazelcastInstance>(allHazelcastInstances);
-        HazelcastInstance[] hazelcastInstanceArray = hazelcastInstanceList.toArray(new HazelcastInstance[allHazelcastInstances.size()]);
+        HazelcastInstance[] hazelcastInstanceArray
+                = hazelcastInstanceList.toArray(new HazelcastInstance[allHazelcastInstances.size()]);
         assertClusterSizeEventually(nodeCount, hazelcastInstanceArray);
     }
 
@@ -136,7 +137,8 @@ public class TxnMapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, S
 
     protected Config createConfig(boolean withNearCache) {
         Config config = getConfig()
-                .setProperty(GroupProperty.PARTITION_COUNT.getName(), PARTITION_COUNT);
+                .setProperty(GroupProperty.PARTITION_COUNT.getName(), PARTITION_COUNT)
+                .setProperty(GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS.getName(), "1");
 
         if (withNearCache) {
             config.getMapConfig(DEFAULT_NEAR_CACHE_NAME).setNearCacheConfig(nearCacheConfig);
@@ -170,6 +172,8 @@ public class TxnMapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, S
         NearCacheTestContext<Integer, String, Data, String> context = createContext();
 
         waitForExpectedClusterSize();
+        waitAllForSafeState(hazelcastFactory.getAllHazelcastInstances());
+
         assertBackingIMapSize(context);
 
         // populate the data structure
@@ -245,5 +249,11 @@ public class TxnMapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, S
     @Override
     @Ignore(value = "This test doesn't work with the TransactionalMap due to its limited implementation")
     public void whenValueIsUpdated_thenAnotherNearCacheContextShouldBeInvalidated() {
+    }
+
+    @Test
+    @Override
+    @Ignore(value = "https://github.com/hazelcast/hazelcast/issues/11456")
+    public void whenGetIsUsed_thenNearCacheShouldBePopulated() {
     }
 }

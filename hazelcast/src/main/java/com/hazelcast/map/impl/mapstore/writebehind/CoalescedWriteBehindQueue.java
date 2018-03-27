@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.hazelcast.util.CollectionUtil.isEmpty;
+import static com.hazelcast.util.MapUtil.createLinkedHashMap;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
@@ -46,7 +47,7 @@ class CoalescedWriteBehindQueue implements WriteBehindQueue<DelayedEntry> {
             return;
         }
         int expectedCapacity = map.size() + collection.size();
-        Map<Data, DelayedEntry> newMap = createMapWithExpectedCapacity(expectedCapacity);
+        Map<Data, DelayedEntry> newMap = createLinkedHashMap(expectedCapacity);
         for (DelayedEntry next : collection) {
             newMap.put((Data) next.getKey(), next);
         }
@@ -158,11 +159,4 @@ class CoalescedWriteBehindQueue implements WriteBehindQueue<DelayedEntry> {
             delayedEntry.setStoreTime(currentStoreTime);
         }
     }
-
-    private static <K, V> Map<K, V> createMapWithExpectedCapacity(int expectedCapacity) {
-        final double defaultLoadFactor = 0.75;
-        int initialCapacity = (int) (expectedCapacity / defaultLoadFactor) + 1;
-        return new LinkedHashMap<K, V>(initialCapacity);
-    }
-
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,10 +19,11 @@ package com.hazelcast.query.impl;
 import com.hazelcast.nio.serialization.Data;
 
 import java.util.AbstractSet;
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
+
+import static com.hazelcast.util.MapUtil.createHashMap;
 
 public class DuplicateDetectingMultiResult extends AbstractSet<QueryableEntry> implements MultiResultSet {
     private Map<Data, QueryableEntry> records;
@@ -30,7 +31,7 @@ public class DuplicateDetectingMultiResult extends AbstractSet<QueryableEntry> i
     @Override
     public void addResultSet(Map<Data, QueryableEntry> resultSet) {
         if (records == null) {
-            records = new HashMap<Data, QueryableEntry>(resultSet.size());
+            records = createHashMap(resultSet.size());
         }
 
         for (Map.Entry<Data, QueryableEntry> entry : resultSet.entrySet()) {
@@ -53,10 +54,9 @@ public class DuplicateDetectingMultiResult extends AbstractSet<QueryableEntry> i
     @Override
     public Iterator<QueryableEntry> iterator() {
         if (records == null) {
-            return new HashSet<QueryableEntry>().iterator();
-        } else {
-            return records.values().iterator();
+            return Collections.<QueryableEntry>emptyList().iterator();
         }
+        return records.values().iterator();
     }
 
     @Override

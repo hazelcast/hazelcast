@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,8 +27,10 @@ import com.hazelcast.durableexecutor.impl.operations.RetrieveResultOperation;
 import com.hazelcast.durableexecutor.impl.operations.ShutdownOperation;
 import com.hazelcast.durableexecutor.impl.operations.TaskOperation;
 import com.hazelcast.executor.impl.RunnableAdapter;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.quorum.QuorumException;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.InternalCompletableFuture;
@@ -55,15 +57,31 @@ import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 
 import static com.hazelcast.durableexecutor.impl.DistributedDurableExecutorService.SERVICE_NAME;
-import static com.hazelcast.util.FutureUtil.logAllExceptions;
+import static com.hazelcast.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 public class DurableExecutorServiceProxy extends AbstractDistributedObject<DistributedDurableExecutorService>
         implements DurableExecutorService {
 
-    private static final FutureUtil.ExceptionHandler WHILE_SHUTDOWN_EXCEPTION_HANDLER =
-            logAllExceptions("Exception while ExecutorService shutdown", Level.FINEST);
+    private final FutureUtil.ExceptionHandler shutdownExceptionHandler = new FutureUtil.ExceptionHandler() {
+        @Override
+        public void handleException(Throwable throwable) {
+            if (throwable != null) {
+                if (throwable instanceof QuorumException) {
+                    sneakyThrow(throwable);
+                }
+                if (throwable.getCause() instanceof QuorumException) {
+                    sneakyThrow(throwable.getCause());
+                }
+            }
+            if (logger.isLoggable(Level.FINEST)) {
+                logger.log(Level.FINEST, "Exception while ExecutorService shutdown", throwable);
+            }
+        }
+    };
+
+    private final ILogger logger;
 
     private final Random random = new Random();
 
@@ -74,6 +92,7 @@ public class DurableExecutorServiceProxy extends AbstractDistributedObject<Distr
     DurableExecutorServiceProxy(NodeEngine nodeEngine, DistributedDurableExecutorService service, String name) {
         super(nodeEngine, service);
         this.name = name;
+        this.logger = nodeEngine.getLogger(DurableExecutorServiceProxy.class);
         this.partitionCount = nodeEngine.getPartitionService().getPartitionCount();
     }
 
@@ -182,16 +201,12 @@ public class DurableExecutorServiceProxy extends AbstractDistributedObject<Distr
         Collection<Future> calls = new LinkedList<Future>();
 
         for (Member member : members) {
-            if (member.localMember()) {
-                getService().shutdownExecutor(name);
-            } else {
-                ShutdownOperation op = new ShutdownOperation(name);
-                Future f = operationService.invokeOnTarget(SERVICE_NAME, op, member.getAddress());
-                calls.add(f);
-            }
+            ShutdownOperation op = new ShutdownOperation(name);
+            Future f = operationService.invokeOnTarget(SERVICE_NAME, op, member.getAddress());
+            calls.add(f);
         }
 
-        waitWithDeadline(calls, 1, TimeUnit.SECONDS, WHILE_SHUTDOWN_EXCEPTION_HANDLER);
+        waitWithDeadline(calls, 3, TimeUnit.SECONDS, shutdownExceptionHandler);
     }
 
     @Override

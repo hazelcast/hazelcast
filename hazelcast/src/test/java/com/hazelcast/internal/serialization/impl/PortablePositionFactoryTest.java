@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.EmptyStatement;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -292,8 +291,10 @@ public class PortablePositionFactoryTest extends HazelcastTestSupport {
         // GIVEN
         FieldDefinition fd = new FieldDefinitionImpl(1, "field", FieldType.PORTABLE, 0);
         int streamPosition = 100;
-        int factoryId = 123, classId = 546;
-        boolean nil = false, leaf = true;
+        int factoryId = 123;
+        int classId = 546;
+        boolean nil = false;
+        boolean leaf = true;
 
         // WHEN
         PortablePosition p = PortablePositionFactory.createSinglePortablePosition(fd, streamPosition, factoryId,
@@ -325,8 +326,10 @@ public class PortablePositionFactoryTest extends HazelcastTestSupport {
         // GIVEN
         FieldDefinition fd = new FieldDefinitionImpl(1, "field", FieldType.PORTABLE, 0);
         int streamPosition = 100;
-        int factoryId = 123, classId = 546;
-        int index = 27, len = 30;
+        int factoryId = 123;
+        int classId = 546;
+        int index = 27;
+        int len = 30;
         boolean leaf = true;
 
         // WHEN
@@ -358,8 +361,10 @@ public class PortablePositionFactoryTest extends HazelcastTestSupport {
         // GIVEN
         FieldDefinition fd = new FieldDefinitionImpl(1, "field", FieldType.PORTABLE, 0);
         int streamPosition = 100;
-        int factoryId = 123, classId = 546;
-        int index = 1, len = 0;
+        int factoryId = 123;
+        int classId = 546;
+        int index = 1;
+        int len = 0;
         boolean leaf = true;
 
         // WHEN
@@ -421,7 +426,7 @@ public class PortablePositionFactoryTest extends HazelcastTestSupport {
             portablePosition.asMultiPosition();
             fail("expected IllegalArgumentException");
         } catch (IllegalArgumentException expected) {
-            EmptyStatement.ignore(expected);
+            ignore(expected);
         }
     }
 }

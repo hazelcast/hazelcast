@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -126,7 +126,7 @@ public interface NearCacheRecord<V> extends Expirable, Evictable<V> {
     void setUuid(UUID uuid);
 
     /**
-     * @return {@code true} if supplied uuid equals existing one, otherwise and when one of supplied
+     * @return {@code true} if supplied UUID equals existing one, otherwise and when one of supplied
      * or existing is null returns {@code false}
      */
     boolean hasSameUuid(UUID uuid);

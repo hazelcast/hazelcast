@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.Clock;
 
@@ -36,7 +37,9 @@ import java.util.List;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.unmodifiableList;
 
-public class MembersUpdateOp extends VersionedClusterOperation {
+// RU_COMPAT_39: Do not remove Versioned interface!
+// Version info is needed on 3.9 members while deserializing the operation.
+public class MembersUpdateOp extends AbstractClusterOperation implements Versioned {
     /** The master cluster clock time. */
     long masterTime = Clock.currentTimeMillis();
     /** The updated member info collection. */
@@ -45,36 +48,42 @@ public class MembersUpdateOp extends VersionedClusterOperation {
     private String targetUuid;
     private boolean returnResponse;
     private PartitionRuntimeState partitionRuntimeState;
+    private int memberListVersion;
 
     public MembersUpdateOp() {
-        super(0);
         memberInfos = emptyList();
     }
 
     public MembersUpdateOp(String targetUuid, MembersView membersView, long masterTime,
                            PartitionRuntimeState partitionRuntimeState, boolean returnResponse) {
-        super(membersView.getVersion());
         this.targetUuid = targetUuid;
         this.masterTime = masterTime;
         this.memberInfos = membersView.getMembers();
         this.returnResponse = returnResponse;
         this.partitionRuntimeState = partitionRuntimeState;
+        this.memberListVersion = membersView.getVersion();
     }
 
     @Override
     public void run() throws Exception {
-        checkLocalMemberUuid();
-
         ClusterServiceImpl clusterService = getService();
         Address callerAddress = getConnectionEndpointOrThisAddress();
         String callerUuid = getCallerUuid();
-        if (clusterService.updateMembers(getMembersView(), callerAddress, callerUuid)) {
+        if (clusterService.updateMembers(getMembersView(), callerAddress, callerUuid, targetUuid)) {
             processPartitionState();
         }
     }
 
+    final int getMemberListVersion() {
+        return memberListVersion;
+    }
+
     final MembersView getMembersView() {
         return new MembersView(getMemberListVersion(), unmodifiableList(memberInfos));
+    }
+
+    final String getTargetUuid() {
+        return targetUuid;
     }
 
     final Address getConnectionEndpointOrThisAddress() {
@@ -96,20 +105,11 @@ public class MembersUpdateOp extends VersionedClusterOperation {
         node.partitionService.processPartitionRuntimeState(partitionRuntimeState);
     }
 
-    final void checkLocalMemberUuid() {
-        ClusterServiceImpl clusterService = getService();
-        if (!clusterService.getThisUuid().equals(targetUuid)) {
-            String msg = "targetUuid: " + targetUuid + " is different than this node's uuid: " + clusterService.getThisUuid();
-            throw new IllegalStateException(msg);
-        }
-    }
-
     @Override
     public final boolean returnsResponse() {
         return returnResponse;
     }
 
-    @Override
     protected void readInternalImpl(ObjectDataInput in) throws IOException {
         targetUuid = in.readUTF();
         masterTime = in.readLong();
@@ -126,6 +126,11 @@ public class MembersUpdateOp extends VersionedClusterOperation {
     }
 
     @Override
+    protected final void readInternal(ObjectDataInput in) throws IOException {
+        readInternalImpl(in);
+        memberListVersion = in.readInt();
+    }
+
     protected void writeInternalImpl(ObjectDataOutput out) throws IOException {
         out.writeUTF(targetUuid);
         out.writeLong(masterTime);
@@ -135,6 +140,12 @@ public class MembersUpdateOp extends VersionedClusterOperation {
         }
         out.writeObject(partitionRuntimeState);
         out.writeBoolean(returnResponse);
+    }
+
+    @Override
+    protected final void writeInternal(ObjectDataOutput out) throws IOException {
+        writeInternalImpl(out);
+        out.writeInt(memberListVersion);
     }
 
     @Override

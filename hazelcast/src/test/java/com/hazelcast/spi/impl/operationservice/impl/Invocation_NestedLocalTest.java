@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -109,7 +109,8 @@ public class Invocation_NestedLocalTest extends Invocation_NestedAbstractTest {
         int innerPartitionId = 0;
         InnerOperation innerOperation = new InnerOperation(RESPONSE, innerPartitionId);
         OuterOperation outerOperation = new OuterOperation(innerOperation, outerPartitionId);
-        InternalCompletableFuture future = operationService.invokeOnPartition(null, outerOperation, outerOperation.getPartitionId());
+        InternalCompletableFuture future
+                = operationService.invokeOnPartition(null, outerOperation, outerOperation.getPartitionId());
 
         expected.expect(IllegalThreadStateException.class);
         expected.expectMessage("cannot make remote call");

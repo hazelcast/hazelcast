@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,11 +28,11 @@ import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.ServiceNamespaceAware;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
-import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
-import java.util.HashSet;
 import java.util.Set;
+
+import static com.hazelcast.util.SetUtil.createHashSet;
 
 /**
  * Backup operation of {@link com.hazelcast.cache.impl.operation.CacheRemoveAllOperation}.
@@ -40,7 +40,7 @@ import java.util.Set;
  */
 public class CacheRemoveAllBackupOperation
         extends AbstractNamedOperation
-        implements BackupOperation, ServiceNamespaceAware, IdentifiedDataSerializable, MutatingOperation {
+        implements BackupOperation, ServiceNamespaceAware, IdentifiedDataSerializable {
 
     private Set<Data> keys;
 
@@ -123,7 +123,7 @@ public class CacheRemoveAllBackupOperation
         boolean isKeysNotNull = in.readBoolean();
         if (isKeysNotNull) {
             int size = in.readInt();
-            keys = new HashSet<Data>(size);
+            keys = createHashSet(size);
             for (int i = 0; i < size; i++) {
                 Data key = in.readData();
                 keys.add(key);

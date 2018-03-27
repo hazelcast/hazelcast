@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package com.hazelcast.quorum.lock;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ILock;
-import com.hazelcast.quorum.BaseQuorumListenerTest;
+import com.hazelcast.quorum.AbstractQuorumListenerTest;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -31,7 +31,12 @@ import java.util.concurrent.CountDownLatch;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class LockQuorumListenerTest extends BaseQuorumListenerTest {
+public class LockQuorumListenerTest extends AbstractQuorumListenerTest {
+
+    @Override
+    protected void addQuorumConfig(Config config, String distributedObjectName, String quorumName) {
+        config.getLockConfig(distributedObjectName).setQuorumName(quorumName);
+    }
 
     @Test
     public void testQuorumFailureEventFiredWhenNodeCountBelowThreshold() {
@@ -46,10 +51,5 @@ public class LockQuorumListenerTest extends BaseQuorumListenerTest {
             expected.printStackTrace();
         }
         assertOpenEventually(quorumNotPresent, 15);
-    }
-
-    @Override
-    protected void addQuorumConfig(Config config, String distributedObjectName, String quorumName) {
-        config.getLockConfig(distributedObjectName).setQuorumName(quorumName);
     }
 }

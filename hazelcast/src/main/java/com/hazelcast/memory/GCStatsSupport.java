@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,25 +18,31 @@ package com.hazelcast.memory;
 
 import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
-import java.util.HashSet;
+import java.util.Collections;
 import java.util.Set;
+
+import static com.hazelcast.util.SetUtil.createHashSet;
 
 /**
  * Used to gather garbage collection statistics.
  */
 public final class GCStatsSupport {
 
-    private static final Set<String> YOUNG_GC = new HashSet<String>(3);
-    private static final Set<String> OLD_GC = new HashSet<String>(3);
+    private static final Set<String> YOUNG_GC;
+    private static final Set<String> OLD_GC;
 
     static {
-        YOUNG_GC.add("PS Scavenge");
-        YOUNG_GC.add("ParNew");
-        YOUNG_GC.add("G1 Young Generation");
+        final Set<String> youngGC = createHashSet(3);
+        youngGC.add("PS Scavenge");
+        youngGC.add("ParNew");
+        youngGC.add("G1 Young Generation");
+        YOUNG_GC = Collections.unmodifiableSet(youngGC);
 
-        OLD_GC.add("PS MarkSweep");
-        OLD_GC.add("ConcurrentMarkSweep");
-        OLD_GC.add("G1 Old Generation");
+        final Set<String> oldGC = createHashSet(3);
+        oldGC.add("PS MarkSweep");
+        oldGC.add("ConcurrentMarkSweep");
+        oldGC.add("G1 Old Generation");
+        OLD_GC = Collections.unmodifiableSet(oldGC);
     }
 
     /**

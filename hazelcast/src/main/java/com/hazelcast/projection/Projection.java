@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,8 +24,7 @@ import java.io.Serializable;
  * <p>
  * Only 1:1 transformations allowed. Use an Aggregator to perform N:1 or N:M aggregations.
  * <p>
- * <pre>
- * <code>
+ * <pre>{@code
  *      IMap<String, Employee> employees = instance.getMap("employees");
  *
  *      Collection<String> names = employees.project(new Projection<Map.Entry<String,Employee>,String>(){
@@ -34,8 +33,7 @@ import java.io.Serializable;
  *              return entry.getValue().getName();
  *          }
  *      });
- * </code>
- * </pre>
+ * }</pre>
  *
  * @param <I> input type
  * @param <O> output type

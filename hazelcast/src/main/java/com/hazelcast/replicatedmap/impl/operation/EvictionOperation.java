@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package com.hazelcast.replicatedmap.impl.operation;
 
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
+import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.util.scheduler.ScheduledEntry;
 
 import java.util.Collection;
@@ -24,7 +25,7 @@ import java.util.Collection;
 /**
  * Evicts set of entries from the record store. Runs locally.
  */
-public class EvictionOperation extends AbstractSerializableOperation {
+public class EvictionOperation extends AbstractNamedSerializableOperation implements MutatingOperation {
 
     private ReplicatedRecordStore store;
     private Collection<ScheduledEntry<Object, Object>> entries;
@@ -53,5 +54,10 @@ public class EvictionOperation extends AbstractSerializableOperation {
     @Override
     public int getId() {
         return ReplicatedMapDataSerializerHook.EVICTION;
+    }
+
+    @Override
+    public String getName() {
+        return store.getName();
     }
 }

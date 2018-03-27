@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -83,12 +83,13 @@ public class MapMaxSizeConfigTest extends HazelcastTestSupport {
 
     @Test
     public void testEquals() {
+        assumeDifferentHashCodes();
         EqualsVerifier.forClass(MaxSizeConfig.class)
-                      .allFieldsShouldBeUsedExcept("readOnly")
-                      .suppress(Warning.NONFINAL_FIELDS)
-                      .withPrefabValues(MaxSizeConfigReadOnly.class,
-                              new MaxSizeConfigReadOnly(new MaxSizeConfig(100, MaxSizeConfig.MaxSizePolicy.PER_PARTITION)),
-                              new MaxSizeConfigReadOnly(new MaxSizeConfig(50, MaxSizeConfig.MaxSizePolicy.FREE_HEAP_PERCENTAGE)))
-                      .verify();
+                .allFieldsShouldBeUsedExcept("readOnly")
+                .suppress(Warning.NONFINAL_FIELDS)
+                .withPrefabValues(MaxSizeConfigReadOnly.class,
+                        new MaxSizeConfigReadOnly(new MaxSizeConfig(100, MaxSizeConfig.MaxSizePolicy.PER_PARTITION)),
+                        new MaxSizeConfigReadOnly(new MaxSizeConfig(50, MaxSizeConfig.MaxSizePolicy.FREE_HEAP_PERCENTAGE)))
+                .verify();
     }
 }

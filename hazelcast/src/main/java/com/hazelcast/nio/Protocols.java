@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,12 +25,17 @@ import com.hazelcast.spi.annotation.PrivateApi;
 public final class Protocols {
 
     /**
+     * The length in bytes of the of the protocol-string
+     */
+    public static final int PROTOCOL_LENGTH = 3;
+
+    /**
      * Protocol that is used among nodes
      */
     public static final String CLUSTER = "HZC";
 
     /**
-     * New Client Protocol that is used for clients(java, c++, c# client)
+     * New Client Protocol that is used for clients (Java, c++, c# client)
      */
     public static final String CLIENT_BINARY_NEW = "CB2";
 

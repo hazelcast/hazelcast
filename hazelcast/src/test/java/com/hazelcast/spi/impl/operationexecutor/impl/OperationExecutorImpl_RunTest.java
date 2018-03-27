@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,7 +60,8 @@ public class OperationExecutorImpl_RunTest extends OperationExecutorImpl_Abstrac
         config.setProperty(PRIORITY_GENERIC_OPERATION_THREAD_COUNT.getName(), "0");
         initExecutor();
 
-        final DummyOperationRunner genericOperationHandler = ((DummyOperationRunnerFactory) handlerFactory).genericOperationHandlers.get(0);
+        final DummyOperationRunner genericOperationHandler
+                = ((DummyOperationRunnerFactory) handlerFactory).genericOperationHandlers.get(0);
         final DummyGenericOperation genericOperation = new DummyGenericOperation();
 
         PartitionSpecificCallable task = new PartitionSpecificCallable(GENERIC_PARTITION_ID) {

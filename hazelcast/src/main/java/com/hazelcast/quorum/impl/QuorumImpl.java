@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,13 @@
 package com.hazelcast.quorum.impl;
 
 import com.hazelcast.config.QuorumConfig;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.HazelcastInstanceAware;
+import com.hazelcast.core.ManagedContext;
 import com.hazelcast.core.Member;
+import com.hazelcast.core.MembershipEvent;
+import com.hazelcast.core.MembershipListener;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.ClassLoaderUtil;
+import com.hazelcast.quorum.HeartbeatAware;
+import com.hazelcast.quorum.PingAware;
 import com.hazelcast.quorum.Quorum;
 import com.hazelcast.quorum.QuorumEvent;
 import com.hazelcast.quorum.QuorumException;
@@ -33,14 +35,19 @@ import com.hazelcast.spi.ReadonlyOperation;
 import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.InternalEventService;
-import com.hazelcast.util.ExceptionUtil;
 
 import java.util.Collection;
 
-import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
+import static com.hazelcast.nio.ClassLoaderUtil.newInstance;
+import static com.hazelcast.util.ExceptionUtil.rethrow;
 
 /**
  * {@link QuorumImpl} can be used to notify quorum service for a particular quorum result that originated externally.
+ *
+ * IMPORTANT: The term "quorum" simply refers to the count of members in the cluster required for an operation to succeed.
+ * It does NOT refer to an implementation of Paxos or Raft protocols as used in many NoSQL and distributed systems.
+ * The mechanism it provides in Hazelcast protects the user in case the number of nodes in a cluster drops below the
+ * specified one.
  */
 public class QuorumImpl implements Quorum {
 
@@ -50,34 +57,43 @@ public class QuorumImpl implements Quorum {
         ABSENT
     }
 
-
     private final NodeEngineImpl nodeEngine;
     private final String quorumName;
     private final int size;
     private final QuorumConfig config;
     private final InternalEventService eventService;
-    private QuorumFunction quorumFunction;
+    private final QuorumFunction quorumFunction;
+    private final boolean heartbeatAwareQuorumFunction;
+    private final boolean pingAwareQuorumFunction;
+    private final boolean membershipListenerQuorumFunction;
 
-    // we are updating the quorum state within the single thread of membership event executor
+    /**
+     * Current quorum state. Updated by single thread, read by multiple threads.
+     */
     private volatile QuorumState quorumState = QuorumState.INITIAL;
 
-    public QuorumImpl(QuorumConfig config, NodeEngineImpl nodeEngine) {
+    QuorumImpl(QuorumConfig config, NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
         this.eventService = nodeEngine.getEventService();
         this.config = config;
         this.quorumName = config.getName();
         this.size = config.getSize();
-        initializeQuorumFunction(nodeEngine.getHazelcastInstance());
+        this.quorumFunction = initializeQuorumFunction();
+        this.heartbeatAwareQuorumFunction = (quorumFunction instanceof HeartbeatAware);
+        this.membershipListenerQuorumFunction = (quorumFunction instanceof MembershipListener);
+        this.pingAwareQuorumFunction = (quorumFunction instanceof PingAware);
     }
 
     /**
      * Determines if the quorum is present for the given member collection, caches the result and publishes an event under
      * the {@link #quorumName} topic if there was a change in presence.
+     * <p/>
+     * <strong>This method is not thread safe and should not be called concurrently.</strong>
      *
      * @param members the members for which the presence is determined
      */
     void update(Collection<Member> members) {
-        QuorumState previousQuorumState = this.quorumState;
+        QuorumState previousQuorumState = quorumState;
         QuorumState newQuorumState = QuorumState.ABSENT;
         try {
             boolean present = quorumFunction.apply(members);
@@ -88,10 +104,50 @@ public class QuorumImpl implements Quorum {
                     + newQuorumState, e);
         }
 
-        this.quorumState = newQuorumState;
+        quorumState = newQuorumState;
         if (previousQuorumState != newQuorumState) {
             createAndPublishEvent(members, newQuorumState == QuorumState.PRESENT);
         }
+    }
+
+    /**
+     * Notify a {@link HeartbeatAware} {@code QuorumFunction} that a heartbeat has been received from a member.
+     *
+     * @param member    source member
+     * @param timestamp heartbeat's timestamp
+     */
+    void onHeartbeat(Member member, long timestamp) {
+        if (!heartbeatAwareQuorumFunction) {
+            return;
+        }
+        ((HeartbeatAware) quorumFunction).onHeartbeat(member, timestamp);
+    }
+
+    void onPing(Member member, boolean successful) {
+        if (!pingAwareQuorumFunction) {
+            return;
+        }
+        PingAware pingAware = (PingAware) quorumFunction;
+        if (successful) {
+            pingAware.onPingRestored(member);
+        } else {
+            pingAware.onPingLost(member);
+        }
+
+    }
+
+    void onMemberAdded(MembershipEvent event) {
+        if (!membershipListenerQuorumFunction) {
+            return;
+        }
+        ((MembershipListener) quorumFunction).memberAdded(event);
+    }
+
+    void onMemberRemoved(MembershipEvent event) {
+        if (!membershipListenerQuorumFunction) {
+            return;
+        }
+        ((MembershipListener) quorumFunction).memberRemoved(event);
     }
 
     public String getName() {
@@ -109,6 +165,26 @@ public class QuorumImpl implements Quorum {
     @Override
     public boolean isPresent() {
         return quorumState == QuorumState.PRESENT;
+    }
+
+    /**
+     * Indicates whether the {@link #quorumFunction} is {@link HeartbeatAware}. If so, then member heartbeats will be published
+     * to the {@link #quorumFunction}.
+     *
+     * @return {@code true} when the {@link #quorumFunction} implements {@link HeartbeatAware}, otherwise {@code false}
+     */
+    boolean isHeartbeatAware() {
+        return heartbeatAwareQuorumFunction;
+    }
+
+    /**
+     * Indicates whether the {@link #quorumFunction} is {@link PingAware}. If so, then ICMP pings will be published
+     * to the {@link #quorumFunction}.
+     *
+     * @return {@code true} when the {@link #quorumFunction} implements {@link PingAware}, otherwise {@code false}
+     */
+    boolean isPingAware() {
+        return pingAwareQuorumFunction;
     }
 
     /**
@@ -153,19 +229,17 @@ public class QuorumImpl implements Quorum {
         if (!isQuorumNeeded(op)) {
             return;
         }
+        ensureQuorumPresent();
+    }
 
+    void ensureQuorumPresent() {
         if (!isPresent()) {
             throw newQuorumException();
         }
     }
 
     private QuorumException newQuorumException() {
-        if (size == 0) {
-            throw new QuorumException("Cluster quorum failed");
-        }
-        Collection<Member> memberList = nodeEngine.getClusterService().getMembers(DATA_MEMBER_SELECTOR);
-        throw new QuorumException("Cluster quorum failed, quorum minimum size: "
-                + size + ", current size: " + memberList.size());
+        throw new QuorumException("Split brain protection exception: " + quorumName + " has failed!");
     }
 
     private void createAndPublishEvent(Collection<Member> memberList, boolean presence) {
@@ -173,30 +247,21 @@ public class QuorumImpl implements Quorum {
         eventService.publishEvent(QuorumServiceImpl.SERVICE_NAME, quorumName, quorumEvent, quorumEvent.hashCode());
     }
 
-    private void initializeQuorumFunction(HazelcastInstance hazelcastInstance) {
-        if (config.getQuorumFunctionImplementation() != null) {
-            quorumFunction = config.getQuorumFunctionImplementation();
-        } else if (config.getQuorumFunctionClassName() != null) {
+    private QuorumFunction initializeQuorumFunction() {
+        QuorumFunction quorumFunction = config.getQuorumFunctionImplementation();
+        if (quorumFunction == null && config.getQuorumFunctionClassName() != null) {
             try {
-                quorumFunction = ClassLoaderUtil
-                        .newInstance(nodeEngine.getConfigClassLoader(), config.getQuorumFunctionClassName());
+                quorumFunction = newInstance(nodeEngine.getConfigClassLoader(), config.getQuorumFunctionClassName());
             } catch (Exception e) {
-                throw ExceptionUtil.rethrow(e);
+                throw rethrow(e);
             }
         }
         if (quorumFunction == null) {
-            quorumFunction = new MemberCountQuorumFunction();
+            quorumFunction = new MemberCountQuorumFunction(size);
         }
-        if (quorumFunction instanceof HazelcastInstanceAware) {
-            ((HazelcastInstanceAware) quorumFunction).setHazelcastInstance(hazelcastInstance);
-        }
-    }
-
-    private class MemberCountQuorumFunction implements QuorumFunction {
-        @Override
-        public boolean apply(Collection<Member> members) {
-            return members.size() >= size;
-        }
+        ManagedContext managedContext = nodeEngine.getSerializationService().getManagedContext();
+        quorumFunction = (QuorumFunction) managedContext.initialize(quorumFunction);
+        return quorumFunction;
     }
 
     @Override

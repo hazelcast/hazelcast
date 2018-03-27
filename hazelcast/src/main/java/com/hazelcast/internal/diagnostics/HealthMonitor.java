@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,6 @@ import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.memory.MemoryStats;
 import com.hazelcast.spi.properties.GroupProperty;
-import com.hazelcast.util.EmptyStatement;
 
 import static com.hazelcast.internal.diagnostics.HealthMonitorLevel.OFF;
 import static com.hazelcast.internal.diagnostics.HealthMonitorLevel.valueOf;
@@ -34,6 +33,7 @@ import static com.hazelcast.spi.properties.GroupProperty.HEALTH_MONITORING_THRES
 import static com.hazelcast.spi.properties.GroupProperty.HEALTH_MONITORING_THRESHOLD_MEMORY_PERCENTAGE;
 import static com.hazelcast.util.ThreadUtil.createThreadName;
 import static java.lang.String.format;
+import static java.lang.Thread.currentThread;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -114,7 +114,7 @@ public class HealthMonitor {
         try {
             monitorThread.join();
         } catch (InterruptedException e) {
-            EmptyStatement.ignore(e);
+            currentThread().interrupt();
         }
         logger.finest("HealthMonitor stopped");
     }
@@ -156,12 +156,13 @@ public class HealthMonitor {
                             }
                             break;
                         default:
-                            throw new IllegalStateException("unrecognized HealthMonitorLevel:" + monitorLevel);
+                            throw new IllegalStateException("Unrecognized HealthMonitorLevel: " + monitorLevel);
                     }
 
                     try {
                         SECONDS.sleep(delaySeconds);
                     } catch (InterruptedException e) {
+                        currentThread().interrupt();
                         return;
                     }
                 }
@@ -361,7 +362,7 @@ public class HealthMonitor {
                 sb.append("load.systemAverage").append("=n/a ");
             } else {
                 sb.append("load.systemAverage").append('=')
-                        .append(format("%.2f", osSystemLoadAverage.read())).append("%, ");
+                        .append(format("%.2f", osSystemLoadAverage.read())).append(", ");
             }
         }
 

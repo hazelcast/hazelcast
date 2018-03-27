@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,9 +21,12 @@ import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.cache.impl.operation.CacheDestroyOperation;
 import com.hazelcast.config.CacheConfig;
+import com.hazelcast.core.DistributedObjectEvent;
+import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.HazelcastInstanceProxy;
 import com.hazelcast.internal.nearcache.impl.invalidation.Invalidation;
+import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.test.AssertTask;
@@ -97,9 +100,13 @@ public class CacheDestroyTest extends CacheTestSupport {
     }
 
     @Test
-    public void test_cacheDestroyOperation() throws ExecutionException, InterruptedException {
+    public void test_cacheDestroyOperation() {
         final String CACHE_NAME = "MyCache";
         final String FULL_CACHE_NAME = HazelcastCacheManager.CACHE_MANAGER_PREFIX + CACHE_NAME;
+        final CountDownLatch cacheProxyCreatedLatch = new CountDownLatch(INSTANCE_COUNT);
+        for (HazelcastInstance hz : hazelcastInstances) {
+            hz.addDistributedObjectListener(new CacheProxyListener(cacheProxyCreatedLatch));
+        }
 
         CachingProvider cachingProvider = HazelcastServerCachingProvider.createCachingProvider(getHazelcastInstance());
         CacheManager cacheManager = cachingProvider.getCacheManager();
@@ -114,6 +121,11 @@ public class CacheDestroyTest extends CacheTestSupport {
 
         assertNotNull(cacheService1.getCacheConfig(FULL_CACHE_NAME));
         assertNotNull(cacheService2.getCacheConfig(FULL_CACHE_NAME));
+
+        // wait for the latch to ensure proxy registration events have been processed (otherwise
+        // the cache config may be added on a member after having been removed by CacheDestroyOp)
+        assertOpenEventually("A cache proxy should have been created on each instance, latch count was "
+                                + cacheProxyCreatedLatch.getCount(), cacheProxyCreatedLatch);
 
         // Invoke on single node and the operation is also forward to others nodes by the operation itself
         operationService1.invokeOnTarget(ICacheService.SERVICE_NAME,
@@ -177,7 +189,7 @@ public class CacheDestroyTest extends CacheTestSupport {
         final Cache<Integer, Integer> cache = cacheManager.createCache(cacheName, cacheConfig);
 
         final CountDownLatch latch = new CountDownLatch(1);
-        int concurrency = Runtime.getRuntime().availableProcessors();
+        int concurrency = RuntimeAvailableProcessors.get();
         Future[] destroyFutures = new Future[concurrency];
 
         DestroyCacheTask destroyCacheTask = new DestroyCacheTask(cacheName, cacheManager, latch, cache);
@@ -201,14 +213,14 @@ public class CacheDestroyTest extends CacheTestSupport {
         final CacheConfig<Integer, Integer> cacheConfig = createCacheConfig();
 
         final CountDownLatch latch = new CountDownLatch(1);
-        int concurrency = Runtime.getRuntime().availableProcessors() * 4;
+        int concurrency = RuntimeAvailableProcessors.get() * 4;
         Future[] futures = new Future[concurrency];
 
         DestroyCacheTask destroyCacheTask = new DestroyCacheTask(cacheName, cacheManager, latch, null);
         CreateCacheTask createCacheTask = new CreateCacheTask(cacheName, cacheManager, latch, cacheConfig);
 
         for (int i = 0; i < concurrency; i++) {
-            futures[i] = spawn( i % 2 == 0 ? destroyCacheTask : createCacheTask);
+            futures[i] = spawn(i % 2 == 0 ? destroyCacheTask : createCacheTask);
         }
 
         latch.countDown();
@@ -294,4 +306,22 @@ public class CacheDestroyTest extends CacheTestSupport {
         }
     }
 
+    public static class CacheProxyListener implements DistributedObjectListener {
+        private final CountDownLatch objectCreatedLatch;
+
+        public CacheProxyListener(CountDownLatch objectCreatedLatch) {
+            this.objectCreatedLatch = objectCreatedLatch;
+        }
+
+        @Override
+        public void distributedObjectCreated(DistributedObjectEvent event) {
+            if (event.getDistributedObject() instanceof Cache) {
+                objectCreatedLatch.countDown();
+            }
+        }
+
+        @Override
+        public void distributedObjectDestroyed(DistributedObjectEvent event) {
+        }
+    }
 }

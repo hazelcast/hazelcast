@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -274,7 +274,7 @@ public abstract class InvocationBuilder {
      * It occurs upon the release of computational and other resources used by the task underlying the invocation.
      * The user loses interest in the computation as soon as the invocation's future is canceled, but our
      * internal concern is keeping track of resource usage. Therefore we need a lifecycle event independent
-     * of the regular future completion/cancelation.
+     * of the regular future completion/cancellation.
      */
     public InvocationBuilder setDoneCallback(Runnable doneCallback) {
         this.doneCallback = doneCallback;

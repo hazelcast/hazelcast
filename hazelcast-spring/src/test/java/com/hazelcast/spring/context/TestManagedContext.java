@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -126,29 +126,29 @@ public class TestManagedContext {
     @Test
     public void testRunnableTask_withScheduledExecutor_onLocalMember() throws Exception {
         instance1.getScheduledExecutorService("test")
-                 .scheduleOnMember(new SomeRunnableTask(), instance1.getCluster().getLocalMember(), 0, TimeUnit.SECONDS)
-                 .get();
+                .scheduleOnMember(new SomeRunnableTask(), instance1.getCluster().getLocalMember(), 0, TimeUnit.SECONDS)
+                .get();
     }
 
     @Test
     public void testRunnableTask_withScheduledExecutor_onRemoteMember() throws Exception {
         instance1.getScheduledExecutorService("test")
-                 .scheduleOnMember(new SomeRunnableTask(), instance2.getCluster().getLocalMember(), 0, TimeUnit.SECONDS)
-                 .get();
+                .scheduleOnMember(new SomeRunnableTask(), instance2.getCluster().getLocalMember(), 0, TimeUnit.SECONDS)
+                .get();
     }
 
     @Test
     public void testCallableTask_withScheduledExecutor_onLocalMember() throws Exception {
         instance1.getScheduledExecutorService("test")
-                 .scheduleOnMember(new SomeCallableTask(), instance1.getCluster().getLocalMember(), 0, TimeUnit.SECONDS)
-                 .get();
+                .scheduleOnMember(new SomeCallableTask(), instance1.getCluster().getLocalMember(), 0, TimeUnit.SECONDS)
+                .get();
     }
 
     @Test
     public void testCallableTask_withScheduledExecutor_onRemoteMember() throws Exception {
         instance1.getScheduledExecutorService("test")
-                 .scheduleOnMember(new SomeCallableTask(), instance2.getCluster().getLocalMember(), 0, TimeUnit.SECONDS)
-                 .get();
+                .scheduleOnMember(new SomeCallableTask(), instance2.getCluster().getLocalMember(), 0, TimeUnit.SECONDS)
+                .get();
     }
 
     @Test

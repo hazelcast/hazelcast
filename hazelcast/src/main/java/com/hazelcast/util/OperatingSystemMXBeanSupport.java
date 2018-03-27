@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,8 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+
+import static com.hazelcast.util.EmptyStatement.ignore;
 
 /**
  * Support class for reading attributes from OperatingSystemMXBean.
@@ -70,7 +72,7 @@ public final class OperatingSystemMXBeanSupport {
         } catch (RuntimeException re) {
             throw re;
         } catch (Exception ignored) {
-            EmptyStatement.ignore(ignored);
+            ignore(ignored);
         }
         return defaultValue;
     }

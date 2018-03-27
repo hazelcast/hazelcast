@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package com.hazelcast.spring.cache;
 
+import com.hazelcast.config.Config;
+import com.hazelcast.config.JoinConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectEvent;
 import com.hazelcast.core.DistributedObjectListener;
@@ -35,6 +37,7 @@ import org.springframework.cache.CacheManager;
 import org.springframework.test.context.ContextConfiguration;
 
 import javax.annotation.Resource;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -115,7 +118,16 @@ public class TestCacheManager extends HazelcastTestSupport {
             }
         });
 
-        HazelcastInstance testInstance = Hazelcast.newHazelcastInstance();
+        Config config = new Config();
+        config.getNetworkConfig().setPublicAddress("127.0.0.1")
+                .setPort(5101).setPortAutoIncrement(true);
+        JoinConfig join = config.getNetworkConfig().getJoin();
+        join.getMulticastConfig().setEnabled(false);
+        join.getAwsConfig().setEnabled(false);
+        join.getTcpIpConfig().setEnabled(true).setMembers(
+                Arrays.asList(
+                        "127.0.0.1"));
+        HazelcastInstance testInstance = Hazelcast.newHazelcastInstance(config);
         testInstance.getMap(testMap);
         // be sure that test-map is distributed
         HazelcastTestSupport.assertOpenEventually(distributionSignal);

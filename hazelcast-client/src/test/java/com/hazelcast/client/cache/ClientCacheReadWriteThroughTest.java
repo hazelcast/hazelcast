@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,11 @@ package com.hazelcast.client.cache;
 import com.hazelcast.cache.CacheReadWriteThroughTest;
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.client.cache.impl.HazelcastClientCachingProvider;
+import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.CacheConfig;
+import com.hazelcast.config.CacheConfiguration;
+import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.instance.HazelcastInstanceImpl;
@@ -51,22 +54,32 @@ import static org.junit.Assert.assertNotNull;
 @Category({QuickTest.class, ParallelTest.class})
 public class ClientCacheReadWriteThroughTest extends CacheReadWriteThroughTest {
 
+    private static final String CACHE_WITH_NEARCACHE = randomName();
+    private static final int NEARCACHE_SIZE = 100;
+
     private CachingProvider serverCachingProvider;
 
+    @Override
     protected CachingProvider createCachingProvider(HazelcastInstance instance) {
         return HazelcastClientCachingProvider.createCachingProvider(instance);
     }
 
+    @Override
     protected TestHazelcastInstanceFactory createInstanceFactory(int instanceCount) {
         return new TestHazelcastFactory();
     }
 
+    @Override
     protected HazelcastInstance getInstance() {
         // Create server instance
         HazelcastInstance serverInstance = factory.newHazelcastInstance(createConfig());
         serverCachingProvider = HazelcastServerCachingProvider.createCachingProvider(serverInstance);
         // Create client instance
-        return ((TestHazelcastFactory) factory).newHazelcastClient();
+        ClientConfig clientConfig = new ClientConfig();
+        NearCacheConfig nearCacheConfig = new NearCacheConfig(CACHE_WITH_NEARCACHE);
+        nearCacheConfig.getEvictionConfig().setSize(NEARCACHE_SIZE);
+        clientConfig.addNearCacheConfig(nearCacheConfig);
+        return ((TestHazelcastFactory) factory).newHazelcastClient(clientConfig);
     }
 
     @Override
@@ -102,6 +115,23 @@ public class ClientCacheReadWriteThroughTest extends CacheReadWriteThroughTest {
         assertEquals(keys.size(), loaded.size());
         for (Map.Entry<Integer, String> entry : loaded.entrySet()) {
             assertEquals(ServerSideCacheLoader.valueOf(entry.getKey()), entry.getValue());
+        }
+    }
+
+    @Test
+    public void test_readThroughCacheLoader_withNearCache() {
+        String cacheName = CACHE_WITH_NEARCACHE;
+        CacheConfiguration<Integer, String> cacheConfig =
+                new CacheConfig<Integer, String>()
+                        .setReadThrough(true)
+                        .setCacheLoaderFactory(new ServerSideCacheLoaderFactory());
+
+        serverCachingProvider.getCacheManager().createCache(cacheName, cacheConfig);
+
+        Cache<Integer, String> cache = cachingProvider.getCacheManager().getCache(cacheName);
+
+        for (int i = 0; i < NEARCACHE_SIZE * 5; i++) {
+            assertNotNull(cache.get(i));
         }
     }
 

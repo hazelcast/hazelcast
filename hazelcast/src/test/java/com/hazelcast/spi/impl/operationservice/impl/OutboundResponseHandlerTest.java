@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.instance.Node;
@@ -17,42 +33,59 @@ import com.hazelcast.spi.impl.operationservice.impl.responses.BackupAckResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 import org.mockito.ArgumentCaptor;
 
 import java.io.IOException;
+import java.nio.ByteOrder;
 
 import static com.hazelcast.spi.OperationAccessor.setCallId;
 import static com.hazelcast.spi.OperationAccessor.setCallerAddress;
+import static java.nio.ByteOrder.BIG_ENDIAN;
+import static java.nio.ByteOrder.LITTLE_ENDIAN;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(Parameterized.class)
+@UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class OutboundResponseHandlerTest {
 
+    @Parameter
+    public ByteOrder byteOrder;
+
     private OutboundResponseHandler handler;
-    private Address thisAddress;
     private InternalSerializationService serializationService;
     private ILogger logger = Logger.getLogger(OutboundResponseHandlerTest.class);
-    private Node node;
     private Address thatAddress;
     private ConnectionManager connectionManager;
 
+    @Parameters(name = "{0}")
+    public static Object[][] parameters() {
+        return new Object[][]{
+                {BIG_ENDIAN},
+                {LITTLE_ENDIAN},
+        };
+    }
+
     @Before
     public void setup() throws Exception {
-        thisAddress = new Address("127.0.0.1", 5701);
+        Address thisAddress = new Address("127.0.0.1", 5701);
         thatAddress = new Address("127.0.0.1", 5702);
-        serializationService = new DefaultSerializationServiceBuilder().build();
-        node = mock(Node.class);
+        serializationService = new DefaultSerializationServiceBuilder().setByteOrder(byteOrder).build();
+        Node node = mock(Node.class);
         connectionManager = mock(ConnectionManager.class);
         when(node.getConnectionManager()).thenReturn(connectionManager);
         handler = new OutboundResponseHandler(thisAddress, serializationService, node, logger);
@@ -77,7 +110,7 @@ public class OutboundResponseHandlerTest {
 
     @Test
     public void sendResponse_whenPortable() {
-        Object response = new PortableAddress("Sesame Street",1);
+        Object response = new PortableAddress("Sesame Street", 1);
         Operation op = new DummyOperation();
         setCallId(op, 10);
         setCallerAddress(op, thatAddress);

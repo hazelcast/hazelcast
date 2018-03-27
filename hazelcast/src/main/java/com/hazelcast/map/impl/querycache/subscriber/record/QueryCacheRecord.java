@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package com.hazelcast.map.impl.querycache.subscriber.record;
 
 import com.hazelcast.internal.eviction.Evictable;
-import com.hazelcast.nio.serialization.Data;
 
 /**
  * Represents a {@link com.hazelcast.map.QueryCache QueryCache} record.
@@ -25,8 +24,6 @@ import com.hazelcast.nio.serialization.Data;
  * @param <V> the type of the value of this record.
  */
 public interface QueryCacheRecord<V> extends Evictable {
-
-    Data getKey();
 
     @Override
     V getValue();

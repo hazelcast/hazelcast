@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -190,6 +190,39 @@ public class TcpIpConfig {
     public TcpIpConfig setRequiredMember(final String requiredMember) {
         this.requiredMember = requiredMember;
         return this;
+    }
+
+    @Override
+    @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
+    public final boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || !(o instanceof TcpIpConfig)) {
+            return false;
+        }
+
+        TcpIpConfig that = (TcpIpConfig) o;
+
+        if (connectionTimeoutSeconds != that.connectionTimeoutSeconds) {
+            return false;
+        }
+        if (enabled != that.enabled) {
+            return false;
+        }
+        if (members != null ? !members.equals(that.members) : that.members != null) {
+            return false;
+        }
+        return requiredMember != null ? requiredMember.equals(that.requiredMember) : that.requiredMember == null;
+    }
+
+    @Override
+    public final int hashCode() {
+        int result = connectionTimeoutSeconds;
+        result = 31 * result + (enabled ? 1 : 0);
+        result = 31 * result + (members != null ? members.hashCode() : 0);
+        result = 31 * result + (requiredMember != null ? requiredMember.hashCode() : 0);
+        return result;
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ import static com.hazelcast.internal.eviction.EvictionPolicyEvaluatorProvider.ge
 /**
  * Contains eviction specific functionality of a {@link QueryCacheRecordStore}.
  */
-public class EvictionOperator {
+class EvictionOperator {
     // It could be the current size of the CQC is over a configured limit. This can happen e.g. when multiple threads
     // are inserting entries concurrently. However each eviction cycle can remove at most 1 entry -> we run multiple
     // eviction cycles when the current size is over the configured eviction threshold. This property controls maximum
@@ -48,7 +48,7 @@ public class EvictionOperator {
     private final EvictionListener<Data, QueryCacheRecord> listener;
     private final ClassLoader classLoader;
 
-    public EvictionOperator(QueryCacheRecordHashMap cache,
+    EvictionOperator(QueryCacheRecordHashMap cache,
                             QueryCacheConfig config,
                             EvictionListener<Data, QueryCacheRecord> listener,
                             ClassLoader classLoader) {
@@ -56,7 +56,7 @@ public class EvictionOperator {
         this.evictionConfig = config.getEvictionConfig();
         this.evictionChecker = createCacheEvictionChecker();
         this.evictionPolicyEvaluator = createEvictionPolicyEvaluator();
-        this.evictionStrategy = createEvictionStrategy();
+        this.evictionStrategy = SamplingEvictionStrategy.INSTANCE;
         this.listener = listener;
         this.classLoader = classLoader;
     }
@@ -88,9 +88,5 @@ public class EvictionOperator {
     private EvictionPolicyEvaluator<Data, QueryCacheRecord> createEvictionPolicyEvaluator() {
         checkEvictionConfig(evictionConfig, false);
         return getEvictionPolicyEvaluator(evictionConfig, classLoader);
-    }
-
-    private SamplingEvictionStrategy<Data, QueryCacheRecord, QueryCacheRecordHashMap> createEvictionStrategy() {
-        return SamplingEvictionStrategy.INSTANCE;
     }
 }

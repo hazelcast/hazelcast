@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ import com.hazelcast.internal.eviction.Expirable;
 public interface CacheRecord<V> extends Expirable, Evictable<V> {
 
     /**
-     * Represents invalid (not set) time for creation time, expiration time, access time, etc ...
+     * Represents invalid (not set) time for creation time, expiration time, access time, etc...
      */
     long TIME_NOT_AVAILABLE = -1;
 

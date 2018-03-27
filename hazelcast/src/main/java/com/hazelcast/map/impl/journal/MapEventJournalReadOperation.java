@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 
 package com.hazelcast.map.impl.journal;
 
-import com.hazelcast.journal.EventJournal;
-import com.hazelcast.journal.EventJournalReadOperation;
+import com.hazelcast.internal.journal.EventJournal;
+import com.hazelcast.internal.journal.EventJournalReadOperation;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.journal.EventJournalMapEvent;
@@ -46,14 +46,16 @@ import java.io.IOException;
 public class MapEventJournalReadOperation<K, V, T> extends EventJournalReadOperation<T, InternalEventJournalMapEvent> {
 
     protected Predicate<? super EventJournalMapEvent<K, V>> predicate;
-    protected Projection<? super EventJournalMapEvent<K, V>, T> projection;
+    protected Projection<? super EventJournalMapEvent<K, V>, ? extends T> projection;
 
     public MapEventJournalReadOperation() {
     }
 
-    public MapEventJournalReadOperation(String mapName, long startSequence, int minSize, int maxSize,
-                                        Predicate<? super EventJournalMapEvent<K, V>> predicate,
-                                        Projection<? super EventJournalMapEvent<K, V>, T> projection) {
+    public MapEventJournalReadOperation(
+            String mapName, long startSequence, int minSize, int maxSize,
+            Predicate<? super EventJournalMapEvent<K, V>> predicate,
+            Projection<? super EventJournalMapEvent<K, V>, ? extends T> projection
+    ) {
         super(mapName, startSequence, minSize, maxSize);
         this.predicate = predicate;
         this.projection = projection;

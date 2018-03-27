@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import com.hazelcast.concurrent.lock.operations.UnlockOperation;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.LockPermission;
 import com.hazelcast.spi.Operation;
@@ -40,7 +41,7 @@ public class LockUnlockMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        final Data key = serializationService.toData(parameters.name);
+        final Data key = serializationService.toData(parameters.name, StringPartitioningStrategy.INSTANCE);
         return new UnlockOperation(new InternalLockNamespace(parameters.name), key, parameters.threadId, false,
                 parameters.referenceId);
     }

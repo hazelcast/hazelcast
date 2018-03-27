@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package com.hazelcast.durableexecutor;
 
 import com.hazelcast.core.DistributedObject;
-import com.hazelcast.spi.annotation.Beta;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -30,8 +29,9 @@ import java.util.concurrent.RejectedExecutionException;
  * DurableExecutor provides additional methods like executing tasks on a member who is owner of a specific key
  * DurableExecutor also provides a way to retrieve the result of an execution with the given taskId.
  * @see ExecutorService
+ *
+ * Supports Quorum {@link com.hazelcast.config.QuorumConfig} since 3.10 in cluster versions 3.10 and higher.
  */
-@Beta
 public interface DurableExecutorService extends ExecutorService, DistributedObject {
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,14 +19,12 @@ package com.hazelcast.cache.impl.journal;
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.ICacheService;
-import com.hazelcast.internal.cluster.Versions;
-import com.hazelcast.journal.EventJournalInitialSubscriberState;
+import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.ReadonlyOperation;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
-import com.hazelcast.version.Version;
 
 /**
  * Performs the initial subscription to the cache event journal.
@@ -51,12 +49,6 @@ public class CacheEventJournalSubscribeOperation
     @Override
     public void beforeRun() throws Exception {
         super.beforeRun();
-
-        final Version clusterVersion = getNodeEngine().getClusterService().getClusterVersion();
-        if (clusterVersion.isLessThan(Versions.V3_9)) {
-            throw new UnsupportedOperationException(
-                    "Event journal actions are not available when cluster version is " + clusterVersion);
-        }
 
         namespace = CacheService.getObjectNamespace(name);
         final CacheService service = getService();

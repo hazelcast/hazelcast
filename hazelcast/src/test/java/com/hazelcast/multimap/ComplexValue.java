@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package com.hazelcast.multimap;
 import java.io.Serializable;
 
 public class ComplexValue implements Serializable {
+
     String name;
     int time;
 
@@ -49,9 +50,9 @@ public class ComplexValue implements Serializable {
 
     @Override
     public String toString() {
-        return "ComplexValue{" +
-                "name='" + name + '\'' +
-                ", time=" + time +
-                '}';
+        return "ComplexValue{"
+                + "name='" + name + '\''
+                + ", time=" + time
+                + '}';
     }
 }

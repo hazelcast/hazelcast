@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,11 +65,8 @@ public class PartitionLostEvent implements DataSerializable, PartitionEvent {
     }
 
     /**
-     * Returns the number of lost backups for the partition. O: the owner, 1: first backup, 2: second backup ...
-     * If all replicas of a partition is lost, {@link InternalPartition#MAX_BACKUP_COUNT} is returned.
-     *
-     * @return the number of lost backups for the partition.
-     * If all replicas of a partition is lost, {@link InternalPartition#MAX_BACKUP_COUNT} is returned.
+     * Returns the number of lost backups for the partition. 0: the owner, 1: first backup, 2: second backup...
+     * If all replicas of a partition are lost, {@link InternalPartition#MAX_BACKUP_COUNT} is returned.
      */
     public int getLostBackupCount() {
         return lostBackupCount;

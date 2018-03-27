@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -369,7 +369,8 @@ public class SerializationTest extends HazelcastTestSupport {
         SerializationService serializationService = new DefaultSerializationServiceBuilder()
                 .setEnableCompression(true)
                 .build();
-        long key = 1, value = 5000;
+        long key = 1;
+        long value = 5000;
         Properties properties = new Properties();
         properties.put(key, value);
         Data data = serializationService.toData(properties);
@@ -533,7 +534,8 @@ public class SerializationTest extends HazelcastTestSupport {
             DynamicProxyTestClassLoader cl = new DynamicProxyTestClassLoader(current);
             Thread.currentThread().setContextClassLoader(cl);
             SerializationService ss = new DefaultSerializationServiceBuilder().setClassLoader(cl).build();
-            IObjectA oa = (IObjectA) Proxy.newProxyInstance(current, new Class[]{IObjectA.class}, DummyInvocationHandler.INSTANCE);
+            IObjectA oa
+                    = (IObjectA) Proxy.newProxyInstance(current, new Class[]{IObjectA.class}, DummyInvocationHandler.INSTANCE);
             Data data = ss.toData(oa);
             Object o = ss.toObject(data);
             Assert.assertSame("context classloader is not used", cl, o.getClass().getClassLoader());
@@ -554,7 +556,8 @@ public class SerializationTest extends HazelcastTestSupport {
         DynamicProxyTestClassLoader cl1 = new DynamicProxyTestClassLoader(current, IPrivateObjectB.class.getName());
         DynamicProxyTestClassLoader cl2 = new DynamicProxyTestClassLoader(cl1, IPrivateObjectC.class.getName());
         SerializationService ss = new DefaultSerializationServiceBuilder().setClassLoader(cl2).build();
-        Object ocd = Proxy.newProxyInstance(current, new Class[]{IPrivateObjectB.class, IPrivateObjectC.class}, DummyInvocationHandler.INSTANCE);
+        Object ocd
+                = Proxy.newProxyInstance(current, new Class[]{IPrivateObjectB.class, IPrivateObjectC.class}, DummyInvocationHandler.INSTANCE);
         Data data = ss.toData(ocd);
         try {
             ss.toObject(data);

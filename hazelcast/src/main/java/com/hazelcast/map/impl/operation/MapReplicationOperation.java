@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,13 +24,16 @@ import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordInfo;
 import com.hazelcast.map.impl.record.RecordReplicationInfo;
 import com.hazelcast.map.impl.recordstore.RecordStore;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.ServiceNamespace;
-import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.spi.impl.operationservice.TargetAware;
+import com.hazelcast.spi.serialization.SerializationService;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -40,7 +43,7 @@ import static com.hazelcast.map.impl.record.Records.buildRecordInfo;
 /**
  * Replicates all IMap-states of this partition to a replica partition.
  */
-public class MapReplicationOperation extends Operation implements MutatingOperation, IdentifiedDataSerializable {
+public class MapReplicationOperation extends Operation implements IdentifiedDataSerializable, Versioned, TargetAware {
 
     // keep these fields `protected`, extended in another context.
     protected final MapReplicationStateHolder mapReplicationStateHolder = new MapReplicationStateHolder(this);
@@ -94,9 +97,10 @@ public class MapReplicationOperation extends Operation implements MutatingOperat
         mapNearCacheStateHolder.readData(in);
     }
 
-    RecordReplicationInfo createRecordReplicationInfo(Data key, Record record, MapServiceContext mapServiceContext) {
+    RecordReplicationInfo toReplicationInfo(Record record, SerializationService ss) {
         RecordInfo info = buildRecordInfo(record);
-        return new RecordReplicationInfo(key, mapServiceContext.toData(record.getValue()), info);
+        Data dataValue = ss.toData(record.getValue());
+        return new RecordReplicationInfo(record.getKey(), dataValue, info);
     }
 
     RecordStore getRecordStore(String mapName) {
@@ -114,5 +118,10 @@ public class MapReplicationOperation extends Operation implements MutatingOperat
     @Override
     public int getId() {
         return MapDataSerializerHook.MAP_REPLICATION;
+    }
+
+    @Override
+    public void setTarget(Address address) {
+        mapReplicationStateHolder.setTarget(address);
     }
 }

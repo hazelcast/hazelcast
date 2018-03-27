@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -103,7 +103,32 @@ public abstract class SemaphoreBasicTest extends HazelcastTestSupport {
 
         assertEquals(semaphore.availablePermits(), numberOfPermits);
     }
-
+    
+    @Test(timeout = 30000)
+    public void testAllowNegativePermits() {
+        assertTrue(semaphore.init(10));
+        
+        semaphore.reducePermits(15);
+        
+        assertEquals(0, semaphore.availablePermits());
+        
+        semaphore.release(10);
+        
+        assertEquals(5, semaphore.availablePermits());
+    }    
+    
+    
+    @Test(timeout = 30000)
+    public void testIncreasePermits() {
+        assertTrue(semaphore.init(10));
+                
+        assertEquals(10, semaphore.availablePermits());
+        
+        semaphore.increasePermits(100);
+        
+        assertEquals(110, semaphore.availablePermits());
+    }
+    
     @Test(timeout = 30000)
     public void testRelease_whenArgumentNegative() {
         try {
@@ -270,6 +295,16 @@ public abstract class SemaphoreBasicTest extends HazelcastTestSupport {
         assertEquals(0, semaphore.availablePermits());
     }
 
+    @Test(timeout = 30000)
+    public void testIncrease_whenArgumentNegative() {
+        try {
+            semaphore.increasePermits(-5);
+            fail();
+        } catch (IllegalArgumentException expected) {
+        }
+        assertEquals(0, semaphore.availablePermits());
+    }
+    
 
     @Test(timeout = 30000)
     public void testTryAcquire() {

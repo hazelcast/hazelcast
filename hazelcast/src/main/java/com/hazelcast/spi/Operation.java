@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,9 +31,13 @@ import com.hazelcast.spi.properties.GroupProperty;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
+import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 import java.util.logging.Level;
 
+import static com.hazelcast.spi.CallStatus.DONE_RESPONSE;
+import static com.hazelcast.spi.CallStatus.DONE_VOID;
+import static com.hazelcast.spi.CallStatus.WAIT;
 import static com.hazelcast.spi.ExceptionAction.RETRY_INVOCATION;
 import static com.hazelcast.spi.ExceptionAction.THROW_EXCEPTION;
 import static com.hazelcast.util.EmptyStatement.ignore;
@@ -84,6 +88,13 @@ public abstract class Operation implements DataSerializable {
         setFlag(true, BITMASK_CALL_TIMEOUT_64_BIT);
     }
 
+    /**
+     * Returns {@code true} if local member is the caller.
+     * <p>
+     * <b>Note:</b> On the caller member this method always returns {@code
+     * true}. It's meant to be used on target member to determine if the
+     * execution is local.
+     */
     public boolean executedLocally() {
         return nodeEngine.getThisAddress().equals(callerAddress);
     }
@@ -97,16 +108,68 @@ public abstract class Operation implements DataSerializable {
     }
 
     // runs after wait-support, supposed to do actual operation
-    public abstract void run() throws Exception;
+    public void run() throws Exception {
+    }
+
+    /**
+     * Call the operation and returns the CallStatus.
+     *
+     * An Operation should either implement call or run; not both. If run is implemented, then the system remains backwards
+     * compatible to prevent making massive code changes while adding this feature.
+     *
+     * In the future all {@link #run()} methods will be replaced by call methods.
+     *
+     * The call method looks very much like the {@link #run()} method and it is very close to {@link Runnable#run()} and
+     * {@link Callable#call()}.
+     *
+     * The main difference between a run and call, is that the returned CallStatus from the call can tell something about the
+     * actual execution. For example it could tell that some waiting is required in case of a {@link BlockingOperation}.
+     * Or that the actual execution the work is offloaded to some executor in case of an {@link com.hazelcast.core.Offloadable}
+     * {@link com.hazelcast.map.impl.operation.EntryOperation}.
+     *
+     * In the future new types of CallStatus are expected to be added, e.g. for interleaving.
+     *
+     * In the future it is very likely that for regular Operation that want to return a concrete response, the
+     * actual response can be returned directly. In this case we'll change the return type to {@link Object} to
+     * prevent forcing the response to be wrapped in a {@link CallStatus#DONE_RESPONSE}  monad since that would force additional
+     * litter to be created.
+     *
+     * @return the CallStatus.
+     * @throws Exception if something failed while executing 'call'.
+     */
+    public CallStatus call() throws Exception {
+        if (this instanceof BlockingOperation) {
+            BlockingOperation blockingOperation = (BlockingOperation) this;
+            if (blockingOperation.shouldWait()) {
+                return WAIT;
+            }
+        }
+
+        run();
+        return returnsResponse() ? DONE_RESPONSE : DONE_VOID;
+    }
 
     // runs after backups, before wait-notify
     public void afterRun() throws Exception {
     }
 
+    /**
+     * Method is intended to be subclassed. If it returns {@code true}, {@link #getResponse()} will be
+     * called right after {@link #run()} method. If it returns {@code false}, {@link #sendResponse(Object)}
+     * must be called later to finish the operation.
+     * <p>
+     * In other words, {@code true} is for synchronous operation and {@code false} is for asynchronous one.
+     * <p>
+     * Default implementation is synchronous operation ({@code true}).
+     */
     public boolean returnsResponse() {
         return true;
     }
 
+    /**
+     * Called if and only if {@link #returnsResponse()} returned {@code true}, shortly after {@link #run()}
+     * returns.
+     */
     public Object getResponse() {
         return null;
     }

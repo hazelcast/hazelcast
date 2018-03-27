@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import com.hazelcast.client.impl.client.SecureRequest;
 import com.hazelcast.client.impl.protocol.ClientExceptionFactory;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.serialization.InternalSerializationService;
@@ -33,14 +34,20 @@ import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.util.ExceptionUtil;
 
 import java.security.Permission;
+import java.util.Arrays;
+import java.util.List;
+
+import static com.hazelcast.util.ExceptionUtil.peel;
 
 /**
  * Base Message task.
  */
 public abstract class AbstractMessageTask<P> implements MessageTask, SecureRequest {
+
+    private static final List<Class<? extends Throwable>> NON_PEELABLE_EXCEPTIONS =
+            Arrays.asList(Error.class, MemberLeftException.class);
 
     protected final ClientMessage clientMessage;
 
@@ -218,7 +225,7 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
 
     protected void sendClientMessage(Throwable throwable) {
         ClientExceptionFactory exceptionFactory = clientEngine.getClientExceptionFactory();
-        ClientMessage exception = exceptionFactory.createExceptionMessage(ExceptionUtil.peel(throwable));
+        ClientMessage exception = exceptionFactory.createExceptionMessage(peelIfNeeded(throwable));
         sendClientMessage(exception);
     }
 
@@ -240,5 +247,19 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
 
     protected final BuildInfo getMemberBuildInfo() {
         return node.getBuildInfo();
+    }
+
+    private Throwable peelIfNeeded(Throwable t) {
+        if (t == null) {
+            return null;
+        }
+
+        for (Class<? extends Throwable> clazz : NON_PEELABLE_EXCEPTIONS) {
+            if (clazz.isAssignableFrom(t.getClass())) {
+                return t;
+            }
+        }
+
+        return peel(t);
     }
 }

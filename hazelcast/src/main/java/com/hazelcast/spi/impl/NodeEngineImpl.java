@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,6 +68,7 @@ import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
 import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
 import com.hazelcast.spi.impl.servicemanager.ServiceManager;
 import com.hazelcast.spi.impl.servicemanager.impl.ServiceManagerImpl;
+import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.transaction.TransactionManagerService;
@@ -80,6 +81,8 @@ import java.util.LinkedList;
 
 import static com.hazelcast.internal.diagnostics.Diagnostics.METRICS_DISTRIBUTED_DATASTRUCTURES;
 import static com.hazelcast.internal.diagnostics.Diagnostics.METRICS_LEVEL;
+import static com.hazelcast.util.EmptyStatement.ignore;
+import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static java.lang.System.currentTimeMillis;
 
 /**
@@ -87,7 +90,7 @@ import static java.lang.System.currentTimeMillis;
  * compared to a Spring ApplicationContext. It is fine that we refer to concrete types, and it is fine
  * that we cast to a concrete type within this class (e.g. to call shutdown). In an application context
  * you get exactly the same behavior.
- * <p/>
+ * <p>
  * But the crucial thing is that we don't want to leak concrete dependencies to the outside. For example
  * we don't leak {@link com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl} to the outside.
  */
@@ -97,81 +100,70 @@ public class NodeEngineImpl implements NodeEngine {
     private static final String JET_SERVICE_NAME = "hz:impl:jetService";
 
     private final Node node;
+    private final SerializationService serializationService;
+    private final LoggingServiceImpl loggingService;
     private final ILogger logger;
-    private final EventServiceImpl eventService;
-    private final OperationServiceImpl operationService;
-    private final ExecutionServiceImpl executionService;
-    private final OperationParkerImpl operationParker;
-    private final ServiceManagerImpl serviceManager;
-    private final TransactionManagerServiceImpl transactionManagerService;
+    private final MetricsRegistryImpl metricsRegistry;
     private final ProxyServiceImpl proxyService;
+    private final ServiceManagerImpl serviceManager;
+    private final ExecutionServiceImpl executionService;
+    private final OperationServiceImpl operationService;
+    private final EventServiceImpl eventService;
+    private final OperationParkerImpl operationParker;
+    private final ClusterWideConfigurationService configurationService;
+    private final TransactionManagerServiceImpl transactionManagerService;
     private final WanReplicationService wanReplicationService;
     private final PacketHandler packetDispatcher;
     private final QuorumServiceImpl quorumService;
-    private final MetricsRegistryImpl metricsRegistry;
-    private final SerializationService serializationService;
-    private final LoggingServiceImpl loggingService;
     private final Diagnostics diagnostics;
-    private final UserCodeDeploymentService userCodeDeploymentService;
-    private final ClusterWideConfigurationService configurationService;
+    private final SplitBrainMergePolicyProvider splitBrainMergePolicyProvider;
 
     @SuppressWarnings("checkstyle:executablestatementcount")
-    public NodeEngineImpl(final Node node) {
+    public NodeEngineImpl(Node node) {
         this.node = node;
-        this.loggingService = node.loggingService;
-        this.serializationService = node.getSerializationService();
-        this.logger = node.getLogger(NodeEngine.class.getName());
-        this.metricsRegistry = newMetricRegistry(node);
-        this.proxyService = new ProxyServiceImpl(this);
-        this.serviceManager = new ServiceManagerImpl(this);
-        this.executionService = new ExecutionServiceImpl(this);
-        this.operationService = new OperationServiceImpl(this);
-        this.eventService = new EventServiceImpl(this);
-        this.operationParker = new OperationParkerImpl(this);
-        this.userCodeDeploymentService = new UserCodeDeploymentService();
-        DynamicConfigListener dynamicConfigListener = node.getNodeExtension().createDynamicConfigListener();
-        this.configurationService = new ClusterWideConfigurationService(this, dynamicConfigListener);
-        ClassLoader configClassLoader = node.getConfigClassLoader();
-        if (configClassLoader instanceof UserCodeDeploymentClassLoader) {
-            ((UserCodeDeploymentClassLoader) configClassLoader).setUserCodeDeploymentService(userCodeDeploymentService);
-        }
-        this.transactionManagerService = new TransactionManagerServiceImpl(this);
-        this.wanReplicationService = node.getNodeExtension().createService(WanReplicationService.class);
-        this.packetDispatcher = new PacketDispatcher(
-                logger,
-                operationService.getOperationExecutor(),
-                operationService.getAsyncInboundResponseHandler(),
-                operationService.getInvocationMonitor(),
-                eventService,
-                new ConnectionManagerPacketHandler(),
-                newJetPacketHandler());
-        this.quorumService = new QuorumServiceImpl(this);
-        this.diagnostics = newDiagnostics();
-
-        serviceManager.registerService(InternalOperationService.SERVICE_NAME, operationService);
-        serviceManager.registerService(OperationParker.SERVICE_NAME, operationParker);
-        serviceManager.registerService(UserCodeDeploymentService.SERVICE_NAME, userCodeDeploymentService);
-        serviceManager.registerService(ClusterWideConfigurationService.SERVICE_NAME, configurationService);
-    }
-
-    private PacketHandler newJetPacketHandler() {
-        // currently service registration is done after the creation of the packet dispatcher, hence
-        // we need to lazily initialize the jet packet handler
-        return new PacketHandler() {
-
-            private volatile PacketHandler handler;
-
-            @Override
-            public void handle(Packet packet) throws Exception {
-                if (handler == null) {
-                    handler = serviceManager.getService(JET_SERVICE_NAME);
-                    if (handler == null) {
-                        throw new UnsupportedOperationException("Jet is not registered on this node");
-                    }
-                }
-                handler.handle(packet);
+        try {
+            this.serializationService = node.getSerializationService();
+            this.loggingService = node.loggingService;
+            this.logger = node.getLogger(NodeEngine.class.getName());
+            this.metricsRegistry = newMetricRegistry(node);
+            this.proxyService = new ProxyServiceImpl(this);
+            this.serviceManager = new ServiceManagerImpl(this);
+            this.executionService = new ExecutionServiceImpl(this);
+            this.operationService = new OperationServiceImpl(this);
+            this.eventService = new EventServiceImpl(this);
+            this.operationParker = new OperationParkerImpl(this);
+            UserCodeDeploymentService userCodeDeploymentService = new UserCodeDeploymentService();
+            DynamicConfigListener dynamicConfigListener = node.getNodeExtension().createDynamicConfigListener();
+            this.configurationService = new ClusterWideConfigurationService(this, dynamicConfigListener);
+            ClassLoader configClassLoader = node.getConfigClassLoader();
+            if (configClassLoader instanceof UserCodeDeploymentClassLoader) {
+                ((UserCodeDeploymentClassLoader) configClassLoader).setUserCodeDeploymentService(userCodeDeploymentService);
             }
-        };
+            this.transactionManagerService = new TransactionManagerServiceImpl(this);
+            this.wanReplicationService = node.getNodeExtension().createService(WanReplicationService.class);
+            this.packetDispatcher = new PacketDispatcher(
+                    logger,
+                    operationService.getOperationExecutor(),
+                    operationService.getInboundResponseHandlerSupplier().get(),
+                    operationService.getInvocationMonitor(),
+                    eventService,
+                    new ConnectionManagerPacketHandler(),
+                    new JetPacketHandler());
+            this.quorumService = new QuorumServiceImpl(this);
+            this.diagnostics = newDiagnostics();
+            this.splitBrainMergePolicyProvider = new SplitBrainMergePolicyProvider(this);
+            serviceManager.registerService(InternalOperationService.SERVICE_NAME, operationService);
+            serviceManager.registerService(OperationParker.SERVICE_NAME, operationParker);
+            serviceManager.registerService(UserCodeDeploymentService.SERVICE_NAME, userCodeDeploymentService);
+            serviceManager.registerService(ClusterWideConfigurationService.SERVICE_NAME, configurationService);
+        } catch (Throwable e) {
+            try {
+                shutdown(true);
+            } catch (Throwable ignored) {
+                ignore(ignored);
+            }
+            throw rethrow(e);
+        }
     }
 
     private MetricsRegistryImpl newMetricRegistry(Node node) {
@@ -191,25 +183,12 @@ public class NodeEngineImpl implements NodeEngine {
                 node.getProperties());
     }
 
-    class ConnectionManagerPacketHandler implements PacketHandler {
-        // ConnectionManager is only available after the NodeEngineImpl is available.
-        @Override
-        public void handle(Packet packet) throws Exception {
-            PacketHandler packetHandler = (PacketHandler) node.getConnectionManager();
-            packetHandler.handle(packet);
-        }
-    }
-
     public LoggingService getLoggingService() {
         return loggingService;
     }
 
     public MetricsRegistry getMetricsRegistry() {
         return metricsRegistry;
-    }
-
-    public PacketHandler getPacketDispatcher() {
-        return packetDispatcher;
     }
 
     public void start() {
@@ -232,6 +211,10 @@ public class NodeEngineImpl implements NodeEngine {
         diagnostics.start();
 
         node.getNodeExtension().registerPlugins(diagnostics);
+    }
+
+    public PacketHandler getPacketDispatcher() {
+        return packetDispatcher;
     }
 
     public Diagnostics getDiagnostics() {
@@ -335,7 +318,7 @@ public class NodeEngineImpl implements NodeEngine {
     }
 
     @Override
-    public Object toObject(Object object) {
+    public <T> T toObject(Object object) {
         return serializationService.toObject(object);
     }
 
@@ -382,8 +365,7 @@ public class NodeEngineImpl implements NodeEngine {
                 throw new HazelcastException("Service with name '" + serviceName + "' not found!",
                         new ServiceNotFoundException("Service with name '" + serviceName + "' not found!"));
             } else {
-                throw new RetryableHazelcastException("HazelcastInstance[" + getThisAddress()
-                        + "] is not active!");
+                throw new RetryableHazelcastException("HazelcastInstance[" + getThisAddress() + "] is not active!");
             }
         }
         return service;
@@ -399,11 +381,12 @@ public class NodeEngineImpl implements NodeEngine {
         return node.getVersion();
     }
 
-    /**
-     * Returns a list of services matching provides service class/interface.
-     * <br></br>
-     * <b>CoreServices will be placed at the beginning of the list.</b>
-     */
+    @Override
+    public SplitBrainMergePolicyProvider getSplitBrainMergePolicyProvider() {
+        return splitBrainMergePolicyProvider;
+    }
+
+    @Override
     public <S> Collection<S> getServices(Class<S> serviceClass) {
         return serviceManager.getServices(serviceClass);
     }
@@ -435,7 +418,7 @@ public class NodeEngineImpl implements NodeEngine {
      * <p>
      * Post join operations should return response, at least a {@code null} response.
      * <p>
-     * <b>NOTE</b>: Post join operations must be lock free, meaning no locks at all:
+     * <b>Note</b>: Post join operations must be lock free, meaning no locks at all:
      * no partition locks, no key-based locks, no service level locks, no database interaction!
      * The {@link Operation#getPartitionId()} method should return a negative value.
      * This means that the operations should not implement {@link PartitionAwareOperation}.
@@ -443,16 +426,15 @@ public class NodeEngineImpl implements NodeEngine {
      * @return the operations to be executed at the end of a finalized join
      */
     public Operation[] getPostJoinOperations() {
-        final Collection<Operation> postJoinOps = new LinkedList<Operation>();
+        Collection<Operation> postJoinOps = new LinkedList<Operation>();
         Collection<PostJoinAwareService> services = getServices(PostJoinAwareService.class);
         for (PostJoinAwareService service : services) {
             Operation postJoinOperation = service.getPostJoinOperation();
             if (postJoinOperation != null) {
                 if (postJoinOperation.getPartitionId() >= 0) {
-                    logger.severe(
-                            "Post-join operations should not have partition ID set! Service: "
-                                    + service + ", Operation: "
-                                    + postJoinOperation);
+                    logger.severe("Post-join operations should not have partition ID set! Service: "
+                            + service + ", Operation: "
+                            + postJoinOperation);
                     continue;
                 }
                 postJoinOps.add(postJoinOperation);
@@ -462,16 +444,15 @@ public class NodeEngineImpl implements NodeEngine {
     }
 
     public Operation[] getPreJoinOperations() {
-        final Collection<Operation> preJoinOps = new LinkedList<Operation>();
+        Collection<Operation> preJoinOps = new LinkedList<Operation>();
         Collection<PreJoinAwareService> services = getServices(PreJoinAwareService.class);
         for (PreJoinAwareService service : services) {
-            final Operation preJoinOperation = service.getPreJoinOperation();
+            Operation preJoinOperation = service.getPreJoinOperation();
             if (preJoinOperation != null) {
                 if (preJoinOperation.getPartitionId() >= 0) {
-                    logger.severe(
-                            "Pre-join operations operations should not have partition ID set! Service: "
-                                    + service + ", Operation: "
-                                    + preJoinOperation);
+                    logger.severe("Pre-join operations operations should not have partition ID set! Service: "
+                            + service + ", Operation: "
+                            + preJoinOperation);
                     continue;
                 }
                 preJoinOps.add(preJoinOperation);
@@ -485,17 +466,66 @@ public class NodeEngineImpl implements NodeEngine {
         operationService.reset();
     }
 
-    public void shutdown(final boolean terminate) {
+    @SuppressWarnings("checkstyle:npathcomplexity")
+    public void shutdown(boolean terminate) {
         logger.finest("Shutting down services...");
-        operationParker.shutdown();
-        operationService.shutdownInvocations();
-        proxyService.shutdown();
-        serviceManager.shutdown(terminate);
-        eventService.shutdown();
-        operationService.shutdownOperationExecutor();
-        wanReplicationService.shutdown();
-        executionService.shutdown();
-        metricsRegistry.shutdown();
-        diagnostics.shutdown();
+        if (operationParker != null) {
+            operationParker.shutdown();
+        }
+        if (operationService != null) {
+            operationService.shutdownInvocations();
+        }
+        if (proxyService != null) {
+            proxyService.shutdown();
+        }
+        if (serviceManager != null) {
+            serviceManager.shutdown(terminate);
+        }
+        if (eventService != null) {
+            eventService.shutdown();
+        }
+        if (operationService != null) {
+            operationService.shutdownOperationExecutor();
+        }
+        if (wanReplicationService != null) {
+            wanReplicationService.shutdown();
+        }
+        if (executionService != null) {
+            executionService.shutdown();
+        }
+        if (metricsRegistry != null) {
+            metricsRegistry.shutdown();
+        }
+        if (diagnostics != null) {
+            diagnostics.shutdown();
+        }
+    }
+
+    private class ConnectionManagerPacketHandler implements PacketHandler {
+
+        @Override
+        public void handle(Packet packet) throws Exception {
+            // ConnectionManager is only available after the NodeEngineImpl is available
+            PacketHandler packetHandler = (PacketHandler) node.getConnectionManager();
+            packetHandler.handle(packet);
+        }
+    }
+
+    private class JetPacketHandler implements PacketHandler {
+
+        private volatile PacketHandler handler;
+
+        @Override
+        public void handle(Packet packet) throws Exception {
+            // currently service registration is done after the creation of the packet dispatcher,
+            // hence we need to lazily initialize the JetPacketHandler
+            if (handler == null) {
+                handler = serviceManager.getService(JET_SERVICE_NAME);
+                if (handler == null) {
+                    throw new UnsupportedOperationException("Jet is not registered on this node");
+                }
+            }
+            handler.handle(packet);
+        }
     }
 }

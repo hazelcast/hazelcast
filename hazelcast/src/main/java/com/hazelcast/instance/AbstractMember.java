@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -209,11 +209,11 @@ public abstract class AbstractMember implements Member {
         if (obj == null) {
             return false;
         }
-        if (!(obj instanceof AbstractMember)) {
+        if (!(obj instanceof Member)) {
             return false;
         }
 
-        AbstractMember that = (AbstractMember) obj;
-        return address.equals(that.address) && uuid.equals(that.uuid);
+        Member that = (Member) obj;
+        return address.equals(that.getAddress()) && uuid.equals(that.getUuid());
     }
 }

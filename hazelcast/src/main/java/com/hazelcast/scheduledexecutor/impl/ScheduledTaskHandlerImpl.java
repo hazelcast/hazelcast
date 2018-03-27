@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -90,13 +90,8 @@ public final class ScheduledTaskHandlerImpl
 
     @Override
     public String toUrn() {
-        return URN_BASE
-                + (address == null
-                        ? "-"
-                        : (address.getHost() + ":" + String.valueOf(address.getPort()))) + DESC_SEP
-                + String.valueOf(partitionId) + DESC_SEP
-                + schedulerName + DESC_SEP
-                + taskName;
+        return URN_BASE + (address == null ? "-" : (address.getHost() + ":" + String.valueOf(address.getPort()))) + DESC_SEP
+                + String.valueOf(partitionId) + DESC_SEP + schedulerName + DESC_SEP + taskName;
     }
 
     @Override
@@ -200,8 +195,7 @@ public final class ScheduledTaskHandlerImpl
         String scheduler = parts[2];
         String task = parts[3];
 
-        return addr != null
-                ? new ScheduledTaskHandlerImpl(addr, scheduler, task)
-                : new ScheduledTaskHandlerImpl(partitionId, scheduler, task);
+        return addr != null ? new ScheduledTaskHandlerImpl(addr, scheduler, task) : new ScheduledTaskHandlerImpl(partitionId,
+                scheduler, task);
     }
 }

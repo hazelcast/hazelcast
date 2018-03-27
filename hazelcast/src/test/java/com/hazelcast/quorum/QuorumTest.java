@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package com.hazelcast.quorum;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.ConfigurationException;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.QuorumConfig;
 import com.hazelcast.core.HazelcastInstance;
@@ -24,10 +25,13 @@ import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.ILock;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.Member;
+import com.hazelcast.quorum.impl.ProbabilisticQuorumFunction;
 import com.hazelcast.quorum.impl.QuorumServiceImpl;
+import com.hazelcast.quorum.impl.RecentlyActiveQuorumFunction;
 import com.hazelcast.spi.MemberAttributeServiceEvent;
 import com.hazelcast.spi.MembershipAwareService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -47,6 +51,9 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 
+/**
+ * Tests quorum related configurations.
+ */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class QuorumTest extends HazelcastTestSupport {
@@ -80,9 +87,59 @@ public class QuorumTest extends HazelcastTestSupport {
         final Quorum quorum2 = hazelcastInstance.getQuorumService().getQuorum(quorumName2);
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertTrue(quorum1.isPresent());
                 assertFalse(quorum2.isPresent());
+            }
+        });
+    }
+
+    @Test
+    public void testProbabilisticQuorumConsidersLocalMember() {
+        String quorumName = randomString();
+        QuorumFunction quorumFunction = new ProbabilisticQuorumFunction(1, 100, 1250, 20, 100, 20);
+        QuorumConfig quorumConfig = new QuorumConfig()
+                .setName(quorumName)
+                .setEnabled(true)
+                .setQuorumFunctionImplementation(quorumFunction);
+
+        Config config = new Config()
+                .addQuorumConfig(quorumConfig)
+                .setProperty(GroupProperty.HEARTBEAT_INTERVAL_SECONDS.getName(), "1");
+
+        HazelcastInstance instance = createHazelcastInstance(config);
+
+        final Quorum quorum = instance.getQuorumService().getQuorum(quorumName);
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertTrue(quorum.isPresent());
+            }
+        });
+    }
+
+    @Test
+    public void testRecentlyActiveQuorumConsidersLocalMember() {
+        final String quorumName = randomString();
+        QuorumFunction quorumFunction = new RecentlyActiveQuorumFunction(1, 10000);
+        QuorumConfig quorumConfig = new QuorumConfig()
+                .setName(quorumName)
+                .setEnabled(true)
+                .setQuorumFunctionImplementation(quorumFunction);
+
+        Config config = new Config()
+                .addQuorumConfig(quorumConfig)
+                .setProperty(GroupProperty.HEARTBEAT_INTERVAL_SECONDS.getName(), "1");
+
+        HazelcastInstance instance = createHazelcastInstance(config);
+
+        final Quorum quorum = instance.getQuorumService().getQuorum(quorumName);
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertTrue(quorum.isPresent());
             }
         });
     }
@@ -105,7 +162,7 @@ public class QuorumTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertTrue(function.wasCalled);
             }
         });
@@ -354,6 +411,58 @@ public class QuorumTest extends HazelcastTestSupport {
 
         HazelcastInstance instance = createHazelcastInstance(config);
         assertEquals(instance, HazelcastInstanceAwareQuorumFunction.instance);
+    }
+
+    @Test(expected = ConfigurationException.class)
+    public void givenProbabilisticQuorum_whenAcceptableHeartbeatPause_greaterThanMaxNoHeartbeat_exceptionIsThrown() {
+        Config config = new Config();
+        config.setProperty(GroupProperty.MAX_NO_HEARTBEAT_SECONDS.getName(), "10");
+        QuorumConfig probabilisticQuorumConfig = QuorumConfig.newProbabilisticQuorumConfigBuilder("prob-quorum", 3)
+                .withAcceptableHeartbeatPauseMillis(13000)
+                .build();
+
+        config.addQuorumConfig(probabilisticQuorumConfig);
+
+        createHazelcastInstance(config);
+    }
+
+    @Test(expected = ConfigurationException.class)
+    public void givenProbabilisticQuorum_whenAcceptableHeartbeatPause_lessThanHeartbeatInterval_exceptionIsThrown() {
+        Config config = new Config();
+        config.setProperty(GroupProperty.HEARTBEAT_INTERVAL_SECONDS.getName(), "5");
+        QuorumConfig probabilisticQuorumConfig = QuorumConfig.newProbabilisticQuorumConfigBuilder("prob-quorum", 3)
+                .withAcceptableHeartbeatPauseMillis(3000)
+                .build();
+
+        config.addQuorumConfig(probabilisticQuorumConfig);
+
+        createHazelcastInstance(config);
+    }
+
+    @Test(expected = ConfigurationException.class)
+    public void givenRecentlyActiveQuorum_whenHeartbeatTolerance_greaterThanMaxNoHeartbeat_exceptionIsThrown() {
+        Config config = new Config();
+        config.setProperty(GroupProperty.MAX_NO_HEARTBEAT_SECONDS.getName(), "10");
+        QuorumConfig recentlyActiveQuorumConfig = QuorumConfig
+                .newRecentlyActiveQuorumConfigBuilder("test-quorum", 3, 13000)
+                .build();
+
+        config.addQuorumConfig(recentlyActiveQuorumConfig);
+
+        createHazelcastInstance(config);
+    }
+
+    @Test(expected = ConfigurationException.class)
+    public void givenRecentlyActiveQuorum_whenHeartbeatTolerance_lessThanHeartbeatInterval_exceptionIsThrown() {
+        Config config = new Config();
+        config.setProperty(GroupProperty.HEARTBEAT_INTERVAL_SECONDS.getName(), "5");
+        QuorumConfig recentlyActiveQuorumConfig = QuorumConfig
+                .newRecentlyActiveQuorumConfigBuilder("test-quorum", 3, 3000)
+                .build();
+
+        config.addQuorumConfig(recentlyActiveQuorumConfig);
+
+        createHazelcastInstance(config);
     }
 
     private static class HazelcastInstanceAwareQuorumFunction implements QuorumFunction, HazelcastInstanceAware {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,8 @@ package com.hazelcast.cache.impl.journal;
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.journal.EventJournalCacheEvent;
-import com.hazelcast.journal.EventJournal;
-import com.hazelcast.journal.EventJournalReadOperation;
+import com.hazelcast.internal.journal.EventJournal;
+import com.hazelcast.internal.journal.EventJournalReadOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.projection.Projection;
@@ -43,16 +43,19 @@ import java.io.IOException;
  *            if the projection is {@code null} or it is the identity projection
  * @since 3.9
  */
-public class CacheEventJournalReadOperation<K, V, T> extends EventJournalReadOperation<T, InternalEventJournalCacheEvent> {
+public class CacheEventJournalReadOperation<K, V, T>
+        extends EventJournalReadOperation<T, InternalEventJournalCacheEvent> {
     protected Predicate<? super EventJournalCacheEvent<K, V>> predicate;
-    protected Projection<? super EventJournalCacheEvent<K, V>, T> projection;
+    protected Projection<? super EventJournalCacheEvent<K, V>, ? extends T> projection;
 
     public CacheEventJournalReadOperation() {
     }
 
-    public CacheEventJournalReadOperation(String cacheName, long startSequence, int minSize, int maxSize,
-                                          Predicate<? super EventJournalCacheEvent<K, V>> predicate,
-                                          Projection<? super EventJournalCacheEvent<K, V>, T> projection) {
+    public CacheEventJournalReadOperation(
+            String cacheName, long startSequence, int minSize, int maxSize,
+            Predicate<? super EventJournalCacheEvent<K, V>> predicate,
+            Projection<? super EventJournalCacheEvent<K, V>, ? extends T> projection
+    ) {
         super(cacheName, startSequence, minSize, maxSize);
         this.predicate = predicate;
         this.projection = projection;

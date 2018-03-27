@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -208,7 +208,8 @@ public class ClientCachePartitionLostListenerTest extends HazelcastTestSupport {
     private static class EventCollectingCachePartitionLostListener
             implements CachePartitionLostListener {
 
-        private final List<CachePartitionLostEvent> events = Collections.synchronizedList(new LinkedList<CachePartitionLostEvent>());
+        private final List<CachePartitionLostEvent> events
+                = Collections.synchronizedList(new LinkedList<CachePartitionLostEvent>());
 
         public EventCollectingCachePartitionLostListener() {
         }

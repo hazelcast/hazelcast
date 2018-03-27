@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,6 +53,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.util.ThreadUtil.createThreadPoolName;
+import static java.lang.Thread.currentThread;
 
 @SuppressWarnings("checkstyle:classfanoutcomplexity")
 public final class ExecutionServiceImpl implements InternalExecutionService {
@@ -152,6 +153,11 @@ public final class ExecutionServiceImpl implements InternalExecutionService {
         // register CompletableFuture task
         this.completableFutureTask = new CompletableFutureTask();
         scheduleWithRepetition(completableFutureTask, INITIAL_DELAY, PERIOD, TimeUnit.MILLISECONDS);
+    }
+
+    // only used in tests
+    public LoggingScheduledExecutor getScheduledExecutorService() {
+        return scheduledExecutorService;
     }
 
     @Override
@@ -313,11 +319,13 @@ public final class ExecutionServiceImpl implements InternalExecutionService {
         try {
             scheduledExecutorService.awaitTermination(AWAIT_TIME, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
+            currentThread().interrupt();
             logger.finest(e);
         }
         try {
             cachedExecutorService.awaitTermination(AWAIT_TIME, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
+            currentThread().interrupt();
             logger.finest(e);
         }
         executors.clear();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -278,8 +278,8 @@ public class QueueStoreTest extends HazelcastTestSupport {
         TestQueueStore testQueueStore = (TestQueueStore) queueStore;
         int size = testQueueStore.store.size();
 
-        assertEquals("Expected not queue store operation" +
-                " since we disabled it in QueueStoreConfig but found initialized ", 0, size);
+        assertEquals("Expected not queue store operation since we disabled it in QueueStoreConfig, but found initialized ",
+                0, size);
     }
 
     @Test

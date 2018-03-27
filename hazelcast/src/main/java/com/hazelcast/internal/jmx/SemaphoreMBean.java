@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,6 +49,12 @@ public class SemaphoreMBean extends HazelcastMBean<ISemaphore> {
     @ManagedDescription("Shrinks the number of available permits by the indicated reduction. Does not block")
     public void reduce(int reduction) {
         managedObject.reducePermits(reduction);
+    }
+
+    @ManagedAnnotation(value = "increase", operation = true)
+    @ManagedDescription("Increases the number of available permits by the indicated increase. Does not block")
+    public void increase(int increases) {
+        managedObject.increasePermits(increases);
     }
 
     @ManagedAnnotation(value = "release", operation = true)

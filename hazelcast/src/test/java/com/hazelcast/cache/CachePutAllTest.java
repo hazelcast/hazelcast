@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,11 @@ import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.Node;
+import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceAccessor;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -33,6 +36,11 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import javax.cache.Cache;
+import javax.cache.configuration.Factory;
+import javax.cache.configuration.FactoryBuilder;
+import javax.cache.expiry.CreatedExpiryPolicy;
+import javax.cache.expiry.Duration;
 import javax.cache.expiry.ExpiryPolicy;
 import java.util.HashMap;
 import java.util.Map;
@@ -160,4 +168,30 @@ public class CachePutAllTest extends CacheTestSupport {
         }
     }
 
+    @Test
+    public void testPutAll_whenEntryExpiresOnCreate() {
+        Factory<? extends ExpiryPolicy> expiryPolicyFactory = FactoryBuilder.factoryOf(new CreatedExpiryPolicy(Duration.ZERO));
+        CacheConfig<String, String> cacheConfig = new CacheConfig<String, String>();
+        cacheConfig.setTypes(String.class, String.class);
+        cacheConfig.setExpiryPolicyFactory(expiryPolicyFactory);
+        cacheConfig.setStatisticsEnabled(true);
+        cacheConfig.setBackupCount(1);
+
+        Cache<String, String> cache = createCache(cacheConfig);
+
+        String key = generateKeyOwnedBy(hazelcastInstance);
+        // need to count the number of backup failures on backup member
+        OperationService operationService = getOperationService(hazelcastInstances[1]);
+        MetricsRegistry metricsRegistry = getMetricsRegistry(hazelcastInstances[1]);
+        assertEquals(0L, OperationServiceAccessor.getFailedBackupsCount(hazelcastInstances[1]).get());
+
+        Map<String, String> entries = new HashMap<String, String>();
+        entries.put(key, randomString());
+        cache.putAll(entries);
+
+        assertNull(cache.get(key));
+        // force collect metrics
+        metricsRegistry.collectMetrics(operationService);
+        assertEquals(0L, OperationServiceAccessor.getFailedBackupsCount(hazelcastInstances[1]).get());
+    }
 }

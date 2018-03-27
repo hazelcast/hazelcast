@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,10 +66,9 @@ public class ReplicateUpdateToCallerOperation extends AbstractSerializableOperat
         long updateVersion = response.getVersion();
         if (currentVersion >= updateVersion) {
             if (logger.isFineEnabled()) {
-                logger.fine("Rejecting stale update received for replicated map: " + name + "  partitionId="
-                        + getPartitionId() + " current version: " + currentVersion + " update version: " + updateVersion);
+                logger.fine("Rejecting stale update received for replicated map '" + name + "' (partitionId " + getPartitionId()
+                        + ") (current version " + currentVersion + ") (update version " + updateVersion + ")");
             }
-
             return;
         }
         Object key = store.marshall(dataKey);
@@ -102,7 +101,7 @@ public class ReplicateUpdateToCallerOperation extends AbstractSerializableOperat
 
     private void notifyCaller() {
         OperationServiceImpl operationService = (OperationServiceImpl) getNodeEngine().getOperationService();
-        operationService.getInboundResponseHandler().notifyBackupComplete(callId);
+        operationService.getBackupHandler().notifyBackupComplete(callId);
     }
 
     @Override

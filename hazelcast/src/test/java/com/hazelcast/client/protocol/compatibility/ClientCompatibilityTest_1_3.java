@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1962,6 +1962,8 @@ public class ClientCompatibilityTest_1_3 {
     MultiMapRemoveEntryCodec.ResponseParameters params = MultiMapRemoveEntryCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
                 assertTrue(isEqual(aBoolean, params.response));
 }
+
+
 
 
 {
@@ -6092,7 +6094,7 @@ public class ClientCompatibilityTest_1_3 {
     ClientMessage clientMessage = RingbufferReadManyCodec.encodeRequest(    aString ,    aLong ,    anInt ,    anInt ,    aData   );
     int length = inputStream.readInt();
     // Since the test is generated for protocol version (1.3) which is earlier than latest change in the message
-    // (version 1.5), only the bytes after frame length fields are compared
+    // (version 1.6), only the bytes after frame length fields are compared
     int frameLength = clientMessage.getFrameLength();
     assertTrue(frameLength >= length);
     inputStream.skipBytes(FRAME_LEN_FIELD_SIZE);
@@ -6109,6 +6111,7 @@ public class ClientCompatibilityTest_1_3 {
                 assertTrue(isEqual(anInt, params.readCount));
                 assertTrue(isEqual(datas, params.items));
                 assertFalse(params.itemSeqsExist);
+                assertFalse(params.nextSeqExist);
 }
 
 
@@ -6243,6 +6246,26 @@ public class ClientCompatibilityTest_1_3 {
     CardinalityEstimatorEstimateCodec.ResponseParameters params = CardinalityEstimatorEstimateCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
                 assertTrue(isEqual(aLong, params.response));
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

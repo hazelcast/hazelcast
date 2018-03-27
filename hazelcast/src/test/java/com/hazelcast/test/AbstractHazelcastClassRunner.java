@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.annotation.Repeat;
 import com.hazelcast.test.bounce.BounceMemberRule;
-import com.hazelcast.util.EmptyStatement;
 import net.bytebuddy.agent.ByteBuddyAgent;
 import net.bytebuddy.agent.builder.AgentBuilder;
 import net.bytebuddy.description.type.TypeDescription;
@@ -56,7 +55,10 @@ import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.cache.jsr.JsrTestUtil.clearCachingProviderRegistry;
+import static com.hazelcast.cache.jsr.JsrTestUtil.getCachingProviderRegistrySize;
 import static com.hazelcast.test.TestEnvironment.isRunningCompatibilityTest;
+import static com.hazelcast.util.EmptyStatement.ignore;
 import static java.lang.Integer.getInteger;
 
 /**
@@ -95,7 +97,7 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
                 threadMXBean.setThreadCpuTimeEnabled(true);
                 threadCPUTimeInfoAvailable = true;
             } catch (Throwable t) {
-                EmptyStatement.ignore(t);
+                ignore(t);
             }
         }
         THREAD_CPU_TIME_INFO_AVAILABLE = threadCPUTimeInfoAvailable;
@@ -106,7 +108,7 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
                 threadMXBean.setThreadContentionMonitoringEnabled(true);
                 threadContentionInfoAvailable = true;
             } catch (Throwable t) {
-                EmptyStatement.ignore(t);
+                ignore(t);
             }
         }
         THREAD_CONTENTION_INFO_AVAILABLE = threadContentionInfoAvailable;
@@ -266,7 +268,7 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
 
     /**
      * Gets the {@link Repeat} annotation if set.
-     *
+     * <p>
      * Method level definition overrides class level definition.
      */
     private Repeat getRepeatable(FrameworkMethod method) {
@@ -332,11 +334,20 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
             public void evaluate() throws Throwable {
                 originalStatement.evaluate();
 
+                // check for running Hazelcast instances
                 Set<HazelcastInstance> instances = Hazelcast.getAllHazelcastInstances();
                 if (!instances.isEmpty()) {
                     String message = "Instances haven't been shut down: " + instances;
                     Hazelcast.shutdownAll();
                     throw new IllegalStateException(message);
+                }
+
+                // check for leftover CachingProvider instances
+                int registrySize = getCachingProviderRegistrySize();
+                if (registrySize > 0) {
+                    clearCachingProviderRegistry();
+                    throw new IllegalStateException(registrySize + " CachingProviders are not cleaned up."
+                            + " Please use JsrTestUtil.cleanup() in your test!");
                 }
             }
         };

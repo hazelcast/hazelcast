@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -76,28 +76,29 @@ public class CacheSimpleConfigTest extends HazelcastTestSupport {
 
     @Test
     public void testEqualsAndHashCode() {
+        assumeDifferentHashCodes();
         CacheSimpleEntryListenerConfig redEntryListenerConfig = new CacheSimpleEntryListenerConfig();
         redEntryListenerConfig.setCacheEntryListenerFactory("red");
         CacheSimpleEntryListenerConfig blackEntryListenerConfig = new CacheSimpleEntryListenerConfig();
         blackEntryListenerConfig.setCacheEntryListenerFactory("black");
         EqualsVerifier.forClass(CacheSimpleConfig.class)
-                      .allFieldsShouldBeUsedExcept("readOnly")
-                      .suppress(Warning.NONFINAL_FIELDS, Warning.NULL_FIELDS)
-                      .withPrefabValues(EvictionConfig.class,
-                              new EvictionConfig(1000, ENTRY_COUNT, EvictionPolicy.LFU),
-                              new EvictionConfig(300, USED_NATIVE_MEMORY_PERCENTAGE, EvictionPolicy.LRU))
-                      .withPrefabValues(WanReplicationRef.class,
-                              new WanReplicationRef("red", null, null,false),
-                              new WanReplicationRef("black", null, null, true))
-                      .withPrefabValues(CacheSimpleConfig.class,
-                              new CacheSimpleConfig().setName("red"),
-                              new CacheSimpleConfig().setName("black"))
-                      .withPrefabValues(CacheSimpleEntryListenerConfig.class,
-                              redEntryListenerConfig,
-                              blackEntryListenerConfig)
-                      .withPrefabValues(CachePartitionLostListenerConfig.class,
-                              new CachePartitionLostListenerConfig("red"),
-                              new CachePartitionLostListenerConfig("black"))
-                      .verify();
+                .allFieldsShouldBeUsedExcept("readOnly")
+                .suppress(Warning.NONFINAL_FIELDS, Warning.NULL_FIELDS)
+                .withPrefabValues(EvictionConfig.class,
+                        new EvictionConfig(1000, ENTRY_COUNT, EvictionPolicy.LFU),
+                        new EvictionConfig(300, USED_NATIVE_MEMORY_PERCENTAGE, EvictionPolicy.LRU))
+                .withPrefabValues(WanReplicationRef.class,
+                        new WanReplicationRef("red", null, null, false),
+                        new WanReplicationRef("black", null, null, true))
+                .withPrefabValues(CacheSimpleConfig.class,
+                        new CacheSimpleConfig().setName("red"),
+                        new CacheSimpleConfig().setName("black"))
+                .withPrefabValues(CacheSimpleEntryListenerConfig.class,
+                        redEntryListenerConfig,
+                        blackEntryListenerConfig)
+                .withPrefabValues(CachePartitionLostListenerConfig.class,
+                        new CachePartitionLostListenerConfig("red"),
+                        new CachePartitionLostListenerConfig("black"))
+                .verify();
     }
 }

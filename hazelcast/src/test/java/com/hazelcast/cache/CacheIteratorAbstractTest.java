@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,8 @@ import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
 
 import javax.cache.Cache;
 import javax.cache.CacheManager;
@@ -30,6 +31,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 
 public abstract class CacheIteratorAbstractTest extends HazelcastTestSupport {
@@ -38,15 +40,15 @@ public abstract class CacheIteratorAbstractTest extends HazelcastTestSupport {
 
     private CachingProvider cachingProvider;
 
-    @Parameterized.Parameters(name = "configureFetchSize:{0}")
+    @Parameters(name = "configureFetchSize:{0}")
     public static Collection<Object[]> parameters() {
-        return Arrays.asList(new Object[][]{
+        return asList(new Object[][]{
                 {false},
-                {true}
+                {true},
         });
     }
 
-    @Parameterized.Parameter(0)
+    @Parameter(0)
     public boolean configureFetchSize;
 
     protected Iterator getIterator(Cache cache) {

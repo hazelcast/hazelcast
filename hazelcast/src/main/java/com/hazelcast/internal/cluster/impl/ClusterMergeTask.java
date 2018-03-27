@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,27 +17,24 @@
 package com.hazelcast.internal.cluster.impl;
 
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.core.LifecycleEvent.LifecycleState;
 import com.hazelcast.instance.LifecycleServiceImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.Disposable;
 import com.hazelcast.spi.CoreService;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.SplitBrainHandlerService;
-import com.hazelcast.spi.properties.GroupProperty;
-import com.hazelcast.util.EmptyStatement;
+import com.hazelcast.util.ExceptionUtil;
 
 import java.util.Collection;
 import java.util.LinkedList;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.MERGED;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.MERGE_FAILED;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.MERGING;
-import static com.hazelcast.util.Preconditions.isNotNull;
+import static com.hazelcast.util.EmptyStatement.ignore;
 
 /**
  * ClusterMergeTask prepares {@code Node}'s internal state and its services
@@ -47,44 +44,83 @@ import static com.hazelcast.util.Preconditions.isNotNull;
  */
 class ClusterMergeTask implements Runnable {
 
-    private static final long MIN_WAIT_ON_FUTURE_TIMEOUT_MILLIS = TimeUnit.SECONDS.toMillis(10);
     private static final String MERGE_TASKS_EXECUTOR = "hz:cluster-merge";
 
+    private final boolean wasLiteMember;
     private final Node node;
+    private final ILogger logger;
+    private final LifecycleServiceImpl lifecycleService;
 
     ClusterMergeTask(Node node) {
         this.node = node;
+        this.logger = node.getLogger(getClass());
+        this.lifecycleService = node.hazelcastInstance.getLifecycleService();
+        this.wasLiteMember = node.clusterService.getLocalMember().isLiteMember();
     }
 
     public void run() {
-        LifecycleServiceImpl lifecycleService = node.hazelcastInstance.getLifecycleService();
         lifecycleService.fireLifecycleEvent(MERGING);
-        LifecycleState finalLifecycleState = MERGE_FAILED;
 
+        boolean joined = false;
         try {
             resetState();
 
             Collection<Runnable> coreTasks = collectMergeTasks(true);
-
             Collection<Runnable> nonCoreTasks = collectMergeTasks(false);
 
             resetServices();
 
             rejoin();
 
-            finalLifecycleState = getFinalLifecycleState();
+            joined = isJoined();
 
-            if (finalLifecycleState == MERGED) {
-                executeMergeTasks(coreTasks);
-                executeMergeTasks(nonCoreTasks);
+            if (joined) {
+                try {
+                    executeMergeTasks(coreTasks);
+                    executeMergeTasks(nonCoreTasks);
+                } finally {
+                    disposeTasks(coreTasks, nonCoreTasks);
+                }
             }
         } finally {
-            lifecycleService.fireLifecycleEvent(finalLifecycleState);
+            try {
+                if (joined) {
+                    tryToPromoteLocalLiteMember();
+                }
+            } finally {
+                lifecycleService.fireLifecycleEvent(joined ? MERGED : MERGE_FAILED);
+            }
         }
     }
 
-    private LifecycleState getFinalLifecycleState() {
-       return (node.isRunning() && node.getClusterService().isJoined()) ? MERGED : MERGE_FAILED;
+    /**
+     * Release associated task resources if tasks are {@link Disposable}
+     */
+    private void disposeTasks(Collection<Runnable>... tasks) {
+        for (Collection<Runnable> task : tasks) {
+            for (Runnable runnable : task) {
+                if (runnable instanceof Disposable) {
+                    ((Disposable) runnable).dispose();
+                }
+            }
+        }
+    }
+
+    private void tryToPromoteLocalLiteMember() {
+        if (wasLiteMember) {
+            // this node was a lite-member so no promotion needed after merging
+            return;
+        }
+
+        logger.info("Local lite-member was previously a data-member, now trying to promote it back...");
+
+        node.clusterService.promoteLocalLiteMember();
+
+        logger.info("Promoted local lite-member upon finish of split brain healing");
+    }
+
+    private boolean isJoined() {
+        return node.isRunning() && node.getClusterService().isJoined();
     }
 
     private void resetState() {
@@ -141,42 +177,33 @@ class ClusterMergeTask implements Runnable {
     }
 
     private void executeMergeTasks(Collection<Runnable> tasks) {
-        // execute merge tasks
         Collection<Future> futures = new LinkedList<Future>();
+
         for (Runnable task : tasks) {
             Future f = node.nodeEngine.getExecutionService().submit(MERGE_TASKS_EXECUTOR, task);
             futures.add(f);
         }
-        long callTimeoutMillis = node.getProperties().getMillis(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS);
+
         for (Future f : futures) {
             try {
-                waitOnFutureInterruptible(f, callTimeoutMillis, TimeUnit.MILLISECONDS);
+                waitOnFuture(f);
             } catch (HazelcastInstanceNotActiveException e) {
-                EmptyStatement.ignore(e);
+                ignore(e);
             } catch (Exception e) {
                 node.getLogger(getClass()).severe("While merging...", e);
             }
         }
     }
 
-    private <V> V waitOnFutureInterruptible(Future<V> future, long timeout, TimeUnit timeUnit)
-            throws ExecutionException, InterruptedException, TimeoutException {
-
-        isNotNull(timeUnit, "timeUnit");
-        long totalTimeoutMs = timeUnit.toMillis(timeout);
-        while (true) {
-            long timeoutStepMs = Math.min(MIN_WAIT_ON_FUTURE_TIMEOUT_MILLIS, totalTimeoutMs);
-            try {
-                return future.get(timeoutStepMs, TimeUnit.MILLISECONDS);
-            } catch (TimeoutException t) {
-                totalTimeoutMs -= timeoutStepMs;
-                if (totalTimeoutMs <= 0) {
-                    throw t;
-                }
-                if (!node.isRunning()) {
-                    future.cancel(true);
-                    throw new HazelcastInstanceNotActiveException();
-                }
+    private <V> V waitOnFuture(Future<V> future) {
+        try {
+            return future.get();
+        } catch (Throwable t) {
+            if (!node.isRunning()) {
+                future.cancel(true);
+                throw new HazelcastInstanceNotActiveException();
+            } else {
+                throw ExceptionUtil.rethrow(t);
             }
         }
     }

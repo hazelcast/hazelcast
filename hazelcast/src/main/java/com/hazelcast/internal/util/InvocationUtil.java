@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import com.hazelcast.partition.NoDataMemberInClusterException;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationResponseHandler;
 import com.hazelcast.spi.impl.AbstractCompletableFuture;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.util.executor.CompletedFuture;
@@ -88,6 +89,34 @@ public final class InvocationUtil {
         // it invokes on another member only when the previous invocation is completed (so invocations are serial)
         // the future itself completes only when the last invocation completes (or if there is an error)
         return new ChainingFuture<Object>(invocationIterator, executor, memberIterator, logger);
+    }
+
+    /**
+     * Constructs a local execution with retry logic. The operation must not
+     * have an {@link OperationResponseHandler}, it must return a response
+     * and it must not validate the target.
+     *
+     * @return the local execution
+     * @throws IllegalArgumentException if the operation has a response handler
+     *                                  set, if it does not return a response
+     *                                  or if it validates the operation target
+     * @see Operation#returnsResponse()
+     * @see Operation#getOperationResponseHandler()
+     * @see Operation#validatesTarget()
+     */
+    public static LocalRetryableExecution executeLocallyWithRetry(NodeEngine nodeEngine, Operation operation) {
+        if (operation.getOperationResponseHandler() != null) {
+            throw new IllegalArgumentException("Operation must not have a response handler set");
+        }
+        if (!operation.returnsResponse()) {
+            throw new IllegalArgumentException("Operation must return a response");
+        }
+        if (operation.validatesTarget()) {
+            throw new IllegalArgumentException("Operation must not validate the target");
+        }
+        final LocalRetryableExecution execution = new LocalRetryableExecution(nodeEngine, operation);
+        execution.run();
+        return execution;
     }
 
     private static void warmUpPartitions(NodeEngine nodeEngine) {

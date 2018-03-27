@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,13 +20,13 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.partition.InternalPartition;
+import com.hazelcast.internal.partition.PartitionReplicaVersionsView;
 import com.hazelcast.internal.partition.impl.ReplicaFragmentSyncInfo;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.ServiceNamespace;
 import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.internal.partition.PartitionReplicaVersionsView;
 import com.hazelcast.util.scheduler.ScheduledEntry;
 import org.junit.After;
 import org.junit.Before;
@@ -46,6 +46,7 @@ import static com.hazelcast.internal.partition.TestPartitionUtils.getOwnedReplic
 import static com.hazelcast.internal.partition.TestPartitionUtils.getScheduledReplicaSyncRequests;
 import static junit.framework.TestCase.assertNotNull;
 
+@SuppressWarnings("WeakerAccess")
 public abstract class AbstractPartitionLostListenerTest extends HazelcastTestSupport {
 
     public enum NodeLeaveType {
@@ -54,6 +55,16 @@ public abstract class AbstractPartitionLostListenerTest extends HazelcastTestSup
     }
 
     private TestHazelcastInstanceFactory hazelcastInstanceFactory;
+
+    @Before
+    public final void setup() {
+        hazelcastInstanceFactory = createHazelcastInstanceFactory(getNodeCount());
+    }
+
+    @After
+    public final void tearDown() {
+        hazelcastInstanceFactory.terminateAll();
+    }
 
     protected abstract int getNodeCount();
 
@@ -65,17 +76,12 @@ public abstract class AbstractPartitionLostListenerTest extends HazelcastTestSup
         return 20;
     }
 
-    @Before
-    public void setup() {
-        hazelcastInstanceFactory = createHazelcastInstanceFactory(getNodeCount());
+    final protected void stopInstances(List<HazelcastInstance> instances, NodeLeaveType nodeLeaveType) {
+        stopInstances(instances, nodeLeaveType, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
     }
 
-    @After
-    public void tearDown() {
-        hazelcastInstanceFactory.terminateAll();
-    }
-
-    final protected void stopInstances(List<HazelcastInstance> instances, final NodeLeaveType nodeLeaveType) {
+    final protected void stopInstances(List<HazelcastInstance> instances, final NodeLeaveType nodeLeaveType,
+                                       int timeoutSeconds) {
         assertNotNull(nodeLeaveType);
 
         final List<Thread> threads = new ArrayList<Thread>();
@@ -101,7 +107,7 @@ public abstract class AbstractPartitionLostListenerTest extends HazelcastTestSup
             t.start();
         }
 
-        assertOpenEventually(latch);
+        assertOpenEventually(latch, timeoutSeconds);
     }
 
     final protected List<HazelcastInstance> getCreatedInstancesShuffledAfterWarmedUp() {
@@ -176,8 +182,9 @@ public abstract class AbstractPartitionLostListenerTest extends HazelcastTestSup
         return survivingPartitions;
     }
 
+    @SuppressWarnings("SameParameterValue")
     final protected void waitAllForSafeStateAndDumpPartitionServiceOnFailure(List<HazelcastInstance> instances,
-                                                                             int timeoutInSeconds) throws InterruptedException {
+                                                                             int timeoutInSeconds) {
         try {
             waitAllForSafeState(instances, timeoutInSeconds);
         } catch (AssertionError e) {
@@ -186,7 +193,7 @@ public abstract class AbstractPartitionLostListenerTest extends HazelcastTestSup
         }
     }
 
-    private void logPartitionState(List<HazelcastInstance> instances) throws InterruptedException {
+    private void logPartitionState(List<HazelcastInstance> instances) {
         for (Entry<Integer, List<Address>> entry : getAllReplicaAddresses(instances).entrySet()) {
             System.out.println("PartitionTable >> partitionId=" + entry.getKey() + " table=" + entry.getValue());
         }

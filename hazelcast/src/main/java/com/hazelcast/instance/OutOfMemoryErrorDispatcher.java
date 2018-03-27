@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,11 +19,11 @@ package com.hazelcast.instance;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.OutOfMemoryHandler;
 import com.hazelcast.spi.annotation.PrivateApi;
-import com.hazelcast.util.EmptyStatement;
 
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.Preconditions.isNotNull;
 import static java.lang.System.arraycopy;
 
@@ -178,7 +178,7 @@ public final class OutOfMemoryErrorDispatcher {
                 HazelcastInstance[] clients = removeRegisteredClients();
                 h.onOutOfMemory(outOfMemoryError, clients);
             } catch (Throwable ignored) {
-                EmptyStatement.ignore(ignored);
+                ignore(ignored);
             }
         }
 
@@ -188,7 +188,7 @@ public final class OutOfMemoryErrorDispatcher {
                 HazelcastInstance[] instances = removeRegisteredServers();
                 h.onOutOfMemory(outOfMemoryError, instances);
             } catch (Throwable ignored) {
-                EmptyStatement.ignore(ignored);
+                ignore(ignored);
             }
         }
     }

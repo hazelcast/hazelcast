@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.XmlClientConfigBuilder;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.util.StringUtil;
 
 import java.io.IOException;
 import java.net.URI;
@@ -145,7 +146,11 @@ public final class HazelcastClientCachingProvider extends AbstractHazelcastCachi
     }
 
     private ClientConfig getDefaultClientConfig() {
-        return new XmlClientConfigBuilder().build();
+        ClientConfig clientConfig = new XmlClientConfigBuilder().build();
+        if (namedDefaultHzInstance && StringUtil.isNullOrEmpty(clientConfig.getInstanceName())) {
+            clientConfig.setInstanceName(SHARED_JCACHE_INSTANCE_NAME);
+        }
+        return clientConfig;
     }
 
     protected ClientConfig getConfigFromLocation(String location, ClassLoader classLoader, String instanceName)

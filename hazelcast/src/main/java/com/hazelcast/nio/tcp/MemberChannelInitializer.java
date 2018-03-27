@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,8 @@
 
 package com.hazelcast.nio.tcp;
 
-import com.hazelcast.client.impl.protocol.util.ClientMessageChannelInboundHandler;
+import com.hazelcast.client.impl.protocol.util.ClientMessageDecoder;
+import com.hazelcast.client.impl.protocol.util.ClientMessageEncoder;
 import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.ChannelInboundHandler;
 import com.hazelcast.internal.networking.ChannelInitializer;
@@ -24,8 +25,8 @@ import com.hazelcast.internal.networking.ChannelOutboundHandler;
 import com.hazelcast.internal.networking.InitResult;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.IOService;
-import com.hazelcast.nio.ascii.TextChannelInboundHandler;
-import com.hazelcast.nio.ascii.TextChannelOutboundHandler;
+import com.hazelcast.nio.ascii.TextDecoder;
+import com.hazelcast.nio.ascii.TextEncoder;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -38,6 +39,7 @@ import static com.hazelcast.nio.IOService.KILO_BYTE;
 import static com.hazelcast.nio.IOUtil.newByteBuffer;
 import static com.hazelcast.nio.Protocols.CLIENT_BINARY_NEW;
 import static com.hazelcast.nio.Protocols.CLUSTER;
+import static com.hazelcast.nio.Protocols.PROTOCOL_LENGTH;
 import static com.hazelcast.util.StringUtil.bytesToString;
 import static com.hazelcast.util.StringUtil.stringToBytes;
 
@@ -94,7 +96,7 @@ public class MemberChannelInitializer implements ChannelInitializer {
         ConcurrentMap attributeMap = channel.attributeMap();
         ByteBuffer protocolBuffer = (ByteBuffer) attributeMap.get(PROTOCOL_BUFFER);
         if (protocolBuffer == null) {
-            protocolBuffer = ByteBuffer.allocate(3);
+            protocolBuffer = ByteBuffer.allocate(PROTOCOL_LENGTH);
             attributeMap.put(PROTOCOL_BUFFER, protocolBuffer);
         }
 
@@ -135,13 +137,12 @@ public class MemberChannelInitializer implements ChannelInitializer {
         return new InitResult<ChannelInboundHandler>(inputBuffer, inboundHandler);
     }
 
-    private InitResult<ChannelInboundHandler> initInboundClientProtocol(Channel channel) throws IOException {
+    private InitResult<ChannelInboundHandler> initInboundClientProtocol(Channel channel) {
         TcpIpConnection connection = (TcpIpConnection) channel.attributeMap().get(TcpIpConnection.class);
 
         ByteBuffer inputBuffer = newInputBuffer(channel, ioService.getSocketClientReceiveBufferSize());
 
-        ChannelInboundHandler inboundHandler
-                = new ClientMessageChannelInboundHandler(new MessageHandlerImpl(connection, ioService.getClientEngine()));
+        ChannelInboundHandler inboundHandler = new ClientMessageDecoder(connection, ioService.getClientEngine());
 
         return new InitResult<ChannelInboundHandler>(inputBuffer, inboundHandler);
     }
@@ -151,13 +152,13 @@ public class MemberChannelInitializer implements ChannelInitializer {
         TcpIpConnectionManager connectionManager = connection.getConnectionManager();
         connectionManager.incrementTextConnections();
 
-        TextChannelOutboundHandler outboundHandler = new TextChannelOutboundHandler(connection);
+        TextEncoder outboundHandler = new TextEncoder(connection);
         channel.attributeMap().put(TEXT_OUTBOUND_HANDLER, outboundHandler);
 
-        ByteBuffer inputBuffer = newInputBuffer(channel, ioService.getSocketReceiveBufferSize());
+        ByteBuffer inputBuffer = newInputBuffer(channel, ioService.getSocketClientReceiveBufferSize());
         inputBuffer.put(stringToBytes(protocol));
 
-        ChannelInboundHandler inboundHandler = new TextChannelInboundHandler(connection, outboundHandler);
+        ChannelInboundHandler inboundHandler = new TextDecoder(connection, outboundHandler);
         return new InitResult<ChannelInboundHandler>(inputBuffer, inboundHandler);
     }
 
@@ -223,7 +224,7 @@ public class MemberChannelInitializer implements ChannelInitializer {
     }
 
     private InitResult<ChannelOutboundHandler> initOutboundClientProtocol(Channel channel) {
-        ChannelOutboundHandler outboundHandler = new ClientChannelOutboundHandler();
+        ChannelOutboundHandler outboundHandler = new ClientMessageEncoder();
 
         ByteBuffer outputBuffer = newOutputBuffer(channel, ioService.getSocketClientSendBufferSize());
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,10 +18,12 @@ package com.hazelcast.core;
 
 import com.hazelcast.cardinality.CardinalityEstimator;
 import com.hazelcast.config.Config;
+import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.quorum.QuorumService;
+import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.replicatedmap.ReplicatedMapCantBeCreatedOnLiteMemberException;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
@@ -192,8 +194,8 @@ public interface HazelcastInstance {
      * Executor service enables you to run your <tt>Runnable</tt>s and <tt>Callable</tt>s
      * on the Hazelcast cluster.
      * <p>
-     * <b>Note:</b> Note that it don't support invokeAll/Any
-     * and don't have standard shutdown behavior
+     * <p><b>Note:</b> Note that it doesn't support {@code invokeAll/Any}
+     * and doesn't have standard shutdown behavior</p>
      *
      * @param name name of the executor service
      * @return the distributed executor service for the given name
@@ -204,9 +206,9 @@ public interface HazelcastInstance {
      * Returns the durable executor service for the given name.
      * DurableExecutor service enables you to run your <tt>Runnable</tt>s and <tt>Callable</tt>s
      * on the Hazelcast cluster.
-     * <p/>
-     * <p><b>Note:</b> Note that it don't support invokeAll/Any
-     * and don't have standard shutdown behavior</p>
+     * <p>
+     * <p><b>Note:</b> Note that it doesn't support {@code invokeAll/Any}
+     * and doesn't have standard shutdown behavior</p>
      *
      * @param name name of the executor service
      * @return the durable executor service for the given name
@@ -252,15 +254,41 @@ public interface HazelcastInstance {
     TransactionContext newTransactionContext(TransactionOptions options);
 
     /**
-     * Creates cluster-wide unique IDs. Generated IDs are long type primitive values
+     * Creates cluster-wide unique ID generator. Generated IDs are {@code long} primitive values
      * between <tt>0</tt> and <tt>Long.MAX_VALUE</tt>. ID generation occurs almost at the speed of
-     * <tt>AtomicLong.incrementAndGet()</tt>. Generated IDs are unique during the life
+     * local <tt>AtomicLong.incrementAndGet()</tt>. Generated IDs are unique during the life
      * cycle of the cluster. If the entire cluster is restarted, IDs start from <tt>0</tt> again.
      *
      * @param name name of the {@link IdGenerator}
      * @return IdGenerator for the given name
+     *
+     * @deprecated The implementation can produce duplicate IDs in case of network split, even
+     * with split-brain protection enabled (during short window while split-brain is detected).
+     * Use {@link #getFlakeIdGenerator(String)} for an alternative implementation which does not
+     * suffer from this problem.
      */
+    @Deprecated
     IdGenerator getIdGenerator(String name);
+
+    /**
+     * Creates a cluster-wide unique ID generator. Generated IDs are {@code long} primitive values
+     * and are k-ordered (roughly ordered). IDs are in the range from {@code 0} to {@code
+     * Long.MAX_VALUE}.
+     * <p>
+     * The IDs contain timestamp component and a node ID component, which is assigned when the member
+     * joins the cluster. This allows the IDs to be ordered and unique without any coordination between
+     * members, which makes the generator safe even in split-brain scenario (for caveats,
+     * {@link com.hazelcast.internal.cluster.ClusterService#getMemberListJoinVersion() see here}).
+     * <p>
+     * For more details and caveats, see class documentation for {@link FlakeIdGenerator}.
+     * <p>
+     * Note: this implementation doesn't share namespace with {@link #getIdGenerator(String)}.
+     * That is, {@code getIdGenerator("a")} is distinct from {@code getFlakeIdGenerator("a")}.
+     *
+     * @param name name of the {@link FlakeIdGenerator}
+     * @return FlakeIdGenerator for the given name
+     */
+    FlakeIdGenerator getFlakeIdGenerator(String name);
 
     /**
      * Creates cluster-wide atomic long. Hazelcast {@link IAtomicLong} is distributed
@@ -345,6 +373,11 @@ public interface HazelcastInstance {
      * Quorum service can be used to retrieve quorum callbacks which let you to notify quorum results of your own to
      * the cluster quorum service.
      *
+     * IMPORTANT: The term "quorum" simply refers to the count of members in the cluster required for an operation to succeed.
+     * It does NOT refer to an implementation of Paxos or Raft protocols as used in many NoSQL and distributed systems.
+     * The mechanism it provides in Hazelcast protects the user in case the number of nodes in a cluster drops below the
+     * specified one.
+     *
      * @return the quorum service of this Hazelcast instance
      */
     QuorumService getQuorumService();
@@ -427,6 +460,20 @@ public interface HazelcastInstance {
      * @return a {@link CardinalityEstimator}
      */
     CardinalityEstimator getCardinalityEstimator(String name);
+
+    /**
+     * Obtain a {@link com.hazelcast.crdt.pncounter.PNCounter} with the given
+     * name.
+     * <p>
+     * The PN counter can be used as a counter with strong eventual consistency
+     * guarantees - if operations to the counters stop, the counter values
+     * of all replicas that can communicate with each other should eventually
+     * converge to the same value.
+     *
+     * @param name the name of the PN counter
+     * @return a {@link com.hazelcast.crdt.pncounter.PNCounter}
+     */
+    PNCounter getPNCounter(String name);
 
     /**
      * Returns the {@link IScheduledExecutorService} scheduled executor service for the given name.

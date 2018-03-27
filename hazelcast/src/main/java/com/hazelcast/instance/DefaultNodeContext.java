@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,13 +17,13 @@
 package com.hazelcast.instance;
 
 import com.hazelcast.cluster.Joiner;
-import com.hazelcast.config.MemberAddressProviderConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigurationException;
+import com.hazelcast.config.MemberAddressProviderConfig;
 import com.hazelcast.internal.networking.ChannelErrorHandler;
+import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.networking.EventLoopGroup;
 import com.hazelcast.internal.networking.nio.NioEventLoopGroup;
-import com.hazelcast.internal.networking.spinning.SpinningEventLoopGroup;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingServiceImpl;
 import com.hazelcast.nio.ClassLoaderUtil;
@@ -144,33 +144,23 @@ public class DefaultNodeContext implements NodeContext {
     }
 
     private EventLoopGroup createEventLoopGroup(Node node, NodeIOService ioService) {
-        boolean spinning = Boolean.getBoolean("hazelcast.io.spinning");
         LoggingServiceImpl loggingService = node.loggingService;
 
-        MemberChannelInitializer initializer
+        ChannelInitializer initializer
                 = new MemberChannelInitializer(loggingService.getLogger(MemberChannelInitializer.class), ioService);
 
-        ChannelErrorHandler exceptionHandler
+        ChannelErrorHandler errorHandler
                 = new TcpIpConnectionChannelErrorHandler(loggingService.getLogger(TcpIpConnectionChannelErrorHandler.class));
 
-        if (spinning) {
-            return new SpinningEventLoopGroup(
-                    loggingService,
-                    node.nodeEngine.getMetricsRegistry(),
-                    exceptionHandler,
-                    initializer,
-                    node.hazelcastInstance.getName());
-        } else {
-            return new NioEventLoopGroup(
-                    loggingService,
-                    node.nodeEngine.getMetricsRegistry(),
-                    node.hazelcastInstance.getName(),
-                    exceptionHandler,
-                    ioService.getInputSelectorThreadCount(),
-                    ioService.getOutputSelectorThreadCount(),
-                    ioService.getBalancerIntervalSeconds(),
-                    initializer);
-        }
+        return new NioEventLoopGroup(
+                new NioEventLoopGroup.Context()
+                        .loggingService(loggingService)
+                        .metricsRegistry(node.nodeEngine.getMetricsRegistry())
+                        .threadNamePrefix(node.hazelcastInstance.getName())
+                        .errorHandler(errorHandler)
+                        .inputThreadCount(ioService.getInputSelectorThreadCount())
+                        .outputThreadCount(ioService.getOutputSelectorThreadCount())
+                        .balancerIntervalSeconds(ioService.getBalancerIntervalSeconds())
+                        .channelInitializer(initializer));
     }
-
 }

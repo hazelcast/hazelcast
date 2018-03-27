@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,14 +17,16 @@
 package com.hazelcast.concurrent.atomiclong.operations;
 
 import com.hazelcast.concurrent.atomiclong.AtomicLongContainer;
-import com.hazelcast.concurrent.atomiclong.AtomicLongDataSerializerHook;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
 
-public class ApplyOperation<R> extends AbstractAtomicLongOperation {
+import static com.hazelcast.concurrent.atomiclong.AtomicLongDataSerializerHook.APPLY;
+
+public class ApplyOperation<R> extends AbstractAtomicLongOperation implements MutatingOperation {
 
     private IFunction<Long, R> function;
     private R returnValue;
@@ -39,8 +41,8 @@ public class ApplyOperation<R> extends AbstractAtomicLongOperation {
 
     @Override
     public void run() throws Exception {
-        AtomicLongContainer atomicLongContainer = getLongContainer();
-        returnValue = function.apply(atomicLongContainer.get());
+        AtomicLongContainer container = getLongContainer();
+        returnValue = function.apply(container.get());
     }
 
     @Override
@@ -50,7 +52,7 @@ public class ApplyOperation<R> extends AbstractAtomicLongOperation {
 
     @Override
     public int getId() {
-        return AtomicLongDataSerializerHook.APPLY;
+        return APPLY;
     }
 
     @Override

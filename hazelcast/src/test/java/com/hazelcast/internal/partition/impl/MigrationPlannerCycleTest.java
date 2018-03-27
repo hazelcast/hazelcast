@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,131 +37,246 @@ public class MigrationPlannerCycleTest {
     private MigrationPlanner migrationPlanner = new MigrationPlanner();
 
     @Test
-    public void testCycle1()
-            throws UnknownHostException {
-        final Address[] oldReplicas = new Address[]{new Address("localhost", 5701), new Address("localhost",
-                5702), null, null, null, null, null};
-
-        final Address[] newReplicas = new Address[]{new Address("localhost", 5702), new Address("localhost",
-                5701), null, null, null, null, null};
+    public void testCycle1() throws UnknownHostException {
+        final Address[] oldReplicas = new Address[]{
+                new Address("localhost", 5701),
+                new Address("localhost", 5702),
+                null,
+                null,
+                null,
+                null,
+                null,
+        };
+        final Address[] newReplicas = new Address[]{
+                new Address("localhost", 5702),
+                new Address("localhost", 5701),
+                null,
+                null,
+                null,
+                null,
+                null,
+        };
 
         assertTrue(migrationPlanner.isCyclic(oldReplicas, newReplicas));
     }
 
     @Test
-    public void testCycle1_fixed()
-            throws UnknownHostException {
-        final Address[] oldReplicas = new Address[]{new Address("localhost", 5701), new Address("localhost",
-                5702), null, null, null, null, null};
-
-        final Address[] newReplicas = new Address[]{new Address("localhost", 5702), new Address("localhost",
-                5701), null, null, null, null, null};
+    public void testCycle1_fixed() throws UnknownHostException {
+        final Address[] oldReplicas = new Address[]{
+                new Address("localhost", 5701),
+                new Address("localhost", 5702),
+                null,
+                null,
+                null,
+                null,
+                null,
+        };
+        final Address[] newReplicas = new Address[]{
+                new Address("localhost", 5702),
+                new Address("localhost", 5701),
+                null,
+                null,
+                null,
+                null,
+                null,
+        };
 
         assertTrue(migrationPlanner.fixCycle(oldReplicas, newReplicas));
         assertArrayEquals(oldReplicas, newReplicas);
     }
 
     @Test
-    public void testCycle2()
-            throws UnknownHostException {
-        final Address[] oldReplicas = new Address[]{new Address("localhost", 5701), new Address("localhost", 5702), new Address(
-                "localhost", 5703), null, null, null, null};
-
-        final Address[] newReplicas = new Address[]{new Address("localhost", 5703), new Address("localhost", 5701), new Address(
-                "localhost", 5702), null, null, null, null};
+    public void testCycle2() throws UnknownHostException {
+        final Address[] oldReplicas = new Address[]{
+                new Address("localhost", 5701),
+                new Address("localhost", 5702),
+                new Address("localhost", 5703),
+                null,
+                null,
+                null,
+                null,
+        };
+        final Address[] newReplicas = new Address[]{
+                new Address("localhost", 5703),
+                new Address("localhost", 5701),
+                new Address("localhost", 5702),
+                null,
+                null,
+                null,
+                null,
+        };
 
         assertTrue(migrationPlanner.isCyclic(oldReplicas, newReplicas));
     }
 
     @Test
-    public void testCycle2_fixed()
-            throws UnknownHostException {
-        final Address[] oldReplicas = new Address[]{new Address("localhost", 5701), new Address("localhost", 5702), new Address(
-                "localhost", 5703), null, null, null, null};
-
-        final Address[] newReplicas = new Address[]{new Address("localhost", 5703), new Address("localhost", 5701), new Address(
-                "localhost", 5702), null, null, null, null};
+    public void testCycle2_fixed() throws UnknownHostException {
+        final Address[] oldReplicas = new Address[]{
+                new Address("localhost", 5701),
+                new Address("localhost", 5702),
+                new Address("localhost", 5703),
+                null,
+                null,
+                null,
+                null,
+        };
+        final Address[] newReplicas = new Address[]{
+                new Address("localhost", 5703),
+                new Address("localhost", 5701),
+                new Address("localhost", 5702),
+                null,
+                null,
+                null,
+                null,
+        };
 
         assertTrue(migrationPlanner.fixCycle(oldReplicas, newReplicas));
         assertArrayEquals(oldReplicas, newReplicas);
     }
 
     @Test
-    public void testCycle3()
-            throws UnknownHostException {
-        final Address[] oldReplicas = new Address[]{new Address("localhost", 5701), new Address("localhost", 5702), new Address(
-                "localhost", 5703), new Address("localhost", 5704), new Address("localhost", 5705), null, null};
-
-        final Address[] newReplicas = new Address[]{new Address("localhost", 5705), new Address("localhost", 5702), new Address(
-                "localhost", 5701), new Address("localhost", 5704), new Address("localhost", 5703), null, null};
+    public void testCycle3() throws UnknownHostException {
+        final Address[] oldReplicas = new Address[]{
+                new Address("localhost", 5701),
+                new Address("localhost", 5702),
+                new Address("localhost", 5703),
+                new Address("localhost", 5704),
+                new Address("localhost", 5705),
+                null,
+                null,
+        };
+        final Address[] newReplicas = new Address[]{
+                new Address("localhost", 5705),
+                new Address("localhost", 5702),
+                new Address("localhost", 5701),
+                new Address("localhost", 5704),
+                new Address("localhost", 5703),
+                null,
+                null,
+        };
 
         assertTrue(migrationPlanner.isCyclic(oldReplicas, newReplicas));
     }
 
     @Test
-    public void testCycle3_fixed()
-            throws UnknownHostException {
-        final Address[] oldReplicas = new Address[]{new Address("localhost", 5701), new Address("localhost", 5702), new Address(
-                "localhost", 5703), new Address("localhost", 5704), new Address("localhost", 5705), null, null};
-
-        final Address[] newReplicas = new Address[]{new Address("localhost", 5705), new Address("localhost", 5702), new Address(
-                "localhost", 5701), new Address("localhost", 5704), new Address("localhost", 5703), null, null};
+    public void testCycle3_fixed() throws UnknownHostException {
+        final Address[] oldReplicas = new Address[]{
+                new Address("localhost", 5701),
+                new Address("localhost", 5702),
+                new Address("localhost", 5703),
+                new Address("localhost", 5704),
+                new Address("localhost", 5705),
+                null,
+                null,
+        };
+        final Address[] newReplicas = new Address[]{
+                new Address("localhost", 5705),
+                new Address("localhost", 5702),
+                new Address("localhost", 5701),
+                new Address("localhost", 5704),
+                new Address("localhost", 5703),
+                null,
+                null,
+        };
 
         assertTrue(migrationPlanner.fixCycle(oldReplicas, newReplicas));
         assertArrayEquals(oldReplicas, newReplicas);
     }
 
     @Test
-    public void testCycle4()
-            throws UnknownHostException {
-        final Address[] oldReplicas = new Address[]{new Address("localhost", 5701), new Address("localhost", 5702), new Address(
-                "localhost", 5703), new Address("localhost", 5704), new Address("localhost", 5705), new Address("localhost",
-                5706), new Address("localhost", 5707)};
-
-        final Address[] newReplicas = new Address[]{new Address("localhost", 5705), new Address("localhost", 5702), new Address(
-                "localhost", 5701), new Address("localhost", 5704), new Address("localhost", 5703), new Address("localhost",
-                5707), new Address("localhost", 5706)};
+    public void testCycle4() throws UnknownHostException {
+        final Address[] oldReplicas = new Address[]{
+                new Address("localhost", 5701),
+                new Address("localhost", 5702),
+                new Address("localhost", 5703),
+                new Address("localhost", 5704),
+                new Address("localhost", 5705),
+                new Address("localhost", 5706),
+                new Address("localhost", 5707),
+        };
+        final Address[] newReplicas = new Address[]{
+                new Address("localhost", 5705),
+                new Address("localhost", 5702),
+                new Address("localhost", 5701),
+                new Address("localhost", 5704),
+                new Address("localhost", 5703),
+                new Address("localhost", 5707),
+                new Address("localhost", 5706),
+        };
 
         assertTrue(migrationPlanner.isCyclic(oldReplicas, newReplicas));
     }
 
     @Test
-    public void testCycle4_fixed()
-            throws UnknownHostException {
-        final Address[] oldReplicas = new Address[]{new Address("localhost", 5701), new Address("localhost", 5702), new Address(
-                "localhost", 5703), new Address("localhost", 5704), new Address("localhost", 5705), new Address("localhost",
-                5706), new Address("localhost", 5707)};
-
-        final Address[] newReplicas = new Address[]{new Address("localhost", 5705), new Address("localhost", 5702), new Address(
-                "localhost", 5701), new Address("localhost", 5704), new Address("localhost", 5703), new Address("localhost",
-                5707), new Address("localhost", 5706)};
+    public void testCycle4_fixed() throws UnknownHostException {
+        final Address[] oldReplicas = new Address[]{
+                new Address("localhost", 5701),
+                new Address("localhost", 5702),
+                new Address("localhost", 5703),
+                new Address("localhost", 5704),
+                new Address("localhost", 5705),
+                new Address("localhost", 5706),
+                new Address("localhost", 5707),
+        };
+        final Address[] newReplicas = new Address[]{
+                new Address("localhost", 5705),
+                new Address("localhost", 5702),
+                new Address("localhost", 5701),
+                new Address("localhost", 5704),
+                new Address("localhost", 5703),
+                new Address("localhost", 5707),
+                new Address("localhost", 5706),
+        };
 
         assertTrue(migrationPlanner.fixCycle(oldReplicas, newReplicas));
         assertArrayEquals(oldReplicas, newReplicas);
     }
 
     @Test
-    public void testNoCycle()
-            throws UnknownHostException {
-        final Address[] oldReplicas = new Address[]{new Address("localhost", 5701), new Address("localhost",
-                5702), null, null, null, null, null};
-
-        final Address[] newReplicas = new Address[]{new Address("localhost", 5702), new Address("localhost",
-                5703), null, null, null, null, null};
+    public void testNoCycle() throws UnknownHostException {
+        final Address[] oldReplicas = new Address[]{
+                new Address("localhost", 5701),
+                new Address("localhost", 5702),
+                null,
+                null,
+                null,
+                null,
+                null,
+        };
+        final Address[] newReplicas = new Address[]{
+                new Address("localhost", 5702),
+                new Address("localhost", 5703),
+                null,
+                null,
+                null,
+                null,
+                null,
+        };
 
         assertFalse(migrationPlanner.isCyclic(oldReplicas, newReplicas));
     }
 
     @Test
-    public void testNoCycle2()
-            throws UnknownHostException {
-        final Address[] oldReplicas = new Address[]{new Address("localhost", 5701), new Address("localhost", 5702), new Address(
-                "localhost", 5703), new Address("localhost", 5704), new Address("localhost", 5705), null, null};
-
-        final Address[] newReplicas = new Address[]{new Address("localhost", 5706), new Address("localhost", 5702), new Address(
-                "localhost", 5701), new Address("localhost", 5704), new Address("localhost", 5703), null, null};
+    public void testNoCycle2() throws UnknownHostException {
+        final Address[] oldReplicas = new Address[]{
+                new Address("localhost", 5701),
+                new Address("localhost", 5702),
+                new Address("localhost", 5703),
+                new Address("localhost", 5704),
+                new Address("localhost", 5705),
+                null,
+                null,
+        };
+        final Address[] newReplicas = new Address[]{
+                new Address("localhost", 5706),
+                new Address("localhost", 5702),
+                new Address("localhost", 5701),
+                new Address("localhost", 5704),
+                new Address("localhost", 5703),
+                null,
+                null,
+        };
 
         assertFalse(migrationPlanner.isCyclic(oldReplicas, newReplicas));
     }
-
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,6 +58,7 @@ import java.util.Set;
 
 import static com.hazelcast.client.config.ClientXmlElements.CONNECTION_STRATEGY;
 import static com.hazelcast.client.config.ClientXmlElements.EXECUTOR_POOL_SIZE;
+import static com.hazelcast.client.config.ClientXmlElements.FLAKE_ID_GENERATOR;
 import static com.hazelcast.client.config.ClientXmlElements.GROUP;
 import static com.hazelcast.client.config.ClientXmlElements.INSTANCE_NAME;
 import static com.hazelcast.client.config.ClientXmlElements.LICENSE_KEY;
@@ -214,7 +215,7 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
         for (Node node : childElements(docElement)) {
             String nodeName = cleanNodeName(node);
             if (occurrenceSet.contains(nodeName)) {
-                throw new InvalidConfigurationException("Duplicate '" + nodeName + "' definition found in XML configuration. ");
+                throw new InvalidConfigurationException("Duplicate '" + nodeName + "' definition found in XML configuration");
             }
             handleXmlNode(node, nodeName);
             if (!canOccurMultipleTimes(nodeName)) {
@@ -256,6 +257,8 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
             handleConnectionStrategy(node);
         } else if (USER_CODE_DEPLOYMENT.isEqual(nodeName)) {
             handleUserCodeDeployment(node);
+        } else if (FLAKE_ID_GENERATOR.isEqual(nodeName)) {
+            handleFlakeIdGenerator(node);
         }
     }
 
@@ -341,6 +344,21 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
         clientConfig.addNearCacheConfig(nearCacheConfig);
     }
 
+    private void handleFlakeIdGenerator(Node node) {
+        String name = getAttribute(node, "name");
+        ClientFlakeIdGeneratorConfig config = new ClientFlakeIdGeneratorConfig(name);
+        for (Node child : childElements(node)) {
+            String nodeName = cleanNodeName(child);
+            String value = getTextContent(child).trim();
+            if ("prefetch-count".equals(nodeName)) {
+                config.setPrefetchCount(Integer.parseInt(value));
+            } else if ("prefetch-validity-millis".equalsIgnoreCase(nodeName)) {
+                config.setPrefetchValidityMillis(Long.parseLong(value));
+            }
+        }
+        clientConfig.addFlakeIdGeneratorConfig(config);
+    }
+
     private EvictionConfig getEvictionConfig(Node node) {
         EvictionConfig evictionConfig = new EvictionConfig();
         Node size = node.getAttributes().getNamedItem("size");
@@ -419,9 +437,36 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
                 handleDiscoveryStrategies(child, clientNetworkConfig);
             } else if ("outbound-ports".equals(nodeName)) {
                 handleOutboundPorts(child, clientNetworkConfig);
+            } else if ("icmp-ping".equals(nodeName)) {
+                handleIcmpPing(child, clientNetworkConfig);
             }
         }
         clientConfig.setNetworkConfig(clientNetworkConfig);
+    }
+
+    private void handleIcmpPing(Node node, ClientNetworkConfig clientNetworkConfig) {
+        ClientIcmpPingConfig icmpPingConfig = clientNetworkConfig.getClientIcmpPingConfig();
+
+        NamedNodeMap atts = node.getAttributes();
+        Node enabledNode = atts.getNamedItem("enabled");
+        boolean enabled = enabledNode != null && getBooleanValue(getTextContent(enabledNode).trim());
+        icmpPingConfig.setEnabled(enabled);
+
+        for (Node child : childElements(node)) {
+            String nodeName = cleanNodeName(child);
+            if ("timeout-milliseconds".equals(nodeName)) {
+                icmpPingConfig.setTimeoutMilliseconds(Integer.parseInt(getTextContent(child)));
+            } else if ("interval-milliseconds".equals(nodeName)) {
+                icmpPingConfig.setIntervalMilliseconds(Integer.parseInt(getTextContent(child)));
+            } else if ("ttl".equals(nodeName)) {
+                icmpPingConfig.setTtl(Integer.parseInt(getTextContent(child)));
+            } else if ("max-attempts".equals(nodeName)) {
+                icmpPingConfig.setMaxAttempts(Integer.parseInt(getTextContent(child)));
+            } else if ("echo-fail-fast-on-startup".equals(nodeName)) {
+                icmpPingConfig.setEchoFailFastOnStartup(Boolean.parseBoolean(getTextContent(child)));
+            }
+        }
+        clientNetworkConfig.setClientIcmpPingConfig(icmpPingConfig);
     }
 
     private void handleDiscoveryStrategies(Node node, ClientNetworkConfig clientNetworkConfig) {

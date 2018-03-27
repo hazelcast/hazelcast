@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -208,5 +208,29 @@ public final class MemorySize {
             return unit.toKiloBytes(size) + " KB";
         }
         return size + " bytes";
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        MemorySize that = (MemorySize) o;
+
+        if (value != that.value) {
+            return false;
+        }
+        return unit == that.unit;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = (int) (value ^ (value >>> 32));
+        result = 31 * result + (unit != null ? unit.hashCode() : 0);
+        return result;
     }
 }

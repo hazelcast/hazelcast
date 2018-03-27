@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,8 @@ package com.hazelcast.cache.impl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.spi.merge.MergingEntry;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 
 import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.processor.EntryProcessor;
@@ -54,6 +56,13 @@ public interface CacheOperationProvider {
     Operation createKeyIteratorOperation(int lastTableIndex, int fetchSize);
 
     Operation createEntryIteratorOperation(int lastTableIndex, int fetchSize);
+
+    Operation createMergeOperation(String name, List<MergingEntry<Data, Data>> mergingEntries,
+                                   SplitBrainMergePolicy policy);
+
+    OperationFactory createMergeOperationFactory(String name, int[] partitions,
+                                                 List<MergingEntry<Data, Data>>[] mergingEntries,
+                                                 SplitBrainMergePolicy policy);
 
     OperationFactory createGetAllOperationFactory(Set<Data> keySet, ExpiryPolicy policy);
 

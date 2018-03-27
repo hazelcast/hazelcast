@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,20 +29,21 @@ import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.util.SetUtil.createHashSet;
+
 public class MultiMapReplicationOperation extends Operation implements IdentifiedDataSerializable {
 
-    private Map<String, Map> map;
+    private Map<String, Map<Data, MultiMapValue>> map;
 
     public MultiMapReplicationOperation() {
     }
 
-    public MultiMapReplicationOperation(Map<String, Map> map) {
+    public MultiMapReplicationOperation(Map<String, Map<Data, MultiMapValue>> map) {
         this.map = map;
     }
 
@@ -55,7 +56,7 @@ public class MultiMapReplicationOperation extends Operation implements Identifie
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeInt(map.size());
-        for (Map.Entry<String, Map> entry : map.entrySet()) {
+        for (Map.Entry<String, Map<Data, MultiMapValue>> entry : map.entrySet()) {
             String name = entry.getKey();
             out.writeUTF(name);
 
@@ -82,18 +83,18 @@ public class MultiMapReplicationOperation extends Operation implements Identifie
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         int mapSize = in.readInt();
-        map = new HashMap<String, Map>(mapSize);
+        map = createHashMap(mapSize);
         for (int i = 0; i < mapSize; i++) {
             String name = in.readUTF();
             int collectionSize = in.readInt();
-            Map<Data, MultiMapValue> collections = new HashMap<Data, MultiMapValue>();
+            Map<Data, MultiMapValue> collections = createHashMap(collectionSize);
             for (int j = 0; j < collectionSize; j++) {
                 Data key = in.readData();
                 int collSize = in.readInt();
                 String collectionType = in.readUTF();
                 Collection<MultiMapRecord> coll;
                 if (collectionType.equals(MultiMapConfig.ValueCollectionType.SET.name())) {
-                    coll = new HashSet<MultiMapRecord>();
+                    coll = createHashSet(collSize);
                 } else {
                     coll = new LinkedList<MultiMapRecord>();
                 }

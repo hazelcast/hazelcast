@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,11 @@ import com.hazelcast.cache.CacheCreationTest;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.cache.impl.HazelcastClientCachingProvider;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.spi.properties.ClientProperty;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Ignore;
@@ -29,7 +32,10 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import javax.cache.CacheManager;
+import javax.cache.configuration.MutableConfiguration;
 import javax.cache.spi.CachingProvider;
+import java.util.concurrent.CountDownLatch;
 
 import static java.util.Collections.singletonList;
 
@@ -48,6 +54,50 @@ public class ClientCacheCreationTest extends CacheCreationTest {
             clientConfig.getNetworkConfig().setAddresses(singletonList("127.0.0.1"));
         }
         return HazelcastClientCachingProvider.createCachingProvider(HazelcastClient.newHazelcastClient(clientConfig));
+    }
+
+    @Test(expected = OperationTimeoutException.class)
+    public void createSingleCache_whenMemberDown_throwsOperationTimeoutException() {
+        HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance();
+
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
+        clientConfig.setProperty(ClientProperty.INVOCATION_TIMEOUT_SECONDS.getName(), "2");
+        HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
+        HazelcastClientCachingProvider cachingProvider = HazelcastClientCachingProvider.createCachingProvider(client);
+        CacheManager cacheManager = cachingProvider.getCacheManager();
+
+        hazelcastInstance.shutdown();
+        MutableConfiguration configuration = new MutableConfiguration();
+        cacheManager.createCache("xmlCache", configuration);
+    }
+
+    @Test
+    public void createSingleCache_whenMemberBounce() throws InterruptedException {
+        HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance();
+
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
+        HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
+        HazelcastClientCachingProvider cachingProvider = HazelcastClientCachingProvider.createCachingProvider(client);
+        final CacheManager cacheManager = cachingProvider.getCacheManager();
+
+        hazelcastInstance.shutdown();
+
+        final CountDownLatch cacheCreated = new CountDownLatch(1);
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                MutableConfiguration configuration = new MutableConfiguration();
+                cacheManager.createCache("xmlCache", configuration);
+                cacheCreated.countDown();
+            }
+        }).start();
+
+        //leave some gap to let create cache to start and retry
+        Thread.sleep(2000);
+        Hazelcast.newHazelcastInstance();
+        assertOpenEventually(cacheCreated);
     }
 
     @Test

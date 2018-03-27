@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,13 +58,13 @@ public interface ClientConnectionManager extends ConnectionListenable {
      * @return associated connection if available, returns null and triggers new connection creation otherwise
      * @throws IOException if connection is not able to triggered
      */
-    Connection getOrTriggerConnect(Address address) throws IOException;
+    Connection getOrTriggerConnect(Address address, boolean acquiresResource) throws IOException;
 
     void addConnectionHeartbeatListener(ConnectionHeartbeatListener connectionHeartbeatListener);
 
     Collection<ClientConnection> getActiveConnections();
 
-    Address getOwnerConnectionAddress() ;
+    Address getOwnerConnectionAddress();
 
     ClientPrincipal getPrincipal();
 

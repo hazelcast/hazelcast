@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,6 +36,7 @@ import org.junit.runner.RunWith;
 import java.util.Properties;
 
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
+import static com.hazelcast.test.HazelcastTestSupport.assumeDifferentHashCodes;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -110,12 +111,13 @@ public class RingbufferStoreConfigTest {
 
     @Test
     public void testEqualsAndHashCode() {
+        assumeDifferentHashCodes();
         EqualsVerifier.forClass(RingbufferStoreConfig.class)
-                      .allFieldsShouldBeUsedExcept("readOnly")
-                      .suppress(Warning.NONFINAL_FIELDS)
-                      .withPrefabValues(RingbufferStoreConfigReadOnly.class,
-                              new RingbufferStoreConfigReadOnly(new RingbufferStoreConfig().setClassName("red")),
-                              new RingbufferStoreConfigReadOnly(new RingbufferStoreConfig().setClassName("black")))
-                      .verify();
+                .allFieldsShouldBeUsedExcept("readOnly")
+                .suppress(Warning.NONFINAL_FIELDS)
+                .withPrefabValues(RingbufferStoreConfigReadOnly.class,
+                        new RingbufferStoreConfigReadOnly(new RingbufferStoreConfig().setClassName("red")),
+                        new RingbufferStoreConfigReadOnly(new RingbufferStoreConfig().setClassName("black")))
+                .verify();
     }
 }

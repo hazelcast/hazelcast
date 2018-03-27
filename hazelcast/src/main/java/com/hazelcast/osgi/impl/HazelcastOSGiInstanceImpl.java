@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import com.hazelcast.core.Cluster;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.core.Endpoint;
+import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.core.IAtomicReference;
@@ -42,6 +43,7 @@ import com.hazelcast.core.LifecycleService;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.core.PartitionService;
 import com.hazelcast.core.ReplicatedMap;
+import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.mapreduce.JobTracker;
@@ -64,6 +66,7 @@ import java.util.concurrent.ConcurrentMap;
  * {@link com.hazelcast.osgi.HazelcastOSGiInstance} implementation
  * as proxy of delegated {@link com.hazelcast.core.HazelcastInstance} for getting from OSGi service.
  */
+@SuppressWarnings({"checkstyle:classfanoutcomplexity"})
 class HazelcastOSGiInstanceImpl
         implements HazelcastOSGiInstance {
 
@@ -187,6 +190,11 @@ class HazelcastOSGiInstanceImpl
     }
 
     @Override
+    public FlakeIdGenerator getFlakeIdGenerator(String name) {
+        return delegatedInstance.getFlakeIdGenerator(name);
+    }
+
+    @Override
     public IAtomicLong getAtomicLong(String name) {
         return delegatedInstance.getAtomicLong(name);
     }
@@ -269,6 +277,11 @@ class HazelcastOSGiInstanceImpl
     @Override
     public CardinalityEstimator getCardinalityEstimator(String name) {
         return delegatedInstance.getCardinalityEstimator(name);
+    }
+
+    @Override
+    public PNCounter getPNCounter(String name) {
+        return delegatedInstance.getPNCounter(name);
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,8 +33,6 @@ import com.hazelcast.spi.partition.MigrationEndpoint;
 import java.util.concurrent.ExecutionException;
 import java.util.logging.Level;
 
-import static com.hazelcast.internal.cluster.Versions.V3_9;
-
 abstract class BaseMigrationSourceOperation extends BaseMigrationOperation {
 
     boolean returnResponse = true;
@@ -62,22 +60,13 @@ abstract class BaseMigrationSourceOperation extends BaseMigrationOperation {
     final void verifyMasterOnMigrationSource() {
         NodeEngine nodeEngine = getNodeEngine();
         Address masterAddress = nodeEngine.getMasterAddress();
-        boolean shouldFail = nodeEngine.getClusterService().getClusterVersion().isGreaterOrEqual(V3_9);
 
         if (!migrationInfo.getMaster().equals(masterAddress)) {
-            if (shouldFail) {
-                throw new IllegalStateException("Migration initiator is not master node! => " + toString());
-            } else {
-                throw new RetryableHazelcastException("Migration initiator is not master node! => " + toString());
-            }
+            throw new IllegalStateException("Migration initiator is not master node! => " + toString());
         }
 
         if (!masterAddress.equals(getCallerAddress())) {
-            if (shouldFail) {
-                throw new IllegalStateException("Caller is not master node! => " + toString());
-            } else {
-                throw new RetryableHazelcastException("Caller is not master node! => " + toString());
-            }
+            throw new IllegalStateException("Caller is not master node! => " + toString());
         }
     }
 

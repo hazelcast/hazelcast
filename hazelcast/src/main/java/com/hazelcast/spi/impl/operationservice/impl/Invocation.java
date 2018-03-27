@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,6 +47,7 @@ import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.spi.impl.executionservice.InternalExecutionService;
 import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
+import com.hazelcast.spi.impl.operationservice.TargetAware;
 import com.hazelcast.spi.impl.operationservice.impl.responses.BackupAckResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
@@ -256,6 +257,10 @@ public abstract class Invocation implements OperationResponseHandler {
                 throw new TargetNotMemberException(
                         invTarget, op.getPartitionId(), op.getClass().getName(), op.getServiceName());
             }
+        }
+
+        if (op instanceof TargetAware) {
+            ((TargetAware) op).setTarget(invTarget);
         }
 
         remote = !context.thisAddress.equals(invTarget);
@@ -572,7 +577,7 @@ public abstract class Invocation implements OperationResponseHandler {
 
     private void doInvokeRemote() {
         if (!context.outboundOperationHandler.send(op, invTarget)) {
-            notifyError(new RetryableIOException("Packet not send to -> " + invTarget));
+            notifyError(new RetryableIOException("Packet not sent to -> " + invTarget));
         }
     }
 

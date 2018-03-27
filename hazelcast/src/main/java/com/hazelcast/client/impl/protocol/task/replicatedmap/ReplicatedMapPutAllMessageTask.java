@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,8 +30,9 @@ import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.security.Permission;
-import java.util.HashMap;
 import java.util.Map;
+
+import static com.hazelcast.util.MapUtil.createHashMap;
 
 public class ReplicatedMapPutAllMessageTask
         extends AbstractAllPartitionsMessageTask<ReplicatedMapPutAllCodec.RequestParameters> {
@@ -88,7 +89,7 @@ public class ReplicatedMapPutAllMessageTask
 
     @Override
     public Object[] getParameters() {
-        final HashMap map = new HashMap();
+        final Map map = createHashMap(parameters.entries.size());
         for (Map.Entry entry : parameters.entries) {
             map.put(entry.getKey(), entry.getValue());
         }

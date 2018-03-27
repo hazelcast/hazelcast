@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,7 +68,7 @@ public class HazelcastCacheNoReadTimeoutTest extends HazelcastTestSupport {
         this.delayNo = cacheManager.getCache("delayNo");
 
         //no timeout
-        ((IMap<?, ?>)this.delayNo.getNativeCache()).addInterceptor(new DelayIMapGetInterceptor(250));
+        ((IMap<?, ?>) this.delayNo.getNativeCache()).addInterceptor(new DelayIMapGetInterceptor(250));
     }
 
     @Test
@@ -81,7 +81,7 @@ public class HazelcastCacheNoReadTimeoutTest extends HazelcastTestSupport {
         String key = createRandomKey();
         long start = System.nanoTime();
         dummyTimeoutBean.getDelayNo(key);
-        long time =  TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
+        long time = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
         assertTrue(time >= 250L);
     }
 

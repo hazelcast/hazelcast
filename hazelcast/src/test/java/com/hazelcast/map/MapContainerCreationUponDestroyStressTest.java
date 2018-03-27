@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,12 +48,12 @@ public class MapContainerCreationUponDestroyStressTest extends HazelcastTestSupp
 
     /**
      * Tests newly created recordStores after imap#destroy references same MapContainer instance.
-     *
+     * <p>
      * Normally, we remove mapContainer in map#destroy operation. If we call map#put after map#destroy, a new mapContainer
      * instance is created and all newly created recordStores references that new mapContainer instance. That referenced
      * mapContainer instance should be the new-mapContainer-instance because we previously called map#destroy and removed
      * old mapContainer instance.
-     *
+     * <p>
      * This test trying to be sure that after map#destroy those all newly created recordStore instances references same
      * single mapContainer instance by stressing mapContainer creation process with subsequent map#put and map#destroy operations.
      */

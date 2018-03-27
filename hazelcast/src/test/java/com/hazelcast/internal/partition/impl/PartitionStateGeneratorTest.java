@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -384,12 +384,12 @@ public class PartitionStateGeneratorTest {
         }
         final float r = 2f;
         assertTrue("Too low partition count! \nOwned: " + count + ", Avg: " + average
-                + ", \nPartitionCount: " + partitionCount + ", Replica: " + replica +
-                ", \nOwner: " + owner, count >= (float) (average) / r);
+                + ", \nPartitionCount: " + partitionCount + ", Replica: " + replica
+                + ", \nOwner: " + owner, count >= (float) (average) / r);
 
         assertTrue("Too high partition count! \nOwned: " + count + ", Avg: " + average
-                + ", \nPartitionCount: " + partitionCount + ", Replica: " + replica +
-                ", \nOwner: " + owner, count <= (float) (average) * r);
+                + ", \nPartitionCount: " + partitionCount + ", Replica: " + replica
+                + ", \nOwner: " + owner, count <= (float) (average) * r);
     }
 
     private static void printTable(Map<MemberGroup, GroupPartitionState> groupPartitionStates, int replicaCount) {

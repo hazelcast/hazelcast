@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -266,8 +266,8 @@ public class RingbufferStoreTest extends HazelcastTestSupport {
         final Ringbuffer<Object> ringbuffer = instance.getRingbuffer(ringbufferName);
         ringbuffer.add(1);
 
-        assertEquals("Expected that the ring buffer store would not be initialized" +
-                " since we disabled it in the ring buffer store config but found initialized ", 0, rbStoreFactory.stores.size());
+        assertEquals("Expected that the RingbufferStore would not be initialized since we disabled it"
+                + " in the RingbufferStoreConfig, but found initialized", 0, rbStoreFactory.stores.size());
     }
 
     @Test
@@ -288,7 +288,7 @@ public class RingbufferStoreTest extends HazelcastTestSupport {
     }
 
     @Test(expected = HazelcastException.class)
-    public void testRingbufferStore_addThrowsException() throws InterruptedException {
+    public void testRingbufferStore_addThrowsException() {
         final String ringbufferName = randomString();
         final RingbufferStoreConfig rbStoreConfig = new RingbufferStoreConfig()
                 .setStoreImplementation(new ExceptionThrowingRingbufferStore())
@@ -314,7 +314,7 @@ public class RingbufferStoreTest extends HazelcastTestSupport {
     }
 
     @Test(expected = HazelcastException.class)
-    public void testRingbufferStore_getLargestSequenceThrowsException() throws Exception {
+    public void testRingbufferStore_getLargestSequenceThrowsException() {
         final String ringbufferName = randomString();
         final RingbufferStoreConfig rbStoreConfig = new RingbufferStoreConfig()
                 .setStoreImplementation(new ExceptionThrowingRingbufferStore(true))

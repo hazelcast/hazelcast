@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,10 +18,12 @@ package com.hazelcast.map.impl.query;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.query.impl.Index;
+import com.hazelcast.query.impl.IndexCopyBehavior;
 import com.hazelcast.query.impl.getters.Extractors;
 
 public interface IndexProvider {
 
-    Index createIndex(String attributeName, boolean ordered, Extractors extractors, InternalSerializationService ss);
+    Index createIndex(String attributeName, boolean ordered, Extractors extractors,
+                      InternalSerializationService ss, IndexCopyBehavior copyBehavior);
 
 }

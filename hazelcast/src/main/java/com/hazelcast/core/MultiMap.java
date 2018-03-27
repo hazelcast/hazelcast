@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,9 +48,12 @@ import java.util.concurrent.TimeUnit;
  * </ul>
  * </p>
  *
+ * Supports Quorum {@link com.hazelcast.config.QuorumConfig} since 3.10 in cluster versions 3.10 and higher.
+ *
  * @author oztalip
  * @see IMap
  */
+@SuppressWarnings("checkstyle:methodcount")
 public interface MultiMap<K, V>
         extends BaseMultiMap<K, V>, DistributedObject {
 
@@ -131,6 +134,18 @@ public interface MultiMap<K, V>
      */
     Collection<V> remove(Object key);
 
+    /**
+     *  Deletes all the entries with the given key.
+     * <p/>
+     * <p><b>Warning:</b></p>
+     * This method uses <tt>hashCode</tt> and <tt>equals</tt> of the binary form of
+     * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
+     * defined in the <tt>key</tt>'s class.
+     *
+     * @param key the key of the entry to remove
+     */
+
+    void delete(Object key);
     /**
      * Returns the locally owned set of keys.
      * <p/>
@@ -490,6 +505,8 @@ public interface MultiMap<K, V>
      * is used to either select or to select and extract a (sub-)value. A predefined set of aggregations can be found in
      * {@link com.hazelcast.mapreduce.aggregation.Aggregations}.
      *
+     * Method does not honour Quorum
+     *
      * @param supplier        the supplier to select and / or extract a (sub-)value from the multimap
      * @param aggregation     the aggregation that is being executed against the multimap
      * @param <SuppliedValue> the final type emitted from the supplier
@@ -506,6 +523,8 @@ public interface MultiMap<K, V>
      * Executes a predefined aggregation on the multimaps data set. The {@link com.hazelcast.mapreduce.aggregation.Supplier}
      * is used to either select, or to select and extract, a (sub-)value. A predefined set of aggregations can be found in
      * {@link com.hazelcast.mapreduce.aggregation.Aggregations}.
+     *
+     * Method does not honour Quorum
      *
      * @param supplier        the supplier to select and / or extract a (sub-)value from the multimap
      * @param aggregation     the aggregation that is being executed against the multimap

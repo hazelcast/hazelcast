@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,14 +17,16 @@
 package com.hazelcast.concurrent.atomiclong.operations;
 
 import com.hazelcast.concurrent.atomiclong.AtomicLongContainer;
-import com.hazelcast.concurrent.atomiclong.AtomicLongDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
 
-public class GetAndSetOperation extends AtomicLongBackupAwareOperation {
+import static com.hazelcast.concurrent.atomiclong.AtomicLongDataSerializerHook.GET_AND_SET;
+
+public class GetAndSetOperation extends AtomicLongBackupAwareOperation implements MutatingOperation {
 
     private long newValue;
     private long returnValue;
@@ -39,8 +41,8 @@ public class GetAndSetOperation extends AtomicLongBackupAwareOperation {
 
     @Override
     public void run() throws Exception {
-        AtomicLongContainer atomicLongContainer = getLongContainer();
-        returnValue = atomicLongContainer.getAndSet(newValue);
+        AtomicLongContainer container = getLongContainer();
+        returnValue = container.getAndSet(newValue);
     }
 
     @Override
@@ -55,7 +57,7 @@ public class GetAndSetOperation extends AtomicLongBackupAwareOperation {
 
     @Override
     public int getId() {
-        return AtomicLongDataSerializerHook.GET_AND_SET;
+        return GET_AND_SET;
     }
 
     @Override

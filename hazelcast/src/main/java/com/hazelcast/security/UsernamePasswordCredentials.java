@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import com.hazelcast.spi.impl.SpiPortableHook;
 
 import java.io.IOException;
 
+import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.StringUtil.bytesToString;
 import static com.hazelcast.util.StringUtil.stringToBytes;
 
@@ -42,6 +43,7 @@ public class UsernamePasswordCredentials extends AbstractCredentials {
 
     public UsernamePasswordCredentials(String username, String password) {
         super(username);
+        checkNotNull(password);
         this.password = stringToBytes(password);
     }
 
@@ -60,11 +62,8 @@ public class UsernamePasswordCredentials extends AbstractCredentials {
      * @return the password
      */
     public String getPassword() {
-        if (password == null) {
-            return null;
-        } else {
-            return bytesToString(password);
-        }
+        checkNotNull(password);
+        return bytesToString(password);
     }
 
     /**
@@ -82,6 +81,7 @@ public class UsernamePasswordCredentials extends AbstractCredentials {
      * @param password the password to set
      */
     public void setPassword(String password) {
+        checkNotNull(password);
         this.password = stringToBytes(password);
     }
 

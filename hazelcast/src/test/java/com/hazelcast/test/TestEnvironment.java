@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ public final class TestEnvironment {
      * followed by a random UUID to avoid clashes.
      * For example {@code -Dhazelcast.test.sample.serialized.objects=/home/hz/tmp/objects-} will create files
      * {@code /home/hz/tmp/objects-UUID.index} and {@code /home/hz/tmp/objects-UUID.samples}.
+     *
      * @see SamplingSerializationService
      */
     public static final String SAMPLE_SERIALIZED_OBJECTS = "hazelcast.test.sample.serialized.objects";

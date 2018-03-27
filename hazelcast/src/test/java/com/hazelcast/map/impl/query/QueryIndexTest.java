@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.query;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.query.EntryObject;
@@ -26,30 +27,55 @@ import com.hazelcast.query.SampleTestObjects.Employee;
 import com.hazelcast.query.SampleTestObjects.Value;
 import com.hazelcast.query.SampleTestObjects.ValueType;
 import com.hazelcast.query.SqlPredicate;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.query.impl.IndexCopyBehavior;
+import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
+import static java.util.Arrays.asList;
 import static java.util.UUID.randomUUID;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 
-@RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@RunWith(Parameterized.class)
+@UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@Category(QuickTest.class)
 public class QueryIndexTest extends HazelcastTestSupport {
+
+    @Parameter(0)
+    public IndexCopyBehavior copyBehavior;
+
+    @Parameters(name = "copyBehavior: {0}")
+    public static Collection<Object[]> parameters() {
+        return asList(new Object[][]{
+                {IndexCopyBehavior.COPY_ON_READ},
+                {IndexCopyBehavior.COPY_ON_WRITE},
+                {IndexCopyBehavior.NEVER},
+        });
+    }
+
+    private HazelcastInstance createTestHazelcastInstance() {
+        Config config = getConfig();
+        config.setProperty(GroupProperty.INDEX_COPY_BEHAVIOR.getName(), copyBehavior.name());
+        return createHazelcastInstance(config);
+    }
 
     @Test
     public void testResultsReturned_whenCustomAttributeIndexed() {
-        HazelcastInstance h1 = createHazelcastInstance();
+        HazelcastInstance h1 = createTestHazelcastInstance();
 
         IMap<String, CustomObject> imap = h1.getMap("objects");
         imap.addIndex("attribute", true);
@@ -69,7 +95,7 @@ public class QueryIndexTest extends HazelcastTestSupport {
 
     @Test(timeout = 1000 * 60)
     public void testDeletingNonExistingObject() {
-        HazelcastInstance instance = createHazelcastInstance();
+        HazelcastInstance instance = createTestHazelcastInstance();
         IMap<Integer, SampleTestObjects.Value> map = instance.getMap(randomMapName());
         map.addIndex("name", false);
 
@@ -78,7 +104,7 @@ public class QueryIndexTest extends HazelcastTestSupport {
 
     @Test(timeout = 1000 * 60)
     public void testInnerIndex() {
-        HazelcastInstance instance = createHazelcastInstance();
+        HazelcastInstance instance = createTestHazelcastInstance();
         IMap<String, SampleTestObjects.Value> map = instance.getMap("default");
         map.addIndex("name", false);
         map.addIndex("type.typeName", false);
@@ -100,7 +126,7 @@ public class QueryIndexTest extends HazelcastTestSupport {
 
     @Test(timeout = 1000 * 60)
     public void testInnerIndexSql() {
-        HazelcastInstance instance = createHazelcastInstance();
+        HazelcastInstance instance = createTestHazelcastInstance();
         IMap<String, SampleTestObjects.Value> map = instance.getMap("default");
         map.addIndex("name", false);
         map.addIndex("type.typeName", false);
@@ -120,7 +146,7 @@ public class QueryIndexTest extends HazelcastTestSupport {
 
     @Test(timeout = 1000 * 60)
     public void issue685RemoveIndexesOnClear() {
-        HazelcastInstance instance = createHazelcastInstance();
+        HazelcastInstance instance = createTestHazelcastInstance();
         IMap<String, SampleTestObjects.Value> map = instance.getMap("default");
         map.addIndex("name", true);
         for (int i = 0; i < 4; i++) {
@@ -135,7 +161,7 @@ public class QueryIndexTest extends HazelcastTestSupport {
 
     @Test(timeout = 1000 * 60)
     public void testQueryDoesNotMatchOldResults_whenEntriesAreUpdated() {
-        HazelcastInstance instance = createHazelcastInstance();
+        HazelcastInstance instance = createTestHazelcastInstance();
         IMap<String, SampleTestObjects.Value> map = instance.getMap("default");
         map.addIndex("name", true);
 
@@ -148,7 +174,7 @@ public class QueryIndexTest extends HazelcastTestSupport {
 
     @Test(timeout = 1000 * 60)
     public void testOneIndexedFieldsWithTwoCriteriaField() {
-        HazelcastInstance h1 = createHazelcastInstance();
+        HazelcastInstance h1 = createTestHazelcastInstance();
         IMap<String, Employee> map = h1.getMap("employees");
         map.addIndex("name", false);
         map.put("1", new Employee(1L, "joe", 30, true, 100D));
@@ -161,7 +187,7 @@ public class QueryIndexTest extends HazelcastTestSupport {
 
     @Test(timeout = 1000 * 60)
     public void testPredicateNotEqualWithIndex() {
-        HazelcastInstance instance = createHazelcastInstance();
+        HazelcastInstance instance = createTestHazelcastInstance();
         IMap<Integer, Value> map1 = instance.getMap("testPredicateNotEqualWithIndex-ordered");
         IMap<Integer, Value> map2 = instance.getMap("testPredicateNotEqualWithIndex-unordered");
         testPredicateNotEqualWithIndex(map1, true);

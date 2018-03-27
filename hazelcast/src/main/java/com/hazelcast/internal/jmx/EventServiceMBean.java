@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ import static com.hazelcast.internal.jmx.ManagementService.quote;
 @ManagedDescription("HazelcastInstance.EventService")
 public class EventServiceMBean extends HazelcastMBean<EventService> {
 
-    private static final int INITIAL_CAPACITY = 3;
+    private static final int INITIAL_CAPACITY = 5;
 
     public EventServiceMBean(HazelcastInstance hazelcastInstance, EventService eventService, ManagementService service) {
         super(eventService, service);

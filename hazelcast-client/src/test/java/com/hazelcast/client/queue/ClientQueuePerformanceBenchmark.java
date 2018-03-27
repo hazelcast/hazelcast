@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,7 +48,7 @@ public class ClientQueuePerformanceBenchmark extends HazelcastTestSupport {
         test2();
     }
 
-    private static void test1()  {
+    private static void test1() {
         final Random rnd = new Random();
         for (int i = 0; i < THREAD_COUNT; i++) {
             new Thread() {
@@ -103,7 +103,8 @@ public class ClientQueuePerformanceBenchmark extends HazelcastTestSupport {
 
             System.err.println("_______________________________________________________________________________________");
             System.err.println(" offer: " + totalOfferVal + ",\t poll: " + totalPollVal + ",\t peek: " + totalPeekVal);
-            System.err.println(" size: " + queue.size() + " \t speed: " + ((totalOfferVal + totalPollVal + totalPeekVal) / sleepTime));
+            System.err.println(" size: " + queue.size()
+                    + " \t speed: " + ((totalOfferVal + totalPollVal + totalPeekVal) / sleepTime));
             System.err.println("---------------------------------------------------------------------------------------");
             System.err.println("");
         }

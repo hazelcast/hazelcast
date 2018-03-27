@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -128,9 +128,9 @@ public final class SortingUtil {
         };
     }
 
-    public static Comparator<Map.Entry> newComparator(final PagingPredicate pagingPredicate) {
-        return new Comparator<Map.Entry>() {
-            public int compare(Map.Entry entry1, Map.Entry entry2) {
+    private static Comparator<QueryableEntry> newComparator(final PagingPredicate pagingPredicate) {
+        return new Comparator<QueryableEntry>() {
+            public int compare(QueryableEntry entry1, QueryableEntry entry2) {
                 return SortingUtil.compare(pagingPredicate.getComparator(),
                         pagingPredicate.getIterationType(), entry1, entry2);
             }
@@ -142,14 +142,15 @@ public final class SortingUtil {
         if (pagingPredicate == null || list.isEmpty()) {
             return list;
         }
-        Comparator<Map.Entry> comparator = SortingUtil.newComparator(pagingPredicate);
+        Comparator<QueryableEntry> comparator = newComparator(pagingPredicate);
         Collections.sort(list, comparator);
         int nearestPage = nearestAnchorEntry.getKey();
         int pageSize = pagingPredicate.getPageSize();
         int page = pagingPredicate.getPage();
-        int totalSize = pageSize * (page - nearestPage);
+        long totalSize = pageSize * ((long) page - nearestPage);
         if (list.size() > totalSize) {
-            list = list.subList(0, totalSize);
+            // it's safe to cast totalSize back to int here since it's limited by the list size
+            list = list.subList(0, (int) totalSize);
         }
         return list;
     }
@@ -167,17 +168,18 @@ public final class SortingUtil {
         int nearestPage = nearestAnchorEntry.getKey();
         int page = pagingPredicate.getPage();
         int pageSize = pagingPredicate.getPageSize();
-        int begin = pageSize * (page - nearestPage - 1);
+        long begin = pageSize * ((long) page - nearestPage - 1);
         int size = list.size();
         if (begin > size) {
             return new ResultSet();
         }
-        int end = begin + pageSize;
+        long end = begin + pageSize;
         if (end > size) {
             end = size;
         }
         setAnchor(list, pagingPredicate, nearestPage);
-        List<Map.Entry> subList = list.subList(begin, end);
+        // it's safe to cast begin and end back to int here since they are limited by the list size
+        List<Map.Entry> subList = list.subList((int) begin, (int) end);
         return new ResultSet(subList, iterationType);
     }
 

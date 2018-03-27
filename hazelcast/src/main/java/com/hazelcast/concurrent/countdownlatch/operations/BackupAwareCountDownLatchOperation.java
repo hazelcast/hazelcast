@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,8 +34,8 @@ abstract class BackupAwareCountDownLatchOperation extends AbstractCountDownLatch
     @Override
     public Operation getBackupOperation() {
         CountDownLatchService service = getService();
-        CountDownLatchContainer latchContainer = service.getCountDownLatchContainer(name);
-        int count = latchContainer != null ? latchContainer.getCount() : 0;
+        CountDownLatchContainer container = service.getCountDownLatchContainer(name);
+        int count = container != null ? container.getCount() : 0;
         return new CountDownLatchBackupOperation(name, count);
     }
 

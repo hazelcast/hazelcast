@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,6 +44,10 @@ public abstract class InstancePermission extends ClusterPermission {
         final StringBuilder s = new StringBuilder();
         for (String action : actions) {
             s.append(action).append(" ");
+        }
+        // trim the trailing space
+        if (s.length() > 0) {
+            s.setLength(s.length() - 1);
         }
         this.actions = s.toString();
     }

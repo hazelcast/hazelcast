@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -139,11 +139,7 @@ public class BatchEventData implements Sequenced, EventData {
         }
 
         BatchEventData that = (BatchEventData) o;
-        if (events != null ? !events.equals(that.events) : that.events != null) {
-            return false;
-        }
-
-        return true;
+        return events != null ? events.equals(that.events) : that.events == null;
     }
 
     @Override

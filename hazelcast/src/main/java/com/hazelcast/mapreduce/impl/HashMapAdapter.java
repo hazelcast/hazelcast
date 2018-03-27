@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,8 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+
+import static com.hazelcast.util.MapUtil.createHashMap;
 
 /**
  * Simple HashMap adapter class to implement DataSerializable serialization semantics
@@ -78,7 +80,7 @@ public class HashMapAdapter<K, V>
             throws IOException {
 
         int size = in.readInt();
-        Map<K, V> map = new HashMap<K, V>(size);
+        Map<K, V> map = createHashMap(size);
         for (int i = 0; i < size; i++) {
             K key = in.readObject();
             V value = in.readObject();

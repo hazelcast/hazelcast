@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,6 +52,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static com.hazelcast.scheduledexecutor.TaskUtils.named;
+import static com.hazelcast.spi.partition.IPartition.MAX_BACKUP_COUNT;
+import static java.lang.String.format;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
@@ -134,7 +136,8 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
             fail("Should have been rejected.");
         } catch (RejectedExecutionException ex) {
             assertEquals("Got wrong RejectedExecutionException",
-                    "Maximum capacity (100) of tasks reached, for scheduled executor (foobar)", ex.getMessage());
+                    "Maximum capacity (100) of tasks reached, for scheduled executor (foobar). "
+                            + "Reminder that tasks must be disposed if not needed.", ex.getMessage());
         }
     }
 
@@ -163,7 +166,8 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
             fail("Should have been rejected.");
         } catch (RejectedExecutionException ex) {
             assertEquals("Got wrong RejectedExecutionException",
-                    "Maximum capacity (10) of tasks reached, for scheduled executor (foobar)", ex.getMessage());
+                    "Maximum capacity (10) of tasks reached, for scheduled executor (foobar). "
+                            + "Reminder that tasks must be disposed if not needed.", ex.getMessage());
         }
     }
 
@@ -192,7 +196,8 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
             fail("Should have been rejected.");
         } catch (RejectedExecutionException ex) {
             assertEquals("Got wrong RejectedExecutionException",
-                    "Maximum capacity (10) of tasks reached, for scheduled executor (foobar)", ex.getMessage());
+                    "Maximum capacity (10) of tasks reached, for scheduled executor (foobar). "
+                            + "Reminder that tasks must be disposed if not needed.", ex.getMessage());
         }
     }
 
@@ -315,30 +320,30 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
 
     @Test
     public void schedule_withMapChanges_durable() throws Exception {
-        int delay = 0;
-
         HazelcastInstance[] instances = createClusterWithCount(2);
         IMap<String, Integer> map = instances[1].getMap("map");
-        for (int i = 0; i < 100000; i++) {
+        for (int i = 0; i < MAP_INCREMENT_TASK_MAX_ENTRIES; i++) {
             map.put(String.valueOf(i), i);
         }
 
         Object key = generateKeyOwnedBy(instances[0]);
-        ICountDownLatch runsCountLatch = instances[1].getCountDownLatch("runsCountLatchName");
-        runsCountLatch.trySetCount(1);
+        ICountDownLatch startedLatch = instances[1].getCountDownLatch("startedLatch");
+        ICountDownLatch finishedLatch = instances[1].getCountDownLatch("finishedLatch");
+        startedLatch.trySetCount(1);
+        finishedLatch.trySetCount(1);
 
         IAtomicLong runEntryCounter = instances[1].getAtomicLong("runEntryCounterName");
 
         IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
-        executorService.scheduleOnKeyOwner(new ICountdownLatchMapIncrementCallableTask("map", "runEntryCounterName",
-                "runsCountLatchName"), key, delay, SECONDS);
+        executorService.scheduleOnKeyOwner(new ICountdownLatchMapIncrementCallableTask("map",
+                "runEntryCounterName", "startedLatch", "finishedLatch"), key, 0, SECONDS);
 
-        sleepSeconds(2);
+        assertOpenEventually(startedLatch);
         instances[0].getLifecycleService().shutdown();
 
-        runsCountLatch.await(2, MINUTES);
+        assertOpenEventually(finishedLatch);
 
-        for (int i = 0; i < 100000; i++) {
+        for (int i = 0; i < 10000; i++) {
             assertEquals(i + 1, (int) map.get(String.valueOf(i)));
         }
 
@@ -596,22 +601,22 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         executorService.schedule(new PlainCallableTask(), delay, SECONDS);
     }
 
-    @Test
-    public void schedule_testPartitionLostEvent() {
+    public void schedule_testPartitionLostEvent(int replicaLostCount) {
         int delay = 1;
 
         HazelcastInstance[] instances = createClusterWithCount(1);
         IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
         final IScheduledFuture future = executorService.schedule(new PlainCallableTask(), delay, SECONDS);
 
-        // used to make sure both futures (on the same handler) get the event. Catching possible equal/hashcode issues in the Map
-        final IScheduledFuture futureCopeInstance = (IScheduledFuture) ((List) executorService.getAllScheduledFutures()
-                .values().toArray()[0]).get(0);
+        // Used to make sure both futures (on the same handler) get the event.
+        // Catching possible equal/hashcode issues in the Map
+        final IScheduledFuture futureCopyInstance = (IScheduledFuture) ((List) executorService.getAllScheduledFutures()
+                                                                                              .values().toArray()[0]).get(0);
 
         ScheduledTaskHandler handler = future.getHandler();
 
         int partitionOwner = handler.getPartitionId();
-        IPartitionLostEvent internalEvent = new IPartitionLostEvent(partitionOwner, 1, null);
+        IPartitionLostEvent internalEvent = new IPartitionLostEvent(partitionOwner, replicaLostCount, null);
         ((InternalPartitionServiceImpl) getNodeEngineImpl(instances[0]).getPartitionService()).onPartitionLost(internalEvent);
 
         assertTrueEventually(new AssertTask() {
@@ -623,15 +628,27 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
                     fail();
                 } catch (IllegalStateException ex) {
                     try {
-                        futureCopeInstance.get();
+                        futureCopyInstance.get();
                         fail();
                     } catch (IllegalStateException ex2) {
-                        assertEquals("Partition holding this Scheduled task was lost along with all backups.", ex.getMessage());
-                        assertEquals("Partition holding this Scheduled task was lost along with all backups.", ex2.getMessage());
+                        assertEquals(format("Partition %d, holding this scheduled task was lost along with all backups.",
+                                future.getHandler().getPartitionId()), ex.getMessage());
+                        assertEquals(format("Partition %d, holding this scheduled task was lost along with all backups.",
+                                future.getHandler().getPartitionId()), ex2.getMessage());
                     }
                 }
             }
         });
+    }
+
+    @Test
+    public void schedule_testPartitionLostEvent_withMaxBackupCount() {
+        schedule_testPartitionLostEvent(MAX_BACKUP_COUNT);
+    }
+
+    @Test
+    public void schedule_testPartitionLostEvent_withDurabilityCount() {
+        schedule_testPartitionLostEvent(1);
     }
 
     @Test
@@ -651,10 +668,14 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
             public void run()
                     throws Exception {
                 try {
-                    future.get();
+                    future.get(0, SECONDS);
                     fail();
                 } catch (IllegalStateException ex) {
-                    assertEquals("Member holding this Scheduled task was removed from the cluster.", ex.getMessage());
+                    System.err.println(ex.getMessage());
+                    assertEquals(format("Member with address: %s,  holding this scheduled task is not part of this cluster.",
+                            future.getHandler().getAddress()), ex.getMessage());
+                } catch (TimeoutException ex) {
+                    ignore(ex);
                 }
             }
         });

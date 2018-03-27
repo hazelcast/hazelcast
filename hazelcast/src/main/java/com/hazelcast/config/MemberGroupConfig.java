@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -85,6 +85,25 @@ public class MemberGroupConfig {
         clear();
         this.interfaces.addAll(interfaces);
         return this;
+    }
+
+    @Override
+    public final boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || !(o instanceof MemberGroupConfig)) {
+            return false;
+        }
+
+        MemberGroupConfig that = (MemberGroupConfig) o;
+
+        return interfaces.equals(that.interfaces);
+    }
+
+    @Override
+    public final int hashCode() {
+        return interfaces.hashCode();
     }
 
     @Override

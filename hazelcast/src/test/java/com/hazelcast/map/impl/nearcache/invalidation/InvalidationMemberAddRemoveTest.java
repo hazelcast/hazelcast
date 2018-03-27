@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,7 +72,8 @@ public class InvalidationMemberAddRemoveTest extends NearCacheTestSupport {
         }
 
         // a new member comes with Near Cache configured
-        final Config config2 = createConfig().addMapConfig(createMapConfig(mapName).setNearCacheConfig(createNearCacheConfig(mapName)));
+        final Config config2 = createConfig().addMapConfig(createMapConfig(mapName)
+                .setNearCacheConfig(createNearCacheConfig(mapName)));
         final HazelcastInstance nearCachedMember = factory.newHazelcastInstance(config2);
         final IMap<Integer, Integer> nearCachedMap = nearCachedMember.getMap(mapName);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,19 +19,28 @@ package com.hazelcast.test;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.core.LifecycleEvent;
+import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.HazelcastInstanceProxy;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeState;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.tcp.FirewallingConnectionManager;
+import com.hazelcast.spi.merge.MergingValue;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.properties.GroupProperty;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 
 /**
  * A support class for high-level split-brain tests.
@@ -53,7 +62,8 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
 
     protected TestHazelcastInstanceFactory factory;
 
-    private static final int[] DEFAULT_BRAINS = new int[]{1, 2};
+    // per default the second half should merge into the first half
+    private static final int[] DEFAULT_BRAINS = new int[]{2, 1};
     private static final int DEFAULT_ITERATION_COUNT = 1;
     private HazelcastInstance[] instances;
     private int[] brains;
@@ -103,11 +113,23 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
         instances = startInitialCluster(config, clusterSize);
     }
 
+    @After
+    public final void tearDown() {
+        onTearDown();
+    }
+
     /**
      * Override this method to execute initialization that may be required before instantiating the cluster. This is the
      * first method executed by {@code @Before SplitBrainTestSupport.setupInternals}.
      */
     protected void onBeforeSetup() {
+    }
+
+    /**
+     * Override this method to execute clean up that may be required after finishing the test. This is the
+     * first method executed by {@code @After SplitBrainTestSupport.tearDown}.
+     */
+    protected void onTearDown() {
     }
 
     /**
@@ -125,7 +147,7 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
      * @return the default Hazelcast configuration
      */
     protected Config config() {
-        return new Config()
+        return smallInstanceConfig()
                 .setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "5")
                 .setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "5");
     }
@@ -165,7 +187,7 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
 
     /**
      * Indicates whether test should fail when cluster does not include all original members after communications are unblocked.
-     *
+     * <p>
      * Override this method when it is expected that after communications are unblocked some members will not rejoin the cluster.
      * When overriding this method, it may be desirable to add some wait time to allow the split brain handler to execute.
      *
@@ -380,11 +402,22 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
         h2Node.getJoiner().unblacklist(h1Node.getThisAddress());
     }
 
+    public static String toString(Collection collection) {
+        StringBuilder sb = new StringBuilder("[");
+        String delimiter = "";
+        for (Object item : collection) {
+            sb.append(delimiter).append(item);
+            delimiter = ", ";
+        }
+        sb.append("]");
+        return sb.toString();
+    }
+
     private interface SplitBrainAction {
         void apply(HazelcastInstance h1, HazelcastInstance h2);
     }
 
-    protected class Brains {
+    protected static class Brains {
 
         private final HazelcastInstance[] firstHalf;
         private final HazelcastInstance[] secondHalf;
@@ -400,6 +433,45 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
 
         public HazelcastInstance[] getSecondHalf() {
             return secondHalf;
+        }
+    }
+
+    protected static class MergeLifecycleListener implements LifecycleListener {
+
+        private final CountDownLatch latch;
+
+        public MergeLifecycleListener(int mergingClusterSize) {
+            latch = new CountDownLatch(mergingClusterSize);
+        }
+
+        @Override
+        public void stateChanged(LifecycleEvent event) {
+            if (event.getState() == LifecycleEvent.LifecycleState.MERGED) {
+                latch.countDown();
+            }
+        }
+
+        public void await() {
+            assertOpenEventually(latch);
+        }
+    }
+
+    protected static class MergeIntegerValuesMergePolicy implements SplitBrainMergePolicy {
+
+        @Override
+        public <T> T merge(MergingValue<T> mergingValue, MergingValue<T> existingValue) {
+            if (mergingValue.getDeserializedValue() instanceof Integer) {
+                return mergingValue.getValue();
+            }
+            return null;
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) {
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) {
         }
     }
 }

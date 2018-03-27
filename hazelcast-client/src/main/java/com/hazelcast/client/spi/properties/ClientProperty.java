@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,8 +27,16 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 public final class ClientProperty {
 
     /**
+     * Client disallows doing invocations on client disconnected state. When this property is set to true, even client
+     * is not connected to all cluster, it allows invocations that can go thorough available ones.
+     */
+    public static final HazelcastProperty ALLOW_INVOCATIONS_WHEN_DISCONNECTED
+            = new HazelcastProperty("hazelcast.client.allow.invocations.when.disconnected", false);
+
+
+    /**
      * Client shuffles the given member list to prevent all clients to connect to the same node when
-     * this property is set to false. When it is set to true, the client tries to connect to the nodes
+     * this property is set to true. When it is set to false, the client tries to connect to the nodes
      * in the given order.
      */
     public static final HazelcastProperty SHUFFLE_MEMBER_LIST
@@ -159,6 +167,21 @@ public final class ClientProperty {
     public static final HazelcastProperty IO_BALANCER_INTERVAL_SECONDS
             = new HazelcastProperty("hazelcast.client.io.balancer.interval.seconds", 20, SECONDS);
 
+    /**
+     * The number of response threads.
+     *
+     * By default there are 2 response threads; this gives stable and good performance.
+     *
+     * If set to 0, the response threads are bypassed and the response handling is done
+     * on the IO threads. Under certain conditions this can give a higher throughput, but
+     * setting to 0 should be regarded an experimental feature.
+     *
+     * If set to 0, the IO_OUTPUT_THREAD_COUNT is really going to matter because the
+     * inbound thread will have more work to do. By default when TLS isn't enable,
+     * there is just 1 inbound thread.
+     */
+    public static final HazelcastProperty RESPONSE_THREAD_COUNT
+            = new HazelcastProperty("hazelcast.client.response.thread.count", 2);
 
     private ClientProperty() {
     }

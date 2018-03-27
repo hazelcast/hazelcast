@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,21 +16,19 @@
 
 package com.hazelcast.internal.cluster.impl.operations;
 
-import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.cluster.impl.ClusterHeartbeatManager;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.MembersViewMetadata;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.impl.Versioned;
 
 import java.io.IOException;
 
-import static com.hazelcast.internal.cluster.impl.operations.VersionedClusterOperation.isGreaterOrEqualV39;
-
 /** A heartbeat sent from one cluster member to another. The sent timestamp is the cluster clock time of the sending member */
+// RU_COMPAT_39: Do not remove Versioned interface!
+// Version info is needed on 3.9 members while deserializing the operation.
 public final class HeartbeatOp extends AbstractClusterOperation implements Versioned {
 
     private MembersViewMetadata senderMembersViewMetadata;
@@ -51,27 +49,7 @@ public final class HeartbeatOp extends AbstractClusterOperation implements Versi
         ClusterServiceImpl service = getService();
         ClusterHeartbeatManager heartbeatManager = service.getClusterHeartbeatManager();
 
-        if (senderMembersViewMetadata != null) {
-            heartbeatManager.handleHeartbeat(senderMembersViewMetadata, targetUuid, timestamp);
-        } else {
-            // version 3.8
-            MemberImpl member = getHeartBeatingMember(service);
-            if (member != null) {
-                heartbeatManager.onHeartbeat(member, timestamp);
-            }
-        }
-    }
-
-    private MemberImpl getHeartBeatingMember(ClusterServiceImpl service) {
-        MemberImpl member = service.getMember(getCallerAddress());
-        ILogger logger = getLogger();
-        if (member == null) {
-            if (logger.isFineEnabled()) {
-                logger.fine("Heartbeat received from an unknown endpoint: " + getCallerAddress());
-            }
-            return null;
-        }
-        return member;
+        heartbeatManager.handleHeartbeat(senderMembersViewMetadata, targetUuid, timestamp);
     }
 
     @Override
@@ -82,20 +60,16 @@ public final class HeartbeatOp extends AbstractClusterOperation implements Versi
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        if (isGreaterOrEqualV39(out.getVersion())) {
-            out.writeObject(senderMembersViewMetadata);
-            out.writeUTF(targetUuid);
-        }
+        out.writeObject(senderMembersViewMetadata);
+        out.writeUTF(targetUuid);
         out.writeLong(timestamp);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        if (isGreaterOrEqualV39(in.getVersion())) {
-            senderMembersViewMetadata = in.readObject();
-            targetUuid = in.readUTF();
-        }
+        senderMembersViewMetadata = in.readObject();
+        targetUuid = in.readUTF();
         timestamp = in.readLong();
     }
 

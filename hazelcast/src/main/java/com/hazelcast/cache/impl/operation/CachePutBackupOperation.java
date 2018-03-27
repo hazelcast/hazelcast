@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,12 +26,13 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
-import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.spi.serialization.SerializationService;
 
 import java.io.IOException;
 
 /**
  * Backup operation for the operation of adding cache entries into record stores.
+ *
  * @see CacheEntryProcessorOperation
  * @see CachePutOperation
  * @see CachePutIfAbsentOperation
@@ -40,7 +41,7 @@ import java.io.IOException;
  */
 public class CachePutBackupOperation
         extends AbstractBackupCacheOperation
-        implements BackupOperation, MutatingOperation {
+        implements BackupOperation {
 
     private CacheRecord cacheRecord;
     private boolean wanOriginated;
@@ -65,34 +66,32 @@ public class CachePutBackupOperation
     }
 
     @Override
-    public void runInternal()
-            throws Exception {
+    public void runInternal() {
         ICacheService service = getService();
         ICacheRecordStore cache = service.getOrCreateRecordStore(name, getPartitionId());
-        cache.putRecord(key, cacheRecord);
+        cache.putRecord(key, cacheRecord, true);
         response = Boolean.TRUE;
     }
 
     @Override
-    public void afterRunInternal() throws Exception {
+    public void afterRunInternal() {
         if (!wanOriginated && cache.isWanReplicationEnabled()) {
+            SerializationService serializationService = getNodeEngine().getSerializationService();
             CacheEntryView<Data, Data> entryView = CacheEntryViews.createDefaultEntryView(key,
-                    getNodeEngine().getSerializationService().toData(cacheRecord.getValue()), cacheRecord);
+                    serializationService.toData(cacheRecord.getValue()), cacheRecord);
             wanEventPublisher.publishWanReplicationUpdateBackup(name, entryView);
         }
     }
 
     @Override
-    protected void writeInternal(ObjectDataOutput out)
-            throws IOException {
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeObject(cacheRecord);
         out.writeBoolean(wanOriginated);
     }
 
     @Override
-    protected void readInternal(ObjectDataInput in)
-            throws IOException {
+    protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         cacheRecord = in.readObject();
         wanOriginated = in.readBoolean();
@@ -102,5 +101,4 @@ public class CachePutBackupOperation
     public int getId() {
         return CacheDataSerializerHook.PUT_BACKUP;
     }
-
 }

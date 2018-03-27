@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,22 @@
 
 package com.hazelcast.internal.dynamicconfig;
 
+import com.hazelcast.config.AtomicLongConfig;
+import com.hazelcast.config.AtomicReferenceConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.ConfigPatternMatcher;
 import com.hazelcast.config.ConfigurationException;
+import com.hazelcast.config.CountDownLatchConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.ExecutorConfig;
+import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.LockConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MultiMapConfig;
+import com.hazelcast.config.PNCounterConfig;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.ReliableTopicConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
@@ -46,33 +51,46 @@ import com.hazelcast.spi.CoreService;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.PreJoinAwareService;
 import com.hazelcast.spi.SplitBrainHandlerService;
-import com.hazelcast.spi.impl.BinaryOperationFactory;
 import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.util.FutureUtil;
+import com.hazelcast.util.function.Supplier;
 import com.hazelcast.version.Version;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
+import static com.hazelcast.internal.cluster.Versions.V3_10;
 import static com.hazelcast.internal.cluster.Versions.V3_8;
+import static com.hazelcast.internal.cluster.Versions.V3_9;
 import static com.hazelcast.internal.config.ConfigUtils.lookupByPattern;
 import static com.hazelcast.internal.util.InvocationUtil.invokeOnStableClusterSerial;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.util.FutureUtil.waitForever;
 import static java.lang.Boolean.getBoolean;
+import static java.lang.String.format;
+import static java.util.Collections.singleton;
 
 @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:methodcount", "checkstyle:classfanoutcomplexity"})
 public class ClusterWideConfigurationService implements PreJoinAwareService,
         CoreService, ClusterVersionListener, ManagedService, ConfigurationService, SplitBrainHandlerService {
+
     public static final String SERVICE_NAME = "configuration-service";
     public static final int CONFIG_PUBLISH_MAX_ATTEMPT_COUNT = 100;
+
+    // RU_COMPAT
+    // maps config class to cluster version in which it was introduced
+    static final Map<Class<? extends IdentifiedDataSerializable>, Version> CONFIG_TO_VERSION;
 
     //this is meant to be used as a workaround for buggy equals/hashcode implementations
     private static final boolean IGNORE_CONFLICTING_CONFIGS_WORKAROUND =
@@ -86,7 +104,13 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
     private final ConcurrentMap<String, MultiMapConfig> multiMapConfigs = new ConcurrentHashMap<String, MultiMapConfig>();
     private final ConcurrentMap<String, CardinalityEstimatorConfig> cardinalityEstimatorConfigs =
             new ConcurrentHashMap<String, CardinalityEstimatorConfig>();
+    private final ConcurrentMap<String, PNCounterConfig> pnCounterConfigs = new ConcurrentHashMap<String, PNCounterConfig>();
     private final ConcurrentMap<String, RingbufferConfig> ringbufferConfigs = new ConcurrentHashMap<String, RingbufferConfig>();
+    private final ConcurrentMap<String, AtomicLongConfig> atomicLongConfigs = new ConcurrentHashMap<String, AtomicLongConfig>();
+    private final ConcurrentMap<String, AtomicReferenceConfig> atomicReferenceConfigs
+            = new ConcurrentHashMap<String, AtomicReferenceConfig>();
+    private final ConcurrentMap<String, CountDownLatchConfig> countDownLatchConfigs
+            = new ConcurrentHashMap<String, CountDownLatchConfig>();
     private final ConcurrentMap<String, LockConfig> lockConfigs = new ConcurrentHashMap<String, LockConfig>();
     private final ConcurrentMap<String, ListConfig> listConfigs = new ConcurrentHashMap<String, ListConfig>();
     private final ConcurrentMap<String, SetConfig> setConfigs = new ConcurrentHashMap<String, SetConfig>();
@@ -108,6 +132,8 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
             new ConcurrentHashMap<String, EventJournalConfig>();
     private final ConcurrentMap<String, EventJournalConfig> mapEventJournalConfigs =
             new ConcurrentHashMap<String, EventJournalConfig>();
+    private final ConcurrentMap<String, FlakeIdGeneratorConfig> flakeIdGeneratorConfigs =
+            new ConcurrentHashMap<String, FlakeIdGeneratorConfig>();
 
     private final ConfigPatternMatcher configPatternMatcher;
     private final ILogger logger;
@@ -121,6 +147,9 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
             lockConfigs,
             listConfigs,
             setConfigs,
+            atomicLongConfigs,
+            atomicReferenceConfigs,
+            countDownLatchConfigs,
             replicatedMapConfigs,
             topicConfigs,
             executorConfigs,
@@ -132,9 +161,15 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
             cacheSimpleConfigs,
             cacheEventJournalConfigs,
             mapEventJournalConfigs,
+            flakeIdGeneratorConfigs,
+            pnCounterConfigs,
     };
 
     private volatile Version version;
+
+    static {
+        CONFIG_TO_VERSION = initializeConfigToVersionMap();
+    }
 
     public ClusterWideConfigurationService(NodeEngine nodeEngine, DynamicConfigListener dynamicConfigListener) {
         this.nodeEngine = nodeEngine;
@@ -145,9 +180,6 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
 
     @Override
     public Operation getPreJoinOperation() {
-        if (version.isLessOrEqual(V3_8)) {
-            return null;
-        }
         IdentifiedDataSerializable[] allConfigurations = collectAllDynamicConfigs();
         if (noConfigurationExist(allConfigurations)) {
             // there is no dynamic configuration -> no need to send an empty operation
@@ -205,18 +237,28 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
     }
 
     public ICompletableFuture<Object> broadcastConfigAsync(IdentifiedDataSerializable config) {
-        if (version.isLessOrEqual(V3_8)) {
-            throw new UnsupportedOperationException("Adding dynamic configuration is only supported when running "
-                    + " in cluster version 3.9+. The current cluster version:" + version);
-        }
-
-        // we create an defensive copy as local operation execution might use a fast-path
+        checkConfigVersion(config);
+        // we create a defensive copy as local operation execution might use a fast-path
         // and avoid config serialization altogether.
         // we certainly do not want the dynamic config service to reference object a user can mutate
         IdentifiedDataSerializable clonedConfig = cloneConfig(config);
         ClusterService clusterService = nodeEngine.getClusterService();
         return invokeOnStableClusterSerial(nodeEngine, new AddDynamicConfigOperationSupplier(clusterService, clonedConfig),
                 CONFIG_PUBLISH_MAX_ATTEMPT_COUNT);
+    }
+
+    private void checkConfigVersion(IdentifiedDataSerializable config) {
+        Class<? extends IdentifiedDataSerializable> configClass = config.getClass();
+        Version currentClusterVersion = version;
+        Version introducedIn = CONFIG_TO_VERSION.get(configClass);
+        if (currentClusterVersion.isLessThan(introducedIn)) {
+            throw new UnsupportedOperationException(format("Config '%s' is available since version '%s'. "
+                            + "Current cluster version '%s' does not allow dynamically adding '%1$s'.",
+                    configClass.getSimpleName(),
+                    introducedIn.toString(),
+                    currentClusterVersion.toString()
+            ));
+        }
     }
 
     private IdentifiedDataSerializable cloneConfig(IdentifiedDataSerializable config) {
@@ -230,10 +272,10 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
      * Register a dynamic configuration in a local member. When a dynamic configuration with the same name already
      * exists then this call has no effect.
      *
-     * @param newConfig Configuration to register.
+     * @param newConfig       Configuration to register.
      * @param configCheckMode behaviour when a config is detected
      * @throws UnsupportedOperationException when given configuration type is not supported
-     * @throws ConfigurationException when conflict is detected and configCheckMode is on THROW_EXCEPTION
+     * @throws ConfigurationException        when conflict is detected and configCheckMode is on THROW_EXCEPTION
      */
     @SuppressWarnings("checkstyle:methodlength")
     public void registerConfigLocally(IdentifiedDataSerializable newConfig,
@@ -258,6 +300,15 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
         } else if (newConfig instanceof LockConfig) {
             LockConfig lockConfig = (LockConfig) newConfig;
             currentConfig = lockConfigs.putIfAbsent(lockConfig.getName(), lockConfig);
+        } else if (newConfig instanceof AtomicLongConfig) {
+            AtomicLongConfig atomicLongConfig = (AtomicLongConfig) newConfig;
+            currentConfig = atomicLongConfigs.putIfAbsent(atomicLongConfig.getName(), atomicLongConfig);
+        } else if (newConfig instanceof AtomicReferenceConfig) {
+            AtomicReferenceConfig atomicReferenceConfig = (AtomicReferenceConfig) newConfig;
+            currentConfig = atomicReferenceConfigs.putIfAbsent(atomicReferenceConfig.getName(), atomicReferenceConfig);
+        } else if (newConfig instanceof CountDownLatchConfig) {
+            CountDownLatchConfig countDownLatchConfig = (CountDownLatchConfig) newConfig;
+            currentConfig = countDownLatchConfigs.putIfAbsent(countDownLatchConfig.getName(), countDownLatchConfig);
         } else if (newConfig instanceof ListConfig) {
             ListConfig listConfig = (ListConfig) newConfig;
             currentConfig = listConfigs.putIfAbsent(listConfig.getName(), listConfig);
@@ -297,6 +348,12 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
         } else if (newConfig instanceof SemaphoreConfig) {
             SemaphoreConfig semaphoreConfig = (SemaphoreConfig) newConfig;
             currentConfig = semaphoreConfigs.putIfAbsent(semaphoreConfig.getName(), semaphoreConfig);
+        } else if (newConfig instanceof FlakeIdGeneratorConfig) {
+            FlakeIdGeneratorConfig config = (FlakeIdGeneratorConfig) newConfig;
+            currentConfig = flakeIdGeneratorConfigs.putIfAbsent(config.getName(), config);
+        } else if (newConfig instanceof PNCounterConfig) {
+            PNCounterConfig config = (PNCounterConfig) newConfig;
+            currentConfig = pnCounterConfigs.putIfAbsent(config.getName(), config);
         } else {
             throw new UnsupportedOperationException("Unsupported config type: " + newConfig);
         }
@@ -396,6 +453,16 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
     }
 
     @Override
+    public PNCounterConfig findPNCounterConfig(String name) {
+        return lookupByPattern(configPatternMatcher, pnCounterConfigs, name);
+    }
+
+    @Override
+    public ConcurrentMap<String, PNCounterConfig> getPNCounterConfigs() {
+        return pnCounterConfigs;
+    }
+
+    @Override
     public ExecutorConfig findExecutorConfig(String name) {
         return lookupByPattern(configPatternMatcher, executorConfigs, name);
     }
@@ -443,6 +510,36 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
     @Override
     public ConcurrentMap<String, RingbufferConfig> getRingbufferConfigs() {
         return ringbufferConfigs;
+    }
+
+    @Override
+    public AtomicLongConfig findAtomicLongConfig(String name) {
+        return lookupByPattern(configPatternMatcher, atomicLongConfigs, name);
+    }
+
+    @Override
+    public Map<String, AtomicLongConfig> getAtomicLongConfigs() {
+        return atomicLongConfigs;
+    }
+
+    @Override
+    public AtomicReferenceConfig findAtomicReferenceConfig(String name) {
+        return lookupByPattern(configPatternMatcher, atomicReferenceConfigs, name);
+    }
+
+    @Override
+    public CountDownLatchConfig findCountDownLatchConfig(String name) {
+        return lookupByPattern(configPatternMatcher, countDownLatchConfigs, name);
+    }
+
+    @Override
+    public Map<String, AtomicReferenceConfig> getAtomicReferenceConfigs() {
+        return atomicReferenceConfigs;
+    }
+
+    @Override
+    public Map<String, CountDownLatchConfig> getCountDownLatchConfigs() {
+        return countDownLatchConfigs;
     }
 
     @Override
@@ -536,6 +633,16 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
     }
 
     @Override
+    public FlakeIdGeneratorConfig findFlakeIdGeneratorConfig(String baseName) {
+        return lookupByPattern(configPatternMatcher, flakeIdGeneratorConfigs, baseName);
+    }
+
+    @Override
+    public Map<String, FlakeIdGeneratorConfig> getFlakeIdGeneratorConfigs() {
+        return flakeIdGeneratorConfigs;
+    }
+
+    @Override
     public Runnable prepareMergeRunnable() {
         if (version.isLessOrEqual(V3_8)) {
             return null;
@@ -558,15 +665,50 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
 
         @Override
         public void run() {
-            OperationService operationService = nodeEngine.getOperationService();
-            BinaryOperationFactory operationFactory = new BinaryOperationFactory(replicationOperation, nodeEngine);
             try {
-                // intentionally targeting partitions and not members to avoid races
-                // it has generates extra load, but it's worth it.
-                operationService.invokeOnAllPartitions(SERVICE_NAME, operationFactory);
+                Future<Object> future = invokeOnStableClusterSerial(nodeEngine, new Supplier<Operation>() {
+                    @Override
+                    public Operation get() {
+                        return replicationOperation;
+                    }
+                }, CONFIG_PUBLISH_MAX_ATTEMPT_COUNT);
+                waitForever(singleton(future), FutureUtil.RETHROW_EVERYTHING);
             } catch (Exception e) {
                 throw new HazelcastException("Error while merging configurations", e);
             }
         }
+    }
+
+    private static Map<Class<? extends IdentifiedDataSerializable>, Version> initializeConfigToVersionMap() {
+        Map<Class<? extends IdentifiedDataSerializable>, Version> configToVersion =
+                new HashMap<Class<? extends IdentifiedDataSerializable>, Version>();
+
+        // Since 3.9
+        configToVersion.put(MapConfig.class, V3_9);
+        configToVersion.put(MultiMapConfig.class, V3_9);
+        configToVersion.put(CardinalityEstimatorConfig.class, V3_9);
+        configToVersion.put(RingbufferConfig.class, V3_9);
+        configToVersion.put(LockConfig.class, V3_9);
+        configToVersion.put(ListConfig.class, V3_9);
+        configToVersion.put(SetConfig.class, V3_9);
+        configToVersion.put(ReplicatedMapConfig.class, V3_9);
+        configToVersion.put(TopicConfig.class, V3_9);
+        configToVersion.put(ExecutorConfig.class, V3_9);
+        configToVersion.put(DurableExecutorConfig.class, V3_9);
+        configToVersion.put(ScheduledExecutorConfig.class, V3_9);
+        configToVersion.put(SemaphoreConfig.class, V3_9);
+        configToVersion.put(QueueConfig.class, V3_9);
+        configToVersion.put(ReliableTopicConfig.class, V3_9);
+        configToVersion.put(CacheSimpleConfig.class, V3_9);
+        configToVersion.put(EventJournalConfig.class, V3_9);
+
+        // Since 3.10
+        configToVersion.put(AtomicLongConfig.class, V3_10);
+        configToVersion.put(AtomicReferenceConfig.class, V3_10);
+        configToVersion.put(CountDownLatchConfig.class, V3_10);
+        configToVersion.put(FlakeIdGeneratorConfig.class, V3_10);
+        configToVersion.put(PNCounterConfig.class, V3_10);
+
+        return Collections.unmodifiableMap(configToVersion);
     }
 }

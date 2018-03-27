@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,13 +22,13 @@ import com.hazelcast.core.MultiExecutionCallback;
 import com.hazelcast.logging.ILogger;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
+import static com.hazelcast.util.MapUtil.createConcurrentHashMap;
+import static com.hazelcast.util.MapUtil.createHashMap;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 
@@ -49,7 +49,7 @@ class ExecutionCallbackAdapterFactory {
     ExecutionCallbackAdapterFactory(ILogger logger, Collection<Member> members,
                                     MultiExecutionCallback multiExecutionCallback) {
         this.multiExecutionCallback = multiExecutionCallback;
-        this.responses = new ConcurrentHashMap<Member, ValueWrapper>(members.size());
+        this.responses = createConcurrentHashMap(members.size());
         this.members = new HashSet<Member>(members);
         this.logger = logger;
     }
@@ -67,7 +67,7 @@ class ExecutionCallbackAdapterFactory {
             return;
         }
 
-        Map<Member, Object> realResponses = new HashMap<Member, Object>(members.size());
+        Map<Member, Object> realResponses = createHashMap(members.size());
         for (Map.Entry<Member, ValueWrapper> entry : responses.entrySet()) {
             Member key = entry.getKey();
             Object value = entry.getValue().value;

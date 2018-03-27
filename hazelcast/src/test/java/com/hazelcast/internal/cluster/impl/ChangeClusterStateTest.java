@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,8 +31,6 @@ import org.junit.runners.Parameterized;
 import java.util.Arrays;
 import java.util.Collection;
 
-import static com.hazelcast.internal.cluster.impl.BasicClusterStateTest.assertClusterState;
-
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -40,7 +38,7 @@ public class ChangeClusterStateTest extends HazelcastTestSupport {
 
     @Parameterized.Parameters(name = "from:{0} to:{1}")
     public static Collection<Object[]> parameters() {
-        return Arrays.asList(new Object[][] {
+        return Arrays.asList(new Object[][]{
                 {ClusterState.ACTIVE, ClusterState.FROZEN},
                 {ClusterState.ACTIVE, ClusterState.NO_MIGRATION},
                 {ClusterState.ACTIVE, ClusterState.PASSIVE},
@@ -52,7 +50,7 @@ public class ChangeClusterStateTest extends HazelcastTestSupport {
                 {ClusterState.FROZEN, ClusterState.PASSIVE},
                 {ClusterState.PASSIVE, ClusterState.ACTIVE},
                 {ClusterState.PASSIVE, ClusterState.NO_MIGRATION},
-                {ClusterState.PASSIVE, ClusterState.FROZEN}
+                {ClusterState.PASSIVE, ClusterState.FROZEN},
         });
     }
 

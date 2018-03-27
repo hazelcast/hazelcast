@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,9 @@ public class CacheAddNearCacheInvalidationListenerTask
         CacheService cacheService = getService(CacheService.SERVICE_NAME);
         CacheContext cacheContext = cacheService.getOrCreateCacheContext(parameters.name);
         NearCacheInvalidationListener listener
-                = new NearCacheInvalidationListener(endpoint, cacheContext, nodeEngine.getLocalMember().getUuid());
+                = new NearCacheInvalidationListener(endpoint, cacheContext,
+                nodeEngine.getLocalMember().getUuid(), clientMessage.getCorrelationId());
+
         String registrationId =
                 cacheService.addInvalidationListener(parameters.name, listener, parameters.localOnly);
         endpoint.addListenerDestroyAction(CacheService.SERVICE_NAME, parameters.name, registrationId);
@@ -53,22 +55,23 @@ public class CacheAddNearCacheInvalidationListenerTask
 
     private final class NearCacheInvalidationListener extends AbstractCacheClientNearCacheInvalidationListener {
 
-        NearCacheInvalidationListener(ClientEndpoint endpoint, CacheContext cacheContext, String localMemberUuid) {
-            super(endpoint, cacheContext, localMemberUuid);
+        NearCacheInvalidationListener(ClientEndpoint endpoint, CacheContext cacheContext,
+                                      String localMemberUuid, long correlationId) {
+            super(endpoint, cacheContext, localMemberUuid, correlationId);
         }
 
         @Override
         protected ClientMessage encodeBatchInvalidation(String name, List<Data> keys, List<String> sourceUuids,
-                                              List<UUID> partitionUuids, List<Long> sequences) {
-            return CacheAddNearCacheInvalidationListenerCodec.encodeCacheBatchInvalidationEvent(name, keys, sourceUuids,
-                    partitionUuids, sequences);
+                                                        List<UUID> partitionUuids, List<Long> sequences) {
+            return CacheAddNearCacheInvalidationListenerCodec.encodeCacheBatchInvalidationEvent(name, keys,
+                    sourceUuids, partitionUuids, sequences);
         }
 
         @Override
         protected ClientMessage encodeSingleInvalidation(String name, Data key, String sourceUuid,
-                                               UUID partitionUuid, long sequence) {
-            return CacheAddNearCacheInvalidationListenerCodec.encodeCacheInvalidationEvent(name, key, sourceUuid,
-                    partitionUuid, sequence);
+                                                         UUID partitionUuid, long sequence) {
+            return CacheAddNearCacheInvalidationListenerCodec.encodeCacheInvalidationEvent(name, key,
+                    sourceUuid, partitionUuid, sequence);
         }
 
         @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.AssertTask;
@@ -81,8 +82,12 @@ public class BackupExpirationBouncingMemberTest extends HazelcastTestSupport {
                 for (int i = 0; i < length; i++) {
                     HazelcastInstance node = members.get(i);
                     assert node != null;
-                    if (node.getLifecycleService().isRunning()) {
-                        assertEquals(0, getTotalEntryCount(node.getMap(mapName)));
+                    if (node.getLifecycleService().isRunning()
+                            && node.getCluster().getClusterState() != ClusterState.PASSIVE) {
+
+                        ClusterState clusterState = node.getCluster().getClusterState();
+                        assertEquals("Current cluster state is:" + clusterState.toString(),
+                                0, getTotalEntryCount(node.getMap(mapName)));
                     }
                 }
             }

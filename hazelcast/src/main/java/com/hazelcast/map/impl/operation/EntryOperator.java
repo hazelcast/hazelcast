@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,9 +44,6 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.util.Clock;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
@@ -63,7 +60,6 @@ import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_TTL;
  */
 public final class EntryOperator {
 
-    private final boolean collectWanEvents;
     private final boolean shouldClone;
     private final boolean backup;
     private final boolean readOnly;
@@ -82,7 +78,6 @@ public final class EntryOperator {
     private final MapServiceContext mapServiceContext;
     private final MapOperation mapOperation;
     private final Address callerAddress;
-    private final List<WanEventHolder> wanEventList;
     private final InMemoryFormat inMemoryFormat;
 
     private EntryProcessor entryProcessor;
@@ -102,9 +97,7 @@ public final class EntryOperator {
         this.mapOperation = mapOperation;
         this.predicate = predicate;
         this.recordStore = mapOperation.recordStore;
-        this.collectWanEvents = collectWanEvents;
         this.readOnly = entryProcessor instanceof ReadOnly;
-        this.wanEventList = collectWanEvents ? new ArrayList<WanEventHolder>() : Collections.<WanEventHolder>emptyList();
         this.mapContainer = recordStore.getMapContainer();
         this.inMemoryFormat = mapContainer.getMapConfig().getInMemoryFormat();
         this.mapName = mapContainer.getName();
@@ -143,11 +136,6 @@ public final class EntryOperator {
 
     public static EntryOperator operator(MapOperation mapOperation, Object processor, Predicate predicate) {
         return new EntryOperator(mapOperation, processor, predicate, false);
-    }
-
-    public static EntryOperator operator(MapOperation mapOperation, Object processor, Predicate predicate,
-                                         boolean collectWanEvents) {
-        return new EntryOperator(mapOperation, processor, predicate, collectWanEvents);
     }
 
     public EntryOperator init(Data dataKey, Object oldValue, Object newValue, Data result, EntryEventType eventType) {
@@ -207,10 +195,6 @@ public final class EntryOperator {
 
     public EntryEventType getEventType() {
         return eventType;
-    }
-
-    public List<WanEventHolder> getWanEventList() {
-        return wanEventList;
     }
 
     public Object getNewValue() {
@@ -302,7 +286,7 @@ public final class EntryOperator {
         if (backup) {
             recordStore.putBackup(dataKey, newValue);
         } else {
-            recordStore.set(dataKey, newValue, DEFAULT_TTL);
+            recordStore.setWithUncountedAccess(dataKey, newValue, DEFAULT_TTL);
             if (mapOperation.isPostProcessing(recordStore)) {
                 Record record = recordStore.getRecord(dataKey);
                 newValue = record == null ? null : record.getValue();
@@ -352,9 +336,6 @@ public final class EntryOperator {
                 mapEventPublisher.publishWanReplicationRemoveBackup(mapName, dataKey, Clock.currentTimeMillis());
             } else {
                 mapEventPublisher.publishWanReplicationRemove(mapName, dataKey, Clock.currentTimeMillis());
-                if (collectWanEvents) {
-                    wanEventList.add(new WanEventHolder(dataKey, null, REMOVED));
-                }
             }
 
             return;
@@ -367,9 +348,6 @@ public final class EntryOperator {
             mapEventPublisher.publishWanReplicationUpdateBackup(mapName, entryView);
         } else {
             mapEventPublisher.publishWanReplicationUpdate(mapName, entryView);
-            if (collectWanEvents) {
-                wanEventList.add(new WanEventHolder(dataKey, dataNewValue, UPDATED));
-            }
         }
     }
 

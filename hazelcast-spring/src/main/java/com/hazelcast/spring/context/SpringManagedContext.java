@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
 /**
- * @author mdogan 4/6/12
+ * {@link ManagedContext} implementation for Hazelcast.
  */
 public class SpringManagedContext implements ManagedContext, ApplicationContextAware {
 
@@ -54,8 +54,8 @@ public class SpringManagedContext implements ManagedContext, ApplicationContextA
         SpringAware s = (SpringAware) clazz.getAnnotation(SpringAware.class);
         Object resultObject = obj;
         if (s != null) {
-            String name = s.beanName();
-            if (name == null || name.length() == 0) {
+            String name = s.beanName().trim();
+            if (name.isEmpty()) {
                 name = clazz.getName();
             }
             beanFactory.autowireBean(obj);
@@ -65,7 +65,7 @@ public class SpringManagedContext implements ManagedContext, ApplicationContextA
     }
 
     @Override
-    public void setApplicationContext(final ApplicationContext applicationContext) throws BeansException {
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.beanFactory = applicationContext.getAutowireCapableBeanFactory();
     }
 }

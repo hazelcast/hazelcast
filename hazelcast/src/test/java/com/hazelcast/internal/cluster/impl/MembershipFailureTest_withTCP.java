@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008 - 2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,14 +23,17 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.FirewallingNodeContext;
 import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
 import org.junit.experimental.categories.Category;
+import org.junit.runners.Parameterized;
 
 import java.util.Collection;
 
 import static com.hazelcast.instance.HazelcastInstanceFactory.createInstanceName;
 
+@Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category(SlowTest.class)
 public class MembershipFailureTest_withTCP extends MembershipFailureTest {
 
@@ -46,7 +49,7 @@ public class MembershipFailureTest_withTCP extends MembershipFailureTest {
 
     @Override
     HazelcastInstance newHazelcastInstance(Config config) {
-        config.setProperty(GroupProperty.HEARTBEAT_FAILURE_DETECTOR_TYPE.getName(), failureDetectorType);
+        config.setProperty(GroupProperty.HEARTBEAT_FAILURE_DETECTOR_TYPE.getName(), failureDetectorType.toString());
         initConfig(config);
         return HazelcastInstanceFactory.newHazelcastInstance(config, createInstanceName(config), new FirewallingNodeContext());
     }

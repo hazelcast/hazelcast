@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,6 +56,34 @@ public class GlobalSerializerConfig {
     public GlobalSerializerConfig setOverrideJavaSerialization(boolean overrideJavaSerialization) {
         this.overrideJavaSerialization = overrideJavaSerialization;
         return this;
+    }
+
+    @Override
+    public final boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || !(o instanceof GlobalSerializerConfig)) {
+            return false;
+        }
+
+        GlobalSerializerConfig that = (GlobalSerializerConfig) o;
+
+        if (overrideJavaSerialization != that.overrideJavaSerialization) {
+            return false;
+        }
+        if (className != null ? !className.equals(that.className) : that.className != null) {
+            return false;
+        }
+        return implementation != null ? implementation.equals(that.implementation) : that.implementation == null;
+    }
+
+    @Override
+    public final int hashCode() {
+        int result = className != null ? className.hashCode() : 0;
+        result = 31 * result + (implementation != null ? implementation.hashCode() : 0);
+        result = 31 * result + (overrideJavaSerialization ? 1 : 0);
+        return result;
     }
 
     @Override

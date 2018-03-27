@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -92,7 +92,7 @@ public class PublisherRegistry implements Registry<String, PartitionAccumulatorR
 
         private final AccumulatorFactory accumulatorFactory;
 
-        public PublisherAccumulatorConstructor(AccumulatorInfo info, AccumulatorFactory accumulatorFactory) {
+        PublisherAccumulatorConstructor(AccumulatorInfo info, AccumulatorFactory accumulatorFactory) {
             this.info = info;
             this.accumulatorFactory = accumulatorFactory;
         }
@@ -110,7 +110,7 @@ public class PublisherRegistry implements Registry<String, PartitionAccumulatorR
         return infoSupplier.getAccumulatorInfoOrNull(mapName, cacheId);
     }
 
-    protected PublisherAccumulatorFactory createPublisherAccumulatorFactory() {
+    private PublisherAccumulatorFactory createPublisherAccumulatorFactory() {
         return new PublisherAccumulatorFactory(context);
     }
 }

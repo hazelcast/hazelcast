@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,8 +31,7 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 
 public class ScheduledRunnableAdapter<V>
-        implements IdentifiedDataSerializable, Callable<V>,
-                   NodeAware, PartitionAware, NamedTask, StatefulTask {
+        implements IdentifiedDataSerializable, Callable<V>, NodeAware, PartitionAware, NamedTask, StatefulTask {
 
     private Runnable task;
 
@@ -52,7 +51,8 @@ public class ScheduledRunnableAdapter<V>
     }
 
     @Override
-    public V call() throws Exception {
+    public V call()
+            throws Exception {
         task.run();
         return null;
     }
@@ -95,12 +95,14 @@ public class ScheduledRunnableAdapter<V>
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out)
+            throws IOException {
         out.writeObject(task);
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
+    public void readData(ObjectDataInput in)
+            throws IOException {
         task = in.readObject();
     }
 

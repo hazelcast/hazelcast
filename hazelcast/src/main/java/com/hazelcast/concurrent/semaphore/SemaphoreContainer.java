@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import java.util.Map;
 
 import static com.hazelcast.concurrent.semaphore.SemaphoreDataSerializerHook.CONTAINER;
 import static com.hazelcast.concurrent.semaphore.SemaphoreDataSerializerHook.F_ID;
+import static com.hazelcast.util.MapUtil.createHashMap;
 
 public class SemaphoreContainer implements IdentifiedDataSerializable {
 
@@ -91,11 +92,11 @@ public class SemaphoreContainer implements IdentifiedDataSerializable {
     }
 
     public int getAvailable() {
-        return available;
+        return available < 0 ? 0 : available;
     }
 
     public boolean isAvailable(int permitCount) {
-        return available - permitCount >= 0;
+        return available > 0 && available - permitCount >= 0;
     }
 
     public boolean acquire(String owner, int permitCount) {
@@ -118,14 +119,27 @@ public class SemaphoreContainer implements IdentifiedDataSerializable {
         return drain;
     }
 
-    public boolean reduce(int permitCount) {
-        if (available == 0 || permitCount == 0) {
+    public boolean increase(int permitCount) {
+        if (permitCount == 0) {
             return false;
         }
-        available -= permitCount;
-        if (available < 0) {
-            available = 0;
+        int newAvailable = available + permitCount;
+        if (newAvailable < available) {
+            return false;
         }
+        available = newAvailable;
+        return true;
+    }
+
+    public boolean reduce(int permitCount) {
+        if (permitCount == 0) {
+            return false;
+        }
+        int newAvailable = available - permitCount;
+        if (newAvailable > available) {
+            return false;
+        }
+        available = newAvailable;
         return true;
     }
 
@@ -185,7 +199,7 @@ public class SemaphoreContainer implements IdentifiedDataSerializable {
         backupCount = in.readInt();
         asyncBackupCount = in.readInt();
         int size = in.readInt();
-        attachMap = new HashMap<String, Integer>(size);
+        attachMap = createHashMap(size);
         for (int i = 0; i < size; i++) {
             String owner = in.readUTF();
             Integer val = in.readInt();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -264,6 +264,7 @@ public class MapStoreConfigTest extends HazelcastTestSupport {
 
     @Test
     public void testHashCode() {
+        assumeDifferentHashCodes();
         assertNotEquals(defaultCfg.hashCode(), cfgNotEnabled.hashCode());
         assertNotEquals(defaultCfg.hashCode(), cfgNotWriteCoalescing.hashCode());
         assertNotEquals(defaultCfg.hashCode(), cfgNonNullClassName.hashCode());
@@ -281,12 +282,13 @@ public class MapStoreConfigTest extends HazelcastTestSupport {
 
     @Test
     public void testEqualsAndHashCode() {
+        assumeDifferentHashCodes();
         EqualsVerifier.forClass(MapStoreConfig.class)
-                      .allFieldsShouldBeUsedExcept("readOnly")
-                      .suppress(Warning.NONFINAL_FIELDS, Warning.NULL_FIELDS)
-                      .withPrefabValues(MapStoreConfigReadOnly.class,
-                              new MapStoreConfigReadOnly(cfgNotEnabled),
-                              new MapStoreConfigReadOnly(cfgNonNullClassName))
-                      .verify();
+                .allFieldsShouldBeUsedExcept("readOnly")
+                .suppress(Warning.NONFINAL_FIELDS, Warning.NULL_FIELDS)
+                .withPrefabValues(MapStoreConfigReadOnly.class,
+                        new MapStoreConfigReadOnly(cfgNotEnabled),
+                        new MapStoreConfigReadOnly(cfgNonNullClassName))
+                .verify();
     }
 }

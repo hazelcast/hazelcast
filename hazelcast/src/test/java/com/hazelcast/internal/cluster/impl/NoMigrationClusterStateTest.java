@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,9 +20,7 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.Node;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.nio.Address;
@@ -223,16 +221,6 @@ public class NoMigrationClusterStateTest extends HazelcastTestSupport {
                 service.assertNoReplication();
             }
         }, 10);
-    }
-
-    @Test(expected = UnsupportedOperationException.class)
-    // RU_COMPAT_WITH_3_8
-    public void noMigration_notSupported_beforeV39()  {
-        System.setProperty(BuildInfoProvider.HAZELCAST_INTERNAL_OVERRIDE_VERSION, Versions.V3_8.toString());
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
-        HazelcastInstance hz = factory.newHazelcastInstance();
-
-        hz.getCluster().changeClusterState(ClusterState.NO_MIGRATION);
     }
 
     private Config newConfigWithMigrationAwareService() {

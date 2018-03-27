@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,11 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.annotation.Beta;
 
 import java.io.IOException;
@@ -39,7 +41,7 @@ import static com.hazelcast.util.Preconditions.checkPositive;
  * in the cluster and its backup in another member in the cluster.
  */
 @Beta
-public class RingbufferConfig implements IdentifiedDataSerializable {
+public class RingbufferConfig implements IdentifiedDataSerializable, Versioned {
 
     /**
      * Default value of capacity of the RingBuffer.
@@ -69,6 +71,8 @@ public class RingbufferConfig implements IdentifiedDataSerializable {
     private int timeToLiveSeconds = DEFAULT_TTL_SECONDS;
     private InMemoryFormat inMemoryFormat = DEFAULT_IN_MEMORY_FORMAT;
     private RingbufferStoreConfig ringbufferStoreConfig = new RingbufferStoreConfig().setEnabled(false);
+    private String quorumName;
+    private MergePolicyConfig mergePolicyConfig = new MergePolicyConfig();
 
     public RingbufferConfig() {
     }
@@ -100,6 +104,8 @@ public class RingbufferConfig implements IdentifiedDataSerializable {
         if (config.ringbufferStoreConfig != null) {
             this.ringbufferStoreConfig = new RingbufferStoreConfig(config.ringbufferStoreConfig);
         }
+        this.mergePolicyConfig = config.mergePolicyConfig;
+        this.quorumName = config.quorumName;
     }
 
     /**
@@ -285,6 +291,65 @@ public class RingbufferConfig implements IdentifiedDataSerializable {
         return this;
     }
 
+    /**
+     * Get the RingbufferStore (load and store ringbuffer items from/to a database) configuration.
+     *
+     * @return the ringbuffer configuration
+     */
+    public RingbufferStoreConfig getRingbufferStoreConfig() {
+        return ringbufferStoreConfig;
+    }
+
+    /**
+     * Set the RingbufferStore (load and store ringbuffer items from/to a database) configuration.
+     *
+     * @param ringbufferStoreConfig set the RingbufferStore configuration to this configuration
+     * @return the ringbuffer configuration
+     */
+    public RingbufferConfig setRingbufferStoreConfig(RingbufferStoreConfig ringbufferStoreConfig) {
+        this.ringbufferStoreConfig = ringbufferStoreConfig;
+        return this;
+    }
+
+    /**
+     * Returns the quorum name for operations.
+     *
+     * @return the quorum name
+     */
+    public String getQuorumName() {
+        return quorumName;
+    }
+
+    /**
+     * Sets the quorum name for operations.
+     *
+     * @param quorumName the quorum name
+     * @return the updated configuration
+     */
+    public RingbufferConfig setQuorumName(String quorumName) {
+        this.quorumName = quorumName;
+        return this;
+    }
+
+    /**
+     * Gets the {@link MergePolicyConfig} for this ringbuffer.
+     *
+     * @return the {@link MergePolicyConfig} for this ringbuffer
+     */
+    public MergePolicyConfig getMergePolicyConfig() {
+        return mergePolicyConfig;
+    }
+
+    /**
+     * Sets the {@link MergePolicyConfig} for this ringbuffer.
+     *
+     * @return the ringbuffer configuration
+     */
+    public RingbufferConfig setMergePolicyConfig(MergePolicyConfig mergePolicyConfig) {
+        this.mergePolicyConfig = mergePolicyConfig;
+        return this;
+    }
+
     @Override
     public String toString() {
         return "RingbufferConfig{"
@@ -295,37 +360,9 @@ public class RingbufferConfig implements IdentifiedDataSerializable {
                 + ", timeToLiveSeconds=" + timeToLiveSeconds
                 + ", inMemoryFormat=" + inMemoryFormat
                 + ", ringbufferStoreConfig=" + ringbufferStoreConfig
+                + ", quorumName=" + quorumName
+                + ", mergePolicyConfig=" + mergePolicyConfig
                 + '}';
-    }
-
-    /**
-     * Get the RingbufferStore (load and store ring buffer items from/to a database) configuration.
-     *
-     * @return the ring buffer configuration
-     */
-    public RingbufferStoreConfig getRingbufferStoreConfig() {
-        return ringbufferStoreConfig;
-    }
-
-    /**
-     * Set the RingbufferStore (load and store ring buffer items from/to a database) configuration.
-     *
-     * @param ringbufferStoreConfig set the RingbufferStore configuration to this configuration
-     * @return the RingbufferStore configuration
-     */
-    public RingbufferConfig setRingbufferStoreConfig(RingbufferStoreConfig ringbufferStoreConfig) {
-        this.ringbufferStoreConfig = ringbufferStoreConfig;
-        return this;
-    }
-
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return immutable version of this configuration
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
-     */
-    public RingbufferConfig getAsReadOnly() {
-        return new RingbufferConfigReadOnly(this);
     }
 
     @Override
@@ -347,6 +384,11 @@ public class RingbufferConfig implements IdentifiedDataSerializable {
         out.writeInt(timeToLiveSeconds);
         out.writeUTF(inMemoryFormat.name());
         out.writeObject(ringbufferStoreConfig);
+        // RU_COMPAT_3_9
+        if (out.getVersion().isGreaterOrEqual(Versions.V3_10)) {
+            out.writeUTF(quorumName);
+            out.writeObject(mergePolicyConfig);
+        }
     }
 
     @Override
@@ -358,6 +400,11 @@ public class RingbufferConfig implements IdentifiedDataSerializable {
         timeToLiveSeconds = in.readInt();
         inMemoryFormat = InMemoryFormat.valueOf(in.readUTF());
         ringbufferStoreConfig = in.readObject();
+        // RU_COMPAT_3_9
+        if (in.getVersion().isGreaterOrEqual(Versions.V3_10)) {
+            quorumName = in.readUTF();
+            mergePolicyConfig = in.readObject();
+        }
     }
 
     @Override
@@ -389,8 +436,14 @@ public class RingbufferConfig implements IdentifiedDataSerializable {
         if (inMemoryFormat != that.inMemoryFormat) {
             return false;
         }
-        return ringbufferStoreConfig != null ? ringbufferStoreConfig.equals(that.ringbufferStoreConfig)
-                : that.ringbufferStoreConfig == null;
+        if (ringbufferStoreConfig != null ? !ringbufferStoreConfig.equals(that.ringbufferStoreConfig)
+                : that.ringbufferStoreConfig != null) {
+            return false;
+        }
+        if (quorumName != null ? !quorumName.equals(that.quorumName) : that.quorumName != null) {
+            return false;
+        }
+        return mergePolicyConfig != null ? mergePolicyConfig.equals(that.mergePolicyConfig) : that.mergePolicyConfig == null;
     }
 
     @Override
@@ -402,7 +455,19 @@ public class RingbufferConfig implements IdentifiedDataSerializable {
         result = 31 * result + timeToLiveSeconds;
         result = 31 * result + (inMemoryFormat != null ? inMemoryFormat.hashCode() : 0);
         result = 31 * result + (ringbufferStoreConfig != null ? ringbufferStoreConfig.hashCode() : 0);
+        result = 31 * result + (quorumName != null ? quorumName.hashCode() : 0);
+        result = 31 * result + (mergePolicyConfig != null ? mergePolicyConfig.hashCode() : 0);
         return result;
+    }
+
+    /**
+     * Gets immutable version of this configuration.
+     *
+     * @return immutable version of this configuration
+     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
+     */
+    public RingbufferConfig getAsReadOnly() {
+        return new RingbufferConfigReadOnly(this);
     }
 
     /**
@@ -427,31 +492,45 @@ public class RingbufferConfig implements IdentifiedDataSerializable {
 
         @Override
         public RingbufferConfig setCapacity(int capacity) {
-            throw new UnsupportedOperationException("This config is read-only");
+            throw throwReadOnly();
         }
 
         @Override
         public RingbufferConfig setAsyncBackupCount(int asyncBackupCount) {
-            throw new UnsupportedOperationException("This config is read-only");
+            throw throwReadOnly();
         }
 
         @Override
         public RingbufferConfig setBackupCount(int backupCount) {
-            throw new UnsupportedOperationException("This config is read-only");
+            throw throwReadOnly();
         }
 
         @Override
         public RingbufferConfig setTimeToLiveSeconds(int timeToLiveSeconds) {
-            throw new UnsupportedOperationException("This config is read-only");
+            throw throwReadOnly();
         }
 
         @Override
         public RingbufferConfig setInMemoryFormat(InMemoryFormat inMemoryFormat) {
-            throw new UnsupportedOperationException("This config is read-only");
+            throw throwReadOnly();
         }
 
         @Override
         public RingbufferConfig setRingbufferStoreConfig(RingbufferStoreConfig ringbufferStoreConfig) {
+            throw throwReadOnly();
+        }
+
+        @Override
+        public RingbufferConfig setQuorumName(String quorumName) {
+            throw throwReadOnly();
+        }
+
+        @Override
+        public RingbufferConfig setMergePolicyConfig(MergePolicyConfig mergePolicyConfig) {
+            throw throwReadOnly();
+        }
+
+        private UnsupportedOperationException throwReadOnly() {
             throw new UnsupportedOperationException("This config is read-only");
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -360,6 +360,7 @@ public class Statistics {
             stats.append("lastStatisticsCollectionTime").append(KEY_VALUE_SEPARATOR).append(System.currentTimeMillis());
             addStat(stats, "enterprise", enterprise);
             addStat(stats, "clientType", ClientType.JAVA.toString());
+            addStat(stats, "clientVersion", BuildInfoProvider.getBuildInfo().getVersion());
             addStat(stats, "clusterConnectionTimestamp", ownerConnection.getStartTime());
 
             stats.append(STAT_SEPARATOR).append("clientAddress").append(KEY_VALUE_SEPARATOR)

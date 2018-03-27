@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package com.hazelcast.internal.nearcache.impl.invalidation;
 
 import com.hazelcast.core.IFunction;
-import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventRegistration;
@@ -28,6 +27,9 @@ import com.hazelcast.spi.partition.IPartitionService;
 
 import java.util.Collection;
 import java.util.UUID;
+
+import static com.hazelcast.internal.util.ToHeapDataConverter.toHeapData;
+import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * Contains shared functionality for Near Cache invalidation.
@@ -63,9 +65,8 @@ public abstract class Invalidator {
      * @param dataStructureName name of the data structure to be invalidated
      */
     public final void invalidateKey(Data key, String dataStructureName, String sourceUuid) {
-        assert key != null;
-        assert dataStructureName != null;
-        assert sourceUuid != null;
+        checkNotNull(key, "key cannot be null");
+        checkNotNull(sourceUuid, "sourceUuid cannot be null");
 
         Invalidation invalidation = newKeyInvalidation(key, dataStructureName, sourceUuid);
         invalidateInternal(invalidation, getPartitionId(key));
@@ -77,8 +78,7 @@ public abstract class Invalidator {
      * @param dataStructureName name of the data structure to be cleared
      */
     public final void invalidateAllKeys(String dataStructureName, String sourceUuid) {
-        assert dataStructureName != null;
-        assert sourceUuid != null;
+        checkNotNull(sourceUuid, "sourceUuid cannot be null");
 
         int orderKey = getPartitionId(dataStructureName);
         Invalidation invalidation = newClearInvalidation(dataStructureName, sourceUuid);
@@ -94,25 +94,15 @@ public abstract class Invalidator {
         return newInvalidation(key, dataStructureName, sourceUuid, partitionId);
     }
 
-    protected final Invalidation newClearInvalidation(String dataStructureName, String sourceUuid) {
+    private Invalidation newClearInvalidation(String dataStructureName, String sourceUuid) {
         int partitionId = getPartitionId(dataStructureName);
         return newInvalidation(null, dataStructureName, sourceUuid, partitionId);
     }
 
     protected Invalidation newInvalidation(Data key, String dataStructureName, String sourceUuid, int partitionId) {
-        assert assertHeapData(key);
-
         long sequence = metaDataGenerator.nextSequence(dataStructureName, partitionId);
         UUID partitionUuid = metaDataGenerator.getOrCreateUuid(partitionId);
-        return new SingleNearCacheInvalidation(key, dataStructureName, sourceUuid, partitionUuid, sequence);
-    }
-
-    private static boolean assertHeapData(Data data) {
-        if (data != null) {
-            return data instanceof HeapData;
-        } else {
-            return true;
-        }
+        return new SingleNearCacheInvalidation(toHeapData(key), dataStructureName, sourceUuid, partitionUuid, sequence);
     }
 
     private int getPartitionId(Data o) {

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -260,7 +260,7 @@
             <xs:annotation>
                 <xs:documentation>
                     <![CDATA[The unique identifier for a bean.
-                    A bean id may not be used more than once within the same <beans> element.]]>
+                    A bean ID may not be used more than once within the same <beans> element.]]>
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>

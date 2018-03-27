@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ public class VersionConstructor extends AbstractStarterObjectConstructor {
         Byte major = (Byte) getFieldValueReflectively(delegate, "major");
         Byte minor = (Byte) getFieldValueReflectively(delegate, "minor");
 
-        Object[] args = new Object[] {major.intValue(), minor.intValue()};
+        Object[] args = new Object[]{major.intValue(), minor.intValue()};
 
         return versionOf.invoke(null, args);
     }

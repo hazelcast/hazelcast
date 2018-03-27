@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,8 @@ import com.hazelcast.concurrent.semaphore.operations.AcquireOperation;
 import com.hazelcast.concurrent.semaphore.operations.AvailableOperation;
 import com.hazelcast.concurrent.semaphore.operations.DrainBackupOperation;
 import com.hazelcast.concurrent.semaphore.operations.DrainOperation;
+import com.hazelcast.concurrent.semaphore.operations.IncreaseBackupOperation;
+import com.hazelcast.concurrent.semaphore.operations.IncreaseOperation;
 import com.hazelcast.concurrent.semaphore.operations.InitBackupOperation;
 import com.hazelcast.concurrent.semaphore.operations.InitOperation;
 import com.hazelcast.concurrent.semaphore.operations.ReduceBackupOperation;
@@ -57,6 +59,8 @@ public class SemaphoreDataSerializerHook implements DataSerializerHook {
     public static final int RELEASE_OPERATION = 12;
     public static final int DETACH_MEMBER_OPERATION = 13;
     public static final int SEMAPHORE_REPLICATION_OPERATION = 14;
+    public static final int INCREASE_OPERATION = 15;
+    public static final int INCREASE_BACKUP_OPERATION = 16;
 
     @Override
     public int getFactoryId() {
@@ -99,6 +103,10 @@ public class SemaphoreDataSerializerHook implements DataSerializerHook {
                         return new SemaphoreDetachMemberOperation();
                     case SEMAPHORE_REPLICATION_OPERATION:
                         return new SemaphoreReplicationOperation();
+                    case INCREASE_OPERATION:
+                        return new IncreaseOperation();
+                    case INCREASE_BACKUP_OPERATION:
+                        return new IncreaseBackupOperation();
                     default:
                         return null;
                 }

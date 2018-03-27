@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,6 +38,8 @@ import static java.lang.Thread.sleep;
  * Common methods used in ScheduledExecutorService tests.
  */
 public class ScheduledExecutorServiceTestSupport extends HazelcastTestSupport {
+
+    public static final int MAP_INCREMENT_TASK_MAX_ENTRIES = 10000;
 
     public IScheduledExecutorService getScheduledExecutor(HazelcastInstance[] instances, String name) {
         return instances[0].getScheduledExecutorService(name);
@@ -141,30 +143,34 @@ public class ScheduledExecutorServiceTestSupport extends HazelcastTestSupport {
 
     static class ICountdownLatchMapIncrementCallableTask implements Runnable, Serializable, HazelcastInstanceAware {
 
-        final String runLatchName;
+        final String startedLatch;
+        final String finishedLatch;
         final String runEntryCounterName;
         final String mapName;
 
         transient HazelcastInstance instance;
 
-        ICountdownLatchMapIncrementCallableTask(String mapName, String runEntryCounterName, String runLatchName) {
+        ICountdownLatchMapIncrementCallableTask(String mapName, String runEntryCounterName,
+                                                String startedLatch, String finishedLatch) {
             this.mapName = mapName;
             this.runEntryCounterName = runEntryCounterName;
-            this.runLatchName = runLatchName;
+            this.startedLatch = startedLatch;
+            this.finishedLatch = finishedLatch;
         }
 
         @Override
         public void run() {
             instance.getAtomicLong(runEntryCounterName).incrementAndGet();
+            instance.getCountDownLatch(startedLatch).countDown();
 
             IMap<String, Integer> map = instance.getMap(mapName);
-            for (int i = 0; i < 100000; i++) {
+            for (int i = 0; i < MAP_INCREMENT_TASK_MAX_ENTRIES; i++) {
                 if (map.get(String.valueOf(i)) == i) {
                     map.put(String.valueOf(i), i + 1);
                 }
             }
 
-            instance.getCountDownLatch(runLatchName).countDown();
+            instance.getCountDownLatch(finishedLatch).countDown();
         }
 
         @Override
@@ -241,6 +247,10 @@ public class ScheduledExecutorServiceTestSupport extends HazelcastTestSupport {
 
         @Override
         public Double call() throws Exception {
+            return calculateResult(delta);
+        }
+
+        public static double calculateResult(int delta) {
             return 5 * 5.0 + delta;
         }
     }

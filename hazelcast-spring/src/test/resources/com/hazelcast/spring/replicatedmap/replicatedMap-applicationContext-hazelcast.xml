@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -18,13 +18,10 @@
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xmlns:hz="http://www.hazelcast.com/schema/spring"
-       xmlns:cache="http://www.springframework.org/schema/cache"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
-		http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
-		http://www.springframework.org/schema/cache
-		http://www.springframework.org/schema/cache/spring-cache.xsd
-		http://www.hazelcast.com/schema/spring
-		http://www.hazelcast.com/schema/spring/hazelcast-spring.xsd">
+        http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.hazelcast.com/schema/spring
+        http://www.hazelcast.com/schema/spring/hazelcast-spring.xsd">
 
     <hz:hazelcast id="instance">
         <hz:config>
@@ -40,10 +37,11 @@
                     <hz:interface>127.0.0.1</hz:interface>
                 </hz:interfaces>
             </hz:network>
-            <hz:replicatedmap name="replicatedMap" concurrency-level="3" in-memory-format="OBJECT" async-fillup="true" statistics-enabled="false" replication-delay-millis="10">
-                    <hz:entry-listeners>
-                        <hz:entry-listener class-name="com.hazelcast.spring.DummyEntryListener"/>
-                    </hz:entry-listeners>
+            <hz:replicatedmap name="replicatedMap" concurrency-level="3" in-memory-format="OBJECT" async-fillup="true"
+                              statistics-enabled="false" replication-delay-millis="10">
+                <hz:entry-listeners>
+                    <hz:entry-listener class-name="com.hazelcast.spring.DummyEntryListener"/>
+                </hz:entry-listeners>
             </hz:replicatedmap>
         </hz:config>
     </hz:hazelcast>

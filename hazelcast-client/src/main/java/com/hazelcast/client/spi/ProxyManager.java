@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import com.hazelcast.client.config.ProxyFactoryConfig;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAddDistributedObjectListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.ClientCreateProxiesCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientCreateProxyCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientRemoveDistributedObjectListenerCodec;
 import com.hazelcast.client.proxy.ClientAtomicLongProxy;
@@ -36,11 +37,13 @@ import com.hazelcast.client.proxy.ClientCardinalityEstimatorProxy;
 import com.hazelcast.client.proxy.ClientCountDownLatchProxy;
 import com.hazelcast.client.proxy.ClientDurableExecutorServiceProxy;
 import com.hazelcast.client.proxy.ClientExecutorServiceProxy;
+import com.hazelcast.client.proxy.ClientFlakeIdGeneratorProxy;
 import com.hazelcast.client.proxy.ClientIdGeneratorProxy;
 import com.hazelcast.client.proxy.ClientListProxy;
 import com.hazelcast.client.proxy.ClientLockProxy;
 import com.hazelcast.client.proxy.ClientMapReduceProxy;
 import com.hazelcast.client.proxy.ClientMultiMapProxy;
+import com.hazelcast.client.proxy.ClientPNCounterProxy;
 import com.hazelcast.client.proxy.ClientQueueProxy;
 import com.hazelcast.client.proxy.ClientReliableTopicProxy;
 import com.hazelcast.client.proxy.ClientReplicatedMapProxy;
@@ -50,8 +53,8 @@ import com.hazelcast.client.proxy.ClientSemaphoreProxy;
 import com.hazelcast.client.proxy.ClientSetProxy;
 import com.hazelcast.client.proxy.ClientTopicProxy;
 import com.hazelcast.client.proxy.txn.xa.XAResourceProxy;
-import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.AbstractClientInvocationService;
+import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientProxyFactoryWithContext;
 import com.hazelcast.client.spi.impl.ClientServiceNotFoundException;
 import com.hazelcast.client.spi.impl.ListenerMessageCodec;
@@ -74,13 +77,16 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.OperationTimeoutException;
+import com.hazelcast.crdt.pncounter.PNCounterService;
 import com.hazelcast.durableexecutor.impl.DistributedDurableExecutorService;
 import com.hazelcast.executor.impl.DistributedExecutorService;
+import com.hazelcast.flakeidgen.impl.FlakeIdGeneratorService;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
+import com.hazelcast.nio.Connection;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
@@ -89,26 +95,28 @@ import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.topic.impl.reliable.ReliableTopicService;
 import com.hazelcast.transaction.impl.xa.XAService;
-import com.hazelcast.util.EmptyStatement;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
+import java.util.AbstractMap;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.ServiceLoader.classIterator;
+import static java.lang.Thread.currentThread;
 
 /**
  * The ProxyManager handles client proxy instantiation and retrieval at start and runtime by registering
  * corresponding service manager names and their {@link com.hazelcast.client.spi.ClientProxyFactory}s.
  */
-@SuppressWarnings("checkstyle:classfanoutcomplexity")
+@SuppressWarnings({"checkstyle:classfanoutcomplexity", "checkstyle:classdataabstractioncoupling"})
 public final class ProxyManager {
 
     private static final String PROVIDER_ID = ClientProxyDescriptorProvider.class.getCanonicalName();
@@ -161,6 +169,7 @@ public final class ProxyManager {
         }
     }
 
+    @SuppressWarnings("checkstyle:methodlength")
     public void init(ClientConfig config, ClientContext clientContext) {
         context = clientContext;
         // register defaults
@@ -197,8 +206,10 @@ public final class ProxyManager {
                 return new ClientIdGeneratorProxy(IdGeneratorService.SERVICE_NAME, id, context, atomicLong);
             }
         });
+        register(FlakeIdGeneratorService.SERVICE_NAME, ClientFlakeIdGeneratorProxy.class);
         register(CardinalityEstimatorService.SERVICE_NAME, ClientCardinalityEstimatorProxy.class);
         register(DistributedScheduledExecutorService.SERVICE_NAME, ClientScheduledExecutorProxy.class);
+        register(PNCounterService.SERVICE_NAME, ClientPNCounterProxy.class);
 
         ClassLoader classLoader = config.getClassLoader();
         for (ProxyFactoryConfig proxyFactoryConfig : config.getProxyFactoryConfigs()) {
@@ -290,25 +301,26 @@ public final class ProxyManager {
         if (proxyFuture != null) {
             return proxyFuture.get();
         }
-        final ClientProxyFactory factory = proxyFactories.get(service);
+        ClientProxyFactory factory = proxyFactories.get(service);
         if (factory == null) {
             throw new ClientServiceNotFoundException("No factory registered for service: " + service);
         }
-        final ClientProxy clientProxy = createClientProxy(id, factory);
         proxyFuture = new ClientProxyFuture();
-        final ClientProxyFuture current = proxies.putIfAbsent(ns, proxyFuture);
+        ClientProxyFuture current = proxies.putIfAbsent(ns, proxyFuture);
         if (current != null) {
             return current.get();
         }
+
         try {
+            ClientProxy clientProxy = createClientProxy(id, factory);
             initializeWithRetry(clientProxy);
+            proxyFuture.set(clientProxy);
+            return clientProxy;
         } catch (Throwable e) {
             proxies.remove(ns);
             proxyFuture.set(e);
             throw rethrow(e);
         }
-        proxyFuture.set(clientProxy);
-        return clientProxy;
     }
 
     private ClientProxy createClientProxy(String id, ClientProxyFactory factory) {
@@ -358,7 +370,7 @@ public final class ProxyManager {
         try {
             Thread.sleep(invocationRetryPauseMillis);
         } catch (InterruptedException ignored) {
-            EmptyStatement.ignore(ignored);
+            currentThread().interrupt();
         }
     }
 
@@ -411,6 +423,20 @@ public final class ProxyManager {
     public String addDistributedObjectListener(final DistributedObjectListener listener) {
         final EventHandler<ClientMessage> eventHandler = new DistributedObjectEventHandler(listener, this);
         return client.getListenerService().registerListener(distributedObjectListenerCodec, eventHandler);
+    }
+
+    public void createDistributedObjectsOnCluster(Connection ownerConnection) {
+        List<Map.Entry<String, String>> proxyEntries = new LinkedList<Map.Entry<String, String>>();
+        for (ObjectNamespace objectNamespace : proxies.keySet()) {
+            String name = objectNamespace.getObjectName();
+            String serviceName = objectNamespace.getServiceName();
+            proxyEntries.add(new AbstractMap.SimpleEntry<String, String>(name, serviceName));
+        }
+        if (proxyEntries.isEmpty()) {
+            return;
+        }
+        ClientMessage clientMessage = ClientCreateProxiesCodec.encodeRequest(proxyEntries);
+        new ClientInvocation(client, clientMessage, null, ownerConnection).invoke();
     }
 
     private final class DistributedObjectEventHandler extends ClientAddDistributedObjectListenerCodec.AbstractEventHandler

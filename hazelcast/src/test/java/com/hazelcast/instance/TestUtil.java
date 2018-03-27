@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -138,5 +138,16 @@ public final class TestUtil {
         return false;
     }
 
+    /**
+     * Sets or removes (in case value==null) a system property. It's only a helper method, which avoids
+     * {@link NullPointerException} thrown from {@link System#setProperty(String, String)} method, when the value is
+     * <code>null</code>.
+     *
+     * @param key   property name
+     * @param value property value
+     * @return the previous string value of the system property
+     */
+    public static String setSystemProperty(final String key, final String value) {
+        return value == null ? System.clearProperty(key) : System.setProperty(key, value);
+    }
 }
-

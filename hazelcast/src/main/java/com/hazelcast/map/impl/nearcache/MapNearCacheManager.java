@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package com.hazelcast.map.impl.nearcache;
 
-import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.nearcache.NearCache;
@@ -30,7 +29,6 @@ import com.hazelcast.internal.nearcache.impl.invalidation.RepairingHandler;
 import com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.EventListenerFilter;
-import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapManagedService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.nearcache.invalidation.MemberMapMetaDataFetcher;
@@ -135,17 +133,6 @@ public class MapNearCacheManager extends DefaultNearCacheManager {
     public boolean destroyNearCache(String mapName) {
         invalidator.destroy(mapName, nodeEngine.getLocalMember().getUuid());
         return super.destroyNearCache(mapName);
-    }
-
-    public Object getFromNearCache(String mapName, Object key) {
-        MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
-        if (!mapContainer.hasInvalidationListener()) {
-            return null;
-        }
-
-        NearCacheConfig nearCacheConfig = mapContainer.getMapConfig().getNearCacheConfig();
-        NearCache<Object, Object> nearCache = getOrCreateNearCache(mapName, nearCacheConfig);
-        return nearCache.get(key);
     }
 
     public Invalidator getInvalidator() {

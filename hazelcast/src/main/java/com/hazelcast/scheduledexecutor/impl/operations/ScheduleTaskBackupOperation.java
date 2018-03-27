@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,8 @@ import com.hazelcast.spi.BackupOperation;
 import java.io.IOException;
 
 public class ScheduleTaskBackupOperation
-        extends AbstractSchedulerOperation implements BackupOperation {
+        extends AbstractSchedulerOperation
+        implements BackupOperation {
 
     private TaskDefinition definition;
 
@@ -40,7 +41,7 @@ public class ScheduleTaskBackupOperation
     @Override
     public void run()
             throws Exception {
-        getContainer().stash(definition);
+        getContainer().enqueueSuspended(definition);
     }
 
     @Override

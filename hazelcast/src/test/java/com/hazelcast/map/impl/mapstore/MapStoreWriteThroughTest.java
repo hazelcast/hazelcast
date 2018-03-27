@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,6 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.EmptyStatement;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -248,21 +247,21 @@ public class MapStoreWriteThroughTest extends AbstractMapStoreTest {
             map.get("1");
             fail("should have thrown exception");
         } catch (Exception e) {
-            EmptyStatement.ignore(e);
+            ignore(e);
         }
         assertEquals(1, testMapStore.loads.get());
         try {
             map.get("1");
             fail("should have thrown exception");
         } catch (Exception e) {
-            EmptyStatement.ignore(e);
+            ignore(e);
         }
         assertEquals(2, testMapStore.loads.get());
         try {
             map.put("1", "value");
             fail("should have thrown exception");
         } catch (Exception e) {
-            EmptyStatement.ignore(e);
+            ignore(e);
         }
         assertEquals(0, testMapStore.stores.get());
         assertEquals(0, map.size());
@@ -282,7 +281,7 @@ public class MapStoreWriteThroughTest extends AbstractMapStoreTest {
             map.put("1", "value");
             fail("should have thrown exception");
         } catch (Exception e) {
-            EmptyStatement.ignore(e);
+            ignore(e);
         }
         assertEquals(0, map.size());
     }

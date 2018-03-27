@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,8 @@ import com.hazelcast.client.config.ClientAwsConfig;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientConnectionStrategyConfig;
 import com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode;
+import com.hazelcast.client.config.ClientFlakeIdGeneratorConfig;
+import com.hazelcast.client.config.ClientIcmpPingConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.config.ClientUserCodeDeploymentConfig;
 import com.hazelcast.client.config.ProxyFactoryConfig;
@@ -102,8 +104,14 @@ public class TestClientApplicationContext {
     @Resource(name = "client8")
     private HazelcastClientProxy client8;
 
-    @Resource(name = "user-code-deployment-test")
+    @Resource(name = "client9-user-code-deployment-test")
     private HazelcastClientProxy userCodeDeploymentTestClient;
+
+    @Resource(name = "client10-flakeIdGenerator")
+    private HazelcastClientProxy client10;
+
+    @Resource(name = "client11-icmp-ping")
+    private HazelcastClientProxy icmpPingTestClient;
 
     @Resource(name = "instance")
     private HazelcastInstance instance;
@@ -369,6 +377,28 @@ public class TestClientApplicationContext {
         ClientConnectionStrategyConfig connectionStrategyConfig = client8.getClientConfig().getConnectionStrategyConfig();
         assertTrue(connectionStrategyConfig.isAsyncStart());
         assertEquals(ReconnectMode.ASYNC, connectionStrategyConfig.getReconnectMode());
+    }
+
+    @Test
+    public void testFlakeIdGeneratorConfig() {
+        Map<String, ClientFlakeIdGeneratorConfig> configMap = client10.getClientConfig().getFlakeIdGeneratorConfigMap();
+        assertEquals(1, configMap.size());
+        ClientFlakeIdGeneratorConfig config = configMap.values().iterator().next();
+        assertEquals("gen1", config.getName());
+        assertEquals(3, config.getPrefetchCount());
+        assertEquals(3000L, config.getPrefetchValidityMillis());
+    }
+
+    @Test
+    public void testClientIcmpConfig() {
+        ClientIcmpPingConfig icmpPingConfig = icmpPingTestClient.getClientConfig()
+                .getNetworkConfig().getClientIcmpPingConfig();
+        assertEquals(false, icmpPingConfig.isEnabled());
+        assertEquals(2000, icmpPingConfig.getTimeoutMilliseconds());
+        assertEquals(3000, icmpPingConfig.getIntervalMilliseconds());
+        assertEquals(50, icmpPingConfig.getTtl());
+        assertEquals(5, icmpPingConfig.getMaxAttempts());
+        assertEquals(false, icmpPingConfig.isEchoFailFastOnStartup());
     }
 
     private static QueryCacheConfig getQueryCacheConfig(ClientConfig config) {

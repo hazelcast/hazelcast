@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,7 +66,8 @@ public abstract class TestAbstractMigrationAwareService<N> implements ManagedSer
         onBeforeMigration(event);
     }
 
-    protected void onBeforeMigration(PartitionMigrationEvent event) {}
+    protected void onBeforeMigration(PartitionMigrationEvent event) {
+    }
 
     @Override
     public final void commitMigration(PartitionMigrationEvent event) {
@@ -76,7 +77,8 @@ public abstract class TestAbstractMigrationAwareService<N> implements ManagedSer
         onCommitMigration(event);
     }
 
-    protected void onCommitMigration(PartitionMigrationEvent event) {}
+    protected void onCommitMigration(PartitionMigrationEvent event) {
+    }
 
     @Override
     public void rollbackMigration(PartitionMigrationEvent event) {
@@ -86,7 +88,8 @@ public abstract class TestAbstractMigrationAwareService<N> implements ManagedSer
         onRollbackMigration(event);
     }
 
-    protected void onRollbackMigration(PartitionMigrationEvent event) {}
+    protected void onRollbackMigration(PartitionMigrationEvent event) {
+    }
 
     public List<PartitionMigrationEvent> getBeforeEvents() {
         synchronized (beforeEvents) {

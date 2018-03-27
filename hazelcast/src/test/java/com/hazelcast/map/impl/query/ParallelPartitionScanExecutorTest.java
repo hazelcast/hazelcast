@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,7 +54,8 @@ public class ParallelPartitionScanExecutorTest {
     public ExpectedException expected = ExpectedException.none();
 
     private ParallelPartitionScanExecutor executor(PartitionScanRunner runner) {
-        PoolExecutorThreadFactory threadFactory = new PoolExecutorThreadFactory(UUID.randomUUID().toString(), currentThread().getContextClassLoader());
+        PoolExecutorThreadFactory threadFactory
+                = new PoolExecutorThreadFactory(UUID.randomUUID().toString(), currentThread().getContextClassLoader());
         NamedThreadPoolExecutor pool = new NamedThreadPoolExecutor(UUID.randomUUID().toString(), 1, 1,
                 100, TimeUnit.SECONDS,
                 new LinkedBlockingQueue<Runnable>(100),

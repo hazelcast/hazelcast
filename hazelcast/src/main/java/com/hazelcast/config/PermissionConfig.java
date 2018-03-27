@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.hazelcast.config;
 
 import java.util.HashSet;
 import java.util.Set;
+
 /**
  * Contains the configuration for a permission.
  */
@@ -83,6 +84,10 @@ public class PermissionConfig {
          */
         ID_GENERATOR("id-generator-permission"),
         /**
+         * Flake ID generator
+         */
+        FLAKE_ID_GENERATOR("flake-id-generator-permission"),
+        /**
          * Lock
          */
         LOCK("lock-permission"),
@@ -133,7 +138,11 @@ public class PermissionConfig {
         /**
          * Configuration permission
          */
-        CONFIG("config-permission");
+        CONFIG("config-permission"),
+        /**
+         * CRDT PN Counter
+         */
+        PN_COUNTER("pn-counter-permission");
 
         private final String nodeName;
 

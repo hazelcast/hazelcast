@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,19 +38,16 @@ public class ConsoleCommandHandler {
 
 
    /**
-    * Runs a command on the console. Will not run "exit" or "quit".
+    * Runs a command on the console. Will not run "exit", "quit", "shutdown", their upper-case
+    * or mixed case counterparts.
     *
     * @param command The command to run.
     *
     * @return either the command is handled, or a console message is returned if the command is not handled.
     *
-    * @throws java.lang.InterruptedException.
+    * @throws java.lang.InterruptedException
     */
     public String handleCommand(final String command) throws InterruptedException {
-        if ("exit".equals(command) || "quit".equals(command)) {
-            return "'" + command + "' is not allowed!";
-        }
-
         if (lock.tryLock(1, TimeUnit.SECONDS)) {
             try {
                 return doHandleCommand(command);
@@ -80,11 +77,6 @@ public class ConsoleCommandHandler {
         }
 
         @Override
-        protected void handleCommand(String inputCommand) {
-            super.handleCommand(inputCommand);
-        }
-
-        @Override
         protected void handleAddListener(String[] args) {
             println("Listener commands are not allowed!");
         }
@@ -103,6 +95,16 @@ public class ConsoleCommandHandler {
         @Override
         public void print(Object obj) {
             buffer.append(String.valueOf(obj));
+        }
+
+        @Override
+        protected void handleExit() {
+            print("'exit' is not allowed!");
+        }
+
+        @Override
+        protected void handleShutdown() {
+            print("'shutdown' is not allowed!");
         }
     }
 }

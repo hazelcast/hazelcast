@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -113,7 +113,7 @@ public class LockProxy extends AbstractDistributedObject<LockServiceImpl> implem
 
     @Override
     public Condition newCondition() {
-        throw new UnsupportedOperationException("Use ICondition.newCondition(String name) instead!");
+        throw new UnsupportedOperationException("Use ILock.newCondition(String name) instead!");
     }
 
     @Override

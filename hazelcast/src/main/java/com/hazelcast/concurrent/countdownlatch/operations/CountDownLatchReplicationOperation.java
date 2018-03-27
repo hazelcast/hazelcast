@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package com.hazelcast.concurrent.countdownlatch.operations;
 
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchContainer;
-import com.hazelcast.concurrent.countdownlatch.CountDownLatchDataSerializerHook;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -27,6 +26,10 @@ import com.hazelcast.spi.Operation;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+
+import static com.hazelcast.concurrent.countdownlatch.CountDownLatchDataSerializerHook.COUNT_DOWN_LATCH_REPLICATION_OPERATION;
+import static com.hazelcast.concurrent.countdownlatch.CountDownLatchDataSerializerHook.F_ID;
+import static com.hazelcast.concurrent.countdownlatch.CountDownLatchService.SERVICE_NAME;
 
 public class CountDownLatchReplicationOperation extends Operation implements IdentifiedDataSerializable {
 
@@ -46,24 +49,24 @@ public class CountDownLatchReplicationOperation extends Operation implements Ide
         }
 
         CountDownLatchService service = getService();
-        for (CountDownLatchContainer latchContainer : data) {
-            service.add(latchContainer);
+        for (CountDownLatchContainer container : data) {
+            service.add(container);
         }
     }
 
     @Override
     public String getServiceName() {
-        return CountDownLatchService.SERVICE_NAME;
+        return SERVICE_NAME;
     }
 
     @Override
     public int getFactoryId() {
-        return CountDownLatchDataSerializerHook.F_ID;
+        return F_ID;
     }
 
     @Override
     public int getId() {
-        return CountDownLatchDataSerializerHook.COUNT_DOWN_LATCH_REPLICATION_OPERATION;
+        return COUNT_DOWN_LATCH_REPLICATION_OPERATION;
     }
 
     @Override
@@ -72,8 +75,8 @@ public class CountDownLatchReplicationOperation extends Operation implements Ide
         int len = data != null ? data.size() : 0;
         out.writeInt(len);
         if (len > 0) {
-            for (CountDownLatchContainer latchContainer : data) {
-                latchContainer.writeData(out);
+            for (CountDownLatchContainer container : data) {
+                container.writeData(out);
             }
         }
     }
@@ -83,11 +86,11 @@ public class CountDownLatchReplicationOperation extends Operation implements Ide
         super.readInternal(in);
         int len = in.readInt();
         if (len > 0) {
-            data = new ArrayList<CountDownLatchContainer>();
+            data = new ArrayList<CountDownLatchContainer>(len);
             for (int i = 0; i < len; i++) {
-                CountDownLatchContainer latchContainer = new CountDownLatchContainer();
-                latchContainer.readData(in);
-                data.add(latchContainer);
+                CountDownLatchContainer container = new CountDownLatchContainer();
+                container.readData(in);
+                data.add(container);
             }
         }
     }

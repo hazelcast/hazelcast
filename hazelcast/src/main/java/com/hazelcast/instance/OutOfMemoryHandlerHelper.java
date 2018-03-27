@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,8 @@ package com.hazelcast.instance;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.annotation.PrivateApi;
-import com.hazelcast.util.EmptyStatement;
+
+import static com.hazelcast.util.EmptyStatement.ignore;
 
 /**
  * Helper class for OutOfMemoryHandlers to close sockets, stop threads, release allocated resources
@@ -46,7 +47,7 @@ public final class OutOfMemoryHandlerHelper {
             try {
                 factory.node.connectionManager.shutdown();
             } catch (Throwable ignored) {
-                EmptyStatement.ignore(ignored);
+                ignore(ignored);
             }
         }
     }
@@ -60,7 +61,7 @@ public final class OutOfMemoryHandlerHelper {
         try {
             factory.node.shutdown(true);
         } catch (Throwable ignored) {
-            EmptyStatement.ignore(ignored);
+            ignore(ignored);
         }
     }
 }

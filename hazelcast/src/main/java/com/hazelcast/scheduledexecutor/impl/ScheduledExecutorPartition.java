@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,14 +23,15 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.util.ConstructorFunction;
 
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-public class ScheduledExecutorPartition extends AbstractScheduledExecutorContainerHolder {
+import static com.hazelcast.util.MapUtil.createHashMap;
+
+public class ScheduledExecutorPartition
+        extends AbstractScheduledExecutorContainerHolder {
 
     private final ILogger logger;
-
     private final int partitionId;
 
     private final ConstructorFunction<String, ScheduledExecutorContainer> containerConstructorFunction =
@@ -38,29 +39,27 @@ public class ScheduledExecutorPartition extends AbstractScheduledExecutorContain
                 @Override
                 public ScheduledExecutorContainer createNew(String name) {
                     if (logger.isFinestEnabled()) {
-                        logger.finest("[Partition: " + partitionId + "] "
-                                + "Create new scheduled executor container with name: " + name);
+                        logger.finest("[Partition:" + partitionId + "]Create new scheduled executor container with name:" + name);
                     }
 
                     ScheduledExecutorConfig config = nodeEngine.getConfig().findScheduledExecutorConfig(name);
-                    return new ScheduledExecutorContainer(name, partitionId, nodeEngine,
-                            config.getDurability(), config.getCapacity());
+                    return new ScheduledExecutorContainer(name, partitionId, nodeEngine, config.getDurability(),
+                            config.getCapacity());
                 }
             };
 
-    public ScheduledExecutorPartition(NodeEngine nodeEngine, int partitionId) {
+    ScheduledExecutorPartition(NodeEngine nodeEngine, int partitionId) {
         super(nodeEngine);
         this.logger = nodeEngine.getLogger(getClass());
         this.partitionId = partitionId;
     }
 
     public Operation prepareReplicationOperation(int replicaIndex, boolean migrationMode) {
-        Map<String, Map<String, ScheduledTaskDescriptor>> map =
-                new HashMap<String, Map<String, ScheduledTaskDescriptor>>();
+        Map<String, Map<String, ScheduledTaskDescriptor>> map = createHashMap(containers.size());
 
         if (logger.isFinestEnabled()) {
-            logger.finest("[Partition: " + partitionId + "] "
-                    + "Prepare replication(migration: " + migrationMode + ") for index: " + replicaIndex);
+            logger.finest("[Partition: " + partitionId + "] Prepare replication(migration: " + migrationMode + ") "
+                    + "for index: " + replicaIndex);
         }
 
         for (ScheduledExecutorContainer container : containers.values()) {
@@ -80,8 +79,8 @@ public class ScheduledExecutorPartition extends AbstractScheduledExecutorContain
 
     void disposeObsoleteReplicas(int thresholdReplicaIndex) {
         if (logger.isFinestEnabled()) {
-            logger.finest("[Partition: " + partitionId + "] "
-                    + "Dispose obsolete replicas with thresholdReplicaIndex: " + thresholdReplicaIndex);
+            logger.finest("[Partition: " + partitionId + "] Dispose obsolete replicas with thresholdReplicaIndex: "
+                    + thresholdReplicaIndex);
         }
 
         if (thresholdReplicaIndex < 0) {
@@ -102,13 +101,13 @@ public class ScheduledExecutorPartition extends AbstractScheduledExecutorContain
         }
     }
 
-    void promoteStash() {
+    void promoteSuspended() {
         if (logger.isFinestEnabled()) {
-            logger.finest("[Partition: " + partitionId + "] " + "Promote stashes");
+            logger.finest("[Partition: " + partitionId + "] " + "Promote suspended");
         }
 
         for (ScheduledExecutorContainer container : containers.values()) {
-            container.promoteStash();
+            container.promoteSuspended();
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +21,6 @@ import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientDeployClassesCodec;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.IOUtil;
-import com.hazelcast.util.EmptyStatement;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -42,7 +40,9 @@ import java.util.jar.JarInputStream;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static com.hazelcast.nio.IOUtil.closeResource;
 import static com.hazelcast.nio.IOUtil.toByteArray;
+import static com.hazelcast.util.EmptyStatement.ignore;
 
 public class ClientUserCodeDeploymentService {
 
@@ -78,9 +78,9 @@ public class ClientUserCodeDeploymentService {
                 byte[] bytes = toByteArray(is);
                 classDefinitionList.add(new AbstractMap.SimpleEntry<String, byte[]>(className, bytes));
             } catch (IOException e) {
-                EmptyStatement.ignore(e);
+                ignore(e);
             } finally {
-                IOUtil.closeResource(is);
+                closeResource(is);
             }
         }
     }
@@ -92,7 +92,7 @@ public class ClientUserCodeDeploymentService {
                 loadClassesFromJar(os, jarPath);
             }
         } finally {
-            IOUtil.closeResource(os);
+            closeResource(os);
         }
     }
 
@@ -116,7 +116,7 @@ public class ClientUserCodeDeploymentService {
                 classDefinitionList.add(new AbstractMap.SimpleEntry<String, byte[]>(className, classDefinition));
             } while (true);
         } finally {
-            IOUtil.closeResource(inputStream);
+            closeResource(inputStream);
         }
     }
 
@@ -130,13 +130,12 @@ public class ClientUserCodeDeploymentService {
             URL url = new URL(jarPath);
             return new JarInputStream(url.openStream());
         } catch (MalformedURLException e) {
-            EmptyStatement.ignore(e);
+            ignore(e);
         }
 
         InputStream inputStream = configClassLoader.getResourceAsStream(jarPath);
         if (inputStream == null) {
-            throw new FileNotFoundException("File could not be found in " + jarPath
-                    + "  and resources/" + jarPath);
+            throw new FileNotFoundException("File could not be found in " + jarPath + "  and resources/" + jarPath);
         }
         return new JarInputStream(inputStream);
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,13 +47,25 @@ public class MigrationPlannerTest {
     private MigrationPlanner migrationPlanner = new MigrationPlanner();
 
     @Test
-    public void test_MOVE()
-            throws UnknownHostException {
-        final Address[] oldAddresses = new Address[]{new Address("localhost", 5701), new Address("localhost", 5702), new Address(
-                "localhost", 5703), null, null, null, null};
-
-        final Address[] newAddresses = new Address[]{new Address("localhost", 5704), new Address("localhost", 5702), new Address(
-                "localhost", 5705), null, null, null, null};
+    public void test_MOVE() throws UnknownHostException {
+        final Address[] oldAddresses = new Address[]{
+                new Address("localhost", 5701),
+                new Address("localhost", 5702),
+                new Address("localhost", 5703),
+                null,
+                null,
+                null,
+                null,
+        };
+        final Address[] newAddresses = new Address[]{
+                new Address("localhost", 5704),
+                new Address("localhost", 5702),
+                new Address("localhost", 5705),
+                null,
+                null,
+                null,
+                null,
+        };
 
         migrationPlanner.planMigrations(oldAddresses, newAddresses, callback);
         verify(callback).migrate(new Address("localhost", 5701), 0, -1, new Address("localhost", 5704), -1, 0);
@@ -61,39 +73,75 @@ public class MigrationPlannerTest {
     }
 
     @Test
-    public void test_COPY()
-            throws UnknownHostException {
-        final Address[] oldAddresses = new Address[]{new Address("localhost", 5701), null, new Address("localhost",
-                5703), null, null, null, null};
-
-        final Address[] newAddresses = new Address[]{new Address("localhost", 5701), new Address("localhost", 5704), new Address(
-                "localhost", 5703), null, null, null, null};
+    public void test_COPY() throws UnknownHostException {
+        final Address[] oldAddresses = new Address[]{
+                new Address("localhost", 5701),
+                null,
+                new Address("localhost", 5703),
+                null,
+                null,
+                null,
+                null,
+        };
+        final Address[] newAddresses = new Address[]{
+                new Address("localhost", 5701),
+                new Address("localhost", 5704),
+                new Address("localhost", 5703),
+                null,
+                null,
+                null,
+                null,
+        };
 
         migrationPlanner.planMigrations(oldAddresses, newAddresses, callback);
         verify(callback).migrate(null, -1, -1, new Address("localhost", 5704), -1, 1);
     }
 
     @Test
-    public void test_SHIFT_DOWN_withNullKeepReplicaIndex()
-            throws UnknownHostException {
-        final Address[] oldAddresses = new Address[]{new Address("localhost", 5701), null, new Address("localhost",
-                5703), null, null, null, null};
-
-        final Address[] newAddresses = new Address[]{new Address("localhost", 5704), new Address("localhost", 5701), new Address(
-                "localhost", 5703), null, null, null, null};
+    public void test_SHIFT_DOWN_withNullKeepReplicaIndex() throws UnknownHostException {
+        final Address[] oldAddresses = new Address[]{
+                new Address("localhost", 5701),
+                null,
+                new Address("localhost", 5703),
+                null,
+                null,
+                null,
+                null,
+        };
+        final Address[] newAddresses = new Address[]{
+                new Address("localhost", 5704),
+                new Address("localhost", 5701),
+                new Address("localhost", 5703),
+                null,
+                null,
+                null,
+                null,
+        };
 
         migrationPlanner.planMigrations(oldAddresses, newAddresses, callback);
         verify(callback).migrate(new Address("localhost", 5701), 0, 1, new Address("localhost", 5704), -1, 0);
     }
 
     @Test
-    public void test_SHIFT_DOWN_withNullNonNullKeepReplicaIndex()
-            throws UnknownHostException {
-        final Address[] oldAddresses = new Address[]{new Address("localhost", 5701), new Address("localhost", 5702), new Address(
-                "localhost", 5703), null, null, null, null};
-
-        final Address[] newAddresses = new Address[]{new Address("localhost", 5704), new Address("localhost", 5701), new Address(
-                "localhost", 5703), null, null, null, null};
+    public void test_SHIFT_DOWN_withNullNonNullKeepReplicaIndex() throws UnknownHostException {
+        final Address[] oldAddresses = new Address[]{
+                new Address("localhost", 5701),
+                new Address("localhost", 5702),
+                new Address("localhost", 5703),
+                null,
+                null,
+                null,
+                null,
+        };
+        final Address[] newAddresses = new Address[]{
+                new Address("localhost", 5704),
+                new Address("localhost", 5701),
+                new Address("localhost", 5703),
+                null,
+                null,
+                null,
+                null,
+        };
 
         migrationPlanner.planMigrations(oldAddresses, newAddresses, callback);
         verify(callback).migrate(new Address("localhost", 5701), 0, -1, new Address("localhost", 5704), -1, 0);
@@ -101,13 +149,24 @@ public class MigrationPlannerTest {
     }
 
     @Test
-    public void test_SHIFT_DOWN_performedBy_MOVE()
-            throws UnknownHostException {
-        final Address[] oldAddresses = new Address[]{new Address("localhost", 5701), new Address("localhost", 5702), new Address(
-                "localhost", 5703), null, null, null, null};
-
-        final Address[] newAddresses = new Address[]{new Address("localhost", 5704), new Address("localhost", 5701), new Address(
-                "localhost", 5702), null, null, null, null};
+    public void test_SHIFT_DOWN_performedBy_MOVE() throws UnknownHostException {
+        final Address[] oldAddresses = new Address[]{
+                new Address("localhost", 5701),
+                new Address("localhost", 5702),
+                new Address("localhost", 5703),
+                null,
+                null,
+                null,
+                null,
+        };
+        final Address[] newAddresses = new Address[]{new Address("localhost", 5704),
+                new Address("localhost", 5701),
+                new Address("localhost", 5702),
+                null,
+                null,
+                null,
+                null,
+        };
 
         migrationPlanner.planMigrations(oldAddresses, newAddresses, callback);
         verify(callback).migrate(new Address("localhost", 5701), 0, -1, new Address("localhost", 5704), -1, 0);
@@ -116,13 +175,25 @@ public class MigrationPlannerTest {
     }
 
     @Test
-    public void test_SHIFT_UP()
-            throws UnknownHostException {
-        final Address[] oldAddresses = new Address[]{new Address("localhost", 5701), null, new Address("localhost",
-                5703), new Address("localhost", 5704), null, null, null};
-
-        final Address[] newAddresses = new Address[]{new Address("localhost", 5701), new Address("localhost", 5703), new Address(
-                "localhost", 5704), null, null, null, null};
+    public void test_SHIFT_UP() throws UnknownHostException {
+        final Address[] oldAddresses = new Address[]{
+                new Address("localhost", 5701),
+                null,
+                new Address("localhost", 5703),
+                new Address("localhost", 5704),
+                null,
+                null,
+                null,
+        };
+        final Address[] newAddresses = new Address[]{
+                new Address("localhost", 5701),
+                new Address("localhost", 5703),
+                new Address("localhost", 5704),
+                null,
+                null,
+                null,
+                null,
+        };
 
         migrationPlanner.planMigrations(oldAddresses, newAddresses, callback);
 
@@ -131,13 +202,25 @@ public class MigrationPlannerTest {
     }
 
     @Test
-    public void test_SHIFT_UPS_performedBy_MOVE()
-            throws UnknownHostException {
-        final Address[] oldAddresses = new Address[]{new Address("localhost", 5701), new Address("localhost", 5702), new Address(
-                "localhost", 5703), new Address("localhost", 5704), null, null, null};
-
-        final Address[] newAddresses = new Address[]{new Address("localhost", 5701), new Address("localhost", 5703), new Address(
-                "localhost", 5704), new Address("localhost", 5705), null, null, null};
+    public void test_SHIFT_UPS_performedBy_MOVE() throws UnknownHostException {
+        final Address[] oldAddresses = new Address[]{
+                new Address("localhost", 5701),
+                new Address("localhost", 5702),
+                new Address("localhost", 5703),
+                new Address("localhost", 5704),
+                null,
+                null,
+                null,
+        };
+        final Address[] newAddresses = new Address[]{
+                new Address("localhost", 5701),
+                new Address("localhost", 5703),
+                new Address("localhost", 5704),
+                new Address("localhost", 5705),
+                null,
+                null,
+                null,
+        };
 
         migrationPlanner.planMigrations(oldAddresses, newAddresses, callback);
 
@@ -147,15 +230,25 @@ public class MigrationPlannerTest {
     }
 
     @Test
-    public void test_SHIFT_DOWN_performedAfterKnownNewReplicaOwnerKickedOutOfReplicas()
-            throws UnknownHostException {
-
-        final Address[] oldAddresses = new Address[]{new Address("localhost", 5701), new Address("localhost", 5702), new Address(
-                "localhost", 5703), new Address("localhost", 5705), null, null, null};
-
-        final Address[] newAddresses = new Address[]{new Address("localhost", 5704), new Address("localhost", 5703), new Address(
-                "localhost", 5705), new Address("localhost", 5706), new Address("localhost", 5702), new Address("localhost",
-                5701), null};
+    public void test_SHIFT_DOWN_performedAfterKnownNewReplicaOwnerKickedOutOfReplicas() throws UnknownHostException {
+        final Address[] oldAddresses = new Address[]{
+                new Address("localhost", 5701),
+                new Address("localhost", 5702),
+                new Address("localhost", 5703),
+                new Address("localhost", 5705),
+                null,
+                null,
+                null,
+        };
+        final Address[] newAddresses = new Address[]{
+                new Address("localhost", 5704),
+                new Address("localhost", 5703),
+                new Address("localhost", 5705),
+                new Address("localhost", 5706),
+                new Address("localhost", 5702),
+                new Address("localhost", 5701),
+                null,
+        };
 
         migrationPlanner.planMigrations(oldAddresses, newAddresses, callback);
         verify(callback).migrate(new Address("localhost", 5701), 0, 5, new Address("localhost", 5704), -1, 0);
@@ -165,13 +258,25 @@ public class MigrationPlannerTest {
     }
 
     @Test
-    public void test_SHIFT_DOWN_performedBeforeNonConflicting_SHIFT_UP()
-            throws UnknownHostException {
-        final Address[] oldAddresses = new Address[]{new Address("localhost", 5701), new Address("localhost", 5702), new Address(
-                "localhost", 5703), new Address("localhost", 5705), null, null, null};
-
-        final Address[] newAddresses = new Address[]{new Address("localhost", 5704), new Address("localhost", 5703), new Address(
-                "localhost", 5705), new Address("localhost", 5706), new Address("localhost", 5701), null, null};
+    public void test_SHIFT_DOWN_performedBeforeNonConflicting_SHIFT_UP() throws UnknownHostException {
+        final Address[] oldAddresses = new Address[]{
+                new Address("localhost", 5701),
+                new Address("localhost", 5702),
+                new Address("localhost", 5703),
+                new Address("localhost", 5705),
+                null,
+                null,
+                null,
+        };
+        final Address[] newAddresses = new Address[]{
+                new Address("localhost", 5704),
+                new Address("localhost", 5703),
+                new Address("localhost", 5705),
+                new Address("localhost", 5706),
+                new Address("localhost", 5701),
+                null,
+                null,
+        };
 
         migrationPlanner.planMigrations(oldAddresses, newAddresses, callback);
         verify(callback).migrate(new Address("localhost", 5701), 0, 4, new Address("localhost", 5704), -1, 0);
@@ -180,26 +285,50 @@ public class MigrationPlannerTest {
     }
 
     @Test
-    public void test_MOVE_toNull()
-            throws UnknownHostException {
-        final Address[] oldAddresses = new Address[]{new Address("localhost", 5701), new Address("localhost", 5702), new Address(
-                "localhost", 5703), new Address("localhost", 5705), null, null, null};
-
-        final Address[] newAddresses = new Address[]{new Address("localhost", 5701), new Address("localhost", 5702), new Address(
-                "localhost", 5703), null, null, null, null};
+    public void test_MOVE_toNull() throws UnknownHostException {
+        final Address[] oldAddresses = new Address[]{
+                new Address("localhost", 5701),
+                new Address("localhost", 5702),
+                new Address("localhost", 5703),
+                new Address("localhost", 5705),
+                null,
+                null,
+                null,
+        };
+        final Address[] newAddresses = new Address[]{
+                new Address("localhost", 5701),
+                new Address("localhost", 5702),
+                new Address("localhost", 5703),
+                null,
+                null,
+                null,
+                null,
+        };
 
         migrationPlanner.planMigrations(oldAddresses, newAddresses, callback);
         verify(callback).migrate(new Address("localhost", 5705), 3, -1, null, -1, -1);
     }
 
     @Test
-    public void test_SHIFT_UP_toReplicaIndexWithExistingOwner()
-            throws UnknownHostException {
-        final Address[] oldAddresses = new Address[]{new Address("localhost", 5701), new Address("localhost", 5702), new Address(
-                "localhost", 5703), new Address("localhost", 5704), null, null, null};
-
-        final Address[] newAddresses = new Address[]{new Address("localhost", 5701), new Address("localhost", 5704), new Address(
-                "localhost", 5703), null, null, null, null};
+    public void test_SHIFT_UP_toReplicaIndexWithExistingOwner() throws UnknownHostException {
+        final Address[] oldAddresses = new Address[]{
+                new Address("localhost", 5701),
+                new Address("localhost", 5702),
+                new Address("localhost", 5703),
+                new Address("localhost", 5704),
+                null,
+                null,
+                null,
+        };
+        final Address[] newAddresses = new Address[]{
+                new Address("localhost", 5701),
+                new Address("localhost", 5704),
+                new Address("localhost", 5703),
+                null,
+                null,
+                null,
+                null,
+        };
 
         migrationPlanner.planMigrations(oldAddresses, newAddresses, callback);
         verify(callback).migrate(new Address("localhost", 5702), 1, -1, new Address("localhost", 5704), 3, 1);
@@ -208,11 +337,24 @@ public class MigrationPlannerTest {
     @Test
     public void test_MOVE_performedAfter_SHIFT_UP_toReplicaIndexWithExistingOwnerKicksItOutOfCluster()
             throws UnknownHostException {
-        final Address[] oldAddresses = new Address[]{new Address("localhost", 5701), new Address("localhost", 5702), new Address(
-                "localhost", 5703), new Address("localhost", 5704), null, null, null};
-
-        final Address[] newAddresses = new Address[]{new Address("localhost", 5702), new Address("localhost", 5704), new Address(
-                "localhost", 5703), null, null, null, null};
+        final Address[] oldAddresses = new Address[]{
+                new Address("localhost", 5701),
+                new Address("localhost", 5702),
+                new Address("localhost", 5703),
+                new Address("localhost", 5704),
+                null,
+                null,
+                null,
+        };
+        final Address[] newAddresses = new Address[]{
+                new Address("localhost", 5702),
+                new Address("localhost", 5704),
+                new Address("localhost", 5703),
+                null,
+                null,
+                null,
+                null,
+        };
 
         migrationPlanner.planMigrations(oldAddresses, newAddresses, callback);
         verify(callback).migrate(new Address("localhost", 5702), 1, -1, new Address("localhost", 5704), 3, 1);
@@ -220,13 +362,25 @@ public class MigrationPlannerTest {
     }
 
     @Test
-    public void test_SHIFT_UP_multipleTimes()
-            throws UnknownHostException {
-        final Address[] oldAddresses = new Address[]{new Address("localhost", 5702), null, new Address("localhost",
-                5703), new Address("localhost", 5704), null, null, null};
-
-        final Address[] newAddresses = new Address[]{new Address("localhost", 5702), new Address("localhost", 5703), new Address(
-                "localhost", 5704), null, null, null, null};
+    public void test_SHIFT_UP_multipleTimes() throws UnknownHostException {
+        final Address[] oldAddresses = new Address[]{
+                new Address("localhost", 5702),
+                null,
+                new Address("localhost", 5703),
+                new Address("localhost", 5704),
+                null,
+                null,
+                null,
+        };
+        final Address[] newAddresses = new Address[]{
+                new Address("localhost", 5702),
+                new Address("localhost", 5703),
+                new Address("localhost", 5704),
+                null,
+                null,
+                null,
+                null,
+        };
 
         migrationPlanner.planMigrations(oldAddresses, newAddresses, callback);
         verify(callback).migrate(null, -1, -1, new Address("localhost", 5703), 2, 1);
@@ -234,24 +388,50 @@ public class MigrationPlannerTest {
     }
 
     @Test
-    public void test_SHIFT_UP_nonNullSource_isNoLongerReplica()
-            throws UnknownHostException {
-        final Address[] oldAddresses = new Address[]{new Address("localhost", 5701), new Address("localhost",
-                5702), null, null, null, null, null};
-
-        final Address[] newAddresses = new Address[]{new Address("localhost", 5702), null, null, null, null, null, null};
+    public void test_SHIFT_UP_nonNullSource_isNoLongerReplica() throws UnknownHostException {
+        final Address[] oldAddresses = new Address[]{
+                new Address("localhost", 5701),
+                new Address("localhost", 5702),
+                null,
+                null,
+                null,
+                null,
+                null,
+        };
+        final Address[] newAddresses = new Address[]{
+                new Address("localhost", 5702),
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+        };
 
         migrationPlanner.planMigrations(oldAddresses, newAddresses, callback);
         verify(callback).migrate(new Address("localhost", 5701), 0, -1, new Address("localhost", 5702), 1, 0);
     }
 
     @Test
-    public void test_SHIFT_UP_nonNullSource_willGetAnotherMOVE()
-            throws UnknownHostException {
-        final Address[] oldAddresses = new Address[]{new Address("localhost", 5701), new Address("localhost",
-                5702), new Address("localhost", 5703), null, null, null, null};
-
-        final Address[] newAddresses = new Address[]{new Address("localhost", 5703), new Address("localhost", 5701), null, null, null, null, null};
+    public void test_SHIFT_UP_nonNullSource_willGetAnotherMOVE() throws UnknownHostException {
+        final Address[] oldAddresses = new Address[]{
+                new Address("localhost", 5701),
+                new Address("localhost", 5702),
+                new Address("localhost", 5703),
+                null,
+                null,
+                null,
+                null,
+        };
+        final Address[] newAddresses = new Address[]{
+                new Address("localhost", 5703),
+                new Address("localhost", 5701),
+                null,
+                null,
+                null,
+                null,
+                null,
+        };
 
         migrationPlanner.planMigrations(oldAddresses, newAddresses, callback);
         verify(callback).migrate(new Address("localhost", 5701), 0, -1, new Address("localhost", 5703), 2, 0);
@@ -259,20 +439,32 @@ public class MigrationPlannerTest {
     }
 
     @Test
-    public void test_SHIFT_UP_SHIFT_DOWN_atomicTogether()
-            throws UnknownHostException {
-        final Address[] oldAddresses = new Address[]{new Address("localhost", 5701), null, new Address("localhost",
-                5703), null, null, null, null};
-
-        final Address[] newAddresses = new Address[]{new Address("localhost", 5703), new Address("localhost", 5701), null, null, null, null, null};
+    public void test_SHIFT_UP_SHIFT_DOWN_atomicTogether() throws UnknownHostException {
+        final Address[] oldAddresses = new Address[]{
+                new Address("localhost", 5701),
+                null,
+                new Address("localhost", 5703),
+                null,
+                null,
+                null,
+                null,
+        };
+        final Address[] newAddresses = new Address[]{
+                new Address("localhost", 5703),
+                new Address("localhost", 5701),
+                null,
+                null,
+                null,
+                null,
+                null,
+        };
 
         migrationPlanner.planMigrations(oldAddresses, newAddresses, callback);
         verify(callback).migrate(new Address("localhost", 5701), 0, 1, new Address("localhost", 5703), 2, 0);
     }
 
     @Test
-    public void testSingleMigrationPrioritization()
-            throws UnknownHostException {
+    public void testSingleMigrationPrioritization() throws UnknownHostException {
         List<MigrationInfo> migrations = new ArrayList<MigrationInfo>();
         final MigrationInfo migration1 = new MigrationInfo(0, null, null, new Address("localhost", 5701), "5701", -1, -1, -1, 0);
         migrations.add(migration1);
@@ -283,8 +475,7 @@ public class MigrationPlannerTest {
     }
 
     @Test
-    public void testNoCopyPrioritizationAgainstCopy()
-            throws UnknownHostException {
+    public void testNoCopyPrioritizationAgainstCopy() throws UnknownHostException {
         List<MigrationInfo> migrations = new ArrayList<MigrationInfo>();
         final MigrationInfo migration1 = new MigrationInfo(0, null, null, new Address("localhost", 5701), "5701", -1, -1, -1, 0);
         final MigrationInfo migration2 = new MigrationInfo(0, null, null, new Address("localhost", 5702), "5702", -1, -1, -1, 1);
@@ -323,8 +514,7 @@ public class MigrationPlannerTest {
     }
 
     @Test
-    public void testShiftUpPrioritizationAgainstMove()
-            throws UnknownHostException {
+    public void testShiftUpPrioritizationAgainstMove() throws UnknownHostException {
         List<MigrationInfo> migrations = new ArrayList<MigrationInfo>();
         final MigrationInfo migration1 = new MigrationInfo(0, null, null, new Address("localhost", 5701), "5701", -1, -1, -1, 0);
         final MigrationInfo migration2 = new MigrationInfo(0, null, null, new Address("localhost", 5702), "5702", -1, -1, -1, 1);
@@ -342,10 +532,10 @@ public class MigrationPlannerTest {
     }
 
     @Test
-    public void testCopyPrioritizationAgainstShiftDownToColderIndex()
-            throws UnknownHostException {
+    public void testCopyPrioritizationAgainstShiftDownToColderIndex() throws UnknownHostException {
         List<MigrationInfo> migrations = new ArrayList<MigrationInfo>();
-        final MigrationInfo migration1 = new MigrationInfo(0, new Address("localhost", 5701), "5701", new Address("localhost", 5702), "5702", 0, 2, -1, 0);
+        final MigrationInfo migration1 = new MigrationInfo(0, new Address("localhost", 5701), "5701",
+                new Address("localhost", 5702), "5702", 0, 2, -1, 0);
         final MigrationInfo migration2 = new MigrationInfo(0, null, null, new Address("localhost", 5703), "5703", -1, -1, -1, 1);
 
         migrations.add(migration1);
@@ -357,10 +547,10 @@ public class MigrationPlannerTest {
     }
 
     @Test
-    public void testNoCopyPrioritizationAgainstShiftDownToHotterIndex()
-            throws UnknownHostException {
+    public void testNoCopyPrioritizationAgainstShiftDownToHotterIndex() throws UnknownHostException {
         List<MigrationInfo> migrations = new ArrayList<MigrationInfo>();
-        final MigrationInfo migration1 = new MigrationInfo(0, new Address("localhost", 5701), "5701", new Address("localhost", 5702), "5702", 0, 1, -1, 0);
+        final MigrationInfo migration1 = new MigrationInfo(0, new Address("localhost", 5701), "5701",
+                new Address("localhost", 5702), "5702", 0, 1, -1, 0);
         final MigrationInfo migration2 = new MigrationInfo(0, null, null, new Address("localhost", 5703), "5703", -1, -1, -1, 2);
 
         migrations.add(migration1);
@@ -372,8 +562,7 @@ public class MigrationPlannerTest {
     }
 
     @Test
-    public void testRandom()
-            throws UnknownHostException {
+    public void testRandom() throws UnknownHostException {
         for (int i = 0; i < 100; i++) {
             testRandom(3);
             testRandom(4);
@@ -381,8 +570,7 @@ public class MigrationPlannerTest {
         }
     }
 
-    private void testRandom(int initialLen)
-            throws java.net.UnknownHostException {
+    private void testRandom(int initialLen) throws UnknownHostException {
         Address[] oldAddresses = new Address[InternalPartition.MAX_REPLICA_COUNT];
         for (int i = 0; i < initialLen; i++) {
             oldAddresses[i] = newAddress(5000 + i);
@@ -412,8 +600,7 @@ public class MigrationPlannerTest {
     }
 
     private Address newAddress(int port)
-            throws java.net.UnknownHostException {
+            throws UnknownHostException {
         return new Address("localhost", port);
     }
-
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -73,6 +73,7 @@ final class CacheStatsHandler {
     void onPutIfAbsent(long startNanos, boolean saved) {
         if (saved) {
             statistics.increaseCachePuts();
+            statistics.increaseCacheMisses();
             statistics.addPutTimeNanos(System.nanoTime() - startNanos);
         }
     }

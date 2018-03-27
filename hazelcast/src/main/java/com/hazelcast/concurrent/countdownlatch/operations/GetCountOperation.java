@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,12 @@
 
 package com.hazelcast.concurrent.countdownlatch.operations;
 
-import com.hazelcast.concurrent.countdownlatch.CountDownLatchDataSerializerHook;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
+import com.hazelcast.spi.ReadonlyOperation;
 
-public class GetCountOperation extends AbstractCountDownLatchOperation {
+import static com.hazelcast.concurrent.countdownlatch.CountDownLatchDataSerializerHook.GET_COUNT_OPERATION;
+
+public class GetCountOperation extends AbstractCountDownLatchOperation implements ReadonlyOperation {
 
     private int count;
 
@@ -43,6 +45,6 @@ public class GetCountOperation extends AbstractCountDownLatchOperation {
 
     @Override
     public int getId() {
-        return CountDownLatchDataSerializerHook.GET_COUNT_OPERATION;
+        return GET_COUNT_OPERATION;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -88,6 +88,16 @@ public class MultiMapConfigReadOnly extends MultiMapConfig {
 
     @Override
     public MultiMapConfig setStatisticsEnabled(boolean statisticsEnabled) {
+        throw new UnsupportedOperationException("This config is read-only multimap: " + getName());
+    }
+
+    @Override
+    public MultiMapConfig setQuorumName(String quorumName) {
+        throw new UnsupportedOperationException("This config is read-only multimap: " + getName());
+    }
+
+    @Override
+    public MultiMapConfig setMergePolicyConfig(MergePolicyConfig mergePolicyConfig) {
         throw new UnsupportedOperationException("This config is read-only multimap: " + getName());
     }
 }

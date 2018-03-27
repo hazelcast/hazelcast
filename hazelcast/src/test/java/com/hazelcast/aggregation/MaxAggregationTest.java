@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -120,7 +120,8 @@ public class MaxAggregationTest {
             aggregation.accumulate(createExtractableEntryWithValue(value));
         }
 
-        Aggregator<Map.Entry<ValueContainer, ValueContainer>, BigInteger> resultAggregation = Aggregators.bigIntegerMax("bigInteger");
+        Aggregator<Map.Entry<ValueContainer, ValueContainer>, BigInteger> resultAggregation
+                = Aggregators.bigIntegerMax("bigInteger");
         resultAggregation.combine(aggregation);
         BigInteger result = resultAggregation.aggregate();
 
@@ -264,7 +265,8 @@ public class MaxAggregationTest {
             aggregation.accumulate(createExtractableEntryWithValue(value));
         }
 
-        Aggregator<Map.Entry<ValueContainer, ValueContainer>, String> resultAggregation = Aggregators.comparableMax("stringValue");
+        Aggregator<Map.Entry<ValueContainer, ValueContainer>, String> resultAggregation
+                = Aggregators.comparableMax("stringValue");
         resultAggregation.combine(aggregation);
         String result = resultAggregation.aggregate();
 
@@ -302,26 +304,29 @@ public class MaxAggregationTest {
             aggregation.accumulate(createExtractableEntryWithValue(value));
         }
 
-        Aggregator<Map.Entry<ValueContainer, ValueContainer>, String> resultAggregation = Aggregators.comparableMax("stringValue");
+        Aggregator<Map.Entry<ValueContainer, ValueContainer>, String> resultAggregation
+                = Aggregators.comparableMax("stringValue");
         resultAggregation.combine(aggregation);
         String result = resultAggregation.aggregate();
 
         assertThat(result, is(equalTo(expectation)));
     }
 
-    @Test(timeout = 60*TimeoutInMillis.MINUTE)
+    @Test(timeout = 60 * TimeoutInMillis.MINUTE)
     public void testMaxBy_withAttributePath_withNull() {
         List<ValueContainer> values = sampleValueContainers(STRING);
         Collections.sort(values);
         Map.Entry<ValueContainer, ValueContainer> expectation = createExtractableEntryWithValue(values.get(values.size() - 1));
         values.add(null);
 
-        Aggregator<Map.Entry<ValueContainer, ValueContainer>, Map.Entry<ValueContainer, ValueContainer>> aggregation = Aggregators.maxBy("stringValue");
+        Aggregator<Map.Entry<ValueContainer, ValueContainer>, Map.Entry<ValueContainer, ValueContainer>> aggregation
+                = Aggregators.maxBy("stringValue");
         for (ValueContainer value : values) {
             aggregation.accumulate(createExtractableEntryWithValue(value));
         }
 
-        Aggregator<Map.Entry<ValueContainer, ValueContainer>, Map.Entry<ValueContainer, ValueContainer>> resultAggregation = Aggregators.maxBy("stringValue");
+        Aggregator<Map.Entry<ValueContainer, ValueContainer>, Map.Entry<ValueContainer, ValueContainer>> resultAggregation
+                = Aggregators.maxBy("stringValue");
         resultAggregation.combine(aggregation);
         Map.Entry<ValueContainer, ValueContainer> result = resultAggregation.aggregate();
 

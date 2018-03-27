@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,15 +25,18 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
 
-public class ListSetOperation extends CollectionBackupAwareOperation {
+import static com.hazelcast.collection.impl.collection.CollectionContainer.INVALID_ITEM_ID;
+
+public class ListSetOperation extends CollectionBackupAwareOperation implements MutatingOperation {
 
     private int index;
     private Data value;
-    private long itemId = -1;
-    private long oldItemId = -1;
+    private long itemId = INVALID_ITEM_ID;
+    private long oldItemId = INVALID_ITEM_ID;
 
     public ListSetOperation() {
     }

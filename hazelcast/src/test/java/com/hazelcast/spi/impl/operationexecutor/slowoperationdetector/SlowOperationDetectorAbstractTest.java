@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,6 @@ import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.util.EmptyStatement;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -268,7 +267,7 @@ abstract class SlowOperationDetectorAbstractTest extends HazelcastTestSupport {
             try {
                 completedLatch.await();
             } catch (InterruptedException e) {
-                EmptyStatement.ignore(e);
+                ignore(e);
             }
         }
     }
@@ -285,7 +284,7 @@ abstract class SlowOperationDetectorAbstractTest extends HazelcastTestSupport {
             try {
                 latch.await();
             } catch (InterruptedException e) {
-                EmptyStatement.ignore(e);
+                ignore(e);
             }
         }
     }

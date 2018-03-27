@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,22 +16,38 @@
 
 package com.hazelcast.scheduledexecutor.impl;
 
+import com.hazelcast.config.MergePolicyConfig;
+import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.core.MembershipAdapter;
-import com.hazelcast.core.MembershipEvent;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.partition.PartitionLostEvent;
 import com.hazelcast.partition.PartitionLostListener;
+import com.hazelcast.scheduledexecutor.impl.operations.MergeOperation;
 import com.hazelcast.spi.ManagedService;
+import com.hazelcast.spi.MemberAttributeServiceEvent;
+import com.hazelcast.spi.MembershipAwareService;
+import com.hazelcast.spi.MembershipServiceEvent;
 import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PartitionReplicationEvent;
+import com.hazelcast.spi.QuorumAwareService;
 import com.hazelcast.spi.RemoteService;
+import com.hazelcast.spi.SplitBrainHandlerService;
 import com.hazelcast.spi.impl.executionservice.InternalExecutionService;
+import com.hazelcast.spi.impl.merge.AbstractContainerMerger;
+import com.hazelcast.spi.merge.MergingEntry;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.partition.MigrationEndpoint;
+import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.util.ContextMutexFactory;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.WeakHashMap;
@@ -39,6 +55,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.hazelcast.internal.config.ConfigValidator.checkScheduledExecutorConfig;
+import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntry;
+import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 import static com.hazelcast.util.ExceptionUtil.peel;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static java.util.Collections.newSetFromMap;
@@ -48,29 +67,34 @@ import static java.util.Collections.synchronizedSet;
  * Scheduled executor service, middle-man responsible for managing Scheduled Executor containers.
  */
 public class DistributedScheduledExecutorService
-        implements ManagedService, RemoteService, MigrationAwareService {
+        implements ManagedService, RemoteService, MigrationAwareService, QuorumAwareService, SplitBrainHandlerService,
+        MembershipAwareService {
 
     public static final String SERVICE_NAME = "hz:impl:scheduledExecutorService";
-
     public static final int MEMBER_BIN = -1;
 
-    private NodeEngine nodeEngine;
+    private static final Object NULL_OBJECT = new Object();
 
-    private ScheduledExecutorPartition[] partitions;
-
-    private ScheduledExecutorMemberBin memberBin;
-
-    private final ConcurrentMap<String, Boolean> shutdownExecutors
-            = new ConcurrentHashMap<String, Boolean>();
-
+    private final ConcurrentMap<String, Boolean> shutdownExecutors = new ConcurrentHashMap<String, Boolean>();
     private final Set<ScheduledFutureProxy> lossListeners =
             synchronizedSet(newSetFromMap(new WeakHashMap<ScheduledFutureProxy, Boolean>()));
-
     private final AtomicBoolean migrationMode = new AtomicBoolean();
 
-    private String partitionLostRegistration;
+    private final ConcurrentMap<String, Object> quorumConfigCache = new ConcurrentHashMap<String, Object>();
+    private final ContextMutexFactory quorumConfigCacheMutexFactory = new ContextMutexFactory();
+    private final ConstructorFunction<String, Object> quorumConfigConstructor = new ConstructorFunction<String, Object>() {
+        @Override
+        public Object createNew(String name) {
+            ScheduledExecutorConfig executorConfig = nodeEngine.getConfig().findScheduledExecutorConfig(name);
+            String quorumName = executorConfig.getQuorumName();
+            return quorumName == null ? NULL_OBJECT : quorumName;
+        }
+    };
 
-    private String membershipListenerRegistration;
+    private NodeEngine nodeEngine;
+    private ScheduledExecutorPartition[] partitions;
+    private ScheduledExecutorMemberBin memberBin;
+    private String partitionLostRegistration;
 
     public DistributedScheduledExecutorService() {
     }
@@ -105,12 +129,9 @@ public class DistributedScheduledExecutorService
 
         memberBin = new ScheduledExecutorMemberBin(nodeEngine);
 
+        // Keep using the public API due to the benefit of getting events on all partitions and not just local
         if (partitionLostRegistration == null) {
             registerPartitionListener();
-        }
-
-        if (membershipListenerRegistration == null) {
-            registerMembershipListener();
         }
 
         for (int partitionId = 0; partitionId < partitions.length; partitionId++) {
@@ -132,11 +153,10 @@ public class DistributedScheduledExecutorService
         lossListeners.clear();
 
         unRegisterPartitionListenerIfExists();
-        unRegisterMembershipListenerIfExists();
 
-        for (int partitionId = 0; partitionId < partitions.length; partitionId++) {
-            if (partitions[partitionId] != null) {
-                partitions[partitionId].destroy();
+        for (ScheduledExecutorPartition partition : partitions) {
+            if (partition != null) {
+                partition.destroy();
             }
         }
     }
@@ -147,6 +167,9 @@ public class DistributedScheduledExecutorService
 
     @Override
     public DistributedObject createDistributedObject(String name) {
+        ScheduledExecutorConfig executorConfig = nodeEngine.getConfig().findScheduledExecutorConfig(name);
+        checkScheduledExecutorConfig(executorConfig);
+
         return new ScheduledExecutorServiceProxy(name, nodeEngine, this);
     }
 
@@ -157,6 +180,7 @@ public class DistributedScheduledExecutorService
         }
 
         resetPartitionOrMemberBinContainer(name);
+        quorumConfigCache.remove(name);
     }
 
     public void shutdownExecutor(String name) {
@@ -177,6 +201,13 @@ public class DistributedScheduledExecutorService
     }
 
     @Override
+    public Runnable prepareMergeRunnable() {
+        ScheduledExecutorContainerCollector collector = new ScheduledExecutorContainerCollector(nodeEngine, partitions);
+        collector.run();
+        return new Merger(collector);
+    }
+
+    @Override
     public void beforeMigration(PartitionMigrationEvent event) {
         migrationMode.compareAndSet(false, true);
     }
@@ -185,10 +216,10 @@ public class DistributedScheduledExecutorService
     public void commitMigration(PartitionMigrationEvent event) {
         int partitionId = event.getPartitionId();
         if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
-            discardStash(partitionId, event.getNewReplicaIndex());
+            discardReserved(partitionId, event.getNewReplicaIndex());
         } else if (event.getNewReplicaIndex() == 0) {
             ScheduledExecutorPartition partition = partitions[partitionId];
-            partition.promoteStash();
+            partition.promoteSuspended();
         }
         migrationMode.set(false);
     }
@@ -197,15 +228,15 @@ public class DistributedScheduledExecutorService
     public void rollbackMigration(PartitionMigrationEvent event) {
         int partitionId = event.getPartitionId();
         if (event.getMigrationEndpoint() == MigrationEndpoint.DESTINATION) {
-            discardStash(event.getPartitionId(), event.getCurrentReplicaIndex());
+            discardReserved(event.getPartitionId(), event.getCurrentReplicaIndex());
         } else if (event.getCurrentReplicaIndex() == 0) {
             ScheduledExecutorPartition partition = partitions[partitionId];
-            partition.promoteStash();
+            partition.promoteSuspended();
         }
         migrationMode.set(false);
     }
 
-    private void discardStash(int partitionId, int thresholdReplicaIndex) {
+    private void discardReserved(int partitionId, int thresholdReplicaIndex) {
         ScheduledExecutorPartition partition = partitions[partitionId];
         partition.disposeObsoleteReplicas(thresholdReplicaIndex);
     }
@@ -221,18 +252,17 @@ public class DistributedScheduledExecutorService
     }
 
     private void registerPartitionListener() {
-        this.partitionLostRegistration = getNodeEngine().getPartitionService().addPartitionLostListener(
-                new PartitionLostListener() {
+        this.partitionLostRegistration =
+                getNodeEngine().getPartitionService().addPartitionLostListener(new PartitionLostListener() {
                     @Override
-                    public void partitionLost(PartitionLostEvent event) {
+                    public void partitionLost(final PartitionLostEvent event) {
                         // use toArray before iteration since it is done under mutex
-                        ScheduledFutureProxy[] futures = lossListeners.toArray(new ScheduledFutureProxy[lossListeners.size()]);
+                        ScheduledFutureProxy[] futures = lossListeners.toArray(new ScheduledFutureProxy[0]);
                         for (ScheduledFutureProxy future : futures) {
                             future.notifyPartitionLost(event);
                         }
                     }
-                }
-        );
+                });
     }
 
     private void unRegisterPartitionListenerIfExists() {
@@ -243,8 +273,7 @@ public class DistributedScheduledExecutorService
         try {
             getNodeEngine().getPartitionService().removePartitionLostListener(this.partitionLostRegistration);
         } catch (Exception ex) {
-            if (peel(ex, HazelcastInstanceNotActiveException.class, null)
-                    instanceof HazelcastInstanceNotActiveException) {
+            if (peel(ex, HazelcastInstanceNotActiveException.class, null) instanceof HazelcastInstanceNotActiveException) {
                 throw rethrow(ex);
             }
         }
@@ -252,33 +281,83 @@ public class DistributedScheduledExecutorService
         this.partitionLostRegistration = null;
     }
 
-    private void registerMembershipListener() {
-        this.membershipListenerRegistration = getNodeEngine().getClusterService().addMembershipListener(new MembershipAdapter() {
-            @Override
-            public void memberRemoved(MembershipEvent event) {
-                // use toArray before iteration since it is done under mutex
-                ScheduledFutureProxy[] futures = lossListeners.toArray(new ScheduledFutureProxy[lossListeners.size()]);
-                for (ScheduledFutureProxy future : futures) {
-                    future.notifyMemberLost(event);
-                }
-            }
-        });
+    @Override
+    public void memberAdded(MembershipServiceEvent event) {
+        // ignore
     }
 
-    private void unRegisterMembershipListenerIfExists() {
-        if (this.membershipListenerRegistration == null) {
-            return;
+    @Override
+    public void memberRemoved(MembershipServiceEvent event) {
+        // use toArray before iteration since it is done under mutex
+        ScheduledFutureProxy[] futures = lossListeners.toArray(new ScheduledFutureProxy[0]);
+        for (ScheduledFutureProxy future : futures) {
+            future.notifyMemberLost(event);
+        }
+    }
+
+    @Override
+    public void memberAttributeChanged(MemberAttributeServiceEvent event) {
+        // ignore
+    }
+
+    @Override
+    public String getQuorumName(final String name) {
+        // RU_COMPAT_3_9
+        if (nodeEngine.getClusterService().getClusterVersion().isLessThan(Versions.V3_10)) {
+            return null;
+        }
+        Object quorumName = getOrPutSynchronized(quorumConfigCache, name, quorumConfigCacheMutexFactory, quorumConfigConstructor);
+        return quorumName == NULL_OBJECT ? null : (String) quorumName;
+    }
+
+    private class Merger extends AbstractContainerMerger<ScheduledExecutorContainer> {
+
+        Merger(ScheduledExecutorContainerCollector collector) {
+            super(collector, nodeEngine);
         }
 
-        try {
-            getNodeEngine().getClusterService().removeMembershipListener(membershipListenerRegistration);
-        } catch (Exception ex) {
-            if (peel(ex, HazelcastInstanceNotActiveException.class, null)
-                    instanceof HazelcastInstanceNotActiveException) {
-                throw rethrow(ex);
+        @Override
+        protected String getLabel() {
+            return "scheduled executors";
+        }
+
+        @Override
+        public void runInternal() {
+            ScheduledExecutorContainerCollector collector = (ScheduledExecutorContainerCollector) this.collector;
+
+            List<MergingEntry<String, ScheduledTaskDescriptor>> mergingEntries;
+            Map<Integer, Collection<ScheduledExecutorContainer>> containerMap = collector.getCollectedContainers();
+            for (Map.Entry<Integer, Collection<ScheduledExecutorContainer>> entry : containerMap.entrySet()) {
+                int partitionId = entry.getKey();
+                Collection<ScheduledExecutorContainer> containers = entry.getValue();
+
+                for (ScheduledExecutorContainer container : containers) {
+                    String name = container.getName();
+                    MergePolicyConfig mergePolicyConfig = collector.getMergePolicyConfig(container);
+                    SplitBrainMergePolicy mergePolicy = getMergePolicy(mergePolicyConfig);
+                    int batchSize = mergePolicyConfig.getBatchSize();
+
+                    mergingEntries = new ArrayList<MergingEntry<String, ScheduledTaskDescriptor>>(batchSize);
+                    for (ScheduledTaskDescriptor descriptor : container.prepareForReplication(true).values()) {
+                        MergingEntry<String, ScheduledTaskDescriptor> mergingEntry
+                                = createMergingEntry(nodeEngine.getSerializationService(), descriptor);
+                        mergingEntries.add(mergingEntry);
+                    }
+                    if (mergingEntries.size() == batchSize) {
+                        sendBatch(partitionId, name, mergePolicy, mergingEntries);
+                        mergingEntries = new ArrayList<MergingEntry<String, ScheduledTaskDescriptor>>(batchSize);
+                    }
+                    if (!mergingEntries.isEmpty()) {
+                        sendBatch(partitionId, name, mergePolicy, mergingEntries);
+                    }
+                }
             }
         }
 
-        this.membershipListenerRegistration = null;
+        private void sendBatch(int partitionId, String name, SplitBrainMergePolicy mergePolicy,
+                               List<MergingEntry<String, ScheduledTaskDescriptor>> mergingEntries) {
+            MergeOperation operation = new MergeOperation(name, mergePolicy, mergingEntries);
+            invoke(SERVICE_NAME, operation, partitionId);
+        }
     }
 }

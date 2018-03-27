@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,16 +22,16 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
-import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
+
+import static com.hazelcast.util.MapUtil.createHashMap;
 
 /**
  * Provides backup functionality for {@link AddAllOperation}
  */
-public class AddAllBackupOperation extends QueueOperation implements BackupOperation, MutatingOperation {
+public class AddAllBackupOperation extends QueueOperation implements BackupOperation {
 
     private Map<Long, Data> dataMap;
 
@@ -70,7 +70,7 @@ public class AddAllBackupOperation extends QueueOperation implements BackupOpera
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         int size = in.readInt();
-        dataMap = new HashMap<Long, Data>(size);
+        dataMap = createHashMap(size);
         for (int i = 0; i < size; i++) {
             long itemId = in.readLong();
             Data value = in.readData();

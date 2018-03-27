@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,9 @@
  */
 
 /**
- * <p>This package contains ScheduledExecutorService functionality for Hazelcast.<br/>
- * The ScheduledExecutorService provides functionality similar to {@link java.util.concurrent.ExecutorService}
+ * <p>This package contains ScheduledExecutorService functionality for Hazelcast.
+ *
+ * <p>The ScheduledExecutorService provides functionality similar to {@link java.util.concurrent.ExecutorService}
  * and also additional methods like executing tasks on a member who is owner of a specific key.
  * ScheduledExecutorService also provides a way to find the {@link com.hazelcast.scheduledexecutor.IScheduledFuture}
  * at any point in time using the {@link com.hazelcast.scheduledexecutor.ScheduledTaskHandler} accessible through

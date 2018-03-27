@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -263,6 +263,51 @@ public class MulticastConfig {
     public MulticastConfig setLoopbackModeEnabled(boolean enabled) {
         this.loopbackModeEnabled = enabled;
         return this;
+    }
+
+    @Override
+    @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
+    public final boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || !(o instanceof MulticastConfig)) {
+            return false;
+        }
+
+        MulticastConfig that = (MulticastConfig) o;
+
+        if (enabled != that.enabled) {
+            return false;
+        }
+        if (multicastPort != that.multicastPort) {
+            return false;
+        }
+        if (multicastTimeoutSeconds != that.multicastTimeoutSeconds) {
+            return false;
+        }
+        if (multicastTimeToLive != that.multicastTimeToLive) {
+            return false;
+        }
+        if (loopbackModeEnabled != that.loopbackModeEnabled) {
+            return false;
+        }
+        if (multicastGroup != null ? !multicastGroup.equals(that.multicastGroup) : that.multicastGroup != null) {
+            return false;
+        }
+        return trustedInterfaces.equals(that.trustedInterfaces);
+    }
+
+    @Override
+    public final int hashCode() {
+        int result = (enabled ? 1 : 0);
+        result = 31 * result + (multicastGroup != null ? multicastGroup.hashCode() : 0);
+        result = 31 * result + multicastPort;
+        result = 31 * result + multicastTimeoutSeconds;
+        result = 31 * result + multicastTimeToLive;
+        result = 31 * result + trustedInterfaces.hashCode();
+        result = 31 * result + (loopbackModeEnabled ? 1 : 0);
+        return result;
     }
 
     @Override

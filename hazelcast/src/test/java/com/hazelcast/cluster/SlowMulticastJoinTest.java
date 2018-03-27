@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -118,8 +118,8 @@ public class SlowMulticastJoinTest extends AbstractJoinTest {
         assertTrue(splitLatch.await(10, TimeUnit.SECONDS));
 
         // while cluster is split, no split brain join messages should be accumulated in the non-master member 1
-        assertSplitBrainMessagesCount(clusterSize, new HazelcastInstance[] {instances[1]},
-                new MulticastJoiner[] {joiners[1]});
+        assertSplitBrainMessagesCount(clusterSize, new HazelcastInstance[]{instances[1]},
+                new MulticastJoiner[]{joiners[1]});
 
         assertTrue(mergeLatch.await(30, TimeUnit.SECONDS));
         assertClusterSize(clusterSize, instances[0]);

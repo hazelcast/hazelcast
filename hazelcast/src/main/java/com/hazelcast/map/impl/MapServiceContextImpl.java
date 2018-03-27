@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,9 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.core.PartitioningStrategy;
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.util.InvocationUtil;
+import com.hazelcast.internal.util.LocalRetryableExecution;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.impl.event.MapEventPublisher;
@@ -35,7 +38,7 @@ import com.hazelcast.map.impl.operation.BaseRemoveOperation;
 import com.hazelcast.map.impl.operation.GetOperation;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.map.impl.operation.MapOperationProviders;
-import com.hazelcast.map.impl.operation.MapPartitionDestroyTask;
+import com.hazelcast.map.impl.operation.MapPartitionDestroyOperation;
 import com.hazelcast.map.impl.query.AccumulationExecutor;
 import com.hazelcast.map.impl.query.AggregationResult;
 import com.hazelcast.map.impl.query.AggregationResultProcessor;
@@ -64,6 +67,8 @@ import com.hazelcast.map.listener.MapPartitionLostListener;
 import com.hazelcast.map.merge.MergePolicyProvider;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.DataType;
+import com.hazelcast.query.impl.IndexCopyBehavior;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.query.impl.predicates.QueryOptimizer;
 import com.hazelcast.spi.EventFilter;
@@ -72,15 +77,14 @@ import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ContextMutexFactory;
-import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.executor.ManagedExecutorService;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -91,7 +95,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -103,8 +106,10 @@ import static com.hazelcast.query.impl.predicates.QueryOptimizerFactory.newOptim
 import static com.hazelcast.spi.ExecutionService.QUERY_EXECUTOR;
 import static com.hazelcast.spi.Operation.GENERIC_PARTITION_ID;
 import static com.hazelcast.spi.properties.GroupProperty.AGGREGATION_ACCUMULATION_PARALLEL_EVALUATION;
+import static com.hazelcast.spi.properties.GroupProperty.INDEX_COPY_BEHAVIOR;
 import static com.hazelcast.spi.properties.GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS;
 import static com.hazelcast.spi.properties.GroupProperty.QUERY_PREDICATE_PARALLEL_EVALUATION;
+import static java.lang.Thread.currentThread;
 
 /**
  * Default implementation of {@link MapServiceContext}.
@@ -130,7 +135,7 @@ class MapServiceContextImpl implements MapServiceContext {
     protected final AtomicInteger writeBehindQueueItemCounter = new AtomicInteger(0);
 
     protected final NodeEngine nodeEngine;
-    protected final SerializationService serializationService;
+    protected final InternalSerializationService serializationService;
     protected final ConstructorFunction<String, MapContainer> mapConstructor;
     protected final PartitionContainer[] partitionContainers;
     protected final ExpirationManager expirationManager;
@@ -148,12 +153,14 @@ class MapServiceContextImpl implements MapServiceContext {
     protected final EventService eventService;
     protected final MapOperationProviders operationProviders;
     protected final ResultProcessorRegistry resultProcessorRegistry;
+    protected ILogger logger;
 
     protected MapService mapService;
 
+    @SuppressWarnings("checkstyle:executablestatementcount")
     MapServiceContextImpl(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
-        this.serializationService = nodeEngine.getSerializationService();
+        this.serializationService = ((InternalSerializationService) nodeEngine.getSerializationService());
         this.mapConstructor = createMapConstructor();
         this.queryCacheContext = new NodeQueryCacheContext(this);
         this.partitionContainers = createPartitionContainers();
@@ -171,6 +178,7 @@ class MapServiceContextImpl implements MapServiceContext {
         this.eventService = nodeEngine.getEventService();
         this.operationProviders = createOperationProviders();
         this.partitioningStrategyFactory = new PartitioningStrategyFactory(nodeEngine.getConfigClassLoader());
+        this.logger = nodeEngine.getLogger(getClass());
 
         initRecordComparators();
     }
@@ -207,7 +215,7 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     private MapEventJournal createEventJournal() {
-        return new RingbufferMapEventJournalImpl(getNodeEngine());
+        return new RingbufferMapEventJournalImpl(getNodeEngine(), this);
     }
 
     private LocalMapStatsProvider createLocalMapStatsProvider() {
@@ -308,7 +316,6 @@ class MapServiceContextImpl implements MapServiceContext {
                 final MapContainer mapContainer = recordStore.getMapContainer();
                 if (backupCount > mapContainer.getTotalBackupCount()) {
                     recordStore.clearPartition(false);
-                    eventJournal.destroy(mapContainer.getObjectNamespace(), partitionId);
                     iter.remove();
                 }
             }
@@ -321,7 +328,6 @@ class MapServiceContextImpl implements MapServiceContext {
         if (container != null) {
             for (RecordStore mapPartition : container.getMaps().values()) {
                 mapPartition.clearPartition(false);
-                eventJournal.destroy(mapPartition.getMapContainer().getObjectNamespace(), partitionId);
             }
             container.getMaps().clear();
         }
@@ -383,23 +389,37 @@ class MapServiceContextImpl implements MapServiceContext {
         if (mapContainer == null) {
             return;
         }
+
+        nodeEngine.getWanReplicationService().removeWanEventCounters(MapService.SERVICE_NAME, mapName);
         mapContainer.getMapStoreContext().stop();
         localMapStatsProvider.destroyLocalMapStatsImpl(mapContainer.getName());
         destroyPartitionsAndMapContainer(mapContainer);
     }
 
+    /**
+     * Destroys the map data on local partition threads and waits for
+     * {@value #DESTROY_TIMEOUT_SECONDS} seconds
+     * for each partition segment destruction to complete.
+     *
+     * @param mapContainer the map container to destroy
+     */
     private void destroyPartitionsAndMapContainer(MapContainer mapContainer) {
-        Semaphore semaphore = new Semaphore(0);
-        InternalOperationService operationService = (InternalOperationService) nodeEngine.getOperationService();
+        final List<LocalRetryableExecution> executions = new ArrayList<LocalRetryableExecution>();
+
         for (PartitionContainer container : partitionContainers) {
-            MapPartitionDestroyTask partitionDestroyTask = new MapPartitionDestroyTask(container, mapContainer, semaphore);
-            operationService.execute(partitionDestroyTask);
+            final MapPartitionDestroyOperation op = new MapPartitionDestroyOperation(container, mapContainer);
+            executions.add(InvocationUtil.executeLocallyWithRetry(nodeEngine, op));
         }
 
-        try {
-            semaphore.tryAcquire(partitionContainers.length, DESTROY_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-        } catch (Throwable t) {
-            throw ExceptionUtil.rethrow(t);
+        for (LocalRetryableExecution execution : executions) {
+            try {
+                if (!execution.awaitCompletion(DESTROY_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
+                    logger.warning("Map partition was not destroyed in expected time, possible leak");
+                }
+            } catch (InterruptedException e) {
+                currentThread().interrupt();
+                nodeEngine.getLogger(getClass()).warning(e);
+            }
         }
     }
 
@@ -512,7 +532,7 @@ class MapServiceContextImpl implements MapServiceContext {
 
     @Override
     public Object toObject(Object data) {
-        return nodeEngine.toObject(data);
+        return serializationService.toObject(data);
     }
 
     @Override
@@ -522,7 +542,7 @@ class MapServiceContextImpl implements MapServiceContext {
 
     @Override
     public Data toData(Object object) {
-        return nodeEngine.toData(object);
+        return serializationService.toData(object, DataType.HEAP);
     }
 
     @Override
@@ -760,11 +780,7 @@ class MapServiceContextImpl implements MapServiceContext {
 
     @Override
     public void onClusterStateChange(ClusterState newState) {
-        if (newState == ClusterState.PASSIVE) {
-            expirationManager.stop();
-        } else {
-            expirationManager.start();
-        }
+        expirationManager.onClusterStateChange(newState);
     }
 
     @Override
@@ -790,15 +806,6 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     @Override
-    public String addListenerAdapter(String cacheName, ListenerAdapter listenerAdaptor) {
-        EventService eventService = getNodeEngine().getEventService();
-        EventRegistration registration
-                = eventService.registerListener(MapService.SERVICE_NAME,
-                cacheName, TrueEventFilter.INSTANCE, listenerAdaptor);
-        return registration.getId();
-    }
-
-    @Override
     public String addLocalListenerAdapter(ListenerAdapter adapter, String mapName) {
         EventService eventService = getNodeEngine().getEventService();
         EventRegistration registration = eventService.registerLocalListener(MapService.SERVICE_NAME, mapName, adapter);
@@ -808,5 +815,10 @@ class MapServiceContextImpl implements MapServiceContext {
     @Override
     public QueryCacheContext getQueryCacheContext() {
         return queryCacheContext;
+    }
+
+    @Override
+    public IndexCopyBehavior getIndexCopyBehavior() {
+        return nodeEngine.getProperties().getEnum(INDEX_COPY_BEHAVIOR, IndexCopyBehavior.class);
     }
 }

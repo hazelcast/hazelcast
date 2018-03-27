@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,7 @@
 
 package com.hazelcast.internal.partition.operation;
 
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.partition.InternalPartitionService;
-import com.hazelcast.internal.partition.NonFragmentedServiceNamespace;
 import com.hazelcast.internal.partition.ReplicaErrorLogger;
 import com.hazelcast.internal.partition.impl.InternalPartitionImpl;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
@@ -39,6 +37,7 @@ import com.hazelcast.spi.ServiceNamespace;
 import com.hazelcast.spi.UrgentSystemOperation;
 import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
+import com.hazelcast.spi.impl.operationservice.TargetAware;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
@@ -59,9 +58,12 @@ import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createError
  * <li>if the node is not a replica anymore it will clear the replica versions for the partition</li>
  * </ul>
  */
+// RU_COMPAT_39: Do not remove Versioned interface!
+// Version info is needed on 3.9 members while deserializing the operation.
 @SuppressFBWarnings("EI_EXPOSE_REP")
 public class PartitionReplicaSyncResponse extends AbstractPartitionOperation
-        implements PartitionAwareOperation, BackupOperation, UrgentSystemOperation, AllowedDuringPassiveState, Versioned {
+        implements PartitionAwareOperation, BackupOperation, UrgentSystemOperation,
+        AllowedDuringPassiveState, Versioned, TargetAware {
 
     private Collection<Operation> operations;
     private ServiceNamespace namespace;
@@ -240,13 +242,19 @@ public class PartitionReplicaSyncResponse extends AbstractPartitionOperation
     }
 
     @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
-        if (out.getVersion().isGreaterOrEqual(Versions.V3_9)) {
-            out.writeObject(namespace);
-        } else {
-            assert namespace.equals(NonFragmentedServiceNamespace.INSTANCE)
-                    : "Only internal namespace is allowed before V3.9: " + namespace;
+    public void setTarget(Address address) {
+        if (operations != null) {
+            for (Operation op : operations) {
+                if (op instanceof TargetAware) {
+                    ((TargetAware) op).setTarget(address);
+                }
+            }
         }
+    }
+
+    @Override
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
+        out.writeObject(namespace);
         out.writeLongArray(versions);
 
         int size = operations != null ? operations.size() : 0;
@@ -260,11 +268,7 @@ public class PartitionReplicaSyncResponse extends AbstractPartitionOperation
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        if (in.getVersion().isGreaterOrEqual(Versions.V3_9)) {
-            namespace = in.readObject();
-        } else {
-            namespace = NonFragmentedServiceNamespace.INSTANCE;
-        }
+        namespace = in.readObject();
         versions = in.readLongArray();
 
         int size = in.readInt();

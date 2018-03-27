@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,8 @@ import com.hazelcast.map.QueryCache;
 import com.hazelcast.query.impl.Indexes;
 
 /**
- * Internal interface which adds some internally used methods to {@code QueryCache} interface.
+ * Internal interface which adds some internally used methods
+ * to {@code QueryCache} interface.
  *
  * @param <K> the key type for this {@code QueryCache}
  * @param <V> the value type for this {@code QueryCache}
@@ -33,7 +34,13 @@ public interface InternalQueryCache<K, V> extends QueryCache<K, V> {
 
     void deleteInternal(Object key, boolean callDelegate, EntryEventType eventType);
 
-    void clearInternal(EntryEventType eventType);
+    /**
+     * Scans all entries in this {@link QueryCache} to remove matching ones
+     * with supplied {@code partitionId}
+     *
+     * @return number of entries removed
+     */
+    int removeEntriesOf(int partitionId);
 
     IMap<K, V> getDelegate();
 
@@ -44,7 +51,7 @@ public interface InternalQueryCache<K, V> extends QueryCache<K, V> {
     void setPublisherListenerId(String publisherListenerId);
 
     /**
-     * @return internally used id for this query cache.
+     * @return internally used ID for this query cache
      */
     String getCacheId();
 }

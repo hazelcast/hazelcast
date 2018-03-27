@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -114,7 +114,10 @@ public class SqlPredicateTest {
     }
 
     public static class Record {
-        private String str1, str2, str3;
+
+        private String str1;
+        private String str2;
+        private String str3;
 
         public Record(String str1, String str2, String str3) {
             this.str1 = str1;
@@ -219,8 +222,10 @@ public class SqlPredicateTest {
         SimpleDateFormat format = new SimpleDateFormat(DateHelperTest.SQL_DATE_FORMAT, Locale.US);
         assertSqlMatching("attribute > '" + format.format(new java.sql.Date(0)) + "'", value);
         assertSqlMatching("attribute >= '" + format.format(new java.sql.Date(0)) + "'", value);
-        assertSqlMatching("attribute < '" + format.format(new java.sql.Date(date.getTime() + TimeUnit.DAYS.toMillis(2))) + "'", value);
-        assertSqlMatching("attribute <= '" + format.format(new java.sql.Date(date.getTime() + TimeUnit.DAYS.toMillis(2))) + "'", value);
+        assertSqlMatching("attribute < '" + format.format(new java.sql.Date(date.getTime() + TimeUnit.DAYS.toMillis(2))) + "'",
+                value);
+        assertSqlMatching("attribute <= '" + format.format(new java.sql.Date(date.getTime() + TimeUnit.DAYS.toMillis(2))) + "'",
+                value);
     }
 
     @Test
@@ -644,7 +649,8 @@ public class SqlPredicateTest {
     @Test
     // http://stackoverflow.com/questions/37382505/hazelcast-imap-valuespredicate-miss-data
     public void testAndWithRegex_stackOverflowIssue() {
-        SqlPredicate sqlPredicate = new SqlPredicate("nextExecuteTime < 1463975296703 AND autoIncrementId REGEX '.*[5,6,7,8,9]$'");
+        SqlPredicate sqlPredicate
+                = new SqlPredicate("nextExecuteTime < 1463975296703 AND autoIncrementId REGEX '.*[5,6,7,8,9]$'");
         Predicate predicate = sqlPredicate.predicate;
 
         AndPredicate andPredicate = (AndPredicate) predicate;

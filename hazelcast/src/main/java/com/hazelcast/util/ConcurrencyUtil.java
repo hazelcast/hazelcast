@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,6 @@ package com.hazelcast.util;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
-
-import static com.hazelcast.nio.IOUtil.closeResource;
-import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * Utility methods to getOrPutSynchronized and getOrPutIfAbsent in a thread safe way
@@ -44,6 +41,7 @@ public final class ConcurrencyUtil {
             if (current >= value) {
                 return;
             }
+
             if (updater.compareAndSet(obj, current, value)) {
                 return;
             }
@@ -62,9 +60,11 @@ public final class ConcurrencyUtil {
         }
     }
 
-    @SuppressWarnings("SynchronizationOnLocalVariableOrMethodParameter")
-    public static <K, V> V getOrPutSynchronized(ConcurrentMap<K, V> map, K key, Object mutex, ConstructorFunction<K, V> func) {
-        checkNotNull(mutex, "mutex cannot be null");
+    public static <K, V> V getOrPutSynchronized(ConcurrentMap<K, V> map, K key, final Object mutex,
+                                                ConstructorFunction<K, V> func) {
+        if (mutex == null) {
+            throw new NullPointerException();
+        }
         V value = map.get(key);
         if (value == null) {
             synchronized (mutex) {
@@ -80,13 +80,25 @@ public final class ConcurrencyUtil {
 
     public static <K, V> V getOrPutSynchronized(ConcurrentMap<K, V> map, K key, ContextMutexFactory contextMutexFactory,
                                                 ConstructorFunction<K, V> func) {
-        checkNotNull(contextMutexFactory, "contextMutexFactory cannot be null");
-        ContextMutexFactory.Mutex mutex = contextMutexFactory.mutexFor(key);
-        try {
-            return getOrPutSynchronized(map, key, mutex, func);
-        } finally {
-            closeResource(mutex);
+        if (contextMutexFactory == null) {
+            throw new NullPointerException();
         }
+        V value = map.get(key);
+        if (value == null) {
+            ContextMutexFactory.Mutex mutex = contextMutexFactory.mutexFor(key);
+            try {
+                synchronized (mutex) {
+                    value = map.get(key);
+                    if (value == null) {
+                        value = func.createNew(key);
+                        map.put(key, value);
+                    }
+                }
+            } finally {
+                mutex.close();
+            }
+        }
+        return value;
     }
 
     public static <K, V> V getOrPutIfAbsent(ConcurrentMap<K, V> map, K key, ConstructorFunction<K, V> func) {
@@ -98,4 +110,5 @@ public final class ConcurrencyUtil {
         }
         return value;
     }
+
 }

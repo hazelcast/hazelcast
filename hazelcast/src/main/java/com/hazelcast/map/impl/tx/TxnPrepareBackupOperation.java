@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,12 +17,11 @@
 package com.hazelcast.map.impl.tx;
 
 import com.hazelcast.map.impl.MapDataSerializerHook;
-import com.hazelcast.map.impl.operation.MutatingKeyBasedMapOperation;
+import com.hazelcast.map.impl.operation.KeyBasedMapOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
-import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.transaction.TransactionException;
 
 import java.io.IOException;
@@ -30,7 +29,7 @@ import java.io.IOException;
 /**
  * An operation to prepare transaction by locking the key on key backup owner.
  */
-public class TxnPrepareBackupOperation extends MutatingKeyBasedMapOperation implements BackupOperation, MutatingOperation {
+public class TxnPrepareBackupOperation extends KeyBasedMapOperation implements BackupOperation {
 
     private static final long LOCK_TTL_MILLIS = 10000L;
     private String lockOwner;

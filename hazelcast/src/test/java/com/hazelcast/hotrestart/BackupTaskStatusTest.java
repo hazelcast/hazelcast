@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.test.HazelcastTestSupport.assumeDifferentHashCodes;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 
@@ -73,6 +74,7 @@ public class BackupTaskStatusTest {
         assertEquals(backupTaskStatus.hashCode(), backupTaskStatus.hashCode());
         assertEquals(backupTaskStatus.hashCode(), backupTaskStatusWithSameAttributes.hashCode());
 
+        assumeDifferentHashCodes();
         assertNotEquals(backupTaskStatus.hashCode(), backupTaskStatusOtherState.hashCode());
         assertNotEquals(backupTaskStatus.hashCode(), backupTaskStatusOtherCompleted.hashCode());
         assertNotEquals(backupTaskStatus.hashCode(), backupTaskStatusOtherTotal.hashCode());

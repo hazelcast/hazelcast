@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import com.hazelcast.core.ClientService;
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectListener;
+import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.core.IAtomicReference;
@@ -43,6 +44,7 @@ import com.hazelcast.core.LifecycleService;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.core.PartitionService;
 import com.hazelcast.core.ReplicatedMap;
+import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.instance.TerminatedLifecycleService;
 import com.hazelcast.logging.LoggingService;
@@ -191,6 +193,11 @@ public class HazelcastClientProxy implements HazelcastInstance, SerializationSer
     }
 
     @Override
+    public FlakeIdGenerator getFlakeIdGenerator(String name) {
+        return getClient().getFlakeIdGenerator(name);
+    }
+
+    @Override
     public IAtomicLong getAtomicLong(String name) {
         return getClient().getAtomicLong(name);
     }
@@ -213,6 +220,11 @@ public class HazelcastClientProxy implements HazelcastInstance, SerializationSer
     @Override
     public CardinalityEstimator getCardinalityEstimator(String name) {
         return getClient().getCardinalityEstimator(name);
+    }
+
+    @Override
+    public PNCounter getPNCounter(String name) {
+        return getClient().getPNCounter(name);
     }
 
     @Override

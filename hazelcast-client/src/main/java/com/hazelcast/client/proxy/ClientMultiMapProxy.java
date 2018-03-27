@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import com.hazelcast.client.impl.protocol.codec.MultiMapClearCodec;
 import com.hazelcast.client.impl.protocol.codec.MultiMapContainsEntryCodec;
 import com.hazelcast.client.impl.protocol.codec.MultiMapContainsKeyCodec;
 import com.hazelcast.client.impl.protocol.codec.MultiMapContainsValueCodec;
+import com.hazelcast.client.impl.protocol.codec.MultiMapDeleteCodec;
 import com.hazelcast.client.impl.protocol.codec.MultiMapEntrySetCodec;
 import com.hazelcast.client.impl.protocol.codec.MultiMapForceUnlockCodec;
 import com.hazelcast.client.impl.protocol.codec.MultiMapGetCodec;
@@ -82,6 +83,7 @@ import static com.hazelcast.map.impl.ListenerAdapters.createListenerAdapter;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.Preconditions.checkPositive;
 import static com.hazelcast.util.Preconditions.isNotNull;
+import static java.lang.Thread.currentThread;
 
 /**
  * Proxy implementation of {@link MultiMap}.
@@ -147,6 +149,13 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         ClientMessage response = invoke(request, keyData);
         MultiMapRemoveCodec.ResponseParameters resultParameters = MultiMapRemoveCodec.decodeResponse(response);
         return new UnmodifiableLazyList<V>(resultParameters.response, getSerializationService());
+    }
+
+    public void delete(Object key) {
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        Data keyData = toData(key);
+        ClientMessage request = MultiMapDeleteCodec.encodeRequest(name, keyData, ThreadUtil.getThreadId());
+        invoke(request, keyData);
     }
 
     @Override
@@ -294,6 +303,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
 
     @Override
     public String addEntryListener(EntryListener<K, V> listener, K key, final boolean includeValue) {
+        isNotNull(listener, "listener");
         final Data keyData = toData(key);
         EventHandler<ClientMessage> handler = createHandler(listener);
         return registerListener(createEntryListenerToKeyCodec(includeValue, keyData), handler);
@@ -363,6 +373,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         try {
             return tryLock(key, 0, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
+            currentThread().interrupt();
             return false;
         }
     }

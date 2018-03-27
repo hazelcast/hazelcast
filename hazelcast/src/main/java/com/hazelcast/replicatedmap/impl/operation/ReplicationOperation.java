@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,11 +29,12 @@ import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
 import com.hazelcast.spi.serialization.SerializationService;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+
+import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.util.SetUtil.createHashSet;
 
 /**
  * Carries all the partition data for replicated map from old owner to the new owner.
@@ -58,9 +59,8 @@ public class ReplicationOperation extends AbstractSerializableOperation {
     public void run() throws Exception {
         ILogger logger = getLogger();
         if (logger.isFineEnabled()) {
-            logger.fine("Moving partitionId=" + getPartitionId()
-                    + " to the new owner: " + getNodeEngine().getThisAddress()
-                    + " from: " + getCallerAddress());
+            logger.fine("Moving replicated map (partitionId " + getPartitionId() + ") from " + getCallerAddress()
+                    + " to the new owner " + getNodeEngine().getThisAddress());
         }
         ReplicatedMapService service = getService();
         if (data == null) {
@@ -76,12 +76,12 @@ public class ReplicationOperation extends AbstractSerializableOperation {
 
     private void fetchReplicatedMapRecords(PartitionContainer container) {
         int storeCount = container.getStores().size();
-        data = new HashMap<String, Set<RecordMigrationInfo>>(storeCount);
-        versions = new HashMap<String, Long>(storeCount);
+        data = createHashMap(storeCount);
+        versions = createHashMap(storeCount);
         for (Map.Entry<String, ReplicatedRecordStore> entry : container.getStores().entrySet()) {
             String name = entry.getKey();
             ReplicatedRecordStore store = entry.getValue();
-            Set<RecordMigrationInfo> recordSet = new HashSet<RecordMigrationInfo>(store.size());
+            Set<RecordMigrationInfo> recordSet = createHashSet(store.size());
             Iterator<ReplicatedRecord> iterator = store.recordIterator();
             while (iterator.hasNext()) {
                 ReplicatedRecord record = iterator.next();
@@ -135,11 +135,11 @@ public class ReplicationOperation extends AbstractSerializableOperation {
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         int size = in.readInt();
-        data = new HashMap<String, Set<RecordMigrationInfo>>(size);
+        data = createHashMap(size);
         for (int i = 0; i < size; i++) {
             String name = in.readUTF();
             int mapSize = in.readInt();
-            Set<RecordMigrationInfo> recordSet = new HashSet<RecordMigrationInfo>(mapSize);
+            Set<RecordMigrationInfo> recordSet = createHashSet(mapSize);
             for (int j = 0; j < mapSize; j++) {
                 RecordMigrationInfo record = new RecordMigrationInfo();
                 record.readData(in);
@@ -148,7 +148,7 @@ public class ReplicationOperation extends AbstractSerializableOperation {
             data.put(name, recordSet);
         }
         int versionsSize = in.readInt();
-        versions = new HashMap<String, Long>(versionsSize);
+        versions = createHashMap(versionsSize);
         for (int i = 0; i < versionsSize; i++) {
             String name = in.readUTF();
             long version = in.readLong();

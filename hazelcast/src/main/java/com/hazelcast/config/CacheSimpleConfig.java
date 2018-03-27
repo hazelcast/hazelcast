@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,10 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.cache.BuiltInCacheMergePolicies;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
 import com.hazelcast.spi.partition.IPartition;
 
 import java.io.IOException;
@@ -61,14 +61,9 @@ public class CacheSimpleConfig implements IdentifiedDataSerializable {
     public static final InMemoryFormat DEFAULT_IN_MEMORY_FORMAT = InMemoryFormat.BINARY;
 
     /**
-     * Default Eviction Policy.
-     */
-    public static final EvictionPolicy DEFAULT_EVICTION_POLICY = EvictionConfig.DEFAULT_EVICTION_POLICY;
-
-    /**
      * Default policy for merging
      */
-    public static final String DEFAULT_CACHE_MERGE_POLICY = BuiltInCacheMergePolicies.getDefault().getImplementationClassName();
+    public static final String DEFAULT_CACHE_MERGE_POLICY = PutIfAbsentMergePolicy.class.getName();
 
     private String name;
 

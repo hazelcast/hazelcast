@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,8 @@ import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Set;
+
+import static com.hazelcast.util.EmptyStatement.ignore;
 
 /**
  * AddressUtil contains Address helper methods.
@@ -237,7 +239,7 @@ public final class AddressUtil {
                 addPossibleAddress(inet6Address, possibleAddresses, ni);
             }
         } catch (IOException ignored) {
-            EmptyStatement.ignore(ignored);
+            ignore(ignored);
         }
 
         if (possibleAddresses.isEmpty()) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.util.Clock;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.util.ThreadUtil.assertRunningOnPartitionThread;
 
 /**
  * Evictor helper methods.
@@ -47,6 +48,8 @@ public class EvictorImpl implements Evictor {
 
     @Override
     public void evict(RecordStore recordStore, Data excludedKey) {
+        assertRunningOnPartitionThread();
+
         EntryView evictableEntry = selectEvictableEntry(recordStore, excludedKey);
         if (evictableEntry == null) {
             return;
@@ -98,6 +101,8 @@ public class EvictorImpl implements Evictor {
 
     @Override
     public boolean checkEvictable(RecordStore recordStore) {
+        assertRunningOnPartitionThread();
+
         return evictionChecker.checkEvictable(recordStore);
     }
 

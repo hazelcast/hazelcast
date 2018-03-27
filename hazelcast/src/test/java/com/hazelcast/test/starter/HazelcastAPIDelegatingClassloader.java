@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,11 +35,13 @@ import static com.hazelcast.test.compatibility.SamplingSerializationService.isTe
 /**
  * Classloader which delegates to its parent except when the fully qualified name of the class starts with
  * "com.hazelcast". In this case:
- *  - if the class is a test class, then locate its bytes from the parent classloader but load it as a new class
- *  in the target class loader. This way user objects implemented in test classpath are loaded on the target classloader
- *  therefore implement the appropriate loaded class for any Hazelcast interfaces they implement (eg EntryListener,
- *  Predicate etc).
- *  - otherwise load the requested class from the URLs given to this classloader as constructor argument.
+ * <ul>
+ * <li>if the class is a test class, then locate its bytes from the parent classloader but load it as a new class
+ * in the target class loader. This way user objects implemented in test classpath are loaded on the target classloader
+ * therefore implement the appropriate loaded class for any Hazelcast interfaces they implement (eg EntryListener,
+ * Predicate etc).</li>
+ * <li>otherwise load the requested class from the URLs given to this classloader as constructor argument.</li>
+ * </ul>
  */
 public class HazelcastAPIDelegatingClassloader extends URLClassLoader {
 

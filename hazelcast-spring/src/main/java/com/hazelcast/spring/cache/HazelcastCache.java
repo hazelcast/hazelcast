@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,13 +25,12 @@ import com.hazelcast.util.ExceptionUtil;
 import org.springframework.cache.Cache;
 import org.springframework.cache.support.SimpleValueWrapper;
 
-import java.io.IOException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 /**
- * @author mdogan 4/3/12
+ * Sprint related {@link Cache} implementation for Hazelcast.
  */
 public class HazelcastCache implements Cache {
 
@@ -40,13 +39,13 @@ public class HazelcastCache implements Cache {
     private final IMap<Object, Object> map;
 
     /**
-     * read timeout for cache value retrieval operations.
-     * if 0 or negative, get operations block, otherwise uses getAsync with defined
-     * timeout
+     * Read timeout for cache value retrieval operations.
+     * <p>
+     * If {@code 0} or negative, get() operations block, otherwise uses getAsync() with defined timeout.
      */
     private long readTimeout;
 
-    public HazelcastCache(final IMap<Object, Object> map) {
+    public HazelcastCache(IMap<Object, Object> map) {
         this.map = map;
     }
 
@@ -56,19 +55,20 @@ public class HazelcastCache implements Cache {
     }
 
     @Override
-    public Object getNativeCache() {
+    public IMap<Object, Object> getNativeCache() {
         return map;
     }
 
     @Override
-    public ValueWrapper get(final Object key) {
+    public ValueWrapper get(Object key) {
         if (key == null) {
             return null;
         }
-        final Object value = lookup(key);
+        Object value = lookup(key);
         return value != null ? new SimpleValueWrapper(fromStoreValue(value)) : null;
     }
 
+    @SuppressWarnings("unchecked")
     public <T> T get(Object key, Class<T> type) {
         Object value = fromStoreValue(lookup(key));
         if (type != null && value != null && !type.isInstance(value)) {
@@ -109,20 +109,20 @@ public class HazelcastCache implements Cache {
     }
 
     @Override
-    public void put(final Object key, final Object value) {
+    public void put(Object key, Object value) {
         if (key != null) {
             map.set(key, toStoreValue(value));
         }
     }
 
-    protected Object toStoreValue(final Object value) {
+    protected Object toStoreValue(Object value) {
         if (value == null) {
             return NULL;
         }
         return value;
     }
 
-    protected Object fromStoreValue(final Object value) {
+    protected Object fromStoreValue(Object value) {
         if (NULL.equals(value)) {
             return null;
         }
@@ -130,7 +130,7 @@ public class HazelcastCache implements Cache {
     }
 
     @Override
-    public void evict(final Object key) {
+    public void evict(Object key) {
         if (key != null) {
             map.delete(key);
         }
@@ -163,12 +163,13 @@ public class HazelcastCache implements Cache {
     }
 
     static final class NullDataSerializable implements DataSerializable {
+
         @Override
-        public void writeData(final ObjectDataOutput out) throws IOException {
+        public void writeData(ObjectDataOutput out) {
         }
 
         @Override
-        public void readData(final ObjectDataInput in) throws IOException {
+        public void readData(ObjectDataInput in) {
         }
 
         @Override
@@ -185,13 +186,14 @@ public class HazelcastCache implements Cache {
     private static class ValueRetrievalExceptionResolver {
 
         static RuntimeException resolveException(Object key, Callable<?> valueLoader,
-                Throwable ex) {
+                                                 Throwable ex) {
             return new ValueRetrievalException(key, valueLoader, ex);
         }
     }
 
     /**
      * Set cache value retrieval timeout
+     *
      * @param readTimeout cache value retrieval timeout in milliseconds. 0 or negative values disable timeout
      */
     public void setReadTimeout(long readTimeout) {

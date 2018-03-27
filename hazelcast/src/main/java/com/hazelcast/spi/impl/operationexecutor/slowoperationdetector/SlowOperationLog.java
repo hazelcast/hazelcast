@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,10 @@
 
 package com.hazelcast.spi.impl.operationexecutor.slowoperationdetector;
 
+import com.hazelcast.internal.diagnostics.OperationDescriptors;
 import com.hazelcast.internal.management.dto.SlowOperationDTO;
 import com.hazelcast.internal.management.dto.SlowOperationInvocationDTO;
+import com.hazelcast.spi.Operation;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -47,8 +49,12 @@ final class SlowOperationLog {
 
     private final ConcurrentHashMap<Integer, Invocation> invocations = new ConcurrentHashMap<Integer, Invocation>();
 
-    SlowOperationLog(String stackTrace, Object operation) {
-        this.operation = operation.getClass().getName();
+    SlowOperationLog(String stackTrace, Object task) {
+        if (task instanceof Operation) {
+            this.operation = OperationDescriptors.toOperationDesc((Operation) task);
+        } else {
+            this.operation = task.getClass().getName();
+        }
         this.stackTrace = stackTrace;
         if (stackTrace.length() <= SHORT_STACKTRACE_LENGTH) {
             this.shortStackTrace = stackTrace;

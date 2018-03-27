@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -127,17 +127,6 @@ public class NearCacheTestSupport extends HazelcastTestSupport {
                 assertTrue(format("we expect at least %d entries to be expired from the Near Cache (%s)", size, stats),
                         stats.getExpirations() >= size);
                 assertEquals(format("we expect no entries to be evicted (%s)", stats), 0, stats.getEvictions());
-            }
-        });
-    }
-
-    private void populateNearCacheEventually(final IMap<Integer, Integer> map, final int size) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                populateNearCache(map, size);
-                long ownedEntryCount = getNearCacheStats(map).getOwnedEntryCount();
-                assertEquals("Near Cache has not reached expected size", size, ownedEntryCount);
             }
         });
     }

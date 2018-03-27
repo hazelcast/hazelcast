@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,10 +47,11 @@ public abstract class AbstractQueryCacheEndToEndConstructor implements QueryCach
     protected final SubscriberContext subscriberContext;
     protected final ILogger logger = Logger.getLogger(getClass());
 
-    protected Predicate predicate;
     protected boolean includeValue;
     protected InternalQueryCache queryCache;
-    protected String publisherListenerId;
+
+    private Predicate predicate;
+    private String publisherListenerId;
 
     public AbstractQueryCacheEndToEndConstructor(QueryCacheRequest request) {
         this.request = request;
@@ -63,7 +64,7 @@ public abstract class AbstractQueryCacheEndToEndConstructor implements QueryCach
     public final void createSubscriberAccumulator(AccumulatorInfo info) {
         QueryCacheEventService eventService = context.getQueryCacheEventService();
         ListenerAdapter listener = new SubscriberListener(context, info);
-        publisherListenerId = eventService.listenPublisher(info.getMapName(), info.getCacheId(), listener);
+        publisherListenerId = eventService.addPublisherListener(info.getMapName(), info.getCacheId(), listener);
     }
 
     /**
@@ -131,7 +132,7 @@ public abstract class AbstractQueryCacheEndToEndConstructor implements QueryCach
         return context.toObject(data);
     }
 
-    protected QueryCacheConfig initQueryCacheConfig(QueryCacheRequest request) {
+    private QueryCacheConfig initQueryCacheConfig(QueryCacheRequest request) {
         Predicate predicate = request.getPredicate();
 
         QueryCacheConfig queryCacheConfig;

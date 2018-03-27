@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,12 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.replicatedmap.merge.PutIfAbsentMapMergePolicy;
+import com.hazelcast.nio.serialization.impl.Versioned;
+import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -28,11 +30,13 @@ import java.util.concurrent.ScheduledExecutorService;
 
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.readNullableList;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeNullableList;
+import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * Contains the configuration for an {@link com.hazelcast.core.ReplicatedMap}
  */
-public class ReplicatedMapConfig implements IdentifiedDataSerializable {
+@SuppressWarnings("checkstyle:methodcount")
+public class ReplicatedMapConfig implements IdentifiedDataSerializable, Versioned {
 
     /**
      * Default value of concurrency level
@@ -53,7 +57,7 @@ public class ReplicatedMapConfig implements IdentifiedDataSerializable {
     /**
      * Default policy for merging
      */
-    public static final String DEFAULT_MERGE_POLICY = PutIfAbsentMapMergePolicy.class.getName();
+    public static final String DEFAULT_MERGE_POLICY = PutIfAbsentMergePolicy.class.getName();
 
     private String name;
     // concurrencyLevel is deprecated and it's not used anymore
@@ -66,9 +70,11 @@ public class ReplicatedMapConfig implements IdentifiedDataSerializable {
     private transient ScheduledExecutorService replicatorExecutorService;
     private boolean asyncFillup = DEFAULT_ASNYC_FILLUP;
     private boolean statisticsEnabled = true;
-    private String mergePolicy = DEFAULT_MERGE_POLICY;
+    private MergePolicyConfig mergePolicyConfig = new MergePolicyConfig();
 
     private List<ListenerConfig> listenerConfigs;
+
+    private String quorumName;
 
     public ReplicatedMapConfig() {
     }
@@ -88,10 +94,12 @@ public class ReplicatedMapConfig implements IdentifiedDataSerializable {
         this.concurrencyLevel = replicatedMapConfig.concurrencyLevel;
         this.replicationDelayMillis = replicatedMapConfig.replicationDelayMillis;
         this.replicatorExecutorService = replicatedMapConfig.replicatorExecutorService;
-        this.listenerConfigs = new ArrayList<ListenerConfig>(replicatedMapConfig.getListenerConfigs());
+        this.listenerConfigs = replicatedMapConfig.listenerConfigs == null ? null
+                : new ArrayList<ListenerConfig>(replicatedMapConfig.getListenerConfigs());
         this.asyncFillup = replicatedMapConfig.asyncFillup;
         this.statisticsEnabled = replicatedMapConfig.statisticsEnabled;
-        this.mergePolicy = replicatedMapConfig.mergePolicy;
+        this.mergePolicyConfig = replicatedMapConfig.mergePolicyConfig;
+        this.quorumName = replicatedMapConfig.quorumName;
     }
 
     /**
@@ -304,12 +312,33 @@ public class ReplicatedMapConfig implements IdentifiedDataSerializable {
     }
 
     /**
+     * Returns the quorum name for operations.
+     *
+     * @return the quorum name
+     */
+    public String getQuorumName() {
+        return quorumName;
+    }
+
+    /**
+     * Sets the quorum name for operations.
+     *
+     * @param quorumName the quorum name
+     * @return the updated configuration
+     */
+    public ReplicatedMapConfig setQuorumName(String quorumName) {
+        this.quorumName = quorumName;
+        return this;
+    }
+
+    /**
      * Gets the replicated map merge policy {@link com.hazelcast.replicatedmap.merge.ReplicatedMapMergePolicy}
      *
      * @return the updated replicated map configuration
+     * @deprecated since 3.10, please use {@link #getMergePolicyConfig()} and {@link MergePolicyConfig#getPolicy()}
      */
     public String getMergePolicy() {
-        return mergePolicy;
+        return mergePolicyConfig.getPolicy();
     }
 
     /**
@@ -317,9 +346,29 @@ public class ReplicatedMapConfig implements IdentifiedDataSerializable {
      *
      * @param mergePolicy the replicated map merge policy to set
      * @return the updated replicated map configuration
+     * @deprecated since 3.10, please use {@link #setMergePolicyConfig(MergePolicyConfig)}
      */
     public ReplicatedMapConfig setMergePolicy(String mergePolicy) {
-        this.mergePolicy = mergePolicy;
+        this.mergePolicyConfig.setPolicy(mergePolicy);
+        return this;
+    }
+
+    /**
+     * Gets the {@link MergePolicyConfig} for this replicated map.
+     *
+     * @return the {@link MergePolicyConfig} for this replicated map
+     */
+    public MergePolicyConfig getMergePolicyConfig() {
+        return mergePolicyConfig;
+    }
+
+    /**
+     * Sets the {@link MergePolicyConfig} for this replicated map.
+     *
+     * @return the updated replicated map configuration
+     */
+    public ReplicatedMapConfig setMergePolicyConfig(MergePolicyConfig mergePolicyConfig) {
+        this.mergePolicyConfig = checkNotNull(mergePolicyConfig, "mergePolicyConfig cannot be null!");
         return this;
     }
 
@@ -332,7 +381,8 @@ public class ReplicatedMapConfig implements IdentifiedDataSerializable {
                 + ", replicationDelayMillis=" + replicationDelayMillis
                 + ", asyncFillup=" + asyncFillup
                 + ", statisticsEnabled=" + statisticsEnabled
-                + ", mergePolicy='" + mergePolicy + '\''
+                + ", quorumName='" + quorumName + '\''
+                + ", mergePolicyConfig='" + mergePolicyConfig + '\''
                 + '}';
     }
 
@@ -352,8 +402,16 @@ public class ReplicatedMapConfig implements IdentifiedDataSerializable {
         out.writeUTF(inMemoryFormat.name());
         out.writeBoolean(asyncFillup);
         out.writeBoolean(statisticsEnabled);
-        out.writeUTF(mergePolicy);
+        // RU_COMPAT_3_9
+        if (out.getVersion().isLessThan(Versions.V3_10)) {
+            out.writeUTF(mergePolicyConfig.getPolicy());
+        }
         writeNullableList(listenerConfigs, out);
+        // RU_COMPAT_3_9
+        if (out.getVersion().isGreaterOrEqual(Versions.V3_10)) {
+            out.writeUTF(quorumName);
+            out.writeObject(mergePolicyConfig);
+        }
     }
 
     @Override
@@ -362,8 +420,16 @@ public class ReplicatedMapConfig implements IdentifiedDataSerializable {
         inMemoryFormat = InMemoryFormat.valueOf(in.readUTF());
         asyncFillup = in.readBoolean();
         statisticsEnabled = in.readBoolean();
-        mergePolicy = in.readUTF();
+        // RU_COMPAT_3_9
+        if (in.getVersion().isUnknownOrLessThan(Versions.V3_10)) {
+            mergePolicyConfig.setPolicy(in.readUTF());
+        }
         listenerConfigs = readNullableList(in);
+        // RU_COMPAT_3_9
+        if (in.getVersion().isGreaterOrEqual(Versions.V3_10)) {
+            quorumName = in.readUTF();
+            mergePolicyConfig = in.readObject();
+        }
     }
 
     @Override
@@ -389,7 +455,10 @@ public class ReplicatedMapConfig implements IdentifiedDataSerializable {
         if (inMemoryFormat != that.inMemoryFormat) {
             return false;
         }
-        if (mergePolicy != null ? !mergePolicy.equals(that.mergePolicy) : that.mergePolicy != null) {
+        if (quorumName != null ? !quorumName.equals(that.quorumName) : that.quorumName != null) {
+            return false;
+        }
+        if (mergePolicyConfig != null ? !mergePolicyConfig.equals(that.mergePolicyConfig) : that.mergePolicyConfig != null) {
             return false;
         }
         return listenerConfigs != null ? listenerConfigs.equals(that.listenerConfigs) : that.listenerConfigs == null;
@@ -402,8 +471,9 @@ public class ReplicatedMapConfig implements IdentifiedDataSerializable {
         result = 31 * result + (inMemoryFormat != null ? inMemoryFormat.hashCode() : 0);
         result = 31 * result + (asyncFillup ? 1 : 0);
         result = 31 * result + (statisticsEnabled ? 1 : 0);
-        result = 31 * result + (mergePolicy != null ? mergePolicy.hashCode() : 0);
         result = 31 * result + (listenerConfigs != null ? listenerConfigs.hashCode() : 0);
+        result = 31 * result + (quorumName != null ? quorumName.hashCode() : 0);
+        result = 31 * result + (mergePolicyConfig != null ? mergePolicyConfig.hashCode() : 0);
         return result;
     }
 }

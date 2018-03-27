@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,11 +25,12 @@ import com.hazelcast.version.MemberVersion;
 
 import java.io.IOException;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.util.SetUtil.createHashSet;
 import static java.util.Collections.unmodifiableSet;
 
 public class JoinRequest extends JoinMessage {
@@ -86,14 +87,14 @@ public class JoinRequest extends JoinMessage {
         }
         tryCount = in.readInt();
         int size = in.readInt();
-        attributes = new HashMap<String, Object>();
+        attributes = createHashMap(size);
         for (int i = 0; i < size; i++) {
             String key = in.readUTF();
             Object value = in.readObject();
             attributes.put(key, value);
         }
         size = in.readInt();
-        Set<String> excludedMemberUuids = new HashSet<String>();
+        Set<String> excludedMemberUuids = createHashSet(size);
         for (int i = 0; i < size; i++) {
             excludedMemberUuids.add(in.readUTF());
         }

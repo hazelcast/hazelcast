@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ import com.hazelcast.spi.ReadonlyOperation;
 
 import java.io.IOException;
 
-public class GetOperation extends AbstractSerializableOperation implements ReadonlyOperation {
+public class GetOperation extends AbstractNamedSerializableOperation implements ReadonlyOperation {
 
     private String name;
     private Data key;
@@ -44,9 +44,11 @@ public class GetOperation extends AbstractSerializableOperation implements Reado
     public void run() throws Exception {
         ReplicatedMapService service = getService();
         ReplicatedRecordStore store = service.getReplicatedRecordStore(name, false, getPartitionId());
-        ReplicatedRecord record = store.getReplicatedRecord(key);
-        if (record != null) {
-            response = record.getValue();
+        if (store != null) {
+            ReplicatedRecord record = store.getReplicatedRecord(key);
+            if (record != null) {
+                response = record.getValue();
+            }
         }
     }
 
@@ -70,5 +72,10 @@ public class GetOperation extends AbstractSerializableOperation implements Reado
     @Override
     public int getId() {
         return ReplicatedMapDataSerializerHook.GET;
+    }
+
+    @Override
+    public String getName() {
+        return name;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,8 +25,10 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
+
+import static com.hazelcast.concurrent.atomiclong.AtomicLongDataSerializerHook.REPLICATION;
+import static com.hazelcast.util.MapUtil.createHashMap;
 
 public class AtomicLongReplicationOperation extends Operation
         implements IdentifiedDataSerializable {
@@ -45,9 +47,9 @@ public class AtomicLongReplicationOperation extends Operation
         AtomicLongService atomicLongService = getService();
         for (Map.Entry<String, Long> longEntry : migrationData.entrySet()) {
             String name = longEntry.getKey();
-            AtomicLongContainer atomicLongContainer = atomicLongService.getLongContainer(name);
+            AtomicLongContainer container = atomicLongService.getLongContainer(name);
             Long value = longEntry.getValue();
-            atomicLongContainer.set(value);
+            container.set(value);
         }
     }
 
@@ -63,7 +65,7 @@ public class AtomicLongReplicationOperation extends Operation
 
     @Override
     public int getId() {
-        return AtomicLongDataSerializerHook.REPLICATION;
+        return REPLICATION;
     }
 
     @Override
@@ -78,7 +80,7 @@ public class AtomicLongReplicationOperation extends Operation
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         int mapSize = in.readInt();
-        migrationData = new HashMap<String, Long>(mapSize);
+        migrationData = createHashMap(mapSize);
         for (int i = 0; i < mapSize; i++) {
             String name = in.readUTF();
             Long longContainer = in.readLong();

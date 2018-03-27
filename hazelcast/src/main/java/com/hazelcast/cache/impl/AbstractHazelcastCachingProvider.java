@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.StringUtil;
 
 import javax.cache.CacheException;
 import javax.cache.CacheManager;
@@ -35,6 +36,9 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.WeakHashMap;
+
+import static java.lang.Boolean.parseBoolean;
+import static java.lang.System.getProperty;
 
 /**
  * Abstract {@link CachingProvider} implementation providing shared functionality to server and client caching
@@ -53,10 +57,24 @@ import java.util.WeakHashMap;
 public abstract class AbstractHazelcastCachingProvider
         implements CachingProvider {
 
+    /**
+     * Name of default {@link HazelcastInstance} which may be started when obtaining the default {@link CachingProvider}.
+     */
+    public static final String SHARED_JCACHE_INSTANCE_NAME = "_hzinstance_jcache_shared";
+
+    /**
+     * System property to control whether the default Hazelcast instance, which may be started when obtaining the default
+     * {@link CachingProvider}, will have an instance name set or not. When not set or when system property
+     * {@code hazelcast.named.jcache.instance} is {@code "true"}, then a common instance name is used to get-or-create the
+     * default {@link HazelcastInstance}. When system property {@code hazelcast.named.jcache.instance} is {@code "false"}, then
+     * no instance name is set on the default configuration.
+     */
+    public static final String NAMED_JCACHE_HZ_INSTANCE = "hazelcast.named.jcache.instance";
+
     protected static final ILogger LOGGER = Logger.getLogger(HazelcastCachingProvider.class);
 
     protected static final String INVALID_HZ_INSTANCE_SPECIFICATION_MESSAGE =
-            "Not available Hazelcast instance. "
+            "No available Hazelcast instance. "
             + "Please specify your Hazelcast configuration file path via "
             + "\"HazelcastCachingProvider.HAZELCAST_CONFIG_LOCATION\" property or "
             + "specify Hazelcast instance name via "
@@ -77,6 +95,7 @@ public abstract class AbstractHazelcastCachingProvider
 
     protected final ClassLoader defaultClassLoader;
     protected final URI defaultURI;
+    protected final boolean namedDefaultHzInstance = parseBoolean(getProperty(NAMED_JCACHE_HZ_INSTANCE, "true"));
 
     private final Map<ClassLoader, Map<URI, AbstractHazelcastCacheManager>> cacheManagers;
 
@@ -87,7 +106,7 @@ public abstract class AbstractHazelcastCachingProvider
         try {
             defaultURI = new URI("hazelcast");
         } catch (URISyntaxException e) {
-            throw new CacheException("Cannot create Default URI", e);
+            throw new CacheException("Cannot create default URI", e);
         }
     }
 
@@ -246,7 +265,7 @@ public abstract class AbstractHazelcastCachingProvider
         if (scheme == null) {
             // interpret as place holder
             try {
-                String resolvedPlaceholder = System.getProperty(location.getRawSchemeSpecificPart());
+                String resolvedPlaceholder = getProperty(location.getRawSchemeSpecificPart());
                 if (resolvedPlaceholder == null) {
                     return false;
                 }
@@ -257,6 +276,6 @@ public abstract class AbstractHazelcastCachingProvider
             }
         }
 
-        return (scheme != null && SUPPORTED_SCHEMES.contains(scheme.toLowerCase()));
+        return (scheme != null && SUPPORTED_SCHEMES.contains(scheme.toLowerCase(StringUtil.LOCALE_INTERNAL)));
     }
 }

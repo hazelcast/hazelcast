@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -71,6 +71,7 @@ import static com.hazelcast.internal.nearcache.NearCache.NOT_CACHED;
 import static com.hazelcast.internal.nearcache.NearCacheRecord.NOT_RESERVED;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.util.Preconditions.isNotNull;
 import static java.util.Collections.sort;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
@@ -264,6 +265,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
 
     @Override
     public String addEntryListener(EntryListener<K, V> listener) {
+        isNotNull(listener, "listener");
         EventHandler<ClientMessage> handler = createHandler(listener);
         return registerListener(createEntryListenerCodec(), handler);
     }
@@ -295,6 +297,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
     @Override
     public String addEntryListener(EntryListener<K, V> listener, K key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        isNotNull(listener, "listener");
         final Data keyData = toData(key);
         EventHandler<ClientMessage> handler = createHandler(listener);
         return registerListener(createEntryListenerToKeyCodec(keyData), handler);
@@ -326,6 +329,8 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
 
     @Override
     public String addEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate) {
+        isNotNull(listener, "listener");
+        isNotNull(predicate, "predicate");
         final Data predicateData = toData(predicate);
         EventHandler<ClientMessage> handler = createHandler(listener);
         return registerListener(createEntryListenerWithPredicateCodec(predicateData), handler);
@@ -358,6 +363,8 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
     @Override
     public String addEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate, K key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        isNotNull(listener, "listener");
+        isNotNull(predicate, "predicate");
         final Data keyData = toData(key);
         final Data predicateData = toData(predicate);
         EventHandler<ClientMessage> handler = createHandler(listener);

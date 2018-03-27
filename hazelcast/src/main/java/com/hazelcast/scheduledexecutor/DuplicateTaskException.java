@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,8 @@ package com.hazelcast.scheduledexecutor;
 import com.hazelcast.core.HazelcastException;
 
 /**
- * An exception thrown when a task's name is already used before for another (or the same, if re-attempted) schedule.
- * Tasks under a scheduler must have unique names.
+ * An exception thrown when a task's name is already used before for another (or the same, if re-attempted) schedule. Tasks under
+ * a scheduler must have unique names.
  */
 public class DuplicateTaskException
         extends HazelcastException {

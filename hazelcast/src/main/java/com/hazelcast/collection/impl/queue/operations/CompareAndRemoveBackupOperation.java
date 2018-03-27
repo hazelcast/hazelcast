@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,16 +21,16 @@ import com.hazelcast.collection.impl.queue.QueueDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.BackupOperation;
-import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
-import java.util.HashSet;
 import java.util.Set;
+
+import static com.hazelcast.util.SetUtil.createHashSet;
 
 /**
  * This class triggers backup method for items' ID.
  */
-public class CompareAndRemoveBackupOperation extends QueueOperation implements BackupOperation, MutatingOperation {
+public class CompareAndRemoveBackupOperation extends QueueOperation implements BackupOperation {
 
     private Set<Long> keySet;
 
@@ -67,7 +67,7 @@ public class CompareAndRemoveBackupOperation extends QueueOperation implements B
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         int size = in.readInt();
-        keySet = new HashSet<Long>(size);
+        keySet = createHashSet(size);
         for (int i = 0; i < size; i++) {
             keySet.add(in.readLong());
         }

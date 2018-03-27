@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.StringUtil;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -146,7 +147,7 @@ public class InterceptorTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertEquals(value.toUpperCase(), listener.value.get());
+                assertEquals(value.toUpperCase(StringUtil.LOCALE_INTERNAL), listener.value.get());
             }
         }, 15);
     }
@@ -166,7 +167,7 @@ public class InterceptorTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertEquals(value.toUpperCase(), listener.value.get());
+                assertEquals(value.toUpperCase(StringUtil.LOCALE_INTERNAL), listener.value.get());
             }
         }, 15);
     }
@@ -184,7 +185,7 @@ public class InterceptorTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertEquals(value.toUpperCase(), listener.value.get());
+                assertEquals(value.toUpperCase(StringUtil.LOCALE_INTERNAL), listener.value.get());
             }
         }, 15);
     }
@@ -278,7 +279,7 @@ public class InterceptorTest extends HazelcastTestSupport {
 
         @Override
         public Object interceptPut(Object oldValue, Object newValue) {
-            return newValue.toString().toUpperCase();
+            return newValue.toString().toUpperCase(StringUtil.LOCALE_INTERNAL);
         }
 
         @Override

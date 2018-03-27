@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,9 @@ import com.hazelcast.internal.networking.ChannelInboundHandler;
 import com.hazelcast.internal.util.counters.Counter;
 
 /**
- * Trigger for the ChannelReader to inject the appropriate counters. This is a temporary solution, it would be
- * best if the counters could be defined directly on handlers and automatically get registered + unregistered.
+ * Trigger for the ChannelReader to inject the appropriate counters. This is a
+ * temporary solution, it would be best if the counters could be defined directly
+ * on handlers and automatically get registered + unregistered.
  */
 public abstract class ChannelInboundHandlerWithCounters implements ChannelInboundHandler {
     protected Counter normalPacketsRead;

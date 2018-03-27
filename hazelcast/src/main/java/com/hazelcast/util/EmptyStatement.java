@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,24 +17,19 @@
 package com.hazelcast.util;
 
 /**
- * This class does nothing!
- * <p/>
- * It is useful if you e.g. don't need to do anything with an exception; but checkstyle is complaining that
- * you need to have at least 1 statement.
+ * This class makes CheckStyle happy, if you have an ignored or expected exception,
+ * but need at least a single statement in the {@code catch} clause.
  */
 public final class EmptyStatement {
 
-    //we don't want instances.
     private EmptyStatement() {
     }
 
     /**
-     * Does totally nothing.
+     * Ignores the given exception.
      *
-     * @param t the exception to ignore.
+     * @param t the exception to ignore
      */
     public static void ignore(Throwable t) {
     }
-
-
 }

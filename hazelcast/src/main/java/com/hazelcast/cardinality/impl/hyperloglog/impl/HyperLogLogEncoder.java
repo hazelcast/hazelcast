@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ public interface HyperLogLogEncoder extends IdentifiedDataSerializable {
 
     /**
      * Aggregates the hash value in the HyperLogLog registers, and returns a hint if the
-     * operation migth have affected the cardinality, it is just a hint, and it relies to
+     * operation might have affected the cardinality, it is just a hint, and it relies to
      * the respective implementation.
      *
      * @param hash the value to aggregate
@@ -47,7 +47,17 @@ public interface HyperLogLogEncoder extends IdentifiedDataSerializable {
 
     /**
      * Returns the encoding type of this instance; see: {@link HyperLogLogEncoding}
+     *
      * @return {@link HyperLogLogEncoding}
      */
     HyperLogLogEncoding getEncodingType();
+
+    /**
+     * Merge the two HyperLogLog structures in one. Estimations from both are taken into consideration
+     * and the unified estimate should be similar to the distinct union set of the two.
+     *
+     * @param encoder The second HLL to be merged into this one
+     * @return {@link HyperLogLogEncoder} the union
+     */
+    HyperLogLogEncoder merge(HyperLogLogEncoder encoder);
 }

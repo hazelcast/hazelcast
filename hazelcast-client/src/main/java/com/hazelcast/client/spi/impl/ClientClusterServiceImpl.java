@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -213,16 +213,13 @@ public class ClientClusterServiceImpl implements ClientClusterService {
     void handleMembershipEvent(MembershipEvent event) {
         synchronized (initialMembershipListenerMutex) {
             Member member = event.getMember();
+            LinkedHashMap<Address, Member> newMap = new LinkedHashMap<Address, Member>(members.get());
             if (event.getEventType() == MembershipEvent.MEMBER_ADDED) {
-                LinkedHashMap<Address, Member> newMap = new LinkedHashMap<Address, Member>(members.get());
                 newMap.put(member.getAddress(), member);
-                members.set(Collections.unmodifiableMap(newMap));
             } else {
-                LinkedHashMap<Address, Member> newMap = new LinkedHashMap<Address, Member>(members.get());
                 newMap.remove(member.getAddress());
-                members.set(Collections.unmodifiableMap(newMap));
             }
-
+            members.set(Collections.unmodifiableMap(newMap));
             fireMembershipEvent(event);
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.proxy;
 
+import com.hazelcast.aggregation.Aggregator;
 import com.hazelcast.concurrent.lock.LockProxySupport;
 import com.hazelcast.concurrent.lock.LockServiceImpl;
 import com.hazelcast.config.EntryListenerConfig;
@@ -52,7 +53,10 @@ import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.map.impl.operation.RemoveInterceptorOperation;
 import com.hazelcast.map.impl.query.MapQueryEngine;
+import com.hazelcast.map.impl.query.Query;
 import com.hazelcast.map.impl.query.QueryEventFilter;
+import com.hazelcast.map.impl.query.Result;
+import com.hazelcast.map.impl.query.Target;
 import com.hazelcast.map.impl.querycache.QueryCacheContext;
 import com.hazelcast.map.impl.querycache.subscriber.QueryCacheEndToEndProvider;
 import com.hazelcast.map.impl.querycache.subscriber.SubscriberContext;
@@ -65,6 +69,8 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializableByConvention;
+import com.hazelcast.projection.Projection;
+import com.hazelcast.query.PartitionPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.EventFilter;
@@ -82,6 +88,7 @@ import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.IterableUtil;
+import com.hazelcast.util.IterationType;
 import com.hazelcast.util.MutableLong;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -108,6 +115,7 @@ import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.IterableUtil.nullToEmpty;
 import static com.hazelcast.util.MapUtil.createHashMap;
 import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.util.SetUtil.createHashSet;
 import static com.hazelcast.util.ThreadUtil.getThreadId;
 import static java.lang.Math.ceil;
 import static java.lang.Math.log10;
@@ -758,7 +766,7 @@ abstract class MapProxySupport<K, V>
         int partitions = partitionService.getPartitionCount();
         // TODO: is there better way to estimate the size?
         int capacity = min(partitions, keys.size());
-        Set<Integer> partitionIds = new HashSet<Integer>(capacity);
+        Set<Integer> partitionIds = createHashSet(capacity);
 
         Iterator<Data> iterator = keys.iterator();
         while (iterator.hasNext() && partitionIds.size() < partitions) {
@@ -1128,9 +1136,21 @@ abstract class MapProxySupport<K, V>
      */
     public void executeOnEntriesInternal(EntryProcessor entryProcessor, Predicate predicate, List<Data> result) {
         try {
-            OperationFactory operation
-                    = operationProvider.createPartitionWideEntryWithPredicateOperationFactory(name, entryProcessor, predicate);
-            Map<Integer, Object> results = operationService.invokeOnAllPartitions(SERVICE_NAME, operation);
+            Map<Integer, Object> results;
+            if (predicate instanceof PartitionPredicate) {
+                PartitionPredicate partitionPredicate = (PartitionPredicate) predicate;
+                Data key = toData(partitionPredicate.getPartitionKey());
+                int partitionId = partitionService.getPartitionId(key);
+                handleHazelcastInstanceAwareParams(partitionPredicate.getTarget());
+
+                OperationFactory operation = operationProvider.createPartitionWideEntryWithPredicateOperationFactory(
+                        name, entryProcessor, partitionPredicate.getTarget());
+                results = operationService.invokeOnPartitions(SERVICE_NAME, operation, Collections.singletonList(partitionId));
+            } else {
+                OperationFactory operation = operationProvider.createPartitionWideEntryWithPredicateOperationFactory(
+                        name, entryProcessor, predicate);
+                results = operationService.invokeOnAllPartitions(SERVICE_NAME, operation);
+            }
             for (Object object : results.values()) {
                 if (object != null) {
                     MapEntries mapEntries = (MapEntries) object;
@@ -1208,6 +1228,42 @@ abstract class MapProxySupport<K, V>
     private void publishMapEvent(int numberOfAffectedEntries, EntryEventType eventType) {
         MapEventPublisher mapEventPublisher = mapServiceContext.getMapEventPublisher();
         mapEventPublisher.publishMapEvent(thisAddress, name, eventType, numberOfAffectedEntries);
+    }
+
+    protected <T extends Result> T executeQueryInternal(Predicate predicate, IterationType iterationType, Target target) {
+        return executeQueryInternal(predicate, null, null, iterationType, target);
+    }
+
+    protected <T extends Result> T executeQueryInternal(Predicate predicate, Aggregator aggregator, Projection projection,
+                                                        IterationType iterationType, Target target) {
+        MapQueryEngine queryEngine = getMapQueryEngine();
+        Predicate userPredicate = predicate;
+
+        if (predicate instanceof PartitionPredicate) {
+            PartitionPredicate partitionPredicate = (PartitionPredicate) predicate;
+            Data key = toData(partitionPredicate.getPartitionKey());
+            int partitionId = partitionService.getPartitionId(key);
+            userPredicate = partitionPredicate.getTarget();
+            target = Target.of().partitionOwner(partitionId).build();
+        }
+        handleHazelcastInstanceAwareParams(userPredicate);
+
+        Query query = Query.of()
+                .mapName(getName())
+                .predicate(userPredicate)
+                .iterationType(iterationType)
+                .aggregator(aggregator)
+                .projection(projection)
+                .build();
+        return queryEngine.execute(query, target);
+    }
+
+    protected void handleHazelcastInstanceAwareParams(Object... objects) {
+        for (Object object : objects) {
+            if (object instanceof HazelcastInstanceAware) {
+                ((HazelcastInstanceAware) object).setHazelcastInstance(getNodeEngine().getHazelcastInstance());
+            }
+        }
     }
 
     private class IncrementStatsExecutionCallback<T> implements ExecutionCallback<T> {

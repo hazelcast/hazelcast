@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,10 @@ import com.hazelcast.core.MapEvent;
 public interface MapClearedListener extends MapListener {
     /**
      * Invoked when all entries are removed by {@link com.hazelcast.core.IMap#clear()}.
+     *
+     * When a listener is registered as local-only then it will be invoked if and only if
+     * the <code>clear()</code> method is called on the same instance where the listener
+     * was registered to.
      *
      * @param event the map event invoked when all entries are removed by {@link com.hazelcast.core.IMap#clear()}
      */

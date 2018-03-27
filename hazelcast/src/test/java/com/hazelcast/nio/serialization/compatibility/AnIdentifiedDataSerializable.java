@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -353,13 +353,19 @@ public class AnIdentifiedDataSerializable implements IdentifiedDataSerializable 
         if (portableObject != null ? !portableObject.equals(that.portableObject) : that.portableObject != null) {
             return false;
         }
-        if (identifiedDataSerializableObject != null ? !identifiedDataSerializableObject.equals(that.identifiedDataSerializableObject) : that.identifiedDataSerializableObject != null) {
+        if (identifiedDataSerializableObject != null
+                ? !identifiedDataSerializableObject.equals(that.identifiedDataSerializableObject)
+                : that.identifiedDataSerializableObject != null) {
             return false;
         }
-        if (customStreamSerializableObject != null ? !customStreamSerializableObject.equals(that.customStreamSerializableObject) : that.customStreamSerializableObject != null) {
+        if (customStreamSerializableObject != null
+                ? !customStreamSerializableObject.equals(that.customStreamSerializableObject)
+                : that.customStreamSerializableObject != null) {
             return false;
         }
-        if (customByteArraySerializableObject != null ? !customByteArraySerializableObject.equals(that.customByteArraySerializableObject) : that.customByteArraySerializableObject != null) {
+        if (customByteArraySerializableObject != null
+                ? !customByteArraySerializableObject.equals(that.customByteArraySerializableObject)
+                : that.customByteArraySerializableObject != null) {
             return false;
         }
         return !(data != null ? !data.equals(that.data) : that.data != null);

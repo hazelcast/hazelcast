@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,20 +16,27 @@
 
 package com.hazelcast.cardinality.impl;
 
+import com.hazelcast.cardinality.impl.operations.MergeOperation;
 import com.hazelcast.cardinality.impl.operations.ReplicationOperation;
 import com.hazelcast.config.CardinalityEstimatorConfig;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PartitionReplicationEvent;
+import com.hazelcast.spi.QuorumAwareService;
 import com.hazelcast.spi.RemoteService;
+import com.hazelcast.spi.SplitBrainHandlerService;
+import com.hazelcast.spi.impl.merge.AbstractContainerMerger;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.partition.MigrationEndpoint;
 import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.util.ContextMutexFactory;
 
-import java.util.HashMap;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
@@ -38,12 +45,22 @@ import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getPartitionKey;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
+import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
+import static com.hazelcast.util.MapUtil.createHashMap;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 public class CardinalityEstimatorService
-        implements ManagedService, RemoteService, MigrationAwareService {
+        implements ManagedService, RemoteService, MigrationAwareService, QuorumAwareService, SplitBrainHandlerService {
 
     public static final String SERVICE_NAME = "hz:impl:cardinalityEstimatorService";
+
+    /**
+     * Speculative factor to be used when initialising collections
+     * of an approximate final size.
+     */
+    private static final double SIZING_FUDGE_FACTOR = 1.3;
+
+    private static final Object NULL_OBJECT = new Object();
 
     private NodeEngine nodeEngine;
     private final ConcurrentMap<String, CardinalityEstimatorContainer> containers =
@@ -56,6 +73,17 @@ public class CardinalityEstimatorService
                     return new CardinalityEstimatorContainer(config.getBackupCount(), config.getAsyncBackupCount());
                 }
             };
+
+    private final ConcurrentMap<String, Object> quorumConfigCache = new ConcurrentHashMap<String, Object>();
+    private final ContextMutexFactory quorumConfigCacheMutexFactory = new ContextMutexFactory();
+    private final ConstructorFunction<String, Object> quorumConfigConstructor = new ConstructorFunction<String, Object>() {
+        @Override
+        public Object createNew(String name) {
+            CardinalityEstimatorConfig config = nodeEngine.getConfig().findCardinalityEstimatorConfig(name);
+            String quorumName = config.getQuorumName();
+            return quorumName == null ? NULL_OBJECT : quorumName;
+        }
+    };
 
     public void addCardinalityEstimator(String name, CardinalityEstimatorContainer container) {
         checkNotNull(name, "Name can't be null");
@@ -91,6 +119,7 @@ public class CardinalityEstimatorService
     @Override
     public void destroyDistributedObject(String objectName) {
         containers.remove(objectName);
+        quorumConfigCache.remove(objectName);
     }
 
     @Override
@@ -99,7 +128,9 @@ public class CardinalityEstimatorService
 
     @Override
     public Operation prepareReplicationOperation(PartitionReplicationEvent event) {
-        Map<String, CardinalityEstimatorContainer> data = new HashMap<String, CardinalityEstimatorContainer>();
+        final IPartitionService partitionService = nodeEngine.getPartitionService();
+        final int roughSize = (int) ((containers.size() * SIZING_FUDGE_FACTOR) / partitionService.getPartitionCount());
+        Map<String, CardinalityEstimatorContainer> data = createHashMap(roughSize);
         int partitionId = event.getPartitionId();
         for (Map.Entry<String, CardinalityEstimatorContainer> containerEntry : containers.entrySet()) {
             String name = containerEntry.getKey();
@@ -143,5 +174,53 @@ public class CardinalityEstimatorService
         IPartitionService partitionService = nodeEngine.getPartitionService();
         String partitionKey = getPartitionKey(name);
         return partitionService.getPartitionId(partitionKey);
+    }
+
+    @Override
+    public String getQuorumName(String name) {
+        // RU_COMPAT_3_9
+        if (nodeEngine.getClusterService().getClusterVersion().isLessThan(Versions.V3_10)) {
+            return null;
+        }
+        Object quorumName = getOrPutSynchronized(quorumConfigCache, name, quorumConfigCacheMutexFactory, quorumConfigConstructor);
+        return quorumName == NULL_OBJECT ? null : (String) quorumName;
+    }
+
+    @Override
+    public Runnable prepareMergeRunnable() {
+        CardinalityEstimatorContainerCollector collector = new CardinalityEstimatorContainerCollector(nodeEngine, containers);
+        collector.run();
+        return new Merger(collector);
+    }
+
+    private class Merger extends AbstractContainerMerger<CardinalityEstimatorContainer> {
+
+        Merger(CardinalityEstimatorContainerCollector collector) {
+            super(collector, nodeEngine);
+        }
+
+        @Override
+        protected String getLabel() {
+            return "cardinality estimator";
+        }
+
+        @Override
+        public void runInternal() {
+            CardinalityEstimatorContainerCollector collector = (CardinalityEstimatorContainerCollector) this.collector;
+            Map<Integer, Collection<CardinalityEstimatorContainer>> containerMap = collector.getCollectedContainers();
+            for (Map.Entry<Integer, Collection<CardinalityEstimatorContainer>> entry : containerMap.entrySet()) {
+                // TODO: batching support (tkountis)
+                int partitionId = entry.getKey();
+                Collection<CardinalityEstimatorContainer> containerList = entry.getValue();
+
+                for (CardinalityEstimatorContainer container : containerList) {
+                    String containerName = collector.getContainerName(container);
+                    SplitBrainMergePolicy mergePolicy = getMergePolicy(collector.getMergePolicyConfig(container));
+
+                    MergeOperation operation = new MergeOperation(containerName, mergePolicy, container.hll);
+                    invoke(SERVICE_NAME, operation, partitionId);
+                }
+            }
+        }
     }
 }

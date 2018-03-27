@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,9 +29,13 @@ import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.spi.merge.MergingEntry;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 
 import java.util.List;
 import java.util.Set;
+
+import static java.util.Collections.singletonList;
 
 /**
  * Creates map operations.
@@ -184,9 +188,15 @@ public class DefaultMapOperationProvider implements MapOperationProvider {
     }
 
     @Override
-    public MapOperation createMergeOperation(String name, Data dataKey, EntryView<Data, Data> entryView,
-                                             MapMergePolicy policy, boolean disableWanReplicationEvent) {
-        return new MergeOperation(name, dataKey, entryView, policy, disableWanReplicationEvent);
+    public MapOperation createLegacyMergeOperation(String name, EntryView<Data, Data> mergingEntry,
+                                                   MapMergePolicy policy, boolean disableWanReplicationEvent) {
+        return new LegacyMergeOperation(name, mergingEntry, policy, disableWanReplicationEvent);
+    }
+
+    @Override
+    public MapOperation createMergeOperation(String name, MergingEntry<Data, Data> mergingValue,
+                                             SplitBrainMergePolicy mergePolicy, boolean disableWanReplicationEvent) {
+        return new MergeOperation(name, singletonList(mergingValue), mergePolicy, disableWanReplicationEvent);
     }
 
     @Override
@@ -242,6 +252,13 @@ public class DefaultMapOperationProvider implements MapOperationProvider {
         return new PutAllPartitionAwareOperationFactory(name, partitions, mapEntries);
     }
 
+    @Override
+    public OperationFactory createMergeOperationFactory(String name, int[] partitions,
+                                                        List<MergingEntry<Data, Data>>[] mergingEntries,
+                                                        SplitBrainMergePolicy mergePolicy) {
+        return new MergeOperationFactory(name, partitions, mergingEntries, mergePolicy);
+    }
+    
     @Override
     public OperationFactory createContainsValueExceptKeysOperation(String name, Object value, Set<Data> deletedKeys) {
         return new ContainsValueExceptKeysFactory(name, value, deletedKeys);

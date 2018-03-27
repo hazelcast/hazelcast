@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -216,7 +216,11 @@ public class RestClusterTest extends HazelcastTestSupport {
             assertEquals("{\"status\":\"success\"}", communicator.shutdownMember("dev", "dev-pass"));
         } catch (ConnectException ignored) {
             // if node shuts down before response is received, `java.net.ConnectException: Connection refused` is expected
+        } catch (NoHttpResponseException ignored) {
+            // `NoHttpResponseException` is also a possible outcome when a node shut down before it has a chance
+            // to send a response back to a client.
         }
+
 
         assertOpenEventually(shutdownLatch);
         assertFalse(instance.getLifecycleService().isRunning());
@@ -236,11 +240,11 @@ public class RestClusterTest extends HazelcastTestSupport {
         HTTPCommunicator communicator = new HTTPCommunicator(instance);
         String result = communicator.getClusterHealth();
 
-        assertEquals("Hazelcast::NodeState=ACTIVE\n" +
-                "Hazelcast::ClusterState=ACTIVE\n" +
-                "Hazelcast::ClusterSafe=TRUE\n" +
-                "Hazelcast::MigrationQueueSize=0\n" +
-                "Hazelcast::ClusterSize=1\n", result);
+        assertEquals("Hazelcast::NodeState=ACTIVE\n"
+                + "Hazelcast::ClusterState=ACTIVE\n"
+                + "Hazelcast::ClusterSafe=TRUE\n"
+                + "Hazelcast::MigrationQueueSize=0\n"
+                + "Hazelcast::ClusterSize=1\n", result);
     }
 
     @Test(expected = NoHttpResponseException.class)

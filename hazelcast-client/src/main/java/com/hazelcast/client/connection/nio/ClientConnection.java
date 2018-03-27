@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package com.hazelcast.client.connection.nio;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.spi.ClientInvocationService;
+import com.hazelcast.client.spi.impl.ClientResponseHandler;
 import com.hazelcast.client.spi.impl.listener.AbstractClientListenerService;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.instance.BuildInfo;
@@ -60,6 +60,7 @@ public class ClientConnection implements Connection {
     private final LifecycleService lifecycleService;
     private final HazelcastClientInstanceImpl client;
     private final long startTime = System.currentTimeMillis();
+    private final ClientResponseHandler responseHandler;
 
     private volatile Address remoteEndpoint;
     private volatile boolean isHeartBeating = true;
@@ -75,10 +76,9 @@ public class ClientConnection implements Connection {
     private int connectedServerVersion = BuildInfo.UNKNOWN_HAZELCAST_VERSION;
     private String connectedServerVersionString;
 
-    public ClientConnection(HazelcastClientInstanceImpl client,
-                            int connectionId,
-                            Channel channel) throws IOException {
+    public ClientConnection(HazelcastClientInstanceImpl client, int connectionId, Channel channel) {
         this.client = client;
+        this.responseHandler = client.getInvocationService().getResponseHandler();
         this.connectionManager = (ClientConnectionManagerImpl) client.getConnectionManager();
         this.lifecycleService = client.getLifecycleService();
         this.channel = channel;
@@ -87,9 +87,9 @@ public class ClientConnection implements Connection {
         this.logger = client.getLoggingService().getLogger(ClientConnection.class);
     }
 
-    public ClientConnection(HazelcastClientInstanceImpl client,
-                            int connectionId) throws IOException {
+    public ClientConnection(HazelcastClientInstanceImpl client, int connectionId) {
         this.client = client;
+        this.responseHandler = client.getInvocationService().getResponseHandler();
         this.connectionManager = (ClientConnectionManagerImpl) client.getConnectionManager();
         this.lifecycleService = client.getLifecycleService();
         this.connectionId = connectionId;
@@ -163,7 +163,7 @@ public class ClientConnection implements Connection {
 
     @Override
     public InetSocketAddress getRemoteSocketAddress() {
-        return (InetSocketAddress) channel.getRemoteSocketAddress();
+        return (InetSocketAddress) channel.remoteSocketAddress();
     }
 
     @Override
@@ -180,7 +180,7 @@ public class ClientConnection implements Connection {
     }
 
     public InetSocketAddress getLocalSocketAddress() {
-        return (InetSocketAddress) channel.getLocalSocketAddress();
+        return (InetSocketAddress) channel.localSocketAddress();
     }
 
     @Override
@@ -249,13 +249,12 @@ public class ClientConnection implements Connection {
     }
 
     public void handleClientMessage(ClientMessage message) {
-        ClientInvocationService invocationService = client.getInvocationService();
         incrementPendingPacketCount();
         if (message.isFlagSet(ClientMessage.LISTENER_EVENT_FLAG)) {
             AbstractClientListenerService listenerService = (AbstractClientListenerService) client.getListenerService();
             listenerService.handleClientMessage(message, this);
         } else {
-            invocationService.handleClientMessage(message, this);
+            responseHandler.handle(message, this);
         }
     }
 
@@ -302,12 +301,7 @@ public class ClientConnection implements Connection {
         }
 
         ClientConnection that = (ClientConnection) o;
-
-        if (connectionId != that.connectionId) {
-            return false;
-        }
-
-        return true;
+        return connectionId == that.connectionId;
     }
 
     @Override
@@ -352,5 +346,4 @@ public class ClientConnection implements Connection {
     public String getConnectedServerVersionString() {
         return connectedServerVersionString;
     }
-
 }

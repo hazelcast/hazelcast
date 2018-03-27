@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -80,6 +80,7 @@ public class AtomicReferenceMigrationTest extends HazelcastTestSupport {
     }
 
     static class SimpleObject implements DataSerializable, Serializable {
+
         int field;
 
         SimpleObject(int field) {
@@ -117,11 +118,9 @@ public class AtomicReferenceMigrationTest extends HazelcastTestSupport {
             }
 
             SimpleObject that = (SimpleObject) o;
-
             if (field != that.field) {
                 return false;
             }
-
             return true;
         }
 

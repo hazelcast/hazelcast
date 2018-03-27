@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import com.hazelcast.internal.management.dto.OperationServiceDTO;
 import com.hazelcast.internal.management.dto.PartitionServiceBeanDTO;
 import com.hazelcast.internal.management.dto.ProxyServiceDTO;
 import com.hazelcast.internal.partition.InternalPartitionService;
+import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.monitor.impl.MemberStateImpl;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.spi.EventService;
@@ -41,8 +42,9 @@ import java.lang.management.OperatingSystemMXBean;
 import java.lang.management.RuntimeMXBean;
 import java.lang.management.ThreadMXBean;
 import java.lang.reflect.Method;
-import java.util.HashMap;
 import java.util.Map;
+
+import static com.hazelcast.util.MapUtil.createHashMap;
 
 /**
  * Helper class to be gather JMX related stats for {@link TimedMemberStateFactory}
@@ -107,8 +109,9 @@ final class TimedMemberStateFactoryHelper {
         MemoryMXBean memoryMxBean = ManagementFactory.getMemoryMXBean();
         MemoryUsage heapMemory = memoryMxBean.getHeapMemoryUsage();
         MemoryUsage nonHeapMemory = memoryMxBean.getNonHeapMemoryUsage();
-        Map<String, Long> map = new HashMap<String, Long>();
-        map.put("runtime.availableProcessors", Integer.valueOf(runtime.availableProcessors()).longValue());
+        final int propertyCount = 29;
+        Map<String, Long> map = createHashMap(propertyCount);
+        map.put("runtime.availableProcessors", (long) RuntimeAvailableProcessors.get());
         map.put("date.startTime", runtimeMxBean.getStartTime());
         map.put("seconds.upTime", runtimeMxBean.getUptime());
         map.put("memory.maxMemory", runtime.maxMemory());
@@ -161,8 +164,8 @@ final class TimedMemberStateFactoryHelper {
                 return (Long) value;
             }
             return defaultValue;
-        } catch (RuntimeException re) {
-            throw re;
+        } catch (RuntimeException e) {
+            return defaultValue;
         } catch (Exception e) {
             return defaultValue;
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package com.hazelcast.map.impl.operation;
 
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.ExpiredKey;
@@ -57,8 +56,6 @@ public class EvictBatchBackupOperation extends MapOperation implements BackupOpe
 
     @Override
     public void run() {
-        assert getNodeEngine().getClusterService().getClusterVersion().isGreaterOrEqual(Versions.V3_9);
-
         for (ExpiredKey expiredKey : expiredKeys) {
             Record existingRecord = recordStore.getRecord(expiredKey.getKey());
             if (canEvictRecord(existingRecord, expiredKey)) {

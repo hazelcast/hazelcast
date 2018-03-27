@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,7 +51,7 @@ public class HazelcastProxyFactoryTest {
         // HazelcastAPIDelegatingClassloader will reload the bytes of ProxiedInterface as a new class
         // as happens with every com.hazelcast class that contains "test"
         HazelcastAPIDelegatingClassloader targetClassLoader =
-                new HazelcastAPIDelegatingClassloader(new URL[] {}, HazelcastProxyFactoryTest.class.getClassLoader());
+                new HazelcastAPIDelegatingClassloader(new URL[]{}, HazelcastProxyFactoryTest.class.getClassLoader());
 
         Object proxy = HazelcastProxyFactory.proxyObjectForStarter(targetClassLoader, delegate);
 

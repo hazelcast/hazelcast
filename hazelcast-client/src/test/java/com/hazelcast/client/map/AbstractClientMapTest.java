@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,22 +21,22 @@ import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastTestSupport;
-import org.junit.After;
-import org.junit.Before;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 
 @SuppressWarnings("WeakerAccess")
 public abstract class AbstractClientMapTest extends HazelcastTestSupport {
 
-    protected final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+    protected static TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
-    protected HazelcastInstance client;
+    protected static HazelcastInstance client;
 
-    protected HazelcastInstance member1;
-    protected HazelcastInstance member2;
+    protected static HazelcastInstance member1;
+    protected static HazelcastInstance member2;
 
-    @Before
-    public final void startHazelcastInstances() {
-        Config config = getConfig();
+    @BeforeClass
+    public static final void startHazelcastInstances() {
+        Config config = regularInstanceConfig();
         ClientConfig clientConfig = getClientConfig();
 
         member1 = hazelcastFactory.newHazelcastInstance(config);
@@ -45,12 +45,12 @@ public abstract class AbstractClientMapTest extends HazelcastTestSupport {
         client = hazelcastFactory.newHazelcastClient(clientConfig);
     }
 
-    @After
-    public final void stopHazelcastInstances() {
+    @AfterClass
+    public static final void stopHazelcastInstances() {
         hazelcastFactory.terminateAll();
     }
 
-    protected ClientConfig getClientConfig() {
+    protected static ClientConfig getClientConfig() {
         return new ClientConfig();
     }
 }

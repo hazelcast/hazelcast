@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,13 +40,19 @@ import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.query.impl.getters.ReflectionHelper;
 import com.hazelcast.query.impl.predicates.AndPredicate;
 import com.hazelcast.query.impl.predicates.EqualPredicate;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -59,9 +65,22 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(Parameterized.class)
+@UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category(QuickTest.class)
 public class IndexTest {
+
+    @Parameter(0)
+    public IndexCopyBehavior copyBehavior;
+
+    @Parameters(name = "copyBehavior: {0}")
+    public static Collection<Object[]> parameters() {
+        return Arrays.asList(new Object[][]{
+                {IndexCopyBehavior.COPY_ON_READ},
+                {IndexCopyBehavior.COPY_ON_WRITE},
+                {IndexCopyBehavior.NEVER},
+        });
+    }
 
     static final short FACTORY_ID = 1;
 
@@ -84,7 +103,7 @@ public class IndexTest {
 
     @Test
     public void testRemoveEnumIndex() {
-        Indexes is = new Indexes(ss, new DefaultIndexProvider(), Extractors.empty(), true);
+        Indexes is = new Indexes(ss, new DefaultIndexProvider(), Extractors.empty(), true, copyBehavior);
         is.addOrGetIndex("favoriteCity", false);
         Data key = ss.toData(1);
         Data value = ss.toData(new SerializableWithEnum(SerializableWithEnum.City.ISTANBUL));
@@ -98,7 +117,7 @@ public class IndexTest {
 
     @Test
     public void testUpdateEnumIndex() {
-        Indexes is = new Indexes(ss, new DefaultIndexProvider(), Extractors.empty(), true);
+        Indexes is = new Indexes(ss, new DefaultIndexProvider(), Extractors.empty(), true, copyBehavior);
         is.addOrGetIndex("favoriteCity", false);
         Data key = ss.toData(1);
         Data value = ss.toData(new SerializableWithEnum(SerializableWithEnum.City.ISTANBUL));
@@ -113,7 +132,7 @@ public class IndexTest {
 
     @Test
     public void testIndex() throws QueryException {
-        Indexes is = new Indexes(ss, new DefaultIndexProvider(), Extractors.empty(), true);
+        Indexes is = new Indexes(ss, new DefaultIndexProvider(), Extractors.empty(), true, copyBehavior);
         Index dIndex = is.addOrGetIndex("d", false);
         Index boolIndex = is.addOrGetIndex("bool", false);
         Index strIndex = is.addOrGetIndex("str", false);
@@ -175,7 +194,7 @@ public class IndexTest {
 
     @Test
     public void testIndexWithNull() throws QueryException {
-        Indexes is = new Indexes(ss, new DefaultIndexProvider(), Extractors.empty(), true);
+        Indexes is = new Indexes(ss, new DefaultIndexProvider(), Extractors.empty(), true, copyBehavior);
         Index strIndex = is.addOrGetIndex("str", true);
 
         Data value = ss.toData(new MainPortable(false, 1, null));
@@ -362,17 +381,17 @@ public class IndexTest {
 
         @Override
         public String toString() {
-            return "MainPortable{" +
-                    "b=" + b +
-                    ", bool=" + bool +
-                    ", c=" + c +
-                    ", s=" + s +
-                    ", i=" + i +
-                    ", l=" + l +
-                    ", f=" + f +
-                    ", d=" + d +
-                    ", str='" + str + '\'' +
-                    '}';
+            return "MainPortable{"
+                    + "b=" + b
+                    + ", bool=" + bool
+                    + ", c=" + c
+                    + ", s=" + s
+                    + ", i=" + i
+                    + ", l=" + l
+                    + ", f=" + f
+                    + ", d=" + d
+                    + ", str='" + str + '\''
+                    + '}';
         }
 
         public int getFactoryId() {
@@ -449,7 +468,8 @@ public class IndexTest {
     }
 
     private void testIt(boolean ordered) {
-        IndexImpl index = new IndexImpl(QueryConstants.THIS_ATTRIBUTE_NAME.value(), ordered, ss, Extractors.empty());
+        IndexImpl index
+                = new IndexImpl(QueryConstants.THIS_ATTRIBUTE_NAME.value(), ordered, ss, Extractors.empty(), copyBehavior);
         assertEquals(0, index.getRecords(0L).size());
         assertEquals(0, index.getSubRecordsBetween(0L, 1000L).size());
         QueryRecord record5 = newRecord(5L, 55L);

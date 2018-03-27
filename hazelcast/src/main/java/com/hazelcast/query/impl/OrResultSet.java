@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,10 +23,15 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
+import static com.hazelcast.util.SetUtil.createHashSet;
+
 /**
  * Or result set for Predicates.
  */
 public class OrResultSet extends AbstractSet<QueryableEntry> {
+
+    private static final int ENTRY_MULTIPLE = 4;
+    private static final int ENTRY_MIN_SIZE = 8;
 
     private final List<Set<QueryableEntry>> indexedResults;
     private Set<QueryableEntry> entries;
@@ -77,7 +82,7 @@ public class OrResultSet extends AbstractSet<QueryableEntry> {
                 if (indexedResults.size() == 1) {
                     entries = new HashSet<QueryableEntry>(indexedResults.get(0));
                 } else {
-                    entries = new HashSet<QueryableEntry>();
+                    entries = createHashSet(Math.max(ENTRY_MIN_SIZE, indexedResults.size() * ENTRY_MULTIPLE));
                     for (Set<QueryableEntry> result : indexedResults) {
                         entries.addAll(result);
                     }

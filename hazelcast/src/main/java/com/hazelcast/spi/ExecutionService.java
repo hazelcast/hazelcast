@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,6 +56,11 @@ public interface ExecutionService {
      * Name of the client executor.
      */
     String CLIENT_QUERY_EXECUTOR = "hz:client-query";
+
+    /**
+     * Name of the client management executor.
+     */
+    String CLIENT_MANAGEMENT_EXECUTOR = "hz:client-management";
 
     /**
      * Name of the query executor.

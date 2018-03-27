@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,6 @@ import com.hazelcast.map.impl.query.QueryEntryFactory;
 import com.hazelcast.map.impl.record.DataRecordFactory;
 import com.hazelcast.map.impl.record.ObjectRecordFactory;
 import com.hazelcast.map.impl.record.RecordFactory;
-import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializableByConvention;
@@ -88,7 +87,7 @@ public class MapContainer {
     // so if globalIndexes is null it means that global index is not in use
     protected final Indexes globalIndexes;
 
-    // RU_COMPAT_38
+    // RU_COMPAT_3_9
     /**
      * Definitions of indexes that need to be added on partition threads
      *
@@ -107,7 +106,7 @@ public class MapContainer {
     protected final ObjectNamespace objectNamespace;
 
     protected WanReplicationPublisher wanReplicationPublisher;
-    protected MapMergePolicy wanMergePolicy;
+    protected Object wanMergePolicy;
 
     protected volatile Evictor evictor;
     protected volatile MapConfig mapConfig;
@@ -135,7 +134,8 @@ public class MapContainer {
         this.extractors = new Extractors(mapConfig.getMapAttributeConfigs(), config.getClassLoader());
         if (shouldUseGlobalIndex(mapConfig)) {
             this.globalIndexes = new Indexes((InternalSerializationService) serializationService,
-                    mapServiceContext.getIndexProvider(mapConfig), extractors, true);
+                    mapServiceContext.getIndexProvider(mapConfig), extractors,
+                    true, mapServiceContext.getIndexCopyBehavior());
         } else {
             this.globalIndexes = null;
         }
@@ -237,12 +237,16 @@ public class MapContainer {
         return wanReplicationPublisher;
     }
 
-    public MapMergePolicy getWanMergePolicy() {
+    public Object getWanMergePolicy() {
         return wanMergePolicy;
     }
 
     public boolean isWanReplicationEnabled() {
         return wanReplicationPublisher != null && wanMergePolicy != null;
+    }
+
+    public boolean isWanRepublishingEnabled() {
+        return isWanReplicationEnabled() && mapConfig.getWanReplicationRef().isRepublishingEnabled();
     }
 
     /**

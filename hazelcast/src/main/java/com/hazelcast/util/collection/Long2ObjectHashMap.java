@@ -34,10 +34,10 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.collection.Hashing.longHash;
 
 /**
- * {@link java.util.Map} implementation specialised for long keys using open addressing and
+ * {@link java.util.Map} implementation specialised for {@code long} keys using open addressing and
  * linear probing for cache efficient access.
- *
- * NOTE: This map doesn't support {@code null} keys and values!
+ * <p>
+ * NOTE: This map doesn't support {@code null} keys and values.
  *
  * @param <V> values stored in the {@link java.util.Map}
  */
@@ -208,7 +208,7 @@ public class Long2ObjectHashMap<V> implements Map<Long, V> {
     }
 
     /**
-     * Overloaded version of {@link Map#put(Object, Object)} that takes a primitive int key.
+     * Overloaded version of {@link Map#put(Object, Object)} that takes a primitive long key.
      *
      * @param key   for indexing the {@link Map}
      * @param value to be inserted in the {@link Map}
@@ -243,7 +243,7 @@ public class Long2ObjectHashMap<V> implements Map<Long, V> {
     }
 
     /**
-     * Overloaded version of {@link Map#remove(Object)} that takes a primitive int key.
+     * Overloaded version of {@link Map#remove(Object)} that takes a primitive long key.
      *
      * @param key for indexing the {@link Map}
      * @return the value if found otherwise null

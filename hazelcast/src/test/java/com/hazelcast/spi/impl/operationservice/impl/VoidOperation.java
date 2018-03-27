@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import java.io.IOException;
 
 /**
  * An operation that doesn't return a response.
- *
+ * <p>
  * This is practical for testing heartbeats and timeouts
  * when the caller is going to wait for a response.
  */

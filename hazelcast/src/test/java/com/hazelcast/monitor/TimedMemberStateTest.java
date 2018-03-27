@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,13 +25,11 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-
-import java.util.HashSet;
-import java.util.Set;
 
 import static com.hazelcast.instance.TestUtil.getHazelcastInstanceImpl;
 import static org.junit.Assert.assertEquals;
@@ -47,30 +45,23 @@ public class TimedMemberStateTest extends HazelcastTestSupport {
 
     @Before
     public void setUp() {
-        Set<String> instanceNames = new HashSet<String>();
-        instanceNames.add("topicStats");
-
         hz = createHazelcastInstance();
         TimedMemberStateFactory timedMemberStateFactory = new TimedMemberStateFactory(getHazelcastInstanceImpl(hz));
 
         timedMemberState = timedMemberStateFactory.createTimedMemberState();
         timedMemberState.setClusterName("ClusterName");
         timedMemberState.setTime(1827731);
-        timedMemberState.setInstanceNames(instanceNames);
         timedMemberState.setSslEnabled(true);
         timedMemberState.setLite(true);
     }
 
     @Test
-    public void testClone() throws InterruptedException, CloneNotSupportedException {
+    public void testClone() throws CloneNotSupportedException {
         TimedMemberState cloned = timedMemberState.clone();
 
         assertNotNull(cloned);
         assertEquals("ClusterName", cloned.getClusterName());
         assertEquals(1827731, cloned.getTime());
-        assertNotNull(cloned.getInstanceNames());
-        assertEquals(1, cloned.getInstanceNames().size());
-        assertContains(cloned.getInstanceNames(), "topicStats");
         assertNotNull(cloned.getMemberState());
         assertTrue(cloned.isSslEnabled());
         assertTrue(cloned.isLite());
@@ -78,7 +69,7 @@ public class TimedMemberStateTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testSerialization() throws InterruptedException, CloneNotSupportedException {
+    public void testSerialization() {
         JsonObject serialized = timedMemberState.toJson();
         TimedMemberState deserialized = new TimedMemberState();
         deserialized.fromJson(serialized);
@@ -86,9 +77,6 @@ public class TimedMemberStateTest extends HazelcastTestSupport {
         assertNotNull(deserialized);
         assertEquals("ClusterName", deserialized.getClusterName());
         assertEquals(1827731, deserialized.getTime());
-        assertNotNull(deserialized.getInstanceNames());
-        assertEquals(1, deserialized.getInstanceNames().size());
-        assertContains(deserialized.getInstanceNames(), "topicStats");
         assertNotNull(deserialized.getMemberState());
         assertTrue(deserialized.isSslEnabled());
         assertTrue(deserialized.isLite());

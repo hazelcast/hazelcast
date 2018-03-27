@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package com.hazelcast.spi.impl.operationexecutor;
 
-import com.hazelcast.spi.LiveOperations;
+import com.hazelcast.spi.LiveOperationsTracker;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.PacketHandler;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
@@ -34,7 +34,7 @@ import com.hazelcast.spi.impl.operationexecutor.impl.OperationExecutorImpl;
  * The actual processing of a operation-packet, Operation, or a PartitionSpecificRunnable is forwarded to the
  * {@link OperationRunner}.
  */
-public interface OperationExecutor extends PacketHandler {
+public interface OperationExecutor extends PacketHandler, LiveOperationsTracker {
 
     // Will be replaced by metrics
     @Deprecated
@@ -128,8 +128,6 @@ public interface OperationExecutor extends PacketHandler {
      * @throws java.lang.NullPointerException if op is null.
      */
     void runOrExecute(Operation op);
-
-    void scan(LiveOperations result);
 
     /**
      * Checks if the {@link Operation} is allowed to run on the current thread.

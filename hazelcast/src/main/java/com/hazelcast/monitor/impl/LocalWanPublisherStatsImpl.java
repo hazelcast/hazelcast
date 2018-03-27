@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,9 @@ package com.hazelcast.monitor.impl;
 
 import com.eclipsesource.json.JsonObject;
 import com.hazelcast.monitor.LocalWanPublisherStats;
+import com.hazelcast.wan.impl.WanEventCounter.EventCounter;
 
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
 import static com.hazelcast.util.JsonUtil.getBoolean;
@@ -39,6 +41,8 @@ public class LocalWanPublisherStatsImpl implements LocalWanPublisherStats {
     private volatile int outboundQueueSize;
     private volatile long totalPublishLatency;
     private volatile long totalPublishedEventCount;
+    private volatile Map<String, EventCounter> sentMapEventCounter;
+    private volatile Map<String, EventCounter> sentCacheEventCounter;
 
     @Override
     public boolean isConnected() {
@@ -75,6 +79,24 @@ public class LocalWanPublisherStatsImpl implements LocalWanPublisherStats {
     @Override
     public long getTotalPublishedEventCount() {
         return totalPublishedEventCount;
+    }
+
+    @Override
+    public Map<String, EventCounter> getSentMapEventCounter() {
+        return sentMapEventCounter;
+    }
+
+    @Override
+    public Map<String, EventCounter> getSentCacheEventCounter() {
+        return sentCacheEventCounter;
+    }
+
+    public void setSentMapEventCounter(Map<String, EventCounter> sentMapEventCounter) {
+        this.sentMapEventCounter = sentMapEventCounter;
+    }
+
+    public void setSentCacheEventCounter(Map<String, EventCounter> sentCacheEventCounter) {
+        this.sentCacheEventCounter = sentCacheEventCounter;
     }
 
     public void incrementPublishedEventCount(long latency) {

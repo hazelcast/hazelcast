@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package com.hazelcast.internal.partition.impl;
 
 import com.hazelcast.instance.Node;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.NonFragmentedServiceNamespace;
@@ -40,7 +39,6 @@ import com.hazelcast.util.scheduler.EntryTaskSchedulerFactory;
 import com.hazelcast.util.scheduler.ScheduleType;
 import com.hazelcast.util.scheduler.ScheduledEntry;
 import com.hazelcast.util.scheduler.ScheduledEntryProcessor;
-import com.hazelcast.version.Version;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -79,8 +77,6 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
 
     private final long partitionMigrationTimeout;
     private final int maxParallelReplications;
-
-    private volatile Version clusterVersion;
 
     PartitionReplicaManager(Node node, InternalPartitionServiceImpl partitionService) {
         this.node = node;
@@ -213,11 +209,6 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
             return;
         }
 
-        // ASSERTION
-        if (nodeEngine.getClusterService().getClusterVersion().isLessThan(Versions.V3_9)) {
-            assert namespaces.size() == 1 : "Only single namespace is allowed before V3.9: " + namespaces;
-        }
-
         if (logger.isFinestEnabled()) {
             logger.finest("Sending sync replica request for partitionId=" + partitionId + ", replicaIndex=" + replicaIndex
                     + ", namespaces=" + namespaces);
@@ -251,7 +242,7 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
 
     @Override
     public ServiceNamespace getServiceNamespace(Operation operation) {
-        if (operation instanceof ServiceNamespaceAware && clusterVersion.isGreaterOrEqual(Versions.V3_9)) {
+        if (operation instanceof ServiceNamespaceAware) {
             return ((ServiceNamespaceAware) operation).getServiceNamespace();
         }
         return NonFragmentedServiceNamespace.INSTANCE;
@@ -420,10 +411,6 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
     public void retainNamespaces(int partitionId, Set<ServiceNamespace> namespaces) {
         PartitionReplicaVersions versions = replicaVersions[partitionId];
         versions.retainNamespaces(namespaces);
-    }
-
-    void setClusterVersion(Version newVersion) {
-        this.clusterVersion = newVersion;
     }
 
     private class ReplicaSyncTimeoutProcessor implements ScheduledEntryProcessor<ReplicaFragmentSyncInfo, Void> {

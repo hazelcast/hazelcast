@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,8 +50,8 @@ public class AbstractVisitorTest {
             Indexes indexes = mock(Indexes.class);
             Object result = method.invoke(visitor, predicate, indexes);
 
-            assertSame("Method " + method + " does not return identity of the original predicate. " +
-                    "See contract of " + AbstractVisitor.class.getSimpleName(), predicate, result);
+            assertSame("Method " + method + " does not return identity of the original predicate."
+                    + " See contract of " + AbstractVisitor.class.getSimpleName(), predicate, result);
         }
     }
 }

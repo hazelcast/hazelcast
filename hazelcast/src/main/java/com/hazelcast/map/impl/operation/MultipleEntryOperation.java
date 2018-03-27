@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,10 +32,10 @@ import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.spi.serialization.SerializationService;
 
 import java.io.IOException;
-import java.util.HashSet;
 import java.util.Set;
 
 import static com.hazelcast.map.impl.operation.EntryOperator.operator;
+import static com.hazelcast.util.SetUtil.createHashSet;
 
 
 public class MultipleEntryOperation extends MapOperation
@@ -70,7 +70,7 @@ public class MultipleEntryOperation extends MapOperation
     public void run() throws Exception {
         responses = new MapEntries(keys.size());
 
-        operator = operator(this, entryProcessor, getPredicate(), true);
+        operator = operator(this, entryProcessor, getPredicate());
         for (Data key : keys) {
             Data response = operator.operateOnKey(key).doPostOperateOps().getResult();
             if (response != null) {
@@ -109,7 +109,6 @@ public class MultipleEntryOperation extends MapOperation
         MultipleEntryBackupOperation backupOperation = null;
         if (backupProcessor != null) {
             backupOperation = new MultipleEntryBackupOperation(name, keys, backupProcessor);
-            backupOperation.setWanEventList(operator.getWanEventList());
         }
         return backupOperation;
     }
@@ -119,7 +118,7 @@ public class MultipleEntryOperation extends MapOperation
         super.readInternal(in);
         entryProcessor = in.readObject();
         int size = in.readInt();
-        keys = new HashSet<Data>(size);
+        keys = createHashSet(size);
         for (int i = 0; i < size; i++) {
             Data key = in.readData();
             keys.add(key);

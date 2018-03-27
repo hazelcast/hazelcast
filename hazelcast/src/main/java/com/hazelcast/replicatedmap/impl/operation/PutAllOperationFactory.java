@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,6 @@ public class PutAllOperationFactory implements OperationFactory {
     private String name;
     private ReplicatedMapEntries entries;
 
-    @SuppressWarnings("unused")
     public PutAllOperationFactory() {
     }
 
@@ -44,9 +43,8 @@ public class PutAllOperationFactory implements OperationFactory {
 
     @Override
     public Operation createOperation() {
-        PutAllOperation putAllOperation = new PutAllOperation(name, entries);
-        putAllOperation.setServiceName(ReplicatedMapService.SERVICE_NAME);
-        return putAllOperation;
+        return new PutAllOperation(name, entries)
+                .setServiceName(ReplicatedMapService.SERVICE_NAME);
     }
 
     @Override

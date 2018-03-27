@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,14 @@
 
 package com.hazelcast.concurrent.countdownlatch.operations;
 
-import com.hazelcast.concurrent.countdownlatch.CountDownLatchDataSerializerHook;
-import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
 import com.hazelcast.concurrent.countdownlatch.LatchKey;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
+
+import static com.hazelcast.concurrent.countdownlatch.CountDownLatchDataSerializerHook.F_ID;
+import static com.hazelcast.concurrent.countdownlatch.CountDownLatchService.SERVICE_NAME;
 
 abstract class AbstractCountDownLatchOperation extends AbstractNamedOperation
         implements PartitionAwareOperation, IdentifiedDataSerializable {
@@ -36,12 +37,12 @@ abstract class AbstractCountDownLatchOperation extends AbstractNamedOperation
 
     @Override
     public final String getServiceName() {
-        return CountDownLatchService.SERVICE_NAME;
+        return SERVICE_NAME;
     }
 
     @Override
     public final int getFactoryId() {
-        return CountDownLatchDataSerializerHook.F_ID;
+        return F_ID;
     }
 
     WaitNotifyKey waitNotifyKey() {

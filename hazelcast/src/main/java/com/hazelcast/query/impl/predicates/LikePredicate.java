@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ public class LikePredicate extends AbstractPredicate {
     }
 
     public LikePredicate(String attributeName, String expression) {
-        this.attributeName = attributeName;
+        super(attributeName);
         this.expression = expression;
     }
 
@@ -73,13 +73,13 @@ public class LikePredicate extends AbstractPredicate {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(attributeName);
+        super.writeData(out);
         out.writeUTF(expression);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        attributeName = in.readUTF();
+        super.readData(in);
         expression = in.readUTF();
     }
 

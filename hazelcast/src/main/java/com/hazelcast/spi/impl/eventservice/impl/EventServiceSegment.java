@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,11 +25,12 @@ import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
+
+import static java.util.Collections.newSetFromMap;
 
 /**
  * Segment of the event service. Each segment is responsible for a single service and
@@ -64,13 +65,6 @@ public class EventServiceSegment<S> {
     }
 
     /**
-     * Returns the number of registrations for this segment.
-     */
-    private int listenerCount() {
-        return registrationIdMap.size();
-    }
-
-    /**
      * Notifies the registration of a event in the listener lifecycle.
      * The registration is checked for a {@link NotifiableEventListener} in this order :
      * <ul>
@@ -92,7 +86,6 @@ public class EventServiceSegment<S> {
         }
         pingNotifiableEventListenerInternal(listener, topic, registration, register);
         pingNotifiableEventListenerInternal(service, topic, registration, register);
-
     }
 
     /**
@@ -110,11 +103,11 @@ public class EventServiceSegment<S> {
             return;
         }
 
-        NotifiableEventListener notifiableEventListener = ((NotifiableEventListener) object);
+        NotifiableEventListener listener = ((NotifiableEventListener) object);
         if (register) {
-            notifiableEventListener.onRegister(service, serviceName, topic, registration);
+            listener.onRegister(service, serviceName, topic, registration);
         } else {
-            notifiableEventListener.onDeregister(service, serviceName, topic, registration);
+            listener.onDeregister(service, serviceName, topic, registration);
         }
     }
 
@@ -132,7 +125,7 @@ public class EventServiceSegment<S> {
             ConstructorFunction<String, Collection<Registration>> func
                     = new ConstructorFunction<String, Collection<Registration>>() {
                 public Collection<Registration> createNew(String key) {
-                    return Collections.newSetFromMap(new ConcurrentHashMap<Registration, Boolean>());
+                    return newSetFromMap(new ConcurrentHashMap<Registration, Boolean>());
                 }
             };
             return ConcurrencyUtil.getOrPutIfAbsent(registrations, topic, func);
@@ -147,6 +140,11 @@ public class EventServiceSegment<S> {
         return registrationIdMap;
     }
 
+    // this method is only used for testing purposes
+    public ConcurrentMap<String, Collection<Registration>> getRegistrations() {
+        return registrations;
+    }
+
     /**
      * Adds a registration for the {@code topic} and notifies the listener and service of the listener
      * registration. Returns if the registration was added. The registration might not be added
@@ -157,7 +155,7 @@ public class EventServiceSegment<S> {
      * @return if the registration is added
      */
     public boolean addRegistration(String topic, Registration registration) {
-        final Collection<Registration> registrations = getRegistrations(topic, true);
+        Collection<Registration> registrations = getRegistrations(topic, true);
         if (registrations.add(registration)) {
             registrationIdMap.put(registration.getId(), registration);
             pingNotifiableEventListener(topic, registration, true);
@@ -175,7 +173,7 @@ public class EventServiceSegment<S> {
      * @return the registration which was removed or {@code null} if none matchec
      */
     public Registration removeRegistration(String topic, String id) {
-        final Registration registration = registrationIdMap.remove(id);
+        Registration registration = registrationIdMap.remove(id);
         if (registration != null) {
             final Collection<Registration> all = registrations.get(topic);
             if (all != null) {
@@ -193,12 +191,13 @@ public class EventServiceSegment<S> {
      * @param topic the topic for which registrations are removed
      */
     void removeRegistrations(String topic) {
-        final Collection<Registration> all = registrations.remove(topic);
-        if (all != null) {
-            for (Registration reg : all) {
-                registrationIdMap.remove(reg.getId());
-                pingNotifiableEventListener(topic, reg, false);
-            }
+        Collection<Registration> all = registrations.remove(topic);
+        if (all == null) {
+            return;
+        }
+        for (Registration reg : all) {
+            registrationIdMap.remove(reg.getId());
+            pingNotifiableEventListener(topic, reg, false);
         }
     }
 
@@ -235,5 +234,13 @@ public class EventServiceSegment<S> {
     boolean hasRegistration(String topic) {
         Collection<Registration> topicRegistrations = registrations.get(topic);
         return !(topicRegistrations == null || topicRegistrations.isEmpty());
+    }
+
+    void collectRemoteRegistrations(Collection<Registration> result) {
+        for (Registration registration : registrationIdMap.values()) {
+            if (!registration.isLocalOnly()) {
+                result.add(registration);
+            }
+        }
     }
 }

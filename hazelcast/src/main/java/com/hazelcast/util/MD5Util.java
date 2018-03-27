@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ public final class MD5Util {
         try {
             MessageDigest md = MessageDigest.getInstance("MD5");
             if (md == null || str == null) {
-                return "NULL";
+                return null;
             }
             byte[] byteData = md.digest(str.getBytes(Charset.forName("UTF-8")));
 
@@ -48,7 +48,6 @@ public final class MD5Util {
             }
             return sb.toString();
         } catch (NoSuchAlgorithmException ignored) {
-            EmptyStatement.ignore(ignored);
             return null;
         }
     }

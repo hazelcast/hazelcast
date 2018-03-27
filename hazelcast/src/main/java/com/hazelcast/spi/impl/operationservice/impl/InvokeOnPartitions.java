@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,6 @@ import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionAwareOpe
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionIteratingOperation;
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionIteratingOperation.PartitionResponse;
 
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -34,6 +33,7 @@ import java.util.concurrent.Future;
 
 import static com.hazelcast.spi.impl.operationservice.impl.operations.PartitionAwareFactoryAccessor.extractPartitionAware;
 import static com.hazelcast.util.CollectionUtil.toIntArray;
+import static com.hazelcast.util.MapUtil.createHashMap;
 
 /**
  * Executes an operation on a set of partitions.
@@ -56,9 +56,9 @@ final class InvokeOnPartitions {
         this.serviceName = serviceName;
         this.operationFactory = operationFactory;
         this.memberPartitions = memberPartitions;
-        this.futures = new HashMap<Address, Future>(memberPartitions.size());
+        this.futures = createHashMap(memberPartitions.size());
         int partitionCount = operationService.nodeEngine.getPartitionService().getPartitionCount();
-        this.partitionResults = new HashMap<Integer, Object>(partitionCount);
+        this.partitionResults = createHashMap(partitionCount);
     }
 
     /**
@@ -100,7 +100,7 @@ final class InvokeOnPartitions {
         for (Map.Entry<Address, Future> response : futures.entrySet()) {
             try {
                 Future future = response.getValue();
-                PartitionResponse result = (PartitionResponse) nodeEngine.toObject(future.get());
+                PartitionResponse result = nodeEngine.toObject(future.get());
                 result.addResults(partitionResults);
             } catch (Throwable t) {
                 if (operationService.logger.isFinestEnabled()) {

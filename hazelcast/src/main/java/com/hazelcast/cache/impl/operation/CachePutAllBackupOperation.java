@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,20 +32,21 @@ import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.ServiceNamespaceAware;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
-import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
+
+import static com.hazelcast.util.MapUtil.createHashMap;
 
 /**
  * Cache PutAllBackup Operation is the backup operation used by load all operation. Provides backup of
  * multiple entries.
+ *
  * @see com.hazelcast.cache.impl.operation.CacheLoadAllOperation
  */
 public class CachePutAllBackupOperation
         extends AbstractNamedOperation
-        implements BackupOperation, ServiceNamespaceAware, IdentifiedDataSerializable, MutatingOperation {
+        implements BackupOperation, ServiceNamespaceAware, IdentifiedDataSerializable {
 
     private Map<Data, CacheRecord> cacheRecords;
     private transient ICacheRecordStore cache;
@@ -59,8 +60,7 @@ public class CachePutAllBackupOperation
     }
 
     @Override
-    public void beforeRun()
-            throws Exception {
+    public void beforeRun() throws Exception {
         ICacheService service = getService();
         try {
             cache = service.getOrCreateRecordStore(name, getPartitionId());
@@ -77,7 +77,7 @@ public class CachePutAllBackupOperation
         if (cacheRecords != null) {
             for (Map.Entry<Data, CacheRecord> entry : cacheRecords.entrySet()) {
                 CacheRecord record = entry.getValue();
-                cache.putRecord(entry.getKey(), record);
+                cache.putRecord(entry.getKey(), record, true);
 
                 publishWanEvent(entry.getKey(), record);
             }
@@ -87,10 +87,9 @@ public class CachePutAllBackupOperation
     private void publishWanEvent(Data key, CacheRecord record) {
         if (cache.isWanReplicationEnabled()) {
             ICacheService service = getService();
-            final CacheWanEventPublisher publisher = service.getCacheWanEventPublisher();
-            final CacheEntryView<Data, Data> view = CacheEntryViews.createDefaultEntryView(
-                    key, toData(record.getValue()), record);
-            publisher.publishWanReplicationUpdate(name, view);
+            CacheWanEventPublisher publisher = service.getCacheWanEventPublisher();
+            CacheEntryView<Data, Data> view = CacheEntryViews.createDefaultEntryView(key, toData(record.getValue()), record);
+            publisher.publishWanReplicationUpdateBackup(name, view);
         }
     }
 
@@ -109,15 +108,14 @@ public class CachePutAllBackupOperation
     }
 
     @Override
-    protected void writeInternal(ObjectDataOutput out)
-            throws IOException {
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeBoolean(cacheRecords != null);
         if (cacheRecords != null) {
             out.writeInt(cacheRecords.size());
             for (Map.Entry<Data, CacheRecord> entry : cacheRecords.entrySet()) {
-                final Data key = entry.getKey();
-                final CacheRecord record = entry.getValue();
+                Data key = entry.getKey();
+                CacheRecord record = entry.getValue();
                 out.writeData(key);
                 out.writeObject(record);
             }
@@ -125,16 +123,15 @@ public class CachePutAllBackupOperation
     }
 
     @Override
-    protected void readInternal(ObjectDataInput in)
-            throws IOException {
+    protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        final boolean recordNotNull = in.readBoolean();
+        boolean recordNotNull = in.readBoolean();
         if (recordNotNull) {
             int size = in.readInt();
-            cacheRecords = new HashMap<Data, CacheRecord>(size);
+            cacheRecords = createHashMap(size);
             for (int i = 0; i < size; i++) {
-                final Data key = in.readData();
-                final CacheRecord record = in.readObject();
+                Data key = in.readData();
+                CacheRecord record = in.readObject();
                 cacheRecords.put(key, record);
             }
         }
@@ -149,5 +146,4 @@ public class CachePutAllBackupOperation
     public int getFactoryId() {
         return CacheDataSerializerHook.F_ID;
     }
-
 }

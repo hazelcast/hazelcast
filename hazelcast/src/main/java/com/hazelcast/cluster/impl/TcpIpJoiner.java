@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.impl.AbstractJoiner;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage;
+import com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage.SplitBrainMergeCheckResult;
 import com.hazelcast.internal.cluster.impl.operations.JoinMastershipClaimOp;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -32,7 +33,6 @@ import com.hazelcast.util.AddressUtil;
 import com.hazelcast.util.AddressUtil.AddressMatcher;
 import com.hazelcast.util.AddressUtil.InvalidAddressException;
 import com.hazelcast.util.Clock;
-import com.hazelcast.util.EmptyStatement;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -45,6 +45,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.util.AddressUtil.AddressHolder;
+import static com.hazelcast.util.EmptyStatement.ignore;
 
 public class TcpIpJoiner extends AbstractJoiner {
 
@@ -93,7 +94,7 @@ public class TcpIpJoiner extends AbstractJoiner {
     private void joinViaTargetMember(Address targetAddress, long maxJoinMillis) {
         try {
             if (targetAddress == null) {
-                throw new IllegalArgumentException("Invalid target address -> NULL");
+                throw new IllegalArgumentException("Invalid target address: NULL");
             }
             if (logger.isFineEnabled()) {
                 logger.fine("Joining over target member " + targetAddress);
@@ -412,7 +413,7 @@ public class TcpIpJoiner extends AbstractJoiner {
                 try {
                     addressMatcher = AddressUtil.getAddressMatcher(addressHolder.getAddress());
                 } catch (InvalidAddressException ignore) {
-                    EmptyStatement.ignore(ignore);
+                    ignore(ignore);
                 }
                 if (addressMatcher != null) {
                     final Collection<String> matchedAddresses;
@@ -513,12 +514,13 @@ public class TcpIpJoiner extends AbstractJoiner {
         if (possibleAddresses.isEmpty()) {
             return;
         }
+        SplitBrainJoinMessage request = node.createSplitBrainJoinMessage();
         for (Address address : possibleAddresses) {
-            SplitBrainJoinMessage response = sendSplitBrainJoinMessage(address);
-            if (shouldMerge(response)) {
+            SplitBrainMergeCheckResult result = sendSplitBrainJoinMessageAndCheckResponse(address, request);
+            if (result == SplitBrainMergeCheckResult.LOCAL_NODE_SHOULD_MERGE) {
                 logger.warning(node.getThisAddress() + " is merging [tcp/ip] to " + address);
                 setTargetAddress(address);
-                startClusterMerge(address);
+                startClusterMerge(address, request.getMemberListVersion());
                 return;
             }
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,6 +58,15 @@ import java.util.Set;
  * All writes to this {@link QueryCache} is reflected to underlying {@code IMap} and that
  * write operation will eventually be reflected to this {@code QueryCache} after receiving the
  * event of that operation.
+ * </li>
+ * <li>
+ * Currently, updates performed on the entries are reflected in the indexes in a
+ * non-atomic way. Therefore, if there are indexes configured for the query
+ * cache, their state may slightly lag behind the state of the entries.
+ * Use map listeners if you need to observe the state when the entry store and
+ * its indexes are consistent about the state of a particular entry, see
+ * {@link IMap#addEntryListener(MapListener, boolean) addEntryListener} for more
+ * details.
  * </li>
  * <li>
  * There are some gotchas same with underlying {@link com.hazelcast.core.IMap IMap} implementation,

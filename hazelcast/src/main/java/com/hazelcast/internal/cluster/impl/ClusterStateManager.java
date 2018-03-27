@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.cluster.impl.operations.LockClusterStateOp;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.util.LockGuard;
@@ -98,6 +97,7 @@ public class ClusterStateManager {
         LockGuard stateLock = stateLockRef.get();
         while (stateLock.isLeaseExpired()) {
             if (stateLockRef.compareAndSet(stateLock, LockGuard.NOT_LOCKED)) {
+                logger.fine("Cluster state lock: " + stateLock + " is expired.");
                 stateLock = LockGuard.NOT_LOCKED;
                 break;
             }
@@ -211,13 +211,7 @@ public class ClusterStateManager {
 
             checkMigrationsAndPartitionStateVersion(stateChange, partitionStateVersion);
 
-            final LockGuard currentLock = getStateLock();
-            if (!currentLock.allowsLock(txnId)) {
-                throw new TransactionException("Locking failed for " + initiator + ", tx: " + txnId
-                        + ", current state: " + toString());
-            }
-
-            stateLockRef.set(new LockGuard(initiator, txnId, leaseTime));
+            lockOrExtendClusterState(initiator, txnId, leaseTime);
 
             try {
                 // check migration status and partition-state version again
@@ -230,6 +224,22 @@ public class ClusterStateManager {
         } finally {
             clusterServiceLock.unlock();
         }
+    }
+
+    private void lockOrExtendClusterState(Address initiator, String txnId, long leaseTime) {
+        Preconditions.checkPositive(leaseTime, "Lease time should be positive!");
+
+        LockGuard currentLock = getStateLock();
+        if (!currentLock.allowsLock(txnId)) {
+            throw new TransactionException("Locking failed for " + initiator + ", tx: " + txnId
+                    + ", current state: " + toString());
+        }
+
+        long newLeaseTime = currentLock.getRemainingTime() + leaseTime;
+        if (newLeaseTime < 0L) {
+            newLeaseTime = Long.MAX_VALUE;
+        }
+        stateLockRef.set(new LockGuard(initiator, txnId, newLeaseTime));
     }
 
     // check if current node is compatible with requested cluster version
@@ -313,6 +323,7 @@ public class ClusterStateManager {
             } else if (stateChange.isOfType(Version.class)) {
                 // version is validated on cluster-state-lock, thus we can commit without checking compatibility
                 doSetClusterVersion((Version) stateChange.getNewState());
+                node.getClusterService().getMembershipManager().scheduleMemberListVersionIncrement();
             } else {
                 throw new IllegalArgumentException("Illegal ClusterStateChange of type " + stateChange.getType() + ".");
             }
@@ -336,11 +347,6 @@ public class ClusterStateManager {
 
     void changeClusterState(ClusterStateChange newState, MemberMap memberMap,
             TransactionOptions options, int partitionStateVersion, boolean isTransient) {
-
-        if (clusterVersion.isLessThan(Versions.V3_9) && newState.getNewState() == ClusterState.NO_MIGRATION) {
-            throw new UnsupportedOperationException("NO_MIGRATION cluster state is not available before 3.9!");
-        }
-
         checkParameters(newState, options);
         if (isCurrentStateEqualToRequestedOne(newState)) {
             return;
@@ -441,7 +447,7 @@ public class ClusterStateManager {
         }
     }
 
-    String stateToString() {
+    public String stateToString() {
         return "ClusterState{state=" + state + ", lock=" + stateLockRef.get() + '}';
     }
 

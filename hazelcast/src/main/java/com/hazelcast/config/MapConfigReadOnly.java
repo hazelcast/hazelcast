@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -121,146 +121,155 @@ public class MapConfigReadOnly extends MapConfig {
 
     @Override
     public MapConfig setHotRestartConfig(HotRestartConfig hotRestartConfig) {
-        throw new UnsupportedOperationException("This config is read-only map: " + getName());
+        throw throwReadOnly();
     }
 
     @Override
     public MapConfig setName(String name) {
-        throw new UnsupportedOperationException("This config is read-only map: " + getName());
+        throw throwReadOnly();
     }
 
     @Override
     public MapConfig setInMemoryFormat(InMemoryFormat inMemoryFormat) {
-        throw new UnsupportedOperationException("This config is read-only map: " + getName());
+        throw throwReadOnly();
     }
 
     @Override
     public MapConfig setBackupCount(int backupCount) {
-        throw new UnsupportedOperationException("This config is read-only map: " + getName());
+        throw throwReadOnly();
     }
 
     @Override
     public MapConfig setAsyncBackupCount(int asyncBackupCount) {
-        throw new UnsupportedOperationException("This config is read-only map: " + getName());
+        throw throwReadOnly();
     }
 
     @Override
     public MapConfig setEvictionPercentage(int evictionPercentage) {
-        throw new UnsupportedOperationException("This config is read-only map: " + getName());
+        throw throwReadOnly();
     }
 
     @Override
     public MapConfig setMinEvictionCheckMillis(long checkIfEvictableAfterMillis) {
-        throw new UnsupportedOperationException("This config is read-only map: " + getName());
+        throw throwReadOnly();
     }
 
     @Override
     public MapConfig setTimeToLiveSeconds(int timeToLiveSeconds) {
-        throw new UnsupportedOperationException("This config is read-only map: " + getName());
+        throw throwReadOnly();
     }
 
     @Override
     public MapConfig setMaxIdleSeconds(int maxIdleSeconds) {
-        throw new UnsupportedOperationException("This config is read-only map: " + getName());
+        throw throwReadOnly();
     }
 
     @Override
     public MapConfig setMaxSizeConfig(MaxSizeConfig maxSizeConfig) {
-        throw new UnsupportedOperationException("This config is read-only map: " + getName());
+        throw throwReadOnly();
     }
 
     @Override
     public MapConfig setEvictionPolicy(EvictionPolicy evictionPolicy) {
-        throw new UnsupportedOperationException("This config is read-only map: " + getName());
+        throw throwReadOnly();
     }
 
     @Override
     public MapConfig setMapEvictionPolicy(MapEvictionPolicy mapEvictionPolicy) {
-        throw new UnsupportedOperationException("This config is read-only map: " + getName());
+        throw throwReadOnly();
     }
 
     @Override
     public MapConfig setMapStoreConfig(MapStoreConfig mapStoreConfig) {
-        throw new UnsupportedOperationException("This config is read-only map: " + getName());
+        throw throwReadOnly();
     }
 
     @Override
     public MapConfig setNearCacheConfig(NearCacheConfig nearCacheConfig) {
-        throw new UnsupportedOperationException("This config is read-only map: " + getName());
+        throw throwReadOnly();
     }
 
     @Override
     public MapConfig setMergePolicy(String mergePolicy) {
-        throw new UnsupportedOperationException("This config is read-only map: " + getName());
+        throw throwReadOnly();
+    }
+
+    @Override
+    public MapConfig setMergePolicyConfig(MergePolicyConfig mergePolicyConfig) {
+        throw throwReadOnly();
     }
 
     @Override
     public MapConfig setStatisticsEnabled(boolean statisticsEnabled) {
-        throw new UnsupportedOperationException("This config is read-only map: " + getName());
+        throw throwReadOnly();
     }
 
     @Override
     public MapConfig setReadBackupData(boolean readBackupData) {
-        throw new UnsupportedOperationException("This config is read-only map: " + getName());
+        throw throwReadOnly();
     }
 
     @Override
     public MapConfig setWanReplicationRef(WanReplicationRef wanReplicationRef) {
-        throw new UnsupportedOperationException("This config is read-only map: " + getName());
+        throw throwReadOnly();
     }
 
     @Override
     public MapConfig addEntryListenerConfig(EntryListenerConfig listenerConfig) {
-        throw new UnsupportedOperationException("This config is read-only map: " + getName());
+        throw throwReadOnly();
     }
 
     @Override
     public MapConfig setEntryListenerConfigs(List<EntryListenerConfig> listenerConfigs) {
-        throw new UnsupportedOperationException("This config is read-only map: " + getName());
+        throw throwReadOnly();
     }
 
     @Override
     public MapConfig addMapIndexConfig(MapIndexConfig mapIndexConfig) {
-        throw new UnsupportedOperationException("This config is read-only map: " + getName());
+        throw throwReadOnly();
     }
 
     @Override
     public MapConfig setMapIndexConfigs(List<MapIndexConfig> mapIndexConfigs) {
-        throw new UnsupportedOperationException("This config is read-only map: " + getName());
+        throw throwReadOnly();
     }
 
     @Override
     public MapConfig setPartitioningStrategyConfig(PartitioningStrategyConfig partitioningStrategyConfig) {
-        throw new UnsupportedOperationException("This config is read-only map: " + getName());
+        throw throwReadOnly();
     }
 
     @Override
     public MapConfig setOptimizeQueries(boolean optimizeQueries) {
-        throw new UnsupportedOperationException("This config is read-only map: " + getName());
+        throw throwReadOnly();
     }
 
     @Override
     public MapConfig setPartitionLostListenerConfigs(List<MapPartitionLostListenerConfig> listenerConfigs) {
-        throw new UnsupportedOperationException("This config is read-only map: " + getName());
+        throw throwReadOnly();
     }
 
     @Override
     public MapConfig setMapAttributeConfigs(List<MapAttributeConfig> mapAttributeConfigs) {
-        throw new UnsupportedOperationException("This config is read-only map: " + getName());
+        throw throwReadOnly();
     }
 
     @Override
     public void setQueryCacheConfigs(List<QueryCacheConfig> queryCacheConfigs) {
-        throw new UnsupportedOperationException("This config is read-only map: " + getName());
+        throw throwReadOnly();
     }
 
     @Override
     public MapConfig setCacheDeserializedValues(CacheDeserializedValues cacheDeserializedValues) {
-        throw new UnsupportedOperationException("This config is read-only map: " + getName());
+        throw throwReadOnly();
     }
 
     @Override
     public MapConfig setQuorumName(String quorumName) {
-        throw new UnsupportedOperationException("This config is read-only map: " + getName());
+        throw throwReadOnly();
+    }
+
+    private UnsupportedOperationException throwReadOnly() {
+        throw new UnsupportedOperationException("This config is read-only");
     }
 }

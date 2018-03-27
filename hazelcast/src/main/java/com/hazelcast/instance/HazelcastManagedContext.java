@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.spi.NodeAware;
 import com.hazelcast.spi.annotation.PrivateApi;
+import com.hazelcast.spi.serialization.SerializationServiceAware;
 
 @PrivateApi
 public final class HazelcastManagedContext implements ManagedContext {
@@ -28,7 +29,7 @@ public final class HazelcastManagedContext implements ManagedContext {
     private final ManagedContext externalContext;
     private final boolean hasExternalContext;
 
-    public HazelcastManagedContext(final HazelcastInstanceImpl instance, final ManagedContext externalContext) {
+    public HazelcastManagedContext(HazelcastInstanceImpl instance, ManagedContext externalContext) {
         this.instance = instance;
         this.externalContext = externalContext;
         this.hasExternalContext = externalContext != null;
@@ -37,12 +38,13 @@ public final class HazelcastManagedContext implements ManagedContext {
     @Override
     public Object initialize(Object obj) {
         if (obj instanceof HazelcastInstanceAware) {
-            HazelcastInstanceAware hazelcastInstanceAware = (HazelcastInstanceAware) obj;
-            hazelcastInstanceAware.setHazelcastInstance(instance);
+            ((HazelcastInstanceAware) obj).setHazelcastInstance(instance);
         }
         if (obj instanceof NodeAware) {
-            NodeAware nodeAware = (NodeAware) obj;
-            nodeAware.setNode(instance.node);
+            ((NodeAware) obj).setNode(instance.node);
+        }
+        if (obj instanceof SerializationServiceAware) {
+            ((SerializationServiceAware) obj).setSerializationService(instance.node.getSerializationService());
         }
 
         if (hasExternalContext) {

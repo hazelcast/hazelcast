@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,11 +20,11 @@ import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.transaction.impl.Transaction;
-import com.hazelcast.util.EmptyStatement;
 
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
+import static java.lang.Thread.currentThread;
 
 /**
  * Provides proxy for the Transactional Queue.
@@ -42,7 +42,7 @@ public class TransactionalQueueProxy<E> extends TransactionalQueueProxySupport<E
         try {
             return offer(e, 0, TimeUnit.MILLISECONDS);
         } catch (InterruptedException ignored) {
-            EmptyStatement.ignore(ignored);
+            currentThread().interrupt();
         }
         return false;
     }
@@ -67,8 +67,7 @@ public class TransactionalQueueProxy<E> extends TransactionalQueueProxySupport<E
         try {
             return poll(0, TimeUnit.MILLISECONDS);
         } catch (InterruptedException ignored) {
-            //todo: interrupt status swallowed
-            EmptyStatement.ignore(ignored);
+            currentThread().interrupt();
         }
         return null;
     }
@@ -87,8 +86,7 @@ public class TransactionalQueueProxy<E> extends TransactionalQueueProxySupport<E
         try {
             return peek(0, TimeUnit.MILLISECONDS);
         } catch (InterruptedException ignored) {
-            //todo: interrupt status swallowed
-            EmptyStatement.ignore(ignored);
+            currentThread().interrupt();
         }
         return null;
     }

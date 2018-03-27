@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,38 +19,36 @@ package com.hazelcast.spi;
 import java.util.Properties;
 
 /**
- * A interface that can be implemented by a SPI Service to receive lifecycle calls:
+ * An interface that can be implemented by an SPI Service to receive lifecycle calls:
  * <ol>
- *     <li>initialization</li>
- *     <li>shutdown</li>
- *     <li>reset</li>
+ * <li>initialization</li>
+ * <li>shutdown</li>
+ * <li>reset</li>
  * </ol>
- *
- * @author mdogan 7/23/12
  */
 public interface ManagedService {
 
     /**
-     * Initializes this ManagedService
+     * Initializes this service.
      *
-     * @param nodeEngine the NodeEngine that this ManagedService belongs to.
-     * @param properties the Properties. Can be used to pass settings to the service.
+     * @param nodeEngine the NodeEngine that this service belongs to
+     * @param properties the Properties (can be used to pass settings to the service)
      */
     void init(NodeEngine nodeEngine, Properties properties);
 
     /**
-     * reset this ManagedService back to initial state.
-     *
-     * todo: what is the purpose of reset
+     * Resets this service back to its initial state.
+     * <p>
+     * TODO: what is the purpose of reset
      */
     void reset();
 
     /**
-     * Shuts down this ManagedService.
+     * Shuts down this service.
+     * <p>
+     * TODO: what is the purpose of the terminate variable
      *
-     * todo: what is the purpose of the terminate variable.
-     *
-     * @param terminate true to shut down the ManagedService
+     * @param terminate {@code true} to shut down this service
      */
     void shutdown(boolean terminate);
 }

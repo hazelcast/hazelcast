@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package com.hazelcast.spi.impl.executionservice.impl;
 
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.AbstractCompletableFuture;
-import com.hazelcast.util.EmptyStatement;
 
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
@@ -26,17 +25,19 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.ExceptionUtil.sneakyThrow;
+import static java.lang.Thread.currentThread;
 
 /**
- * Wraps a java.util.concurrent.Future to make it a com.hazelcast.core.ICompletableFuture.
+ * Wraps a {@code java.util.concurrent.Future} to make it a {@code com.hazelcast.core.ICompletableFuture}.
  * <p>
- * Ensures two-directional binding when it comes to cancellation:
- * - if delegate future cancelled - this future may be done or cancelled
- * - if this future cancelled - delegate future may be done or cancelled
- * <p>
+ * Ensures two-directional binding when it comes to cancellation:<ul>
+ *     <li>if delegate future cancelled - this future may be done or cancelled
+ *     <li>if this future cancelled - delegate future may be done or cancelled
+ * </ul>
  * Ensures the transfer of the result from the delegate future to this future
- * on execution of get() and isDone() methods.
+ * on execution of {@link #get()} and {@link #isDone()} methods.
  */
 class BasicCompletableFuture<V> extends AbstractCompletableFuture<V> {
 
@@ -59,6 +60,7 @@ class BasicCompletableFuture<V> extends AbstractCompletableFuture<V> {
         } catch (TimeoutException ex) {
             sneakyThrow(ex);
         } catch (InterruptedException ex) {
+            currentThread().interrupt();
             sneakyThrow(ex);
         } catch (ExecutionException ex) {
             setResult(ex);
@@ -79,9 +81,9 @@ class BasicCompletableFuture<V> extends AbstractCompletableFuture<V> {
             try {
                 ensureResultSet(Long.MAX_VALUE, TimeUnit.DAYS);
             } catch (ExecutionException ignored) {
-                EmptyStatement.ignore(ignored);
+                ignore(ignored);
             } catch (CancellationException ignored) {
-                EmptyStatement.ignore(ignored);
+                ignore(ignored);
             }
             return true;
         } else {

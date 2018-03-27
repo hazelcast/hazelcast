@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ import com.hazelcast.spi.Operation;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
-class CardinalityEstimatorProxy
+public class CardinalityEstimatorProxy
         extends AbstractDistributedObject<CardinalityEstimatorService>
         implements CardinalityEstimator {
 
@@ -38,6 +38,10 @@ class CardinalityEstimatorProxy
         super(nodeEngine, service);
         this.name = name;
         this.partitionId = nodeEngine.getPartitionService().getPartitionId(getNameAsPartitionAwareData());
+    }
+
+    public int getPartitionId() {
+        return partitionId;
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,32 +21,33 @@ import com.hazelcast.concurrent.lock.LockStore;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.DistributedObjectNamespace;
 import com.hazelcast.spi.ObjectNamespace;
+import com.hazelcast.spi.merge.MergingEntry;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
+import com.hazelcast.spi.serialization.SerializationService;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
 
+import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntry;
 import static com.hazelcast.util.Clock.currentTimeMillis;
+import static com.hazelcast.util.MapUtil.createHashMap;
 
 /**
  * MultiMap container which holds a map of {@link MultiMapValue}.
  */
+@SuppressWarnings("checkstyle:methodcount")
 public class MultiMapContainer extends MultiMapContainerSupport {
 
     private static final int ID_PROMOTION_OFFSET = 100000;
 
     private final DistributedObjectNamespace lockNamespace;
-
     private final LockStore lockStore;
-
     private final int partitionId;
-
     private final long creationTime;
-
     private final ObjectNamespace objectNamespace;
 
     private long idGen;
@@ -59,7 +60,7 @@ public class MultiMapContainer extends MultiMapContainerSupport {
         super(name, service.getNodeEngine());
         this.partitionId = partitionId;
         this.lockNamespace = new DistributedObjectNamespace(MultiMapService.SERVICE_NAME, name);
-        final LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
+        LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
         this.lockStore = lockService == null ? null : lockService.createLockStore(partitionId, lockNamespace);
         this.creationTime = currentTimeMillis();
         this.objectNamespace = new DistributedObjectNamespace(MultiMapService.SERVICE_NAME, name);
@@ -116,9 +117,7 @@ public class MultiMapContainer extends MultiMapContainerSupport {
 
     public Set<Data> keySet() {
         Set<Data> keySet = multiMapValues.keySet();
-        Set<Data> keys = new HashSet<Data>(keySet.size());
-        keys.addAll(keySet);
-        return keys;
+        return new HashSet<Data>(keySet);
     }
 
     public Collection<MultiMapRecord> values() {
@@ -152,7 +151,7 @@ public class MultiMapContainer extends MultiMapContainerSupport {
     }
 
     public Map<Data, Collection<MultiMapRecord>> copyCollections() {
-        Map<Data, Collection<MultiMapRecord>> map = new HashMap<Data, Collection<MultiMapRecord>>(multiMapValues.size());
+        Map<Data, Collection<MultiMapRecord>> map = createHashMap(multiMapValues.size());
         for (Map.Entry<Data, MultiMapValue> entry : multiMapValues.entrySet()) {
             Data key = entry.getKey();
             Collection<MultiMapRecord> col = entry.getValue().getCollection(true);
@@ -170,8 +169,8 @@ public class MultiMapContainer extends MultiMapContainerSupport {
     }
 
     public int clear() {
-        final Collection<Data> locks = lockStore != null ? lockStore.getLockedKeys() : Collections.<Data>emptySet();
-        Map<Data, MultiMapValue> lockedKeys = new HashMap<Data, MultiMapValue>(locks.size());
+        Collection<Data> locks = lockStore != null ? lockStore.getLockedKeys() : Collections.<Data>emptySet();
+        Map<Data, MultiMapValue> lockedKeys = createHashMap(locks.size());
         for (Data key : locks) {
             MultiMapValue multiMapValue = multiMapValues.get(key);
             if (multiMapValue != null) {
@@ -185,7 +184,7 @@ public class MultiMapContainer extends MultiMapContainerSupport {
     }
 
     public void destroy() {
-        final LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
+        LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
         if (lockService != null) {
             lockService.clearLockStore(partitionId, lockNamespace);
         }
@@ -218,5 +217,79 @@ public class MultiMapContainer extends MultiMapContainerSupport {
 
     public ObjectNamespace getObjectNamespace() {
         return objectNamespace;
+    }
+
+    public int getPartitionId() {
+        return partitionId;
+    }
+
+    /**
+     * Merges the given {@link MergingEntry} via the given {@link SplitBrainMergePolicy}.
+     *
+     * @param mergingEntry the {@link MergingEntry} instance to merge
+     * @param mergePolicy  the {@link SplitBrainMergePolicy} instance to apply
+     * @return the used {@link MultiMapValue} if merge is applied, otherwise {@code null}
+     */
+    public MultiMapValue merge(MergingEntry<Data, MultiMapMergeContainer> mergingEntry, SplitBrainMergePolicy mergePolicy) {
+        SerializationService serializationService = nodeEngine.getSerializationService();
+        serializationService.getManagedContext().initialize(mergingEntry);
+        serializationService.getManagedContext().initialize(mergePolicy);
+
+        Data key = mergingEntry.getKey();
+        MultiMapMergeContainer mergingContainer = mergingEntry.getValue();
+        MultiMapValue existingValue = getMultiMapValueOrNull(key);
+
+        if (existingValue == null) {
+            return mergeNewValue(serializationService, mergePolicy, key, mergingContainer);
+        }
+        return mergeExistingValue(serializationService, mergePolicy, key, mergingContainer, existingValue);
+    }
+
+    private MultiMapValue mergeNewValue(SerializationService ss, SplitBrainMergePolicy mergePolicy, Data key,
+                                        MultiMapMergeContainer mergingContainer) {
+        boolean isBinary = getConfig().isBinary();
+
+        MultiMapValue mergedValue = null;
+        for (MultiMapRecord mergeRecord : mergingContainer.getRecords()) {
+            MergingEntry<Data, Object> mergingEntry = createMergingEntry(nodeEngine.getSerializationService(),
+                    mergingContainer, mergeRecord);
+            Object newValue = mergePolicy.merge(mergingEntry, null);
+            if (newValue != null) {
+                MultiMapRecord newRecord = new MultiMapRecord(nextId(), isBinary ? newValue : ss.toObject(newValue));
+                if (mergedValue == null) {
+                    mergedValue = getOrCreateMultiMapValue(key);
+                }
+                Collection<MultiMapRecord> collection = mergedValue.getCollection(false);
+                collection.add(newRecord);
+            }
+        }
+        return mergedValue;
+    }
+
+    private MultiMapValue mergeExistingValue(SerializationService ss, SplitBrainMergePolicy mergePolicy, Data key,
+                                             MultiMapMergeContainer mergingContainer, MultiMapValue existingValue) {
+        boolean isBinary = getConfig().isBinary();
+
+        Collection<MultiMapRecord> existingRecords = existingValue.getCollection(false);
+        int existingHits = existingValue.getHits();
+        for (MultiMapRecord mergeRecord : mergingContainer.getRecords()) {
+            MergingEntry<Data, Object> mergingEntry = createMergingEntry(nodeEngine.getSerializationService(),
+                    mergingContainer, mergeRecord);
+            MergingEntry<Data, Object> existingEntry = null;
+            MultiMapRecord existingRecord = null;
+            for (MultiMapRecord record : existingRecords) {
+                if (record.getObject().equals(mergeRecord.getObject())) {
+                    existingEntry = createMergingEntry(nodeEngine.getSerializationService(), this, key, record, existingHits);
+                    existingRecord = record;
+                }
+            }
+            Object newValue = mergePolicy.merge(mergingEntry, existingEntry);
+            if (newValue != null && (existingRecord == null || !newValue.equals(existingRecord.getObject()))) {
+                MultiMapRecord newRecord = new MultiMapRecord(nextId(), isBinary ? newValue : ss.toObject(newValue));
+                existingRecords.remove(existingRecord);
+                existingRecords.add(newRecord);
+            }
+        }
+        return existingValue;
     }
 }

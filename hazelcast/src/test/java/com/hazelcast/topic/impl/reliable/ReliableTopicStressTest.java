@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,7 +65,7 @@ public class ReliableTopicStressTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = 1000 * 60 * 10)
-    public void test() throws InterruptedException {
+    public void test() {
         final StressMessageListener listener1 = new StressMessageListener(1);
         topic.addMessageListener(listener1);
         final StressMessageListener listener2 = new StressMessageListener(2);
@@ -84,7 +84,7 @@ public class ReliableTopicStressTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(produceThread.send, listener1.received + listener1.lost);
                 assertEquals(produceThread.send, listener2.received + listener2.lost);
                 assertEquals(0, listener1.failed);
@@ -102,7 +102,7 @@ public class ReliableTopicStressTest extends HazelcastTestSupport {
         }
 
         @Override
-        public void doRun() throws Throwable {
+        public void doRun() {
             while (!stop.get()) {
                 topic.publish(send);
                 send++;
@@ -146,9 +146,9 @@ public class ReliableTopicStressTest extends HazelcastTestSupport {
 
         @Override
         public String toString() {
-            return "StressMessageListener{" +
-                    "id=" + id +
-                    '}';
+            return "StressMessageListener{"
+                    + "id=" + id
+                    + '}';
         }
 
         @Override

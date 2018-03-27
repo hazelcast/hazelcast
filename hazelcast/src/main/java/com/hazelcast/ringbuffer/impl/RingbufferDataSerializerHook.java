@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,8 @@ import com.hazelcast.ringbuffer.impl.operations.AddAllOperation;
 import com.hazelcast.ringbuffer.impl.operations.AddBackupOperation;
 import com.hazelcast.ringbuffer.impl.operations.AddOperation;
 import com.hazelcast.ringbuffer.impl.operations.GenericOperation;
+import com.hazelcast.ringbuffer.impl.operations.MergeBackupOperation;
+import com.hazelcast.ringbuffer.impl.operations.MergeOperation;
 import com.hazelcast.ringbuffer.impl.operations.ReadManyOperation;
 import com.hazelcast.ringbuffer.impl.operations.ReadOneOperation;
 import com.hazelcast.ringbuffer.impl.operations.ReplicationOperation;
@@ -49,6 +51,8 @@ public class RingbufferDataSerializerHook implements DataSerializerHook {
     public static final int ADD_ALL_BACKUP_OPERATION = 8;
     public static final int READ_RESULT_SET = 9;
     public static final int RINGBUFFER_CONTAINER = 10;
+    public static final int MERGE_OPERATION = 11;
+    public static final int MERGE_BACKUP_OPERATION = 12;
 
     @Override
     public int getFactoryId() {
@@ -81,6 +85,10 @@ public class RingbufferDataSerializerHook implements DataSerializerHook {
                         return new ReadResultSetImpl();
                     case RINGBUFFER_CONTAINER:
                         return new RingbufferContainer();
+                    case MERGE_OPERATION:
+                        return new MergeOperation();
+                    case MERGE_BACKUP_OPERATION:
+                        return new MergeBackupOperation();
                     default:
                         return null;
                 }

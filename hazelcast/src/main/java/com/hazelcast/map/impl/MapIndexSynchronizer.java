@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,11 +32,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-// RU_COMPAT_V38
+// RU_COMPAT_V3_9
 
 /**
  * This class is responsible for tracking cluster version changes and synchronizes indexes if needed.
- * The synchronization will happen only on 3.8 to 3.9 cluster version change.
+ * The synchronization will happen only on 3.9 to 3.10 cluster version change.
  *
  * It is a last-chance anti-entropy that guards the situation where the index definitions arrive after the map data.
  * In this case the MapContainer.indexesToAdd indexes will be send to each partition and the indexes will be populated.
@@ -69,7 +69,7 @@ class MapIndexSynchronizer {
     }
 
     public void onClusterVersionChange(Version newVersion) {
-        if (isV38toV39transition(newVersion)) {
+        if (isV39toV310transition(newVersion)) {
             synchronizeIndexes();
         }
         currentVersion = newVersion;
@@ -112,7 +112,7 @@ class MapIndexSynchronizer {
         }
     }
 
-    private boolean isV38toV39transition(Version newVersion) {
-        return currentVersion != null && currentVersion.equals(Versions.V3_8) && newVersion.equals(Versions.V3_9);
+    private boolean isV39toV310transition(Version newVersion) {
+        return currentVersion != null && currentVersion.equals(Versions.V3_9) && newVersion.equals(Versions.V3_10);
     }
 }

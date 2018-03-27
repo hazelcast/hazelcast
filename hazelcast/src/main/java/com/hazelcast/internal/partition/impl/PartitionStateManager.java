@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,6 +50,7 @@ public class PartitionStateManager {
 
     private final Node node;
     private final ILogger logger;
+    private final InternalPartitionServiceImpl partitionService;
 
     private final int partitionCount;
     private final InternalPartitionImpl[] partitions;
@@ -72,6 +73,7 @@ public class PartitionStateManager {
         this.node = node;
         this.logger = node.getLogger(getClass());
 
+        this.partitionService = partitionService;
         partitionCount = partitionService.getPartitionCount();
         this.partitions = new InternalPartitionImpl[partitionCount];
 
@@ -180,6 +182,10 @@ public class PartitionStateManager {
             logger.warning("Partitions can't be assigned since cluster-state= " + clusterState);
             return false;
         }
+        if (partitionService.isFetchMostRecentPartitionTableTaskRequired()) {
+            logger.warning("Partitions can't be assigned since most recent partition table is not decided yet.");
+            return false;
+        }
         return true;
     }
 
@@ -195,7 +201,7 @@ public class PartitionStateManager {
         if (initialized) {
             throw new IllegalStateException("Partition table is already initialized!");
         }
-        logger.info("Setting cluster partition table ...");
+        logger.info("Setting cluster partition table...");
         boolean foundReplica = false;
         for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
             InternalPartitionImpl partition = partitions[partitionId];

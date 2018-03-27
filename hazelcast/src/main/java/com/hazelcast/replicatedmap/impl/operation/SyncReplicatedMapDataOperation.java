@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,9 +26,10 @@ import com.hazelcast.replicatedmap.impl.record.RecordMigrationInfo;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecord;
 
 import java.io.IOException;
-import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
+
+import static com.hazelcast.util.SetUtil.createHashSet;
 
 /**
  * Carries set of replicated map records for a partition from one node to another
@@ -49,15 +50,17 @@ public class SyncReplicatedMapDataOperation<K, V> extends AbstractSerializableOp
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public void run() throws Exception {
         ILogger logger = getLogger();
         if (logger.isFineEnabled()) {
-            logger.fine("Syncing " + recordSet.size() + " records and version: " + version + " for map: " + name + " partitionId="
-                    + getPartitionId() + " from: " + getCallerAddress() + " to: " + getNodeEngine().getThisAddress());
+            logger.fine("Syncing " + recordSet.size() + " records (version " + version
+                    + ") for replicated map '" + name + "' (partitionId " + getPartitionId()
+                    + ") from " + getCallerAddress() + " to " + getNodeEngine().getThisAddress());
         }
         ReplicatedMapService service = getService();
-        AbstractReplicatedRecordStore store = (AbstractReplicatedRecordStore) service
-                .getReplicatedRecordStore(name, true, getPartitionId());
+        AbstractReplicatedRecordStore store
+                = (AbstractReplicatedRecordStore) service.getReplicatedRecordStore(name, true, getPartitionId());
         InternalReplicatedMapStorage<K, V> newStorage = new InternalReplicatedMapStorage<K, V>();
         for (RecordMigrationInfo record : recordSet) {
             K key = (K) store.marshall(record.getKey());
@@ -98,7 +101,7 @@ public class SyncReplicatedMapDataOperation<K, V> extends AbstractSerializableOp
         name = in.readUTF();
         version = in.readLong();
         int size = in.readInt();
-        recordSet = new HashSet<RecordMigrationInfo>(size);
+        recordSet = createHashSet(size);
         for (int j = 0; j < size; j++) {
             RecordMigrationInfo record = new RecordMigrationInfo();
             record.readData(in);

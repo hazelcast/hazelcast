@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.Offloadable;
 import com.hazelcast.core.ReadOnly;
+import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.SlowTest;
@@ -43,7 +44,7 @@ public class EntryProcessorOffloadableBouncingNodesTest extends HazelcastTestSup
 
     public static final String MAP_NAME = "EntryProcessorOffloadableTest";
     public static final int COUNT_ENTRIES = 1000;
-    private static final int CONCURRENCY = Runtime.getRuntime().availableProcessors();
+    private static final int CONCURRENCY = RuntimeAvailableProcessors.get();
 
     @Rule
     public BounceMemberRule bounceMemberRule = BounceMemberRule.with(getBouncingTestConfig()).build();

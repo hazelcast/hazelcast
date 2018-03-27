@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,13 +37,13 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-// RU_COMPAT_38
+// RU_COMPAT_3_9
 
 /**
  * A task that is sent to all local partitions in order to add the indexes that have been specified in the task.
  * Each task is executed for a separate partition.
  *
- * It is a compatibility mode between 3.8 and 3.9 nodes. It is only necessary due to race between
+ * It is a compatibility mode between 3.9 and 3.10 nodes. It is only necessary due to race between
  * PostJoinMapOperations and MapReplicationOperations, so the map data may arrive before the index definitions.
  *
  * This task is responsible to put the index instances back in sync with the definitions.

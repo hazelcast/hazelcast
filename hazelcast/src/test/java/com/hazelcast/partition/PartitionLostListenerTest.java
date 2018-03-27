@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,7 +55,6 @@ import static org.mockito.Mockito.when;
 @Category({QuickTest.class, ParallelTest.class})
 public class PartitionLostListenerTest extends HazelcastTestSupport {
 
-
     private TestHazelcastInstanceFactory factory;
 
     private HazelcastInstance[] instances;
@@ -77,10 +76,10 @@ public class PartitionLostListenerTest extends HazelcastTestSupport {
     public void test_partitionLostListenerInvoked() {
         HazelcastInstance instance = instances[0];
 
-        final EventCollectingPartitionLostListener listener = new EventCollectingPartitionLostListener();
+        EventCollectingPartitionLostListener listener = new EventCollectingPartitionLostListener();
         instance.getPartitionService().addPartitionLostListener(listener);
 
-        final IPartitionLostEvent internalEvent = new IPartitionLostEvent(1, 0, null);
+        IPartitionLostEvent internalEvent = new IPartitionLostEvent(1, 0, null);
 
         NodeEngineImpl nodeEngine = getNode(instance).getNodeEngine();
         InternalPartitionServiceImpl partitionService = (InternalPartitionServiceImpl) nodeEngine.getPartitionService();
@@ -94,12 +93,12 @@ public class PartitionLostListenerTest extends HazelcastTestSupport {
         HazelcastInstance instance1 = instances[0];
         HazelcastInstance instance2 = instances[1];
 
-        final EventCollectingPartitionLostListener listener1 = new EventCollectingPartitionLostListener();
-        final EventCollectingPartitionLostListener listener2 = new EventCollectingPartitionLostListener();
+        EventCollectingPartitionLostListener listener1 = new EventCollectingPartitionLostListener();
+        EventCollectingPartitionLostListener listener2 = new EventCollectingPartitionLostListener();
         instance1.getPartitionService().addPartitionLostListener(listener1);
         instance2.getPartitionService().addPartitionLostListener(listener2);
 
-        final IPartitionLostEvent internalEvent = new IPartitionLostEvent(1, 0, null);
+        IPartitionLostEvent internalEvent = new IPartitionLostEvent(1, 0, null);
 
         NodeEngineImpl nodeEngine = getNode(instance1).getNodeEngine();
         InternalPartitionServiceImpl partitionService = (InternalPartitionServiceImpl) nodeEngine.getPartitionService();
@@ -135,8 +134,7 @@ public class PartitionLostListenerTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 List<PartitionLostEvent> events = listener.getEvents();
                 assertFalse(events.isEmpty());
 
@@ -166,8 +164,7 @@ public class PartitionLostListenerTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 List<PartitionLostEvent> events = listener.getEvents();
                 assertFalse(events.isEmpty());
             }
@@ -207,8 +204,7 @@ public class PartitionLostListenerTest extends HazelcastTestSupport {
     private void assertEventEventually(final EventCollectingPartitionLostListener listener, final IPartitionLostEvent internalEvent) {
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 List<PartitionLostEvent> events = listener.getEvents();
                 assertEquals(1, events.size());
 

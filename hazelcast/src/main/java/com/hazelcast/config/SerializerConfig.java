@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -130,6 +130,39 @@ public class SerializerConfig {
     public SerializerConfig setTypeClassName(final String typeClassName) {
         this.typeClassName = typeClassName;
         return this;
+    }
+
+    @Override
+    @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
+    public final boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || !(o instanceof SerializerConfig)) {
+            return false;
+        }
+
+        SerializerConfig that = (SerializerConfig) o;
+
+        if (className != null ? !className.equals(that.className) : that.className != null) {
+            return false;
+        }
+        if (implementation != null ? !implementation.equals(that.implementation) : that.implementation != null) {
+            return false;
+        }
+        if (typeClass != null ? !typeClass.equals(that.typeClass) : that.typeClass != null) {
+            return false;
+        }
+        return typeClassName != null ? typeClassName.equals(that.typeClassName) : that.typeClassName == null;
+    }
+
+    @Override
+    public final int hashCode() {
+        int result = className != null ? className.hashCode() : 0;
+        result = 31 * result + (implementation != null ? implementation.hashCode() : 0);
+        result = 31 * result + (typeClass != null ? typeClass.hashCode() : 0);
+        result = 31 * result + (typeClassName != null ? typeClassName.hashCode() : 0);
+        return result;
     }
 
     @Override

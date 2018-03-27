@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,7 @@
 
 package com.hazelcast.internal.partition.operation;
 
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.partition.InternalPartitionService;
-import com.hazelcast.internal.partition.NonFragmentedServiceNamespace;
 import com.hazelcast.internal.partition.ReplicaErrorLogger;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.PartitionReplicaManager;
@@ -39,6 +37,7 @@ import java.util.Map;
 import static com.hazelcast.internal.partition.impl.PartitionDataSerializerHook.PARTITION_BACKUP_REPLICA_ANTI_ENTROPY;
 
 // should not be an urgent operation. required to be in order with backup operations on target node
+// RU_COMPAT_39: Do not remove Versioned interface! Version info is needed on 3.9 members while deserializing the operation.
 public final class PartitionBackupReplicaAntiEntropyOperation
         extends AbstractPartitionOperation
         implements PartitionAwareOperation, AllowedDuringPassiveState, Versioned {
@@ -140,33 +139,22 @@ public final class PartitionBackupReplicaAntiEntropyOperation
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        if (out.getVersion().isGreaterOrEqual(Versions.V3_9)) {
-            out.writeInt(versions.size());
-            for (Map.Entry<ServiceNamespace, Long> entry : versions.entrySet()) {
-                out.writeObject(entry.getKey());
-                out.writeLong(entry.getValue());
-            }
-        } else {
-            assert versions.size() == 1 : "Only single namespace is allowed before V3.9: " + versions.keySet();
-            out.writeLong(versions.get(NonFragmentedServiceNamespace.INSTANCE));
+        out.writeInt(versions.size());
+        for (Map.Entry<ServiceNamespace, Long> entry : versions.entrySet()) {
+            out.writeObject(entry.getKey());
+            out.writeLong(entry.getValue());
         }
         out.writeBoolean(returnResponse);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        if (in.getVersion().isGreaterOrEqual(Versions.V3_9)) {
-            int len = in.readInt();
-            versions = new HashMap<ServiceNamespace, Long>(len);
-            for (int i = 0; i < len; i++) {
-                ServiceNamespace ns = in.readObject();
-                long v = in.readLong();
-                versions.put(ns, v);
-            }
-        } else {
-            versions = new HashMap<ServiceNamespace, Long>(1);
+        int len = in.readInt();
+        versions = new HashMap<ServiceNamespace, Long>(len);
+        for (int i = 0; i < len; i++) {
+            ServiceNamespace ns = in.readObject();
             long v = in.readLong();
-            versions.put(NonFragmentedServiceNamespace.INSTANCE, v);
+            versions.put(ns, v);
         }
         returnResponse = in.readBoolean();
     }

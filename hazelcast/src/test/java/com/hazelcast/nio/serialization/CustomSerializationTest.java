@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,26 +43,26 @@ import static org.junit.Assert.assertEquals;
 public class CustomSerializationTest {
 
     @Test
-    public void testSerializer() throws Exception {
+    public void testSerializer() {
         testSerializer(ByteOrder.BIG_ENDIAN, false);
     }
 
     @Test
-    public void testSerializerLittleEndian() throws Exception {
+    public void testSerializerLittleEndian() {
         testSerializer(ByteOrder.LITTLE_ENDIAN, false);
     }
 
     @Test
-    public void testSerializerNativeOrder() throws Exception {
+    public void testSerializerNativeOrder() {
         testSerializer(ByteOrder.nativeOrder(), false);
     }
 
     @Test
-    public void testSerializerNativeOrderUsingUnsafe() throws Exception {
+    public void testSerializerNativeOrderUsingUnsafe() {
         testSerializer(ByteOrder.nativeOrder(), true);
     }
 
-    private void testSerializer(ByteOrder order, boolean allowUnsafe) throws Exception {
+    private void testSerializer(ByteOrder order, boolean allowUnsafe) {
         SerializationConfig config = new SerializationConfig();
         config.setAllowUnsafe(allowUnsafe).setByteOrder(order).setUseNativeByteOrder(false);
         SerializerConfig sc = new SerializerConfig()
@@ -170,9 +170,9 @@ public class CustomSerializationTest {
 
         @Override
         public String toString() {
-            return "FooDataSerializable{" +
-                    "foo='" + foo + '\'' +
-                    '}';
+            return "FooDataSerializable{"
+                    + "foo='" + foo + '\''
+                    + '}';
         }
     }
 
@@ -196,7 +196,7 @@ public class CustomSerializationTest {
         }
 
         @Override
-        public Foo read(ObjectDataInput in) throws IOException {
+        public Foo read(ObjectDataInput in) {
             final InputStream inputStream = (InputStream) in;
             XMLDecoder decoder = new XMLDecoder(inputStream);
             return (Foo) decoder.readObject();

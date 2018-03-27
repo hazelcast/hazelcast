@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,9 +31,8 @@ public final class Hazelcast {
     }
 
     /**
-     * Shuts down all running Hazelcast Instances on this JVM.
-     * It doesn't shutdown all members of the
-     * cluster but just the ones running on this JVM.
+     * Shuts down all member {@link HazelcastInstance}s running on this JVM.
+     * It doesn't shutdown all members of the cluster but just the ones running on this JVM.
      *
      * @see #newHazelcastInstance(Config)
      */

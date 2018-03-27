@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 
 <!--
-  ~ Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -91,8 +91,8 @@
               files="com[\\/]hazelcast[\\/]config[\\/]AbstractXmlConfigHelper"/>
     <suppress checks="ExecutableStatementCount" files="com[\\/]hazelcast[\\/]config[\\/]CacheConfig"/>
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]config[\\/]CacheSimpleConfig"/>
-    <suppress checks="MethodCount|ClassDataAbstractionCoupling|ClassFanOutComplexity"
-              files="com[\\/]hazelcast[\\/]config[\\/]Config"/>
+    <suppress checks="FileLengthCheck" files="com[\\/]hazelcast[\\/]config[\\/]Config"/>
+    <suppress checks="FileLengthCheck" files="com[\\/]hazelcast[\\/]internal[\\/]dynamicconfig[\\/]DynamicConfigurationAwareConfig"/>
     <suppress checks="FanOutComplexity" files="com[\\/]hazelcast[\\/]config[\\/]ConfigXmlGenerator"/>
     <!-- couldn't change structure because of API -->
     <suppress checks="MethodCount|CyclomaticComplexity|NPathComplexity|BooleanExpressionComplexity|ExecutableStatementCount"
@@ -137,6 +137,7 @@
     <suppress checks="CyclomaticComplexity|ClassDataAbstractionCoupling"
               files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]client[\\/]ClientPortableFactory"/>
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]client[\\/]config[\\/]ClientConfig"/>
+    <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]client[\\/]config[\\/]ClientNetworkConfig"/>
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]client[\\/]connection[\\/]nio[\\/]ClientConnection"/>
     <suppress checks="MethodCount|ClassFanOutComplexity|ClassDataAbstractionCoupling" files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]ClientEngineImpl"/>
     <suppress checks="CyclomaticComplexity|ClassDataAbstractionCoupling"
@@ -234,6 +235,12 @@
     <!-- Executor -->
     <suppress checks="ClassFanOutComplexity|MethodCount"
               files="com[\\/]hazelcast[\\/]executor[\\/]impl[\\/]ExecutorServiceProxy"/>
+    <suppress checks="NPathComplexity"
+              files="com[\\/]hazelcast[\\/]config[\\/]DurableExecutorConfig"/>
+    <suppress checks="NPathComplexity"
+              files="com[\\/]hazelcast[\\/]config[\\/]ExecutorConfig"/>
+    <suppress checks="NPathComplexity"
+              files="com[\\/]hazelcast[\\/]config[\\/]ScheduledExecutorConfig"/>
 
     <!-- Multimap -->
     <suppress checks="JavadocMethod" files="com[\\/]hazelcast[\\/]multimap[\\/]"/>
@@ -344,6 +351,9 @@
               files="com[\\/]hazelcast[\\/]map[\\/]impl[\\/]querycache[\\/]event[\\/]DefaultQueryCacheEventData"/>
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]map[\\/]impl[\\/]query[\\/]MapQueryEngineImpl"/>
     <suppress checks="NPathComplexity|CyclomaticComplexity" files="com[\\/]hazelcast[\\/]map[\\/]impl[\\/]SimpleEntryView"/>
+
+    <!-- PhoneHome -->
+    <suppress checks="NPathComplexity" files="com[\\/]hazelcast[\\/]util[\\/]PhoneHome"/>
 
     <!-- Adopted public domain code with different style -->
     <suppress checks="MagicNumber|FileLength|DeclarationOrder|RedundantModifier|InnerAssignment|NPath|Cyclomatic"

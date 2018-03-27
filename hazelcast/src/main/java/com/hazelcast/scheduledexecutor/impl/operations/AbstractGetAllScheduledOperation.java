@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,8 @@ import com.hazelcast.scheduledexecutor.impl.ScheduledTaskDescriptor;
 import java.util.Collection;
 import java.util.List;
 
-public abstract class AbstractGetAllScheduledOperation extends AbstractSchedulerOperation {
+public abstract class AbstractGetAllScheduledOperation
+        extends AbstractSchedulerOperation {
 
     public AbstractGetAllScheduledOperation() {
     }
@@ -44,10 +45,7 @@ public abstract class AbstractGetAllScheduledOperation extends AbstractScheduler
 
         Collection<ScheduledTaskDescriptor> tasks = container.getTasks();
         for (ScheduledTaskDescriptor task : tasks) {
-            if (task.isTaskOwner()) {
-                handlers.add(container.offprintHandler(task.getDefinition().getName()));
-            }
+            handlers.add(container.offprintHandler(task.getDefinition().getName()));
         }
     }
-
 }

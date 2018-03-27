@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,16 +18,17 @@ package com.hazelcast.internal.cluster.impl;
 
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.instance.Node;
+import com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage.SplitBrainMergeCheckResult;
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.util.Clock;
-import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.RandomPicker;
 
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static java.lang.Thread.currentThread;
 
 public class MulticastJoiner extends AbstractJoiner {
 
@@ -96,7 +97,7 @@ public class MulticastJoiner extends AbstractJoiner {
             try {
                 Thread.sleep(JOIN_RETRY_INTERVAL);
             } catch (InterruptedException e) {
-                EmptyStatement.ignore(e);
+                currentThread().interrupt();
             }
 
             if (isBlacklisted(master)) {
@@ -123,23 +124,21 @@ public class MulticastJoiner extends AbstractJoiner {
                     continue;
                 }
 
-                if (splitBrainMsg.getMemberCount() == 1) {
-                    // if the other cluster has just single member, that may be a newly starting node instead of a split node
-                    // wait 2 times 'WAIT_SECONDS_BEFORE_JOIN' seconds before processing merge JoinRequest
-                    Thread.sleep(2 * node.getProperties().getMillis(GroupProperty.WAIT_SECONDS_BEFORE_JOIN));
-                }
-
-                SplitBrainJoinMessage response = sendSplitBrainJoinMessage(targetAddress);
-                if (shouldMerge(response)) {
+                SplitBrainJoinMessage request = node.createSplitBrainJoinMessage();
+                SplitBrainMergeCheckResult result = sendSplitBrainJoinMessageAndCheckResponse(targetAddress, request);
+                if (result == SplitBrainMergeCheckResult.LOCAL_NODE_SHOULD_MERGE) {
                     logger.warning(node.getThisAddress() + " is merging [multicast] to " + targetAddress);
-                    startClusterMerge(targetAddress);
+                    startClusterMerge(targetAddress, clusterService.getMemberListVersion());
                     return;
                 }
 
-                // other side should join to us. broadcast a new SplitBrainJoinMessage.
-                node.multicastService.send(node.createSplitBrainJoinMessage());
+                if (result == SplitBrainMergeCheckResult.REMOTE_NODE_SHOULD_MERGE) {
+                    // other side should join to us. broadcast a new SplitBrainJoinMessage.
+                    node.multicastService.send(node.createSplitBrainJoinMessage());
+                }
             }
         } catch (InterruptedException e) {
+            currentThread().interrupt();
             logger.fine(e);
         } catch (Exception e) {
             logger.warning(e);

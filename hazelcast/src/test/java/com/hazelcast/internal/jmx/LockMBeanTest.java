@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,8 +62,8 @@ public class LockMBeanTest extends HazelcastTestSupport {
 
     @Test
     public void testLockCountIsTwo_whenLockedTwice() throws Exception {
-        lock.lock(1000, TimeUnit.MILLISECONDS);
-        lock.lock(1000, TimeUnit.MILLISECONDS);
+        lock.lock(10000, TimeUnit.MILLISECONDS);
+        lock.lock(10000, TimeUnit.MILLISECONDS);
 
         // check number of times locked (locked twice now)
         int lockCount = getIntegerAttribute("lockCount");

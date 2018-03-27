@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,6 @@ import com.hazelcast.partition.NoDataMemberInClusterException;
 
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -36,6 +35,8 @@ import static com.hazelcast.mapreduce.TopologyChangedStrategy.CANCEL_RUNNING_OPE
 import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.ResultState.CHECK_STATE_FAILED;
 import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.ResultState.NO_SUPERVISOR;
 import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.ResultState.SUCCESSFUL;
+import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.util.SetUtil.createHashSet;
 
 /**
  * This operation is used to request assignment for keys on the job owners node. The job owner
@@ -71,10 +72,10 @@ public class KeysAssignmentOperation
             return;
         }
 
-        Map<Object, Address> assignment = new HashMap<Object, Address>();
 
         // Precheck if still all members are available
         if (!supervisor.checkAssignedMembersAvailable()) {
+            Map<Object, Address> assignment = new HashMap<Object, Address>();
             TopologyChangedStrategy tcs = supervisor.getConfiguration().getTopologyChangedStrategy();
             if (tcs == CANCEL_RUNNING_OPERATION) {
                 Exception exception = new TopologyChangedException();
@@ -92,6 +93,8 @@ public class KeysAssignmentOperation
                 return;
             }
         }
+
+        final Map<Object, Address> assignment = createHashMap(keys.size());
 
         try {
             for (Object key : keys) {
@@ -120,7 +123,7 @@ public class KeysAssignmentOperation
             throws IOException {
         super.readInternal(in);
         int size = in.readInt();
-        keys = new HashSet<Object>();
+        keys = createHashSet(size);
         for (int i = 0; i < size; i++) {
             keys.add(in.readObject());
         }

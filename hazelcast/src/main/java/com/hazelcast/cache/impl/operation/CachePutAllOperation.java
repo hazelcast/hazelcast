@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,9 +38,10 @@ import javax.cache.expiry.ExpiryPolicy;
 import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static com.hazelcast.util.MapUtil.createHashMap;
 
 public class CachePutAllOperation
         extends AbstractNamedOperation
@@ -82,12 +83,15 @@ public class CachePutAllOperation
         String callerUuid = getCallerUuid();
         ICacheService service = getService();
         cache = service.getOrCreateRecordStore(name, partitionId);
-        backupRecords = new HashMap<Data, CacheRecord>(entries.size());
+        backupRecords = createHashMap(entries.size());
         for (Map.Entry<Data, Data> entry : entries) {
             Data key = entry.getKey();
             Data value = entry.getValue();
             CacheRecord backupRecord = cache.put(key, value, expiryPolicy, callerUuid, completionId);
-            backupRecords.put(key, backupRecord);
+            // backupRecord may be null (eg expired on put)
+            if (backupRecord != null) {
+                backupRecords.put(key, backupRecord);
+            }
 
             publishWanEvent(key, value, backupRecord);
         }

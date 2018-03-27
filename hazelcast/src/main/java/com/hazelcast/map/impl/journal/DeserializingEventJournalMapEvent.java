@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,9 +25,12 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
 import com.hazelcast.spi.serialization.SerializationService;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 
+@SuppressFBWarnings(value = "EQ_DOESNT_OVERRIDE_EQUALS",
+        justification = "equality is checked by serialised data in superclass, not deserialised instances in this class")
 public class DeserializingEventJournalMapEvent<K, V>
         extends InternalEventJournalMapEvent
         implements EventJournalMapEvent<K, V>, HazelcastInstanceAware {

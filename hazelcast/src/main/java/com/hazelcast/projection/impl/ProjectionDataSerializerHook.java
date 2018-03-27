@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,8 +32,9 @@ public final class ProjectionDataSerializerHook implements DataSerializerHook {
 
     public static final int SINGLE_ATTRIBUTE = 0;
     public static final int MULTI_ATTRIBUTE = 1;
+    public static final int IDENTITY_PROJECTION = 2;
 
-    private static final int LEN = MULTI_ATTRIBUTE + 1;
+    private static final int LEN = IDENTITY_PROJECTION + 1;
 
     @Override
     public int getFactoryId() {
@@ -52,6 +53,11 @@ public final class ProjectionDataSerializerHook implements DataSerializerHook {
         constructors[MULTI_ATTRIBUTE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new MultiAttributeProjection();
+            }
+        };
+        constructors[IDENTITY_PROJECTION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return IdentityProjection.INSTANCE;
             }
         };
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -139,6 +139,15 @@ public final class FactoryIdHelper {
 
     public static final String EVENT_JOURNAL_DS_FACTORY = "hazelcast.serialization.ds.event_journal";
     public static final int EVENT_JOURNAL_DS_FACTORY_ID = -45;
+
+    public static final String FLAKE_ID_GENERATOR_DS_FACTORY = "hazelcast.serialization.ds.flake_id_generator";
+    public static final int FLAKE_ID_GENERATOR_DS_FACTORY_ID = -46;
+
+    public static final String SPLIT_BRAIN_DS_FACTORY = "hazelcast.serialization.ds.split_brain";
+    public static final int SPLIT_BRAIN_DS_FACTORY_ID = -47;
+
+    public static final String PN_COUNTER_DS_FACTORY = "hazelcast.serialization.ds.pn_counter";
+    public static final int PN_COUNTER_DS_FACTORY_ID = -48;
 
     // =========================== portables =============================================
 

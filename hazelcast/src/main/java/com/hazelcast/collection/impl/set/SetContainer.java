@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,9 +30,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.util.SetUtil.createHashSet;
+
 public class SetContainer extends CollectionContainer {
 
     private static final int INITIAL_CAPACITY = 1000;
+
     private Set<CollectionItem> itemSet;
     private SetConfig config;
 
@@ -54,7 +58,7 @@ public class SetContainer extends CollectionContainer {
     @Override
     public Map<Long, Data> addAll(List<Data> valueList) {
         final int size = valueList.size();
-        final Map<Long, Data> map = new HashMap<Long, Data>(size);
+        final Map<Long, Data> map = createHashMap(size);
         List<CollectionItem> list = new ArrayList<CollectionItem>(size);
         for (Data value : valueList) {
             final long itemId = nextId();
@@ -73,7 +77,15 @@ public class SetContainer extends CollectionContainer {
     public Set<CollectionItem> getCollection() {
         if (itemSet == null) {
             if (itemMap != null && !itemMap.isEmpty()) {
-                itemSet = new HashSet<CollectionItem>(itemMap.values());
+                itemSet = createHashSet(itemMap.size());
+                long maxItemId = Long.MIN_VALUE;
+                for (CollectionItem collectionItem : itemMap.values()) {
+                    if (collectionItem.getItemId() > maxItemId) {
+                        maxItemId = collectionItem.getItemId();
+                    }
+                    itemSet.add(collectionItem);
+                }
+                setId(maxItemId + ID_PROMOTION_OFFSET);
                 itemMap.clear();
             } else {
                 itemSet = new HashSet<CollectionItem>(INITIAL_CAPACITY);
@@ -84,10 +96,10 @@ public class SetContainer extends CollectionContainer {
     }
 
     @Override
-    protected Map<Long, CollectionItem> getMap() {
+    public Map<Long, CollectionItem> getMap() {
         if (itemMap == null) {
             if (itemSet != null && !itemSet.isEmpty()) {
-                itemMap = new HashMap<Long, CollectionItem>(itemSet.size());
+                itemMap = createHashMap(itemSet.size());
                 for (CollectionItem item : itemSet) {
                     itemMap.put(item.getItemId(), item);
                 }

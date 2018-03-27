@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,18 +17,26 @@
 package com.hazelcast.map.impl.querycache.subscriber.record;
 
 import com.hazelcast.util.Clock;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
+
+import static java.util.concurrent.atomic.AtomicIntegerFieldUpdater.newUpdater;
+
 
 /**
  * Contains common functionality which is needed by a {@link QueryCacheRecord} instance.
  */
 abstract class AbstractQueryCacheRecord implements QueryCacheRecord {
 
-    protected final long creationTime;
-    protected volatile long accessTime = -1L;
-    protected volatile int accessHit;
+    private static final AtomicIntegerFieldUpdater<AbstractQueryCacheRecord> ACCESS_HIT =
+            newUpdater(AbstractQueryCacheRecord.class, "accessHit");
 
-    public AbstractQueryCacheRecord() {
+    private final long creationTime;
+
+    private volatile int accessHit;
+    private volatile long accessTime = -1L;
+
+    AbstractQueryCacheRecord() {
         creationTime = Clock.currentTimeMillis();
     }
 
@@ -48,10 +56,8 @@ abstract class AbstractQueryCacheRecord implements QueryCacheRecord {
     }
 
     @Override
-    @SuppressFBWarnings(value = "VO_VOLATILE_INCREMENT",
-            justification = "CacheRecord can be accessed by only its own partition thread.")
     public void incrementAccessHit() {
-        accessHit++;
+        ACCESS_HIT.incrementAndGet(this);
     }
 
     @Override

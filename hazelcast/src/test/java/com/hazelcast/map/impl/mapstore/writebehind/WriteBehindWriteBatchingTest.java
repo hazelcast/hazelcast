@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,7 +52,8 @@ public class WriteBehindWriteBatchingTest extends HazelcastTestSupport {
                 // expecting more than half of operations should have the write batch size.
                 // takes this a lower bound.
                 final int expectedBatchOpCount = (numberOfItems / writeBatchSize) / 2;
-                final int numberOfBatchOperationsEqualWriteBatchSize = mapStore.findNumberOfBatchsEqualWriteBatchSize(writeBatchSize);
+                final int numberOfBatchOperationsEqualWriteBatchSize
+                        = mapStore.findNumberOfBatchsEqualWriteBatchSize(writeBatchSize);
                 assertTrue(numberOfBatchOperationsEqualWriteBatchSize >= expectedBatchOpCount);
             }
         }, 20);

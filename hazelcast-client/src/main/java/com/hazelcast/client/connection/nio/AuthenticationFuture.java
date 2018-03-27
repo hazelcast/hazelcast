@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,6 @@ import com.hazelcast.nio.Connection;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 class AuthenticationFuture {
 
@@ -39,10 +37,8 @@ class AuthenticationFuture {
         countDownLatch.countDown();
     }
 
-    Connection get(int timeout) throws Throwable {
-        if (!countDownLatch.await(timeout, TimeUnit.MILLISECONDS)) {
-            throw new TimeoutException("Authentication response did not come back in " + timeout + " millis");
-        }
+    Connection get() throws Throwable {
+        countDownLatch.await();
         if (connection != null) {
             return connection;
         }

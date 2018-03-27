@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -115,17 +115,18 @@ public class QueryCacheConfigTest extends HazelcastTestSupport {
 
     @Test
     public void testEqualsAndHashCode() {
+        assumeDifferentHashCodes();
         EqualsVerifier.forClass(QueryCacheConfig.class)
-                      .allFieldsShouldBeUsedExcept("readOnly")
-                      .suppress(Warning.NONFINAL_FIELDS)
-                      .withPrefabValues(PredicateConfig.class,
-                              new PredicateConfig("red"), new PredicateConfig("black"))
-                      .withPrefabValues(EvictionConfig.class,
-                              new EvictionConfig(1000, ENTRY_COUNT, EvictionPolicy.LFU),
-                              new EvictionConfig(300, USED_NATIVE_MEMORY_PERCENTAGE, EvictionPolicy.LRU))
-                      .withPrefabValues(QueryCacheConfigReadOnly.class,
-                              new QueryCacheConfigReadOnly(new QueryCacheConfig("red")),
-                              new QueryCacheConfigReadOnly(new QueryCacheConfig("black")))
-                      .verify();
+                .allFieldsShouldBeUsedExcept("readOnly")
+                .suppress(Warning.NONFINAL_FIELDS)
+                .withPrefabValues(PredicateConfig.class,
+                        new PredicateConfig("red"), new PredicateConfig("black"))
+                .withPrefabValues(EvictionConfig.class,
+                        new EvictionConfig(1000, ENTRY_COUNT, EvictionPolicy.LFU),
+                        new EvictionConfig(300, USED_NATIVE_MEMORY_PERCENTAGE, EvictionPolicy.LRU))
+                .withPrefabValues(QueryCacheConfigReadOnly.class,
+                        new QueryCacheConfigReadOnly(new QueryCacheConfig("red")),
+                        new QueryCacheConfigReadOnly(new QueryCacheConfig("black")))
+                .verify();
     }
 }

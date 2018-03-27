@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import com.hazelcast.collection.impl.collection.operations.CollectionCompareAndR
 import com.hazelcast.collection.impl.collection.operations.CollectionContainsOperation;
 import com.hazelcast.collection.impl.collection.operations.CollectionGetAllOperation;
 import com.hazelcast.collection.impl.collection.operations.CollectionIsEmptyOperation;
+import com.hazelcast.collection.impl.collection.operations.CollectionMergeOperation;
 import com.hazelcast.collection.impl.collection.operations.CollectionRemoveBackupOperation;
 import com.hazelcast.collection.impl.collection.operations.CollectionRemoveOperation;
 import com.hazelcast.collection.impl.collection.operations.CollectionSizeOperation;
@@ -122,6 +123,8 @@ public class CollectionDataSerializerHook implements DataSerializerHook {
     public static final int COLLECTION_TRANSACTION_LOG_RECORD = 43;
     public static final int QUEUE_TRANSACTION_LOG_RECORD = 44;
 
+    public static final int COLLECTION_MERGE = 45;
+
     @Override
     public int getFactoryId() {
         return F_ID;
@@ -130,7 +133,7 @@ public class CollectionDataSerializerHook implements DataSerializerHook {
     @Override
     public DataSerializableFactory createFactory() {
         ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors
-                = new ConstructorFunction[QUEUE_TRANSACTION_LOG_RECORD + 1];
+                = new ConstructorFunction[COLLECTION_MERGE + 1];
 
         constructors[COLLECTION_ADD] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
@@ -352,6 +355,11 @@ public class CollectionDataSerializerHook implements DataSerializerHook {
         constructors[QUEUE_TRANSACTION_LOG_RECORD] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new QueueTransactionLogRecord();
+            }
+        };
+        constructors[COLLECTION_MERGE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CollectionMergeOperation();
             }
         };
 

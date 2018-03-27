@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,8 +34,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 /**
- * Executes an operation on a set of targets.
- * Similar to {@link com.hazelcast.spi.impl.operationservice.impl.InvokeOnPartitions} but for members.
+ * Executes an operation on a set of targets. Similar to {@link com.hazelcast.spi.impl.operationservice.impl.InvokeOnPartitions}
+ * but for members.
  */
 @PrivateApi
 public final class InvokeOnMembers {
@@ -54,8 +54,7 @@ public final class InvokeOnMembers {
     private final Map<Member, Future> futures;
     private final Map<Member, Object> results;
 
-    public InvokeOnMembers(NodeEngine nodeEngine,
-                           String serviceName, Supplier<Operation> operationFactory,
+    public InvokeOnMembers(NodeEngine nodeEngine, String serviceName, Supplier<Operation> operationFactory,
                            Collection<Member> targets) {
         this.logger = nodeEngine.getLogger(getClass());
         this.operationService = nodeEngine.getOperationService();
@@ -70,7 +69,8 @@ public final class InvokeOnMembers {
     /**
      * Executes the operation on all targets.
      */
-    public Map<Member, Object> invoke() throws Exception {
+    public Map<Member, Object> invoke()
+            throws Exception {
         invokeOnAllTargets();
 
         awaitCompletion();
@@ -82,11 +82,8 @@ public final class InvokeOnMembers {
 
     private void invokeOnAllTargets() {
         for (Member target : targets) {
-            Future future = operationService
-                    .createInvocationBuilder(serviceName, operationFactory.get(), target.getAddress())
-                    .setTryCount(TRY_COUNT)
-                    .setTryPauseMillis(TRY_PAUSE_MILLIS)
-                    .invoke();
+            Future future = operationService.createInvocationBuilder(serviceName, operationFactory.get(), target.getAddress())
+                                            .setTryCount(TRY_COUNT).setTryPauseMillis(TRY_PAUSE_MILLIS).invoke();
             futures.put(target, future);
         }
     }
@@ -108,7 +105,8 @@ public final class InvokeOnMembers {
         }
     }
 
-    private void retryFailedTargets() throws InterruptedException, ExecutionException {
+    private void retryFailedTargets()
+            throws InterruptedException, ExecutionException {
         List<Member> failedMembers = new LinkedList<Member>();
         for (Map.Entry<Member, Object> memberResult : results.entrySet()) {
             Member member = memberResult.getKey();
@@ -120,9 +118,7 @@ public final class InvokeOnMembers {
 
         for (Member failedMember : failedMembers) {
             Operation operation = operationFactory.get();
-            Future future = operationService
-                    .createInvocationBuilder(serviceName, operation, failedMember.getAddress())
-                    .invoke();
+            Future future = operationService.createInvocationBuilder(serviceName, operation, failedMember.getAddress()).invoke();
             results.put(failedMember, future);
         }
 

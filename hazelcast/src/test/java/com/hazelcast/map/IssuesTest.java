@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,8 +62,10 @@ public class IssuesTest extends HazelcastTestSupport {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(n);
 
         final IMap<Integer, Integer> map = factory.newHazelcastInstance(getConfig()).getMap("testIssue321_1");
-        final BlockingQueue<com.hazelcast.core.EntryEvent<Integer, Integer>> events1 = new LinkedBlockingQueue<com.hazelcast.core.EntryEvent<Integer, Integer>>();
-        final BlockingQueue<com.hazelcast.core.EntryEvent<Integer, Integer>> events2 = new LinkedBlockingQueue<com.hazelcast.core.EntryEvent<Integer, Integer>>();
+        final BlockingQueue<com.hazelcast.core.EntryEvent<Integer, Integer>> events1
+                = new LinkedBlockingQueue<com.hazelcast.core.EntryEvent<Integer, Integer>>();
+        final BlockingQueue<com.hazelcast.core.EntryEvent<Integer, Integer>> events2
+                = new LinkedBlockingQueue<com.hazelcast.core.EntryEvent<Integer, Integer>>();
         map.addEntryListener(new EntryAdapter<Integer, Integer>() {
             @Override
             public void entryAdded(com.hazelcast.core.EntryEvent<Integer, Integer> event) {
@@ -91,8 +93,10 @@ public class IssuesTest extends HazelcastTestSupport {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(n);
 
         final IMap<Integer, Integer> imap = factory.newHazelcastInstance(getConfig()).getMap("testIssue321_2");
-        final BlockingQueue<com.hazelcast.core.EntryEvent<Integer, Integer>> events1 = new LinkedBlockingQueue<com.hazelcast.core.EntryEvent<Integer, Integer>>();
-        final BlockingQueue<com.hazelcast.core.EntryEvent<Integer, Integer>> events2 = new LinkedBlockingQueue<com.hazelcast.core.EntryEvent<Integer, Integer>>();
+        final BlockingQueue<com.hazelcast.core.EntryEvent<Integer, Integer>> events1
+                = new LinkedBlockingQueue<com.hazelcast.core.EntryEvent<Integer, Integer>>();
+        final BlockingQueue<com.hazelcast.core.EntryEvent<Integer, Integer>> events2
+                = new LinkedBlockingQueue<com.hazelcast.core.EntryEvent<Integer, Integer>>();
         imap.addEntryListener(new EntryAdapter<Integer, Integer>() {
             @Override
             public void entryAdded(com.hazelcast.core.EntryEvent<Integer, Integer> event) {

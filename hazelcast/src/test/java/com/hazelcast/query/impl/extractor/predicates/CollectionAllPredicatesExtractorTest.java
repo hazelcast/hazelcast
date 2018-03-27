@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,15 +38,15 @@ import static com.hazelcast.query.impl.extractor.predicates.CollectionDataStruct
  * Tests whether all predicates work with the extraction in collections.
  * Each predicate is tested with and without the extraction including "any" operator.
  * Extraction with the "any" operator may return multiple results, thus each predicate has to handle it.
- *
+ * <p>
  * Extraction mechanism: CUSTOM EXTRACTORS.
- *
+ * <p>
  * The trick here is that each extractor is registered under the attribute name like "limbs_[1].power".
  * It is illegal in the production usage, but it enables reusing the test cases from
  * CollectionAllPredicatesReflectionTest without any code changes, so it is used here.
  * That is the reason why this test may extend the CollectionAllPredicatesReflectionTest, and the only difference
  * is the registration of the Extractors.
- *
+ * <p>
  * This test is parametrised. See CollectionAllPredicatesReflectionTest for more details.
  */
 @RunWith(Parameterized.class)

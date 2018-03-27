@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,13 +28,9 @@ import java.io.IOException;
 public class MultiMapOperationFactory implements OperationFactory {
 
     private String name;
-
     private OperationFactoryType operationFactoryType;
-
     private Data key;
-
     private Data value;
-
     private long threadId;
 
     public MultiMapOperationFactory() {
@@ -79,8 +75,7 @@ public class MultiMapOperationFactory implements OperationFactory {
     }
 
     @Override
-    public void writeData(ObjectDataOutput out)
-            throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
         out.writeInt(operationFactoryType.type);
         out.writeLong(threadId);
@@ -89,8 +84,7 @@ public class MultiMapOperationFactory implements OperationFactory {
     }
 
     @Override
-    public void readData(ObjectDataInput in)
-            throws IOException {
+    public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
         operationFactoryType = OperationFactoryType.getByType(in.readInt());
         threadId = in.readLong();

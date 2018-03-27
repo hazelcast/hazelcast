@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,9 +20,11 @@ import com.hazelcast.concurrent.semaphore.operations.AcquireOperation;
 import com.hazelcast.concurrent.semaphore.operations.AvailableOperation;
 import com.hazelcast.concurrent.semaphore.operations.DrainOperation;
 import com.hazelcast.concurrent.semaphore.operations.InitOperation;
+import com.hazelcast.concurrent.semaphore.operations.IncreaseOperation;
 import com.hazelcast.concurrent.semaphore.operations.ReduceOperation;
 import com.hazelcast.concurrent.semaphore.operations.ReleaseOperation;
 import com.hazelcast.core.ISemaphore;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
@@ -33,6 +35,7 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.util.ExceptionUtil.rethrowAllowInterrupted;
 import static com.hazelcast.util.Preconditions.checkNotNegative;
+import static java.lang.Thread.currentThread;
 
 public class SemaphoreProxy extends AbstractDistributedObject<SemaphoreService> implements ISemaphore {
 
@@ -106,6 +109,20 @@ public class SemaphoreProxy extends AbstractDistributedObject<SemaphoreService> 
     }
 
     @Override
+    public void increasePermits(int increase) {
+        if (getNodeEngine().getClusterService().getClusterVersion().isLessThan(Versions.V3_10)) {
+            throw new UnsupportedOperationException("Increasing permits is available when cluster version is 3.10 or higher");
+        }
+
+        checkNotNegative(increase, "increase can't be negative");
+
+        Operation operation = new IncreaseOperation(name, increase)
+                .setPartitionId(partitionId);
+        InternalCompletableFuture<Object> future = invokeOnPartition(operation);
+        future.join();
+    }
+
+    @Override
     public void release() {
         release(1);
     }
@@ -125,6 +142,7 @@ public class SemaphoreProxy extends AbstractDistributedObject<SemaphoreService> 
         try {
             return tryAcquire(1, 0, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
+            currentThread().interrupt();
             return false;
         }
     }
@@ -134,6 +152,7 @@ public class SemaphoreProxy extends AbstractDistributedObject<SemaphoreService> 
         try {
             return tryAcquire(permits, 0, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
+            currentThread().interrupt();
             return false;
         }
     }

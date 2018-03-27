@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,8 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
+
+import static com.hazelcast.util.SetUtil.createHashSet;
 
 /**
  * <p>Internal Set wrapper of {@link CacheEventData} items used during publishing and dispatching events.</p>
@@ -111,7 +113,7 @@ public class CacheEventSet
         eventType = CacheEventType.getByType(in.readInt());
         completionId = in.readInt();
         final int size = in.readInt();
-        events = new HashSet<CacheEventData>(size);
+        events = createHashSet(size);
         for (int i = 0; i < size; i++) {
             CacheEventData ced = in.readObject();
             events.add(ced);

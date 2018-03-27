@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -74,7 +74,7 @@ public class PartitionWideEntryOperation extends MapOperation
     @Override
     public void run() {
         responses = new MapEntries(recordStore.size());
-        operator = operator(this, entryProcessor, getPredicate(), true);
+        operator = operator(this, entryProcessor, getPredicate());
 
         Iterator<Record> iterator = recordStore.iterator(Clock.currentTimeMillis(), false);
         while (iterator.hasNext()) {
@@ -114,9 +114,16 @@ public class PartitionWideEntryOperation extends MapOperation
         PartitionWideEntryBackupOperation backupOperation = null;
         if (backupProcessor != null) {
             backupOperation = new PartitionWideEntryBackupOperation(name, backupProcessor);
-            backupOperation.setWanEventList(operator.getWanEventList());
         }
         return backupOperation;
+    }
+
+
+    @Override
+    protected void toString(StringBuilder sb) {
+        super.toString(sb);
+
+        sb.append(", entryProcessor=").append(entryProcessor);
     }
 
     @Override

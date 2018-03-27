@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,11 +36,10 @@ import java.util.concurrent.ConcurrentMap;
  */
 public class CachePartitionSegment implements ConstructorFunction<String, ICacheRecordStore> {
 
-    protected final AbstractCacheService cacheService;
     protected final int partitionId;
-    protected final ConcurrentMap<String, ICacheRecordStore> recordStores =
-            new ConcurrentHashMap<String, ICacheRecordStore>();
     protected final Object mutex = new Object();
+    protected final AbstractCacheService cacheService;
+    protected final ConcurrentMap<String, ICacheRecordStore> recordStores = new ConcurrentHashMap<String, ICacheRecordStore>();
 
     public CachePartitionSegment(final AbstractCacheService cacheService, final int partitionId) {
         this.cacheService = cacheService;
@@ -121,10 +120,10 @@ public class CachePartitionSegment implements ConstructorFunction<String, ICache
         }
     }
 
-    public void clear() {
+    public void reset() {
         synchronized (mutex) {
             for (ICacheRecordStore store : recordStores.values()) {
-                store.clear();
+                store.reset();
             }
         }
     }
@@ -143,7 +142,7 @@ public class CachePartitionSegment implements ConstructorFunction<String, ICache
             for (ICacheRecordStore store : recordStores.values()) {
                 CacheConfig cacheConfig = store.getConfig();
                 if (backupCount > cacheConfig.getTotalBackupCount()) {
-                    store.clear();
+                    store.reset();
                 }
             }
         }

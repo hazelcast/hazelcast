@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,21 +25,26 @@ import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ReplicationSupportingService;
-import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.spi.merge.MergingEntry;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.wan.WanReplicationEvent;
+import com.hazelcast.wan.WanReplicationService;
 
 import java.util.concurrent.Future;
 
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
+import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntry;
+import static com.hazelcast.util.ExceptionUtil.rethrow;
 
 class MapReplicationSupportingService implements ReplicationSupportingService {
-
     private final MapServiceContext mapServiceContext;
     private final NodeEngine nodeEngine;
+    private final WanReplicationService wanService;
 
     MapReplicationSupportingService(MapServiceContext mapServiceContext) {
         this.mapServiceContext = mapServiceContext;
         this.nodeEngine = mapServiceContext.getNodeEngine();
+        this.wanService = nodeEngine.getWanReplicationService();
     }
 
     @Override
@@ -60,29 +65,37 @@ class MapReplicationSupportingService implements ReplicationSupportingService {
 
         try {
             int partitionId = nodeEngine.getPartitionService().getPartitionId(replicationRemove.getKey());
-            Future f = nodeEngine.getOperationService()
+            Future future = nodeEngine.getOperationService()
                     .invokeOnPartition(SERVICE_NAME, operation, partitionId);
-            f.get();
+            future.get();
+            wanService.getReceivedEventCounter(MapService.SERVICE_NAME).incrementRemove(mapName);
         } catch (Throwable t) {
-            throw ExceptionUtil.rethrow(t);
+            throw rethrow(t);
         }
     }
 
     private void handleUpdate(MapReplicationUpdate replicationUpdate) {
-        EntryView entryView = replicationUpdate.getEntryView();
-        MapMergePolicy mergePolicy = replicationUpdate.getMergePolicy();
+        Object mergePolicy = replicationUpdate.getMergePolicy();
         String mapName = replicationUpdate.getMapName();
-        MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
         MapOperationProvider operationProvider = mapServiceContext.getMapOperationProvider(mapName);
-        Data dataKey = mapServiceContext.toData(entryView.getKey(), mapContainer.getPartitioningStrategy());
-        MapOperation operation = operationProvider.createMergeOperation(mapName, dataKey, entryView, mergePolicy, true);
+
+        MapOperation operation;
+        if (mergePolicy instanceof SplitBrainMergePolicy) {
+            MergingEntry<Data, Data> mergingEntry = createMergingEntry(nodeEngine.getSerializationService(),
+                    replicationUpdate.getEntryView());
+            operation = operationProvider.createMergeOperation(mapName, mergingEntry, (SplitBrainMergePolicy) mergePolicy, true);
+        } else {
+            EntryView<Data, Data> entryView = replicationUpdate.getEntryView();
+            operation = operationProvider.createLegacyMergeOperation(mapName, entryView, (MapMergePolicy) mergePolicy, true);
+        }
         try {
-            int partitionId = nodeEngine.getPartitionService().getPartitionId(entryView.getKey());
-            Future f = nodeEngine.getOperationService()
+            int partitionId = nodeEngine.getPartitionService().getPartitionId(replicationUpdate.getEntryView().getKey());
+            Future future = nodeEngine.getOperationService()
                     .invokeOnPartition(SERVICE_NAME, operation, partitionId);
-            f.get();
+            future.get();
+            wanService.getReceivedEventCounter(MapService.SERVICE_NAME).incrementUpdate(mapName);
         } catch (Throwable t) {
-            throw ExceptionUtil.rethrow(t);
+            throw rethrow(t);
         }
     }
 }

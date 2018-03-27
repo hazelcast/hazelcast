@@ -1,5 +1,5 @@
 <!--
-  ~ Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@
 
     <properties>
         <main.basedir>${project.basedir}</main.basedir>
-        <client.protocol.version>1.5.0-8</client.protocol.version>
+        <client.protocol.version>1.6.0-10</client.protocol.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
         <jdk.version>1.6</jdk.version>
@@ -48,9 +48,10 @@
 
         <hazelcast.distribution>Hazelcast</hazelcast.distribution>
         <hazelcast.serialization.version>1</hazelcast.serialization.version>
+        <hazelcast.serverMainClass>com.hazelcast.core.server.StartServer</hazelcast.serverMainClass>
 
         <!-- Not using 3.1 at the moment since it recompiles all classes every time -->
-        <!-- https://jira.codehaus.org/browse/MCOMPILER-205 -->
+        <!-- https://issues.apache.org/jira/browse/MCOMPILER-205 -->
         <!--<maven.compiler.plugin.version>3.1</maven.compiler.plugin.version>-->
         <maven.compiler.plugin.version>2.5.1</maven.compiler.plugin.version>
         <maven.jar.plugin.version>2.4</maven.jar.plugin.version>
@@ -62,30 +63,31 @@
         <maven.rar.plugin.version>2.2</maven.rar.plugin.version>
         <maven.bundle.plugin.version>2.3.7</maven.bundle.plugin.version>
         <maven.shade.plugin.version>2.2</maven.shade.plugin.version>
-        <maven.dependency.plugin.version>2.6</maven.dependency.plugin.version>
+        <maven.dependency.plugin.version>2.10</maven.dependency.plugin.version>
         <maven.animal.sniffer.plugin.version>1.15</maven.animal.sniffer.plugin.version>
         <maven.git.commit.id.plugin.version>2.1.10</maven.git.commit.id.plugin.version>
 
         <maven.surefire.plugin.version>2.18.1</maven.surefire.plugin.version>
         <maven.checkstyle.plugin.version>2.15</maven.checkstyle.plugin.version>
         <maven.findbugs.plugin.version>3.0.1</maven.findbugs.plugin.version>
-        <maven.sonar.plugin.version>2.6</maven.sonar.plugin.version>
-        <maven.jacoco.plugin.version>0.7.4.201502262128</maven.jacoco.plugin.version>
-        <maven.failsafe.plugin.version>2.19</maven.failsafe.plugin.version>
+        <maven.sonar.plugin.version>3.3.0.603</maven.sonar.plugin.version>
+        <maven.jacoco.plugin.version>0.7.9</maven.jacoco.plugin.version>
+        <maven.failsafe.plugin.version>2.20.1</maven.failsafe.plugin.version>
         <maven.cobertura.plugin.version>2.6</maven.cobertura.plugin.version>
 
         <log4j.version>1.2.17</log4j.version>
 
         <!--- This is the last log4j2 version working with Java 6 -->
         <log4j2.version>2.3</log4j2.version>
-        <slf4j.api.version>1.6.6</slf4j.api.version>
+        <slf4j.api.version>1.7.25</slf4j.api.version>
 
         <junit.version>4.12</junit.version>
         <hamcrest.version>1.3</hamcrest.version>
         <mockito.version>1.10.19</mockito.version>
-        <powermock.version>1.6.3</powermock.version>
-        <jmh.version>1.12</jmh.version>
+        <powermock.version>1.6.6</powermock.version>
+        <jmh.version>1.16</jmh.version>
         <bytebuddy.version>1.6.12</bytebuddy.version>
+        <commons-lang3.version>3.4</commons-lang3.version>
         <felix.utils.version>1.10.0</felix.utils.version>
 
         <findbugs.version>1.3.2</findbugs.version>
@@ -96,10 +98,12 @@
         <sonar.language>java</sonar.language>
         <sonar.verbose>true</sonar.verbose>
 
-        <jsr107.api.version>1.0.0</jsr107.api.version>
+        <jsr107.api.version>1.1.0</jsr107.api.version>
+        <jsr107.tck.version>1.1.0</jsr107.tck.version>
 
         <h2.version>1.3.160</h2.version>
         <atomikos.version>3.9.3</atomikos.version>
+        <extraVmArgs/>
     </properties>
     <licenses>
         <license>
@@ -168,6 +172,7 @@
                 <directory>src/main/resources</directory>
                 <filtering>false</filtering>
                 <includes>
+                    <include>**/*.so</include>
                     <include>**/*.license</include>
                     <include>**/*.key</include>
                     <include>**/*.ftl</include>
@@ -247,6 +252,7 @@
                         -Dhazelcast.phone.home.enabled=false
                         -Dhazelcast.mancenter.enabled=false
                         -Dhazelcast.test.use.network=false
+                        ${extraVmArgs}
                     </argLine>
                     <includes>
                         <include>**/**.java</include>
@@ -255,6 +261,7 @@
                         <exclude>**/jsr/**.java</exclude>
                         <exclude>**/**IT.java</exclude>
                         <exclude>**/client/**Request.*</exclude>
+                        <exclude>**/mapreduce/**.java</exclude>
                     </excludes>
                     <groups>com.hazelcast.test.annotation.QuickTest</groups>
                     <excludedGroups>
@@ -272,12 +279,6 @@
             </plugin>
 
             <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>sonar-maven-plugin</artifactId>
-                <version>${maven.sonar.plugin.version}</version>
-            </plugin>
-
-            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <version>${maven.failsafe.plugin.version}</version>
@@ -289,6 +290,7 @@
                         -Dhazelcast.mancenter.enabled=false
                         -Dhazelcast.logging.type=none
                         -Dhazelcast.test.use.network=true
+                        ${extraVmArgs}
                     </argLine>
                     <useManifestOnlyJar>false</useManifestOnlyJar>
                     <useSystemClassLoader>true</useSystemClassLoader>
@@ -312,6 +314,7 @@
 
     <profiles>
         <profile>
+            <!-- used by the PR builder -->
             <id>parallelTest</id>
             <build>
                 <plugins>
@@ -339,6 +342,8 @@
                                         -Dhazelcast.logging.type=none
                                         -Dhazelcast.test.use.network=false
                                         -Dhazelcast.test.multiple.jvm=true
+                                        -Dlog4j.configurationFile=log4j2-info.xml
+                                        ${extraVmArgs}
                                     </argLine>
                                     <includes>
                                         <include>**/**.java</include>
@@ -346,6 +351,7 @@
                                     <excludes>
                                         <exclude>**/jsr/**.java</exclude>
                                         <exclude>**/**IT.java</exclude>
+                                        <exclude>**/mapreduce/**.java</exclude>
                                     </excludes>
                                     <groups>
                                         com.hazelcast.test.annotation.QuickTest AND
@@ -375,6 +381,8 @@
                                         -Dhazelcast.mancenter.enabled=false
                                         -Dhazelcast.logging.type=none
                                         -Dhazelcast.test.use.network=false
+                                        -Dlog4j.configurationFile=log4j2-info.xml
+                                        ${extraVmArgs}
                                     </argLine>
                                     <includes>
                                         <include>**/**.java</include>
@@ -382,6 +390,7 @@
                                     <excludes>
                                         <exclude>**/jsr/**.java</exclude>
                                         <exclude>**/**IT.java</exclude>
+                                        <exclude>**/mapreduce/**.java</exclude>
                                     </excludes>
                                     <groups>com.hazelcast.test.annotation.QuickTest</groups>
                                     <excludedGroups>
@@ -420,6 +429,7 @@
                                 -Dhazelcast.phone.home.enabled=false
                                 -Dhazelcast.mancenter.enabled=false
                                 -Dhazelcast.test.use.network=false
+                                ${extraVmArgs}
                             </argLine>
                             <includes>
                                 <include>**/**.java</include>
@@ -427,6 +437,7 @@
                             <excludes>
                                 <exclude>**/jsr/**.java</exclude>
                                 <exclude>**/**IT.java</exclude>
+                                <exclude>**/mapreduce/**.java</exclude>
                             </excludes>
                             <groups>com.hazelcast.test.annotation.QuickTest</groups>
                             <excludedGroups>
@@ -455,6 +466,7 @@
                                 -Dhazelcast.phone.home.enabled=false
                                 -Dhazelcast.mancenter.enabled=false
                                 -Dhazelcast.test.use.network=false
+                                ${extraVmArgs}
                             </argLine>
                             <useManifestOnlyJar>false</useManifestOnlyJar>
                             <useSystemClassLoader>true</useSystemClassLoader>
@@ -516,6 +528,7 @@
                                 -Dhazelcast.logging.type=none
                                 -Dhazelcast.test.use.network=false
                                 -Dlog4j.skipJansi=true
+                                ${extraVmArgs}
                             </argLine>
                             <includes>
                                 <include>**/YourTestFileHear.java</include>
@@ -552,6 +565,7 @@
                     -Dhazelcast.logging.type=none
                     -Dhazelcast.test.use.network=false
                     -Dlog4j.skipJansi=true
+                    ${extraVmArgs}
                 </argLine>
             </properties>
             <build>
@@ -569,6 +583,7 @@
                                 <exclude>**HibernateTestSupport**</exclude>
                                 <exclude>**RegionFactoryDefaultTest**</exclude>
                                 <exclude>**/client/**Request.*</exclude>
+                                <exclude>**/mapreduce/**.java</exclude>
                             </excludes>
                         </configuration>
                         <executions>
@@ -593,6 +608,7 @@
                             </includes>
                             <excludes>
                                 <exclude>**/**IT.java</exclude>
+                                <exclude>**/mapreduce/**.java</exclude>
                             </excludes>
                             <groups>
                                 com.hazelcast.test.annotation.QuickTest,
@@ -623,6 +639,7 @@
                                 -Dhazelcast.mancenter.enabled=false
                                 -Dhazelcast.logging.type=none
                                 -Dhazelcast.test.use.network=true
+                                ${extraVmArgs}
                             </argLine>
                             <groups>
                                 com.hazelcast.test.annotation.QuickTest,
@@ -651,6 +668,11 @@
                         </dependencies>
                     </plugin>
 
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>sonar-maven-plugin</artifactId>
+                        <version>${maven.sonar.plugin.version}</version>
+                    </plugin>
                 </plugins>
             </build>
         </profile>
@@ -724,12 +746,14 @@
                                 -Dhazelcast.logging.type=none
                                 -Dhazelcast.test.use.network=false
                                 -Dlog4j.skipJansi=true
+                                ${extraVmArgs}
                             </argLine>
 
                             <includes>
                                 <include>**/ExecutorConfigTest*.java</include>
                                 <include>**/TopicTest*.java</include>
                                 <include>**/LockTest*.java</include>
+                                <exclude>**/mapreduce/**.java</exclude>
                             </includes>
 
                             <groups>
@@ -755,6 +779,7 @@
                                 -Dhazelcast.mancenter.enabled=false
                                 -Dhazelcast.logging.type=none
                                 -Dhazelcast.test.use.network=true
+                                ${extraVmArgs}
                             </argLine>
                             <includes>
                                 <include>**/AtomicLongTest*.java</include>
@@ -985,6 +1010,7 @@
                                 -Dhazelcast.logging.type=none
                                 -Dhazelcast.test.use.network=false
                                 -Dlog4j.skipJansi=true
+                                ${extraVmArgs}
                             </argLine>
                             <includes>
                                 <include>**/**.java</include>
@@ -992,6 +1018,7 @@
                             <excludes>
                                 <exclude>**/**IT.java</exclude>
                                 <exclude>**/jsr/**.java</exclude>
+                                <exclude>**/mapreduce/**.java</exclude>
                             </excludes>
                             <groups>
                                 com.hazelcast.test.annotation.NightlyTest,
@@ -1018,6 +1045,7 @@
                                 -Dhazelcast.mancenter.enabled=false
                                 -Dhazelcast.logging.type=none
                                 -Dhazelcast.test.use.network=true
+                                ${extraVmArgs}
                             </argLine>
                             <useManifestOnlyJar>false</useManifestOnlyJar>
                             <useSystemClassLoader>true</useSystemClassLoader>
@@ -1058,6 +1086,7 @@
                                 -Dhazelcast.logging.type=none
                                 -Dhazelcast.test.use.network=false
                                 -Dlog4j.skipJansi=true
+                                ${extraVmArgs}
                             </argLine>
                             <includes>
                                 <include>**/**.java</include>
@@ -1065,6 +1094,7 @@
                             <excludes>
                                 <exclude>**/jsr/**.java</exclude>
                                 <exclude>**/**IT.java</exclude>
+                                <exclude>**/mapreduce/**.java</exclude>
                             </excludes>
                             <groups>
                                 com.hazelcast.test.annotation.QuickTest,
@@ -1092,6 +1122,7 @@
                                 -Dhazelcast.mancenter.enabled=false
                                 -Dhazelcast.logging.type=none
                                 -Dhazelcast.test.use.network=true
+                                ${extraVmArgs}
                             </argLine>
                             <useManifestOnlyJar>false</useManifestOnlyJar>
                             <useSystemClassLoader>true</useSystemClassLoader>
@@ -1133,6 +1164,7 @@
                                 -Dhazelcast.phone.home.enabled=false
                                 -Dhazelcast.mancenter.enabled=false
                                 -Dhazelcast.test.use.network=false
+                                ${extraVmArgs}
                             </argLine>
                             <includes>
                                 <include>**/**.java</include>
@@ -1140,6 +1172,7 @@
                             <excludes>
                                 <exclude>**/jsr/**.java</exclude>
                                 <exclude>**/**IT.java</exclude>
+                                <exclude>**/mapreduce/**.java</exclude>
                             </excludes>
                             <groups>com.hazelcast.test.annotation.QuickTest</groups>
                             <excludedGroups>
@@ -1184,6 +1217,7 @@
                                 -Dhazelcast.mancenter.enabled=false
                                 -Dhazelcast.test.use.network=false
                                 -Dhazelcast.test.sample.serialized.objects=${target.dir}/serialized-objects-${project.version}-
+                                ${extraVmArgs}
                             </argLine>
                             <includes>
                                 <include>**/**.java</include>
@@ -1197,6 +1231,7 @@
                                 <exclude>**/UserCodeDeploymentSmokeTest.java</exclude>
                                 <exclude>**/OperationRunnerImplTest.java</exclude>
                                 <exclude>**/**IT.java</exclude>
+                                <exclude>**/mapreduce/**.java</exclude>
                             </excludes>
                             <groups>com.hazelcast.test.annotation.QuickTest</groups>
                             <excludedGroups>
@@ -1225,13 +1260,14 @@
 
     <repositories>
         <repository>
+            <id>backup-repository</id>
+            <name>Maven Central (Backup)</name>
+            <url>http://repo2.maven.org/maven2/</url>
+        </repository>
+        <repository>
             <id>snapshot-repository</id>
             <name>Maven2 Snapshot Repository</name>
             <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-        </repository>
-        <repository>
-            <id>backup-repo</id>
-            <url>http://repo2.maven.org/maven2/</url>
         </repository>
         <repository>
             <id>release-repository</id>
@@ -1241,7 +1277,7 @@
     </repositories>
 
     <pluginRepositories>
-        <!-- JitPack repository is needed to fetch patch surefire-common plugin -->
+        <!-- JitPack repository is needed to fetch patched surefire-common plugin -->
         <pluginRepository>
             <id>jitpack.io</id>
             <url>https://jitpack.io</url>
@@ -1271,19 +1307,13 @@
         </dependency>
         <dependency>
             <groupId>org.powermock</groupId>
-            <artifactId>powermock-module-junit4</artifactId>
+            <artifactId>powermock-api-mockito</artifactId>
             <version>${powermock.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-lang3</artifactId>
-            <version>3.4</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>org.powermock</groupId>
-            <artifactId>powermock-api-mockito</artifactId>
+            <artifactId>powermock-module-junit4</artifactId>
             <version>${powermock.version}</version>
             <scope>test</scope>
         </dependency>
@@ -1320,6 +1350,12 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>${commons-lang3.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>net.bytebuddy</groupId>
             <artifactId>byte-buddy-agent</artifactId>
             <version>${bytebuddy.version}</version>
@@ -1338,5 +1374,4 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
-
 </project>

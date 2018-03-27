@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -390,6 +390,23 @@ public class CacheThroughHazelcastInstanceTest extends HazelcastTestSupport {
         ICacheManager hzCacheManager = new HazelcastInstanceCacheManager(hzInstanceImpl);
         thrown.expect(HazelcastException.class);
         hzCacheManager.getCache("any-cache");
+    }
+
+    @Test
+    public void cacheConfigIsAvailableOnAllMembers_afterGetCacheCompletes() {
+        Config config = createConfig();
+        config.addCacheConfig(createCacheSimpleConfig(CACHE_NAME));
+
+        TestHazelcastInstanceFactory instanceFactory = createHazelcastInstanceFactory();
+
+        HazelcastInstance instance1 = instanceFactory.newHazelcastInstance(config);
+        HazelcastInstance instance2 = instanceFactory.newHazelcastInstance(config);
+
+        ICacheService cacheServiceOnInstance2 = getNodeEngineImpl(instance2).getService(ICacheService.SERVICE_NAME);
+        retrieveCache(instance1, true);
+        assertNotNull("Cache config was not available on other instance after cache proxy was created",
+                cacheServiceOnInstance2.getCacheConfig(
+                HazelcastCacheManager.CACHE_MANAGER_PREFIX + CACHE_NAME));
     }
 
     private static ICache<Integer, Integer> retrieveCache(HazelcastInstance instance, boolean getCache) {

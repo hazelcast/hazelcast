@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,11 +52,6 @@ public class SimpleReplicatedMapTest {
     private final int putPercentage;
     private final boolean load;
 
-    static {
-        System.setProperty("hazelcast.phone.home.enabled", "false");
-        System.setProperty("java.net.preferIPv4Stack", "true");
-    }
-
     private SimpleReplicatedMapTest(final int threadCount, final int entryCount, final int valueSize,
                                     final int getPercentage, final int putPercentage, final boolean load) {
         this.threadCount = threadCount;
@@ -65,9 +60,11 @@ public class SimpleReplicatedMapTest {
         this.getPercentage = getPercentage;
         this.putPercentage = putPercentage;
         this.load = load;
-        Config cfg = new XmlConfigBuilder().build();
-        cfg.setProperty(GroupProperty.HEALTH_MONITORING_LEVEL.getName(), "NOISY");
-        cfg.setProperty(GroupProperty.HEALTH_MONITORING_DELAY_SECONDS.getName(), "5");
+        Config cfg = new XmlConfigBuilder().build()
+                                           .setProperty(GroupProperty.HEALTH_MONITORING_LEVEL.getName(), "NOISY")
+                                           .setProperty(GroupProperty.HEALTH_MONITORING_DELAY_SECONDS.getName(), "5")
+                                           .setProperty(GroupProperty.PHONE_HOME_ENABLED.getName(), "false")
+                                           .setProperty(GroupProperty.PREFER_IPv4_STACK.getName(), "false");
         instance = Hazelcast.newHazelcastInstance(cfg);
         logger = instance.getLoggingService().getLogger("SimpleReplicatedMapTest");
         random = new Random();
@@ -107,7 +104,8 @@ public class SimpleReplicatedMapTest {
             System.out.println();
         }
 
-        SimpleReplicatedMapTest test = new SimpleReplicatedMapTest(threadCount, entryCount, valueSize, getPercentage, putPercentage, load);
+        SimpleReplicatedMapTest test
+                = new SimpleReplicatedMapTest(threadCount, entryCount, valueSize, getPercentage, putPercentage, load);
         test.start();
     }
 

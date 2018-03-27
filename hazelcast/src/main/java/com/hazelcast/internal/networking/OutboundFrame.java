@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,8 +26,8 @@ package com.hazelcast.internal.networking;
  * <li>ClientMessage: for the new client to member communication</li>
  * </ol>
  *
- * Till so far, all communication over a single connection, will be of a single Frame-class. E.g. member
- * to member only uses Packets.
+ * Till so far, all communication over a single connection, will be of a single
+ * Frame-class. E.g. member to member only uses Packets.
  *
  * There is no need for an InboundFrame interface.
  *
@@ -39,9 +39,10 @@ public interface OutboundFrame {
     /**
      * Checks if this Frame is urgent.
      *
-     * Frames that are urgent, have priority above regular frames. This is useful to implement
-     * System Operations so that they can be send faster than regular operations; especially when the system is
-     * under load you want these operations have precedence.
+     * Frames that are urgent, have priority above regular frames. This is useful
+     * to implement System Operations so that they can be send faster than regular
+     * operations; especially when the system is under load you want these operations
+     * have precedence.
      *
      * @return true if urgent, false otherwise.
      */

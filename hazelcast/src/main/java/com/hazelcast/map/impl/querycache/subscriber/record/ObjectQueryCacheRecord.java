@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,22 +24,14 @@ import com.hazelcast.spi.serialization.SerializationService;
  */
 class ObjectQueryCacheRecord extends AbstractQueryCacheRecord {
 
-    private final Data keyData;
-
     private final Object value;
 
-    public ObjectQueryCacheRecord(Data keyData, Data valueData, SerializationService serializationService) {
-        this.keyData = keyData;
+    public ObjectQueryCacheRecord(Data valueData, SerializationService serializationService) {
         this.value = serializationService.toObject(valueData);
     }
 
     @Override
     public Object getValue() {
         return value;
-    }
-
-    @Override
-    public final Data getKey() {
-        return keyData;
     }
 }

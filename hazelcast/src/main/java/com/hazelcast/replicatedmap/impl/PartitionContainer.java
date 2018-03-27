@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,29 +18,26 @@ package com.hazelcast.replicatedmap.impl;
 
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.ReplicatedMapConfig;
-import com.hazelcast.replicatedmap.impl.record.AbstractReplicatedRecordStore;
 import com.hazelcast.replicatedmap.impl.record.DataReplicatedRecordStore;
 import com.hazelcast.replicatedmap.impl.record.ObjectReplicatedRecordStorage;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
-import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
+
 /**
- * Contains the record storage for the replicated maps which are actual place where the data is stored.
+ * Contains the record storage for the replicated maps which are the actual place where the data is stored.
  */
 public class PartitionContainer {
 
-    private final ReplicatedMapService service;
-
-    private final int partitionId;
-
-    private final ConcurrentHashMap<String, ReplicatedRecordStore> replicatedStorages = initReplicatedRecordStoreMapping();
-
+    private final ConcurrentHashMap<String, ReplicatedRecordStore> replicatedRecordStores = initReplicatedRecordStoreMapping();
     private final ConstructorFunction<String, ReplicatedRecordStore> constructor = buildConstructorFunction();
 
+    private final ReplicatedMapService service;
+    private final int partitionId;
 
     public PartitionContainer(ReplicatedMapService service, int partitionId) {
         this.service = service;
@@ -58,54 +55,47 @@ public class PartitionContainer {
             public ReplicatedRecordStore createNew(String name) {
                 ReplicatedMapConfig replicatedMapConfig = service.getReplicatedMapConfig(name);
                 InMemoryFormat inMemoryFormat = replicatedMapConfig.getInMemoryFormat();
-                AbstractReplicatedRecordStore replicatedRecordStorage = null;
                 switch (inMemoryFormat) {
                     case OBJECT:
-                        replicatedRecordStorage = new ObjectReplicatedRecordStorage(name, service, partitionId);
-                        break;
+                        return new ObjectReplicatedRecordStorage(name, service, partitionId);
                     case BINARY:
-                        replicatedRecordStorage = new DataReplicatedRecordStore(name, service, partitionId);
-                        break;
+                        return new DataReplicatedRecordStore(name, service, partitionId);
                     case NATIVE:
                         throw new IllegalStateException("Native memory not yet supported for replicated map");
                     default:
-                        throw new IllegalStateException("Unhandled in memory format:" + inMemoryFormat);
+                        throw new IllegalStateException("Unsupported in memory format: " + inMemoryFormat);
                 }
-                return replicatedRecordStorage;
             }
         };
     }
 
     public boolean isEmpty() {
-        return replicatedStorages.isEmpty();
+        return replicatedRecordStores.isEmpty();
     }
 
     public ConcurrentMap<String, ReplicatedRecordStore> getStores() {
-        return replicatedStorages;
+        return replicatedRecordStores;
     }
 
     public ReplicatedRecordStore getOrCreateRecordStore(String name) {
-        ReplicatedRecordStore replicatedRecordStore = ConcurrencyUtil
-                .getOrPutSynchronized(replicatedStorages, name, replicatedStorages, constructor);
-        return replicatedRecordStore;
+        return getOrPutSynchronized(replicatedRecordStores, name, replicatedRecordStores, constructor);
     }
 
     public ReplicatedRecordStore getRecordStore(String name) {
-        return replicatedStorages.get(name);
+        return replicatedRecordStores.get(name);
     }
 
     public void shutdown() {
-        for (ReplicatedRecordStore replicatedRecordStore : replicatedStorages.values()) {
+        for (ReplicatedRecordStore replicatedRecordStore : replicatedRecordStores.values()) {
             replicatedRecordStore.destroy();
         }
-        replicatedStorages.clear();
+        replicatedRecordStores.clear();
     }
 
     public void destroy(String name) {
-        ReplicatedRecordStore replicatedRecordStore = replicatedStorages.remove(name);
+        ReplicatedRecordStore replicatedRecordStore = replicatedRecordStores.remove(name);
         if (replicatedRecordStore != null) {
             replicatedRecordStore.destroy();
         }
-
     }
 }

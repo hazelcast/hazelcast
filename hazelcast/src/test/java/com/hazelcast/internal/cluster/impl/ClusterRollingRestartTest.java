@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,9 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -35,11 +38,11 @@ import java.util.Collection;
 import static com.hazelcast.internal.cluster.impl.AdvancedClusterStateTest.changeClusterStateEventually;
 
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class ClusterRollingRestartTest extends HazelcastTestSupport {
 
-    @Parameterized.Parameters(name = "clusterState:{0},partitionAssignmentType:{1}")
+    @Parameters(name = "clusterState:{0},partitionAssignmentType:{1}")
     public static Collection<Object[]> parameters() {
         return Arrays.asList(new Object[][]{
                 {ClusterState.FROZEN, PartitionAssignmentType.NEVER},
@@ -47,14 +50,14 @@ public class ClusterRollingRestartTest extends HazelcastTestSupport {
                 {ClusterState.FROZEN, PartitionAssignmentType.AT_THE_END},
                 {ClusterState.PASSIVE, PartitionAssignmentType.AT_THE_END},
                 {ClusterState.FROZEN, PartitionAssignmentType.DURING_STARTUP},
-                {ClusterState.PASSIVE, PartitionAssignmentType.DURING_STARTUP}
+                {ClusterState.PASSIVE, PartitionAssignmentType.DURING_STARTUP},
         });
     }
 
-    @Parameterized.Parameter(0)
+    @Parameter(0)
     public ClusterState clusterState;
 
-    @Parameterized.Parameter(1)
+    @Parameter(1)
     public PartitionAssignmentType partitionAssignmentType;
 
     @Test

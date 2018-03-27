@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package com.hazelcast.spi.exception;
 import com.hazelcast.nio.Address;
 
 /**
- * A {@link RetryableHazelcastException} that indicates that an operation was send by a machine which isn't member
+ * A {@link RetryableHazelcastException} that indicates that an operation was sent by a machine which isn't member
  * in the cluster when the operation is executed.
  */
 public class CallerNotMemberException extends RetryableHazelcastException {

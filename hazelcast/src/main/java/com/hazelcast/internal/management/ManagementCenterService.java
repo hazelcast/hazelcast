@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,6 +54,7 @@ import com.hazelcast.monitor.TimedMemberState;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.spi.ExecutionService;
+import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.util.Clock;
@@ -247,24 +248,26 @@ public class ManagementCenterService {
         }
     }
 
-    public Object callOnAddress(Address address, Operation operation) {
+    public InternalCompletableFuture<Object> callOnAddress(Address address, Operation operation) {
         // TODO: why are we always executing on the MapService?
         OperationService operationService = instance.node.nodeEngine.getOperationService();
-        Future future = operationService.invokeOnTarget(MapService.SERVICE_NAME, operation, address);
+        return operationService.invokeOnTarget(MapService.SERVICE_NAME, operation, address);
+    }
+
+    public InternalCompletableFuture<Object> callOnThis(Operation operation) {
+        return callOnAddress(instance.node.getThisAddress(), operation);
+    }
+
+    public InternalCompletableFuture<Object> callOnMember(Member member, Operation operation) {
+        return callOnAddress(member.getAddress(), operation);
+    }
+
+    public static Object resolveFuture(Future<Object> future) {
         try {
             return future.get();
         } catch (Throwable t) {
             return ExceptionUtil.toString(t);
         }
-    }
-
-    public Object callOnThis(Operation operation) {
-        return callOnAddress(instance.node.getThisAddress(), operation);
-    }
-
-    public Object callOnMember(Member member, Operation operation) {
-        Address address = member.getAddress();
-        return callOnAddress(address, operation);
     }
 
     public void send(Address address, Operation operation) {
@@ -524,7 +527,7 @@ public class ManagementCenterService {
 
                     Class<? extends ConsoleRequest> requestClass = consoleRequests.get(type);
                     if (requestClass == null) {
-                        throw new RuntimeException("Failed to find a request for requestType:" + type);
+                        throw new RuntimeException("Failed to find a request for requestType: " + type);
                     }
                     ConsoleRequest task = requestClass.newInstance();
                     task.fromJson(getObject(innerRequest, "request"));
@@ -637,8 +640,9 @@ public class ManagementCenterService {
             try {
                 Member member = membershipEvent.getMember();
                 if (member != null && instance.node.isMaster() && urlChanged) {
-                    Operation operation = new UpdateManagementCenterUrlOperation(managementCenterUrl);
-                    callOnMember(member, operation);
+                    UpdateManagementCenterUrlOperation operation
+                            = new UpdateManagementCenterUrlOperation(managementCenterUrl);
+                    resolveFuture(callOnMember(member, operation));
                 }
             } catch (Exception e) {
                 logger.warning("Web server url cannot be send to the newly joined member", e);

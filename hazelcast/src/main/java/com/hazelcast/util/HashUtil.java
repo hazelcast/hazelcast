@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -331,7 +331,7 @@ public final class HashUtil {
      * @throws IllegalArgumentException if mod smaller than 1.
      */
     public static int hashToIndex(int hash, int length) {
-        checkPositive(length, "mod must be larger than 0");
+        checkPositive(length, "length must be larger than 0");
 
         if (hash == Integer.MIN_VALUE) {
             hash = 0;

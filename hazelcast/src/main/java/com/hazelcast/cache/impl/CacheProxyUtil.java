@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,15 +17,14 @@
 package com.hazelcast.cache.impl;
 
 import com.hazelcast.config.CacheConfig;
-import com.hazelcast.internal.config.ConfigValidator;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.Map;
 import java.util.Set;
 
+import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
@@ -138,13 +137,13 @@ public final class CacheProxyUtil {
             containsNullKey = map.containsKey(null);
         } catch (NullPointerException e) {
             // ignore if null key is not allowed for this map
-            EmptyStatement.ignore(e);
+            ignore(e);
         }
         try {
             containsNullValue = map.containsValue(null);
         } catch (NullPointerException e) {
             // ignore if null value is not allowed for this map
-            EmptyStatement.ignore(e);
+            ignore(e);
         }
         if (containsNullKey) {
             throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
@@ -216,7 +215,7 @@ public final class CacheProxyUtil {
         if (Object.class != keyType) {
             // means that type checks is required
             if (!keyType.isAssignableFrom(key.getClass())) {
-                throw new ClassCastException("Key " + key + "is not assignable to " + keyType);
+                throw new ClassCastException("Key '" + key + "' is not assignable to " + keyType);
             }
         }
     }
@@ -233,12 +232,8 @@ public final class CacheProxyUtil {
         if (Object.class != valueType) {
             // means that type checks is required
             if (!valueType.isAssignableFrom(value.getClass())) {
-                throw new ClassCastException("Value " + value + "is not assignable to " + valueType);
+                throw new ClassCastException("Value '" + value + "' is not assignable to " + valueType);
             }
         }
-    }
-
-    public static <K, V> void validateCacheConfig(CacheConfig<K, V> cacheConfig) {
-        ConfigValidator.checkCacheConfig(cacheConfig.getInMemoryFormat(), cacheConfig.getEvictionConfig());
     }
 }

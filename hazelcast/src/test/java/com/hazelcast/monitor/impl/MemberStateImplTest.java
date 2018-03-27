@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -103,9 +103,11 @@ public class MemberStateImplTest extends HazelcastTestSupport {
         memberState.putLocalQueueStats("queueStats", new LocalQueueStatsImpl());
         memberState.putLocalTopicStats("topicStats", new LocalTopicStatsImpl());
         memberState.putLocalReliableTopicStats("reliableTopicStats", new LocalTopicStatsImpl());
+        memberState.putLocalPNCounterStats("pnCounterStats", new LocalPNCounterStatsImpl());
         memberState.putLocalExecutorStats("executorStats", new LocalExecutorStatsImpl());
         memberState.putLocalReplicatedMapStats("replicatedMapStats", replicatedMapStats);
         memberState.putLocalCacheStats("cacheStats", new LocalCacheStatsImpl(cacheStatistics));
+        memberState.putLocalFlakeIdStats("flakeIdStats", new LocalFlakeIdGeneratorStatsImpl());
         memberState.setRuntimeProps(runtimeProps);
         memberState.setLocalMemoryStats(new LocalMemoryStatsImpl());
         memberState.setOperationStats(new LocalOperationStatsImpl());
@@ -124,10 +126,12 @@ public class MemberStateImplTest extends HazelcastTestSupport {
         assertNotNull(deserialized.getLocalQueueStats("queueStats").toString());
         assertNotNull(deserialized.getLocalTopicStats("topicStats").toString());
         assertNotNull(deserialized.getReliableLocalTopicStats("reliableTopicStats").toString());
+        assertNotNull(deserialized.getLocalPNCounterStats("pnCounterStats").toString());
         assertNotNull(deserialized.getLocalExecutorStats("executorStats").toString());
         assertNotNull(deserialized.getLocalReplicatedMapStats("replicatedMapStats").toString());
         assertEquals(1, deserialized.getLocalReplicatedMapStats("replicatedMapStats").getPutOperationCount());
         assertNotNull(deserialized.getLocalCacheStats("cacheStats").toString());
+        assertNotNull(deserialized.getLocalFlakeIdGeneratorStats("flakeIdStats").toString());
         assertEquals(5, deserialized.getLocalCacheStats("cacheStats").getCacheHits());
         assertNotNull(deserialized.getRuntimeProps());
         assertEquals(Long.valueOf(598123L), deserialized.getRuntimeProps().get("prop1"));

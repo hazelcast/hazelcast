@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,10 +68,14 @@ public class MemberSelectingCollectionTest extends HazelcastTestSupport {
     @Before
     public void before()
             throws Exception {
-        thisMember = new MemberImpl(new Address("localhost", 5701), MemberVersion.of("3.8.0"), true, newUnsecureUuidString(), null, true);
-        liteMember = new MemberImpl(new Address("localhost", 5702), MemberVersion.of("3.8.0"), false, newUnsecureUuidString(), null, true);
-        dataMember = new MemberImpl(new Address("localhost", 5704), MemberVersion.of("3.8.0"), false, newUnsecureUuidString(), null, false);
-        nonExistingMember = new MemberImpl(new Address("localhost", 5705), MemberVersion.of("3.8.0"), false, newUnsecureUuidString(), null, false);
+        thisMember
+                = new MemberImpl(new Address("localhost", 5701), MemberVersion.of("3.8.0"), true, newUnsecureUuidString(), null, true);
+        liteMember
+                = new MemberImpl(new Address("localhost", 5702), MemberVersion.of("3.8.0"), false, newUnsecureUuidString(), null, true);
+        dataMember
+                = new MemberImpl(new Address("localhost", 5704), MemberVersion.of("3.8.0"), false, newUnsecureUuidString(), null, false);
+        nonExistingMember
+                = new MemberImpl(new Address("localhost", 5705), MemberVersion.of("3.8.0"), false, newUnsecureUuidString(), null, false);
 
         members = createMembers();
     }

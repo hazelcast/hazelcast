@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ public class MutableLong {
 
     //CHECKSTYLE:OFF
     public long value;
-    //CHECKSTYLE:OFF
+    //CHECKSTYLE:ON
 
     public static MutableLong valueOf(long value) {
         MutableLong instance = new MutableLong();
@@ -52,8 +52,6 @@ public class MutableLong {
 
     @Override
     public String toString() {
-        return "MutableLong{" +
-                "value=" + value +
-                '}';
+        return "MutableLong{value=" + value + '}';
     }
 }

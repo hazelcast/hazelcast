@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.core.MigrationEvent;
+import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.Versions;
@@ -33,7 +34,6 @@ import com.hazelcast.internal.partition.PartitionStateVersionMismatchException;
 import com.hazelcast.internal.partition.impl.InternalMigrationListener.MigrationParticipant;
 import com.hazelcast.internal.partition.impl.MigrationPlanner.MigrationDecisionCallback;
 import com.hazelcast.internal.partition.operation.FinalizeMigrationOperation;
-import com.hazelcast.internal.partition.operation.LegacyMigrationRequestOperation;
 import com.hazelcast.internal.partition.operation.MigrationCommitOperation;
 import com.hazelcast.internal.partition.operation.MigrationRequestOperation;
 import com.hazelcast.internal.partition.operation.PartitionReplicaSyncRequest;
@@ -54,7 +54,6 @@ import com.hazelcast.util.Clock;
 import com.hazelcast.util.MutableInteger;
 import com.hazelcast.util.Preconditions;
 import com.hazelcast.util.scheduler.CoalescingDelayedTrigger;
-import com.hazelcast.version.Version;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -108,6 +107,7 @@ public class MigrationManager {
     private volatile MigrationInfo activeMigrationInfo;
     // both reads and updates will be done under lock!
     private final LinkedHashSet<MigrationInfo> completedMigrations = new LinkedHashSet<MigrationInfo>();
+    private final AtomicBoolean promotionPermit = new AtomicBoolean(false);
     @Probe
     private final AtomicLong completedMigrationCounter = new AtomicLong();
     private volatile InternalMigrationListener internalMigrationListener
@@ -115,6 +115,7 @@ public class MigrationManager {
     private final Lock partitionServiceLock;
     private final MigrationPlanner migrationPlanner;
     private final boolean fragmentedMigrationEnabled;
+    private final long memberHeartbeatTimeoutMillis;
 
     MigrationManager(Node node, InternalPartitionServiceImpl service, Lock partitionServiceLock) {
         this.node = node;
@@ -141,6 +142,7 @@ public class MigrationManager {
                 resumeMigration();
             }
         });
+        this.memberHeartbeatTimeoutMillis = properties.getMillis(GroupProperty.MAX_NO_HEARTBEAT_SECONDS);
     }
 
     @Probe(name = "migrationActive")
@@ -261,6 +263,31 @@ public class MigrationManager {
     }
 
     /**
+     * Acquires promotion commit permit which is needed while running promotion commit
+     * to prevent concurrent commits.
+     * <p>
+     * Normally, promotions are submitted &amp; executed serially
+     * but when the commit operation timeouts, it's retried which can cause concurrent execution
+     * (promotion commit operation runs on generic operation threads).
+     * <p>
+     * Promotion commit operation is idempotent when executed serially.
+     *
+     * @return true if promotion commit is allowed to run, false otherwise
+     */
+    public boolean acquirePromotionPermit() {
+        return promotionPermit.compareAndSet(false, true);
+    }
+
+    /**
+     * Releases promotion commit permit.
+     *
+     * @see #acquirePromotionPermit()
+     */
+    public void releasePromotionPermit() {
+        promotionPermit.set(false);
+    }
+
+    /**
      * Removes the current {@link #activeMigrationInfo} if the {@code partitionId} is the same and returns {@code true} if
      * removed.
      * Acquires the partition service lock.
@@ -351,7 +378,7 @@ public class MigrationManager {
             Future<Boolean> future = nodeEngine.getOperationService()
                     .createInvocationBuilder(SERVICE_NAME, operation, destination)
                     .setTryCount(Integer.MAX_VALUE)
-                    .setCallTimeout(Long.MAX_VALUE).invoke();
+                    .setCallTimeout(memberHeartbeatTimeoutMillis).invoke();
 
             boolean result = future.get();
             if (logger.isFinestEnabled()) {
@@ -360,6 +387,10 @@ public class MigrationManager {
             return result;
         } catch (Throwable t) {
             logMigrationCommitFailure(destination, migration, t);
+
+            if (t.getCause() instanceof OperationTimeoutException) {
+                return commitMigrationToDestination(destination, migration);
+            }
         }
         return false;
     }
@@ -973,11 +1004,8 @@ public class MigrationManager {
          */
         private Boolean executeMigrateOperation(MemberImpl fromMember) {
             int partitionStateVersion = partitionService.getPartitionStateVersion();
-            Version clusterVersion = node.getClusterService().getClusterVersion();
-            Operation migrationRequestOp = clusterVersion.isGreaterOrEqual(Versions.V3_9)
-                    ? new MigrationRequestOperation(migrationInfo, partitionStateVersion, fragmentedMigrationEnabled)
-                    : new LegacyMigrationRequestOperation(migrationInfo, partitionStateVersion);
-            Future future = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, migrationRequestOp,
+            Operation op = new MigrationRequestOperation(migrationInfo, partitionStateVersion, fragmentedMigrationEnabled);
+            Future future = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, op,
                     fromMember.getAddress())
                     .setCallTimeout(partitionMigrationTimeout)
                     .setTryCount(InternalPartitionService.MIGRATION_RETRY_COUNT)
@@ -1302,6 +1330,8 @@ public class MigrationManager {
                 logger.warning("Destination " + destination + " is not member anymore");
                 return false;
             }
+            // RU_COMPAT_39
+            boolean idempotentRetry = node.getClusterService().getClusterVersion().isGreaterThan(Versions.V3_9);
             try {
                 if (logger.isFinestEnabled()) {
                     logger.finest("Sending commit operation to " + destination + " for " + migrations);
@@ -1312,7 +1342,7 @@ public class MigrationManager {
                 Future<Boolean> future = nodeEngine.getOperationService()
                         .createInvocationBuilder(SERVICE_NAME, op, destination)
                         .setTryCount(Integer.MAX_VALUE)
-                        .setCallTimeout(Long.MAX_VALUE).invoke();
+                        .setCallTimeout(idempotentRetry ? memberHeartbeatTimeoutMillis : Long.MAX_VALUE).invoke();
 
                 boolean result = future.get();
                 if (logger.isFinestEnabled()) {
@@ -1322,6 +1352,10 @@ public class MigrationManager {
                 return result;
             } catch (Throwable t) {
                 logPromotionCommitFailure(destination, migrations, t);
+
+                if (idempotentRetry && t.getCause() instanceof OperationTimeoutException) {
+                    return commitPromotionsToDestination(destination, migrations);
+                }
             }
             return false;
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,11 +35,11 @@ import static java.util.concurrent.locks.LockSupport.unpark;
  * Multi producer single consumer queue. This queue has a configurable {@link IdleStrategy} so if there is nothing to take,
  * the thread can idle and eventually can do the more expensive blocking. The blocking is especially a concern for the putting
  * thread, because it needs to notify the blocked thread.
- *
+ * <p>
  * This MPSCQueue is based on 2 stacks; so the items are put in a reverse order by the putting thread, and by the taking thread
  * they are reversed in order again so that the original ordering is restored. Using this approach, if there are multiple items
- * on the stack, the owning thread can take them all using a single cas. Once this is done, the owning thread can process them
- * one by one and doesn't need to content with the putting threads; reducing contention.
+ * on the stack, the owning thread can take them all using a single CAS. Once this is done, the owning thread can process them
+ * one by one and doesn't need to contend with the putting threads; reducing contention.
  *
  * @param <E> the type of elements held in this collection
  */

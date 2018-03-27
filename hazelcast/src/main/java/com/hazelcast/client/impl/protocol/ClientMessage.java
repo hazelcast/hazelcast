@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -107,6 +107,7 @@ public class ClientMessage
 
     private transient int writeOffset;
     private transient boolean isRetryable;
+    private transient boolean acquiresResource;
     private transient String operationName;
 
     protected ClientMessage() {
@@ -369,6 +370,14 @@ public class ClientMessage
 
     public boolean isRetryable() {
         return isRetryable;
+    }
+
+    public boolean acquiresResource() {
+        return acquiresResource;
+    }
+
+    public void setAcquiresResource(boolean acquiresResource) {
+        this.acquiresResource = acquiresResource;
     }
 
     public void setRetryable(boolean isRetryable) {

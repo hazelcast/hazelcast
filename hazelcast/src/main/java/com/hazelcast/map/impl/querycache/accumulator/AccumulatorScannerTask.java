@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -125,7 +125,7 @@ public class AccumulatorScannerTask implements Runnable {
 
         private Map<Integer, Queue<Accumulator>> partitionAccumulators;
 
-        public ScannerConsumer() {
+        ScannerConsumer() {
         }
 
         void consume(Accumulator accumulator, int partitionId) {
@@ -141,7 +141,7 @@ public class AccumulatorScannerTask implements Runnable {
             accumulators.add(accumulator);
         }
 
-        public Map<Integer, Queue<Accumulator>> getPartitionAccumulators() {
+        Map<Integer, Queue<Accumulator>> getPartitionAccumulators() {
             return partitionAccumulators;
         }
 

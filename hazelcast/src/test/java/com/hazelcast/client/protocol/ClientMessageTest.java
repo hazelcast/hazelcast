@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 
@@ -159,8 +158,7 @@ public class ClientMessageTest {
 
 
     @Test
-    public void shouldEncodeAndDecodeClientMessageCorrectly_withPayLoadData_fromOffset()
-            throws UnsupportedEncodingException {
+    public void shouldEncodeAndDecodeClientMessageCorrectly_withPayLoadData_fromOffset() {
         SafeBuffer byteBuffer = new SafeBuffer(new byte[150]);
         int offset = 100;
 
@@ -172,8 +170,8 @@ public class ClientMessageTest {
                 .setCorrelationId(66).setPartitionId(77);
 
         byte[] bytes = VAR_DATA_STR_1.getBytes();
-        final int calculatedFrameSize = ClientMessage.HEADER_SIZE + Bits.INT_SIZE_IN_BYTES +
-                ParameterUtil.calculateDataSize(bytes);
+        final int calculatedFrameSize = ClientMessage.HEADER_SIZE + Bits.INT_SIZE_IN_BYTES
+                + ParameterUtil.calculateDataSize(bytes);
         cmEncode.set(1);
         cmEncode.set(bytes);
         cmEncode.updateFrameLength();
@@ -187,8 +185,7 @@ public class ClientMessageTest {
     }
 
     @Test
-    public void shouldEncodeWithNewVersionAndDecodeWithOldVersionCorrectly_withPayLoadData()
-            throws UnsupportedEncodingException {
+    public void shouldEncodeWithNewVersionAndDecodeWithOldVersionCorrectly_withPayLoadData() {
         SafeBuffer byteBuffer = new SafeBuffer(new byte[1024]);
 
         FutureClientMessage cmEncode = new FutureClientMessage();
@@ -218,8 +215,7 @@ public class ClientMessageTest {
     }
 
     @Test
-    public void shouldEncodeWithOldVersionAndDecodeWithNewVersionCorrectly_withPayLoadData()
-            throws UnsupportedEncodingException {
+    public void shouldEncodeWithOldVersionAndDecodeWithNewVersionCorrectly_withPayLoadData() {
         SafeBuffer byteBuffer = new SafeBuffer(new byte[1024]);
 
         ClientMessage cmEncode = TestClientMessage.createForEncode(byteBuffer, 0);
@@ -246,8 +242,7 @@ public class ClientMessageTest {
     }
 
     @Test
-    public void shouldEncodeAndDecodeClientMessageCorrectly_withPayLoadData_multipleMessages()
-            throws UnsupportedEncodingException {
+    public void shouldEncodeAndDecodeClientMessageCorrectly_withPayLoadData_multipleMessages() {
         SafeBuffer byteBuffer = new SafeBuffer(new byte[1024]);
         ClientMessage cmEncode = TestClientMessage.createForEncode(byteBuffer, 0);
         cmEncode.setMessageType(7).setVersion((short) 3).addFlag(ClientMessage.BEGIN_AND_END_FLAGS)
@@ -392,7 +387,7 @@ public class ClientMessageTest {
     }
 
     @Test
-    public void testUnsignedFields() throws IOException {
+    public void testUnsignedFields() {
         ClientProtocolBuffer buffer = new SafeBuffer(new byte[22]);
 
         ClientMessage cmEncode = ClientMessage.createForEncode(buffer, 0);
@@ -411,8 +406,7 @@ public class ClientMessageTest {
     }
 
     @Test(expected = MaxMessageSizeExceeded.class)
-    public void testMessageSizeOverflow()
-            throws Exception {
+    public void testMessageSizeOverflow() {
         ClientMessage.findSuitableMessageSize(Integer.MAX_VALUE << 1);
     }
 }

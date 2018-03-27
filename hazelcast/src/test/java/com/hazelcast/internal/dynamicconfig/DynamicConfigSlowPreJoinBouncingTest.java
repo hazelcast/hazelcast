@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ public class DynamicConfigSlowPreJoinBouncingTest extends DynamicConfigBouncingT
         Config config = new Config();
         config.getServicesConfig().addServiceConfig(
                 new ServiceConfig().setEnabled(true).setName(DelaysPreparingPreJoinOpService.SERVICE_NAME)
-                                   .setImplementation(service));
+                        .setImplementation(service));
         return config;
     }
 

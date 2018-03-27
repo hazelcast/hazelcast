@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import com.eclipsesource.json.JsonObject;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.management.operation.ChangeWanStateOperation;
 
+import static com.hazelcast.internal.management.ManagementCenterService.resolveFuture;
 import static com.hazelcast.util.JsonUtil.getBoolean;
 import static com.hazelcast.util.JsonUtil.getString;
 
@@ -52,8 +53,9 @@ public class ChangeWanStateRequest implements ConsoleRequest {
     }
 
     @Override
-    public void writeResponse(ManagementCenterService mcs, JsonObject out) throws Exception {
-        Object operationResult = mcs.callOnThis(new ChangeWanStateOperation(schemeName, publisherName, start));
+    public void writeResponse(ManagementCenterService mcs, JsonObject out) {
+        Object operationResult = resolveFuture(
+                mcs.callOnThis(new ChangeWanStateOperation(schemeName, publisherName, start)));
         JsonObject result = new JsonObject();
         if (operationResult == null) {
             result.add("result", SUCCESS);

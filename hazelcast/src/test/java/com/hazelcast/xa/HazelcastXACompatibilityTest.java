@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,19 +46,19 @@ import static org.junit.Assert.fail;
 @Category({QuickTest.class, ParallelTest.class})
 public class HazelcastXACompatibilityTest extends HazelcastTestSupport {
 
-    private HazelcastInstance instance, secondInstance;
-    private HazelcastXAResource xaResource, secondXaResource;
+    private HazelcastXAResource xaResource;
+    private HazelcastXAResource secondXaResource;
     private Xid xid;
 
-    private static Xid createXid() throws InterruptedException {
+    private static Xid createXid() {
         return new XID(randomString(), "test");
     }
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        instance = factory.newHazelcastInstance();
-        secondInstance = factory.newHazelcastInstance();
+        HazelcastInstance instance = factory.newHazelcastInstance();
+        HazelcastInstance secondInstance = factory.newHazelcastInstance();
         xaResource = instance.getXAResource();
         secondXaResource = secondInstance.getXAResource();
         xid = createXid();
@@ -98,7 +98,7 @@ public class HazelcastXACompatibilityTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testRecoveryRequiresRollbackOfUnknownXid() throws Exception {
+    public void testRecoveryRequiresRollbackOfUnknownXid() {
         performRollbackWithXa(xaResource);
     }
 
@@ -111,12 +111,13 @@ public class HazelcastXACompatibilityTest extends HazelcastTestSupport {
         xaResource.commit(xid, false);
     }
 
-    private void performRollbackWithXa(XAResource xaResource) throws XAException {
+    private void performRollbackWithXa(XAResource xaResource) {
         try {
             xaResource.rollback(xid);
         } catch (XAException xaerr) {
-            assertTrue("rollback of unknown xid gives unexpected errorCode: " + xaerr.errorCode, ((XAException.XA_RBBASE <= xaerr.errorCode) && (xaerr.errorCode <= XAException.XA_RBEND))
-                    || xaerr.errorCode == XAException.XAER_NOTA);
+            assertTrue("rollback of unknown xid gives unexpected errorCode: " + xaerr.errorCode,
+                    ((XAException.XA_RBBASE <= xaerr.errorCode) && (xaerr.errorCode <= XAException.XA_RBEND))
+                            || xaerr.errorCode == XAException.XAER_NOTA);
         }
     }
 

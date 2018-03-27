@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,10 +22,9 @@ import com.hazelcast.mapreduce.Combiner;
 import com.hazelcast.mapreduce.CombinerFactory;
 import com.hazelcast.mapreduce.Context;
 import com.hazelcast.mapreduce.impl.CombinerResultList;
-import com.hazelcast.mapreduce.impl.HashMapAdapter;
 import com.hazelcast.mapreduce.impl.MapReduceUtil;
-import com.hazelcast.nio.serialization.SerializableByConvention;
 import com.hazelcast.nio.serialization.BinaryInterface;
+import com.hazelcast.nio.serialization.SerializableByConvention;
 import com.hazelcast.util.ConcurrentReferenceHashMap;
 import com.hazelcast.util.IConcurrentMap;
 
@@ -35,6 +34,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
 import static com.hazelcast.util.ConcurrentReferenceHashMap.ReferenceType.STRONG;
+import static com.hazelcast.util.MapUtil.createHashMapAdapter;
 
 /**
  * This is the internal default implementation of a map reduce context mappers emit values to. It controls the emitted
@@ -85,7 +85,7 @@ public class DefaultContext<KeyIn, ValueIn>
 
     public <Chunk> Map<KeyIn, Chunk> requestChunk() {
         int mapSize = MapReduceUtil.mapSize(combiners.size());
-        Map<KeyIn, Chunk> chunkMap = new HashMapAdapter<KeyIn, Chunk>(mapSize);
+        Map<KeyIn, Chunk> chunkMap = createHashMapAdapter(mapSize);
         for (Map.Entry<KeyIn, Combiner<ValueIn, ?>> entry : combiners.entrySet()) {
             Combiner<ValueIn, ?> combiner = entry.getValue();
             Chunk chunk = (Chunk) combiner.finalizeChunk();

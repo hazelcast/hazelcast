@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -648,7 +648,8 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
         final int partitionCount = getPartitionService(instance1).getPartitionCount();
         final Set<String> keys = generateRandomKeys(instance1, partitionCount);
 
-        int half = keys.size() / 2, i = 0;
+        int half = keys.size() / 2;
+        int i = 0;
         for (String key : keys) {
             final ReplicatedMap<String, String> map = i++ < half ? map1 : map2;
             map.put(key, key);
@@ -702,7 +703,8 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
         final int partitionCount = getPartitionService(instance1).getPartitionCount();
         final Set<String> keys = generateRandomKeys(instance1, partitionCount);
 
-        int half = keys.size() / 2, i = 0;
+        int half = keys.size() / 2;
+        int i = 0;
         for (String key : keys) {
             final ReplicatedMap<String, String> map = i++ < half ? map1 : map2;
             map.put(key, key);
@@ -739,7 +741,8 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
         final int partitionCount = getPartitionService(instance1).getPartitionCount();
         final Set<String> keys = generateRandomKeys(instance1, partitionCount);
 
-        int half = keys.size() / 2, i = 0;
+        int half = keys.size() / 2;
+        int i = 0;
         for (String key : keys) {
             final ReplicatedMap<String, String> map = i++ < half ? map1 : map2;
             map.put(key, key);
@@ -776,7 +779,8 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
         final int partitionCount = getPartitionService(instance1).getPartitionCount();
         final Set<String> keys = generateRandomKeys(instance1, partitionCount);
 
-        int half = keys.size() / 2, i = 0;
+        int half = keys.size() / 2;
+        int i = 0;
         for (String key : keys) {
             final ReplicatedMap<String, String> map = i++ < half ? map1 : map2;
             map.put(key, key);

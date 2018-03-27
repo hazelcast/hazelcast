@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,10 +38,9 @@ import com.hazelcast.internal.ascii.rest.HttpHeadCommandProcessor;
 import com.hazelcast.internal.ascii.rest.HttpPostCommandProcessor;
 import com.hazelcast.internal.ascii.rest.RestValue;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.ascii.TextChannelOutboundHandler;
+import com.hazelcast.nio.ascii.TextEncoder;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.Clock;
-import com.hazelcast.util.EmptyStatement;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.nio.ByteBuffer;
@@ -76,7 +75,9 @@ import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.TOUCH;
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.UNKNOWN;
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.VERSION;
+import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.ThreadUtil.createThreadName;
+import static java.lang.Thread.currentThread;
 
 public class TextCommandServiceImpl implements TextCommandService {
 
@@ -294,8 +295,8 @@ public class TextCommandServiceImpl implements TextCommandService {
     @Override
     public void lock(String mapName, String key) throws InterruptedException {
         if (!hazelcast.getMap(mapName).tryLock(key, 1, TimeUnit.MINUTES)) {
-            throw new RuntimeException("Memcache client could not get the lock for map:"
-                    + mapName + " key:" + key + " in 1 minute");
+            throw new RuntimeException("Memcache client could not get the lock for map: "
+                    + mapName + ", key: " + key + " in 1 minute");
         }
     }
 
@@ -325,6 +326,7 @@ public class TextCommandServiceImpl implements TextCommandService {
         try {
             return hazelcast.getQueue(queueName).poll(seconds, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
+            currentThread().interrupt();
             return null;
         }
     }
@@ -393,14 +395,17 @@ public class TextCommandServiceImpl implements TextCommandService {
                             stopObject.notify();
                         }
                     } else {
-                        TextChannelOutboundHandler textWriteHandler = textCommand.getWriteHandler();
+                        TextEncoder textWriteHandler = textCommand.getEncoder();
                         textWriteHandler.enqueue(textCommand);
                     }
                 } catch (InterruptedException e) {
+                    currentThread().interrupt();
                     return;
                 } catch (OutOfMemoryError e) {
                     OutOfMemoryErrorDispatcher.onOutOfMemory(e);
                     throw e;
+                } catch (Throwable t) {
+                    logger.severe("Error while processing Memcache or Rest command.", t);
                 }
             }
         }
@@ -424,7 +429,7 @@ public class TextCommandServiceImpl implements TextCommandService {
                     //noinspection WaitNotInLoop
                     stopObject.wait(WAIT_TIME);
                 } catch (Exception ignored) {
-                    EmptyStatement.ignore(ignored);
+                    ignore(ignored);
                 }
             }
         }

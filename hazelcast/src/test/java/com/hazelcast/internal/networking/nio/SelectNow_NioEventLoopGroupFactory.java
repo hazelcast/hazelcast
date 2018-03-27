@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,13 +17,11 @@
 package com.hazelcast.internal.networking.nio;
 
 import com.hazelcast.internal.metrics.MetricsRegistry;
-import com.hazelcast.internal.networking.Channel;
-import com.hazelcast.internal.networking.ChannelErrorHandler;
 import com.hazelcast.internal.networking.ChannelFactory;
-import com.hazelcast.logging.LoggingServiceImpl;
+import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.tcp.EventLoopGroupFactory;
-import com.hazelcast.nio.tcp.MockIOService;
 import com.hazelcast.nio.tcp.MemberChannelInitializer;
+import com.hazelcast.nio.tcp.MockIOService;
 import com.hazelcast.nio.tcp.TcpIpConnectionChannelErrorHandler;
 
 public class SelectNow_NioEventLoopGroupFactory implements EventLoopGroupFactory {
@@ -35,19 +33,21 @@ public class SelectNow_NioEventLoopGroupFactory implements EventLoopGroupFactory
 
     @Override
     public NioEventLoopGroup create(MockIOService ioService, MetricsRegistry metricsRegistry) {
-
-        LoggingServiceImpl loggingService = ioService.loggingService;
-        NioEventLoopGroup threadingModel = new NioEventLoopGroup(
-                loggingService,
-                metricsRegistry,
-                ioService.getHazelcastName(),
-                new TcpIpConnectionChannelErrorHandler(loggingService.getLogger(TcpIpConnectionChannelErrorHandler.class)),
-                ioService.getInputSelectorThreadCount(),
-                ioService.getOutputSelectorThreadCount(),
-                ioService.getBalancerIntervalSeconds(),
-                new MemberChannelInitializer(loggingService.getLogger(MemberChannelInitializer.class), ioService)
-        );
-        threadingModel.setSelectorMode(SelectorMode.SELECT_NOW);
-        return threadingModel;
+        LoggingService loggingService = ioService.loggingService;
+        return new NioEventLoopGroup(
+                new NioEventLoopGroup.Context()
+                        .loggingService(loggingService)
+                        .metricsRegistry(metricsRegistry)
+                        .threadNamePrefix(ioService.getHazelcastName())
+                        .errorHandler(
+                                new TcpIpConnectionChannelErrorHandler(
+                                        loggingService.getLogger(TcpIpConnectionChannelErrorHandler.class)))
+                        .inputThreadCount(ioService.getInputSelectorThreadCount())
+                        .outputThreadCount(ioService.getOutputSelectorThreadCount())
+                        .balancerIntervalSeconds(ioService.getBalancerIntervalSeconds())
+                        .channelInitializer(
+                                new MemberChannelInitializer(
+                                        loggingService.getLogger(MemberChannelInitializer.class), ioService))
+                        .selectorMode(SelectorMode.SELECT_NOW));
     }
 }

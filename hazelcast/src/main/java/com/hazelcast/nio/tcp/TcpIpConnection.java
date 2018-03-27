@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -114,7 +114,7 @@ public final class TcpIpConnection implements Connection {
 
     @Override
     public InetSocketAddress getRemoteSocketAddress() {
-        return (InetSocketAddress) channel.getRemoteSocketAddress();
+        return (InetSocketAddress) channel.remoteSocketAddress();
     }
 
     @Override
@@ -251,7 +251,7 @@ public final class TcpIpConnection implements Connection {
     @Override
     public String toString() {
         return "Connection[id=" + connectionId
-                + ", " + channel.getLocalSocketAddress() + "->" + channel.getRemoteSocketAddress()
+                + ", " + channel.localSocketAddress() + "->" + channel.remoteSocketAddress()
                 + ", endpoint=" + endPoint
                 + ", alive=" + alive
                 + ", type=" + type

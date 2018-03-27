@@ -45,17 +45,17 @@ public class MapIndexSynchronizerTest extends HazelcastTestSupport {
 
     @Test
     public void noIndexes_properTransition_syncNotFired() throws Exception {
-        synchronizer.onClusterVersionChange(Versions.V3_8);
+        synchronizer.onClusterVersionChange(Versions.V3_9);
         assertNoIndexesEventually();
 
-        synchronizer.onClusterVersionChange(Versions.V3_9);
+        synchronizer.onClusterVersionChange(Versions.V3_10);
         assertNoIndexesEventually();
 
     }
 
     @Test
     public void indexes_properTransition_syncFired() throws Exception {
-        synchronizer.onClusterVersionChange(Versions.V3_8);
+        synchronizer.onClusterVersionChange(Versions.V3_9);
         assertNoIndexesEventually();
 
         IndexInfo orderedIndex = index("age", true);
@@ -63,13 +63,13 @@ public class MapIndexSynchronizerTest extends HazelcastTestSupport {
         add(orderedIndex, unorderedIndex);
         assertNoIndexesEventually();
 
-        synchronizer.onClusterVersionChange(Versions.V3_9);
+        synchronizer.onClusterVersionChange(Versions.V3_10);
         assertIndexesEqualEventually(orderedIndex, unorderedIndex);
     }
 
     @Test
     public void indexes_improperTransition_syncNotFired() throws Exception {
-        synchronizer.onClusterVersionChange(Version.of(3, 7));
+        synchronizer.onClusterVersionChange(Version.of(3, 8));
         assertNoIndexesEventually();
 
         IndexInfo orderedIndex = index("age", true);
@@ -77,7 +77,7 @@ public class MapIndexSynchronizerTest extends HazelcastTestSupport {
         add(orderedIndex, unorderedIndex);
         assertNoIndexesEventually();
 
-        synchronizer.onClusterVersionChange(Versions.V3_9);
+        synchronizer.onClusterVersionChange(Versions.V3_10);
         assertNoIndexesEventually();
     }
 

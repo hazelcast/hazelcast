@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -75,7 +75,9 @@ public class MapAddNearCacheInvalidationListenerMessageTask
 
     @Override
     protected Object newMapListener() {
-        return new NearCacheInvalidationListener(endpoint, nodeEngine.getLocalMember().getUuid());
+        String uuid = nodeEngine.getLocalMember().getUuid();
+        long correlationId = clientMessage.getCorrelationId();
+        return new NearCacheInvalidationListener(endpoint, uuid, correlationId);
     }
 
     @Override
@@ -85,8 +87,8 @@ public class MapAddNearCacheInvalidationListenerMessageTask
 
     private final class NearCacheInvalidationListener extends AbstractMapClientNearCacheInvalidationListener {
 
-        NearCacheInvalidationListener(ClientEndpoint endpoint, String localMemberUuid) {
-            super(endpoint, localMemberUuid);
+        NearCacheInvalidationListener(ClientEndpoint endpoint, String localMemberUuid, long correlationId) {
+            super(endpoint, localMemberUuid, correlationId);
         }
 
         @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,6 +50,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 
+import static com.hazelcast.client.proxy.ClientMapProxy.NULL_LISTENER_IS_NOT_ALLOWED;
 import static com.hazelcast.ringbuffer.impl.RingbufferService.TOPIC_RB_PREFIX;
 import static com.hazelcast.topic.impl.reliable.ReliableTopicService.SERVICE_NAME;
 import static com.hazelcast.util.ExceptionUtil.peel;
@@ -151,7 +152,7 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
 
     @Override
     public String addMessageListener(MessageListener<E> listener) {
-        checkNotNull(listener, "listener can't be null");
+        checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
 
         String id = UuidUtil.newUnsecureUuidString();
         ReliableMessageListener<E> reliableMessageListener = toReliableMessageListener(listener);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ import static org.junit.Assert.assertEquals;
 public class AtomicLongAdvancedTest extends HazelcastTestSupport {
 
     @Test
-    public void testMultipleThreadAtomicLong() throws InterruptedException {
+    public void testMultipleThreadAtomicLong() {
         final HazelcastInstance instance = createHazelcastInstance();
         final int k = 10;
         final CountDownLatch countDownLatch = new CountDownLatch(k);
@@ -83,7 +83,7 @@ public class AtomicLongAdvancedTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testAtomicLongSpawnNodeInParallel() throws InterruptedException {
+    public void testAtomicLongSpawnNodeInParallel() {
         int total = 6;
         int parallel = 2;
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(total + 1);
@@ -117,7 +117,7 @@ public class AtomicLongAdvancedTest extends HazelcastTestSupport {
                 waitAllForSafeState(nodeFactory.getAllHazelcastInstances());
 
                 // if there is an exception while incrementing in parallel threads, find number of exceptions
-                // and subtract the number from expectedValue.
+                // and subtract the number from the expectedValue
                 final int thrownExceptionCount = exceptionCount.get();
                 final long expectedValue = (long) 100 + (i + 1) * parallel - thrownExceptionCount;
                 IAtomicLong newAtomicLong = instance.getAtomicLong(name);

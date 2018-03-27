@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,7 +56,7 @@ public class MapPartitionLostListenerStressTest extends AbstractPartitionLostLis
                 {3, true, NodeLeaveType.SHUTDOWN, false},
                 {3, true, NodeLeaveType.TERMINATE, true},
                 {3, false, NodeLeaveType.SHUTDOWN, false},
-                {3, false, NodeLeaveType.TERMINATE, true}
+                {3, false, NodeLeaveType.TERMINATE, true},
         });
     }
 
@@ -120,7 +120,8 @@ public class MapPartitionLostListenerStressTest extends AbstractPartitionLostLis
     }
 
     private List<TestEventCollectingMapPartitionLostListener> registerListeners(HazelcastInstance instance) {
-        List<TestEventCollectingMapPartitionLostListener> listeners = new ArrayList<TestEventCollectingMapPartitionLostListener>();
+        List<TestEventCollectingMapPartitionLostListener> listeners
+                = new ArrayList<TestEventCollectingMapPartitionLostListener>();
         for (int i = 0; i < getNodeCount(); i++) {
             TestEventCollectingMapPartitionLostListener listener = new TestEventCollectingMapPartitionLostListener(i);
             instance.getMap(getIthMapName(i)).addPartitionLostListener(listener);

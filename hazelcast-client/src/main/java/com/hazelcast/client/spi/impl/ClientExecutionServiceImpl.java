@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,6 +41,7 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.spi.properties.GroupProperty.TASK_SCHEDULER_REMOVE_ON_CANCEL;
+import static java.lang.Thread.currentThread;
 
 public final class ClientExecutionServiceImpl implements ClientExecutionService, MetricsProvider {
 
@@ -130,6 +131,7 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService,
                         + " seconds");
             }
         } catch (InterruptedException e) {
+            currentThread().interrupt();
             logger.warning(name + " executor await termination is interrupted", e);
         }
     }

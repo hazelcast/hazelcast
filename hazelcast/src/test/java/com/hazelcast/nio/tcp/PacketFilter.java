@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,9 +20,31 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Packet;
 
 /**
- * A filter used by mock network system to allow, drop or delay {@code Packet}s
+ * A filter used by network system to allow, reject, drop or delay {@code Packet}s
  */
 public interface PacketFilter {
+
+    enum Action {
+        /**
+         * Allows the packet to pass through intact
+         */
+        ALLOW,
+
+        /**
+         * Rejects the packet. Sender will be aware of rejection.
+         */
+        REJECT,
+
+        /**
+         * Silently drops the packet as if sent to the destination.
+         */
+        DROP,
+
+        /**
+         * Delays sending packet to the destination.
+         */
+        DELAY
+    }
 
     /**
      * Filters a packet inspecting its content and/or endpoint and decides
@@ -30,8 +52,9 @@ public interface PacketFilter {
      *
      * @param packet   packet
      * @param endpoint target endpoint which packet is sent to
-     * @return returns true if packet should pass through intact, false otherwise
+     * @return returns An {@link Action} to denote whether packet should pass through intact,
+     * or should be rejected/dropped/delayed
      */
-    boolean allow(Packet packet, Address endpoint);
+    Action filter(Packet packet, Address endpoint);
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,10 +30,10 @@ import static org.junit.Assert.assertEquals;
 
 /**
  * Base class for tests which have to change the {@link Clock} implementation, which works properly only in an isolated node.
- *
+ * <p>
  * Use {@link #startIsolatedNode()} to create an isolated node, which will pick up the actual {@link ClockProperties}.
  * Use {@link #shutdownIsolatedNode()} and {@link #resetClock()} to stop the node and cleanup the properties.
- *
+ * <p>
  * Implementations of this class have to run in full isolation, so {@link com.hazelcast.test.HazelcastSerialClassRunner} and
  * no usage of {@link com.hazelcast.test.annotation.ParallelTest}.
  */

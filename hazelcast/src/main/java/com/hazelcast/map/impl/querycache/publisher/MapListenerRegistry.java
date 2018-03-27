@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ import java.util.concurrent.ConcurrentMap;
  */
 public class MapListenerRegistry implements Registry<String, QueryCacheListenerRegistry> {
 
-    private ConstructorFunction<String, QueryCacheListenerRegistry> registryConstructorFunction =
+    private final ConstructorFunction<String, QueryCacheListenerRegistry> registryConstructorFunction =
             new ConstructorFunction<String, QueryCacheListenerRegistry>() {
                 @Override
                 public QueryCacheListenerRegistry createNew(String mapName) {

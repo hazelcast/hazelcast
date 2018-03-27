@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,15 +18,17 @@ package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IMap;
+import com.hazelcast.map.listener.EntryUpdatedListener;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -34,24 +36,26 @@ import org.junit.runner.RunWith;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
 
 /**
- * Verifies how well Hazelcast is able to deal with a cluster where members
- * are joining and leaving all the time, so partitions are moving.
- *
- * In this cluster, partitioned calls are made and therefor it happens
- * frequently that calls are sent to the wrong machine.
+ * Verifies how well Hazelcast is able to deal with a cluster where members are joining and leaving all the time, so partitions
+ * are moving.
+ * <p>
+ * In this cluster, partitioned calls are made and therefor it happens frequently that calls are sent to the wrong machine.
  */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(NightlyTest.class)
 public class RepartitioningStressTest extends HazelcastTestSupport {
+
+    private static final int DUPLICATE_OPS_TOLERANCE = 5;
 
     private static final int INITIAL_MEMBER_COUNT = 5;
     private static final int THREAD_COUNT = 10;
@@ -62,6 +66,8 @@ public class RepartitioningStressTest extends HazelcastTestSupport {
     private TestHazelcastInstanceFactory instanceFactory;
     private Config config;
     private HazelcastInstance hz;
+    private final AtomicLong updateCounter = new AtomicLong();
+    private final AtomicLong updateCounterInListener = new AtomicLong();
 
     private RestartThread restartThread;
 
@@ -73,7 +79,6 @@ public class RepartitioningStressTest extends HazelcastTestSupport {
         config = new Config();
         config.getGroupConfig().setName(generateRandomString(10));
         MapConfig mapConfig = new MapConfig("map");
-        //mapConfig.setBackupCount(0);
         config.addMapConfig(mapConfig);
         hz = createHazelcastInstance();
 
@@ -96,14 +101,19 @@ public class RepartitioningStressTest extends HazelcastTestSupport {
     }
 
     @Test
-    @Ignore(value = "https://github.com/hazelcast/hazelcast/issues/3683")
-    public void callWithBackups() throws Exception {
+    public void replaceUpdatesAtLeastOnce() throws Exception {
         int itemCount = 10000;
-        ConcurrentMap<Integer, Integer> map = hz.getMap("map");
+        IMap<Integer, Integer> map = hz.getMap("map");
 
         for (int i = 0; i < itemCount; i++) {
             map.put(i, 0);
         }
+        map.addEntryListener(new EntryUpdatedListener<Integer, Integer>() {
+            @Override
+            public void entryUpdated(EntryEvent<Integer, Integer> event) {
+                updateCounterInListener.incrementAndGet();
+            }
+        }, true);
 
         restartThread.start();
 
@@ -120,17 +130,18 @@ public class RepartitioningStressTest extends HazelcastTestSupport {
             thread.assertDiedPeacefully();
         }
 
+        assertEqualsWithDuplicatesTolerance("Unexpected count of updates seen in listener", updateCounter.get(),
+                updateCounterInListener.get());
+
         int[] expectedValues = new int[itemCount];
         for (UpdateThread t : testThreads) {
             for (int i = 0; i < itemCount; i++) {
-                expectedValues[i] += t.values[i];
+                expectedValues[i] += t.values[i].get();
             }
         }
 
         for (int i = 0; i < itemCount; i++) {
-            int expected = expectedValues[i];
-            int found = map.get(i);
-            assertEquals("value not the same", expected, found);
+            assertEqualsWithDuplicatesTolerance("Unexpected value for key " + i, expectedValues[i], map.get(i));
         }
     }
 
@@ -171,6 +182,13 @@ public class RepartitioningStressTest extends HazelcastTestSupport {
         for (TestThread thread : testThreads) {
             thread.join(TimeUnit.MINUTES.toMillis(1));
             thread.assertDiedPeacefully();
+        }
+    }
+
+    private void assertEqualsWithDuplicatesTolerance(String msg, long expected, long actual) {
+        if (actual < expected || actual > expected + DUPLICATE_OPS_TOLERANCE) {
+            fail(String.format("%s, expected: %d, actual %d, tolerance for duplicates: %d", msg, expected,
+                    actual, DUPLICATE_OPS_TOLERANCE));
         }
     }
 
@@ -233,14 +251,17 @@ public class RepartitioningStressTest extends HazelcastTestSupport {
     private class UpdateThread extends RepartitioningStressTest.TestThread {
 
         private final int itemCount;
-        private final ConcurrentMap<Integer, Integer> map;
-        private final int[] values;
+        private final IMap<Integer, Integer> map;
+        private final AtomicInteger[] values;
 
-        UpdateThread(int id, int itemCount, ConcurrentMap<Integer, Integer> map) {
+        UpdateThread(int id, int itemCount, IMap<Integer, Integer> map) {
             super("Thread-" + id);
             this.itemCount = itemCount;
             this.map = map;
-            this.values = new int[itemCount];
+            this.values = new AtomicInteger[itemCount];
+            for (int i = 0; i < itemCount; i++) {
+                this.values[i] = new AtomicInteger(0);
+            }
         }
 
         @Override
@@ -248,25 +269,16 @@ public class RepartitioningStressTest extends HazelcastTestSupport {
             long endTime = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(DURATION_SECONDS);
 
             Random random = new Random();
-            while (true) {
-                int key = random.nextInt(itemCount);
-                int increment = random.nextInt(100);
-                values[key] += increment;
+            int key = random.nextInt(itemCount);
+            do {
+                Integer value = map.get(key);
 
-                while (true) {
-                    Integer value = map.get(key);
-                    if (value == null) {
-                        value = 0;
-                    }
-                    if (map.replace(key, value, value + increment)) {
-                        break;
-                    }
+                if (map.replace(key, value, value + 1)) {
+                    values[key].incrementAndGet();
+                    updateCounter.incrementAndGet();
+                    key = random.nextInt(itemCount);
                 }
-
-                if (System.currentTimeMillis() > endTime) {
-                    break;
-                }
-            }
+            } while (System.currentTimeMillis() < endTime);
         }
     }
 }

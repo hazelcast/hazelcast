@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -82,11 +82,11 @@ class DefaultQueryCacheRecordStore implements QueryCacheRecordStore {
     public QueryCacheRecord add(Data keyData, Data valueData) {
         evictionOperator.evictIfRequired();
 
-        QueryCacheRecord entry = recordFactory.createEntry(keyData, valueData);
-        QueryCacheRecord oldEntry = cache.put(keyData, entry);
-        saveIndex(keyData, entry, oldEntry);
+        QueryCacheRecord newRecord = recordFactory.createRecord(valueData);
+        QueryCacheRecord oldRecord = cache.put(keyData, newRecord);
+        saveIndex(keyData, newRecord, oldRecord);
 
-        return oldEntry;
+        return oldRecord;
     }
 
     private void saveIndex(Data keyData, QueryCacheRecord currentRecord, QueryCacheRecord oldRecord) {

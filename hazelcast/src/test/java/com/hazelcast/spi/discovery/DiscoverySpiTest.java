@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -81,6 +81,7 @@ import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.config.PartitionGroupConfig.MemberGroupType.SPI;
 import static com.hazelcast.config.properties.PropertyTypeConverter.BOOLEAN;
 import static com.hazelcast.spi.discovery.DiscoverySpiTest.ParametrizedDiscoveryStrategyFactory.BOOL_PROPERTY;
 import static org.junit.Assert.assertEquals;
@@ -205,7 +206,7 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
         String xmlFileName = "test-hazelcast-discovery-spi.xml";
 
         SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
-        URL schemaResource = DiscoverySpiTest.class.getClassLoader().getResource("hazelcast-config-3.9.xsd");
+        URL schemaResource = DiscoverySpiTest.class.getClassLoader().getResource("hazelcast-config-3.10.xsd");
         assertNotNull(schemaResource);
 
         InputStream xmlResource = DiscoverySpiTest.class.getClassLoader().getResourceAsStream(xmlFileName);
@@ -347,7 +348,8 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
     public void testSPIAwareMemberGroupFactoryInvalidConfig() throws Exception {
         HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance();
         try {
-            MemberGroupFactory groupFactory = new SPIAwareMemberGroupFactory(TestUtil.getNode(hazelcastInstance).getDiscoveryService());
+            MemberGroupFactory groupFactory
+                    = new SPIAwareMemberGroupFactory(TestUtil.getNode(hazelcastInstance).getDiscoveryService());
             Collection<Member> members = createMembers();
             groupFactory.createMemberGroups(members);
         } finally {
@@ -421,6 +423,32 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
             verify(discoveryService, atLeastOnce()).discoverNodes();
         } finally {
             instance.getLifecycleService().terminate();
+        }
+    }
+
+    @Test
+    public void testMemberGroup_givenSPIMemberGroupIsActived_whenInstanceStarting_wontThrowNPE() {
+        // this test has no assert. it's a regression test checking an instance can start when a SPI-driven member group
+        // strategy is configured. see #11681
+        Config config = new Config();
+        config.setProperty(GroupProperty.DISCOVERY_SPI_ENABLED.getName(), "true");
+        JoinConfig joinConfig = config.getNetworkConfig().getJoin();
+        joinConfig.getMulticastConfig().setEnabled(false);
+
+        DiscoveryStrategyConfig discoveryStrategyConfig
+                = new DiscoveryStrategyConfig(MetadataProvidingDiscoveryStrategy.class.getName());
+        joinConfig.getDiscoveryConfig()
+                .addDiscoveryStrategyConfig(discoveryStrategyConfig);
+        config.getPartitionGroupConfig().setGroupType(SPI).setEnabled(true);
+
+        HazelcastInstance hazelcastInstance = null;
+        try {
+            // check the instance can actually be started
+            hazelcastInstance = Hazelcast.newHazelcastInstance(config);
+        } finally {
+            if (hazelcastInstance != null) {
+                hazelcastInstance.shutdown();
+            }
         }
     }
 

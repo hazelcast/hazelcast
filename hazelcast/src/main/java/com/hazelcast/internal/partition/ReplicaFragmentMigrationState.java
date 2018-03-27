@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,13 @@
 package com.hazelcast.internal.partition;
 
 import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.ServiceNamespace;
+import com.hazelcast.spi.impl.operationservice.TargetAware;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -34,7 +36,7 @@ import java.util.Map;
  *
  * @since 3.9
  */
-public class ReplicaFragmentMigrationState implements IdentifiedDataSerializable {
+public class ReplicaFragmentMigrationState implements IdentifiedDataSerializable, TargetAware {
 
     private Map<ServiceNamespace, long[]> namespaces;
 
@@ -97,4 +99,12 @@ public class ReplicaFragmentMigrationState implements IdentifiedDataSerializable
         }
     }
 
+    @Override
+    public void setTarget(Address address) {
+        for (Operation op : migrationOperations) {
+            if (op instanceof TargetAware) {
+                ((TargetAware) op).setTarget(address);
+            }
+        }
+    }
 }

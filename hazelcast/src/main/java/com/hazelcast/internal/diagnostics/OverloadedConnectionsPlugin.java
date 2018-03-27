@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,7 @@ package com.hazelcast.internal.diagnostics;
 
 import com.hazelcast.internal.networking.OutboundFrame;
 import com.hazelcast.internal.networking.nio.NioChannel;
-import com.hazelcast.internal.networking.nio.NioChannelWriter;
-import com.hazelcast.internal.networking.spinning.SpinningChannel;
-import com.hazelcast.internal.networking.spinning.SpinningChannelWriter;
+import com.hazelcast.internal.networking.nio.NioOutboundPipeline;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.tcp.TcpIpConnection;
@@ -155,12 +153,8 @@ public class OverloadedConnectionsPlugin extends DiagnosticsPlugin {
     private Queue<OutboundFrame> getOutboundQueue(TcpIpConnection connection, boolean priority) {
         if (connection.getChannel() instanceof NioChannel) {
             NioChannel nioChannel = (NioChannel) connection.getChannel();
-            NioChannelWriter writer = nioChannel.getWriter();
-            return priority ? writer.urgentWriteQueue : writer.writeQueue;
-        } else if (connection.getChannel() instanceof SpinningChannel) {
-            SpinningChannel spinningChannel = (SpinningChannel) connection.getChannel();
-            SpinningChannelWriter writer = spinningChannel.getWriter();
-            return priority ? writer.urgentWriteQueue : writer.writeQueue;
+            NioOutboundPipeline outboundPipeline = nioChannel.outboundPipeline();
+            return priority ? outboundPipeline.urgentWriteQueue : outboundPipeline.writeQueue;
         } else {
             return EMPTY_QUEUE;
         }

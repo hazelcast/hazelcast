@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,11 +57,12 @@ import static com.hazelcast.replicatedmap.impl.ReplicatedMapService.SERVICE_NAME
  */
 public class ReplicatedMapEventPublishingService implements EventPublishingService {
 
+    private final HashMap<String, Boolean> statisticsMap = new HashMap<String, Boolean>();
+
     private final ReplicatedMapService replicatedMapService;
     private final NodeEngine nodeEngine;
     private final Config config;
     private final EventService eventService;
-    private final HashMap<String, Boolean> statisticsMap = new HashMap<String, Boolean>();
 
     public ReplicatedMapEventPublishingService(ReplicatedMapService replicatedMapService) {
         this.replicatedMapService = replicatedMapService;
@@ -122,13 +123,13 @@ public class ReplicatedMapEventPublishingService implements EventPublishingServi
                     entryListener.mapCleared(mapEvent);
                     break;
                 default:
-                    throw new IllegalArgumentException("event type " + type + " not supported");
+                    throw new IllegalArgumentException("Unsupported EntryEventType: " + type);
             }
         }
     }
 
     public String addEventListener(EventListener entryListener, EventFilter eventFilter, String mapName) {
-        if (config.isLiteMember()) {
+        if (nodeEngine.getLocalMember().isLiteMember()) {
             throw new ReplicatedMapCantBeCreatedOnLiteMemberException(nodeEngine.getThisAddress());
         }
         EventRegistration registration = eventService.registerLocalListener(SERVICE_NAME, mapName, eventFilter,
@@ -137,7 +138,7 @@ public class ReplicatedMapEventPublishingService implements EventPublishingServi
     }
 
     public boolean removeEventListener(String mapName, String registrationId) {
-        if (config.isLiteMember()) {
+        if (nodeEngine.getLocalMember().isLiteMember()) {
             throw new ReplicatedMapCantBeCreatedOnLiteMemberException(nodeEngine.getThisAddress());
         }
         if (registrationId == null) {
@@ -148,8 +149,7 @@ public class ReplicatedMapEventPublishingService implements EventPublishingServi
 
     public void fireMapClearedEvent(int deletedEntrySize, String name) {
         EventService eventService = nodeEngine.getEventService();
-        Collection<EventRegistration> registrations = eventService.getRegistrations(
-                SERVICE_NAME, name);
+        Collection<EventRegistration> registrations = eventService.getRegistrations(SERVICE_NAME, name);
         if (registrations.isEmpty()) {
             return;
         }
@@ -201,8 +201,8 @@ public class ReplicatedMapEventPublishingService implements EventPublishingServi
             } else {
                 testValue = value;
             }
-            InternalSerializationService serializationService =
-                    (InternalSerializationService) nodeEngine.getSerializationService();
+            InternalSerializationService serializationService
+                    = (InternalSerializationService) nodeEngine.getSerializationService();
             queryEntry = new QueryEntry(serializationService, key, testValue, null);
         }
         return filter == null || filter.eval(queryEntry != null ? queryEntry : key);

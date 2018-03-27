@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,7 +53,7 @@ public class MapMergePolicyQuickTest extends HazelcastTestSupport {
         Data dataKey = mapServiceContext.toData("key");
 
         RecordStore recordStore = mapServiceContext.getRecordStore(getPartitionId(instance, "key"), name);
-        MapMergePolicy mergePolicy = mapServiceContext.getMergePolicyProvider()
+        MapMergePolicy mergePolicy = (MapMergePolicy) mapServiceContext.getMergePolicyProvider()
                 .getMergePolicy(LatestUpdateMapMergePolicy.class.getName());
         long now = Clock.currentTimeMillis();
         SimpleEntryView<String, String> initialEntry = new SimpleEntryView<String, String>("key", "value1");
@@ -82,7 +82,7 @@ public class MapMergePolicyQuickTest extends HazelcastTestSupport {
         Data dataKey = mapServiceContext.toData("key");
 
         RecordStore recordStore = mapServiceContext.getRecordStore(getPartitionId(instance, "key"), name);
-        MapMergePolicy mergePolicy = mapServiceContext.getMergePolicyProvider()
+        MapMergePolicy mergePolicy = (MapMergePolicy) mapServiceContext.getMergePolicyProvider()
                 .getMergePolicy(PutIfAbsentMapMergePolicy.class.getName());
 
         SimpleEntryView<String, String> initialEntry = new SimpleEntryView<String, String>("key", "value1");
@@ -104,7 +104,7 @@ public class MapMergePolicyQuickTest extends HazelcastTestSupport {
         Data dataKey = mapServiceContext.toData("key");
 
         RecordStore recordStore = mapServiceContext.getRecordStore(getPartitionId(instance, "key"), name);
-        MapMergePolicy mergePolicy = mapServiceContext.getMergePolicyProvider()
+        MapMergePolicy mergePolicy = (MapMergePolicy) mapServiceContext.getMergePolicyProvider()
                 .getMergePolicy(PassThroughMergePolicy.class.getName());
         SimpleEntryView<String, String> initialEntry = new SimpleEntryView<String, String>("key", "value1");
         recordStore.merge(dataKey, initialEntry, mergePolicy);

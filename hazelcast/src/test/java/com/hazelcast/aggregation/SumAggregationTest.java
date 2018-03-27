@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -83,7 +83,8 @@ public class SumAggregationTest {
             aggregation.accumulate(createExtractableEntryWithValue(value));
         }
 
-        Aggregator<Map.Entry<ValueContainer, ValueContainer>, BigDecimal> resultAggregation = Aggregators.bigDecimalSum("bigDecimal");
+        Aggregator<Map.Entry<ValueContainer, ValueContainer>, BigDecimal> resultAggregation
+                = Aggregators.bigDecimalSum("bigDecimal");
         resultAggregation.combine(aggregation);
         BigDecimal result = resultAggregation.aggregate();
 
@@ -129,7 +130,8 @@ public class SumAggregationTest {
             aggregation.accumulate(createExtractableEntryWithValue(value));
         }
 
-        Aggregator<Map.Entry<ValueContainer, ValueContainer>, BigInteger> resultAggregation = Aggregators.bigIntegerSum("bigInteger");
+        Aggregator<Map.Entry<ValueContainer, ValueContainer>, BigInteger> resultAggregation
+                = Aggregators.bigIntegerSum("bigInteger");
         resultAggregation.combine(aggregation);
         BigInteger result = resultAggregation.aggregate();
 
@@ -367,7 +369,8 @@ public class SumAggregationTest {
             aggregation.accumulate(createExtractableEntryWithValue(value));
         }
 
-        Aggregator<Map.Entry<ValueContainer, ValueContainer>, Double> resultAggregation = Aggregators.floatingPointSum("numberValue");
+        Aggregator<Map.Entry<ValueContainer, ValueContainer>, Double> resultAggregation
+                = Aggregators.floatingPointSum("numberValue");
         resultAggregation.combine(aggregation);
         double result = resultAggregation.aggregate();
 

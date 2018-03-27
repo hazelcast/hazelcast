@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -82,13 +82,23 @@ public class CacheReadWriteThroughTest extends HazelcastTestSupport {
         return instance;
     }
 
+    /**
+     * Hook for adding additional setup steps in child classes.
+     */
+    protected void onSetup() {
+    }
+
     @Before
     public void setup() {
+        onSetup();
         factory = createInstanceFactory(2);
         hz = getInstance();
         cachingProvider = createCachingProvider(hz);
     }
 
+    /**
+     * Hook for adding additional teardown steps in child classes.
+     */
     protected void onTearDown() {
     }
 

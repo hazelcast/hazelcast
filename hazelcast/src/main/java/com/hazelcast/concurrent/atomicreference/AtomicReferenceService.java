@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,9 @@
 package com.hazelcast.concurrent.atomicreference;
 
 import com.hazelcast.concurrent.atomicreference.operations.AtomicReferenceReplicationOperation;
+import com.hazelcast.concurrent.atomicreference.operations.MergeOperation;
+import com.hazelcast.config.AtomicReferenceConfig;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.spi.ManagedService;
@@ -25,11 +28,17 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PartitionReplicationEvent;
+import com.hazelcast.spi.QuorumAwareService;
 import com.hazelcast.spi.RemoteService;
+import com.hazelcast.spi.SplitBrainHandlerService;
+import com.hazelcast.spi.impl.merge.AbstractContainerMerger;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.partition.MigrationEndpoint;
 import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.util.ContextMutexFactory;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -37,13 +46,17 @@ import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import static com.hazelcast.internal.config.ConfigValidator.checkBasicConfig;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
+import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 
-public class AtomicReferenceService implements ManagedService, RemoteService, MigrationAwareService {
+public class AtomicReferenceService
+        implements ManagedService, RemoteService, MigrationAwareService, QuorumAwareService, SplitBrainHandlerService {
 
     public static final String SERVICE_NAME = "hz:impl:atomicReferenceService";
 
-    private NodeEngine nodeEngine;
+    private static final Object NULL_OBJECT = new Object();
+
     private final ConcurrentMap<String, AtomicReferenceContainer> containers
             = new ConcurrentHashMap<String, AtomicReferenceContainer>();
     private final ConstructorFunction<String, AtomicReferenceContainer> atomicReferenceConstructorFunction =
@@ -53,11 +66,30 @@ public class AtomicReferenceService implements ManagedService, RemoteService, Mi
                 }
             };
 
+    private final ConcurrentMap<String, Object> quorumConfigCache = new ConcurrentHashMap<String, Object>();
+    private final ContextMutexFactory quorumConfigCacheMutexFactory = new ContextMutexFactory();
+    private final ConstructorFunction<String, Object> quorumConfigConstructor = new ConstructorFunction<String, Object>() {
+        @Override
+        public Object createNew(String name) {
+            AtomicReferenceConfig config = nodeEngine.getConfig().findAtomicReferenceConfig(name);
+            String quorumName = config.getQuorumName();
+            // the quorumName will be null if there is no quorum defined for this data structure,
+            // but the QuorumService is active, due to another data structure with a quorum configuration
+            return quorumName == null ? NULL_OBJECT : quorumName;
+        }
+    };
+
+    private NodeEngine nodeEngine;
+
     public AtomicReferenceService() {
     }
 
     public AtomicReferenceContainer getReferenceContainer(String name) {
         return getOrPutIfAbsent(containers, name, atomicReferenceConstructorFunction);
+    }
+
+    public boolean containsReferenceContainer(String name) {
+        return containers.containsKey(name);
     }
 
     @Override
@@ -77,12 +109,16 @@ public class AtomicReferenceService implements ManagedService, RemoteService, Mi
 
     @Override
     public AtomicReferenceProxy createDistributedObject(String name) {
+        AtomicReferenceConfig atomicReferenceConfig = nodeEngine.getConfig().findAtomicReferenceConfig(name);
+        checkBasicConfig(atomicReferenceConfig);
+
         return new AtomicReferenceProxy(name, nodeEngine, this);
     }
 
     @Override
     public void destroyDistributedObject(String name) {
         containers.remove(name);
+        quorumConfigCache.remove(name);
     }
 
     @Override
@@ -142,5 +178,54 @@ public class AtomicReferenceService implements ManagedService, RemoteService, Mi
         IPartitionService partitionService = nodeEngine.getPartitionService();
         String partitionKey = StringPartitioningStrategy.getPartitionKey(name);
         return partitionService.getPartitionId(partitionKey);
+    }
+
+    @Override
+    public String getQuorumName(String name) {
+        // RU_COMPAT_3_9
+        if (nodeEngine.getClusterService().getClusterVersion().isLessThan(Versions.V3_10)) {
+            return null;
+        }
+        Object quorumName = getOrPutSynchronized(quorumConfigCache, name, quorumConfigCacheMutexFactory,
+                quorumConfigConstructor);
+        return quorumName == NULL_OBJECT ? null : (String) quorumName;
+    }
+
+    @Override
+    public Runnable prepareMergeRunnable() {
+        AtomicReferenceContainerCollector collector = new AtomicReferenceContainerCollector(nodeEngine, containers);
+        collector.run();
+        return new Merger(collector);
+    }
+
+    private class Merger extends AbstractContainerMerger<AtomicReferenceContainer> {
+
+        Merger(AtomicReferenceContainerCollector collector) {
+            super(collector, nodeEngine);
+        }
+
+        @Override
+        protected String getLabel() {
+            return "AtomicReference";
+        }
+
+        @Override
+        public void runInternal() {
+            AtomicReferenceContainerCollector collector = (AtomicReferenceContainerCollector) this.collector;
+            for (Map.Entry<Integer, Collection<AtomicReferenceContainer>> entry : collector.getCollectedContainers().entrySet()) {
+                // TODO: add batching (which is a bit complex, since AtomicReference is a single-value data structure,
+                // so we need an operation for multiple AtomicReference instances, which doesn't exist so far)
+                int partitionId = entry.getKey();
+                Collection<AtomicReferenceContainer> containerList = entry.getValue();
+
+                for (AtomicReferenceContainer container : containerList) {
+                    String name = collector.getContainerName(container);
+                    SplitBrainMergePolicy mergePolicy = getMergePolicy(collector.getMergePolicyConfig(container));
+
+                    MergeOperation operation = new MergeOperation(name, mergePolicy, container.get());
+                    invoke(SERVICE_NAME, operation, partitionId);
+                }
+            }
+        }
     }
 }

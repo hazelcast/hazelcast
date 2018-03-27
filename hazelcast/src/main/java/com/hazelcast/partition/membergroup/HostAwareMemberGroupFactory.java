@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,16 +21,17 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+
+import static com.hazelcast.util.MapUtil.createHashMap;
 
 public class HostAwareMemberGroupFactory extends BackupSafeMemberGroupFactory implements MemberGroupFactory {
 
     @Override
     protected Set<MemberGroup> createInternalMemberGroups(Collection<? extends Member> allMembers) {
-        Map<String, MemberGroup> groups = new HashMap<String, MemberGroup>();
+        Map<String, MemberGroup> groups = createHashMap(allMembers.size());
         for (Member member : allMembers) {
             Address address = ((MemberImpl) member).getAddress();
             MemberGroup group = groups.get(address.getHost());

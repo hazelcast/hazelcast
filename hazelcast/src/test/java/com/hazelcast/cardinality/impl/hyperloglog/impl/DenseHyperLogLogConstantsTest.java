@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -86,7 +86,7 @@ public class DenseHyperLogLogConstantsTest extends HazelcastTestSupport {
 
     /**
      * Asserts {@code double[][]} arrays by an array of hash codes per sub-array.
-     *
+     * <p>
      * The method {@link Arrays#hashCode(Object[])} is not constant for {@code double[][]} arrays.
      * So we compare each sub-array on its own with {@link Arrays#hashCode(double[])}.
      */

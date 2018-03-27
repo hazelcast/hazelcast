@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -96,6 +96,7 @@ public final class SerializationConstants {
     public static final int CSHARP_CLR_SERIALIZATION_TYPE = -110;
     public static final int PYTHON_PICKLE_SERIALIZATION_TYPE = -120;
     public static final int JAVASCRIPT_JSON_SERIALIZATION_TYPE = -130;
+    public static final int GO_GOB_SERIALIZATION_TYPE = -140;
 
     // ------------------------------------------------------------
     // HIBERNATE SERIALIZERS

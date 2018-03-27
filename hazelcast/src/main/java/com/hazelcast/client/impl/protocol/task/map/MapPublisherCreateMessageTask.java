@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,12 +39,12 @@ import com.hazelcast.util.ExceptionUtil;
 import java.security.Permission;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
+import static com.hazelcast.util.SetUtil.createHashSet;
 
 /**
  * Client Protocol Task for handling messages with type ID:
@@ -88,7 +88,7 @@ public class MapPublisherCreateMessageTask
     }
 
     private Set<Data> getQueryResults(List<Future> futures) {
-        Set<Data> results = new HashSet<Data>(futures.size());
+        Set<Data> results = createHashSet(futures.size());
         for (Future future : futures) {
             Object result = null;
             try {

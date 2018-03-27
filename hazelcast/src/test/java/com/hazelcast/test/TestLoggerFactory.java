@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
 /**
  * The factory uses log4j2 internally, however loggers always
  * return true to guards such as `isFinestEnabled()` etc.
- *
+ * <p>
  * The real filtering is happening in the log4js once again.
  * Thus it covers branches guarded by is-level-enabled checks
  * yet the real logging is configurable via log4j2.xml

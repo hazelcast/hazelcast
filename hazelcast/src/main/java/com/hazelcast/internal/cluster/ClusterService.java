@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -142,4 +142,26 @@ public interface ClusterService extends CoreService, Cluster {
      * @return current version of member list
      */
     int getMemberListVersion();
+
+    /**
+     * Returns the member list join version of the local member instance.
+     * <p>
+     * The join algorithm assigns different member list join versions to each member in the cluster.
+     * If two members join at the same time, they will appear on different version of member list.
+     * <p>
+     * The uniqueness guarantee of member list join versions is provided except the following scenario:
+     * when there is a split-brain issue, if a new node joins to any sub-cluster,
+     * it can get a duplicate member list join version, i.e., its member list join version
+     * can be assigned to another node in the other sub-cluster(s).
+     * <p>
+     * When duplicate member list join version is assigned during network split, the returned value can
+     * change to make it unique again. Therefore the caller should call this method repeatedly.
+     *
+     * @throws IllegalStateException if the local instance is not joined or the cluster just upgraded to 3.10,
+     *      but local member has not yet learned its join version from the master node.
+     * @throws UnsupportedOperationException if the cluster version is below 3.10
+     *
+     * @return the member list join version of the local member instance
+     */
+    int getMemberListJoinVersion();
 }

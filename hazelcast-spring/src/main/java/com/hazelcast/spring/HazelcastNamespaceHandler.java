@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ public class HazelcastNamespaceHandler extends NamespaceHandlerSupport {
         registerBeanDefinitionParser("client", new HazelcastClientBeanDefinitionParser());
         registerBeanDefinitionParser("hibernate-region-factory", new RegionFactoryBeanDefinitionParser());
         registerBeanDefinitionParser("cache-manager", new CacheManagerBeanDefinitionParser());
-        final String[] types = {
+        String[] types = {
                 "map",
                 "multiMap",
                 "replicatedMap",
@@ -40,16 +40,22 @@ public class HazelcastNamespaceHandler extends NamespaceHandlerSupport {
                 "set",
                 "list",
                 "executorService",
+                "durableExecutorService",
+                "scheduledExecutorService",
+                "ringbuffer",
+                "cardinalityEstimator",
                 "idGenerator",
+                "flakeIdGenerator",
                 "atomicLong",
                 "atomicReference",
                 "countDownLatch",
                 "semaphore",
                 "lock",
-        };
-        for (final String type : types) {
+                "reliableTopic",
+                "PNCounter",
+                };
+        for (String type : types) {
             registerBeanDefinitionParser(type, new HazelcastTypeBeanDefinitionParser(type));
         }
     }
 }
-

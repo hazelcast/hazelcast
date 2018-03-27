@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ import static com.hazelcast.util.StringUtil.timeToString;
 
 /**
  * The InvocationFuture is the {@link com.hazelcast.spi.InternalCompletableFuture} that waits on the completion
- * of a {@link Invocation}. The Invocation executes an operation.
+ * of an {@link Invocation}. The Invocation executes an operation.
  * <p>
  * In the past the InvocationFuture.get logic was also responsible for detecting the heartbeat for blocking operations
  * using the CONTINUE_WAIT and detecting if an operation is still running using the IsStillRunning functionality. This

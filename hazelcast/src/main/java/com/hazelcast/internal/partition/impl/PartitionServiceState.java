@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,8 +43,14 @@ public enum PartitionServiceState {
     REPLICA_NOT_SYNC,
 
     /**
-     * Indicates that there are some replicas are not owned.
+     * Indicates that there are some unowned replicas.
      */
-    REPLICA_NOT_OWNED
+    REPLICA_NOT_OWNED,
+
+    /**
+     * Indicates that new master still fetching partition tables from cluster members
+     * to determine the most recent partition table published by the previous master.
+     */
+    FETCHING_PARTITION_TABLE
 
 }

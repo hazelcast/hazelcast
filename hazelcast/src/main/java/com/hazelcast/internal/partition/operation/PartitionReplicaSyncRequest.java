@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.partition.operation;
 
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationCycleOperation;
@@ -55,6 +54,8 @@ import java.util.Collections;
  * </ul>
  * An empty response can be sent if the current replica version is 0.
  */
+// RU_COMPAT_39: Do not remove Versioned interface!
+// Version info is needed on 3.9 members while deserializing the operation.
 public final class PartitionReplicaSyncRequest extends AbstractPartitionOperation
         implements PartitionAwareOperation, MigrationCycleOperation, Versioned {
 
@@ -101,20 +102,14 @@ public final class PartitionReplicaSyncRequest extends AbstractPartitionOperatio
 
         try {
             PartitionReplicationEvent event = new PartitionReplicationEvent(partitionId, replicaIndex);
-            if (allNamespaces.isEmpty()) {
-                // version 3.8
-                Collection<Operation> operations = createAllReplicationOperations(event);
+            if (allNamespaces.remove(NonFragmentedServiceNamespace.INSTANCE)) {
+                Collection<Operation> operations = createNonFragmentedReplicationOperations(event);
                 sendOperations(operations, NonFragmentedServiceNamespace.INSTANCE);
-            } else {
-                if (allNamespaces.remove(NonFragmentedServiceNamespace.INSTANCE)) {
-                    Collection<Operation> operations = createNonFragmentedReplicationOperations(event);
-                    sendOperations(operations, NonFragmentedServiceNamespace.INSTANCE);
-                }
+            }
 
-                for (ServiceNamespace namespace : allNamespaces) {
-                    Collection<Operation> operations = createFragmentReplicationOperations(event, namespace);
-                    sendOperations(operations, namespace);
-                }
+            for (ServiceNamespace namespace : allNamespaces) {
+                Collection<Operation> operations = createFragmentReplicationOperations(event, namespace);
+                sendOperations(operations, namespace);
             }
         } finally {
             partitionService.getReplicaManager().releaseReplicaSyncPermit();
@@ -181,13 +176,15 @@ public final class PartitionReplicaSyncRequest extends AbstractPartitionOperatio
             logger.finest("Sending sync response to -> " + target + " for partitionId="
                     + getPartitionId() + ", replicaIndex=" + getReplicaIndex() + ", namespaces=" + ns);
         }
+
+        // PartitionReplicaSyncResponse is TargetAware and sent directly without invocation system.
+        syncResponse.setTarget(target);
+
         OperationService operationService = nodeEngine.getOperationService();
         operationService.send(syncResponse, target);
     }
 
-    private PartitionReplicaSyncResponse createResponse(Collection<Operation> operations, ServiceNamespace ns)
-            throws IOException {
-
+    private PartitionReplicaSyncResponse createResponse(Collection<Operation> operations, ServiceNamespace ns) {
         int partitionId = getPartitionId();
         int replicaIndex = getReplicaIndex();
         InternalPartitionService partitionService = getService();
@@ -234,23 +231,19 @@ public final class PartitionReplicaSyncRequest extends AbstractPartitionOperatio
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        if (out.getVersion().isGreaterOrEqual(Versions.V3_9)) {
-            out.writeInt(allNamespaces.size());
-            for (ServiceNamespace namespace : allNamespaces) {
-                out.writeObject(namespace);
-            }
+        out.writeInt(allNamespaces.size());
+        for (ServiceNamespace namespace : allNamespaces) {
+            out.writeObject(namespace);
         }
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        if (in.getVersion().isGreaterOrEqual(Versions.V3_9)) {
-            int len = in.readInt();
-            allNamespaces = new ArrayList<ServiceNamespace>(len);
-            for (int i = 0; i < len; i++) {
-                ServiceNamespace ns = in.readObject();
-                allNamespaces.add(ns);
-            }
+        int len = in.readInt();
+        allNamespaces = new ArrayList<ServiceNamespace>(len);
+        for (int i = 0; i < len; i++) {
+            ServiceNamespace ns = in.readObject();
+            allNamespaces.add(ns);
         }
     }
 

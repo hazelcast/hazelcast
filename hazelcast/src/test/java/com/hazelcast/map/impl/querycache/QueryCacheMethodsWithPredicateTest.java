@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.querycache;
 
+import com.hazelcast.core.IMap;
 import com.hazelcast.map.QueryCache;
 import com.hazelcast.mapreduce.helpers.Employee;
 import com.hazelcast.query.Predicate;
@@ -44,11 +45,11 @@ public class QueryCacheMethodsWithPredicateTest extends AbstractQueryCacheTestSu
 
     @Test
     public void testKeySet_onIndexedField() {
+        IMap<Integer, Employee> map = getIMapWithDefaultConfig(TRUE_PREDICATE);
         int count = 111;
         populateMap(map, count);
 
-        String cacheName = randomString();
-        QueryCache<Integer, Employee> cache = map.getQueryCache(cacheName, TRUE_PREDICATE, true);
+        QueryCache<Integer, Employee> cache = map.getQueryCache(cacheName);
         cache.addIndex("id", true);
 
         populateMap(map, count, 2 * count);
@@ -62,11 +63,11 @@ public class QueryCacheMethodsWithPredicateTest extends AbstractQueryCacheTestSu
     @Test
     public void testKeySet_onIndexedField_whenIncludeValueFalse() {
         int count = 111;
-        String cacheName = randomString();
+        IMap<Integer, Employee> map = getIMapWithDefaultConfig(TRUE_PREDICATE);
 
         populateMap(map, count);
 
-        QueryCache<Integer, Employee> cache = map.getQueryCache(cacheName, TRUE_PREDICATE, false);
+        QueryCache<Integer, Employee> cache = map.getQueryCache(cacheName);
         cache.addIndex("__key", true);
 
         populateMap(map, count, 2 * count);
@@ -80,11 +81,11 @@ public class QueryCacheMethodsWithPredicateTest extends AbstractQueryCacheTestSu
     @Test
     public void testKeySet_onIndexedField_afterRemovalOfSomeIndexes() {
         int count = 111;
-        String cacheName = randomString();
+        IMap<Integer, Employee> map = getIMapWithDefaultConfig(TRUE_PREDICATE);
 
         populateMap(map, count);
 
-        QueryCache<Integer, Employee> cache = map.getQueryCache(cacheName, TRUE_PREDICATE, true);
+        QueryCache<Integer, Employee> cache = map.getQueryCache(cacheName);
         cache.addIndex("id", true);
 
         populateMap(map, 17, count);
@@ -98,11 +99,11 @@ public class QueryCacheMethodsWithPredicateTest extends AbstractQueryCacheTestSu
     @Test
     public void testEntrySet() {
         int count = 1;
-        String cacheName = randomString();
+        IMap<Integer, Employee> map = getIMapWithDefaultConfig(TRUE_PREDICATE);
 
         populateMap(map, count);
 
-        QueryCache<Integer, Employee> cache = map.getQueryCache(cacheName, TRUE_PREDICATE, true);
+        QueryCache<Integer, Employee> cache = map.getQueryCache(cacheName);
         cache.addIndex("id", true);
 
         populateMap(map, count, 2 * count);
@@ -116,7 +117,7 @@ public class QueryCacheMethodsWithPredicateTest extends AbstractQueryCacheTestSu
     @Test
     public void testEntrySet_whenIncludeValueFalse() throws Exception {
         int count = 111;
-        String cacheName = randomString();
+        IMap<Integer, Employee> map = getIMapWithDefaultConfig(TRUE_PREDICATE);
 
         populateMap(map, count);
 
@@ -134,7 +135,7 @@ public class QueryCacheMethodsWithPredicateTest extends AbstractQueryCacheTestSu
     @Test
     public void testEntrySet_withIndexedKeys_whenIncludeValueFalse() {
         int count = 111;
-        String cacheName = randomString();
+        IMap<Integer, Employee> map = getIMapWithDefaultConfig(TRUE_PREDICATE);
 
         populateMap(map, count);
 
@@ -153,11 +154,11 @@ public class QueryCacheMethodsWithPredicateTest extends AbstractQueryCacheTestSu
     @Test
     public void testValues() {
         int count = 111;
-        String cacheName = randomString();
+        IMap<Integer, Employee> map = getIMapWithDefaultConfig(TRUE_PREDICATE);
 
         populateMap(map, count);
 
-        QueryCache<Integer, Employee> cache = map.getQueryCache(cacheName, TRUE_PREDICATE, true);
+        QueryCache<Integer, Employee> cache = map.getQueryCache(cacheName);
         cache.addIndex("id", true);
 
         populateMap(map, count, 2 * count);
@@ -171,11 +172,11 @@ public class QueryCacheMethodsWithPredicateTest extends AbstractQueryCacheTestSu
     @Test
     public void testValues_withoutIndex() {
         int count = 111;
-        String cacheName = randomString();
+        IMap<Integer, Employee> map = getIMapWithDefaultConfig(TRUE_PREDICATE);
 
         populateMap(map, count);
 
-        QueryCache<Integer, Employee> cache = map.getQueryCache(cacheName, TRUE_PREDICATE, true);
+        QueryCache<Integer, Employee> cache = map.getQueryCache(cacheName);
 
         removeEntriesFromMap(map, 17, count);
 
@@ -188,7 +189,7 @@ public class QueryCacheMethodsWithPredicateTest extends AbstractQueryCacheTestSu
     @Test
     public void testValues_withoutIndex_whenIncludeValueFalse() {
         int count = 111;
-        String cacheName = randomString();
+        IMap<Integer, Employee> map = getIMapWithDefaultConfig(TRUE_PREDICATE);
 
         populateMap(map, count);
 

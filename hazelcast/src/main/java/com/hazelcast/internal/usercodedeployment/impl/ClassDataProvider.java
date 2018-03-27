@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package com.hazelcast.internal.usercodedeployment.impl;
 import com.hazelcast.config.UserCodeDeploymentConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.IOUtil;
-import com.hazelcast.util.EmptyStatement;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -28,6 +27,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.nio.IOUtil.toByteArray;
+import static com.hazelcast.util.EmptyStatement.ignore;
 
 /**
  * Provides {@link ClassData} to remote members.
@@ -134,7 +134,7 @@ public final class ClassDataProvider {
                 innerClassDefinitions.put(innerClassName, innerByteCode);
             }
         } catch (ClassNotFoundException e) {
-            EmptyStatement.ignore(e);
+            ignore(e);
         }
         return innerClassDefinitions;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,7 @@
 
 package com.hazelcast.internal.partition.operation;
 
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.partition.InternalPartitionService;
-import com.hazelcast.internal.partition.NonFragmentedServiceNamespace;
 import com.hazelcast.internal.partition.MigrationCycleOperation;
 import com.hazelcast.internal.partition.ReplicaErrorLogger;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
@@ -40,6 +38,8 @@ import java.util.Collections;
  * The response to a {@link PartitionReplicaSyncRequest} that the replica should retry. This will reset the current ongoing
  * synchronization request state and retry the request if this node is still a replica of this partition.
  */
+// RU_COMPAT_39: Do not remove Versioned interface!
+// Version info is needed on 3.9 members while deserializing the operation.
 public class PartitionReplicaSyncRetryResponse
         extends AbstractPartitionOperation
         implements PartitionAwareOperation, BackupOperation, MigrationCycleOperation, Versioned {
@@ -61,13 +61,8 @@ public class PartitionReplicaSyncRetryResponse
         final int replicaIndex = getReplicaIndex();
 
         PartitionReplicaManager replicaManager = partitionService.getReplicaManager();
-        if (namespaces.isEmpty()) {
-            // version 3.8
-            replicaManager.clearReplicaSyncRequest(partitionId, NonFragmentedServiceNamespace.INSTANCE, replicaIndex);
-        } else {
-            for (ServiceNamespace namespace : namespaces) {
-                replicaManager.clearReplicaSyncRequest(partitionId, namespace, replicaIndex);
-            }
+        for (ServiceNamespace namespace : namespaces) {
+            replicaManager.clearReplicaSyncRequest(partitionId, namespace, replicaIndex);
         }
     }
 
@@ -93,23 +88,19 @@ public class PartitionReplicaSyncRetryResponse
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        if (out.getVersion().isGreaterOrEqual(Versions.V3_9)) {
-            out.writeInt(namespaces.size());
-            for (ServiceNamespace namespace : namespaces) {
-                out.writeObject(namespace);
-            }
+        out.writeInt(namespaces.size());
+        for (ServiceNamespace namespace : namespaces) {
+            out.writeObject(namespace);
         }
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        if (in.getVersion().isGreaterOrEqual(Versions.V3_9)) {
-            int len = in.readInt();
-            namespaces = new ArrayList<ServiceNamespace>(len);
-            for (int i = 0; i < len; i++) {
-                ServiceNamespace ns = in.readObject();
-                namespaces.add(ns);
-            }
+        int len = in.readInt();
+        namespaces = new ArrayList<ServiceNamespace>(len);
+        for (int i = 0; i < len; i++) {
+            ServiceNamespace ns = in.readObject();
+            namespaces.add(ns);
         }
     }
 

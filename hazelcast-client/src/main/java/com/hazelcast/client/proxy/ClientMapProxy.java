@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -106,9 +106,9 @@ import com.hazelcast.core.IMapEvent;
 import com.hazelcast.core.MapEvent;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.ReadOnly;
+import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
+import com.hazelcast.internal.journal.EventJournalReader;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.journal.EventJournalInitialSubscriberState;
-import com.hazelcast.journal.EventJournalReader;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapInterceptor;
@@ -173,6 +173,7 @@ import static com.hazelcast.util.Preconditions.checkNotInstanceOf;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.SortingUtil.getSortedQueryResultSet;
 import static com.hazelcast.util.ThreadUtil.getThreadId;
+import static java.lang.Thread.currentThread;
 import static java.util.Collections.emptyMap;
 
 /**
@@ -182,7 +183,8 @@ import static java.util.Collections.emptyMap;
  * @param <V> value
  */
 @SuppressWarnings("checkstyle:classdataabstractioncoupling")
-public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V>, EventJournalReader<EventJournalMapEvent<K, V>> {
+public class ClientMapProxy<K, V> extends ClientProxy
+        implements IMap<K, V>, EventJournalReader<EventJournalMapEvent<K, V>> {
 
     protected static final String NULL_LISTENER_IS_NOT_ALLOWED = "Null listener is not allowed!";
     protected static final String NULL_KEY_IS_NOT_ALLOWED = "Null key is not allowed!";
@@ -250,8 +252,9 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V>, Eve
             @Override
             public ReadResultSet<?> decodeClientMessage(ClientMessage message) {
                 final MapEventJournalReadCodec.ResponseParameters params = MapEventJournalReadCodec.decodeResponse(message);
-                final PortableReadResultSet<?> resultSet
-                        = new PortableReadResultSet<Object>(params.readCount, params.items, params.itemSeqs);
+                final PortableReadResultSet<?> resultSet = new PortableReadResultSet<Object>(
+                        params.readCount, params.items, params.itemSeqs,
+                        params.nextSeqExist ? params.nextSeq : ReadResultSet.SEQUENCE_UNAVAILABLE);
                 resultSet.setSerializationService(getSerializationService());
                 return resultSet;
             }
@@ -639,6 +642,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V>, Eve
         try {
             return tryLock(key, 0, null);
         } catch (InterruptedException e) {
+            currentThread().interrupt();
             return false;
         }
     }
@@ -861,6 +865,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V>, Eve
     public String addEntryListener(MapListener listener, Predicate<K, V> predicate, K key, boolean includeValue) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        checkNotNull(key, NULL_PREDICATE_IS_NOT_ALLOWED);
         ListenerAdapter<IMapEvent> listenerAdaptor = createListenerAdapter(listener);
         return addEntryListenerInternal(listenerAdaptor, predicate, key, includeValue);
     }
@@ -868,6 +873,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V>, Eve
     @Override
     public String addEntryListener(EntryListener listener, Predicate<K, V> predicate, K key, boolean includeValue) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
+        checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         ListenerAdapter<IMapEvent> listenerAdaptor = createListenerAdapter(listener);
         return addEntryListenerInternal(listenerAdaptor, predicate, key, includeValue);
@@ -969,26 +975,25 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V>, Eve
         ClientMessage response = invoke(request, keyData);
 
         MapGetEntryViewCodec.ResponseParameters parameters = MapGetEntryViewCodec.decodeResponse(response);
-        SimpleEntryView<K, V> entryView = new SimpleEntryView<K, V>();
         SimpleEntryView<Data, Data> dataEntryView = parameters.response;
 
         if (dataEntryView == null) {
             return null;
         }
-        entryView.setKey((K) toObject(dataEntryView.getKey()));
-        entryView.setValue((V) toObject(dataEntryView.getValue()));
-        entryView.setCost(dataEntryView.getCost());
-        entryView.setCreationTime(dataEntryView.getCreationTime());
-        entryView.setExpirationTime(dataEntryView.getExpirationTime());
-        entryView.setHits(dataEntryView.getHits());
-        entryView.setLastAccessTime(dataEntryView.getLastAccessTime());
-        entryView.setLastStoredTime(dataEntryView.getLastStoredTime());
-        entryView.setLastUpdateTime(dataEntryView.getLastUpdateTime());
-        entryView.setVersion(dataEntryView.getVersion());
-        entryView.setHits(dataEntryView.getHits());
-        entryView.setTtl(dataEntryView.getTtl());
         // TODO: putCache
-        return entryView;
+        return new SimpleEntryView<K, V>()
+                .withKey((K) toObject(dataEntryView.getKey()))
+                .withValue((V) toObject(dataEntryView.getValue()))
+                .withCost(dataEntryView.getCost())
+                .withCreationTime(dataEntryView.getCreationTime())
+                .withExpirationTime(dataEntryView.getExpirationTime())
+                .withHits(dataEntryView.getHits())
+                .withLastAccessTime(dataEntryView.getLastAccessTime())
+                .withLastStoredTime(dataEntryView.getLastStoredTime())
+                .withLastUpdateTime(dataEntryView.getLastUpdateTime())
+                .withVersion(dataEntryView.getVersion())
+                .withHits(dataEntryView.getHits())
+                .withTtl(dataEntryView.getTtl());
     }
 
     @Override
@@ -1356,7 +1361,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V>, Eve
     @Override
     public Map<K, Object> executeOnEntries(EntryProcessor entryProcessor, Predicate predicate) {
         ClientMessage request = MapExecuteWithPredicateCodec.encodeRequest(name, toData(entryProcessor), toData(predicate));
-        ClientMessage response = invoke(request);
+        ClientMessage response = invokeWithPredicate(request, predicate);
 
         MapExecuteWithPredicateCodec.ResponseParameters resultParameters = MapExecuteWithPredicateCodec.decodeResponse(response);
         return prepareResult(resultParameters.response);
@@ -1380,7 +1385,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V>, Eve
         checkNotPagingPredicate(predicate, "aggregate");
 
         ClientMessage request = MapAggregateWithPredicateCodec.encodeRequest(name, toData(aggregator), toData(predicate));
-        ClientMessage response = invoke(request);
+        ClientMessage response = invokeWithPredicate(request, predicate);
 
         MapAggregateWithPredicateCodec.ResponseParameters resultParameters =
                 MapAggregateWithPredicateCodec.decodeResponse(response);
@@ -1403,7 +1408,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V>, Eve
         checkNotPagingPredicate(predicate, "project");
 
         ClientMessage request = MapProjectWithPredicateCodec.encodeRequest(name, toData(projection), toData(predicate));
-        ClientMessage response = invoke(request);
+        ClientMessage response = invokeWithPredicate(request, predicate);
 
         MapProjectWithPredicateCodec.ResponseParameters resultParameters =
                 MapProjectWithPredicateCodec.decodeResponse(response);
@@ -1491,7 +1496,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V>, Eve
     private QueryCache<K, V> createQueryCache(QueryCacheRequest request) {
         SubscriberContext subscriberContext = queryCacheContext.getSubscriberContext();
         QueryCacheEndToEndProvider queryCacheEndToEndProvider = subscriberContext.getEndToEndQueryCacheProvider();
-        return queryCacheEndToEndProvider.getOrCreateQueryCache(request.getMapName(), request.getCacheName(),
+        return queryCacheEndToEndProvider.getOrCreateQueryCache(request.getMapName(), request.getCacheId(),
                 new ClientQueryCacheEndToEndConstructor(request));
     }
 
@@ -1640,9 +1645,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V>, Eve
                                     Predicate<K, V> predicate) {
         checkNotNull(projection, NULL_PROJECTION_IS_NOT_ALLOWED);
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
-        if (predicate instanceof PagingPredicate) {
-            throw new IllegalArgumentException("Paging predicate is not allowed when iterating map by query");
-        }
+        checkNotPagingPredicate(predicate, "iterator");
         return new ClientMapQueryPartitionIterator<K, V, R>(this, getContext(), fetchSize, partitionId,
                 predicate, projection);
     }
@@ -1662,7 +1665,12 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V>, Eve
             int maxSize,
             int partitionId,
             com.hazelcast.util.function.Predicate<? super EventJournalMapEvent<K, V>> predicate,
-            Projection<? super EventJournalMapEvent<K, V>, T> projection) {
+            Projection<? super EventJournalMapEvent<K, V>, ? extends T> projection
+    ) {
+        if (maxSize < minSize) {
+            throw new IllegalArgumentException("maxSize " + maxSize
+                    + " must be greater or equal to minSize " + minSize);
+        }
         final SerializationService ss = getSerializationService();
         final ClientMessage request = MapEventJournalReadCodec.encodeRequest(
                 name, startSequence, minSize, maxSize, ss.toData(predicate), ss.toData(projection));

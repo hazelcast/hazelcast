@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,9 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.merge.MergingValue;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
+import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.transaction.TransactionException;
 
 import java.io.IOException;
@@ -34,8 +37,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingValue;
+import static com.hazelcast.util.MapUtil.createHashMap;
+
 @SuppressWarnings("checkstyle:methodcount")
 public abstract class CollectionContainer implements IdentifiedDataSerializable {
+
+    public static final int INVALID_ITEM_ID = -1;
+
+    public static final int ID_PROMOTION_OFFSET = 100000;
 
     protected final Map<Long, TxCollectionItem> txMap = new HashMap<Long, TxCollectionItem>();
     protected String name;
@@ -58,18 +68,22 @@ public abstract class CollectionContainer implements IdentifiedDataSerializable 
         this.logger = nodeEngine.getLogger(getClass());
     }
 
+    public String getName() {
+        return name;
+    }
+
     public abstract CollectionConfig getConfig();
 
-    protected abstract Collection<CollectionItem> getCollection();
+    public abstract Collection<CollectionItem> getCollection();
 
-    protected abstract Map<Long, CollectionItem> getMap();
+    public abstract Map<Long, CollectionItem> getMap();
 
     public long add(Data value) {
         final CollectionItem item = new CollectionItem(nextId(), value);
         if (getCollection().add(item)) {
             return item.getItemId();
         }
-        return -1;
+        return INVALID_ITEM_ID;
     }
 
     public void addBackup(long itemId, Data value) {
@@ -99,9 +113,9 @@ public abstract class CollectionContainer implements IdentifiedDataSerializable 
 
     public Map<Long, Data> clear() {
         final Collection<CollectionItem> coll = getCollection();
-        Map<Long, Data> itemIdMap = new HashMap<Long, Data>(coll.size());
+        Map<Long, Data> itemIdMap = createHashMap(coll.size());
         for (CollectionItem item : coll) {
-            itemIdMap.put(item.getItemId(), (Data) item.getValue());
+            itemIdMap.put(item.getItemId(), item.getValue());
         }
         coll.clear();
         return itemIdMap;
@@ -115,7 +129,7 @@ public abstract class CollectionContainer implements IdentifiedDataSerializable 
 
     public boolean contains(Set<Data> valueSet) {
         Collection<CollectionItem> collection = getCollection();
-        CollectionItem collectionItem = new CollectionItem(-1, null);
+        CollectionItem collectionItem = new CollectionItem(INVALID_ITEM_ID, null);
         for (Data value : valueSet) {
             collectionItem.setValue(value);
             if (!collection.contains(collectionItem)) {
@@ -127,7 +141,7 @@ public abstract class CollectionContainer implements IdentifiedDataSerializable 
 
     public Map<Long, Data> addAll(List<Data> valueList) {
         final int size = valueList.size();
-        final Map<Long, Data> map = new HashMap<Long, Data>(size);
+        final Map<Long, Data> map = createHashMap(size);
         List<CollectionItem> list = new ArrayList<CollectionItem>(size);
         for (Data value : valueList) {
             final long itemId = nextId();
@@ -140,7 +154,7 @@ public abstract class CollectionContainer implements IdentifiedDataSerializable 
     }
 
     public void addAllBackup(Map<Long, Data> valueMap) {
-        Map<Long, CollectionItem> map = new HashMap<Long, CollectionItem>(valueMap.size());
+        Map<Long, CollectionItem> map = createHashMap(valueMap.size());
         for (Map.Entry<Long, Data> entry : valueMap.entrySet()) {
             final long itemId = entry.getKey();
             map.put(itemId, new CollectionItem(itemId, entry.getValue()));
@@ -155,7 +169,7 @@ public abstract class CollectionContainer implements IdentifiedDataSerializable 
             final CollectionItem item = iterator.next();
             final boolean contains = valueSet.contains(item.getValue());
             if ((contains && !retain) || (!contains && retain)) {
-                itemIdMap.put(item.getItemId(), (Data) item.getValue());
+                itemIdMap.put(item.getItemId(), item.getValue());
                 iterator.remove();
             }
         }
@@ -163,17 +177,16 @@ public abstract class CollectionContainer implements IdentifiedDataSerializable 
     }
 
     public List<Data> getAll() {
-        ArrayList<Data> sub = new ArrayList<Data>(getCollection().size());
+        ArrayList<Data> sub = new ArrayList<Data>(size());
         for (CollectionItem item : getCollection()) {
-            sub.add((Data) item.getValue());
+            sub.add(item.getValue());
         }
         return sub;
     }
 
     public boolean hasEnoughCapacity(int delta) {
-        return getCollection().size() + delta <= getConfig().getMaxSize();
+        return size() + delta <= getConfig().getMaxSize();
     }
-
 
     /*
      * TX methods
@@ -181,7 +194,7 @@ public abstract class CollectionContainer implements IdentifiedDataSerializable 
      */
 
     public Long reserveAdd(String transactionId, Data value) {
-        if (value != null && getCollection().contains(new CollectionItem(-1, value))) {
+        if (value != null && getCollection().contains(new CollectionItem(INVALID_ITEM_ID, value))) {
             return null;
         }
         final long itemId = nextId();
@@ -210,7 +223,7 @@ public abstract class CollectionContainer implements IdentifiedDataSerializable 
                 return item;
             }
         }
-        if (reservedItemId != -1) {
+        if (reservedItemId != INVALID_ITEM_ID) {
             return txMap.remove(reservedItemId);
         }
         return null;
@@ -316,7 +329,7 @@ public abstract class CollectionContainer implements IdentifiedDataSerializable 
         return ++idGenerator;
     }
 
-    void setId(long itemId) {
+    protected void setId(long itemId) {
         idGenerator = Math.max(itemId + 1, idGenerator);
     }
 
@@ -329,6 +342,47 @@ public abstract class CollectionContainer implements IdentifiedDataSerializable 
     }
 
     protected abstract void onDestroy();
+
+    /**
+     * Merges the given {@link MergingValue} via the given {@link SplitBrainMergePolicy}.
+     *
+     * @param mergingValue the {@link MergingValue} instance to merge
+     * @param mergePolicy  the {@link SplitBrainMergePolicy} instance to apply
+     * @return the used {@link CollectionItem} if merge is applied, otherwise {@code null}
+     */
+    public CollectionItem merge(MergingValue<Data> mergingValue, SplitBrainMergePolicy mergePolicy) {
+        SerializationService serializationService = nodeEngine.getSerializationService();
+        serializationService.getManagedContext().initialize(mergingValue);
+        serializationService.getManagedContext().initialize(mergePolicy);
+
+        // try to find an existing item with the same value
+        CollectionItem existingItem = null;
+        for (CollectionItem item : getCollection()) {
+            if (mergingValue.getValue().equals(item.getValue())) {
+                existingItem = item;
+                break;
+            }
+        }
+
+        CollectionItem mergedItem = null;
+        if (existingItem == null) {
+            Data newValue = mergePolicy.merge(mergingValue, null);
+            if (newValue != null) {
+                CollectionItem item = new CollectionItem(nextId(), newValue);
+                if (getCollection().add(item)) {
+                    mergedItem = item;
+                }
+            }
+        } else {
+            MergingValue<Data> existingValue = createMergingValue(serializationService, existingItem);
+            Data newValue = mergePolicy.merge(mergingValue, existingValue);
+            if (newValue != null && !newValue.equals(existingValue.getValue())) {
+                existingItem.setValue(newValue);
+                mergedItem = existingItem;
+            }
+        }
+        return mergedItem;
+    }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,10 +24,7 @@ import com.hazelcast.map.impl.querycache.subscriber.record.QueryCacheRecord;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializableByConvention;
 import com.hazelcast.spi.serialization.SerializationService;
-import com.hazelcast.util.ConcurrentReferenceHashMap;
 import com.hazelcast.util.SampleableConcurrentHashMap;
-
-import java.util.EnumSet;
 
 /**
  * Evictable concurrent hash map implementation.
@@ -46,24 +43,15 @@ public class QueryCacheRecordHashMap extends SampleableConcurrentHashMap<Data, Q
         this.serializationService = serializationService;
     }
 
-    public QueryCacheRecordHashMap(SerializationService serializationService,
-                                   int initialCapacity, float loadFactor, int concurrencyLevel,
-                                   ConcurrentReferenceHashMap.ReferenceType keyType,
-                                   ConcurrentReferenceHashMap.ReferenceType valueType,
-                                   EnumSet<Option> options) {
-        super(initialCapacity, loadFactor, concurrencyLevel, keyType, valueType, options);
-        this.serializationService = serializationService;
-    }
-
     /**
      * @see com.hazelcast.util.SampleableConcurrentHashMap.SamplingEntry
      * @see EvictionCandidate
      */
-    public class QueryCacheEvictableSamplingEntry
+    class QueryCacheEvictableSamplingEntry
             extends SamplingEntry<Data, QueryCacheRecord>
             implements EvictionCandidate {
 
-        public QueryCacheEvictableSamplingEntry(Data key, QueryCacheRecord value) {
+        QueryCacheEvictableSamplingEntry(Data key, QueryCacheRecord value) {
             super(key, value);
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.serialization.SerializationService;
-import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.UnmodifiableListIterator;
 
 import java.io.IOException;
@@ -31,6 +30,8 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
+
+import static com.hazelcast.util.EmptyStatement.ignore;
 
 public class UnmodifiableLazyList<E> extends AbstractList<E> implements IdentifiedDataSerializable {
 
@@ -79,7 +80,7 @@ public class UnmodifiableLazyList<E> extends AbstractList<E> implements Identifi
             try {
                 list.set(index, item);
             } catch (Exception e) {
-                EmptyStatement.ignore(e);
+                ignore(e);
             }
             return item;
         }
@@ -167,7 +168,7 @@ public class UnmodifiableLazyList<E> extends AbstractList<E> implements Identifi
                 try {
                     listIterator.set(item);
                 } catch (Exception e) {
-                    EmptyStatement.ignore(e);
+                    ignore(e);
                 }
                 return item;
             }

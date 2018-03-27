@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -102,7 +102,7 @@ public class PreJoinCacheConfigTest {
     public void serializationSucceeds_whenKVTypesNotSpecified() {
         CacheConfig cacheConfig = newDefaultCacheConfig("test");
         PreJoinCacheConfig preJoinCacheConfig = new PreJoinCacheConfig(cacheConfig);
-        Data data  = serializationService.toData(preJoinCacheConfig);
+        Data data = serializationService.toData(preJoinCacheConfig);
         PreJoinCacheConfig deserialized = serializationService.toObject(data);
         assertEquals(preJoinCacheConfig, deserialized);
         assertEquals(cacheConfig, deserialized.asCacheConfig());
@@ -114,7 +114,7 @@ public class PreJoinCacheConfigTest {
         cacheConfig.setKeyType(Integer.class);
         cacheConfig.setValueType(String.class);
         PreJoinCacheConfig preJoinCacheConfig = new PreJoinCacheConfig(cacheConfig);
-        Data data  = serializationService.toData(preJoinCacheConfig);
+        Data data = serializationService.toData(preJoinCacheConfig);
         PreJoinCacheConfig deserialized = serializationService.toObject(data);
         assertEquals(preJoinCacheConfig, deserialized);
         assertEquals(cacheConfig, deserialized.asCacheConfig());
@@ -126,7 +126,7 @@ public class PreJoinCacheConfigTest {
         cacheConfig.setKeyClassName("java.lang.Integer");
         cacheConfig.setValueClassName("java.lang.String");
         PreJoinCacheConfig preJoinCacheConfig = new PreJoinCacheConfig(cacheConfig);
-        Data data  = serializationService.toData(preJoinCacheConfig);
+        Data data = serializationService.toData(preJoinCacheConfig);
         PreJoinCacheConfig deserialized = serializationService.toObject(data);
         assertEquals(preJoinCacheConfig, deserialized);
         assertEquals(cacheConfig, deserialized.asCacheConfig());
@@ -137,7 +137,7 @@ public class PreJoinCacheConfigTest {
         PreJoinCacheConfig preJoinCacheConfig = new PreJoinCacheConfig(newDefaultCacheConfig("test"));
         preJoinCacheConfig.setKeyClassName("some.inexistent.Class");
         preJoinCacheConfig.setValueClassName("java.lang.String");
-        Data data  = serializationService.toData(preJoinCacheConfig);
+        Data data = serializationService.toData(preJoinCacheConfig);
         PreJoinCacheConfig deserialized = serializationService.toObject(data);
         assertEquals(deserialized, preJoinCacheConfig);
         try {
@@ -155,7 +155,7 @@ public class PreJoinCacheConfigTest {
         PreJoinCacheConfig preJoinCacheConfig = new PreJoinCacheConfig(newDefaultCacheConfig("test"));
         preJoinCacheConfig.setKeyClassName("java.lang.String");
         preJoinCacheConfig.setValueClassName("some.inexistent.Class");
-        Data data  = serializationService.toData(preJoinCacheConfig);
+        Data data = serializationService.toData(preJoinCacheConfig);
         PreJoinCacheConfig deserialized = serializationService.toObject(data);
         assertEquals(deserialized, preJoinCacheConfig);
         try {

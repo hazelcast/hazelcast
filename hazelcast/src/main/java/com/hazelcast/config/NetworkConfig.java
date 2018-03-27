@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import java.util.HashSet;
 /**
  * Contains configuration for Network.
  */
+@SuppressWarnings("checkstyle:methodcount")
 public class NetworkConfig {
 
     /**
@@ -60,6 +61,8 @@ public class NetworkConfig {
     private SSLConfig sslConfig;
 
     private MemberAddressProviderConfig memberAddressProviderConfig = new MemberAddressProviderConfig();
+
+    private IcmpFailureDetectorConfig icmpFailureDetectorConfig;
 
     public NetworkConfig() {
         String os = StringUtil.lowerCaseInternal(System.getProperty("os.name"));
@@ -334,6 +337,29 @@ public class NetworkConfig {
         return this;
     }
 
+    /**
+     * Sets the {@link IcmpFailureDetectorConfig}. The value can be {@code null} if this detector isn't needed.
+     *
+     * @param icmpFailureDetectorConfig the IcmpFailureDetectorConfig to set
+     * @return the updated NetworkConfig
+     * @see #getIcmpFailureDetectorConfig()
+     */
+    public NetworkConfig setIcmpFailureDetectorConfig(final IcmpFailureDetectorConfig icmpFailureDetectorConfig) {
+        this.icmpFailureDetectorConfig = icmpFailureDetectorConfig;
+        return this;
+    }
+
+    /**
+     * Returns the current {@link IcmpFailureDetectorConfig}. It is possible that null is returned if no
+     * IcmpFailureDetectorConfig has been set.
+     *
+     * @return the IcmpFailureDetectorConfig
+     * @see #setIcmpFailureDetectorConfig(IcmpFailureDetectorConfig)
+     */
+    public IcmpFailureDetectorConfig getIcmpFailureDetectorConfig() {
+        return icmpFailureDetectorConfig;
+    }
+
     @Override
     public String toString() {
         return "NetworkConfig{"
@@ -346,6 +372,7 @@ public class NetworkConfig {
                 + ", sslConfig=" + sslConfig
                 + ", socketInterceptorConfig=" + socketInterceptorConfig
                 + ", symmetricEncryptionConfig=" + symmetricEncryptionConfig
+                + ", icmpFailureDetectorConfig=" + icmpFailureDetectorConfig
                 + '}';
     }
 }

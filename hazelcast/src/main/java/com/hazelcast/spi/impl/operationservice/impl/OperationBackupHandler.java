@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,9 +25,10 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.FragmentedMigrationAwareService;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.ServiceNamespaceAware;
 import com.hazelcast.spi.ServiceNamespace;
+import com.hazelcast.spi.ServiceNamespaceAware;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.operationservice.TargetAware;
 import com.hazelcast.spi.impl.operationservice.impl.operations.Backup;
 
 import static com.hazelcast.internal.partition.InternalPartition.MAX_BACKUP_COUNT;
@@ -196,7 +197,49 @@ final class OperationBackupHandler {
     private int sendSingleBackup(BackupAwareOperation backupAwareOp, InternalPartition partition,
                                  long[] replicaVersions, int syncBackups) {
         // Since there is only one replica, replica index is `1`
-        Address target = partition.getReplicaAddress(1);
+        return sendSingleBackup(backupAwareOp, partition, replicaVersions, syncBackups, 1);
+    }
+
+    private int sendMultipleBackups(BackupAwareOperation backupAwareOp, InternalPartition partition,
+                                    long[] replicaVersions, int syncBackups, int totalBackups) {
+        int sendSyncBackups = 0;
+        Operation backupOp = getBackupOperation(backupAwareOp);
+        if (!(backupOp instanceof TargetAware)) {
+            // optimize common case: serialize operation once and send to multiple targets
+            Data backupOpData = nodeEngine.getSerializationService().toData(backupOp);
+
+            for (int replicaIndex = 1; replicaIndex <= totalBackups; replicaIndex++) {
+                Address target = partition.getReplicaAddress(replicaIndex);
+
+                if (target == null) {
+                    continue;
+                }
+
+                assertNoBackupOnPrimaryMember(partition, target);
+
+                boolean isSyncBackup = replicaIndex <= syncBackups;
+
+                Backup backup = newBackup(backupAwareOp, backupOpData, replicaVersions, replicaIndex, isSyncBackup);
+                outboundOperationHandler.send(backup, target);
+
+                if (isSyncBackup) {
+                    sendSyncBackups++;
+                }
+            }
+        } else {
+            for (int replicaIndex = 1; replicaIndex <= totalBackups; replicaIndex++) {
+                int syncBackupSent = sendSingleBackup(backupAwareOp, partition, replicaVersions,
+                        syncBackups, replicaIndex);
+                sendSyncBackups += syncBackupSent;
+            }
+        }
+        return sendSyncBackups;
+    }
+
+    private int sendSingleBackup(BackupAwareOperation backupAwareOp, InternalPartition partition,
+                                 long[] replicaVersions, int syncBackups, int replica) {
+        Operation backupOp = getBackupOperation(backupAwareOp);
+        Address target = partition.getReplicaAddress(replica);
         if (target != null) {
             // Since there is only one backup, backup operation is sent to only one node.
             // If backup operation is converted to `Data`, there will be these operations as below:
@@ -207,9 +250,10 @@ final class OperationBackupHandler {
             // So in this case (there is only one backup), we don't convert backup operation to `Data` as temporary
             // before `Backup` is serialized but backup operation is already serialized directly into output
             // without any unnecessary memory allocation and copy when it is used as object inside `Backup`.
-            Operation backupOp = getBackupOperation(backupAwareOp);
-
             assertNoBackupOnPrimaryMember(partition, target);
+            if (backupOp instanceof TargetAware) {
+                ((TargetAware) backupOp).setTarget(target);
+            }
 
             boolean isSyncBackup = syncBackups == 1;
 
@@ -221,34 +265,6 @@ final class OperationBackupHandler {
             }
         }
         return 0;
-    }
-
-    private int sendMultipleBackups(BackupAwareOperation backupAwareOp, InternalPartition partition,
-                                    long[] replicaVersions, int syncBackups, int totalBackups) {
-        int sendSyncBackups = 0;
-        Operation backupOp = getBackupOperation(backupAwareOp);
-        Data backupOpData = nodeEngine.getSerializationService().toData(backupOp);
-
-        for (int replicaIndex = 1; replicaIndex <= totalBackups; replicaIndex++) {
-            Address target = partition.getReplicaAddress(replicaIndex);
-
-            if (target == null) {
-                continue;
-            }
-
-            assertNoBackupOnPrimaryMember(partition, target);
-
-            boolean isSyncBackup = replicaIndex <= syncBackups;
-
-            Backup backup = newBackup(backupAwareOp, backupOpData, replicaVersions, replicaIndex, isSyncBackup);
-            outboundOperationHandler.send(backup, target);
-
-            if (isSyncBackup) {
-                sendSyncBackups++;
-            }
-        }
-
-        return sendSyncBackups;
     }
 
     private Operation getBackupOperation(BackupAwareOperation backupAwareOp) {

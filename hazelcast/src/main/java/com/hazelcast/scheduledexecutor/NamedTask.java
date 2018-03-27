@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,16 +17,15 @@
 package com.hazelcast.scheduledexecutor;
 
 /**
- * The <code>NamedTask</code> interface should be implemented by any task
- * that needs to have an identification and enhanced atomicity upon scheduling the task.
+ * The <code>NamedTask</code> interface should be implemented by any task that needs to have an identification and enhanced
+ * atomicity upon scheduling the task.
  */
 public interface NamedTask {
 
     /**
-     * Returns the name of the task.
-     * The name will be used to uniquely identify the task in the scheduler service, if a duplicate
+     * Returns the name of the task. The name will be used to uniquely identify the task in the scheduler service, if a duplicate
      * is detected a {@link DuplicateTaskException} will be thrown and the task will be rejected.
-
+     *
      * @return String The name of the task
      */
     String getName();

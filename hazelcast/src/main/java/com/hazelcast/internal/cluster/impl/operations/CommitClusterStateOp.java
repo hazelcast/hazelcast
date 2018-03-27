@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,8 @@ import com.hazelcast.transaction.TransactionException;
 
 import java.io.IOException;
 
+import static java.lang.String.format;
+
 public class CommitClusterStateOp extends Operation implements AllowedDuringPassiveState, IdentifiedDataSerializable {
 
     private ClusterStateChange stateChange;
@@ -62,8 +64,8 @@ public class CommitClusterStateOp extends Operation implements AllowedDuringPass
     public void run() throws Exception {
         ClusterServiceImpl service = getService();
         ClusterStateManager clusterStateManager = service.getClusterStateManager();
-        getLogger().info("Changing cluster state state to " + stateChange + ", Initiator: " + initiator
-                + " transient: " + isTransient);
+        getLogger().info(format("Changing cluster state from %s to %s, initiator: %s, transient: %s",
+                clusterStateManager.stateToString(), stateChange, initiator, isTransient));
         clusterStateManager.commitClusterState(stateChange, initiator, txnId, isTransient);
     }
 

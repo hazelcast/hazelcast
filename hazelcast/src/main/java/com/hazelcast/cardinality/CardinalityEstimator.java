@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,9 +23,11 @@ import com.hazelcast.spi.annotation.Beta;
 /**
  * CardinalityEstimator is a redundant and highly available distributed data-structure used
  * for probabilistic cardinality estimation purposes, on unique items, in significantly sized data cultures.
- *
+ * <p>
  * CardinalityEstimator is internally based on a HyperLogLog++ data-structure,
  * and uses P^2 byte registers for storage and computation. (Default P = 14)
+ * <p>
+ * Supports Quorum {@link com.hazelcast.config.QuorumConfig} since 3.10 in cluster versions 3.10 and higher.
  */
 @Beta
 public interface CardinalityEstimator extends DistributedObject {
@@ -33,7 +35,7 @@ public interface CardinalityEstimator extends DistributedObject {
     /**
      * Add a new object in the estimation set. This is the method you want to
      * use to feed objects into the estimator.
-     *
+     * <p>
      * Objects are considered identical if they are serialized into the same binary blob.
      * In other words: It does <strong>not</strong> use Java equality.
      *
@@ -42,7 +44,6 @@ public interface CardinalityEstimator extends DistributedObject {
      * @since 3.8
      */
     void add(Object obj);
-
 
     /**
      * Estimates the cardinality of the aggregation so far.
@@ -56,21 +57,18 @@ public interface CardinalityEstimator extends DistributedObject {
     /**
      * Add a new object in the estimation set. This is the method you want to
      * use to feed objects into the estimator.
-     *
+     * <p>
      * Objects are considered identical if they are serialized into the same binary blob.
      * In other words: It does <strong>not</strong> use Java equality.
-     *
+     * <p>
      * This method will dispatch a request and return immediately an {@link ICompletableFuture}.
      * The operations result can be obtained in a blocking way, or a
      * callback can be provided for execution upon completion, as demonstrated in the following examples:
-     * <p>
      * <pre>
      *     ICompletableFuture&lt;Void&gt; future = estimator.addAsync();
      *     // do something else, then read the result
      *     Boolean result = future.get(); // this method will block until the result is available
      * </pre>
-     * </p>
-     * <p>
      * <pre>
      *     ICompletableFuture&lt;Void&gt; future = estimator.addAsync();
      *     future.andThen(new ExecutionCallback&lt;Void&gt;() {
@@ -83,7 +81,7 @@ public interface CardinalityEstimator extends DistributedObject {
      *          }
      *     });
      * </pre>
-     * </p>
+     *
      * @param obj object to add in the estimation set.
      * @return an {@link ICompletableFuture} API consumers can use to track execution of this request.
      * @throws NullPointerException if obj is null
@@ -94,18 +92,15 @@ public interface CardinalityEstimator extends DistributedObject {
     /**
      * Estimates the cardinality of the aggregation so far.
      * If it was previously estimated and never invalidated, then a cached version is used.
-     *
+     * <p>
      * This method will dispatch a request and return immediately an {@link ICompletableFuture}.
      * The operations result can be obtained in a blocking way, or a
      * callback can be provided for execution upon completion, as demonstrated in the following examples:
-     * <p>
      * <pre>
      *     ICompletableFuture&lt;Long&gt; future = estimator.estimateAsync();
      *     // do something else, then read the result
      *     Long result = future.get(); // this method will block until the result is available
      * </pre>
-     * </p>
-     * <p>
      * <pre>
      *     ICompletableFuture&lt;Long&gt; future = estimator.estimateAsync();
      *     future.andThen(new ExecutionCallback&lt;Long&gt;() {
@@ -118,10 +113,9 @@ public interface CardinalityEstimator extends DistributedObject {
      *          }
      *     });
      * </pre>
-     * </p>
+     *
      * @return {@link ICompletableFuture} bearing the response, the estimate.
      * @since 3.8
      */
     ICompletableFuture<Long> estimateAsync();
-
 }

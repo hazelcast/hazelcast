@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,6 +45,8 @@ package com.hazelcast.core;
  * Once the network partition heals, Hazelcast will use the value held in the largest cluster, in this case updates
  * made to the {@link IAtomicLong} in the smaller clusters will be lost.  Where the merging clusters are the same sizes
  * a winner of the merge will be randomly chosen.
+ *
+ * Supports Quorum {@link com.hazelcast.config.QuorumConfig} since 3.10 in cluster versions 3.10 and higher.
  *
  * @see IAtomicReference
  */

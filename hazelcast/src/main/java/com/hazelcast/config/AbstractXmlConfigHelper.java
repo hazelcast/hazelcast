@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,6 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.memory.MemorySize;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.util.StringUtil;
-
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
@@ -59,13 +58,16 @@ import java.util.Properties;
 
 import static com.hazelcast.nio.IOUtil.closeResource;
 import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
+import static com.hazelcast.util.StringUtil.isNullOrEmpty;
 import static com.hazelcast.util.StringUtil.upperCaseInternal;
 import static java.lang.Boolean.parseBoolean;
+import static java.lang.Double.parseDouble;
 import static java.lang.String.format;
 
 /**
  * Contains Hazelcast XML Configuration helper methods and variables.
  */
+@SuppressWarnings("checkstyle:methodcount")
 public abstract class AbstractXmlConfigHelper {
 
     private static final ILogger LOGGER = Logger.getLogger(AbstractXmlConfigHelper.class);
@@ -159,7 +161,7 @@ public abstract class AbstractXmlConfigHelper {
 
             // if this is hazelcast namespace but location is different log only warning
             if (namespace.equals(xmlns) && !uri.endsWith(hazelcastSchemaLocation)) {
-                LOGGER.warning("Name of the hazelcast schema location incorrect using default");
+                LOGGER.warning("Name of the hazelcast schema location is incorrect, using default");
             }
 
             // if this is not hazelcast namespace then try to load from uri
@@ -187,7 +189,7 @@ public abstract class AbstractXmlConfigHelper {
             SAXSource source = new SAXSource(new InputSource(is));
             validator.validate(source);
         } catch (Exception e) {
-            throw new InvalidConfigurationException(e.getMessage());
+            throw new InvalidConfigurationException(e.getMessage(), e);
         } finally {
             for (StreamSource source : schemas) {
                 closeResource(source.getInputStream());
@@ -204,7 +206,7 @@ public abstract class AbstractXmlConfigHelper {
             try {
                 inputStream = new URL(schemaLocation).openStream();
             } catch (Exception e) {
-                throw new InvalidConfigurationException("Your xsd schema couldn't be load");
+                throw new InvalidConfigurationException("Your xsd schema couldn't be loaded");
             }
         }
         return inputStream;
@@ -217,6 +219,10 @@ public abstract class AbstractXmlConfigHelper {
     }
 
     protected String xmlToJavaName(final String name) {
+        String javaRefName = xmlRefToJavaName(name);
+        if (javaRefName != null) {
+            return javaRefName;
+        }
         final StringBuilder builder = new StringBuilder();
         final char[] charArray = name.toCharArray();
         boolean dash = false;
@@ -232,6 +238,13 @@ public abstract class AbstractXmlConfigHelper {
         }
         appendToken(builder, token);
         return builder.toString();
+    }
+
+    private String xmlRefToJavaName(final String name) {
+        if (name.equals("quorum-ref")) {
+            return "quorumName";
+        }
+        return null;
     }
 
     protected void appendToken(final StringBuilder builder, final StringBuilder token) {
@@ -305,6 +318,13 @@ public abstract class AbstractXmlConfigHelper {
         }
     }
 
+    protected static int getIntegerValue(final String parameterName, final String value, int defaultValue) {
+        if (isNullOrEmpty(value)) {
+            return defaultValue;
+        }
+        return getIntegerValue(parameterName, value);
+    }
+
     protected static long getLongValue(final String parameterName, final String value) {
         try {
             return Long.parseLong(value);
@@ -312,6 +332,29 @@ public abstract class AbstractXmlConfigHelper {
             throw new InvalidConfigurationException(
                     format("Invalid long integer value for parameter %s: %s", parameterName, value));
         }
+    }
+
+    protected static long getLongValue(final String parameterName, final String value, long defaultValue) {
+        if (isNullOrEmpty(value)) {
+            return defaultValue;
+        }
+        return getLongValue(parameterName, value);
+    }
+
+    protected static double getDoubleValue(final String parameterName, final String value) {
+        try {
+            return parseDouble(value);
+        } catch (final Exception e) {
+            throw new InvalidConfigurationException(
+                    format("Invalid long integer value for parameter %s: %s", parameterName, value));
+        }
+    }
+
+    protected static double getDoubleValue(final String parameterName, final String value, double defaultValue) {
+        if (isNullOrEmpty(value)) {
+            return defaultValue;
+        }
+        return getDoubleValue(parameterName, value);
     }
 
     protected String getAttribute(Node node, String attName) {

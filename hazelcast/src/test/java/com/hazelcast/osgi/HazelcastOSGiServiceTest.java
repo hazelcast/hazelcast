@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -207,8 +207,8 @@ public class HazelcastOSGiServiceTest extends HazelcastTestSupport {
             testBundle = new TestBundle(registerDeregisterListener);
             try {
                 testBundle.start();
-                fail("OSGI service could not be activated because of exception while registering default instance. " +
-                        "It is expected to get `IllegalStateException` here!");
+                fail("OSGI service could not be activated because of exception while registering default instance."
+                        + " It is expected to get `IllegalStateException` here!");
             } catch (IllegalStateException e) {
                 // Since bundle is not active, it is expected to get `IllegalStateException`
             }
@@ -236,8 +236,8 @@ public class HazelcastOSGiServiceTest extends HazelcastTestSupport {
             testBundle = new TestBundle(registerDeregisterListener);
             try {
                 testBundle.start();
-                fail("OSGI service could not be activated because of exception while registering default instance. " +
-                        "It is expected to get `IllegalStateException` here!");
+                fail("OSGI service could not be activated because of exception while registering default instance."
+                        + "It is expected to get `IllegalStateException` here!");
             } catch (IllegalStateException e) {
                 // Since bundle is not active, it is expected to get `IllegalStateException`
             }

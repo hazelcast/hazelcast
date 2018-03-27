@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,8 +25,9 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
 
 import java.io.IOException;
-import java.util.HashSet;
 import java.util.Set;
+
+import static com.hazelcast.util.SetUtil.createHashSet;
 
 /**
  * {@link com.hazelcast.spi.OperationFactory} implementation for RemoveAll Operations.
@@ -80,7 +81,7 @@ public class CacheRemoveAllOperationFactory implements OperationFactory, Identif
         if (size == -1) {
             return;
         }
-        keys = new HashSet<Data>(size);
+        keys = createHashSet(size);
         for (int i = 0; i < size; i++) {
             keys.add(in.readData());
         }
