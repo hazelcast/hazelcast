@@ -20,6 +20,7 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.logging.LoggerFactory;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
+import org.junit.runner.RunWith;
 import org.junit.runners.model.Statement;
 
 import java.lang.reflect.Field;
@@ -27,8 +28,6 @@ import java.lang.reflect.Field;
 /**
  * Fully isolates the shared global logging state for a test. Also provides
  * utilities which are useful while testing logging related things.
- * <p>
- * Make sure you are using a serial test runner if you use this rule.
  */
 public class IsolatedLoggingRule implements TestRule {
 
@@ -48,10 +47,12 @@ public class IsolatedLoggingRule implements TestRule {
     }
 
     @Override
-    public Statement apply(final Statement base, Description description) {
+    public Statement apply(final Statement base, final Description description) {
         return new Statement() {
             @Override
             public void evaluate() throws Throwable {
+                ensureSerialRunner(description);
+
                 String oldLoggingType = System.getProperty(LOGGING_TYPE_PROPERTY);
                 String oldLoggingClass = System.getProperty(LOGGING_CLASS_PROPERTY);
 
@@ -99,6 +100,15 @@ public class IsolatedLoggingRule implements TestRule {
         }
         field.setAccessible(true);
         return field;
+    }
+
+    private void ensureSerialRunner(Description description) {
+        RunWith runWithAnnotation = description.getTestClass().getAnnotation(RunWith.class);
+        Class runnerClass = runWithAnnotation == null ? null : runWithAnnotation.value();
+        if (runnerClass == null || !HazelcastSerialClassRunner.class.isAssignableFrom(runnerClass)) {
+            throw new IllegalStateException("Isolated logging may be achieved only when running a test using a serial runner. Use"
+                    + " HazelcastSerialClassRunner or its subclass to run this test.");
+        }
     }
 
 }
