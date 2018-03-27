@@ -588,12 +588,12 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
     protected R createRecordWithExpiry(Data key, Object value, long expiryTime,
                                        long now, boolean disableWriteThrough, int completionId) {
-        return createRecordWithExpiry(key, value, expiryTime, now, disableWriteThrough, completionId, null);
+        return createRecordWithExpiry(key, value, expiryTime, now, disableWriteThrough, completionId, SOURCE_NOT_AVAILABLE);
     }
 
     protected R createRecordWithExpiry(Data key, Object value, ExpiryPolicy expiryPolicy,
                                        long now, boolean disableWriteThrough, int completionId) {
-        return createRecordWithExpiry(key, value, expiryPolicy, now, disableWriteThrough, completionId, null);
+        return createRecordWithExpiry(key, value, expiryPolicy, now, disableWriteThrough, completionId, SOURCE_NOT_AVAILABLE);
     }
 
     protected R createRecordWithExpiry(Data key, Object value, ExpiryPolicy expiryPolicy,
