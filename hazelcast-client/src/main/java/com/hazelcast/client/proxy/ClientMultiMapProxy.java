@@ -303,6 +303,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
 
     @Override
     public String addEntryListener(EntryListener<K, V> listener, K key, final boolean includeValue) {
+        isNotNull(listener, "listener");
         final Data keyData = toData(key);
         EventHandler<ClientMessage> handler = createHandler(listener);
         return registerListener(createEntryListenerToKeyCodec(includeValue, keyData), handler);

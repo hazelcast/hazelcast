@@ -294,11 +294,7 @@ public class MapListenerTest extends HazelcastTestSupport {
 
     @Override
     protected Config getConfig() {
-        return super.getConfig()
-                    .setProperty(PARTITION_COUNT.getName(), "10")
-                    .setProperty(PARTITION_OPERATION_THREAD_COUNT.getName(), "2")
-                    .setProperty(GENERIC_OPERATION_THREAD_COUNT.getName(), "2")
-                    .setProperty(EVENT_THREAD_COUNT.getName(), "1")
+        return smallInstanceConfig()
                     .setProperty(LISTENER_WITH_PREDICATE_PRODUCES_NATURAL_EVENT_TYPES.getName(), "true");
     }
 }

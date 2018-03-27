@@ -21,8 +21,8 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.scheduledexecutor.impl.ScheduledExecutorContainer;
 import com.hazelcast.scheduledexecutor.impl.ScheduledTaskDescriptor;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.SplitBrainMergePolicy;
-import com.hazelcast.spi.merge.MergingEntryHolder;
+import com.hazelcast.spi.merge.MergingEntry;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -34,7 +34,7 @@ public class MergeOperation
         extends AbstractBackupAwareSchedulerOperation {
 
     private SplitBrainMergePolicy mergePolicy;
-    private List<MergingEntryHolder<String, ScheduledTaskDescriptor>> mergingEntries;
+    private List<MergingEntry<String, ScheduledTaskDescriptor>> mergingEntries;
 
     private transient List<ScheduledTaskDescriptor> mergedTasks;
 
@@ -43,7 +43,7 @@ public class MergeOperation
     }
 
     public MergeOperation(String name, SplitBrainMergePolicy mergePolicy,
-                          List<MergingEntryHolder<String, ScheduledTaskDescriptor>> mergingEntries) {
+                          List<MergingEntry<String, ScheduledTaskDescriptor>> mergingEntries) {
         super(name);
         this.mergePolicy = mergePolicy;
         this.mergingEntries = mergingEntries;
@@ -60,7 +60,7 @@ public class MergeOperation
         ScheduledExecutorContainer container = getContainer();
         mergedTasks = new ArrayList<ScheduledTaskDescriptor>();
 
-        for (MergingEntryHolder<String, ScheduledTaskDescriptor> mergingEntry : mergingEntries) {
+        for (MergingEntry<String, ScheduledTaskDescriptor> mergingEntry : mergingEntries) {
             ScheduledTaskDescriptor merged = container.merge(mergingEntry, mergePolicy);
             if (merged != null) {
                 mergedTasks.add(merged);
@@ -86,7 +86,7 @@ public class MergeOperation
         super.writeInternal(out);
         out.writeObject(mergePolicy);
         out.writeInt(mergingEntries.size());
-        for (MergingEntryHolder<String, ScheduledTaskDescriptor> mergingEntry : mergingEntries) {
+        for (MergingEntry<String, ScheduledTaskDescriptor> mergingEntry : mergingEntries) {
             out.writeObject(mergingEntry);
         }
     }
@@ -97,9 +97,9 @@ public class MergeOperation
         super.readInternal(in);
         mergePolicy = in.readObject();
         int size = in.readInt();
-        mergingEntries = new ArrayList<MergingEntryHolder<String, ScheduledTaskDescriptor>>(size);
+        mergingEntries = new ArrayList<MergingEntry<String, ScheduledTaskDescriptor>>(size);
         for (int i = 0; i < size; i++) {
-            MergingEntryHolder<String, ScheduledTaskDescriptor> mergingEntry = in.readObject();
+            MergingEntry<String, ScheduledTaskDescriptor> mergingEntry = in.readObject();
             mergingEntries.add(mergingEntry);
         }
     }

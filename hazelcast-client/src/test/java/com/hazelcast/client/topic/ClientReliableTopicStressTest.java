@@ -61,7 +61,6 @@ public class ClientReliableTopicStressTest extends HazelcastTestSupport {
 
         RingbufferConfig ringbufferConfig = new RingbufferConfig("foobar");
         ringbufferConfig.setCapacity(10000000);
-        ringbufferConfig.setTimeToLiveSeconds(5);
         config.addRingBufferConfig(ringbufferConfig);
 
         ClientConfig clientConfig = new ClientConfig();

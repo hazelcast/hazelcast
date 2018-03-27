@@ -124,6 +124,23 @@ public class ClientSemaphoreTest {
     }
 
     @Test
+    public void testAvailableIncreasePermits() throws Exception {
+        final ISemaphore semaphore = client.getSemaphore(randomString());
+        semaphore.init(10);
+        semaphore.drainPermits();
+        semaphore.increasePermits(5);
+        assertEquals(5, semaphore.availablePermits());
+    }
+
+    @Test
+    public void testAvailableIncreasePermits_WhenIncreasedFromZero() throws Exception {
+        final ISemaphore semaphore = client.getSemaphore(randomString());
+        semaphore.init(0);
+        semaphore.increasePermits(1);
+        assertEquals(1, semaphore.availablePermits());
+    }
+
+    @Test
     public void testTryAcquire_whenAvailable() throws Exception {
         final ISemaphore semaphore = client.getSemaphore(randomString());
         semaphore.init(1);

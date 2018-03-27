@@ -20,14 +20,14 @@ import com.hazelcast.cardinality.impl.hyperloglog.HyperLogLog;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.SplitBrainMergePolicy;
-import com.hazelcast.spi.merge.MergingEntryHolder;
+import com.hazelcast.spi.merge.MergingEntry;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.serialization.SerializationService;
 
 import java.io.IOException;
 
 import static com.hazelcast.cardinality.impl.CardinalityEstimatorDataSerializerHook.MERGE;
-import static com.hazelcast.spi.impl.merge.MergingHolders.createMergeHolder;
+import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntry;
 
 /**
  * Contains a mergeable {@link HyperLogLog} instance for split-brain healing with a {@link SplitBrainMergePolicy}.
@@ -54,7 +54,7 @@ public class MergeOperation
     @Override
     public void run() throws Exception {
         SerializationService serializationService = getNodeEngine().getSerializationService();
-        MergingEntryHolder<String, HyperLogLog> mergingEntry = createMergeHolder(serializationService, name, value);
+        MergingEntry<String, HyperLogLog> mergingEntry = createMergingEntry(serializationService, name, value);
         backupValue = getCardinalityEstimatorContainer().merge(mergingEntry, mergePolicy, serializationService);
     }
 

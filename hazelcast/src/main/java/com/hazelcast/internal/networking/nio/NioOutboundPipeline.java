@@ -80,8 +80,8 @@ public final class NioOutboundPipeline extends NioPipeline implements Runnable {
 
     public NioOutboundPipeline(NioChannel channel,
                                NioThread owner,
-        ChannelErrorHandler errorHandler,
-        ILogger logger,
+                               ChannelErrorHandler errorHandler,
+                               ILogger logger,
                                IOBalancer balancer,
                                ChannelInitializer initializer) {
         super(channel, owner, errorHandler, OP_WRITE, logger, balancer);

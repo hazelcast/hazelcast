@@ -136,7 +136,8 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
             fail("Should have been rejected.");
         } catch (RejectedExecutionException ex) {
             assertEquals("Got wrong RejectedExecutionException",
-                    "Maximum capacity (100) of tasks reached, for scheduled executor (foobar)", ex.getMessage());
+                    "Maximum capacity (100) of tasks reached, for scheduled executor (foobar). "
+                            + "Reminder that tasks must be disposed if not needed.", ex.getMessage());
         }
     }
 
@@ -165,7 +166,8 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
             fail("Should have been rejected.");
         } catch (RejectedExecutionException ex) {
             assertEquals("Got wrong RejectedExecutionException",
-                    "Maximum capacity (10) of tasks reached, for scheduled executor (foobar)", ex.getMessage());
+                    "Maximum capacity (10) of tasks reached, for scheduled executor (foobar). "
+                            + "Reminder that tasks must be disposed if not needed.", ex.getMessage());
         }
     }
 
@@ -194,7 +196,8 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
             fail("Should have been rejected.");
         } catch (RejectedExecutionException ex) {
             assertEquals("Got wrong RejectedExecutionException",
-                    "Maximum capacity (10) of tasks reached, for scheduled executor (foobar)", ex.getMessage());
+                    "Maximum capacity (10) of tasks reached, for scheduled executor (foobar). "
+                            + "Reminder that tasks must be disposed if not needed.", ex.getMessage());
         }
     }
 

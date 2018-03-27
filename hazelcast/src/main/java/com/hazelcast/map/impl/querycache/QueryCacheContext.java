@@ -125,6 +125,11 @@ public interface QueryCacheContext {
     int getPartitionId(Object object);
 
     /**
+     * @return partition count
+     */
+    int getPartitionCount();
+
+    /**
      * @return mutex factory for this context. This is mainly intended to use during query-cache create and destroy.
      */
     ContextMutexFactory getLifecycleMutexFactory();

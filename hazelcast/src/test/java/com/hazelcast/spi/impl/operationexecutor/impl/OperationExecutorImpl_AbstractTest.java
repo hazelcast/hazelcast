@@ -77,10 +77,7 @@ public abstract class OperationExecutorImpl_AbstractTest extends HazelcastTestSu
         loggingService = new LoggingServiceImpl("foo", "jdk", new BuildInfo("1", "1", "1", 1, false, (byte) 1));
 
         serializationService = new DefaultSerializationServiceBuilder().build();
-        config = new Config();
-        config.setProperty(PARTITION_COUNT.getName(), "10");
-        config.setProperty(PARTITION_OPERATION_THREAD_COUNT.getName(), "10");
-        config.setProperty(GENERIC_OPERATION_THREAD_COUNT.getName(), "10");
+        config = smallInstanceConfig();
         thisAddress = new Address("localhost", 5701);
         Node node = Mockito.mock(Node.class);
         when(node.getConfig()).thenReturn(config);

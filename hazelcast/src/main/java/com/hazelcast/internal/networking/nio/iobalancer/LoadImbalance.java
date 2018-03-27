@@ -32,29 +32,29 @@ import java.util.Set;
  */
 class LoadImbalance {
     //number of events recorded by the busiest NioThread
-    long maximumEvents;
+    long maximumLoad;
     //number of events recorded by the least busy NioThread
-    long minimumEvents;
+    long minimumLoad;
     //busiest NioThread
-    NioThread sourceSelector;
+    NioThread srcOwner;
     //least busy NioThread
-    NioThread destinationSelector;
+    NioThread dstOwner;
 
-    private final Map<NioThread, Set<MigratablePipeline>> selectorToHandlers;
-    private final ItemCounter<MigratablePipeline> handlerLoadCounter;
+    private final Map<NioThread, Set<MigratablePipeline>> ownerToPipelines;
+    private final ItemCounter<MigratablePipeline> pipelineLoadCounter;
 
-    LoadImbalance(Map<NioThread, Set<MigratablePipeline>> selectorToHandlers,
-                  ItemCounter<MigratablePipeline> handlerLoadCounter) {
-        this.selectorToHandlers = selectorToHandlers;
-        this.handlerLoadCounter = handlerLoadCounter;
+    LoadImbalance(Map<NioThread, Set<MigratablePipeline>> ownerToPipelines,
+                  ItemCounter<MigratablePipeline> pipelineLoadCounter) {
+        this.ownerToPipelines = ownerToPipelines;
+        this.pipelineLoadCounter = pipelineLoadCounter;
     }
 
     /**
-     * @param selector
-     * @return A set of Handlers owned by the selector
+     * @param owner
+     * @return A set of Pipelines owned by the owner
      */
-    Set<MigratablePipeline> getPipelinesOwnerBy(NioThread selector) {
-        return selectorToHandlers.get(selector);
+    Set<MigratablePipeline> getPipelinesOwnedBy(NioThread owner) {
+        return ownerToPipelines.get(owner);
     }
 
     /**
@@ -62,6 +62,6 @@ class LoadImbalance {
      * @return load recorded by the pipeline
      */
     long getLoad(MigratablePipeline pipeline) {
-        return handlerLoadCounter.get(pipeline);
+        return pipelineLoadCounter.get(pipeline);
     }
 }

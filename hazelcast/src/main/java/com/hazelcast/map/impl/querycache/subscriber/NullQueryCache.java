@@ -48,7 +48,8 @@ public final class NullQueryCache implements InternalQueryCache {
     }
 
     @Override
-    public void clearInternal(EntryEventType eventType) {
+    public int removeEntriesOf(int partitionId) {
+        return 0;
     }
 
     @Override

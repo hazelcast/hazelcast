@@ -23,6 +23,8 @@ import java.io.IOException;
 
 /**
  * Contains the configuration for an {@link java.util.concurrent.atomic.AtomicLong}.
+ *
+ * @since 3.10
  */
 public class AtomicLongConfig extends AbstractBasicConfig<AtomicLongConfig> {
 

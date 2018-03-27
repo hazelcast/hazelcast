@@ -35,7 +35,7 @@ public class HyperLogLogMergePolicy extends AbstractSplitBrainMergePolicy {
     }
 
     @Override
-    public <V> V merge(MergingValueHolder<V> mergingValue, MergingValueHolder<V> existingValue) {
+    public <V> V merge(MergingValue<V> mergingValue, MergingValue<V> existingValue) {
         if (!(mergingValue.getValue() instanceof HyperLogLog)) {
             throw new IllegalArgumentException("Unsupported merging data");
         }

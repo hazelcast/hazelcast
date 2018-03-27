@@ -83,13 +83,14 @@ public class FlakeIdGeneratorService implements ManagedService, RemoteService,
     }
 
     /**
-     * Increments the usage count of the {@link FlakeIdGenerator} with the given
-     * name.
+     * Updated the statistics for the {@link FlakeIdGenerator} with the given
+     * name for a newly generated batch of the given size.
      *
      * @param name name of the generator, not null
+     * @param batchSize size of the batch created
      */
-    public void incrementStatsForNewId(String name) {
-        getLocalFlakeIdStats(name).incrementUsage();
+    public void updateStatsForBatch(String name, int batchSize) {
+        getLocalFlakeIdStats(name).update(batchSize);
     }
 
     private LocalFlakeIdGeneratorStatsImpl getLocalFlakeIdStats(String name) {

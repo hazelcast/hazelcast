@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.txn;
 
+import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
@@ -68,7 +69,9 @@ public class ClientTxnMapTest {
     @Before
     public void setup() {
         hazelcastFactory.newHazelcastInstance();
-        client = hazelcastFactory.newHazelcastClient();
+        final ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
+        client = hazelcastFactory.newHazelcastClient(clientConfig);
     }
 
 

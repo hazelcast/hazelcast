@@ -58,7 +58,7 @@ public interface ClientConnectionManager extends ConnectionListenable {
      * @return associated connection if available, returns null and triggers new connection creation otherwise
      * @throws IOException if connection is not able to triggered
      */
-    Connection getOrTriggerConnect(Address address) throws IOException;
+    Connection getOrTriggerConnect(Address address, boolean acquiresResource) throws IOException;
 
     void addConnectionHeartbeatListener(ConnectionHeartbeatListener connectionHeartbeatListener);
 

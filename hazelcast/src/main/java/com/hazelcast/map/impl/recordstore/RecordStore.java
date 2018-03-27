@@ -29,9 +29,9 @@ import com.hazelcast.map.impl.record.RecordFactory;
 import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.monitor.LocalRecordStoreStats;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.SplitBrainMergePolicy;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
-import com.hazelcast.spi.merge.MergingEntryHolder;
+import com.hazelcast.spi.merge.MergingEntry;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 
 import java.util.Iterator;
 import java.util.List;
@@ -51,6 +51,16 @@ public interface RecordStore<R extends Record> {
 
     String getName();
 
+    /**
+     * @return oldValue only if it exists in memory, otherwise just returns
+     * null and doesn't try to load it from {@link com.hazelcast.core.MapLoader}
+     */
+    Object set(Data dataKey, Object value, long ttl);
+
+    /**
+     * @return oldValue if it exists in memory otherwise tries to load oldValue
+     * by using {@link com.hazelcast.core.MapLoader}
+     */
     Object put(Data dataKey, Object dataValue, long ttl);
 
     Object putIfAbsent(Data dataKey, Object value, long ttl);
@@ -65,17 +75,6 @@ public interface RecordStore<R extends Record> {
      * @return previous record if exists otherwise null.
      */
     R putBackup(Data key, Object value, long ttl, boolean putTransient);
-
-    /**
-     * Sets a value associated with the given {@code dataKey} to the new given {@code value}.
-     *
-     * @param dataKey the key to set the value of.
-     * @param value   the new value to store.
-     * @param ttl     the TTL for the new value.
-     * @return {@code true} if the key wasn't existent before the operation, {@code false} otherwise.
-     * @see com.hazelcast.core.IMap#set(Object, Object)
-     */
-    boolean set(Data dataKey, Object value, long ttl);
 
     /**
      * Does exactly the same thing as {@link #set(Data, Object, long)} except the invocation is not counted as
@@ -178,13 +177,13 @@ public interface RecordStore<R extends Record> {
     boolean merge(Data dataKey, EntryView mergingEntry, MapMergePolicy mergePolicy);
 
     /**
-     * Merges the given {@link MergingEntryHolder} via the given {@link SplitBrainMergePolicy}.
+     * Merges the given {@link MergingEntry} via the given {@link SplitBrainMergePolicy}.
      *
-     * @param mergingEntry the {@link MergingEntryHolder} instance to merge
+     * @param mergingEntry the {@link MergingEntry} instance to merge
      * @param mergePolicy  the {@link SplitBrainMergePolicy} instance to apply
      * @return {@code true} if merge is applied, otherwise {@code false}
      */
-    boolean merge(MergingEntryHolder<Data, Object> mergingEntry, SplitBrainMergePolicy mergePolicy);
+    boolean merge(MergingEntry<Data, Object> mergingEntry, SplitBrainMergePolicy mergePolicy);
 
     R getRecord(Data key);
 
@@ -467,4 +466,10 @@ public interface RecordStore<R extends Record> {
      * @param exception an exception that occurred during key loading
      */
     void updateLoadStatus(boolean lastBatch, Throwable exception);
+
+    /**
+     * @return true if there is a {@link com.hazelcast.map.QueryCache} defined
+     * for this map.
+     */
+    boolean hasQueryCache();
 }

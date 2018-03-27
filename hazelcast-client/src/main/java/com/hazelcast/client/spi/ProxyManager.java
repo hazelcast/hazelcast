@@ -28,6 +28,7 @@ import com.hazelcast.client.config.ProxyFactoryConfig;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAddDistributedObjectListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.ClientCreateProxiesCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientCreateProxyCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientRemoveDistributedObjectListenerCodec;
 import com.hazelcast.client.proxy.ClientAtomicLongProxy;
@@ -85,6 +86,7 @@ import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
+import com.hazelcast.nio.Connection;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
@@ -96,10 +98,12 @@ import com.hazelcast.transaction.impl.xa.XAService;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
+import java.util.AbstractMap;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
@@ -419,6 +423,20 @@ public final class ProxyManager {
     public String addDistributedObjectListener(final DistributedObjectListener listener) {
         final EventHandler<ClientMessage> eventHandler = new DistributedObjectEventHandler(listener, this);
         return client.getListenerService().registerListener(distributedObjectListenerCodec, eventHandler);
+    }
+
+    public void createDistributedObjectsOnCluster(Connection ownerConnection) {
+        List<Map.Entry<String, String>> proxyEntries = new LinkedList<Map.Entry<String, String>>();
+        for (ObjectNamespace objectNamespace : proxies.keySet()) {
+            String name = objectNamespace.getObjectName();
+            String serviceName = objectNamespace.getServiceName();
+            proxyEntries.add(new AbstractMap.SimpleEntry<String, String>(name, serviceName));
+        }
+        if (proxyEntries.isEmpty()) {
+            return;
+        }
+        ClientMessage clientMessage = ClientCreateProxiesCodec.encodeRequest(proxyEntries);
+        new ClientInvocation(client, clientMessage, null, ownerConnection).invoke();
     }
 
     private final class DistributedObjectEventHandler extends ClientAddDistributedObjectListenerCodec.AbstractEventHandler

@@ -24,6 +24,9 @@ import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.Offloadable;
 import com.hazelcast.core.ReadOnly;
+import com.hazelcast.nio.Address;
+import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -50,6 +53,9 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.config.InMemoryFormat.BINARY;
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
@@ -65,6 +71,8 @@ import static org.junit.Assert.assertTrue;
 public class EntryProcessorOffloadableTest extends HazelcastTestSupport {
 
     public static final String MAP_NAME = "EntryProcessorOffloadableTest";
+
+    private static final int HEARTBEATS_INTERVAL_SEC = 2;
 
     private HazelcastInstance[] instances;
 
@@ -101,6 +109,8 @@ public class EntryProcessorOffloadableTest extends HazelcastTestSupport {
         mapConfig.setAsyncBackupCount(asyncBackupCount);
         mapConfig.setBackupCount(syncBackupCount);
         config.addMapConfig(mapConfig);
+        config.getProperties().setProperty("hazelcast.operation.call.timeout.millis",
+                String.valueOf(HEARTBEATS_INTERVAL_SEC * 4 * 1000));
         return config;
     }
 
@@ -928,6 +938,104 @@ public class EntryProcessorOffloadableTest extends HazelcastTestSupport {
         }
     }
 
+    /**
+     * <pre>
+     * Given: Heart beats are configured to come each few seconds (i.e. one quarter of hazelcast.operation.call.timeout.millis
+     *        - set in the {@code getConfig()} method)
+     * When: An offloaded EntryProcessor takes a long time to run.
+     * Then: Heart beats are still coming during the task is offloaded.
+     * </pre>
+     *
+     * @see #getConfig()
+     * @see #HEARTBEATS_INTERVAL_SEC
+     */
+    @Test
+    public void testHeartBeatsComingWhenEntryPropcessorOffloaded() throws Exception {
+        final String key = generateKeyOwnedBy(instances[1]);
+        SimpleValue givenValue = new SimpleValue(1);
+
+        final IMap<Object, Object> map = instances[0].getMap(MAP_NAME);
+        map.put(key, givenValue);
+
+        final Address instance1Address = instances[1].getCluster().getLocalMember().getAddress();
+        final AtomicInteger heartBeatsCounter = new AtomicInteger(0);
+        final AtomicLong minDelta = new AtomicLong(Long.MAX_VALUE);
+        Thread hbMonitorThread = new Thread() {
+            public void run() {
+                NodeEngine nodeEngine = HazelcastTestSupport.getNodeEngineImpl(instances[0]);
+                OperationServiceImpl osImpl = (OperationServiceImpl) nodeEngine.getOperationService();
+                Map<Address, AtomicLong> heartBeats = osImpl.getInvocationMonitor().getHeartbeatPerMember();
+                long lastbeat = Long.MIN_VALUE;
+                while (!isInterrupted()) {
+                    AtomicLong timestamp = heartBeats.get(instance1Address);
+                    if (timestamp != null) {
+                        long newlastbeat = timestamp.get();
+                        if (lastbeat != newlastbeat) {
+                            long delta = newlastbeat - lastbeat;
+                            if (lastbeat != Long.MIN_VALUE && delta < minDelta.get()) {
+                                minDelta.set(delta);
+                            }
+                            lastbeat = newlastbeat;
+                            heartBeatsCounter.incrementAndGet();
+                        }
+                    }
+                    HazelcastTestSupport.sleepMillis(100);
+                }
+            }
+        };
+        final int secondsToRun = 8;
+        final int expectedHeartBeats = secondsToRun / HEARTBEATS_INTERVAL_SEC;
+        try {
+            hbMonitorThread.start();
+            map.executeOnKey(key, new TimeConsumingOffloadableTask(secondsToRun));
+        } finally {
+            hbMonitorThread.interrupt();
+        }
+        int hbCount = heartBeatsCounter.get();
+        assertTrue("At least " + expectedHeartBeats + " heartBeats expected, " + hbCount + " came.",
+                hbCount >= expectedHeartBeats);
+        long deltaToCheck = minDelta.get();
+        assertTrue("Heartbeats came too close to each other: " + deltaToCheck + "ms",
+                deltaToCheck > 500 * HEARTBEATS_INTERVAL_SEC);
+    }
+
+    private static class TimeConsumingOffloadableTask implements EntryProcessor<String, SimpleValue>, Offloadable,
+            EntryBackupProcessor<String, SimpleValue>, Serializable {
+
+        private final int secondsToWork;
+
+        public TimeConsumingOffloadableTask(int secondsToWork) {
+            this.secondsToWork = secondsToWork;
+        }
+
+        @Override
+        public Object process(final Map.Entry<String, SimpleValue> entry) {
+            final SimpleValue value = entry.getValue();
+            long endTime = TimeUnit.SECONDS.toMillis(secondsToWork) + System.currentTimeMillis() + 500L;
+            do {
+                HazelcastTestSupport.sleepMillis(200);
+                value.i++;
+                entry.setValue(value);
+            } while (System.currentTimeMillis() < endTime);
+            return null;
+        }
+
+        @Override
+        public EntryBackupProcessor<String, SimpleValue> getBackupProcessor() {
+            return this;
+        }
+
+        @Override
+        public void processBackup(Map.Entry<String, SimpleValue> entry) {
+            process(entry);
+        }
+
+        @Override
+        public String getExecutorName() {
+            return Offloadable.OFFLOADABLE_EXECUTOR;
+        }
+
+    }
 
     private static class SimpleValue implements Serializable {
 

@@ -68,7 +68,8 @@ import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.MEMB
 import static com.hazelcast.spi.properties.GroupProperty.MEMBER_LIST_PUBLISH_INTERVAL_SECONDS;
 import static com.hazelcast.test.PacketFiltersUtil.delayOperationsFrom;
 import static com.hazelcast.test.PacketFiltersUtil.dropOperationsBetween;
-import static com.hazelcast.test.PacketFiltersUtil.dropOperationsFrom;
+import static com.hazelcast.test.PacketFiltersUtil.rejectOperationsBetween;
+import static com.hazelcast.test.PacketFiltersUtil.rejectOperationsFrom;
 import static com.hazelcast.test.PacketFiltersUtil.resetPacketFiltersFrom;
 import static com.hazelcast.util.UuidUtil.newUnsecureUuidString;
 import static java.lang.Thread.currentThread;
@@ -404,7 +405,7 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
 
         assertClusterSize(2, hz1, hz2);
 
-        dropOperationsFrom(hz1, F_ID, singletonList(MEMBER_INFO_UPDATE));
+        rejectOperationsFrom(hz1, F_ID, singletonList(MEMBER_INFO_UPDATE));
 
         HazelcastInstance hz3 = factory.newHazelcastInstance(config);
 
@@ -432,7 +433,7 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
 
         assertClusterSize(2, hz1, hz2);
 
-        dropOperationsFrom(hz1, F_ID, singletonList(MEMBER_INFO_UPDATE));
+        rejectOperationsFrom(hz1, F_ID, singletonList(MEMBER_INFO_UPDATE));
 
         HazelcastInstance hz3 = factory.newHazelcastInstance(config);
 
@@ -558,6 +559,8 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         HazelcastInstance hz2 = factory.newHazelcastInstance(config);
         HazelcastInstance hz3 = factory.newHazelcastInstance(config);
 
+        assertClusterSizeEventually(3, hz2);
+
         Node node = getNode(hz1);
         ClusterServiceImpl clusterService = node.getClusterService();
         MembershipManager membershipManager = clusterService.getMembershipManager();
@@ -589,6 +592,8 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         HazelcastInstance hz2 = factory.newHazelcastInstance(config);
         HazelcastInstance hz3 = factory.newHazelcastInstance(config);
 
+        assertClusterSizeEventually(3, hz2);
+
         Node node = getNode(hz1);
         ClusterServiceImpl clusterService = node.getClusterService();
         MembershipManager membershipManager = clusterService.getMembershipManager();
@@ -615,18 +620,20 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
 
     @Test
     public void memberListOrder_shouldBeSame_whenMemberRestartedWithSameIdentity() {
-        Config config = new Config();
-        config.setProperty(GroupProperty.MEMBER_LIST_PUBLISH_INTERVAL_SECONDS.getName(), "5");
-        config.setProperty(GroupProperty.MAX_JOIN_SECONDS.getName(), "5");
+        Config configMaster = new Config();
+        configMaster.setProperty(GroupProperty.MEMBER_LIST_PUBLISH_INTERVAL_SECONDS.getName(), "5");
+        // Needed only on master to prevent accepting stale join requests.
+        // See ClusterJoinManager#checkRecentlyJoinedMemberUuidBeforeJoin(target, uuid)
+        configMaster.setProperty(GroupProperty.MAX_JOIN_SECONDS.getName(), "5");
+        final HazelcastInstance hz1 = factory.newHazelcastInstance(configMaster);
 
-        final HazelcastInstance hz1 = factory.newHazelcastInstance(config);
-        final HazelcastInstance hz2 = factory.newHazelcastInstance(config);
-        HazelcastInstance hz3 = factory.newHazelcastInstance(config);
-        HazelcastInstance hz4 = factory.newHazelcastInstance(config);
+        final HazelcastInstance hz2 = factory.newHazelcastInstance();
+        HazelcastInstance hz3 = factory.newHazelcastInstance();
+        HazelcastInstance hz4 = factory.newHazelcastInstance();
 
-        assertClusterSize(4, hz2, hz3);
+        assertClusterSizeEventually(4, hz2, hz3);
 
-        dropOperationsBetween(hz1, hz2, F_ID, singletonList(MEMBER_INFO_UPDATE));
+        rejectOperationsBetween(hz1, hz2, F_ID, singletonList(MEMBER_INFO_UPDATE));
 
         final MemberImpl member3 = getNode(hz3).getLocalMember();
         hz3.getLifecycleService().terminate();
@@ -634,7 +641,7 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         assertClusterSizeEventually(3, hz1, hz4);
         assertClusterSize(4, hz2);
 
-        hz3 = newHazelcastInstance(config, "test-instance", new StaticMemberNodeContext(factory, member3));
+        hz3 = newHazelcastInstance(new Config(), "test-instance", new StaticMemberNodeContext(factory, member3));
 
         assertClusterSizeEventually(4, hz1, hz4);
 

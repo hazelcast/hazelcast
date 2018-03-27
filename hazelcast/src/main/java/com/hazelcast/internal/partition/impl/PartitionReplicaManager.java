@@ -39,7 +39,6 @@ import com.hazelcast.util.scheduler.EntryTaskSchedulerFactory;
 import com.hazelcast.util.scheduler.ScheduleType;
 import com.hazelcast.util.scheduler.ScheduledEntry;
 import com.hazelcast.util.scheduler.ScheduledEntryProcessor;
-import com.hazelcast.version.Version;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -78,8 +77,6 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
 
     private final long partitionMigrationTimeout;
     private final int maxParallelReplications;
-
-    private volatile Version clusterVersion;
 
     PartitionReplicaManager(Node node, InternalPartitionServiceImpl partitionService) {
         this.node = node;
@@ -414,10 +411,6 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
     public void retainNamespaces(int partitionId, Set<ServiceNamespace> namespaces) {
         PartitionReplicaVersions versions = replicaVersions[partitionId];
         versions.retainNamespaces(namespaces);
-    }
-
-    void setClusterVersion(Version newVersion) {
-        this.clusterVersion = newVersion;
     }
 
     private class ReplicaSyncTimeoutProcessor implements ScheduledEntryProcessor<ReplicaFragmentSyncInfo, Void> {

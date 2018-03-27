@@ -399,9 +399,9 @@ public abstract class ConditionAbstractTest extends HazelcastTestSupport {
     }
 
     //if there are multiple waiters, then only 1 waiter should be notified.
-    @Test(timeout = 60000)
-    public void testSignalWithMultipleWaiters() throws InterruptedException {
-        ILock lock = callerInstance.getLock(newName());
+    @Test
+    public void testSignalWithMultipleWaiters() {
+        final ILock lock = callerInstance.getLock(newName());
         ICondition condition = lock.newCondition(newName());
         CountDownLatch allAwaited = new CountDownLatch(3);
         CountDownLatch allSignalled = new CountDownLatch(10);
@@ -413,7 +413,13 @@ public abstract class ConditionAbstractTest extends HazelcastTestSupport {
         assertOpenEventually("All threads should have been reached await", allAwaited);
         signal(lock, condition);
         assertCountEventually("Condition has not been signalled", 9, allSignalled, THIRTY_SECONDS);
-        assertFalse(lock.isLocked());
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertFalse(lock.isLocked());
+            }
+        });
     }
 
     // A signal send to wake up threads is not a flag set on the condition

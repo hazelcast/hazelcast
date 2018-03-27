@@ -16,12 +16,9 @@
 
 package com.hazelcast.internal.journal;
 
-import com.hazelcast.internal.cluster.Versions;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.ringbuffer.StaleSequenceException;
 import com.hazelcast.ringbuffer.impl.ReadResultSetImpl;
 import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.DistributedObjectNamespace;
@@ -29,7 +26,6 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.ReadonlyOperation;
 import com.hazelcast.spi.WaitNotifyKey;
-import com.hazelcast.version.Version;
 
 import java.io.IOException;
 
@@ -78,12 +74,6 @@ public abstract class EventJournalReadOperation<T, J> extends Operation
      */
     @Override
     public void beforeRun() {
-        final Version clusterVersion = getNodeEngine().getClusterService().getClusterVersion();
-        if (clusterVersion.isLessThan(Versions.V3_9)) {
-            throw new UnsupportedOperationException(
-                    "Event journal actions are not available when cluster version is " + clusterVersion);
-        }
-
         namespace = new DistributedObjectNamespace(getServiceName(), name);
 
         final EventJournal<J> journal = getJournal();
@@ -94,6 +84,20 @@ public abstract class EventJournalReadOperation<T, J> extends Operation
 
         final int partitionId = getPartitionId();
         journal.cleanup(namespace, partitionId);
+
+        final long oldestSequence = journal.oldestSequence(namespace, partitionId);
+        final long newestSequence = journal.newestSequence(namespace, partitionId);
+
+        // fast forward if late and no store is configured
+        if (startSequence < oldestSequence && !journal.isPersistenceEnabled(namespace, partitionId)) {
+            startSequence = oldestSequence;
+        }
+
+        // jump back if too far in future
+        if (startSequence > newestSequence + 1) {
+            startSequence = newestSequence + 1;
+        }
+
         journal.isAvailableOrNextSequence(namespace, partitionId, startSequence);
         // we'll store the wait notify key because ICache destroys the record store
         // and the cache config is unavailable at the time operations are being
@@ -139,6 +143,7 @@ public abstract class EventJournalReadOperation<T, J> extends Operation
         }
 
         sequence = journal.readMany(namespace, partitionId, sequence, resultSet);
+        resultSet.setNextSequenceToReadFrom(sequence);
         return !resultSet.isMinSizeReached();
     }
 
@@ -177,20 +182,6 @@ public abstract class EventJournalReadOperation<T, J> extends Operation
         minSize = in.readInt();
         maxSize = in.readInt();
         startSequence = in.readLong();
-    }
-
-    @Override
-    public void logError(Throwable e) {
-        if (e instanceof StaleSequenceException) {
-            ILogger logger = getLogger();
-            if (logger.isFinestEnabled()) {
-                logger.finest(e.getMessage(), e);
-            } else if (logger.isFineEnabled()) {
-                logger.fine(e.getClass().getSimpleName() + ": " + e.getMessage());
-            }
-        } else {
-            super.logError(e);
-        }
     }
 
     public abstract String getServiceName();

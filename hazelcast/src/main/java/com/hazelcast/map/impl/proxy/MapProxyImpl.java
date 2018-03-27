@@ -26,7 +26,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.ManagedContext;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.internal.journal.EventJournalReader;
 import com.hazelcast.map.EntryProcessor;
@@ -590,29 +589,8 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         loadInternal(keys, null, replaceExistingValues);
     }
 
-    /**
-     * This method clears the map and calls deleteAll on MapStore which if connected to a database,
-     * will delete the records from that database.
-     * <p>
-     * If you wish to clear the map only without calling deleteAll, use #clearMapOnly.
-     *
-     * @see #clearMapOnly
-     */
     @Override
     public void clear() {
-        clearInternal();
-    }
-
-    /**
-     * This method clears the map. It does not invoke deleteAll on any associated MapStore.
-     *
-     * @see #clear
-     */
-    //TODO: why is this not tested?
-    //TODO: how come the implementation is the same as clear? I think this code is broken
-    //TODO: This method also isn't part of the IMap API
-    public void clearMapOnly() {
-        // TODO: need a different method here that does not call deleteAll()
         clearInternal();
     }
 
@@ -871,15 +849,11 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
      * @param predicate   the predicate which the entries must match. {@code null} value is not allowed
      * @param <R>         the return type
      * @return the iterator for the projected entries
-     * @throws UnsupportedOperationException when cluster version is less than {@link Versions#V3_9}
-     * @throws IllegalArgumentException      if the predicate is of type {@link PagingPredicate}
+     * @throws IllegalArgumentException if the predicate is of type {@link PagingPredicate}
      * @since 3.9
      */
     public <R> Iterator<R> iterator(int fetchSize, int partitionId, Projection<Map.Entry<K, V>, R> projection,
                                     Predicate<K, V> predicate) {
-        if (getNodeEngine().getClusterService().getClusterVersion().isLessThan(Versions.V3_9)) {
-            throw new UnsupportedOperationException("Iterate map by query is available when cluster version is 3.9 or higher");
-        }
         if (predicate instanceof PagingPredicate) {
             throw new IllegalArgumentException("Paging predicate is not allowed when iterating map by query");
         }
@@ -916,6 +890,10 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
             int partitionId,
             com.hazelcast.util.function.Predicate<? super EventJournalMapEvent<K, V>> predicate,
             Projection<? super EventJournalMapEvent<K, V>, ? extends T> projection) {
+        if (maxSize < minSize) {
+            throw new IllegalArgumentException("maxSize " + maxSize
+                    + " must be greater or equal to minSize " + minSize);
+        }
         final ManagedContext context = serializationService.getManagedContext();
         context.initialize(predicate);
         context.initialize(projection);

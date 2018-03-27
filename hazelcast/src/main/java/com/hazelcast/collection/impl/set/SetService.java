@@ -73,7 +73,7 @@ public class SetService extends CollectionService {
     }
 
     @Override
-    public Map<String, ? extends CollectionContainer> getContainerMap() {
+    public ConcurrentMap<String, ? extends CollectionContainer> getContainerMap() {
         return containerMap;
     }
 

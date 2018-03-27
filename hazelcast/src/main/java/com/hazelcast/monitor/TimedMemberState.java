@@ -19,12 +19,10 @@ package com.hazelcast.monitor;
 import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
 import com.eclipsesource.json.JsonValue;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.management.JsonSerializable;
 import com.hazelcast.monitor.impl.MemberStateImpl;
 
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
 
 import static com.hazelcast.util.JsonUtil.getArray;
@@ -38,7 +36,6 @@ public final class TimedMemberState implements Cloneable, JsonSerializable {
 
     long time;
     MemberStateImpl memberState;
-    List<String> instanceNames;
     List<String> memberList;
     boolean master;
     String clusterName;
@@ -78,14 +75,6 @@ public final class TimedMemberState implements Cloneable, JsonSerializable {
         return time;
     }
 
-    public List<String> getInstanceNames() {
-        return instanceNames;
-    }
-
-    public void setInstanceNames(List<String> longInstanceNames) {
-        this.instanceNames = longInstanceNames;
-    }
-
     public MemberStateImpl getMemberState() {
         return memberState;
     }
@@ -123,7 +112,6 @@ public final class TimedMemberState implements Cloneable, JsonSerializable {
         TimedMemberState state = (TimedMemberState) super.clone();
         state.setTime(time);
         state.setMemberState(memberState);
-        state.setInstanceNames(instanceNames);
         state.setMemberList(memberList);
         state.setMaster(master);
         state.setClusterName(clusterName);
@@ -139,11 +127,6 @@ public final class TimedMemberState implements Cloneable, JsonSerializable {
         root.add("master", master);
         root.add("time", time);
         root.add("clusterName", clusterName);
-        JsonArray instanceNames = new JsonArray();
-        for (String instanceName : this.instanceNames) {
-            instanceNames.add(instanceName);
-        }
-        root.add("instanceNames", instanceNames);
         if (memberList != null) {
             JsonArray members = new JsonArray();
             for (String member : memberList) {
@@ -153,12 +136,8 @@ public final class TimedMemberState implements Cloneable, JsonSerializable {
         }
         root.add("memberState", memberState.toJson());
         root.add("sslEnabled", sslEnabled);
-        if (memberState.getNodeState().getClusterVersion().isGreaterOrEqual(Versions.V3_9)) {
-            root.add("lite", lite);
-        }
-        if (memberState.getNodeState().getClusterVersion().isGreaterOrEqual(Versions.V3_9)) {
-            root.add("socketInterceptorEnabled", socketInterceptorEnabled);
-        }
+        root.add("lite", lite);
+        root.add("socketInterceptorEnabled", socketInterceptorEnabled);
         return root;
     }
 
@@ -167,11 +146,6 @@ public final class TimedMemberState implements Cloneable, JsonSerializable {
         time = getLong(json, "time");
         master = getBoolean(json, "master");
         clusterName = getString(json, "clusterName");
-        instanceNames = new LinkedList<String>();
-        final JsonArray jsonInstanceNames = getArray(json, "instanceNames");
-        for (JsonValue instanceName : jsonInstanceNames.values()) {
-            instanceNames.add(instanceName.asString());
-        }
         final JsonArray jsonMemberList = getArray(json, "memberList");
         memberList = new ArrayList<String>(jsonMemberList.size());
         for (JsonValue member : jsonMemberList.values()) {
@@ -181,18 +155,12 @@ public final class TimedMemberState implements Cloneable, JsonSerializable {
         memberState = new MemberStateImpl();
         memberState.fromJson(jsonMemberState);
         sslEnabled = getBoolean(json, "sslEnabled", false);
-        if (memberState.getNodeState().getClusterVersion().isGreaterOrEqual(Versions.V3_9)) {
-            lite = getBoolean(json, "lite");
-        }
-        if (memberState.getNodeState().getClusterVersion().isGreaterOrEqual(Versions.V3_9)) {
-            socketInterceptorEnabled = getBoolean(json, "socketInterceptorEnabled");
-        }
+        lite = getBoolean(json, "lite");
+        socketInterceptorEnabled = getBoolean(json, "socketInterceptorEnabled");
     }
 
     @Override
     public String toString() {
-        return "TimedMemberState{"
-                + LINE_SEPARATOR + '\t' + memberState
-                + LINE_SEPARATOR + "} Instances: " + instanceNames;
+        return "TimedMemberState{" + LINE_SEPARATOR + '\t' + memberState + LINE_SEPARATOR + "}";
     }
 }

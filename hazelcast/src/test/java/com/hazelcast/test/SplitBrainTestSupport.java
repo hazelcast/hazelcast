@@ -29,9 +29,10 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.tcp.FirewallingConnectionManager;
-import com.hazelcast.spi.SplitBrainMergePolicy;
-import com.hazelcast.spi.merge.MergingValueHolder;
+import com.hazelcast.spi.merge.MergingValue;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.properties.GroupProperty;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -112,11 +113,23 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
         instances = startInitialCluster(config, clusterSize);
     }
 
+    @After
+    public final void tearDown() {
+        onTearDown();
+    }
+
     /**
      * Override this method to execute initialization that may be required before instantiating the cluster. This is the
      * first method executed by {@code @Before SplitBrainTestSupport.setupInternals}.
      */
     protected void onBeforeSetup() {
+    }
+
+    /**
+     * Override this method to execute clean up that may be required after finishing the test. This is the
+     * first method executed by {@code @After SplitBrainTestSupport.tearDown}.
+     */
+    protected void onTearDown() {
     }
 
     /**
@@ -134,7 +147,7 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
      * @return the default Hazelcast configuration
      */
     protected Config config() {
-        return new Config()
+        return smallInstanceConfig()
                 .setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "5")
                 .setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "5");
     }
@@ -446,7 +459,7 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
     protected static class MergeIntegerValuesMergePolicy implements SplitBrainMergePolicy {
 
         @Override
-        public <T> T merge(MergingValueHolder<T> mergingValue, MergingValueHolder<T> existingValue) {
+        public <T> T merge(MergingValue<T> mergingValue, MergingValue<T> existingValue) {
             if (mergingValue.getDeserializedValue() instanceof Integer) {
                 return mergingValue.getValue();
             }

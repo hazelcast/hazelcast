@@ -27,9 +27,9 @@ import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
-import com.hazelcast.spi.SplitBrainMergePolicy;
 import com.hazelcast.spi.impl.merge.AbstractMergeRunnable;
-import com.hazelcast.spi.merge.MergingEntryHolder;
+import com.hazelcast.spi.merge.MergingEntry;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.function.BiConsumer;
 
@@ -39,9 +39,9 @@ import java.util.List;
 import java.util.Map;
 
 import static com.hazelcast.map.impl.EntryViews.createSimpleEntryView;
-import static com.hazelcast.spi.impl.merge.MergingHolders.createMergeHolder;
+import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntry;
 
-class MapMergeRunnable extends AbstractMergeRunnable<RecordStore, MergingEntryHolder<Data, Data>> {
+class MapMergeRunnable extends AbstractMergeRunnable<RecordStore, MergingEntry<Data, Data>> {
 
     private final MapServiceContext mapServiceContext;
     private final MapSplitBrainHandlerService mapSplitBrainHandlerService;
@@ -58,7 +58,7 @@ class MapMergeRunnable extends AbstractMergeRunnable<RecordStore, MergingEntryHo
     }
 
     @Override
-    protected void consumeStore(RecordStore store, BiConsumer<Integer, MergingEntryHolder<Data, Data>> consumer) {
+    protected void consumeStore(RecordStore store, BiConsumer<Integer, MergingEntry<Data, Data>> consumer) {
         long now = Clock.currentTimeMillis();
         int partitionId = store.getPartitionId();
 
@@ -67,7 +67,7 @@ class MapMergeRunnable extends AbstractMergeRunnable<RecordStore, MergingEntryHo
             Record record = iterator.next();
 
             Data dataValue = toData(record.getValue());
-            MergingEntryHolder<Data, Data> mergingEntry = createMergeHolder(getSerializationService(), record, dataValue);
+            MergingEntry<Data, Data> mergingEntry = createMergingEntry(getSerializationService(), record, dataValue);
             consumer.accept(partitionId, mergingEntry);
         }
     }
@@ -120,7 +120,7 @@ class MapMergeRunnable extends AbstractMergeRunnable<RecordStore, MergingEntryHo
     protected OperationFactory createMergeOperationFactory(String dataStructureName,
                                                            SplitBrainMergePolicy mergePolicy,
                                                            int[] partitions,
-                                                           List<MergingEntryHolder<Data, Data>>[] entries) {
+                                                           List<MergingEntry<Data, Data>>[] entries) {
         MapOperationProvider operationProvider = mapServiceContext.getMapOperationProvider(dataStructureName);
         return operationProvider.createMergeOperationFactory(dataStructureName, partitions, entries, mergePolicy);
     }

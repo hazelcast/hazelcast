@@ -20,9 +20,11 @@ import com.hazelcast.concurrent.semaphore.operations.AcquireOperation;
 import com.hazelcast.concurrent.semaphore.operations.AvailableOperation;
 import com.hazelcast.concurrent.semaphore.operations.DrainOperation;
 import com.hazelcast.concurrent.semaphore.operations.InitOperation;
+import com.hazelcast.concurrent.semaphore.operations.IncreaseOperation;
 import com.hazelcast.concurrent.semaphore.operations.ReduceOperation;
 import com.hazelcast.concurrent.semaphore.operations.ReleaseOperation;
 import com.hazelcast.core.ISemaphore;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
@@ -101,6 +103,20 @@ public class SemaphoreProxy extends AbstractDistributedObject<SemaphoreService> 
         checkNotNegative(reduction, "reduction can't be negative");
 
         Operation operation = new ReduceOperation(name, reduction)
+                .setPartitionId(partitionId);
+        InternalCompletableFuture<Object> future = invokeOnPartition(operation);
+        future.join();
+    }
+
+    @Override
+    public void increasePermits(int increase) {
+        if (getNodeEngine().getClusterService().getClusterVersion().isLessThan(Versions.V3_10)) {
+            throw new UnsupportedOperationException("Increasing permits is available when cluster version is 3.10 or higher");
+        }
+
+        checkNotNegative(increase, "increase can't be negative");
+
+        Operation operation = new IncreaseOperation(name, increase)
                 .setPartitionId(partitionId);
         InternalCompletableFuture<Object> future = invokeOnPartition(operation);
         future.join();

@@ -20,6 +20,7 @@ import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -34,7 +35,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 /**
  * Contains the configuration for an {@link com.hazelcast.core.IQueue}.
  */
-public class QueueConfig implements IdentifiedDataSerializable {
+public class QueueConfig implements IdentifiedDataSerializable, Versioned {
 
     /**
      * Default value for the maximum size of the Queue.

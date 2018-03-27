@@ -45,7 +45,7 @@ public class SmartClientInvocationService extends AbstractClientInvocationServic
             throw new TargetNotMemberException("Partition owner '" + owner + "' is not a member.");
         }
         invocation.getClientMessage().setPartitionId(partitionId);
-        Connection connection = getOrTriggerConnect(owner);
+        Connection connection = getOrTriggerConnect(owner, invocation.getClientMessage().acquiresResource());
         send(invocation, (ClientConnection) connection);
     }
 
@@ -55,7 +55,7 @@ public class SmartClientInvocationService extends AbstractClientInvocationServic
         if (randomAddress == null) {
             throw new IOException("No address found to invoke");
         }
-        Connection connection = getOrTriggerConnect(randomAddress);
+        Connection connection = getOrTriggerConnect(randomAddress, invocation.getClientMessage().acquiresResource());
         send(invocation, (ClientConnection) connection);
     }
 
@@ -65,12 +65,12 @@ public class SmartClientInvocationService extends AbstractClientInvocationServic
         if (!isMember(target)) {
             throw new TargetNotMemberException("Target '" + target + "' is not a member.");
         }
-        Connection connection = getOrTriggerConnect(target);
+        Connection connection = getOrTriggerConnect(target, invocation.getClientMessage().acquiresResource());
         invokeOnConnection(invocation, (ClientConnection) connection);
     }
 
-    private Connection getOrTriggerConnect(Address target) throws IOException {
-        Connection connection = connectionManager.getOrTriggerConnect(target);
+    private Connection getOrTriggerConnect(Address target, boolean acquiresResource) throws IOException {
+        Connection connection = connectionManager.getOrTriggerConnect(target, acquiresResource);
         if (connection == null) {
             throw new IOException("No available connection to address " + target);
         }

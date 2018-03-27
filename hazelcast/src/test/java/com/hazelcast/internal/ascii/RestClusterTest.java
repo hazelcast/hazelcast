@@ -216,7 +216,11 @@ public class RestClusterTest extends HazelcastTestSupport {
             assertEquals("{\"status\":\"success\"}", communicator.shutdownMember("dev", "dev-pass"));
         } catch (ConnectException ignored) {
             // if node shuts down before response is received, `java.net.ConnectException: Connection refused` is expected
+        } catch (NoHttpResponseException ignored) {
+            // `NoHttpResponseException` is also a possible outcome when a node shut down before it has a chance
+            // to send a response back to a client.
         }
+
 
         assertOpenEventually(shutdownLatch);
         assertFalse(instance.getLifecycleService().isRunning());

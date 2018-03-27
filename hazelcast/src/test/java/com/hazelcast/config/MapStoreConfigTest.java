@@ -264,6 +264,7 @@ public class MapStoreConfigTest extends HazelcastTestSupport {
 
     @Test
     public void testHashCode() {
+        assumeDifferentHashCodes();
         assertNotEquals(defaultCfg.hashCode(), cfgNotEnabled.hashCode());
         assertNotEquals(defaultCfg.hashCode(), cfgNotWriteCoalescing.hashCode());
         assertNotEquals(defaultCfg.hashCode(), cfgNonNullClassName.hashCode());
@@ -281,6 +282,7 @@ public class MapStoreConfigTest extends HazelcastTestSupport {
 
     @Test
     public void testEqualsAndHashCode() {
+        assumeDifferentHashCodes();
         EqualsVerifier.forClass(MapStoreConfig.class)
                 .allFieldsShouldBeUsedExcept("readOnly")
                 .suppress(Warning.NONFINAL_FIELDS, Warning.NULL_FIELDS)

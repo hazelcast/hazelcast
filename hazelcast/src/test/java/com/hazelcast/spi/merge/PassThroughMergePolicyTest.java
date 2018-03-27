@@ -16,7 +16,6 @@
 
 package com.hazelcast.spi.merge;
 
-import com.hazelcast.spi.SplitBrainMergePolicy;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -45,8 +44,8 @@ public class PassThroughMergePolicyTest {
 
     @Test
     public void merge_mergingNotNull() {
-        MergingValueHolder existing = mergingValueWithGivenValue(EXISTING);
-        MergingValueHolder merging = mergingValueWithGivenValue(MERGING);
+        MergingValue existing = mergingValueWithGivenValue(EXISTING);
+        MergingValue merging = mergingValueWithGivenValue(MERGING);
 
         assertEquals(MERGING, mergePolicy.merge(merging, existing));
     }
@@ -54,14 +53,14 @@ public class PassThroughMergePolicyTest {
     @Test
     @SuppressWarnings("ConstantConditions")
     public void merge_mergingNull() {
-        MergingValueHolder existing = mergingValueWithGivenValue(EXISTING);
-        MergingValueHolder merging = null;
+        MergingValue existing = mergingValueWithGivenValue(EXISTING);
+        MergingValue merging = null;
 
         assertEquals(EXISTING, mergePolicy.merge(merging, existing));
     }
 
-    private MergingValueHolder mergingValueWithGivenValue(String value) {
-        MergingValueHolder mergingValue = mock(MergingValueHolder.class);
+    private MergingValue mergingValueWithGivenValue(String value) {
+        MergingValue mergingValue = mock(MergingValue.class);
         try {
             when(mergingValue.getValue()).thenReturn(value);
             return mergingValue;

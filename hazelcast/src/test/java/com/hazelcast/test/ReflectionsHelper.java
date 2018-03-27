@@ -27,6 +27,7 @@ import org.reflections.util.ClasspathHelper;
 import org.reflections.util.ConfigurationBuilder;
 import org.reflections.util.FilterBuilder;
 
+import java.lang.reflect.Modifier;
 import java.net.URL;
 import java.util.Collection;
 import java.util.Iterator;
@@ -36,8 +37,9 @@ import java.util.Set;
 import static java.util.Collections.singletonList;
 
 /**
- * Initialize once org.reflections library to avoid duplicate work scanning the classpath from individual tests.
+ * Initialize the org.reflections library once to avoid duplicate work on scanning the classpath from individual tests.
  */
+@SuppressWarnings("WeakerAccess")
 public final class ReflectionsHelper {
 
     public static final Reflections REFLECTIONS;
@@ -66,7 +68,23 @@ public final class ReflectionsHelper {
     private ReflectionsHelper() {
     }
 
-    // Overrides default implementation of getSubTypesOf to obtain also transitive subtypes of given class
+    /**
+     * Removes abstract classes and interfaces from the given set.
+     */
+    public static void filterNonConcreteClasses(Set<? extends Class> classes) {
+        Iterator<? extends Class> iterator = classes.iterator();
+        while (iterator.hasNext()) {
+            Class<?> klass = iterator.next();
+            if (klass.isInterface() || Modifier.isAbstract(klass.getModifiers())) {
+                iterator.remove();
+            }
+        }
+    }
+
+    /**
+     * Overrides the default implementation of {@link Reflections#getSubTypesOf(Class)}
+     * to also obtain transitive subtypes of the given class.
+     */
     public static class ReflectionsTransitive extends Reflections {
 
         public ReflectionsTransitive(Configuration configuration) {
@@ -84,26 +102,33 @@ public final class ReflectionsHelper {
     }
 
     public static class HierarchyTraversingSubtypesScanner extends AbstractScanner {
+
         /**
-         * creates new HierarchyTraversingSubtypesScanner. will exclude direct Object subtypes
+         * Creates new HierarchyTraversingSubtypesScanner.
+         * <p>
+         * Excludes direct Object subtypes.
          */
         public HierarchyTraversingSubtypesScanner() {
-            this(true); //exclude direct Object subtypes by default
+            // exclude direct Object subtypes by default
+            this(true);
         }
 
         /**
-         * creates new HierarchyTraversingSubtypesScanner.
+         * Creates a new HierarchyTraversingSubtypesScanner.
          *
-         * @param excludeObjectClass if false, include direct {@link Object} subtypes in results.
+         * @param excludeObjectClass excludes direct {@link Object} subtypes in results if {@code true}
          */
         public HierarchyTraversingSubtypesScanner(boolean excludeObjectClass) {
             if (excludeObjectClass) {
-                filterResultsBy(new FilterBuilder().exclude(Object.class.getName())); //exclude direct Object subtypes
+                // exclude direct Object subtypes
+                filterResultsBy(new FilterBuilder().exclude(Object.class.getName()));
             }
         }
 
-        // depending on Reflections configuration, cls is either a regular Class or a javassist ClassFile
-        @SuppressWarnings({"unchecked"})
+        /**
+         * @param cls depending on the Reflections configuration, this is either a regular Class or a javassist ClassFile
+         */
+        @SuppressWarnings("unchecked")
         public void scan(final Object cls) {
             String className = getMetadataAdapter().getClassName(cls);
 

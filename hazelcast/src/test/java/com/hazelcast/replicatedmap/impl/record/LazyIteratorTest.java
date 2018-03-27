@@ -17,8 +17,8 @@
 package com.hazelcast.replicatedmap.impl.record;
 
 import com.hazelcast.replicatedmap.merge.ReplicatedMapMergePolicy;
-import com.hazelcast.spi.SplitBrainMergePolicy;
-import com.hazelcast.spi.merge.MergingEntryHolder;
+import com.hazelcast.spi.merge.MergingEntry;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -535,6 +535,11 @@ public class LazyIteratorTest extends HazelcastTestSupport {
         }
 
         @Override
+        public int getPartitionId() {
+            return 0;
+        }
+
+        @Override
         public Object remove(Object key) {
             return null;
         }
@@ -688,7 +693,7 @@ public class LazyIteratorTest extends HazelcastTestSupport {
         }
 
         @Override
-        public boolean merge(MergingEntryHolder<Object, Object> mergingEntry, SplitBrainMergePolicy mergePolicy) {
+        public boolean merge(MergingEntry<Object, Object> mergingEntry, SplitBrainMergePolicy mergePolicy) {
             return false;
         }
     }

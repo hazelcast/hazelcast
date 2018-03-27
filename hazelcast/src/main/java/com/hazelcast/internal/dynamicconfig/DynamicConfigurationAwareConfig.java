@@ -59,7 +59,6 @@ import com.hazelcast.config.UserCodeDeploymentConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.internal.cluster.ClusterService;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.security.SecurityService;
 import com.hazelcast.util.StringUtil;
 
@@ -627,12 +626,6 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     @Override
     public Config addAtomicLongConfig(AtomicLongConfig atomicLongConfig) {
-        // RU_COMPAT_3_9
-        if (clusterService.getClusterVersion().isLessThan(Versions.V3_10)) {
-            throw new ConfigurationException("Cannot add AtomicLongConfig while the cluster is not running version "
-                    + Versions.V3_10);
-        }
-
         checkStaticConfigurationDoesNotExist(staticConfig.getAtomicLongConfigs(), atomicLongConfig.getName(), atomicLongConfig);
         configurationService.broadcastConfig(atomicLongConfig);
         return this;
@@ -676,12 +669,6 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     @Override
     public Config addAtomicReferenceConfig(AtomicReferenceConfig atomicReferenceConfig) {
-        // RU_COMPAT_3_9
-        if (clusterService.getClusterVersion().isLessThan(Versions.V3_10)) {
-            throw new ConfigurationException("Cannot add AtomicReferenceConfig while the cluster is not running version "
-                    + Versions.V3_10);
-        }
-
         checkStaticConfigurationDoesNotExist(staticConfig.getAtomicReferenceConfigs(), atomicReferenceConfig.getName(),
                 atomicReferenceConfig);
         configurationService.broadcastConfig(atomicReferenceConfig);
@@ -726,12 +713,6 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     @Override
     public Config addCountDownLatchConfig(CountDownLatchConfig countDownLatchConfig) {
-        // RU_COMPAT_3_9
-        if (clusterService.getClusterVersion().isLessThan(Versions.V3_10)) {
-            throw new ConfigurationException("Cannot add CountDownLatchConfig while the cluster is not running version "
-                    + Versions.V3_10);
-        }
-
         checkStaticConfigurationDoesNotExist(staticConfig.getCountDownLatchConfigs(), countDownLatchConfig.getName(),
                 countDownLatchConfig);
         configurationService.broadcastConfig(countDownLatchConfig);

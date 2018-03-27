@@ -2,6 +2,13 @@ This document lists the new features, enhancements, fixed issues and, removed or
 
 1. Enhancements
 
+==== 3.10-BETA-2 ====
+
+- Added ID count to flake ID generators statistics. [#12612]
+- It is still required to provide a group and password while configuring with Spring: the attribute required should be removed from the tag group both for name and password elements. [#12462]
+
+==== 3.10-BETA-1 ====
+
 - Split-Brain Healing for Hazelcast Data Structures with High-Density (HD) Memory Store: Added implementations to allow the merging of HD Memory Store backed data structures.
 - Multiple Users/Roles in a Single Security Mapping: Added support for allowing multiple principals, i.e., users or roles/groups, to be attributed to a security realm. Please see the Authorization section for more information.
 - Extended Split-Brain Protection: Split-Brain protection has been implemented for all the Hazelcast data structures (it was only for IMap, ICache, IQueue and ILock before 3.10). Please see the Distributed Data Structures chapter.
@@ -29,6 +36,39 @@ The following are the other improvements performed to solve the enhancement issu
 
 
 2. Fixes
+
+==== 3.10-BETA-2 ====
+
+- ReplicatedMapConfig must not be mutated while constructing read-only variant. [#12620]
+- Exception in Node constructor doesn't shutdown services properly. [#12587]
+- CacheNotExistsException must be thrown when cache configuration does not exist. [#12593]
+- Index configurations must be respected in query caches. [#12577]
+- Issues with replicated map and lite members: (i) replicated map cannot be used after lite member promotion, (ii) replicated map runs into NPE after a split-brain healing. [#12537]
+- Eviction causes absence of an entry in IMap and MapStore at the same time: just after the method evictAll is invoked, the map is cleared and the eviction is done in a different thread. This causes the objects not being available both IMap and MapStore. [#12455]
+- JCache 1.1 TCK: the test org.jsr107.tck.event.CacheListenerTest passes, but there are assertion errors in the log. [#12390]
+- An index aware predicate does not invoke its apply method: only the index operation is performed and the apply filter is silently ignored. [#12352]
+- Query with predicates on IMap does not use index when running locally. [#12351]
+- EventJournal loses data if two members terminate: Scenario is starting a cluster with four members and a client, producing data for the event journal, terminating one member and terminating another member after some time. When checking the total count of events, it is seen that some data is lost. [#12300]
+- When minority of members are removed from the network, read/write failures occur on the cluster. [#12240]
+- A merge policy cannot be defined for replicated maps using declarative configuration (XML). [#12223]
+- All dynamic configurations are sent out in a prejoin operation regardless of the cluster version. [#12151]
+- When using PagingPredicate, setting a too big page ends up with IllegalArgumentException. [#12079]
+- There is a performance regression on predicate queries for 3.9.1 and 3.8.7 versions. [#12018]
+- Each new configuration method introduced in 3.10 must be overridden in the client-side dynamic configuration support class. [#12010]
+- For some of the scheduled jobs, the method getLastRunDuration() returns negative values for quick executions. [#11929]
+- Exception in ResponseThreadRunnable causes the REST API to fail: When there is an exception while processing a single command, the entire thread is killed. It causes an unrecoverable condition when the system does not process any incoming REST commands, and hence the memory leak (incoming commands are accumulated in blockingQueue). [#11722]
+- Accessing a query cache with a reasonable amount of data can result in an NPE. [#11675]
+- IMap.add and IMap.remove: EntryListener randomly hangs. [#11470]
+- Members not rejoining cluster after an elongated network disconnectivity: Assuming that, initially there is a cluster of 8 members and when the connectivity for a member is broken it gets eliminated from the cluster. The original cluster contains now 7 members and this is working as expected. However, when the connectivity is restored, the disconnected member is not able to join the original cluster and remains isolated. [#11267]
+- There is a minor decrease in the performance of indexed searches for 3.7.6 and higher versions. [#11231]
+- The code comments for time-to-live expiration is not clear. [#11787]
+- When setting the same key value twice, NPE is thrown on the member. [#10556]
+- JCache fails to initialize when the type of a key or value is not available on a remote member. [#8972]
+- In Hazelcast 3.7, PollOperation invocation is failing to complete due to operation-heartbeat-timeout. [#8831]
+- Custom LoggerFactory is instantiating two times. [#5641]
+
+
+==== 3.10-BETA-1 ====
 
 - Health Monitor reports load statistics incorrectly. [#12190]
 - Time-to-live for IMap is not working as documented: outdated warnings should be removed from the code comments. [#12144]

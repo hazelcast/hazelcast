@@ -29,9 +29,9 @@ import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.ServiceNamespace;
 import com.hazelcast.spi.ServiceNamespaceAware;
-import com.hazelcast.spi.SplitBrainMergePolicy;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
-import com.hazelcast.spi.merge.MergingEntryHolder;
+import com.hazelcast.spi.merge.MergingEntry;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.serialization.SerializationService;
 
 import java.io.IOException;
@@ -49,7 +49,7 @@ import static com.hazelcast.util.MapUtil.createHashMap;
  */
 public class CacheMergeOperation extends AbstractNamedOperation implements BackupAwareOperation, ServiceNamespaceAware {
 
-    private List<MergingEntryHolder<Data, Data>> mergingEntries;
+    private List<MergingEntry<Data, Data>> mergingEntries;
     private SplitBrainMergePolicy mergePolicy;
 
     private transient SerializationService serializationService;
@@ -62,7 +62,7 @@ public class CacheMergeOperation extends AbstractNamedOperation implements Backu
     public CacheMergeOperation() {
     }
 
-    public CacheMergeOperation(String name, List<MergingEntryHolder<Data, Data>> mergingEntries,
+    public CacheMergeOperation(String name, List<MergingEntry<Data, Data>> mergingEntries,
                                SplitBrainMergePolicy mergePolicy) {
         super(name);
         this.mergingEntries = mergingEntries;
@@ -85,12 +85,12 @@ public class CacheMergeOperation extends AbstractNamedOperation implements Backu
 
     @Override
     public void run() {
-        for (MergingEntryHolder<Data, Data> mergingEntry : mergingEntries) {
+        for (MergingEntry<Data, Data> mergingEntry : mergingEntries) {
             merge(mergingEntry);
         }
     }
 
-    private void merge(MergingEntryHolder<Data, Data> mergingEntry) {
+    private void merge(MergingEntry<Data, Data> mergingEntry) {
         Data dataKey = mergingEntry.getKey();
 
         CacheRecord backupRecord = cache.merge(mergingEntry, mergePolicy);
@@ -137,7 +137,7 @@ public class CacheMergeOperation extends AbstractNamedOperation implements Backu
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeInt(mergingEntries.size());
-        for (MergingEntryHolder<Data, Data> mergingEntry : mergingEntries) {
+        for (MergingEntry<Data, Data> mergingEntry : mergingEntries) {
             out.writeObject(mergingEntry);
         }
         out.writeObject(mergePolicy);
@@ -147,9 +147,9 @@ public class CacheMergeOperation extends AbstractNamedOperation implements Backu
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         int size = in.readInt();
-        mergingEntries = new ArrayList<MergingEntryHolder<Data, Data>>(size);
+        mergingEntries = new ArrayList<MergingEntry<Data, Data>>(size);
         for (int i = 0; i < size; i++) {
-            MergingEntryHolder<Data, Data> mergingEntry = in.readObject();
+            MergingEntry<Data, Data> mergingEntry = in.readObject();
             mergingEntries.add(mergingEntry);
         }
         mergePolicy = in.readObject();

@@ -25,7 +25,7 @@ import com.hazelcast.core.Member;
  */
 public class BatchIMapEvent implements IMapEvent {
 
-    private BatchEventData batchEventData;
+    private final BatchEventData batchEventData;
 
     public BatchIMapEvent(BatchEventData batchEventData) {
         this.batchEventData = batchEventData;

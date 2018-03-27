@@ -21,7 +21,6 @@ import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.VersionAware;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -30,9 +29,9 @@ import com.hazelcast.ringbuffer.StaleSequenceException;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.ObjectNamespace;
-import com.hazelcast.spi.SplitBrainMergePolicy;
 import com.hazelcast.spi.WaitNotifyKey;
-import com.hazelcast.spi.merge.MergingValueHolder;
+import com.hazelcast.spi.merge.MergingEntry;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.serialization.SerializationService;
 
 import java.io.IOException;
@@ -40,7 +39,6 @@ import java.io.IOException;
 import static com.hazelcast.config.InMemoryFormat.BINARY;
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
 import static com.hazelcast.config.InMemoryFormat.values;
-import static com.hazelcast.internal.cluster.Versions.V3_9;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -506,12 +504,7 @@ public class RingbufferContainer<T, E> implements IdentifiedDataSerializable, No
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        assert !out.getVersion().isUnknown();
         boolean ttlEnabled = expirationPolicy != null;
-        if (!isGreaterOrEqualV39(out)) {
-            // 3.8 requires ringbuffer name at this point
-            out.writeUTF(namespace.getObjectName());
-        }
         out.writeLong(ringbuffer.tailSequence());
         out.writeLong(ringbuffer.headSequence());
         out.writeInt((int) ringbuffer.getCapacity());
@@ -543,10 +536,6 @@ public class RingbufferContainer<T, E> implements IdentifiedDataSerializable, No
     @Override
     @SuppressWarnings("unchecked")
     public void readData(ObjectDataInput in) throws IOException {
-        if (!isGreaterOrEqualV39(in)) {
-            // used to be ringbuffer name, it is replaced with namespace in 3.9 which is set in the constructor
-            in.readUTF();
-        }
         final long tailSequence = in.readLong();
         final long headSequence = in.readLong();
         final int capacity = in.readInt();
@@ -576,10 +565,6 @@ public class RingbufferContainer<T, E> implements IdentifiedDataSerializable, No
                 expirationPolicy.setExpirationAt(seq, delta + now);
             }
         }
-    }
-
-    private static boolean isGreaterOrEqualV39(VersionAware versionAware) {
-        return versionAware.getVersion().isGreaterOrEqual(V3_9);
     }
 
     Ringbuffer<E> getRingbuffer() {
@@ -615,13 +600,20 @@ public class RingbufferContainer<T, E> implements IdentifiedDataSerializable, No
     }
 
     /**
-     * Merges the given {@link MergingValueHolder} via the given {@link SplitBrainMergePolicy}.
+     * Clears the data in the ringbuffer.
+     */
+    public void clear() {
+        ringbuffer.clear();
+    }
+
+    /**
+     * Merges the given {@link MergingEntry} via the given {@link SplitBrainMergePolicy}.
      *
-     * @param mergingValue the {@link MergingValueHolder} instance to merge
+     * @param mergingEntry the {@link MergingEntry} instance to merge
      * @param mergePolicy  the {@link SplitBrainMergePolicy} instance to apply
      * @return the sequence ID of the merged item or {@code -1} if no item was merged
      */
-    public long merge(MergingValueHolder<E> mergingValue, SplitBrainMergePolicy mergePolicy) {
-        return ringbuffer.merge(mergingValue, mergePolicy, remainingCapacity());
+    public long merge(MergingEntry<Long, E> mergingEntry, SplitBrainMergePolicy mergePolicy) {
+        return ringbuffer.merge(mergingEntry, mergePolicy, remainingCapacity());
     }
 }

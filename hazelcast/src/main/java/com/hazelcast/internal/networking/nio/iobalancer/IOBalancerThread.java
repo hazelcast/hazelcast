@@ -18,10 +18,9 @@ package com.hazelcast.internal.networking.nio.iobalancer;
 
 import com.hazelcast.logging.ILogger;
 
-import java.util.concurrent.TimeUnit;
-
 import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.ThreadUtil.createThreadName;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 class IOBalancerThread extends Thread {
     private static final String THREAD_NAME_PREFIX = "IOBalancerThread";
@@ -48,9 +47,9 @@ class IOBalancerThread extends Thread {
         try {
             log.finest("Starting IOBalancer thread");
             while (!shutdown) {
-                ioBalancer.checkReadHandlers();
-                ioBalancer.checkWriteHandlers();
-                TimeUnit.SECONDS.sleep(balancerIntervalSeconds);
+                ioBalancer.checkInboundPipelines();
+                ioBalancer.checkOutboundPipelines();
+                SECONDS.sleep(balancerIntervalSeconds);
             }
         } catch (InterruptedException e) {
             log.finest("IOBalancer thread stopped");

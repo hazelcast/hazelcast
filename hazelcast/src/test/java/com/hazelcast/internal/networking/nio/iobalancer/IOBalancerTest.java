@@ -40,10 +40,10 @@ public class IOBalancerTest {
     @Test
     public void whenChannelAdded_andDisabled_thenSkipTaskCreation() {
         IOBalancer ioBalancer = new IOBalancer(new NioThread[1], new NioThread[1], "foo", 1, loggingService);
-        MigratablePipeline readHandler = mock(MigratablePipeline.class);
-        MigratablePipeline writeHandler = mock(MigratablePipeline.class);
+        MigratablePipeline inboundPipeline = mock(MigratablePipeline.class);
+        MigratablePipeline outboundPipeline = mock(MigratablePipeline.class);
 
-        ioBalancer.channelAdded(readHandler, writeHandler);
+        ioBalancer.channelAdded(inboundPipeline, outboundPipeline);
 
         assertTrue(ioBalancer.getInLoadTracker().tasks.isEmpty());
         assertTrue(ioBalancer.getOutLoadTracker().tasks.isEmpty());
@@ -53,10 +53,10 @@ public class IOBalancerTest {
     @Test
     public void whenChannelRemoved_andDisabled_thenSkipTaskCreation() {
         IOBalancer ioBalancer = new IOBalancer(new NioThread[1], new NioThread[1], "foo", 1, loggingService);
-        MigratablePipeline readHandler = mock(MigratablePipeline.class);
-        MigratablePipeline writeHandler = mock(MigratablePipeline.class);
+        MigratablePipeline inboundPipeline = mock(MigratablePipeline.class);
+        MigratablePipeline outboundPipelines = mock(MigratablePipeline.class);
 
-        ioBalancer.channelRemoved(readHandler, writeHandler);
+        ioBalancer.channelRemoved(inboundPipeline, outboundPipelines);
 
         assertTrue(ioBalancer.getInLoadTracker().tasks.isEmpty());
         assertTrue(ioBalancer.getOutLoadTracker().tasks.isEmpty());

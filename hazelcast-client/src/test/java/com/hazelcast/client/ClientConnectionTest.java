@@ -196,12 +196,20 @@ public class ClientConnectionTest extends HazelcastTestSupport {
         ClientConfig config = new ClientConfig();
         WaitingCredentials credentials = new WaitingCredentials("dev", "dev-pass", countDownLatch);
         config.setCredentials(credentials);
-        HazelcastInstance client = hazelcastFactory.newHazelcastClient(config);
+        final HazelcastInstance client = hazelcastFactory.newHazelcastClient(config);
         final IExecutorService executorService = client.getExecutorService(randomString());
 
         credentials.waitFlag.set(true);
 
         final HazelcastInstance secondInstance = hazelcastFactory.newHazelcastInstance();
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(2, client.getCluster().getMembers().size());
+            }
+        });
+
         final AtomicReference<Future> atomicReference = new AtomicReference<Future>();
         Thread thread = new Thread(new Runnable() {
             @Override

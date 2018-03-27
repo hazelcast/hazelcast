@@ -1727,6 +1727,7 @@ public class ClientCompatibilityNullTest_1_6 {
                 assertTrue(isEqual(anInt, params.readCount));
                 assertTrue(isEqual(datas, params.items));
                 assertTrue(isEqual(null, params.itemSeqs));
+                assertTrue(isEqual(aLong, params.nextSeq));
 }
 
 
@@ -5754,6 +5755,7 @@ public class ClientCompatibilityNullTest_1_6 {
                 assertTrue(isEqual(anInt, params.readCount));
                 assertTrue(isEqual(datas, params.items));
                 assertTrue(isEqual(null, params.itemSeqs));
+                assertTrue(isEqual(aLong, params.nextSeq));
 }
 
 
@@ -6183,6 +6185,7 @@ public class ClientCompatibilityNullTest_1_6 {
                 assertTrue(isEqual(anInt, params.readCount));
                 assertTrue(isEqual(datas, params.items));
                 assertTrue(isEqual(null, params.itemSeqs));
+                assertTrue(isEqual(aLong, params.nextSeq));
 }
 
 

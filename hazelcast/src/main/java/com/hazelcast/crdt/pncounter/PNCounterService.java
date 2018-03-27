@@ -18,7 +18,7 @@ package com.hazelcast.crdt.pncounter;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.PNCounterConfig;
-import com.hazelcast.core.Memoizer;
+import com.hazelcast.internal.util.Memoizer;
 import com.hazelcast.crdt.CRDTReplicationAwareService;
 import com.hazelcast.crdt.CRDTReplicationContainer;
 import com.hazelcast.crdt.MutationDisallowedException;

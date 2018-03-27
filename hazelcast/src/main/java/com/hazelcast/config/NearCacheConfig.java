@@ -40,6 +40,21 @@ public class NearCacheConfig implements IdentifiedDataSerializable, Serializable
     public static final InMemoryFormat DEFAULT_MEMORY_FORMAT = InMemoryFormat.BINARY;
 
     /**
+     * Do not serialize by default
+     */
+    public static final boolean DEFAULT_SERIALIZE_KEYS = false;
+
+    /**
+     * @see LocalUpdatePolicy#INVALIDATE
+     */
+    public static final boolean DEFAULT_INVALIDATE_ON_CHANGE = true;
+
+    /**
+     * @see LocalUpdatePolicy#INVALIDATE
+     */
+    public static final LocalUpdatePolicy DEFAULT_LOCAL_UPDATE_POLICY = LocalUpdatePolicy.INVALIDATE;
+
+    /**
      * Default value of the time to live in seconds.
      */
     public static final int DEFAULT_TTL_SECONDS = 0;
@@ -92,15 +107,15 @@ public class NearCacheConfig implements IdentifiedDataSerializable, Serializable
 
     private String name = "default";
     private InMemoryFormat inMemoryFormat = DEFAULT_MEMORY_FORMAT;
-    private boolean serializeKeys;
-    private boolean invalidateOnChange = true;
+    private boolean serializeKeys = DEFAULT_SERIALIZE_KEYS;
+    private boolean invalidateOnChange = DEFAULT_INVALIDATE_ON_CHANGE;
     private int timeToLiveSeconds = DEFAULT_TTL_SECONDS;
     private int maxIdleSeconds = DEFAULT_MAX_IDLE_SECONDS;
     private int maxSize = EvictionConfig.DEFAULT_MAX_ENTRY_COUNT_FOR_ON_HEAP_MAP;
     private String evictionPolicy = EvictionConfig.DEFAULT_EVICTION_POLICY.name();
     private EvictionConfig evictionConfig = new EvictionConfig();
     private boolean cacheLocalEntries;
-    private LocalUpdatePolicy localUpdatePolicy = LocalUpdatePolicy.INVALIDATE;
+    private LocalUpdatePolicy localUpdatePolicy = DEFAULT_LOCAL_UPDATE_POLICY;
     private NearCachePreloaderConfig preloaderConfig = new NearCachePreloaderConfig();
 
     private NearCacheConfigReadOnly readOnly;
@@ -264,7 +279,7 @@ public class NearCacheConfig implements IdentifiedDataSerializable, Serializable
 
     /**
      * Checks if the Near Cache key is stored in serialized format or by-reference.
-     * <p>
+     *
      * <b>NOTE:</b> When the in-memory-format is {@code NATIVE}, this method will always return {@code true}.
      *
      * @return {@code true} if the key is stored in serialized format or in-memory-format is {@code NATIVE},
@@ -276,7 +291,7 @@ public class NearCacheConfig implements IdentifiedDataSerializable, Serializable
 
     /**
      * Sets if the Near Cache key is stored in serialized format or by-reference.
-     * <p>
+     *
      * <b>NOTE:</b> It's not supported to disable the key serialization when the in-memory-format is {@code NATIVE}.
      * You can still set this value to {@code false}, but it will have no effect.
      *
@@ -430,7 +445,7 @@ public class NearCacheConfig implements IdentifiedDataSerializable, Serializable
      * <li>{@code NONE} (no extra eviction, time-to-live-seconds or max-idle-seconds may still apply)</li>
      * <li>{@code RANDOM} (random entry)</li>
      * </ul>
-     *
+     * <p>
      * {@code LRU} is the default.
      * Regardless of the eviction policy used, time-to-live-seconds and max-idle-seconds will still apply.
      *

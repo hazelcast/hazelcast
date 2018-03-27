@@ -21,7 +21,6 @@ import com.hazelcast.client.impl.protocol.codec.ClientDeployClassesCodec;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.Node;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.usercodedeployment.UserCodeDeploymentService;
 import com.hazelcast.internal.usercodedeployment.impl.operation.DeployClassesOperation;
 import com.hazelcast.nio.Connection;
@@ -51,9 +50,6 @@ public class DeployClassesMessageTask extends AbstractMultiTargetMessageTask<Cli
 
     @Override
     protected Supplier<Operation> createOperationSupplier() {
-        if (nodeEngine.getClusterService().getClusterVersion().isLessThan(Versions.V3_9)) {
-            throw new UnsupportedOperationException("Client user code deployment available in 3.9");
-        }
         return this;
     }
 

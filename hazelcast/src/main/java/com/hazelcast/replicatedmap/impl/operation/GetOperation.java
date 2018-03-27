@@ -44,9 +44,11 @@ public class GetOperation extends AbstractNamedSerializableOperation implements 
     public void run() throws Exception {
         ReplicatedMapService service = getService();
         ReplicatedRecordStore store = service.getReplicatedRecordStore(name, false, getPartitionId());
-        ReplicatedRecord record = store.getReplicatedRecord(key);
-        if (record != null) {
-            response = record.getValue();
+        if (store != null) {
+            ReplicatedRecord record = store.getReplicatedRecord(key);
+            if (record != null) {
+                response = record.getValue();
+            }
         }
     }
 

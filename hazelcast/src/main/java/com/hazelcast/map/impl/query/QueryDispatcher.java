@@ -18,7 +18,6 @@ package com.hazelcast.map.impl.query;
 
 import com.hazelcast.core.Member;
 import com.hazelcast.internal.cluster.ClusterService;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.LocalMapStatsProvider;
@@ -29,7 +28,6 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.util.executor.ManagedExecutorService;
-import com.hazelcast.version.Version;
 
 import java.util.ArrayList;
 import java.util.BitSet;
@@ -97,7 +95,7 @@ final class QueryDispatcher {
         Collection<Member> members = clusterService.getMembers(DATA_MEMBER_SELECTOR);
         List<Future<Result>> futures = new ArrayList<Future<Result>>(members.size());
         for (Member member : members) {
-            Operation operation = createQueryOperation(query, clusterService.getClusterVersion());
+            Operation operation = createQueryOperation(query);
             Future<Result> future = operationService.invokeOnTarget(
                     MapService.SERVICE_NAME, operation, member.getAddress());
             futures.add(future);
@@ -105,14 +103,8 @@ final class QueryDispatcher {
         return futures;
     }
 
-    private Operation createQueryOperation(Query query, Version clusterVersion) {
-        // for rolling-upgrade compatibility, the else-clause can be deleted in 4.0
-        boolean isVersion39orGreater = clusterVersion.isGreaterOrEqual(Versions.V3_9);
-        if (isVersion39orGreater) {
-            return mapServiceContext.getMapOperationProvider(query.getMapName()).createQueryOperation(query);
-        } else {
-            return new QueryOperation(query);
-        }
+    private Operation createQueryOperation(Query query) {
+        return mapServiceContext.getMapOperationProvider(query.getMapName()).createQueryOperation(query);
     }
 
     protected List<Future<Result>> dispatchPartitionScanQueryOnOwnerMemberOnPartitionThread(
@@ -130,7 +122,7 @@ final class QueryDispatcher {
     }
 
     protected Future<Result> dispatchPartitionScanQueryOnOwnerMemberOnPartitionThread(Query query, int partitionId) {
-        Operation op = createQueryPartitionOperation(query, clusterService.getClusterVersion());
+        Operation op = createQueryPartitionOperation(query);
         op.setPartitionId(partitionId);
         try {
             return operationService.invokeOnPartition(MapService.SERVICE_NAME, op, partitionId);
@@ -139,14 +131,8 @@ final class QueryDispatcher {
         }
     }
 
-    private Operation createQueryPartitionOperation(Query query, Version clusterVersion) {
-        // for rolling-upgrade compatibility, the else-clause can be deleted in 4.0
-        boolean isVersion39orGreater = clusterVersion.isGreaterOrEqual(Versions.V3_9);
-        if (isVersion39orGreater) {
-            return mapServiceContext.getMapOperationProvider(query.getMapName()).createQueryPartitionOperation(query);
-        } else {
-            return new QueryPartitionOperation(query);
-        }
+    private Operation createQueryPartitionOperation(Query query) {
+        return mapServiceContext.getMapOperationProvider(query.getMapName()).createQueryPartitionOperation(query);
     }
 
     private static boolean shouldSkipPartitionsQuery(BitSet partitionIds) {

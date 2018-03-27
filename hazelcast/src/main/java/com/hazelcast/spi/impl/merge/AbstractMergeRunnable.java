@@ -29,7 +29,7 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.SplitBrainHandlerService;
-import com.hazelcast.spi.SplitBrainMergePolicy;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.util.MutableLong;
 import com.hazelcast.util.function.BiConsumer;
@@ -41,9 +41,10 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.internal.cluster.Versions.V3_10;
+import static com.hazelcast.internal.config.ConfigValidator.checkMergePolicySupportsInMemoryFormat;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static java.lang.String.format;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -57,6 +58,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 public abstract class AbstractMergeRunnable<Store, MergingItem> implements Runnable, Disposable {
 
     private static final long TIMEOUT_FACTOR = 500;
+    private static final long MINIMAL_TIMEOUT_MILLIS = TimeUnit.SECONDS.toMillis(5);
 
     private final Semaphore semaphore = new Semaphore(0);
 
@@ -73,7 +75,6 @@ public abstract class AbstractMergeRunnable<Store, MergingItem> implements Runna
     protected AbstractMergeRunnable(String serviceName, Map<String, Collection<Store>> collectedStores,
                                     Map<String, Collection<Store>> collectedStoresWithLegacyPolicies,
                                     Collection<Store> backupStores, NodeEngine nodeEngine) {
-
         this.serviceName = serviceName;
         this.logger = nodeEngine.getLogger(getClass());
         this.partitionService = nodeEngine.getPartitionService();
@@ -140,11 +141,10 @@ public abstract class AbstractMergeRunnable<Store, MergingItem> implements Runna
 
         for (Map.Entry<String, Collection<Store>> entry : collectedStoresWithLegacyPolicies.entrySet()) {
             String dataStructureName = entry.getKey();
-
-            // although configuration fails fast,
-            // keep this assertion here as a paranoiac check
-            assert getInMemoryFormat(dataStructureName) != NATIVE
-                    : "Legacy policies cannot be used to merge NATIVE data";
+            if (!checkMergePolicySupportsInMemoryFormat(dataStructureName, getMergePolicy(dataStructureName),
+                    getInMemoryFormat(dataStructureName), clusterService.getClusterVersion(), false, logger)) {
+                continue;
+            }
 
             Collection<Store> recordStores = entry.getValue();
             for (Store recordStore : recordStores) {
@@ -157,7 +157,8 @@ public abstract class AbstractMergeRunnable<Store, MergingItem> implements Runna
 
     private void waitMergeEnd(int mergedCount) {
         try {
-            if (!semaphore.tryAcquire(mergedCount, mergedCount * TIMEOUT_FACTOR, MILLISECONDS)) {
+            long timeoutMillis = Math.max(mergedCount * TIMEOUT_FACTOR, MINIMAL_TIMEOUT_MILLIS);
+            if (!semaphore.tryAcquire(mergedCount, timeoutMillis, MILLISECONDS)) {
                 logger.warning("Split-brain healing didn't finish within the timeout...");
             }
         } catch (InterruptedException e) {

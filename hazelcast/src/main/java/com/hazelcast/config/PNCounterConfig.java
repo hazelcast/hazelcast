@@ -27,6 +27,8 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * Configuration for a {@link com.hazelcast.crdt.pncounter.PNCounter}
+ *
+ * @since 3.10
  */
 @Beta
 public class PNCounterConfig implements IdentifiedDataSerializable {

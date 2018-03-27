@@ -131,17 +131,6 @@ public class NearCacheTestSupport extends HazelcastTestSupport {
         });
     }
 
-    private void populateNearCacheEventually(final IMap<Integer, Integer> map, final int size) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                populateNearCache(map, size);
-                long ownedEntryCount = getNearCacheStats(map).getOwnedEntryCount();
-                assertEquals("Near Cache has not reached expected size", size, ownedEntryCount);
-            }
-        });
-    }
-
     /**
      * Tests the Near Cache memory cost calculation.
      * <p>

@@ -24,6 +24,7 @@ import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.Records;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.query.impl.IndexInfo;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.FragmentedMigrationAwareService;
@@ -83,6 +84,25 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
             // 2. Populate non-global partitioned indexes.
             populateIndexes(event, TargetIndexes.NON_GLOBAL);
         }
+
+        flushAndRemoveQueryCaches(event);
+    }
+
+    /**
+     * Flush and remove query cache on this source partition.
+     */
+    private void flushAndRemoveQueryCaches(PartitionMigrationEvent event) {
+        if (event.getMigrationEndpoint() != MigrationEndpoint.SOURCE) {
+            return;
+        }
+
+        QueryCacheContext queryCacheContext = mapServiceContext.getQueryCacheContext();
+        PublisherContext publisherContext = queryCacheContext.getPublisherContext();
+
+        int partitionId = event.getPartitionId();
+
+        flushAccumulator(publisherContext, partitionId);
+        removeAccumulator(publisherContext, partitionId);
     }
 
     @Override
@@ -92,6 +112,7 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
 
         Operation operation = new MapReplicationOperation(container, partitionId, event.getReplicaIndex());
         operation.setService(mapServiceContext.getService());
+        operation.setNodeEngine(mapServiceContext.getNodeEngine());
 
         return operation;
     }
@@ -106,6 +127,7 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
 
         Operation operation = new MapReplicationOperation(container, namespaces, partitionId, event.getReplicaIndex());
         operation.setService(mapServiceContext.getService());
+        operation.setNodeEngine(mapServiceContext.getNodeEngine());
 
         return operation;
     }
@@ -141,15 +163,6 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
             recordStore.startLoading();
         }
         mapServiceContext.reloadOwnedPartitions();
-
-        QueryCacheContext queryCacheContext = mapServiceContext.getQueryCacheContext();
-        PublisherContext publisherContext = queryCacheContext.getPublisherContext();
-
-        if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
-            int partitionId = event.getPartitionId();
-            flushAccumulator(publisherContext, partitionId);
-            removeAccumulator(publisherContext, partitionId);
-        }
     }
 
     @Override
@@ -203,6 +216,12 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
         final PartitionContainer container = mapServiceContext.getPartitionContainer(event.getPartitionId());
         for (RecordStore recordStore : container.getMaps().values()) {
             final MapContainer mapContainer = mapServiceContext.getMapContainer(recordStore.getName());
+
+            // RU_COMPAT_3_9
+            // Old nodes (3.9-) won't send mapIndexInfos to new nodes (3.10+) in the map-replication operation.
+            // This is the reason why we pick up the mapContainer.getIndexesToAdd() that were added by the
+            // PostJoinMapOperation and we add them to the map, before we add data
+            addPartitionIndexes(recordStore, event.getPartitionId(), mapContainer.getPartitionIndexesToAdd());
 
             final Indexes indexes = mapContainer.getIndexes(event.getPartitionId());
             if (!indexes.hasIndex()) {
@@ -259,6 +278,20 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
 
                 final Object value = Records.getValueOrCachedValue(record, serializationService);
                 indexes.removeEntryIndex(key, value);
+            }
+        }
+    }
+
+    // RU_COMPAT_3_9
+    private void addPartitionIndexes(RecordStore recordStore, int partitionId, Collection<IndexInfo> indexInfos) {
+        if (indexInfos == null) {
+            return;
+        }
+        MapContainer mapContainer = recordStore.getMapContainer();
+        if (!mapContainer.isGlobalIndexEnabled()) {
+            Indexes indexes = mapContainer.getIndexes(partitionId);
+            for (IndexInfo indexInfo : indexInfos) {
+                indexes.addOrGetIndex(indexInfo.getAttributeName(), indexInfo.isOrdered());
             }
         }
     }

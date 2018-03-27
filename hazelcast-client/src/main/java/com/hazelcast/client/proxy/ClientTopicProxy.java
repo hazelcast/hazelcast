@@ -31,6 +31,9 @@ import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.topic.impl.DataAwareMessage;
 
+import static com.hazelcast.client.proxy.ClientMapProxy.NULL_LISTENER_IS_NOT_ALLOWED;
+import static com.hazelcast.util.Preconditions.checkNotNull;
+
 /**
  * Proxy implementation of {@link ITopic}.
  *
@@ -51,6 +54,7 @@ public class ClientTopicProxy<E> extends PartitionSpecificClientProxy implements
 
     @Override
     public String addMessageListener(final MessageListener<E> listener) {
+        checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         EventHandler<ClientMessage> handler = new TopicItemHandler(listener);
         return registerListener(new Codec(), handler);
     }

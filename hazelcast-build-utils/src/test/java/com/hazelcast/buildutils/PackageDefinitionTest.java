@@ -27,6 +27,7 @@ import org.junit.runner.RunWith;
 
 import java.util.Set;
 
+import static com.hazelcast.test.HazelcastTestSupport.assumeDifferentHashCodes;
 import static java.lang.String.format;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.singleton;
@@ -116,6 +117,7 @@ public class PackageDefinitionTest {
         assertEquals(packageDefinition.hashCode(), packageDefinitionOtherResolutionOptional.hashCode());
         assertEquals(packageDefinition.hashCode(), packageDefinitionOtherVersion.hashCode());
 
+        assumeDifferentHashCodes();
         assertNotEquals(packageDefinition.hashCode(), packageDefinitionOtherPackageName.hashCode());
     }
 

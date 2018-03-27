@@ -18,7 +18,6 @@ package com.hazelcast.internal.journal;
 
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.RingbufferConfig;
-import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.ringbuffer.StaleSequenceException;
 import com.hazelcast.ringbuffer.impl.ReadResultSetImpl;
 import com.hazelcast.spi.ObjectNamespace;
@@ -56,6 +55,19 @@ public interface EventJournal<E> {
      * @throws IllegalStateException if there is no event journal configured for this object
      */
     long oldestSequence(ObjectNamespace namespace, int partitionId);
+
+    /**
+     * Returns {@code true} if the event journal has persistence enabled and
+     * can be queried for events older than the
+     * {@link #oldestSequence(ObjectNamespace, int)}. If the journal is not
+     * backed by a persistent store, this method will return {@code false}.
+     *
+     * @param namespace   the object namespace
+     * @param partitionId the partition ID of the event journal
+     * @return if the journal is backed by a persistent store and can serve events older than the oldest sequence
+     * @throws IllegalStateException if there is no event journal configured for this object
+     */
+    boolean isPersistenceEnabled(ObjectNamespace namespace, int partitionId);
 
     /**
      * Destroys the event journal for the given object and partition ID.
@@ -155,14 +167,6 @@ public interface EventJournal<E> {
     /**
      * Returns the event journal configuration or {@code null} if there is none or the journal is disabled
      * for the given {@code namespace}.
-     * <p>
-     * <b>NOTE</b><br>
-     * If the {@link ClusterService#getClusterVersion()} is less
-     * than {@link com.hazelcast.internal.cluster.Versions#V3_9},
-     * this method will return {@code null}, regardless of whether
-     * the journal is actually enabled by the configuration. This
-     * is because some members might not know how to save journal
-     * events and respond to subscribe/read operations.
      *
      * @param namespace the object namespace of the specific distributed object
      * @return the journal configuration or {@code null} if the journal is not enabled or available
@@ -173,7 +177,7 @@ public interface EventJournal<E> {
      * Creates a new {@link RingbufferConfig} for a ringbuffer that will keep
      * event journal events for a single partition.
      *
-     * @param config the event journal config
+     * @param config    the event journal config
      * @param namespace the object namespace
      * @return the ringbuffer config for a single partition of the event journal
      */

@@ -98,6 +98,10 @@ public class LockGuard {
         return lockExpiryTime;
     }
 
+    public long getRemainingTime() {
+        return Math.max(0, getLockExpiryTime() - Clock.currentTimeMillis());
+    }
+
     @Override
     public String toString() {
         return "LockGuard{"

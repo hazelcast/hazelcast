@@ -35,6 +35,7 @@ import org.junit.runner.RunWith;
 import java.util.Collection;
 import java.util.Random;
 
+import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static org.junit.Assert.assertEquals;
 
@@ -82,7 +83,7 @@ public class QueryBounceTest {
     }
 
     protected Config getConfig() {
-        return new Config();
+        return smallInstanceConfig();
     }
 
     private void prepareAndRunQueryTasks() {

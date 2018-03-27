@@ -37,6 +37,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 
+import static com.hazelcast.internal.partition.impl.PartitionServiceState.FETCHING_PARTITION_TABLE;
 import static com.hazelcast.internal.partition.impl.PartitionServiceState.MIGRATION_LOCAL;
 import static com.hazelcast.internal.partition.impl.PartitionServiceState.MIGRATION_ON_MASTER;
 import static com.hazelcast.internal.partition.impl.PartitionServiceState.REPLICA_NOT_OWNED;
@@ -75,6 +76,10 @@ public class PartitionReplicaStateChecker {
     }
 
     public PartitionServiceState getPartitionServiceState() {
+        if (partitionService.isFetchMostRecentPartitionTableTaskRequired()) {
+            return FETCHING_PARTITION_TABLE;
+        }
+
         if (hasMissingReplicaOwners()) {
             return REPLICA_NOT_OWNED;
         }

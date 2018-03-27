@@ -69,7 +69,7 @@ public class RingbufferReadManyMessageTask
             seqs[k] = resultSet.getSequence(k);
         }
 
-        return RingbufferReadManyCodec.encodeResponse(resultSet.readCount(), items, seqs);
+        return RingbufferReadManyCodec.encodeResponse(resultSet.readCount(), items, seqs, resultSet.getNextSequenceToReadFrom());
     }
 
     @Override

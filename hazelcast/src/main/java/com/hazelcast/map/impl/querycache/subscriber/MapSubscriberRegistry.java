@@ -34,7 +34,7 @@ import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
  */
 public class MapSubscriberRegistry implements Registry<String, SubscriberRegistry> {
 
-    private ConstructorFunction<String, SubscriberRegistry> registryConstructorFunction =
+    private final ConstructorFunction<String, SubscriberRegistry> registryConstructorFunction =
             new ConstructorFunction<String, SubscriberRegistry>() {
                 @Override
                 public SubscriberRegistry createNew(String mapName) {

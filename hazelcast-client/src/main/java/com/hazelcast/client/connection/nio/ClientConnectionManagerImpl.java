@@ -19,6 +19,7 @@ package com.hazelcast.client.connection.nio;
 import com.hazelcast.client.AuthenticationException;
 import com.hazelcast.client.ClientExtension;
 import com.hazelcast.client.ClientTypes;
+import com.hazelcast.client.HazelcastClientOfflineException;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.config.SocketOptions;
 import com.hazelcast.client.connection.AddressProvider;
@@ -91,6 +92,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.client.config.SocketOptions.DEFAULT_BUFFER_SIZE_BYTE;
 import static com.hazelcast.client.config.SocketOptions.KILO_BYTE;
+import static com.hazelcast.client.spi.properties.ClientProperty.ALLOW_INVOCATIONS_WHEN_DISCONNECTED;
 import static com.hazelcast.client.spi.properties.ClientProperty.IO_BALANCER_INTERVAL_SECONDS;
 import static com.hazelcast.client.spi.properties.ClientProperty.IO_INPUT_THREAD_COUNT;
 import static com.hazelcast.client.spi.properties.ClientProperty.IO_OUTPUT_THREAD_COUNT;
@@ -129,7 +131,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
     private final ConcurrentMap<Address, AuthenticationFuture> connectionsInProgress =
             new ConcurrentHashMap<Address, AuthenticationFuture>();
     private final Set<ConnectionListener> connectionListeners = new CopyOnWriteArraySet<ConnectionListener>();
-
+    private final boolean allowInvokeWhenDisconnected;
     private final Credentials credentials;
     private final NioEventLoopGroup eventLoopGroup;
 
@@ -151,7 +153,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
     @SuppressWarnings("checkstyle:executablestatementcount")
     public ClientConnectionManagerImpl(HazelcastClientInstanceImpl client, AddressTranslator addressTranslator,
                                        Collection<AddressProvider> addressProviders) {
-
+        allowInvokeWhenDisconnected = client.getProperties().getBoolean(ALLOW_INVOCATIONS_WHEN_DISCONNECTED);
         this.client = client;
         this.addressTranslator = addressTranslator;
 
@@ -344,8 +346,8 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
     }
 
     @Override
-    public Connection getOrTriggerConnect(Address target) throws IOException {
-        Connection connection = getConnection(target, false);
+    public Connection getOrTriggerConnect(Address target, boolean acquiresResources) throws IOException {
+        Connection connection = getConnection(target, false, acquiresResources);
         if (connection != null) {
             return connection;
         }
@@ -353,13 +355,8 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
         return null;
     }
 
-    private Connection getConnection(Address target, boolean asOwner) throws IOException {
-        if (!asOwner) {
-            connectionStrategy.beforeGetConnection(target);
-        }
-        if (!asOwner && getOwnerConnection() == null) {
-            throw new IOException("Owner connection is not available!");
-        }
+    private Connection getConnection(Address target, boolean asOwner, boolean acquiresResources) throws IOException {
+        checkAllowed(target, asOwner, acquiresResources);
         if (target == null) {
             throw new IllegalStateException("Address can not be null");
         }
@@ -377,6 +374,29 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
         return null;
     }
 
+    private void checkAllowed(Address target, boolean asOwner, boolean acquiresResources) throws IOException {
+        if (asOwner) {
+            //opening an owner connection is always allowed
+            return;
+        }
+        try {
+            connectionStrategy.beforeGetConnection(target);
+        } catch (HazelcastClientOfflineException e) {
+            if (allowInvokeWhenDisconnected && !acquiresResources) {
+                //invocations that does not acquire resources are allowed to invoke when disconnected
+                return;
+            }
+            throw e;
+        }
+        if (getOwnerConnection() == null) {
+            if (allowInvokeWhenDisconnected && !acquiresResources) {
+                //invocations that does not acquire resources are allowed to invoke when disconnected
+                return;
+            }
+            throw new IOException("Owner connection is not available!");
+        }
+    }
+
     @Override
     public Address getOwnerConnectionAddress() {
         return ownerConnectionAddress;
@@ -390,7 +410,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
     private Connection getOrConnect(Address address, boolean asOwner) {
         try {
             while (true) {
-                ClientConnection connection = (ClientConnection) getConnection(address, asOwner);
+                ClientConnection connection = (ClientConnection) getConnection(address, asOwner, true);
                 if (connection != null) {
                     return connection;
                 }
@@ -441,8 +461,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
             logger.info("Trying to connect to " + address + " as owner member");
             connection = getOrConnect(address, true);
             client.onClusterConnect(connection);
-            setOwnerConnectionAddress(connection.getEndPoint());
-            logger.info("Setting " + connection + " as owner with principal " + principal);
             fireConnectionEvent(LifecycleEvent.LifecycleState.CLIENT_CONNECTED);
             connectionStrategy.onConnectToCluster();
         } catch (Exception e) {
@@ -893,7 +911,13 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
 
         LinkedHashSet<Address> providerAddresses = new LinkedHashSet<Address>();
         for (AddressProvider addressProvider : addressProviders) {
-            providerAddresses.addAll(addressProvider.loadAddresses());
+            try {
+                providerAddresses.addAll(addressProvider.loadAddresses());
+            } catch (NullPointerException e) {
+                throw e;
+            } catch (Exception e) {
+                logger.warning("Exception from AddressProvider: " + addressProvider, e);
+            }
         }
 
         if (shuffleMemberList) {
@@ -964,6 +988,11 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
                         connection.setIsAuthenticatedAsOwner();
                         ClientPrincipal principal = new ClientPrincipal(result.uuid, result.ownerUuid);
                         setPrincipal(principal);
+                        //setting owner connection is moved to here(before onAuthenticated/before connected event)
+                        //so that invocations that requires owner connection on this connection go through
+                        setOwnerConnectionAddress(connection.getEndPoint());
+                        logger.info("Setting " + connection + " as owner with principal " + principal);
+
                     }
                     onAuthenticated(target, connection);
                     future.onSuccess(connection);

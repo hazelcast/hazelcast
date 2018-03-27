@@ -25,8 +25,8 @@ import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.OperationFactory;
-import com.hazelcast.spi.SplitBrainMergePolicy;
-import com.hazelcast.spi.merge.MergingEntryHolder;
+import com.hazelcast.spi.merge.MergingEntry;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.wan.WANReplicationQueueFullException;
 
 import java.util.List;
@@ -174,7 +174,7 @@ public class WANAwareOperationProvider extends MapOperationProviderDelegator {
     }
 
     @Override
-    public MapOperation createMergeOperation(String name, MergingEntryHolder<Data, Data> mergingValue,
+    public MapOperation createMergeOperation(String name, MergingEntry<Data, Data> mergingValue,
                                              SplitBrainMergePolicy mergePolicy, boolean disableWanReplicationEvent) {
         checkWanReplicationQueues(name);
         return getDelegate().createMergeOperation(name, mergingValue, mergePolicy, disableWanReplicationEvent);

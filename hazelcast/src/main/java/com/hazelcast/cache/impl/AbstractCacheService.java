@@ -21,6 +21,7 @@ import com.hazelcast.cache.HazelcastCacheManager;
 import com.hazelcast.cache.impl.event.CachePartitionLostEventFilter;
 import com.hazelcast.cache.impl.journal.CacheEventJournal;
 import com.hazelcast.cache.impl.journal.RingbufferCacheEventJournalImpl;
+import com.hazelcast.cache.impl.merge.policy.CacheMergePolicyProvider;
 import com.hazelcast.cache.impl.operation.CacheCreateConfigOperation;
 import com.hazelcast.cache.impl.operation.OnJoinCacheOperation;
 import com.hazelcast.config.CacheConfig;
@@ -51,6 +52,7 @@ import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ContextMutexFactory;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.wan.WanReplicationService;
 
 import javax.cache.CacheException;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
@@ -66,7 +68,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.cache.impl.AbstractCacheRecordStore.SOURCE_NOT_AVAILABLE;
-import static com.hazelcast.cache.impl.CacheProxyUtil.validateCacheConfig;
+import static com.hazelcast.internal.config.ConfigValidator.checkCacheConfig;
+import static com.hazelcast.internal.config.ConfigValidator.checkMergePolicySupportsInMemoryFormat;
 import static com.hazelcast.util.EmptyStatement.ignore;
 
 @SuppressWarnings("checkstyle:classdataabstractioncoupling")
@@ -75,16 +78,24 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
 
     private static final String SETUP_REF = "setupRef";
 
-    /** Map from full prefixed cache name to {@link CacheConfig} */
+    /**
+     * Map from full prefixed cache name to {@link CacheConfig}
+     */
     protected final ConcurrentMap<String, CacheConfig> configs = new ConcurrentHashMap<String, CacheConfig>();
 
-    /** Map from full prefixed cache name to {@link CacheContext} */
+    /**
+     * Map from full prefixed cache name to {@link CacheContext}
+     */
     protected final ConcurrentMap<String, CacheContext> cacheContexts = new ConcurrentHashMap<String, CacheContext>();
 
-    /** Map from full prefixed cache name to {@link CacheStatisticsImpl} */
+    /**
+     * Map from full prefixed cache name to {@link CacheStatisticsImpl}
+     */
     protected final ConcurrentMap<String, CacheStatisticsImpl> statistics = new ConcurrentHashMap<String, CacheStatisticsImpl>();
 
-    /** Map from full prefixed cache name to set of {@link Closeable} resources */
+    /**
+     * Map from full prefixed cache name to set of {@link Closeable} resources
+     */
     protected final ConcurrentMap<String, Set<Closeable>> resources = new ConcurrentHashMap<String, Set<Closeable>>();
     protected final ConcurrentMap<String, Closeable> closeableListeners = new ConcurrentHashMap<String, Closeable>();
     protected final ConcurrentMap<String, CacheOperationProvider> operationProviderCache =
@@ -118,7 +129,7 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
     protected NodeEngine nodeEngine;
     protected CachePartitionSegment[] segments;
     protected CacheEventHandler cacheEventHandler;
-    protected SplitBrainHandlerService splitBrainHandlerService;
+    protected CacheSplitBrainHandlerService splitBrainHandlerService;
     protected RingbufferCacheEventJournalImpl eventJournal;
     protected ILogger logger;
 
@@ -138,7 +149,7 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
     }
 
     // this method is overridden on ee
-    protected SplitBrainHandlerService newSplitBrainHandlerService(NodeEngine nodeEngine) {
+    protected CacheSplitBrainHandlerService newSplitBrainHandlerService(NodeEngine nodeEngine) {
         return new CacheSplitBrainHandlerService(nodeEngine, configs, segments);
     }
 
@@ -217,7 +228,14 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
                     cacheConfig.setManagerPrefix(HazelcastCacheManager.CACHE_MANAGER_PREFIX);
                 }
 
-                validateCacheConfig(cacheConfig);
+                CacheMergePolicyProvider mergePolicyProvider = splitBrainHandlerService.getMergePolicyProvider();
+                checkCacheConfig(cacheConfig.getInMemoryFormat(), cacheConfig.getEvictionConfig(),
+                        cacheConfig.isStatisticsEnabled(), cacheConfig.getMergePolicy());
+
+                Object mergePolicy = mergePolicyProvider.getMergePolicy(cacheConfig.getMergePolicy());
+                checkMergePolicySupportsInMemoryFormat(cacheConfig.getName(), mergePolicy, cacheConfig.getInMemoryFormat(),
+                        nodeEngine.getClusterService().getClusterVersion(), true, logger);
+
                 putCacheConfigIfAbsent(cacheConfig);
                 // ensure cache config becomes available on all members before the proxy is returned to the caller
                 createCacheConfigOnAllMembers(cacheConfig);
@@ -313,6 +331,9 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
         } else {
             closeSegments(cacheNameWithPrefix);
         }
+
+        WanReplicationService wanService = nodeEngine.getWanReplicationService();
+        wanService.removeWanEventCounters(ICacheService.SERVICE_NAME, cacheNameWithPrefix);
         cacheContexts.remove(cacheNameWithPrefix);
         operationProviderCache.remove(cacheNameWithPrefix);
         deregisterAllListener(cacheNameWithPrefix);
