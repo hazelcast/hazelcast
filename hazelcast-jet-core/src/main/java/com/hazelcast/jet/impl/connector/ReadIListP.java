@@ -21,11 +21,11 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IList;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.AbstractProcessor;
-import com.hazelcast.jet.core.CloseableProcessorSupplier;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
+import com.hazelcast.jet.core.ProcessorSupplier;
 
 import javax.annotation.Nonnull;
-import java.io.Closeable;
+import javax.annotation.Nullable;
 
 import static com.hazelcast.client.HazelcastClient.newHazelcastClient;
 import static com.hazelcast.jet.Traversers.traverseIterable;
@@ -34,7 +34,7 @@ import static com.hazelcast.jet.core.ProcessorMetaSupplier.forceTotalParallelism
 import static java.lang.Math.min;
 import static java.util.stream.IntStream.rangeClosed;
 
-public final class ReadIListP extends AbstractProcessor implements Closeable {
+public final class ReadIListP extends AbstractProcessor {
 
     static final int FETCH_SIZE = 16384;
     private final String name;
@@ -76,7 +76,7 @@ public final class ReadIListP extends AbstractProcessor implements Closeable {
     }
 
     @Override
-    public void close() {
+    public void close(@Nullable Throwable error) {
         if (client != null) {
             client.shutdown();
         }
@@ -89,7 +89,7 @@ public final class ReadIListP extends AbstractProcessor implements Closeable {
     public static ProcessorMetaSupplier metaSupplier(String listName, ClientConfig clientConfig) {
         SerializableClientConfig config = clientConfig != null ? new SerializableClientConfig(clientConfig) : null;
         return forceTotalParallelismOne(
-                CloseableProcessorSupplier.of(() -> new ReadIListP(listName, config)), listName
+                ProcessorSupplier.of(() -> new ReadIListP(listName, config)), listName
         );
     }
 }

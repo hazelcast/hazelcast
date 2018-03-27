@@ -46,9 +46,9 @@ public class TopologyChangeDuringJobSubmissionTest extends JetTestSupport {
 
     @Before
     public void setup() {
-        MockPS.completeCount.set(0);
+        MockPS.closeCount.set(0);
         MockPS.initCount.set(0);
-        MockPS.completeErrors.clear();
+        MockPS.receivedCloseErrors.clear();
 
         StuckProcessor.proceedLatch = new CountDownLatch(1);
         StuckProcessor.executionStarted = new CountDownLatch(PARALLELISM);

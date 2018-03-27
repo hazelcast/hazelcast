@@ -22,6 +22,7 @@ import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.Watermark;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * Base class for processor wrappers. Delegates all calls to the wrapped
@@ -82,5 +83,10 @@ public class ProcessorWrapper implements Processor {
     @Override
     public boolean finishSnapshotRestore() {
         return wrapped.finishSnapshotRestore();
+    }
+
+    @Override
+    public void close(@Nullable Throwable error) throws Exception {
+        wrapped.close(error);
     }
 }

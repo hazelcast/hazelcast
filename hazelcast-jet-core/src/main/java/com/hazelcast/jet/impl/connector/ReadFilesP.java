@@ -19,13 +19,13 @@ package com.hazelcast.jet.impl.connector;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.core.AbstractProcessor;
-import com.hazelcast.jet.core.CloseableProcessorSupplier;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
+import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.processor.SourceProcessors;
 import com.hazelcast.jet.function.DistributedBiFunction;
 
 import javax.annotation.Nonnull;
-import java.io.Closeable;
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.DirectoryStream;
@@ -41,7 +41,7 @@ import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static java.util.stream.Collectors.toList;
 
 /**
- * Private API, use {@link SourceProcessors#readFilesP(String, Charset, String)}.
+ * Private API, use {@link SourceProcessors#readFilesP}.
  * <p>
  * Since the work of this vertex is file IO-intensive, its {@link
  * com.hazelcast.jet.core.Vertex#localParallelism(int) local parallelism}
@@ -52,7 +52,7 @@ import static java.util.stream.Collectors.toList;
  * one file is only read by one thread, so extra parallelism won't improve
  * performance if there aren't enough files to read.
  */
-public final class ReadFilesP<R> extends AbstractProcessor implements Closeable {
+public final class ReadFilesP<R> extends AbstractProcessor {
 
     private final Charset charset;
     private final int parallelism;
@@ -81,7 +81,7 @@ public final class ReadFilesP<R> extends AbstractProcessor implements Closeable 
                                     .filter(this::shouldProcessEvent)
                                     .flatMap(this::processFile)
                                     .onFirstNull(() -> {
-                                        uncheckRun(this::close);
+                                        uncheckRun(() -> close(null));
                                         directoryStream = null;
                                     });
     }
@@ -119,7 +119,7 @@ public final class ReadFilesP<R> extends AbstractProcessor implements Closeable 
     }
 
     @Override
-    public void close() throws IOException {
+    public void close(@Nullable Throwable error) throws IOException {
         IOException ex = null;
         if (directoryStream != null) {
             try {
@@ -150,11 +150,11 @@ public final class ReadFilesP<R> extends AbstractProcessor implements Closeable 
             @Nonnull String glob,
             @Nonnull DistributedBiFunction<String, String, ?> mapOutputFn
     ) {
-        return ProcessorMetaSupplier.of(CloseableProcessorSupplier.of(
+        return ProcessorMetaSupplier.of((ProcessorSupplier)
                 count -> IntStream.range(0, count)
                                   .mapToObj(i -> new ReadFilesP(directory, Charset.forName(charset), glob, count, i,
                                           mapOutputFn))
-                                  .collect(toList())),
+                                  .collect(toList()),
                 2);
     }
 }

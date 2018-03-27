@@ -17,11 +17,12 @@
 package com.hazelcast.jet.pipeline;
 
 import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.core.ProcessorSupplier;
+import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.processor.SinkProcessors;
 import com.hazelcast.jet.function.DistributedBiConsumer;
 import com.hazelcast.jet.function.DistributedConsumer;
 import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.impl.pipeline.SinkImpl;
 import com.hazelcast.util.Preconditions;
 
@@ -121,7 +122,7 @@ public final class SinkBuilder<W, T> {
 
         // local copy for serialization
         DistributedFunction<? super JetInstance, ? extends W> createFn = this.createFn;
-        ProcessorSupplier supplier = SinkProcessors.writeBufferedP(
+        DistributedSupplier<Processor> supplier = SinkProcessors.writeBufferedP(
                 ctx -> createFn.apply(ctx.jetInstance()),
                 onReceiveFn,
                 flushFn,

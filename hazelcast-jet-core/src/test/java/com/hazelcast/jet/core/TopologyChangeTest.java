@@ -106,9 +106,9 @@ public class TopologyChangeTest extends JetTestSupport {
             }
         }
 
-        MockPS.completeCount.set(0);
+        MockPS.closeCount.set(0);
         MockPS.initCount.set(0);
-        MockPS.completeErrors.clear();
+        MockPS.receivedCloseErrors.clear();
 
         StuckProcessor.proceedLatch = new CountDownLatch(1);
         StuckProcessor.executionStarted = new CountDownLatch(nodeCount * PARALLELISM);
@@ -143,8 +143,8 @@ public class TopologyChangeTest extends JetTestSupport {
         assertEquals(nodeCount, MockPS.initCount.get());
 
         assertTrueEventually(() -> {
-            assertEquals(nodeCount, MockPS.completeCount.get());
-            assertThat(MockPS.completeErrors, empty());
+            assertEquals(nodeCount, MockPS.closeCount.get());
+            assertThat(MockPS.receivedCloseErrors, empty());
         });
     }
 
@@ -165,8 +165,8 @@ public class TopologyChangeTest extends JetTestSupport {
         assertEquals(nodeCount, MockPS.initCount.get());
 
         assertTrueEventually(() -> {
-            assertEquals(nodeCount, MockPS.completeCount.get());
-            assertThat(MockPS.completeErrors, empty());
+            assertEquals(nodeCount, MockPS.closeCount.get());
+            assertThat(MockPS.receivedCloseErrors, empty());
         });
     }
 
@@ -189,10 +189,10 @@ public class TopologyChangeTest extends JetTestSupport {
         assertEquals(count, MockPS.initCount.get());
 
         assertTrueEventually(() -> {
-            assertEquals(count, MockPS.completeCount.get());
-            assertEquals(nodeCount, MockPS.completeErrors.size());
-            for (int i = 0; i < MockPS.completeErrors.size(); i++) {
-                Throwable error = MockPS.completeErrors.get(i);
+            assertEquals(count, MockPS.closeCount.get());
+            assertEquals(nodeCount, MockPS.receivedCloseErrors.size());
+            for (int i = 0; i < MockPS.receivedCloseErrors.size(); i++) {
+                Throwable error = MockPS.receivedCloseErrors.get(i);
                 assertTrue(error instanceof TopologyChangedException
                         || error instanceof HazelcastInstanceNotActiveException);
             }
@@ -270,10 +270,10 @@ public class TopologyChangeTest extends JetTestSupport {
         assertEquals(count, MockPS.initCount.get());
 
         assertTrueEventually(() -> {
-            assertEquals(count, MockPS.completeCount.get());
-            assertEquals(nodeCount, MockPS.completeErrors.size());
-            for (int i = 0; i < MockPS.completeErrors.size(); i++) {
-                Throwable error = MockPS.completeErrors.get(i);
+            assertEquals(count, MockPS.closeCount.get());
+            assertEquals(nodeCount, MockPS.receivedCloseErrors.size());
+            for (int i = 0; i < MockPS.receivedCloseErrors.size(); i++) {
+                Throwable error = MockPS.receivedCloseErrors.get(i);
                 assertTrue(error instanceof TopologyChangedException
                         || error instanceof HazelcastInstanceNotActiveException);
             }

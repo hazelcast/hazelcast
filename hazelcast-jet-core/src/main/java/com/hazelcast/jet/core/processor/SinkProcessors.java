@@ -17,14 +17,15 @@
 package com.hazelcast.jet.core.processor;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.Processor.Context;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
-import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.function.DistributedBiConsumer;
 import com.hazelcast.jet.function.DistributedBiFunction;
 import com.hazelcast.jet.function.DistributedBinaryOperator;
 import com.hazelcast.jet.function.DistributedConsumer;
 import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.impl.connector.HazelcastWriters;
 import com.hazelcast.jet.impl.connector.WriteBufferedP;
 import com.hazelcast.jet.impl.connector.WriteFileP;
@@ -274,7 +275,7 @@ public final class SinkProcessors {
      * @param flushBufferFn flushes the buffer
      */
     @Nonnull
-    public static <B, T> ProcessorSupplier writeBufferedP(
+    public static <B, T> DistributedSupplier<Processor> writeBufferedP(
             @Nonnull DistributedFunction<Context, B> newBufferFn,
             @Nonnull DistributedBiConsumer<B, T> addToBufferFn,
             @Nonnull DistributedConsumer<B> flushBufferFn
@@ -299,7 +300,7 @@ public final class SinkProcessors {
      * @param <T>         type of the received item
      */
     @Nonnull
-    public static <W, T> ProcessorSupplier writeBufferedP(
+    public static <W, T> DistributedSupplier<Processor> writeBufferedP(
             @Nonnull DistributedFunction<? super Context, ? extends W> createFn,
             @Nonnull DistributedBiConsumer<? super W, ? super T> onReceiveFn,
             @Nonnull DistributedConsumer<? super W> flushFn,

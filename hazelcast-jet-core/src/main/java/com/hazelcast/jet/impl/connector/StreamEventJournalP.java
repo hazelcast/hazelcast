@@ -449,7 +449,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
         }
 
         @Override
-        public void complete(Throwable error) {
+        public void close(Throwable error) {
             if (client != null) {
                 client.shutdown();
             }

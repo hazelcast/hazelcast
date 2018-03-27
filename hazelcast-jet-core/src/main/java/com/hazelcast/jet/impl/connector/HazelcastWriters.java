@@ -408,7 +408,7 @@ public final class HazelcastWriters {
         }
 
         @Override
-        public void complete(Throwable error) {
+        public void close(Throwable error) {
             if (client != null) {
                 client.shutdown();
             }
@@ -466,7 +466,7 @@ public final class HazelcastWriters {
         }
 
         @Override
-        public void complete(Throwable error) {
+        public void close(Throwable error) {
             if (client != null) {
                 client.shutdown();
             }

@@ -24,6 +24,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.Serializable;
 import java.util.List;
 import java.util.function.Function;
@@ -93,7 +94,7 @@ public interface ProcessorMetaSupplier extends Serializable {
     /**
      * Called on coordinator member after execution has finished on all
      * members, successfully or not. This method will be called after {@link
-     * ProcessorSupplier#complete(Throwable)} has been called on all
+     * ProcessorSupplier#close(Throwable)} has been called on all
      * <em>available</em> members.
      * <p>
      * If there is an exception during the creation of the execution plan, this
@@ -108,7 +109,7 @@ public interface ProcessorMetaSupplier extends Serializable {
      * @param error the exception (if any) that caused the job to fail;
      *              {@code null} in the case of successful job completion
      */
-    default void complete(Throwable error) {
+    default void close(@Nullable Throwable error) {
     }
 
     /**

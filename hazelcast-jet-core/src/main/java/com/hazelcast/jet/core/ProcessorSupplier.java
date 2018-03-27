@@ -20,6 +20,7 @@ import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.logging.ILogger;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.stream.Stream;
@@ -51,10 +52,14 @@ public interface ProcessorSupplier extends Serializable {
 
     /**
      * Called after the execution has finished on all members - successfully or
-     * not. It is called immediately when the execution was <em>aborted</em>
-     * due to a member leaving the cluster. If called immediately, it can
-     * happen that the job is still running on some other member (but not on
-     * this member).
+     * not. This method will be called after {@link Processor#close()} has been
+     * called on all <em>available</em> members.
+     * <p>
+     * If the execution was <em>aborted</em> due to a member leaving the
+     * cluster, it is called immediately (but not before {@link
+     * Processor#close()} for local processors). In this case, it can happen
+     * that the job is still running on some other member (but not on this
+     * member).
      * <p>
      * If this method throws an exception, it will be logged and ignored; it
      * won't be reported as a job failure.
@@ -66,7 +71,7 @@ public interface ProcessorSupplier extends Serializable {
      * @param error the exception (if any) that caused the job to fail;
      *              {@code null} in the case of successful job completion
      */
-    default void complete(Throwable error) {
+    default void close(@Nullable Throwable error) {
     }
 
     /**

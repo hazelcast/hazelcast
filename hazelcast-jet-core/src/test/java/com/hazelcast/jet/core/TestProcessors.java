@@ -19,10 +19,9 @@ package com.hazelcast.jet.core;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.nio.Address;
-import com.hazelcast.test.ExpectedRuntimeException;
 
 import javax.annotation.Nonnull;
-import java.util.Collection;
+import javax.annotation.Nullable;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
@@ -46,34 +45,6 @@ public class TestProcessors {
         @Override
         protected boolean tryProcess(int ordinal, @Nonnull Object item) {
             return tryEmit(item);
-        }
-    }
-
-    public static class ProcessorThatFailsInComplete implements Processor {
-
-        private final RuntimeException e;
-
-        public ProcessorThatFailsInComplete(@Nonnull RuntimeException e) {
-            this.e = e;
-        }
-
-        @Override
-        public boolean complete() {
-            throw e;
-        }
-    }
-
-    public static class ProcessorThatFailsInInit extends AbstractProcessor {
-
-        private final Exception e;
-
-        ProcessorThatFailsInInit(@Nonnull Exception e) {
-            this.e = e;
-        }
-
-        @Override
-        protected void init(@Nonnull Context context) throws Exception {
-            throw e;
         }
     }
 
@@ -113,70 +84,34 @@ public class TestProcessors {
         }
     }
 
-    public static class FailingOnCompletePS implements ProcessorSupplier {
-
-        private final DistributedSupplier<Processor> supplierFn;
-
-        FailingOnCompletePS(DistributedSupplier<Processor> supplierFn) {
-            this.supplierFn = supplierFn;
-        }
-
-        @Override
-        public void init(@Nonnull Context context) {
-
-        }
-
-        @Nonnull @Override
-        public Collection<? extends Processor> get(int count) {
-            return Stream.generate(supplierFn).limit(count).collect(toList());
-        }
-
-        @Override
-        public void complete(Throwable error) {
-            throw new ExpectedRuntimeException();
-        }
-    }
-
-    public static class FailingOnCompletePMS implements ProcessorMetaSupplier {
-
-        private final DistributedSupplier<ProcessorSupplier> supplierFn;
-
-        public FailingOnCompletePMS(DistributedSupplier<ProcessorSupplier> supplierFn) {
-            this.supplierFn = supplierFn;
-        }
-
-        @Override
-        public void init(@Nonnull Context context) {
-
-        }
-
-        @Nonnull @Override
-        public Function<Address, ProcessorSupplier> get(@Nonnull List<Address> addresses) {
-            return a -> supplierFn.get();
-        }
-
-        @Override
-        public void complete(Throwable error) {
-            throw new ExpectedRuntimeException();
-        }
-    }
-
     public static class MockPMS implements ProcessorMetaSupplier {
 
         static AtomicBoolean initCalled = new AtomicBoolean();
-        static AtomicBoolean completeCalled = new AtomicBoolean();
-        static AtomicReference<Throwable> completeError = new AtomicReference<>();
+        static AtomicBoolean closeCalled = new AtomicBoolean();
+        static AtomicReference<Throwable> receivedCloseError = new AtomicReference<>();
 
-        private final RuntimeException initError;
+        private RuntimeException initError;
+        private RuntimeException getError;
+        private RuntimeException closeError;
         private final DistributedSupplier<MockPS> supplierFn;
 
         public MockPMS(DistributedSupplier<MockPS> supplierFn) {
-            this(null, supplierFn);
+            this.supplierFn = supplierFn;
         }
 
-        public MockPMS(RuntimeException initError, DistributedSupplier<MockPS> supplierFn) {
+        public MockPMS setInitError(RuntimeException initError) {
             this.initError = initError;
-            this.supplierFn = supplierFn;
+            return this;
+        }
+
+        public MockPMS setGetError(RuntimeException getError) {
+            this.getError = getError;
+            return this;
+        }
+
+        public MockPMS setCloseError(RuntimeException closeError) {
+            this.closeError = closeError;
+            return this;
         }
 
         @Override
@@ -191,43 +126,63 @@ public class TestProcessors {
 
         @Nonnull @Override
         public Function<Address, ProcessorSupplier> get(@Nonnull List<Address> addresses) {
+            if (getError != null) {
+                throw getError;
+            }
             return a -> supplierFn.get();
         }
 
         @Override
-        public void complete(Throwable error) {
-            assertEquals("all PS that have been init should have been completed at this point",
-                    MockPS.initCount.get(), MockPS.completeCount.get());
-            assertTrue("Complete called without calling init()", initCalled.get());
-            assertTrue("PMS.complete() already called once",
-                    completeCalled.compareAndSet(false, true)
+        public void close(Throwable error) {
+            assertEquals("all PS that have been init should have been closed at this point",
+                    MockPS.initCount.get(), MockPS.closeCount.get());
+            assertTrue("Close called without calling init()", initCalled.get());
+            assertTrue("PMS.close() already called once",
+                    closeCalled.compareAndSet(false, true)
             );
-            assertTrue("PMS.complete() already called once",
-                    completeError.compareAndSet(null, error)
+            assertTrue("PMS.close() already called once",
+                    receivedCloseError.compareAndSet(null, error)
             );
+
+            if (closeError != null) {
+                throw closeError;
+            }
         }
     }
 
     public static class MockPS implements ProcessorSupplier {
 
         static AtomicInteger initCount = new AtomicInteger();
-        static AtomicInteger completeCount = new AtomicInteger();
-        static List<Throwable> completeErrors = new CopyOnWriteArrayList<>();
+        static AtomicInteger closeCount = new AtomicInteger();
+        static List<Throwable> receivedCloseErrors = new CopyOnWriteArrayList<>();
 
-        private final RuntimeException initError;
+        private RuntimeException initError;
+        private RuntimeException getError;
+        private RuntimeException closeError;
+
         private final DistributedSupplier<Processor> supplier;
         private final int nodeCount;
 
         private boolean initCalled;
 
         MockPS(DistributedSupplier<Processor> supplier, int nodeCount) {
-            this(null, supplier, nodeCount);
-        }
-
-        MockPS(RuntimeException initError, DistributedSupplier<Processor> supplier, int nodeCount) {
-            this.initError = initError;
             this.supplier = supplier;
             this.nodeCount = nodeCount;
+        }
+
+        public MockPS setInitError(RuntimeException initError) {
+            this.initError = initError;
+            return this;
+        }
+
+        public MockPS setGetError(RuntimeException getError) {
+            this.getError = getError;
+            return this;
+        }
+
+        public MockPS setCloseError(RuntimeException closeError) {
+            this.closeError = closeError;
+            return this;
         }
 
         @Override
@@ -242,21 +197,95 @@ public class TestProcessors {
 
         @Nonnull @Override
         public List<Processor> get(int count) {
+            if (getError != null) {
+                throw getError;
+            }
             return Stream.generate(supplier).limit(count).collect(toList());
         }
 
         @Override
-        public void complete(Throwable error) {
+        public void close(Throwable error) {
             if (error != null) {
-                completeErrors.add(error);
+                receivedCloseErrors.add(error);
             }
-            completeCount.incrementAndGet();
+            closeCount.incrementAndGet();
 
-            assertTrue("Complete called without calling init()", initCalled);
-            assertTrue("Complete called without init being called on all the nodes! init count: "
+            assertTrue("Close called without calling init()", initCalled);
+            assertTrue("Close called without init being called on all the nodes. Init count: "
                     + initCount.get() + " node count: " + nodeCount, initCount.get() >= nodeCount);
-            assertTrue("Complete called " + completeCount.get() + " but init called "
-                    + initCount.get() + " times!", completeCount.get() <= initCount.get());
+            assertTrue("Close called " + closeCount.get() + " times, but init called "
+                    + initCount.get() + " times!", closeCount.get() <= initCount.get());
+
+            if (closeError != null) {
+                throw closeError;
+            }
+        }
+    }
+
+    public static class MockP extends AbstractProcessor {
+
+        static AtomicInteger initCount = new AtomicInteger();
+        static AtomicInteger closeCount = new AtomicInteger();
+        static List<Throwable> receivedCloseErrors = new CopyOnWriteArrayList<>();
+
+        private Exception initError;
+        private Exception processError;
+        private RuntimeException completeError;
+        private Exception closeError;
+
+        public MockP setInitError(Exception initError) {
+            this.initError = initError;
+            return this;
+        }
+
+        public MockP setProcessError(Exception processError) {
+            this.processError = processError;
+            return this;
+        }
+
+        public MockP setCompleteError(RuntimeException completeError) {
+            this.completeError = completeError;
+            return this;
+        }
+
+        public MockP setCloseError(Exception closeError) {
+            this.closeError = closeError;
+            return this;
+        }
+
+        @Override
+        protected void init(@Nonnull Context context) throws Exception {
+            initCount.incrementAndGet();
+            if (initError != null) {
+                throw initError;
+            }
+        }
+
+        @Override
+        protected boolean tryProcess(int ordinal, @Nonnull Object item) throws Exception {
+            if (processError != null) {
+                throw processError;
+            }
+            return tryEmit(item);
+        }
+
+        @Override
+        public boolean complete() {
+            if (completeError != null) {
+                throw completeError;
+            }
+            return true;
+        }
+
+        @Override
+        public void close(@Nullable Throwable error) throws Exception {
+            closeCount.incrementAndGet();
+            if (error != null) {
+                receivedCloseErrors.add(error);
+            }
+            if (closeError != null) {
+                throw closeError;
+            }
         }
     }
 

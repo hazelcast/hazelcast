@@ -34,6 +34,7 @@ import org.apache.hadoop.mapred.TaskAttemptContextImpl;
 import org.apache.hadoop.mapred.TaskAttemptID;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.List;
 
@@ -76,7 +77,8 @@ public final class WriteHdfsP<T, K, V> extends AbstractProcessor {
         return true;
     }
 
-    private void close() {
+    @Override
+    public void close(@Nullable Throwable error) {
         uncheckRun(() -> {
             recordWriter.close(Reporter.NULL);
             if (outputCommitter.needsTaskCommit(taskAttemptContext)) {
@@ -123,7 +125,7 @@ public final class WriteHdfsP<T, K, V> extends AbstractProcessor {
         }
 
         @Override
-        public void complete(Throwable error) {
+        public void close(Throwable error) {
             if (outputCommitter != null && jobContext != null) {
                 uncheckRun(() -> outputCommitter.commitJob(jobContext));
             }
@@ -146,7 +148,6 @@ public final class WriteHdfsP<T, K, V> extends AbstractProcessor {
         private transient Context context;
         private transient OutputCommitter outputCommitter;
         private transient JobContextImpl jobContext;
-        private transient List<Processor> processorList;
 
         Supplier(SerializableJobConf jobConf,
                  DistributedFunction<? super T, K> extractKeyFn,
@@ -164,16 +165,9 @@ public final class WriteHdfsP<T, K, V> extends AbstractProcessor {
             jobContext = new JobContextImpl(jobConf, new JobID());
         }
 
-        @Override
-        public void complete(Throwable error) {
-            if (processorList != null) {
-                processorList.forEach(p -> ((WriteHdfsP) p).close());
-            }
-        }
-
         @Override @Nonnull
         public List<Processor> get(int count) {
-            return processorList = range(0, count).mapToObj(i -> {
+            return range(0, count).mapToObj(i -> {
                 try {
                     String uuid = context.jetInstance().getCluster().getLocalMember().getUuid();
                     TaskAttemptID taskAttemptID = new TaskAttemptID("jet-node-" + uuid, jobContext.getJobID().getId(),

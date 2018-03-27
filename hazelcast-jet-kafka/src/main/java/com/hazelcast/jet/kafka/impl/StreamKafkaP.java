@@ -20,12 +20,12 @@ import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.BroadcastKey;
-import com.hazelcast.jet.core.CloseableProcessorSupplier;
-import com.hazelcast.jet.core.ProcessorSupplier;
+import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.WatermarkGenerationParams;
 import com.hazelcast.jet.core.WatermarkSourceUtil;
 import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.kafka.KafkaProcessors;
 import com.hazelcast.util.Preconditions;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -35,7 +35,7 @@ import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.InterruptException;
 
 import javax.annotation.Nonnull;
-import java.io.Closeable;
+import javax.annotation.Nullable;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -58,7 +58,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 /**
  * See {@link KafkaProcessors#streamKafkaP}.
  */
-public final class StreamKafkaP<K, V, T> extends AbstractProcessor implements Closeable {
+public final class StreamKafkaP<K, V, T> extends AbstractProcessor {
 
     private static final long METADATA_CHECK_INTERVAL_NANOS = SECONDS.toNanos(5);
     private static final int POLL_TIMEOUT_MS = 50;
@@ -211,7 +211,7 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor implements Cl
     }
 
     @Override
-    public void close() {
+    public void close(@Nullable Throwable error) {
         if (consumer != null) {
             consumer.close();
         }
@@ -268,15 +268,13 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor implements Cl
     }
 
     @Nonnull
-    public static <K, V, T> ProcessorSupplier processorSupplier(
+    public static <K, V, T> DistributedSupplier<Processor> processorSupplier(
             @Nonnull Properties properties,
             @Nonnull List<String> topics,
             @Nonnull DistributedFunction<ConsumerRecord<K, V>, T> projectionFn,
             @Nonnull WatermarkGenerationParams<T> wmGenParams
     ) {
-        return CloseableProcessorSupplier.of(() -> new StreamKafkaP<>(
-                properties, topics, projectionFn, wmGenParams
-        ));
+        return () -> new StreamKafkaP<>(properties, topics, projectionFn, wmGenParams);
     }
 
     /**

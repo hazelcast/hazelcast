@@ -586,7 +586,7 @@ public class MasterContext {
         if (vertices != null) {
             for (Vertex vertex : vertices) {
                 try {
-                    vertex.getMetaSupplier().complete(failure);
+                    vertex.getMetaSupplier().close(failure);
                 } catch (Exception e) {
                     logger.severe(jobIdString()
                             + " encountered an exception in ProcessorMetaSupplier.complete(), ignoring it", e);

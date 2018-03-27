@@ -17,12 +17,11 @@
 package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.jet.core.AbstractProcessor;
-import com.hazelcast.jet.core.CloseableProcessorSupplier;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.processor.SourceProcessors;
 
 import javax.annotation.Nonnull;
-import java.io.Closeable;
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
@@ -38,7 +37,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 /**
  * @see SourceProcessors#streamSocketP(String, int, Charset)
  */
-public final class StreamSocketP extends AbstractProcessor implements Closeable {
+public final class StreamSocketP extends AbstractProcessor {
 
     private static final int BUFFER_SIZE = 4096;
     private static final int MAX_BYTES_PER_CHAR = 4;
@@ -142,7 +141,7 @@ public final class StreamSocketP extends AbstractProcessor implements Closeable 
     }
 
     @Override
-    public void close() throws IOException {
+    public void close(@Nullable Throwable error) throws IOException {
         if (socketChannel != null) {
             getLogger().info("Closing socket " + hostAndPort());
             socketChannel.close();
@@ -157,7 +156,7 @@ public final class StreamSocketP extends AbstractProcessor implements Closeable 
      * Internal API, use {@link SourceProcessors#streamSocketP(String, int, Charset)}.
      */
     public static ProcessorMetaSupplier supplier(String host, int port, @Nonnull String charset) {
-        return ProcessorMetaSupplier.preferLocalParallelismOne(CloseableProcessorSupplier.of(
-                () -> new StreamSocketP(host, port, Charset.forName(charset))));
+        return ProcessorMetaSupplier.preferLocalParallelismOne(
+                () -> new StreamSocketP(host, port, Charset.forName(charset)));
     }
 }

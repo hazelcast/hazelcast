@@ -58,7 +58,7 @@ public final class WrappingProcessorMetaSupplier implements ProcessorMetaSupplie
     }
 
     @Override
-    public void complete(Throwable error) {
-        wrapped.complete(error);
+    public void close(Throwable error) {
+        wrapped.close(error);
     }
 }

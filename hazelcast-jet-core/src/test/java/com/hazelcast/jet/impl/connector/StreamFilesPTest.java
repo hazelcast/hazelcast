@@ -99,7 +99,7 @@ public class StreamFilesPTest extends JetTestSupport {
         ProcessorSupplier supplier = metaSupplier.get(singletonList(a)).apply(a);
         supplier.init(new TestProcessorContext());
         assertEquals(1, supplier.get(1).size());
-        supplier.complete(null);
+        supplier.close(null);
     }
 
     @Test

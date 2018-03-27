@@ -24,13 +24,12 @@ import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.Outbox;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.Processor.Context;
-import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.TestProcessors.StuckForeverSourceP;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.processor.SinkProcessors;
 import com.hazelcast.jet.core.test.TestInbox;
-import com.hazelcast.jet.core.test.TestProcessorContext;
+import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.Before;
 import org.junit.Test;
@@ -56,10 +55,9 @@ public class WriteBufferedPTest extends JetTestSupport {
     }
 
     @Test
-    public void writeBuffered_smokeTest() throws Exception {
-        ProcessorSupplier supplier = getLoggingBufferedWriter();
-        supplier.init(new TestProcessorContext());
-        Processor p = supplier.get(1).iterator().next();
+    public void writeBuffered_smokeTest() {
+        DistributedSupplier<Processor> supplier = getLoggingBufferedWriter();
+        Processor p = supplier.get();
         Outbox outbox = mock(Outbox.class);
         p.init(outbox, mock(Context.class));
         TestInbox inbox = new TestInbox();
@@ -112,7 +110,7 @@ public class WriteBufferedPTest extends JetTestSupport {
     }
 
     // returns a processor that will not write anywhere, just log the events
-    private static ProcessorSupplier getLoggingBufferedWriter() {
+    private static DistributedSupplier<Processor> getLoggingBufferedWriter() {
         return SinkProcessors.writeBufferedP(
                 idx -> {
                     events.add("new");

@@ -53,6 +53,7 @@ import java.util.stream.IntStream;
 import static com.hazelcast.jet.core.test.JetAssert.assertEquals;
 import static com.hazelcast.jet.core.test.JetAssert.assertTrue;
 import static com.hazelcast.jet.function.DistributedFunction.identity;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static java.util.concurrent.TimeUnit.MICROSECONDS;
@@ -329,10 +330,14 @@ public final class TestSupport {
      * @throws AssertionError if some assertion does not hold
      */
     public void expectOutputs(@Nonnull List<List<?>> expectedOutputs) {
-        supplier.init(new TestProcessorSupplierContext());
-        this.expectedOutputs = expectedOutputs;
-        runTest(doSnapshots, doSnapshots ? 1 : 0);
-        supplier.complete(null);
+        try {
+            supplier.init(new TestProcessorSupplierContext());
+            this.expectedOutputs = expectedOutputs;
+            runTest(doSnapshots, doSnapshots ? 1 : 0);
+            supplier.close(null);
+        } catch (Exception e) {
+            throw sneakyThrow(e);
+        }
     }
 
     /**
@@ -463,7 +468,7 @@ public final class TestSupport {
         }
     }
 
-    private void runTest(boolean doSnapshots, int doRestoreEvery) {
+    private void runTest(boolean doSnapshots, int doRestoreEvery) throws Exception {
         assert doSnapshots || doRestoreEvery == 0 : "Illegal combination: don't do snapshots, but do restore";
         IdleStrategy idler = new BackoffIdleStrategy(0, 0, MICROSECONDS.toNanos(1),
                 MILLISECONDS.toNanos(1));
@@ -562,6 +567,8 @@ public final class TestSupport {
             assertTrue("complete returned true", !done[0] || runUntilCompletedTimeout <= 0);
         }
 
+        processor[0].close(null);
+
         // assert the outbox
         for (int i = 0; i < expectedOutputs.size(); i++) {
             List<?> expectedOutput = expectedOutputs.get(i);
@@ -644,7 +651,7 @@ public final class TestSupport {
             List<List<Object>> actualOutput,
             boolean doSnapshot,
             int doRestoreEvery,
-            int[] restoreCount) {
+            int[] restoreCount) throws Exception {
         if (!doSnapshot) {
             return;
         }
@@ -685,6 +692,7 @@ public final class TestSupport {
         // restore state to new processor
         assert outbox[0].queue(0).isEmpty();
         assert outbox[0].snapshotQueue().isEmpty();
+        processor[0].close(null);
         processor[0] = newProcessorFromSupplier();
         outbox[0] = createOutbox();
         initProcessor(processor[0], outbox[0]);

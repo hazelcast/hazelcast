@@ -18,15 +18,15 @@ package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.core.AbstractProcessor;
-import com.hazelcast.jet.core.CloseableProcessorSupplier;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
+import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.function.DistributedBiFunction;
 import com.hazelcast.jet.impl.util.ReflectionUtils;
 import com.hazelcast.logging.ILogger;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.BufferedReader;
-import java.io.Closeable;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -71,7 +71,7 @@ import static java.util.stream.Collectors.toList;
  * one file is only read by one thread, so extra parallelism won't improve
  * performance if there aren't enough files to read.
  */
-public class StreamFilesP<R> extends AbstractProcessor implements Closeable {
+public class StreamFilesP<R> extends AbstractProcessor {
 
     /**
      * The amount of data read from one file at once must be limited
@@ -138,7 +138,7 @@ public class StreamFilesP<R> extends AbstractProcessor implements Closeable {
     }
 
     @Override
-    public void close() {
+    public void close(@Nullable Throwable error) {
         try {
             closeCurrentFile();
             if (isClosed()) {
@@ -169,7 +169,7 @@ public class StreamFilesP<R> extends AbstractProcessor implements Closeable {
             }
             return false;
         } catch (InterruptedException e) {
-            close();
+            close(e);
             return true;
         }
     }
@@ -183,7 +183,7 @@ public class StreamFilesP<R> extends AbstractProcessor implements Closeable {
         if (key == null) {
             if (!Files.exists(watchedDirectory)) {
                 logger.info("Directory " + watchedDirectory + " does not exist, stopped watching");
-                close();
+                close(null);
             }
             return;
         }
@@ -207,7 +207,7 @@ public class StreamFilesP<R> extends AbstractProcessor implements Closeable {
         }
         if (!key.reset()) {
             logger.info("Watch key is invalid. Stopping watcher.");
-            close();
+            close(null);
         }
     }
 
@@ -239,7 +239,7 @@ public class StreamFilesP<R> extends AbstractProcessor implements Closeable {
                 }
             }
         } catch (IOException e) {
-            close();
+            close(e);
             throw sneakyThrow(e);
         }
     }
@@ -355,11 +355,11 @@ public class StreamFilesP<R> extends AbstractProcessor implements Closeable {
             @Nonnull String glob,
             @Nonnull DistributedBiFunction<String, String, ?> mapOutputFn
     ) {
-        return ProcessorMetaSupplier.of(CloseableProcessorSupplier.of(
+        return ProcessorMetaSupplier.of((ProcessorSupplier)
                 count -> IntStream.range(0, count)
                         .mapToObj(i -> new StreamFilesP(watchedDirectory, Charset.forName(charset), glob, count, i,
                                 mapOutputFn))
-                        .collect(toList())),
+                        .collect(toList()),
                 2);
     }
 

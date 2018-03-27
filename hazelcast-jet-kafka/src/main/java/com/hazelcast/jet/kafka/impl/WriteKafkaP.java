@@ -131,7 +131,7 @@ public final class WriteKafkaP<T, K, V> implements Processor {
         }
 
         @Override
-        public void complete(Throwable error) {
+        public void close(Throwable error) {
             if (producer != null) {
                 producer.close();
             }

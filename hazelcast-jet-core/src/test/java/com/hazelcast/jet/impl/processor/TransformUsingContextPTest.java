@@ -70,11 +70,11 @@ public class TransformUsingContextPTest {
         assertEquals("context-0", outbox1.queue(0).poll());
         assertEquals(share ? "context-0" : "context-1", outbox2.queue(0).poll());
 
-        processors[0].close();
+        processors[0].close(null);
         assertEquals(share ? 0 : 1, destroyCounter[0]);
-        processors[1].close();
+        processors[1].close(null);
         assertEquals(share ? 0 : 2, destroyCounter[0]);
-        supplier.complete(null);
+        supplier.close(null);
         assertEquals(share ? 1 : 2, destroyCounter[0]);
     }
 

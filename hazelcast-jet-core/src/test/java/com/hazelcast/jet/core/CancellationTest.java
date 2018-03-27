@@ -28,7 +28,7 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import javax.annotation.Nonnull;
-import java.io.Closeable;
+import javax.annotation.Nullable;
 import java.net.UnknownHostException;
 import java.util.List;
 import java.util.concurrent.CancellationException;
@@ -263,7 +263,7 @@ public class CancellationTest extends JetTestSupport {
     public void when_shutdown_then_jobFuturesCanceled() throws Exception {
         JetInstance jet = newInstance();
         DAG dag = new DAG();
-        dag.newVertex("blocking", CloseableProcessorSupplier.of(BlockingProcessor::new)).localParallelism(1);
+        dag.newVertex("blocking", BlockingProcessor::new).localParallelism(1);
         jet.newJob(dag);
         assertTrueEventually(() -> assertTrue(BlockingProcessor.hasStarted), 3);
         jet.shutdown();
@@ -274,7 +274,7 @@ public class CancellationTest extends JetTestSupport {
     public void when_jobCanceled_then_jobFutureCanceled() {
         JetInstance jet = newInstance();
         DAG dag = new DAG();
-        dag.newVertex("blocking", CloseableProcessorSupplier.of(BlockingProcessor::new)).localParallelism(1);
+        dag.newVertex("blocking", BlockingProcessor::new).localParallelism(1);
         Job job = jet.newJob(dag);
         assertTrueEventually(() -> assertTrue(BlockingProcessor.hasStarted), 3);
         job.cancel();
@@ -320,7 +320,7 @@ public class CancellationTest extends JetTestSupport {
         }
     }
 
-    private static class BlockingProcessor extends AbstractProcessor implements Closeable {
+    private static class BlockingProcessor extends AbstractProcessor {
 
         static volatile boolean hasStarted;
         static volatile boolean isDone;
@@ -336,7 +336,7 @@ public class CancellationTest extends JetTestSupport {
         }
 
         @Override
-        public void close() {
+        public void close(@Nullable Throwable error) {
             isDone = true;
         }
     }

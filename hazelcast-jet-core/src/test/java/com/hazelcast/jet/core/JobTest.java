@@ -21,8 +21,8 @@ import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.TestProcessors.Identity;
+import com.hazelcast.jet.core.TestProcessors.MockP;
 import com.hazelcast.jet.core.TestProcessors.MockPS;
-import com.hazelcast.jet.core.TestProcessors.ProcessorThatFailsInComplete;
 import com.hazelcast.jet.core.TestProcessors.StuckProcessor;
 import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.test.ExpectedRuntimeException;
@@ -69,9 +69,9 @@ public class JobTest extends JetTestSupport {
 
     @Before
     public void setup() {
-        MockPS.completeCount.set(0);
+        MockPS.closeCount.set(0);
         MockPS.initCount.set(0);
-        MockPS.completeErrors.clear();
+        MockPS.receivedCloseErrors.clear();
 
         StuckProcessor.proceedLatch = new CountDownLatch(1);
         StuckProcessor.executionStarted = new CountDownLatch(NODE_COUNT * LOCAL_PARALLELISM);
@@ -129,7 +129,7 @@ public class JobTest extends JetTestSupport {
     public void when_jobIsFailed_then_jobStatusIsCompletedEventually() throws InterruptedException {
         // Given
         DAG dag = new DAG().vertex(new Vertex("test", new MockPS((DistributedSupplier<Processor>)
-                () -> new ProcessorThatFailsInComplete(new ExpectedRuntimeException()), NODE_COUNT)));
+                () -> new MockP().setCompleteError(new ExpectedRuntimeException()), NODE_COUNT)));
 
         // When
         Job job = instance1.newJob(dag);
@@ -210,7 +210,7 @@ public class JobTest extends JetTestSupport {
     public void when_jobIsFailed_then_trackedJobCanQueryJobResult() throws InterruptedException {
         // Given
         DAG dag = new DAG().vertex(new Vertex("test", new MockPS((DistributedSupplier<Processor>)
-                () -> new ProcessorThatFailsInComplete(new ExpectedRuntimeException()), NODE_COUNT)));
+                () -> new MockP().setCompleteError(new ExpectedRuntimeException()), NODE_COUNT)));
 
         // When
         instance1.newJob(dag);

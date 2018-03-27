@@ -56,7 +56,7 @@ public class TestSupportTest {
             }
 
             @Override
-            public void complete(Throwable error) {
+            public void close(Throwable error) {
                 completeCalled[0] = true;
             }
         };

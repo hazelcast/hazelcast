@@ -18,7 +18,7 @@ package com.hazelcast.jet.impl.processor;
 
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.AbstractProcessor;
-import com.hazelcast.jet.core.CloseableProcessorSupplier;
+import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.ResettableSingletonTraverser;
 import com.hazelcast.jet.function.DistributedTriFunction;
@@ -26,7 +26,10 @@ import com.hazelcast.jet.pipeline.ContextFactory;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.io.Closeable;
+import java.util.Collection;
+import java.util.stream.Stream;
+
+import static java.util.stream.Collectors.toList;
 
 /**
  * Processor which, for each received item, emits all the items from the
@@ -37,7 +40,7 @@ import java.io.Closeable;
  * @param <T> received item type
  * @param <R> emitted item type
  */
-public final class TransformUsingContextP<C, T, R> extends AbstractProcessor implements Closeable {
+public final class TransformUsingContextP<C, T, R> extends AbstractProcessor {
 
     // package-visible for test
     C contextObject;
@@ -92,7 +95,7 @@ public final class TransformUsingContextP<C, T, R> extends AbstractProcessor imp
     }
 
     @Override
-    public void close() {
+    public void close(@Nullable Throwable error) {
         // close() might be called even if init() was not called.
         // Only destroy the context if is not shared (i.e. it is our own).
         if (contextObject != null && !contextFactory.isSharedLocally()) {
@@ -101,7 +104,7 @@ public final class TransformUsingContextP<C, T, R> extends AbstractProcessor imp
         contextObject = null;
     }
 
-    private static final class Supplier<C, T, R> extends CloseableProcessorSupplier {
+    private static final class Supplier<C, T, R> implements ProcessorSupplier {
 
         static final long serialVersionUID = 1L;
 
@@ -124,15 +127,17 @@ public final class TransformUsingContextP<C, T, R> extends AbstractProcessor imp
             if (contextFactory.isSharedLocally()) {
                 contextObject = contextFactory.createFn().apply(context.jetInstance());
             }
-            setSupplier(() -> new TransformUsingContextP<>(contextFactory, flatMapFn, contextObject));
+        }
+
+        @Nonnull @Override
+        public Collection<? extends Processor> get(int count) {
+            return Stream.generate(() -> new TransformUsingContextP<>(contextFactory, flatMapFn, contextObject))
+                         .limit(count)
+                         .collect(toList());
         }
 
         @Override
-        public void complete(Throwable error) {
-            // Super implementation closes the processor instances - it cleans up non-shared
-            // context objects.
-            super.complete(error);
-
+        public void close(Throwable error) {
             if (contextObject != null) {
                 contextFactory.destroyFn().accept(contextObject);
             }
