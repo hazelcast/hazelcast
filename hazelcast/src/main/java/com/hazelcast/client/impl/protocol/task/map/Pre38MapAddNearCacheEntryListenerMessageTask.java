@@ -75,7 +75,9 @@ public class Pre38MapAddNearCacheEntryListenerMessageTask
 
     @Override
     protected Object newMapListener() {
-        return new Pre38NearCacheInvalidationListener(endpoint, nodeEngine.getLocalMember().getUuid());
+        String uuid = nodeEngine.getLocalMember().getUuid();
+        long correlationId = clientMessage.getCorrelationId();
+        return new Pre38NearCacheInvalidationListener(endpoint, uuid, correlationId);
     }
 
     @Override
@@ -89,8 +91,8 @@ public class Pre38MapAddNearCacheEntryListenerMessageTask
      */
     private final class Pre38NearCacheInvalidationListener extends AbstractMapClientNearCacheInvalidationListener {
 
-        Pre38NearCacheInvalidationListener(ClientEndpoint endpoint, String localMemberUuid) {
-            super(endpoint, localMemberUuid);
+        Pre38NearCacheInvalidationListener(ClientEndpoint endpoint, String localMemberUuid, long correlationId) {
+            super(endpoint, localMemberUuid, correlationId);
         }
 
         @Override
