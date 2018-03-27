@@ -104,8 +104,9 @@ public class EvictionTest extends HazelcastTestSupport {
 
         map.put(1, "value0", 1, TimeUnit.SECONDS);
         map.put(1, "value1", 2, TimeUnit.SECONDS);
+        long sleepRef = System.currentTimeMillis();
         map.put(1, "value2", 300, TimeUnit.SECONDS);
-        sleepSeconds(2);
+        sleepAtMostSeconds(sleepRef, 2);
 
         assertTrue(map.containsKey(1));
     }
@@ -114,15 +115,17 @@ public class EvictionTest extends HazelcastTestSupport {
     public void testTTL_prolongationAfterNonTTLUpdate_Quick() {
         final IMap<Integer, String> map = createSimpleMap();
 
+        long sleepRef = System.currentTimeMillis();
         map.put(1, "value0", 3, TimeUnit.SECONDS);
         // 1 second safety margin before eviction
-        sleepSeconds(2);
+        sleepAtMostSeconds(sleepRef, 2);
         assertTrue(map.containsKey(1));
 
+        sleepRef = System.currentTimeMillis();
         // this should prolong the life of the entry for another 3 seconds
         map.put(1, "value1");
         // 4 seconds of wait time in total, 1 second safety margin after a potential eviction
-        sleepSeconds(2);
+        sleepAtMostSeconds(sleepRef, 2);
         assertTrue(map.containsKey(1));
     }
 
@@ -131,27 +134,31 @@ public class EvictionTest extends HazelcastTestSupport {
     public void testTTL_prolongationAfterNonTTLUpdate_Slow() throws ExecutionException, InterruptedException {
         final IMap<Integer, String> map = createSimpleMap();
 
+        long sleepRef = System.currentTimeMillis();
         map.put(1, "value0", 3, TimeUnit.SECONDS);
         // 1 second safety margin before eviction
-        sleepSeconds(2);
+        sleepAtMostSeconds(sleepRef, 2);
         assertTrue(map.containsKey(1));
 
+        sleepRef = System.currentTimeMillis();
         // this should prolong the life of the entry for another 3 seconds
         map.put(1, "value1");
         // 4 seconds of wait time in total, 1 second safety margin after a potential eviction
-        sleepSeconds(2);
+        sleepAtMostSeconds(sleepRef, 2);
         assertTrue(map.containsKey(1));
 
+        sleepRef = System.currentTimeMillis();
         map.set(1, "value2");
-        sleepSeconds(2);
+        sleepAtMostSeconds(sleepRef, 2);
         assertTrue(map.containsKey(1));
 
         final HashMap<Integer, String> items = new HashMap<Integer, String>();
         items.put(1, "value3");
         items.put(2, "value1");
         items.put(3, "value1");
+        sleepRef = System.currentTimeMillis();
         map.putAll(items);
-        sleepSeconds(2);
+        sleepAtMostSeconds(sleepRef, 2);
         assertTrue(map.containsKey(1));
 
         map.putAsync(1, "value4").get();
