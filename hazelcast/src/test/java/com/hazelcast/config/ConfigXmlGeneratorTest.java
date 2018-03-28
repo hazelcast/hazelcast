@@ -193,27 +193,25 @@ public class ConfigXmlGeneratorTest {
 
     @Test
     public void testNativeMemory() {
-        NativeMemoryConfig nativeMemoryConfig = new NativeMemoryConfig();
-        nativeMemoryConfig.setEnabled(true);
-        nativeMemoryConfig.setAllocatorType(NativeMemoryConfig.MemoryAllocatorType.STANDARD);
-        nativeMemoryConfig.setMetadataSpacePercentage((float) 12.5);
-        nativeMemoryConfig.setMinBlockSize(50);
-        nativeMemoryConfig.setPageSize(100);
-        nativeMemoryConfig.setSize(new MemorySize(20, MemoryUnit.MEGABYTES));
+        NativeMemoryConfig expectedConfig = new NativeMemoryConfig();
+        expectedConfig.setEnabled(true);
+        expectedConfig.setAllocatorType(NativeMemoryConfig.MemoryAllocatorType.STANDARD);
+        expectedConfig.setMetadataSpacePercentage(12.5f);
+        expectedConfig.setMinBlockSize(50);
+        expectedConfig.setPageSize(100);
+        expectedConfig.setSize(new MemorySize(20, MemoryUnit.MEGABYTES));
 
-        Config config = new Config()
-                .setNativeMemoryConfig(nativeMemoryConfig);
-
+        Config config = new Config().setNativeMemoryConfig(expectedConfig);
         Config xmlConfig = getNewConfigViaXMLGenerator(config);
 
-        NativeMemoryConfig xmlNativeMemoryConfig = xmlConfig.getNativeMemoryConfig();
-        assertTrue(xmlNativeMemoryConfig.isEnabled());
-        assertEquals(NativeMemoryConfig.MemoryAllocatorType.STANDARD, nativeMemoryConfig.getAllocatorType());
-        assertEquals(12.5, nativeMemoryConfig.getMetadataSpacePercentage(), 0.0001);
-        assertEquals(50, nativeMemoryConfig.getMinBlockSize());
-        assertEquals(100, nativeMemoryConfig.getPageSize());
-        assertEquals(new MemorySize(20, MemoryUnit.MEGABYTES).getUnit(), nativeMemoryConfig.getSize().getUnit());
-        assertEquals(new MemorySize(20, MemoryUnit.MEGABYTES).getValue(), nativeMemoryConfig.getSize().getValue());
+        NativeMemoryConfig actualConfig = xmlConfig.getNativeMemoryConfig();
+        assertTrue(actualConfig.isEnabled());
+        assertEquals(NativeMemoryConfig.MemoryAllocatorType.STANDARD, actualConfig.getAllocatorType());
+        assertEquals(12.5, actualConfig.getMetadataSpacePercentage(), 0.0001);
+        assertEquals(50, actualConfig.getMinBlockSize());
+        assertEquals(100, actualConfig.getPageSize());
+        assertEquals(new MemorySize(20, MemoryUnit.MEGABYTES).getUnit(), actualConfig.getSize().getUnit());
+        assertEquals(new MemorySize(20, MemoryUnit.MEGABYTES).getValue(), actualConfig.getSize().getValue());
     }
 
     @Test
