@@ -16,19 +16,25 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.config.replacer.spi.ConfigReplacer;
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
+import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.PrintWriter;
 import java.util.Properties;
 
+import static com.hazelcast.config.AbstractConfigBuilder.HAZELCAST_CONFIG_REPLACER_CLASS;
+import static com.hazelcast.config.AbstractConfigBuilder.HAZELCAST_CONFIG_REPLACER_FAIL_IF_MISSING;
 import static com.hazelcast.config.XMLConfigBuilderTest.HAZELCAST_END_TAG;
 import static com.hazelcast.config.XMLConfigBuilderTest.HAZELCAST_START_TAG;
 import static org.junit.Assert.assertEquals;
@@ -41,6 +47,9 @@ public class XmlConfigImportVariableReplacementTest {
 
     @Rule
     public ExpectedException rule = ExpectedException.none();
+
+    @Rule
+    public TemporaryFolder tempFolder = new TemporaryFolder();
 
     @Test
     public void testImportElementOnlyAppearsInTopLevel() {
@@ -381,6 +390,100 @@ public class XmlConfigImportVariableReplacementTest {
     }
 
     @Test
+    public void testEncryptionReplacer() throws Exception {
+        File passwordFile = tempFolder.newFile(getClass().getSimpleName() + ".pwd");
+        PrintWriter out = new PrintWriter(passwordFile);
+        try {
+            out.print("This is a password");
+        } finally {
+            IOUtil.closeResource(out);
+        }
+        String xml = HAZELCAST_START_TAG
+                + "    <properties>\n"
+                + "        <property name='" + HAZELCAST_CONFIG_REPLACER_CLASS
+                + "'>com.hazelcast.config.replacer.EncryptionReplacer</property>\n"
+                + "        <property name='com.hazelcast.config.replacer.EncryptionReplacer.passwordFile'>"
+                + passwordFile.getAbsolutePath() + "</property>\n"
+                + "        <property name='com.hazelcast.config.replacer.EncryptionReplacer.passwordUserProperties'>false</property>\n"
+                + "        <property name='com.hazelcast.config.replacer.EncryptionReplacer.keyLengthBits'>64</property>\n"
+                + "        <property name='com.hazelcast.config.replacer.EncryptionReplacer.saltLengthBytes'>8</property>\n"
+                + "        <property name='com.hazelcast.config.replacer.EncryptionReplacer.cipherAlgorithm'>DES</property>\n"
+                + "        <property name='com.hazelcast.config.replacer.EncryptionReplacer.secretKeyFactoryAlgorithm'>PBKDF2WithHmacSHA1</property>\n"
+                + "        <property name='com.hazelcast.config.replacer.EncryptionReplacer.secretKeyAlgorithm'>DES</property>\n"
+                + "    </properties>\n"
+                + "    <group>\n"
+                + "        <name>${java.version}</name>\n"
+                + "        <password>$ENC{7JX2r/8qVVw=:10000:Jk4IPtor5n/vCb+H8lYS6tPZOlCZMtZv}</password>\n"
+                + "    </group>\n"
+                + HAZELCAST_END_TAG;
+        GroupConfig groupConfig = buildConfig(xml, System.getProperties()).getGroupConfig();
+        assertEquals(System.getProperty("java.version"), groupConfig.getName());
+        assertEquals("My very secret secret", groupConfig.getPassword());
+    }
+
+    @Test(expected = ConfigurationException.class)
+    public void testReplacerFailFast() throws Exception {
+        String xml = HAZELCAST_START_TAG
+                + "    <properties>\n"
+                + "        <property name='" + HAZELCAST_CONFIG_REPLACER_CLASS
+                + "'>com.hazelcast.config.replacer.EncryptionReplacer</property>\n"
+                + "    </properties>\n"
+                + "    <group>\n"
+                + "        <password>$ENC{7JX2r/8qVVw=:10000:Jk4IPtor5n/vCb+H8lYS6tPZOlCZMtZv}</password>\n"
+                + "    </group>\n"
+                + HAZELCAST_END_TAG;
+        buildConfig(xml, System.getProperties());
+    }
+
+    @Test
+    public void testReplacerDisabledFailFast() throws Exception {
+        String xml = HAZELCAST_START_TAG
+                + "    <properties>\n"
+                + "        <property name='" + HAZELCAST_CONFIG_REPLACER_CLASS
+                + "'>com.hazelcast.config.replacer.EncryptionReplacer</property>\n"
+                + "        <property name='" + HAZELCAST_CONFIG_REPLACER_FAIL_IF_MISSING + "'>false</property>\n"
+                + "    </properties>\n"
+                + "    <group>\n"
+                + "        <name>$ENC{7JX2r/8qVVw=:10000:Jk4IPtor5n/vCb+H8lYS6tPZOlCZMtZv}</name>\n"
+                + "    </group>\n"
+                + HAZELCAST_END_TAG;
+        GroupConfig groupConfig = buildConfig(xml, System.getProperties()).getGroupConfig();
+        assertEquals("$ENC{7JX2r/8qVVw=:10000:Jk4IPtor5n/vCb+H8lYS6tPZOlCZMtZv}", groupConfig.getName());
+    }
+
+    @Test
+    public void testCustomReplacer() throws Exception {
+        String xml = HAZELCAST_START_TAG
+                + "    <properties>\n"
+                + "        <property name='" + HAZELCAST_CONFIG_REPLACER_CLASS
+                + "'>" + IdentityReplacer.class.getName() + "</property>\n"
+                + "    </properties>\n"
+                + "    <group>\n"
+                + "        <name>$ID{my-&lt;test/&gt;-group}</name>\n"
+                + "    </group>\n"
+                + HAZELCAST_END_TAG;
+        GroupConfig groupConfig = buildConfig(xml, System.getProperties()).getGroupConfig();
+        assertEquals("my-<test/>-group", groupConfig.getName());
+    }
+
+    /**
+     * Given: No replacer is used in the configuration file<br>
+     * When: A property variable is used within the file<br>
+     * Then: The configuration parsing doesn't fail and the variable string remains unchanged (i.e. backward compatible
+     * behavior, as if {@code fail-if-value-missing} attribute is {@code false}).
+     */
+    @Test
+    public void testNoConfigReplacersMissingProperties() throws Exception {
+        String xml = HAZELCAST_START_TAG
+                + "    <group>\n"
+                + "        <name>${noSuchPropertyAvailable}</name>\n"
+                + "    </group>\n"
+                + HAZELCAST_END_TAG;
+        GroupConfig groupConfig = buildConfig(xml, System.getProperties()).getGroupConfig();
+        assertEquals("${noSuchPropertyAvailable}", groupConfig.getName());
+    }
+
+    @Test
     public void testXmlVariableReplacementAsSubstring() {
         String xml = HAZELCAST_START_TAG
                 + "    <properties>\n"
@@ -443,5 +546,21 @@ public class XmlConfigImportVariableReplacementTest {
         Properties properties = new Properties();
         properties.setProperty(key, value);
         return buildConfig(xml, properties);
+    }
+
+    public static class IdentityReplacer implements ConfigReplacer {
+        @Override
+        public String getPrefix() {
+            return "ID";
+        }
+
+        @Override
+        public String getReplacement(String maskedValue) {
+            return maskedValue;
+        }
+
+        @Override
+        public void init(Properties properties) {
+        }
     }
 }
