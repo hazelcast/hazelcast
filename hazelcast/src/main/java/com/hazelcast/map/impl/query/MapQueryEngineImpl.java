@@ -88,8 +88,7 @@ public class MapQueryEngineImpl implements MapQueryEngine {
         } else if (target.isTargetLocalNode()) {
             return runQueryOnLocalPartitions(adjustedQuery);
         } else if (target.isTargetPartitionOwner()) {
-            // we do not adjust the query here - it's a single partition operation only
-            return runQueryOnGivenPartition(query, target);
+            return runQueryOnGivenPartition(adjustedQuery, target);
         }
         throw new IllegalArgumentException("Illegal target " + query);
     }
