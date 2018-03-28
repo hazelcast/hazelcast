@@ -25,6 +25,7 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.spi.ClientAwareService;
+import com.hazelcast.spi.CoreService;
 import com.hazelcast.spi.FragmentedMigrationAwareService;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.MemberAttributeServiceEvent;
@@ -57,7 +58,7 @@ import java.util.concurrent.ConcurrentMap;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 
 @SuppressWarnings("checkstyle:methodcount")
-public final class LockServiceImpl implements LockService, ManagedService, RemoteService, MembershipAwareService,
+public final class LockServiceImpl implements LockService, CoreService, ManagedService, RemoteService, MembershipAwareService,
         FragmentedMigrationAwareService, ClientAwareService, QuorumAwareService {
 
     private static final Object NULL_OBJECT = new Object();

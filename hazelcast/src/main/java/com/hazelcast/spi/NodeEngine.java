@@ -16,6 +16,7 @@
 
 package com.hazelcast.spi;
 
+import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.HazelcastInstance;
@@ -98,6 +99,13 @@ public interface NodeEngine {
      * @return the WanReplicationService
      */
     WanReplicationService getWanReplicationService();
+
+    /**
+     * Gets the LockService.
+     *
+     * @return the LockService
+     */
+    LockService getLockService();
 
     /**
      * Gets the QuorumService.

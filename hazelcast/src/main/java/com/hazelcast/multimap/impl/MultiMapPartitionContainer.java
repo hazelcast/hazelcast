@@ -16,7 +16,6 @@
 
 package com.hazelcast.multimap.impl;
 
-import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.spi.DistributedObjectNamespace;
 import com.hazelcast.spi.NodeEngine;
@@ -90,11 +89,8 @@ public class MultiMapPartitionContainer {
 
     private void clearLockStore(String name) {
         NodeEngine nodeEngine = service.getNodeEngine();
-        LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
-        if (lockService != null) {
-            DistributedObjectNamespace namespace = new DistributedObjectNamespace(MultiMapService.SERVICE_NAME, name);
-            lockService.clearLockStore(partitionId, namespace);
-        }
+        DistributedObjectNamespace namespace = new DistributedObjectNamespace(MultiMapService.SERVICE_NAME, name);
+        nodeEngine.getLockService().clearLockStore(partitionId, namespace);
     }
 
     void destroy() {

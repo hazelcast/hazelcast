@@ -28,7 +28,6 @@ import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
 import com.hazelcast.concurrent.idgen.IdGeneratorService;
 import com.hazelcast.concurrent.lock.LockService;
-import com.hazelcast.concurrent.lock.LockServiceImpl;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
 import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.config.ServicesConfig;
@@ -130,6 +129,7 @@ public final class ServiceManagerImpl implements ServiceManager {
         registerService(QuorumServiceImpl.SERVICE_NAME, nodeEngine.getQuorumService());
         registerService(WanReplicationService.SERVICE_NAME, nodeEngine.getWanReplicationService());
         registerService(EventServiceImpl.SERVICE_NAME, nodeEngine.getEventService());
+        registerService(LockService.SERVICE_NAME, node.getLockService());
     }
 
     private void registerExtensionServices() {
@@ -148,7 +148,6 @@ public final class ServiceManagerImpl implements ServiceManager {
 
         logger.finest("Registering default services...");
         registerService(MapService.SERVICE_NAME, createService(MapService.class));
-        registerService(LockService.SERVICE_NAME, new LockServiceImpl(nodeEngine));
         registerService(QueueService.SERVICE_NAME, new QueueService(nodeEngine));
         registerService(TopicService.SERVICE_NAME, new TopicService());
         registerService(ReliableTopicService.SERVICE_NAME, new ReliableTopicService(nodeEngine));
@@ -341,10 +340,10 @@ public final class ServiceManagerImpl implements ServiceManager {
 
     @Override
     public <S> List<S> getServices(Class<S> serviceClass) {
-        final LinkedList<S> result = new LinkedList<S>();
+        LinkedList<S> result = new LinkedList<S>();
         for (ServiceInfo serviceInfo : services.values()) {
             if (serviceInfo.isInstanceOf(serviceClass)) {
-                final S service = (S) serviceInfo.getService();
+                S service = serviceInfo.getService();
                 if (serviceInfo.isCoreService()) {
                     result.addFirst(service);
                 } else {
@@ -367,11 +366,9 @@ public final class ServiceManagerImpl implements ServiceManager {
         if (service == null) {
             return null;
         }
-
         if (service instanceof SharedService) {
             return (T) service;
         }
-
         throw new IllegalArgumentException("No SharedService registered with name: " + serviceName);
     }
 

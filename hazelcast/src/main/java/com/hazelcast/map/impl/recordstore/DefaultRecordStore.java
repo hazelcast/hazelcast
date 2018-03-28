@@ -16,7 +16,6 @@
 
 package com.hazelcast.map.impl.recordstore;
 
-import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.core.EntryView;
@@ -217,11 +216,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     @Override
     public void clearPartition(boolean onShutdown) {
         NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
-        LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
-        if (lockService != null) {
-            ObjectNamespace namespace = MapService.getObjectNamespace(name);
-            lockService.clearLockStore(partitionId, namespace);
-        }
+        ObjectNamespace objectNamespace = MapService.getObjectNamespace(name);
+        nodeEngine.getLockService().clearLockStore(partitionId, objectNamespace);
 
         Indexes indexes = mapContainer.getIndexes(partitionId);
         if (indexes.isGlobal()) {

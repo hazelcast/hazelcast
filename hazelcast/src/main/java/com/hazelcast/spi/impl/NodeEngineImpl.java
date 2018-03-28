@@ -16,6 +16,7 @@
 
 package com.hazelcast.spi.impl;
 
+import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
@@ -300,6 +301,11 @@ public class NodeEngineImpl implements NodeEngine {
     @Override
     public WanReplicationService getWanReplicationService() {
         return wanReplicationService;
+    }
+
+    @Override
+    public LockService getLockService() {
+        return node.getLockService();
     }
 
     @Override

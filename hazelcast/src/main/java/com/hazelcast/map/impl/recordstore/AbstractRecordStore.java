@@ -16,7 +16,6 @@
 
 package com.hazelcast.map.impl.recordstore;
 
-import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.lock.LockStore;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.map.impl.EntryCostEstimator;
@@ -36,6 +35,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.Clock;
 
@@ -174,11 +174,8 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
 
     protected LockStore createLockStore() {
         NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
-        LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
-        if (lockService == null) {
-            return null;
-        }
-        return lockService.createLockStore(partitionId, MapService.getObjectNamespace(name));
+        ObjectNamespace objectNamespace = MapService.getObjectNamespace(name);
+        return nodeEngine.getLockService().createLockStore(partitionId, objectNamespace);
     }
 
     public int getLockedEntryCount() {
