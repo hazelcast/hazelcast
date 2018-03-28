@@ -48,14 +48,17 @@ import static java.util.concurrent.Executors.newCachedThreadPool;
 import static java.util.concurrent.TimeUnit.MICROSECONDS;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
+import static java.util.regex.Matcher.quoteReplacement;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.partitioningBy;
 import static java.util.stream.Collectors.toList;
 
 public class TaskletExecutionService {
 
-    private static final IdleStrategy IDLER =
+    private static final IdleStrategy IDLER_COOPERATIVE =
             new BackoffIdleStrategy(0, 0, MICROSECONDS.toNanos(1), MILLISECONDS.toNanos(1));
+    private static final IdleStrategy IDLER_NON_COOPERATIVE =
+            new BackoffIdleStrategy(0, 0, MICROSECONDS.toNanos(1), MILLISECONDS.toNanos(5));
 
     private final ExecutorService blockingTaskletExecutor = newCachedThreadPool(new BlockingTaskThreadFactory());
     private final CooperativeWorker[] cooperativeWorkers;
@@ -178,6 +181,12 @@ public class TaskletExecutionService {
             final ClassLoader clBackup = currentThread().getContextClassLoader();
             final Tasklet t = tracker.tasklet;
             currentThread().setContextClassLoader(tracker.jobClassLoader);
+
+            // swap the thread name by replacing the ".thread-NN" part at the end
+            final String oldName = currentThread().getName();
+            currentThread().setName(oldName.replaceAll(".thread-[0-9]+$", quoteReplacement("." + tracker.tasklet)));
+            assert !oldName.equals(currentThread().getName()) : "unexpected thread name pattern: " + oldName;
+
             try {
                 startedLatch.countDown();
                 t.init();
@@ -188,7 +197,10 @@ public class TaskletExecutionService {
                     if (result.isMadeProgress()) {
                         idleCount = 0;
                     } else {
-                        IDLER.idle(++idleCount);
+                        if (idleCount < Integer.MAX_VALUE) {
+                            idleCount++;
+                        }
+                        IDLER_NON_COOPERATIVE.idle(idleCount);
                     }
                 } while (!result.isDone()
                         && !tracker.executionTracker.executionCompletedExceptionally()
@@ -198,6 +210,7 @@ public class TaskletExecutionService {
                 tracker.executionTracker.exception(new JetException("Exception in " + t + ": " + e, e));
             } finally {
                 currentThread().setContextClassLoader(clBackup);
+                currentThread().setName(oldName);
                 tracker.executionTracker.taskletDone();
             }
         }
@@ -262,7 +275,10 @@ public class TaskletExecutionService {
                     idleCount = 0;
                 } else {
                     thread.setContextClassLoader(clBackup);
-                    IDLER.idle(++idleCount);
+                    if (idleCount < Integer.MAX_VALUE) {
+                        idleCount++;
+                    }
+                    IDLER_COOPERATIVE.idle(idleCount);
                 }
             }
             // Best-effort attempt to release all tasklets. A tasklet can still be added
