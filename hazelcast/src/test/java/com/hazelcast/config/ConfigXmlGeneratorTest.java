@@ -433,6 +433,7 @@ public class ConfigXmlGeneratorTest {
                 .setPrefetchCount(3)
                 .setPrefetchValidityMillis(10L)
                 .setIdOffset(20L)
+                .setNodeIdOffset(30L)
                 .setStatisticsEnabled(false);
 
         Config config = new Config()
