@@ -16,32 +16,51 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
+import static com.hazelcast.config.XmlElements.IMPORT;
+import static com.hazelcast.config.XmlElements.PROPERTIES;
+import static com.hazelcast.util.StringUtil.isNullOrEmpty;
+import static com.hazelcast.util.StringUtil.trim;
+import static java.lang.String.format;
+
+import java.io.InputStream;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map.Entry;
+import java.util.Properties;
+import java.util.Set;
+
+import javax.xml.namespace.NamespaceContext;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathFactory;
+
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-import javax.xml.namespace.NamespaceContext;
-import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathConstants;
-import javax.xml.xpath.XPathFactory;
-import java.io.InputStream;
-import java.net.URL;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Properties;
-import java.util.Set;
-
-import static com.hazelcast.config.XmlElements.IMPORT;
-import static java.lang.String.format;
+import com.hazelcast.config.replacer.PropertyReplacer;
+import com.hazelcast.config.replacer.spi.ConfigReplacer;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 
 /**
  * Contains logic for replacing system variables in the XML file and importing XML files from different locations.
  */
 public abstract class AbstractConfigBuilder extends AbstractXmlConfigHelper {
+
+    /**
+     * Name of property which allows to configure a {@link ConfigReplacer} to be applied on the loaded XML configuration.
+     */
+    public static final String HAZELCAST_CONFIG_REPLACER_CLASS = "hazelcast.config.replacer.class";
+    /**
+     * Name of property which allows to disable the fail-fast approach for {@link ConfigReplacer}.
+     */
+    public static final String HAZELCAST_CONFIG_REPLACER_FAIL_IF_MISSING = "hazelcast.config.replacer.fail-if-value-missing";
 
     protected enum ConfigType {
         SERVER("hazelcast"),
@@ -143,46 +162,104 @@ public abstract class AbstractConfigBuilder extends AbstractXmlConfigHelper {
     @Override
     protected abstract ConfigType getXmlType();
 
-    private void traverseChildrenAndReplaceVariables(Node root) {
+    private void traverseChildrenAndReplaceVariables(Node root) throws Exception {
+        // if no config-replacer is defined, use backward compatible default behavior for missing properties
+        boolean failFast = false;
+
+        List<ConfigReplacer> replacers = new ArrayList<ConfigReplacer>();
+
+        // Always use the Property replacer first.
+        PropertyReplacer propertyReplacer = new PropertyReplacer();
+        propertyReplacer.init(getProperties());
+        replacers.add(propertyReplacer);
+
+        // Check if other replacer is defined in the XML
+        Properties hzProperties = new Properties();
+        NodeList importTags = (NodeList) xpath.evaluate(
+                format("/hz:%s/hz:%s", getXmlType().name, PROPERTIES.name), root, XPathConstants.NODESET);
+        for (Node node : asElementIterable(importTags)) {
+            fillProperties(node, hzProperties);
+        }
+
+        String replacerClassName = trim(hzProperties.getProperty(HAZELCAST_CONFIG_REPLACER_CLASS));
+        if (! isNullOrEmpty(replacerClassName)) {
+            String failFastProperty = trim(hzProperties.getProperty(HAZELCAST_CONFIG_REPLACER_FAIL_IF_MISSING));
+            failFast = isNullOrEmpty(failFastProperty);
+            replacers.add(createReplacer(replacerClassName, hzProperties));
+        }
+
+        // Use all the replacers on the XML content
+        for (ConfigReplacer replacer : replacers) {
+            traverseChildrenAndReplaceVariables(root, replacer, failFast);
+        }
+    }
+
+    private ConfigReplacer createReplacer(String replacerClassName, Properties hzProperties) throws Exception {
+        String propertyPrefix = replacerClassName + ".";
+        int prefixLen = propertyPrefix.length();
+        Properties properties = new Properties();
+        for (Entry<Object, Object> entry : hzProperties.entrySet()) {
+            String key = (String) entry.getKey();
+            if (key.startsWith(propertyPrefix)) {
+                properties.setProperty(key.substring(prefixLen), (String) entry.getValue());
+            }
+        }
+        ConfigReplacer replacer = (ConfigReplacer) Class.forName(replacerClassName).newInstance();
+        replacer.init(properties);
+        return replacer;
+    }
+
+
+    private void traverseChildrenAndReplaceVariables(Node root, ConfigReplacer replacer, boolean failFast) {
         NamedNodeMap attributes = root.getAttributes();
         if (attributes != null) {
             for (int k = 0; k < attributes.getLength(); k++) {
                 Node attribute = attributes.item(k);
-                replaceVariables(attribute);
+                replaceVariables(attribute, replacer, failFast);
             }
         }
         if (root.getNodeValue() != null) {
-            replaceVariables(root);
+            replaceVariables(root, replacer, failFast);
         }
         final NodeList childNodes = root.getChildNodes();
         for (int k = 0; k < childNodes.getLength(); k++) {
             Node child = childNodes.item(k);
-            traverseChildrenAndReplaceVariables(child);
+            traverseChildrenAndReplaceVariables(child, replacer, failFast);
         }
     }
 
-    private void replaceVariables(Node node) {
+    private void replaceVariables(Node node, ConfigReplacer replacer, boolean failFast) {
         String value = node.getNodeValue();
         StringBuilder sb = new StringBuilder(value);
+        String replacerPrefix = "$" + replacer.getPrefix() + "{";
         int endIndex = -1;
-        int startIndex = sb.indexOf("${");
+        int startIndex = sb.indexOf(replacerPrefix);
         while (startIndex > -1) {
             endIndex = sb.indexOf("}", startIndex);
             if (endIndex == -1) {
-                LOGGER.warning("Bad variable syntax. Could not find a closing curly bracket '}' on node: " + node.getLocalName());
+                LOGGER.warning("Bad variable syntax. Could not find a closing curly bracket '}' for prefix " + replacerPrefix
+                        + " on node: " + node.getLocalName());
                 break;
             }
 
-            String variable = sb.substring(startIndex + 2, endIndex);
-            String variableReplacement = getProperties().getProperty(variable);
+            String variable = sb.substring(startIndex + replacerPrefix.length(), endIndex);
+            String variableReplacement = replacer.getReplacement(variable);
             if (variableReplacement != null) {
                 sb.replace(startIndex, endIndex + 1, variableReplacement);
                 endIndex = startIndex + variableReplacement.length();
             } else {
-                LOGGER.warning("Could not find a value for property  '" + variable + "' on node: " + node.getLocalName());
+                handleMissingVariable(sb.substring(startIndex, endIndex + 1), node.getLocalName(), failFast);
             }
-            startIndex = sb.indexOf("${", endIndex);
+            startIndex = sb.indexOf(replacerPrefix, endIndex);
         }
         node.setNodeValue(sb.toString());
+    }
+
+    private void handleMissingVariable(String variable, String nodeName, boolean failFast) throws ConfigurationException {
+        String message = format("Could not find a replacement for '%s' on node '%s'", variable, nodeName);
+        if (failFast) {
+            throw new ConfigurationException(message);
+        }
+        LOGGER.warning(message);
     }
 }
