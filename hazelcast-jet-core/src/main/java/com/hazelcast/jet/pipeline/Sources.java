@@ -719,6 +719,18 @@ public final class Sources {
     }
 
     /**
+     * Convenience for {@link #socket socket(host, port, charset)} with
+     * UTF-8 as the charset.
+     *
+     * @param host the hostname to connect to
+     * @param port the port to connect to
+     */
+    @Nonnull
+    public static StreamSource<String> socket(@Nonnull String host, int port) {
+        return socket(host, port, UTF_8);
+    }
+
+    /**
      * A source that emits lines from files in a directory (but not its
      * subdirectories. The files must not change while being read; if they do,
      * the behavior is unspecified.
@@ -756,8 +768,8 @@ public final class Sources {
 
     /**
      * Convenience for {@link #files(String, Charset, String, DistributedBiFunction)
-     * full version of readFiles}, using UTF-8 encoding, matching all files in
-     * the directory and emitting just the lines as Strings.
+     * the full version of readFiles} which uses UTF-8 encoding, matches all
+     * the files in the directory and emits lines of text in the files.
      */
     @Nonnull
     public static BatchSource<String> files(@Nonnull String directory) {

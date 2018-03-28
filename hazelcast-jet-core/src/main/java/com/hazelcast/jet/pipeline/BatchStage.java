@@ -119,6 +119,7 @@ public interface BatchStage<T> extends GeneralStage<T> {
      * Attaches to this stage a stage that performs the given aggregate operation
      * over all the items it receives. The aggregating stage emits a single item.
      *
+     * @see com.hazelcast.jet.aggregate.AggregateOperations AggregateOperations
      * @param aggrOp the aggregate operation to perform
      * @param <A> the type of the accumulator used by the aggregate operation
      * @param <R> the type of the result
@@ -137,6 +138,7 @@ public interface BatchStage<T> extends GeneralStage<T> {
      * <p>
      * The aggregating stage emits a single item.
      *
+     * @see com.hazelcast.jet.aggregate.AggregateOperations AggregateOperations
      * @param aggrOp the aggregate operation to perform
      * @param <T1> type of items in {@code stage1}
      * @param <A> type of the accumulator used by the aggregate operation
@@ -157,6 +159,7 @@ public interface BatchStage<T> extends GeneralStage<T> {
      * <p>
      * The aggregating stage emits a single item.
      *
+     * @see com.hazelcast.jet.aggregate.AggregateOperations AggregateOperations
      * @param aggrOp the aggregate operation to perform
      * @param <T1> type of items in {@code stage1}
      * @param <T2> type of items in {@code stage2}

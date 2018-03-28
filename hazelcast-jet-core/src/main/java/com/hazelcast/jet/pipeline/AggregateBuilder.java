@@ -92,6 +92,7 @@ public class AggregateBuilder<T0> {
      *         .andFinish(MyAccumulator::finish));
      * }</pre>
      *
+     * @see com.hazelcast.jet.aggregate.AggregateOperations AggregateOperations
      * @param aggrOp the aggregate operation to perform
      * @param <A> the type of items in the pipeline stage this builder was obtained from
      * @param <R> the type of the output item

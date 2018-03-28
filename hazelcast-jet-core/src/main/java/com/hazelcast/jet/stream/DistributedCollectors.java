@@ -472,8 +472,8 @@ public abstract class DistributedCollectors {
 
 
     /**
-     * Returns a collector which performs a distributed aggregation on all the input
-     * values using the given {@link AggregateOperation1}.
+     * Returns a collector which performs a distributed aggregation on all the
+     * input values using the given {@link AggregateOperation1}.
      */
     public static <T, A, R> DistributedCollector<T, A, R> aggregating(AggregateOperation1<T, A, R> aggregateOp) {
         return new DistributedCollectorImpl<>(
@@ -504,13 +504,15 @@ public abstract class DistributedCollectors {
     //                 JET-SPECIFIC REDUCERS
 
     /**
-     * Variant of {@link Collectors#toMap(Function, Function)
+     * Returns a collector similar to {@link Collectors#toMap(Function, Function)
      * java.util.stream.Collectors#toMap(Function,Function)} which, instead of
-     * returning a map as the result, writes the results to the distributed
-     * {@link IMapJet} with the given name.
+     * creating a regular Java map, writes the results to the distributed
+     * {@link IMapJet} with the given name. The stream expression will return the
+     * {@code IMapJet} in question.
      */
     public static <T, K, U> Reducer<T, IMapJet<K, U>> toIMap(
-            String mapName, DistributedFunction<? super T, ? extends K> keyMapper,
+            String mapName,
+            DistributedFunction<? super T, ? extends K> keyMapper,
             DistributedFunction<? super T, ? extends U> valueMapper
     ) {
         return new SinkReducer<>("write-map-" + mapName, jetInstance -> jetInstance.getMap(mapName),
@@ -518,13 +520,13 @@ public abstract class DistributedCollectors {
     }
 
     /**
-     * Variant of {@link Collectors#toMap(Function, Function)
+     * Returns a collector similar to {@link Collectors#toMap(Function, Function)
      * java.util.stream.Collectors#toMap(Function,Function)} which, instead of
      * returning a map as the result, writes the results to the distributed
      * {@link IMapJet} with the given name.
      * <p>
-     * The key and value of the will be used as the respective key and value to
-     * put to the target {@code IMapJet}.
+     * This collector expects to receive {@code Map.Entry}s and it will put them
+     * as key/value pairs to the target map.
      */
     public static <K, U> Reducer<Entry<K, U>, IMapJet<K, U>> toIMap(String mapName) {
         return toIMap(mapName, Map.Entry::getKey, Map.Entry::getValue);
@@ -609,9 +611,11 @@ public abstract class DistributedCollectors {
 
     /**
      * Variant of {@link Collectors#groupingBy(Function, Collector)
-     * java.util.stream.Collectors#groupingBy(Function, Collector)} which, instead of
-     * returning a map as the result, writes the grouped results to the distributed
-     * {@link IMapJet} with the given name.
+     * java.util.stream.Collectors#groupingBy(Function, Collector)} which,
+     * instead of returning a map as the result, writes the grouped results to
+     * the distributed {@link IMapJet} with the given name. The downstream
+     * collector you provide will produce the value to be stored under each
+     * grouping key. The value must be serializable.
      */
     public static <T, K, A, D> Reducer<T, IMapJet<K, D>> groupingByToIMap(
             String mapName, DistributedFunction<? super T, ? extends K> classifier,
@@ -635,9 +639,11 @@ public abstract class DistributedCollectors {
 
     /**
      * Variant of {@link Collectors#groupingBy(Function, Collector)
-     * java.util.stream.Collectors#groupingBy(Function, Collector)} which, instead of
-     * returning a map as the result, writes the grouped results to the distributed
-     * {@link ICacheJet} with the given name.
+     * java.util.stream.Collectors#groupingBy(Function, Collector)} which,
+     * instead of returning a map as the result, writes the grouped results to
+     * the distributed {@link ICacheJet} with the given name. The downstream
+     * collector you provide will produce the value to be stored under each
+     * grouping key. The value must be serializable.
      */
     public static <T, K, A, D> Reducer<T, ICacheJet<K, D>> groupingByToICache(
             String cacheName, DistributedFunction<? super T, ? extends K> classifier,

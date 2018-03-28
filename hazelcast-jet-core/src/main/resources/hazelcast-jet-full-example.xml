@@ -19,26 +19,26 @@
                xmlns="http://www.hazelcast.com/schema/jet-config"
                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <instance>
-        <!-- number of threads to use for DAG execution -->
+        <!-- number of threads in the cooperative thread pool -->
        <cooperative-thread-count>8</cooperative-thread-count>
-        <!-- frequency of flow control packets, in milliseconds -->
+        <!-- period between flow control packets in milliseconds -->
        <flow-control-period>100</flow-control-period>
-        <!-- working directory to use for placing temporary files -->
+        <!-- directory for temporary files -->
        <temp-dir>/var/tmp/jet</temp-dir>
-        <!-- number of backups for job specifics maps -->
+        <!-- number of backup copies to configure for Hazelcast IMaps used internally in a Jet job -->
        <backup-count>1</backup-count>
     </instance>
     <properties>
        <property name="custom.property">custom property</property>
     </properties>
     <edge-defaults>
-        <!-- number of available slots for each concurrent queue between two vertices -->
+        <!-- capacity of the concurrent SPSC queue between each two processors -->
        <queue-size>1024</queue-size>
 
-        <!-- maximum packet size in bytes, only applies to distributed edges -->
+        <!-- network packet size limit in bytes, only applies to distributed edges -->
        <packet-size-limit>16384</packet-size-limit>
 
-        <!-- target receive window size multiplier, only applies to distributed edges -->
+        <!-- receive window size multiplier, only applies to distributed edges -->
        <receive-window-multiplier>3</receive-window-multiplier>
     </edge-defaults>
     <!-- custom properties which can be read within a ProcessorSupplier -->

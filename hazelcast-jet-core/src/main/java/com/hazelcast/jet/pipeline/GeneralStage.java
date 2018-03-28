@@ -93,10 +93,11 @@ public interface GeneralStage<T> extends Stage {
      * If the mapping result is {@code null}, it emits nothing. Therefore this
      * stage can be used to implement filtering semantics as well.
      * <p>
-     * If you store some state locally in the context object, it won't be saved
-     * to the snapshot and will misbehave in a fault-tolerant stream processing
-     * job. This doesn't apply to the state you store in a Hazelcast data
-     * structure the context object gives you access to.
+     * <strong>NOTE:</strong> any state you maintain in the context object does
+     * not automatically become a part of a fault-tolerant snapshot. If Jet must
+     * restore from a snapshot, your state will either be lost (if it was just
+     * local state) or not rewound to the checkpoint (if it was stored in some
+     * durable storage).
      *
      * @param <C> type of context object
      * @param <R> the result type of the mapping function
@@ -117,10 +118,11 @@ public interface GeneralStage<T> extends Stage {
      * parameter, the context object which Jet will create using the supplied
      * {@code contextFactory}.
      * <p>
-     * If you store some state locally in the context object, it won't be saved
-     * to the snapshot and will misbehave in a fault-tolerant stream processing
-     * job. This doesn't apply to the state you store in a Hazelcast data
-     * structure the context object gives you access to.
+     * <strong>NOTE:</strong> any state you maintain in the context object does
+     * not automatically become a part of a fault-tolerant snapshot. If Jet must
+     * restore from a snapshot, your state will either be lost (if it was just
+     * local state) or not rewound to the checkpoint (if it was stored in some
+     * durable storage).
      *
      * @param <C> type of context object
      * @param contextFactory the context factory
@@ -141,10 +143,11 @@ public interface GeneralStage<T> extends Stage {
      * parameter, the context object which Jet will create using the supplied
      * {@code contextFactory}.
      * <p>
-     * If you store some state locally in the context object, it won't be saved
-     * to the snapshot and will misbehave in a fault-tolerant stream processing
-     * job. This doesn't apply to the state you store in a Hazelcast data
-     * structure the context object gives you access to.
+     * <strong>NOTE:</strong> any state you maintain in the context object does
+     * not automatically become a part of a fault-tolerant snapshot. If Jet must
+     * restore from a snapshot, your state will either be lost (if it was just
+     * local state) or not rewound to the checkpoint (if it was stored in some
+     * durable storage).
      *
      * @param <C> type of context object
      * @param <R> the type of items in the result's traversers

@@ -62,6 +62,7 @@ public interface StageWithGroupingAndWindow<T, K> {
      * mapToOutputFn} with each key and the associated aggregation result to
      * create the items to emit.
      *
+     * @see com.hazelcast.jet.aggregate.AggregateOperations AggregateOperations
      * @param aggrOp the aggregate operation to perform
      * @param mapToOutputFn the function that creates the output item
      * @param <A> type of the accumulator used by the aggregate operation
@@ -82,6 +83,7 @@ public interface StageWithGroupingAndWindow<T, K> {
      * a given window. The value is the result of the aggregate operation
      * across all the items with the given grouping key.
      *
+     * @see com.hazelcast.jet.aggregate.AggregateOperations AggregateOperations
      * @param aggrOp the aggregate operation to perform
      * @param <A> type of the accumulator used by the aggregate operation
      * @param <R> type of the aggregation result
@@ -100,10 +102,12 @@ public interface StageWithGroupingAndWindow<T, K> {
      * mapToOutputFn} with each key and the associated aggregation result to
      * create the items to emit.
      * <p>
+     * @see com.hazelcast.jet.aggregate.AggregateOperations AggregateOperations
      * The aggregate operation must specify a separate accumulator function for
      * each of the two streams (refer to its {@link AggregateOperation2 Javadoc}
      * for a simple example).
      *
+     * @see com.hazelcast.jet.aggregate.AggregateOperations AggregateOperations
      * @param aggrOp the aggregate operation to perform
      * @param mapToOutputFn the function that creates the output item
      * @param <T1> type of items in {@code stage1}
@@ -130,6 +134,7 @@ public interface StageWithGroupingAndWindow<T, K> {
      * each of the two streams (refer to its {@link AggregateOperation2 Javadoc}
      * for a simple example).
      *
+     * @see com.hazelcast.jet.aggregate.AggregateOperations AggregateOperations
      * @param aggrOp the aggregate operation to perform
      * @param <T1> type of items in {@code stage1}
      * @param <A> type of the accumulator used by the aggregate operation
@@ -154,6 +159,7 @@ public interface StageWithGroupingAndWindow<T, K> {
      * each of the three streams (refer to its {@link AggregateOperation3
      * Javadoc} for a simple example).
      *
+     * @see com.hazelcast.jet.aggregate.AggregateOperations AggregateOperations
      * @param aggrOp the aggregate operation to perform
      * @param mapToOutputFn the function that creates the output item
      * @param <T1> type of items in {@code stage1}
@@ -181,6 +187,7 @@ public interface StageWithGroupingAndWindow<T, K> {
      * each of the three streams (refer to its {@link AggregateOperation3
      * Javadoc} for a simple example).
      *
+     * @see com.hazelcast.jet.aggregate.AggregateOperations AggregateOperations
      * @param aggrOp the aggregate operation to perform
      * @param <T1> type of items in {@code stage1}
      * @param <T2> type of items in {@code stage2}

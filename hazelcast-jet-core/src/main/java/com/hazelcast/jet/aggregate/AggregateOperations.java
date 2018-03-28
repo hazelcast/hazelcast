@@ -22,7 +22,6 @@ import com.hazelcast.jet.accumulator.LongAccumulator;
 import com.hazelcast.jet.accumulator.LongDoubleAccumulator;
 import com.hazelcast.jet.accumulator.LongLongAccumulator;
 import com.hazelcast.jet.accumulator.MutableReference;
-import com.hazelcast.jet.aggregate.AggregateOperationBuilder.VarArity;
 import com.hazelcast.jet.datamodel.BagsByTag;
 import com.hazelcast.jet.datamodel.Tag;
 import com.hazelcast.jet.datamodel.ThreeBags;
@@ -687,7 +686,7 @@ public final class AggregateOperations {
     @SuppressWarnings("unchecked")
     public static AggregateOperation<BagsByTag, BagsByTag> toBagsByTag(@Nonnull Tag<?> ... tags) {
         checkPositive(tags.length, "At least one tag required");
-        VarArity<BagsByTag> builder = AggregateOperation
+        AggregateOperationBuilder.VarArity<BagsByTag> builder = AggregateOperation
                 .withCreate(BagsByTag::new)
                 .andAccumulate(tags[0], (acc, item) -> ((Collection) acc.ensureBag(tags[0])).add(item));
         for (int i = 1; i < tags.length; i++) {
