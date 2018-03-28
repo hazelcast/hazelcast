@@ -47,6 +47,32 @@ https://hazelcast.org/documentation/.
 
     -->
     <import resource="your-configuration-XML-file"/>
+
+    <!--
+        The <config-replacers> allow to use variables (placeholders) within the configuration file and use an external
+        class to retrieve correct values (replacements).
+
+        It can be used for masking sensitive strings such as passwords for instance.
+
+        Format of a variable is:
+        $ PREFIX { STRING_TO_BE_REPLACED }      e.g. $ENC{nnPgTqJCcCQ=:23000:B4y/nlp6M0t3q6YiKImW+w==}
+
+        The PREFIX value depends on the replacer implementation (e.g. "ENC" is used for the EncryptionReplacer)
+        The STRING_TO_BE_REPLACED is the value which is provided to replacer implementation.
+    -->
+    <config-replacers fail-if-value-missing="false">
+        <replacer class-name="com.hazelcast.config.replacer.EncryptionReplacer">
+            <properties>
+                <property name="passwordFile">password.txt</property>
+                <property name="passwordUserProperties">false</property>
+                <property name="cipherAlgorithm">DES</property>
+                <property name="keyLengthBits">64</property>
+                <property name="secretKeyAlgorithm">DES</property>
+                <property name="secretKeyFactoryAlgorithm">PBKDF2WithHmacSHA1</property>
+            </properties>
+        </replacer>
+    </config-replacers>
+
     <!--
         Specifies the name and password for a cluster group you create.
         Cluster groups allow you to create separate sub-clusters within your Hazelcast cluster to
