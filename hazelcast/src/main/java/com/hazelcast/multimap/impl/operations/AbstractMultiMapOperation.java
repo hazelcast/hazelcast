@@ -35,17 +35,19 @@ import java.io.IOException;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
-public abstract class MultiMapOperation extends Operation
+public abstract class AbstractMultiMapOperation extends Operation
         implements NamedOperation, PartitionAwareOperation, ServiceNamespaceAware, IdentifiedDataSerializable {
 
     protected String name;
+
     protected transient Object response;
+
     private transient MultiMapContainer container;
 
-    protected MultiMapOperation() {
+    protected AbstractMultiMapOperation() {
     }
 
-    protected MultiMapOperation(String name) {
+    protected AbstractMultiMapOperation(String name) {
         this.name = name;
     }
 
@@ -81,6 +83,14 @@ public abstract class MultiMapOperation extends Operation
         if (container == null) {
             MultiMapService service = getService();
             container = service.getOrCreateCollectionContainer(getPartitionId(), name);
+        }
+        return container;
+    }
+
+    public final MultiMapContainer getOrCreateContainerWithoutAccess() {
+        if (container == null) {
+            MultiMapService service = getService();
+            container = service.getOrCreateCollectionContainerWithoutAccess(getPartitionId(), name);
         }
         return container;
     }

@@ -30,7 +30,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 
-public class PutOperation extends MultiMapBackupAwareOperation implements MutatingOperation {
+public class PutOperation extends AbstractBackupAwareMultiMapOperation implements MutatingOperation {
 
     private Data value;
     private int index = -1;
@@ -66,6 +66,7 @@ public class PutOperation extends MultiMapBackupAwareOperation implements Mutati
     @Override
     public void afterRun() throws Exception {
         if (Boolean.TRUE.equals(response)) {
+            getOrCreateContainer().update();
             publishEvent(EntryEventType.ADDED, dataKey, value, null);
         }
     }

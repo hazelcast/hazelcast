@@ -95,6 +95,7 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -1281,6 +1282,18 @@ public abstract class HazelcastTestSupport {
      */
     public static void assertEqualsStringFormat(String message, Object expected, Object actual) {
         assertEquals(format(message, expected, actual), expected, actual);
+    }
+
+    /**
+     * This method executes the normal assertNotEquals with expected and actual values.
+     * In addition it formats the given string with those values to provide a good assert message.
+     *
+     * @param message  assert message which is formatted with expected and actual values
+     * @param expected expected value which is used for assert
+     * @param actual   actual value which is used for assert
+     */
+    public static void assertNotEqualsStringFormat(String message, Object expected, Object actual) {
+        assertNotEquals(format(message, expected, actual), expected, actual);
     }
 
     public static void assertBetween(String label, long actualValue, long lowerBound, long upperBound) {

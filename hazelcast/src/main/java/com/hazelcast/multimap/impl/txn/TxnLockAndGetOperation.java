@@ -22,7 +22,7 @@ import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
 import com.hazelcast.multimap.impl.MultiMapRecord;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.multimap.impl.MultiMapValue;
-import com.hazelcast.multimap.impl.operations.MultiMapKeyBasedOperation;
+import com.hazelcast.multimap.impl.operations.AbstractKeyBasedMultiMapOperation;
 import com.hazelcast.multimap.impl.operations.MultiMapResponse;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -36,10 +36,9 @@ import com.hazelcast.transaction.TransactionException;
 import java.io.IOException;
 import java.util.Collection;
 
-public class TxnLockAndGetOperation extends MultiMapKeyBasedOperation implements BlockingOperation, MutatingOperation {
+public class TxnLockAndGetOperation extends AbstractKeyBasedMultiMapOperation implements BlockingOperation, MutatingOperation {
 
     private long ttl;
-
     private boolean blockReads;
 
     public TxnLockAndGetOperation() {

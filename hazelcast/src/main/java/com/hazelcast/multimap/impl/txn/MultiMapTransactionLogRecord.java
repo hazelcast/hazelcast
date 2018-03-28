@@ -52,7 +52,7 @@ public class MultiMapTransactionLogRecord implements TransactionLogRecord {
 
     @Override
     public Operation newPrepareOperation() {
-        return new TxnPrepareOperation(partitionId, name, key, ttl, threadId);
+        return new TxnPrepareOperation(partitionId, name, key, threadId);
     }
 
     @Override

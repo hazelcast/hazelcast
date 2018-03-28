@@ -106,8 +106,8 @@ public class MultiMapContainer extends MultiMapContainerSupport {
         idGen = newValue + ID_PROMOTION_OFFSET;
     }
 
-    public void delete(Data dataKey) {
-        multiMapValues.remove(dataKey);
+    public boolean delete(Data dataKey) {
+        return multiMapValues.remove(dataKey) != null;
     }
 
     public Collection<MultiMapRecord> remove(Data dataKey, boolean copyOf) {
