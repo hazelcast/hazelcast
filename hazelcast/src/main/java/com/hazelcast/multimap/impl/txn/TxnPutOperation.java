@@ -22,7 +22,7 @@ import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
 import com.hazelcast.multimap.impl.MultiMapRecord;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.multimap.impl.MultiMapValue;
-import com.hazelcast.multimap.impl.operations.MultiMapKeyBasedOperation;
+import com.hazelcast.multimap.impl.operations.AbstractKeyBasedMultiMapOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -33,11 +33,12 @@ import com.hazelcast.spi.impl.MutatingOperation;
 import java.io.IOException;
 import java.util.Collection;
 
-public class TxnPutOperation extends MultiMapKeyBasedOperation implements BackupAwareOperation, MutatingOperation {
+public class TxnPutOperation extends AbstractKeyBasedMultiMapOperation implements BackupAwareOperation, MutatingOperation {
 
-    long recordId;
-    Data value;
-    long startTimeNanos = -1;
+    private long recordId;
+    private Data value;
+
+    private transient long startTimeNanos;
 
     public TxnPutOperation() {
     }

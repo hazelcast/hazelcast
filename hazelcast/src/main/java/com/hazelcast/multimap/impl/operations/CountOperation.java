@@ -28,7 +28,7 @@ import com.hazelcast.spi.DistributedObjectNamespace;
 import com.hazelcast.spi.ReadonlyOperation;
 import com.hazelcast.spi.WaitNotifyKey;
 
-public class CountOperation extends MultiMapKeyBasedOperation implements BlockingOperation, ReadonlyOperation {
+public class CountOperation extends AbstractKeyBasedMultiMapOperation implements BlockingOperation, ReadonlyOperation {
 
     public CountOperation() {
     }

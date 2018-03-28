@@ -44,7 +44,7 @@ import static com.hazelcast.util.MapUtil.createHashMap;
  *
  * @since 3.10
  */
-public class MergeOperation extends MultiMapOperation implements BackupAwareOperation {
+public class MergeOperation extends AbstractMultiMapOperation implements BackupAwareOperation {
 
     private List<MultiMapMergeContainer> mergeContainers;
     private SplitBrainMergePolicy mergePolicy;
@@ -62,7 +62,7 @@ public class MergeOperation extends MultiMapOperation implements BackupAwareOper
 
     @Override
     public void run() throws Exception {
-        MultiMapContainer container = getOrCreateContainer();
+        MultiMapContainer container = getOrCreateContainerWithoutAccess();
         resultMap = createHashMap(mergeContainers.size());
         for (MultiMapMergeContainer mergeContainer : mergeContainers) {
             Data key = mergeContainer.getKey();

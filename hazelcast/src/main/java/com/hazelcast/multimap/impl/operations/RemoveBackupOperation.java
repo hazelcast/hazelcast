@@ -28,7 +28,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Iterator;
 
-public class RemoveBackupOperation extends MultiMapKeyBasedOperation implements BackupOperation {
+public class RemoveBackupOperation extends AbstractKeyBasedMultiMapOperation implements BackupOperation {
 
     long recordId;
 
