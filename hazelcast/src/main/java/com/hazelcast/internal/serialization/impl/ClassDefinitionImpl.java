@@ -27,8 +27,8 @@ import java.util.Set;
 
 public class ClassDefinitionImpl implements ClassDefinition {
 
-    private int factoryId;
-    private int classId;
+    private final int factoryId;
+    private final int classId;
     private int version = -1;
     private final Map<String, FieldDefinition> fieldDefinitionsMap = new LinkedHashMap<String, FieldDefinition>();
 
