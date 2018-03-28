@@ -1132,6 +1132,7 @@ public class ConfigXmlGenerator {
                     .node("prefetch-count", m.getPrefetchCount())
                     .node("prefetch-validity-millis", m.getPrefetchValidityMillis())
                     .node("id-offset", m.getIdOffset())
+                    .node("node-id-offset", m.getNodeIdOffset())
                     .node("statistics-enabled", m.isStatisticsEnabled());
             gen.close();
         }

@@ -632,8 +632,8 @@
                 <hz:backup-dir>/mnt/hot-backup/</hz:backup-dir>
             </hz:hot-restart-persistence>
 
-            <hz:flake-id-generator name="flakeIdGenerator*" prefetchCount="3" prefetchValidityMillis="10" idOffset="20" 
-                statistics-enabled="false" />
+            <hz:flake-id-generator name="flakeIdGenerator*" prefetchCount="3" prefetchValidityMillis="10" idOffset="20"
+                                   nodeIdOffset="30" statistics-enabled="false" />
 
             <hz:crdt-replication max-concurrent-replication-targets="10" replication-period-millis="2000" />
 

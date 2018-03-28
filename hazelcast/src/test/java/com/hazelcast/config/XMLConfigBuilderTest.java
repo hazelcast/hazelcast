@@ -1163,6 +1163,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
                 + "  <prefetch-count>3</prefetch-count>"
                 + "  <prefetch-validity-millis>10</prefetch-validity-millis>"
                 + "  <id-offset>20</id-offset>"
+                + "  <node-id-offset>30</node-id-offset>"
                 + "  <statistics-enabled>false</statistics-enabled>"
                 + "</flake-id-generator>"
                 + HAZELCAST_END_TAG;
@@ -1172,6 +1173,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         assertEquals(3, fConfig.getPrefetchCount());
         assertEquals(10L, fConfig.getPrefetchValidityMillis());
         assertEquals(20L, fConfig.getIdOffset());
+        assertEquals(30L, fConfig.getNodeIdOffset());
         assertFalse(fConfig.isStatisticsEnabled());
     }
 

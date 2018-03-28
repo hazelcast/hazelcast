@@ -619,6 +619,7 @@ class ConfigCompatibilityChecker {
                     && c1.getPrefetchCount() == c2.getPrefetchCount()
                     && c1.getPrefetchValidityMillis() == c2.getPrefetchValidityMillis()
                     && c1.getIdOffset() == c2.getIdOffset()
+                    && c1.getNodeIdOffset() == c2.getNodeIdOffset()
                     && c1.isStatisticsEnabled() == c2.isStatisticsEnabled();
         }
 
