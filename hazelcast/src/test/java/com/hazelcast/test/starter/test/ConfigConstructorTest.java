@@ -35,7 +35,7 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class ConfigTest extends HazelcastTestSupport {
+public class ConfigConstructorTest extends HazelcastTestSupport {
 
     @Test
     public void configCloneTest() {
