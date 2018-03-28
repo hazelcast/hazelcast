@@ -67,10 +67,10 @@ public class FlakeIdGeneratorProxyTest {
 
     @Before
     public void before() {
-        before(0);
+        before(0, 0);
     }
 
-    public void before(long idOffset) {
+    public void before(long idOffset, long nodeIdOffset) {
         ILogger logger = mock(ILogger.class);
         clusterService = mock(ClusterService.class);
         NodeEngine nodeEngine = mock(NodeEngine.class);
@@ -78,7 +78,7 @@ public class FlakeIdGeneratorProxyTest {
         when(nodeEngine.getLogger(FlakeIdGeneratorProxy.class)).thenReturn(logger);
         when(nodeEngine.isRunning()).thenReturn(true);
         when(nodeEngine.getConfig()).thenReturn(new Config().addFlakeIdGeneratorConfig(
-                new FlakeIdGeneratorConfig("foo").setIdOffset(idOffset)
+                new FlakeIdGeneratorConfig("foo").setIdOffset(idOffset).setNodeIdOffset(nodeIdOffset)
         ));
         when(nodeEngine.getClusterService()).thenReturn(clusterService);
         gen = new FlakeIdGeneratorProxy("foo", nodeEngine, service);
@@ -166,7 +166,7 @@ public class FlakeIdGeneratorProxyTest {
     public void test_minimumIdOffset() {
         // By assigning MIN_VALUE idOffset we'll offset the default epoch start by (Long.MIN_VALUE >> 22) ms, that is
         // by about 69 years. So the lowest working date will be:
-        before(Long.MIN_VALUE);
+        before(Long.MIN_VALUE, 0);
         long id = gen.newIdBaseLocal(EPOCH_START, 1234, 1).idBatch.base();
         LOG.info("ID=" + id);
         assertEquals(-9223372036854774574L, id);
@@ -176,10 +176,20 @@ public class FlakeIdGeneratorProxyTest {
     public void test_maximumIdOffset() {
         // By assigning MIN_VALUE idOffset we'll offset the default epoch start by (Long.MIN_VALUE >> 22) ms, that is
         // by about 69 years. So the lowest working date will be:
-        before(Long.MAX_VALUE);
+        before(Long.MAX_VALUE, 0);
         long id = gen.newIdBaseLocal(EPOCH_START, 1234, 1).idBatch.base();
         LOG.info("ID=" + id);
         assertEquals(9223372036850582738L, id);
+    }
+
+    @Test
+    public void test_positiveNodeIdOffset() {
+        int nodeIdOffset = 5;
+        int memberListJoinVersion = 20;
+        before(0, nodeIdOffset);
+
+        when(clusterService.getMemberListJoinVersion()).thenReturn(memberListJoinVersion);
+        assertEquals((memberListJoinVersion + nodeIdOffset), gen.getNodeId(0));
     }
 
     @Test
@@ -193,7 +203,7 @@ public class FlakeIdGeneratorProxyTest {
         // This test will start failing after December 17th 2058 3:52:07 UTC: after this time no idOffset will be needed.
         assertTrue(largestIdGeneratorValue > currentFlakeGenValue);
         // the before() call will create a new gen
-        before(largestIdGeneratorValue - currentFlakeGenValue + reserve);
+        before(largestIdGeneratorValue - currentFlakeGenValue + reserve, 0);
 
         // Then
         long newFlakeGenValue = gen.newId();

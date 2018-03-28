@@ -23,9 +23,11 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.projection.Projection;
+import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.IterationType;
+import com.hazelcast.util.SortingUtil;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -33,29 +35,77 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
 
 /**
- * Contains the result of a query or projection evaluation.
+ * Represents a result of the query execution in the form of an iterable
+ * collection of {@link QueryResultRow rows}.
  * <p>
- * A QueryResults is a collections of {@link QueryResultRow} instances.
+ * There are two modes of the result construction, the selection of the mode is
+ * controlled by the {@code orderAndLimitExpected} parameter:
+ * <ol>
+ * <li>When {@code orderAndLimitExpected} is {@code true}, this indicates that
+ * the call to the {@link #orderAndLimit} method is expected on behalf of the
+ * {@link PagingPredicate paging predicate} involved in the query. In this case,
+ * the intermediate result is represented as a collection of {@link
+ * QueryableEntry queryable entries} to allow the comparison of the items using
+ * the comparator of the paging predicate. After the call to {@link
+ * #completeConstruction}, all the queryable entries are converted to {@link
+ * QueryResultRow rows} and the result is ready to be provided to the client.
+ * <li>When {@code orderAndLimitExpected} is {@code false}, this indicates that
+ * no calls to the {@link #orderAndLimit} method are expected. In this case, the
+ * intermediate result is represented directly as a collection of {@link
+ * QueryResultRow rows} and no further conversion is performed.
+ * </ol>
  */
 public class QueryResult implements Result<QueryResult>, IdentifiedDataSerializable, Iterable<QueryResultRow> {
 
-    private final List<QueryResultRow> rows = new LinkedList<QueryResultRow>();
+    private List rows = new LinkedList();
 
     private Collection<Integer> partitionIds;
-
-    private transient long resultLimit;
-    private transient long resultSize;
     private IterationType iterationType;
 
+    private final transient SerializationService serializationService;
+    private final transient long resultLimit;
+    private final transient boolean orderAndLimitExpected;
+    private final transient Projection projection;
+
+    private transient long resultSize;
+
+    /**
+     * Constructs an empty result for the purposes of deserialization.
+     */
     public QueryResult() {
+        serializationService = null;
+        orderAndLimitExpected = false;
         resultLimit = Long.MAX_VALUE;
+        projection = null;
     }
 
-    public QueryResult(IterationType iterationType, long resultLimit) {
-        this.resultLimit = resultLimit;
+    /**
+     * Constructs an empty result.
+     *
+     * @param iterationType         the iteration type of the query for which
+     *                              this result is constructed for.
+     * @param projection            the projection of the query for which this
+     *                              result is constructed for.
+     * @param serializationService  the serialization service associated with
+     *                              the query for which this result is
+     *                              constructed for.
+     * @param resultLimit           the upper limit on the number of items that
+     *                              can be {@link #add added} to this result.
+     * @param orderAndLimitExpected the flag to signal that the call to the
+     *                              {@link #orderAndLimit} method is expected,
+     *                              see the class javadoc for more details.
+     */
+    public QueryResult(IterationType iterationType, Projection projection, SerializationService serializationService,
+                       long resultLimit, boolean orderAndLimitExpected) {
         this.iterationType = iterationType;
+        this.projection = projection;
+        this.serializationService = serializationService;
+        this.resultLimit = resultLimit;
+        this.orderAndLimitExpected = orderAndLimitExpected;
     }
 
     // for testing
@@ -68,49 +118,65 @@ public class QueryResult implements Result<QueryResult>, IdentifiedDataSerializa
         return rows.iterator();
     }
 
+    /**
+     * @return the size of this result.
+     */
     public int size() {
         return rows.size();
     }
 
+    /**
+     * @return {@code true} if this result is empty, {@code false} otherwise.
+     **/
     public boolean isEmpty() {
         return rows.isEmpty();
     }
 
-    // just for testing
-    long getResultLimit() {
-        return resultLimit;
-    }
-
+    /**
+     * Adds the given row into this result.
+     *
+     * @param row the row to add.
+     */
     public void addRow(QueryResultRow row) {
         rows.add(row);
     }
 
-    public void add(QueryableEntry entry, Projection projection, SerializationService serializationService) {
+    /**
+     * {@inheritDoc}
+     *
+     * @throws QueryResultSizeExceededException if the size of this result
+     *                                          exceeds the result size limit.
+     */
+    @Override
+    public void add(QueryableEntry entry) {
         if (++resultSize > resultLimit) {
             throw new QueryResultSizeExceededException();
         }
 
-        Data key = null;
-        Data value = null;
-        switch (iterationType) {
-            case KEY:
-                key = entry.getKeyData();
-                break;
-            case VALUE:
-                value = getValueData(entry, projection, serializationService);
-                break;
-            case ENTRY:
-                key = entry.getKeyData();
-                value = entry.getValueData();
-                break;
-            default:
-                throw new IllegalStateException("Unknown iterationType:" + iterationType);
-        }
-
-        rows.add(new QueryResultRow(key, value));
+        rows.add(orderAndLimitExpected ? entry : convertEntryToRow(entry));
     }
 
-    private Data getValueData(QueryableEntry entry, Projection projection, SerializationService serializationService) {
+    @Override
+    public QueryResult createSubResult() {
+        return new QueryResult(iterationType, projection, serializationService, resultLimit, orderAndLimitExpected);
+    }
+
+    @Override
+    public void orderAndLimit(PagingPredicate pagingPredicate, Map.Entry<Integer, Map.Entry> nearestAnchorEntry) {
+        rows = SortingUtil.getSortedSubList(rows, pagingPredicate, nearestAnchorEntry);
+    }
+
+    @Override
+    public void completeConstruction(Collection<Integer> partitionIds) {
+        setPartitionIds(partitionIds);
+        if (orderAndLimitExpected) {
+            for (ListIterator iterator = rows.listIterator(); iterator.hasNext(); ) {
+                iterator.set(convertEntryToRow((QueryableEntry) iterator.next()));
+            }
+        }
+    }
+
+    private Data getValueData(QueryableEntry entry) {
         if (projection != null) {
             return serializationService.toData(projection.transform(entry));
         } else {
@@ -133,7 +199,7 @@ public class QueryResult implements Result<QueryResult>, IdentifiedDataSerializa
             partitionIds = new ArrayList<Integer>(otherPartitionIds.size());
         }
         partitionIds.addAll(otherPartitionIds);
-        rows.addAll(result.getRows());
+        rows.addAll(result.rows);
     }
 
     @Override
@@ -145,6 +211,9 @@ public class QueryResult implements Result<QueryResult>, IdentifiedDataSerializa
         this.partitionIds = new ArrayList<Integer>(partitionIds);
     }
 
+    /**
+     * @return the rows of this result.
+     */
     public List<QueryResultRow> getRows() {
         return rows;
     }
@@ -174,7 +243,7 @@ public class QueryResult implements Result<QueryResult>, IdentifiedDataSerializa
         int resultSize = rows.size();
         out.writeInt(resultSize);
         if (resultSize > 0) {
-            for (QueryResultRow row : rows) {
+            for (QueryResultRow row : (List<QueryResultRow>) rows) {
                 row.writeData(out);
             }
         }
@@ -200,5 +269,25 @@ public class QueryResult implements Result<QueryResult>, IdentifiedDataSerializa
                 rows.add(row);
             }
         }
+    }
+
+    private QueryResultRow convertEntryToRow(QueryableEntry entry) {
+        Data key = null;
+        Data value = null;
+        switch (iterationType) {
+            case KEY:
+                key = entry.getKeyData();
+                break;
+            case VALUE:
+                value = getValueData(entry);
+                break;
+            case ENTRY:
+                key = entry.getKeyData();
+                value = entry.getValueData();
+                break;
+            default:
+                throw new IllegalStateException("Unknown iterationType:" + iterationType);
+        }
+        return new QueryResultRow(key, value);
     }
 }

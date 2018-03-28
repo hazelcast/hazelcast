@@ -57,7 +57,7 @@ public class ReadAndResetAccumulatorOperation extends MapOperation implements Pa
         QueryCacheContext context = getQueryCacheContext();
         Map<Integer, Accumulator> accumulators = getAccumulators(context, name, cacheId);
         Accumulator<Sequenced> accumulator = accumulators.get(getPartitionId());
-        if (accumulator.isEmpty()) {
+        if (accumulator == null || accumulator.isEmpty()) {
             return;
         }
 

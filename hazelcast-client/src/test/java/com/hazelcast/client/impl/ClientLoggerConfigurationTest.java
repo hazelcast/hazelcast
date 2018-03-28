@@ -24,33 +24,27 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Log4j2Factory;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.SaveLoggingPropertiesRule;
+import com.hazelcast.test.IsolatedLoggingRule;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
-import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
-
+import static com.hazelcast.test.IsolatedLoggingRule.LOGGING_TYPE_JDK;
+import static com.hazelcast.test.IsolatedLoggingRule.LOGGING_TYPE_LOG4J2;
+import static com.hazelcast.test.IsolatedLoggingRule.LOGGING_TYPE_PROPERTY;
 import static org.junit.Assert.assertSame;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class})
 public class ClientLoggerConfigurationTest extends HazelcastTestSupport {
 
-    private TestHazelcastFactory hazelcastFactory;
-
     @Rule
-    public SaveLoggingPropertiesRule saveLoggingPropertiesRule = new SaveLoggingPropertiesRule();
+    public final IsolatedLoggingRule isolatedLoggingRule = new IsolatedLoggingRule();
 
-    @Before
-    public void setUp() {
-        System.clearProperty("hazelcast.logging.type");
-        System.clearProperty("hazelcast.logging.class");
-    }
+    private TestHazelcastFactory hazelcastFactory;
 
     @After
     public void tearDown() {
@@ -58,12 +52,12 @@ public class ClientLoggerConfigurationTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testProgrammaticConfiguration() throws IOException {
+    public void testProgrammaticConfiguration() {
         testLoggingWithConfiguration(true);
     }
 
     @Test
-    public void testSystemPropertyConfiguration() throws IOException {
+    public void testSystemPropertyConfiguration() {
         testLoggingWithConfiguration(false);
     }
 
@@ -71,17 +65,17 @@ public class ClientLoggerConfigurationTest extends HazelcastTestSupport {
 
     // the idea of the test is to configure a specific logging type for a client and then
     // test its LoggingService produce instances of the expected Logger impl
-    protected void testLoggingWithConfiguration(boolean programmaticConfiguration) throws IOException {
+    protected void testLoggingWithConfiguration(boolean programmaticConfiguration) {
         hazelcastFactory = new TestHazelcastFactory();
         Config cg = new Config();
-        cg.setProperty("hazelcast.logging.type", "jdk");
+        cg.setProperty(LOGGING_TYPE_PROPERTY, LOGGING_TYPE_JDK);
         hazelcastFactory.newHazelcastInstance(cg);
 
         ClientConfig config = new ClientConfig();
         if (programmaticConfiguration) {
-            config.setProperty("hazelcast.logging.type", "log4j2");
+            config.setProperty(LOGGING_TYPE_PROPERTY, LOGGING_TYPE_LOG4J2);
         } else {
-            System.setProperty("hazelcast.logging.type", "log4j2");
+            isolatedLoggingRule.setLoggingType(LOGGING_TYPE_LOG4J2);
         }
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(config);
 

@@ -3322,6 +3322,16 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
+        <xs:attribute name="nodeIdOffset" type="xs:long" default="0" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    Sets the offset that will be added to the node ID assigned to cluster member for this generator.
+                    Might be useful in A/B deployment scenarios where you have cluster A which you want to upgrade.
+                    You create cluster B and for some time both will generate IDs and you want to have them unique.
+                    In this case, configure node ID offset for generators on cluster B.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
         <xs:attribute name="statistics-enabled" type="parameterized-boolean" use="optional" default="true">
             <xs:annotation>
                 <xs:documentation>

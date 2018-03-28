@@ -289,6 +289,7 @@
         <prefetch-count>100</prefetch-count>
         <prefetch-validity-millis>600000</prefetch-validity-millis>
         <id-offset>0</id-offset>
+        <node-id-offset>0</node-id-offset>
         <statistics-enabled>true</statistics-enabled>
     </flake-id-generator>
 
