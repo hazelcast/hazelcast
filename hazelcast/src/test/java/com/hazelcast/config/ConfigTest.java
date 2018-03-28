@@ -39,7 +39,7 @@ public class ConfigTest extends HazelcastTestSupport {
      * </ul>
      */
     @Test
-    public void testInheritance() {
+    public void testInheritanceFromDefaultConfig() {
         assertNotEquals("Expected that the default in-memory format is not OBJECT",
                 MapConfig.DEFAULT_IN_MEMORY_FORMAT, InMemoryFormat.OBJECT);
 
