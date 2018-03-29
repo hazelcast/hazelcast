@@ -92,52 +92,43 @@ public class ClientPartitionPredicateTest extends HazelcastTestSupport {
 
     @Test
     public void values_withPagingPredicate() {
-        String mapName = map.getName();
-
-        IMap<String, Integer> serverMap = client.getMap(mapName);
         PagingPredicate<String, Integer> pagingPredicate = new PagingPredicate<String, Integer>(Predicates.alwaysTrue(), 1);
         predicate = new PartitionPredicate<String, Integer>(randomString(), pagingPredicate);
 
         for (int i = 0; i < ITEMS_PER_PARTITION; i++) {
-            int size = serverMap.values(predicate).size();
+            int size = map.values(predicate).size();
             assertEquals(1, size);
             pagingPredicate.nextPage();
         }
-        int size = serverMap.values(predicate).size();
+        int size = map.values(predicate).size();
         assertEquals(0, size);
     }
 
     @Test
     public void keys_withPagingPredicate() {
-        String mapName = map.getName();
-
-        IMap<String, Integer> serverMap = client.getMap(mapName);
         PagingPredicate<String, Integer> pagingPredicate = new PagingPredicate<String, Integer>(Predicates.alwaysTrue(), 1);
         predicate = new PartitionPredicate<String, Integer>(randomString(), pagingPredicate);
 
         for (int i = 0; i < ITEMS_PER_PARTITION; i++) {
-            int size = serverMap.keySet(predicate).size();
+            int size = map.keySet(predicate).size();
             assertEquals(1, size);
             pagingPredicate.nextPage();
         }
-        int size = serverMap.keySet(predicate).size();
+        int size = map.keySet(predicate).size();
         assertEquals(0, size);
     }
 
     @Test
     public void entries_withPagingPredicate() {
-        String mapName = map.getName();
-
-        IMap<String, Integer> serverMap = client.getMap(mapName);
         PagingPredicate<String, Integer> pagingPredicate = new PagingPredicate<String, Integer>(Predicates.alwaysTrue(), 1);
         predicate = new PartitionPredicate<String, Integer>(randomString(), pagingPredicate);
 
         for (int i = 0; i < ITEMS_PER_PARTITION; i++) {
-            int size = serverMap.entrySet(predicate).size();
+            int size = map.entrySet(predicate).size();
             assertEquals(1, size);
             pagingPredicate.nextPage();
         }
-        int size = serverMap.entrySet(predicate).size();
+        int size = map.entrySet(predicate).size();
         assertEquals(0, size);
     }
 
