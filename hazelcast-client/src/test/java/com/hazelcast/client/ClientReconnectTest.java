@@ -38,6 +38,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -197,9 +198,12 @@ public class ClientReconnectTest extends HazelcastTestSupport {
 
     public static class CustomCredentials_takesLong extends CustomCredentials {
 
-        private static AtomicInteger count = new AtomicInteger();
+        private AtomicInteger count;
+        private long sleepMillis;
 
-        public CustomCredentials_takesLong() {
+        CustomCredentials_takesLong(AtomicInteger count, long sleepMillis) {
+            this.count = count;
+            this.sleepMillis = sleepMillis;
         }
 
         CustomCredentials_takesLong(String username, String password) {
@@ -210,7 +214,7 @@ public class ClientReconnectTest extends HazelcastTestSupport {
         protected void readPortableInternal(PortableReader reader) throws IOException {
             if (count.incrementAndGet() == 1) {
                 try {
-                    Thread.sleep(30000);
+                    Thread.sleep(sleepMillis);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -221,11 +225,13 @@ public class ClientReconnectTest extends HazelcastTestSupport {
 
     @Test
     public void testClientConnected_withFirstAuthenticationTakingLong() throws InterruptedException {
+        final AtomicInteger customCredentialsRunCount = new AtomicInteger();
+        final long customCredentialsSleepMillis = 30000;
         SerializationConfig serializationConfig = new SerializationConfig();
         serializationConfig.addPortableFactory(1, new PortableFactory() {
             @Override
             public Portable create(int classId) {
-                return new CustomCredentials_takesLong();
+                return new CustomCredentials_takesLong(customCredentialsRunCount, customCredentialsSleepMillis);
             }
         });
 
@@ -237,6 +243,47 @@ public class ClientReconnectTest extends HazelcastTestSupport {
         clientConfig.setCredentials(new CustomCredentials_takesLong("dev", "dev-pass"));
         clientConfig.setSerializationConfig(serializationConfig);
         hazelcastFactory.newHazelcastClient(clientConfig);
+    }
+
+
+    @Test
+    @Category(SlowTest.class)
+    public void testEndpointCleanup_withFirstAuthenticationTakingLong() throws InterruptedException {
+        final AtomicInteger customCredentialsRunCount = new AtomicInteger();
+        ClientConfig clientConfig = new ClientConfig();
+        int defaultConnectionTimeoutMillis = clientConfig.getNetworkConfig().getConnectionTimeout();
+        //Credentials will take longer than connection timeout so that client will close the connection
+        final long customCredentialsSleepMillis = defaultConnectionTimeoutMillis * 2;
+
+        SerializationConfig serializationConfig = new SerializationConfig();
+        serializationConfig.addPortableFactory(1, new PortableFactory() {
+            @Override
+            public Portable create(int classId) {
+                return new CustomCredentials_takesLong(customCredentialsRunCount, customCredentialsSleepMillis);
+            }
+        });
+
+        Config config = new Config();
+        config.setSerializationConfig(serializationConfig);
+        final HazelcastInstance instance = hazelcastFactory.newHazelcastInstance(config);
+        //make sure credentials that takes long is used
+        clientConfig.setCredentials(new CustomCredentials_takesLong("dev", "dev-pass"));
+        clientConfig.setSerializationConfig(serializationConfig);
+        //make sure that client is not connected back after first attempt
+        clientConfig.getNetworkConfig().setConnectionAttemptLimit(1);
+        //since client will not be connected, don't block the current test thread
+        clientConfig.getConnectionStrategyConfig().setAsyncStart(true);
+        hazelcastFactory.newHazelcastClient(clientConfig);
+        //Wait for custom credentials to wake up and register endpoint for timed out connection
+        Thread.sleep(customCredentialsSleepMillis + 3000);
+        // registered endpoint should be removed eventually
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                int size = instance.getClientService().getConnectedClients().size();
+                assertEquals(0, size);
+            }
+        });
     }
 
     public static class CustomCredentials_retried extends CustomCredentials {
