@@ -23,6 +23,8 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.UserCodeDeploymentConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.core.LifecycleEvent;
+import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -40,6 +42,7 @@ import usercodedeployment.IncrementingEntryProcessor;
 
 import java.util.Collection;
 import java.util.LinkedList;
+import java.util.concurrent.CountDownLatch;
 
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
@@ -135,8 +138,13 @@ public class ClientUserCodeDeploymentTest extends HazelcastTestSupport {
         HazelcastInstance firstInstance = factory.newHazelcastInstance(config);
         HazelcastInstance client = factory.newHazelcastClient(clientConfig);
         factory.newHazelcastInstance(config);
+
+        final CountDownLatch clientReconnectedLatch = new CountDownLatch(1);
+        client.getLifecycleService().addLifecycleListener(new ClientReconnectionListener(clientReconnectedLatch));
+
         firstInstance.getLifecycleService().shutdown();
 
+        assertOpenEventually(clientReconnectedLatch);
         assertCodeDeploymentWorking(client, new IncrementingEntryProcessor());
     }
 
@@ -170,4 +178,18 @@ public class ClientUserCodeDeploymentTest extends HazelcastTestSupport {
         assertCodeDeploymentWorking(client, new EntryProcessorWithAnonymousAndInner());
     }
 
+    private static class ClientReconnectionListener implements LifecycleListener {
+        private final CountDownLatch clientReconnectedLatch;
+
+        private ClientReconnectionListener(CountDownLatch clientReconnectedLatch) {
+            this.clientReconnectedLatch = clientReconnectedLatch;
+        }
+
+        @Override
+        public void stateChanged(LifecycleEvent event) {
+            if (event.getState() == LifecycleEvent.LifecycleState.CLIENT_CONNECTED) {
+                clientReconnectedLatch.countDown();
+            }
+        }
+    }
 }
