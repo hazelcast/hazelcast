@@ -58,7 +58,7 @@ public class ClientMapLoadAllTest extends AbstractMapStoreTest {
         hazelcastFactory.terminateAll();
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testGetMap_issue_3031() throws Exception {
         final int itemCount = 1000;
         final String mapName = randomMapName();
