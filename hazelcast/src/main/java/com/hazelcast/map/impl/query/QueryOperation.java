@@ -78,28 +78,34 @@ public class QueryOperation extends MapOperation implements ReadonlyOperation {
                 new BinaryOperationFactory(new QueryPartitionOperation(query), getNodeEngine()), toIntArray(initialPartitions));
 
         final OperationServiceImpl ops = (OperationServiceImpl) getNodeEngine().getOperationService();
-        ops.invokeOnTarget(MapService.SERVICE_NAME, opf, getNodeEngine().getThisAddress()).andThen(
-                new ExecutionCallback<Object>() {
-                    @Override
-                    public void onResponse(Object response) {
-                        try {
-                            Result modifiableResult = queryRunner.populateEmptyResult(query, initialPartitions);
-                            populateResult((PartitionIteratingOperation.PartitionResponse) response, modifiableResult);
-                            QueryOperation.this.sendResponse(modifiableResult);
-                        } finally {
-                            ops.onCompletionAsyncOperation(QueryOperation.this);
-                        }
-                    }
+        ops.invokeOnTarget(MapService.SERVICE_NAME, opf, getNodeEngine().getThisAddress())
+           .andThen(new ExecutionCallback<Object>() {
+               @Override
+               public void onResponse(Object response) {
+                   try {
+                       Result modifiableResult;
+                       try {
+                           modifiableResult = queryRunner.populateEmptyResult(query, initialPartitions);
+                           populateResult((PartitionIteratingOperation.PartitionResponse) response, modifiableResult);
+                       } catch (Throwable throwable) {
+                           QueryOperation.this.sendResponse(throwable);
+                           return;
+                       }
+                       QueryOperation.this.sendResponse(modifiableResult);
+                   } finally {
+                       ops.onCompletionAsyncOperation(QueryOperation.this);
+                   }
+               }
 
-                    @Override
-                    public void onFailure(Throwable t) {
-                        try {
-                            QueryOperation.this.sendResponse(t);
-                        } finally {
-                            ops.onCompletionAsyncOperation(QueryOperation.this);
-                        }
-                    }
-                });
+               @Override
+               public void onFailure(Throwable t) {
+                   try {
+                       QueryOperation.this.sendResponse(t);
+                   } finally {
+                       ops.onCompletionAsyncOperation(QueryOperation.this);
+                   }
+               }
+           });
     }
 
     private Result populateResult(PartitionIteratingOperation.PartitionResponse response, Result result) {
@@ -113,7 +119,6 @@ public class QueryOperation extends MapOperation implements ReadonlyOperation {
         }
         return result;
     }
-
 
     @Override
     public ExceptionAction onInvocationException(Throwable throwable) {
