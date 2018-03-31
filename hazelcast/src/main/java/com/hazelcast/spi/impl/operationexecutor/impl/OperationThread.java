@@ -34,23 +34,25 @@ import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutOfMemo
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 
 /**
- * The OperationThread is responsible for processing operations, packets containing operations and runnable's.
+ * The OperationThread is responsible for processing operations, packets
+ * containing operations and runnable's.
  * <p/>
  * There are 2 flavors of OperationThread:
  * - threads that deal with operations for a specific partition
  * - threads that deal with non partition specific tasks
  * <p/>
- * The actual processing of an operation is forwarded to the {@link com.hazelcast.spi.impl.operationexecutor.OperationRunner}.
+ * The actual processing of an operation is forwarded to the {@link OperationRunner}.
  */
 public abstract class OperationThread extends HazelcastManagedThread implements MetricsProvider {
 
     final int threadId;
     final OperationQueue queue;
-    // This field wil only be accessed by the thread itself when doing 'self' calls. So no need
-    // for any form of synchronization.
+    // This field wil only be accessed by the thread itself when doing 'self'
+    // calls. So no need for any form of synchronization.
     OperationRunner currentRunner;
 
-    // All these counters are updated by this OperationThread (so a single writer) and are read by the MetricsRegistry.
+    // All these counters are updated by this OperationThread (so a single writer)
+    // and are read by the MetricsRegistry.
     @Probe
     private final SwCounter completedTotalCount = newSwCounter();
     @Probe
@@ -71,8 +73,13 @@ public abstract class OperationThread extends HazelcastManagedThread implements 
     private final ILogger logger;
     private volatile boolean shutdown;
 
-    public OperationThread(String name, int threadId, OperationQueue queue, ILogger logger,
-                           NodeExtension nodeExtension, boolean priority, ClassLoader configClassLoader) {
+    public OperationThread(String name,
+                           int threadId,
+                           OperationQueue queue,
+                           ILogger logger,
+                           NodeExtension nodeExtension,
+                           boolean priority,
+                           ClassLoader configClassLoader) {
         super(name);
         setContextClassLoader(configClassLoader);
         this.queue = queue;
