@@ -24,16 +24,17 @@ import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationexecutor.impl.OperationExecutorImpl;
 
 /**
- * The OperationExecutor is responsible for scheduling work (packets/operations) to be executed. It can be compared
- * to a {@link java.util.concurrent.Executor} with the big difference that it is designed for assigning packets,
- * operations and PartitionSpecificRunnable to a thread instead of only runnables.
+ * The OperationExecutor is responsible for scheduling work (packets/operations)
+ * to be executed. It can be compared to a {@link java.util.concurrent.Executor}
+ * with the big difference that it is designed for assigning packets, operations
+ * and PartitionSpecificRunnable to a thread instead of only runnables.
  *
- * It depends on the implementation if an operation is executed on the calling thread or not. For example the
- * {@link OperationExecutorImpl} will always offload a partition specific
- * Operation to the correct partition-operation-thread.
+ * It depends on the implementation if an operation is executed on the calling
+ * thread or not. For example the {@link OperationExecutorImpl} will always
+ * offload a partition specific Operation to the correct partition-operation-thread.
  *
- * The actual processing of a operation-packet, Operation, or a PartitionSpecificRunnable is forwarded to the
- * {@link OperationRunner}.
+ * The actual processing of a operation-packet, Operation, or a
+ * PartitionSpecificRunnable is forwarded to the {@link OperationRunner}.
  */
 public interface OperationExecutor extends PacketHandler, LiveOperationsTracker {
 
@@ -69,8 +70,9 @@ public interface OperationExecutor extends PacketHandler, LiveOperationsTracker 
     int getGenericThreadCount();
 
     /**
-     * Gets all the operation handlers for the partitions. Each partition will have its own operation handler. So if
-     * there are 271 partitions, then the size of the array will be 271.
+     * Gets all the operation handlers for the partitions. Each partition will
+     * have its own operation handler. So if there are 271 partitions, then the
+     * size of the array will be 271.
      * <p/>
      * Don't modify the content of the array!
      *
@@ -79,8 +81,8 @@ public interface OperationExecutor extends PacketHandler, LiveOperationsTracker 
     OperationRunner[] getPartitionOperationRunners();
 
     /**
-     * Gets all the generic operation handlers. The number of generic operation handlers depends on the number of
-     * generic threads.
+     * Gets all the generic operation handlers. The number of generic operation
+     * handlers depends on the number of generic threads.
      * <p/>
      * Don't modify the content of the array!
      *
@@ -109,7 +111,8 @@ public interface OperationExecutor extends PacketHandler, LiveOperationsTracker 
     void execute(PartitionTaskFactory taskFactory, int[] partitions);
 
     /**
-     * Executes the given {@link PartitionSpecificRunnable} at some point in the future.
+     * Executes the given {@link PartitionSpecificRunnable} at some point in the
+     * future.
      *
      * @param task the task the execute.
      * @throws java.lang.NullPointerException if task is null.
@@ -129,13 +132,15 @@ public interface OperationExecutor extends PacketHandler, LiveOperationsTracker 
      *
      * @param op the {@link Operation} to run.
      * @throws java.lang.NullPointerException if op is null.
-     * @throws IllegalThreadStateException    if the operation is not allowed to be run on the calling thread.
+     * @throws IllegalThreadStateException    if the operation is not allowed
+     * to be run on the calling thread.
      */
     void run(Operation op);
 
     /**
-     * Tries to run the {@link Operation} on the calling thread if allowed. Otherwise the operation is submitted for executing
-     * using {@link #execute(Operation)}.
+     * Tries to run the {@link Operation} on the calling thread if allowed.
+     * Otherwise the operation is submitted for executing using
+     * {@link #execute(Operation)}.
      *
      * @param op the {@link Operation} to run or execute.
      * @throws java.lang.NullPointerException if op is null.
@@ -152,12 +157,15 @@ public interface OperationExecutor extends PacketHandler, LiveOperationsTracker 
     boolean isRunAllowed(Operation op);
 
     /**
-     * Checks if the {@link Operation} is allowed to be invoked from the current thread. Invoking means that the operation can
-     * be executed on another thread, but that one is going to block for completion using the future.get/join etc.
-     * Blocking for completion can cause problems, e.g. when you hog a partition thread or deadlocks.
+     * Checks if the {@link Operation} is allowed to be invoked from the current
+     * thread. Invoking means that the operation can be executed on another thread,
+     * but that one is going to block for completion using the future.get/join etc.
+     * Blocking for completion can cause problems, e.g. when you hog a partition
+     * thread or deadlocks.
      *
      * @param op      the {@link Operation} to check
-     * @param isAsync is the invocation async, if false invocation does not return a future to block on
+     * @param isAsync is the invocation async, if false invocation does not return
+     *                a future to block on
      * @return true if allowed, false otherwise.
      */
     boolean isInvocationAllowed(Operation op, boolean isAsync);
@@ -170,15 +178,17 @@ public interface OperationExecutor extends PacketHandler, LiveOperationsTracker 
     boolean isOperationThread();
 
     /**
-     * Returns the ID of the partitionThread assigned to handle partition with given partitionId
+     * Returns the ID of the partitionThread assigned to handle partition
+     * with given partitionId
      *
      * @param partitionId given partitionId
-     * @return ID of the partitionThread assigned to handle partition with given partitionId
+     * @return ID of the partitionThread assigned to handle partition
+     * with given partitionId
      */
     int getPartitionThreadId(int partitionId);
 
     /**
-     * Starts this OperationExecutor
+     * Starts this OperationExecutor.
      */
     void start();
 
