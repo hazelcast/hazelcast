@@ -1520,6 +1520,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     handleSecurityPermissions(child, securityConfigBuilder);
                 } else if ("security-interceptors".equals(nodeName)) {
                     handleSecurityInterceptors(child, securityConfigBuilder);
+                } else if ("client-block-unmapped-actions".equals(nodeName)) {
+                    securityConfigBuilder.addPropertyValue("clientBlockUnmappedActions", getBooleanValue(getTextContent(child)));
                 }
             }
             configBuilder.addPropertyValue("securityConfig", beanDefinition);

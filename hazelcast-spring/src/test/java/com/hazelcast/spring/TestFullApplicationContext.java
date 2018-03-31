@@ -545,6 +545,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     @Test
     public void testSecurity() {
         final Set<PermissionConfig> clientPermissionConfigs = config.getSecurityConfig().getClientPermissionConfigs();
+        assertFalse(config.getSecurityConfig().getClientBlockUnmappedActions());
         assertTrue(isNotEmpty(clientPermissionConfigs));
         assertEquals(1, clientPermissionConfigs.size());
         final PermissionConfig pnCounterPermission = new PermissionConfig(PermissionType.PN_COUNTER, "pnCounterPermission", "*")

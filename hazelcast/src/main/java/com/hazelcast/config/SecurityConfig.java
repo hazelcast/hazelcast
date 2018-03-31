@@ -25,6 +25,8 @@ import java.util.Set;
  */
 public class SecurityConfig {
 
+    private static final boolean DEFAULT_CLIENT_BLOCK_UNMAPPED_ACTIONS = true;
+
     private boolean enabled;
 
     private CredentialsFactoryConfig memberCredentialsConfig = new CredentialsFactoryConfig();
@@ -38,6 +40,8 @@ public class SecurityConfig {
     private PermissionPolicyConfig clientPolicyConfig = new PermissionPolicyConfig();
 
     private Set<PermissionConfig> clientPermissionConfigs = new HashSet<PermissionConfig>();
+
+    private boolean clientBlockUnmappedActions = DEFAULT_CLIENT_BLOCK_UNMAPPED_ACTIONS;
 
     public SecurityConfig addSecurityInterceptorConfig(SecurityInterceptorConfig interceptorConfig) {
         securityInterceptorConfigs.add(interceptorConfig);
@@ -121,6 +125,41 @@ public class SecurityConfig {
         return this;
     }
 
+    /**
+     * @return a boolean flag indicating whether actions, submitted as tasks in an Executor from clients
+     * and have no permission mappings, are blocked or allowed.
+     * <p/>
+     * Executors:
+     *
+     * <ul>
+     * <li>{@link com.hazelcast.core.IExecutorService}
+     * <li>{@link com.hazelcast.scheduledexecutor.IScheduledExecutorService}
+     * <li>{@link com.hazelcast.durableexecutor.DurableExecutorService}
+     * </ul>
+     */
+    public boolean getClientBlockUnmappedActions() {
+        return clientBlockUnmappedActions;
+    }
+
+    /**
+     * Block or allow actions, submitted as tasks in an Executor from clients and have no permission mappings.
+     * <p/>
+     * Executors:
+     *
+     * <ul>
+     * <li>{@link com.hazelcast.core.IExecutorService}
+     * <li>{@link com.hazelcast.scheduledexecutor.IScheduledExecutorService}
+     * <li>{@link com.hazelcast.durableexecutor.DurableExecutorService}
+     * </ul>
+     *
+     * @param clientBlockUnmappedActions <li/>True: Blocks all actions that have no permission mapping
+     *                                   <li/>False: Allows all actions that have no permission mapping
+     */
+    public SecurityConfig setClientBlockUnmappedActions(boolean clientBlockUnmappedActions) {
+        this.clientBlockUnmappedActions = clientBlockUnmappedActions;
+        return this;
+    }
+
     @Override
     public String toString() {
         return "SecurityConfig{"
@@ -130,6 +169,69 @@ public class SecurityConfig {
                 + ", clientLoginModuleConfigs=" + clientLoginModuleConfigs
                 + ", clientPolicyConfig=" + clientPolicyConfig
                 + ", clientPermissionConfigs=" + clientPermissionConfigs
+                + ", clientBlockUnmappedActions=" + clientBlockUnmappedActions
                 + '}';
+    }
+
+    @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity"})
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        SecurityConfig that = (SecurityConfig) o;
+
+        if (enabled != that.enabled) {
+            return false;
+        }
+        if (clientBlockUnmappedActions != that.clientBlockUnmappedActions) {
+            return false;
+        }
+        if (memberCredentialsConfig != null
+                ? !memberCredentialsConfig.equals(that.memberCredentialsConfig)
+                : that.memberCredentialsConfig != null) {
+            return false;
+        }
+        if (memberLoginModuleConfigs != null
+                ? !memberLoginModuleConfigs.equals(that.memberLoginModuleConfigs)
+                : that.memberLoginModuleConfigs != null) {
+            return false;
+        }
+        if (securityInterceptorConfigs != null
+                ? !securityInterceptorConfigs.equals(that.securityInterceptorConfigs)
+                : that.securityInterceptorConfigs != null) {
+            return false;
+        }
+        if (clientLoginModuleConfigs != null
+                ? !clientLoginModuleConfigs.equals(that.clientLoginModuleConfigs)
+                : that.clientLoginModuleConfigs != null) {
+            return false;
+        }
+        if (clientPolicyConfig != null
+                ? !clientPolicyConfig.equals(that.clientPolicyConfig)
+                : that.clientPolicyConfig != null) {
+            return false;
+        }
+        return clientPermissionConfigs != null
+                ? clientPermissionConfigs.equals(that.clientPermissionConfigs)
+                : that.clientPermissionConfigs == null;
+    }
+
+    @SuppressWarnings({"checkstyle:npathcomplexity"})
+    @Override
+    public int hashCode() {
+        int result = (enabled ? 1 : 0);
+        result = 31 * result + (memberCredentialsConfig != null ? memberCredentialsConfig.hashCode() : 0);
+        result = 31 * result + (memberLoginModuleConfigs != null ? memberLoginModuleConfigs.hashCode() : 0);
+        result = 31 * result + (securityInterceptorConfigs != null ? securityInterceptorConfigs.hashCode() : 0);
+        result = 31 * result + (clientLoginModuleConfigs != null ? clientLoginModuleConfigs.hashCode() : 0);
+        result = 31 * result + (clientPolicyConfig != null ? clientPolicyConfig.hashCode() : 0);
+        result = 31 * result + (clientPermissionConfigs != null ? clientPermissionConfigs.hashCode() : 0);
+        result = 31 * result + (clientBlockUnmappedActions ? 1 : 0);
+        return result;
     }
 }
