@@ -42,7 +42,7 @@ public final class PartitionOperationThread extends OperationThread {
      * So we need to find the right one based on the partition ID.
      */
     @Override
-    public OperationRunner getOperationRunner(int partitionId) {
+    public OperationRunner operationRunner(int partitionId) {
         return partitionOperationRunners[partitionId];
     }
 
