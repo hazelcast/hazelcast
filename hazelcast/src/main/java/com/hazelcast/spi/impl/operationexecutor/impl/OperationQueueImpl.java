@@ -23,7 +23,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
-public final class DefaultOperationQueue implements OperationQueue {
+public final class OperationQueueImpl implements OperationQueue {
 
     static final Object TRIGGER_TASK = new Object() {
         public String toString() {
@@ -34,11 +34,11 @@ public final class DefaultOperationQueue implements OperationQueue {
     private final BlockingQueue<Object> normalQueue;
     private final Queue<Object> priorityQueue;
 
-    public DefaultOperationQueue() {
+    public OperationQueueImpl() {
         this(new LinkedBlockingQueue<Object>(), new ConcurrentLinkedQueue<Object>());
     }
 
-    public DefaultOperationQueue(BlockingQueue<Object> normalQueue, Queue<Object> priorityQueue) {
+    public OperationQueueImpl(BlockingQueue<Object> normalQueue, Queue<Object> priorityQueue) {
         this.normalQueue = checkNotNull(normalQueue, "normalQueue");
         this.priorityQueue = checkNotNull(priorityQueue, "priorityQueue");
     }

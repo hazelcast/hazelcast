@@ -31,11 +31,11 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(NightlyTest.class)
-public class DefaultOperationQueueStressTest extends HazelcastTestSupport {
+public class OperationQueueImplStressTest extends HazelcastTestSupport {
 
     private static final Object POISON_PILL = new Object();
 
-    private final DefaultOperationQueue queue = new DefaultOperationQueue();
+    private final OperationQueueImpl queue = new OperationQueueImpl();
     private final AtomicBoolean stop = new AtomicBoolean();
 
     @Test
