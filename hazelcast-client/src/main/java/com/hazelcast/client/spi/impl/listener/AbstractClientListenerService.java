@@ -41,10 +41,8 @@ import com.hazelcast.util.executor.SingleExecutorThreadFactory;
 import com.hazelcast.util.executor.StripedExecutor;
 import com.hazelcast.util.executor.StripedRunnable;
 
-import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
@@ -65,8 +63,6 @@ public abstract class AbstractClientListenerService implements ClientListenerSer
     protected final SerializationService serializationService;
     protected final long invocationTimeoutMillis;
     protected final long invocationRetryPauseMillis;
-    protected final Map<Connection, Collection<ClientRegistrationKey>> failedRegistrations
-            = new ConcurrentHashMap<Connection, Collection<ClientRegistrationKey>>();
     protected final Map<ClientRegistrationKey, Map<Connection, ClientEventRegistration>> registrations
             = new ConcurrentHashMap<ClientRegistrationKey, Map<Connection, ClientEventRegistration>>();
 
@@ -244,7 +240,6 @@ public abstract class AbstractClientListenerService implements ClientListenerSer
         registrationExecutor.submit(new Runnable() {
             @Override
             public void run() {
-                failedRegistrations.remove(connection);
                 for (Map<Connection, ClientEventRegistration> registrationMap : registrations.values()) {
                     ClientEventRegistration registration = registrationMap.remove(connection);
                     if (registration != null) {
@@ -293,19 +288,12 @@ public abstract class AbstractClientListenerService implements ClientListenerSer
         return registrations;
     }
 
-    void invokeFromInternalThread(ClientRegistrationKey registrationKey, Connection connection) {
+    private void invokeFromInternalThread(ClientRegistrationKey registrationKey, Connection connection) {
         //This method should only be called from registrationExecutor
         assert (Thread.currentThread().getName().contains("eventRegistration"));
 
         try {
             invoke(registrationKey, connection);
-        } catch (IOException e) {
-            Collection<ClientRegistrationKey> failedRegsToConnection = failedRegistrations.get(connection);
-            if (failedRegsToConnection == null) {
-                failedRegsToConnection = Collections.newSetFromMap(new HashMap<ClientRegistrationKey, Boolean>());
-                failedRegistrations.put(connection, failedRegsToConnection);
-            }
-            failedRegsToConnection.add(registrationKey);
         } catch (Exception e) {
             logger.warning("Listener " + registrationKey + " can not be added to a new connection: "
                     + connection + ", reason: " + e.getMessage());
