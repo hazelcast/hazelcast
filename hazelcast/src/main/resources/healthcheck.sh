@@ -40,17 +40,14 @@ while [ $# -gt 0 ]; do
 done
 
 if [ -z "$OPERATION" ]; then
- 	echo "No operation is defined, running script with default operation: 'all'."
  	OPERATION="all"
 fi
 
 if [ -z "$PORT" ]; then
-    echo "No port is defined, running script with default port: '5701'."
     PORT="5701"
 fi
 
 if [ -z "$ADDRESS" ]; then
-    echo "No specific ip address is defined, running script with default ip: '127.0.0.1'."
     ADDRESS="127.0.0.1"
 fi
 
