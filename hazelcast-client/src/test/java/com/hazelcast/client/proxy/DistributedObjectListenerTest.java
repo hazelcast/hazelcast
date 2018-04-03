@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.proxy;
 
+import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectEvent;
@@ -119,7 +120,9 @@ public class DistributedObjectListenerTest extends HazelcastTestSupport {
     public void distributedObjectsCreatedBack_whenClusterRestart_withSingleNode() {
         final HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
 
-        HazelcastInstance client = hazelcastFactory.newHazelcastClient();
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getNetworkConfig().setConnectionAttemptLimit(100);
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
 
         client.getMap("test");
 
@@ -144,7 +147,9 @@ public class DistributedObjectListenerTest extends HazelcastTestSupport {
         final HazelcastInstance instance1 = hazelcastFactory.newHazelcastInstance();
         final HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance();
 
-        HazelcastInstance client = hazelcastFactory.newHazelcastClient();
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getNetworkConfig().setConnectionAttemptLimit(100);
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
 
         client.getMap("test");
 
