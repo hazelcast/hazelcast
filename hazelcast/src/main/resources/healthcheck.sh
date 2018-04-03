@@ -8,7 +8,8 @@ print_help() {
 }
 
 command -v curl >/dev/null 2>&1 || { echo >&2 "Cluster state script requires 'curl' but it's not installed. Aborting."; exit 1; }
-command -v awk >/dev/null 2>&1 || { echo >&2 "Cluster state script requires 'awk' but it's not installed. Aborting."; exit 1; }
+command -v grep >/dev/null 2>&1 || { echo >&2 "Cluster state script requires 'grep' but it's not installed. Aborting."; exit 1; }
+command -v sed >/dev/null 2>&1 || { echo >&2 "Cluster state script requires 'sed' but it's not installed. Aborting."; exit 1; }
 
 if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
     print_help
@@ -86,7 +87,8 @@ if [ "$OPERATION" = "all" ]; then
     exit 0
 fi
 
-RESULT=$(echo $HTTP_BODY | awk "{match(\$0,  /Hazelcast\:\:${KEYWORD}\=([A-Z_0-9]*)/, m)}END{print m[1]}")
+PREFIX_REGEX="Hazelcast\:\:${KEYWORD}\="
+RESULT=$(echo $HTTP_BODY | grep -Eo "${PREFIX_REGEX}[A-Z_0-9]*" | sed "s/${PREFIX_REGEX}//")
 
 echo "${RESULT}"
 exit 0
