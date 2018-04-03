@@ -60,7 +60,7 @@ import static com.hazelcast.util.MapUtil.createHashMap;
 public class MapReplicationStateHolder implements IdentifiedDataSerializable, Versioned {
 
     // data for each map
-    private Map<String, Set<RecordReplicationInfo>> data;
+    protected Map<String, Set<RecordReplicationInfo>> data;
 
     // propagates the information if the given record store has been already loaded with map-loaded
     // if so, the loading won't be triggered again after a migration to avoid duplicate loading.
