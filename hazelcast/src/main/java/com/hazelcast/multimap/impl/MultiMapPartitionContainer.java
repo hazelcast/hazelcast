@@ -50,8 +50,14 @@ public class MultiMapPartitionContainer {
     }
 
     public MultiMapContainer getOrCreateMultiMapContainer(String name) {
+        return getOrCreateMultiMapContainer(name, true);
+    }
+
+    public MultiMapContainer getOrCreateMultiMapContainer(String name, boolean isAccess) {
         MultiMapContainer container = ConcurrencyUtil.getOrPutIfAbsent(containerMap, name, containerConstructor);
-        container.access();
+        if (isAccess) {
+            container.access();
+        }
         return container;
     }
 

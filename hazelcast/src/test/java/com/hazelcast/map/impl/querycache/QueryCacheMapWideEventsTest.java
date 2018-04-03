@@ -32,6 +32,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -65,17 +66,23 @@ public class QueryCacheMapWideEventsTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(SlowTest.class)
     public void no_event_lost_during_migrations__with_many_parallel_nodes() {
-        no_event_lost_during_migrations(3, 2);
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                no_event_lost_during_migrations(3, 5);
+            }
+        });
     }
 
-    private void no_event_lost_during_migrations(int parallelNodeCount, int newNodeAfterSeconds) {
+    private void no_event_lost_during_migrations(int parallelNodeCount, int startNewNodeAfterSeconds) {
         newQueryCacheOnNewNode();
 
         List<Thread> threads = new ArrayList<Thread>();
         for (int i = 0; i < parallelNodeCount; i++) {
             // creates CLEAR_ALL events
-            Thread clearAllNode = new Thread() {
+            Thread doMapClear = new Thread() {
                 @Override
                 public void run() {
                     IMap map = newQueryCacheOnNewNode();
@@ -92,12 +99,12 @@ public class QueryCacheMapWideEventsTest extends HazelcastTestSupport {
                 }
             };
 
-            threads.add(clearAllNode);
+            threads.add(doMapClear);
         }
 
         for (Thread thread : threads) {
             thread.start();
-            sleepSeconds(newNodeAfterSeconds);
+            sleepSeconds(startNewNodeAfterSeconds);
         }
 
         assertJoinable(threads.toArray(new Thread[0]));

@@ -24,10 +24,11 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.impl.MutatingOperation;
 
-public class ClearOperation extends MultiMapOperation implements BackupAwareOperation, PartitionAwareOperation,
+public class ClearOperation extends AbstractMultiMapOperation implements BackupAwareOperation, PartitionAwareOperation,
         MutatingOperation {
 
-    boolean shouldBackup;
+    private transient MultiMapContainer container;
+    private transient boolean shouldBackup;
 
     public ClearOperation() {
     }
@@ -38,19 +39,22 @@ public class ClearOperation extends MultiMapOperation implements BackupAwareOper
 
     @Override
     public void beforeRun() throws Exception {
-        MultiMapContainer container = getOrCreateContainer();
+        container = getOrCreateContainer();
         shouldBackup = container.size() > 0;
     }
 
     @Override
     public void run() throws Exception {
-        MultiMapContainer container = getOrCreateContainer();
+        container = getOrCreateContainer();
         response = container.clear();
     }
 
     @Override
     public void afterRun() throws Exception {
         ((MultiMapService) getService()).getLocalMultiMapStatsImpl(name).incrementOtherOperations();
+        if (shouldBackup) {
+            container.update();
+        }
     }
 
     @Override

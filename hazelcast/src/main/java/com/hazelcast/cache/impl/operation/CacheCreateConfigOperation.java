@@ -18,7 +18,6 @@ package com.hazelcast.cache.impl.operation;
 
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.impl.ICacheService;
-import com.hazelcast.cache.impl.PreJoinCacheConfig;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.Member;
@@ -52,7 +51,12 @@ import java.util.concurrent.atomic.AtomicInteger;
  * remote members on which the new {@code CacheConfig} needs to be created. When this operation returns {@code null} with {@code
  * createAlsoOnOthers == true}, it is impossible to tell whether it is because the {@code CacheConfig} was not already registered
  * or due to sending out the operation to other remote members.
+ *
+ * @deprecated as of 3.10 replaced by {@link AddCacheConfigOperation}, which is used in conjunction with
+ * {@link com.hazelcast.internal.util.InvocationUtil#invokeOnStableClusterSerial(NodeEngine,
+ * com.hazelcast.util.function.Supplier, int)} to reliably broadcast the {@code CacheConfig} to all members of the cluster.
  */
+@Deprecated
 public class CacheCreateConfigOperation
         extends AbstractNamedOperation
         implements IdentifiedDataSerializable {
@@ -87,9 +91,7 @@ public class CacheCreateConfigOperation
     public void run() throws Exception {
         ICacheService service = getService();
         if (!ignoreLocal) {
-            CacheConfig cacheConfig =
-                    config instanceof PreJoinCacheConfig ? ((PreJoinCacheConfig) config).asCacheConfig() : config;
-            response = service.putCacheConfigIfAbsent(cacheConfig);
+            response = service.putCacheConfigIfAbsent(config);
         }
         if (createAlsoOnOthers) {
             NodeEngine nodeEngine = getNodeEngine();

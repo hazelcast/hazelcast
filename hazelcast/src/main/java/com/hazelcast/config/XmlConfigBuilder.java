@@ -2350,6 +2350,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 handleSecurityPermissions(child);
             } else if ("security-interceptors".equals(nodeName)) {
                 handleSecurityInterceptors(child);
+            } else if ("client-block-unmapped-actions".equals(nodeName)) {
+                config.getSecurityConfig().setClientBlockUnmappedActions(getBooleanValue(getTextContent(child)));
             }
         }
     }

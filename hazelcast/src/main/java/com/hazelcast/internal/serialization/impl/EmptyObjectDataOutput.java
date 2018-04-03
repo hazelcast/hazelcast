@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.serialization.impl;
 
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 
@@ -143,4 +144,8 @@ final class EmptyObjectDataOutput extends VersionedObjectDataOutput implements O
         return ByteOrder.BIG_ENDIAN;
     }
 
+    @Override
+    public InternalSerializationService getSerializationService() {
+        return null;
+    }
 }

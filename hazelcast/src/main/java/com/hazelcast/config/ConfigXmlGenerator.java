@@ -37,6 +37,7 @@ import javax.xml.transform.stream.StreamSource;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -44,9 +45,13 @@ import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
 
+import static com.hazelcast.config.PermissionConfig.PermissionType.ALL;
+import static com.hazelcast.config.PermissionConfig.PermissionType.CONFIG;
+import static com.hazelcast.config.PermissionConfig.PermissionType.TRANSACTION;
 import static com.hazelcast.nio.IOUtil.closeResource;
 import static com.hazelcast.util.Preconditions.isNotNull;
 import static com.hazelcast.util.StringUtil.isNullOrEmpty;
+import static java.util.Arrays.asList;
 
 /**
  * The ConfigXmlGenerator is responsible for transforming a {@link Config} to a Hazelcast XML string.
@@ -117,6 +122,7 @@ public class ConfigXmlGenerator {
 
         manCenterXmlGenerator(gen, config);
         gen.appendProperties(config.getProperties());
+        securityXmlGenerator(gen, config);
         wanReplicationXmlGenerator(gen, config);
         networkConfigXmlGenerator(gen, config);
         mapConfigXmlGenerator(gen, config);
@@ -246,6 +252,99 @@ public class ConfigXmlGenerator {
                     .node("capacity", c.getCapacity())
                     .node("time-to-live-seconds", c.getTimeToLiveSeconds())
                     .close();
+        }
+    }
+
+    private static void securityXmlGenerator(XmlGenerator gen, Config config) {
+        SecurityConfig c = config.getSecurityConfig();
+        if (c == null) {
+            return;
+        }
+
+        gen.open("security", "enabled", c.isEnabled())
+           .node("client-block-unmapped-actions", c.getClientBlockUnmappedActions());
+
+        PermissionPolicyConfig ppc = c.getClientPolicyConfig();
+        if (ppc.getClassName() != null) {
+            gen.open("client-permission-policy", "class-name", ppc.getClassName())
+               .appendProperties(ppc.getProperties())
+               .close();
+        }
+
+        appendLoginModules(gen, "client-login-modules", c.getClientLoginModuleConfigs());
+        appendLoginModules(gen, "member-login-modules", c.getMemberLoginModuleConfigs());
+
+        CredentialsFactoryConfig cfc = c.getMemberCredentialsConfig();
+        if (cfc.getClassName() != null) {
+            gen.open("member-credentials-factory", "class-name", cfc.getClassName())
+               .appendProperties(cfc.getProperties())
+               .close();
+        }
+
+        List<SecurityInterceptorConfig> sic = c.getSecurityInterceptorConfigs();
+        if (!sic.isEmpty()) {
+            gen.open("security-interceptors");
+            for (SecurityInterceptorConfig s : sic) {
+                gen.open("interceptor", "class-name", s.getClassName())
+                   .close();
+            }
+            gen.close();
+        }
+
+        appendSecurityPermissions(gen, "client-permissions", c.getClientPermissionConfigs());
+        gen.close();
+    }
+
+    private static void appendSecurityPermissions(XmlGenerator gen, String tag, Set<PermissionConfig> cpc) {
+        final List<PermissionConfig.PermissionType> clusterPermTypes = asList(ALL, CONFIG, TRANSACTION);
+
+        if (!cpc.isEmpty()) {
+            gen.open(tag);
+            for (PermissionConfig p : cpc) {
+                if (clusterPermTypes.contains(p.getType())) {
+                    gen.open(p.getType().getNodeName(), "principal", p.getPrincipal());
+                } else {
+                    gen.open(p.getType().getNodeName(), "principal", p.getPrincipal(), "name", p.getName());
+                }
+
+                if (!p.getEndpoints().isEmpty()) {
+                    gen.open("endpoints");
+                    for (String endpoint : p.getEndpoints()) {
+                        gen.node("endpoint", endpoint);
+                    }
+                    gen.close();
+                }
+
+                if (!p.getActions().isEmpty()) {
+                    gen.open("actions");
+                    for (String action : p.getActions()) {
+                        gen.node("action", action);
+                    }
+                    gen.close();
+                }
+                gen.close();
+            }
+            gen.close();
+        }
+    }
+
+    private static void appendLoginModules(XmlGenerator gen, String tag, List<LoginModuleConfig> loginModuleConfigs) {
+        if (!loginModuleConfigs.isEmpty()) {
+            gen.open(tag);
+            for (LoginModuleConfig lm : loginModuleConfigs) {
+                List<String> attrs = new ArrayList<String>();
+                attrs.add("class-name");
+                attrs.add(lm.getClassName());
+
+                if (lm.getUsage() != null) {
+                    attrs.add("usage");
+                    attrs.add(lm.getUsage().name());
+                }
+                gen.open("login-module", attrs.toArray())
+                   .appendProperties(lm.getProperties())
+                   .close();
+            }
+            gen.close();
         }
     }
 

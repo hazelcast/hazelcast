@@ -17,7 +17,6 @@
 package com.hazelcast.cache.impl;
 
 import com.hazelcast.cache.HazelcastCachingProvider;
-import com.hazelcast.cache.impl.operation.CacheCreateConfigOperation;
 import com.hazelcast.cache.impl.operation.CacheGetConfigOperation;
 import com.hazelcast.cache.impl.operation.CacheManagementConfigOperation;
 import com.hazelcast.config.CacheConfig;
@@ -27,7 +26,6 @@ import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.HazelcastInstanceProxy;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.OperationService;
 
 import java.net.URI;
 import java.util.ArrayList;
@@ -123,9 +121,7 @@ public class HazelcastServerCacheManager
 
     @Override
     protected <K, V> CacheConfig<K, V> findCacheConfig(String cacheName,
-                                                       String simpleCacheName,
-                                                       boolean createAlsoOnOthers,
-                                                       boolean syncCreate) {
+                                                       String simpleCacheName) {
         CacheConfig<K, V> config = cacheService.getCacheConfig(cacheName);
         if (config == null) {
             config = cacheService.findCacheConfig(simpleCacheName);
@@ -141,31 +137,15 @@ public class HazelcastServerCacheManager
             // This is needed because even though cache config is exist on this node
             // (for example added by an in-flight cache config creation operation)
             // it still might not exist on other nodes yet (but will created eventually).
-            createCacheConfig(cacheName, config, createAlsoOnOthers, syncCreate);
+            createCacheConfig(cacheName, config);
         }
         return config;
     }
 
     @Override
-    protected <K, V> CacheConfig<K, V> createCacheConfig(String cacheName,
-                                                         CacheConfig<K, V> config,
-                                                         boolean createAlsoOnOthers,
-                                                         boolean syncCreate) {
-        CacheConfig<K, V> currentCacheConfig = cacheService.getCacheConfig(cacheName);
-        OperationService operationService = nodeEngine.getOperationService();
-        // Create cache config on all nodes.
-        CacheCreateConfigOperation op =
-                new CacheCreateConfigOperation(config, createAlsoOnOthers);
-        // Run "CacheCreateConfigOperation" on this node. Its itself handles interaction with other nodes.
-        // This operation doesn't block operation thread even "syncCreate" is specified.
-        // In that case, scheduled thread is used, not operation thread.
-        InternalCompletableFuture future =
-                operationService.invokeOnTarget(CacheService.SERVICE_NAME, op, nodeEngine.getThisAddress());
-        if (syncCreate) {
-            return (CacheConfig<K, V>) future.join();
-        } else {
-            return currentCacheConfig;
-        }
+    protected <K, V> void createCacheConfig(String cacheName,
+                                            CacheConfig<K, V> config) {
+        cacheService.createCacheConfigOnAllMembers(PreJoinCacheConfig.of(config));
     }
 
     @Override

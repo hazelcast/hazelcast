@@ -23,8 +23,10 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.map.AbstractEntryProcessor;
 import com.hazelcast.projection.Projection;
+import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.PartitionPredicate;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.query.TruePredicate;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -86,6 +88,48 @@ public class ClientPartitionPredicateTest extends HazelcastTestSupport {
     @After
     public void tearDown() {
         hazelcastFactory.terminateAll();
+    }
+
+    @Test
+    public void values_withPagingPredicate() {
+        PagingPredicate<String, Integer> pagingPredicate = new PagingPredicate<String, Integer>(Predicates.alwaysTrue(), 1);
+        predicate = new PartitionPredicate<String, Integer>(randomString(), pagingPredicate);
+
+        for (int i = 0; i < ITEMS_PER_PARTITION; i++) {
+            int size = map.values(predicate).size();
+            assertEquals(1, size);
+            pagingPredicate.nextPage();
+        }
+        int size = map.values(predicate).size();
+        assertEquals(0, size);
+    }
+
+    @Test
+    public void keys_withPagingPredicate() {
+        PagingPredicate<String, Integer> pagingPredicate = new PagingPredicate<String, Integer>(Predicates.alwaysTrue(), 1);
+        predicate = new PartitionPredicate<String, Integer>(randomString(), pagingPredicate);
+
+        for (int i = 0; i < ITEMS_PER_PARTITION; i++) {
+            int size = map.keySet(predicate).size();
+            assertEquals(1, size);
+            pagingPredicate.nextPage();
+        }
+        int size = map.keySet(predicate).size();
+        assertEquals(0, size);
+    }
+
+    @Test
+    public void entries_withPagingPredicate() {
+        PagingPredicate<String, Integer> pagingPredicate = new PagingPredicate<String, Integer>(Predicates.alwaysTrue(), 1);
+        predicate = new PartitionPredicate<String, Integer>(randomString(), pagingPredicate);
+
+        for (int i = 0; i < ITEMS_PER_PARTITION; i++) {
+            int size = map.entrySet(predicate).size();
+            assertEquals(1, size);
+            pagingPredicate.nextPage();
+        }
+        int size = map.entrySet(predicate).size();
+        assertEquals(0, size);
     }
 
     @Test

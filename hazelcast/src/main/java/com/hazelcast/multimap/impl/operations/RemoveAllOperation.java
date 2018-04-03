@@ -27,7 +27,7 @@ import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.util.Collection;
 
-public class RemoveAllOperation extends MultiMapBackupAwareOperation implements MutatingOperation {
+public class RemoveAllOperation extends AbstractBackupAwareMultiMapOperation implements MutatingOperation {
 
     private Collection<MultiMapRecord> coll;
 

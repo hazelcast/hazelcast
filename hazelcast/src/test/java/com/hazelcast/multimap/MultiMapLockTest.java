@@ -50,19 +50,19 @@ public class MultiMapLockTest extends HazelcastTestSupport {
 
     @Test(expected = NullPointerException.class)
     public void testLock_whenNullKey() {
-        MultiMap multiMap = getMultiMapForLock();
+        MultiMap<String, Integer> multiMap = getMultiMapForLock();
         multiMap.lock(null);
     }
 
     @Test(expected = NullPointerException.class)
     public void testUnlock_whenNullKey() {
-        MultiMap multiMap = getMultiMapForLock();
+        MultiMap<String, Integer> multiMap = getMultiMapForLock();
         multiMap.unlock(null);
     }
 
     @Test(timeout = 60000)
     public void testTryLockLeaseTime_whenLockFree() throws InterruptedException {
-        MultiMap multiMap = getMultiMapForLock();
+        MultiMap<String, Integer> multiMap = getMultiMapForLock();
         String key = randomString();
         boolean isLocked = multiMap.tryLock(key, 1000, TimeUnit.MILLISECONDS, 1000, TimeUnit.MILLISECONDS);
         assertTrue(isLocked);
@@ -70,7 +70,7 @@ public class MultiMapLockTest extends HazelcastTestSupport {
 
     @Test(timeout = 60000)
     public void testTryLockLeaseTime_whenLockAcquiredByOther() throws InterruptedException {
-        final MultiMap multiMap = getMultiMapForLock();
+        final MultiMap<String, Integer> multiMap = getMultiMapForLock();
         final String key = randomString();
         Thread thread = new Thread() {
             public void run() {
@@ -86,12 +86,12 @@ public class MultiMapLockTest extends HazelcastTestSupport {
 
     @Test
     public void testTryLockLeaseTime_lockIsReleasedEventually() throws InterruptedException {
-        final MultiMap multiMap = getMultiMapForLock();
+        final MultiMap<String, Integer> multiMap = getMultiMapForLock();
         final String key = randomString();
         multiMap.tryLock(key, 1000, TimeUnit.MILLISECONDS, 1000, TimeUnit.MILLISECONDS);
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 Assert.assertFalse(multiMap.isLocked(key));
             }
         }, 30);
@@ -99,12 +99,15 @@ public class MultiMapLockTest extends HazelcastTestSupport {
 
     @Test
     public void testLock() throws Exception {
-        Config config = new Config();
         final String name = "defMM";
-        config.getMultiMapConfig(name).setValueCollectionType(MultiMapConfig.ValueCollectionType.LIST);
-        final int insCount = 4;
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(insCount);
+
+        Config config = new Config();
+        config.getMultiMapConfig(name)
+                .setValueCollectionType(MultiMapConfig.ValueCollectionType.LIST);
+
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(4);
         final HazelcastInstance[] instances = factory.newInstances(config);
+
         final CountDownLatch latch = new CountDownLatch(1);
         final CountDownLatch latch2 = new CountDownLatch(1);
         new Thread() {
@@ -136,7 +139,6 @@ public class MultiMapLockTest extends HazelcastTestSupport {
         }.start();
 
         assertTrue(instances[1].getMultiMap(name).tryLock("alo", 20, TimeUnit.SECONDS));
-
     }
 
     /**
@@ -145,9 +147,9 @@ public class MultiMapLockTest extends HazelcastTestSupport {
     @Test
     public void lockStoreShouldBeRemoved_whenMultimapIsDestroyed() {
         HazelcastInstance hz = createHazelcastInstance();
-        MultiMap multiMap = hz.getMultiMap(randomName());
+        MultiMap<String, Integer> multiMap = hz.getMultiMap(randomName());
         for (int i = 0; i < 1000; i++) {
-            multiMap.lock(i);
+            multiMap.lock("" + i);
         }
         multiMap.destroy();
 
@@ -161,8 +163,7 @@ public class MultiMapLockTest extends HazelcastTestSupport {
         }
     }
 
-    private MultiMap getMultiMapForLock() {
+    private MultiMap<String, Integer> getMultiMapForLock() {
         return createHazelcastInstance().getMultiMap(randomString());
     }
-
 }

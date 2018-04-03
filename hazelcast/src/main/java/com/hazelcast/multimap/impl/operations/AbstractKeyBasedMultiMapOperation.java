@@ -27,30 +27,27 @@ import com.hazelcast.spi.PartitionAwareOperation;
 import java.io.IOException;
 import java.util.Collection;
 
-public abstract class MultiMapKeyBasedOperation extends MultiMapOperation implements PartitionAwareOperation {
+public abstract class AbstractKeyBasedMultiMapOperation extends AbstractMultiMapOperation
+        implements PartitionAwareOperation {
 
     protected Data dataKey;
     protected long threadId;
 
-    protected MultiMapKeyBasedOperation() {
+    protected AbstractKeyBasedMultiMapOperation() {
     }
 
-    protected MultiMapKeyBasedOperation(String name, Data dataKey) {
+    protected AbstractKeyBasedMultiMapOperation(String name, Data dataKey) {
         super(name);
         this.dataKey = dataKey;
     }
 
-    protected MultiMapKeyBasedOperation(String name, Data dataKey, long threadId) {
+    protected AbstractKeyBasedMultiMapOperation(String name, Data dataKey, long threadId) {
         super(name);
         this.dataKey = dataKey;
         this.threadId = threadId;
     }
 
-    public long getThreadId() {
-        return threadId;
-    }
-
-    public void setThreadId(long threadId) {
+    public final void setThreadId(long threadId) {
         this.threadId = threadId;
     }
 
@@ -67,8 +64,8 @@ public abstract class MultiMapKeyBasedOperation extends MultiMapOperation implem
         return getOrCreateContainer().remove(dataKey, copyOf);
     }
 
-    public final void delete() {
-        getOrCreateContainer().delete(dataKey);
+    public final boolean delete() {
+        return getOrCreateContainer().delete(dataKey);
     }
 
     @Override

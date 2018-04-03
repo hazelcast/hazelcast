@@ -115,6 +115,11 @@ public class DynamicSecurityConfig extends SecurityConfig {
         throw new UnsupportedOperationException("Unsupported operation");
     }
 
+    @Override
+    public SecurityConfig setClientBlockUnmappedActions(boolean clientBlockUnmappedActions) {
+        throw new UnsupportedOperationException("Unsupported operation");
+    }
+
     /**
      * Returns existing client permissions as an unmodifiable {@link Set}. You may use this set to create your
      * client permissions set and pass it {@link #setClientPermissionConfigs(Set)} to update client permissions.
@@ -125,6 +130,11 @@ public class DynamicSecurityConfig extends SecurityConfig {
                 ? securityService.getClientPermissionConfigs()
                 : staticSecurityConfig.getClientPermissionConfigs();
         return Collections.unmodifiableSet(permissionConfigs);
+    }
+
+    @Override
+    public boolean getClientBlockUnmappedActions() {
+        return staticSecurityConfig.getClientBlockUnmappedActions();
     }
 
     /**
@@ -147,5 +157,31 @@ public class DynamicSecurityConfig extends SecurityConfig {
     @Override
     public SecurityConfig setMemberCredentialsConfig(CredentialsFactoryConfig credentialsFactoryConfig) {
         throw new UnsupportedOperationException("Unsupported operation");
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        if (!super.equals(o)) {
+            return false;
+        }
+
+        DynamicSecurityConfig that = (DynamicSecurityConfig) o;
+
+        return staticSecurityConfig != null
+                ? staticSecurityConfig.equals(that.staticSecurityConfig)
+                : that.staticSecurityConfig == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + (staticSecurityConfig != null ? staticSecurityConfig.hashCode() : 0);
+        return result;
     }
 }

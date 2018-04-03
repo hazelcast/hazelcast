@@ -17,10 +17,10 @@
 package com.hazelcast.multimap.impl.txn;
 
 import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
-import com.hazelcast.multimap.impl.operations.MultiMapKeyBasedOperation;
+import com.hazelcast.multimap.impl.operations.AbstractKeyBasedMultiMapOperation;
 import com.hazelcast.nio.serialization.Data;
 
-public class TxnGenerateRecordIdOperation extends MultiMapKeyBasedOperation {
+public class TxnGenerateRecordIdOperation extends AbstractKeyBasedMultiMapOperation {
 
     public TxnGenerateRecordIdOperation() {
     }

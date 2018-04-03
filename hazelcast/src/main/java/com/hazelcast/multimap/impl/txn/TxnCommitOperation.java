@@ -17,7 +17,7 @@
 package com.hazelcast.multimap.impl.txn;
 
 import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
-import com.hazelcast.multimap.impl.operations.MultiMapBackupAwareOperation;
+import com.hazelcast.multimap.impl.operations.AbstractBackupAwareMultiMapOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -30,10 +30,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class TxnCommitOperation extends MultiMapBackupAwareOperation implements Notifier {
+public class TxnCommitOperation extends AbstractBackupAwareMultiMapOperation implements Notifier {
 
     private List<Operation> opList;
-    private boolean notify = true;
+
+    private transient boolean notify = true;
 
     public TxnCommitOperation() {
     }

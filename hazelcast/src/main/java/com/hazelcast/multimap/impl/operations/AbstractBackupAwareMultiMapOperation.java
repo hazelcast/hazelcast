@@ -28,14 +28,13 @@ import com.hazelcast.spi.WaitNotifyKey;
 
 import java.io.IOException;
 
-public abstract class MultiMapBackupAwareOperation
-        extends MultiMapKeyBasedOperation
+public abstract class AbstractBackupAwareMultiMapOperation extends AbstractKeyBasedMultiMapOperation
         implements BackupAwareOperation, BlockingOperation {
 
-    protected MultiMapBackupAwareOperation() {
+    protected AbstractBackupAwareMultiMapOperation() {
     }
 
-    protected MultiMapBackupAwareOperation(String name, Data dataKey, long threadId) {
+    protected AbstractBackupAwareMultiMapOperation(String name, Data dataKey, long threadId) {
         super(name, dataKey, threadId);
     }
 

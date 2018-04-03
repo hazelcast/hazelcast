@@ -31,7 +31,7 @@ import com.hazelcast.spi.WaitNotifyKey;
 
 import java.io.IOException;
 
-public class ContainsEntryOperation extends MultiMapOperation implements BlockingOperation, ReadonlyOperation {
+public class ContainsEntryOperation extends AbstractMultiMapOperation implements BlockingOperation, ReadonlyOperation {
 
     private Data key;
     private Data value;

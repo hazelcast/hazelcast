@@ -22,9 +22,9 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
 
 
-public class DeleteOperation extends MultiMapBackupAwareOperation {
+public class DeleteOperation extends AbstractBackupAwareMultiMapOperation {
 
-    private boolean shouldBackup;
+    private transient boolean shouldBackup;
 
     public DeleteOperation() {
     }
@@ -35,13 +35,10 @@ public class DeleteOperation extends MultiMapBackupAwareOperation {
 
     @Override
     public void run() throws Exception {
-        delete();
+        if (delete()) {
+            getOrCreateContainer().update();
+        }
         shouldBackup = true;
-    }
-
-    @Override
-    public void afterRun() throws Exception {
-       super.afterRun();
     }
 
     @Override

@@ -121,4 +121,32 @@ public class LoginModuleConfig {
         return "LoginModuleConfig{className='" + className + "', usage=" + usage
                 + ", properties=" + properties + '}';
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        LoginModuleConfig that = (LoginModuleConfig) o;
+
+        if (className != null ? !className.equals(that.className) : that.className != null) {
+            return false;
+        }
+        if (usage != that.usage) {
+            return false;
+        }
+        return properties != null ? properties.equals(that.properties) : that.properties == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = className != null ? className.hashCode() : 0;
+        result = 31 * result + (usage != null ? usage.hashCode() : 0);
+        result = 31 * result + (properties != null ? properties.hashCode() : 0);
+        return result;
+    }
 }

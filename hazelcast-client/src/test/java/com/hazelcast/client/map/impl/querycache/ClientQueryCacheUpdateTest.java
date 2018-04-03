@@ -37,6 +37,7 @@ import org.junit.runner.RunWith;
 import java.io.Serializable;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -80,6 +81,7 @@ public class ClientQueryCacheUpdateTest extends HazelcastTestSupport {
             @Override
             public void run() {
                 IdWrapper idWrapper = queryCache.get(1);
+                assertNotNull(idWrapper);
                 assertEquals(9, idWrapper.value);
             }
         });

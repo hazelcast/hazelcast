@@ -143,6 +143,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
                 + "    <interceptor class-name=\"foo\"/>"
                 + "    <interceptor class-name=\"bar\"/>"
                 + "  </security-interceptors>"
+                + "  <client-block-unmapped-actions>false</client-block-unmapped-actions>"
                 + "</security>"
                 + HAZELCAST_END_TAG;
 
@@ -153,6 +154,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         assertEquals(2, interceptorConfigs.size());
         assertEquals("foo", interceptorConfigs.get(0).className);
         assertEquals("bar", interceptorConfigs.get(1).className);
+        assertFalse(securityConfig.getClientBlockUnmappedActions());
     }
 
     @Test

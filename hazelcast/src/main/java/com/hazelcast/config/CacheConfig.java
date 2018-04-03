@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.cache.impl.DeferredValue;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig.ExpiryPolicyType;
@@ -35,11 +36,15 @@ import javax.cache.expiry.AccessedExpiryPolicy;
 import javax.cache.expiry.CreatedExpiryPolicy;
 import javax.cache.expiry.Duration;
 import javax.cache.expiry.EternalExpiryPolicy;
+import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.expiry.ModifiedExpiryPolicy;
 import javax.cache.expiry.TouchedExpiryPolicy;
+import javax.cache.integration.CacheLoader;
+import javax.cache.integration.CacheWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import static com.hazelcast.config.CacheSimpleConfig.DEFAULT_BACKUP_COUNT;
 import static com.hazelcast.config.CacheSimpleConfig.DEFAULT_IN_MEMORY_FORMAT;
@@ -114,6 +119,8 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
             this.quorumName = config.quorumName;
             this.mergePolicy = config.mergePolicy;
             this.disablePerEntryInvalidationEvents = config.disablePerEntryInvalidationEvents;
+            this.serializationService = config.serializationService;
+            this.classLoader = config.classLoader;
         }
     }
 
@@ -130,18 +137,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
         this.isManagementEnabled = simpleConfig.isManagementEnabled();
         this.isReadThrough = simpleConfig.isReadThrough();
         this.isWriteThrough = simpleConfig.isWriteThrough();
-        if (simpleConfig.getCacheLoaderFactory() != null) {
-            this.cacheLoaderFactory = ClassLoaderUtil.newInstance(null, simpleConfig.getCacheLoaderFactory());
-        }
-        if (simpleConfig.getCacheLoader() != null) {
-            this.cacheLoaderFactory = FactoryBuilder.factoryOf(simpleConfig.getCacheLoader());
-        }
-        if (simpleConfig.getCacheWriterFactory() != null) {
-            this.cacheWriterFactory = ClassLoaderUtil.newInstance(null, simpleConfig.getCacheWriterFactory());
-        }
-        if (simpleConfig.getCacheWriter() != null) {
-            this.cacheWriterFactory = FactoryBuilder.factoryOf(simpleConfig.getCacheWriter());
-        }
+        copyFactories(simpleConfig);
         initExpiryPolicyFactoryConfig(simpleConfig);
         this.asyncBackupCount = simpleConfig.getAsyncBackupCount();
         this.backupCount = simpleConfig.getBackupCount();
@@ -153,25 +149,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
         if (simpleConfig.getWanReplicationRef() != null) {
             this.wanReplicationRef = new WanReplicationRef(simpleConfig.getWanReplicationRef());
         }
-        for (CacheSimpleEntryListenerConfig simpleListener : simpleConfig.getCacheEntryListeners()) {
-            Factory<? extends CacheEntryListener<? super K, ? super V>> listenerFactory = null;
-            Factory<? extends CacheEntryEventFilter<? super K, ? super V>> filterFactory = null;
-            if (simpleListener.getCacheEntryListenerFactory() != null) {
-                listenerFactory = ClassLoaderUtil.newInstance(null, simpleListener.getCacheEntryListenerFactory());
-            }
-            if (simpleListener.getCacheEntryEventFilterFactory() != null) {
-                filterFactory = ClassLoaderUtil.newInstance(null, simpleListener.getCacheEntryEventFilterFactory());
-            }
-            boolean isOldValueRequired = simpleListener.isOldValueRequired();
-            boolean synchronous = simpleListener.isSynchronous();
-            MutableCacheEntryListenerConfiguration<K, V> listenerConfiguration =
-                    new MutableCacheEntryListenerConfiguration<K, V>(
-                            listenerFactory, filterFactory, isOldValueRequired, synchronous);
-            addCacheEntryListenerConfiguration(listenerConfiguration);
-        }
-        for (CachePartitionLostListenerConfig listenerConfig : simpleConfig.getPartitionLostListenerConfigs()) {
-            getPartitionLostListenerConfigs().add(listenerConfig);
-        }
+        copyListeners(simpleConfig);
         this.quorumName = simpleConfig.getQuorumName();
         this.mergePolicy = simpleConfig.getMergePolicy();
         this.hotRestartConfig = new HotRestartConfig(simpleConfig.getHotRestartConfig());
@@ -183,8 +161,12 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
                 simpleConfig.getExpiryPolicyFactoryConfig();
         if (expiryPolicyFactoryConfig != null) {
             if (expiryPolicyFactoryConfig.getClassName() != null) {
-                this.expiryPolicyFactory =
-                        ClassLoaderUtil.newInstance(null, expiryPolicyFactoryConfig.getClassName());
+                setExpiryPolicyFactory(
+                        ClassLoaderUtil.<Factory<? extends ExpiryPolicy>>newInstance(
+                                null,
+                                expiryPolicyFactoryConfig.getClassName()
+                        )
+                );
             } else {
                 TimedExpiryPolicyFactoryConfig timedExpiryPolicyConfig =
                         expiryPolicyFactoryConfig.getTimedExpiryPolicyFactoryConfig();
@@ -193,31 +175,31 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
                     ExpiryPolicyType expiryPolicyType = timedExpiryPolicyConfig.getExpiryPolicyType();
                     switch (expiryPolicyType) {
                         case CREATED:
-                            this.expiryPolicyFactory =
+                            setExpiryPolicyFactory(
                                     CreatedExpiryPolicy.factoryOf(
                                             new Duration(durationConfig.getTimeUnit(),
-                                                    durationConfig.getDurationAmount()));
+                                                    durationConfig.getDurationAmount())));
                             break;
                         case MODIFIED:
-                            this.expiryPolicyFactory =
+                            setExpiryPolicyFactory(
                                     ModifiedExpiryPolicy.factoryOf(
                                             new Duration(durationConfig.getTimeUnit(),
-                                                    durationConfig.getDurationAmount()));
+                                                    durationConfig.getDurationAmount())));
                             break;
                         case ACCESSED:
-                            this.expiryPolicyFactory =
+                            setExpiryPolicyFactory(
                                     AccessedExpiryPolicy.factoryOf(
                                             new Duration(durationConfig.getTimeUnit(),
-                                                    durationConfig.getDurationAmount()));
+                                                    durationConfig.getDurationAmount())));
                             break;
                         case TOUCHED:
-                            this.expiryPolicyFactory =
+                            setExpiryPolicyFactory(
                                     TouchedExpiryPolicy.factoryOf(
                                             new Duration(durationConfig.getTimeUnit(),
-                                                    durationConfig.getDurationAmount()));
+                                                    durationConfig.getDurationAmount())));
                             break;
                         case ETERNAL:
-                            this.expiryPolicyFactory = EternalExpiryPolicy.factoryOf();
+                            setExpiryPolicyFactory(EternalExpiryPolicy.factoryOf());
                             break;
                         default:
                             throw new IllegalArgumentException("Unsupported expiry policy type: " + expiryPolicyType);
@@ -530,9 +512,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
         // SUPER
         writeKeyValueTypes(out);
         writeTenant(out);
-        out.writeObject(cacheLoaderFactory);
-        out.writeObject(cacheWriterFactory);
-        out.writeObject(expiryPolicyFactory);
+        writeFactories(out);
 
         out.writeBoolean(isReadThrough);
         out.writeBoolean(isWriteThrough);
@@ -544,13 +524,9 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
 
         out.writeUTF(quorumName);
 
-        final boolean listNotEmpty = listenerConfigurations != null && !listenerConfigurations.isEmpty();
-        out.writeBoolean(listNotEmpty);
-        if (listNotEmpty) {
-            out.writeInt(listenerConfigurations.size());
-            for (CacheEntryListenerConfiguration<K, V> cc : listenerConfigurations) {
-                out.writeObject(cc);
-            }
+        out.writeBoolean(hasListenerConfiguration());
+        if (hasListenerConfiguration()) {
+            writeListenerConfigurations(out);
         }
 
         out.writeUTF(mergePolicy);
@@ -576,9 +552,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
         readTenant(in);
         TenantControl.Closeable tenantContext = tenantControl.setTenant(false);
         try {
-            cacheLoaderFactory = in.readObject();
-            cacheWriterFactory = in.readObject();
-            expiryPolicyFactory = in.readObject();
+            readFactories(in);
         }
         finally {
             tenantContext.close();
@@ -602,11 +576,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
         tenantContext = tenantControl.setTenant(false);
         try {
             if (listNotEmpty) {
-                final int size = in.readInt();
-                listenerConfigurations = createConcurrentSet();
-                for (int i = 0; i < size; i++) {
-                    listenerConfigurations.add((CacheEntryListenerConfiguration<K, V>) in.readObject());
-                }
+                readListenerConfigurations(in);
             }
         } finally {
             tenantContext.close();
@@ -616,6 +586,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
         disablePerEntryInvalidationEvents = in.readBoolean();
 
         setClassLoader(in.getClassLoader());
+        this.serializationService = in.getSerializationService();
     }
 
     public TenantControl getTenantControl() {
@@ -680,9 +651,36 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
         setValueType((Class<V>) in.readObject());
     }
 
-
     protected void writeTenant(ObjectDataOutput out) throws IOException { }
     protected void readTenant(ObjectDataInput in) throws IOException { }
+  
+    protected void writeFactories(ObjectDataOutput out) throws IOException {
+        out.writeObject(getCacheLoaderFactory());
+        out.writeObject(getCacheWriterFactory());
+        out.writeObject(getExpiryPolicyFactory());
+    }
+
+    protected void readFactories(ObjectDataInput in) throws IOException {
+        setCacheLoaderFactory(in.<Factory<? extends CacheLoader<K, V>>>readObject());
+        setCacheWriterFactory(in.<Factory<? extends CacheWriter<? super K, ? super V>>>readObject());
+        setExpiryPolicyFactory(in.<Factory<? extends ExpiryPolicy>>readObject());
+    }
+
+    protected void writeListenerConfigurations(ObjectDataOutput out) throws IOException {
+        out.writeInt(getListenerConfigurations().size());
+        for (CacheEntryListenerConfiguration<K, V> cc : getListenerConfigurations()) {
+            out.writeObject(cc);
+        }
+    }
+
+    protected void readListenerConfigurations(ObjectDataInput in) throws IOException {
+        final int size = in.readInt();
+        Set<DeferredValue<CacheEntryListenerConfiguration<K, V>>> lc = createConcurrentSet();
+        for (int i = 0; i < size; i++) {
+            lc.add(DeferredValue.withValue((CacheEntryListenerConfiguration<K, V>) in.readObject()));
+        }
+        listenerConfigurations = lc;
+    }
 
     /**
      * Copy this CacheConfig to given {@code target} object whose type extends CacheConfig.
@@ -698,11 +696,8 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
         target.setTenantControl(getTenantControl());
         target.setAsyncBackupCount(getAsyncBackupCount());
         target.setBackupCount(getBackupCount());
-        target.setCacheLoaderFactory(getCacheLoaderFactory());
-        target.setCacheWriterFactory(getCacheWriterFactory());
         target.setDisablePerEntryInvalidationEvents(isDisablePerEntryInvalidationEvents());
         target.setEvictionConfig(getEvictionConfig());
-        target.setExpiryPolicyFactory(getExpiryPolicyFactory());
         target.setHotRestartConfig(getHotRestartConfig());
         target.setInMemoryFormat(getInMemoryFormat());
         if (resolved) {
@@ -712,6 +707,16 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
             target.setKeyClassName(getKeyClassName());
             target.setValueClassName(getValueClassName());
         }
+
+        target.cacheLoaderFactory = cacheLoaderFactory.shallowCopy();
+        target.cacheWriterFactory = cacheWriterFactory.shallowCopy();
+        target.expiryPolicyFactory = expiryPolicyFactory.shallowCopy();
+
+        target.listenerConfigurations = createConcurrentSet();
+        for (DeferredValue<CacheEntryListenerConfiguration<K, V>> lazyEntryListenerConfig : listenerConfigurations) {
+            target.listenerConfigurations.add(lazyEntryListenerConfig.shallowCopy());
+        }
+
         target.setManagementEnabled(isManagementEnabled());
         target.setManagerPrefix(getManagerPrefix());
         target.setMergePolicy(getMergePolicy());
@@ -724,10 +729,56 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
         target.setUriString(getUriString());
         target.setWanReplicationRef(getWanReplicationRef());
         target.setWriteThrough(isWriteThrough());
-        Iterable<CacheEntryListenerConfiguration<K, V>> entryListenerConfigs = getCacheEntryListenerConfigurations();
-        for (CacheEntryListenerConfiguration<K, V> entryListenerConfig : entryListenerConfigs) {
-            target.addCacheEntryListenerConfiguration(entryListenerConfig);
-        }
+        target.setClassLoader(classLoader);
+        target.serializationService = serializationService;
         return target;
+    }
+
+    private void copyListeners(CacheSimpleConfig simpleConfig)
+            throws Exception {
+        for (CacheSimpleEntryListenerConfig simpleListener : simpleConfig.getCacheEntryListeners()) {
+            Factory<? extends CacheEntryListener<? super K, ? super V>> listenerFactory = null;
+            Factory<? extends CacheEntryEventFilter<? super K, ? super V>> filterFactory = null;
+            if (simpleListener.getCacheEntryListenerFactory() != null) {
+                listenerFactory = ClassLoaderUtil.newInstance(null, simpleListener.getCacheEntryListenerFactory());
+            }
+            if (simpleListener.getCacheEntryEventFilterFactory() != null) {
+                filterFactory = ClassLoaderUtil.newInstance(null, simpleListener.getCacheEntryEventFilterFactory());
+            }
+            boolean isOldValueRequired = simpleListener.isOldValueRequired();
+            boolean synchronous = simpleListener.isSynchronous();
+            MutableCacheEntryListenerConfiguration<K, V> listenerConfiguration =
+                    new MutableCacheEntryListenerConfiguration<K, V>(
+                            listenerFactory, filterFactory, isOldValueRequired, synchronous);
+            addCacheEntryListenerConfiguration(listenerConfiguration);
+        }
+        for (CachePartitionLostListenerConfig listenerConfig : simpleConfig.getPartitionLostListenerConfigs()) {
+            getPartitionLostListenerConfigs().add(listenerConfig);
+        }
+    }
+
+    private void copyFactories(CacheSimpleConfig simpleConfig) throws Exception {
+        if (simpleConfig.getCacheLoaderFactory() != null) {
+            setCacheLoaderFactory(
+                    ClassLoaderUtil.<Factory<? extends CacheLoader<K, V>>>newInstance(
+                            null,
+                            simpleConfig.getCacheLoaderFactory()
+                    )
+            );
+        }
+        if (simpleConfig.getCacheLoader() != null) {
+            setCacheLoaderFactory(FactoryBuilder.<CacheLoader<K, V>>factoryOf(simpleConfig.getCacheLoader()));
+        }
+        if (simpleConfig.getCacheWriterFactory() != null) {
+            setCacheWriterFactory(
+                    ClassLoaderUtil.<Factory<? extends CacheWriter<K, V>>>newInstance(
+                            null,
+                            simpleConfig.getCacheWriterFactory()
+                    )
+            );
+        }
+        if (simpleConfig.getCacheWriter() != null) {
+            setCacheWriterFactory(FactoryBuilder.<CacheWriter<K, V>>factoryOf(simpleConfig.getCacheWriter()));
+        }
     }
 }

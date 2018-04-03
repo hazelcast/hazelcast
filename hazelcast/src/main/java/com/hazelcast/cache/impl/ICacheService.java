@@ -43,6 +43,11 @@ public interface ICacheService
     String SERVICE_NAME = "hz:impl:cacheService";
 
     /**
+     * Maximum retries for adding cache config cluster-wide on stable cluster
+     */
+    int MAX_ADD_CACHE_CONFIG_RETRIES = 100;
+
+    /**
      * Gets or creates a cache record store with the prefixed {@code cacheNameWithPrefix}
      * and partition ID.
      *
@@ -128,4 +133,16 @@ public interface ICacheService
      * Returns an interface for interacting with the cache event journals.
      */
     CacheEventJournal getEventJournal();
+
+    /**
+     * Creates the given CacheConfig on all members of the cluster synchronously. When used with
+     * cluster version 3.10 or greater, the cluster-wide invocation ensures that all members of
+     * the cluster will receive the cache config even in the face of cluster membership changes.
+     *
+     * @param cacheConfig   the cache config to create on all members of the cluster
+     * @param <K>           key type parameter
+     * @param <V>           value type parameter
+     * @since 3.10
+     */
+    <K, V> void createCacheConfigOnAllMembers(PreJoinCacheConfig<K, V> cacheConfig);
 }

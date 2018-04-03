@@ -178,6 +178,10 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
         return partitionContainers[partitionId].getOrCreateMultiMapContainer(name);
     }
 
+    public MultiMapContainer getOrCreateCollectionContainerWithoutAccess(int partitionId, String name) {
+        return partitionContainers[partitionId].getOrCreateMultiMapContainer(name, false);
+    }
+
     public MultiMapPartitionContainer getPartitionContainer(int partitionId) {
         return partitionContainers[partitionId];
     }

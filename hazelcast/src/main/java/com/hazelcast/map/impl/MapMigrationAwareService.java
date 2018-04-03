@@ -149,11 +149,6 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
 
         if (SOURCE == event.getMigrationEndpoint()) {
             clearMapsHavingLesserBackupCountThan(event.getPartitionId(), event.getNewReplicaIndex());
-            getMetaDataGenerator().removeUuidAndSequence(event.getPartitionId());
-        } else if (DESTINATION == event.getMigrationEndpoint()) {
-            if (event.getNewReplicaIndex() != 0) {
-                getMetaDataGenerator().regenerateUuid(event.getPartitionId());
-            }
         }
 
         PartitionContainer partitionContainer = mapServiceContext.getPartitionContainer(event.getPartitionId());
@@ -163,6 +158,20 @@ class MapMigrationAwareService implements FragmentedMigrationAwareService {
             recordStore.startLoading();
         }
         mapServiceContext.reloadOwnedPartitions();
+
+        removeOrRegenerateNearCacheUuid(event);
+    }
+
+    private void removeOrRegenerateNearCacheUuid(PartitionMigrationEvent event) {
+        if (SOURCE == event.getMigrationEndpoint()) {
+            getMetaDataGenerator().removeUuidAndSequence(event.getPartitionId());
+            return;
+        }
+
+        if (DESTINATION == event.getMigrationEndpoint() && event.getNewReplicaIndex() != 0) {
+            getMetaDataGenerator().regenerateUuid(event.getPartitionId());
+            return;
+        }
     }
 
     @Override
