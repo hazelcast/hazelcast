@@ -86,8 +86,6 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.client.config.SocketOptions.DEFAULT_BUFFER_SIZE_BYTE;
@@ -99,7 +97,6 @@ import static com.hazelcast.client.spi.properties.ClientProperty.IO_OUTPUT_THREA
 import static com.hazelcast.client.spi.properties.ClientProperty.SHUFFLE_MEMBER_LIST;
 import static com.hazelcast.spi.properties.GroupProperty.SOCKET_CLIENT_BUFFER_DIRECT;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
  * Implementation of {@link ClientConnectionManager}.
@@ -126,6 +123,8 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
 
     private final ClientExecutionServiceImpl executionService;
     private final AddressTranslator addressTranslator;
+    private final ConcurrentMap<Address, ClientConnection> authenticatedConnections
+            = new ConcurrentHashMap<Address, ClientConnection>();
     private final ConcurrentMap<Address, ClientConnection> activeConnections
             = new ConcurrentHashMap<Address, ClientConnection>();
     private final ConcurrentMap<Address, AuthenticationFuture> connectionsInProgress =
@@ -276,6 +275,11 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
     }
 
     @Override
+    public Collection<ClientConnection> getAuthenticatedConnections() {
+        return authenticatedConnections.values();
+    }
+
+    @Override
     public Collection<ClientConnection> getActiveConnections() {
         return activeConnections.values();
     }
@@ -341,6 +345,14 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
     }
 
     @Override
+    public Connection getAuthenticatedConnection(Address target) {
+        if (target == null) {
+            return null;
+        }
+        return authenticatedConnections.get(target);
+    }
+
+    @Override
     public Connection getOrConnect(Address address) throws IOException {
         return getOrConnect(address, false);
     }
@@ -361,7 +373,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
             throw new IllegalStateException("Address can not be null");
         }
 
-        ClientConnection connection = activeConnections.get(target);
+        ClientConnection connection = authenticatedConnections.get(target);
 
         if (connection != null) {
             if (!asOwner) {
@@ -451,7 +463,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
         if (ownerConnectionAddress == null) {
             return null;
         }
-        ClientConnection connection = (ClientConnection) getActiveConnection(ownerConnectionAddress);
+        ClientConnection connection = (ClientConnection) getAuthenticatedConnection(ownerConnectionAddress);
         return connection;
     }
 
@@ -622,6 +634,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
             return;
         }
         if (activeConnections.remove(endpoint, connection)) {
+            authenticatedConnections.remove(endpoint, connection);
             logger.info("Removed connection to endpoint: " + endpoint + ", connection: " + connection);
             fireConnectionRemovedEvent((ClientConnection) connection);
         } else {
@@ -648,9 +661,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
         ClientMessage clientMessage = encodeAuthenticationRequest(asOwner, client.getSerializationService(), principal);
         ClientInvocation clientInvocation = new ClientInvocation(client, clientMessage, null, connection);
         ClientInvocationFuture invocationFuture = clientInvocation.invokeUrgent();
-        ScheduledFuture timeoutTaskFuture = executionService.schedule(new TimeoutAuthenticationTask(invocationFuture),
-                connectionTimeoutMillis, MILLISECONDS);
-        invocationFuture.andThen(new AuthCallback(connection, asOwner, target, future, timeoutTaskFuture));
+        invocationFuture.andThen(new AuthCallback(connection, asOwner, target, future));
     }
 
     private ClientMessage encodeAuthenticationRequest(boolean asOwner, SerializationService ss, ClientPrincipal principal) {
@@ -676,7 +687,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
     }
 
     private void onAuthenticated(Address target, ClientConnection connection) {
-        ClientConnection oldConnection = activeConnections.put(connection.getEndPoint(), connection);
+        ClientConnection oldConnection = authenticatedConnections.put(connection.getEndPoint(), connection);
         if (oldConnection == null) {
             if (logger.isFinestEnabled()) {
                 logger.finest("Authentication succeeded for " + connection
@@ -727,25 +738,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
         connectionStrategy.onHeartbeatStopped((ClientConnection) connection);
     }
 
-    private class TimeoutAuthenticationTask implements Runnable {
-
-        private final ClientInvocationFuture future;
-
-        TimeoutAuthenticationTask(ClientInvocationFuture future) {
-            this.future = future;
-        }
-
-        @Override
-        public void run() {
-            if (future.isDone()) {
-                return;
-            }
-            future.complete(new TimeoutException("Authentication response did not come back in "
-                    + connectionTimeoutMillis + " millis"));
-        }
-
-    }
-
     private class InitConnectionTask implements Runnable {
 
         private final Address target;
@@ -771,6 +763,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
             }
 
             try {
+                activeConnections.put(target, connection);
                 authenticate(target, connection, asOwner, future);
             } catch (Exception e) {
                 future.onFailure(e);
@@ -958,20 +951,17 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
         private final boolean asOwner;
         private final Address target;
         private final AuthenticationFuture future;
-        private final ScheduledFuture timeoutTaskFuture;
 
         AuthCallback(ClientConnection connection, boolean asOwner, Address target,
-                     AuthenticationFuture future, ScheduledFuture timeoutTaskFuture) {
+                     AuthenticationFuture future) {
             this.connection = connection;
             this.asOwner = asOwner;
             this.target = target;
             this.future = future;
-            this.timeoutTaskFuture = timeoutTaskFuture;
         }
 
         @Override
         public void onResponse(ClientMessage response) {
-            timeoutTaskFuture.cancel(true);
             ClientAuthenticationCodec.ResponseParameters result;
             try {
                 result = ClientAuthenticationCodec.decodeResponse(response);
@@ -1008,7 +998,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
 
         @Override
         public void onFailure(Throwable t) {
-            timeoutTaskFuture.cancel(true);
             onAuthenticationFailed(target, connection, t);
             future.onFailure(t);
         }

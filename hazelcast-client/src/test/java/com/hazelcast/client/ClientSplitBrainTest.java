@@ -188,7 +188,7 @@ public class ClientSplitBrainTest extends ClientTestSupport {
 
         HazelcastClientInstanceImpl clientInstanceImpl = getHazelcastClientInstanceImpl(client);
 
-        assertSizeEventually(3, clientInstanceImpl.getConnectionManager().getActiveConnections());
+        assertSizeEventually(3, clientInstanceImpl.getConnectionManager().getAuthenticatedConnections());
 
         blockCommunicationBetween(h1, h2);
         blockCommunicationBetween(h1, h3);
@@ -221,7 +221,7 @@ public class ClientSplitBrainTest extends ClientTestSupport {
         assertOpenEventually(connected);
 
         // wait for client to connect back to all nodes
-        assertSizeEventually(3, clientInstanceImpl.getConnectionManager().getActiveConnections());
+        assertSizeEventually(3, clientInstanceImpl.getConnectionManager().getAuthenticatedConnections());
 
         // verify endpoints are cleared
         ClientEngineImpl clientEngineImpl1 = getClientEngineImpl(h1);

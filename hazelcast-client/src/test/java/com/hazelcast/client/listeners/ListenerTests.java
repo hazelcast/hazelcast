@@ -105,7 +105,7 @@ public class ListenerTests extends ClientTestSupport {
         LinkedList<String> registrationIds = new LinkedList<String>();
 
         HazelcastClientInstanceImpl clientInstance = getHazelcastClientInstanceImpl(client);
-        while (clientInstance.getConnectionManager().getActiveConnections().size() < nodeCount) {
+        while (clientInstance.getConnectionManager().getAuthenticatedConnections().size() < nodeCount) {
             registrationIds.add(map.addEntryListener(listener, false));
         }
 

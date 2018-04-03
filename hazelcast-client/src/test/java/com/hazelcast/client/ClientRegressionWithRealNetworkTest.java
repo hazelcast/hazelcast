@@ -132,7 +132,7 @@ public class ClientRegressionWithRealNetworkTest extends ClientTestSupport {
             @Override
             public void run()
                     throws Exception {
-                assertEquals(2, connectionManager.getActiveConnections().size());
+                assertEquals(2, connectionManager.getAuthenticatedConnections().size());
             }
         });
 
@@ -156,7 +156,7 @@ public class ClientRegressionWithRealNetworkTest extends ClientTestSupport {
 
         assertOpenEventually(connectedLatch);
 
-        assertEquals(1, connectionManager.getActiveConnections().size());
+        assertEquals(1, connectionManager.getAuthenticatedConnections().size());
     }
 
     @Test
@@ -189,7 +189,7 @@ public class ClientRegressionWithRealNetworkTest extends ClientTestSupport {
             @Override
             public void run() throws Exception {
                 HazelcastClientInstanceImpl clientInstanceImpl = getHazelcastClientInstanceImpl(client);
-                int size = clientInstanceImpl.getConnectionManager().getActiveConnections().size();
+                int size = clientInstanceImpl.getConnectionManager().getAuthenticatedConnections().size();
                 assertEquals(2, size);
 
             }
