@@ -959,7 +959,6 @@ public class EntryProcessorOffloadableTest extends HazelcastTestSupport {
 
         final Address instance1Address = instances[1].getCluster().getLocalMember().getAddress();
         final AtomicInteger heartBeatsCounter = new AtomicInteger(0);
-        final AtomicLong minDelta = new AtomicLong(Long.MAX_VALUE);
         Thread hbMonitorThread = new Thread() {
             public void run() {
                 NodeEngine nodeEngine = HazelcastTestSupport.getNodeEngineImpl(instances[0]);
@@ -971,10 +970,6 @@ public class EntryProcessorOffloadableTest extends HazelcastTestSupport {
                     if (timestamp != null) {
                         long newlastbeat = timestamp.get();
                         if (lastbeat != newlastbeat) {
-                            long delta = newlastbeat - lastbeat;
-                            if (lastbeat != Long.MIN_VALUE && delta < minDelta.get()) {
-                                minDelta.set(delta);
-                            }
                             lastbeat = newlastbeat;
                             heartBeatsCounter.incrementAndGet();
                         }
@@ -994,9 +989,6 @@ public class EntryProcessorOffloadableTest extends HazelcastTestSupport {
         int hbCount = heartBeatsCounter.get();
         assertTrue("At least " + expectedHeartBeats + " heartBeats expected, " + hbCount + " came.",
                 hbCount >= expectedHeartBeats);
-        long deltaToCheck = minDelta.get();
-        assertTrue("Heartbeats came too close to each other: " + deltaToCheck + "ms",
-                deltaToCheck > 500 * HEARTBEATS_INTERVAL_SEC);
     }
 
     private static class TimeConsumingOffloadableTask implements EntryProcessor<String, SimpleValue>, Offloadable,
@@ -1004,7 +996,7 @@ public class EntryProcessorOffloadableTest extends HazelcastTestSupport {
 
         private final int secondsToWork;
 
-        public TimeConsumingOffloadableTask(int secondsToWork) {
+        private TimeConsumingOffloadableTask(int secondsToWork) {
             this.secondsToWork = secondsToWork;
         }
 
