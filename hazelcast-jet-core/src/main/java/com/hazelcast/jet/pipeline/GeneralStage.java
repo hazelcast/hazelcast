@@ -236,26 +236,15 @@ public interface GeneralStage<T> extends Stage {
 
     /**
      * Adds a timestamp to each item in the stream using the current system
-     * time.
-     * <p>
-     * Note: if this stage is added directly after the source, the watermarks
-     * can be added by the source. In this case, watermarks are generated for
-     * each source partition and are coalesced. If watermarks are not added in
-     * the source but are added later, it can happen that the watermarks are
-     * added after streams from several source partitions are split or merged.
-     * This is problematic when "catching up" after a restart.
-     * <p>
-     * For example: say the source has two partitions P1 and P2. After a
-     * restart, each of them contains one event. P1 contains very recent event
-     * and P2 contains very late event. Assume that their time difference is
-     * higher than the allowed lag. If at the point where watermarks are added
-     * we receive the event from P1 before the event from P2, the event from P2
-     * can be dropped as late. If watermarks would have been generated at the
-     * source, each event will cause its own watermark and, thanks to
-     * coalescing, the resulting watermark will not advance beyond the event
-     * from P2.
+     * time. <strong>NOTE:</strong> when snapshotting is enabled to achieve
+     * fault tolerance, after a restart Jet replays all the events that were
+     * already processed since the last snapshot. These events will now get
+     * different timestamps. If you want your job to be fault-tolerant, the
+     * events in the stream must carry their own timestamp and you must use
+     * {@link #addTimestamps(DistributedToLongFunction, long)
+     * addTimestamps(timestampFn, allowedLag} to extract them.
      *
-     * @throws IllegalArgumentException if timestamps were already added to the stream
+     * @throws IllegalArgumentException if this stage already has timestamps
      */
     @Nonnull
     default StreamStage<T> addTimestamps() {
@@ -267,8 +256,8 @@ public interface GeneralStage<T> extends Stage {
      * and specifies the allowed amount of disorder between them. As the stream
      * moves on the timestamps must increase, but you can tell Jet to accept
      * some items that "come in late", i.e., have a lower timestamp than the
-     * items before them. The {@code allowedLag} parameter controls how much
-     * lower the timestamp can be than the highest one observed so far. If
+     * items before them. The {@code allowedLag} parameter controls by how much
+     * the timestamp can be lower than the highest one observed so far. If
      * it is even lower, Jet will drop the item as being "too late".
      * <p>
      * For example, if the sequence of the timestamps is {@code [1,4,3,2]} and
@@ -279,31 +268,22 @@ public interface GeneralStage<T> extends Stage {
      * The amount of lag you configure strongly influences the latency of Jet's
      * output. Jet cannot finalize the window until it knows it has observed all
      * the events belonging to it, and the more lag it must tolerate, the longer
-     * will it have to wait for possible latecomers. On the other hand, if don't
-     * allow enough lag, you face the risk of failing to account for the data
-     * that came in after the results were already emitted.
+     * will it have to wait for possible latecomers. On the other hand, if you
+     * don't allow enough lag, you face the risk of failing to account for the
+     * data that came in after the results were already emitted.
      * <p>
-     * Note: if this stage is added directly after the source, the watermarks
-     * can be added by the source. In this case, watermarks are generated for
-     * each source partition and are coalesced. If watermarks are not added in
-     * the source but are added later, it can happen that the watermarks are
-     * added after streams from several source partitions are split or merged.
-     * This is problematic when "catching up" after a restart.
-     * <p>
-     * For example: say the source has two partitions P1 and P2. After a
-     * restart, each of them contains one event. P1 contains very recent event
-     * and P2 contains very late event. Assume that their time difference is
-     * higher than the allowed lag. If at the point where watermarks are added
-     * we receive the event from P1 before the event from P2, the event from P2
-     * can be dropped as late. If watermarks would have been generated at the
-     * source, each event will cause its own watermark and, thanks to
-     * coalescing, the resulting watermark will not advance beyond the event
-     * from P2.
+     * You should strongly prefer adding this stage right after the source. In
+     * that case Jet can compute the watermark inside the source connector,
+     * taking into account its partitioning. It can maintain a separate
+     * watermark value for each partition and coalesce them into the overall
+     * watermark without causing dropped events. If you add the timestamps
+     * later on, events from different partitions may be mixed, increasing
+     * the perceived event lag and causing more dropped events.
      *
      * @param timestampFn a function that returns the timestamp for each item
      * @param allowedLag the allowed lag behind the top observed timestamp
      *
-     * @throws IllegalArgumentException if timestamps were already added to the stream
+     * @throws IllegalArgumentException if this stage already has timestamps
      */
     @Nonnull
     StreamStage<T> addTimestamps(DistributedToLongFunction<? super T> timestampFn, long allowedLag);
@@ -390,7 +370,7 @@ public interface GeneralStage<T> extends Stage {
     /**
      * Attaches to this stage a stage with a custom transform based on the
      * provided supplier of Core API {@link Processor}s. To be compatible with
-     * the rest of the stage, the processor must expect a single inbound
+     * the rest of the pipeline, the processor must expect a single inbound
      * edge and arbitrarily many outbound edges, and it must push the same data
      * to all outbound edges.
      * <p>

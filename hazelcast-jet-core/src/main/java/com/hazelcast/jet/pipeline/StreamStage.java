@@ -40,6 +40,8 @@ public interface StreamStage<T> extends GeneralStage<T> {
     /**
      * Adds the given window definition to this stage, as the first step in the
      * construction of a pipeline stage that performs windowed aggregation.
+     *
+     * @see WindowDefinition factory methods in WindowDefiniton
      */
     @Nonnull
     StageWithWindow<T> window(WindowDefinition wDef);
