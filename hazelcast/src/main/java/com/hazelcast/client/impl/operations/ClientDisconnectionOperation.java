@@ -75,6 +75,10 @@ public class ClientDisconnectionOperation extends AbstractClientOperation implem
 
     @Override
     public boolean returnsResponse() {
+        // This method actually returns a response.
+        // Since operation needs to work on a different executor,
+        // (see {@link com.hazelcast.spi.ExecutionService.CLIENT_MANAGEMENT_EXECUTOR})
+        // the response is returned via ClientDisconnectionOperation.ClientDisconnectedTask
         return false;
     }
 
