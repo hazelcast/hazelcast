@@ -23,11 +23,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.net.URL;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 
 import static com.hazelcast.nio.IOUtil.closeResource;
 import static com.hazelcast.util.Preconditions.isNotNull;
+import static java.util.Collections.enumeration;
 
 /**
  * This is used to separate Server and Client inside the same JVM on new standalone client unit tests.
@@ -60,28 +62,25 @@ public class FilteringClassLoader extends ClassLoader {
 
     @Override
     public URL getResource(String name) {
-        return delegatingClassLoader.getResource(name);
+        return checkResourceExcluded(name) ? null : delegatingClassLoader.getResource(name);
     }
 
     @Override
     public Enumeration<URL> getResources(String name) throws IOException {
-        return delegatingClassLoader.getResources(name);
+        return checkResourceExcluded(name) ? enumeration(Collections.<URL>emptyList())
+                : delegatingClassLoader.getResources(name);
     }
 
     @Override
     public InputStream getResourceAsStream(String name) {
-        return delegatingClassLoader.getResourceAsStream(name);
+        return checkResourceExcluded(name) ? null : delegatingClassLoader.getResourceAsStream(name);
     }
 
     @Override
     protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
         isNotNull(name, "name");
 
-        for (String excludedPackage : excludePackages) {
-            if (name.startsWith(excludedPackage)) {
-                throw new ClassNotFoundException(name + " - Package excluded explicitly!");
-            }
-        }
+        checkExcluded(name);
 
         if (enforcedSelfLoadingPackage != null && name.startsWith(enforcedSelfLoadingPackage)) {
             // we don't call registerAsParallelCapable() on JDK7+, so we need to synchronize on this.
@@ -94,6 +93,28 @@ public class FilteringClassLoader extends ClassLoader {
             }
         }
         return delegatingClassLoader.loadClass(name);
+    }
+
+    public boolean checkResourceExcluded(String resourceName) {
+        if (resourceName == null) {
+            return true;
+        }
+        // transform resource path as class name so we can check against excluded packages
+        String resourceAsClassName = resourceName.replace('/', '.').replace(".class", "");
+        for (String excludedPackage : excludePackages) {
+            if (resourceAsClassName.startsWith(excludedPackage)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public void checkExcluded(String name) throws ClassNotFoundException {
+        for (String excludedPackage : excludePackages) {
+            if (name.startsWith(excludedPackage)) {
+                throw new ClassNotFoundException(name + " - Package excluded explicitly!");
+            }
+        }
     }
 
     private Class<?> loadAndDefineClass(String name) throws ClassNotFoundException {
