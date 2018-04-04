@@ -20,6 +20,8 @@ import java.io.Serializable;
 
 class ComplexValue implements Serializable {
 
+    private static final long serialVersionUID = -6926569333412274188L;
+
     private String name;
     private int time;
 
