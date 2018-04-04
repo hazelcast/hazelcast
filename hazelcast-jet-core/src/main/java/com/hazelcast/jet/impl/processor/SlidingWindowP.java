@@ -212,8 +212,8 @@ public class SlidingWindowP<K, A, R, OUT> extends AbstractProcessor {
         // restore and remain at MIN_VALUE.
         if (isLastStage) {
             nextWinToEmit = minRestoredNextWinToEmit;
+            logFine(getLogger(), "Restored nextWinToEmit from snapshot to: %s", nextWinToEmit);
         }
-        logFine(getLogger(), "Restored nextWinToEmit from snapshot to: %s", nextWinToEmit);
         return true;
     }
 
