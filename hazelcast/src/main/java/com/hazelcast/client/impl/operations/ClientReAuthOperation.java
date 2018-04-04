@@ -74,6 +74,9 @@ public class ClientReAuthOperation
             endpoint.authenticated(principal);
         }
         String previousMemberUuid = engine.addOwnershipMapping(clientUuid, memberUuid);
+        if (logger.isFineEnabled()) {
+            logger.fine("Client authenticated " + clientUuid + ", owner " + memberUuid);
+        }
         return previousMemberUuid == null;
     }
 
