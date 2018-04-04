@@ -17,8 +17,6 @@
 package com.hazelcast.scheduledexecutor.impl;
 
 import com.hazelcast.scheduledexecutor.StatefulTask;
-import com.hazelcast.scheduledexecutor.impl.operations.ResultReadyNotifyOperation;
-import com.hazelcast.spi.Operation;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -42,6 +40,8 @@ class TaskRunner<V>
 
     private final ScheduledTaskStatisticsImpl statistics;
 
+    private final TaskDefinition.Type type;
+
     private boolean initted;
 
     private ScheduledTaskResult resolution;
@@ -52,6 +52,7 @@ class TaskRunner<V>
         this.original = descriptor.getDefinition().getCommand();
         this.taskName = descriptor.getDefinition().getName();
         this.statistics = descriptor.getStatsSnapshot();
+        this.type = descriptor.getDefinition().getType();
         statistics.onInit();
     }
 
@@ -61,7 +62,7 @@ class TaskRunner<V>
         beforeRun();
         try {
             V result = original.call();
-            if (SINGLE_RUN.equals(descriptor.getDefinition().getType())) {
+            if (SINGLE_RUN.equals(type)) {
                 resolution = new ScheduledTaskResult(result);
             }
             return result;
@@ -120,15 +121,10 @@ class TaskRunner<V>
         } catch (Exception ex) {
             container.log(WARNING, taskName, "Unexpected exception during afterRun occurred", ex);
         } finally {
-            notifyResultReady();
+            container.notifyResultReady(taskName);
         }
 
         container.log(FINEST, taskName, "Exiting running mode");
-    }
-
-    private void notifyResultReady() {
-        Operation op = new ResultReadyNotifyOperation(container.offprintHandler(taskName));
-        container.createInvocationBuilder(op).setCallTimeout(Long.MAX_VALUE).invoke();
     }
 
 }

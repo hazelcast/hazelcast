@@ -37,12 +37,43 @@ import java.util.concurrent.atomic.AtomicReference;
  * For partition owned tasks, writes to the fields are done through the partition-thread.
  * For member owned tasks, writes to the fields are done through the generic-thread.
  * Reads on the fields, follow the same principal.
+ *
+ * <p>
+ * More specifically, there are two flows in the {@link com.hazelcast.scheduledexecutor.IScheduledExecutorService}.
+ *
+ * <h3>A. Flow for partitioned tasks, tasks that got vanilla scheduled, or scheduled on particular key-owner (partition).</h3>
+ *
+ * Scheduling and book-keeping happen on partition threads, every interaction with the offloaded runner thread,
+ * goes through atomic ops, e.g. {@link #setState(Map)}, {@link #setStats(ScheduledTaskStatisticsImpl)}
+ * {@link #setTaskResult(ScheduledTaskResult)}
+ *
+ * <h3>B. Flow for non-partitioned tasks, tasks that get scheduled for a specific member.</h3>
+ *
+ * Interaction with these happen through generic threads, so they need special care.
+ * The scheduling part, which is responsible for creating the entry, scheduling the runnable, assigning the future, is done
+ * under a lock for that Member {@link ScheduledExecutorMemberOwnedContainer} and the result is stored in a ConcurrentMap.
+ * All further reads on that task, get the task from the Map. The {@link #future} never changes, its only marked as non-final
+ * due to the serialization needs for the partitioned flavor of this feature.<br/>
+ * It's important to remind at this stage, that Member owned tasks, don't support any durability options,
+ * no backups, no migrations whatsoever.
  */
 public class ScheduledTaskDescriptor
         implements IdentifiedDataSerializable {
 
+    /**
+     * Assigned either on the partition thread, or under the member lock
+     * {@link ScheduledExecutorMemberOwnedContainer#acquireMemberPartitionLockIfNeeded()}
+     * All further accesses are done upon acquiring the {@link ScheduledTaskDescriptor} reference
+     * from the ConcurrentMap collection
+     */
     private TaskDefinition definition;
 
+    /**
+     * Assigned either on the partition thread, or under the member lock
+     * {@link ScheduledExecutorMemberOwnedContainer#acquireMemberPartitionLockIfNeeded()}
+     * All further accesses are done upon acquiring the {@link ScheduledTaskDescriptor} reference
+     * from the ConcurrentMap collection
+     */
     private transient ScheduledFuture<?> future;
 
     private final AtomicReference<ScheduledTaskResult> resultRef = new AtomicReference<ScheduledTaskResult>(null);
@@ -163,7 +194,6 @@ public class ScheduledTaskDescriptor
     }
 
     boolean shouldSchedule() {
-        // Stashed tasks that never got scheduled, and weren't cancelled in-between
         return future == null && this.resultRef.get() == null;
     }
 

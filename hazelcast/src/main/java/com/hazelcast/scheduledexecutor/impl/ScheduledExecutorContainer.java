@@ -21,6 +21,7 @@ import com.hazelcast.scheduledexecutor.DuplicateTaskException;
 import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
 import com.hazelcast.scheduledexecutor.ScheduledTaskStatistics;
 import com.hazelcast.scheduledexecutor.StaleTaskException;
+import com.hazelcast.scheduledexecutor.impl.operations.ResultReadyNotifyOperation;
 import com.hazelcast.scheduledexecutor.impl.operations.SyncStateOperation;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.NodeEngine;
@@ -222,11 +223,15 @@ public class ScheduledExecutorContainer {
     public void promoteSuspended() {
         for (ScheduledTaskDescriptor descriptor : tasks.values()) {
             try {
-                log(FINEST, descriptor.getDefinition().getName(), "Attempting promotion");
-                if (descriptor.shouldSchedule()) {
-                    doSchedule(descriptor);
-                }
+                final String taskName = descriptor.getDefinition().getName();
 
+                if (descriptor.shouldSchedule()) {
+                    log(FINEST, taskName, "Promoting");
+                    doSchedule(descriptor);
+                } else {
+                    log(FINEST, taskName, "Notifying ready result");
+                    notifyResultReady(taskName);
+                }
             } catch (Exception e) {
                 throw rethrow(e);
             }
@@ -354,6 +359,11 @@ public class ScheduledExecutorContainer {
         createInvocationBuilder(op)
                 .invoke()
                 .join();
+    }
+
+    void notifyResultReady(String taskName) {
+        Operation op = new ResultReadyNotifyOperation(offprintHandler(taskName));
+        createInvocationBuilder(op).setCallTimeout(Long.MAX_VALUE).invoke();
     }
 
     protected InvocationBuilder createInvocationBuilder(Operation op) {
