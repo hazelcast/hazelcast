@@ -26,6 +26,8 @@ import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
+import org.junit.Ignore;
+import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runners.Parameterized;
 
@@ -72,5 +74,11 @@ public class MembershipFailureTest_withTCP extends MembershipFailureTest {
         }
 
         return config;
+    }
+
+    @Test
+    @Override
+    @Ignore("Cannot be fixed in 3.9.x branch. See https://github.com/hazelcast/hazelcast/issues/10939")
+    public void secondMastershipClaimByYounger_shouldRetry_when_firstMastershipClaimByElder_accepted() {
     }
 }
