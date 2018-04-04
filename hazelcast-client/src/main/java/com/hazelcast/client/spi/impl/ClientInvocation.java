@@ -189,6 +189,8 @@ public class ClientInvocation implements Runnable {
     }
 
     public void notifyException(Throwable exception) {
+        logException(exception);
+
         if (!lifecycleService.isRunning()) {
             clientInvocationFuture.complete(new HazelcastClientNotActiveException(exception.getMessage(), exception));
             return;
@@ -223,6 +225,15 @@ public class ClientInvocation implements Runnable {
             clientInvocationFuture.complete(exception);
         }
 
+    }
+
+    private void logException(Throwable exception) {
+        if (logger.isFinestEnabled()) {
+            logger.finest("Invocation got an exception " + this
+                    + ", exception : " + exception.getClass()
+                    + ", message : " + exception.getMessage()
+                    + (exception.getCause() != null ? (", cause :" + exception.getCause()) : ""));
+        }
     }
 
     private void execute() {
