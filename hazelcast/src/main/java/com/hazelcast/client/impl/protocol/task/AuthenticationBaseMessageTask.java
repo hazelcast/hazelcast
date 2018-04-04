@@ -64,6 +64,9 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractStableClu
 
     @Override
     protected Object resolve(Object response) {
+        if (logger.isFineEnabled()) {
+            logger.fine("Processed owner authentication with principal " + principal);
+        }
         return prepareAuthenticatedClientMessage();
     }
 
@@ -103,6 +106,9 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractStableClu
         String uuid = getUuid();
         String localMemberUUID = clientEngine.getThisUuid();
         principal = new ClientPrincipal(uuid, localMemberUUID);
+        if (logger.isFineEnabled()) {
+            logger.fine("Processing owner authentication with principal " + principal);
+        }
         super.processMessage();
     }
 
