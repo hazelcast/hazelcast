@@ -49,8 +49,8 @@ import com.hazelcast.spi.StatisticsAwareService;
 import com.hazelcast.spi.TaskScheduler;
 import com.hazelcast.spi.TransactionalService;
 import com.hazelcast.spi.impl.merge.AbstractContainerMerger;
-import com.hazelcast.spi.merge.MergingValue;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
+import com.hazelcast.spi.merge.SplitBrainMergeTypes.QueueMergeTypes;
 import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.partition.MigrationEndpoint;
@@ -259,7 +259,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
     @Override
     public QueueProxyImpl createDistributedObject(String objectId) {
         QueueConfig queueConfig = nodeEngine.getConfig().findQueueConfig(objectId);
-        checkQueueConfig(queueConfig);
+        checkQueueConfig(queueConfig, nodeEngine.getSplitBrainMergePolicyProvider());
 
         return new QueueProxyImpl(objectId, this, nodeEngine, queueConfig);
     }
@@ -393,7 +393,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
         return partitionService.getPartitionId(keyData);
     }
 
-    private class Merger extends AbstractContainerMerger<QueueContainer> {
+    private class Merger extends AbstractContainerMerger<QueueContainer, Data, QueueMergeTypes> {
 
         Merger(QueueContainerCollector collector) {
             super(collector, nodeEngine);
@@ -406,7 +406,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
 
         @Override
         public void runInternal() {
-            List<MergingValue<Data>> mergingValues;
+            List<QueueMergeTypes> mergingValues;
             for (Entry<Integer, Collection<QueueContainer>> entry : collector.getCollectedContainers().entrySet()) {
                 int partitionId = entry.getKey();
                 Collection<QueueContainer> containerList = entry.getValue();
@@ -415,16 +415,17 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
 
                     String name = container.getName();
                     int batchSize = container.getConfig().getMergePolicyConfig().getBatchSize();
-                    SplitBrainMergePolicy mergePolicy = getMergePolicy(container.getConfig().getMergePolicyConfig());
+                    SplitBrainMergePolicy<Data, QueueMergeTypes> mergePolicy
+                            = getMergePolicy(container.getConfig().getMergePolicyConfig());
 
-                    mergingValues = new ArrayList<MergingValue<Data>>(batchSize);
+                    mergingValues = new ArrayList<QueueMergeTypes>(batchSize);
                     for (QueueItem item : itemList) {
-                        MergingValue<Data> mergingValue = createMergingValue(serializationService, item);
+                        QueueMergeTypes mergingValue = createMergingValue(serializationService, item);
                         mergingValues.add(mergingValue);
 
                         if (mergingValues.size() == batchSize) {
                             sendBatch(partitionId, name, mergePolicy, mergingValues);
-                            mergingValues = new ArrayList<MergingValue<Data>>(batchSize);
+                            mergingValues = new ArrayList<QueueMergeTypes>(batchSize);
                         }
                     }
                     itemList.clear();
@@ -435,8 +436,8 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
             }
         }
 
-        private void sendBatch(int partitionId, String name, SplitBrainMergePolicy mergePolicy,
-                               List<MergingValue<Data>> mergingValues) {
+        private void sendBatch(int partitionId, String name, SplitBrainMergePolicy<Data, QueueMergeTypes> mergePolicy,
+                               List<QueueMergeTypes> mergingValues) {
             QueueMergeOperation operation = new QueueMergeOperation(name, mergePolicy, mergingValues);
             invoke(SERVICE_NAME, operation, partitionId);
         }

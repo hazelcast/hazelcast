@@ -19,9 +19,10 @@ package com.hazelcast.spi.merge;
 /**
  * Represents a read-only view of memory costs for the merging process after a split-brain.
  *
+ * @param <V> the type of the value
  * @since 3.10
  */
-public interface MergingCosts {
+public interface MergingCosts<V> extends MergingValue<V> {
 
     /**
      * Returns the memory cost of the merge data.

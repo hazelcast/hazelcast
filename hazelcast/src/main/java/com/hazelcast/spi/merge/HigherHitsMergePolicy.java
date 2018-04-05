@@ -23,26 +23,24 @@ import com.hazelcast.spi.impl.merge.SplitBrainDataSerializerHook;
  * Merges data structure entries from source to destination data structure if the source entry
  * has more hits than the destination one.
  *
+ * @param <V> the type of the merged value
+ * @param <T> the type of the merging value
  * @since 3.10
  */
-public class HigherHitsMergePolicy extends AbstractSplitBrainMergePolicy {
+public class HigherHitsMergePolicy<V, T extends MergingHits<V>> extends AbstractSplitBrainMergePolicy<V, T> {
 
     public HigherHitsMergePolicy() {
     }
 
     @Override
-    public <V> V merge(MergingValue<V> mergingValue, MergingValue<V> existingValue) {
-        checkInstanceOf(mergingValue, MergingHits.class);
-        checkInstanceOf(existingValue, MergingHits.class);
+    public V merge(T mergingValue, T existingValue) {
         if (mergingValue == null) {
             return existingValue.getValue();
         }
         if (existingValue == null) {
             return mergingValue.getValue();
         }
-        MergingHits merging = (MergingHits) mergingValue;
-        MergingHits existing = (MergingHits) existingValue;
-        if (merging.getHits() >= existing.getHits()) {
+        if (mergingValue.getHits() >= existingValue.getHits()) {
             return mergingValue.getValue();
         }
         return existingValue.getValue();

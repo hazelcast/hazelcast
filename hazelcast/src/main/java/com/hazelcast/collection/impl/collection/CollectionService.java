@@ -40,8 +40,8 @@ import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.SplitBrainHandlerService;
 import com.hazelcast.spi.TransactionalService;
 import com.hazelcast.spi.impl.merge.AbstractContainerMerger;
-import com.hazelcast.spi.merge.MergingValue;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
+import com.hazelcast.spi.merge.SplitBrainMergeTypes.CollectionMergeTypes;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.partition.MigrationEndpoint;
 import com.hazelcast.spi.serialization.SerializationService;
@@ -199,7 +199,7 @@ public abstract class CollectionService implements ManagedService, RemoteService
         return new Merger(collector);
     }
 
-    private class Merger extends AbstractContainerMerger<CollectionContainer> {
+    private class Merger extends AbstractContainerMerger<CollectionContainer, Data, CollectionMergeTypes> {
 
         Merger(CollectionContainerCollector collector) {
             super(collector, nodeEngine);
@@ -212,7 +212,7 @@ public abstract class CollectionService implements ManagedService, RemoteService
 
         @Override
         public void runInternal() {
-            List<MergingValue<Data>> mergingValues;
+            List<CollectionMergeTypes> mergingValues;
             for (Map.Entry<Integer, Collection<CollectionContainer>> entry : collector.getCollectedContainers().entrySet()) {
                 int partitionId = entry.getKey();
                 Collection<CollectionContainer> containerList = entry.getValue();
@@ -221,16 +221,17 @@ public abstract class CollectionService implements ManagedService, RemoteService
 
                     String name = container.getName();
                     int batchSize = container.getConfig().getMergePolicyConfig().getBatchSize();
-                    SplitBrainMergePolicy mergePolicy = getMergePolicy(container.getConfig().getMergePolicyConfig());
+                    SplitBrainMergePolicy<Data, CollectionMergeTypes> mergePolicy
+                            = getMergePolicy(container.getConfig().getMergePolicyConfig());
 
-                    mergingValues = new ArrayList<MergingValue<Data>>();
+                    mergingValues = new ArrayList<CollectionMergeTypes>();
                     for (CollectionItem item : itemList) {
-                        MergingValue<Data> mergingValue = createMergingValue(serializationService, item);
+                        CollectionMergeTypes mergingValue = createMergingValue(serializationService, item);
                         mergingValues.add(mergingValue);
 
                         if (mergingValues.size() == batchSize) {
                             sendBatch(partitionId, name, mergePolicy, mergingValues);
-                            mergingValues = new ArrayList<MergingValue<Data>>(batchSize);
+                            mergingValues = new ArrayList<CollectionMergeTypes>(batchSize);
                         }
                     }
                     itemList.clear();
@@ -241,8 +242,8 @@ public abstract class CollectionService implements ManagedService, RemoteService
             }
         }
 
-        private void sendBatch(int partitionId, String name, SplitBrainMergePolicy mergePolicy,
-                               List<MergingValue<Data>> mergingValues) {
+        private void sendBatch(int partitionId, String name, SplitBrainMergePolicy<Data, CollectionMergeTypes> mergePolicy,
+                               List<CollectionMergeTypes> mergingValues) {
             CollectionOperation operation = new CollectionMergeOperation(name, mergePolicy, mergingValues);
             invoke(getServiceName(), operation, partitionId);
         }

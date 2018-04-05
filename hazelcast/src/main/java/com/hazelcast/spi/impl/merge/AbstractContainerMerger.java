@@ -24,6 +24,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.merge.MergingValue;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
 
@@ -36,8 +37,10 @@ import static com.hazelcast.util.ExceptionUtil.rethrow;
  * Merges data structures which have been collected via an {@link AbstractContainerCollector}.
  *
  * @param <C> container of the data structure
+ * @param <V> the type of the merged value
+ * @param <T> the type of the merging value, e.g. {@code MergingValue} or {@code MergingEntry & MergingHits}
  */
-public abstract class AbstractContainerMerger<C> implements Runnable {
+public abstract class AbstractContainerMerger<C, V, T extends MergingValue<V>> implements Runnable {
 
     private static final long TIMEOUT_FACTOR = 500;
     private static final long MINIMAL_TIMEOUT_MILLIS = TimeUnit.SECONDS.toMillis(5);
@@ -119,7 +122,7 @@ public abstract class AbstractContainerMerger<C> implements Runnable {
      * @param mergePolicyConfig the {@link MergePolicyConfig} to retrieve the merge policy from
      * @return the {@link SplitBrainMergePolicy} instance
      */
-    protected SplitBrainMergePolicy getMergePolicy(MergePolicyConfig mergePolicyConfig) {
+    protected SplitBrainMergePolicy<V, T> getMergePolicy(MergePolicyConfig mergePolicyConfig) {
         String mergePolicyName = mergePolicyConfig.getPolicy();
         return splitBrainMergePolicyProvider.getMergePolicy(mergePolicyName);
     }

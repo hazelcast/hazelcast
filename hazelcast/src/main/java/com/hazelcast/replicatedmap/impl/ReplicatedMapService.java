@@ -206,7 +206,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
     @Override
     public DistributedObject createDistributedObject(String objectName) {
         ReplicatedMapConfig replicatedMapConfig = getReplicatedMapConfig(objectName);
-        checkReplicatedMapConfig(replicatedMapConfig);
+        checkReplicatedMapConfig(replicatedMapConfig, splitBrainHandlerService.getMergePolicyProvider());
         if (nodeEngine.getLocalMember().isLiteMember()) {
             throw new ReplicatedMapCantBeCreatedOnLiteMemberException(nodeEngine.getThisAddress());
         }

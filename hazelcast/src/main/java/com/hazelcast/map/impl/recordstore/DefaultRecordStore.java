@@ -46,8 +46,8 @@ import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
-import com.hazelcast.spi.merge.MergingEntry;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
+import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.CollectionUtil;
@@ -729,7 +729,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     @Override
-    public boolean merge(MergingEntry<Data, Object> mergingEntry, SplitBrainMergePolicy mergePolicy) {
+    public boolean merge(MapMergeTypes mergingEntry, SplitBrainMergePolicy<Data, MapMergeTypes> mergePolicy) {
         checkIfLoaded();
         long now = getNow();
 
@@ -753,7 +753,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                     key, null, record.getValue());
         } else {
             oldValue = record.getValue();
-            MergingEntry<Data, Object> existingEntry = createMergingEntry(serializationService, record);
+            MapMergeTypes existingEntry = createMergingEntry(serializationService, record);
             newValue = mergePolicy.merge(mergingEntry, existingEntry);
             // existing entry will be removed
             if (newValue == null) {

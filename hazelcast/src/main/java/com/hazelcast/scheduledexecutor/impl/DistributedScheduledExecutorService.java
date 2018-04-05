@@ -38,9 +38,10 @@ import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.SplitBrainHandlerService;
 import com.hazelcast.spi.impl.executionservice.InternalExecutionService;
 import com.hazelcast.spi.impl.merge.AbstractContainerMerger;
-import com.hazelcast.spi.merge.MergingEntry;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
+import com.hazelcast.spi.merge.SplitBrainMergeTypes.ScheduledExecutorMergeTypes;
 import com.hazelcast.spi.partition.MigrationEndpoint;
+import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ContextMutexFactory;
 
@@ -168,7 +169,7 @@ public class DistributedScheduledExecutorService
     @Override
     public DistributedObject createDistributedObject(String name) {
         ScheduledExecutorConfig executorConfig = nodeEngine.getConfig().findScheduledExecutorConfig(name);
-        checkScheduledExecutorConfig(executorConfig);
+        checkScheduledExecutorConfig(executorConfig, nodeEngine.getSplitBrainMergePolicyProvider());
 
         return new ScheduledExecutorServiceProxy(name, nodeEngine, this);
     }
@@ -310,7 +311,8 @@ public class DistributedScheduledExecutorService
         return quorumName == NULL_OBJECT ? null : (String) quorumName;
     }
 
-    private class Merger extends AbstractContainerMerger<ScheduledExecutorContainer> {
+    private class Merger extends AbstractContainerMerger<ScheduledExecutorContainer,
+            ScheduledTaskDescriptor, ScheduledExecutorMergeTypes> {
 
         Merger(ScheduledExecutorContainerCollector collector) {
             super(collector, nodeEngine);
@@ -324,8 +326,9 @@ public class DistributedScheduledExecutorService
         @Override
         public void runInternal() {
             ScheduledExecutorContainerCollector collector = (ScheduledExecutorContainerCollector) this.collector;
+            SerializationService serializationService = nodeEngine.getSerializationService();
 
-            List<MergingEntry<String, ScheduledTaskDescriptor>> mergingEntries;
+            List<ScheduledExecutorMergeTypes> mergingEntries;
             Map<Integer, Collection<ScheduledExecutorContainer>> containerMap = collector.getCollectedContainers();
             for (Map.Entry<Integer, Collection<ScheduledExecutorContainer>> entry : containerMap.entrySet()) {
                 int partitionId = entry.getKey();
@@ -334,29 +337,30 @@ public class DistributedScheduledExecutorService
                 for (ScheduledExecutorContainer container : containers) {
                     String name = container.getName();
                     MergePolicyConfig mergePolicyConfig = collector.getMergePolicyConfig(container);
-                    SplitBrainMergePolicy mergePolicy = getMergePolicy(mergePolicyConfig);
+                    SplitBrainMergePolicy<ScheduledTaskDescriptor, ScheduledExecutorMergeTypes> mergePolicy
+                            = getMergePolicy(mergePolicyConfig);
                     int batchSize = mergePolicyConfig.getBatchSize();
 
-                    mergingEntries = new ArrayList<MergingEntry<String, ScheduledTaskDescriptor>>(batchSize);
+                    mergingEntries = new ArrayList<ScheduledExecutorMergeTypes>(batchSize);
+
                     for (ScheduledTaskDescriptor descriptor : container.prepareForReplication(true).values()) {
-                        MergingEntry<String, ScheduledTaskDescriptor> mergingEntry
-                                = createMergingEntry(nodeEngine.getSerializationService(), descriptor);
+                        ScheduledExecutorMergeTypes mergingEntry = createMergingEntry(serializationService, descriptor);
                         mergingEntries.add(mergingEntry);
                     }
                     if (mergingEntries.size() == batchSize) {
-                        sendBatch(partitionId, name, mergePolicy, mergingEntries);
-                        mergingEntries = new ArrayList<MergingEntry<String, ScheduledTaskDescriptor>>(batchSize);
+                        sendBatch(partitionId, name, mergingEntries, mergePolicy);
+                        mergingEntries = new ArrayList<ScheduledExecutorMergeTypes>(batchSize);
                     }
                     if (!mergingEntries.isEmpty()) {
-                        sendBatch(partitionId, name, mergePolicy, mergingEntries);
+                        sendBatch(partitionId, name, mergingEntries, mergePolicy);
                     }
                 }
             }
         }
 
-        private void sendBatch(int partitionId, String name, SplitBrainMergePolicy mergePolicy,
-                               List<MergingEntry<String, ScheduledTaskDescriptor>> mergingEntries) {
-            MergeOperation operation = new MergeOperation(name, mergePolicy, mergingEntries);
+        private void sendBatch(int partitionId, String name, List<ScheduledExecutorMergeTypes> mergingEntries,
+                               SplitBrainMergePolicy<ScheduledTaskDescriptor, ScheduledExecutorMergeTypes> mergePolicy) {
+            MergeOperation operation = new MergeOperation(name, mergingEntries, mergePolicy);
             invoke(SERVICE_NAME, operation, partitionId);
         }
     }

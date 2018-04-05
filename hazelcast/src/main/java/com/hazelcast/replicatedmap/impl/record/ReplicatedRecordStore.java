@@ -17,8 +17,8 @@
 package com.hazelcast.replicatedmap.impl.record;
 
 import com.hazelcast.replicatedmap.merge.ReplicatedMapMergePolicy;
-import com.hazelcast.spi.merge.MergingEntry;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
+import com.hazelcast.spi.merge.SplitBrainMergeTypes.ReplicatedMapMergeTypes;
 import com.hazelcast.util.scheduler.ScheduledEntry;
 
 import java.util.Collection;
@@ -99,6 +99,15 @@ public interface ReplicatedRecordStore {
     void setLoaded(boolean loaded);
 
     /**
+     * Merges the given {@link ReplicatedMapMergeTypes} via the given {@link SplitBrainMergePolicy}.
+     *
+     * @param mergingEntry the {@link ReplicatedMapMergeTypes} instance to merge
+     * @param mergePolicy  the {@link SplitBrainMergePolicy} instance to apply
+     * @return {@code true} if merge is applied, otherwise {@code false}
+     */
+    boolean merge(ReplicatedMapMergeTypes mergingEntry, SplitBrainMergePolicy<Object, ReplicatedMapMergeTypes> mergePolicy);
+
+    /**
      * Merges the given {@link ReplicatedMapEntryView} via the given {@link ReplicatedMapMergePolicy}.
      *
      * @param entryView   the {@link ReplicatedMapEntryView} instance to merge
@@ -106,13 +115,4 @@ public interface ReplicatedRecordStore {
      * @return {@code true} if merge is applied, otherwise {@code false}
      */
     boolean merge(Object key, ReplicatedMapEntryView entryView, ReplicatedMapMergePolicy mergePolicy);
-
-    /**
-     * Merges the given {@link MergingEntry} via the given {@link SplitBrainMergePolicy}.
-     *
-     * @param mergingEntry the {@link MergingEntry} instance to merge
-     * @param mergePolicy  the {@link SplitBrainMergePolicy} instance to apply
-     * @return {@code true} if merge is applied, otherwise {@code false}
-     */
-    boolean merge(MergingEntry<Object, Object> mergingEntry, SplitBrainMergePolicy mergePolicy);
 }

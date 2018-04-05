@@ -456,10 +456,10 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
         }
     }
 
-    protected static class MergeIntegerValuesMergePolicy implements SplitBrainMergePolicy {
+    protected static class MergeIntegerValuesMergePolicy<V, T extends MergingValue<V>> implements SplitBrainMergePolicy<V, T> {
 
         @Override
-        public <T> T merge(MergingValue<T> mergingValue, MergingValue<T> existingValue) {
+        public V merge(T mergingValue, T existingValue) {
             if (mergingValue.getDeserializedValue() instanceof Integer) {
                 return mergingValue.getValue();
             }

@@ -16,6 +16,7 @@
 
 package com.hazelcast.cardinality.impl;
 
+import com.hazelcast.cardinality.impl.hyperloglog.HyperLogLog;
 import com.hazelcast.cardinality.impl.operations.MergeOperation;
 import com.hazelcast.cardinality.impl.operations.ReplicationOperation;
 import com.hazelcast.config.CardinalityEstimatorConfig;
@@ -31,6 +32,7 @@ import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.SplitBrainHandlerService;
 import com.hazelcast.spi.impl.merge.AbstractContainerMerger;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
+import com.hazelcast.spi.merge.SplitBrainMergeTypes.CardinalityEstimatorMergeTypes;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.partition.MigrationEndpoint;
 import com.hazelcast.util.ConstructorFunction;
@@ -193,7 +195,8 @@ public class CardinalityEstimatorService
         return new Merger(collector);
     }
 
-    private class Merger extends AbstractContainerMerger<CardinalityEstimatorContainer> {
+    private class Merger
+            extends AbstractContainerMerger<CardinalityEstimatorContainer, HyperLogLog, CardinalityEstimatorMergeTypes> {
 
         Merger(CardinalityEstimatorContainerCollector collector) {
             super(collector, nodeEngine);
@@ -215,7 +218,8 @@ public class CardinalityEstimatorService
 
                 for (CardinalityEstimatorContainer container : containerList) {
                     String containerName = collector.getContainerName(container);
-                    SplitBrainMergePolicy mergePolicy = getMergePolicy(collector.getMergePolicyConfig(container));
+                    SplitBrainMergePolicy<HyperLogLog, CardinalityEstimatorMergeTypes> mergePolicy
+                            = getMergePolicy(collector.getMergePolicyConfig(container));
 
                     MergeOperation operation = new MergeOperation(containerName, mergePolicy, container.hll);
                     invoke(SERVICE_NAME, operation, partitionId);

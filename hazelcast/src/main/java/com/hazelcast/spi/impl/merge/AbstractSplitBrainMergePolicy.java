@@ -28,15 +28,13 @@ import com.hazelcast.spi.serialization.SerializationService;
  * <p>
  * Doesn't save the injected {@link SerializationService}, since it's not needed by any out-of-the-box merge policy.
  *
+ * @param <V> the type of the merged value
+ * @param <T> the type of the merging value, e.g. {@code MergingValue<V>}
+ *            or a composition like {@code MergingEntry<String, V> & MergingHits}
  * @since 3.10
  */
-public abstract class AbstractSplitBrainMergePolicy implements SplitBrainMergePolicy, IdentifiedDataSerializable {
-
-    protected void checkInstanceOf(MergingValue mergingValue, Class<?> clazz) {
-        if (mergingValue != null && !clazz.isInstance(mergingValue)) {
-            throw new IllegalArgumentException("Expected MergingValue to be an instance of " + clazz.getName());
-        }
-    }
+public abstract class AbstractSplitBrainMergePolicy<V, T extends MergingValue<V>>
+        implements SplitBrainMergePolicy<V, T>, IdentifiedDataSerializable {
 
     @Override
     public int getFactoryId() {
@@ -49,10 +47,5 @@ public abstract class AbstractSplitBrainMergePolicy implements SplitBrainMergePo
 
     @Override
     public void readData(ObjectDataInput in) {
-    }
-
-    @Override
-    public <V> V merge(MergingValue<V> mergingValue, MergingValue<V> existingValue) {
-        return null;
     }
 }

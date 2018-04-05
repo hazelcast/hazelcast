@@ -16,12 +16,11 @@
 
 package com.hazelcast.replicatedmap.merge;
 
-import com.hazelcast.core.HazelcastException;
+import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.hamcrest.core.IsInstanceOf;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -48,14 +47,13 @@ public class MergePolicyProviderTest extends HazelcastTestSupport {
 
     @Test
     public void getMergePolicy_NotExistingMergePolicy() {
-        expected.expect(HazelcastException.class);
-        expected.expectCause(IsInstanceOf.any(ClassNotFoundException.class));
+        expected.expect(InvalidConfigurationException.class);
         mergePolicyProvider.getMergePolicy("no such policy bro!");
     }
 
     @Test
     public void getMergePolicy_NullPolicy() {
-        expected.expect(NullPointerException.class);
+        expected.expect(InvalidConfigurationException.class);
         mergePolicyProvider.getMergePolicy(null);
     }
 
