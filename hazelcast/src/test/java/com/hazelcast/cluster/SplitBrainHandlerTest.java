@@ -536,6 +536,9 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         assertClusterSizeEventually(3, lite1, lite2, data1);
         assertClusterSizeEventually(2, data2, data3);
 
+        waitAllForSafeState(lite1, lite2, data1);
+        waitAllForSafeState(data2, data3);
+
         data1.getMap("default").put(1, "cluster1");
         data3.getMap("default").put(1, "cluster2");
 
@@ -547,9 +550,9 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
         unblockCommunicationBetween(lite2, data3);
         unblockCommunicationBetween(data1, data3);
 
-        assertOpenEventually(mergeLatch, 120);
+        assertOpenEventually(mergeLatch);
         assertClusterSizeEventually(5, lite1, lite2, data1, data2, data3);
-
+        waitAllForSafeState(lite1, lite2, data1, data2, data3);
         assertEquals("cluster1", lite1.getMap("default").get(1));
     }
 
