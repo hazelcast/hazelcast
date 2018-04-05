@@ -17,6 +17,7 @@
 package com.hazelcast.test.starter;
 
 import com.hazelcast.internal.usercodedeployment.impl.ClassloadingMutexProvider;
+import com.hazelcast.util.FilteringClassLoader;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -48,6 +49,7 @@ public class HazelcastAPIDelegatingClassloader extends URLClassLoader {
     static final Set<String> DELEGATION_WHITE_LIST;
 
     private ClassloadingMutexProvider mutexFactory = new ClassloadingMutexProvider();
+    private ClassLoader parent;
 
     static {
         Set<String> alwaysDelegateWhiteList = new HashSet<String>();
@@ -58,11 +60,13 @@ public class HazelcastAPIDelegatingClassloader extends URLClassLoader {
 
     public HazelcastAPIDelegatingClassloader(URL[] urls, ClassLoader parent) {
         super(urls, parent);
+        this.parent = parent;
     }
 
     @Override
     public Enumeration<URL> getResources(String name) throws IOException {
         Utils.debug("Calling getResource with " + name);
+        checkResourceExcluded(name);
         if (name.contains("hazelcast")) {
             return findResources(name);
         }
@@ -72,6 +76,7 @@ public class HazelcastAPIDelegatingClassloader extends URLClassLoader {
     @Override
     public URL getResource(String name) {
         Utils.debug("Getting resource " + name);
+        checkResourceExcluded(name);
         if (name.contains("hazelcast")) {
             return findResource(name);
         }
@@ -79,7 +84,14 @@ public class HazelcastAPIDelegatingClassloader extends URLClassLoader {
     }
 
     @Override
+    public InputStream getResourceAsStream(String name) {
+        checkResourceExcluded(name);
+        return super.getResourceAsStream(name);
+    }
+
+    @Override
     protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
+        checkExcluded(name);
         if (shouldDelegate(name)) {
             return super.loadClass(name, resolve);
         } else {
@@ -151,6 +163,10 @@ public class HazelcastAPIDelegatingClassloader extends URLClassLoader {
     }
 
     private boolean isHazelcastTestClass(String name) {
+        if (name.startsWith("usercodedeployment")) {
+            return true;
+        }
+
         if (!name.startsWith("com.hazelcast")) {
             return false;
         }
@@ -160,5 +176,17 @@ public class HazelcastAPIDelegatingClassloader extends URLClassLoader {
         }
 
         return false;
+    }
+
+    private void checkExcluded(String className) throws ClassNotFoundException {
+        if (parent instanceof FilteringClassLoader) {
+            ((FilteringClassLoader) parent).checkExcluded(className);
+        }
+    }
+
+    private void checkResourceExcluded(String resourceName) {
+        if (parent instanceof FilteringClassLoader) {
+            ((FilteringClassLoader) parent).checkResourceExcluded(resourceName);
+        }
     }
 }
