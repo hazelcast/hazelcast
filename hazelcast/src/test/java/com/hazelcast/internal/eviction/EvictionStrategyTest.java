@@ -37,8 +37,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.Matchers;
 
-import java.util.Collections;
-
 import static com.hazelcast.internal.eviction.EvictionChecker.EVICT_ALWAYS;
 import static com.hazelcast.internal.eviction.EvictionListener.NO_LISTENER;
 import static org.junit.Assert.assertEquals;

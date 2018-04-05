@@ -21,6 +21,9 @@ import com.hazelcast.concurrent.lock.LockStore;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.DistributedObjectNamespace;
 import com.hazelcast.spi.ObjectNamespace;
+import com.hazelcast.spi.merge.MergingEntry;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
+import com.hazelcast.spi.serialization.SerializationService;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -29,6 +32,7 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
 
+import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntry;
 import static com.hazelcast.util.Clock.currentTimeMillis;
 import static com.hazelcast.util.MapUtil.createHashMap;
 
@@ -213,5 +217,79 @@ public class MultiMapContainer extends MultiMapContainerSupport {
 
     public ObjectNamespace getObjectNamespace() {
         return objectNamespace;
+    }
+
+    public int getPartitionId() {
+        return partitionId;
+    }
+
+    /**
+     * Merges the given {@link MergingEntry} via the given {@link SplitBrainMergePolicy}.
+     *
+     * @param mergingEntry the {@link MergingEntry} instance to merge
+     * @param mergePolicy  the {@link SplitBrainMergePolicy} instance to apply
+     * @return the used {@link MultiMapValue} if merge is applied, otherwise {@code null}
+     */
+    public MultiMapValue merge(MergingEntry<Data, MultiMapMergeContainer> mergingEntry, SplitBrainMergePolicy mergePolicy) {
+        SerializationService serializationService = nodeEngine.getSerializationService();
+        serializationService.getManagedContext().initialize(mergingEntry);
+        serializationService.getManagedContext().initialize(mergePolicy);
+
+        Data key = mergingEntry.getKey();
+        MultiMapMergeContainer mergingContainer = mergingEntry.getValue();
+        MultiMapValue existingValue = getMultiMapValueOrNull(key);
+
+        if (existingValue == null) {
+            return mergeNewValue(serializationService, mergePolicy, key, mergingContainer);
+        }
+        return mergeExistingValue(serializationService, mergePolicy, key, mergingContainer, existingValue);
+    }
+
+    private MultiMapValue mergeNewValue(SerializationService ss, SplitBrainMergePolicy mergePolicy, Data key,
+                                        MultiMapMergeContainer mergingContainer) {
+        boolean isBinary = getConfig().isBinary();
+
+        MultiMapValue mergedValue = null;
+        for (MultiMapRecord mergeRecord : mergingContainer.getRecords()) {
+            MergingEntry<Data, Object> mergingEntry = createMergingEntry(nodeEngine.getSerializationService(),
+                    mergingContainer, mergeRecord);
+            Object newValue = mergePolicy.merge(mergingEntry, null);
+            if (newValue != null) {
+                MultiMapRecord newRecord = new MultiMapRecord(nextId(), isBinary ? newValue : ss.toObject(newValue));
+                if (mergedValue == null) {
+                    mergedValue = getOrCreateMultiMapValue(key);
+                }
+                Collection<MultiMapRecord> collection = mergedValue.getCollection(false);
+                collection.add(newRecord);
+            }
+        }
+        return mergedValue;
+    }
+
+    private MultiMapValue mergeExistingValue(SerializationService ss, SplitBrainMergePolicy mergePolicy, Data key,
+                                             MultiMapMergeContainer mergingContainer, MultiMapValue existingValue) {
+        boolean isBinary = getConfig().isBinary();
+
+        Collection<MultiMapRecord> existingRecords = existingValue.getCollection(false);
+        int existingHits = existingValue.getHits();
+        for (MultiMapRecord mergeRecord : mergingContainer.getRecords()) {
+            MergingEntry<Data, Object> mergingEntry = createMergingEntry(nodeEngine.getSerializationService(),
+                    mergingContainer, mergeRecord);
+            MergingEntry<Data, Object> existingEntry = null;
+            MultiMapRecord existingRecord = null;
+            for (MultiMapRecord record : existingRecords) {
+                if (record.getObject().equals(mergeRecord.getObject())) {
+                    existingEntry = createMergingEntry(nodeEngine.getSerializationService(), this, key, record, existingHits);
+                    existingRecord = record;
+                }
+            }
+            Object newValue = mergePolicy.merge(mergingEntry, existingEntry);
+            if (newValue != null && (existingRecord == null || !newValue.equals(existingRecord.getObject()))) {
+                MultiMapRecord newRecord = new MultiMapRecord(nextId(), isBinary ? newValue : ss.toObject(newValue));
+                existingRecords.remove(existingRecord);
+                existingRecords.add(newRecord);
+            }
+        }
+        return existingValue;
     }
 }

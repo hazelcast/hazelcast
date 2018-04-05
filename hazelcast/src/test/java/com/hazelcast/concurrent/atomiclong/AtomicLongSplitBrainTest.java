@@ -22,13 +22,11 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.spi.SplitBrainMergeEntryView;
-import com.hazelcast.spi.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.DiscardMergePolicy;
+import com.hazelcast.spi.merge.MergingValue;
 import com.hazelcast.spi.merge.PassThroughMergePolicy;
 import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
-import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.SplitBrainTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -43,8 +41,10 @@ import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 import java.util.Collection;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.hazelcast.concurrent.ConcurrencyTestUtil.getAtomicLongBackup;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 /**
  * Tests different split-brain scenarios for {@link IAtomicLong}.
@@ -109,15 +109,14 @@ public class AtomicLongSplitBrainTest extends SplitBrainTestSupport {
 
         if (mergePolicyClass == DiscardMergePolicy.class) {
             afterSplitDiscardMergePolicy();
-        }
-        if (mergePolicyClass == PassThroughMergePolicy.class) {
+        } else if (mergePolicyClass == PassThroughMergePolicy.class) {
             afterSplitPassThroughMergePolicy();
-        }
-        if (mergePolicyClass == PutIfAbsentMergePolicy.class) {
+        } else if (mergePolicyClass == PutIfAbsentMergePolicy.class) {
             afterSplitPutIfAbsentMergePolicy();
-        }
-        if (mergePolicyClass == MergeGreaterValueMergePolicy.class) {
+        } else if (mergePolicyClass == MergeGreaterValueMergePolicy.class) {
             afterSplitCustomMergePolicy();
+        } else {
+            fail();
         }
     }
 
@@ -128,20 +127,19 @@ public class AtomicLongSplitBrainTest extends SplitBrainTestSupport {
 
         atomicLongB1 = instances[0].getAtomicLong(atomicLongNameB);
 
-        backupAtomicLongA = getAtomicLongBackup(instances, atomicLongA1, atomicLongNameA);
-        backupAtomicLongB = getAtomicLongBackup(instances, atomicLongB1, atomicLongNameB);
+        backupAtomicLongA = getAtomicLongBackup(instances, atomicLongA1);
+        backupAtomicLongB = getAtomicLongBackup(instances, atomicLongB1);
 
         if (mergePolicyClass == DiscardMergePolicy.class) {
             afterMergeDiscardMergePolicy();
-        }
-        if (mergePolicyClass == PassThroughMergePolicy.class) {
+        } else if (mergePolicyClass == PassThroughMergePolicy.class) {
             afterMergePassThroughMergePolicy();
-        }
-        if (mergePolicyClass == PutIfAbsentMergePolicy.class) {
+        } else if (mergePolicyClass == PutIfAbsentMergePolicy.class) {
             afterMergePutIfAbsentMergePolicy();
-        }
-        if (mergePolicyClass == MergeGreaterValueMergePolicy.class) {
+        } else if (mergePolicyClass == MergeGreaterValueMergePolicy.class) {
             afterMergeCustomMergePolicy();
+        } else {
+            fail();
         }
     }
 
@@ -208,26 +206,14 @@ public class AtomicLongSplitBrainTest extends SplitBrainTestSupport {
         assertEquals(42, backupAtomicLongA.get());
     }
 
-    private static AtomicLong getAtomicLongBackup(HazelcastInstance[] instances, IAtomicLong atomicLong, String atomicLongName) {
-        int partitionId = ((AtomicLongProxy) atomicLong).getPartitionId();
-        HazelcastInstance backupInstance = getFirstBackupInstance(instances, partitionId);
-        AtomicLongService service = getNodeEngineImpl(backupInstance).getService(AtomicLongService.SERVICE_NAME);
-        AtomicLongContainer container = service.getLongContainer(atomicLongName);
-        return new AtomicLong(container.get());
-    }
-
-    private static class MergeGreaterValueMergePolicy implements SplitBrainMergePolicy, DataSerializable {
+    private static class MergeGreaterValueMergePolicy implements SplitBrainMergePolicy {
 
         @Override
-        public <K, V> V merge(SplitBrainMergeEntryView<K, V> mergingEntry, SplitBrainMergeEntryView<K, V> existingEntry) {
-            if ((Long) mergingEntry.getValue() > (Long) existingEntry.getValue()) {
-                return mergingEntry.getValue();
+        public <T> T merge(MergingValue<T> mergingValue, MergingValue<T> existingValue) {
+            if ((Long) mergingValue.getValue() > (Long) existingValue.getValue()) {
+                return mergingValue.getValue();
             }
-            return existingEntry.getValue();
-        }
-
-        @Override
-        public void setSerializationService(SerializationService serializationService) {
+            return existingValue.getValue();
         }
 
         @Override

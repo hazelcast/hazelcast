@@ -181,7 +181,6 @@ public class TcpIpConnector {
                 }
                 Channel channel = connectionManager.createChannel(socketChannel, true);
                 ioService.interceptSocket(socketChannel.socket(), false);
-
                 socketChannel.configureBlocking(false);
                 TcpIpConnection connection = connectionManager.newConnection(channel, address);
                 connectionManager.sendBindRequest(connection, address, true);

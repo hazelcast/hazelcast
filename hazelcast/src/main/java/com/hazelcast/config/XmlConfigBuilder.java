@@ -67,9 +67,11 @@ import static com.hazelcast.config.XmlElements.ATOMIC_REFERENCE;
 import static com.hazelcast.config.XmlElements.CACHE;
 import static com.hazelcast.config.XmlElements.CARDINALITY_ESTIMATOR;
 import static com.hazelcast.config.XmlElements.COUNT_DOWN_LATCH;
+import static com.hazelcast.config.XmlElements.CRDT_REPLICATION;
 import static com.hazelcast.config.XmlElements.DURABLE_EXECUTOR_SERVICE;
 import static com.hazelcast.config.XmlElements.EVENT_JOURNAL;
 import static com.hazelcast.config.XmlElements.EXECUTOR_SERVICE;
+import static com.hazelcast.config.XmlElements.FLAKE_ID_GENERATOR;
 import static com.hazelcast.config.XmlElements.GROUP;
 import static com.hazelcast.config.XmlElements.HOT_RESTART_PERSISTENCE;
 import static com.hazelcast.config.XmlElements.IMPORT;
@@ -87,10 +89,10 @@ import static com.hazelcast.config.XmlElements.MULTIMAP;
 import static com.hazelcast.config.XmlElements.NATIVE_MEMORY;
 import static com.hazelcast.config.XmlElements.NETWORK;
 import static com.hazelcast.config.XmlElements.PARTITION_GROUP;
+import static com.hazelcast.config.XmlElements.PN_COUNTER;
 import static com.hazelcast.config.XmlElements.PROPERTIES;
 import static com.hazelcast.config.XmlElements.QUEUE;
 import static com.hazelcast.config.XmlElements.QUORUM;
-import static com.hazelcast.config.XmlElements.FLAKE_ID_GENERATOR;
 import static com.hazelcast.config.XmlElements.RELIABLE_TOPIC;
 import static com.hazelcast.config.XmlElements.REPLICATED_MAP;
 import static com.hazelcast.config.XmlElements.RINGBUFFER;
@@ -389,6 +391,10 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             handleCardinalityEstimator(node);
         } else if (FLAKE_ID_GENERATOR.isEqual(nodeName)) {
             handleFlakeIdGenerator(node);
+        }  else if (CRDT_REPLICATION.isEqual(nodeName)) {
+            handleCRDTReplication(node);
+        } else if (PN_COUNTER.isEqual(nodeName)) {
+            handlePNCounter(node);
         } else {
             return true;
         }
@@ -468,6 +474,24 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
         config.setHotRestartPersistenceConfig(hrConfig);
     }
 
+    private void handleCRDTReplication(Node root) {
+        final CRDTReplicationConfig replicationConfig = new CRDTReplicationConfig();
+        final String replicationPeriodMillisName = "replication-period-millis";
+        final String maxConcurrentReplicationTargetsName = "max-concurrent-replication-targets";
+
+        for (Node n : childElements(root)) {
+            final String name = cleanNodeName(n);
+            if (replicationPeriodMillisName.equals(name)) {
+                replicationConfig.setReplicationPeriodMillis(
+                        getIntegerValue(replicationPeriodMillisName, getTextContent(n)));
+            } else if (maxConcurrentReplicationTargetsName.equals(name)) {
+                replicationConfig.setMaxConcurrentReplicationTargets(
+                        getIntegerValue(maxConcurrentReplicationTargetsName, getTextContent(n)));
+            }
+        }
+        this.config.setCRDTReplicationConfig(replicationConfig);
+    }
+
     private void handleLiteMember(Node node) {
         Node attrEnabled = node.getAttributes().getNamedItem("enabled");
         boolean liteMember = attrEnabled != null && getBooleanValue(getTextContent(attrEnabled));
@@ -480,6 +504,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
         quorumConfig.setName(name);
         Node attrEnabled = node.getAttributes().getNamedItem("enabled");
         boolean enabled = attrEnabled != null && getBooleanValue(getTextContent(attrEnabled));
+        // probabilistic-quorum and recently-active-quorum quorum configs are constructed via QuorumConfigBuilder
+        QuorumConfigBuilder quorumConfigBuilder = null;
         quorumConfig.setEnabled(enabled);
         for (Node n : childElements(node)) {
             String value = getTextContent(n).trim();
@@ -497,11 +523,64 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 quorumConfig.setType(QuorumType.valueOf(upperCaseInternal(value)));
             } else if ("quorum-function-class-name".equals(nodeName)) {
                 quorumConfig.setQuorumFunctionClassName(value);
+            } else if ("recently-active-quorum".equals(nodeName)) {
+                quorumConfigBuilder = handleRecentlyActiveQuorum(name, n, quorumConfig.getSize());
+            } else if ("probabilistic-quorum".equals(nodeName)) {
+                quorumConfigBuilder = handleProbabilisticQuorum(name, n, quorumConfig.getSize());
             }
+        }
+        if (quorumConfigBuilder != null) {
+            boolean quorumFunctionDefinedByClassName = !isNullOrEmpty(quorumConfig.getQuorumFunctionClassName());
+            if (quorumFunctionDefinedByClassName) {
+                throw new ConfigurationException("A quorum cannot simultaneously define probabilistic-quorum or "
+                        + "recently-active-quorum and a quorum function class name.");
+            }
+            // ensure parsed attributes are reflected in constructed quorum config
+            QuorumConfig constructedConfig = quorumConfigBuilder.build();
+            constructedConfig.setSize(quorumConfig.getSize());
+            constructedConfig.setType(quorumConfig.getType());
+            constructedConfig.setListenerConfigs(quorumConfig.getListenerConfigs());
+            quorumConfig = constructedConfig;
         }
         config.addQuorumConfig(quorumConfig);
     }
 
+    private QuorumConfigBuilder handleRecentlyActiveQuorum(String name, Node node, int quorumSize) {
+        QuorumConfigBuilder quorumConfigBuilder;
+        int heartbeatToleranceMillis = getIntegerValue("heartbeat-tolerance-millis",
+                getAttribute(node, "heartbeat-tolerance-millis"),
+                RecentlyActiveQuorumConfigBuilder.DEFAULT_HEARTBEAT_TOLERANCE_MILLIS);
+        quorumConfigBuilder = QuorumConfig.newRecentlyActiveQuorumConfigBuilder(name,
+                quorumSize,
+                heartbeatToleranceMillis);
+        return quorumConfigBuilder;
+    }
+
+    private QuorumConfigBuilder handleProbabilisticQuorum(String name, Node node, int quorumSize) {
+        QuorumConfigBuilder quorumConfigBuilder;
+        long acceptableHeartPause = getLongValue("acceptable-heartbeat-pause-millis",
+                getAttribute(node, "acceptable-heartbeat-pause-millis"),
+                ProbabilisticQuorumConfigBuilder.DEFAULT_HEARTBEAT_PAUSE_MILLIS);
+        double threshold = getDoubleValue("suspicion-threshold",
+                getAttribute(node, "suspicion-threshold"),
+                ProbabilisticQuorumConfigBuilder.DEFAULT_PHI_THRESHOLD);
+        int maxSampleSize = getIntegerValue("max-sample-size",
+                getAttribute(node, "max-sample-size"),
+                ProbabilisticQuorumConfigBuilder.DEFAULT_SAMPLE_SIZE);
+        long minStdDeviation = getLongValue("min-std-deviation-millis",
+                getAttribute(node, "min-std-deviation-millis"),
+                ProbabilisticQuorumConfigBuilder.DEFAULT_MIN_STD_DEVIATION);
+        long heartbeatIntervalMillis = getLongValue("heartbeat-interval-millis",
+                getAttribute(node, "heartbeat-interval-millis"),
+                ProbabilisticQuorumConfigBuilder.DEFAULT_HEARTBEAT_INTERVAL_MILLIS);
+        quorumConfigBuilder = QuorumConfig.newProbabilisticQuorumConfigBuilder(name, quorumSize)
+                .withAcceptableHeartbeatPauseMillis(acceptableHeartPause)
+                .withSuspicionThreshold(threshold)
+                .withHeartbeatIntervalMillis(heartbeatIntervalMillis)
+                .withMinStdDeviationMillis(minStdDeviation)
+                .withMaxSampleSize(maxSampleSize);
+        return quorumConfigBuilder;
+    }
 
     private void handleServices(Node node) {
         Node attDefaults = node.getAttributes().getNamedItem("enable-defaults");
@@ -646,8 +725,26 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
 
     private void handleScheduledExecutor(Node node) throws Exception {
         ScheduledExecutorConfig scheduledExecutorConfig = new ScheduledExecutorConfig();
-        handleViaReflection(node, config, scheduledExecutorConfig);
+        scheduledExecutorConfig.setName(getTextContent(node.getAttributes().getNamedItem("name")));
+
+        for (Node child : childElements(node)) {
+            String nodeName = cleanNodeName(child);
+            if ("merge-policy".equals(nodeName)) {
+                scheduledExecutorConfig.setMergePolicyConfig(createMergePolicyConfig(child));
+            } else if ("capacity".equals(nodeName)) {
+                scheduledExecutorConfig.setCapacity(parseInt(getTextContent(child)));
+            } else if ("durability".equals(nodeName)) {
+                scheduledExecutorConfig.setDurability(parseInt(getTextContent(child)));
+            } else if ("pool-size".equals(nodeName)) {
+                scheduledExecutorConfig.setPoolSize(parseInt(getTextContent(child)));
+            } else if ("quorum-ref".equals(nodeName)) {
+                scheduledExecutorConfig.setQuorumName(getTextContent(child));
+            }
+        }
+
+        config.addScheduledExecutorConfig(scheduledExecutorConfig);
     }
+
 
     private void handleCardinalityEstimator(Node node) {
         CardinalityEstimatorConfig cardinalityEstimatorConfig = new CardinalityEstimatorConfig();
@@ -670,6 +767,11 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
         config.addCardinalityEstimatorConfig(cardinalityEstimatorConfig);
     }
 
+    private void handlePNCounter(Node node) throws Exception {
+        PNCounterConfig pnCounterConfig = new PNCounterConfig();
+        handleViaReflection(node, config, pnCounterConfig);
+    }
+
     private void handleFlakeIdGenerator(Node node) {
         String name = getAttribute(node, "name");
         FlakeIdGeneratorConfig generatorConfig = new FlakeIdGeneratorConfig(name);
@@ -680,6 +782,12 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 generatorConfig.setPrefetchCount(Integer.parseInt(value));
             } else if ("prefetch-validity-millis".equalsIgnoreCase(nodeName)) {
                 generatorConfig.setPrefetchValidityMillis(Long.parseLong(value));
+            } else if ("id-offset".equalsIgnoreCase(nodeName)) {
+                generatorConfig.setIdOffset(Long.parseLong(value));
+            } else if ("node-id-offset".equalsIgnoreCase(nodeName)) {
+                generatorConfig.setNodeIdOffset(Long.parseLong(value));
+            } else if ("statistics-enabled".equals(nodeName)) {
+                generatorConfig.setStatisticsEnabled(getBooleanValue(value));
             }
         }
         config.addFlakeIdGeneratorConfig(generatorConfig);
@@ -1073,6 +1181,9 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 qConfig.setQuorumName(value);
             } else if ("empty-queue-ttl".equals(nodeName)) {
                 qConfig.setEmptyQueueTtl(getIntegerValue("empty-queue-ttl", value));
+            } else if ("merge-policy".equals(nodeName)) {
+                MergePolicyConfig mergePolicyConfig = createMergePolicyConfig(n);
+                qConfig.setMergePolicyConfig(mergePolicyConfig);
             }
         }
         config.addQueueConfig(qConfig);
@@ -1181,6 +1292,9 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 multiMapConfig.setBinary(getBooleanValue(value));
             } else if ("quorum-ref".equals(nodeName)) {
                 multiMapConfig.setQuorumName(value);
+            } else if ("merge-policy".equals(nodeName)) {
+                MergePolicyConfig mergePolicyConfig = createMergePolicyConfig(n);
+                multiMapConfig.setMergePolicyConfig(mergePolicyConfig);
             }
         }
         config.addMultiMapConfig(multiMapConfig);
@@ -1200,8 +1314,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             } else if ("in-memory-format".equals(nodeName)) {
                 replicatedMapConfig.setInMemoryFormat(InMemoryFormat.valueOf(upperCaseInternal(value)));
             } else if ("replication-delay-millis".equals(nodeName)) {
-                replicatedMapConfig.setReplicationDelayMillis(getIntegerValue("replication-delay-millis"
-                        , value));
+                replicatedMapConfig.setReplicationDelayMillis(getIntegerValue("replication-delay-millis", value));
             } else if ("async-fillup".equals(nodeName)) {
                 replicatedMapConfig.setAsyncFillup(getBooleanValue(value));
             } else if ("statistics-enabled".equals(nodeName)) {
@@ -1217,7 +1330,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                     }
                 }
             } else if ("merge-policy".equals(nodeName)) {
-                replicatedMapConfig.setMergePolicy(value);
+                MergePolicyConfig mergePolicyConfig = createMergePolicyConfig(n);
+                replicatedMapConfig.setMergePolicyConfig(mergePolicyConfig);
             } else if ("quorum-ref".equals(nodeName)) {
                 replicatedMapConfig.setQuorumName(value);
             }
@@ -1270,7 +1384,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             } else if ("near-cache".equals(nodeName)) {
                 mapConfig.setNearCacheConfig(handleNearCacheConfig(node));
             } else if ("merge-policy".equals(nodeName)) {
-                mapConfig.setMergePolicy(value);
+                MergePolicyConfig mergePolicyConfig = createMergePolicyConfig(node);
+                mapConfig.setMergePolicyConfig(mergePolicyConfig);
             } else if ("hot-restart".equals(nodeName)) {
                 mapConfig.setHotRestartConfig(createHotRestartConfig(node));
             } else if ("read-backup-data".equals(nodeName)) {
@@ -1846,32 +1961,9 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 sslConfig.setFactoryClassName(getTextContent(n).trim());
             } else if ("properties".equals(nodeName)) {
                 fillProperties(n, sslConfig.getProperties());
-            } else if ("host-verification".equals(nodeName)) {
-                handleTlsHostVerificationConfig(n, sslConfig);
             }
         }
         config.getNetworkConfig().setSSLConfig(sslConfig);
-    }
-
-    private void handleTlsHostVerificationConfig(Node node, SSLConfig sslConfig) {
-        HostVerificationConfig hostVerification = new HostVerificationConfig();
-        NamedNodeMap attributes = node.getAttributes();
-        Node classNameNode = attributes.getNamedItem("policy-class-name");
-        if (classNameNode == null) {
-            throw new InvalidConfigurationException(
-                    "The 'policy-class-name' attribute has to be provided in ssl/host-verification");
-        }
-        hostVerification.setPolicyClassName(getTextContent(classNameNode).trim());
-        Node enabledNode = attributes.getNamedItem("enabled-on-server");
-        hostVerification.setEnabledOnServer(enabledNode != null && getBooleanValue(getTextContent(enabledNode).trim()));
-
-        for (Node n : childElements(node)) {
-            String nodeName = cleanNodeName(n);
-            if ("properties".equals(nodeName)) {
-                fillProperties(n, hostVerification.getProperties());
-            }
-        }
-        sslConfig.setHostVerificationConfig(hostVerification);
     }
 
     private void handleMcMutualAuthConfig(Node node) {
@@ -2094,6 +2186,9 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 rbConfig.setRingbufferStoreConfig(ringbufferStoreConfig);
             } else if ("quorum-ref".equals(nodeName)) {
                 rbConfig.setQuorumName(value);
+            } else if ("merge-policy".equals(nodeName)) {
+                MergePolicyConfig mergePolicyConfig = createMergePolicyConfig(n);
+                rbConfig.setMergePolicyConfig(mergePolicyConfig);
             }
         }
         config.addRingBufferConfig(rbConfig);
@@ -2247,6 +2342,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 handleSecurityPermissions(child);
             } else if ("security-interceptors".equals(nodeName)) {
                 handleSecurityInterceptors(child);
+            } else if ("client-block-unmapped-actions".equals(nodeName)) {
+                config.getSecurityConfig().setClientBlockUnmappedActions(getBooleanValue(getTextContent(child)));
             }
         }
     }
@@ -2400,6 +2497,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 type = PermissionType.CARDINALITY_ESTIMATOR;
             } else if ("scheduled-executor-permission".equals(nodeName)) {
                 type = PermissionType.SCHEDULED_EXECUTOR;
+            } else if ("pn-counter-permission".equals(nodeName)) {
+                type = PermissionType.PN_COUNTER;
             } else if ("cache-permission".equals(nodeName)) {
                 type = PermissionType.CACHE;
             } else if ("user-code-deployment".equals(nodeName)) {

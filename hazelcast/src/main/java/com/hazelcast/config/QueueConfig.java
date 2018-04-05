@@ -16,9 +16,11 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -28,11 +30,12 @@ import static com.hazelcast.internal.serialization.impl.SerializationUtil.readNu
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeNullableList;
 import static com.hazelcast.util.Preconditions.checkAsyncBackupCount;
 import static com.hazelcast.util.Preconditions.checkBackupCount;
+import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * Contains the configuration for an {@link com.hazelcast.core.IQueue}.
  */
-public class QueueConfig implements IdentifiedDataSerializable {
+public class QueueConfig implements IdentifiedDataSerializable, Versioned {
 
     /**
      * Default value for the maximum size of the Queue.
@@ -63,6 +66,7 @@ public class QueueConfig implements IdentifiedDataSerializable {
     private QueueStoreConfig queueStoreConfig;
     private boolean statisticsEnabled = true;
     private String quorumName;
+    private MergePolicyConfig mergePolicyConfig = new MergePolicyConfig();
     private transient QueueConfigReadOnly readOnly;
 
     public QueueConfig() {
@@ -81,6 +85,7 @@ public class QueueConfig implements IdentifiedDataSerializable {
         this.emptyQueueTtl = config.emptyQueueTtl;
         this.statisticsEnabled = config.statisticsEnabled;
         this.quorumName = config.quorumName;
+        this.mergePolicyConfig = config.mergePolicyConfig;
         this.queueStoreConfig = config.queueStoreConfig != null ? new QueueStoreConfig(config.queueStoreConfig) : null;
         this.listenerConfigs = new ArrayList<ItemListenerConfig>(config.getItemListenerConfigs());
     }
@@ -311,6 +316,25 @@ public class QueueConfig implements IdentifiedDataSerializable {
         return this;
     }
 
+    /**
+     * Gets the {@link MergePolicyConfig} for this queue.
+     *
+     * @return the {@link MergePolicyConfig} for this queue
+     */
+    public MergePolicyConfig getMergePolicyConfig() {
+        return mergePolicyConfig;
+    }
+
+    /**
+     * Sets the {@link MergePolicyConfig} for this queue.
+     *
+     * @return the updated queue configuration
+     */
+    public QueueConfig setMergePolicyConfig(MergePolicyConfig mergePolicyConfig) {
+        this.mergePolicyConfig = checkNotNull(mergePolicyConfig, "mergePolicyConfig cannot be null");
+        return this;
+    }
+
     @Override
     public String toString() {
         return "QueueConfig{"
@@ -322,6 +346,7 @@ public class QueueConfig implements IdentifiedDataSerializable {
                 + ", emptyQueueTtl=" + emptyQueueTtl
                 + ", queueStoreConfig=" + queueStoreConfig
                 + ", statisticsEnabled=" + statisticsEnabled
+                + ", mergePolicyConfig=" + mergePolicyConfig
                 + '}';
     }
 
@@ -346,6 +371,10 @@ public class QueueConfig implements IdentifiedDataSerializable {
         out.writeObject(queueStoreConfig);
         out.writeBoolean(statisticsEnabled);
         out.writeUTF(quorumName);
+        // RU_COMPAT_3_9
+        if (out.getVersion().isGreaterOrEqual(Versions.V3_10)) {
+            out.writeObject(mergePolicyConfig);
+        }
     }
 
     @Override
@@ -359,6 +388,10 @@ public class QueueConfig implements IdentifiedDataSerializable {
         queueStoreConfig = in.readObject();
         statisticsEnabled = in.readBoolean();
         quorumName = in.readUTF();
+        // RU_COMPAT_3_9
+        if (in.getVersion().isGreaterOrEqual(Versions.V3_10)) {
+            mergePolicyConfig = in.readObject();
+        }
     }
 
     @Override
@@ -393,11 +426,13 @@ public class QueueConfig implements IdentifiedDataSerializable {
         if (!getItemListenerConfigs().equals(that.getItemListenerConfigs())) {
             return false;
         }
-        if (queueStoreConfig != null
-                ? !queueStoreConfig.equals(that.queueStoreConfig) : that.queueStoreConfig != null) {
+        if (queueStoreConfig != null ? !queueStoreConfig.equals(that.queueStoreConfig) : that.queueStoreConfig != null) {
             return false;
         }
-        return quorumName != null ? quorumName.equals(that.quorumName) : that.quorumName == null;
+        if (quorumName != null ? !quorumName.equals(that.quorumName) : that.quorumName != null) {
+            return false;
+        }
+        return mergePolicyConfig != null ? mergePolicyConfig.equals(that.mergePolicyConfig) : that.mergePolicyConfig == null;
     }
 
     @Override
@@ -411,6 +446,7 @@ public class QueueConfig implements IdentifiedDataSerializable {
         result = 31 * result + (queueStoreConfig != null ? queueStoreConfig.hashCode() : 0);
         result = 31 * result + (statisticsEnabled ? 1 : 0);
         result = 31 * result + (quorumName != null ? quorumName.hashCode() : 0);
+        result = 31 * result + (mergePolicyConfig != null ? mergePolicyConfig.hashCode() : 0);
         return result;
     }
 }

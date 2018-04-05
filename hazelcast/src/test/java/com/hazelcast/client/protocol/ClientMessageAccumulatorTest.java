@@ -41,7 +41,8 @@ import static org.junit.Assert.assertTrue;
 public class ClientMessageAccumulatorTest {
 
 
-    private static final byte[] BYTE_DATA = new byte[]{0, 0, 24, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    private static final byte[] BYTE_DATA
+            = new byte[]{0, 0, 24, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
     private static final int OFFSET = 2;
 
     @Before

@@ -16,11 +16,16 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.spi.merge.DiscardMergePolicy;
+import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import nl.jqno.equalsverifier.EqualsVerifier;
 import nl.jqno.equalsverifier.Warning;
+
+import static com.hazelcast.test.HazelcastTestSupport.assumeDifferentHashCodes;
+
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -31,9 +36,13 @@ public class ReplicatedMapConfigTest {
 
     @Test
     public void testEqualsAndHashCode() {
+        assumeDifferentHashCodes();
         EqualsVerifier.forClass(ReplicatedMapConfig.class)
-                      .allFieldsShouldBeUsed()
-                      .suppress(Warning.NONFINAL_FIELDS)
-                      .verify();
+                .allFieldsShouldBeUsed()
+                .suppress(Warning.NONFINAL_FIELDS)
+                .withPrefabValues(MergePolicyConfig.class,
+                        new MergePolicyConfig(PutIfAbsentMergePolicy.class.getName(), 100),
+                        new MergePolicyConfig(DiscardMergePolicy.class.getName(), 200))
+                .verify();
     }
 }

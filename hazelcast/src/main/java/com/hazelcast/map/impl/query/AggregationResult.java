@@ -21,14 +21,18 @@ import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.query.PagingPredicate;
+import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.spi.serialization.SerializationService;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Map;
 
 /**
  * Contains the result of the evaluation of an aggregation on a specific Partition or Node.
- *
+ * <p>
  * At the end of the aggregation execution path all AggregationResults are merged into one AggregationResult.
  */
 public class AggregationResult implements Result<AggregationResult>, IdentifiedDataSerializable {
@@ -36,11 +40,15 @@ public class AggregationResult implements Result<AggregationResult>, IdentifiedD
     private Aggregator aggregator;
     private Collection<Integer> partitionIds;
 
+    private final transient SerializationService serializationService;
+
     public AggregationResult() {
+        this.serializationService = null;
     }
 
-    public AggregationResult(Aggregator aggregator) {
+    public AggregationResult(Aggregator aggregator, SerializationService serializationService) {
         this.aggregator = aggregator;
+        this.serializationService = serializationService;
     }
 
     @SuppressWarnings("unchecked")
@@ -63,7 +71,7 @@ public class AggregationResult implements Result<AggregationResult>, IdentifiedD
             partitionIds = new ArrayList<Integer>(otherPartitionIds.size());
         }
         partitionIds.addAll(otherPartitionIds);
-        aggregator.combine((result.aggregator));
+        aggregator.combine(result.aggregator);
     }
 
     @Override
@@ -71,6 +79,28 @@ public class AggregationResult implements Result<AggregationResult>, IdentifiedD
         if (aggregator != null) {
             aggregator.onCombinationFinished();
         }
+    }
+
+    @Override
+    public void add(QueryableEntry entry) {
+        aggregator.accumulate(entry);
+    }
+
+    @Override
+    public AggregationResult createSubResult() {
+        Aggregator aggregatorClone = serializationService.toObject(serializationService.toData(aggregator));
+        return new AggregationResult(aggregatorClone, serializationService);
+    }
+
+    @Override
+    public void orderAndLimit(PagingPredicate pagingPredicate, Map.Entry<Integer, Map.Entry> nearestAnchorEntry) {
+        // Do nothing, since there is no support of paging predicates for
+        // aggregations.
+    }
+
+    @Override
+    public void completeConstruction(Collection<Integer> partitionIds) {
+        setPartitionIds(partitionIds);
     }
 
     @Override

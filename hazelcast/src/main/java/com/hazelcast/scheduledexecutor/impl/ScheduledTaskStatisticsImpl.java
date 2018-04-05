@@ -18,58 +18,55 @@ package com.hazelcast.scheduledexecutor.impl;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.scheduledexecutor.ScheduledTaskStatistics;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.internal.cluster.Versions.V3_10;
 
 public class ScheduledTaskStatisticsImpl
-        implements ScheduledTaskStatistics, TaskLifecycleListener {
+        implements ScheduledTaskStatistics, TaskLifecycleListener, Versioned {
 
     private static final TimeUnit MEASUREMENT_UNIT = TimeUnit.NANOSECONDS;
 
     private long runs;
-
-    private long createdAt;
-
-    private long firstRunStart;
-
-    private long lastRunStart;
-
-    private long lastRunEnd;
-
+    private long lastRunDuration;
     private long lastIdleDuration;
-
     private long totalRunDuration;
-
     private long totalIdleDuration;
+
+    private transient long createdAt;
+    private transient long firstRunStart;
+    private transient long lastRunStart;
+    private transient long lastRunEnd;
 
     public ScheduledTaskStatisticsImpl() {
     }
 
     public ScheduledTaskStatisticsImpl(ScheduledTaskStatisticsImpl copy) {
-        this(copy.createdAt, copy.getTotalRuns(), copy.firstRunStart, copy.lastRunStart,
-                copy.lastRunEnd, copy.getLastIdleTime(MEASUREMENT_UNIT), copy.getTotalRunTime(MEASUREMENT_UNIT),
-                copy.getTotalIdleTime(MEASUREMENT_UNIT));
+        this(copy.createdAt, copy.getTotalRuns(), copy.firstRunStart, copy.lastRunStart, copy.lastRunEnd,
+                copy.getLastIdleTime(MEASUREMENT_UNIT), copy.getTotalRunTime(MEASUREMENT_UNIT),
+                copy.getTotalIdleTime(MEASUREMENT_UNIT), copy.getLastRunDuration(MEASUREMENT_UNIT));
     }
 
-    public ScheduledTaskStatisticsImpl(long runs, long lastIdleTimeNanos, long totalRunTimeNanos,
-                                       long totalIdleTimeNanos) {
+    public ScheduledTaskStatisticsImpl(long runs, long lastIdleTimeNanos, long totalRunTimeNanos, long totalIdleTimeNanos) {
         this.runs = runs;
         this.lastIdleDuration = lastIdleTimeNanos;
         this.totalRunDuration = totalRunTimeNanos;
         this.totalIdleDuration = totalIdleTimeNanos;
     }
 
-    ScheduledTaskStatisticsImpl(long createdAt, long runs, long firstRunStartNanos, long lastRunStartNanos,
-                                       long lastRunEndNanos, long lastIdleTimeNanos, long totalRunTimeNanos,
-                                       long totalIdleTimeNanos) {
+    ScheduledTaskStatisticsImpl(long createdAt, long runs, long firstRunStartNanos, long lastRunStartNanos, long lastRunEndNanos,
+                                long lastIdleTimeNanos, long totalRunTimeNanos, long totalIdleTimeNanos,
+                                long lastRunDurationNanos) {
         this.createdAt = createdAt;
         this.runs = runs;
         this.firstRunStart = firstRunStartNanos;
         this.lastRunStart = lastRunStartNanos;
         this.lastRunEnd = lastRunEndNanos;
+        this.lastRunDuration = lastRunDurationNanos;
         this.lastIdleDuration = lastIdleTimeNanos;
         this.totalRunDuration = totalRunTimeNanos;
         this.totalIdleDuration = totalIdleTimeNanos;
@@ -82,8 +79,7 @@ public class ScheduledTaskStatisticsImpl
 
     @Override
     public long getLastRunDuration(TimeUnit unit) {
-        long duration = lastRunEnd - lastRunStart;
-        return unit.convert(duration, MEASUREMENT_UNIT);
+        return unit.convert(lastRunDuration, MEASUREMENT_UNIT);
     }
 
     @Override
@@ -100,7 +96,6 @@ public class ScheduledTaskStatisticsImpl
     public long getTotalRunTime(TimeUnit unit) {
         return unit.convert(totalRunDuration, MEASUREMENT_UNIT);
     }
-
 
     @Override
     public int getFactoryId() {
@@ -119,6 +114,10 @@ public class ScheduledTaskStatisticsImpl
         out.writeLong(lastIdleDuration);
         out.writeLong(totalIdleDuration);
         out.writeLong(totalRunDuration);
+        // RU_COMPAT_3_9
+        if (out.getVersion().isGreaterOrEqual(V3_10)) {
+            out.writeLong(lastRunDuration);
+        }
     }
 
     @Override
@@ -128,11 +127,15 @@ public class ScheduledTaskStatisticsImpl
         lastIdleDuration = in.readLong();
         totalIdleDuration = in.readLong();
         totalRunDuration = in.readLong();
+        // RU_COMPAT_3_9
+        if (in.getVersion().isGreaterOrEqual(V3_10)) {
+            lastRunDuration = in.readLong();
+        }
     }
 
     @Override
     public void onInit() {
-        this.createdAt  = System.nanoTime();
+        this.createdAt = System.nanoTime();
     }
 
     @Override
@@ -151,11 +154,10 @@ public class ScheduledTaskStatisticsImpl
     public void onAfterRun() {
         long now = System.nanoTime();
 
-        long lastRunTime = now - lastRunStart;
-
         this.lastRunEnd = now;
+        this.lastRunDuration = lastRunEnd - lastRunStart;
         this.runs++;
-        this.totalRunDuration += lastRunTime;
+        this.totalRunDuration += lastRunDuration;
 
     }
 
@@ -165,10 +167,12 @@ public class ScheduledTaskStatisticsImpl
 
     @Override
     public String toString() {
-        return "ScheduledTaskStatisticsImpl{runs=" + runs
+        return "ScheduledTaskStatisticsImpl{"
+                + "runs=" + runs
                 + ", lastIdleDuration=" + lastIdleDuration
                 + ", totalRunDuration=" + totalRunDuration
                 + ", totalIdleDuration=" + totalIdleDuration
+                + ", lastRunDuration=" + lastRunDuration
                 + '}';
     }
 }

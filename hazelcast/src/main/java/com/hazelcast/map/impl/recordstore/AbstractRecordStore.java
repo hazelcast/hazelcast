@@ -49,21 +49,21 @@ import static com.hazelcast.map.impl.ExpirationTimeSetter.setTTLAndUpdateExpiryT
  */
 abstract class AbstractRecordStore implements RecordStore<Record> {
 
-    protected final String name;
-    protected final MapContainer mapContainer;
     protected final int partitionId;
+    protected final String name;
+    protected final LockStore lockStore;
+    protected final MapContainer mapContainer;
+    protected final RecordFactory recordFactory;
+    protected final MapEventJournal eventJournal;
+    protected final InMemoryFormat inMemoryFormat;
+    protected final MapStoreContext mapStoreContext;
+    protected final RecordComparator recordComparator;
     protected final MapServiceContext mapServiceContext;
     protected final SerializationService serializationService;
-    protected final InMemoryFormat inMemoryFormat;
-    protected final RecordFactory recordFactory;
-    protected final RecordComparator recordComparator;
-    protected final MapStoreContext mapStoreContext;
     protected final MapDataStore<Data, Object> mapDataStore;
-    protected final LockStore lockStore;
-    protected final MapEventJournal eventJournal;
+    protected final LocalRecordStoreStatsImpl stats = new LocalRecordStoreStatsImpl();
 
     protected Storage<Data, Record> storage;
-    protected final LocalRecordStoreStatsImpl stats = new LocalRecordStoreStatsImpl();
 
     protected AbstractRecordStore(MapContainer mapContainer, int partitionId) {
         this.name = mapContainer.getName();
@@ -97,7 +97,7 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         record.setLastUpdateTime(now);
 
         setTTLAndUpdateExpiryTime(ttlMillis, record, mapContainer.getMapConfig(), true);
-        updateStatsOnPut(true, now);
+        updateStatsOnPut(false, now);
         return record;
     }
 
@@ -125,8 +125,11 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         return Clock.currentTimeMillis();
     }
 
-    protected void updateRecord(Data key, Record record, Object value, long now) {
-        updateStatsOnPut(false, now);
+    protected void updateRecord(Data key, Record record, Object value, long now, boolean countAsAccess) {
+        updateStatsOnPut(countAsAccess, now);
+        if (countAsAccess) {
+            record.onAccess(now);
+        }
         record.onUpdate(now);
         eventJournal.writeUpdateEvent(mapContainer.getEventJournalConfig(), mapContainer.getObjectNamespace(), partitionId,
                 record.getKey(), record.getValue(), value);
@@ -204,10 +207,10 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         return storage;
     }
 
-    protected void updateStatsOnPut(boolean newRecord, long now) {
+    protected void updateStatsOnPut(boolean countAsAccess, long now) {
         stats.setLastUpdateTime(now);
 
-        if (!newRecord) {
+        if (countAsAccess) {
             updateStatsOnGet(now);
         }
     }

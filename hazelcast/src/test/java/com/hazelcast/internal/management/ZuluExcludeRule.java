@@ -20,6 +20,7 @@ import org.junit.rules.MethodRule;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.Statement;
 
+import static java.lang.Integer.parseInt;
 import static org.junit.Assert.assertNotNull;
 
 /**
@@ -38,7 +39,7 @@ public class ZuluExcludeRule implements MethodRule {
         String vendor = System.getProperty(vendorPropertyName);
         assertNotNull(vendorPropertyName + " should be set!", vendor);
 
-        int version = Integer.parseInt(versionProperty.split("\\.")[1]);
+        int version = parseInt(versionProperty.contains(".") ? versionProperty.split("\\.")[1] : versionProperty);
         EXCLUDED = version < 8 && vendor.startsWith("Azul");
     }
 
@@ -64,7 +65,7 @@ public class ZuluExcludeRule implements MethodRule {
             String className = method.getMethod().getDeclaringClass().getName();
             String methodName = method.getName();
 
-            System.out.println("EXCLUDING '" + className + "#" + methodName + "()' ...");
+            System.out.println("EXCLUDING '" + className + "#" + methodName + "()'...");
         }
     }
 }

@@ -29,11 +29,11 @@ import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Test;
 
 import java.io.Serializable;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static java.util.Arrays.asList;
 import static org.junit.runners.Parameterized.Parameter;
 import static org.junit.runners.Parameterized.Parameters;
 
@@ -45,8 +45,9 @@ public abstract class AbstractEntryEventTypesTest extends HazelcastTestSupport {
 
     @Parameters(name = "includeValues: {0}")
     public static Collection<Object[]> data() {
-        return Arrays.asList(new Object[][]{
-                {true}, {false}
+        return asList(new Object[][]{
+                {true},
+                {false},
         });
     }
 

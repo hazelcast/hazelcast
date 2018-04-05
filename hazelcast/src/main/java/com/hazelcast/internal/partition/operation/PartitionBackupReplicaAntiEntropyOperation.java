@@ -37,6 +37,7 @@ import java.util.Map;
 import static com.hazelcast.internal.partition.impl.PartitionDataSerializerHook.PARTITION_BACKUP_REPLICA_ANTI_ENTROPY;
 
 // should not be an urgent operation. required to be in order with backup operations on target node
+// RU_COMPAT_39: Do not remove Versioned interface! Version info is needed on 3.9 members while deserializing the operation.
 public final class PartitionBackupReplicaAntiEntropyOperation
         extends AbstractPartitionOperation
         implements PartitionAwareOperation, AllowedDuringPassiveState, Versioned {

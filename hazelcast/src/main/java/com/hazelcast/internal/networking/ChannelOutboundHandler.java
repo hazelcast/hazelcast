@@ -31,6 +31,9 @@ import java.nio.ByteBuffer;
  * For more information about the ChannelOutboundHandler (and handlers in generally), have a look at the
  * {@link ChannelInboundHandler}.
  *
+ * If the main task of a ChannelOutboundHandler is to encode a message (e.g. a Packet), it is best to call this handler
+ * an encoder. For example PacketEncoder.
+ *
  * @param <F>
  * @see EventLoopGroup
  * @see ChannelInboundHandler

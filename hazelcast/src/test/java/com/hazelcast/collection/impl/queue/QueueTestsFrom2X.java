@@ -58,9 +58,7 @@ public class QueueTestsFrom2X extends HazelcastTestSupport {
 
     @Override
     protected Config getConfig() {
-        final Config config = super.getConfig();
-        config.setProperty(GroupProperty.PARTITION_COUNT.getName(), "10");
-        return config;
+        return smallInstanceConfig();
     }
 
     @Test

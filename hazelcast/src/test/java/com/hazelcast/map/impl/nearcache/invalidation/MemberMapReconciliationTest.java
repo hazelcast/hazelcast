@@ -131,6 +131,7 @@ public class MemberMapReconciliationTest extends HazelcastTestSupport {
         IMap<Integer, Integer> nearCachedMapFromNewServer = nearCachedMapFromNewServer();
 
         warmUpPartitions(factory.getAllHazelcastInstances());
+        waitAllForSafeState(factory.getAllHazelcastInstances());
 
         for (int i = 0; i < total; i++) {
             nearCachedMapFromNewServer.get(i);

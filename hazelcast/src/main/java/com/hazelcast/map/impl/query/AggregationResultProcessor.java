@@ -44,6 +44,6 @@ public class AggregationResultProcessor implements ResultProcessor<AggregationRe
     @Override
     public AggregationResult populateResult(Query query, long resultLimit) {
         Aggregator resultAggregator = serializationService.toObject(serializationService.toData(query.getAggregator()));
-        return new AggregationResult(resultAggregator);
+        return new AggregationResult(resultAggregator, serializationService);
     }
 }

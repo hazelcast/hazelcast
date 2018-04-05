@@ -210,7 +210,7 @@ public class CountingMigrationAwareServiceTest {
 
         @Override
         public Operation prepareReplicationOperation(PartitionReplicationEvent event,
-                Collection<ServiceNamespace> namespaces) {
+                                                     Collection<ServiceNamespace> namespaces) {
             return null;
         }
 
@@ -254,7 +254,7 @@ public class CountingMigrationAwareServiceTest {
 
         @Override
         public Operation prepareReplicationOperation(PartitionReplicationEvent event,
-                Collection<ServiceNamespace> namespaces) {
+                                                     Collection<ServiceNamespace> namespaces) {
             return null;
         }
 

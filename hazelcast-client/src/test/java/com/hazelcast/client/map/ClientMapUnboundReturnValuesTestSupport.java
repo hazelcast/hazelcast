@@ -28,7 +28,6 @@ import com.hazelcast.query.TruePredicate;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.transaction.TransactionContext;
-import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
 import org.junit.After;
 
@@ -237,7 +236,7 @@ public abstract class ClientMapUnboundReturnValuesTestSupport extends HazelcastT
             queryMap.localKeySet();
             failExpectedException("IMap.localKeySet()");
         } catch (UnsupportedOperationException e) {
-            EmptyStatement.ignore(e);
+            ignore(e);
         } catch (QueryResultSizeExceededException e) {
             failUnwantedException("IMap.localKeySet()");
         }
@@ -246,7 +245,7 @@ public abstract class ClientMapUnboundReturnValuesTestSupport extends HazelcastT
             queryMap.localKeySet(TruePredicate.INSTANCE);
             failExpectedException("IMap.localKeySet(predicate)");
         } catch (UnsupportedOperationException e) {
-            EmptyStatement.ignore(e);
+            ignore(e);
         } catch (QueryResultSizeExceededException e) {
             failUnwantedException("IMap.localKeySet()");
         }

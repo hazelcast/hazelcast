@@ -29,7 +29,8 @@ import java.util.Map;
 
 import static com.hazelcast.util.MapUtil.createHashMap;
 
-public class ReplicationOperation extends Operation
+public class ReplicationOperation
+        extends Operation
         implements IdentifiedDataSerializable {
 
     private Map<String, CardinalityEstimatorContainer> migrationData;

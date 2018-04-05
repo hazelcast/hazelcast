@@ -39,7 +39,6 @@ import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 import com.hazelcast.util.Clock;
-import com.hazelcast.version.Version;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.ArrayList;
@@ -51,7 +50,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.hazelcast.internal.cluster.Versions.V3_9;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.util.CollectionUtil.isEmpty;
 import static com.hazelcast.util.Preconditions.checkPositive;
@@ -473,12 +471,7 @@ public final class ExpirationManager implements OperationResponseHandler, Lifecy
     }
 
     public boolean canPrimaryDriveExpiration() {
-        if (!primaryDrivesEviction) {
-            return false;
-        }
-
-        Version version = clusterService.getClusterVersion();
-        return version.isGreaterOrEqual(V3_9);
+        return primaryDrivesEviction;
     }
 
     private void doBackupExpiration(PartitionContainer container) {

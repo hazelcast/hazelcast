@@ -253,7 +253,8 @@ public class ReliableTopicCreateTest extends HazelcastTestSupport {
 
         // check that the listener is of the right class.
         ReliableMessageListenerRunner runner = (ReliableMessageListenerRunner) proxy.runnersMap.values().iterator().next();
-        InstanceAwareReliableMessageListenerMock mock = assertInstanceOf(InstanceAwareReliableMessageListenerMock.class, runner.listener);
+        InstanceAwareReliableMessageListenerMock mock
+                = assertInstanceOf(InstanceAwareReliableMessageListenerMock.class, runner.listener);
         assertNotNull(mock.hz);
     }
 }

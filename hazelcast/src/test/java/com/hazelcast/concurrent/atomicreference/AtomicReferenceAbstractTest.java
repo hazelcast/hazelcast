@@ -21,7 +21,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicReference;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.util.EmptyStatement;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -187,7 +186,7 @@ public abstract class AtomicReferenceAbstractTest extends HazelcastTestSupport {
             ref.apply(new FailingFunction());
             fail();
         } catch (HazelcastException expected) {
-            EmptyStatement.ignore(expected);
+            ignore(expected);
         }
 
         assertEquals("foo", ref.get());
@@ -206,7 +205,7 @@ public abstract class AtomicReferenceAbstractTest extends HazelcastTestSupport {
             ref.alter(new FailingFunction());
             fail();
         } catch (HazelcastException expected) {
-            EmptyStatement.ignore(expected);
+            ignore(expected);
         }
 
         assertEquals("foo", ref.get());
@@ -238,7 +237,7 @@ public abstract class AtomicReferenceAbstractTest extends HazelcastTestSupport {
             ref.alterAndGet(new FailingFunction());
             fail();
         } catch (HazelcastException expected) {
-            EmptyStatement.ignore(expected);
+            ignore(expected);
         }
 
         assertEquals("foo", ref.get());
@@ -270,7 +269,7 @@ public abstract class AtomicReferenceAbstractTest extends HazelcastTestSupport {
             ref.getAndAlter(new FailingFunction());
             fail();
         } catch (HazelcastException expected) {
-            EmptyStatement.ignore(expected);
+            ignore(expected);
         }
 
         assertEquals("foo", ref.get());

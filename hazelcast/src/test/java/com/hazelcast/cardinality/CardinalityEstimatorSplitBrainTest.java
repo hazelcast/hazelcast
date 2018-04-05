@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,15 @@
 
 package com.hazelcast.cardinality;
 
-import com.hazelcast.spi.merge.HyperLogLogMergePolicy;
+import com.hazelcast.cardinality.impl.CardinalityEstimatorProxy;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.spi.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.DiscardMergePolicy;
+import com.hazelcast.spi.merge.HyperLogLogMergePolicy;
+import com.hazelcast.spi.merge.PassThroughMergePolicy;
 import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.SplitBrainTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -30,38 +32,49 @@ import com.hazelcast.test.annotation.QuickTest;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.util.Collection;
 
+import static com.hazelcast.cardinality.CardinalityEstimatorTestUtil.getBackupEstimate;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
+@UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class CardinalityEstimatorSplitBrainTest extends SplitBrainTestSupport {
-
-    private final String name = randomName();
 
     private final int INITIAL_COUNT = 100000;
     private final int EXTRA_COUNT = 10000;
     private final int TOTAL_COUNT = INITIAL_COUNT + (brains().length * EXTRA_COUNT);
 
+    private String estimatorNameA = randomMapName("estimatorA-");
+    private String estimatorNameB = randomMapName("estimatorB-");
+    private CardinalityEstimator estimatorA1;
+    private CardinalityEstimator estimatorA2;
+    private CardinalityEstimator estimatorB1;
+    private CardinalityEstimator estimatorB2;
+    private long expectedEstimateA;
+    private long expectedEstimateB;
+    private long backupEstimateA;
+    private long backupEstimateB;
     private MergeLifecycleListener mergeLifecycleListener;
-    private long estimate;
 
-    @Parameterized.Parameters(name = "mergePolicy:{0}")
+    @Parameters(name = "mergePolicy:{0}")
     public static Collection<Object> parameters() {
         return asList(new Object[]{
                 DiscardMergePolicy.class,
-                PutIfAbsentMergePolicy.class,
                 HyperLogLogMergePolicy.class,
-
+                PassThroughMergePolicy.class,
+                PutIfAbsentMergePolicy.class,
         });
     }
 
-    @Parameterized.Parameter
+    @Parameter
     public Class<? extends SplitBrainMergePolicy> mergePolicyClass;
 
     @Override
@@ -71,22 +84,25 @@ public class CardinalityEstimatorSplitBrainTest extends SplitBrainTestSupport {
                 .setBatchSize(10);
 
         Config config = super.config();
-        config.getCardinalityEstimatorConfig(name)
-              .setBackupCount(1)
-              .setAsyncBackupCount(0)
-              .setMergePolicyConfig(mergePolicyConfig);
+        config.getCardinalityEstimatorConfig(estimatorNameA)
+                .setBackupCount(1)
+                .setAsyncBackupCount(0)
+                .setMergePolicyConfig(mergePolicyConfig);
+        config.getCardinalityEstimatorConfig(estimatorNameB)
+                .setBackupCount(1)
+                .setAsyncBackupCount(0)
+                .setMergePolicyConfig(mergePolicyConfig);
         return config;
     }
 
     @Override
     protected void onBeforeSplitBrainCreated(HazelcastInstance[] instances) {
-        CardinalityEstimator estimator = instances[0].getCardinalityEstimator(name);
-
+        CardinalityEstimator estimator = instances[0].getCardinalityEstimator(estimatorNameA);
         for (int i = 0; i < INITIAL_COUNT; i++) {
             estimator.add(String.valueOf(i));
         }
 
-        estimate = estimator.estimate();
+        expectedEstimateA = estimator.estimate();
         waitAllForSafeState(instances);
     }
 
@@ -97,12 +113,23 @@ public class CardinalityEstimatorSplitBrainTest extends SplitBrainTestSupport {
             instance.getLifecycleService().addLifecycleListener(mergeLifecycleListener);
         }
 
+        estimatorA1 = firstBrain[0].getCardinalityEstimator(estimatorNameA);
+        estimatorA2 = secondBrain[0].getCardinalityEstimator(estimatorNameA);
+
+        estimatorB2 = secondBrain[0].getCardinalityEstimator(estimatorNameB);
+        for (int i = 0; i < INITIAL_COUNT; i++) {
+            estimatorB2.add(String.valueOf(i));
+        }
+        expectedEstimateB = estimatorB2.estimate();
+
         if (mergePolicyClass == DiscardMergePolicy.class) {
-            onAfterSplitDiscardPolicy(firstBrain, secondBrain);
+            onAfterSplitDiscardMergePolicy();
         } else if (mergePolicyClass == HyperLogLogMergePolicy.class) {
-            onAfterSplitHLLMergePolicy(firstBrain, secondBrain);
+            onAfterSplitHyperLogLogMergePolicy();
+        } else if (mergePolicyClass == PassThroughMergePolicy.class) {
+            onAfterSplitPassThroughMergePolicy();
         } else if (mergePolicyClass == PutIfAbsentMergePolicy.class) {
-            onAfterSplitPutAbsentPolicy(firstBrain, secondBrain);
+            onAfterSplitPutIfAbsentMergePolicy();
         } else {
             fail();
         }
@@ -113,69 +140,109 @@ public class CardinalityEstimatorSplitBrainTest extends SplitBrainTestSupport {
         // wait until merge completes
         mergeLifecycleListener.await();
 
+        estimatorB1 = instances[0].getCardinalityEstimator(estimatorNameB);
+
+        int partitionId = ((CardinalityEstimatorProxy) estimatorA1).getPartitionId();
+        backupEstimateA = getBackupEstimate(getFirstBackupInstance(instances, partitionId), estimatorNameA);
+        partitionId = ((CardinalityEstimatorProxy) estimatorB1).getPartitionId();
+        backupEstimateB = getBackupEstimate(getFirstBackupInstance(instances, partitionId), estimatorNameB);
+
         if (mergePolicyClass == DiscardMergePolicy.class) {
-            onAfterMergeDiscardMergePolicy(instances);
+            onAfterMergeDiscardMergePolicy();
         } else if (mergePolicyClass == HyperLogLogMergePolicy.class) {
-            onAfterMergeHLLMergePolicy(instances);
+            onAfterMergeHyperLogLogMergePolicy(instances);
+        } else if (mergePolicyClass == PassThroughMergePolicy.class) {
+            onAfterMergePassThroughMergePolicy();
         } else if (mergePolicyClass == PutIfAbsentMergePolicy.class) {
-            onAfterMergePutAbsentMergePolicy(instances);
+            onAfterMergePutIfAbsentMergePolicy();
         } else {
             fail();
         }
-
     }
 
-    private void onAfterSplitDiscardPolicy(HazelcastInstance[] firstBrain, HazelcastInstance[] secondBrain) {
-        CardinalityEstimator estimator = secondBrain[0].getCardinalityEstimator(name);
+    private void onAfterSplitDiscardMergePolicy() {
+        // we should not have these items in the merged estimator, since they are in the smaller cluster only
         for (int i = INITIAL_COUNT; i < TOTAL_COUNT; i++) {
-            estimator.add(String.valueOf(i));
+            estimatorA2.add(String.valueOf(i));
+            estimatorB2.add(String.valueOf(i));
         }
     }
 
-    private void onAfterMergeDiscardMergePolicy(HazelcastInstance[] instances) {
-        CardinalityEstimator estimator = instances[0].getCardinalityEstimator(name);
-        assertEquals(estimate, estimator.estimate());
+    private void onAfterMergeDiscardMergePolicy() {
+        assertEquals(expectedEstimateA, estimatorA1.estimate());
+        assertEquals(expectedEstimateA, estimatorA2.estimate());
+        assertEquals(expectedEstimateA, backupEstimateA);
+
+        assertEquals(0, estimatorB1.estimate());
+        assertEquals(0, estimatorB2.estimate());
+        assertEquals(0, backupEstimateB);
     }
 
-    private void onAfterSplitPutAbsentPolicy(HazelcastInstance[] firstBrain, HazelcastInstance[] secondBrain) {
-        CardinalityEstimator estimator = secondBrain[0].getCardinalityEstimator("Absent");
-        for (int i = 0; i < INITIAL_COUNT; i++) {
-            estimator.add(String.valueOf(i));
-        }
-
-        estimate = estimator.estimate();
-    }
-
-    private void onAfterMergePutAbsentMergePolicy(HazelcastInstance[] instances) {
-        CardinalityEstimator estimator = instances[0].getCardinalityEstimator(name);
-        CardinalityEstimator absent = instances[0].getCardinalityEstimator(name);
-
-        assertEquals(estimate, estimator.estimate());
-        assertEquals(estimate, absent.estimate());
-    }
-
-    private void onAfterSplitHLLMergePolicy(HazelcastInstance[] firstBrain, HazelcastInstance[] secondBrain) {
+    private void onAfterSplitHyperLogLogMergePolicy() {
         int firstBrainBump = INITIAL_COUNT + EXTRA_COUNT;
 
-        CardinalityEstimator estimator1 = firstBrain[0].getCardinalityEstimator(name);
         for (int i = INITIAL_COUNT; i < firstBrainBump; i++) {
-            estimator1.add(String.valueOf(i));
+            estimatorA1.add(String.valueOf(i));
         }
-
-        CardinalityEstimator estimator2 = secondBrain[0].getCardinalityEstimator(name);
         for (int i = INITIAL_COUNT; i < TOTAL_COUNT; i++) {
-            estimator2.add(String.valueOf(i));
+            estimatorA2.add(String.valueOf(i));
+            estimatorB2.add(String.valueOf(i));
         }
     }
 
-    private void onAfterMergeHLLMergePolicy(HazelcastInstance[] instances) {
-        CardinalityEstimator estimator = instances[0].getCardinalityEstimator(name);
-        CardinalityEstimator expected = instances[0].getCardinalityEstimator("Expected");
+    private void onAfterMergeHyperLogLogMergePolicy(HazelcastInstance[] instances) {
+        CardinalityEstimator expectedEstimator = instances[0].getCardinalityEstimator("expectedEstimator");
         for (int i = 0; i < TOTAL_COUNT; i++) {
-            expected.add(String.valueOf(i));
+            expectedEstimator.add(String.valueOf(i));
         }
+        long expectedValue = expectedEstimator.estimate();
 
-        assertEquals(expected.estimate(), estimator.estimate());
+        assertEquals(expectedValue, estimatorA1.estimate());
+        assertEquals(expectedValue, estimatorA2.estimate());
+        assertEquals(expectedValue, backupEstimateA);
+
+        assertEquals(expectedValue, estimatorB2.estimate());
+        assertEquals(expectedValue, backupEstimateB);
     }
 
+    private void onAfterSplitPassThroughMergePolicy() {
+        // we should not lose the additional values from estimatorA2 and estimatorB2
+        for (int i = INITIAL_COUNT; i < TOTAL_COUNT; i++) {
+            estimatorA2.add(String.valueOf(i));
+            estimatorB2.add(String.valueOf(i));
+        }
+
+        expectedEstimateA = estimatorA2.estimate();
+        expectedEstimateB = estimatorB2.estimate();
+    }
+
+    private void onAfterMergePassThroughMergePolicy() {
+        assertEquals(expectedEstimateA, estimatorA1.estimate());
+        assertEquals(expectedEstimateA, estimatorA2.estimate());
+        assertEquals(expectedEstimateA, backupEstimateA);
+
+        assertEquals(expectedEstimateB, estimatorB1.estimate());
+        assertEquals(expectedEstimateB, estimatorB2.estimate());
+        assertEquals(expectedEstimateB, backupEstimateB);
+    }
+
+    private void onAfterSplitPutIfAbsentMergePolicy() {
+        // we should not lose the additional values from estimatorB2, but from estimatorA2
+        for (int i = INITIAL_COUNT; i < TOTAL_COUNT; i++) {
+            estimatorA2.add(String.valueOf(i));
+            estimatorB2.add(String.valueOf(i));
+        }
+
+        expectedEstimateB = estimatorB2.estimate();
+    }
+
+    private void onAfterMergePutIfAbsentMergePolicy() {
+        assertEquals(expectedEstimateA, estimatorA1.estimate());
+        assertEquals(expectedEstimateA, estimatorA2.estimate());
+        assertEquals(expectedEstimateA, backupEstimateA);
+
+        assertEquals(expectedEstimateB, estimatorB1.estimate());
+        assertEquals(expectedEstimateB, estimatorB2.estimate());
+        assertEquals(expectedEstimateB, backupEstimateB);
+    }
 }

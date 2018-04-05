@@ -22,7 +22,9 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.projection.Projection;
+import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.IterationType;
 
 import java.io.IOException;
@@ -43,8 +45,7 @@ public class Query implements IdentifiedDataSerializable {
     public Query() {
     }
 
-    public Query(String mapName, Predicate predicate, IterationType iterationType, Aggregator aggregator,
-                 Projection projection) {
+    public Query(String mapName, Predicate predicate, IterationType iterationType, Aggregator aggregator, Projection projection) {
         this.mapName = checkNotNull(mapName);
         this.predicate = checkNotNull(predicate);
         this.iterationType = checkNotNull(iterationType);
@@ -91,6 +92,15 @@ public class Query implements IdentifiedDataSerializable {
 
     public boolean isProjectionQuery() {
         return projection != null;
+    }
+
+    public Result createResult(SerializationService serializationService, long limit) {
+        if (isAggregationQuery()) {
+            Aggregator aggregatorClone = serializationService.toObject(serializationService.toData(aggregator));
+            return new AggregationResult(aggregatorClone, serializationService);
+        } else {
+            return new QueryResult(iterationType, projection, serializationService, limit, predicate instanceof PagingPredicate);
+        }
     }
 
     public static QueryBuilder of() {

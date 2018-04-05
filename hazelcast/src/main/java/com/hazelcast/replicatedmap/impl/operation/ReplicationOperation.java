@@ -59,9 +59,8 @@ public class ReplicationOperation extends AbstractSerializableOperation {
     public void run() throws Exception {
         ILogger logger = getLogger();
         if (logger.isFineEnabled()) {
-            logger.fine("Moving partitionId=" + getPartitionId()
-                    + " to the new owner: " + getNodeEngine().getThisAddress()
-                    + " from: " + getCallerAddress());
+            logger.fine("Moving replicated map (partitionId " + getPartitionId() + ") from " + getCallerAddress()
+                    + " to the new owner " + getNodeEngine().getThisAddress());
         }
         ReplicatedMapService service = getService();
         if (data == null) {

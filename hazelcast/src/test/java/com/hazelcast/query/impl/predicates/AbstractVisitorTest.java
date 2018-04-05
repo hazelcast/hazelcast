@@ -50,8 +50,8 @@ public class AbstractVisitorTest {
             Indexes indexes = mock(Indexes.class);
             Object result = method.invoke(visitor, predicate, indexes);
 
-            assertSame("Method " + method + " does not return identity of the original predicate. " +
-                    "See contract of " + AbstractVisitor.class.getSimpleName(), predicate, result);
+            assertSame("Method " + method + " does not return identity of the original predicate."
+                    + " See contract of " + AbstractVisitor.class.getSimpleName(), predicate, result);
         }
     }
 }

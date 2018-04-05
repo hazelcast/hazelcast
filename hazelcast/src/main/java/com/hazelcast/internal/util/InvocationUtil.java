@@ -31,6 +31,7 @@ import com.hazelcast.partition.NoDataMemberInClusterException;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationResponseHandler;
 import com.hazelcast.spi.impl.AbstractCompletableFuture;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.util.executor.CompletedFuture;
@@ -63,7 +64,7 @@ public final class InvocationUtil {
      * is interrupted and the exception is propagated to the caller.
      */
     public static ICompletableFuture<Object> invokeOnStableClusterSerial(NodeEngine nodeEngine,
-                                                                         Supplier<Operation> operationSupplier,
+                                                                         Supplier<? extends Operation> operationSupplier,
                                                                          int maxRetries) {
 
         ClusterService clusterService = nodeEngine.getClusterService();
@@ -88,6 +89,34 @@ public final class InvocationUtil {
         // it invokes on another member only when the previous invocation is completed (so invocations are serial)
         // the future itself completes only when the last invocation completes (or if there is an error)
         return new ChainingFuture<Object>(invocationIterator, executor, memberIterator, logger);
+    }
+
+    /**
+     * Constructs a local execution with retry logic. The operation must not
+     * have an {@link OperationResponseHandler}, it must return a response
+     * and it must not validate the target.
+     *
+     * @return the local execution
+     * @throws IllegalArgumentException if the operation has a response handler
+     *                                  set, if it does not return a response
+     *                                  or if it validates the operation target
+     * @see Operation#returnsResponse()
+     * @see Operation#getOperationResponseHandler()
+     * @see Operation#validatesTarget()
+     */
+    public static LocalRetryableExecution executeLocallyWithRetry(NodeEngine nodeEngine, Operation operation) {
+        if (operation.getOperationResponseHandler() != null) {
+            throw new IllegalArgumentException("Operation must not have a response handler set");
+        }
+        if (!operation.returnsResponse()) {
+            throw new IllegalArgumentException("Operation must return a response");
+        }
+        if (operation.validatesTarget()) {
+            throw new IllegalArgumentException("Operation must not validate the target");
+        }
+        final LocalRetryableExecution execution = new LocalRetryableExecution(nodeEngine, operation);
+        execution.run();
+        return execution;
     }
 
     private static void warmUpPartitions(NodeEngine nodeEngine) {
@@ -120,13 +149,13 @@ public final class InvocationUtil {
     private static class InvokeOnMemberFunction implements IFunction<Member, ICompletableFuture<Object>> {
         private static final long serialVersionUID = 2903680336421872278L;
 
-        private final transient Supplier<Operation> operationSupplier;
+        private final transient Supplier<? extends Operation> operationSupplier;
         private final transient NodeEngine nodeEngine;
         private final transient RestartingMemberIterator memberIterator;
         private final long retryDelayMillis;
         private volatile int lastRetryCount;
 
-        InvokeOnMemberFunction(Supplier<Operation> operationSupplier, NodeEngine nodeEngine,
+        InvokeOnMemberFunction(Supplier<? extends Operation> operationSupplier, NodeEngine nodeEngine,
                 RestartingMemberIterator memberIterator) {
             this.operationSupplier = operationSupplier;
             this.nodeEngine = nodeEngine;

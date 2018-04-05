@@ -35,7 +35,7 @@ public class CachePermissionTest extends AbstractMapPermissionTest {
                 "remove",
                 "listen",
                 "create",
-                "destroy"
+                "destroy",
         };
     }
 

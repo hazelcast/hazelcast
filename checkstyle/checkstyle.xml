@@ -249,7 +249,6 @@
             <property name="tokens" value="PARAMETER_DEF, METHOD_DEF"/>
         </module>
         <module name="InnerAssignment"/>
-        <module name="JUnitTestCase"/>
         <module name="ReturnCount">
             <property name="max" value="8"/>
         </module>

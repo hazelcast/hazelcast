@@ -47,7 +47,7 @@ public final class ThreadLeakTestUtils {
      * We should not add classes of Hazelcast production code here, just test related classes.
      */
     private static final List<Class> THREAD_CLASS_WHITELIST = asList(new Class[]{
-            JitterThread.class
+            JitterThread.class,
     });
 
     public static Set<Thread> getThreads() {
@@ -55,7 +55,11 @@ public final class ThreadLeakTestUtils {
     }
 
     public static void assertHazelcastThreadShutdown(Set<Thread> oldThreads) {
-        Thread[] joinableThreads = getAndLogThreads("There are still Hazelcast threads running after shutdown!", oldThreads);
+        assertHazelcastThreadShutdown("There are still Hazelcast threads running after shutdown!", oldThreads);
+    }
+
+    public static void assertHazelcastThreadShutdown(String message, Set<Thread> oldThreads) {
+        Thread[] joinableThreads = getAndLogThreads(message, oldThreads);
         if (joinableThreads == null) {
             return;
         }

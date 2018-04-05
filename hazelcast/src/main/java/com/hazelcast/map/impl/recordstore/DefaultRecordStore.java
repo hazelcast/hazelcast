@@ -46,6 +46,9 @@ import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
+import com.hazelcast.spi.merge.MergingEntry;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
+import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.CollectionUtil;
 import com.hazelcast.util.ExceptionUtil;
@@ -65,6 +68,7 @@ import static com.hazelcast.config.NativeMemoryConfig.MemoryAllocatorType.POOLED
 import static com.hazelcast.core.EntryEventType.ADDED;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.setTTLAndUpdateExpiryTime;
 import static com.hazelcast.map.impl.mapstore.MapDataStores.EMPTY_MAP_DATA_STORE;
+import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntry;
 import static com.hazelcast.util.MapUtil.createHashMap;
 import static java.util.Collections.emptyList;
 
@@ -76,6 +80,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     protected final ILogger logger;
     protected final RecordStoreLoader recordStoreLoader;
     protected final MapKeyLoader keyLoader;
+
     /**
      * A collection of futures representing pending completion of the key and
      * value loading tasks.
@@ -100,6 +105,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
      */
     private boolean loadedOnPreMigration;
 
+    private final IPartitionService partitionService;
+
     public DefaultRecordStore(MapContainer mapContainer, int partitionId,
                               MapKeyLoader keyLoader, ILogger logger) {
         super(mapContainer, partitionId);
@@ -107,6 +114,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         this.logger = logger;
         this.keyLoader = keyLoader;
         this.recordStoreLoader = createRecordStoreLoader(mapStoreContext);
+        this.partitionService = mapServiceContext.getNodeEngine().getPartitionService();
     }
 
     @Override
@@ -150,8 +158,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     public void putRecord(Data key, Record record) {
         markRecordStoreExpirable(record.getTtl());
         storage.put(key, record);
-        eventJournal.writeAddEvent(mapContainer.getEventJournalConfig(), mapContainer.getObjectNamespace(), partitionId,
-                key, record.getValue());
         updateStatsOnPut(record.getHits());
     }
 
@@ -172,7 +178,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             eventJournal.writeAddEvent(mapContainer.getEventJournalConfig(), mapContainer.getObjectNamespace(), partitionId,
                     key, record.getValue());
         } else {
-            updateRecord(key, record, value, now);
+            updateRecord(key, record, value, now, true);
         }
         if (putTransient) {
             mapDataStore.addTransient(key, now);
@@ -435,7 +441,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     public void reset() {
         mapDataStore.reset();
         storage.clear(false);
-        eventJournal.destroy(mapContainer.getObjectNamespace(), partitionId);
         stats.reset();
     }
 
@@ -672,7 +677,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     /**
      * @return {@code true} if this IMap has any query-cache, otherwise return {@code false}
      */
-    private boolean hasQueryCache() {
+    public boolean hasQueryCache() {
         QueryCacheContext queryCacheContext = mapServiceContext.getQueryCacheContext();
         PublisherContext publisherContext = queryCacheContext.getPublisherContext();
         MapPublisherRegistry mapPublisherRegistry = publisherContext.getMapPublisherRegistry();
@@ -688,11 +693,16 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     @Override
-    public Object put(Data key, Object value, long ttl) {
-        return putInternal(key, value, ttl, true);
+    public Object set(Data dataKey, Object value, long ttl) {
+        return putInternal(dataKey, value, ttl, false, true);
     }
 
-    protected Object putInternal(Data key, Object value, long ttl, boolean loadFromStore) {
+    @Override
+    public Object put(Data key, Object value, long ttl) {
+        return putInternal(key, value, ttl, true, true);
+    }
+
+    protected Object putInternal(Data key, Object value, long ttl, boolean loadFromStore, boolean countAsAccess) {
         checkIfLoaded();
 
         long now = getNow();
@@ -710,12 +720,66 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             eventJournal.writeAddEvent(mapContainer.getEventJournalConfig(), mapContainer.getObjectNamespace(), partitionId,
                     record.getKey(), record.getValue());
         } else {
-            updateRecord(key, record, value, now);
+            updateRecord(key, record, value, now, countAsAccess);
             setTTLAndUpdateExpiryTime(ttl, record, mapContainer.getMapConfig(), false);
         }
 
         saveIndex(record, oldValue);
         return oldValue;
+    }
+
+    @Override
+    public boolean merge(MergingEntry<Data, Object> mergingEntry, SplitBrainMergePolicy mergePolicy) {
+        checkIfLoaded();
+        long now = getNow();
+
+        serializationService.getManagedContext().initialize(mergingEntry);
+        serializationService.getManagedContext().initialize(mergePolicy);
+
+        Data key = mergingEntry.getKey();
+        Record record = getRecordOrNull(key, now, false);
+        Object newValue;
+        Object oldValue = null;
+        if (record == null) {
+            newValue = mergePolicy.merge(mergingEntry, null);
+            if (newValue == null) {
+                return false;
+            }
+            newValue = mapDataStore.add(key, newValue, now);
+            record = createRecord(newValue, DEFAULT_TTL, now);
+            mergeRecordExpiration(record, mergingEntry);
+            storage.put(key, record);
+            eventJournal.writeUpdateEvent(mapContainer.getEventJournalConfig(), mapContainer.getObjectNamespace(), partitionId,
+                    key, null, record.getValue());
+        } else {
+            oldValue = record.getValue();
+            MergingEntry<Data, Object> existingEntry = createMergingEntry(serializationService, record);
+            newValue = mergePolicy.merge(mergingEntry, existingEntry);
+            // existing entry will be removed
+            if (newValue == null) {
+                removeIndex(record);
+                mapDataStore.remove(key, now);
+                onStore(record);
+                eventJournal.writeUpdateEvent(mapContainer.getEventJournalConfig(), mapContainer.getObjectNamespace(),
+                        partitionId, key, oldValue, null);
+                storage.removeRecord(record);
+                return true;
+            }
+            if (newValue == mergingEntry.getValue()) {
+                mergeRecordExpiration(record, mergingEntry);
+            }
+            // same with the existing entry so no need to map-store etc operations.
+            if (recordComparator.isEqual(newValue, oldValue)) {
+                return true;
+            }
+            newValue = mapDataStore.add(key, newValue, now);
+            onStore(record);
+            eventJournal.writeUpdateEvent(mapContainer.getEventJournalConfig(), mapContainer.getObjectNamespace(), partitionId,
+                    key, oldValue, newValue);
+            storage.updateRecordValue(key, record, newValue);
+        }
+        saveIndex(record, oldValue);
+        return newValue != null;
     }
 
     @Override
@@ -786,7 +850,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         update = mapServiceContext.interceptPut(name, oldValue, update);
         update = mapDataStore.add(key, update, now);
         onStore(record);
-        updateRecord(key, record, update, now);
+        updateRecord(key, record, update, now, true);
         setTTLAndUpdateExpiryTime(record.getTtl(), record, mapContainer.getMapConfig(), false);
         saveIndex(record, oldValue);
         return oldValue;
@@ -809,7 +873,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         update = mapServiceContext.interceptPut(name, current, update);
         update = mapDataStore.add(key, update, now);
         onStore(record);
-        updateRecord(key, record, update, now);
+        updateRecord(key, record, update, now, true);
         setTTLAndUpdateExpiryTime(record.getTtl(), record, mapContainer.getMapConfig(), false);
         saveIndex(record, current);
         return true;
@@ -832,7 +896,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         } else {
             oldValue = record.getValue();
             value = mapServiceContext.interceptPut(name, oldValue, value);
-            updateRecord(key, record, value, now);
+            updateRecord(key, record, value, now, true);
             setTTLAndUpdateExpiryTime(ttl, record, mapContainer.getMapConfig(), false);
         }
         saveIndex(record, oldValue);
@@ -850,11 +914,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         return putFromLoadInternal(key, value, DEFAULT_TTL, true);
     }
 
-    @Override
-    public Object putFromLoad(Data key, Object value, long ttl) {
-        return putFromLoadInternal(key, value, ttl, false);
-    }
-
     private Object putFromLoadInternal(Data key, Object value, long ttl, boolean backup) {
         if (!isKeyAndValueLoadable(key, value)) {
             return null;
@@ -865,6 +924,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         if (shouldEvict()) {
             return null;
         }
+
         markRecordStoreExpirable(ttl);
 
         Record record = getRecordOrNull(key, now, false);
@@ -878,7 +938,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         } else {
             oldValue = record.getValue();
             value = mapServiceContext.interceptPut(name, oldValue, value);
-            updateRecord(key, record, value, now);
+            updateRecord(key, record, value, now, true);
             setTTLAndUpdateExpiryTime(ttl, record, mapContainer.getMapConfig(), false);
         }
         if (!backup) {
@@ -898,12 +958,16 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             return false;
         }
 
+        if (partitionService.getPartitionId(key) != partitionId) {
+            throw new IllegalStateException("MapLoader loaded an item belongs to a different partition");
+        }
+
         return true;
     }
 
     @Override
-    public boolean set(Data dataKey, Object value, long ttl) {
-        Object oldValue = putInternal(dataKey, value, ttl, false);
+    public boolean setWithUncountedAccess(Data dataKey, Object value, long ttl) {
+        Object oldValue = putInternal(dataKey, value, ttl, false, false);
         return oldValue == null;
     }
 

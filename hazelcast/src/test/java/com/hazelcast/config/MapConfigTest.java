@@ -20,6 +20,9 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.map.listener.MapPartitionLostListener;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.merge.DiscardMergePolicy;
+import com.hazelcast.spi.merge.PassThroughMergePolicy;
+import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -33,6 +36,7 @@ import org.junit.runner.RunWith;
 import java.util.EventListener;
 import java.util.List;
 
+import static com.hazelcast.test.HazelcastTestSupport.assumeDifferentHashCodes;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -79,7 +83,7 @@ public class MapConfigTest {
     }
 
     @Test
-    public void testMinEvictionCheckMillis() throws Exception {
+    public void testMinEvictionCheckMillis() {
         assertEquals(MapConfig.DEFAULT_MIN_EVICTION_CHECK_MILLIS, new MapConfig().getMinEvictionCheckMillis());
     }
 
@@ -417,37 +421,54 @@ public class MapConfigTest {
         InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
 
         Data data = serializationService.toData(mapConfig);
-        MapConfig clone = serializationService.toObject(data);
+        serializationService.toObject(data);
+    }
+
+    @Test
+    public void testSetMergePolicyConfig() {
+        MergePolicyConfig mergePolicyConfig = new MergePolicyConfig()
+                .setPolicy(PassThroughMergePolicy.class.getName())
+                .setBatchSize(2342);
+
+        MapConfig config = new MapConfig();
+        config.setMergePolicyConfig(mergePolicyConfig);
+
+        assertEquals(PassThroughMergePolicy.class.getName(), config.getMergePolicyConfig().getPolicy());
+        assertEquals(2342, config.getMergePolicyConfig().getBatchSize());
     }
 
     @Test
     public void testEqualsAndHashCode() {
+        assumeDifferentHashCodes();
         EqualsVerifier.forClass(MapConfig.class)
-                      .allFieldsShouldBeUsedExcept("readOnly")
-                      .suppress(Warning.NULL_FIELDS, Warning.NONFINAL_FIELDS)
-                      .withPrefabValues(MaxSizeConfig.class,
-                              new MaxSizeConfig(300, MaxSizeConfig.MaxSizePolicy.PER_PARTITION),
-                              new MaxSizeConfig(100, MaxSizeConfig.MaxSizePolicy.PER_NODE))
-                      .withPrefabValues(MapStoreConfig.class,
-                              new MapStoreConfig().setEnabled(true).setClassName("red"),
-                              new MapStoreConfig().setEnabled(true).setClassName("black"))
-                      .withPrefabValues(NearCacheConfig.class,
-                              new NearCacheConfig(10, 20, false, InMemoryFormat.BINARY),
-                              new NearCacheConfig(15, 25, true, InMemoryFormat.OBJECT))
-                      .withPrefabValues(WanReplicationRef.class,
-                              new WanReplicationRef().setName("red"),
-                              new WanReplicationRef().setName("black"))
-                      .withPrefabValues(PartitioningStrategyConfig.class,
-                              new PartitioningStrategyConfig("red"),
-                              new PartitioningStrategyConfig("black"))
-                      .withPrefabValues(MapConfigReadOnly.class,
-                              new MapConfigReadOnly(new MapConfig("red")),
-                              new MapConfigReadOnly(new MapConfig("black")))
-                      .verify();
-
+                .allFieldsShouldBeUsedExcept("readOnly")
+                .suppress(Warning.NULL_FIELDS, Warning.NONFINAL_FIELDS)
+                .withPrefabValues(MaxSizeConfig.class,
+                        new MaxSizeConfig(300, MaxSizeConfig.MaxSizePolicy.PER_PARTITION),
+                        new MaxSizeConfig(100, MaxSizeConfig.MaxSizePolicy.PER_NODE))
+                .withPrefabValues(MapStoreConfig.class,
+                        new MapStoreConfig().setEnabled(true).setClassName("red"),
+                        new MapStoreConfig().setEnabled(true).setClassName("black"))
+                .withPrefabValues(NearCacheConfig.class,
+                        new NearCacheConfig(10, 20, false, InMemoryFormat.BINARY),
+                        new NearCacheConfig(15, 25, true, InMemoryFormat.OBJECT))
+                .withPrefabValues(WanReplicationRef.class,
+                        new WanReplicationRef().setName("red"),
+                        new WanReplicationRef().setName("black"))
+                .withPrefabValues(PartitioningStrategyConfig.class,
+                        new PartitioningStrategyConfig("red"),
+                        new PartitioningStrategyConfig("black"))
+                .withPrefabValues(MapConfigReadOnly.class,
+                        new MapConfigReadOnly(new MapConfig("red")),
+                        new MapConfigReadOnly(new MapConfig("black")))
+                .withPrefabValues(MergePolicyConfig.class,
+                        new MergePolicyConfig(PutIfAbsentMergePolicy.class.getName(), 100),
+                        new MergePolicyConfig(DiscardMergePolicy.class.getName(), 200))
+                .verify();
     }
 
     @Test
+    @SuppressWarnings("ResultOfMethodCallIgnored")
     public void testDefaultHashCode() {
         MapConfig mapConfig = new MapConfig();
         mapConfig.hashCode();

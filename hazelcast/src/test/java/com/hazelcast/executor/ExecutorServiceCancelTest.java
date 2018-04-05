@@ -114,7 +114,8 @@ public class ExecutorServiceCancelTest extends ExecutorServiceTestSupport {
 
     private void testCancel_submitToMember(HazelcastInstance instance, Member member) throws Exception {
         IExecutorService executorService = instance.getExecutorService(randomString());
-        Future<Boolean> future = executorService.submitToMember(new SleepingTask(Integer.MAX_VALUE, taskStartedLatchName), member);
+        Future<Boolean> future
+                = executorService.submitToMember(new SleepingTask(Integer.MAX_VALUE, taskStartedLatchName), member);
         awaitTaskStart();
 
         assertTrue(future.cancel(true));
@@ -122,7 +123,8 @@ public class ExecutorServiceCancelTest extends ExecutorServiceTestSupport {
 
     private void testGetValueAfterCancel_submitToMember(HazelcastInstance instance, Member member) throws Exception {
         IExecutorService executorService = instance.getExecutorService(randomString());
-        Future<Boolean> future = executorService.submitToMember(new SleepingTask(Integer.MAX_VALUE, taskStartedLatchName), member);
+        Future<Boolean> future
+                = executorService.submitToMember(new SleepingTask(Integer.MAX_VALUE, taskStartedLatchName), member);
         awaitTaskStart();
 
         future.cancel(true);
@@ -132,7 +134,8 @@ public class ExecutorServiceCancelTest extends ExecutorServiceTestSupport {
     @Test
     public void testCancel_submitToKeyOwner() throws ExecutionException, InterruptedException {
         IExecutorService executorService = localHz.getExecutorService(randomString());
-        Future<Boolean> future = executorService.submitToKeyOwner(new SleepingTask(Integer.MAX_VALUE, taskStartedLatchName), randomString());
+        Future<Boolean> future
+                = executorService.submitToKeyOwner(new SleepingTask(Integer.MAX_VALUE, taskStartedLatchName), randomString());
         awaitTaskStart();
 
 
@@ -143,7 +146,8 @@ public class ExecutorServiceCancelTest extends ExecutorServiceTestSupport {
     @Test(expected = CancellationException.class)
     public void testGetValueAfterCancel_submitToKeyOwner() throws Exception {
         IExecutorService executorService = localHz.getExecutorService(randomString());
-        Future<Boolean> future = executorService.submitToKeyOwner(new SleepingTask(Integer.MAX_VALUE, taskStartedLatchName), randomString());
+        Future<Boolean> future
+                = executorService.submitToKeyOwner(new SleepingTask(Integer.MAX_VALUE, taskStartedLatchName), randomString());
         awaitTaskStart();
 
         future.cancel(true);

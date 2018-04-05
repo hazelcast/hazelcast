@@ -60,4 +60,3 @@ public class ClientProtocolTest extends ClientTestSupport {
         }
     }
 }
-

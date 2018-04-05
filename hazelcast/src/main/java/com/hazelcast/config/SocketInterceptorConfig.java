@@ -136,6 +136,39 @@ public class SocketInterceptorConfig {
     }
 
     @Override
+    @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
+    public final boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || !(o instanceof SocketInterceptorConfig)) {
+            return false;
+        }
+
+        SocketInterceptorConfig that = (SocketInterceptorConfig) o;
+
+        if (enabled != that.enabled) {
+            return false;
+        }
+        if (className != null ? !className.equals(that.className) : that.className != null) {
+            return false;
+        }
+        if (implementation != null ? !implementation.equals(that.implementation) : that.implementation != null) {
+            return false;
+        }
+        return properties != null ? properties.equals(that.properties) : that.properties == null;
+    }
+
+    @Override
+    public final int hashCode() {
+        int result = (enabled ? 1 : 0);
+        result = 31 * result + (className != null ? className.hashCode() : 0);
+        result = 31 * result + (implementation != null ? implementation.hashCode() : 0);
+        result = 31 * result + (properties != null ? properties.hashCode() : 0);
+        return result;
+    }
+
+    @Override
     public String toString() {
         return "SocketInterceptorConfig{"
                 + "className='" + className + '\''

@@ -27,24 +27,24 @@ import org.w3c.dom.Node;
  * BeanDefinitionParser for Hazelcast Instance Configuration.
  * <p>
  * <b>Sample Spring XML for Hazelcast Instance:</b>
- * <pre>
- * &lt;hz:hazelcast id="instance"&gt;
- *      &lt;hz:config&gt;
- *          &lt;hz:group name="dev" password="password"/&gt;
- *          &lt;hz:network port="5701" port-auto-increment="false"&gt;
- *              &lt;hz:join&gt;
- *                  &lt;hz:multicast enabled="false" multicast-group="224.2.2.3" multicast-port="54327"/&gt;
- *                   &lt;hz:tcp-ip enabled="true"&gt;
- *                      &lt;hz:members&gt;10.10.1.2, 10.10.1.3&lt;/hz:members&gt;
- *                   &lt;/hz:tcp-ip&gt;
- *              &lt;/hz:join&gt;
- *          &lt;/hz:network&gt;
- *          &lt;hz:map name="map" backup-count="2" max-size="0" eviction-percentage="30"
+ * <pre>{@code
+ * <hz:hazelcast id="instance">
+ *      <hz:config>
+ *          <hz:group name="dev" password="password"/>
+ *          <hz:network port="5701" port-auto-increment="false">
+ *              <hz:join>
+ *                  <hz:multicast enabled="false" multicast-group="224.2.2.3" multicast-port="54327"/>
+ *                   <hz:tcp-ip enabled="true">
+ *                      <hz:members>10.10.1.2, 10.10.1.3</hz:members>
+ *                   </hz:tcp-ip>
+ *              </hz:join>
+ *          </hz:network>
+ *          <hz:map name="map" backup-count="2" max-size="0" eviction-percentage="30"
  *              read-backup-data="true" eviction-policy="NONE"
- *          merge-policy="com.hazelcast.map.merge.PassThroughMergePolicy"/&gt;
- *      &lt;/hz:config&gt;
- * &lt;/hz:hazelcast&gt;
- * </pre>
+ *          merge-policy="com.hazelcast.map.merge.PassThroughMergePolicy"/>
+ *      </hz:config>
+ * </hz:hazelcast>
+ * }</pre>
  */
 public class HazelcastInstanceDefinitionParser extends AbstractHazelcastBeanDefinitionParser {
 

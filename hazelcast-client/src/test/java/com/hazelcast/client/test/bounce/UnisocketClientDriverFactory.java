@@ -21,8 +21,6 @@ import com.hazelcast.client.spi.properties.ClientProperty;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.nio.Address;
 
-import java.net.InetSocketAddress;
-
 /**
  * Creates unisocket clients configured to connect to the cluster's steady member.
  */

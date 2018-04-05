@@ -23,7 +23,8 @@ import com.hazelcast.spi.exception.SilentException;
  * Exception thrown by the {@link IScheduledFuture} during any operation on a stale (=previously destroyed) task.
  */
 public class StaleTaskException
-        extends HazelcastException implements SilentException {
+        extends HazelcastException
+        implements SilentException {
 
     public StaleTaskException(String msg) {
         super(msg);

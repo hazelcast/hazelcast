@@ -40,6 +40,8 @@ public interface MemberState extends JsonSerializable {
 
     LocalTopicStats getReliableLocalTopicStats(String reliableTopicName);
 
+    LocalPNCounterStats getLocalPNCounterStats(String pnCounterName);
+
     LocalReplicatedMapStats getLocalReplicatedMapStats(String replicatedMapName);
 
     LocalExecutorStats getLocalExecutorStats(String executorName);
@@ -47,6 +49,8 @@ public interface MemberState extends JsonSerializable {
     LocalCacheStats getLocalCacheStats(String cacheName);
 
     LocalWanStats getLocalWanStats(String schemeName);
+
+    LocalFlakeIdGeneratorStats getLocalFlakeIdGeneratorStats(String flakeIdName);
 
     Collection<ClientEndPointDTO> getClients();
 

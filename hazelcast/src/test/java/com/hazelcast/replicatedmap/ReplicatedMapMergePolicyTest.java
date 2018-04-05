@@ -291,7 +291,7 @@ public class ReplicatedMapMergePolicyTest extends HazelcastTestSupport {
 
         @Override
         public String getMergePolicyClassName() {
-            return CustomMergePolicy.class.getName();
+            return CustomReplicatedMapMergePolicy.class.getName();
         }
 
         @Override

@@ -23,8 +23,9 @@ import com.hazelcast.quorum.QuorumException;
 import com.hazelcast.quorum.QuorumType;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
 import com.hazelcast.scheduledexecutor.IScheduledFuture;
-import com.hazelcast.test.HazelcastParametersRunnerFactory;
+import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -34,6 +35,9 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.io.Serializable;
 import java.util.Map;
@@ -47,20 +51,20 @@ import static com.hazelcast.test.HazelcastTestSupport.getNodeEngineImpl;
 import static java.util.Arrays.asList;
 
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
-@Category({QuickTest.class})
+@UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class ScheduledExecutorQuorumWriteTest extends AbstractQuorumTest {
 
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
-
-    @Parameterized.Parameter
-    public static QuorumType quorumType;
-
-    @Parameterized.Parameters(name = "quorumType:{0}")
+    @Parameters(name = "quorumType:{0}")
     public static Iterable<Object[]> parameters() {
         return asList(new Object[][]{{QuorumType.WRITE}, {QuorumType.READ_WRITE}});
     }
+
+    @Parameter
+    public static QuorumType quorumType;
+
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
 
     @BeforeClass
     public static void setUp() {
@@ -93,7 +97,7 @@ public class ScheduledExecutorQuorumWriteTest extends AbstractQuorumTest {
     }
 
     @Test
-    public void scheduleAtFixedRate_callable_quorum() throws Exception {
+    public void scheduleAtFixedRate_callable_quorum() {
         exec(0).scheduleAtFixedRate(runnable(), 10, 10, TimeUnit.MILLISECONDS).cancel(false);
     }
 
@@ -123,7 +127,7 @@ public class ScheduledExecutorQuorumWriteTest extends AbstractQuorumTest {
     }
 
     @Test
-    public void scheduleOnMemberAtFixedRate_runnable_quorum() throws Exception {
+    public void scheduleOnMemberAtFixedRate_runnable_quorum() {
         exec(0).scheduleOnMemberAtFixedRate(runnable(), member(0), 10, 10, TimeUnit.MILLISECONDS).cancel(false);
     }
 
@@ -153,7 +157,7 @@ public class ScheduledExecutorQuorumWriteTest extends AbstractQuorumTest {
     }
 
     @Test
-    public void scheduleOnKeyOwnerAtFixedRate_runnable_quorum() throws Exception {
+    public void scheduleOnKeyOwnerAtFixedRate_runnable_quorum() {
         exec(0).scheduleOnKeyOwnerAtFixedRate(runnable(), key(0), 10, 10, TimeUnit.MILLISECONDS).cancel(false);
     }
 
@@ -183,7 +187,7 @@ public class ScheduledExecutorQuorumWriteTest extends AbstractQuorumTest {
     }
 
     @Test
-    public void scheduleOnAllMembersAtFixedRate_runnable_quorum() throws Exception {
+    public void scheduleOnAllMembersAtFixedRate_runnable_quorum() {
         cancel(exec(0).scheduleOnAllMembersAtFixedRate(runnable(), 10, 10, TimeUnit.MILLISECONDS));
     }
 
@@ -213,7 +217,7 @@ public class ScheduledExecutorQuorumWriteTest extends AbstractQuorumTest {
     }
 
     @Test
-    public void scheduleOnMembersAtFixedRate_runnable_quorum() throws Exception {
+    public void scheduleOnMembersAtFixedRate_runnable_quorum() {
         cancel(exec(0).scheduleOnMembersAtFixedRate(runnable(), asList(member(0)), 10, 10, TimeUnit.MILLISECONDS));
     }
 
@@ -223,12 +227,12 @@ public class ScheduledExecutorQuorumWriteTest extends AbstractQuorumTest {
     }
 
     @Test
-    public void shutdown_quorum() throws Exception {
+    public void shutdown_quorum() {
         exec(0, "shutdown").shutdown();
     }
 
     @Test(expected = QuorumException.class)
-    public void shutdown_noQuorum() throws Exception {
+    public void shutdown_noQuorum() {
         exec(3, "shutdown").shutdown();
     }
 
@@ -264,7 +268,7 @@ public class ScheduledExecutorQuorumWriteTest extends AbstractQuorumTest {
         }
     }
 
-    private void cancel(Map<Member, IScheduledFuture<?>> futures) throws Exception {
+    private void cancel(Map<Member, IScheduledFuture<?>> futures) {
         for (IScheduledFuture f : futures.values()) {
             f.cancel(false);
         }
@@ -277,5 +281,4 @@ public class ScheduledExecutorQuorumWriteTest extends AbstractQuorumTest {
     protected IScheduledExecutorService exec(int index, String postfix) {
         return scheduledExec(index, quorumType, postfix);
     }
-
 }

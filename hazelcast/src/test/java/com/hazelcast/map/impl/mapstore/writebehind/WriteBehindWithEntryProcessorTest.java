@@ -57,7 +57,7 @@ import static org.junit.Assert.assertEquals;
 public class WriteBehindWithEntryProcessorTest extends HazelcastTestSupport {
 
     @Test
-    public void testAllPartialUpdatesStored_whenInMemoryFormatIsObject() throws Exception {
+    public void testAllPartialUpdatesStored_whenInMemoryFormatIsObject() {
         CountDownLatch pauseStoreOp = new CountDownLatch(1);
         JournalingMapStore<Integer, Employee> mapStore = new JournalingMapStore<Integer, Employee>(pauseStoreOp);
         IMap<Integer, Employee> map = TestMapUsingMapStoreBuilder.<Integer, Employee>create()
@@ -94,7 +94,7 @@ public class WriteBehindWithEntryProcessorTest extends HazelcastTestSupport {
     private void assertStoreOperationsCompleted(final int size, final JournalingMapStore mapStore) {
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(size, mapStore.queue.size());
             }
         });
@@ -145,22 +145,25 @@ public class WriteBehindWithEntryProcessorTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void updates_on_same_key_when_in_memory_format_is_object() throws Exception {
+    public void updates_on_same_key_when_in_memory_format_is_object() {
         long customerId = 0L;
         int numberOfSubscriptions = 1000;
         MapStore<Long, Customer> mapStore = new CustomerDataStore(customerId);
         IMap<Long, Customer> map = createMap(mapStore);
 
-        addCustomer(customerId, map);// 1 store op.
-        addSubscriptions(map, customerId, numberOfSubscriptions);// + 1000 store op.
-        removeSubscriptions(map, customerId, numberOfSubscriptions / 2);// + 500 store op.
+        // 1 store op
+        addCustomer(customerId, map);
+        // + 1000 store op
+        addSubscriptions(map, customerId, numberOfSubscriptions);
+        // + 500 store op
+        removeSubscriptions(map, customerId, numberOfSubscriptions / 2);
 
         assertStoreOperationCount(mapStore, 1 + numberOfSubscriptions + numberOfSubscriptions / 2);
         assertFinalSubscriptionCountInStore(mapStore, numberOfSubscriptions / 2);
     }
 
     @Test
-    public void testCoalescingMode_doesNotCauseSerialization_whenInMemoryFormatIsObject() throws Exception {
+    public void testCoalescingMode_doesNotCauseSerialization_whenInMemoryFormatIsObject() {
         MapStore<Integer, TestObject> mapStore = new MapStoreTest.SimpleMapStore<Integer, TestObject>();
         IMap<Integer, TestObject> map = TestMapUsingMapStoreBuilder.<Integer, TestObject>create()
                 .withMapStore(mapStore)
@@ -225,7 +228,7 @@ public class WriteBehindWithEntryProcessorTest extends HazelcastTestSupport {
         final CustomerDataStore store = (CustomerDataStore) mapStore;
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(numberOfSubscriptions, store.subscriptionCount());
             }
         });
@@ -235,7 +238,7 @@ public class WriteBehindWithEntryProcessorTest extends HazelcastTestSupport {
         final CustomerDataStore store = (CustomerDataStore) mapStore;
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 final int storeCallCount = store.getStoreCallCount();
                 assertEquals(expectedStoreCallCount, storeCallCount);
             }

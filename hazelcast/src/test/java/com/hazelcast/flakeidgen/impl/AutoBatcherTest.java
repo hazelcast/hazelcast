@@ -35,10 +35,11 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelTest.class})
 public class AutoBatcherTest {
 
-    private static final int VALIDITY = 1000;
+    private static final int VALIDITY = 10000;
 
     private AutoBatcher batcher = new AutoBatcher(3, VALIDITY, new AutoBatcher.IdBatchSupplier() {
         int base;
+
         @Override
         public IdBatch newIdBatch(int batchSize) {
             try {

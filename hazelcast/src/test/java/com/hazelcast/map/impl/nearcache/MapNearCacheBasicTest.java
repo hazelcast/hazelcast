@@ -125,7 +125,8 @@ public class MapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, Stri
 
     protected Config createConfig(IMapMapStore mapStore, boolean withNearCache) {
         Config config = getConfig()
-                .setProperty(GroupProperty.PARTITION_COUNT.getName(), PARTITION_COUNT);
+                .setProperty(GroupProperty.PARTITION_COUNT.getName(), PARTITION_COUNT)
+                .setProperty(GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS.getName(), "1");
 
         MapConfig mapConfig = config.getMapConfig(DEFAULT_NEAR_CACHE_NAME);
         addMapStoreConfig(mapStore, mapConfig);

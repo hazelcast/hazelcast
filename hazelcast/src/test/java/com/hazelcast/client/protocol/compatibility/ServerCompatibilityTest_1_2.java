@@ -5381,10 +5381,10 @@ public class ServerCompatibilityTest_1_2 {
                 assertTrue(isEqual(aData, params.filter));
 }
 {
-    ClientMessage clientMessage = RingbufferReadManyCodec.encodeResponse(    anInt ,    datas ,    arrLongs   );
+    ClientMessage clientMessage = RingbufferReadManyCodec.encodeResponse(    anInt ,    datas ,    arrLongs ,    aLong   );
     int length = inputStream.readInt();
     // Since the test is generated for protocol version (1.2) which is earlier than latest change in the message
-    // (version 1.5), only the bytes after frame length fields are compared
+    // (version 1.6), only the bytes after frame length fields are compared
     int frameLength = clientMessage.getFrameLength();
     assertTrue(frameLength >= length);
     inputStream.skipBytes(FRAME_LEN_FIELD_SIZE);

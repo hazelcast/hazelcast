@@ -35,7 +35,6 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.util.Clock;
-import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.FutureUtil;
 
 import java.util.ArrayList;
@@ -52,6 +51,7 @@ import static com.hazelcast.cluster.ClusterState.FROZEN;
 import static com.hazelcast.cluster.ClusterState.IN_TRANSITION;
 import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createEmptyResponseHandler;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
+import static java.lang.Thread.currentThread;
 
 public abstract class AbstractJoiner implements Joiner {
 
@@ -178,20 +178,12 @@ public abstract class AbstractJoiner implements Joiner {
     }
 
     private void ensureConnectionToAllMembers() {
-        boolean allConnected = false;
         if (clusterService.isJoined()) {
             logger.fine("Waiting for all connections");
             int connectAllWaitSeconds = node.getProperties().getSeconds(GroupProperty.CONNECT_ALL_WAIT_SECONDS);
             int checkCount = 0;
-            while (checkCount++ < connectAllWaitSeconds && !allConnected) {
-                try {
-                    //noinspection BusyWait
-                    TimeUnit.SECONDS.sleep(1);
-                } catch (InterruptedException ignored) {
-                    EmptyStatement.ignore(ignored);
-                }
-
-                allConnected = true;
+            while (checkCount++ < connectAllWaitSeconds) {
+                boolean allConnected = true;
                 Collection<Member> members = clusterService.getMembers();
                 for (Member member : members) {
                     if (!member.localMember() && node.connectionManager.getOrConnect(member.getAddress()) == null) {
@@ -200,6 +192,15 @@ public abstract class AbstractJoiner implements Joiner {
                             logger.fine("Not-connected to " + member.getAddress());
                         }
                     }
+                }
+                if (allConnected) {
+                    break;
+                }
+                try {
+                    //noinspection BusyWait
+                    TimeUnit.SECONDS.sleep(1);
+                } catch (InterruptedException ignored) {
+                    currentThread().interrupt();
                 }
             }
         }
@@ -247,7 +248,7 @@ public abstract class AbstractJoiner implements Joiner {
                 //noinspection BusyWait
                 Thread.sleep(SPLIT_BRAIN_SLEEP_TIME_MILLIS);
             } catch (InterruptedException e) {
-                EmptyStatement.ignore(e);
+                currentThread().interrupt();
                 return null;
             }
             conn = node.connectionManager.getConnection(target);

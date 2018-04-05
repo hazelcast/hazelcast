@@ -25,7 +25,11 @@ import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.*;
+import com.hazelcast.nio.serialization.DataSerializableFactory;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.Portable;
+import com.hazelcast.nio.serialization.PortableReader;
+import com.hazelcast.nio.serialization.PortableWriter;
 
 import java.io.IOException;
 import java.util.Comparator;
@@ -392,7 +396,7 @@ public class IdentifiedDataSerializableFactory implements DataSerializableFactor
                 return prefix;
             }
 
-            String val = (String)value;
+            String val = (String) value;
             return prefix + val;
         }
 
@@ -479,7 +483,7 @@ public class IdentifiedDataSerializableFactory implements DataSerializableFactor
 
     @Override
     public IdentifiedDataSerializable create(int typeId) {
-        switch(typeId) {
+        switch (typeId) {
             case 1:
                 return new SampleFailingTask();
             case 2:

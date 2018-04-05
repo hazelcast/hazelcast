@@ -56,9 +56,10 @@ public class DiagnosticsLogWriterImplTest extends HazelcastTestSupport {
         // we need to get rid of the time/date prefix
         actual = actual.substring(actual.indexOf("SomeSection"));
 
-        assertEquals("" +
-                "SomeSection[" + LINE_SEPARATOR +
-                "                          s=null]" + LINE_SEPARATOR, actual);
+        assertEquals(""
+                + "SomeSection[" + LINE_SEPARATOR
+                + "                          s=null]" + LINE_SEPARATOR,
+                actual);
     }
 
     @Test
@@ -79,15 +80,16 @@ public class DiagnosticsLogWriterImplTest extends HazelcastTestSupport {
         // we need to get rid of the time/date prefix
         actual = actual.substring(actual.indexOf("SomeSection"));
 
-        assertEquals("" +
-                "SomeSection[" + LINE_SEPARATOR +
-                "                          boolean=true" + LINE_SEPARATOR +
-                "                          long=10" + LINE_SEPARATOR +
-                "                          SubSection[" + LINE_SEPARATOR +
-                "                                  integer=10]" + LINE_SEPARATOR +
-                "                          string=foo" + LINE_SEPARATOR +
-                "                          double=11.0" + LINE_SEPARATOR +
-                "                          foobar]" + LINE_SEPARATOR, actual);
+        assertEquals(""
+                + "SomeSection[" + LINE_SEPARATOR
+                + "                          boolean=true" + LINE_SEPARATOR
+                + "                          long=10" + LINE_SEPARATOR
+                + "                          SubSection[" + LINE_SEPARATOR
+                + "                                  integer=10]" + LINE_SEPARATOR
+                + "                          string=foo" + LINE_SEPARATOR
+                + "                          double=11.0" + LINE_SEPARATOR
+                + "                          foobar]" + LINE_SEPARATOR,
+                actual);
     }
 
     @Test

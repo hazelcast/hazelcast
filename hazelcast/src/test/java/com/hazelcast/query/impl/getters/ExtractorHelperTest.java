@@ -56,7 +56,7 @@ public class ExtractorHelperTest {
     public static Collection<Object[]> parameters() {
         return asList(new Object[][]{
                 {false},
-                {true}
+                {true},
         });
     }
 
@@ -69,7 +69,8 @@ public class ExtractorHelperTest {
     @Test
     public void instantiate_extractor() {
         // GIVEN
-        MapAttributeConfig config = new MapAttributeConfig("iq", "com.hazelcast.query.impl.getters.ExtractorHelperTest$IqExtractor");
+        MapAttributeConfig config
+                = new MapAttributeConfig("iq", "com.hazelcast.query.impl.getters.ExtractorHelperTest$IqExtractor");
 
         // WHEN
         ValueExtractor extractor = instantiateExtractor(config);
@@ -94,8 +95,10 @@ public class ExtractorHelperTest {
     @Test
     public void instantiate_extractors() {
         // GIVEN
-        MapAttributeConfig iqExtractor = new MapAttributeConfig("iq", "com.hazelcast.query.impl.getters.ExtractorHelperTest$IqExtractor");
-        MapAttributeConfig nameExtractor = new MapAttributeConfig("name", "com.hazelcast.query.impl.getters.ExtractorHelperTest$NameExtractor");
+        MapAttributeConfig iqExtractor
+                = new MapAttributeConfig("iq", "com.hazelcast.query.impl.getters.ExtractorHelperTest$IqExtractor");
+        MapAttributeConfig nameExtractor
+                = new MapAttributeConfig("name", "com.hazelcast.query.impl.getters.ExtractorHelperTest$NameExtractor");
 
         // WHEN
         Map<String, ValueExtractor> extractors =
@@ -129,7 +132,8 @@ public class ExtractorHelperTest {
     @Test
     public void instantiate_extractors_oneClassNotExisting() {
         // GIVEN
-        MapAttributeConfig iqExtractor = new MapAttributeConfig("iq", "com.hazelcast.query.impl.getters.ExtractorHelperTest$IqExtractor");
+        MapAttributeConfig iqExtractor
+                = new MapAttributeConfig("iq", "com.hazelcast.query.impl.getters.ExtractorHelperTest$IqExtractor");
         MapAttributeConfig nameExtractor = new MapAttributeConfig("name", "not.existing.class");
 
         // EXPECT
@@ -143,8 +147,10 @@ public class ExtractorHelperTest {
     @Test
     public void instantiate_extractors_duplicateExtractor() {
         // GIVEN
-        MapAttributeConfig iqExtractor = new MapAttributeConfig("iq", "com.hazelcast.query.impl.getters.ExtractorHelperTest$IqExtractor");
-        MapAttributeConfig iqExtractorDuplicate = new MapAttributeConfig("iq", "com.hazelcast.query.impl.getters.ExtractorHelperTest$IqExtractor");
+        MapAttributeConfig iqExtractor
+                = new MapAttributeConfig("iq", "com.hazelcast.query.impl.getters.ExtractorHelperTest$IqExtractor");
+        MapAttributeConfig iqExtractorDuplicate
+                = new MapAttributeConfig("iq", "com.hazelcast.query.impl.getters.ExtractorHelperTest$IqExtractor");
 
         // EXPECT
         expected.expect(IllegalArgumentException.class);
@@ -168,7 +174,8 @@ public class ExtractorHelperTest {
     @Test
     public void instantiate_extractors_initException() {
         // GIVEN
-        MapAttributeConfig string = new MapAttributeConfig("iq", "com.hazelcast.query.impl.getters.ExtractorHelperTest$InitExceptionExtractor");
+        MapAttributeConfig string
+                = new MapAttributeConfig("iq", "com.hazelcast.query.impl.getters.ExtractorHelperTest$InitExceptionExtractor");
 
         // EXPECT
         expected.expect(IllegalArgumentException.class);
@@ -180,7 +187,8 @@ public class ExtractorHelperTest {
     @Test
     public void instantiate_extractors_accessException() {
         // GIVEN
-        MapAttributeConfig string = new MapAttributeConfig("iq", "com.hazelcast.query.impl.getters.ExtractorHelperTest$AccessExceptionExtractor");
+        MapAttributeConfig string
+                = new MapAttributeConfig("iq", "com.hazelcast.query.impl.getters.ExtractorHelperTest$AccessExceptionExtractor");
 
         // EXPECT
         expected.expect(IllegalArgumentException.class);

@@ -317,4 +317,3 @@ public class Int2ObjectHashMapTest {
         assertEquals(count, intToObjectMap.size());
     }
 }
-

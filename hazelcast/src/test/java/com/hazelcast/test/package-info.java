@@ -17,32 +17,32 @@
 /**
  * <h4>Hazelcast Test Runners overview</h4>
  * <table>
- *     <tr><th>Class</th><th>Parametric</th><th>Parallel method execution</th></tr>
- *     <tr>
- *         <td>{@link com.hazelcast.test.HazelcastSerialClassRunner}</td>
- *         <td>No</td>
- *         <td>No</td>
- *     </tr>
- *     <tr>
- *         <td>{@link com.hazelcast.test.HazelcastParallelClassRunner}</td>
- *         <td>No</td>
- *         <td>Yes</td>
- *     </tr>
- *     <tr>
- *         <td>{@link com.hazelcast.test.HazelcastParametersRunnerFactory}</td>
- *         <td>Yes</td>
- *         <td>Based presence of the {@link com.hazelcast.test.annotation.ParallelTest} category</td>
- *     </tr>
- *     <tr>
- *         <td>{@link com.hazelcast.test.HazelcastSerialParametersRunnerFactory}</td>
- *         <td>Yes</td>
- *         <td>No</td>
- *     </tr>
- *     <tr>
- *         <td>{@link com.hazelcast.test.HazelcastParallelParametersRunnerFactory}</td>
- *         <td>Yes</td>
- *         <td>Yes</td>
- *     </tr>
+ * <tr><th>Class</th><th>Parametric</th><th>Parallel method execution</th></tr>
+ * <tr>
+ * <td>{@link com.hazelcast.test.HazelcastSerialClassRunner}</td>
+ * <td>No</td>
+ * <td>No</td>
+ * </tr>
+ * <tr>
+ * <td>{@link com.hazelcast.test.HazelcastParallelClassRunner}</td>
+ * <td>No</td>
+ * <td>Yes</td>
+ * </tr>
+ * <tr>
+ * <td>{@link com.hazelcast.test.HazelcastParametersRunnerFactory}</td>
+ * <td>Yes</td>
+ * <td>Based presence of the {@link com.hazelcast.test.annotation.ParallelTest} category</td>
+ * </tr>
+ * <tr>
+ * <td>{@link com.hazelcast.test.HazelcastSerialParametersRunnerFactory}</td>
+ * <td>Yes</td>
+ * <td>No</td>
+ * </tr>
+ * <tr>
+ * <td>{@link com.hazelcast.test.HazelcastParallelParametersRunnerFactory}</td>
+ * <td>Yes</td>
+ * <td>Yes</td>
+ * </tr>
  * </table>
  */
 package com.hazelcast.test;

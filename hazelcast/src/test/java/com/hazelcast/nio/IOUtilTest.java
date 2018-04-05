@@ -17,16 +17,12 @@
 package com.hazelcast.nio;
 
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.EmptyStatement;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -65,6 +61,7 @@ import static com.hazelcast.nio.IOUtil.readObject;
 import static com.hazelcast.nio.IOUtil.toFileName;
 import static com.hazelcast.nio.IOUtil.writeByteArray;
 import static com.hazelcast.nio.IOUtil.writeObject;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -85,21 +82,7 @@ public class IOUtilTest extends HazelcastTestSupport {
     private static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
     private static final int SIZE = 3;
 
-    private static TestHazelcastInstanceFactory hazelcastInstanceFactory;
-    private static InternalSerializationService serializationService;
-
-    @BeforeClass
-    public static void setUp() {
-        hazelcastInstanceFactory = new TestHazelcastInstanceFactory();
-
-        HazelcastInstance hazelcastInstance = hazelcastInstanceFactory.newHazelcastInstance();
-        serializationService = getSerializationService(hazelcastInstance);
-    }
-
-    @AfterClass
-    public static void tearDown() {
-        hazelcastInstanceFactory.shutdownAll();
-    }
+    private static final InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
 
     @Test
     public void testConstructor() {
@@ -357,13 +340,21 @@ public class IOUtilTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testCompressAndDecompress_withEmptyString() throws Exception {
-        String expected = "";
-
-        byte[] compressed = compress(expected.getBytes());
+    public void testCompressAndDecompress_withEmptyInput() throws Exception {
+        byte[] compressed = compress(EMPTY_BYTE_ARRAY);
         byte[] decompressed = decompress(compressed);
 
-        assertEquals(expected, new String(decompressed));
+        assertArrayEquals(EMPTY_BYTE_ARRAY, decompressed);
+    }
+
+    @Test
+    public void testCompressAndDecompress_withSingleByte() throws Exception {
+        byte[] input = new byte[] {111};
+
+        byte[] compressed = compress(input);
+        byte[] decompressed = decompress(compressed);
+
+        assertArrayEquals(input, decompressed);
     }
 
     @Test
@@ -436,14 +427,14 @@ public class IOUtilTest extends HazelcastTestSupport {
             copyFile(source, target, -1);
             fail();
         } catch (HazelcastException expected) {
-            EmptyStatement.ignore(expected);
+            ignore(expected);
         }
 
         delete(source);
     }
 
     @Test
-    public void testCopyFailsWhenSourceCannotBeListed() throws IOException {
+    public void testCopyFailsWhenSourceCannotBeListed() {
         final File source = mock(File.class);
         when(source.exists()).thenReturn(true);
         when(source.isDirectory()).thenReturn(true);
@@ -458,7 +449,7 @@ public class IOUtilTest extends HazelcastTestSupport {
             copy(source, dest);
             fail();
         } catch (HazelcastException expected) {
-            EmptyStatement.ignore(expected);
+            ignore(expected);
         }
 
         delete(dest);
@@ -478,7 +469,7 @@ public class IOUtilTest extends HazelcastTestSupport {
             copyFile(source, new File("target"), -1);
             fail();
         } catch (IllegalArgumentException expected) {
-            EmptyStatement.ignore(expected);
+            ignore(expected);
         }
         delete(source);
     }
@@ -494,14 +485,14 @@ public class IOUtilTest extends HazelcastTestSupport {
             copy(source, target);
             fail();
         } catch (IllegalArgumentException expected) {
-            EmptyStatement.ignore(expected);
+            ignore(expected);
         }
         delete(source);
         delete(target);
     }
 
     @Test
-    public void testCopyRecursiveDirectory() throws IOException {
+    public void testCopyRecursiveDirectory() {
         final File dir = new File("dir");
         final File subdir = new File(dir, "subdir");
         final File f1 = new File(dir, "f1");
@@ -562,12 +553,12 @@ public class IOUtilTest extends HazelcastTestSupport {
         deleteQuietly(file);
     }
 
-    private static File createDirectory(String dirName) throws IOException {
+    private static File createDirectory(String dirName) {
         File dir = new File(dirName);
         return createDirectory(dir);
     }
 
-    private static File createDirectory(File parent, String dirName) throws IOException {
+    private static File createDirectory(File parent, String dirName) {
         File dir = new File(parent, dirName);
         return createDirectory(dir);
     }

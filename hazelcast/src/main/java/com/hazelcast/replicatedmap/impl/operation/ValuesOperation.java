@@ -33,6 +33,7 @@ import java.util.Collection;
 public class ValuesOperation extends AbstractNamedSerializableOperation implements ReadonlyOperation {
 
     private String name;
+
     private transient Object response;
 
     public ValuesOperation() {

@@ -25,6 +25,10 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.HazelcastInstanceFactory;
+import com.hazelcast.internal.util.RuntimeAvailableProcessors;
+import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -64,6 +68,7 @@ import static org.junit.Assert.assertNotNull;
 public class JoinStressTest extends HazelcastTestSupport {
 
     private static final long TEN_MINUTES_IN_MILLIS = 10 * 60 * 1000L;
+    private ILogger logger = Logger.getLogger(JoinStressTest.class);
 
     @Before
     @After
@@ -111,7 +116,7 @@ public class JoinStressTest extends HazelcastTestSupport {
         final CountDownLatch latch = new CountDownLatch(nodeCount);
         final AtomicReferenceArray<HazelcastInstance> instances = new AtomicReferenceArray<HazelcastInstance>(nodeCount);
 
-        ExecutorService ex = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 2);
+        ExecutorService ex = Executors.newFixedThreadPool(RuntimeAvailableProcessors.get() * 2);
         for (int i = 0; i < nodeCount; i++) {
             final int portSeed = i;
             ex.execute(new Runnable() {
@@ -137,6 +142,7 @@ public class JoinStressTest extends HazelcastTestSupport {
         for (int i = 0; i < nodeCount; i++) {
             HazelcastInstance hz = instances.get(i);
             assertNotNull(hz);
+            logEvaluatedMember(hz);
             assertClusterSizeEventually(nodeCount, hz);
         }
     }
@@ -175,7 +181,7 @@ public class JoinStressTest extends HazelcastTestSupport {
             groups.put("group-" + i, new AtomicInteger(0));
         }
 
-        ExecutorService ex = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 2);
+        ExecutorService ex = Executors.newFixedThreadPool(RuntimeAvailableProcessors.get() * 2);
         for (int i = 0; i < nodeCount; i++) {
             final int portSeed = i;
             ex.execute(new Runnable() {
@@ -205,6 +211,7 @@ public class JoinStressTest extends HazelcastTestSupport {
         for (int i = 0; i < nodeCount; i++) {
             HazelcastInstance hz = instances.get(i);
             assertNotNull(hz);
+            logEvaluatedMember(hz);
 
             final int clusterSize = hz.getCluster().getMembers().size();
             final String groupName = hz.getConfig().getGroupConfig().getName();
@@ -217,6 +224,12 @@ public class JoinStressTest extends HazelcastTestSupport {
                 }
             });
         }
+    }
+
+    private void logEvaluatedMember(HazelcastInstance hz) {
+        ClusterServiceImpl instanceClusterService = getNode(hz).getClusterService();
+        logger.info("Evaluating member: " + hz + " " + hz.getLocalEndpoint().getSocketAddress() + " with memberList "
+                + instanceClusterService.getMemberListString());
     }
 
     private void initNetworkConfig(NetworkConfig networkConfig, int basePort, int portSeed, boolean multicast, int nodeCount) {

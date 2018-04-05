@@ -39,7 +39,7 @@ public class ClientOutBoundPortTest {
         config2.getNetworkConfig().setOutboundPortDefinitions(Arrays.asList("34700", "34703-34705"));
         HazelcastInstance client = HazelcastClient.newHazelcastClient(config2);
 
-        final int port = ((Client)client.getLocalEndpoint()).getSocketAddress().getPort();
+        final int port = ((Client) client.getLocalEndpoint()).getSocketAddress().getPort();
 
         assertContains(Arrays.asList(34700, 34703, 34704, 34705), port);
     }

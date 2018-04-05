@@ -89,7 +89,7 @@ public class PartitionReplicaVersionsView {
                 return false;
             }
         }
-        
+
         return true;
     }
 

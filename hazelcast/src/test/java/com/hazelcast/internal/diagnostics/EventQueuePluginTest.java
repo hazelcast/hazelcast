@@ -16,11 +16,11 @@
 
 package com.hazelcast.internal.diagnostics;
 
+import com.hazelcast.cache.CacheEventType;
 import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.impl.CacheEventData;
 import com.hazelcast.cache.impl.CacheEventDataImpl;
 import com.hazelcast.cache.impl.CacheEventSet;
-import com.hazelcast.cache.CacheEventType;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.HazelcastServerCacheManager;
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;

@@ -88,7 +88,8 @@ class TestClientRegistry {
 
         @Override
         public ClientConnectionManager createConnectionManager(ClientConfig config, HazelcastClientInstanceImpl client,
-                DiscoveryService discoveryService, Collection<AddressProvider> addressProviders) {
+                                                               DiscoveryService discoveryService,
+                                                               Collection<AddressProvider> addressProviders) {
             final ClientAwsConfig awsConfig = config.getNetworkConfig().getAwsConfig();
             AddressTranslator addressTranslator;
             if (awsConfig != null && awsConfig.isEnabled()) {
@@ -114,8 +115,8 @@ class TestClientRegistry {
         private final HazelcastClientInstanceImpl client;
         private final ConcurrentHashMap<Address, LockPair> addressBlockMap = new ConcurrentHashMap<Address, LockPair>();
 
-        MockClientConnectionManager(HazelcastClientInstanceImpl client, AddressTranslator addressTranslator, Collection<AddressProvider> addressProviders,
-                                    String host, AtomicInteger ports) {
+        MockClientConnectionManager(HazelcastClientInstanceImpl client, AddressTranslator addressTranslator,
+                                    Collection<AddressProvider> addressProviders, String host, AtomicInteger ports) {
             super(client, addressTranslator, addressProviders);
             this.client = client;
             this.host = host;
@@ -203,7 +204,6 @@ class TestClientRegistry {
             LockPair lockPair = getLockPair(address);
             lockPair.unblockOutgoing();
         }
-
     }
 
     private class MockedClientConnection extends ClientConnection {
@@ -395,7 +395,7 @@ class TestClientRegistry {
 
         void handleClientMessage(ClientMessage newPacket) {
             lastReadTimeMillis = System.currentTimeMillis();
-            remoteNodeEngine.getNode().clientEngine.handleClientMessage(newPacket, this);
+            remoteNodeEngine.getNode().clientEngine.handle(newPacket, this);
         }
 
         @Override

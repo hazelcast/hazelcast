@@ -114,7 +114,7 @@ public class ClientConnectionManagerTranslateTest extends ClientTestSupport {
 
     @Test
     public void testTranslatorIsNotUsedOnTriggerConnect() throws Exception {
-        Connection connection = clientConnectionManager.getOrTriggerConnect(privateAddress);
+        Connection connection = clientConnectionManager.getOrTriggerConnect(privateAddress, false);
         assertNotNull(connection);
     }
 

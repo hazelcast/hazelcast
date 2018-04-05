@@ -16,13 +16,17 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.core.EntryView;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.query.Query;
+import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.spi.merge.MergingEntry;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.wan.WANReplicationQueueFullException;
 
 import java.util.List;
@@ -163,6 +167,20 @@ public class WANAwareOperationProvider extends MapOperationProviderDelegator {
     }
 
     @Override
+    public MapOperation createLegacyMergeOperation(String name, EntryView<Data, Data> mergingEntry, MapMergePolicy policy,
+                                                   boolean disableWanReplicationEvent) {
+        checkWanReplicationQueues(name);
+        return getDelegate().createLegacyMergeOperation(name, mergingEntry, policy, disableWanReplicationEvent);
+    }
+
+    @Override
+    public MapOperation createMergeOperation(String name, MergingEntry<Data, Data> mergingValue,
+                                             SplitBrainMergePolicy mergePolicy, boolean disableWanReplicationEvent) {
+        checkWanReplicationQueues(name);
+        return getDelegate().createMergeOperation(name, mergingValue, mergePolicy, disableWanReplicationEvent);
+    }
+
+    @Override
     public OperationFactory createPartitionWideEntryOperationFactory(String name, EntryProcessor entryProcessor) {
         checkWanReplicationQueues(name);
         return getDelegate().createPartitionWideEntryOperationFactory(name, entryProcessor);
@@ -173,8 +191,7 @@ public class WANAwareOperationProvider extends MapOperationProviderDelegator {
                                                                                   EntryProcessor entryProcessor,
                                                                                   Predicate predicate) {
         checkWanReplicationQueues(name);
-        return getDelegate()
-                .createPartitionWideEntryWithPredicateOperationFactory(name, entryProcessor, predicate);
+        return getDelegate().createPartitionWideEntryWithPredicateOperationFactory(name, entryProcessor, predicate);
     }
 
     @Override

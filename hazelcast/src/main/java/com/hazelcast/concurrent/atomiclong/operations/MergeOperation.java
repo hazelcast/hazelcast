@@ -20,14 +20,20 @@ import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.SplitBrainMergeEntryView;
-import com.hazelcast.spi.SplitBrainMergePolicy;
+import com.hazelcast.spi.merge.MergingValue;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
+import com.hazelcast.spi.serialization.SerializationService;
 
 import java.io.IOException;
 
 import static com.hazelcast.concurrent.atomiclong.AtomicLongDataSerializerHook.MERGE;
-import static com.hazelcast.spi.merge.SplitBrainEntryViews.createSplitBrainMergeEntryView;
+import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingValue;
 
+/**
+ * Contains a merge value for split-brain healing with a {@link SplitBrainMergePolicy}.
+ *
+ * @since 3.10
+ */
 public class MergeOperation extends AtomicLongBackupAwareOperation {
 
     private SplitBrainMergePolicy mergePolicy;
@@ -49,8 +55,9 @@ public class MergeOperation extends AtomicLongBackupAwareOperation {
         AtomicLongService service = getService();
         boolean isExistingContainer = service.containsAtomicLong(name);
 
-        SplitBrainMergeEntryView<Boolean, Long> mergingEntry = createSplitBrainMergeEntryView(isExistingContainer, mergingValue);
-        backupValue = getLongContainer().merge(mergingEntry, mergePolicy);
+        SerializationService serializationService = getNodeEngine().getSerializationService();
+        MergingValue<Long> mergeValue = createMergingValue(serializationService, mergingValue);
+        backupValue = getLongContainer().merge(mergeValue, mergePolicy, isExistingContainer, serializationService);
     }
 
     @Override

@@ -27,4 +27,3 @@ public class CacheEntryListenerTestFactory<K, V> implements Factory<ClientCacheE
         return new ClientCacheEntryExpiredLatchCountdownListener<K, V>();
     }
 }
-

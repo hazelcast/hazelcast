@@ -16,14 +16,12 @@
 
 package com.hazelcast.internal.networking.nio;
 
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.networking.ChannelErrorHandler;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.operationexecutor.OperationHostileThread;
-import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.concurrent.IdleStrategy;
 
 import java.io.IOException;
@@ -39,8 +37,9 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static com.hazelcast.internal.networking.nio.SelectorMode.SELECT_NOW;
-import static com.hazelcast.internal.networking.nio.SelectorOptimizer.optimize;
+import static com.hazelcast.internal.networking.nio.SelectorOptimizer.newSelector;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
+import static com.hazelcast.util.EmptyStatement.ignore;
 import static java.lang.Math.max;
 import static java.lang.System.currentTimeMillis;
 
@@ -59,7 +58,7 @@ public class NioThread extends Thread implements OperationHostileThread {
             System.getProperty("hazelcast.io.selector.bug.probability", "16"));
 
     @SuppressWarnings("checkstyle:visibilitymodifier")
-    // this field is set during construction and is meant for the probes so that the read/write handler can
+    // this field is set during construction and is meant for the probes so that the NioPipeline can
     // indicate which thread they are currently bound to.
     @Probe(name = "ioThreadId", level = ProbeLevel.INFO)
     public int id;
@@ -71,7 +70,7 @@ public class NioThread extends Thread implements OperationHostileThread {
     @Probe(level = DEBUG)
     volatile long priorityFramesTransceived;
     @Probe(level = DEBUG)
-    volatile long handleCount;
+    volatile long processCount;
 
     @Probe(name = "taskQueueSize")
     private final Queue<Runnable> taskQueue = new ConcurrentLinkedQueue<Runnable>();
@@ -132,19 +131,6 @@ public class NioThread extends Thread implements OperationHostileThread {
         this.idleStrategy = idleStrategy;
     }
 
-    private static Selector newSelector(ILogger logger) {
-        try {
-            Selector selector = Selector.open();
-            boolean optimize = Boolean.parseBoolean(System.getProperty("hazelcast.io.optimizeselector", "true"));
-            if (optimize) {
-                optimize(selector, logger);
-            }
-            return selector;
-        } catch (final IOException e) {
-            throw new HazelcastException("Failed to open a Selector", e);
-        }
-    }
-
     public long bytesTransceived() {
         return bytesTransceived;
     }
@@ -158,7 +144,7 @@ public class NioThread extends Thread implements OperationHostileThread {
     }
 
     public long handleCount() {
-        return handleCount;
+        return processCount;
     }
 
     public long eventCount() {
@@ -176,10 +162,6 @@ public class NioThread extends Thread implements OperationHostileThread {
      */
     public final Selector getSelector() {
         return selector;
-    }
-
-    public ChannelErrorHandler getErrorHandler() {
-        return errorHandler;
     }
 
     /**
@@ -369,8 +351,8 @@ public class NioThread extends Thread implements OperationHostileThread {
     }
 
     private NioThread getTargetIOThread(Runnable task) {
-        if (task instanceof MigratableHandler) {
-            return ((MigratableHandler) task).getOwner();
+        if (task instanceof MigratablePipeline) {
+            return ((MigratablePipeline) task).owner();
         } else {
             return this;
         }
@@ -388,19 +370,19 @@ public class NioThread extends Thread implements OperationHostileThread {
     }
 
     private void handleSelectionKey(SelectionKey sk) {
-        SelectionHandler handler = (SelectionHandler) sk.attachment();
+        NioPipeline pipeline = (NioPipeline) sk.attachment();
         try {
             if (!sk.isValid()) {
-                // if the selectionKey isn't valid, we throw this exception to feedback the situation into the handler.onFailure
+                // if the selectionKey isn't valid, we throw this exception to feedback the situation into the pipeline.onFailure
                 throw new CancelledKeyException();
             }
 
-            // we don't need to check for sk.isReadable/sk.isWritable since the handler has only registered
+            // we don't need to check for sk.isReadable/sk.isWritable since the pipeline has only registered
             // for events it can handle.
             eventCount.inc();
-            handler.handle();
+            pipeline.process();
         } catch (Throwable t) {
-            handler.onFailure(t);
+            pipeline.onFailure(t);
         }
     }
 
@@ -429,20 +411,20 @@ public class NioThread extends Thread implements OperationHostileThread {
         Selector newSelector = newSelector(logger);
         Selector oldSelector = this.selector;
 
-        // reset each handler's selectionKey, cancel the old keys
+        // reset each pipeline's selectionKey, cancel the old keys
         for (SelectionKey key : oldSelector.keys()) {
-            AbstractHandler handler = (AbstractHandler) key.attachment();
+            NioPipeline pipeline = (NioPipeline) key.attachment();
             SelectableChannel channel = key.channel();
             try {
                 int ops = key.interestOps();
-                SelectionKey newSelectionKey = channel.register(newSelector, ops, handler);
-                handler.setSelectionKey(newSelectionKey);
+                SelectionKey newSelectionKey = channel.register(newSelector, ops, pipeline);
+                pipeline.setSelectionKey(newSelectionKey);
             } catch (ClosedChannelException e) {
                 logger.info("Channel was closed while trying to register with new selector.");
             } catch (CancelledKeyException e) {
                 // a CancelledKeyException may be thrown in key.interestOps
                 // in this case, since the key is already cancelled, just do nothing
-                EmptyStatement.ignore(e);
+                ignore(e);
             }
             key.cancel();
         }

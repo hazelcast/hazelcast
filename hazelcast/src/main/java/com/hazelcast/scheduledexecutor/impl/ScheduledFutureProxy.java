@@ -50,8 +50,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 @SuppressFBWarnings("EQ_COMPARETO_USE_OBJECT_EQUALS")
 @SuppressWarnings({"checkstyle:methodcount"})
 public final class ScheduledFutureProxy<V>
-        implements IScheduledFuture<V>,
-                   HazelcastInstanceAware {
+        implements IScheduledFuture<V>, HazelcastInstanceAware {
 
     private transient HazelcastInstance instance;
 
@@ -183,7 +182,8 @@ public final class ScheduledFutureProxy<V>
             return;
         }
 
-        if (handler.isAssignedToMember() && handler.getAddress().equals(event.getMember().getAddress())) {
+        if (handler.isAssignedToMember()
+                && handler.getAddress().equals(event.getMember().getAddress())) {
             this.memberLost.set(true);
         }
     }
@@ -195,13 +195,11 @@ public final class ScheduledFutureProxy<V>
             return;
         }
 
-        int durability = instance.getConfig()
-                                 .getScheduledExecutorConfig(handler.getSchedulerName())
-                                 .getDurability();
+        int durability = instance.getConfig().getScheduledExecutorConfig(handler.getSchedulerName()).getDurability();
 
         if (handler.isAssignedToPartition()
                 && handler.getPartitionId() == event.getPartitionId()
-                && event.getLostBackupCount() == durability) {
+                && event.getLostBackupCount() >= durability) {
             this.partitionLost.set(true);
         }
     }
@@ -209,23 +207,24 @@ public final class ScheduledFutureProxy<V>
     private void checkAccessibleOwner() {
         if (handler.isAssignedToPartition()) {
             if (partitionLost.get()) {
-                throw new IllegalStateException("Partition holding this Scheduled task was lost along with all backups.");
+                throw new IllegalStateException("Partition " + handler.getPartitionId() + ", holding this scheduled task"
+                        + " was lost along with all backups.");
             }
         } else {
             if (memberLost.get()) {
-                throw new IllegalStateException("Member holding this Scheduled task was removed from the cluster.");
+                throw new IllegalStateException("Member with address: " + handler.getAddress() +  ",  holding this scheduled task"
+                        + " is not part of this cluster.");
             }
         }
     }
 
     private void checkAccessibleHandler() {
         if (handler == null) {
-            throw new StaleTaskException(
-                    "Scheduled task was previously disposed.");
+            throw new StaleTaskException("Scheduled task was previously disposed.");
         }
     }
 
-    private <V> InternalCompletableFuture<V> invoke(Operation op) {
+    private <T> InternalCompletableFuture<T> invoke(Operation op) {
         if (handler.isAssignedToPartition()) {
             op.setPartitionId(handler.getPartitionId());
             return invokeOnPartition(op);
@@ -234,18 +233,14 @@ public final class ScheduledFutureProxy<V>
         }
     }
 
-    private <V> InternalCompletableFuture<V> invokeOnPartition(Operation op) {
-        OperationService opService = ((HazelcastInstanceImpl) instance).node
-                .getNodeEngine()
-                .getOperationService();
+    private <T> InternalCompletableFuture<T> invokeOnPartition(Operation op) {
+        OperationService opService = ((HazelcastInstanceImpl) instance).node.getNodeEngine().getOperationService();
 
         return opService.invokeOnPartition(op);
     }
 
-    private <V> InternalCompletableFuture<V> invokeOnAddress(Operation op, Address address) {
-        OperationService opService = ((HazelcastInstanceImpl) instance).node
-                .getNodeEngine()
-                .getOperationService();
+    private <T> InternalCompletableFuture<T> invokeOnAddress(Operation op, Address address) {
+        OperationService opService = ((HazelcastInstanceImpl) instance).node.getNodeEngine().getOperationService();
         return opService.invokeOnTarget(op.getServiceName(), op, address);
     }
 

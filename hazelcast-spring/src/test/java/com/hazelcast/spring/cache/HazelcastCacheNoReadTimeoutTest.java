@@ -68,7 +68,7 @@ public class HazelcastCacheNoReadTimeoutTest extends HazelcastTestSupport {
         this.delayNo = cacheManager.getCache("delayNo");
 
         //no timeout
-        ((IMap<?, ?>)this.delayNo.getNativeCache()).addInterceptor(new DelayIMapGetInterceptor(250));
+        ((IMap<?, ?>) this.delayNo.getNativeCache()).addInterceptor(new DelayIMapGetInterceptor(250));
     }
 
     @Test
@@ -81,7 +81,7 @@ public class HazelcastCacheNoReadTimeoutTest extends HazelcastTestSupport {
         String key = createRandomKey();
         long start = System.nanoTime();
         dummyTimeoutBean.getDelayNo(key);
-        long time =  TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
+        long time = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
         assertTrue(time >= 250L);
     }
 

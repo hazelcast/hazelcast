@@ -35,6 +35,7 @@ package com.hazelcast.client.impl.protocol.task.dynamicconfig;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddMultiMapConfigCodec;
 import com.hazelcast.config.EntryListenerConfig;
+import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
@@ -72,6 +73,9 @@ public class AddMultiMapConfigMessageTask extends
                 multiMapConfig.addEntryListenerConfig(entryListenerConfig);
             }
         }
+        MergePolicyConfig mergePolicyConfig = mergePolicyConfig(parameters.mergePolicyExist, parameters.mergePolicy,
+                parameters.mergeBatchSize);
+        multiMapConfig.setMergePolicyConfig(mergePolicyConfig);
         return multiMapConfig;
     }
 

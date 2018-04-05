@@ -119,6 +119,8 @@ public class MapOperationProviderDelegatorTest extends HazelcastTestSupport {
                 parameters[i] = new MapEntries();
             } else if (parameterType.equals(MapEntries[].class)) {
                 parameters[i] = new MapEntries[0];
+            } else if (parameterType.equals(List[].class)) {
+                parameters[i] = new List[0];
             } else {
                 try {
                     parameters[i] = mock(parameterType);

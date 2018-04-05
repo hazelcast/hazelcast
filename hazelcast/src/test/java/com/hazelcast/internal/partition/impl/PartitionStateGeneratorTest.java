@@ -384,12 +384,12 @@ public class PartitionStateGeneratorTest {
         }
         final float r = 2f;
         assertTrue("Too low partition count! \nOwned: " + count + ", Avg: " + average
-                + ", \nPartitionCount: " + partitionCount + ", Replica: " + replica +
-                ", \nOwner: " + owner, count >= (float) (average) / r);
+                + ", \nPartitionCount: " + partitionCount + ", Replica: " + replica
+                + ", \nOwner: " + owner, count >= (float) (average) / r);
 
         assertTrue("Too high partition count! \nOwned: " + count + ", Avg: " + average
-                + ", \nPartitionCount: " + partitionCount + ", Replica: " + replica +
-                ", \nOwner: " + owner, count <= (float) (average) * r);
+                + ", \nPartitionCount: " + partitionCount + ", Replica: " + replica
+                + ", \nOwner: " + owner, count <= (float) (average) * r);
     }
 
     private static void printTable(Map<MemberGroup, GroupPartitionState> groupPartitionStates, int replicaCount) {

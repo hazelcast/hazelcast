@@ -59,6 +59,34 @@ public class GlobalSerializerConfig {
     }
 
     @Override
+    public final boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || !(o instanceof GlobalSerializerConfig)) {
+            return false;
+        }
+
+        GlobalSerializerConfig that = (GlobalSerializerConfig) o;
+
+        if (overrideJavaSerialization != that.overrideJavaSerialization) {
+            return false;
+        }
+        if (className != null ? !className.equals(that.className) : that.className != null) {
+            return false;
+        }
+        return implementation != null ? implementation.equals(that.implementation) : that.implementation == null;
+    }
+
+    @Override
+    public final int hashCode() {
+        int result = className != null ? className.hashCode() : 0;
+        result = 31 * result + (implementation != null ? implementation.hashCode() : 0);
+        result = 31 * result + (overrideJavaSerialization ? 1 : 0);
+        return result;
+    }
+
+    @Override
     public String toString() {
         return "GlobalSerializerConfig{"
                 + "className='" + className + '\''

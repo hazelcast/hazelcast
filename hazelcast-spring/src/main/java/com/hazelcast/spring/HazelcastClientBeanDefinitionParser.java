@@ -20,6 +20,7 @@ import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientAwsConfig;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientConnectionStrategyConfig;
+import com.hazelcast.client.config.ClientFlakeIdGeneratorConfig;
 import com.hazelcast.client.config.ClientIcmpPingConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.config.ClientUserCodeDeploymentConfig;
@@ -35,7 +36,6 @@ import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.PredicateConfig;
 import com.hazelcast.config.QueryCacheConfig;
-import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.SSLConfig;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
@@ -51,6 +51,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.hazelcast.util.StringUtil.upperCaseInternal;
+import static org.springframework.beans.factory.support.BeanDefinitionBuilder.rootBeanDefinition;
 
 /**
  * BeanDefinitionParser for Hazelcast Client Configuration.
@@ -72,41 +73,41 @@ import static com.hazelcast.util.StringUtil.upperCaseInternal;
  */
 public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDefinitionParser {
 
-    private static final int INITIAL_CAPACITY = 10;
-
     @Override
     protected AbstractBeanDefinition parseInternal(Element element, ParserContext parserContext) {
         SpringXmlBuilder springXmlBuilder = new SpringXmlBuilder(parserContext);
-        springXmlBuilder.handleClient(element);
-        return springXmlBuilder.getBeanDefinition();
+        return springXmlBuilder.handleClient(element);
     }
 
-    private class SpringXmlBuilder extends SpringXmlBuilderHelper {
+    /**
+     * Client bean definition builder
+     */
+    public class SpringXmlBuilder extends SpringXmlBuilderHelper {
+
+        private static final int INITIAL_CAPACITY = 10;
 
         private final ParserContext parserContext;
         private final BeanDefinitionBuilder builder;
-        private final ManagedMap<String, BeanDefinition> nearCacheConfigMap;
-        private ManagedMap<String, BeanDefinition> flakeIdGeneratorConfigMap;
+        private final ManagedMap<String, BeanDefinition> nearCacheConfigMap = new ManagedMap<String, BeanDefinition>();
+        private final ManagedMap<String, BeanDefinition> flakeIdGeneratorConfigMap = new ManagedMap<String, BeanDefinition>();
 
         SpringXmlBuilder(ParserContext parserContext) {
-            this.parserContext = parserContext;
-            this.builder = BeanDefinitionBuilder.rootBeanDefinition(HazelcastClient.class);
-            this.builder.setFactoryMethod("newHazelcastClient");
-            this.builder.setDestroyMethodName("shutdown");
-            this.nearCacheConfigMap = new ManagedMap<String, BeanDefinition>();
-            this.flakeIdGeneratorConfigMap = new ManagedMap<String, BeanDefinition>();
+            this(parserContext, rootBeanDefinition(HazelcastClient.class)
+                    .setFactoryMethod("newHazelcastClient")
+                    .setDestroyMethodName("shutdown"));
+        }
 
-            this.configBuilder = BeanDefinitionBuilder.rootBeanDefinition(ClientConfig.class);
+        public SpringXmlBuilder(ParserContext parserContext, BeanDefinitionBuilder builder) {
+            this.parserContext = parserContext;
+            this.builder = builder;
+
+            this.configBuilder = rootBeanDefinition(ClientConfig.class);
             configBuilder.addPropertyValue("nearCacheConfigMap", nearCacheConfigMap);
             configBuilder.addPropertyValue("flakeIdGeneratorConfigMap", flakeIdGeneratorConfigMap);
         }
 
-        AbstractBeanDefinition getBeanDefinition() {
-            return builder.getBeanDefinition();
-        }
-
         @SuppressWarnings("checkstyle:cyclomaticcomplexity")
-        void handleClient(Element element) {
+        public AbstractBeanDefinition handleClient(Element element) {
             handleCommonBeanAttributes(element, builder, parserContext);
             handleClientAttributes(element);
             for (Node node : childElements(element)) {
@@ -144,6 +145,7 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
                 }
             }
             builder.addConstructorArgValue(configBuilder.getBeanDefinition());
+            return builder.getBeanDefinition();
         }
 
         private void handleUserCodeDeployment(Node node) {
@@ -238,8 +240,6 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
                 String name = cleanNodeName(child);
                 if ("properties".equals(name)) {
                     handleProperties(child, sslConfigBuilder);
-                } else if ("host-verification".equals(name)) {
-                    handleHostVerification(child, sslConfigBuilder);
                 }
             }
             networkConfigBuilder.addPropertyValue("SSLConfig", sslConfigBuilder.getBeanDefinition());
@@ -270,7 +270,7 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
         }
 
         private void handleFlakeIdGenerator(Node node) {
-            BeanDefinitionBuilder configBuilder = createBeanBuilder(FlakeIdGeneratorConfig.class);
+            BeanDefinitionBuilder configBuilder = createBeanBuilder(ClientFlakeIdGeneratorConfig.class);
             fillAttributeValues(node, configBuilder);
             String name = getAttribute(node, "name");
             flakeIdGeneratorConfigMap.put(name, configBuilder.getBeanDefinition());

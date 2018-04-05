@@ -56,6 +56,7 @@ import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.query
 import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.strings;
 import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.taskHandlers;
 import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.uuids;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -430,6 +431,8 @@ public class ClientCompatibilityNullTest_1_5 {
         handler.handle(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
      }
 }
+
+
 
 
 
@@ -1714,9 +1717,14 @@ public class ClientCompatibilityNullTest_1_5 {
 {
     ClientMessage clientMessage = MapEventJournalReadCodec.encodeRequest(    aString ,    aLong ,    anInt ,    anInt ,    null ,    null   );
     int length = inputStream.readInt();
-    byte[] bytes = new byte[length];
+    // Since the test is generated for protocol version (1.5) which is earlier than latest change in the message
+    // (version 1.6), only the bytes after frame length fields are compared
+    int frameLength = clientMessage.getFrameLength();
+    assertTrue(frameLength >= length);
+    inputStream.skipBytes(FRAME_LEN_FIELD_SIZE);
+    byte[] bytes = new byte[length - FRAME_LEN_FIELD_SIZE];
     inputStream.read(bytes);
-    assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
+    assertTrue(isEqual(Arrays.copyOfRange(clientMessage.buffer().byteArray(), FRAME_LEN_FIELD_SIZE, length), bytes));
 }
 {
     int length = inputStream.readInt();
@@ -1726,6 +1734,7 @@ public class ClientCompatibilityNullTest_1_5 {
                 assertTrue(isEqual(anInt, params.readCount));
                 assertTrue(isEqual(datas, params.items));
                 assertTrue(isEqual(null, params.itemSeqs));
+                assertFalse(params.nextSeqExist);
 }
 
 
@@ -2116,6 +2125,8 @@ public class ClientCompatibilityNullTest_1_5 {
     MultiMapRemoveEntryCodec.ResponseParameters params = MultiMapRemoveEntryCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
                 assertTrue(isEqual(aBoolean, params.response));
 }
+
+
 
 
 
@@ -3996,6 +4007,8 @@ public class ClientCompatibilityNullTest_1_5 {
 
 
 
+
+
 {
     ClientMessage clientMessage = ReplicatedMapPutCodec.encodeRequest(    aString ,    aData ,    aData ,    aLong   );
     int length = inputStream.readInt();
@@ -5726,9 +5739,14 @@ public class ClientCompatibilityNullTest_1_5 {
 {
     ClientMessage clientMessage = CacheEventJournalReadCodec.encodeRequest(    aString ,    aLong ,    anInt ,    anInt ,    null ,    null   );
     int length = inputStream.readInt();
-    byte[] bytes = new byte[length];
+    // Since the test is generated for protocol version (1.5) which is earlier than latest change in the message
+    // (version 1.6), only the bytes after frame length fields are compared
+    int frameLength = clientMessage.getFrameLength();
+    assertTrue(frameLength >= length);
+    inputStream.skipBytes(FRAME_LEN_FIELD_SIZE);
+    byte[] bytes = new byte[length - FRAME_LEN_FIELD_SIZE];
     inputStream.read(bytes);
-    assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
+    assertTrue(isEqual(Arrays.copyOfRange(clientMessage.buffer().byteArray(), FRAME_LEN_FIELD_SIZE, length), bytes));
 }
 {
     int length = inputStream.readInt();
@@ -5738,6 +5756,7 @@ public class ClientCompatibilityNullTest_1_5 {
                 assertTrue(isEqual(anInt, params.readCount));
                 assertTrue(isEqual(datas, params.items));
                 assertTrue(isEqual(null, params.itemSeqs));
+                assertFalse(params.nextSeqExist);
 }
 
 
@@ -6155,9 +6174,14 @@ public class ClientCompatibilityNullTest_1_5 {
 {
     ClientMessage clientMessage = RingbufferReadManyCodec.encodeRequest(    aString ,    aLong ,    anInt ,    anInt ,    null   );
     int length = inputStream.readInt();
-    byte[] bytes = new byte[length];
+    // Since the test is generated for protocol version (1.5) which is earlier than latest change in the message
+    // (version 1.6), only the bytes after frame length fields are compared
+    int frameLength = clientMessage.getFrameLength();
+    assertTrue(frameLength >= length);
+    inputStream.skipBytes(FRAME_LEN_FIELD_SIZE);
+    byte[] bytes = new byte[length - FRAME_LEN_FIELD_SIZE];
     inputStream.read(bytes);
-    assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
+    assertTrue(isEqual(Arrays.copyOfRange(clientMessage.buffer().byteArray(), FRAME_LEN_FIELD_SIZE, length), bytes));
 }
 {
     int length = inputStream.readInt();
@@ -6167,6 +6191,7 @@ public class ClientCompatibilityNullTest_1_5 {
                 assertTrue(isEqual(anInt, params.readCount));
                 assertTrue(isEqual(datas, params.items));
                 assertTrue(isEqual(null, params.itemSeqs));
+                assertFalse(params.nextSeqExist);
 }
 
 
@@ -6589,11 +6614,16 @@ public class ClientCompatibilityNullTest_1_5 {
 
 
 {
-    ClientMessage clientMessage = DynamicConfigAddMultiMapConfigCodec.encodeRequest(    aString ,    aString ,    null ,    aBoolean ,    anInt ,    anInt ,    aBoolean  ,   aString );
+    ClientMessage clientMessage = DynamicConfigAddMultiMapConfigCodec.encodeRequest(    aString ,    aString ,    null ,    aBoolean ,    anInt ,    anInt ,    aBoolean ,    null ,    aString ,    anInt   );
     int length = inputStream.readInt();
-    byte[] bytes = new byte[length];
+    // Since the test is generated for protocol version (1.5) which is earlier than latest change in the message
+    // (version 1.6), only the bytes after frame length fields are compared
+    int frameLength = clientMessage.getFrameLength();
+    assertTrue(frameLength >= length);
+    inputStream.skipBytes(FRAME_LEN_FIELD_SIZE);
+    byte[] bytes = new byte[length - FRAME_LEN_FIELD_SIZE];
     inputStream.read(bytes);
-    assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
+    assertTrue(isEqual(Arrays.copyOfRange(clientMessage.buffer().byteArray(), FRAME_LEN_FIELD_SIZE, length), bytes));
 }
 {
     int length = inputStream.readInt();
@@ -6604,11 +6634,16 @@ public class ClientCompatibilityNullTest_1_5 {
 
 
 {
-    ClientMessage clientMessage = DynamicConfigAddRingbufferConfigCodec.encodeRequest(    aString ,    anInt ,    anInt ,    anInt ,    anInt ,    aString ,    null ,   aString  );
+    ClientMessage clientMessage = DynamicConfigAddRingbufferConfigCodec.encodeRequest(    aString ,    anInt ,    anInt ,    anInt ,    anInt ,    aString ,    null ,    null ,    aString ,    anInt   );
     int length = inputStream.readInt();
-    byte[] bytes = new byte[length];
+    // Since the test is generated for protocol version (1.5) which is earlier than latest change in the message
+    // (version 1.6), only the bytes after frame length fields are compared
+    int frameLength = clientMessage.getFrameLength();
+    assertTrue(frameLength >= length);
+    inputStream.skipBytes(FRAME_LEN_FIELD_SIZE);
+    byte[] bytes = new byte[length - FRAME_LEN_FIELD_SIZE];
     inputStream.read(bytes);
-    assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
+    assertTrue(isEqual(Arrays.copyOfRange(clientMessage.buffer().byteArray(), FRAME_LEN_FIELD_SIZE, length), bytes));
 }
 {
     int length = inputStream.readInt();
@@ -6619,11 +6654,16 @@ public class ClientCompatibilityNullTest_1_5 {
 
 
 {
-    ClientMessage clientMessage = DynamicConfigAddCardinalityEstimatorConfigCodec.encodeRequest(    aString ,    anInt ,    anInt ,   aString  );
+    ClientMessage clientMessage = DynamicConfigAddCardinalityEstimatorConfigCodec.encodeRequest(    aString ,    anInt ,    anInt ,    null ,    aString ,    anInt   );
     int length = inputStream.readInt();
-    byte[] bytes = new byte[length];
+    // Since the test is generated for protocol version (1.5) which is earlier than latest change in the message
+    // (version 1.6), only the bytes after frame length fields are compared
+    int frameLength = clientMessage.getFrameLength();
+    assertTrue(frameLength >= length);
+    inputStream.skipBytes(FRAME_LEN_FIELD_SIZE);
+    byte[] bytes = new byte[length - FRAME_LEN_FIELD_SIZE];
     inputStream.read(bytes);
-    assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
+    assertTrue(isEqual(Arrays.copyOfRange(clientMessage.buffer().byteArray(), FRAME_LEN_FIELD_SIZE, length), bytes));
 }
 {
     int length = inputStream.readInt();
@@ -6649,11 +6689,16 @@ public class ClientCompatibilityNullTest_1_5 {
 
 
 {
-    ClientMessage clientMessage = DynamicConfigAddListConfigCodec.encodeRequest(    aString ,    null ,    anInt ,    anInt ,    anInt ,    aBoolean ,   aString  );
+    ClientMessage clientMessage = DynamicConfigAddListConfigCodec.encodeRequest(    aString ,    null ,    anInt ,    anInt ,    anInt ,    aBoolean ,    null ,    aString ,    anInt   );
     int length = inputStream.readInt();
-    byte[] bytes = new byte[length];
+    // Since the test is generated for protocol version (1.5) which is earlier than latest change in the message
+    // (version 1.6), only the bytes after frame length fields are compared
+    int frameLength = clientMessage.getFrameLength();
+    assertTrue(frameLength >= length);
+    inputStream.skipBytes(FRAME_LEN_FIELD_SIZE);
+    byte[] bytes = new byte[length - FRAME_LEN_FIELD_SIZE];
     inputStream.read(bytes);
-    assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
+    assertTrue(isEqual(Arrays.copyOfRange(clientMessage.buffer().byteArray(), FRAME_LEN_FIELD_SIZE, length), bytes));
 }
 {
     int length = inputStream.readInt();
@@ -6664,11 +6709,16 @@ public class ClientCompatibilityNullTest_1_5 {
 
 
 {
-    ClientMessage clientMessage = DynamicConfigAddSetConfigCodec.encodeRequest(    aString ,    null ,    anInt ,    anInt ,    anInt ,    aBoolean ,   aString  );
+    ClientMessage clientMessage = DynamicConfigAddSetConfigCodec.encodeRequest(    aString ,    null ,    anInt ,    anInt ,    anInt ,    aBoolean ,    null ,    aString ,    anInt   );
     int length = inputStream.readInt();
-    byte[] bytes = new byte[length];
+    // Since the test is generated for protocol version (1.5) which is earlier than latest change in the message
+    // (version 1.6), only the bytes after frame length fields are compared
+    int frameLength = clientMessage.getFrameLength();
+    assertTrue(frameLength >= length);
+    inputStream.skipBytes(FRAME_LEN_FIELD_SIZE);
+    byte[] bytes = new byte[length - FRAME_LEN_FIELD_SIZE];
     inputStream.read(bytes);
-    assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
+    assertTrue(isEqual(Arrays.copyOfRange(clientMessage.buffer().byteArray(), FRAME_LEN_FIELD_SIZE, length), bytes));
 }
 {
     int length = inputStream.readInt();
@@ -6679,11 +6729,16 @@ public class ClientCompatibilityNullTest_1_5 {
 
 
 {
-    ClientMessage clientMessage = DynamicConfigAddReplicatedMapConfigCodec.encodeRequest(    aString ,    aString ,    aBoolean ,    aBoolean ,    aString ,    null ,   aString  );
+    ClientMessage clientMessage = DynamicConfigAddReplicatedMapConfigCodec.encodeRequest(    aString ,    aString ,    aBoolean ,    aBoolean ,    aString ,    null ,    null ,    anInt   );
     int length = inputStream.readInt();
-    byte[] bytes = new byte[length];
+    // Since the test is generated for protocol version (1.5) which is earlier than latest change in the message
+    // (version 1.6), only the bytes after frame length fields are compared
+    int frameLength = clientMessage.getFrameLength();
+    assertTrue(frameLength >= length);
+    inputStream.skipBytes(FRAME_LEN_FIELD_SIZE);
+    byte[] bytes = new byte[length - FRAME_LEN_FIELD_SIZE];
     inputStream.read(bytes);
-    assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
+    assertTrue(isEqual(Arrays.copyOfRange(clientMessage.buffer().byteArray(), FRAME_LEN_FIELD_SIZE, length), bytes));
 }
 {
     int length = inputStream.readInt();
@@ -6709,11 +6764,16 @@ public class ClientCompatibilityNullTest_1_5 {
 
 
 {
-    ClientMessage clientMessage = DynamicConfigAddExecutorConfigCodec.encodeRequest(    aString ,    anInt ,    anInt ,    aBoolean ,   aString  );
+    ClientMessage clientMessage = DynamicConfigAddExecutorConfigCodec.encodeRequest(    aString ,    anInt ,    anInt ,    aBoolean ,    null   );
     int length = inputStream.readInt();
-    byte[] bytes = new byte[length];
+    // Since the test is generated for protocol version (1.5) which is earlier than latest change in the message
+    // (version 1.6), only the bytes after frame length fields are compared
+    int frameLength = clientMessage.getFrameLength();
+    assertTrue(frameLength >= length);
+    inputStream.skipBytes(FRAME_LEN_FIELD_SIZE);
+    byte[] bytes = new byte[length - FRAME_LEN_FIELD_SIZE];
     inputStream.read(bytes);
-    assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
+    assertTrue(isEqual(Arrays.copyOfRange(clientMessage.buffer().byteArray(), FRAME_LEN_FIELD_SIZE, length), bytes));
 }
 {
     int length = inputStream.readInt();
@@ -6724,11 +6784,16 @@ public class ClientCompatibilityNullTest_1_5 {
 
 
 {
-    ClientMessage clientMessage = DynamicConfigAddDurableExecutorConfigCodec.encodeRequest(    aString ,    anInt ,    anInt ,    anInt ,     aString  );
+    ClientMessage clientMessage = DynamicConfigAddDurableExecutorConfigCodec.encodeRequest(    aString ,    anInt ,    anInt ,    anInt ,    null   );
     int length = inputStream.readInt();
-    byte[] bytes = new byte[length];
+    // Since the test is generated for protocol version (1.5) which is earlier than latest change in the message
+    // (version 1.6), only the bytes after frame length fields are compared
+    int frameLength = clientMessage.getFrameLength();
+    assertTrue(frameLength >= length);
+    inputStream.skipBytes(FRAME_LEN_FIELD_SIZE);
+    byte[] bytes = new byte[length - FRAME_LEN_FIELD_SIZE];
     inputStream.read(bytes);
-    assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
+    assertTrue(isEqual(Arrays.copyOfRange(clientMessage.buffer().byteArray(), FRAME_LEN_FIELD_SIZE, length), bytes));
 }
 {
     int length = inputStream.readInt();
@@ -6739,11 +6804,16 @@ public class ClientCompatibilityNullTest_1_5 {
 
 
 {
-    ClientMessage clientMessage = DynamicConfigAddScheduledExecutorConfigCodec.encodeRequest(    aString ,    anInt ,    anInt ,    anInt ,     aString  );
+    ClientMessage clientMessage = DynamicConfigAddScheduledExecutorConfigCodec.encodeRequest(    aString ,    anInt ,    anInt ,    anInt ,    null ,    aString ,    anInt   );
     int length = inputStream.readInt();
-    byte[] bytes = new byte[length];
+    // Since the test is generated for protocol version (1.5) which is earlier than latest change in the message
+    // (version 1.6), only the bytes after frame length fields are compared
+    int frameLength = clientMessage.getFrameLength();
+    assertTrue(frameLength >= length);
+    inputStream.skipBytes(FRAME_LEN_FIELD_SIZE);
+    byte[] bytes = new byte[length - FRAME_LEN_FIELD_SIZE];
     inputStream.read(bytes);
-    assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
+    assertTrue(isEqual(Arrays.copyOfRange(clientMessage.buffer().byteArray(), FRAME_LEN_FIELD_SIZE, length), bytes));
 }
 {
     int length = inputStream.readInt();
@@ -6754,11 +6824,16 @@ public class ClientCompatibilityNullTest_1_5 {
 
 
 {
-    ClientMessage clientMessage = DynamicConfigAddSemaphoreConfigCodec.encodeRequest(    aString ,    anInt ,    anInt ,    anInt ,     aString  );
+    ClientMessage clientMessage = DynamicConfigAddSemaphoreConfigCodec.encodeRequest(    aString ,    anInt ,    anInt ,    anInt ,    null   );
     int length = inputStream.readInt();
-    byte[] bytes = new byte[length];
+    // Since the test is generated for protocol version (1.5) which is earlier than latest change in the message
+    // (version 1.6), only the bytes after frame length fields are compared
+    int frameLength = clientMessage.getFrameLength();
+    assertTrue(frameLength >= length);
+    inputStream.skipBytes(FRAME_LEN_FIELD_SIZE);
+    byte[] bytes = new byte[length - FRAME_LEN_FIELD_SIZE];
     inputStream.read(bytes);
-    assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
+    assertTrue(isEqual(Arrays.copyOfRange(clientMessage.buffer().byteArray(), FRAME_LEN_FIELD_SIZE, length), bytes));
 }
 {
     int length = inputStream.readInt();
@@ -6769,53 +6844,16 @@ public class ClientCompatibilityNullTest_1_5 {
 
 
 {
-    ClientMessage clientMessage = DynamicConfigAddAtomicLongConfigCodec.encodeRequest(    aString ,    aString  );
+    ClientMessage clientMessage = DynamicConfigAddQueueConfigCodec.encodeRequest(    aString ,    null ,    anInt ,    anInt ,    anInt ,    anInt ,    aBoolean ,    null ,    null ,    aString ,    anInt   );
     int length = inputStream.readInt();
-    byte[] bytes = new byte[length];
+    // Since the test is generated for protocol version (1.5) which is earlier than latest change in the message
+    // (version 1.6), only the bytes after frame length fields are compared
+    int frameLength = clientMessage.getFrameLength();
+    assertTrue(frameLength >= length);
+    inputStream.skipBytes(FRAME_LEN_FIELD_SIZE);
+    byte[] bytes = new byte[length - FRAME_LEN_FIELD_SIZE];
     inputStream.read(bytes);
-    assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-}
-{
-    int length = inputStream.readInt();
-    byte[] bytes = new byte[length];
-    inputStream.read(bytes);
-    DynamicConfigAddAtomicLongConfigCodec.ResponseParameters params = DynamicConfigAddAtomicLongConfigCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-}
-
-{
-    ClientMessage clientMessage = DynamicConfigAddAtomicReferenceConfigCodec.encodeRequest(    aString ,    aString  );
-    int length = inputStream.readInt();
-    byte[] bytes = new byte[length];
-    inputStream.read(bytes);
-    assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-}
-{
-    int length = inputStream.readInt();
-    byte[] bytes = new byte[length];
-    inputStream.read(bytes);
-    DynamicConfigAddAtomicReferenceConfigCodec.ResponseParameters params = DynamicConfigAddAtomicReferenceConfigCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-}
-
-{
-    ClientMessage clientMessage = DynamicConfigAddCountDownLatchConfigCodec.encodeRequest(    aString ,    aString  );
-    int length = inputStream.readInt();
-    byte[] bytes = new byte[length];
-    inputStream.read(bytes);
-    assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-}
-{
-    int length = inputStream.readInt();
-    byte[] bytes = new byte[length];
-    inputStream.read(bytes);
-    DynamicConfigAddCountDownLatchConfigCodec.ResponseParameters params = DynamicConfigAddCountDownLatchConfigCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-}
-
-{
-    ClientMessage clientMessage = DynamicConfigAddQueueConfigCodec.encodeRequest(    aString ,    null ,    anInt ,    anInt ,    anInt ,    anInt ,    aBoolean ,    null ,    null   );
-    int length = inputStream.readInt();
-    byte[] bytes = new byte[length];
-    inputStream.read(bytes);
-    assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
+    assertTrue(isEqual(Arrays.copyOfRange(clientMessage.buffer().byteArray(), FRAME_LEN_FIELD_SIZE, length), bytes));
 }
 {
     int length = inputStream.readInt();
@@ -6826,11 +6864,16 @@ public class ClientCompatibilityNullTest_1_5 {
 
 
 {
-    ClientMessage clientMessage = DynamicConfigAddMapConfigCodec.encodeRequest(    aString ,    anInt ,    anInt ,    anInt ,    anInt ,    aString ,    aBoolean ,    aString ,    aString ,    aString ,    null ,    null ,    aBoolean ,    null ,    null ,    aString ,    anInt ,    null ,    null ,    null ,    null ,    null ,    null ,    null ,    null ,    null   );
+    ClientMessage clientMessage = DynamicConfigAddMapConfigCodec.encodeRequest(    aString ,    anInt ,    anInt ,    anInt ,    anInt ,    aString ,    aBoolean ,    aString ,    aString ,    aString ,    null ,    null ,    aBoolean ,    null ,    null ,    aString ,    anInt ,    null ,    null ,    null ,    null ,    null ,    null ,    null ,    null ,    null ,    anInt   );
     int length = inputStream.readInt();
-    byte[] bytes = new byte[length];
+    // Since the test is generated for protocol version (1.5) which is earlier than latest change in the message
+    // (version 1.6), only the bytes after frame length fields are compared
+    int frameLength = clientMessage.getFrameLength();
+    assertTrue(frameLength >= length);
+    inputStream.skipBytes(FRAME_LEN_FIELD_SIZE);
+    byte[] bytes = new byte[length - FRAME_LEN_FIELD_SIZE];
     inputStream.read(bytes);
-    assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
+    assertTrue(isEqual(Arrays.copyOfRange(clientMessage.buffer().byteArray(), FRAME_LEN_FIELD_SIZE, length), bytes));
 }
 {
     int length = inputStream.readInt();
@@ -6883,6 +6926,26 @@ public class ClientCompatibilityNullTest_1_5 {
     inputStream.read(bytes);
     DynamicConfigAddEventJournalConfigCodec.ResponseParameters params = DynamicConfigAddEventJournalConfigCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

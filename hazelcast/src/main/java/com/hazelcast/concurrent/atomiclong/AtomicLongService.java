@@ -19,10 +19,7 @@ package com.hazelcast.concurrent.atomiclong;
 import com.hazelcast.concurrent.atomiclong.operations.AtomicLongReplicationOperation;
 import com.hazelcast.concurrent.atomiclong.operations.MergeOperation;
 import com.hazelcast.config.AtomicLongConfig;
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.internal.cluster.Versions;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.NodeEngine;
@@ -32,29 +29,25 @@ import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.spi.QuorumAwareService;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.SplitBrainHandlerService;
-import com.hazelcast.spi.SplitBrainMergePolicy;
-import com.hazelcast.spi.merge.DiscardMergePolicy;
-import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
+import com.hazelcast.spi.impl.merge.AbstractContainerMerger;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.partition.MigrationEndpoint;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ContextMutexFactory;
 
-import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.Semaphore;
-import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.internal.config.ConfigValidator.checkBasicConfig;
 import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getPartitionKey;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
 
 public class AtomicLongService
         implements ManagedService, RemoteService, MigrationAwareService, QuorumAwareService, SplitBrainHandlerService {
@@ -67,7 +60,7 @@ public class AtomicLongService
     private final ConstructorFunction<String, AtomicLongContainer> atomicLongConstructorFunction =
             new ConstructorFunction<String, AtomicLongContainer>() {
                 public AtomicLongContainer createNew(String key) {
-                    return new AtomicLongContainer(key, nodeEngine);
+                    return new AtomicLongContainer();
                 }
             };
 
@@ -85,7 +78,6 @@ public class AtomicLongService
     };
 
     private NodeEngine nodeEngine;
-    private SplitBrainMergePolicyProvider mergePolicyProvider;
 
     public AtomicLongService() {
     }
@@ -101,7 +93,6 @@ public class AtomicLongService
     @Override
     public void init(NodeEngine nodeEngine, Properties properties) {
         this.nodeEngine = nodeEngine;
-        this.mergePolicyProvider = nodeEngine.getSplitBrainMergePolicyProvider();
     }
 
     @Override
@@ -116,6 +107,9 @@ public class AtomicLongService
 
     @Override
     public AtomicLongProxy createDistributedObject(String name) {
+        AtomicLongConfig atomicLongConfig = nodeEngine.getConfig().findAtomicLongConfig(name);
+        checkBasicConfig(atomicLongConfig);
+
         return new AtomicLongProxy(name, nodeEngine, this);
     }
 
@@ -196,96 +190,38 @@ public class AtomicLongService
 
     @Override
     public Runnable prepareMergeRunnable() {
-        IPartitionService partitionService = nodeEngine.getPartitionService();
-        Map<Integer, List<AtomicLongContainer>> containerMap = new HashMap<Integer, List<AtomicLongContainer>>();
-
-        for (Map.Entry<String, AtomicLongContainer> entry : containers.entrySet()) {
-            AtomicLongContainer container = entry.getValue();
-            if (!(getMergePolicy(container) instanceof DiscardMergePolicy)) {
-                String name = entry.getKey();
-                int partitionId = partitionService.getPartitionId(StringPartitioningStrategy.getPartitionKey(name));
-                if (partitionService.isPartitionOwner(partitionId)) {
-                    // add your owned values to the map so they will be merged
-                    List<AtomicLongContainer> containerList = containerMap.get(partitionId);
-                    if (containerList == null) {
-                        containerList = new ArrayList<AtomicLongContainer>(containers.size());
-                        containerMap.put(partitionId, containerList);
-                    }
-                    containerList.add(container);
-                }
-            }
-        }
-        containers.clear();
-
-        return new Merger(containerMap);
+        AtomicLongContainerCollector collector = new AtomicLongContainerCollector(nodeEngine, containers);
+        collector.run();
+        return new Merger(collector);
     }
 
-    private SplitBrainMergePolicy getMergePolicy(AtomicLongContainer container) {
-        String mergePolicyName = container.getConfig().getMergePolicyConfig().getPolicy();
-        return mergePolicyProvider.getMergePolicy(mergePolicyName);
-    }
+    private class Merger extends AbstractContainerMerger<AtomicLongContainer> {
 
-    private class Merger implements Runnable {
-
-        private static final int TIMEOUT_FACTOR = 500;
-
-        private final Map<Integer, List<AtomicLongContainer>> containerMap;
-
-        Merger(Map<Integer, List<AtomicLongContainer>> containerMap) {
-            this.containerMap = containerMap;
+        Merger(AtomicLongContainerCollector collector) {
+            super(collector, nodeEngine);
         }
 
         @Override
-        public void run() {
-            final ILogger logger = nodeEngine.getLogger(AtomicLongService.class);
-            final Semaphore semaphore = new Semaphore(0);
+        protected String getLabel() {
+            return "AtomicLong";
+        }
 
-            ExecutionCallback<Object> mergeCallback = new ExecutionCallback<Object>() {
-                @Override
-                public void onResponse(Object response) {
-                    semaphore.release(1);
-                }
-
-                @Override
-                public void onFailure(Throwable t) {
-                    logger.warning("Error while running merge operation: " + t.getMessage());
-                    semaphore.release(1);
-                }
-            };
-
-            // we cannot merge into a 3.9 cluster, since not all members may understand the MergeOperation
-            if (nodeEngine.getClusterService().getClusterVersion().isLessThan(Versions.V3_10)) {
-                logger.info("Cluster needs to run version " + Versions.V3_10 + " to merge AtomicLong instances");
-                return;
-            }
-
-            int valueCount = 0;
-            for (Map.Entry<Integer, List<AtomicLongContainer>> entry : containerMap.entrySet()) {
+        @Override
+        public void runInternal() {
+            AtomicLongContainerCollector collector = (AtomicLongContainerCollector) this.collector;
+            for (Map.Entry<Integer, Collection<AtomicLongContainer>> entry : collector.getCollectedContainers().entrySet()) {
                 // TODO: add batching (which is a bit complex, since AtomicLong is a single-value data structure,
                 // so we need an operation for multiple AtomicLong instances, which doesn't exist so far)
                 int partitionId = entry.getKey();
-                List<AtomicLongContainer> containerList = entry.getValue();
+                Collection<AtomicLongContainer> containerList = entry.getValue();
 
                 for (AtomicLongContainer container : containerList) {
-                    String name = container.getName();
-                    valueCount++;
+                    String name = collector.getContainerName(container);
+                    SplitBrainMergePolicy mergePolicy = getMergePolicy(collector.getMergePolicyConfig(container));
 
-                    MergeOperation operation = new MergeOperation(name, getMergePolicy(container), container.get());
-                    try {
-                        nodeEngine.getOperationService()
-                                .invokeOnPartition(SERVICE_NAME, operation, partitionId)
-                                .andThen(mergeCallback);
-                    } catch (Throwable t) {
-                        throw rethrow(t);
-                    }
+                    MergeOperation operation = new MergeOperation(name, mergePolicy, container.get());
+                    invoke(SERVICE_NAME, operation, partitionId);
                 }
-            }
-            containerMap.clear();
-
-            try {
-                semaphore.tryAcquire(valueCount, valueCount * TIMEOUT_FACTOR, TimeUnit.MILLISECONDS);
-            } catch (InterruptedException e) {
-                logger.finest("Interrupted while waiting for merge operation...");
             }
         }
     }

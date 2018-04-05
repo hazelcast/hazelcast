@@ -82,7 +82,7 @@ public class ReplicatedMapPortableEntryEvent implements Portable {
     public void writePortable(PortableWriter writer) throws IOException {
         writer.writeInt("e", eventType.getType());
         writer.writeUTF("u", uuid);
-        final ObjectDataOutput out = writer.getRawDataOutput();
+        ObjectDataOutput out = writer.getRawDataOutput();
         out.writeData(key);
         out.writeData(value);
         out.writeData(oldValue);
@@ -92,7 +92,7 @@ public class ReplicatedMapPortableEntryEvent implements Portable {
     public void readPortable(PortableReader reader) throws IOException {
         eventType = EntryEventType.getByType(reader.readInt("e"));
         uuid = reader.readUTF("u");
-        final ObjectDataInput in = reader.getRawDataInput();
+        ObjectDataInput in = reader.getRawDataInput();
         key = in.readData();
         value = in.readData();
         oldValue = in.readData();

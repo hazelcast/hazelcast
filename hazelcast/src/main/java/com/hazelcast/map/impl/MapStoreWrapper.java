@@ -64,7 +64,6 @@ public class MapStoreWrapper implements MapStore, MapLoaderLifecycleSupport {
         this.mapStore = store;
     }
 
-
     public MapStore getMapStore() {
         return mapStore;
     }

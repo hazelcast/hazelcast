@@ -21,7 +21,8 @@ import com.hazelcast.scheduledexecutor.impl.ScheduledExecutorDataSerializerHook;
 import com.hazelcast.spi.impl.MutatingOperation;
 
 public class ShutdownOperation
-        extends AbstractSchedulerOperation implements MutatingOperation {
+        extends AbstractSchedulerOperation
+        implements MutatingOperation {
 
     public ShutdownOperation() {
     }

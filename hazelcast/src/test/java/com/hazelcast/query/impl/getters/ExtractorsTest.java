@@ -51,7 +51,7 @@ public class ExtractorsTest {
     public static Collection<Object[]> parameters() {
         return asList(new Object[][]{
                 {false},
-                {true}
+                {true},
         });
     }
 
@@ -88,7 +88,8 @@ public class ExtractorsTest {
     @Test
     public void getGetter_extractor_cachingWorks() {
         // GIVEN
-        MapAttributeConfig config = new MapAttributeConfig("gimmePower", "com.hazelcast.query.impl.getters.ExtractorsTest$PowerExtractor");
+        MapAttributeConfig config
+                = new MapAttributeConfig("gimmePower", "com.hazelcast.query.impl.getters.ExtractorsTest$PowerExtractor");
         Extractors extractors = new Extractors(singletonList(config), useClassloader ? this.getClass().getClassLoader() : null);
 
         // WHEN
@@ -103,7 +104,8 @@ public class ExtractorsTest {
     @Test
     public void extract_extractor_correctValue() {
         // GIVEN
-        MapAttributeConfig config = new MapAttributeConfig("gimmePower", "com.hazelcast.query.impl.getters.ExtractorsTest$PowerExtractor");
+        MapAttributeConfig config
+                = new MapAttributeConfig("gimmePower", "com.hazelcast.query.impl.getters.ExtractorsTest$PowerExtractor");
         Extractors extractors = new Extractors(singletonList(config), useClassloader ? this.getClass().getClassLoader() : null);
 
         // WHEN

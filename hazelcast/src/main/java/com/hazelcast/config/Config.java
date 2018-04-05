@@ -20,6 +20,7 @@ import com.hazelcast.config.matcher.MatchingPointConfigPatternMatcher;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
+import com.hazelcast.internal.journal.EventJournal;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
@@ -128,6 +129,8 @@ public class Config {
     private final Map<String, AtomicReferenceConfig> atomicReferenceConfigs
             = new ConcurrentHashMap<String, AtomicReferenceConfig>();
 
+    private final Map<String, PNCounterConfig> pnCounterConfigs = new ConcurrentHashMap<String, PNCounterConfig>();
+
     private ServicesConfig servicesConfig = new ServicesConfig();
 
     private SecurityConfig securityConfig = new SecurityConfig();
@@ -151,6 +154,8 @@ public class Config {
     private HotRestartPersistenceConfig hotRestartPersistenceConfig = new HotRestartPersistenceConfig();
 
     private UserCodeDeploymentConfig userCodeDeploymentConfig = new UserCodeDeploymentConfig();
+
+    private CRDTReplicationConfig crdtReplicationConfig = new CRDTReplicationConfig();
 
     private String licenseKey;
 
@@ -224,6 +229,8 @@ public class Config {
      * @param name property name
      * @return property value
      * @see #setProperty(String, String)
+     * @see <a href="http://docs.hazelcast.org/docs/latest/manual/html-single/index.html#system-properties">
+     *     Hazelcast System Properties</a>
      */
     public String getProperty(String name) {
         String value = properties.getProperty(name);
@@ -236,6 +243,8 @@ public class Config {
      * @param name  property name
      * @param value value of the property
      * @return this config instance
+     * @see <a href="http://docs.hazelcast.org/docs/latest/manual/html-single/index.html#system-properties">
+     *     Hazelcast System Properties</a>
      */
     public Config setProperty(String name, String value) {
         properties.put(name, value);
@@ -2054,6 +2063,32 @@ public class Config {
     }
 
     /**
+     * Returns a read-only {@link PNCounterConfig}
+     * configuration for the given name.
+     * <p>
+     * The name is matched by pattern to the configuration and by stripping the
+     * partition ID qualifier from the given {@code name}.
+     * If there is no config found by the name, it will return the configuration
+     * with the name {@code default}.
+     *
+     * @param name name of the PN counter config
+     * @return the PN counter configuration
+     * @throws ConfigurationException if ambiguous configurations are found
+     * @see StringPartitioningStrategy#getBaseName(java.lang.String)
+     * @see #setConfigPatternMatcher(ConfigPatternMatcher)
+     * @see #getConfigPatternMatcher()
+     * @see EvictionConfig#setSize(int)
+     */
+    public PNCounterConfig findPNCounterConfig(String name) {
+        name = getBaseName(name);
+        PNCounterConfig config = lookupByPattern(configPatternMatcher, pnCounterConfigs, name);
+        if (config != null) {
+            return config.getAsReadOnly();
+        }
+        return getPNCounterConfig("default").getAsReadOnly();
+    }
+
+    /**
      * Returns the ExecutorConfig for the given name, creating one
      * if necessary and adding it to the collection of known configurations.
      * <p>
@@ -2237,6 +2272,52 @@ public class Config {
     }
 
     /**
+     * Returns the {@link PNCounterConfig} for the given name, creating one
+     * if necessary and adding it to the collection of known configurations.
+     * <p>
+     * The configuration is found by matching the the configuration name
+     * pattern to the provided {@code name} without the partition qualifier
+     * (the part of the name after {@code '@'}).
+     * If no configuration matches, it will create one by cloning the
+     * {@code "default"} configuration and add it to the configuration
+     * collection.
+     * <p>
+     * This method is intended to easily and fluently create and add
+     * configurations more specific than the default configuration without
+     * explicitly adding it by invoking
+     * {@link #addPNCounterConfig(PNCounterConfig)}.
+     * <p>
+     * Because it adds new configurations if they are not already present,
+     * this method is intended to be used before this config is used to
+     * create a hazelcast instance. Afterwards, newly added configurations
+     * may be ignored.
+     *
+     * @param name name of the PN counter config
+     * @return the PN counter configuration
+     * @throws ConfigurationException if ambiguous configurations are found
+     * @see StringPartitioningStrategy#getBaseName(java.lang.String)
+     * @see #setConfigPatternMatcher(ConfigPatternMatcher)
+     * @see #getConfigPatternMatcher()
+     */
+    public PNCounterConfig getPNCounterConfig(String name) {
+        name = getBaseName(name);
+        PNCounterConfig config = lookupByPattern(configPatternMatcher, pnCounterConfigs, name);
+        if (config != null) {
+            return config;
+        }
+        PNCounterConfig defConfig = pnCounterConfigs.get("default");
+        if (defConfig == null) {
+            defConfig = new PNCounterConfig();
+            defConfig.setName("default");
+            addPNCounterConfig(defConfig);
+        }
+        config = new PNCounterConfig(defConfig);
+        config.setName(name);
+        addPNCounterConfig(config);
+        return config;
+    }
+
+    /**
      * Adds the executor configuration. The configuration is saved under
      * the config name, which may be a pattern with which the configuration
      * will be obtained in the future.
@@ -2285,6 +2366,19 @@ public class Config {
      */
     public Config addCardinalityEstimatorConfig(CardinalityEstimatorConfig cardinalityEstimatorConfig) {
         this.cardinalityEstimatorConfigs.put(cardinalityEstimatorConfig.getName(), cardinalityEstimatorConfig);
+        return this;
+    }
+
+    /**
+     * Adds the PN counter configuration. The configuration is
+     * saved under the config name, which may be a pattern with which the
+     * configuration will be obtained in the future.
+     *
+     * @param pnCounterConfig PN counter config to add
+     * @return this config instance
+     */
+    public Config addPNCounterConfig(PNCounterConfig pnCounterConfig) {
+        this.pnCounterConfigs.put(pnCounterConfig.getName(), pnCounterConfig);
         return this;
     }
 
@@ -2397,6 +2491,34 @@ public class Config {
         this.cardinalityEstimatorConfigs.clear();
         this.cardinalityEstimatorConfigs.putAll(cardinalityEstimatorConfigs);
         for (Entry<String, CardinalityEstimatorConfig> entry : cardinalityEstimatorConfigs.entrySet()) {
+            entry.getValue().setName(entry.getKey());
+        }
+        return this;
+    }
+
+    /**
+     * Returns the map of PN counter configurations, mapped by config
+     * name. The config name may be a pattern with which the configuration was
+     * initially obtained.
+     *
+     * @return the PN counter configurations mapped by config name
+     */
+    public Map<String, PNCounterConfig> getPNCounterConfigs() {
+        return pnCounterConfigs;
+    }
+
+    /**
+     * Sets the map of PN counter configurations, mapped by config name.
+     * The config name may be a pattern with which the configuration will be
+     * obtained in the future.
+     *
+     * @param pnCounterConfigs the PN counter configuration map to set
+     * @return this config instance
+     */
+    public Config setPNCounterConfigs(Map<String, PNCounterConfig> pnCounterConfigs) {
+        this.pnCounterConfigs.clear();
+        this.pnCounterConfigs.putAll(pnCounterConfigs);
+        for (Entry<String, PNCounterConfig> entry : pnCounterConfigs.entrySet()) {
             entry.getValue().setName(entry.getKey());
         }
         return this;
@@ -2904,7 +3026,7 @@ public class Config {
     }
 
     /**
-     * Returns a read-only map {@link com.hazelcast.journal.EventJournal}
+     * Returns a read-only map {@link EventJournal}
      * configuration for the given name.
      * <p>
      * The name is matched by pattern to the configuration and by stripping the
@@ -2930,7 +3052,7 @@ public class Config {
     }
 
     /**
-     * Returns a read-only cache {@link com.hazelcast.journal.EventJournal}
+     * Returns a read-only cache {@link EventJournal}
      * configuration for the given name.
      * <p>
      * The name is matched by pattern to the configuration and by stripping the
@@ -3313,6 +3435,24 @@ public class Config {
         return this;
     }
 
+    public CRDTReplicationConfig getCRDTReplicationConfig() {
+        return crdtReplicationConfig;
+    }
+
+    /**
+     * Sets the replication configuration for {@link com.hazelcast.crdt.CRDT}
+     * implementations.
+     *
+     * @param crdtReplicationConfig the replication configuration
+     * @return this config instance
+     * @throws NullPointerException if the {@code crdtReplicationConfig} parameter is {@code null}
+     */
+    public Config setCRDTReplicationConfig(CRDTReplicationConfig crdtReplicationConfig) {
+        checkNotNull(crdtReplicationConfig, "The CRDT replication config cannot be null!");
+        this.crdtReplicationConfig = crdtReplicationConfig;
+        return this;
+    }
+
     /**
      * Returns the external managed context. This context is used to
      * initialize user supplied objects.
@@ -3526,6 +3666,7 @@ public class Config {
                 + ", managementCenterConfig=" + managementCenterConfig
                 + ", securityConfig=" + securityConfig
                 + ", liteMember=" + liteMember
+                + ", crdtReplicationConfig=" + crdtReplicationConfig
                 + '}';
     }
 }

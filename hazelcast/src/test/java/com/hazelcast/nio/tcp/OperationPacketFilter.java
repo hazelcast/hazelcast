@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,11 +35,11 @@ public abstract class OperationPacketFilter implements PacketFilter {
     }
 
     @Override
-    public final boolean allow(Packet packet, Address endpoint) {
-        return packet.getPacketType() != Packet.Type.OPERATION || allowOperation(packet, endpoint);
+    public final Action filter(Packet packet, Address endpoint) {
+        return packet.getPacketType() != Packet.Type.OPERATION ? Action.ALLOW : filterOperation(packet, endpoint);
     }
 
-    private boolean allowOperation(Packet packet, Address endpoint) {
+    private Action filterOperation(Packet packet, Address endpoint) {
         try {
             ObjectDataInput input = serializationService.createObjectDataInput(packet);
             byte header = input.readByte();
@@ -48,13 +48,13 @@ public abstract class OperationPacketFilter implements PacketFilter {
                 boolean compressed = (header & 1 << 2) != 0;
                 int factory = compressed ? input.readByte() : input.readInt();
                 int type = compressed ? input.readByte() : input.readInt();
-                return allowOperation(endpoint, factory, type);
+                return filterOperation(endpoint, factory, type);
             }
         } catch (IOException e) {
             throw new HazelcastException(e);
         }
-        return true;
+        return Action.ALLOW;
     }
 
-    protected abstract boolean allowOperation(Address endpoint, int factory, int type);
+    protected abstract Action filterOperation(Address endpoint, int factory, int type);
 }

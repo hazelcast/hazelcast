@@ -71,7 +71,8 @@ public class InternalMigrationListenerTest extends HazelcastTestSupport {
 
         final List<MigrationProgressNotification> notifications = listener.getNotifications();
 
-        int partition0Events = 0, partition1Events = 0;
+        int partition0Events = 0;
+        int partition1Events = 0;
         // 3 event for migration = START -> COMPLETE -> COMMIT/ROLLBACK
         assertEquals("Migration Notifications: " + notifications, PARTITION_COUNT * 3, notifications.size());
 
@@ -119,12 +120,12 @@ public class InternalMigrationListenerTest extends HazelcastTestSupport {
 
         @Override
         public String toString() {
-            return "MigrationProgressNotification{" +
-                    "event=" + event +
-                    ", participant=" + participant +
-                    ", migrationInfo=" + migrationInfo +
-                    ", success=" + success +
-                    '}';
+            return "MigrationProgressNotification{"
+                    + "event=" + event
+                    + ", participant=" + participant
+                    + ", migrationInfo=" + migrationInfo
+                    + ", success=" + success
+                    + '}';
         }
     }
 
@@ -141,8 +142,8 @@ public class InternalMigrationListenerTest extends HazelcastTestSupport {
         @Override
         public synchronized void onMigrationComplete(MigrationParticipant participant, MigrationInfo migrationInfo,
                                                      boolean success) {
-            notifications
-                    .add(new MigrationProgressNotification(MigrationProgressEvent.COMPLETE, participant, migrationInfo, success));
+            notifications.add(
+                    new MigrationProgressNotification(MigrationProgressEvent.COMPLETE, participant, migrationInfo, success));
         }
 
         @Override
@@ -158,7 +159,5 @@ public class InternalMigrationListenerTest extends HazelcastTestSupport {
         public synchronized List<MigrationProgressNotification> getNotifications() {
             return new ArrayList<MigrationProgressNotification>(notifications);
         }
-
     }
-
 }

@@ -118,8 +118,8 @@ public class SlowMulticastJoinTest extends AbstractJoinTest {
         assertTrue(splitLatch.await(10, TimeUnit.SECONDS));
 
         // while cluster is split, no split brain join messages should be accumulated in the non-master member 1
-        assertSplitBrainMessagesCount(clusterSize, new HazelcastInstance[] {instances[1]},
-                new MulticastJoiner[] {joiners[1]});
+        assertSplitBrainMessagesCount(clusterSize, new HazelcastInstance[]{instances[1]},
+                new MulticastJoiner[]{joiners[1]});
 
         assertTrue(mergeLatch.await(30, TimeUnit.SECONDS));
         assertClusterSize(clusterSize, instances[0]);

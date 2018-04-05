@@ -16,35 +16,17 @@
 
 package com.hazelcast.concurrent.atomiclong;
 
-import com.hazelcast.config.AtomicLongConfig;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.SplitBrainAwareDataContainer;
-import com.hazelcast.spi.SplitBrainMergeEntryView;
-import com.hazelcast.spi.SplitBrainMergePolicy;
+import com.hazelcast.spi.merge.MergingValue;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.serialization.SerializationService;
 
-import static com.hazelcast.spi.merge.SplitBrainEntryViews.createSplitBrainMergeEntryView;
+import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingValue;
 
-public class AtomicLongContainer implements SplitBrainAwareDataContainer<Boolean, Long, Long> {
-
-    private final String name;
-    private final AtomicLongConfig config;
-    private final SerializationService serializationService;
+public class AtomicLongContainer {
 
     private long value;
 
-    public AtomicLongContainer(String name, NodeEngine nodeEngine) {
-        this.name = name;
-        this.config = nodeEngine.getConfig().findAtomicLongConfig(name);
-        this.serializationService = nodeEngine.getSerializationService();
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public AtomicLongConfig getConfig() {
-        return config;
+    public AtomicLongContainer() {
     }
 
     public long get() {
@@ -80,19 +62,28 @@ public class AtomicLongContainer implements SplitBrainAwareDataContainer<Boolean
         return tempValue;
     }
 
-    @Override
-    public Long merge(SplitBrainMergeEntryView<Boolean, Long> mergingEntry, SplitBrainMergePolicy mergePolicy) {
-        mergePolicy.setSerializationService(serializationService);
+    /**
+     * Merges the given {@link MergingValue} via the given {@link SplitBrainMergePolicy}.
+     *
+     * @param mergingValue         the {@link MergingValue} instance to merge
+     * @param mergePolicy          the {@link SplitBrainMergePolicy} instance to apply
+     * @param serializationService the {@link SerializationService} to inject dependencies
+     * @return the new value if merge is applied, otherwise {@code null}
+     */
+    public Long merge(MergingValue<Long> mergingValue, SplitBrainMergePolicy mergePolicy, boolean isExistingContainer,
+                      SerializationService serializationService) {
+        serializationService.getManagedContext().initialize(mergingValue);
+        serializationService.getManagedContext().initialize(mergePolicy);
 
-        if (mergingEntry.getKey()) {
-            SplitBrainMergeEntryView<Boolean, Long> existingEntry = createSplitBrainMergeEntryView(true, value);
-            Long newValue = mergePolicy.merge(mergingEntry, existingEntry);
+        if (isExistingContainer) {
+            MergingValue<Long> existingValue = createMergingValue(serializationService, value);
+            Long newValue = mergePolicy.merge(mergingValue, existingValue);
             if (newValue != null && !newValue.equals(value)) {
                 value = newValue;
                 return newValue;
             }
         } else {
-            Long newValue = mergePolicy.merge(mergingEntry, null);
+            Long newValue = mergePolicy.merge(mergingValue, null);
             if (newValue != null) {
                 value = newValue;
                 return newValue;

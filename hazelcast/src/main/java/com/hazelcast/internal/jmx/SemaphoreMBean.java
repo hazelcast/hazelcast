@@ -51,6 +51,12 @@ public class SemaphoreMBean extends HazelcastMBean<ISemaphore> {
         managedObject.reducePermits(reduction);
     }
 
+    @ManagedAnnotation(value = "increase", operation = true)
+    @ManagedDescription("Increases the number of available permits by the indicated increase. Does not block")
+    public void increase(int increases) {
+        managedObject.increasePermits(increases);
+    }
+
     @ManagedAnnotation(value = "release", operation = true)
     @ManagedDescription("Releases the given number of permits, increasing the number of available permits by that amount")
     public void release(int permits) {

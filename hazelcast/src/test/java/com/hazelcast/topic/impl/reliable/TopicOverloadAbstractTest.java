@@ -25,7 +25,6 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.TopicOverloadException;
-import com.hazelcast.util.EmptyStatement;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -80,7 +79,7 @@ public abstract class TopicOverloadAbstractTest extends HazelcastTestSupport {
             topic.publish("new");
             fail();
         } catch (TopicOverloadException expected) {
-            EmptyStatement.ignore(expected);
+            ignore(expected);
         }
 
         assertEquals(tail, ringbuffer.tailSequence());

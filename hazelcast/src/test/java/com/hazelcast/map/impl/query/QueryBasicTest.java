@@ -485,8 +485,8 @@ public class QueryBasicTest extends HazelcastTestSupport {
         cal.set(2012, Calendar.FEBRUARY, 10);
         Date d2 = cal.getTime();
         assertEquals(3, map.values(new PredicateBuilder().getEntryObject().get("this").between(d1, d2)).size());
-        assertEquals(3, map.values(new SqlPredicate("this between 'Mon Nov 10 11:43:05 EET 2003'" +
-                " and 'Fri Feb 10 11:43:05 EET 2012'")).size());
+        assertEquals(3, map.values(new SqlPredicate("this between 'Mon Nov 10 11:43:05 EET 2003'"
+                + " and 'Fri Feb 10 11:43:05 EET 2012'")).size());
     }
 
     @Test(timeout = 1000 * 90)
@@ -512,11 +512,11 @@ public class QueryBasicTest extends HazelcastTestSupport {
         assertEquals(2, map.values(new SqlPredicate("this in (MEMBER, LITE_MEMBER)")).size());
         assertEquals(NodeType.JAVA_CLIENT,
                 map.values(new PredicateBuilder().getEntryObject()
-                                                 .get("this").equal(NodeType.JAVA_CLIENT)).iterator().next());
+                        .get("this").equal(NodeType.JAVA_CLIENT)).iterator().next());
         assertEquals(0, map.values(new PredicateBuilder().getEntryObject()
-                                                         .get("this").equal(NodeType.CSHARP_CLIENT)).size());
+                .get("this").equal(NodeType.CSHARP_CLIENT)).size());
         assertEquals(2, map.values(new PredicateBuilder().getEntryObject()
-                                                         .get("this").in(NodeType.LITE_MEMBER, NodeType.MEMBER)).size());
+                .get("this").in(NodeType.LITE_MEMBER, NodeType.MEMBER)).size());
     }
 
     private enum NodeType {
@@ -539,11 +539,11 @@ public class QueryBasicTest extends HazelcastTestSupport {
         map.put(2, object2);
 
         assertEquals(customObject, map.values(new PredicateBuilder().getEntryObject().get("uuid").equal(customObject.getUuid()))
-                                      .iterator().next());
+                .iterator().next());
         assertEquals(2, map.values(new PredicateBuilder().getEntryObject().get("attribute").equal(attribute)).size());
 
         assertEquals(object2, map.values(new PredicateBuilder().getEntryObject().get("uuid").in(object2.getUuid()))
-                                 .iterator().next());
+                .iterator().next());
         assertEquals(2, map.values(new PredicateBuilder().getEntryObject().get("attribute").in(attribute)).size());
     }
 
@@ -885,12 +885,12 @@ public class QueryBasicTest extends HazelcastTestSupport {
 
     private void addPortableFactories(Config config) {
         config.getSerializationConfig()
-              .addPortableFactory(1, new PortableFactory() {
-                  @Override
-                  public Portable create(int classId) {
-                      return new GrandParentPortableObject(1L);
-                  }
-              }).addPortableFactory(2, new PortableFactory() {
+                .addPortableFactory(1, new PortableFactory() {
+                    @Override
+                    public Portable create(int classId) {
+                        return new GrandParentPortableObject(1L);
+                    }
+                }).addPortableFactory(2, new PortableFactory() {
             @Override
             public Portable create(int classId) {
                 return new ParentPortableObject(1L);

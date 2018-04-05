@@ -29,10 +29,12 @@ import java.util.List;
 
 import static com.hazelcast.util.Preconditions.checkAsyncBackupCount;
 import static com.hazelcast.util.Preconditions.checkBackupCount;
+import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * Configuration for MultiMap.
  */
+@SuppressWarnings("checkstyle:methodcount")
 public class MultiMapConfig implements IdentifiedDataSerializable, Versioned {
 
     /**
@@ -52,13 +54,15 @@ public class MultiMapConfig implements IdentifiedDataSerializable, Versioned {
 
     private String name;
     private String valueCollectionType = DEFAULT_VALUE_COLLECTION_TYPE.toString();
-    private List<EntryListenerConfig> listenerConfigs;
+    private List<EntryListenerConfig> listenerConfigs = new ArrayList<EntryListenerConfig>();
     private boolean binary = true;
     private int backupCount = DEFAULT_SYNC_BACKUP_COUNT;
     private int asyncBackupCount = DEFAULT_ASYNC_BACKUP_COUNT;
     private boolean statisticsEnabled = true;
     private String quorumName;
-    private MultiMapConfigReadOnly readOnly;
+    private MergePolicyConfig mergePolicyConfig = new MergePolicyConfig();
+
+    private transient MultiMapConfigReadOnly readOnly;
 
     public MultiMapConfig() {
     }
@@ -67,28 +71,16 @@ public class MultiMapConfig implements IdentifiedDataSerializable, Versioned {
         setName(name);
     }
 
-    public MultiMapConfig(MultiMapConfig defConfig) {
-        this.name = defConfig.getName();
-        this.valueCollectionType = defConfig.valueCollectionType;
-        this.binary = defConfig.binary;
-        this.backupCount = defConfig.backupCount;
-        this.asyncBackupCount = defConfig.asyncBackupCount;
-        this.statisticsEnabled = defConfig.statisticsEnabled;
-        this.listenerConfigs = new ArrayList<EntryListenerConfig>(defConfig.getEntryListenerConfigs());
-        this.quorumName = defConfig.quorumName;
-    }
-
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return Immutable version of this configuration
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
-     */
-    public MultiMapConfigReadOnly getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new MultiMapConfigReadOnly(this);
-        }
-        return readOnly;
+    public MultiMapConfig(MultiMapConfig config) {
+        this.name = config.getName();
+        this.valueCollectionType = config.valueCollectionType;
+        this.listenerConfigs.addAll(config.listenerConfigs);
+        this.binary = config.binary;
+        this.backupCount = config.backupCount;
+        this.asyncBackupCount = config.asyncBackupCount;
+        this.statisticsEnabled = config.statisticsEnabled;
+        this.quorumName = config.quorumName;
+        this.mergePolicyConfig = config.mergePolicyConfig;
     }
 
     /**
@@ -172,9 +164,6 @@ public class MultiMapConfig implements IdentifiedDataSerializable, Versioned {
      * @return the list of entry listeners for this MultiMap
      */
     public List<EntryListenerConfig> getEntryListenerConfigs() {
-        if (listenerConfigs == null) {
-            listenerConfigs = new ArrayList<EntryListenerConfig>();
-        }
         return listenerConfigs;
     }
 
@@ -319,6 +308,25 @@ public class MultiMapConfig implements IdentifiedDataSerializable, Versioned {
         return this;
     }
 
+    /**
+     * Gets the {@link MergePolicyConfig} for this MultiMap.
+     *
+     * @return the {@link MergePolicyConfig} for this MultiMap
+     */
+    public MergePolicyConfig getMergePolicyConfig() {
+        return mergePolicyConfig;
+    }
+
+    /**
+     * Sets the {@link MergePolicyConfig} for this MultiMap.
+     *
+     * @return the updated MultiMapConfig
+     */
+    public MultiMapConfig setMergePolicyConfig(MergePolicyConfig mergePolicyConfig) {
+        this.mergePolicyConfig = checkNotNull(mergePolicyConfig, "mergePolicyConfig cannot be null");
+        return this;
+    }
+
     public String toString() {
         return "MultiMapConfig{"
                 + "name='" + name + '\''
@@ -328,6 +336,7 @@ public class MultiMapConfig implements IdentifiedDataSerializable, Versioned {
                 + ", backupCount=" + backupCount
                 + ", asyncBackupCount=" + asyncBackupCount
                 + ", quorumName=" + quorumName
+                + ", mergePolicyConfig=" + mergePolicyConfig
                 + '}';
     }
 
@@ -345,7 +354,7 @@ public class MultiMapConfig implements IdentifiedDataSerializable, Versioned {
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
         out.writeUTF(valueCollectionType);
-        if (listenerConfigs == null) {
+        if (listenerConfigs == null || listenerConfigs.isEmpty()) {
             out.writeBoolean(false);
         } else {
             out.writeBoolean(true);
@@ -358,8 +367,10 @@ public class MultiMapConfig implements IdentifiedDataSerializable, Versioned {
         out.writeInt(backupCount);
         out.writeInt(asyncBackupCount);
         out.writeBoolean(statisticsEnabled);
+        // RU_COMPAT_3_9
         if (out.getVersion().isGreaterOrEqual(Versions.V3_10)) {
             out.writeUTF(quorumName);
+            out.writeObject(mergePolicyConfig);
         }
     }
 
@@ -380,23 +391,24 @@ public class MultiMapConfig implements IdentifiedDataSerializable, Versioned {
         backupCount = in.readInt();
         asyncBackupCount = in.readInt();
         statisticsEnabled = in.readBoolean();
+        // RU_COMPAT_3_9
         if (in.getVersion().isGreaterOrEqual(Versions.V3_10)) {
             quorumName = in.readUTF();
+            mergePolicyConfig = in.readObject();
         }
     }
 
     @Override
     @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
-    public boolean equals(Object o) {
+    public final boolean equals(Object o) {
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (!(o instanceof MultiMapConfig)) {
             return false;
         }
 
         MultiMapConfig that = (MultiMapConfig) o;
-
         if (binary != that.binary) {
             return false;
         }
@@ -409,22 +421,27 @@ public class MultiMapConfig implements IdentifiedDataSerializable, Versioned {
         if (statisticsEnabled != that.statisticsEnabled) {
             return false;
         }
-        if (!name.equals(that.name)) {
+        if (name != null ? !name.equals(that.name) : that.name != null) {
+            return false;
+        }
+        if (valueCollectionType != null
+                ? !valueCollectionType.equals(that.valueCollectionType)
+                : that.valueCollectionType != null) {
+            return false;
+        }
+        if (listenerConfigs != null ? !listenerConfigs.equals(that.listenerConfigs) : that.listenerConfigs != null) {
             return false;
         }
         if (quorumName != null ? !quorumName.equals(that.quorumName) : that.quorumName != null) {
             return false;
         }
-        if (valueCollectionType != null
-                ? !valueCollectionType.equals(that.valueCollectionType) : that.valueCollectionType != null) {
-            return false;
-        }
-        return listenerConfigs != null ? listenerConfigs.equals(that.listenerConfigs) : that.listenerConfigs == null;
+        return mergePolicyConfig != null ? mergePolicyConfig.equals(that.mergePolicyConfig) : that.mergePolicyConfig == null;
     }
 
     @Override
-    public int hashCode() {
-        int result = name.hashCode();
+    @SuppressWarnings("checkstyle:npathcomplexity")
+    public final int hashCode() {
+        int result = name != null ? name.hashCode() : 0;
         result = 31 * result + (valueCollectionType != null ? valueCollectionType.hashCode() : 0);
         result = 31 * result + (listenerConfigs != null ? listenerConfigs.hashCode() : 0);
         result = 31 * result + (binary ? 1 : 0);
@@ -432,6 +449,20 @@ public class MultiMapConfig implements IdentifiedDataSerializable, Versioned {
         result = 31 * result + asyncBackupCount;
         result = 31 * result + (statisticsEnabled ? 1 : 0);
         result = 31 * result + (quorumName != null ? quorumName.hashCode() : 0);
+        result = 31 * result + (mergePolicyConfig != null ? mergePolicyConfig.hashCode() : 0);
         return result;
+    }
+
+    /**
+     * Gets immutable version of this configuration.
+     *
+     * @return Immutable version of this configuration
+     * @deprecated this method will be removed in 4.0; it is meant for internal usage only
+     */
+    public MultiMapConfigReadOnly getAsReadOnly() {
+        if (readOnly == null) {
+            readOnly = new MultiMapConfigReadOnly(this);
+        }
+        return readOnly;
     }
 }

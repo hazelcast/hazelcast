@@ -18,7 +18,8 @@ package com.hazelcast.scheduledexecutor.impl;
 
 import com.hazelcast.spi.AbstractWaitNotifyKey;
 
-public class ScheduledExecutorWaitNotifyKey extends AbstractWaitNotifyKey {
+public class ScheduledExecutorWaitNotifyKey
+        extends AbstractWaitNotifyKey {
 
     private final String urn;
 

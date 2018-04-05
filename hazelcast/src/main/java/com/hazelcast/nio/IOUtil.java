@@ -163,11 +163,11 @@ public final class IOUtil {
 
     public static OutputStream newOutputStream(final ByteBuffer dst) {
         return new OutputStream() {
-            public void write(int b) throws IOException {
+            public void write(int b) {
                 dst.put((byte) b);
             }
 
-            public void write(byte[] bytes, int off, int len) throws IOException {
+            public void write(byte[] bytes, int off, int len) {
                 dst.put(bytes, off, len);
             }
         };
@@ -175,14 +175,14 @@ public final class IOUtil {
 
     public static InputStream newInputStream(final ByteBuffer src) {
         return new InputStream() {
-            public int read() throws IOException {
+            public int read() {
                 if (!src.hasRemaining()) {
                     return -1;
                 }
                 return src.get() & 0xff;
             }
 
-            public int read(byte[] bytes, int off, int len) throws IOException {
+            public int read(byte[] bytes, int off, int len) {
                 if (!src.hasRemaining()) {
                     return -1;
                 }
@@ -218,12 +218,14 @@ public final class IOUtil {
         if (input.length == 0) {
             return new byte[0];
         }
+        int len = Math.max(input.length / 10, 10);
+
         Deflater compressor = new Deflater();
         compressor.setLevel(Deflater.BEST_SPEED);
         compressor.setInput(input);
         compressor.finish();
-        ByteArrayOutputStream bos = new ByteArrayOutputStream(input.length / 10);
-        byte[] buf = new byte[input.length / 10];
+        ByteArrayOutputStream bos = new ByteArrayOutputStream(len);
+        byte[] buf = new byte[len];
         while (!compressor.finished()) {
             int count = compressor.deflate(buf);
             bos.write(buf, 0, count);
@@ -575,6 +577,20 @@ public final class IOUtil {
         while (-1 != (n = input.read(buffer))) {
             output.write(buffer, 0, n);
         }
+    }
+
+    /**
+     * Creates a debug String for te given ByteBuffer. Useful when debugging IO.
+     *
+     * Do not remove even if this method isn't used.
+     *
+     * @param name name of the ByteBuffer.
+     * @param byteBuffer the ByteBuffer
+     * @return the debug String
+     */
+    public static String toDebugString(String name, ByteBuffer byteBuffer) {
+        return name + "(pos:" + byteBuffer.position() + " lim:" + byteBuffer.limit()
+                + " remain:" + byteBuffer.remaining() + " cap:" + byteBuffer.capacity() + ")";
     }
 
     private static final class ClassLoaderAwareObjectInputStream extends ObjectInputStream {

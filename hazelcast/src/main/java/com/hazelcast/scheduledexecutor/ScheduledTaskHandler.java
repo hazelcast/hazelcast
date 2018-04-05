@@ -22,20 +22,20 @@ import com.hazelcast.scheduledexecutor.impl.ScheduledTaskHandlerImpl;
 import com.hazelcast.spi.annotation.Beta;
 
 /**
- * Resource handler pointing to a {@link IScheduledFuture}.
- * The handler is used to interact with the <code>ScheduledFuture</code> in a {@link IScheduledExecutorService}.
+ * Resource handler pointing to a {@link IScheduledFuture}. The handler is used to interact with the <code>ScheduledFuture</code>
+ * in a {@link IScheduledExecutorService}.
  *
- * To access the handler, see {@link IScheduledFuture#getHandler()}.
- * To re-acquire access to a previously scheduled task, having only the handler at hand,
- * see {@link IScheduledExecutorService#getScheduledFuture(ScheduledTaskHandler)}
+ * <p>To access the handler, see {@link IScheduledFuture#getHandler()}. To re-acquire access to a previously scheduled task,
+ * having only the handler at hand, see {@link IScheduledExecutorService#getScheduledFuture(ScheduledTaskHandler)}
  */
 @Beta
-public abstract class ScheduledTaskHandler implements IdentifiedDataSerializable {
+public abstract class ScheduledTaskHandler
+        implements IdentifiedDataSerializable {
 
     /**
      * Returns the address of the member the task is associated with.
-     * <p>
-     * The address will be {@code null}, if the task was scheduled to particular partition.
+     *
+     * <p>The address will be {@code null}, if the task was scheduled to particular partition.
      *
      * @return The address of the member
      */
@@ -43,8 +43,8 @@ public abstract class ScheduledTaskHandler implements IdentifiedDataSerializable
 
     /**
      * Returns the partition ID the task is associated with.
-     * <p>
-     * If the task was scheduled to a particular member, then the partition ID will have the value of -1.
+     *
+     * <p>If the task was scheduled to a particular member, then the partition ID will have the value of -1.
      *
      * @return The partition ID
      */
@@ -76,9 +76,9 @@ public abstract class ScheduledTaskHandler implements IdentifiedDataSerializable
 
     /**
      * Returns the String representation of the handler.
-     * <p>
-     * Useful for persisting and/or communicating this info. A {@link ScheduledTaskHandler} can be constructed
-     * again from the Urn String using {@link #of(String)}
+     *
+     * <p>Useful for persisting and/or communicating this info. A {@link ScheduledTaskHandler} can be constructed again
+     * from the Urn String using {@link #of(String)}
      *
      * @return URN representing the handler in a String format
      */

@@ -25,7 +25,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -39,7 +39,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import static junit.framework.TestCase.assertNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class})
+@Category(SlowTest.class)
 public class ClientMapNearCachePreloaderStressTest extends HazelcastTestSupport {
 
     private final TestHazelcastFactory factory = new TestHazelcastFactory();
@@ -67,8 +67,9 @@ public class ClientMapNearCachePreloaderStressTest extends HazelcastTestSupport 
                 @Override
                 public void run() {
                     while (isRunning.get()) {
-                        for (DistributedObject distributedObject : client.getDistributedObjects())
+                        for (DistributedObject distributedObject : client.getDistributedObjects()) {
                             distributedObject.destroy();
+                        }
                     }
                 }
             });

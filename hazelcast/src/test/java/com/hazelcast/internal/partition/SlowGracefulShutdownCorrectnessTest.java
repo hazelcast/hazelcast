@@ -38,7 +38,7 @@ public class SlowGracefulShutdownCorrectnessTest extends AbstractGracefulShutdow
                 {1, 2, 1},
                 {1, 6, 3},
                 {2, 3, 1},
-                {2, 6, 3}
+                {2, 6, 3},
         });
     }
 }

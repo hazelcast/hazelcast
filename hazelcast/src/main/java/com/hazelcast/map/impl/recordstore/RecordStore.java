@@ -30,6 +30,8 @@ import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.monitor.LocalRecordStoreStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
+import com.hazelcast.spi.merge.MergingEntry;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 
 import java.util.Iterator;
 import java.util.List;
@@ -49,6 +51,16 @@ public interface RecordStore<R extends Record> {
 
     String getName();
 
+    /**
+     * @return oldValue only if it exists in memory, otherwise just returns
+     * null and doesn't try to load it from {@link com.hazelcast.core.MapLoader}
+     */
+    Object set(Data dataKey, Object value, long ttl);
+
+    /**
+     * @return oldValue if it exists in memory otherwise tries to load oldValue
+     * by using {@link com.hazelcast.core.MapLoader}
+     */
     Object put(Data dataKey, Object dataValue, long ttl);
 
     Object putIfAbsent(Data dataKey, Object value, long ttl);
@@ -65,11 +77,10 @@ public interface RecordStore<R extends Record> {
     R putBackup(Data key, Object value, long ttl, boolean putTransient);
 
     /**
-     * Returns {@code true} if key doesn't exist previously, otherwise returns {@code false}.
-     *
-     * @see com.hazelcast.core.IMap#set(Object, Object)
+     * Does exactly the same thing as {@link #set(Data, Object, long)} except the invocation is not counted as
+     * a read access while updating the access statics.
      */
-    boolean set(Data dataKey, Object value, long ttl);
+    boolean setWithUncountedAccess(Data dataKey, Object value, long ttl);
 
     Object remove(Data dataKey);
 
@@ -119,10 +130,9 @@ public interface RecordStore<R extends Record> {
 
     Object replace(Data dataKey, Object update);
 
-
     /**
      * Sets the value to the given updated value
-     * if {@link com.hazelcast.map.impl.record.RecordFactory#isEquals} comparison
+     * if {@link com.hazelcast.map.impl.record.RecordComparator#isEqual} comparison
      * of current value and expected value is {@code true}.
      *
      * @param dataKey key which's value is requested to be replaced.
@@ -158,18 +168,22 @@ public interface RecordStore<R extends Record> {
     Object putFromLoadBackup(Data key, Object value);
 
     /**
-     * Puts key-value pair to map which is the result of a load from map store operation.
+     * Merges the given {@link EntryView} via the given {@link MapMergePolicy}.
      *
-     * @param key   key to put.
-     * @param value to put.
-     * @param ttl   time to live seconds.
-     * @return the previous value associated with <tt>key</tt>, or
-     * <tt>null</tt> if there was no mapping for <tt>key</tt>.
-     * @see com.hazelcast.map.impl.operation.PutFromLoadAllOperation
+     * @param mergingEntry the {@link EntryView} instance to merge
+     * @param mergePolicy  the {@link MapMergePolicy} instance to apply
+     * @return {@code true} if merge is applied, otherwise {@code false}
      */
-    Object putFromLoad(Data key, Object value, long ttl);
+    boolean merge(Data dataKey, EntryView mergingEntry, MapMergePolicy mergePolicy);
 
-    boolean merge(Data dataKey, EntryView mergingEntryView, MapMergePolicy mergePolicy);
+    /**
+     * Merges the given {@link MergingEntry} via the given {@link SplitBrainMergePolicy}.
+     *
+     * @param mergingEntry the {@link MergingEntry} instance to merge
+     * @param mergePolicy  the {@link SplitBrainMergePolicy} instance to apply
+     * @return {@code true} if merge is applied, otherwise {@code false}
+     */
+    boolean merge(MergingEntry<Data, Object> mergingEntry, SplitBrainMergePolicy mergePolicy);
 
     R getRecord(Data key);
 
@@ -274,6 +288,9 @@ public interface RecordStore<R extends Record> {
 
     /**
      * Resets the record store to it's initial state.
+     * Used in replication operations.
+     *
+     * @see #putRecord(Data, Record)
      */
     void reset();
 
@@ -407,7 +424,8 @@ public interface RecordStore<R extends Record> {
      */
     boolean isLoaded();
 
-    void checkIfLoaded() throws RetryableHazelcastException;
+    void checkIfLoaded()
+            throws RetryableHazelcastException;
 
     /**
      * Triggers key and value loading if there is no ongoing or completed
@@ -448,4 +466,10 @@ public interface RecordStore<R extends Record> {
      * @param exception an exception that occurred during key loading
      */
     void updateLoadStatus(boolean lastBatch, Throwable exception);
+
+    /**
+     * @return true if there is a {@link com.hazelcast.map.QueryCache} defined
+     * for this map.
+     */
+    boolean hasQueryCache();
 }

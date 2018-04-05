@@ -35,7 +35,7 @@ public class DynamicConfigSlowPreJoinBouncingTest extends DynamicConfigBouncingT
         Config config = new Config();
         config.getServicesConfig().addServiceConfig(
                 new ServiceConfig().setEnabled(true).setName(DelaysPreparingPreJoinOpService.SERVICE_NAME)
-                                   .setImplementation(service));
+                        .setImplementation(service));
         return config;
     }
 

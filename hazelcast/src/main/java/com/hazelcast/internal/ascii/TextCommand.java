@@ -17,8 +17,8 @@
 package com.hazelcast.internal.ascii;
 
 import com.hazelcast.internal.networking.OutboundFrame;
-import com.hazelcast.nio.ascii.TextChannelInboundHandler;
-import com.hazelcast.nio.ascii.TextChannelOutboundHandler;
+import com.hazelcast.nio.ascii.TextDecoder;
+import com.hazelcast.nio.ascii.TextEncoder;
 
 import java.nio.ByteBuffer;
 
@@ -26,11 +26,11 @@ public interface TextCommand extends OutboundFrame {
 
     TextCommandConstants.TextCommandType getType();
 
-    void init(TextChannelInboundHandler textReadHandler, long requestId);
+    void init(TextDecoder decoder, long requestId);
 
-    TextChannelInboundHandler getReadHandler();
+    TextDecoder getDecoder();
 
-    TextChannelOutboundHandler getWriteHandler();
+    TextEncoder getEncoder();
 
     long getRequestId();
 

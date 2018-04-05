@@ -82,6 +82,30 @@ public class InterfacesConfig {
     }
 
     @Override
+    public final boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || !(o instanceof InterfacesConfig)) {
+            return false;
+        }
+
+        InterfacesConfig that = (InterfacesConfig) o;
+
+        if (enabled != that.enabled) {
+            return false;
+        }
+        return interfaceSet.equals(that.interfaceSet);
+    }
+
+    @Override
+    public final int hashCode() {
+        int result = (enabled ? 1 : 0);
+        result = 31 * result + interfaceSet.hashCode();
+        return result;
+    }
+
+    @Override
     public String toString() {
         return "InterfacesConfig{enabled=" + enabled + ", interfaces=" + interfaceSet + '}';
     }

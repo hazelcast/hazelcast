@@ -22,13 +22,15 @@ import com.hazelcast.util.ConstructorFunction;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
-public abstract class AbstractScheduledExecutorContainerHolder implements ScheduledExecutorContainerHolder {
+public abstract class AbstractScheduledExecutorContainerHolder
+        implements ScheduledExecutorContainerHolder {
 
     final NodeEngine nodeEngine;
 
@@ -54,10 +56,13 @@ public abstract class AbstractScheduledExecutorContainerHolder implements Schedu
         return Collections.unmodifiableCollection(containers.values());
     }
 
+    public Iterator<ScheduledExecutorContainer> iterator() {
+        return containers.values().iterator();
+    }
+
     public void destroy() {
         for (ScheduledExecutorContainer container : containers.values()) {
-            ((InternalExecutionService) nodeEngine.getExecutionService())
-                    .shutdownScheduledDurableExecutor(container.getName());
+            ((InternalExecutionService) nodeEngine.getExecutionService()).shutdownScheduledDurableExecutor(container.getName());
         }
     }
 

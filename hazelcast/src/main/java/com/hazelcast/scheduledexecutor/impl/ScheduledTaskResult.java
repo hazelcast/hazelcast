@@ -63,9 +63,7 @@ public class ScheduledTaskResult
         return cancelled;
     }
 
-    void checkErroneousState()
-            throws ExecutionException {
-
+    void checkErroneousState() {
         if (wasCancelled()) {
             throw new CancellationException();
         } else if (exception != null) {
@@ -102,12 +100,11 @@ public class ScheduledTaskResult
     }
 
     @Override
-    public String
-    toString() {
+    public String toString() {
         return "ScheduledTaskResult{"
-                + "result=" + result + ", "
-                + "exception=" + exception + ", "
-                + "cancelled=" + cancelled
+                + "result=" + result
+                + ", exception=" + exception
+                + ", cancelled=" + cancelled
                 + '}';
     }
 

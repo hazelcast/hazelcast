@@ -22,12 +22,16 @@ import java.net.Socket;
 /**
  * Member Socket Interceptor can be registered via
  * see {@link com.hazelcast.config.SocketInterceptorConfig}
+ *
+ * Warning: a MemberSocketInterceptor provides access to the socket and will bypass
+ * any TLS encryption. So be warned that any data send using the SocketInterceptor
+ * could be visible as plain text and could therefor be a security risk.
  */
 public interface MemberSocketInterceptor extends SocketInterceptor {
 
     /**
-     * This method will be called when a connection to a member node is accepted meaning security requirements and
-     * clusters are matching.
+     * This method will be called when a connection to a member node is accepted
+     * meaning security requirements and clusters are matching.
      *
      * @param acceptedSocket accepted socket
      * @throws IOException

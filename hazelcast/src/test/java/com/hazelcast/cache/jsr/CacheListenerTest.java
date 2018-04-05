@@ -16,16 +16,21 @@
 
 package com.hazelcast.cache.jsr;
 
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
-@RunWith(HazelcastSerialClassRunner.class)
+// this test overrides the entry event filter used in filtered listener tests
+// to avoid NPE when old value is not available
+@RunWith(Parameterized.class)
+@UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category(QuickTest.class)
-public class CacheListenerTest extends org.jsr107.tck.event.CacheListenerTest {
+public class CacheListenerTest extends AbstractCacheListenerTest {
 
     @BeforeClass
     public static void init() {
@@ -36,4 +41,5 @@ public class CacheListenerTest extends org.jsr107.tck.event.CacheListenerTest {
     public static void cleanup() {
         JsrTestUtil.cleanup();
     }
+
 }

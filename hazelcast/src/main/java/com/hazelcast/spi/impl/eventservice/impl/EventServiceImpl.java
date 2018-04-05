@@ -40,11 +40,9 @@ import com.hazelcast.spi.impl.eventservice.impl.operations.OnJoinRegistrationOpe
 import com.hazelcast.spi.impl.eventservice.impl.operations.RegistrationOperationSupplier;
 import com.hazelcast.spi.impl.eventservice.impl.operations.SendEventOperation;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.UuidUtil;
 import com.hazelcast.util.executor.StripedExecutor;
 import com.hazelcast.util.function.Supplier;
-import com.hazelcast.version.Version;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -58,7 +56,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.logging.Level;
 
-import static com.hazelcast.internal.cluster.Versions.V3_9;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.util.InvocationUtil.invokeOnStableClusterSerial;
 import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
@@ -66,6 +63,7 @@ import static com.hazelcast.spi.properties.GroupProperty.EVENT_QUEUE_CAPACITY;
 import static com.hazelcast.spi.properties.GroupProperty.EVENT_QUEUE_TIMEOUT_MILLIS;
 import static com.hazelcast.spi.properties.GroupProperty.EVENT_SYNC_TIMEOUT_MILLIS;
 import static com.hazelcast.spi.properties.GroupProperty.EVENT_THREAD_COUNT;
+import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.ThreadUtil.createThreadName;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -213,7 +211,7 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
         try {
             ((Closeable) listener).close();
         } catch (IOException e) {
-            EmptyStatement.ignore(e);
+            ignore(e);
         }
     }
 
@@ -604,10 +602,6 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
 
     @Override
     public Operation getPreJoinOperation() {
-        Version clusterVersion = nodeEngine.getClusterService().getClusterVersion();
-        if (clusterVersion.isLessThan(V3_9)) {
-            return null;
-        }
         // pre-join operations are only sent by master member
         return getOnJoinRegistrationOperation();
     }
@@ -615,10 +609,6 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
     @Override
     public Operation getPostJoinOperation() {
         ClusterService clusterService = nodeEngine.getClusterService();
-        Version clusterVersion = clusterService.getClusterVersion();
-        if (clusterVersion.isLessThan(V3_9)) {
-            return getOnJoinRegistrationOperation();
-        }
         // Send post join registration operation only if this is the newly joining member.
         // Master will send registrations with pre-join operation.
         return clusterService.isMaster() ? null : getOnJoinRegistrationOperation();

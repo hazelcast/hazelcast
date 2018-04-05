@@ -111,8 +111,6 @@ public abstract class AbstractRecord<V> implements Record<V> {
 
     @Override
     public void onUpdate(long now) {
-        onAccess(now);
-
         version++;
         lastUpdateTime = now;
     }

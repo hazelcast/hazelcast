@@ -21,25 +21,28 @@ import com.hazelcast.test.annotation.SlowTest;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
-import java.util.Arrays;
 import java.util.Collection;
 
+import static java.util.Arrays.asList;
+
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category({SlowTest.class})
 // related issue https://github.com/hazelcast/hazelcast/issues/5444
 public class SlowPartitionAssignmentsCorrectnessTest extends AbstractPartitionAssignmentsCorrectnessTest {
 
-    @Parameterized.Parameters(name = "backups:{0},nodes:{1}")
+    @Parameters(name = "backups:{0},nodes:{1}")
     public static Collection<Object[]> parameters() {
-        return Arrays.asList(new Object[][]{
+        return asList(new Object[][]{
                 {1, 2},
                 {1, InternalPartition.MAX_REPLICA_COUNT},
                 {2, 3},
                 {2, InternalPartition.MAX_REPLICA_COUNT},
                 {3, 4},
-                {3, InternalPartition.MAX_REPLICA_COUNT}
+                {3, InternalPartition.MAX_REPLICA_COUNT},
         });
     }
 }

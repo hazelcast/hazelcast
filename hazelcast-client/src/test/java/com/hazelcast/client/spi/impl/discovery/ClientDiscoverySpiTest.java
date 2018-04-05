@@ -67,6 +67,7 @@ import javax.xml.validation.Validator;
 import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.net.URL;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -74,6 +75,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -237,6 +239,22 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testClientCanConnect_afterDiscoveryStrategyThrowsException() {
+        Config config = new Config();
+        config.getNetworkConfig().setPort(50001);
+        Hazelcast.newHazelcastInstance(config);
+        ClientConfig clientConfig = new ClientConfig();
+
+        clientConfig.setProperty(GroupProperty.DISCOVERY_SPI_ENABLED.getName(), "true");
+        DiscoveryConfig discoveryConfig = clientConfig.getNetworkConfig().getDiscoveryConfig();
+        DiscoveryStrategyFactory factory = new ExceptionThrowingDiscoveryStrategyFactory();
+        DiscoveryStrategyConfig strategyConfig = new DiscoveryStrategyConfig(factory, Collections.<String, Comparable>emptyMap());
+        discoveryConfig.addDiscoveryStrategyConfig(strategyConfig);
+
+        HazelcastClient.newHazelcastClient(clientConfig);
+    }
+
+    @Test
     public void testNodeFilter_from_xml() throws Exception {
         String xmlFileName = "hazelcast-client-discovery-spi-test.xml";
         InputStream xmlResource = ClientDiscoverySpiTest.class.getClassLoader().getResourceAsStream(xmlFileName);
@@ -381,7 +399,7 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
         verify(discoveryService).discoverNodes();
     }
 
-    @Test (expected = IllegalStateException.class)
+    @Test(expected = IllegalStateException.class)
     public void testDiscoveryEnabledNoLocalhost() {
         Hazelcast.newHazelcastInstance();
 
@@ -405,7 +423,7 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
         HazelcastClient.newHazelcastClient();
     }
 
-    @Test (expected = IllegalStateException.class)
+    @Test(expected = IllegalStateException.class)
     public void testMulticastDiscoveryEnabledNoLocalhost() {
         Hazelcast.newHazelcastInstance();
 
@@ -491,6 +509,66 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
         @Override
         public Collection<PropertyDefinition> getConfigurationProperties() {
             return propertyDefinitions;
+        }
+    }
+
+    private static class FirstCallExceptionThrowingDiscoveryStrategy implements DiscoveryStrategy {
+
+        AtomicBoolean firstCall = new AtomicBoolean(true);
+
+        @Override
+        public void start() {
+        }
+
+        @Override
+        public Collection<DiscoveryNode> discoverNodes() {
+            if (firstCall.compareAndSet(true, false)) {
+                throw new RuntimeException();
+            }
+            try {
+                List<DiscoveryNode> discoveryNodes = new ArrayList<DiscoveryNode>(1);
+                Address privateAddress = new Address("127.0.0.1", 50001);
+                discoveryNodes.add(new SimpleDiscoveryNode(privateAddress));
+                return discoveryNodes;
+            } catch (UnknownHostException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        @Override
+        public void destroy() {
+        }
+
+        @Override
+        public PartitionGroupStrategy getPartitionGroupStrategy() {
+            return null;
+        }
+
+        @Override
+        public Map<String, Object> discoverLocalMetadata() {
+            return Collections.emptyMap();
+        }
+    }
+
+    public static class ExceptionThrowingDiscoveryStrategyFactory implements DiscoveryStrategyFactory {
+
+        public ExceptionThrowingDiscoveryStrategyFactory() {
+        }
+
+        @Override
+        public Class<? extends DiscoveryStrategy> getDiscoveryStrategyType() {
+            return FirstCallExceptionThrowingDiscoveryStrategy.class;
+        }
+
+        @Override
+        public DiscoveryStrategy newDiscoveryStrategy(DiscoveryNode discoveryNode, ILogger logger,
+                                                      Map<String, Comparable> properties) {
+            return new FirstCallExceptionThrowingDiscoveryStrategy();
+        }
+
+        @Override
+        public Collection<PropertyDefinition> getConfigurationProperties() {
+            return Collections.EMPTY_LIST;
         }
     }
 

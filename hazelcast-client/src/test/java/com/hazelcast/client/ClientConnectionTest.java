@@ -37,13 +37,11 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.EmptyStatement;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.net.InetSocketAddress;
 import java.util.Collection;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -198,12 +196,20 @@ public class ClientConnectionTest extends HazelcastTestSupport {
         ClientConfig config = new ClientConfig();
         WaitingCredentials credentials = new WaitingCredentials("dev", "dev-pass", countDownLatch);
         config.setCredentials(credentials);
-        HazelcastInstance client = hazelcastFactory.newHazelcastClient(config);
+        final HazelcastInstance client = hazelcastFactory.newHazelcastClient(config);
         final IExecutorService executorService = client.getExecutorService(randomString());
 
         credentials.waitFlag.set(true);
 
         final HazelcastInstance secondInstance = hazelcastFactory.newHazelcastInstance();
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(2, client.getCluster().getMembers().size());
+            }
+        });
+
         final AtomicReference<Future> atomicReference = new AtomicReference<Future>();
         Thread thread = new Thread(new Runnable() {
             @Override
@@ -249,7 +255,7 @@ public class ClientConnectionTest extends HazelcastTestSupport {
                 try {
                     countDownLatch.await();
                 } catch (InterruptedException e) {
-                    EmptyStatement.ignore(e);
+                    ignore(e);
                 }
             }
             return super.getPassword();

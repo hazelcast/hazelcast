@@ -16,36 +16,18 @@
 
 package com.hazelcast.concurrent.atomicreference;
 
-import com.hazelcast.config.AtomicReferenceConfig;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.SplitBrainAwareDataContainer;
-import com.hazelcast.spi.SplitBrainMergeEntryView;
-import com.hazelcast.spi.SplitBrainMergePolicy;
+import com.hazelcast.spi.merge.MergingValue;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.serialization.SerializationService;
 
-import static com.hazelcast.spi.merge.SplitBrainEntryViews.createSplitBrainMergeEntryView;
+import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingValue;
 
-public class AtomicReferenceContainer implements SplitBrainAwareDataContainer<Boolean, Data, Data> {
-
-    private final String name;
-    private final AtomicReferenceConfig config;
-    private final SerializationService serializationService;
+public class AtomicReferenceContainer {
 
     private Data value;
 
-    public AtomicReferenceContainer(NodeEngine nodeEngine, String name) {
-        this.name = name;
-        this.config = nodeEngine.getConfig().findAtomicReferenceConfig(name);
-        this.serializationService = nodeEngine.getSerializationService();
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public AtomicReferenceConfig getConfig() {
-        return config;
+    public AtomicReferenceContainer() {
     }
 
     public Data get() {
@@ -81,19 +63,28 @@ public class AtomicReferenceContainer implements SplitBrainAwareDataContainer<Bo
         return value == null;
     }
 
-    @Override
-    public Data merge(SplitBrainMergeEntryView<Boolean, Data> mergingEntry, SplitBrainMergePolicy mergePolicy) {
-        mergePolicy.setSerializationService(serializationService);
+    /**
+     * Merges the given {@link MergingValue} via the given {@link SplitBrainMergePolicy}.
+     *
+     * @param mergingValue         the {@link MergingValue} instance to merge
+     * @param mergePolicy          the {@link SplitBrainMergePolicy} instance to apply
+     * @param serializationService the {@link SerializationService} to inject dependencies
+     * @return the new value if merge is applied, otherwise {@code null}
+     */
+    public Data merge(MergingValue<Data> mergingValue, SplitBrainMergePolicy mergePolicy, boolean isExistingContainer,
+                      SerializationService serializationService) {
+        serializationService.getManagedContext().initialize(mergingValue);
+        serializationService.getManagedContext().initialize(mergePolicy);
 
-        if (mergingEntry.getKey()) {
-            SplitBrainMergeEntryView<Boolean, Data> existingEntry = createSplitBrainMergeEntryView(true, value);
-            Data newValue = mergePolicy.merge(mergingEntry, existingEntry);
+        if (isExistingContainer) {
+            MergingValue<Data> existingValue = createMergingValue(serializationService, value);
+            Data newValue = mergePolicy.merge(mergingValue, existingValue);
             if (newValue != null && !newValue.equals(value)) {
                 value = newValue;
                 return newValue;
             }
         } else {
-            Data newValue = mergePolicy.merge(mergingEntry, null);
+            Data newValue = mergePolicy.merge(mergingValue, null);
             if (newValue != null) {
                 value = newValue;
                 return newValue;

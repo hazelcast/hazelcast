@@ -42,7 +42,7 @@ import java.util.Arrays;
 @RunWith(CustomSpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = HazelcastCacheReadTimeoutTestWithJavaConfig.TestConfig.class)
 @Category(QuickTest.class)
-public class HazelcastCacheReadTimeoutTestWithJavaConfig extends AbstractHazelcastCacheReadTimeoutTest{
+public class HazelcastCacheReadTimeoutTestWithJavaConfig extends AbstractHazelcastCacheReadTimeoutTest {
 
     @Configuration
     @EnableCaching

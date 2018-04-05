@@ -22,14 +22,9 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.LinkedHashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Queue;
-import java.util.Set;
-import java.util.concurrent.ConcurrentLinkedQueue;
+
+import static com.hazelcast.test.starter.HazelcastProxyFactory.newCollectionFor;
 
 class ProxyInvocationHandler implements InvocationHandler, Serializable {
 
@@ -100,10 +95,9 @@ class ProxyInvocationHandler implements InvocationHandler, Serializable {
     }
 
     /**
-     *
      * @param targetClassLoader the classloader on which the proxy will be created
-     * @param delegate    the object to be delegated to by the proxy
-     * @return                  a proxy to delegate
+     * @param delegate          the object to be delegated to by the proxy
+     * @return a proxy to delegate
      */
     private Object proxyReturnObject(ClassLoader targetClassLoader, Object delegate) {
         Object resultingProxy;
@@ -137,7 +131,8 @@ class ProxyInvocationHandler implements InvocationHandler, Serializable {
                 Class<?> parameterType = parameterTypes[i];
                 ClassLoader parameterTypeClassloader = parameterType.getClassLoader();
                 ClassLoader delegateClassLoader = delegateClass.getClassLoader();
-                if (parameterTypeClassloader != String.class.getClassLoader() && parameterTypeClassloader != delegateClassLoader) {
+                if (parameterTypeClassloader != String.class.getClassLoader()
+                        && parameterTypeClassloader != delegateClassLoader) {
                     try {
                         Class<?> delegateParameterType = delegateClassLoader.loadClass(parameterType.getName());
                         parameterTypes[i] = delegateParameterType;
@@ -164,24 +159,6 @@ class ProxyInvocationHandler implements InvocationHandler, Serializable {
         Utils.debug("The proxy implements interfaces: ");
         for (Class<?> iface : ifaces) {
             Utils.debug(iface + ", loaded by " + iface.getClassLoader());
-        }
-    }
-
-    /**
-     * @return a new Collection object of a class that is assignable from the given type
-     */
-    private static Collection newCollectionFor(Class type) {
-        if (Set.class.isAssignableFrom(type)) {
-            // original set might be ordered
-            return new LinkedHashSet();
-        } else if (List.class.isAssignableFrom(type)) {
-            return new ArrayList();
-        } else if (Queue.class.isAssignableFrom(type)) {
-            return new ConcurrentLinkedQueue();
-        } else if (Collection.class.isAssignableFrom(type)) {
-            return new LinkedList();
-        } else {
-            throw new UnsupportedOperationException("Cannot locate collection type for " + type);
         }
     }
 

@@ -95,6 +95,11 @@ public class ClientQueryCacheContext implements QueryCacheContext {
     }
 
     @Override
+    public int getPartitionCount() {
+        return clientContext.getPartitionService().getPartitionCount();
+    }
+
+    @Override
     public ContextMutexFactory getLifecycleMutexFactory() {
         return mutexFactory;
     }

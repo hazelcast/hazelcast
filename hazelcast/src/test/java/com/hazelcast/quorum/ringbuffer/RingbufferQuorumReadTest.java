@@ -22,8 +22,9 @@ import com.hazelcast.quorum.AbstractQuorumTest;
 import com.hazelcast.quorum.QuorumException;
 import com.hazelcast.quorum.QuorumType;
 import com.hazelcast.ringbuffer.Ringbuffer;
-import com.hazelcast.test.HazelcastParametersRunnerFactory;
+import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -33,25 +34,28 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import static java.util.Arrays.asList;
 import static org.junit.Assert.fail;
 
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
-@Category({QuickTest.class})
+@UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class RingbufferQuorumReadTest extends AbstractQuorumTest {
 
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
-
-    @Parameterized.Parameter
-    public static QuorumType quorumType;
-
-    @Parameterized.Parameters(name = "quorumType:{0}")
+    @Parameters(name = "quorumType:{0}")
     public static Iterable<Object[]> parameters() {
         return asList(new Object[][]{{QuorumType.READ}, {QuorumType.READ_WRITE}});
     }
+
+    @Parameter
+    public static QuorumType quorumType;
+
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
 
     @BeforeClass
     public static void setUp() {
@@ -115,23 +119,23 @@ public class RingbufferQuorumReadTest extends AbstractQuorumTest {
 
     @Test
     public void readOne_quorum() throws InterruptedException {
-        ring(0).readOne(1l);
+        ring(0).readOne(1L);
     }
 
     @Test(expected = QuorumException.class)
     public void readOne_noQuorum() throws InterruptedException {
-        ring(3).readOne(1l);
+        ring(3).readOne(1L);
     }
 
     @Test
     public void readManyAsync_quorum() throws Exception {
-        ring(0).readManyAsync(1l, 1, 1, new Filter()).get();
+        ring(0).readManyAsync(1L, 1, 1, new Filter()).get();
     }
 
     @Test
-    public void readManyAsync_noQuorum() throws Exception {
+    public void readManyAsync_noQuorum() {
         try {
-            ring(3).readManyAsync(1l, 1, 1, new Filter()).get();
+            ring(3).readManyAsync(1L, 1, 1, new Filter()).get();
         } catch (Exception ex) {
             if (ex instanceof QuorumException || ex.getCause() instanceof QuorumException) {
                 return;

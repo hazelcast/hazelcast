@@ -21,6 +21,9 @@ import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import nl.jqno.equalsverifier.EqualsVerifier;
 import nl.jqno.equalsverifier.Warning;
+
+import static com.hazelcast.test.HazelcastTestSupport.assumeDifferentHashCodes;
+
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -31,12 +34,13 @@ public class QueueStoreConfigTest {
 
     @Test
     public void testEqualsAndHashCode() {
+        assumeDifferentHashCodes();
         EqualsVerifier.forClass(QueueStoreConfig.class)
-                      .allFieldsShouldBeUsedExcept("readOnly")
-                      .suppress(Warning.NONFINAL_FIELDS)
-                      .withPrefabValues(QueueStoreConfigReadOnly.class,
-                              new QueueStoreConfigReadOnly(new QueueStoreConfig().setClassName("red")),
-                              new QueueStoreConfigReadOnly(new QueueStoreConfig().setClassName("black")))
-                      .verify();
+                .allFieldsShouldBeUsedExcept("readOnly")
+                .suppress(Warning.NONFINAL_FIELDS)
+                .withPrefabValues(QueueStoreConfigReadOnly.class,
+                        new QueueStoreConfigReadOnly(new QueueStoreConfig().setClassName("red")),
+                        new QueueStoreConfigReadOnly(new QueueStoreConfig().setClassName("black")))
+                .verify();
     }
 }

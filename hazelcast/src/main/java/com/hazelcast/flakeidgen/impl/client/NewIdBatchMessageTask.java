@@ -19,19 +19,21 @@ package com.hazelcast.flakeidgen.impl.client;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.FlakeIdGeneratorNewIdBatchCodec;
 import com.hazelcast.client.impl.protocol.codec.FlakeIdGeneratorNewIdBatchCodec.RequestParameters;
-import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
+import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
+import com.hazelcast.flakeidgen.impl.FlakeIdGeneratorProxy;
+import com.hazelcast.flakeidgen.impl.FlakeIdGeneratorProxy.IdBatchAndWaitTime;
 import com.hazelcast.flakeidgen.impl.FlakeIdGeneratorService;
 import com.hazelcast.flakeidgen.impl.IdBatch;
-import com.hazelcast.flakeidgen.impl.FlakeIdGeneratorProxy;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.FlakeIdGeneratorPermission;
 
 import java.security.Permission;
+import java.util.concurrent.TimeUnit;
 
 public class NewIdBatchMessageTask
-        extends AbstractCallableMessageTask<RequestParameters> {
+        extends AbstractMessageTask<RequestParameters> {
 
     public NewIdBatchMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -49,10 +51,20 @@ public class NewIdBatchMessageTask
     }
 
     @Override
-    protected IdBatch call() throws Exception {
+    protected void processMessage() {
         FlakeIdGeneratorProxy proxy = (FlakeIdGeneratorProxy) nodeEngine.getProxyService()
                                                                         .getDistributedObject(getServiceName(), parameters.name);
-        return proxy.newIdBatch(parameters.batchSize);
+        final IdBatchAndWaitTime result = proxy.newIdBatch(parameters.batchSize);
+        if (result.waitTimeMillis == 0) {
+            sendResponse(result.idBatch);
+        } else {
+            nodeEngine.getExecutionService().schedule(new Runnable() {
+                @Override
+                public void run() {
+                    sendResponse(result.idBatch);
+                }
+            }, result.waitTimeMillis, TimeUnit.MILLISECONDS);
+        }
     }
 
     @Override

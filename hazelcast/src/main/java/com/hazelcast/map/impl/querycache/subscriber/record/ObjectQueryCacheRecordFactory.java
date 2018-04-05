@@ -33,8 +33,8 @@ public class ObjectQueryCacheRecordFactory implements QueryCacheRecordFactory {
     }
 
     @Override
-    public QueryCacheRecord createEntry(Data keyData, Data valueData) {
-        return new ObjectQueryCacheRecord(keyData, valueData, serializationService);
+    public QueryCacheRecord createRecord(Data valueData) {
+        return new ObjectQueryCacheRecord(valueData, serializationService);
     }
 
     @Override

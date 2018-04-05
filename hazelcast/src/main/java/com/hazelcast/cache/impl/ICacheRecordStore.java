@@ -23,6 +23,8 @@ import com.hazelcast.config.CacheConfig;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.ObjectNamespace;
+import com.hazelcast.spi.merge.MergingEntry;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 
 import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.processor.EntryProcessor;
@@ -310,6 +312,12 @@ public interface ICacheRecordStore {
     void clear();
 
     /**
+     * Resets the record store to it's initial state.
+     * Used in replication operations.
+     */
+    void reset();
+
+    /**
      * records of keys will be deleted one by one and will publish a REMOVE event
      * for each key.
      *
@@ -382,11 +390,11 @@ public interface ICacheRecordStore {
      * Associates the specified record with the specified key.
      * This is simply a put operation on the internal map data
      * without any CacheLoad. It also <b>DOES</b> trigger eviction!
-     *
-     * @param key    the key to the entry.
+     *  @param key    the key to the entry.
      * @param record the value to be associated with the specified key.
+     * @param updateJournal when true an event is appended to related event-journal
      */
-    void putRecord(Data key, CacheRecord record);
+    void putRecord(Data key, CacheRecord record, boolean updateJournal);
 
     /**
      * Removes the record for a key.
@@ -476,11 +484,11 @@ public interface ICacheRecordStore {
     ObjectNamespace getObjectNamespace();
 
     /**
-     * Merges given record (inside given {@link CacheEntryView}) with the existing record as given {@link CacheMergePolicy}.
+     * Merges the given {@link CacheEntryView} via the given {@link CacheMergePolicy}.
      *
-     * @param cacheEntryView the {@link CacheEntryView} instance that wraps key/value for merging and existing entry
-     * @param mergePolicy    the {@link CacheMergePolicy} instance for handling merge policy
-     * @param caller
+     * @param cacheEntryView the {@link CacheEntryView} instance to merge
+     * @param mergePolicy    the {@link CacheMergePolicy} instance to apply
+     * @param caller         the UUID of the caller
      * @param completionId   User generated id which shall be received as a field of the cache event upon completion of
      *                       the request in the cluster.
      * @param origin         source of the call
@@ -488,4 +496,19 @@ public interface ICacheRecordStore {
      */
     CacheRecord merge(CacheEntryView<Data, Data> cacheEntryView, CacheMergePolicy mergePolicy,
                       String caller, String origin, int completionId);
+
+    /**
+     * Merges the given {@link MergingEntry} via the given {@link SplitBrainMergePolicy}.
+     *
+     * @param mergingEntry the {@link MergingEntry} instance to merge
+     * @param mergePolicy  the {@link SplitBrainMergePolicy} instance to apply
+     * @return the used {@link CacheRecord} if merge is applied, otherwise {@code null}
+     */
+    CacheRecord merge(MergingEntry<Data, Data> mergingEntry, SplitBrainMergePolicy mergePolicy);
+
+
+    /**
+     * @return partition ID of this store
+     */
+    int getPartitionId();
 }

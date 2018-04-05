@@ -16,9 +16,9 @@
 
 package com.hazelcast.internal.networking.nio.iobalancer;
 
-import com.hazelcast.internal.networking.nio.MigratableHandler;
+import com.hazelcast.internal.networking.nio.MigratablePipeline;
+import com.hazelcast.internal.networking.nio.NioPipeline;
 import com.hazelcast.internal.networking.nio.NioThread;
-import com.hazelcast.internal.networking.nio.SelectionHandler;
 import com.hazelcast.util.ItemCounter;
 
 import java.util.Map;
@@ -28,40 +28,40 @@ import java.util.Set;
  * Describes a state of NioThread (im-)balance.
  *
  * It's used by {@link MigrationStrategy} to decide whether and what
- * {@link SelectionHandler} should be migrated.
+ * {@link NioPipeline} should be migrated.
  */
 class LoadImbalance {
     //number of events recorded by the busiest NioThread
-    long maximumEvents;
+    long maximumLoad;
     //number of events recorded by the least busy NioThread
-    long minimumEvents;
+    long minimumLoad;
     //busiest NioThread
-    NioThread sourceSelector;
+    NioThread srcOwner;
     //least busy NioThread
-    NioThread destinationSelector;
+    NioThread dstOwner;
 
-    private final Map<NioThread, Set<MigratableHandler>> selectorToHandlers;
-    private final ItemCounter<MigratableHandler> handlerLoadCounter;
+    private final Map<NioThread, Set<MigratablePipeline>> ownerToPipelines;
+    private final ItemCounter<MigratablePipeline> pipelineLoadCounter;
 
-    LoadImbalance(Map<NioThread, Set<MigratableHandler>> selectorToHandlers,
-                  ItemCounter<MigratableHandler> handlerLoadCounter) {
-        this.selectorToHandlers = selectorToHandlers;
-        this.handlerLoadCounter = handlerLoadCounter;
+    LoadImbalance(Map<NioThread, Set<MigratablePipeline>> ownerToPipelines,
+                  ItemCounter<MigratablePipeline> pipelineLoadCounter) {
+        this.ownerToPipelines = ownerToPipelines;
+        this.pipelineLoadCounter = pipelineLoadCounter;
     }
 
     /**
-     * @param selector
-     * @return A set of Handlers owned by the selector
+     * @param owner
+     * @return A set of Pipelines owned by the owner
      */
-    Set<MigratableHandler> getHandlersOwnerBy(NioThread selector) {
-        return selectorToHandlers.get(selector);
+    Set<MigratablePipeline> getPipelinesOwnedBy(NioThread owner) {
+        return ownerToPipelines.get(owner);
     }
 
     /**
-     * @param handler
-     * @return number of events recorded by the handler
+     * @param pipeline
+     * @return load recorded by the pipeline
      */
-    long getLoad(MigratableHandler handler) {
-        return handlerLoadCounter.get(handler);
+    long getLoad(MigratablePipeline pipeline) {
+        return pipelineLoadCounter.get(pipeline);
     }
 }

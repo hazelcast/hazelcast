@@ -40,8 +40,9 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class FlyweightTest {
 
-    private static byte[] DATA = new byte[]{(byte) 0x61, (byte) 0x62, (byte) 0x63, (byte) 0xC2, (byte) 0xA9, (byte) 0xE2,
-            (byte) 0x98, (byte) 0xBA};
+    private static byte[] DATA = new byte[]{
+            (byte) 0x61, (byte) 0x62, (byte) 0x63, (byte) 0xC2, (byte) 0xA9, (byte) 0xE2, (byte) 0x98, (byte) 0xBA,
+    };
 
     private MessageFlyweight flyweight = new MessageFlyweight();
     private ByteBuffer byteBuffer;
@@ -84,7 +85,8 @@ public class FlyweightTest {
 
     @Test
     public void shouldEncodeStringUtf8() {
-        flyweight.set("abc©☺");//0x61 0x62 0x63 0xC2 0xA9 0xE2 0x98 0xBA
+        //0x61 0x62 0x63 0xC2 0xA9 0xE2 0x98 0xBA
+        flyweight.set("abc©☺");
         assertEquals(12, flyweight.index());
         assertThat(byteBuffer.get(0), is((byte) 0x08));
         assertThat(byteBuffer.get(1), is((byte) 0x00));
@@ -102,8 +104,9 @@ public class FlyweightTest {
 
     @Test
     public void shouldEncodeByteArray() {
-        byte[] data = new byte[]{(byte) 0x61, (byte) 0x62, (byte) 0x63, (byte) 0xC2, (byte) 0xA9, (byte) 0xE2,
-                (byte) 0x98, (byte) 0xBA};
+        byte[] data = new byte[]{
+                (byte) 0x61, (byte) 0x62, (byte) 0x63, (byte) 0xC2, (byte) 0xA9, (byte) 0xE2, (byte) 0x98, (byte) 0xBA,
+        };
 
         flyweight.set(data);
         assertEquals(12, flyweight.index());

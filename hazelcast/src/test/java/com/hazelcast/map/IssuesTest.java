@@ -62,8 +62,10 @@ public class IssuesTest extends HazelcastTestSupport {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(n);
 
         final IMap<Integer, Integer> map = factory.newHazelcastInstance(getConfig()).getMap("testIssue321_1");
-        final BlockingQueue<com.hazelcast.core.EntryEvent<Integer, Integer>> events1 = new LinkedBlockingQueue<com.hazelcast.core.EntryEvent<Integer, Integer>>();
-        final BlockingQueue<com.hazelcast.core.EntryEvent<Integer, Integer>> events2 = new LinkedBlockingQueue<com.hazelcast.core.EntryEvent<Integer, Integer>>();
+        final BlockingQueue<com.hazelcast.core.EntryEvent<Integer, Integer>> events1
+                = new LinkedBlockingQueue<com.hazelcast.core.EntryEvent<Integer, Integer>>();
+        final BlockingQueue<com.hazelcast.core.EntryEvent<Integer, Integer>> events2
+                = new LinkedBlockingQueue<com.hazelcast.core.EntryEvent<Integer, Integer>>();
         map.addEntryListener(new EntryAdapter<Integer, Integer>() {
             @Override
             public void entryAdded(com.hazelcast.core.EntryEvent<Integer, Integer> event) {
@@ -91,8 +93,10 @@ public class IssuesTest extends HazelcastTestSupport {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(n);
 
         final IMap<Integer, Integer> imap = factory.newHazelcastInstance(getConfig()).getMap("testIssue321_2");
-        final BlockingQueue<com.hazelcast.core.EntryEvent<Integer, Integer>> events1 = new LinkedBlockingQueue<com.hazelcast.core.EntryEvent<Integer, Integer>>();
-        final BlockingQueue<com.hazelcast.core.EntryEvent<Integer, Integer>> events2 = new LinkedBlockingQueue<com.hazelcast.core.EntryEvent<Integer, Integer>>();
+        final BlockingQueue<com.hazelcast.core.EntryEvent<Integer, Integer>> events1
+                = new LinkedBlockingQueue<com.hazelcast.core.EntryEvent<Integer, Integer>>();
+        final BlockingQueue<com.hazelcast.core.EntryEvent<Integer, Integer>> events2
+                = new LinkedBlockingQueue<com.hazelcast.core.EntryEvent<Integer, Integer>>();
         imap.addEntryListener(new EntryAdapter<Integer, Integer>() {
             @Override
             public void entryAdded(com.hazelcast.core.EntryEvent<Integer, Integer> event) {

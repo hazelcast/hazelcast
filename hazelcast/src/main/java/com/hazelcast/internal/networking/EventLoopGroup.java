@@ -17,7 +17,6 @@
 package com.hazelcast.internal.networking;
 
 import com.hazelcast.internal.networking.nio.NioEventLoopGroup;
-import com.hazelcast.internal.networking.spinning.SpinningEventLoopGroup;
 
 /**
  * The EventLoopGroup is responsible for processing registered channels. Effectively it is the threading model for the io system.
@@ -32,7 +31,6 @@ import com.hazelcast.internal.networking.spinning.SpinningEventLoopGroup;
  * - packet/client-message reader and metrics
  *
  * @see NioEventLoopGroup
- * @see SpinningEventLoopGroup
  */
 public interface EventLoopGroup {
 

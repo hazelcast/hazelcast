@@ -37,7 +37,7 @@ import com.hazelcast.core.MessageListener;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.EntryViews;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.operation.MergeOperation;
+import com.hazelcast.map.impl.operation.LegacyMergeOperation;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.listener.EntryMergedListener;
 import com.hazelcast.map.merge.PassThroughMergePolicy;
@@ -131,7 +131,7 @@ public class ClientListenersTest extends HazelcastTestSupport {
         Data key = serializationService.toData(1);
         Data value = serializationService.toData(new ClientRegressionWithMockNetworkTest.SamplePortable(1));
         EntryView entryView = EntryViews.createSimpleEntryView(key, value, Mockito.mock(Record.class));
-        MergeOperation op = new MergeOperation(map.getName(), entryView, new PassThroughMergePolicy(), false);
+        LegacyMergeOperation op = new LegacyMergeOperation(map.getName(), entryView, new PassThroughMergePolicy(), false);
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         operationService.invokeOnPartition(MapService.SERVICE_NAME, op, partitionId);
 

@@ -19,6 +19,7 @@ package com.hazelcast.spring;
 import com.hazelcast.config.AtomicLongConfig;
 import com.hazelcast.config.AtomicReferenceConfig;
 import com.hazelcast.config.AwsConfig;
+import com.hazelcast.config.CRDTReplicationConfig;
 import com.hazelcast.config.CachePartitionLostListenerConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig;
@@ -28,6 +29,7 @@ import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExp
 import com.hazelcast.config.CacheSimpleEntryListenerConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.ConfigurationException;
 import com.hazelcast.config.CountDownLatchConfig;
 import com.hazelcast.config.CredentialsFactoryConfig;
 import com.hazelcast.config.DurableExecutorConfig;
@@ -67,18 +69,22 @@ import com.hazelcast.config.MulticastConfig;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.NetworkConfig;
+import com.hazelcast.config.PNCounterConfig;
 import com.hazelcast.config.PartitionGroupConfig;
 import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.config.PermissionConfig;
 import com.hazelcast.config.PermissionConfig.PermissionType;
 import com.hazelcast.config.PermissionPolicyConfig;
 import com.hazelcast.config.PredicateConfig;
+import com.hazelcast.config.ProbabilisticQuorumConfigBuilder;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.QueueStoreConfig;
 import com.hazelcast.config.QuorumConfig;
+import com.hazelcast.config.QuorumConfigBuilder;
 import com.hazelcast.config.QuorumListenerConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
+import com.hazelcast.config.RecentlyActiveQuorumConfigBuilder;
 import com.hazelcast.config.ReliableTopicConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.config.RingbufferConfig;
@@ -134,7 +140,7 @@ import static org.springframework.util.Assert.isTrue;
  * BeanDefinitionParser for Hazelcast Config Configuration.
  * <p>
  * <b>Sample Spring XML for Hazelcast Config:</b>
- *
+ * <p>
  * <pre>{@code
  *   <hz:config>
  *     <hz:map name="map1">
@@ -157,7 +163,7 @@ import static org.springframework.util.Assert.isTrue;
         "WeakerAccess"})
 public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDefinitionParser {
 
-    protected AbstractBeanDefinition parseInternal(Element element, ParserContext parserContext) {
+    public AbstractBeanDefinition parseInternal(Element element, ParserContext parserContext) {
         SpringXmlConfigBuilder springXmlConfigBuilder = new SpringXmlConfigBuilder(parserContext);
         springXmlConfigBuilder.handleConfig(element);
         return springXmlConfigBuilder.getBeanDefinition();
@@ -192,6 +198,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
         private ManagedMap<String, AbstractBeanDefinition> replicatedMapManagedMap;
         private ManagedMap<String, AbstractBeanDefinition> quorumManagedMap;
         private ManagedMap<String, AbstractBeanDefinition> flakeIdGeneratorConfigMap;
+        private ManagedMap<String, AbstractBeanDefinition> pnCounterManagedMap;
 
         public SpringXmlConfigBuilder(ParserContext parserContext) {
             this.parserContext = parserContext;
@@ -221,6 +228,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             this.replicatedMapManagedMap = createManagedMap("replicatedMapConfigs");
             this.quorumManagedMap = createManagedMap("quorumConfigs");
             this.flakeIdGeneratorConfigMap = createManagedMap("flakeIdGeneratorConfigs");
+            this.pnCounterManagedMap = createManagedMap("PNCounterConfigs");
         }
 
         private ManagedMap<String, AbstractBeanDefinition> createManagedMap(String configName) {
@@ -320,6 +328,10 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                         handleHotRestartPersistence(node);
                     } else if ("flake-id-generator".equals(nodeName)) {
                         handleFlakeIdGenerator(node);
+                    } else if ("crdt-replication".equals(nodeName)) {
+                        handleCRDTReplication(node);
+                    } else if ("pn-counter".equals(nodeName)) {
+                        handlePNCounter(node);
                     }
                 }
             }
@@ -348,6 +360,12 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             flakeIdGeneratorConfigMap.put(name, configBuilder.getBeanDefinition());
         }
 
+        private void handleCRDTReplication(Node node) {
+            final BeanDefinitionBuilder crdtReplicationConfigBuilder = createBeanBuilder(CRDTReplicationConfig.class);
+            fillAttributeValues(node, crdtReplicationConfigBuilder);
+            configBuilder.addPropertyValue("CRDTReplicationConfig", crdtReplicationConfigBuilder.getBeanDefinition());
+        }
+
         private void handleQuorum(Node node) {
             BeanDefinitionBuilder quorumConfigBuilder = createBeanBuilder(QuorumConfig.class);
             AbstractBeanDefinition beanDefinition = quorumConfigBuilder.getBeanDefinition();
@@ -356,6 +374,13 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             Node attrEnabled = node.getAttributes().getNamedItem("enabled");
             boolean enabled = attrEnabled != null && getBooleanValue(getTextContent(attrEnabled));
             quorumConfigBuilder.addPropertyValue("enabled", enabled);
+            // probabilistic-quorum and recently-active-quorum quorum configs are constructed via QuorumConfigBuilder
+            QuorumConfigBuilder configBuilder = null;
+            // initialized to a placeholder value; we may need to use this value before actually parsing the quorum-size
+            // node; it will anyway have the proper value in the final quorum config.
+            int quorumSize = 3;
+            String quorumClassName = null;
+
             for (Node n : childElements(node)) {
                 String value = getTextContent(n).trim();
                 String nodeName = cleanNodeName(n);
@@ -367,10 +392,63 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 } else if ("quorum-type".equals(nodeName)) {
                     quorumConfigBuilder.addPropertyValue("type", QuorumType.valueOf(value));
                 } else if ("quorum-function-class-name".equals(nodeName)) {
+                    quorumClassName = value;
                     quorumConfigBuilder.addPropertyValue(xmlToJavaName(nodeName), value);
+                } else if ("recently-active-quorum".equals(nodeName)) {
+                    configBuilder = handleRecentlyActiveQuorum(name, n, quorumSize);
+                } else if ("probabilistic-quorum".equals(nodeName)) {
+                    configBuilder = handleProbabilisticQuorum(name, n, quorumSize);
                 }
             }
+            if (configBuilder != null) {
+                boolean quorumFunctionDefinedByClassName = !isNullOrEmpty(quorumClassName);
+                if (quorumFunctionDefinedByClassName) {
+                    throw new ConfigurationException("A quorum cannot simultaneously define probabilistic-quorum or "
+                            + "recently-active-quorum and a quorum function class name.");
+                }
+                QuorumConfig constructedConfig = configBuilder.build();
+                // set the constructed quorum function implementation in the bean definition
+                quorumConfigBuilder.addPropertyValue("quorumFunctionImplementation",
+                        constructedConfig.getQuorumFunctionImplementation());
+            }
             quorumManagedMap.put(name, beanDefinition);
+        }
+
+        private QuorumConfigBuilder handleRecentlyActiveQuorum(String name, Node node, int quorumSize) {
+            QuorumConfigBuilder quorumConfigBuilder;
+            int heartbeatToleranceMillis = getIntegerValue("heartbeat-tolerance-millis",
+                    getAttribute(node, "heartbeat-tolerance-millis"),
+                    RecentlyActiveQuorumConfigBuilder.DEFAULT_HEARTBEAT_TOLERANCE_MILLIS);
+            quorumConfigBuilder = QuorumConfig.newRecentlyActiveQuorumConfigBuilder(name,
+                    quorumSize,
+                    heartbeatToleranceMillis);
+            return quorumConfigBuilder;
+        }
+
+        private QuorumConfigBuilder handleProbabilisticQuorum(String name, Node node, int quorumSize) {
+            QuorumConfigBuilder quorumConfigBuilder;
+            long acceptableHeartPause = getLongValue("acceptable-heartbeat-pause-millis",
+                    getAttribute(node, "acceptable-heartbeat-pause-millis"),
+                    ProbabilisticQuorumConfigBuilder.DEFAULT_HEARTBEAT_PAUSE_MILLIS);
+            double threshold = getDoubleValue("suspicion-threshold",
+                    getAttribute(node, "suspicion-threshold"),
+                    ProbabilisticQuorumConfigBuilder.DEFAULT_PHI_THRESHOLD);
+            int maxSampleSize = getIntegerValue("max-sample-size",
+                    getAttribute(node, "max-sample-size"),
+                    ProbabilisticQuorumConfigBuilder.DEFAULT_SAMPLE_SIZE);
+            long minStdDeviation = getLongValue("min-std-deviation-millis",
+                    getAttribute(node, "min-std-deviation-millis"),
+                    ProbabilisticQuorumConfigBuilder.DEFAULT_MIN_STD_DEVIATION);
+            long heartbeatIntervalMillis = getLongValue("heartbeat-interval-millis",
+                    getAttribute(node, "heartbeat-interval-millis"),
+                    ProbabilisticQuorumConfigBuilder.DEFAULT_HEARTBEAT_INTERVAL_MILLIS);
+            quorumConfigBuilder = QuorumConfig.newProbabilisticQuorumConfigBuilder(name, quorumSize)
+                                              .withAcceptableHeartbeatPauseMillis(acceptableHeartPause)
+                                              .withSuspicionThreshold(threshold)
+                                              .withHeartbeatIntervalMillis(heartbeatIntervalMillis)
+                                              .withMinStdDeviationMillis(minStdDeviation)
+                                              .withMaxSampleSize(maxSampleSize);
+            return quorumConfigBuilder;
         }
 
         private void handleMergePolicyConfig(Node node, BeanDefinitionBuilder builder) {
@@ -456,6 +534,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     replicatedMapConfigBuilder.addPropertyValue("listenerConfigs", listeners);
                 } else if ("quorum-ref".equals(nodeName)) {
                     replicatedMapConfigBuilder.addPropertyValue("quorumName", getTextContent(childNode));
+                } else if ("merge-policy".equals(nodeName)) {
+                    handleMergePolicyConfig(childNode, replicatedMapConfigBuilder);
                 }
             }
             replicatedMapManagedMap.put(name, replicatedMapConfigBuilder.getBeanDefinition());
@@ -643,8 +723,6 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 String name = cleanNodeName(child);
                 if ("properties".equals(name)) {
                     handleProperties(child, sslConfigBuilder);
-                } else if ("host-verification".equals(name)) {
-                    handleHostVerification(child, sslConfigBuilder);
                 }
             }
             networkConfigBuilder.addPropertyValue("SSLConfig", sslConfigBuilder.getBeanDefinition());
@@ -663,7 +741,15 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
         }
 
         public void handleScheduledExecutor(Node node) {
-            createAndFillListedBean(node, ScheduledExecutorConfig.class, "name", scheduledExecutorManagedMap);
+            BeanDefinitionBuilder builder = createAndFillListedBean(node, ScheduledExecutorConfig.class,
+                    "name", scheduledExecutorManagedMap, "mergePolicy");
+
+            for (Node n : childElements(node)) {
+                String name = cleanNodeName(n);
+                if ("merge-policy".equals(name)) {
+                    handleMergePolicyConfig(n, builder);
+                }
+            }
         }
 
         public void handleCardinalityEstimator(Node node) {
@@ -676,6 +762,10 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     handleMergePolicyConfig(n, builder);
                 }
             }
+        }
+
+        public void handlePNCounter(Node node) {
+            createAndFillListedBean(node, PNCounterConfig.class, "name", pnCounterManagedMap);
         }
 
         public void handleMulticast(Node node, BeanDefinitionBuilder joinConfigBuilder) {
@@ -698,8 +788,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
         }
 
         public void handleTcpIp(Node node, BeanDefinitionBuilder joinConfigBuilder) {
-            BeanDefinitionBuilder builder = createAndFillBeanBuilder(node, TcpIpConfig.class, "tcpIpConfig", joinConfigBuilder,
-                    "interface", "member", "members");
+            BeanDefinitionBuilder builder = createAndFillBeanBuilder(node, TcpIpConfig.class,
+                    "tcpIpConfig", joinConfigBuilder, "interface", "member", "members");
             ManagedList<String> members = new ManagedList<String>();
             for (Node n : childElements(node)) {
                 String name = cleanNodeName(n);
@@ -773,6 +863,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     handleRingbufferStoreConfig(childNode, ringbufferConfigBuilder);
                 } else if ("quorum-ref".equals(nodeName)) {
                     ringbufferConfigBuilder.addPropertyValue("quorumName", getTextContent(childNode));
+                } else if ("merge-policy".equals(nodeName)) {
+                    handleMergePolicyConfig(childNode, ringbufferConfigBuilder);
                 }
             }
             ringbufferManagedMap.put(getAttribute(node, "name"), ringbufferConfigBuilder.getBeanDefinition());
@@ -844,6 +936,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     handleQueueStoreConfig(childNode, queueConfigBuilder);
                 } else if ("quorum-ref".equals(nodeName)) {
                     queueConfigBuilder.addPropertyValue("quorumName", getTextContent(childNode));
+                } else if ("merge-policy".equals(nodeName)) {
+                    handleMergePolicyConfig(childNode, queueConfigBuilder);
                 }
             }
             queueManagedMap.put(name, queueConfigBuilder.getBeanDefinition());
@@ -979,6 +1073,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     mapConfigBuilder.addPropertyValue("entryListenerConfigs", listeners);
                 } else if ("quorum-ref".equals(nodeName)) {
                     mapConfigBuilder.addPropertyValue("quorumName", getTextContent(childNode));
+                } else if ("merge-policy".equals(nodeName)) {
+                    handleMergePolicyConfig(childNode, mapConfigBuilder);
                 } else if ("query-caches".equals(nodeName)) {
                     ManagedList queryCaches = getQueryCaches(childNode);
                     mapConfigBuilder.addPropertyValue("queryCacheConfigs", queryCaches);
@@ -1368,6 +1464,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     multiMapConfigBuilder.addPropertyValue("entryListenerConfigs", listeners);
                 } else if ("quorum-ref".equals(nodeName)) {
                     multiMapConfigBuilder.addPropertyValue("quorumName", getTextContent(childNode));
+                } else if ("merge-policy".equals(nodeName)) {
+                    handleMergePolicyConfig(childNode, multiMapConfigBuilder);
                 }
             }
             multiMapManagedMap.put(name, multiMapConfigBuilder.getBeanDefinition());
@@ -1422,6 +1520,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     handleSecurityPermissions(child, securityConfigBuilder);
                 } else if ("security-interceptors".equals(nodeName)) {
                     handleSecurityInterceptors(child, securityConfigBuilder);
+                } else if ("client-block-unmapped-actions".equals(nodeName)) {
+                    securityConfigBuilder.addPropertyValue("clientBlockUnmappedActions", getBooleanValue(getTextContent(child)));
                 }
             }
             configBuilder.addPropertyValue("securityConfig", beanDefinition);

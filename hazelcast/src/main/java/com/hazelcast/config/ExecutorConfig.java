@@ -214,6 +214,7 @@ public class ExecutorConfig implements IdentifiedDataSerializable, Versioned {
         out.writeInt(poolSize);
         out.writeInt(queueCapacity);
         out.writeBoolean(statisticsEnabled);
+        // RU_COMPAT_3_9
         if (out.getVersion().isGreaterOrEqual(Versions.V3_10)) {
             out.writeUTF(quorumName);
         }
@@ -225,6 +226,7 @@ public class ExecutorConfig implements IdentifiedDataSerializable, Versioned {
         poolSize = in.readInt();
         queueCapacity = in.readInt();
         statisticsEnabled = in.readBoolean();
+        // RU_COMPAT_3_9
         if (in.getVersion().isGreaterOrEqual(Versions.V3_10)) {
             quorumName = in.readUTF();
         }

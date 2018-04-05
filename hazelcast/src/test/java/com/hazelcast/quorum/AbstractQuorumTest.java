@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.quorum;
 
 import com.hazelcast.cache.ICache;
@@ -14,6 +30,7 @@ import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.LockConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MultiMapConfig;
+import com.hazelcast.config.PNCounterConfig;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.QuorumConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
@@ -34,6 +51,7 @@ import com.hazelcast.core.ISemaphore;
 import com.hazelcast.core.ISet;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.core.ReplicatedMap;
+import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.ringbuffer.Ringbuffer;
@@ -51,12 +69,15 @@ import static java.util.Arrays.asList;
 
 /**
  * Base class for all quorum tests.
- *
+ * <p>
  * It defines quorum and data-structures that use it. Then it initialises and splits the cluster into two parts:
- * - 3 nodes -> this sub-cluster matches the quorum requirements
- * - 2 nodes -> this sub-cluster DOES NOT match the quorum requirements
+ * <ul>
+ * <li>3 nodes -> this sub-cluster matches the quorum requirements</li>
+ * <li>2 nodes -> this sub-cluster DOES NOT match the quorum requirements</li>
+ * </ul>
  */
-public class AbstractQuorumTest {
+@SuppressWarnings("WeakerAccess")
+public abstract class AbstractQuorumTest {
 
     protected static final String SEMAPHORE = "quorum" + randomString();
     protected static final String REFERENCE_NAME = "reference" + "quorum" + randomString();
@@ -75,6 +96,7 @@ public class AbstractQuorumTest {
     protected static final String RINGBUFFER_NAME = "quorum" + randomString();
     protected static final String SCHEDULED_EXEC_NAME = "quorum" + randomString();
     protected static final String SET_NAME = "quorum" + randomString();
+    protected static final String PN_COUNTER_NAME = "quorum" + randomString();
 
     protected static PartitionedCluster cluster;
 
@@ -193,6 +215,12 @@ public class AbstractQuorumTest {
         return config;
     }
 
+    protected static PNCounterConfig newPNCounterConfig(QuorumType quorumType, String quorumName) {
+        PNCounterConfig config = new PNCounterConfig(PN_COUNTER_NAME + quorumType.name());
+        config.setQuorumName(quorumName);
+        return config;
+    }
+
     protected static QuorumConfig newQuorumConfig(QuorumType quorumType, String quorumName) {
         QuorumConfig quorumConfig = new QuorumConfig();
         quorumConfig.setName(quorumName);
@@ -231,6 +259,7 @@ public class AbstractQuorumTest {
                 config.addScheduledExecutorConfig(newScheduledExecConfig(quorumType, quorumName, postfix));
             }
             config.addSetConfig(newSetConfig(quorumType, quorumName));
+            config.addPNCounterConfig(newPNCounterConfig(quorumType, quorumName));
         }
 
         cluster.createFiveMemberCluster(config);
@@ -254,7 +283,7 @@ public class AbstractQuorumTest {
         return cluster.instance[index].getSemaphore(SEMAPHORE + quorumType.name());
     }
 
-    protected IAtomicReference aref(int index, QuorumType quorumType) {
+    protected IAtomicReference<QuorumTestClass> aref(int index, QuorumType quorumType) {
         return cluster.instance[index].getAtomicReference(REFERENCE_NAME + quorumType.name());
     }
 
@@ -330,14 +359,12 @@ public class AbstractQuorumTest {
         return cluster.instance[index].getSet(SET_NAME + quorumType.name());
     }
 
-    public static class Objekt implements Serializable {
-        public static Objekt object() {
-            return new Objekt();
-        }
+    protected PNCounter pnCounter(int index, QuorumType quorumType) {
+        return cluster.instance[index].getPNCounter(PN_COUNTER_NAME + quorumType.name());
     }
 
     protected static IFunction function() {
-        return new IFunction() {
+        return new IFunction<Object, Object>() {
             @Override
             public Object apply(Object input) {
                 return input;
@@ -345,4 +372,10 @@ public class AbstractQuorumTest {
         };
     }
 
+    public static class QuorumTestClass implements Serializable {
+
+        public static QuorumTestClass object() {
+            return new QuorumTestClass();
+        }
+    }
 }

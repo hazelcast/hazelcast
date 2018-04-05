@@ -79,6 +79,11 @@ public abstract class AbstractBaseReplicatedRecordStore<K, V> implements Replica
     }
 
     @Override
+    public int getPartitionId() {
+        return partitionId;
+    }
+
+    @Override
     public String getName() {
         return name;
     }

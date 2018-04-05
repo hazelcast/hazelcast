@@ -25,7 +25,8 @@ import com.hazelcast.scheduledexecutor.impl.ScheduledTaskDescriptor;
 import java.util.Collection;
 import java.util.List;
 
-public abstract class AbstractGetAllScheduledOperation extends AbstractSchedulerOperation {
+public abstract class AbstractGetAllScheduledOperation
+        extends AbstractSchedulerOperation {
 
     public AbstractGetAllScheduledOperation() {
     }
@@ -44,10 +45,7 @@ public abstract class AbstractGetAllScheduledOperation extends AbstractScheduler
 
         Collection<ScheduledTaskDescriptor> tasks = container.getTasks();
         for (ScheduledTaskDescriptor task : tasks) {
-            if (task.isTaskOwner()) {
-                handlers.add(container.offprintHandler(task.getDefinition().getName()));
-            }
+            handlers.add(container.offprintHandler(task.getDefinition().getName()));
         }
     }
-
 }

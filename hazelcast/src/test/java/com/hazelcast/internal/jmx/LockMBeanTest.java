@@ -62,8 +62,8 @@ public class LockMBeanTest extends HazelcastTestSupport {
 
     @Test
     public void testLockCountIsTwo_whenLockedTwice() throws Exception {
-        lock.lock(1000, TimeUnit.MILLISECONDS);
-        lock.lock(1000, TimeUnit.MILLISECONDS);
+        lock.lock(10000, TimeUnit.MILLISECONDS);
+        lock.lock(10000, TimeUnit.MILLISECONDS);
 
         // check number of times locked (locked twice now)
         int lockCount = getIntegerAttribute("lockCount");

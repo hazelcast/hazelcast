@@ -20,7 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.TransactionalSet;
 import com.hazelcast.quorum.AbstractQuorumTest;
 import com.hazelcast.quorum.QuorumType;
-import com.hazelcast.test.HazelcastParametersRunnerFactory;
+import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionContext;
@@ -32,6 +32,9 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -42,17 +45,11 @@ import static com.hazelcast.transaction.TransactionOptions.TransactionType.ONE_P
 import static com.hazelcast.transaction.TransactionOptions.TransactionType.TWO_PHASE;
 
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category({QuickTest.class})
 public class TransactionalSetQuorumWriteTest extends AbstractQuorumTest {
 
-    @Parameterized.Parameter(0)
-    public static TransactionOptions options;
-
-    @Parameterized.Parameter(1)
-    public static QuorumType quorumType;
-
-    @Parameterized.Parameters(name = "Executing: {0} {1}")
+    @Parameters(name = "Executing: {0} {1}")
     public static Collection<Object[]> parameters() {
 
         TransactionOptions onePhaseOption = TransactionOptions.getDefault();
@@ -68,6 +65,12 @@ public class TransactionalSetQuorumWriteTest extends AbstractQuorumTest {
                 new Object[]{twoPhaseOption, READ_WRITE}
         );
     }
+
+    @Parameter(0)
+    public static TransactionOptions options;
+
+    @Parameter(1)
+    public static QuorumType quorumType;
 
     @BeforeClass
     public static void setUp() {
@@ -118,5 +121,4 @@ public class TransactionalSetQuorumWriteTest extends AbstractQuorumTest {
     public TransactionContext newTransactionContext(int index) {
         return cluster.instance[index].newTransactionContext(options);
     }
-
 }

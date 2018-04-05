@@ -40,7 +40,7 @@ public class MapPermissionTest
                 "index",
                 "intercept",
                 "create",
-                "destroy"
+                "destroy",
         };
     }
 

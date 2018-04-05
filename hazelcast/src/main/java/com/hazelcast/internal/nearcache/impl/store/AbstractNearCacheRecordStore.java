@@ -74,8 +74,8 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
      * we assume 32 bit JVM or compressed-references enabled 64 bit JVM
      * by ignoring compressed-references disable mode on 64 bit JVM.
      */
-    protected static final int REFERENCE_SIZE = MEM_AVAILABLE ? MEM.arrayIndexScale(Object[].class) : (Integer.SIZE / Byte.SIZE);
-    protected static final int MILLI_SECONDS_IN_A_SECOND = 1000;
+    protected static final long REFERENCE_SIZE = MEM_AVAILABLE ? MEM.arrayIndexScale(Object[].class) : (Integer.SIZE / Byte.SIZE);
+    protected static final long MILLI_SECONDS_IN_A_SECOND = 1000;
 
     protected final long timeToLiveMillis;
     protected final long maxIdleMillis;

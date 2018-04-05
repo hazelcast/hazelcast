@@ -42,8 +42,9 @@ import static com.hazelcast.util.Preconditions.isNotNull;
 import static java.lang.Boolean.getBoolean;
 
 /**
- * Support class for loading Hazelcast services and hooks based on the Java {@link ServiceLoader} specification,
- * but changed in the fact of classloaders to test for given services to work in multi classloader
+ * Support class for loading Hazelcast services and hooks based on the Java
+ * {@link java.util.ServiceLoader} specification, but changed to the fact of
+ * class loaders to test for given services to work in multi classloader
  * environments like application or OSGi servers.
  */
 public final class ServiceLoader {
@@ -92,7 +93,7 @@ public final class ServiceLoader {
         }
         if (serviceDefinitions.isEmpty()) {
             Logger.getLogger(ServiceLoader.class).finest(
-                    "Service loader could not load 'META-INF/services/" + factoryId + "' It may be empty or does not exist.");
+                    "Service loader could not load 'META-INF/services/" + factoryId + "'. It may be empty or does not exist.");
         }
         return serviceDefinitions;
     }
@@ -181,9 +182,8 @@ public final class ServiceLoader {
             if (clientClassLoader != classLoader && clientClassLoader != tccl && clientClassLoader != coreClassLoader) {
                 classLoaders.add(clientClassLoader);
             }
-
         } catch (ClassNotFoundException ignore) {
-            // ignore since we does not have HazelcastClient in classpath
+            // ignore since we may not have the HazelcastClient in the classpath
             ignore(ignore);
         }
 
@@ -191,8 +191,8 @@ public final class ServiceLoader {
     }
 
     /**
-     * Definition of the internal service based on classloader that is able to load it
-     * and the classname of the found service.
+     * Definition of the internal service based on the classloader that is able to load it
+     * and the class name of the service that was found.
      */
     static final class ServiceDefinition {
 

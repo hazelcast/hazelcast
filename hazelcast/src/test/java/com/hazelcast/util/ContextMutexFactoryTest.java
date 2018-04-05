@@ -16,6 +16,7 @@
 
 package com.hazelcast.util;
 
+import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
@@ -52,7 +53,7 @@ public class ContextMutexFactoryTest {
         final String[] keys = new String[]{"a", "b", "c"};
         final Map<String, Integer> timesAcquired = new HashMap<String, Integer>();
 
-        int concurrency = Runtime.getRuntime().availableProcessors() * 3;
+        int concurrency = RuntimeAvailableProcessors.get() * 3;
         final CyclicBarrier cyc = new CyclicBarrier(concurrency + 1);
 
         for (int i = 0; i < concurrency; i++) {

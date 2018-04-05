@@ -90,13 +90,8 @@ public final class ScheduledTaskHandlerImpl
 
     @Override
     public String toUrn() {
-        return URN_BASE
-                + (address == null
-                        ? "-"
-                        : (address.getHost() + ":" + String.valueOf(address.getPort()))) + DESC_SEP
-                + String.valueOf(partitionId) + DESC_SEP
-                + schedulerName + DESC_SEP
-                + taskName;
+        return URN_BASE + (address == null ? "-" : (address.getHost() + ":" + String.valueOf(address.getPort()))) + DESC_SEP
+                + String.valueOf(partitionId) + DESC_SEP + schedulerName + DESC_SEP + taskName;
     }
 
     @Override
@@ -200,8 +195,7 @@ public final class ScheduledTaskHandlerImpl
         String scheduler = parts[2];
         String task = parts[3];
 
-        return addr != null
-                ? new ScheduledTaskHandlerImpl(addr, scheduler, task)
-                : new ScheduledTaskHandlerImpl(partitionId, scheduler, task);
+        return addr != null ? new ScheduledTaskHandlerImpl(addr, scheduler, task) : new ScheduledTaskHandlerImpl(partitionId,
+                scheduler, task);
     }
 }

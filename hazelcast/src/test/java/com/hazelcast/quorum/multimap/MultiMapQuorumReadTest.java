@@ -23,30 +23,35 @@ import com.hazelcast.mapreduce.aggregation.Supplier;
 import com.hazelcast.quorum.AbstractQuorumTest;
 import com.hazelcast.quorum.QuorumException;
 import com.hazelcast.quorum.QuorumType;
-import com.hazelcast.test.HazelcastParametersRunnerFactory;
+import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import static java.util.Arrays.asList;
 
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
-@Category({QuickTest.class})
+@UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class MultiMapQuorumReadTest extends AbstractQuorumTest {
 
-    @Parameterized.Parameter
-    public static QuorumType quorumType;
-
-    @Parameterized.Parameters(name = "quorumType:{0}")
+    @Parameters(name = "quorumType:{0}")
     public static Iterable<Object[]> parameters() {
         return asList(new Object[][]{{QuorumType.READ}, {QuorumType.READ_WRITE}});
     }
+
+    @Parameter
+    public static QuorumType quorumType;
 
     @BeforeClass
     public static void setUp() {
@@ -122,7 +127,7 @@ public class MultiMapQuorumReadTest extends AbstractQuorumTest {
     public void localKeySet_successful_whenQuorumSize_met() {
         try {
             map(0).localKeySet();
-        } catch (UnsupportedOperationException ex) {
+        } catch (UnsupportedOperationException ignored) {
         }
     }
 
@@ -176,11 +181,13 @@ public class MultiMapQuorumReadTest extends AbstractQuorumTest {
     }
 
     @Test
+    @Ignore
     public void aggregate_successful_whenQuorumSize_met() {
         map(0).aggregate(Supplier.all(), Aggregations.distinctValues());
     }
 
     @Test
+    @Ignore
     public void aggregate_successful_whenQuorumSize_notMet() {
         map(3).aggregate(Supplier.all(), Aggregations.distinctValues());
     }

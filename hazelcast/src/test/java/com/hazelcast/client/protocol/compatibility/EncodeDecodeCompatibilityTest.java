@@ -16,57 +16,41 @@
 
 package com.hazelcast.client.protocol.compatibility;
 
+import com.hazelcast.client.impl.MemberImpl;
+import com.hazelcast.client.impl.client.DistributedObjectInfo;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.*;
+import com.hazelcast.core.Member;
+import com.hazelcast.internal.serialization.impl.HeapData;
+import com.hazelcast.map.impl.SimpleEntryView;
+import com.hazelcast.map.impl.querycache.event.DefaultQueryCacheEventData;
+import com.hazelcast.map.impl.querycache.event.QueryCacheEventData;
+import com.hazelcast.mapreduce.JobPartitionState;
+import com.hazelcast.mapreduce.impl.task.JobPartitionStateImpl;
+import com.hazelcast.nio.Address;
+import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.transaction.impl.xa.SerializableXID;
+
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import java.lang.reflect.Array;
+import java.net.UnknownHostException;
+import javax.transaction.xa.Xid;
+import java.util.AbstractMap;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
 
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aBoolean;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aByte;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aData;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aListOfEntry;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aListOfStringToByteArrEntry;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aLong;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aMember;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aNamePartitionSequenceList;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aPartitionTable;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aPartitionUuidList;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aQueryCacheEventData;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aString;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aUUID;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.anAddress;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.anEntryView;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.anInt;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.anXid;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.arrLongs;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.cacheEntryListenerConfigs;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.cacheEventDatas;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.datas;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.distributedObjectInfos;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.evictionConfig;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.hotRestartConfig;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.isEqual;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.jobPartitionStates;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.listenerConfigs;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.longs;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.mapAttributeConfigs;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.mapIndexConfigs;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.mapStoreConfig;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.members;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.nearCacheConfig;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.queryCacheConfigs;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.queryCacheEventDatas;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.queueStoreConfig;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.ringbufferStore;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.strings;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.taskHandlers;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.timedExpiryPolicyFactoryConfig;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.uuids;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.wanReplicationRef;
 import static org.junit.Assert.assertTrue;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.*;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -340,6 +324,15 @@ public class EncodeDecodeCompatibilityTest {
         ClientMessage clientMessage = ClientAddPartitionListenerCodec.encodePartitionsEvent( aPartitionTable ,  anInt   );
         handler.handle(ClientMessage.createForDecode(clientMessage.buffer(), 0));
      }
+}
+{
+    ClientMessage clientMessage = ClientCreateProxiesCodec.encodeRequest(    aListOfStringToString   );
+    ClientCreateProxiesCodec.RequestParameters params = ClientCreateProxiesCodec.decodeRequest(ClientMessage.createForDecode(clientMessage.buffer(), 0));
+            assertTrue(isEqual(aListOfStringToString, params.proxies));
+}
+{
+    ClientMessage clientMessage = ClientCreateProxiesCodec.encodeResponse( );
+    ClientCreateProxiesCodec.ResponseParameters params = ClientCreateProxiesCodec.decodeResponse(ClientMessage.createForDecode(clientMessage.buffer(), 0));
 }
 {
     ClientMessage clientMessage = MapPutCodec.encodeRequest(    aString ,    aData ,    aData ,    aLong ,    aLong   );
@@ -1332,11 +1325,12 @@ public class EncodeDecodeCompatibilityTest {
             assertTrue(isEqual(aData, params.projection));
 }
 {
-    ClientMessage clientMessage = MapEventJournalReadCodec.encodeResponse(    anInt ,    datas ,    arrLongs   );
+    ClientMessage clientMessage = MapEventJournalReadCodec.encodeResponse(    anInt ,    datas ,    arrLongs ,    aLong   );
     MapEventJournalReadCodec.ResponseParameters params = MapEventJournalReadCodec.decodeResponse(ClientMessage.createForDecode(clientMessage.buffer(), 0));
             assertTrue(isEqual(anInt, params.readCount));
             assertTrue(isEqual(datas, params.items));
             assertTrue(isEqual(arrLongs, params.itemSeqs));
+            assertTrue(isEqual(aLong, params.nextSeq));
 }
 {
     ClientMessage clientMessage = MultiMapPutCodec.encodeRequest(    aString ,    aData ,    aData ,    aLong   );
@@ -1634,6 +1628,17 @@ public class EncodeDecodeCompatibilityTest {
     ClientMessage clientMessage = MultiMapRemoveEntryCodec.encodeResponse(    aBoolean   );
     MultiMapRemoveEntryCodec.ResponseParameters params = MultiMapRemoveEntryCodec.decodeResponse(ClientMessage.createForDecode(clientMessage.buffer(), 0));
             assertTrue(isEqual(aBoolean, params.response));
+}
+{
+    ClientMessage clientMessage = MultiMapDeleteCodec.encodeRequest(    aString ,    aData ,    aLong   );
+    MultiMapDeleteCodec.RequestParameters params = MultiMapDeleteCodec.decodeRequest(ClientMessage.createForDecode(clientMessage.buffer(), 0));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.key));
+            assertTrue(isEqual(aLong, params.threadId));
+}
+{
+    ClientMessage clientMessage = MultiMapDeleteCodec.encodeResponse( );
+    MultiMapDeleteCodec.ResponseParameters params = MultiMapDeleteCodec.decodeResponse(ClientMessage.createForDecode(clientMessage.buffer(), 0));
 }
 {
     ClientMessage clientMessage = QueueOfferCodec.encodeRequest(    aString ,    aData ,    aLong   );
@@ -2924,6 +2929,16 @@ public class EncodeDecodeCompatibilityTest {
     ClientMessage clientMessage = SemaphoreTryAcquireCodec.encodeResponse(    aBoolean   );
     SemaphoreTryAcquireCodec.ResponseParameters params = SemaphoreTryAcquireCodec.decodeResponse(ClientMessage.createForDecode(clientMessage.buffer(), 0));
             assertTrue(isEqual(aBoolean, params.response));
+}
+{
+    ClientMessage clientMessage = SemaphoreIncreasePermitsCodec.encodeRequest(    aString ,    anInt   );
+    SemaphoreIncreasePermitsCodec.RequestParameters params = SemaphoreIncreasePermitsCodec.decodeRequest(ClientMessage.createForDecode(clientMessage.buffer(), 0));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(anInt, params.increase));
+}
+{
+    ClientMessage clientMessage = SemaphoreIncreasePermitsCodec.encodeResponse( );
+    SemaphoreIncreasePermitsCodec.ResponseParameters params = SemaphoreIncreasePermitsCodec.decodeResponse(ClientMessage.createForDecode(clientMessage.buffer(), 0));
 }
 {
     ClientMessage clientMessage = ReplicatedMapPutCodec.encodeRequest(    aString ,    aData ,    aData ,    aLong   );
@@ -4313,11 +4328,12 @@ public class EncodeDecodeCompatibilityTest {
             assertTrue(isEqual(aData, params.projection));
 }
 {
-    ClientMessage clientMessage = CacheEventJournalReadCodec.encodeResponse(    anInt ,    datas ,    arrLongs   );
+    ClientMessage clientMessage = CacheEventJournalReadCodec.encodeResponse(    anInt ,    datas ,    arrLongs ,    aLong   );
     CacheEventJournalReadCodec.ResponseParameters params = CacheEventJournalReadCodec.decodeResponse(ClientMessage.createForDecode(clientMessage.buffer(), 0));
             assertTrue(isEqual(anInt, params.readCount));
             assertTrue(isEqual(datas, params.items));
             assertTrue(isEqual(arrLongs, params.itemSeqs));
+            assertTrue(isEqual(aLong, params.nextSeq));
 }
 {
     ClientMessage clientMessage = XATransactionClearRemoteCodec.encodeRequest(    anXid   );
@@ -4619,11 +4635,12 @@ public class EncodeDecodeCompatibilityTest {
             assertTrue(isEqual(aData, params.filter));
 }
 {
-    ClientMessage clientMessage = RingbufferReadManyCodec.encodeResponse(    anInt ,    datas ,    arrLongs   );
+    ClientMessage clientMessage = RingbufferReadManyCodec.encodeResponse(    anInt ,    datas ,    arrLongs ,    aLong   );
     RingbufferReadManyCodec.ResponseParameters params = RingbufferReadManyCodec.decodeResponse(ClientMessage.createForDecode(clientMessage.buffer(), 0));
             assertTrue(isEqual(anInt, params.readCount));
             assertTrue(isEqual(datas, params.items));
             assertTrue(isEqual(arrLongs, params.itemSeqs));
+            assertTrue(isEqual(aLong, params.nextSeq));
 }
 {
     ClientMessage clientMessage = DurableExecutorShutdownCodec.encodeRequest(    aString   );
@@ -4924,7 +4941,7 @@ public class EncodeDecodeCompatibilityTest {
     ScheduledExecutorDisposeFromAddressCodec.ResponseParameters params = ScheduledExecutorDisposeFromAddressCodec.decodeResponse(ClientMessage.createForDecode(clientMessage.buffer(), 0));
 }
 {
-    ClientMessage clientMessage = DynamicConfigAddMultiMapConfigCodec.encodeRequest(    aString ,    aString ,    listenerConfigs ,    aBoolean ,    anInt ,    anInt ,    aBoolean ,   aString  );
+    ClientMessage clientMessage = DynamicConfigAddMultiMapConfigCodec.encodeRequest(    aString ,    aString ,    listenerConfigs ,    aBoolean ,    anInt ,    anInt ,    aBoolean ,    aString ,    aString ,    anInt   );
     DynamicConfigAddMultiMapConfigCodec.RequestParameters params = DynamicConfigAddMultiMapConfigCodec.decodeRequest(ClientMessage.createForDecode(clientMessage.buffer(), 0));
             assertTrue(isEqual(aString, params.name));
             assertTrue(isEqual(aString, params.collectionType));
@@ -4933,13 +4950,16 @@ public class EncodeDecodeCompatibilityTest {
             assertTrue(isEqual(anInt, params.backupCount));
             assertTrue(isEqual(anInt, params.asyncBackupCount));
             assertTrue(isEqual(aBoolean, params.statisticsEnabled));
+            assertTrue(isEqual(aString, params.quorumName));
+            assertTrue(isEqual(aString, params.mergePolicy));
+            assertTrue(isEqual(anInt, params.mergeBatchSize));
 }
 {
     ClientMessage clientMessage = DynamicConfigAddMultiMapConfigCodec.encodeResponse( );
     DynamicConfigAddMultiMapConfigCodec.ResponseParameters params = DynamicConfigAddMultiMapConfigCodec.decodeResponse(ClientMessage.createForDecode(clientMessage.buffer(), 0));
 }
 {
-    ClientMessage clientMessage = DynamicConfigAddRingbufferConfigCodec.encodeRequest(    aString ,    anInt ,    anInt ,    anInt ,    anInt ,    aString ,    ringbufferStore ,   aString  );
+    ClientMessage clientMessage = DynamicConfigAddRingbufferConfigCodec.encodeRequest(    aString ,    anInt ,    anInt ,    anInt ,    anInt ,    aString ,    ringbufferStore ,    aString ,    aString ,    anInt   );
     DynamicConfigAddRingbufferConfigCodec.RequestParameters params = DynamicConfigAddRingbufferConfigCodec.decodeRequest(ClientMessage.createForDecode(clientMessage.buffer(), 0));
             assertTrue(isEqual(aString, params.name));
             assertTrue(isEqual(anInt, params.capacity));
@@ -4948,17 +4968,23 @@ public class EncodeDecodeCompatibilityTest {
             assertTrue(isEqual(anInt, params.timeToLiveSeconds));
             assertTrue(isEqual(aString, params.inMemoryFormat));
             assertTrue(isEqual(ringbufferStore, params.ringbufferStoreConfig));
+            assertTrue(isEqual(aString, params.quorumName));
+            assertTrue(isEqual(aString, params.mergePolicy));
+            assertTrue(isEqual(anInt, params.mergeBatchSize));
 }
 {
     ClientMessage clientMessage = DynamicConfigAddRingbufferConfigCodec.encodeResponse( );
     DynamicConfigAddRingbufferConfigCodec.ResponseParameters params = DynamicConfigAddRingbufferConfigCodec.decodeResponse(ClientMessage.createForDecode(clientMessage.buffer(), 0));
 }
 {
-    ClientMessage clientMessage = DynamicConfigAddCardinalityEstimatorConfigCodec.encodeRequest(    aString ,    anInt ,    anInt ,   aString  );
+    ClientMessage clientMessage = DynamicConfigAddCardinalityEstimatorConfigCodec.encodeRequest(    aString ,    anInt ,    anInt ,    aString ,    aString ,    anInt   );
     DynamicConfigAddCardinalityEstimatorConfigCodec.RequestParameters params = DynamicConfigAddCardinalityEstimatorConfigCodec.decodeRequest(ClientMessage.createForDecode(clientMessage.buffer(), 0));
             assertTrue(isEqual(aString, params.name));
             assertTrue(isEqual(anInt, params.backupCount));
             assertTrue(isEqual(anInt, params.asyncBackupCount));
+            assertTrue(isEqual(aString, params.quorumName));
+            assertTrue(isEqual(aString, params.mergePolicy));
+            assertTrue(isEqual(anInt, params.mergeBatchSize));
 }
 {
     ClientMessage clientMessage = DynamicConfigAddCardinalityEstimatorConfigCodec.encodeResponse( );
@@ -4975,7 +5001,7 @@ public class EncodeDecodeCompatibilityTest {
     DynamicConfigAddLockConfigCodec.ResponseParameters params = DynamicConfigAddLockConfigCodec.decodeResponse(ClientMessage.createForDecode(clientMessage.buffer(), 0));
 }
 {
-    ClientMessage clientMessage = DynamicConfigAddListConfigCodec.encodeRequest(    aString ,    listenerConfigs ,    anInt ,    anInt ,    anInt ,    aBoolean ,   aString  );
+    ClientMessage clientMessage = DynamicConfigAddListConfigCodec.encodeRequest(    aString ,    listenerConfigs ,    anInt ,    anInt ,    anInt ,    aBoolean ,    aString ,    aString ,    anInt   );
     DynamicConfigAddListConfigCodec.RequestParameters params = DynamicConfigAddListConfigCodec.decodeRequest(ClientMessage.createForDecode(clientMessage.buffer(), 0));
             assertTrue(isEqual(aString, params.name));
             assertTrue(isEqual(listenerConfigs, params.listenerConfigs));
@@ -4983,13 +5009,16 @@ public class EncodeDecodeCompatibilityTest {
             assertTrue(isEqual(anInt, params.asyncBackupCount));
             assertTrue(isEqual(anInt, params.maxSize));
             assertTrue(isEqual(aBoolean, params.statisticsEnabled));
+            assertTrue(isEqual(aString, params.quorumName));
+            assertTrue(isEqual(aString, params.mergePolicy));
+            assertTrue(isEqual(anInt, params.mergeBatchSize));
 }
 {
     ClientMessage clientMessage = DynamicConfigAddListConfigCodec.encodeResponse( );
     DynamicConfigAddListConfigCodec.ResponseParameters params = DynamicConfigAddListConfigCodec.decodeResponse(ClientMessage.createForDecode(clientMessage.buffer(), 0));
 }
 {
-    ClientMessage clientMessage = DynamicConfigAddSetConfigCodec.encodeRequest(    aString ,    listenerConfigs ,    anInt ,    anInt ,    anInt ,    aBoolean ,   aString  );
+    ClientMessage clientMessage = DynamicConfigAddSetConfigCodec.encodeRequest(    aString ,    listenerConfigs ,    anInt ,    anInt ,    anInt ,    aBoolean ,    aString ,    aString ,    anInt   );
     DynamicConfigAddSetConfigCodec.RequestParameters params = DynamicConfigAddSetConfigCodec.decodeRequest(ClientMessage.createForDecode(clientMessage.buffer(), 0));
             assertTrue(isEqual(aString, params.name));
             assertTrue(isEqual(listenerConfigs, params.listenerConfigs));
@@ -4997,13 +5026,16 @@ public class EncodeDecodeCompatibilityTest {
             assertTrue(isEqual(anInt, params.asyncBackupCount));
             assertTrue(isEqual(anInt, params.maxSize));
             assertTrue(isEqual(aBoolean, params.statisticsEnabled));
+            assertTrue(isEqual(aString, params.quorumName));
+            assertTrue(isEqual(aString, params.mergePolicy));
+            assertTrue(isEqual(anInt, params.mergeBatchSize));
 }
 {
     ClientMessage clientMessage = DynamicConfigAddSetConfigCodec.encodeResponse( );
     DynamicConfigAddSetConfigCodec.ResponseParameters params = DynamicConfigAddSetConfigCodec.decodeResponse(ClientMessage.createForDecode(clientMessage.buffer(), 0));
 }
 {
-    ClientMessage clientMessage = DynamicConfigAddReplicatedMapConfigCodec.encodeRequest(    aString ,    aString ,    aBoolean ,    aBoolean ,    aString ,    listenerConfigs ,   aString  );
+    ClientMessage clientMessage = DynamicConfigAddReplicatedMapConfigCodec.encodeRequest(    aString ,    aString ,    aBoolean ,    aBoolean ,    aString ,    listenerConfigs ,    aString ,    anInt   );
     DynamicConfigAddReplicatedMapConfigCodec.RequestParameters params = DynamicConfigAddReplicatedMapConfigCodec.decodeRequest(ClientMessage.createForDecode(clientMessage.buffer(), 0));
             assertTrue(isEqual(aString, params.name));
             assertTrue(isEqual(aString, params.inMemoryFormat));
@@ -5011,6 +5043,8 @@ public class EncodeDecodeCompatibilityTest {
             assertTrue(isEqual(aBoolean, params.statisticsEnabled));
             assertTrue(isEqual(aString, params.mergePolicy));
             assertTrue(isEqual(listenerConfigs, params.listenerConfigs));
+            assertTrue(isEqual(aString, params.quorumName));
+            assertTrue(isEqual(anInt, params.mergeBatchSize));
 }
 {
     ClientMessage clientMessage = DynamicConfigAddReplicatedMapConfigCodec.encodeResponse( );
@@ -5030,55 +5064,61 @@ public class EncodeDecodeCompatibilityTest {
     DynamicConfigAddTopicConfigCodec.ResponseParameters params = DynamicConfigAddTopicConfigCodec.decodeResponse(ClientMessage.createForDecode(clientMessage.buffer(), 0));
 }
 {
-    ClientMessage clientMessage = DynamicConfigAddExecutorConfigCodec.encodeRequest(    aString ,    anInt ,    anInt ,    aBoolean ,   aString  );
+    ClientMessage clientMessage = DynamicConfigAddExecutorConfigCodec.encodeRequest(    aString ,    anInt ,    anInt ,    aBoolean ,    aString   );
     DynamicConfigAddExecutorConfigCodec.RequestParameters params = DynamicConfigAddExecutorConfigCodec.decodeRequest(ClientMessage.createForDecode(clientMessage.buffer(), 0));
             assertTrue(isEqual(aString, params.name));
             assertTrue(isEqual(anInt, params.poolSize));
             assertTrue(isEqual(anInt, params.queueCapacity));
             assertTrue(isEqual(aBoolean, params.statisticsEnabled));
+            assertTrue(isEqual(aString, params.quorumName));
 }
 {
     ClientMessage clientMessage = DynamicConfigAddExecutorConfigCodec.encodeResponse( );
     DynamicConfigAddExecutorConfigCodec.ResponseParameters params = DynamicConfigAddExecutorConfigCodec.decodeResponse(ClientMessage.createForDecode(clientMessage.buffer(), 0));
 }
 {
-    ClientMessage clientMessage = DynamicConfigAddDurableExecutorConfigCodec.encodeRequest(    aString ,    anInt ,    anInt ,    anInt ,   aString  );
+    ClientMessage clientMessage = DynamicConfigAddDurableExecutorConfigCodec.encodeRequest(    aString ,    anInt ,    anInt ,    anInt ,    aString   );
     DynamicConfigAddDurableExecutorConfigCodec.RequestParameters params = DynamicConfigAddDurableExecutorConfigCodec.decodeRequest(ClientMessage.createForDecode(clientMessage.buffer(), 0));
             assertTrue(isEqual(aString, params.name));
             assertTrue(isEqual(anInt, params.poolSize));
             assertTrue(isEqual(anInt, params.durability));
             assertTrue(isEqual(anInt, params.capacity));
+            assertTrue(isEqual(aString, params.quorumName));
 }
 {
     ClientMessage clientMessage = DynamicConfigAddDurableExecutorConfigCodec.encodeResponse( );
     DynamicConfigAddDurableExecutorConfigCodec.ResponseParameters params = DynamicConfigAddDurableExecutorConfigCodec.decodeResponse(ClientMessage.createForDecode(clientMessage.buffer(), 0));
 }
 {
-    ClientMessage clientMessage = DynamicConfigAddScheduledExecutorConfigCodec.encodeRequest(    aString ,    anInt ,    anInt ,    anInt ,   aString  );
+    ClientMessage clientMessage = DynamicConfigAddScheduledExecutorConfigCodec.encodeRequest(    aString ,    anInt ,    anInt ,    anInt ,    aString ,    aString ,    anInt   );
     DynamicConfigAddScheduledExecutorConfigCodec.RequestParameters params = DynamicConfigAddScheduledExecutorConfigCodec.decodeRequest(ClientMessage.createForDecode(clientMessage.buffer(), 0));
             assertTrue(isEqual(aString, params.name));
             assertTrue(isEqual(anInt, params.poolSize));
             assertTrue(isEqual(anInt, params.durability));
             assertTrue(isEqual(anInt, params.capacity));
+            assertTrue(isEqual(aString, params.quorumName));
+            assertTrue(isEqual(aString, params.mergePolicy));
+            assertTrue(isEqual(anInt, params.mergeBatchSize));
 }
 {
     ClientMessage clientMessage = DynamicConfigAddScheduledExecutorConfigCodec.encodeResponse( );
     DynamicConfigAddScheduledExecutorConfigCodec.ResponseParameters params = DynamicConfigAddScheduledExecutorConfigCodec.decodeResponse(ClientMessage.createForDecode(clientMessage.buffer(), 0));
 }
 {
-    ClientMessage clientMessage = DynamicConfigAddSemaphoreConfigCodec.encodeRequest(    aString ,    anInt ,    anInt ,    anInt ,   aString  );
+    ClientMessage clientMessage = DynamicConfigAddSemaphoreConfigCodec.encodeRequest(    aString ,    anInt ,    anInt ,    anInt ,    aString   );
     DynamicConfigAddSemaphoreConfigCodec.RequestParameters params = DynamicConfigAddSemaphoreConfigCodec.decodeRequest(ClientMessage.createForDecode(clientMessage.buffer(), 0));
             assertTrue(isEqual(aString, params.name));
             assertTrue(isEqual(anInt, params.initialPermits));
             assertTrue(isEqual(anInt, params.backupCount));
             assertTrue(isEqual(anInt, params.asyncBackupCount));
+            assertTrue(isEqual(aString, params.quorumName));
 }
 {
     ClientMessage clientMessage = DynamicConfigAddSemaphoreConfigCodec.encodeResponse( );
     DynamicConfigAddSemaphoreConfigCodec.ResponseParameters params = DynamicConfigAddSemaphoreConfigCodec.decodeResponse(ClientMessage.createForDecode(clientMessage.buffer(), 0));
 }
 {
-    ClientMessage clientMessage = DynamicConfigAddQueueConfigCodec.encodeRequest(    aString ,    listenerConfigs ,    anInt ,    anInt ,    anInt ,    anInt ,    aBoolean ,    aString ,    queueStoreConfig   );
+    ClientMessage clientMessage = DynamicConfigAddQueueConfigCodec.encodeRequest(    aString ,    listenerConfigs ,    anInt ,    anInt ,    anInt ,    anInt ,    aBoolean ,    aString ,    queueStoreConfig ,    aString ,    anInt   );
     DynamicConfigAddQueueConfigCodec.RequestParameters params = DynamicConfigAddQueueConfigCodec.decodeRequest(ClientMessage.createForDecode(clientMessage.buffer(), 0));
             assertTrue(isEqual(aString, params.name));
             assertTrue(isEqual(listenerConfigs, params.listenerConfigs));
@@ -5089,13 +5129,15 @@ public class EncodeDecodeCompatibilityTest {
             assertTrue(isEqual(aBoolean, params.statisticsEnabled));
             assertTrue(isEqual(aString, params.quorumName));
             assertTrue(isEqual(queueStoreConfig, params.queueStoreConfig));
+            assertTrue(isEqual(aString, params.mergePolicy));
+            assertTrue(isEqual(anInt, params.mergeBatchSize));
 }
 {
     ClientMessage clientMessage = DynamicConfigAddQueueConfigCodec.encodeResponse( );
     DynamicConfigAddQueueConfigCodec.ResponseParameters params = DynamicConfigAddQueueConfigCodec.decodeResponse(ClientMessage.createForDecode(clientMessage.buffer(), 0));
 }
 {
-    ClientMessage clientMessage = DynamicConfigAddMapConfigCodec.encodeRequest(    aString ,    anInt ,    anInt ,    anInt ,    anInt ,    aString ,    aBoolean ,    aString ,    aString ,    aString ,    listenerConfigs ,    listenerConfigs ,    aBoolean ,    aString ,    aData ,    aString ,    anInt ,    mapStoreConfig ,    nearCacheConfig ,    wanReplicationRef ,    mapIndexConfigs ,    mapAttributeConfigs ,    queryCacheConfigs ,    aString ,    aData ,    hotRestartConfig   );
+    ClientMessage clientMessage = DynamicConfigAddMapConfigCodec.encodeRequest(    aString ,    anInt ,    anInt ,    anInt ,    anInt ,    aString ,    aBoolean ,    aString ,    aString ,    aString ,    listenerConfigs ,    listenerConfigs ,    aBoolean ,    aString ,    aData ,    aString ,    anInt ,    mapStoreConfig ,    nearCacheConfig ,    wanReplicationRef ,    mapIndexConfigs ,    mapAttributeConfigs ,    queryCacheConfigs ,    aString ,    aData ,    hotRestartConfig ,    anInt   );
     DynamicConfigAddMapConfigCodec.RequestParameters params = DynamicConfigAddMapConfigCodec.decodeRequest(ClientMessage.createForDecode(clientMessage.buffer(), 0));
             assertTrue(isEqual(aString, params.name));
             assertTrue(isEqual(anInt, params.backupCount));
@@ -5123,6 +5165,7 @@ public class EncodeDecodeCompatibilityTest {
             assertTrue(isEqual(aString, params.partitioningStrategyClassName));
             assertTrue(isEqual(aData, params.partitioningStrategyImplementation));
             assertTrue(isEqual(hotRestartConfig, params.hotRestartConfig));
+            assertTrue(isEqual(anInt, params.mergeBatchSize));
 }
 {
     ClientMessage clientMessage = DynamicConfigAddMapConfigCodec.encodeResponse( );
@@ -5186,6 +5229,119 @@ public class EncodeDecodeCompatibilityTest {
 {
     ClientMessage clientMessage = DynamicConfigAddEventJournalConfigCodec.encodeResponse( );
     DynamicConfigAddEventJournalConfigCodec.ResponseParameters params = DynamicConfigAddEventJournalConfigCodec.decodeResponse(ClientMessage.createForDecode(clientMessage.buffer(), 0));
+}
+{
+    ClientMessage clientMessage = DynamicConfigAddFlakeIdGeneratorConfigCodec.encodeRequest(    aString ,    anInt ,    aLong ,    aLong ,    aBoolean ,    aLong   );
+    DynamicConfigAddFlakeIdGeneratorConfigCodec.RequestParameters params = DynamicConfigAddFlakeIdGeneratorConfigCodec.decodeRequest(ClientMessage.createForDecode(clientMessage.buffer(), 0));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(anInt, params.prefetchCount));
+            assertTrue(isEqual(aLong, params.prefetchValidity));
+            assertTrue(isEqual(aLong, params.idOffset));
+            assertTrue(isEqual(aBoolean, params.statisticsEnabled));
+            assertTrue(isEqual(aLong, params.nodeIdOffset));
+}
+{
+    ClientMessage clientMessage = DynamicConfigAddFlakeIdGeneratorConfigCodec.encodeResponse( );
+    DynamicConfigAddFlakeIdGeneratorConfigCodec.ResponseParameters params = DynamicConfigAddFlakeIdGeneratorConfigCodec.decodeResponse(ClientMessage.createForDecode(clientMessage.buffer(), 0));
+}
+{
+    ClientMessage clientMessage = DynamicConfigAddAtomicLongConfigCodec.encodeRequest(    aString ,    aString ,    aString ,    anInt   );
+    DynamicConfigAddAtomicLongConfigCodec.RequestParameters params = DynamicConfigAddAtomicLongConfigCodec.decodeRequest(ClientMessage.createForDecode(clientMessage.buffer(), 0));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.quorumName));
+            assertTrue(isEqual(aString, params.mergePolicy));
+            assertTrue(isEqual(anInt, params.mergeBatchSize));
+}
+{
+    ClientMessage clientMessage = DynamicConfigAddAtomicLongConfigCodec.encodeResponse( );
+    DynamicConfigAddAtomicLongConfigCodec.ResponseParameters params = DynamicConfigAddAtomicLongConfigCodec.decodeResponse(ClientMessage.createForDecode(clientMessage.buffer(), 0));
+}
+{
+    ClientMessage clientMessage = DynamicConfigAddAtomicReferenceConfigCodec.encodeRequest(    aString ,    aString ,    aString ,    anInt   );
+    DynamicConfigAddAtomicReferenceConfigCodec.RequestParameters params = DynamicConfigAddAtomicReferenceConfigCodec.decodeRequest(ClientMessage.createForDecode(clientMessage.buffer(), 0));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.quorumName));
+            assertTrue(isEqual(aString, params.mergePolicy));
+            assertTrue(isEqual(anInt, params.mergeBatchSize));
+}
+{
+    ClientMessage clientMessage = DynamicConfigAddAtomicReferenceConfigCodec.encodeResponse( );
+    DynamicConfigAddAtomicReferenceConfigCodec.ResponseParameters params = DynamicConfigAddAtomicReferenceConfigCodec.decodeResponse(ClientMessage.createForDecode(clientMessage.buffer(), 0));
+}
+{
+    ClientMessage clientMessage = DynamicConfigAddCountDownLatchConfigCodec.encodeRequest(    aString ,    aString   );
+    DynamicConfigAddCountDownLatchConfigCodec.RequestParameters params = DynamicConfigAddCountDownLatchConfigCodec.decodeRequest(ClientMessage.createForDecode(clientMessage.buffer(), 0));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.quorumName));
+}
+{
+    ClientMessage clientMessage = DynamicConfigAddCountDownLatchConfigCodec.encodeResponse( );
+    DynamicConfigAddCountDownLatchConfigCodec.ResponseParameters params = DynamicConfigAddCountDownLatchConfigCodec.decodeResponse(ClientMessage.createForDecode(clientMessage.buffer(), 0));
+}
+{
+    ClientMessage clientMessage = DynamicConfigAddPNCounterConfigCodec.encodeRequest(    aString ,    anInt ,    aBoolean ,    aString   );
+    DynamicConfigAddPNCounterConfigCodec.RequestParameters params = DynamicConfigAddPNCounterConfigCodec.decodeRequest(ClientMessage.createForDecode(clientMessage.buffer(), 0));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(anInt, params.replicaCount));
+            assertTrue(isEqual(aBoolean, params.statisticsEnabled));
+            assertTrue(isEqual(aString, params.quorumName));
+}
+{
+    ClientMessage clientMessage = DynamicConfigAddPNCounterConfigCodec.encodeResponse( );
+    DynamicConfigAddPNCounterConfigCodec.ResponseParameters params = DynamicConfigAddPNCounterConfigCodec.decodeResponse(ClientMessage.createForDecode(clientMessage.buffer(), 0));
+}
+{
+    ClientMessage clientMessage = FlakeIdGeneratorNewIdBatchCodec.encodeRequest(    aString ,    anInt   );
+    FlakeIdGeneratorNewIdBatchCodec.RequestParameters params = FlakeIdGeneratorNewIdBatchCodec.decodeRequest(ClientMessage.createForDecode(clientMessage.buffer(), 0));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(anInt, params.batchSize));
+}
+{
+    ClientMessage clientMessage = FlakeIdGeneratorNewIdBatchCodec.encodeResponse(    aLong ,    aLong ,    anInt   );
+    FlakeIdGeneratorNewIdBatchCodec.ResponseParameters params = FlakeIdGeneratorNewIdBatchCodec.decodeResponse(ClientMessage.createForDecode(clientMessage.buffer(), 0));
+            assertTrue(isEqual(aLong, params.base));
+            assertTrue(isEqual(aLong, params.increment));
+            assertTrue(isEqual(anInt, params.batchSize));
+}
+{
+    ClientMessage clientMessage = PNCounterGetCodec.encodeRequest(    aString ,    aListOfStringToLong ,    anAddress   );
+    PNCounterGetCodec.RequestParameters params = PNCounterGetCodec.decodeRequest(ClientMessage.createForDecode(clientMessage.buffer(), 0));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aListOfStringToLong, params.replicaTimestamps));
+            assertTrue(isEqual(anAddress, params.targetReplica));
+}
+{
+    ClientMessage clientMessage = PNCounterGetCodec.encodeResponse(    aLong ,    aListOfStringToLong ,    anInt   );
+    PNCounterGetCodec.ResponseParameters params = PNCounterGetCodec.decodeResponse(ClientMessage.createForDecode(clientMessage.buffer(), 0));
+            assertTrue(isEqual(aLong, params.value));
+            assertTrue(isEqual(aListOfStringToLong, params.replicaTimestamps));
+            assertTrue(isEqual(anInt, params.replicaCount));
+}
+{
+    ClientMessage clientMessage = PNCounterAddCodec.encodeRequest(    aString ,    aLong ,    aBoolean ,    aListOfStringToLong ,    anAddress   );
+    PNCounterAddCodec.RequestParameters params = PNCounterAddCodec.decodeRequest(ClientMessage.createForDecode(clientMessage.buffer(), 0));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aLong, params.delta));
+            assertTrue(isEqual(aBoolean, params.getBeforeUpdate));
+            assertTrue(isEqual(aListOfStringToLong, params.replicaTimestamps));
+            assertTrue(isEqual(anAddress, params.targetReplica));
+}
+{
+    ClientMessage clientMessage = PNCounterAddCodec.encodeResponse(    aLong ,    aListOfStringToLong ,    anInt   );
+    PNCounterAddCodec.ResponseParameters params = PNCounterAddCodec.decodeResponse(ClientMessage.createForDecode(clientMessage.buffer(), 0));
+            assertTrue(isEqual(aLong, params.value));
+            assertTrue(isEqual(aListOfStringToLong, params.replicaTimestamps));
+            assertTrue(isEqual(anInt, params.replicaCount));
+}
+{
+    ClientMessage clientMessage = PNCounterGetConfiguredReplicaCountCodec.encodeRequest(    aString   );
+    PNCounterGetConfiguredReplicaCountCodec.RequestParameters params = PNCounterGetConfiguredReplicaCountCodec.decodeRequest(ClientMessage.createForDecode(clientMessage.buffer(), 0));
+            assertTrue(isEqual(aString, params.name));
+}
+{
+    ClientMessage clientMessage = PNCounterGetConfiguredReplicaCountCodec.encodeResponse(    anInt   );
+    PNCounterGetConfiguredReplicaCountCodec.ResponseParameters params = PNCounterGetConfiguredReplicaCountCodec.decodeResponse(ClientMessage.createForDecode(clientMessage.buffer(), 0));
+            assertTrue(isEqual(anInt, params.response));
 }
     }
 }

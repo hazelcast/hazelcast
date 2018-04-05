@@ -27,6 +27,10 @@ public interface MapClearedListener extends MapListener {
     /**
      * Invoked when all entries are removed by {@link com.hazelcast.core.IMap#clear()}.
      *
+     * When a listener is registered as local-only then it will be invoked if and only if
+     * the <code>clear()</code> method is called on the same instance where the listener
+     * was registered to.
+     *
      * @param event the map event invoked when all entries are removed by {@link com.hazelcast.core.IMap#clear()}
      */
     void mapCleared(MapEvent event);

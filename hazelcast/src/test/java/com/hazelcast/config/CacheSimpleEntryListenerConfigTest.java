@@ -21,6 +21,9 @@ import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import nl.jqno.equalsverifier.EqualsVerifier;
 import nl.jqno.equalsverifier.Warning;
+
+import static com.hazelcast.test.HazelcastTestSupport.assumeDifferentHashCodes;
+
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -31,16 +34,17 @@ public class CacheSimpleEntryListenerConfigTest {
 
     @Test
     public void testEqualsAndHashCode() {
+        assumeDifferentHashCodes();
         CacheSimpleEntryListenerConfig redEntryListenerConfig = new CacheSimpleEntryListenerConfig();
         redEntryListenerConfig.setCacheEntryListenerFactory("red");
         CacheSimpleEntryListenerConfig blackEntryListenerConfig = new CacheSimpleEntryListenerConfig();
         blackEntryListenerConfig.setCacheEntryListenerFactory("black");
         EqualsVerifier.forClass(CacheSimpleEntryListenerConfig.class)
-                      .allFieldsShouldBeUsedExcept("readOnly")
-                      .suppress(Warning.NONFINAL_FIELDS)
-                      .withPrefabValues(CacheSimpleEntryListenerConfigReadOnly.class,
-                              new CacheSimpleEntryListenerConfigReadOnly(redEntryListenerConfig),
-                              new CacheSimpleEntryListenerConfigReadOnly(blackEntryListenerConfig))
-                      .verify();
+                .allFieldsShouldBeUsedExcept("readOnly")
+                .suppress(Warning.NONFINAL_FIELDS)
+                .withPrefabValues(CacheSimpleEntryListenerConfigReadOnly.class,
+                        new CacheSimpleEntryListenerConfigReadOnly(redEntryListenerConfig),
+                        new CacheSimpleEntryListenerConfigReadOnly(blackEntryListenerConfig))
+                .verify();
     }
 }

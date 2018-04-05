@@ -28,6 +28,7 @@ import com.hazelcast.client.config.ProxyFactoryConfig;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAddDistributedObjectListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.ClientCreateProxiesCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientCreateProxyCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientRemoveDistributedObjectListenerCodec;
 import com.hazelcast.client.proxy.ClientAtomicLongProxy;
@@ -42,6 +43,7 @@ import com.hazelcast.client.proxy.ClientListProxy;
 import com.hazelcast.client.proxy.ClientLockProxy;
 import com.hazelcast.client.proxy.ClientMapReduceProxy;
 import com.hazelcast.client.proxy.ClientMultiMapProxy;
+import com.hazelcast.client.proxy.ClientPNCounterProxy;
 import com.hazelcast.client.proxy.ClientQueueProxy;
 import com.hazelcast.client.proxy.ClientReliableTopicProxy;
 import com.hazelcast.client.proxy.ClientReplicatedMapProxy;
@@ -63,7 +65,6 @@ import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
-import com.hazelcast.flakeidgen.impl.FlakeIdGeneratorService;
 import com.hazelcast.concurrent.idgen.IdGeneratorService;
 import com.hazelcast.concurrent.lock.LockServiceImpl;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
@@ -76,13 +77,16 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.OperationTimeoutException;
+import com.hazelcast.crdt.pncounter.PNCounterService;
 import com.hazelcast.durableexecutor.impl.DistributedDurableExecutorService;
 import com.hazelcast.executor.impl.DistributedExecutorService;
+import com.hazelcast.flakeidgen.impl.FlakeIdGeneratorService;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
+import com.hazelcast.nio.Connection;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
@@ -91,20 +95,22 @@ import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.topic.impl.reliable.ReliableTopicService;
 import com.hazelcast.transaction.impl.xa.XAService;
-import com.hazelcast.util.EmptyStatement;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
+import java.util.AbstractMap;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.ServiceLoader.classIterator;
+import static java.lang.Thread.currentThread;
 
 /**
  * The ProxyManager handles client proxy instantiation and retrieval at start and runtime by registering
@@ -203,6 +209,7 @@ public final class ProxyManager {
         register(FlakeIdGeneratorService.SERVICE_NAME, ClientFlakeIdGeneratorProxy.class);
         register(CardinalityEstimatorService.SERVICE_NAME, ClientCardinalityEstimatorProxy.class);
         register(DistributedScheduledExecutorService.SERVICE_NAME, ClientScheduledExecutorProxy.class);
+        register(PNCounterService.SERVICE_NAME, ClientPNCounterProxy.class);
 
         ClassLoader classLoader = config.getClassLoader();
         for (ProxyFactoryConfig proxyFactoryConfig : config.getProxyFactoryConfigs()) {
@@ -363,7 +370,7 @@ public final class ProxyManager {
         try {
             Thread.sleep(invocationRetryPauseMillis);
         } catch (InterruptedException ignored) {
-            EmptyStatement.ignore(ignored);
+            currentThread().interrupt();
         }
     }
 
@@ -416,6 +423,20 @@ public final class ProxyManager {
     public String addDistributedObjectListener(final DistributedObjectListener listener) {
         final EventHandler<ClientMessage> eventHandler = new DistributedObjectEventHandler(listener, this);
         return client.getListenerService().registerListener(distributedObjectListenerCodec, eventHandler);
+    }
+
+    public void createDistributedObjectsOnCluster(Connection ownerConnection) {
+        List<Map.Entry<String, String>> proxyEntries = new LinkedList<Map.Entry<String, String>>();
+        for (ObjectNamespace objectNamespace : proxies.keySet()) {
+            String name = objectNamespace.getObjectName();
+            String serviceName = objectNamespace.getServiceName();
+            proxyEntries.add(new AbstractMap.SimpleEntry<String, String>(name, serviceName));
+        }
+        if (proxyEntries.isEmpty()) {
+            return;
+        }
+        ClientMessage clientMessage = ClientCreateProxiesCodec.encodeRequest(proxyEntries);
+        new ClientInvocation(client, clientMessage, null, ownerConnection).invoke();
     }
 
     private final class DistributedObjectEventHandler extends ClientAddDistributedObjectListenerCodec.AbstractEventHandler

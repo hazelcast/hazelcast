@@ -23,6 +23,9 @@ import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import nl.jqno.equalsverifier.EqualsVerifier;
 import nl.jqno.equalsverifier.Warning;
+
+import static com.hazelcast.test.HazelcastTestSupport.assumeDifferentHashCodes;
+
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -33,15 +36,16 @@ public class ListConfigTest {
 
     @Test
     public void testEqualsAndHashCode() {
+        assumeDifferentHashCodes();
         EqualsVerifier.forClass(ListConfig.class)
-                      .allFieldsShouldBeUsedExcept("readOnly")
-                      .suppress(Warning.NONFINAL_FIELDS)
-                      .withPrefabValues(ListConfigReadOnly.class,
-                              new ListConfigReadOnly(new ListConfig("red")),
-                              new ListConfigReadOnly(new ListConfig("black")))
-                      .withPrefabValues(MergePolicyConfig.class,
-                              new MergePolicyConfig(PutIfAbsentMergePolicy.class.getName(), 100),
-                              new MergePolicyConfig(DiscardMergePolicy.class.getName(), 200))
-                      .verify();
+                .allFieldsShouldBeUsedExcept("readOnly")
+                .suppress(Warning.NONFINAL_FIELDS)
+                .withPrefabValues(ListConfigReadOnly.class,
+                        new ListConfigReadOnly(new ListConfig("red")),
+                        new ListConfigReadOnly(new ListConfig("black")))
+                .withPrefabValues(MergePolicyConfig.class,
+                        new MergePolicyConfig(PutIfAbsentMergePolicy.class.getName(), 100),
+                        new MergePolicyConfig(DiscardMergePolicy.class.getName(), 200))
+                .verify();
     }
 }

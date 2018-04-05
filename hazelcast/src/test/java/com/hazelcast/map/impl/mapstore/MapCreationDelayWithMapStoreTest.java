@@ -23,7 +23,6 @@ import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.EmptyStatement;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -63,7 +62,7 @@ public class MapCreationDelayWithMapStoreTest extends HazelcastTestSupport {
             try {
                 unreleasedLatch.await();
             } catch (InterruptedException e) {
-                EmptyStatement.ignore(e);
+                ignore(e);
             }
             return Collections.emptySet();
         }

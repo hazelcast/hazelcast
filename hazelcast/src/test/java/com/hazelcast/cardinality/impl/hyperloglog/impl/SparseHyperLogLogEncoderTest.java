@@ -34,7 +34,7 @@ public class SparseHyperLogLogEncoderTest extends HyperLogLogEncoderAbstractTest
 
     @Override
     public HyperLogLogEncoder createStore() {
-        return new SparseHyperLogLogEncoder(14, precision());
+        return new SparseHyperLogLogEncoder(14);
     }
 
     @Override

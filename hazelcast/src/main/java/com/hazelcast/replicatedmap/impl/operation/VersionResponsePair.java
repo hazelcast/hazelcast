@@ -28,8 +28,8 @@ import java.io.IOException;
  */
 public class VersionResponsePair implements IdentifiedDataSerializable {
 
-    Object response;
-    long version;
+    private Object response;
+    private long version;
 
     public VersionResponsePair() {
     }

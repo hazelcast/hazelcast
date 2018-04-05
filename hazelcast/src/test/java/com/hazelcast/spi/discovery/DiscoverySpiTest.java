@@ -348,7 +348,8 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
     public void testSPIAwareMemberGroupFactoryInvalidConfig() throws Exception {
         HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance();
         try {
-            MemberGroupFactory groupFactory = new SPIAwareMemberGroupFactory(TestUtil.getNode(hazelcastInstance).getDiscoveryService());
+            MemberGroupFactory groupFactory
+                    = new SPIAwareMemberGroupFactory(TestUtil.getNode(hazelcastInstance).getDiscoveryService());
             Collection<Member> members = createMembers();
             groupFactory.createMemberGroups(members);
         } finally {
@@ -434,7 +435,8 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
         JoinConfig joinConfig = config.getNetworkConfig().getJoin();
         joinConfig.getMulticastConfig().setEnabled(false);
 
-        DiscoveryStrategyConfig discoveryStrategyConfig = new DiscoveryStrategyConfig(MetadataProvidingDiscoveryStrategy.class.getName());
+        DiscoveryStrategyConfig discoveryStrategyConfig
+                = new DiscoveryStrategyConfig(MetadataProvidingDiscoveryStrategy.class.getName());
         joinConfig.getDiscoveryConfig()
                 .addDiscoveryStrategyConfig(discoveryStrategyConfig);
         config.getPartitionGroupConfig().setGroupType(SPI).setEnabled(true);

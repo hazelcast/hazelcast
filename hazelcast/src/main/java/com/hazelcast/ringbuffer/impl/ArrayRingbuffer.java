@@ -17,26 +17,38 @@
 package com.hazelcast.ringbuffer.impl;
 
 import com.hazelcast.ringbuffer.StaleSequenceException;
+import com.hazelcast.spi.merge.MergingEntry;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
+import com.hazelcast.spi.serialization.SerializationService;
+
+import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntry;
 
 /**
  * The ArrayRingbuffer is responsible for storing the actual content of a ringbuffer.
- * <p/>
+ * <p>
  * Currently the Ringbuffer is not a partitioned data-structure. So all data of a ringbuffer is stored in a single partition
  * and replicated to the replica's. No thread-safety is needed since a partition can only be accessed by a single thread at
  * any given moment.
- * <p/>
+ * <p>
  * The ringItems is the ring that contains the actual items.
+ *
+ * @param <E> the type of the data stored in the ringbuffer
  */
-public class ArrayRingbuffer<T> implements Ringbuffer<T> {
+public class ArrayRingbuffer<E> implements Ringbuffer<E> {
+
     // contains the actual items
-    T[] ringItems;
+    E[] ringItems;
+
     private long tailSequence = -1;
     private long headSequence = tailSequence + 1;
     private int capacity;
 
+    private SerializationService serializationService;
+
+    @SuppressWarnings("unchecked")
     public ArrayRingbuffer(int capacity) {
         this.capacity = capacity;
-        this.ringItems = (T[]) new Object[capacity];
+        this.ringItems = (E[]) new Object[capacity];
     }
 
     @Override
@@ -81,7 +93,7 @@ public class ArrayRingbuffer<T> implements Ringbuffer<T> {
     }
 
     @Override
-    public long add(T item) {
+    public long add(E item) {
         tailSequence++;
 
         if (tailSequence - capacity == headSequence) {
@@ -96,7 +108,7 @@ public class ArrayRingbuffer<T> implements Ringbuffer<T> {
     }
 
     @Override
-    public T read(long sequence) {
+    public E read(long sequence) {
         checkReadSequence(sequence);
         return ringItems[toIndex(sequence)];
     }
@@ -137,7 +149,59 @@ public class ArrayRingbuffer<T> implements Ringbuffer<T> {
     }
 
     @Override
-    public void set(long seq, T data) {
+    public void set(long seq, E data) {
         ringItems[toIndex(seq)] = data;
+    }
+
+    @Override
+    public void clear() {
+        for (int i = 0; i < ringItems.length; i++) {
+            ringItems[i] = null;
+        }
+        tailSequence = -1;
+        headSequence = tailSequence + 1;
+    }
+
+    @Override
+    public void setSerializationService(SerializationService serializationService) {
+        this.serializationService = serializationService;
+    }
+
+    @Override
+    public long merge(MergingEntry<Long, E> mergingEntry, SplitBrainMergePolicy mergePolicy, long remainingCapacity) {
+        serializationService.getManagedContext().initialize(mergingEntry);
+        serializationService.getManagedContext().initialize(mergePolicy);
+
+        // try to find an existing item with the same value
+        E existingItem = null;
+        long existingSequence = -1;
+        for (long sequence = headSequence; sequence <= tailSequence; sequence++) {
+            E item = read(sequence);
+            if (mergingEntry.getValue().equals(item)) {
+                existingItem = item;
+                existingSequence = sequence;
+                break;
+            }
+        }
+
+        if (existingItem == null) {
+            // if there is no capacity for another item, we don't merge
+            if (remainingCapacity < 1) {
+                return -1L;
+            }
+
+            E newValue = mergePolicy.merge(mergingEntry, null);
+            if (newValue != null) {
+                return add(newValue);
+            }
+        } else {
+            MergingEntry<Long, E> existingEntry = createMergingEntry(serializationService, existingSequence, existingItem);
+            E newValue = mergePolicy.merge(mergingEntry, existingEntry);
+            if (newValue != null && !newValue.equals(existingItem)) {
+                set(existingSequence, newValue);
+                return existingSequence;
+            }
+        }
+        return -1L;
     }
 }

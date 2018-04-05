@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008 - 2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,8 +44,8 @@ public class FirewallingConnectionManager implements ConnectionManager, PacketHa
             = Executors.newSingleThreadScheduledExecutor(new ThreadFactoryImpl("FirewallingConnectionManager"));
     private final PacketHandler packetHandler;
 
-    private volatile PacketFilter droppingPacketFilter;
-    private volatile DelayingPacketFilterWrapper delayingPacketFilter;
+    private volatile PacketFilter packetFilter;
+    private volatile PacketDelayProps delayProps = new PacketDelayProps(500, 5000);
 
     public FirewallingConnectionManager(ConnectionManager delegate, Set<Address> initiallyBlockedAddresses) {
         this.delegate = delegate;
@@ -92,57 +92,53 @@ public class FirewallingConnectionManager implements ConnectionManager, PacketHa
         }
     }
 
-    public void setDroppingPacketFilter(PacketFilter droppingPacketFilter) {
-        assert droppingPacketFilter != null;
-        this.droppingPacketFilter = droppingPacketFilter;
+    public void setPacketFilter(PacketFilter packetFilter) {
+        assert packetFilter != null;
+        this.packetFilter = packetFilter;
     }
 
-    public void removeDroppingPacketFilter() {
-        droppingPacketFilter = null;
+    public void removePacketFilter() {
+        packetFilter = null;
     }
 
-    public void setDelayingPacketFilter(PacketFilter delayingPacketFilter, long minDelayMs, long maxDelayMs) {
-        assert delayingPacketFilter != null;
-        this.delayingPacketFilter = new DelayingPacketFilterWrapper(delayingPacketFilter, minDelayMs, maxDelayMs);
+    public void setDelayMillis(long minDelayMs, long maxDelayMs) {
+        assert minDelayMs > 0 : "Min delay must be positive: " + minDelayMs;
+        assert maxDelayMs > 0 : "Max delay must be positive: " + minDelayMs;
+        assert maxDelayMs >= minDelayMs : "Max delay must not be smaller than min delay. Max: "
+                + maxDelayMs + ", min: " + minDelayMs;
+        this.delayProps = new PacketDelayProps(minDelayMs, maxDelayMs);
     }
 
-    public void removeDelayingPacketFilter() {
-        delayingPacketFilter = null;
-    }
-
-    private boolean isAllowed(Packet packet, Address target) {
+    private PacketFilter.Action applyFilter(Packet packet, Address target) {
         if (blockedAddresses.contains(target)) {
-            return false;
+            return PacketFilter.Action.REJECT;
         }
 
-        PacketFilter filter = droppingPacketFilter;
-        return filter == null || filter.allow(packet, target);
+        PacketFilter filter = packetFilter;
+        return filter == null ? PacketFilter.Action.ALLOW : filter.filter(packet, target);
     }
 
-    private long getDelayMs(Packet packet, Address target) {
-        DelayingPacketFilterWrapper delayingFilter = delayingPacketFilter;
-        if (delayingFilter != null) {
-            if (!delayingFilter.packetFilter.allow(packet, target)) {
-                return getRandomBetween(delayingFilter.maxDelayMs, delayingFilter.minDelayMs);
-            }
-        }
-        return 0;
+    private long getDelayMs() {
+        PacketDelayProps delay = delayProps;
+        return getRandomBetween(delay.maxDelayMs, delay.minDelayMs);
     }
 
-    private long getRandomBetween(long max, long min) {
+    private static long getRandomBetween(long max, long min) {
         return (long) ((max - min) * Math.random() + min);
     }
 
     @Override
     public boolean transmit(Packet packet, Connection connection) {
         if (connection != null) {
-            if (!isAllowed(packet, connection.getEndPoint())) {
-                return false;
-            }
-            long delayMs;
-            if ((delayMs = getDelayMs(packet, connection.getEndPoint())) > 0) {
-                scheduledExecutor.schedule(new DelayedPacketTask(packet, connection), delayMs, MILLISECONDS);
-                return true;
+            PacketFilter.Action action = applyFilter(packet, connection.getEndPoint());
+            switch (action) {
+                case DROP:
+                    return true;
+                case REJECT:
+                    return false;
+                case DELAY:
+                    scheduledExecutor.schedule(new DelayedPacketTask(packet, connection), getDelayMs(), MILLISECONDS);
+                    return true;
             }
         }
         return delegate.transmit(packet, connection);
@@ -150,34 +146,48 @@ public class FirewallingConnectionManager implements ConnectionManager, PacketHa
 
     @Override
     public boolean transmit(Packet packet, Address target) {
-        if (!isAllowed(packet, target)) {
-            return false;
-        }
-        long delayMs;
-        if ((delayMs = getDelayMs(packet, target)) > 0) {
-            scheduledExecutor.schedule(new DelayedPacketTask(packet, target), delayMs, MILLISECONDS);
-            return true;
+        PacketFilter.Action action = applyFilter(packet, target);
+        switch (action) {
+            case DROP:
+                return true;
+            case REJECT:
+                return false;
+            case DELAY:
+                scheduledExecutor.schedule(new DelayedPacketTask(packet, target), getDelayMs(), MILLISECONDS);
+                return true;
         }
         return delegate.transmit(packet, target);
     }
 
     @Override
-    public int getCurrentClientConnections() {return delegate.getCurrentClientConnections();}
+    public int getCurrentClientConnections() {
+        return delegate.getCurrentClientConnections();
+    }
 
     @Override
-    public void addConnectionListener(ConnectionListener listener) {delegate.addConnectionListener(listener);}
+    public void addConnectionListener(ConnectionListener listener) {
+        delegate.addConnectionListener(listener);
+    }
 
     @Override
-    public int getAllTextConnections() {return delegate.getAllTextConnections();}
+    public int getAllTextConnections() {
+        return delegate.getAllTextConnections();
+    }
 
     @Override
-    public int getConnectionCount() {return delegate.getConnectionCount();}
+    public int getConnectionCount() {
+        return delegate.getConnectionCount();
+    }
 
     @Override
-    public int getActiveConnectionCount() {return delegate.getActiveConnectionCount();}
+    public int getActiveConnectionCount() {
+        return delegate.getActiveConnectionCount();
+    }
 
     @Override
-    public Connection getConnection(Address address) {return delegate.getConnection(address);}
+    public Connection getConnection(Address address) {
+        return delegate.getConnection(address);
+    }
 
     @Override
     public boolean registerConnection(Address address, Connection connection) {
@@ -190,10 +200,14 @@ public class FirewallingConnectionManager implements ConnectionManager, PacketHa
     }
 
     @Override
-    public void start() {delegate.start();}
+    public void start() {
+        delegate.start();
+    }
 
     @Override
-    public void stop() {delegate.stop();}
+    public void stop() {
+        delegate.stop();
+    }
 
     @Override
     public void shutdown() {
@@ -236,13 +250,11 @@ public class FirewallingConnectionManager implements ConnectionManager, PacketHa
         }
     }
 
-    private static class DelayingPacketFilterWrapper {
-        final PacketFilter packetFilter;
+    private static class PacketDelayProps {
         final long minDelayMs;
         final long maxDelayMs;
 
-        private DelayingPacketFilterWrapper(PacketFilter packetFilter, long minDelayMs, long maxDelayMs) {
-            this.packetFilter = packetFilter;
+        private PacketDelayProps(long minDelayMs, long maxDelayMs) {
             this.minDelayMs = minDelayMs;
             this.maxDelayMs = maxDelayMs;
         }

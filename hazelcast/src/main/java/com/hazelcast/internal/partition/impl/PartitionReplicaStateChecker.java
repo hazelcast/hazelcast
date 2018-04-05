@@ -37,12 +37,14 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 
+import static com.hazelcast.internal.partition.impl.PartitionServiceState.FETCHING_PARTITION_TABLE;
 import static com.hazelcast.internal.partition.impl.PartitionServiceState.MIGRATION_LOCAL;
 import static com.hazelcast.internal.partition.impl.PartitionServiceState.MIGRATION_ON_MASTER;
 import static com.hazelcast.internal.partition.impl.PartitionServiceState.REPLICA_NOT_OWNED;
 import static com.hazelcast.internal.partition.impl.PartitionServiceState.REPLICA_NOT_SYNC;
 import static com.hazelcast.internal.partition.impl.PartitionServiceState.SAFE;
 import static com.hazelcast.spi.partition.IPartitionService.SERVICE_NAME;
+import static java.lang.Thread.currentThread;
 
 /**
  * Verifies up-to-dateness of each of partition replicas owned by this member.
@@ -74,6 +76,10 @@ public class PartitionReplicaStateChecker {
     }
 
     public PartitionServiceState getPartitionServiceState() {
+        if (partitionService.isFetchMostRecentPartitionTableTaskRequired()) {
+            return FETCHING_PARTITION_TABLE;
+        }
+
         if (hasMissingReplicaOwners()) {
             return REPLICA_NOT_OWNED;
         }
@@ -194,6 +200,7 @@ public class PartitionReplicaStateChecker {
             //noinspection BusyWait
             Thread.sleep(sleep);
         } catch (InterruptedException ie) {
+            currentThread().interrupt();
             logger.finest("Busy wait interrupted", ie);
         }
         return timeoutInMillis - sleep;
@@ -219,6 +226,7 @@ public class PartitionReplicaStateChecker {
             boolean receivedAllResponses = semaphore.tryAcquire(permits, REPLICA_SYNC_CHECK_TIMEOUT_SECONDS, TimeUnit.SECONDS);
             return receivedAllResponses && ok.get();
         } catch (InterruptedException ignored) {
+            currentThread().interrupt();
             return false;
         }
     }

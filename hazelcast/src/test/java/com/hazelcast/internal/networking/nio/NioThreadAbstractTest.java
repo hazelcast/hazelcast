@@ -55,7 +55,7 @@ public abstract class NioThreadAbstractTest extends HazelcastTestSupport {
     private ChannelErrorHandler errorHandler;
     private ILogger logger;
     private MockSelector selector;
-    private SelectionHandler handler;
+    private NioPipeline handler;
     NioThread thread;
 
     @Before
@@ -63,7 +63,7 @@ public abstract class NioThreadAbstractTest extends HazelcastTestSupport {
         logger = Logger.getLogger(NioThread.class);
         errorHandler = mock(ChannelErrorHandler.class);
         selector = new MockSelector();
-        handler = mock(SelectionHandler.class);
+        handler = mock(NioPipeline.class);
     }
 
     @After
@@ -102,7 +102,7 @@ public abstract class NioThreadAbstractTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                verify(handler).handle();
+                verify(handler).process();
             }
         });
         assertEquals(1, thread.getEventCount());
@@ -134,7 +134,7 @@ public abstract class NioThreadAbstractTest extends HazelcastTestSupport {
         SelectionKey selectionKey = mock(SelectionKey.class);
         selectionKey.attach(handler);
         when(selectionKey.isValid()).thenReturn(true);
-        doThrow(new ExpectedRuntimeException()).when(handler).handle();
+        doThrow(new ExpectedRuntimeException()).when(handler).process();
 
         selector.scheduleSelectAction(selectionKey);
 
@@ -181,7 +181,7 @@ public abstract class NioThreadAbstractTest extends HazelcastTestSupport {
     public void assertStillRunning() {
         // we verify that the thread is still running by scheduling a selection-key event and checking if the
         // handler is being called.
-        final SelectionHandler handler = mock(SelectionHandler.class);
+        final NioPipeline handler = mock(NioPipeline.class);
         SelectionKey selectionKey = mock(SelectionKey.class);
         selectionKey.attach(handler);
         when(selectionKey.isValid()).thenReturn(true);
@@ -191,7 +191,7 @@ public abstract class NioThreadAbstractTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                verify(handler).handle();
+                verify(handler).process();
             }
         });
     }

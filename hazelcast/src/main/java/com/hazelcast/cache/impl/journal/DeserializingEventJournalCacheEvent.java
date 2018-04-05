@@ -16,8 +16,8 @@
 
 package com.hazelcast.cache.impl.journal;
 
-import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.CacheEventType;
+import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.journal.EventJournalCacheEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
@@ -25,9 +25,12 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
 import com.hazelcast.spi.serialization.SerializationService;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 
+@SuppressFBWarnings(value = "EQ_DOESNT_OVERRIDE_EQUALS",
+        justification = "equality is checked by serialised data in superclass, not deserialised instances in this class")
 public class DeserializingEventJournalCacheEvent<K, V>
         extends InternalEventJournalCacheEvent
         implements EventJournalCacheEvent<K, V>, HazelcastInstanceAware {

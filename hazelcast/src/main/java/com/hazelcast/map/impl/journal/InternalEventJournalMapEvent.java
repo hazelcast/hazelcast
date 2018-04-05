@@ -92,4 +92,42 @@ public class InternalEventJournalMapEvent implements IdentifiedDataSerializable 
         dataNewValue = in.readData();
         dataOldValue = in.readData();
     }
+
+    @Override
+    @SuppressWarnings("checkstyle:npathcomplexity")
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        InternalEventJournalMapEvent that = (InternalEventJournalMapEvent) o;
+
+        if (eventType != that.eventType) {
+            return false;
+        }
+        if (dataKey != null ? !dataKey.equals(that.dataKey) : that.dataKey != null) {
+            return false;
+        }
+        if (dataNewValue != null ? !dataNewValue.equals(that.dataNewValue) : that.dataNewValue != null) {
+            return false;
+        }
+        return dataOldValue != null ? dataOldValue.equals(that.dataOldValue) : that.dataOldValue == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = dataKey != null ? dataKey.hashCode() : 0;
+        result = 31 * result + (dataNewValue != null ? dataNewValue.hashCode() : 0);
+        result = 31 * result + (dataOldValue != null ? dataOldValue.hashCode() : 0);
+        result = 31 * result + eventType;
+        return result;
+    }
+
+    @Override
+    public String toString() {
+        return "InternalEventJournalMapEvent{eventType=" + eventType + '}';
+    }
 }

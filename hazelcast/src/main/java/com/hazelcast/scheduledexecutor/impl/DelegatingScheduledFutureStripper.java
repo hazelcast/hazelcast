@@ -26,11 +26,11 @@ import java.util.concurrent.TimeoutException;
 
 import static com.hazelcast.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.util.Preconditions.checkNotNull;
+import static java.lang.Thread.currentThread;
 
 /**
  * Simple adapter that unwraps the Future delegation done in
- * {@link com.hazelcast.spi.impl.executionservice.impl.DelegatingCallableTaskDecorator}
- * for single-run Callable tasks.
+ * {@link com.hazelcast.spi.impl.executionservice.impl.DelegatingCallableTaskDecorator} for single-run Callable tasks.
  *
  * @param <V>
  */
@@ -94,6 +94,7 @@ public class DelegatingScheduledFutureStripper<V>
         try {
             return (Future) original.get();
         } catch (InterruptedException e) {
+            currentThread().interrupt();
             sneakyThrow(e);
         } catch (ExecutionException e) {
             sneakyThrow(e);

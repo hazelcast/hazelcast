@@ -43,6 +43,7 @@ import com.hazelcast.core.Member;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.core.PartitionService;
 import com.hazelcast.core.ReplicatedMap;
+import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.LoggingService;
@@ -286,6 +287,11 @@ public final class HazelcastInstanceProxy implements HazelcastInstance, Serializ
     @Override
     public CardinalityEstimator getCardinalityEstimator(String name) {
         return getOriginal().getCardinalityEstimator(name);
+    }
+
+    @Override
+    public PNCounter getPNCounter(String name) {
+        return getOriginal().getPNCounter(name);
     }
 
     @Override

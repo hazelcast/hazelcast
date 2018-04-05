@@ -86,8 +86,7 @@ public class MapEventPublisherImpl implements MapEventPublisher {
     @Override
     public void publishWanReplicationUpdate(String mapName, EntryView<Data, Data> entryView) {
         MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
-        MapReplicationUpdate replicationEvent
-                = new MapReplicationUpdate(mapName, mapContainer.getWanMergePolicy(), entryView);
+        MapReplicationUpdate replicationEvent = new MapReplicationUpdate(mapName, mapContainer.getWanMergePolicy(), entryView);
         mapContainer.getWanReplicationPublisher().publishReplicationEvent(SERVICE_NAME, replicationEvent);
     }
 

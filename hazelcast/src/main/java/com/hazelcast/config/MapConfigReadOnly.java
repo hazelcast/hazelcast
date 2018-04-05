@@ -195,6 +195,11 @@ public class MapConfigReadOnly extends MapConfig {
     }
 
     @Override
+    public MapConfig setMergePolicyConfig(MergePolicyConfig mergePolicyConfig) {
+        throw throwReadOnly();
+    }
+
+    @Override
     public MapConfig setStatisticsEnabled(boolean statisticsEnabled) {
         throw throwReadOnly();
     }

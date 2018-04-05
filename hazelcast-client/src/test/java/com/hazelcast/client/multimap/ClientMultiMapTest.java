@@ -65,6 +65,7 @@ public class ClientMultiMapTest {
         assertTrue(mm.put(key, 1));
     }
 
+
     @Test(expected = NullPointerException.class)
     public void testPut_withNullValue() {
         Object key = "key";
@@ -218,6 +219,16 @@ public class ClientMultiMapTest {
             boolean result = mm.remove(key, i);
             assertTrue(result);
         }
+    }
+
+    @Test
+    public void testVoidDelete() {
+        String key = "key";
+        MultiMap mm = client.getMultiMap(randomString());
+        mm.put(key, 4);
+        assertTrue(!mm.get(key).isEmpty());
+        mm.delete(key);
+        assertTrue(mm.get(key).isEmpty());
     }
 
     @Test(expected = UnsupportedOperationException.class)

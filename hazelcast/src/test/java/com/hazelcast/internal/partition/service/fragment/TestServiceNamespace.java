@@ -55,8 +55,12 @@ public class TestServiceNamespace implements ObjectNamespace {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         TestServiceNamespace that = (TestServiceNamespace) o;
         return name.equals(that.name);

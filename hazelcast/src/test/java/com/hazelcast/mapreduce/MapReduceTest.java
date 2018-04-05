@@ -1038,7 +1038,8 @@ public class MapReduceTest extends HazelcastTestSupport {
 
     public static class RangeIdCombinerFactory implements CombinerFactory<Integer, Employee, Set<Employee>> {
 
-        private int min = 0, max = 0;
+        private int min = 0;
+        private int max = 0;
 
         public RangeIdCombinerFactory(int min, int max) {
             this.min = min;

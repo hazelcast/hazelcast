@@ -74,6 +74,10 @@ public class RingbufferProxy<E> extends AbstractDistributedObject<RingbufferServ
         this.config = config;
     }
 
+    public int getPartitionId() {
+        return partitionId;
+    }
+
     @Override
     public String getName() {
         return name;

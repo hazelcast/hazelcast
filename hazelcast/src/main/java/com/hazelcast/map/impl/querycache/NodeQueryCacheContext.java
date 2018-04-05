@@ -161,6 +161,11 @@ public class NodeQueryCacheContext implements QueryCacheContext {
     }
 
     @Override
+    public int getPartitionCount() {
+        return nodeEngine.getPartitionService().getPartitionCount();
+    }
+
+    @Override
     public InvokerWrapper getInvokerWrapper() {
         return invokerWrapper;
     }

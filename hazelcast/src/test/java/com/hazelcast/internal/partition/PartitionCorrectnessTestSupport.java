@@ -193,7 +193,8 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
             TestMigrationAwareService service = getService(hz, TestMigrationAwareService.SERVICE_NAME);
             total += service.size();
 
-            TestFragmentedMigrationAwareService fragmentedService = getService(hz, TestFragmentedMigrationAwareService.SERVICE_NAME);
+            TestFragmentedMigrationAwareService fragmentedService
+                    = getService(hz, TestFragmentedMigrationAwareService.SERVICE_NAME);
             for (int i = 0; i < NAMESPACES.length; i++) {
                 fragmentTotals[i] += fragmentedService.size(NAMESPACES[i]);
             }
@@ -232,7 +233,7 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
     }
 
     private <N> void assertNoLeakingData(TestAbstractMigrationAwareService<N> service, InternalPartition[] partitions,
-            Address thisAddress, N ns) {
+                                         Address thisAddress, N ns) {
         for (Integer p : service.keys(ns)) {
             int replicaIndex = partitions[p].getReplicaIndex(thisAddress);
             assertThat("Partition: " + p + " is leaking on " + thisAddress,
@@ -241,7 +242,7 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
     }
 
     private <N> void assertNoMissingData(TestAbstractMigrationAwareService<N> service, InternalPartition[] partitions,
-                                     Address thisAddress, N ns) {
+                                         Address thisAddress, N ns) {
         for (InternalPartition partition : partitions) {
             int replicaIndex = partition.getReplicaIndex(thisAddress);
             if (replicaIndex >= 0 && replicaIndex <= backupCount) {
@@ -252,10 +253,9 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
         }
     }
 
-    private <N> void assertPartitionVersionsAndBackupValues(int actualBackupCount,
-            TestAbstractMigrationAwareService<N> service, Node node, InternalPartition[] partitions,
-            N name, boolean allowDirty) throws InterruptedException {
-
+    private <N> void assertPartitionVersionsAndBackupValues(int actualBackupCount, TestAbstractMigrationAwareService<N> service,
+                                                            Node node, InternalPartition[] partitions, N name,
+                                                            boolean allowDirty) throws InterruptedException {
         Address thisAddress = node.getThisAddress();
         ServiceNamespace namespace = service.getNamespace(name);
 
@@ -274,14 +274,17 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
                     Node backupNode = getNode(backupInstance);
                     assertNotNull(backupNode);
 
-                    PartitionReplicaVersionsView backupReplicaVersionsView = getPartitionReplicaVersionsView(backupNode, partitionId);
+                    PartitionReplicaVersionsView backupReplicaVersionsView
+                            = getPartitionReplicaVersionsView(backupNode, partitionId);
                     long[] backupReplicaVersions = backupReplicaVersionsView.getVersions(namespace);
-                    assertNotNull("Versions null on " + backupNode.address + ", partitionId: " + partitionId, backupReplicaVersions);
+                    assertNotNull("Versions null on " + backupNode.address + ", partitionId: " + partitionId,
+                            backupReplicaVersions);
 
                     for (int i = replica - 1; i < actualBackupCount; i++) {
                         assertEquals("Replica version mismatch! Owner: " + thisAddress + ", Backup: " + address
                                         + ", Partition: " + partition + ", Replica: " + (i + 1) + " owner versions: "
-                                        + Arrays.toString(replicaVersions) + " backup versions: " + Arrays.toString(backupReplicaVersions),
+                                        + Arrays.toString(replicaVersions) + " backup versions: "
+                                        + Arrays.toString(backupReplicaVersions),
                                 replicaVersions[i], backupReplicaVersions[i]);
                     }
 
@@ -310,7 +313,6 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
         assertEquals("Invalid migration event count on " + thisAddress
                 + "! Before: " + beforeEventsCount + ", Commit: " + commitEventsCount
                 + ", Rollback: " + rollbackEventsCount, beforeEventsCount, commitEventsCount + rollbackEventsCount);
-
 
         Collection<PartitionMigrationEvent> beforeEventsCopy = new ArrayList<PartitionMigrationEvent>(beforeEvents);
         beforeEvents.removeAll(commitEvents);

@@ -21,15 +21,17 @@ import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.VersionAware;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.ringbuffer.StaleSequenceException;
+import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.WaitNotifyKey;
+import com.hazelcast.spi.merge.MergingEntry;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.serialization.SerializationService;
 
 import java.io.IOException;
@@ -37,7 +39,6 @@ import java.io.IOException;
 import static com.hazelcast.config.InMemoryFormat.BINARY;
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
 import static com.hazelcast.config.InMemoryFormat.values;
-import static com.hazelcast.internal.cluster.Versions.V3_9;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -47,9 +48,12 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * <p>
  * The expirationPolicy contains the expiration policy of the items. If a time to live is set, the policy is created, otherwise
  * it is null to save space.
+ *
+ * @param <T> the type of items in the ringbuffer container
+ * @param <E> the type of items in the ringbuffer
  */
 @SuppressWarnings("checkstyle:methodcount")
-public class RingbufferContainer<T> implements IdentifiedDataSerializable, Notifier, Versioned {
+public class RingbufferContainer<T, E> implements IdentifiedDataSerializable, Notifier, Versioned {
 
     private static final long TTL_DISABLED = 0;
 
@@ -70,7 +74,7 @@ public class RingbufferContainer<T> implements IdentifiedDataSerializable, Notif
      * <li>{@link InMemoryFormat#BINARY} or {@link InMemoryFormat#NATIVE} - the type is {@link Data}</li>
      * </ul>
      */
-    private Ringbuffer ringbuffer;
+    private Ringbuffer<E> ringbuffer;
 
     /**
      * For purposes of {@link IdentifiedDataSerializable} instance creation.
@@ -82,7 +86,7 @@ public class RingbufferContainer<T> implements IdentifiedDataSerializable, Notif
     /**
      * Constructs the ring buffer container with only the name and the key for blocking operations. This does not fully
      * prepare the container for usage. The caller must invoke the
-     * {@link #init(RingbufferConfig, SerializationService, ClassLoader)}
+     * {@link #init(RingbufferConfig, NodeEngine)}
      * method to complete the initialization before usage.
      *
      * @param namespace the namespace of the ring buffer container
@@ -96,24 +100,21 @@ public class RingbufferContainer<T> implements IdentifiedDataSerializable, Notif
      * Constructs a fully initialized ring buffer that can be used immediately. References to other services, the ring buffer
      * store, expiration policy and the config are all set.
      *
-     * @param namespace            the namespace of the ring buffer container
-     * @param config               the configuration of the ring buffer
-     * @param serializationService the serialization service
-     * @param configClassLoader    the class loader for which the ring buffer store classes will be loaded
+     * @param namespace  the namespace of the ring buffer container
+     * @param config     the configuration of the ring buffer
+     * @param nodeEngine the NodeEngine
      */
-    public RingbufferContainer(ObjectNamespace namespace, RingbufferConfig config,
-                               SerializationService serializationService,
-                               ClassLoader configClassLoader, int partitionId) {
+    public RingbufferContainer(ObjectNamespace namespace, RingbufferConfig config, NodeEngine nodeEngine, int partitionId) {
         this(namespace, partitionId);
 
         this.inMemoryFormat = config.getInMemoryFormat();
-        this.ringbuffer = new ArrayRingbuffer(config.getCapacity());
+        this.ringbuffer = new ArrayRingbuffer<E>(config.getCapacity());
 
         final long ttlMs = SECONDS.toMillis(config.getTimeToLiveSeconds());
         if (ttlMs != TTL_DISABLED) {
             this.expirationPolicy = new RingbufferExpirationPolicy(ringbuffer.getCapacity(), ttlMs);
         }
-        init(config, serializationService, configClassLoader);
+        init(config, nodeEngine);
     }
 
     /**
@@ -121,20 +122,17 @@ public class RingbufferContainer<T> implements IdentifiedDataSerializable, Notif
      * on a replication operation the container is only partially constructed. The init method finishes the configuration
      * of the ring buffer container for further usage.
      *
-     * @param config               the configuration of the ring buffer
-     * @param serializationService the serialization service
-     * @param configClassLoader    the class loader for which the ring buffer store classes will be loaded
+     * @param config     the configuration of the ring buffer
+     * @param nodeEngine the NodeEngine
      */
-    public void init(RingbufferConfig config,
-                     SerializationService serializationService,
-                     ClassLoader configClassLoader) {
+    public void init(RingbufferConfig config, NodeEngine nodeEngine) {
         this.config = config;
-        this.serializationService = serializationService;
-        initRingbufferStore(config, serializationService, configClassLoader);
+        this.serializationService = nodeEngine.getSerializationService();
+        ringbuffer.setSerializationService(serializationService);
+        initRingbufferStore(nodeEngine.getConfigClassLoader());
     }
 
-    private void initRingbufferStore(RingbufferConfig config, SerializationService serializationService,
-                                     ClassLoader configClassLoader) {
+    private void initRingbufferStore(ClassLoader configClassLoader) {
         this.store = RingbufferStoreWrapper.create(namespace,
                 config.getRingbufferStoreConfig(),
                 config.getInMemoryFormat(),
@@ -304,7 +302,7 @@ public class RingbufferContainer<T> implements IdentifiedDataSerializable, Notif
      */
     @SuppressWarnings("unchecked")
     public void set(long sequenceId, T item) {
-        final Object rbItem = convertToRingbufferFormat(item);
+        final E rbItem = convertToRingbufferFormat(item);
 
         // first we write the dataItem in the ring.
         ringbuffer.set(sequenceId, rbItem);
@@ -449,7 +447,7 @@ public class RingbufferContainer<T> implements IdentifiedDataSerializable, Notif
 
     @SuppressWarnings("unchecked")
     private long addInternal(T item) {
-        final Object rbItem = convertToRingbufferFormat(item);
+        final E rbItem = convertToRingbufferFormat(item);
 
         // first we write the dataItem in the ring.
         final long tailSequence = ringbuffer.add(rbItem);
@@ -470,10 +468,10 @@ public class RingbufferContainer<T> implements IdentifiedDataSerializable, Notif
      * @throws HazelcastSerializationException if the ring buffer is configured to keep items
      *                                         in object format and the item could not be deserialized
      */
-    private Object convertToRingbufferFormat(Object item) {
+    private E convertToRingbufferFormat(Object item) {
         return inMemoryFormat == OBJECT
-                ? serializationService.toObject(item)
-                : serializationService.toData(item);
+                ? (E) serializationService.toObject(item)
+                : (E) serializationService.toData(item);
     }
 
     /**
@@ -506,12 +504,7 @@ public class RingbufferContainer<T> implements IdentifiedDataSerializable, Notif
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        assert !out.getVersion().isUnknown();
         boolean ttlEnabled = expirationPolicy != null;
-        if (!isGreaterOrEqualV39(out)) {
-            // 3.8 requires ringbuffer name at this point
-            out.writeUTF(namespace.getObjectName());
-        }
         out.writeLong(ringbuffer.tailSequence());
         out.writeLong(ringbuffer.headSequence());
         out.writeInt((int) ringbuffer.getCapacity());
@@ -543,10 +536,6 @@ public class RingbufferContainer<T> implements IdentifiedDataSerializable, Notif
     @Override
     @SuppressWarnings("unchecked")
     public void readData(ObjectDataInput in) throws IOException {
-        if (!isGreaterOrEqualV39(in)) {
-            // used to be ringbuffer name, it is replaced with namespace in 3.9 which is set in the constructor
-            in.readUTF();
-        }
         final long tailSequence = in.readLong();
         final long headSequence = in.readLong();
         final int capacity = in.readInt();
@@ -556,6 +545,7 @@ public class RingbufferContainer<T> implements IdentifiedDataSerializable, Notif
         ringbuffer = new ArrayRingbuffer(capacity);
         ringbuffer.setTailSequence(tailSequence);
         ringbuffer.setHeadSequence(headSequence);
+        ringbuffer.setSerializationService(serializationService);
 
         boolean ttlEnabled = ttlMs != TTL_DISABLED;
         if (ttlEnabled) {
@@ -565,9 +555,9 @@ public class RingbufferContainer<T> implements IdentifiedDataSerializable, Notif
         long now = System.currentTimeMillis();
         for (long seq = headSequence; seq <= tailSequence; seq++) {
             if (inMemoryFormat == BINARY) {
-                ringbuffer.set(seq, in.readData());
+                ringbuffer.set(seq, (E) in.readData());
             } else {
-                ringbuffer.set(seq, in.readObject());
+                ringbuffer.set(seq, (E) in.readObject());
             }
 
             if (ttlEnabled) {
@@ -577,11 +567,7 @@ public class RingbufferContainer<T> implements IdentifiedDataSerializable, Notif
         }
     }
 
-    private static boolean isGreaterOrEqualV39(VersionAware versionAware) {
-        return versionAware.getVersion().isGreaterOrEqual(V3_9);
-    }
-
-    Ringbuffer getRingbuffer() {
+    Ringbuffer<E> getRingbuffer() {
         return ringbuffer;
     }
 
@@ -611,5 +597,23 @@ public class RingbufferContainer<T> implements IdentifiedDataSerializable, Notif
     @Override
     public WaitNotifyKey getNotifiedKey() {
         return emptyRingWaitNotifyKey;
+    }
+
+    /**
+     * Clears the data in the ringbuffer.
+     */
+    public void clear() {
+        ringbuffer.clear();
+    }
+
+    /**
+     * Merges the given {@link MergingEntry} via the given {@link SplitBrainMergePolicy}.
+     *
+     * @param mergingEntry the {@link MergingEntry} instance to merge
+     * @param mergePolicy  the {@link SplitBrainMergePolicy} instance to apply
+     * @return the sequence ID of the merged item or {@code -1} if no item was merged
+     */
+    public long merge(MergingEntry<Long, E> mergingEntry, SplitBrainMergePolicy mergePolicy) {
+        return ringbuffer.merge(mergingEntry, mergePolicy, remainingCapacity());
     }
 }

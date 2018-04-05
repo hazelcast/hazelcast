@@ -97,6 +97,7 @@ public class ClusterStateManager {
         LockGuard stateLock = stateLockRef.get();
         while (stateLock.isLeaseExpired()) {
             if (stateLockRef.compareAndSet(stateLock, LockGuard.NOT_LOCKED)) {
+                logger.fine("Cluster state lock: " + stateLock + " is expired.");
                 stateLock = LockGuard.NOT_LOCKED;
                 break;
             }
@@ -210,13 +211,7 @@ public class ClusterStateManager {
 
             checkMigrationsAndPartitionStateVersion(stateChange, partitionStateVersion);
 
-            final LockGuard currentLock = getStateLock();
-            if (!currentLock.allowsLock(txnId)) {
-                throw new TransactionException("Locking failed for " + initiator + ", tx: " + txnId
-                        + ", current state: " + toString());
-            }
-
-            stateLockRef.set(new LockGuard(initiator, txnId, leaseTime));
+            lockOrExtendClusterState(initiator, txnId, leaseTime);
 
             try {
                 // check migration status and partition-state version again
@@ -229,6 +224,22 @@ public class ClusterStateManager {
         } finally {
             clusterServiceLock.unlock();
         }
+    }
+
+    private void lockOrExtendClusterState(Address initiator, String txnId, long leaseTime) {
+        Preconditions.checkPositive(leaseTime, "Lease time should be positive!");
+
+        LockGuard currentLock = getStateLock();
+        if (!currentLock.allowsLock(txnId)) {
+            throw new TransactionException("Locking failed for " + initiator + ", tx: " + txnId
+                    + ", current state: " + toString());
+        }
+
+        long newLeaseTime = currentLock.getRemainingTime() + leaseTime;
+        if (newLeaseTime < 0L) {
+            newLeaseTime = Long.MAX_VALUE;
+        }
+        stateLockRef.set(new LockGuard(initiator, txnId, newLeaseTime));
     }
 
     // check if current node is compatible with requested cluster version

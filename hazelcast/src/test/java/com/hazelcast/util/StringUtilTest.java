@@ -24,13 +24,41 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Locale;
+
+import static com.hazelcast.util.StringUtil.VERSION_PATTERN;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class StringUtilTest extends HazelcastTestSupport {
+
+    @Test
+    public void testVersionPattern() {
+        assertTrue(VERSION_PATTERN.matcher("3.1").matches());
+        assertTrue(VERSION_PATTERN.matcher("3.1-SNAPSHOT").matches());
+        assertTrue(VERSION_PATTERN.matcher("3.1-RC").matches());
+        assertTrue(VERSION_PATTERN.matcher("3.1-RC1-SNAPSHOT").matches());
+        assertTrue(VERSION_PATTERN.matcher("3.1.1").matches());
+        assertTrue(VERSION_PATTERN.matcher("3.1.1-RC").matches());
+        assertTrue(VERSION_PATTERN.matcher("3.1.1-SNAPSHOT").matches());
+        assertTrue(VERSION_PATTERN.matcher("3.1.1-RC1-SNAPSHOT").matches());
+
+        assertFalse(VERSION_PATTERN.matcher("${project.version}").matches());
+        assertFalse(VERSION_PATTERN.matcher("project.version").matches());
+        assertFalse(VERSION_PATTERN.matcher("3").matches());
+        assertFalse(VERSION_PATTERN.matcher("3.RC").matches());
+        assertFalse(VERSION_PATTERN.matcher("3.SNAPSHOT").matches());
+        assertFalse(VERSION_PATTERN.matcher("3-RC").matches());
+        assertFalse(VERSION_PATTERN.matcher("3-SNAPSHOT").matches());
+        assertFalse(VERSION_PATTERN.matcher("3.").matches());
+        assertFalse(VERSION_PATTERN.matcher("3.1.RC").matches());
+        assertFalse(VERSION_PATTERN.matcher("3.1.SNAPSHOT").matches());
+    }
 
     @Test
     public void getterIntoProperty_whenNull_returnNull() throws Exception {
@@ -95,6 +123,25 @@ public class StringUtilTest extends HazelcastTestSupport {
         assertArrayEquals(arr(), StringUtil.subraction(arr(), arr("a", "b")));
         assertArrayEquals(arr("a", "b"), StringUtil.subraction(arr("a", "b"), arr()));
         assertArrayEquals(arr(), StringUtil.subraction(arr("a", "test", "b", "a"), arr("a", "b", "test")));
+    }
+
+    @Test
+    public void testEqualsIgnoreCase() throws Exception {
+        assertFalse(StringUtil.equalsIgnoreCase(null, null));
+        assertFalse(StringUtil.equalsIgnoreCase(null, "a"));
+        assertFalse(StringUtil.equalsIgnoreCase("a", null));
+        assertTrue(StringUtil.equalsIgnoreCase("TEST", "test"));
+        assertTrue(StringUtil.equalsIgnoreCase("test", "TEST"));
+        assertFalse(StringUtil.equalsIgnoreCase("test", "TEST2"));
+
+        Locale defaultLocale = Locale.getDefault();
+        Locale.setDefault(new Locale("tr"));
+        try {
+            assertTrue(StringUtil.equalsIgnoreCase("EXIT", "exit"));
+            assertFalse(StringUtil.equalsIgnoreCase("exıt", "EXIT"));
+        } finally {
+            Locale.setDefault(defaultLocale);
+        }
     }
 
     private String[] arr(String... strings) {

@@ -44,6 +44,7 @@ import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.NightlyTest;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -107,6 +108,7 @@ public class InvalidationMemberAddRemoveTest extends ClientNearCacheTestSupport 
     }
 
     @Test
+    @Ignore("https://github.com/hazelcast/hazelcast/issues/12548")
     public void ensure_nearCachedClient_and_member_data_sync_eventually() throws Exception {
         final AtomicBoolean stopTest = new AtomicBoolean();
 
@@ -234,7 +236,8 @@ public class InvalidationMemberAddRemoveTest extends ClientNearCacheTestSupport 
             }
 
             private MetaDataGenerator getMetaDataGenerator() {
-                CacheEventHandler cacheEventHandler = ((CacheService) ((CacheProxy) memberCache).getService()).getCacheEventHandler();
+                CacheEventHandler cacheEventHandler
+                        = ((CacheService) ((CacheProxy) memberCache).getService()).getCacheEventHandler();
                 return cacheEventHandler.getMetaDataGenerator();
             }
 

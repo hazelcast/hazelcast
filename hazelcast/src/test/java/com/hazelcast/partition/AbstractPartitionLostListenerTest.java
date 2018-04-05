@@ -81,7 +81,7 @@ public abstract class AbstractPartitionLostListenerTest extends HazelcastTestSup
     }
 
     final protected void stopInstances(List<HazelcastInstance> instances, final NodeLeaveType nodeLeaveType,
-            int timeoutSeconds) {
+                                       int timeoutSeconds) {
         assertNotNull(nodeLeaveType);
 
         final List<Thread> threads = new ArrayList<Thread>();

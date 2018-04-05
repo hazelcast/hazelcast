@@ -20,8 +20,6 @@ import com.hazelcast.cardinality.impl.operations.MergeOperation;
 import com.hazelcast.cardinality.impl.operations.ReplicationOperation;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.internal.cluster.Versions;
-import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.NodeEngine;
@@ -31,33 +29,28 @@ import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.spi.QuorumAwareService;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.SplitBrainHandlerService;
-import com.hazelcast.spi.SplitBrainMergePolicy;
-import com.hazelcast.spi.merge.DiscardMergePolicy;
-import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
+import com.hazelcast.spi.impl.merge.AbstractContainerMerger;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.partition.MigrationEndpoint;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ContextMutexFactory;
 
-import java.util.HashMap;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.Semaphore;
-import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getPartitionKey;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.MapUtil.createHashMap;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 public class CardinalityEstimatorService
-        implements ManagedService, RemoteService, MigrationAwareService,
-                   SplitBrainHandlerService, QuorumAwareService {
+        implements ManagedService, RemoteService, MigrationAwareService, QuorumAwareService, SplitBrainHandlerService {
 
     public static final String SERVICE_NAME = "hz:impl:cardinalityEstimatorService";
 
@@ -70,7 +63,6 @@ public class CardinalityEstimatorService
     private static final Object NULL_OBJECT = new Object();
 
     private NodeEngine nodeEngine;
-    private SplitBrainMergePolicyProvider mergePolicyProvider;
     private final ConcurrentMap<String, CardinalityEstimatorContainer> containers =
             new ConcurrentHashMap<String, CardinalityEstimatorContainer>();
     private final ConstructorFunction<String, CardinalityEstimatorContainer> cardinalityEstimatorContainerConstructorFunction =
@@ -107,7 +99,6 @@ public class CardinalityEstimatorService
     @Override
     public void init(NodeEngine nodeEngine, Properties properties) {
         this.nodeEngine = nodeEngine;
-        this.mergePolicyProvider = nodeEngine.getSplitBrainMergePolicyProvider();
     }
 
     @Override
@@ -167,24 +158,6 @@ public class CardinalityEstimatorService
         }
     }
 
-    @Override
-    public Runnable prepareMergeRunnable() {
-        Map<String, CardinalityEstimatorContainer> state =
-                new HashMap<String, CardinalityEstimatorContainer>();
-
-        for (Map.Entry<String, CardinalityEstimatorContainer> entry : containers.entrySet()) {
-            SplitBrainMergePolicy mergePolicy = getMergePolicy(entry.getKey());
-
-            int partition = getPartitionId(entry.getKey());
-            if (nodeEngine.getPartitionService().isPartitionOwner(partition)
-                    && !(mergePolicy instanceof DiscardMergePolicy)) {
-                state.put(entry.getKey(), entry.getValue());
-            }
-        }
-
-        return new Merger(state);
-    }
-
     private void clearPartitionReplica(int partitionId, int durabilityThreshold) {
         final Iterator<Map.Entry<String, CardinalityEstimatorContainer>> iterator = containers.entrySet().iterator();
         while (iterator.hasNext()) {
@@ -209,88 +182,45 @@ public class CardinalityEstimatorService
         if (nodeEngine.getClusterService().getClusterVersion().isLessThan(Versions.V3_10)) {
             return null;
         }
-        Object quorumName = getOrPutSynchronized(quorumConfigCache, name, quorumConfigCacheMutexFactory,
-                quorumConfigConstructor);
+        Object quorumName = getOrPutSynchronized(quorumConfigCache, name, quorumConfigCacheMutexFactory, quorumConfigConstructor);
         return quorumName == NULL_OBJECT ? null : (String) quorumName;
     }
 
-    private SplitBrainMergePolicy getMergePolicy(String name) {
-        String mergePolicyName = nodeEngine.getConfig().findCardinalityEstimatorConfig(name).getMergePolicyConfig().getPolicy();
-        return mergePolicyProvider.getMergePolicy(mergePolicyName);
+    @Override
+    public Runnable prepareMergeRunnable() {
+        CardinalityEstimatorContainerCollector collector = new CardinalityEstimatorContainerCollector(nodeEngine, containers);
+        collector.run();
+        return new Merger(collector);
     }
 
-    private class Merger implements Runnable {
+    private class Merger extends AbstractContainerMerger<CardinalityEstimatorContainer> {
 
-        private static final int TIMEOUT_FACTOR = 500;
-
-        private Map<String, CardinalityEstimatorContainer> snapshot;
-
-        Merger(Map<String, CardinalityEstimatorContainer> snapshot) {
-            this.snapshot = snapshot;
+        Merger(CardinalityEstimatorContainerCollector collector) {
+            super(collector, nodeEngine);
         }
 
-        @SuppressWarnings({"checkstyle:methodlength"})
         @Override
-        public void run() {
-            // we cannot merge into a 3.9 cluster, since not all members may understand the CollectionMergeOperation
-            if (nodeEngine.getClusterService().getClusterVersion().isLessThan(Versions.V3_10)) {
-                return;
-            }
+        protected String getLabel() {
+            return "cardinality estimator";
+        }
 
-            final ILogger logger = nodeEngine.getLogger(CardinalityEstimatorService.class);
-            final Semaphore semaphore = new Semaphore(0);
+        @Override
+        public void runInternal() {
+            CardinalityEstimatorContainerCollector collector = (CardinalityEstimatorContainerCollector) this.collector;
+            Map<Integer, Collection<CardinalityEstimatorContainer>> containerMap = collector.getCollectedContainers();
+            for (Map.Entry<Integer, Collection<CardinalityEstimatorContainer>> entry : containerMap.entrySet()) {
+                // TODO: batching support (tkountis)
+                int partitionId = entry.getKey();
+                Collection<CardinalityEstimatorContainer> containerList = entry.getValue();
 
-            ExecutionCallback<Object> mergeCallback = new ExecutionCallback<Object>() {
-                @Override
-                public void onResponse(Object response) {
-                    semaphore.release(1);
-                }
+                for (CardinalityEstimatorContainer container : containerList) {
+                    String containerName = collector.getContainerName(container);
+                    SplitBrainMergePolicy mergePolicy = getMergePolicy(collector.getMergePolicyConfig(container));
 
-                @Override
-                public void onFailure(Throwable t) {
-                    logger.warning("Error while running merge operation: " + t.getMessage());
-                    semaphore.release(1);
-                }
-            };
-
-            int size = 0;
-            int operationCount = 0;
-
-            try {
-                //TODO tkountis - Batching support
-                for (Map.Entry<String, CardinalityEstimatorContainer> entry : snapshot.entrySet()) {
-                    String containerName = entry.getKey();
-                    CardinalityEstimatorContainer container = entry.getValue();
-                    int partitionId = getPartitionId(containerName);
-
-                    operationCount++;
-
-                    SplitBrainMergePolicy mergePolicy = getMergePolicy(containerName);
                     MergeOperation operation = new MergeOperation(containerName, mergePolicy, container.hll);
-                    try {
-                        nodeEngine.getOperationService()
-                                  .invokeOnPartition(SERVICE_NAME, operation, partitionId)
-                                  .andThen(mergeCallback);
-                    } catch (Throwable t) {
-                        throw rethrow(t);
-                    }
-                    size++;
-
+                    invoke(SERVICE_NAME, operation, partitionId);
                 }
-
-                snapshot.clear();
-
-            } catch (Exception ex) {
-                logger.warning("CardinalityEstimatorService merging didn't complete successfully.", ex);
-                throw rethrow(ex);
-            }
-
-            try {
-                semaphore.tryAcquire(operationCount, size * TIMEOUT_FACTOR, TimeUnit.MILLISECONDS);
-            } catch (InterruptedException e) {
-                logger.finest("Interrupted while waiting for merge operation...");
             }
         }
     }
 }
-

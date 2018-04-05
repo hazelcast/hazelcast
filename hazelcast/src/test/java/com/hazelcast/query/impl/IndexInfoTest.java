@@ -24,13 +24,14 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.test.HazelcastTestSupport.assumeDifferentHashCodes;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class IndexInfoTest {
-    
+
     private IndexInfo indexInfo;
     private IndexInfo indexInfoSameAttributes;
 
@@ -66,6 +67,7 @@ public class IndexInfoTest {
         assertEquals(indexInfo.hashCode(), indexInfo.hashCode());
         assertEquals(indexInfo.hashCode(), indexInfoSameAttributes.hashCode());
 
+        assumeDifferentHashCodes();
         assertNotEquals(indexInfo.hashCode(), indexInfoOtherIsOrdered.hashCode());
         assertNotEquals(indexInfo.hashCode(), indexInfoOtherAttributeName.hashCode());
         assertNotEquals(indexInfo.hashCode(), indexInfoNullAttributeName.hashCode());

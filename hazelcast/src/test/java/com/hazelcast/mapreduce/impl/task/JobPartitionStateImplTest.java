@@ -27,6 +27,7 @@ import org.junit.runner.RunWith;
 
 import static com.hazelcast.mapreduce.JobPartitionState.State.CANCELLED;
 import static com.hazelcast.mapreduce.JobPartitionState.State.WAITING;
+import static com.hazelcast.test.HazelcastTestSupport.assumeDifferentHashCodes;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
@@ -90,6 +91,7 @@ public class JobPartitionStateImplTest {
         assertEquals(jobPartitionState.hashCode(), jobPartitionState.hashCode());
         assertEquals(jobPartitionState.hashCode(), jobPartitionStateSameAttributes.hashCode());
 
+        assumeDifferentHashCodes();
         assertNotEquals(jobPartitionState.hashCode(), jobPartitionStateOtherAddress.hashCode());
         assertNotEquals(jobPartitionState.hashCode(), jobPartitionStateOtherState.hashCode());
     }

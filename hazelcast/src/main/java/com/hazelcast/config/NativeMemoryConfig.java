@@ -131,11 +131,55 @@ public class NativeMemoryConfig {
     }
 
     @Override
+    @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
+    public final boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || !(o instanceof NativeMemoryConfig)) {
+            return false;
+        }
+
+        NativeMemoryConfig that = (NativeMemoryConfig) o;
+
+        if (enabled != that.enabled) {
+            return false;
+        }
+        if (minBlockSize != that.minBlockSize) {
+            return false;
+        }
+        if (pageSize != that.pageSize) {
+            return false;
+        }
+        if (Float.compare(that.metadataSpacePercentage, metadataSpacePercentage) != 0) {
+            return false;
+        }
+        if (size != null ? !size.equals(that.size) : that.size != null) {
+            return false;
+        }
+        return allocatorType == that.allocatorType;
+    }
+
+    @Override
+    public final int hashCode() {
+        int result = (enabled ? 1 : 0);
+        result = 31 * result + (size != null ? size.hashCode() : 0);
+        result = 31 * result + (allocatorType != null ? allocatorType.hashCode() : 0);
+        result = 31 * result + minBlockSize;
+        result = 31 * result + pageSize;
+        result = 31 * result + (metadataSpacePercentage != +0.0f ? Float.floatToIntBits(metadataSpacePercentage) : 0);
+        return result;
+    }
+
+    @Override
     public String toString() {
         return "NativeMemoryConfig{"
                 + "enabled=" + enabled
                 + ", size=" + size
                 + ", allocatorType=" + allocatorType
+                + ", minBlockSize=" + minBlockSize
+                + ", pageSize=" + pageSize
+                + ", metadataSpacePercentage=" + metadataSpacePercentage
                 + '}';
     }
 }

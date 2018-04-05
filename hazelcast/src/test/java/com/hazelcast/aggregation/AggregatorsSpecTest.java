@@ -102,14 +102,21 @@ public class AggregatorsSpecTest extends HazelcastTestSupport {
         assertEquals(Double.valueOf(1), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>doubleMin("doubleValue" + p)));
         assertEquals(Long.valueOf(1), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>longMin("longValue" + p)));
         assertEquals(Integer.valueOf(1), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>integerMin("intValue" + p)));
-        assertEquals(BigDecimal.valueOf(1), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>bigDecimalMin("bigDecimalValue" + p)));
-        assertEquals(BigInteger.valueOf(1), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>bigIntegerMin("bigIntegerValue" + p)));
+        assertEquals(BigDecimal.valueOf(1), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>bigDecimalMin(
+                "bigDecimalValue" + p)));
+        assertEquals(BigInteger.valueOf(1), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>bigIntegerMin(
+                "bigIntegerValue" + p)));
 
-        assertEquals(Double.valueOf(1), map.aggregate(Aggregators.<Map.Entry<Integer, Person>, Double>comparableMin("doubleValue" + p)));
-        assertEquals(Long.valueOf(1), map.aggregate(Aggregators.<Map.Entry<Integer, Person>, Long>comparableMin("longValue" + p)));
-        assertEquals(Integer.valueOf(1), map.aggregate(Aggregators.<Map.Entry<Integer, Person>, Integer>comparableMin("intValue" + p)));
-        assertEquals(BigDecimal.valueOf(1), map.aggregate(Aggregators.<Map.Entry<Integer, Person>, BigDecimal>comparableMin("bigDecimalValue" + p)));
-        assertEquals(BigInteger.valueOf(1), map.aggregate(Aggregators.<Map.Entry<Integer, Person>, BigInteger>comparableMin("bigIntegerValue" + p)));
+        assertEquals(Double.valueOf(1), map.aggregate(Aggregators.<Map.Entry<Integer, Person>, Double>comparableMin(
+                "doubleValue" + p)));
+        assertEquals(Long.valueOf(1), map.aggregate(Aggregators.<Map.Entry<Integer, Person>, Long>comparableMin(
+                "longValue" + p)));
+        assertEquals(Integer.valueOf(1), map.aggregate(Aggregators.<Map.Entry<Integer, Person>, Integer>comparableMin(
+                "intValue" + p)));
+        assertEquals(BigDecimal.valueOf(1), map.aggregate(Aggregators.<Map.Entry<Integer, Person>, BigDecimal>comparableMin(
+                "bigDecimalValue" + p)));
+        assertEquals(BigInteger.valueOf(1), map.aggregate(Aggregators.<Map.Entry<Integer, Person>, BigInteger>comparableMin(
+                "bigIntegerValue" + p)));
 
         assertEquals("1", map.aggregate(Aggregators.<Map.Entry<Integer, Person>, String>comparableMin("comparableValue" + p)));
     }
@@ -119,37 +126,55 @@ public class AggregatorsSpecTest extends HazelcastTestSupport {
         assertEquals(Double.valueOf(999), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>doubleMax("doubleValue" + p)));
         assertEquals(Long.valueOf(999), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>longMax("longValue" + p)));
         assertEquals(Integer.valueOf(999), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>integerMax("intValue" + p)));
-        assertEquals(BigDecimal.valueOf(999), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>bigDecimalMax("bigDecimalValue" + p)));
-        assertEquals(BigInteger.valueOf(999), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>bigIntegerMax("bigIntegerValue" + p)));
+        assertEquals(BigDecimal.valueOf(999), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>bigDecimalMax(
+                "bigDecimalValue" + p)));
+        assertEquals(BigInteger.valueOf(999), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>bigIntegerMax(
+                "bigIntegerValue" + p)));
 
-        assertEquals(Double.valueOf(999), map.aggregate(Aggregators.<Map.Entry<Integer, Person>, Double>comparableMax("doubleValue" + p)));
-        assertEquals(Long.valueOf(999), map.aggregate(Aggregators.<Map.Entry<Integer, Person>, Long>comparableMax("longValue" + p)));
-        assertEquals(Integer.valueOf(999), map.aggregate(Aggregators.<Map.Entry<Integer, Person>, Integer>comparableMax("intValue" + p)));
-        assertEquals(BigDecimal.valueOf(999), map.aggregate(Aggregators.<Map.Entry<Integer, Person>, BigDecimal>comparableMax("bigDecimalValue" + p)));
-        assertEquals(BigInteger.valueOf(999), map.aggregate(Aggregators.<Map.Entry<Integer, Person>, BigInteger>comparableMax("bigIntegerValue" + p)));
+        assertEquals(Double.valueOf(999), map.aggregate(Aggregators.<Map.Entry<Integer, Person>, Double>comparableMax(
+                "doubleValue" + p)));
+        assertEquals(Long.valueOf(999), map.aggregate(Aggregators.<Map.Entry<Integer, Person>, Long>comparableMax(
+                "longValue" + p)));
+        assertEquals(Integer.valueOf(999), map.aggregate(Aggregators.<Map.Entry<Integer, Person>, Integer>comparableMax(
+                "intValue" + p)));
+        assertEquals(BigDecimal.valueOf(999), map.aggregate(Aggregators.<Map.Entry<Integer, Person>, BigDecimal>comparableMax(
+                "bigDecimalValue" + p)));
+        assertEquals(BigInteger.valueOf(999), map.aggregate(Aggregators.<Map.Entry<Integer, Person>, BigInteger>comparableMax(
+                "bigIntegerValue" + p)));
 
         assertEquals("999", map.aggregate(Aggregators.<Map.Entry<Integer, Person>, String>comparableMax("comparableValue" + p)));
     }
 
     public static void assertSumAggregators(IMap<Integer, Person> map, String p) {
         assertNoDataMissing(map, PERSONS_COUNT);
-        assertEquals(Double.valueOf(499500.0d), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>doubleSum("doubleValue" + p)));
+        assertEquals(Double.valueOf(499500.0d), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>doubleSum(
+                "doubleValue" + p)));
         assertEquals(Long.valueOf(499500), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>longSum("longValue" + p)));
         assertEquals(Long.valueOf(499500), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>integerSum("intValue" + p)));
-        assertEquals(BigDecimal.valueOf(499500), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>bigDecimalSum("bigDecimalValue" + p)));
-        assertEquals(BigInteger.valueOf(499500), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>bigIntegerSum("bigIntegerValue" + p)));
+        assertEquals(BigDecimal.valueOf(499500), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>bigDecimalSum(
+                "bigDecimalValue" + p)));
+        assertEquals(BigInteger.valueOf(499500), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>bigIntegerSum(
+                "bigIntegerValue" + p)));
 
-        assertEquals(Long.valueOf(499500), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>fixedPointSum("doubleValue" + p)));
+        assertEquals(Long.valueOf(499500), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>fixedPointSum(
+                "doubleValue" + p)));
         assertEquals(Long.valueOf(499500), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>fixedPointSum("longValue" + p)));
         assertEquals(Long.valueOf(499500), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>fixedPointSum("intValue" + p)));
-        assertEquals(Long.valueOf(499500), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>fixedPointSum("bigIntegerValue" + p)));
-        assertEquals(Long.valueOf(499500), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>fixedPointSum("bigDecimalValue" + p)));
+        assertEquals(Long.valueOf(499500), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>fixedPointSum(
+                "bigIntegerValue" + p)));
+        assertEquals(Long.valueOf(499500), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>fixedPointSum(
+                "bigDecimalValue" + p)));
 
-        assertEquals(Double.valueOf(499500), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>floatingPointSum("doubleValue" + p)));
-        assertEquals(Double.valueOf(499500), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>floatingPointSum("longValue" + p)));
-        assertEquals(Double.valueOf(499500), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>floatingPointSum("intValue" + p)));
-        assertEquals(Double.valueOf(499500), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>floatingPointSum("bigIntegerValue" + p)));
-        assertEquals(Double.valueOf(499500), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>floatingPointSum("bigDecimalValue" + p)));
+        assertEquals(Double.valueOf(499500), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>floatingPointSum(
+                "doubleValue" + p)));
+        assertEquals(Double.valueOf(499500), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>floatingPointSum(
+                "longValue" + p)));
+        assertEquals(Double.valueOf(499500), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>floatingPointSum(
+                "intValue" + p)));
+        assertEquals(Double.valueOf(499500), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>floatingPointSum(
+                "bigIntegerValue" + p)));
+        assertEquals(Double.valueOf(499500), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>floatingPointSum(
+                "bigDecimalValue" + p)));
     }
 
     public static void assertAverageAggregators(IMap<Integer, Person> map, String p) {
@@ -157,14 +182,18 @@ public class AggregatorsSpecTest extends HazelcastTestSupport {
         assertEquals(Double.valueOf(500.0d), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>doubleAvg("doubleValue" + p)));
         assertEquals(Double.valueOf(500.0d), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>longAvg("longValue" + p)));
         assertEquals(Double.valueOf(500.0d), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>integerAvg("intValue" + p)));
-        assertEquals(BigDecimal.valueOf(500), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>bigDecimalAvg("bigDecimalValue" + p)));
-        assertEquals(BigDecimal.valueOf(500), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>bigIntegerAvg("bigIntegerValue" + p)));
+        assertEquals(BigDecimal.valueOf(500), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>bigDecimalAvg(
+                "bigDecimalValue" + p)));
+        assertEquals(BigDecimal.valueOf(500), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>bigIntegerAvg(
+                "bigIntegerValue" + p)));
 
         assertEquals(Double.valueOf(500.0d), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>numberAvg("doubleValue" + p)));
         assertEquals(Double.valueOf(500.0d), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>numberAvg("longValue" + p)));
         assertEquals(Double.valueOf(500.0d), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>numberAvg("intValue" + p)));
-        assertEquals(Double.valueOf(500.0d), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>numberAvg("bigDecimalValue" + p)));
-        assertEquals(Double.valueOf(500.0d), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>numberAvg("bigIntegerValue" + p)));
+        assertEquals(Double.valueOf(500.0d), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>numberAvg(
+                "bigDecimalValue" + p)));
+        assertEquals(Double.valueOf(500.0d), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>numberAvg(
+                "bigIntegerValue" + p)));
     }
 
     public static void assertCountAggregators(IMap<Integer, Person> map, String p) {
@@ -181,17 +210,23 @@ public class AggregatorsSpecTest extends HazelcastTestSupport {
         // projections do not support [any] but we have one element only so here we go.
         assertNoDataMissing(map, PERSONS_COUNT);
         String projection = p.contains("[any]") ? "[0]" : "";
-        assertCollectionEquals(map.project(Projections.<Map.Entry<Integer, Person>, Double>singleAttribute("doubleValue" + projection)),
+        assertCollectionEquals(map.project(Projections.<Map.Entry<Integer, Person>, Double>singleAttribute(
+                "doubleValue" + projection)),
                 map.aggregate(Aggregators.<Map.Entry<Integer, Person>, Double>distinct("doubleValue" + p)));
-        assertCollectionEquals(map.project(Projections.<Map.Entry<Integer, Person>, Long>singleAttribute("longValue" + projection)),
+        assertCollectionEquals(map.project(Projections.<Map.Entry<Integer, Person>, Long>singleAttribute(
+                "longValue" + projection)),
                 map.aggregate(Aggregators.<Map.Entry<Integer, Person>, Long>distinct("longValue" + p)));
-        assertCollectionEquals(map.project(Projections.<Map.Entry<Integer, Person>, Integer>singleAttribute("intValue" + projection)),
+        assertCollectionEquals(map.project(Projections.<Map.Entry<Integer, Person>, Integer>singleAttribute(
+                "intValue" + projection)),
                 map.aggregate(Aggregators.<Map.Entry<Integer, Person>, Integer>distinct("intValue" + p)));
-        assertCollectionEquals(map.project(Projections.<Map.Entry<Integer, Person>, BigDecimal>singleAttribute("bigDecimalValue" + projection)),
+        assertCollectionEquals(map.project(Projections.<Map.Entry<Integer, Person>, BigDecimal>singleAttribute(
+                "bigDecimalValue" + projection)),
                 map.aggregate(Aggregators.<Map.Entry<Integer, Person>, BigDecimal>distinct("bigDecimalValue" + p)));
-        assertCollectionEquals(map.project(Projections.<Map.Entry<Integer, Person>, BigInteger>singleAttribute("bigIntegerValue" + projection)),
+        assertCollectionEquals(map.project(Projections.<Map.Entry<Integer, Person>, BigInteger>singleAttribute(
+                "bigIntegerValue" + projection)),
                 map.aggregate(Aggregators.<Map.Entry<Integer, Person>, BigInteger>distinct("bigIntegerValue" + p)));
-        assertCollectionEquals(map.project(Projections.<Map.Entry<Integer, Person>, Comparable>singleAttribute("comparableValue" + projection)),
+        assertCollectionEquals(map.project(Projections.<Map.Entry<Integer, Person>, Comparable>singleAttribute(
+                "comparableValue" + projection)),
                 map.aggregate(Aggregators.<Map.Entry<Integer, Person>, Comparable>distinct("comparableValue" + p)));
     }
 
@@ -244,8 +279,10 @@ public class AggregatorsSpecTest extends HazelcastTestSupport {
         assertEquals(null, map.aggregate(Aggregators.<Map.Entry<Integer, Person>, Double>comparableMin("doubleValue" + p)));
         assertEquals(null, map.aggregate(Aggregators.<Map.Entry<Integer, Person>, Long>comparableMin("longValue" + p)));
         assertEquals(null, map.aggregate(Aggregators.<Map.Entry<Integer, Person>, Integer>comparableMin("intValue" + p)));
-        assertEquals(null, map.aggregate(Aggregators.<Map.Entry<Integer, Person>, BigDecimal>comparableMin("bigDecimalValue" + p)));
-        assertEquals(null, map.aggregate(Aggregators.<Map.Entry<Integer, Person>, BigInteger>comparableMin("bigIntegerValue" + p)));
+        assertEquals(null, map.aggregate(Aggregators.<Map.Entry<Integer, Person>, BigDecimal>comparableMin(
+                "bigDecimalValue" + p)));
+        assertEquals(null, map.aggregate(Aggregators.<Map.Entry<Integer, Person>, BigInteger>comparableMin(
+                "bigIntegerValue" + p)));
 
         assertEquals(null, map.aggregate(Aggregators.<Map.Entry<Integer, Person>, String>comparableMin("comparableValue" + p)));
     }
@@ -261,8 +298,10 @@ public class AggregatorsSpecTest extends HazelcastTestSupport {
         assertEquals(null, map.aggregate(Aggregators.<Map.Entry<Integer, Person>, Double>comparableMax("doubleValue" + p)));
         assertEquals(null, map.aggregate(Aggregators.<Map.Entry<Integer, Person>, Long>comparableMax("longValue" + p)));
         assertEquals(null, map.aggregate(Aggregators.<Map.Entry<Integer, Person>, Integer>comparableMax("intValue" + p)));
-        assertEquals(null, map.aggregate(Aggregators.<Map.Entry<Integer, Person>, BigDecimal>comparableMax("bigDecimalValue" + p)));
-        assertEquals(null, map.aggregate(Aggregators.<Map.Entry<Integer, Person>, BigInteger>comparableMax("bigIntegerValue" + p)));
+        assertEquals(null, map.aggregate(Aggregators.<Map.Entry<Integer, Person>, BigDecimal>comparableMax(
+                "bigDecimalValue" + p)));
+        assertEquals(null, map.aggregate(Aggregators.<Map.Entry<Integer, Person>, BigInteger>comparableMax(
+                "bigIntegerValue" + p)));
 
         assertEquals(null, map.aggregate(Aggregators.<Map.Entry<Integer, Person>, String>comparableMax("comparableValue" + p)));
     }
@@ -272,20 +311,27 @@ public class AggregatorsSpecTest extends HazelcastTestSupport {
         assertEquals(Double.valueOf(0), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>doubleSum("doubleValue" + p)));
         assertEquals(Long.valueOf(0), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>longSum("longValue" + p)));
         assertEquals(Long.valueOf(0), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>integerSum("intValue" + p)));
-        assertEquals(BigDecimal.valueOf(0), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>bigDecimalSum("bigDecimalValue" + p)));
-        assertEquals(BigInteger.valueOf(0), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>bigIntegerSum("bigIntegerValue" + p)));
+        assertEquals(BigDecimal.valueOf(0), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>bigDecimalSum(
+                "bigDecimalValue" + p)));
+        assertEquals(BigInteger.valueOf(0), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>bigIntegerSum(
+                "bigIntegerValue" + p)));
 
         assertEquals(Long.valueOf(0), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>fixedPointSum("doubleValue" + p)));
         assertEquals(Long.valueOf(0), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>fixedPointSum("longValue" + p)));
         assertEquals(Long.valueOf(0), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>fixedPointSum("intValue" + p)));
-        assertEquals(Long.valueOf(0), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>fixedPointSum("bigIntegerValue" + p)));
-        assertEquals(Long.valueOf(0), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>fixedPointSum("bigDecimalValue" + p)));
+        assertEquals(Long.valueOf(0), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>fixedPointSum(
+                "bigIntegerValue" + p)));
+        assertEquals(Long.valueOf(0), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>fixedPointSum(
+                "bigDecimalValue" + p)));
 
-        assertEquals(Double.valueOf(0), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>floatingPointSum("doubleValue" + p)));
+        assertEquals(Double.valueOf(0), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>floatingPointSum(
+                "doubleValue" + p)));
         assertEquals(Double.valueOf(0), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>floatingPointSum("longValue" + p)));
         assertEquals(Double.valueOf(0), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>floatingPointSum("intValue" + p)));
-        assertEquals(Double.valueOf(0), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>floatingPointSum("bigIntegerValue" + p)));
-        assertEquals(Double.valueOf(0), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>floatingPointSum("bigDecimalValue" + p)));
+        assertEquals(Double.valueOf(0), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>floatingPointSum(
+                "bigIntegerValue" + p)));
+        assertEquals(Double.valueOf(0), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>floatingPointSum(
+                "bigDecimalValue" + p)));
     }
 
     public static void assertAverageAggregatorsAnyCornerCase(IMap<Integer, Person> map, String p) {

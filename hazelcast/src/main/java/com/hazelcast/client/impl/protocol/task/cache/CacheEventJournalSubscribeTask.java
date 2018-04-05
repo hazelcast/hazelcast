@@ -21,8 +21,7 @@ import com.hazelcast.cache.impl.journal.CacheEventJournalSubscribeOperation;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheEventJournalSubscribeCodec;
 import com.hazelcast.instance.Node;
-import com.hazelcast.internal.cluster.Versions;
-import com.hazelcast.journal.EventJournalInitialSubscriberState;
+import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.CachePermission;
@@ -49,10 +48,6 @@ public class CacheEventJournalSubscribeTask
 
     @Override
     protected Operation prepareOperation() {
-        if (nodeEngine.getClusterService().getClusterVersion().isLessThan(Versions.V3_9)) {
-            throw new UnsupportedOperationException(
-                    "Event journal actions are available when cluster version is 3.9 or higher");
-        }
         return new CacheEventJournalSubscribeOperation(parameters.name);
     }
 

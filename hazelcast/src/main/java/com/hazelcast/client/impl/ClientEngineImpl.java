@@ -24,7 +24,7 @@ import com.hazelcast.client.ClientEvent;
 import com.hazelcast.client.ClientEventType;
 import com.hazelcast.client.impl.operations.ClientDisconnectionOperation;
 import com.hazelcast.client.impl.operations.GetConnectedClientsOperation;
-import com.hazelcast.client.impl.operations.PostJoinClientOperation;
+import com.hazelcast.client.impl.operations.OnJoinClientOperation;
 import com.hazelcast.client.impl.protocol.ClientExceptionFactory;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.MessageTaskFactory;
@@ -61,11 +61,12 @@ import com.hazelcast.spi.MembershipServiceEvent;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
-import com.hazelcast.spi.PostJoinAwareService;
+import com.hazelcast.spi.PreJoinAwareService;
 import com.hazelcast.spi.ProxyService;
 import com.hazelcast.spi.UrgentSystemOperation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
+import com.hazelcast.spi.impl.executionservice.InternalExecutionService;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.properties.GroupProperty;
@@ -79,25 +80,27 @@ import javax.security.auth.login.LoginException;
 import java.util.Collection;
 import java.util.EnumMap;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createEmptyResponseHandler;
+import static com.hazelcast.spi.ExecutionService.CLIENT_MANAGEMENT_EXECUTOR;
 import static com.hazelcast.util.SetUtil.createHashSet;
 
 /**
  * Class that requests, listeners from client handled in node side.
  */
 @SuppressWarnings("checkstyle:classdataabstractioncoupling")
-public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwareService,
+public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAwareService,
         ManagedService, MembershipAwareService, EventPublishingService<ClientEvent, ClientListener> {
 
     /**
@@ -118,6 +121,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
     private final Node node;
     private final NodeEngineImpl nodeEngine;
     private final Executor executor;
+    private final ExecutorService clientManagementExecutor;
     private final Executor queryExecutor;
 
     private final SerializationService serializationService;
@@ -144,6 +148,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
         this.endpointManager = new ClientEndpointManagerImpl(nodeEngine);
         this.executor = newClientExecutor();
         this.queryExecutor = newClientQueryExecutor();
+        this.clientManagementExecutor = newClientsManagementExecutor();
         this.messageTaskFactory = new CompositeMessageTaskFactory(nodeEngine);
         this.clientExceptionFactory = initClientExceptionFactory();
         this.endpointRemoveDelaySeconds = node.getProperties().getInteger(GroupProperty.CLIENT_ENDPOINT_REMOVE_DELAY_SECONDS);
@@ -153,6 +158,16 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
     private ClientExceptionFactory initClientExceptionFactory() {
         boolean jcacheAvailable = JCacheDetector.isJCacheAvailable(nodeEngine.getConfigClassLoader());
         return new ClientExceptionFactory(jcacheAvailable);
+    }
+
+    private ExecutorService newClientsManagementExecutor() {
+        //CLIENT_MANAGEMENT_EXECUTOR is a single threaded executor to ensure that disconnect/auth are executed in correct order.
+        InternalExecutionService executionService = nodeEngine.getExecutionService();
+        return executionService.register(CLIENT_MANAGEMENT_EXECUTOR, 1, Integer.MAX_VALUE, ExecutorType.CACHED);
+    }
+
+    public ExecutorService getClientManagementExecutor() {
+        return clientManagementExecutor;
     }
 
     private Executor newClientExecutor() {
@@ -200,7 +215,8 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
         return endpointManager.size();
     }
 
-    public void handleClientMessage(ClientMessage clientMessage, Connection connection) {
+    @Override
+    public void handle(ClientMessage clientMessage, Connection connection) {
         int partitionId = clientMessage.getPartitionId();
         MessageTask messageTask = messageTaskFactory.create(clientMessage, connection);
         InternalOperationService operationService = nodeEngine.getOperationService();
@@ -491,25 +507,12 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
                 // "a disconnected client is reconnected back to same node"
                 return;
             }
-            ClientDisconnectionOperation op = createClientDisconnectionOperation(clientUuid, memberUuid);
-            operationService.run(op);
 
             for (Member member : memberList) {
-                if (!member.localMember()) {
-                    op = createClientDisconnectionOperation(clientUuid, memberUuid);
-                    operationService.send(op, member.getAddress());
-                }
+                ClientDisconnectionOperation op = new ClientDisconnectionOperation(clientUuid, memberUuid);
+                operationService.createInvocationBuilder(SERVICE_NAME, op, member.getAddress()).invoke();
             }
         }
-    }
-
-    private ClientDisconnectionOperation createClientDisconnectionOperation(String clientUuid, String memberUuid) {
-        ClientDisconnectionOperation op = new ClientDisconnectionOperation(clientUuid, memberUuid);
-        op.setNodeEngine(nodeEngine)
-                .setServiceName(SERVICE_NAME)
-                .setService(this)
-                .setOperationResponseHandler(createEmptyResponseHandler());
-        return op;
     }
 
     private class DestroyEndpointTask implements Runnable {
@@ -521,20 +524,29 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
 
         @Override
         public void run() {
+            InternalOperationService service = nodeEngine.getOperationService();
+            Address thisAddr = getLocalMember().getAddress();
             for (Map.Entry<String, String> entry : ownershipMappings.entrySet()) {
                 String clientUuid = entry.getKey();
                 String memberUuid = entry.getValue();
                 if (deadMemberUuid.equals(memberUuid)) {
-                    ClientDisconnectionOperation op = createClientDisconnectionOperation(clientUuid, deadMemberUuid);
-                    nodeEngine.getOperationService().run(op);
+                    ClientDisconnectionOperation op = new ClientDisconnectionOperation(clientUuid, memberUuid);
+                    service.createInvocationBuilder(ClientEngineImpl.SERVICE_NAME, op, thisAddr).invoke();
                 }
             }
         }
     }
 
     @Override
-    public Operation getPostJoinOperation() {
-        return ownershipMappings.isEmpty() ? null : new PostJoinClientOperation(ownershipMappings);
+    public Operation getPreJoinOperation() {
+        Set<Member> members = nodeEngine.getClusterService().getMembers();
+        HashSet<String> liveMemberUUIDs = new HashSet<String>();
+        for (Member member : members) {
+            liveMemberUUIDs.add(member.getUuid());
+        }
+        Map<String, String> liveMappings = new HashMap<String, String>(ownershipMappings);
+        liveMappings.values().retainAll(liveMemberUUIDs);
+        return liveMappings.isEmpty() ? null : new OnJoinClientOperation(liveMappings);
     }
 
     @Override

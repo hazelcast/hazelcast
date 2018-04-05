@@ -108,6 +108,9 @@ public final class ClientProtocolErrorCodes {
     public static final int LOCAL_MEMBER_RESET = 83;
     public static final int INDETERMINATE_OPERATION_STATE = 84;
     public static final int FLAKE_ID_NODE_ID_OUT_OF_RANGE_EXCEPTION = 85;
+    public static final int TARGET_NOT_REPLICA_EXCEPTION = 86;
+    public static final int MUTATION_DISALLOWED_EXCEPTION = 87;
+    public static final int CONSISTENCY_LOST_EXCEPTION = 88;
 
     // These exception codes are reserved to by used by hazelcast-jet project
     public static final int JET_EXCEPTIONS_RANGE_START = 500;

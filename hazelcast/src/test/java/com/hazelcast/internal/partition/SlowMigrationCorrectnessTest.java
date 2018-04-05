@@ -59,7 +59,7 @@ public class SlowMigrationCorrectnessTest extends AbstractMigrationCorrectnessTe
                 {3, 4, true},
                 {3, InternalPartition.MAX_REPLICA_COUNT, true},
                 {3, 4, false},
-                {3, InternalPartition.MAX_REPLICA_COUNT, false}
+                {3, InternalPartition.MAX_REPLICA_COUNT, false},
         });
     }
 

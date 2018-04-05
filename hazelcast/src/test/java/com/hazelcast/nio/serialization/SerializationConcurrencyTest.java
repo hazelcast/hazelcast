@@ -89,7 +89,8 @@ public class SerializationConcurrencyTest {
                             Data dataPortableAddress = ss.toData(portableAddress);
                             Assert.assertEquals(portableAddress, ss.toObject(dataPortableAddress));
 
-                            PortablePerson portablePerson = new PortablePerson(63 + rnd(), 167L + rnd(), "ahmet", portableAddress);
+                            PortablePerson portablePerson = new PortablePerson(
+                                    63 + rnd(), 167L + rnd(), "ahmet", portableAddress);
                             Data dataPortablePerson = ss.toData(portablePerson);
                             Assert.assertEquals(portablePerson, ss.toObject(dataPortablePerson));
                         }

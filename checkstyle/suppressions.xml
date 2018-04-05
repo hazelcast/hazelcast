@@ -92,6 +92,7 @@
     <suppress checks="ExecutableStatementCount" files="com[\\/]hazelcast[\\/]config[\\/]CacheConfig"/>
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]config[\\/]CacheSimpleConfig"/>
     <suppress checks="FileLengthCheck" files="com[\\/]hazelcast[\\/]config[\\/]Config"/>
+    <suppress checks="FileLengthCheck" files="com[\\/]hazelcast[\\/]internal[\\/]dynamicconfig[\\/]DynamicConfigurationAwareConfig"/>
     <suppress checks="FanOutComplexity" files="com[\\/]hazelcast[\\/]config[\\/]ConfigXmlGenerator"/>
     <!-- couldn't change structure because of API -->
     <suppress checks="MethodCount|CyclomaticComplexity|NPathComplexity|BooleanExpressionComplexity|ExecutableStatementCount"

@@ -50,7 +50,7 @@ class MockJoiner extends AbstractJoiner {
 
         Address previousJoinAddress = null;
         long joinAddressTimeout = 0;
-        while (shouldRetry() && (Clock.currentTimeMillis() - joinStartTime < maxJoinMillis)) {
+        while (Clock.currentTimeMillis() - joinStartTime < maxJoinMillis) {
             synchronized (registry) {
                 Address joinAddress = getJoinAddress();
                 verifyInvariant(joinAddress != null, "joinAddress should not be null");
@@ -79,6 +79,9 @@ class MockJoiner extends AbstractJoiner {
                     clusterService.setMasterAddressToJoin(null);
                 }
             }
+            if (!shouldRetry()) {
+                break;
+            }
             try {
                 Thread.sleep(500);
             } catch (InterruptedException e) {
@@ -89,6 +92,10 @@ class MockJoiner extends AbstractJoiner {
     }
 
     private Address getJoinAddress() {
+        final Address targetAddress = getTargetAddress();
+        if (targetAddress != null) {
+            return targetAddress;
+        }
         Address joinAddress = node.getMasterAddress();
         logger.fine("Known master address is: " + joinAddress);
         if (joinAddress == null) {

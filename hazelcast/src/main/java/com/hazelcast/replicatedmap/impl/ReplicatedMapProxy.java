@@ -64,6 +64,7 @@ import static com.hazelcast.util.Preconditions.isNotNull;
 import static com.hazelcast.util.SetUtil.createHashSet;
 import static java.lang.Math.ceil;
 import static java.lang.Math.log10;
+import static java.lang.Thread.currentThread;
 
 /**
  * Proxy implementation of {@link com.hazelcast.core.ReplicatedMap} interface.
@@ -90,7 +91,7 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
 
     private int retryCount;
 
-    ReplicatedMapProxy(NodeEngine nodeEngine, String name, ReplicatedMapService service) {
+    ReplicatedMapProxy(NodeEngine nodeEngine, String name, ReplicatedMapService service, ReplicatedMapConfig config) {
         super(nodeEngine, service);
         this.name = name;
         this.nodeEngine = nodeEngine;
@@ -98,7 +99,7 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
         this.eventPublishingService = service.getEventPublishingService();
         this.serializationService = nodeEngine.getSerializationService();
         this.partitionService = (InternalPartitionServiceImpl) nodeEngine.getPartitionService();
-        this.config = service.getReplicatedMapConfig(name);
+        this.config = config;
     }
 
     @Override
@@ -111,7 +112,7 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
         if (!config.isAsyncFillup()) {
             for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
                 ReplicatedRecordStore store = service.getReplicatedRecordStore(name, false, i);
-                while (!store.isLoaded()) {
+                while (store == null || !store.isLoaded()) {
                     if ((retryCount++) % RETRY_INTERVAL_COUNT == 0) {
                         requestDataForPartition(i);
                     }
@@ -125,6 +126,7 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
         try {
             TimeUnit.MILLISECONDS.sleep(WAIT_INTERVAL_MILLIS);
         } catch (InterruptedException e) {
+            currentThread().interrupt();
             throw rethrow(e);
         }
     }
@@ -147,7 +149,6 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
     @Override
     protected boolean preDestroy() {
         if (super.preDestroy()) {
-            ReplicatedMapEventPublishingService eventPublishingService = service.getEventPublishingService();
             eventPublishingService.fireMapClearedEvent(size(), name);
             return true;
         }
@@ -198,7 +199,7 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
         isNotNull(key, "key");
         int partitionId = partitionService.getPartitionId(key);
         ReplicatedRecordStore store = service.getReplicatedRecordStore(name, false, partitionId);
-        return store.containsKey(key);
+        return store != null && store.containsKey(key);
     }
 
     @Override
@@ -220,6 +221,9 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
         isNotNull(key, "key");
         int partitionId = partitionService.getPartitionId(key);
         ReplicatedRecordStore store = service.getReplicatedRecordStore(getName(), false, partitionId);
+        if (store == null) {
+            return null;
+        }
         return (V) store.get(key);
     }
 
@@ -342,7 +346,6 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
             for (Object deletedEntryPerPartition : results.values()) {
                 deletedEntrySize += (Integer) deletedEntryPerPartition;
             }
-            ReplicatedMapEventPublishingService eventPublishingService = service.getEventPublishingService();
             eventPublishingService.fireMapClearedEvent(deletedEntrySize, name);
         } catch (Throwable t) {
             throw rethrow(t);
@@ -370,6 +373,7 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
     @Override
     public String addEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate) {
         isNotNull(listener, "listener");
+        isNotNull(predicate, "predicate");
         EventFilter eventFilter = new ReplicatedQueryEventFilter(null, predicate);
         return eventPublishingService.addEventListener(listener, eventFilter, name);
     }
@@ -377,6 +381,7 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
     @Override
     public String addEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate, K key) {
         isNotNull(listener, "listener");
+        isNotNull(predicate, "predicate");
         EventFilter eventFilter = new ReplicatedQueryEventFilter(serializationService.toData(key), predicate);
         return eventPublishingService.addEventListener(listener, eventFilter, name);
     }

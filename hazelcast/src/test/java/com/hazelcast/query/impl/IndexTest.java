@@ -46,6 +46,9 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -63,19 +66,19 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category(QuickTest.class)
 public class IndexTest {
 
-    @Parameterized.Parameter(0)
+    @Parameter(0)
     public IndexCopyBehavior copyBehavior;
 
-    @Parameterized.Parameters(name = "copyBehavior: {0}")
+    @Parameters(name = "copyBehavior: {0}")
     public static Collection<Object[]> parameters() {
         return Arrays.asList(new Object[][]{
                 {IndexCopyBehavior.COPY_ON_READ},
                 {IndexCopyBehavior.COPY_ON_WRITE},
-                {IndexCopyBehavior.NEVER}
+                {IndexCopyBehavior.NEVER},
         });
     }
 
@@ -378,17 +381,17 @@ public class IndexTest {
 
         @Override
         public String toString() {
-            return "MainPortable{" +
-                    "b=" + b +
-                    ", bool=" + bool +
-                    ", c=" + c +
-                    ", s=" + s +
-                    ", i=" + i +
-                    ", l=" + l +
-                    ", f=" + f +
-                    ", d=" + d +
-                    ", str='" + str + '\'' +
-                    '}';
+            return "MainPortable{"
+                    + "b=" + b
+                    + ", bool=" + bool
+                    + ", c=" + c
+                    + ", s=" + s
+                    + ", i=" + i
+                    + ", l=" + l
+                    + ", f=" + f
+                    + ", d=" + d
+                    + ", str='" + str + '\''
+                    + '}';
         }
 
         public int getFactoryId() {
@@ -465,7 +468,8 @@ public class IndexTest {
     }
 
     private void testIt(boolean ordered) {
-        IndexImpl index = new IndexImpl(QueryConstants.THIS_ATTRIBUTE_NAME.value(), ordered, ss, Extractors.empty(), copyBehavior);
+        IndexImpl index
+                = new IndexImpl(QueryConstants.THIS_ATTRIBUTE_NAME.value(), ordered, ss, Extractors.empty(), copyBehavior);
         assertEquals(0, index.getRecords(0L).size());
         assertEquals(0, index.getSubRecordsBetween(0L, 1000L).size());
         QueryRecord record5 = newRecord(5L, 55L);

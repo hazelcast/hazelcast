@@ -18,6 +18,7 @@ package com.hazelcast.core;
 
 import com.hazelcast.cardinality.CardinalityEstimator;
 import com.hazelcast.config.Config;
+import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.mapreduce.JobTracker;
@@ -270,9 +271,9 @@ public interface HazelcastInstance {
     IdGenerator getIdGenerator(String name);
 
     /**
-     * Creates cluster-wide unique ID generator. Generated IDs are {@code long} primitive values
-     * and are k-ordered (roughly ordered). IDs are in the range from {@code Long.MIN_VALUE} to
-     * {@code Long.MAX_VALUE}. This type of generator is generally known as Flake ID generator.
+     * Creates a cluster-wide unique ID generator. Generated IDs are {@code long} primitive values
+     * and are k-ordered (roughly ordered). IDs are in the range from {@code 0} to {@code
+     * Long.MAX_VALUE}.
      * <p>
      * The IDs contain timestamp component and a node ID component, which is assigned when the member
      * joins the cluster. This allows the IDs to be ordered and unique without any coordination between
@@ -459,6 +460,20 @@ public interface HazelcastInstance {
      * @return a {@link CardinalityEstimator}
      */
     CardinalityEstimator getCardinalityEstimator(String name);
+
+    /**
+     * Obtain a {@link com.hazelcast.crdt.pncounter.PNCounter} with the given
+     * name.
+     * <p>
+     * The PN counter can be used as a counter with strong eventual consistency
+     * guarantees - if operations to the counters stop, the counter values
+     * of all replicas that can communicate with each other should eventually
+     * converge to the same value.
+     *
+     * @param name the name of the PN counter
+     * @return a {@link com.hazelcast.crdt.pncounter.PNCounter}
+     */
+    PNCounter getPNCounter(String name);
 
     /**
      * Returns the {@link IScheduledExecutorService} scheduled executor service for the given name.

@@ -24,7 +24,6 @@ import com.hazelcast.core.Member;
 import com.hazelcast.internal.jmx.ManagementService;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.properties.GroupProperty;
-import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.Collections;
@@ -38,9 +37,11 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTED;
+import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.Preconditions.checkHasText;
 import static com.hazelcast.util.SetUtil.createHashSet;
 import static java.lang.String.format;
+import static java.lang.Thread.currentThread;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -211,7 +212,7 @@ public final class HazelcastInstanceFactory {
                         SECONDS.sleep(ADDITIONAL_SLEEP_SECONDS_FOR_NON_FIRST_MEMBERS);
                     }
                 } catch (InterruptedException ignored) {
-                    EmptyStatement.ignore(ignored);
+                    currentThread().interrupt();
                 }
             }
             awaitMinimalClusterSize(hazelcastInstance, node, firstMember);
@@ -240,7 +241,7 @@ public final class HazelcastInstanceFactory {
                 // noinspection BusyWait
                 SECONDS.sleep(1);
             } catch (InterruptedException ignored) {
-                EmptyStatement.ignore(ignored);
+                currentThread().interrupt();
             }
         }
         if (initialMinClusterSize > 1) {
@@ -269,7 +270,7 @@ public final class HazelcastInstanceFactory {
                 HazelcastInstanceProxy instanceProxy = future.get();
                 instances.add(instanceProxy);
             } catch (RuntimeException ignored) {
-                EmptyStatement.ignore(ignored);
+                ignore(ignored);
             }
         }
 

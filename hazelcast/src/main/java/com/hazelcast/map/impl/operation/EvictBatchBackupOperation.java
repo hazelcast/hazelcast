@@ -16,7 +16,6 @@
 
 package com.hazelcast.map.impl.operation;
 
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.ExpiredKey;
@@ -57,8 +56,6 @@ public class EvictBatchBackupOperation extends MapOperation implements BackupOpe
 
     @Override
     public void run() {
-        assert getNodeEngine().getClusterService().getClusterVersion().isGreaterOrEqual(Versions.V3_9);
-
         for (ExpiredKey expiredKey : expiredKeys) {
             Record existingRecord = recordStore.getRecord(expiredKey.getKey());
             if (canEvictRecord(existingRecord, expiredKey)) {

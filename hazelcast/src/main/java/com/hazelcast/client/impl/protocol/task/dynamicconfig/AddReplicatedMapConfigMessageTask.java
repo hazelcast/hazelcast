@@ -21,12 +21,16 @@ import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddReplicatedMapCon
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.ListenerConfig;
+import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.version.Version;
 
 import java.util.ArrayList;
+
+import static com.hazelcast.internal.cluster.Versions.V3_10;
 
 public class AddReplicatedMapConfigMessageTask
         extends AbstractAddConfigMessageTask<DynamicConfigAddReplicatedMapConfigCodec.RequestParameters> {
@@ -50,7 +54,15 @@ public class AddReplicatedMapConfigMessageTask
         ReplicatedMapConfig config = new ReplicatedMapConfig(parameters.name);
         config.setAsyncFillup(parameters.asyncFillup);
         config.setInMemoryFormat(InMemoryFormat.valueOf(parameters.inMemoryFormat));
-        config.setMergePolicy(parameters.mergePolicy);
+        Version clusterVersion = nodeEngine.getClusterService().getClusterVersion();
+        if (clusterVersion.isGreaterOrEqual(V3_10) && parameters.mergeBatchSizeExist) {
+            MergePolicyConfig mergePolicyConfig = mergePolicyConfig(true, parameters.mergePolicy,
+                    parameters.mergeBatchSize);
+            config.setMergePolicyConfig(mergePolicyConfig);
+        } else {
+            // RU_COMPAT_3_9
+            config.setMergePolicy(parameters.mergePolicy);
+        }
         config.setStatisticsEnabled(parameters.statisticsEnabled);
         if (parameters.listenerConfigs != null && !parameters.listenerConfigs.isEmpty()) {
             for (ListenerConfigHolder holder : parameters.listenerConfigs) {

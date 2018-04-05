@@ -26,8 +26,8 @@ import com.hazelcast.cache.journal.EventJournalCacheEvent;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.Member;
-import com.hazelcast.journal.EventJournalInitialSubscriberState;
-import com.hazelcast.journal.EventJournalReader;
+import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
+import com.hazelcast.internal.journal.EventJournalReader;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.projection.Projection;
@@ -78,7 +78,8 @@ import static com.hazelcast.util.SetUtil.createHashSet;
  * @param <V> the type of value.
  */
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity"})
-public class CacheProxy<K, V> extends AbstractCacheProxy<K, V> implements EventJournalReader<EventJournalCacheEvent<K, V>> {
+public class CacheProxy<K, V> extends AbstractCacheProxy<K, V>
+        implements EventJournalReader<EventJournalCacheEvent<K, V>> {
 
     protected final ILogger logger;
 
@@ -388,7 +389,12 @@ public class CacheProxy<K, V> extends AbstractCacheProxy<K, V> implements EventJ
             int maxSize,
             int partitionId,
             Predicate<? super EventJournalCacheEvent<K, V>> predicate,
-            Projection<? super EventJournalCacheEvent<K, V>, T> projection) {
+            Projection<? super EventJournalCacheEvent<K, V>, ? extends T> projection
+    ) {
+        if (maxSize < minSize) {
+            throw new IllegalArgumentException("maxSize " + maxSize
+                    + " must be greater or equal to minSize " + minSize);
+        }
         final CacheEventJournalReadOperation<K, V, T> op = new CacheEventJournalReadOperation<K, V, T>(
                 nameWithPrefix, startSequence, minSize, maxSize, predicate, projection);
         op.setPartitionId(partitionId);

@@ -104,9 +104,9 @@ public class IndexIntegrationTest extends HazelcastTestSupport {
 
         List<Index> indexes = getIndexOfAttributeForMap(instance, name, attributeName);
         Set<QueryableEntry> dollars = new HashSet<QueryableEntry>();
-        for(Index index : indexes) {
+        for (Index index : indexes) {
             Set<QueryableEntry> result = index.getRecords(currency);
-            if(result != null) {
+            if (result != null) {
                 dollars.addAll(result);
             }
         }

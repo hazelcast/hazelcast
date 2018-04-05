@@ -37,6 +37,7 @@ import com.hazelcast.spi.ServiceNamespace;
 import com.hazelcast.spi.UrgentSystemOperation;
 import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
+import com.hazelcast.spi.impl.operationservice.TargetAware;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
@@ -57,9 +58,12 @@ import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createError
  * <li>if the node is not a replica anymore it will clear the replica versions for the partition</li>
  * </ul>
  */
+// RU_COMPAT_39: Do not remove Versioned interface!
+// Version info is needed on 3.9 members while deserializing the operation.
 @SuppressFBWarnings("EI_EXPOSE_REP")
 public class PartitionReplicaSyncResponse extends AbstractPartitionOperation
-        implements PartitionAwareOperation, BackupOperation, UrgentSystemOperation, AllowedDuringPassiveState, Versioned {
+        implements PartitionAwareOperation, BackupOperation, UrgentSystemOperation,
+        AllowedDuringPassiveState, Versioned, TargetAware {
 
     private Collection<Operation> operations;
     private ServiceNamespace namespace;
@@ -235,6 +239,17 @@ public class PartitionReplicaSyncResponse extends AbstractPartitionOperation
     @Override
     public void logError(Throwable e) {
         ReplicaErrorLogger.log(e, getLogger());
+    }
+
+    @Override
+    public void setTarget(Address address) {
+        if (operations != null) {
+            for (Operation op : operations) {
+                if (op instanceof TargetAware) {
+                    ((TargetAware) op).setTarget(address);
+                }
+            }
+        }
     }
 
     @Override

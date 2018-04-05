@@ -16,17 +16,17 @@
 
 package com.hazelcast.client.impl;
 
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.ManagedContext;
+import com.hazelcast.spi.serialization.SerializationServiceAware;
 
 final class HazelcastClientManagedContext implements ManagedContext {
 
-    private final HazelcastInstance instance;
+    private final HazelcastClientInstanceImpl instance;
     private final ManagedContext externalContext;
     private final boolean hasExternalContext;
 
-    public HazelcastClientManagedContext(final HazelcastInstance instance, final ManagedContext externalContext) {
+    public HazelcastClientManagedContext(HazelcastClientInstanceImpl instance, ManagedContext externalContext) {
         this.instance = instance;
         this.externalContext = externalContext;
         this.hasExternalContext = externalContext != null;
@@ -37,6 +37,9 @@ final class HazelcastClientManagedContext implements ManagedContext {
         Object object = obj;
         if (object instanceof HazelcastInstanceAware) {
             ((HazelcastInstanceAware) object).setHazelcastInstance(instance);
+        }
+        if (object instanceof SerializationServiceAware) {
+            ((SerializationServiceAware) object).setSerializationService(instance.getSerializationService());
         }
 
         if (hasExternalContext) {

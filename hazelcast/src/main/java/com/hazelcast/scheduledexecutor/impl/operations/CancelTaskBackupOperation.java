@@ -24,7 +24,8 @@ import com.hazelcast.spi.BackupOperation;
 import java.io.IOException;
 
 public class CancelTaskBackupOperation
-        extends AbstractSchedulerOperation implements BackupOperation {
+        extends AbstractSchedulerOperation
+        implements BackupOperation {
 
     private String taskName;
 

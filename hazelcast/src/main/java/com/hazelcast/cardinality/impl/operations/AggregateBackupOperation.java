@@ -60,5 +60,4 @@ public class AggregateBackupOperation
         super.readInternal(in);
         hash = in.readLong();
     }
-
 }

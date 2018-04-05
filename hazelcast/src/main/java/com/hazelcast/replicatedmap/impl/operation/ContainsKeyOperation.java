@@ -43,7 +43,7 @@ public class ContainsKeyOperation extends AbstractNamedSerializableOperation imp
     public void run() throws Exception {
         ReplicatedMapService service = getService();
         ReplicatedRecordStore store = service.getReplicatedRecordStore(name, false, getPartitionId());
-        response = store.containsKey(key);
+        response = store != null && store.containsKey(key);
     }
 
     @Override

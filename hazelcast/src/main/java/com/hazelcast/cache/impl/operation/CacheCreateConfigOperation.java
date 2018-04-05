@@ -51,7 +51,12 @@ import java.util.concurrent.atomic.AtomicInteger;
  * remote members on which the new {@code CacheConfig} needs to be created. When this operation returns {@code null} with {@code
  * createAlsoOnOthers == true}, it is impossible to tell whether it is because the {@code CacheConfig} was not already registered
  * or due to sending out the operation to other remote members.
+ *
+ * @deprecated as of 3.10 replaced by {@link AddCacheConfigOperation}, which is used in conjunction with
+ * {@link com.hazelcast.internal.util.InvocationUtil#invokeOnStableClusterSerial(NodeEngine,
+ * com.hazelcast.util.function.Supplier, int)} to reliably broadcast the {@code CacheConfig} to all members of the cluster.
  */
+@Deprecated
 public class CacheCreateConfigOperation
         extends AbstractNamedOperation
         implements IdentifiedDataSerializable {
@@ -64,10 +69,6 @@ public class CacheCreateConfigOperation
     private transient Object response;
 
     public CacheCreateConfigOperation() {
-    }
-
-    public CacheCreateConfigOperation(CacheConfig config) {
-        this(config, true);
     }
 
     public CacheCreateConfigOperation(CacheConfig config, boolean createAlsoOnOthers) {

@@ -21,23 +21,30 @@ import com.hazelcast.cache.HazelcastCacheManager;
 import com.hazelcast.cache.impl.event.CachePartitionLostEventFilter;
 import com.hazelcast.cache.impl.journal.CacheEventJournal;
 import com.hazelcast.cache.impl.journal.RingbufferCacheEventJournalImpl;
+import com.hazelcast.cache.impl.operation.AddCacheConfigOperationSupplier;
+import com.hazelcast.cache.impl.merge.policy.CacheMergePolicyProvider;
+import com.hazelcast.cache.impl.operation.CacheCreateConfigOperation;
 import com.hazelcast.cache.impl.operation.OnJoinCacheOperation;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.DistributedObject;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.Member;
+import com.hazelcast.internal.util.InvocationUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
+import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.PartitionAwareService;
 import com.hazelcast.spi.PartitionMigrationEvent;
-import com.hazelcast.spi.PostJoinAwareService;
 import com.hazelcast.spi.PreJoinAwareService;
 import com.hazelcast.spi.QuorumAwareService;
 import com.hazelcast.spi.SplitBrainHandlerService;
@@ -48,7 +55,9 @@ import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ContextMutexFactory;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.FutureUtil;
 import com.hazelcast.version.Version;
+import com.hazelcast.wan.WanReplicationService;
 
 import javax.cache.CacheException;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
@@ -64,25 +73,38 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.cache.impl.AbstractCacheRecordStore.SOURCE_NOT_AVAILABLE;
-import static com.hazelcast.cache.impl.CacheProxyUtil.validateCacheConfig;
-import static com.hazelcast.internal.cluster.Versions.V3_9;
+import static com.hazelcast.internal.config.ConfigValidator.checkCacheConfig;
+import static com.hazelcast.cache.impl.PreJoinCacheConfig.asCacheConfig;
+import static com.hazelcast.internal.cluster.Versions.V3_10;
+import static com.hazelcast.internal.config.ConfigValidator.checkMergePolicySupportsInMemoryFormat;
+import static com.hazelcast.util.EmptyStatement.ignore;
+import static com.hazelcast.util.FutureUtil.RETHROW_EVERYTHING;
+import static java.util.Collections.singleton;
 
 @SuppressWarnings("checkstyle:classdataabstractioncoupling")
-public abstract class AbstractCacheService implements ICacheService, PreJoinAwareService, PostJoinAwareService,
+public abstract class AbstractCacheService implements ICacheService, PreJoinAwareService,
         PartitionAwareService, QuorumAwareService, SplitBrainHandlerService {
 
     private static final String SETUP_REF = "setupRef";
 
-    /** Map from full prefixed cache name to {@link CacheConfig} */
+    /**
+     * Map from full prefixed cache name to {@link CacheConfig}
+     */
     protected final ConcurrentMap<String, CacheConfig> configs = new ConcurrentHashMap<String, CacheConfig>();
 
-    /** Map from full prefixed cache name to {@link CacheContext} */
+    /**
+     * Map from full prefixed cache name to {@link CacheContext}
+     */
     protected final ConcurrentMap<String, CacheContext> cacheContexts = new ConcurrentHashMap<String, CacheContext>();
 
-    /** Map from full prefixed cache name to {@link CacheStatisticsImpl} */
+    /**
+     * Map from full prefixed cache name to {@link CacheStatisticsImpl}
+     */
     protected final ConcurrentMap<String, CacheStatisticsImpl> statistics = new ConcurrentHashMap<String, CacheStatisticsImpl>();
 
-    /** Map from full prefixed cache name to set of {@link Closeable} resources */
+    /**
+     * Map from full prefixed cache name to set of {@link Closeable} resources
+     */
     protected final ConcurrentMap<String, Set<Closeable>> resources = new ConcurrentHashMap<String, Set<Closeable>>();
     protected final ConcurrentMap<String, Closeable> closeableListeners = new ConcurrentHashMap<String, Closeable>();
     protected final ConcurrentMap<String, CacheOperationProvider> operationProviderCache =
@@ -129,10 +151,15 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
             segments[i] = newPartitionSegment(i);
         }
         this.cacheEventHandler = new CacheEventHandler(nodeEngine);
-        this.splitBrainHandlerService = new CacheSplitBrainHandlerService(nodeEngine, configs, segments);
+        this.splitBrainHandlerService = newSplitBrainHandlerService(nodeEngine);
         this.logger = nodeEngine.getLogger(getClass());
         this.eventJournal = new RingbufferCacheEventJournalImpl(nodeEngine);
         postInit(nodeEngine, properties);
+    }
+
+    // this method is overridden on ee
+    protected CacheSplitBrainHandlerService newSplitBrainHandlerService(NodeEngine nodeEngine) {
+        return new CacheSplitBrainHandlerService(nodeEngine, configs, segments);
     }
 
     protected void postInit(NodeEngine nodeEngine, Properties properties) {
@@ -157,7 +184,7 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
                 if (onShutdown) {
                     partitionSegment.shutdown();
                 } else {
-                    partitionSegment.clear();
+                    partitionSegment.reset();
                     partitionSegment.init();
                 }
             }
@@ -210,8 +237,19 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
                     cacheConfig.setManagerPrefix(HazelcastCacheManager.CACHE_MANAGER_PREFIX);
                 }
 
-                validateCacheConfig(cacheConfig);
-                putCacheConfigIfAbsent(cacheConfig);
+                CacheMergePolicyProvider mergePolicyProvider = splitBrainHandlerService.getMergePolicyProvider();
+                checkCacheConfig(cacheConfig.getInMemoryFormat(), cacheConfig.getEvictionConfig(),
+                        cacheConfig.isStatisticsEnabled(), cacheConfig.getMergePolicy());
+
+                Object mergePolicy = mergePolicyProvider.getMergePolicy(cacheConfig.getMergePolicy());
+                checkMergePolicySupportsInMemoryFormat(cacheConfig.getName(), mergePolicy, cacheConfig.getInMemoryFormat(),
+                        nodeEngine.getClusterService().getClusterVersion(), true, logger);
+
+                if (putCacheConfigIfAbsent(cacheConfig) == null) {
+                    // if the cache config was not previously known, ensure the new cache config
+                    // becomes available on all members before the proxy is returned to the caller
+                    createCacheConfigOnAllMembers(PreJoinCacheConfig.of(cacheConfig));
+                }
 
                 return new CacheProxy(cacheConfig, nodeEngine, this);
             }
@@ -260,7 +298,7 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
     }
 
     private void clearPartitionReplica(int partitionId) {
-        segments[partitionId].clear();
+        segments[partitionId].reset();
     }
 
     @Override
@@ -304,6 +342,9 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
         } else {
             closeSegments(cacheNameWithPrefix);
         }
+
+        WanReplicationService wanService = nodeEngine.getWanReplicationService();
+        wanService.removeWanEventCounters(ICacheService.SERVICE_NAME, cacheNameWithPrefix);
         cacheContexts.remove(cacheNameWithPrefix);
         operationProviderCache.remove(cacheNameWithPrefix);
         deregisterAllListener(cacheNameWithPrefix);
@@ -315,17 +356,19 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
 
     @Override
     public CacheConfig putCacheConfigIfAbsent(CacheConfig config) {
-        CacheConfig localConfig = configs.putIfAbsent(config.getNameWithPrefix(), config);
+        // ensure all configs registered in CacheService are not PreJoinCacheConfig's
+        CacheConfig cacheConfig = asCacheConfig(config);
+        CacheConfig localConfig = configs.putIfAbsent(cacheConfig.getNameWithPrefix(), cacheConfig);
         if (localConfig == null) {
-            if (config.isStatisticsEnabled()) {
-                setStatisticsEnabled(config, config.getNameWithPrefix(), true);
+            if (cacheConfig.isStatisticsEnabled()) {
+                setStatisticsEnabled(cacheConfig, cacheConfig.getNameWithPrefix(), true);
             }
-            if (config.isManagementEnabled()) {
-                setManagementEnabled(config, config.getNameWithPrefix(), true);
+            if (cacheConfig.isManagementEnabled()) {
+                setManagementEnabled(cacheConfig, cacheConfig.getNameWithPrefix(), true);
             }
         }
         if (localConfig == null) {
-            logger.info("Added cache config: " + config);
+            logger.info("Added cache config: " + cacheConfig);
         }
         return localConfig;
     }
@@ -583,25 +626,13 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
 
     @Override
     public Operation getPreJoinOperation() {
-        Version clusterVersion = nodeEngine.getClusterService().getClusterVersion();
-        OnJoinCacheOperation preJoinCacheOperation = null;
-        assert !clusterVersion.isUnknown() : "Cluster version should not be unknown";
-        if (clusterVersion.isGreaterOrEqual(V3_9)) {
-            preJoinCacheOperation = prepareOnJoinCacheOperation(true);
+        OnJoinCacheOperation preJoinCacheOperation;
+        preJoinCacheOperation = new OnJoinCacheOperation();
+        for (Map.Entry<String, CacheConfig> cacheConfigEntry : configs.entrySet()) {
+            CacheConfig cacheConfig = new PreJoinCacheConfig(cacheConfigEntry.getValue());
+            preJoinCacheOperation.addCacheConfig(cacheConfig);
         }
         return preJoinCacheOperation;
-    }
-
-    // RU_COMPAT_38 since 3.9, configs are transferred in pre-join operation
-    @Override
-    public Operation getPostJoinOperation() {
-        Version clusterVersion = nodeEngine.getClusterService().getClusterVersion();
-        OnJoinCacheOperation postJoinCacheOperation = null;
-        assert !clusterVersion.isUnknown() : "Cluster version should not be unknown";
-        if (clusterVersion.isLessThan(V3_9)) {
-            postJoinCacheOperation = prepareOnJoinCacheOperation(false);
-        }
-        return postJoinCacheOperation;
     }
 
     protected void publishCachePartitionLostEvent(String cacheName, int partitionId) {
@@ -723,18 +754,29 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
         return eventJournal;
     }
 
-    private OnJoinCacheOperation prepareOnJoinCacheOperation(boolean clusterVersionGreaterOrEqualV39) {
-        OnJoinCacheOperation preJoinCacheOperation;
-        preJoinCacheOperation = new OnJoinCacheOperation();
-        for (Map.Entry<String, CacheConfig> cacheConfigEntry : configs.entrySet()) {
-            CacheConfig cacheConfig;
-            if (clusterVersionGreaterOrEqualV39) {
-                cacheConfig = new PreJoinCacheConfig(cacheConfigEntry.getValue());
-            } else {
-                cacheConfig = cacheConfigEntry.getValue();
+    @Override
+    public <K, V> void createCacheConfigOnAllMembers(PreJoinCacheConfig<K, V> cacheConfig) {
+        Version version = getNodeEngine().getClusterService().getClusterVersion();
+        if (version.isGreaterOrEqual(V3_10)) {
+            ICompletableFuture future = InvocationUtil.invokeOnStableClusterSerial(getNodeEngine(),
+                    new AddCacheConfigOperationSupplier(cacheConfig),
+                    MAX_ADD_CACHE_CONFIG_RETRIES);
+            FutureUtil.waitForever(singleton(future), RETHROW_EVERYTHING);
+        } else {
+            // RU_COMPAT_3_9
+            OperationService operationService = nodeEngine.getOperationService();
+            // wrap the CacheConfig in a PreJoinCacheConfig with KV type class names instead of implementations,
+            // to prevent de-serialization failures on remote nodes
+            CacheCreateConfigOperation op = new CacheCreateConfigOperation(cacheConfig, true, false);
+            try {
+                InternalCompletableFuture future = operationService.invokeOnTarget(CacheService.SERVICE_NAME, op,
+                        nodeEngine.getThisAddress());
+                future.join();
+            } catch (HazelcastInstanceNotActiveException e) {
+                // do not fail the cache proxy creation if the operation invocation fails
+                // (eg node is in PASSIVE state due to being restored from hot restart),
+                ignore(e);
             }
-            preJoinCacheOperation.addCacheConfig(cacheConfig);
         }
-        return preJoinCacheOperation;
     }
 }

@@ -25,7 +25,8 @@ import com.hazelcast.spi.ReadonlyOperation;
 import java.io.IOException;
 
 public class IsCanceledOperation
-        extends AbstractSchedulerOperation implements ReadonlyOperation {
+        extends AbstractSchedulerOperation
+        implements ReadonlyOperation {
 
     private String taskName;
 

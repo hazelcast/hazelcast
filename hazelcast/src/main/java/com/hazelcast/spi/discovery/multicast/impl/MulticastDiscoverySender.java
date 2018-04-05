@@ -28,6 +28,8 @@ import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
 
+import static java.lang.Thread.currentThread;
+
 public class MulticastDiscoverySender implements Runnable {
 
     private static final int SLEEP_DURATION = 2000;
@@ -82,6 +84,7 @@ public class MulticastDiscoverySender implements Runnable {
         try {
             Thread.sleep(SLEEP_DURATION);
         } catch (InterruptedException e) {
+            currentThread().interrupt();
             logger.finest("Thread sleeping interrupted. This may due to graceful shutdown.");
         }
     }

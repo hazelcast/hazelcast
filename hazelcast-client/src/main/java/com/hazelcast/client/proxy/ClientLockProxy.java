@@ -36,6 +36,7 @@ import java.util.concurrent.locks.Condition;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.Preconditions.checkPositive;
+import static java.lang.Thread.currentThread;
 
 /**
  * Proxy implementation of {@link ILock}.
@@ -127,6 +128,7 @@ public class ClientLockProxy extends PartitionSpecificClientProxy implements ILo
         try {
             return tryLock(0, null);
         } catch (InterruptedException e) {
+            currentThread().interrupt();
             return false;
         }
     }

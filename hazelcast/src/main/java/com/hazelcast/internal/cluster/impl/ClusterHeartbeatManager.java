@@ -23,6 +23,7 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeState;
 import com.hazelcast.internal.cluster.fd.ClusterFailureDetector;
+import com.hazelcast.internal.cluster.fd.ClusterFailureDetectorType;
 import com.hazelcast.internal.cluster.fd.DeadlineClusterFailureDetector;
 import com.hazelcast.internal.cluster.fd.PhiAccrualClusterFailureDetector;
 import com.hazelcast.internal.cluster.fd.PingFailureDetector;
@@ -34,6 +35,7 @@ import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.quorum.impl.QuorumServiceImpl;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
@@ -41,7 +43,6 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.Clock;
-import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ICMPHelper;
 
 import java.io.IOException;
@@ -53,6 +54,7 @@ import java.util.logging.Level;
 
 import static com.hazelcast.internal.cluster.Versions.V3_9;
 import static com.hazelcast.internal.cluster.impl.ClusterServiceImpl.EXECUTOR_NAME;
+import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.StringUtil.timeToString;
 import static java.lang.String.format;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -84,7 +86,7 @@ public class ClusterHeartbeatManager {
     private final ClusterClockImpl clusterClock;
 
     private final ClusterFailureDetector heartbeatFailureDetector;
-    private final PingFailureDetector icmpFailureDetector;
+    private final PingFailureDetector<Member> icmpFailureDetector;
 
     private final long maxNoHeartbeatMillis;
     private final long heartbeatIntervalMillis;
@@ -177,19 +179,21 @@ public class ClusterHeartbeatManager {
 
     private ClusterFailureDetector createHeartbeatFailureDetector(HazelcastProperties properties) {
         String type = properties.getString(GroupProperty.HEARTBEAT_FAILURE_DETECTOR_TYPE);
-        if ("deadline".equals(type)) {
-            return new DeadlineClusterFailureDetector(maxNoHeartbeatMillis);
+        ClusterFailureDetectorType fdType = ClusterFailureDetectorType.of(type);
+        switch (fdType) {
+            case DEADLINE:
+                return new DeadlineClusterFailureDetector(maxNoHeartbeatMillis);
+            case PHI_ACCRUAL:
+                int defaultValue = Integer.parseInt(GroupProperty.MAX_NO_HEARTBEAT_SECONDS.getDefaultValue());
+                if (maxNoHeartbeatMillis == TimeUnit.SECONDS.toMillis(defaultValue)) {
+                    logger.warning("When using Phi-Accrual Failure Detector, please consider using a lower '"
+                            + GroupProperty.MAX_NO_HEARTBEAT_SECONDS.getName() + "' value. Current is: "
+                            + defaultValue + " seconds.");
+                }
+                return new PhiAccrualClusterFailureDetector(maxNoHeartbeatMillis, heartbeatIntervalMillis, properties);
+            default:
+                throw new IllegalArgumentException("Unknown failure detector type: " + type);
         }
-        if ("phi-accrual".equals(type)) {
-            int defaultValue = Integer.parseInt(GroupProperty.MAX_NO_HEARTBEAT_SECONDS.getDefaultValue());
-            if (maxNoHeartbeatMillis == TimeUnit.SECONDS.toMillis(defaultValue)) {
-                logger.warning("When using Phi-Accrual Failure Detector, please consider using a lower '"
-                        + GroupProperty.MAX_NO_HEARTBEAT_SECONDS.getName() + "' value. Current is: "
-                        + defaultValue + " seconds.");
-            }
-            return new PhiAccrualClusterFailureDetector(maxNoHeartbeatMillis, heartbeatIntervalMillis, properties);
-        }
-        throw new IllegalArgumentException("Unknown failure detector type: " + type);
     }
 
     public long getHeartbeatIntervalMillis() {
@@ -391,27 +395,29 @@ public class ClusterHeartbeatManager {
      * @param timestamp the timestamp when the heartbeat was created
      */
     public void onHeartbeat(MemberImpl member, long timestamp) {
-        if (member != null) {
-            long clusterTime = clusterClock.getClusterTime();
-            if (logger.isFineEnabled()) {
-                logger.fine(format("Received heartbeat from %s (now: %s, timestamp: %s)",
-                        member, timeToString(clusterTime), timeToString(timestamp)));
-            }
-
-            if (clusterTime - timestamp > maxNoHeartbeatMillis / 2) {
-                logger.warning(format("Ignoring heartbeat from %s since it is expired (now: %s, timestamp: %s)", member,
-                        timeToString(clusterTime), timeToString(timestamp)));
-                return;
-            }
-
-            if (isMaster(member)) {
-                clusterClock.setMasterTime(timestamp);
-            }
-            heartbeatFailureDetector.heartbeat(member, clusterClock.getClusterTime());
-
-            MembershipManager membershipManager = clusterService.getMembershipManager();
-            membershipManager.clearMemberSuspicion(member.getAddress(), "Valid heartbeat");
+        if (member == null) {
+            return;
         }
+        long clusterTime = clusterClock.getClusterTime();
+        if (logger.isFineEnabled()) {
+            logger.fine(format("Received heartbeat from %s (now: %s, timestamp: %s)",
+                    member, timeToString(clusterTime), timeToString(timestamp)));
+        }
+
+        if (clusterTime - timestamp > maxNoHeartbeatMillis / 2) {
+            logger.warning(format("Ignoring heartbeat from %s since it is expired (now: %s, timestamp: %s)", member,
+                    timeToString(clusterTime), timeToString(timestamp)));
+            return;
+        }
+
+        if (isMaster(member)) {
+            clusterClock.setMasterTime(timestamp);
+        }
+        heartbeatFailureDetector.heartbeat(member, clusterClock.getClusterTime());
+
+        MembershipManager membershipManager = clusterService.getMembershipManager();
+        membershipManager.clearMemberSuspicion(member.getAddress(), "Valid heartbeat");
+        nodeEngine.getQuorumService().onHeartbeat(member, timestamp);
     }
 
     /**
@@ -659,6 +665,7 @@ public class ClusterHeartbeatManager {
      */
     @Deprecated
     public void sendMasterConfirmation() {
+        // RU_COMPAT_3_9
         if (!clusterService.isJoined() || node.getState() == NodeState.SHUT_DOWN || clusterService.isMaster()
                 || clusterService.getClusterVersion().isGreaterThan(V3_9)) {
             return;
@@ -692,11 +699,20 @@ public class ClusterHeartbeatManager {
         nodeEngine.getOperationService().send(op, masterAddress);
     }
 
+    /**
+     * @return the {@code icmpFailureDetector} if configured, otherwise {@code null}
+     */
+    public PingFailureDetector getIcmpFailureDetector() {
+        return icmpFailureDetector;
+    }
+
     /** Reset all heartbeats to the current cluster time. Called when system clock jump is detected. */
     private void resetHeartbeats() {
+        QuorumServiceImpl quorumService = nodeEngine.getQuorumService();
         long now = clusterClock.getClusterTime();
         for (MemberImpl member : clusterService.getMemberImpls()) {
             heartbeatFailureDetector.heartbeat(member, now);
+            quorumService.onHeartbeat(member, now);
         }
     }
 
@@ -738,7 +754,7 @@ public class ClusterHeartbeatManager {
                 logger.warning(reason);
                 clusterService.suspectMember(member, reason, true);
             } catch (Throwable ignored) {
-                EmptyStatement.ignore(ignored);
+                ignore(ignored);
             }
         }
 
@@ -752,7 +768,7 @@ public class ClusterHeartbeatManager {
                 }
             } catch (ConnectException ignored) {
                 // no route to host, means we cannot connect anymore
-                EmptyStatement.ignore(ignored);
+                ignore(ignored);
             }
             return false;
         }
@@ -760,6 +776,7 @@ public class ClusterHeartbeatManager {
 
     private class PeriodicPingTask
             extends PingTask {
+        final QuorumServiceImpl quorumService = nodeEngine.getQuorumService();
 
         PeriodicPingTask(Member member) {
             super(member);
@@ -770,11 +787,15 @@ public class ClusterHeartbeatManager {
                 Address address = member.getAddress();
                 logger.fine(format("%s will ping %s", node.getThisAddress(), address));
                 if (doPing(address, Level.FINE)) {
-                    icmpFailureDetector.heartbeat(member);
+                    boolean pingRestored = (icmpFailureDetector.heartbeat(member) > 0);
+                    if (pingRestored) {
+                        quorumService.onPingRestored(member);
+                    }
                     return;
                 }
 
                 icmpFailureDetector.logAttempt(member);
+                quorumService.onPingLost(member);
 
                 // host not reachable
                 String reason = format("%s could not ping %s", node.getThisAddress(), address);
@@ -784,9 +805,8 @@ public class ClusterHeartbeatManager {
                     clusterService.suspectMember(member, reason, true);
                 }
             } catch (Throwable ignored) {
-                EmptyStatement.ignore(ignored);
+                ignore(ignored);
             }
         }
     }
-
 }

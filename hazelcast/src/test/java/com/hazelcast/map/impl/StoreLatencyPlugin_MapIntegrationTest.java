@@ -85,51 +85,50 @@ public class StoreLatencyPlugin_MapIntegrationTest extends HazelcastTestSupport 
         mapConfig.getMapStoreConfig()
                 .setEnabled(true)
                 .setImplementation(new MapStore() {
-            private final Random random = new Random();
+                    private final Random random = new Random();
 
-            @Override
-            public void store(Object key, Object value) {
-            }
+                    @Override
+                    public void store(Object key, Object value) {
+                    }
 
-            @Override
-            public Object load(Object key) {
-                randomSleep();
-                return null;
-            }
+                    @Override
+                    public Object load(Object key) {
+                        randomSleep();
+                        return null;
+                    }
 
-            private void randomSleep() {
-                long delay = random.nextInt(100);
-                try {
-                    Thread.sleep(delay);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
+                    private void randomSleep() {
+                        long delay = random.nextInt(100);
+                        try {
+                            Thread.sleep(delay);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
 
-            @Override
-            public Map loadAll(Collection keys) {
-                return null;
-            }
+                    @Override
+                    public Map loadAll(Collection keys) {
+                        return null;
+                    }
 
-            @Override
-            public void storeAll(Map map) {
-            }
+                    @Override
+                    public void storeAll(Map map) {
+                    }
 
-            @Override
-            public void delete(Object key) {
-            }
+                    @Override
+                    public void delete(Object key) {
+                    }
 
-            @Override
-            public Iterable loadAllKeys() {
-                return null;
-            }
+                    @Override
+                    public Iterable loadAllKeys() {
+                        return null;
+                    }
 
-            @Override
-            public void deleteAll(Collection keys) {
+                    @Override
+                    public void deleteAll(Collection keys) {
 
-            }
-        });
+                    }
+                });
         return mapConfig;
     }
 }
-

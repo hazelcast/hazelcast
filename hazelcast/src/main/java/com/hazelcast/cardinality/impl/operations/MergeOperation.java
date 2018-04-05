@@ -20,18 +20,24 @@ import com.hazelcast.cardinality.impl.hyperloglog.HyperLogLog;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.SplitBrainMergeEntryView;
-import com.hazelcast.spi.SplitBrainMergePolicy;
+import com.hazelcast.spi.merge.MergingEntry;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
+import com.hazelcast.spi.serialization.SerializationService;
 
 import java.io.IOException;
 
 import static com.hazelcast.cardinality.impl.CardinalityEstimatorDataSerializerHook.MERGE;
-import static com.hazelcast.spi.merge.SplitBrainEntryViews.createSplitBrainMergeEntryView;
+import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntry;
 
-public class MergeOperation extends CardinalityEstimatorBackupAwareOperation {
+/**
+ * Contains a mergeable {@link HyperLogLog} instance for split-brain healing with a {@link SplitBrainMergePolicy}.
+ *
+ * @since 3.10
+ */
+public class MergeOperation
+        extends CardinalityEstimatorBackupAwareOperation {
 
     private SplitBrainMergePolicy mergePolicy;
-
     private HyperLogLog value;
 
     private transient HyperLogLog backupValue;
@@ -47,9 +53,9 @@ public class MergeOperation extends CardinalityEstimatorBackupAwareOperation {
 
     @Override
     public void run() throws Exception {
-        SplitBrainMergeEntryView<String, HyperLogLog> mergingEntry =
-                createSplitBrainMergeEntryView(name, value);
-        backupValue = getCardinalityEstimatorContainer().merge(mergingEntry, mergePolicy);
+        SerializationService serializationService = getNodeEngine().getSerializationService();
+        MergingEntry<String, HyperLogLog> mergingEntry = createMergingEntry(serializationService, name, value);
+        backupValue = getCardinalityEstimatorContainer().merge(mergingEntry, mergePolicy, serializationService);
     }
 
     @Override
@@ -64,20 +70,18 @@ public class MergeOperation extends CardinalityEstimatorBackupAwareOperation {
 
     @Override
     public Operation getBackupOperation() {
-        return new SyncBackupOperation(name, backupValue);
+        return new MergeBackupOperation(name, backupValue);
     }
 
     @Override
-    protected void readInternal(ObjectDataInput in)
-            throws IOException {
+    protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         mergePolicy = in.readObject();
         value = in.readObject();
     }
 
     @Override
-    protected void writeInternal(ObjectDataOutput out)
-            throws IOException {
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeObject(mergePolicy);
         out.writeObject(value);

@@ -172,8 +172,9 @@ public class ClientXACompatibilityTest extends HazelcastTestSupport {
         try {
             secondXaResource.rollback(xid);
         } catch (XAException xaerr) {
-            assertTrue("rollback of unknown xid gives unexpected errorCode: " + xaerr.errorCode, ((XAException.XA_RBBASE <= xaerr.errorCode) && (xaerr.errorCode <= XAException.XA_RBEND))
-                    || xaerr.errorCode == XAException.XAER_NOTA);
+            assertTrue("rollback of unknown xid gives unexpected errorCode: " + xaerr.errorCode,
+                    ((XAException.XA_RBBASE <= xaerr.errorCode) && (xaerr.errorCode <= XAException.XA_RBEND))
+                            || xaerr.errorCode == XAException.XAER_NOTA);
         }
     }
 
@@ -436,5 +437,4 @@ public class ClientXACompatibilityTest extends HazelcastTestSupport {
 
         xaResource.commit(xid, false);
     }
-
 }

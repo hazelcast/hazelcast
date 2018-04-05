@@ -66,6 +66,9 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -95,19 +98,20 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class EntryProcessorTest extends HazelcastTestSupport {
 
     public static final String MAP_NAME = "EntryProcessorTest";
 
-    @Parameterized.Parameter
+    @Parameter
     public InMemoryFormat inMemoryFormat;
 
-    @Parameterized.Parameters(name = "{index}: {0}")
+    @Parameters(name = "{index}: {0}")
     public static Collection<Object[]> data() {
         return asList(new Object[][]{
-                {BINARY}, {OBJECT}
+                {BINARY},
+                {OBJECT},
         });
     }
 
@@ -981,6 +985,37 @@ public class EntryProcessorTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testHitsAreIncrementedOnceOnEntryUpdate() {
+
+        class UpdatingEntryProcessor extends AbstractEntryProcessor<String, String> {
+
+            private final String value;
+
+            public UpdatingEntryProcessor(String value) {
+                this.value = value;
+            }
+
+            @Override
+            public Object process(Map.Entry<String, String> entry) {
+                entry.setValue(value);
+                return null;
+            }
+        }
+
+        final Config config = getConfig();
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        final HazelcastInstance instance = factory.newHazelcastInstance(config);
+
+        final IMap<Object, Object> map = instance.getMap(MAP_NAME);
+        map.put("key", "value");
+
+        final long hitsBefore = map.getLocalMapStats().getHits();
+        map.executeOnKey("key", new UpdatingEntryProcessor("new value"));
+        assertEquals(1, map.getLocalMapStats().getHits() - hitsBefore);
+        assertEquals("new value", map.get("key"));
+    }
+
+    @Test
     public void testMapEntryProcessorPartitionAware() {
         String mapName1 = "default";
         String mapName2 = "default-2";
@@ -1844,7 +1879,8 @@ public class EntryProcessorTest extends HazelcastTestSupport {
 
         OperationFactory operationFactory = new BinaryOperationFactory(operation, nodeEngineImpl);
 
-        Map<Integer, Object> partitionResponses = operationService.invokeOnAllPartitions(MapService.SERVICE_NAME, operationFactory);
+        Map<Integer, Object> partitionResponses
+                = operationService.invokeOnAllPartitions(MapService.SERVICE_NAME, operationFactory);
 
         for (Object response : partitionResponses.values()) {
             assertEquals(0, ((MapEntries) response).size());

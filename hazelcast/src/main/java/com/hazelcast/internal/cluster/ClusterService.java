@@ -43,7 +43,7 @@ public interface ClusterService extends CoreService, Cluster {
     /**
      * Gets the member with the given UUID.
      *
-     * @param UUID the UUID of the member
+     * @param uuid the UUID of the member
      * @return the found member, or {@code null} if not found (if the UUID is {@code null}, {@code null} is returned)
      */
     MemberImpl getMember(String uuid);
@@ -146,24 +146,16 @@ public interface ClusterService extends CoreService, Cluster {
     /**
      * Returns the member list join version of the local member instance.
      * <p>
-     * The join algorithm is specifically designed to ensure that member list join version is unique for each
-     * member in the cluster, even during a network-split situation:<ul>
-     *     <li>If two members join at the same time, they will appear on different version of member list
-     *     <li>If a new member claims mastership, it makes a jump in the member list version based on its
-     *     index in the member list multiplied by the value of the
-     *     {@link com.hazelcast.spi.properties.GroupProperty#MASTERSHIP_CLAIM_MEMBER_LIST_VERSION_INCREMENT}
-     *     configuration property. This is to protect against the possibility that the original master is still
-     *     running in a separate network partition.
-     * </ul>
-     * The solution provides uniqueness guarantee of member list join version numbers with the following
-     * limitations:<ul>
-     *    <li>When there is a split-brain issue, the number of member list changes that can occur in the
-     *    sub-clusters are capped by the abovementioned configuration parameter.
-     *    <li>When there is a split-brain issue, if further splits occur in the already split sub-clusters, the
-     *    uniqueness guarantee can be lost.
-     * </ul>
-     * The value returned from this method can be cached. Even though it can change later, both values are
-     * unique.
+     * The join algorithm assigns different member list join versions to each member in the cluster.
+     * If two members join at the same time, they will appear on different version of member list.
+     * <p>
+     * The uniqueness guarantee of member list join versions is provided except the following scenario:
+     * when there is a split-brain issue, if a new node joins to any sub-cluster,
+     * it can get a duplicate member list join version, i.e., its member list join version
+     * can be assigned to another node in the other sub-cluster(s).
+     * <p>
+     * When duplicate member list join version is assigned during network split, the returned value can
+     * change to make it unique again. Therefore the caller should call this method repeatedly.
      *
      * @throws IllegalStateException if the local instance is not joined or the cluster just upgraded to 3.10,
      *      but local member has not yet learned its join version from the master node.

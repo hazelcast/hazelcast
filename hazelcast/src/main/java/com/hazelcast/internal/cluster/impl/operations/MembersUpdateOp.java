@@ -37,6 +37,8 @@ import java.util.List;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.unmodifiableList;
 
+// RU_COMPAT_39: Do not remove Versioned interface!
+// Version info is needed on 3.9 members while deserializing the operation.
 public class MembersUpdateOp extends AbstractClusterOperation implements Versioned {
     /** The master cluster clock time. */
     long masterTime = Clock.currentTimeMillis();
@@ -64,12 +66,10 @@ public class MembersUpdateOp extends AbstractClusterOperation implements Version
 
     @Override
     public void run() throws Exception {
-        checkLocalMemberUuid();
-
         ClusterServiceImpl clusterService = getService();
         Address callerAddress = getConnectionEndpointOrThisAddress();
         String callerUuid = getCallerUuid();
-        if (clusterService.updateMembers(getMembersView(), callerAddress, callerUuid)) {
+        if (clusterService.updateMembers(getMembersView(), callerAddress, callerUuid, targetUuid)) {
             processPartitionState();
         }
     }
@@ -80,6 +80,10 @@ public class MembersUpdateOp extends AbstractClusterOperation implements Version
 
     final MembersView getMembersView() {
         return new MembersView(getMemberListVersion(), unmodifiableList(memberInfos));
+    }
+
+    final String getTargetUuid() {
+        return targetUuid;
     }
 
     final Address getConnectionEndpointOrThisAddress() {
@@ -99,14 +103,6 @@ public class MembersUpdateOp extends AbstractClusterOperation implements Version
         ClusterServiceImpl clusterService = getService();
         Node node = clusterService.getNodeEngine().getNode();
         node.partitionService.processPartitionRuntimeState(partitionRuntimeState);
-    }
-
-    final void checkLocalMemberUuid() {
-        ClusterServiceImpl clusterService = getService();
-        if (!clusterService.getThisUuid().equals(targetUuid)) {
-            String msg = "target UUID " + targetUuid + " is different than this node's UUID " + clusterService.getThisUuid();
-            throw new IllegalStateException(msg);
-        }
     }
 
     @Override

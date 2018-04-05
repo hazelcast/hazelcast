@@ -53,6 +53,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.util.ThreadUtil.createThreadPoolName;
+import static java.lang.Thread.currentThread;
 
 @SuppressWarnings("checkstyle:classfanoutcomplexity")
 public final class ExecutionServiceImpl implements InternalExecutionService {
@@ -318,11 +319,13 @@ public final class ExecutionServiceImpl implements InternalExecutionService {
         try {
             scheduledExecutorService.awaitTermination(AWAIT_TIME, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
+            currentThread().interrupt();
             logger.finest(e);
         }
         try {
             cachedExecutorService.awaitTermination(AWAIT_TIME, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
+            currentThread().interrupt();
             logger.finest(e);
         }
         executors.clear();

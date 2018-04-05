@@ -62,8 +62,8 @@ import java.util.concurrent.locks.Lock;
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.internal.cluster.impl.MemberMap.SINGLETON_MEMBER_LIST_VERSION;
 import static com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage.SplitBrainMergeCheckResult.CANNOT_MERGE;
-import static com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage.SplitBrainMergeCheckResult.REMOTE_NODE_SHOULD_MERGE;
 import static com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage.SplitBrainMergeCheckResult.LOCAL_NODE_SHOULD_MERGE;
+import static com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage.SplitBrainMergeCheckResult.REMOTE_NODE_SHOULD_MERGE;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static java.lang.String.format;
 
@@ -654,9 +654,9 @@ public class ClusterJoinManager {
                         clusterService.getMembershipManager().getMembersView(), preJoinOp, postJoinOp,
                         clusterClock.getClusterTime(), clusterService.getClusterId(),
                         clusterClock.getClusterStartTime(), clusterStateManager.getState(),
-                        clusterService.getClusterVersion(), partitionRuntimeState, false);
+                        clusterService.getClusterVersion(), partitionRuntimeState);
                 op.setCallerUuid(clusterService.getThisUuid());
-                nodeEngine.getOperationService().send(op, target);
+                invokeClusterOp(op, target);
             }
             return true;
         }
@@ -727,7 +727,8 @@ public class ClusterJoinManager {
 
                 // member list must be updated on master before preparation of pre-/post-join ops so other operations which have
                 // to be executed on stable cluster can detect the member list version change and retry in case of topology change
-                if (!clusterService.updateMembers(newMembersView, node.getThisAddress(), clusterService.getThisUuid())) {
+                String thisUuid = clusterService.getThisUuid();
+                if (!clusterService.updateMembers(newMembersView, node.getThisAddress(), thisUuid, thisUuid)) {
                     return;
                 }
 
@@ -743,8 +744,8 @@ public class ClusterJoinManager {
                     long startTime = clusterClock.getClusterStartTime();
                     Operation op = new FinalizeJoinOp(member.getUuid(), newMembersView, preJoinOp, postJoinOp, time,
                             clusterService.getClusterId(), startTime, clusterStateManager.getState(),
-                            clusterService.getClusterVersion(), partitionRuntimeState, true);
-                    op.setCallerUuid(clusterService.getThisUuid());
+                            clusterService.getClusterVersion(), partitionRuntimeState);
+                    op.setCallerUuid(thisUuid);
                     invokeClusterOp(op, member.getAddress());
                 }
                 for (MemberImpl member : memberMap.getMembers()) {
@@ -753,7 +754,7 @@ public class ClusterJoinManager {
                     }
                     Operation op = new MembersUpdateOp(member.getUuid(), newMembersView, time,
                             partitionRuntimeState, true);
-                    op.setCallerUuid(clusterService.getThisUuid());
+                    op.setCallerUuid(thisUuid);
                     invokeClusterOp(op, member.getAddress());
                 }
 

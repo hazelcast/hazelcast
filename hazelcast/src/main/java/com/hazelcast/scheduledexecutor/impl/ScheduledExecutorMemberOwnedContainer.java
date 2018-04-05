@@ -29,19 +29,18 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService.SERVICE_NAME;
 
 /**
- * Container for member owned Schedulers.
- * Member operations don't adhere to the same threading model as partition ones, and they require some
- * guarding around them.
+ * Container for member owned Schedulers. Member operations don't adhere to the same threading model as partition ones, and they
+ * require some guarding around them.
  */
-public class ScheduledExecutorMemberOwnedContainer extends ScheduledExecutorContainer {
+public class ScheduledExecutorMemberOwnedContainer
+        extends ScheduledExecutorContainer {
 
     private static final int MEMBER_DURABILITY = 0;
 
     private final AtomicBoolean memberPartitionLock = new AtomicBoolean();
 
     ScheduledExecutorMemberOwnedContainer(String name, int capacity, NodeEngine nodeEngine) {
-        super(name, -1, nodeEngine, MEMBER_DURABILITY, capacity,
-                new ConcurrentHashMap<String, ScheduledTaskDescriptor>());
+        super(name, -1, nodeEngine, MEMBER_DURABILITY, capacity, new ConcurrentHashMap<String, ScheduledTaskDescriptor>());
     }
 
     @Override

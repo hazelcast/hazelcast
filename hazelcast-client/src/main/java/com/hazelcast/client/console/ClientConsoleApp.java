@@ -41,8 +41,8 @@ import com.hazelcast.core.Message;
 import com.hazelcast.core.MessageListener;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.core.Partition;
+import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.util.Clock;
-
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.BufferedReader;
@@ -70,7 +70,7 @@ import java.util.concurrent.locks.Lock;
 
 import static com.hazelcast.util.StringUtil.lowerCaseInternal;
 import static java.lang.String.format;
-
+import static java.lang.Thread.currentThread;
 
 /**
  * A demo application to demonstrate a Hazelcast client. This is probably NOT something you want to use in production.
@@ -355,6 +355,8 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
             handleMapGetMapEntry(args);
         } else if (first.equals("m.remove")) {
             handleMapRemove(args);
+        } else if (first.equals("m.delete")) {
+            handleMapDelete(args);
         } else if (first.equals("m.evict")) {
             handleMapEvict(args);
         } else if (first.equals("m.putmany") || first.equalsIgnoreCase("m.putAll")) {
@@ -486,6 +488,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
             try {
                 f.get();
             } catch (InterruptedException e) {
+                currentThread().interrupt();
                 e.printStackTrace();
             } catch (ExecutionException e) {
                 e.printStackTrace();
@@ -557,7 +560,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
         long total = runtime.totalMemory();
         long free = runtime.freeMemory();
         println("Used Memory:" + ((total - free) / ONE_KB / ONE_KB) + "MB");
-        println("# procs: " + runtime.availableProcessors());
+        println("# procs: " + RuntimeAvailableProcessors.get());
         println("OS info: " + ManagementFactory.getOperatingSystemMXBean().getArch()
                 + ' ' + ManagementFactory.getOperatingSystemMXBean().getName() + ' '
                 + ManagementFactory.getOperatingSystemMXBean().getVersion());
@@ -697,6 +700,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
         try {
             println(getMap().putAsync(args[1], args[2]).get());
         } catch (InterruptedException e) {
+            currentThread().interrupt();
             e.printStackTrace();
         } catch (ExecutionException e) {
             e.printStackTrace();
@@ -719,6 +723,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
         try {
             println(getMap().getAsync(args[1]).get());
         } catch (InterruptedException e) {
+            currentThread().interrupt();
             e.printStackTrace();
         } catch (ExecutionException e) {
             e.printStackTrace();
@@ -731,6 +736,11 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
 
     protected void handleMapRemove(String[] args) {
         println(getMap().remove(args[1]));
+    }
+
+    protected void handleMapDelete(String[] args) {
+        getMap().delete(args[1]);
+        println("true");
     }
 
     protected void handleMapEvict(String[] args) {
@@ -808,6 +818,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
             try {
                 locked = getMap().tryLock(key, time, TimeUnit.SECONDS);
             } catch (InterruptedException e) {
+                currentThread().interrupt();
                 locked = false;
             }
         }
@@ -931,6 +942,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
             try {
                 locked = getMultiMap().tryLock(key, time, TimeUnit.SECONDS);
             } catch (InterruptedException e) {
+                currentThread().interrupt();
                 locked = false;
             }
         }
@@ -976,6 +988,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
                     println(lock.tryLock(time, TimeUnit.SECONDS));
                 } catch (InterruptedException e) {
                     e.printStackTrace();
+                    currentThread().interrupt();
                 }
             }
         }
@@ -1184,6 +1197,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
             boolean offered = getQueue().offer(args[1], timeout, TimeUnit.SECONDS);
             println(offered);
         } catch (InterruptedException e) {
+            currentThread().interrupt();
             e.printStackTrace();
         }
     }
@@ -1192,6 +1206,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
         try {
             println(getQueue().take());
         } catch (InterruptedException e) {
+            currentThread().interrupt();
             e.printStackTrace();
         }
     }
@@ -1204,6 +1219,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
         try {
             println(getQueue().poll(timeout, TimeUnit.SECONDS));
         } catch (InterruptedException e) {
+            currentThread().interrupt();
             e.printStackTrace();
         }
     }
@@ -1302,6 +1318,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
             }
             println("Result: " + future.get());
         } catch (InterruptedException e) {
+            currentThread().interrupt();
             e.printStackTrace();
         } catch (ExecutionException e) {
             e.printStackTrace();
@@ -1319,6 +1336,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
                 println(f.get());
             }
         } catch (InterruptedException e) {
+            currentThread().interrupt();
             e.printStackTrace();
         } catch (ExecutionException e) {
             e.printStackTrace();

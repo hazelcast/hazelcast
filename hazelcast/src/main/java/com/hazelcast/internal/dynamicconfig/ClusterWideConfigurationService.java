@@ -31,6 +31,7 @@ import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.LockConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MultiMapConfig;
+import com.hazelcast.config.PNCounterConfig;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.ReliableTopicConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
@@ -59,6 +60,8 @@ import com.hazelcast.version.Version;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -67,12 +70,15 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
+import static com.hazelcast.internal.cluster.Versions.V3_10;
 import static com.hazelcast.internal.cluster.Versions.V3_8;
+import static com.hazelcast.internal.cluster.Versions.V3_9;
 import static com.hazelcast.internal.config.ConfigUtils.lookupByPattern;
 import static com.hazelcast.internal.util.InvocationUtil.invokeOnStableClusterSerial;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.FutureUtil.waitForever;
 import static java.lang.Boolean.getBoolean;
+import static java.lang.String.format;
 import static java.util.Collections.singleton;
 
 @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:methodcount", "checkstyle:classfanoutcomplexity"})
@@ -81,6 +87,10 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
 
     public static final String SERVICE_NAME = "configuration-service";
     public static final int CONFIG_PUBLISH_MAX_ATTEMPT_COUNT = 100;
+
+    // RU_COMPAT
+    // maps config class to cluster version in which it was introduced
+    static final Map<Class<? extends IdentifiedDataSerializable>, Version> CONFIG_TO_VERSION;
 
     //this is meant to be used as a workaround for buggy equals/hashcode implementations
     private static final boolean IGNORE_CONFLICTING_CONFIGS_WORKAROUND =
@@ -94,6 +104,7 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
     private final ConcurrentMap<String, MultiMapConfig> multiMapConfigs = new ConcurrentHashMap<String, MultiMapConfig>();
     private final ConcurrentMap<String, CardinalityEstimatorConfig> cardinalityEstimatorConfigs =
             new ConcurrentHashMap<String, CardinalityEstimatorConfig>();
+    private final ConcurrentMap<String, PNCounterConfig> pnCounterConfigs = new ConcurrentHashMap<String, PNCounterConfig>();
     private final ConcurrentMap<String, RingbufferConfig> ringbufferConfigs = new ConcurrentHashMap<String, RingbufferConfig>();
     private final ConcurrentMap<String, AtomicLongConfig> atomicLongConfigs = new ConcurrentHashMap<String, AtomicLongConfig>();
     private final ConcurrentMap<String, AtomicReferenceConfig> atomicReferenceConfigs
@@ -151,9 +162,14 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
             cacheEventJournalConfigs,
             mapEventJournalConfigs,
             flakeIdGeneratorConfigs,
+            pnCounterConfigs,
     };
 
     private volatile Version version;
+
+    static {
+        CONFIG_TO_VERSION = initializeConfigToVersionMap();
+    }
 
     public ClusterWideConfigurationService(NodeEngine nodeEngine, DynamicConfigListener dynamicConfigListener) {
         this.nodeEngine = nodeEngine;
@@ -164,9 +180,6 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
 
     @Override
     public Operation getPreJoinOperation() {
-        if (version.isLessOrEqual(V3_8)) {
-            return null;
-        }
         IdentifiedDataSerializable[] allConfigurations = collectAllDynamicConfigs();
         if (noConfigurationExist(allConfigurations)) {
             // there is no dynamic configuration -> no need to send an empty operation
@@ -224,18 +237,28 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
     }
 
     public ICompletableFuture<Object> broadcastConfigAsync(IdentifiedDataSerializable config) {
-        if (version.isLessOrEqual(V3_8)) {
-            throw new UnsupportedOperationException("Adding dynamic configuration is only supported when running"
-                    + " in cluster version 3.9+. The current cluster version: " + version);
-        }
-
-        // we create an defensive copy as local operation execution might use a fast-path
+        checkConfigVersion(config);
+        // we create a defensive copy as local operation execution might use a fast-path
         // and avoid config serialization altogether.
         // we certainly do not want the dynamic config service to reference object a user can mutate
         IdentifiedDataSerializable clonedConfig = cloneConfig(config);
         ClusterService clusterService = nodeEngine.getClusterService();
         return invokeOnStableClusterSerial(nodeEngine, new AddDynamicConfigOperationSupplier(clusterService, clonedConfig),
                 CONFIG_PUBLISH_MAX_ATTEMPT_COUNT);
+    }
+
+    private void checkConfigVersion(IdentifiedDataSerializable config) {
+        Class<? extends IdentifiedDataSerializable> configClass = config.getClass();
+        Version currentClusterVersion = version;
+        Version introducedIn = CONFIG_TO_VERSION.get(configClass);
+        if (currentClusterVersion.isLessThan(introducedIn)) {
+            throw new UnsupportedOperationException(format("Config '%s' is available since version '%s'. "
+                            + "Current cluster version '%s' does not allow dynamically adding '%1$s'.",
+                    configClass.getSimpleName(),
+                    introducedIn.toString(),
+                    currentClusterVersion.toString()
+            ));
+        }
     }
 
     private IdentifiedDataSerializable cloneConfig(IdentifiedDataSerializable config) {
@@ -328,6 +351,9 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
         } else if (newConfig instanceof FlakeIdGeneratorConfig) {
             FlakeIdGeneratorConfig config = (FlakeIdGeneratorConfig) newConfig;
             currentConfig = flakeIdGeneratorConfigs.putIfAbsent(config.getName(), config);
+        } else if (newConfig instanceof PNCounterConfig) {
+            PNCounterConfig config = (PNCounterConfig) newConfig;
+            currentConfig = pnCounterConfigs.putIfAbsent(config.getName(), config);
         } else {
             throw new UnsupportedOperationException("Unsupported config type: " + newConfig);
         }
@@ -424,6 +450,16 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
     @Override
     public ConcurrentMap<String, CardinalityEstimatorConfig> getCardinalityEstimatorConfigs() {
         return cardinalityEstimatorConfigs;
+    }
+
+    @Override
+    public PNCounterConfig findPNCounterConfig(String name) {
+        return lookupByPattern(configPatternMatcher, pnCounterConfigs, name);
+    }
+
+    @Override
+    public ConcurrentMap<String, PNCounterConfig> getPNCounterConfigs() {
+        return pnCounterConfigs;
     }
 
     @Override
@@ -641,5 +677,38 @@ public class ClusterWideConfigurationService implements PreJoinAwareService,
                 throw new HazelcastException("Error while merging configurations", e);
             }
         }
+    }
+
+    private static Map<Class<? extends IdentifiedDataSerializable>, Version> initializeConfigToVersionMap() {
+        Map<Class<? extends IdentifiedDataSerializable>, Version> configToVersion =
+                new HashMap<Class<? extends IdentifiedDataSerializable>, Version>();
+
+        // Since 3.9
+        configToVersion.put(MapConfig.class, V3_9);
+        configToVersion.put(MultiMapConfig.class, V3_9);
+        configToVersion.put(CardinalityEstimatorConfig.class, V3_9);
+        configToVersion.put(RingbufferConfig.class, V3_9);
+        configToVersion.put(LockConfig.class, V3_9);
+        configToVersion.put(ListConfig.class, V3_9);
+        configToVersion.put(SetConfig.class, V3_9);
+        configToVersion.put(ReplicatedMapConfig.class, V3_9);
+        configToVersion.put(TopicConfig.class, V3_9);
+        configToVersion.put(ExecutorConfig.class, V3_9);
+        configToVersion.put(DurableExecutorConfig.class, V3_9);
+        configToVersion.put(ScheduledExecutorConfig.class, V3_9);
+        configToVersion.put(SemaphoreConfig.class, V3_9);
+        configToVersion.put(QueueConfig.class, V3_9);
+        configToVersion.put(ReliableTopicConfig.class, V3_9);
+        configToVersion.put(CacheSimpleConfig.class, V3_9);
+        configToVersion.put(EventJournalConfig.class, V3_9);
+
+        // Since 3.10
+        configToVersion.put(AtomicLongConfig.class, V3_10);
+        configToVersion.put(AtomicReferenceConfig.class, V3_10);
+        configToVersion.put(CountDownLatchConfig.class, V3_10);
+        configToVersion.put(FlakeIdGeneratorConfig.class, V3_10);
+        configToVersion.put(PNCounterConfig.class, V3_10);
+
+        return Collections.unmodifiableMap(configToVersion);
     }
 }

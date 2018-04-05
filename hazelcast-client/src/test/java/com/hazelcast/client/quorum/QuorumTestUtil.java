@@ -23,6 +23,7 @@ import com.hazelcast.nio.Address;
 
 import static com.hazelcast.test.HazelcastTestSupport.getNode;
 
+@SuppressWarnings("WeakerAccess")
 public class QuorumTestUtil {
 
     private QuorumTestUtil() {

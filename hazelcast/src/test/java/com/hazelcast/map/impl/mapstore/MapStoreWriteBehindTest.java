@@ -245,7 +245,7 @@ public class MapStoreWriteBehindTest extends AbstractMapStoreTest {
     public void testOneMemberWriteBehindFlush() {
         TestMapStore testMapStore = new TestMapStore(1, 1, 1);
         testMapStore.setLoadAllKeys(false);
-        int writeDelaySeconds = 2;
+        int writeDelaySeconds = 10;
         Config config = newConfig(testMapStore, writeDelaySeconds);
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
         HazelcastInstance instance = nodeFactory.newHazelcastInstance(config);

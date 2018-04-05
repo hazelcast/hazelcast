@@ -62,6 +62,7 @@ import com.hazelcast.map.impl.operation.IsPartitionLoadedOperation;
 import com.hazelcast.map.impl.operation.IsPartitionLoadedOperationFactory;
 import com.hazelcast.map.impl.operation.KeyLoadStatusOperation;
 import com.hazelcast.map.impl.operation.KeyLoadStatusOperationFactory;
+import com.hazelcast.map.impl.operation.LegacyMergeOperation;
 import com.hazelcast.map.impl.operation.LoadAllOperation;
 import com.hazelcast.map.impl.operation.LoadMapOperation;
 import com.hazelcast.map.impl.operation.MapFetchEntriesOperation;
@@ -79,6 +80,7 @@ import com.hazelcast.map.impl.operation.MapReplicationOperation;
 import com.hazelcast.map.impl.operation.MapReplicationStateHolder;
 import com.hazelcast.map.impl.operation.MapSizeOperation;
 import com.hazelcast.map.impl.operation.MergeOperation;
+import com.hazelcast.map.impl.operation.MergeOperationFactory;
 import com.hazelcast.map.impl.operation.MultipleEntryBackupOperation;
 import com.hazelcast.map.impl.operation.MultipleEntryOperation;
 import com.hazelcast.map.impl.operation.MultipleEntryOperationFactory;
@@ -194,7 +196,7 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     public static final int EVICT_ALL_BACKUP = 32;
     public static final int GET_ALL = 33;
     public static final int IS_EMPTY = 34;
-    public static final int MERGE = 35;
+    public static final int LEGACY_MERGE = 35;
     public static final int NEAR_CACHE_SINGLE_INVALIDATION = 36;
     public static final int NEAR_CACHE_BATCH_INVALIDATION = 37;
     public static final int IS_PARTITION_LOADED = 38;
@@ -304,8 +306,10 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     public static final int EVENT_JOURNAL_DESERIALIZING_MAP_EVENT = 143;
     public static final int EVENT_JOURNAL_INTERNAL_MAP_EVENT = 144;
     public static final int EVENT_JOURNAL_READ_RESULT_SET = 145;
+    public static final int MERGE_FACTORY = 146;
+    public static final int MERGE = 147;
 
-    private static final int LEN = EVENT_JOURNAL_READ_RESULT_SET + 1;
+    private static final int LEN = MERGE + 1;
 
     @Override
     public int getFactoryId() {
@@ -491,9 +495,9 @@ public final class MapDataSerializerHook implements DataSerializerHook {
                 return new MapIsEmptyOperation();
             }
         };
-        constructors[MERGE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+        constructors[LEGACY_MERGE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MergeOperation();
+                return new LegacyMergeOperation();
             }
         };
         constructors[IS_PARTITION_LOADED] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
@@ -1024,6 +1028,16 @@ public final class MapDataSerializerHook implements DataSerializerHook {
         constructors[EVENT_JOURNAL_READ_RESULT_SET] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new MapEventJournalReadResultSetImpl<Object, Object, Object>();
+            }
+        };
+        constructors[MERGE_FACTORY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new MergeOperationFactory();
+            }
+        };
+        constructors[MERGE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new MergeOperation();
             }
         };
 

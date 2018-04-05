@@ -83,7 +83,7 @@ public class PartitionControlledIdTest extends HazelcastTestSupport {
         Config config = new Config();
         PartitioningStrategy partitioningStrategy = StringAndPartitionAwarePartitioningStrategy.INSTANCE;
         config.getMapConfig("default")
-              .setPartitioningStrategyConfig(new PartitioningStrategyConfig(partitioningStrategy));
+                .setPartitioningStrategyConfig(new PartitioningStrategyConfig(partitioningStrategy));
 
         TestHazelcastInstanceFactory instanceFactory = new TestHazelcastInstanceFactory(4);
         instances = instanceFactory.newInstances(config);

@@ -37,7 +37,7 @@ import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
-import com.hazelcast.test.HazelcastParametersRunnerFactory;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -45,10 +45,6 @@ import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameter;
-import org.junit.runners.Parameterized.Parameters;
-import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -60,30 +56,16 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.hazelcast.spi.properties.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_ENABLED;
-import static java.lang.Boolean.FALSE;
-import static java.lang.Boolean.TRUE;
 import static java.lang.String.format;
-import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(Parameterized.class)
-@UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-@SuppressWarnings("WeakerAccess")
 public class ClientMapNearCacheTest extends NearCacheTestSupport {
-
-    @Parameter
-    public boolean batchInvalidationEnabled;
-
-    @Parameters(name = "batchInvalidationEnabled:{0}")
-    public static Iterable<Object[]> parameters() {
-        return asList(new Object[]{TRUE}, new Object[]{FALSE});
-    }
 
     protected final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
@@ -1277,8 +1259,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
     }
 
     protected Config newConfig() {
-        return getConfig()
-                .setProperty(MAP_INVALIDATION_MESSAGE_BATCH_ENABLED.getName(), String.valueOf(batchInvalidationEnabled));
+        return getConfig();
     }
 
     protected NearCacheConfig newNoInvalidationNearCacheConfig() {

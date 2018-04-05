@@ -20,6 +20,7 @@ import com.hazelcast.cache.CacheNotExistsException;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.replicatedmap.ReplicatedMapCantBeCreatedOnLiteMemberException;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
@@ -31,6 +32,8 @@ import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+
+import static com.hazelcast.util.EmptyStatement.ignore;
 
 public class PostJoinProxyOperation extends Operation implements IdentifiedDataSerializable {
 
@@ -58,10 +61,13 @@ public class PostJoinProxyOperation extends Operation implements IdentifiedDataS
             try {
                 executionService.execute(ExecutionService.SYSTEM_EXECUTOR, new CreateProxyTask(registry, proxy));
             } catch (Throwable t) {
-                getLogger().warning("Cannot create proxy [" + proxy.getServiceName() + ":"
-                        + proxy.getObjectName() + "]!", t);
+                logProxyCreationFailure(proxy, t);
             }
         }
+    }
+
+    private void logProxyCreationFailure(ProxyInfo proxy, Throwable t) {
+        getLogger().severe("Cannot create proxy [" + proxy.getServiceName() + ":" + proxy.getObjectName() + "]!", t);
     }
 
     @Override
@@ -125,11 +131,17 @@ public class PostJoinProxyOperation extends Operation implements IdentifiedDataS
             try {
                 registry.createProxy(proxyInfo.getObjectName(), false, true);
             } catch (CacheNotExistsException e) {
-                // This can happen when cache destroy event is received
-                // after cache config is replicated during join (pre-join)
-                // but before cache proxy is created (post-join).
-                getLogger().fine("Could not create Cache[" + proxyInfo.getObjectName()
-                        + "]. It is already destroyed.", e);
+                // this can happen when a cache destroy event is received
+                // after the cache config is replicated during join (pre-join)
+                // but before the cache proxy is created (post-join)
+                getLogger().fine("Could not create Cache[" + proxyInfo.getObjectName() + "]. It is already destroyed.", e);
+            } catch (ReplicatedMapCantBeCreatedOnLiteMemberException e) {
+                // this happens when there is a lite member in the cluster
+                // and a data member creates a ReplicatedMap proxy
+                // (this is totally expected and doesn't need logging)
+                ignore(e);
+            } catch (Exception e) {
+                logProxyCreationFailure(proxyInfo, e);
             }
         }
     }

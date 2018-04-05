@@ -33,7 +33,7 @@ import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category(value = {QuickTest.class, ParallelTest.class})
+@Category({QuickTest.class, ParallelTest.class})
 public class ReplicatedMapLoadingTest extends ReplicatedMapAbstractTest {
 
     @Test

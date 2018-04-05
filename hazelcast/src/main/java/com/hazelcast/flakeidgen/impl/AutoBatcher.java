@@ -38,6 +38,10 @@ public class AutoBatcher {
         this.batchIdSupplier = idGenerator;
     }
 
+    /**
+     * Return next ID from current batch or get new batch from supplier if
+     * current batch is spent or expired.
+     */
     public long newId() {
         for (; ; ) {
             Block block = this.block;

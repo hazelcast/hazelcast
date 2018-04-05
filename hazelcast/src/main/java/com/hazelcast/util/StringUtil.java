@@ -56,8 +56,8 @@ public final class StringUtil {
     /**
      * Pattern used to tokenize version strings.
      */
-    private static final Pattern VERSION_PATTERN
-            = Pattern.compile("^([\\d]+)\\.([\\d]+)(\\.([\\d]+))?(-[\\w]+)?(-SNAPSHOT)?$");
+    public static final Pattern VERSION_PATTERN
+            = Pattern.compile("^(\\d+)\\.(\\d+)(\\.(\\d+))?(-\\w+(?:-\\d+)?)?(-SNAPSHOT)?$");
 
     private static final String GETTER_PREFIX = "get";
 
@@ -352,5 +352,18 @@ public final class StringUtil {
         List<String> list = new ArrayList<String>(Arrays.asList(arr1));
         list.removeAll(Arrays.asList(arr2));
         return list.toArray(new String[list.size()]);
+    }
+
+    /**
+     * Returns true if two strings are equals ignoring the letter case in {@link #LOCALE_INTERNAL} locale.
+     *
+     * @param str1 first string to compare
+     * @param str2 second string to compare
+     * @return true if the strings are equals ignoring the case
+     */
+    public static boolean equalsIgnoreCase(String str1, String str2) {
+        return (str1 == null || str2 == null)
+                ? false
+                : (str1 == str2 || lowerCaseInternal(str1).equals(lowerCaseInternal(str2)));
     }
 }

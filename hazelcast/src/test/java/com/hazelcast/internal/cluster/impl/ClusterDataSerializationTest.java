@@ -43,7 +43,8 @@ import static org.junit.Assert.assertEquals;
 public class ClusterDataSerializationTest {
 
     private static final SerializationService SERIALIZATION_SERVICE = new DefaultSerializationServiceBuilder().build();
-    private static final ClusterStateChange<MemberVersion> VERSION_CLUSTER_STATE_CHANGE = ClusterStateChange.from(MemberVersion.of(
+    private static final ClusterStateChange<MemberVersion> VERSION_CLUSTER_STATE_CHANGE
+            = ClusterStateChange.from(MemberVersion.of(
             BuildInfoProvider.getBuildInfo().getVersion()));
     private static final ClusterStateChange<ClusterState> CLUSTER_STATE_CHANGE = ClusterStateChange.from(ClusterState.FROZEN);
 

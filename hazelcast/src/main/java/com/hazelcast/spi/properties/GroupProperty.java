@@ -21,6 +21,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.core.IndeterminateOperationStateException;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.BuildInfoProvider;
+import com.hazelcast.internal.cluster.fd.ClusterFailureDetectorType;
 import com.hazelcast.internal.diagnostics.HealthMonitorLevel;
 import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.impl.query.QueryResultSizeLimiter;
@@ -95,6 +96,18 @@ public final class GroupProperty {
             = new HazelcastProperty("hazelcast.operation.priority.generic.thread.count", 1);
 
     /**
+     * The number of threads that processes responses.
+     *
+     * By default there are 2 response threads; this gives stable and good performance.
+     *
+     * If set to 0, the response threads are bypassed and the response handling is done
+     * on the IO threads. Under certain conditions this can give a higher throughput, but
+     * setting to 0 should be regarded an experimental feature.
+     */
+    public static final HazelcastProperty RESPONSE_THREAD_COUNT
+            = new HazelcastProperty("hazelcast.operation.response.thread.count", 2);
+
+    /**
      * The number of threads that the client engine has available for processing requests that are not partition specific.
      * Most of the requests, such as map.put and map.get, are partition specific and will use a partition-operation-thread, but
      * there are also requests that can't be executed on a partition-specific operation-thread, such as multimap.contain(value);
@@ -111,7 +124,7 @@ public final class GroupProperty {
      * With this property, client has a window to connect back and prevent cleaning up its resources.
      */
     public static final HazelcastProperty CLIENT_ENDPOINT_REMOVE_DELAY_SECONDS
-            = new HazelcastProperty("hazelcast.client.endpoint.remove.delay.seconds", 10);
+            = new HazelcastProperty("hazelcast.client.endpoint.remove.delay.seconds", 60);
     /**
      * Number of threads for the {@link com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl} executor.
      * The executor is responsible for executing the events. If you process a lot of events and have many cores, setting
@@ -411,19 +424,7 @@ public final class GroupProperty {
      * Default failure detector is <code>deadline</code>.
      */
     public static final HazelcastProperty HEARTBEAT_FAILURE_DETECTOR_TYPE
-            = new HazelcastProperty("hazelcast.heartbeat.failuredetector.type", "deadline");
-
-    /**
-     * The Hazelcast master node increments the member list version for each joining member. Then, member list versions
-     * are used to identify joined members with unique integers. For this algorithm to work under network partitioning scenarios
-     * without generating duplicate member list join versions for different members, a mastership-claiming node increments
-     * the member list version as specified by this parameter, multiplied by its position in the member list.
-     * The value of the parameter must be bigger than the cluster size.
-     * <p>
-     * Introduced in 3.10.
-     */
-    public static final HazelcastProperty MASTERSHIP_CLAIM_MEMBER_LIST_VERSION_INCREMENT =
-            new HazelcastProperty("hazelcast.mastership.claim.member.list.version.increment", 25);
+            = new HazelcastProperty("hazelcast.heartbeat.failuredetector.type", ClusterFailureDetectorType.DEADLINE.toString());
 
     /**
      * The interval at which the master sends the member lists are sent to other non-master members
@@ -543,6 +544,11 @@ public final class GroupProperty {
     public static final HazelcastProperty JMX_UPDATE_INTERVAL_SECONDS
             = new HazelcastProperty("hazelcast.jmx.update.interval.seconds", 5, SECONDS);
 
+    /**
+     * @deprecated as of 3.10
+     * This will be removed in future versions.
+     */
+    @Deprecated
     public static final HazelcastProperty MC_MAX_VISIBLE_INSTANCE_COUNT
             = new HazelcastProperty("hazelcast.mc.max.visible.instance.count", Integer.MAX_VALUE);
     public static final HazelcastProperty MC_MAX_VISIBLE_SLOW_OPERATION_COUNT
@@ -877,7 +883,6 @@ public final class GroupProperty {
     public static final HazelcastProperty INDEX_COPY_BEHAVIOR
             = new HazelcastProperty("hazelcast.index.copy.behavior", IndexCopyBehavior.COPY_ON_READ.toString());
 
-
     /**
      * Forces the JCache provider, which can have values client or server, to force the provider type.
      * If not provided, the provider will be client or server, whichever is found on the classpath first respectively.
@@ -942,12 +947,27 @@ public final class GroupProperty {
             new HazelcastProperty("hazelcast.nio.tcp.spoofing.checks", false);
 
     /**
-     * Controls whether the task scheduler removes tasks immediately upon cancellation.
-     * This is disabled by default, because it can cause severe delays on other operations. By default all cancelled
-     * tasks will eventually get removed by scheduler workers.
+     * This is a Java 6 specific property. In Java 7+ tasks are always removed
+     * on cancellation due to the explicit
+     * {@code java.util.concurrent.ScheduledThreadPoolExecutor#setRemoveOnCancelPolicy(boolean)}
+     * and constant time removal.
+     *
+     * In Java 6 there is no out-of-the-box support for removal of cancelled tasks,
+     * and the only way to implement this is using a linear scan of all pending
+     * tasks. Therefore in Java 6 there is a performance penalty.
+     *
+     * Using this property, in Java 6, one can control if cancelled tasks are removed.
+     * By default tasks are removed, because it can lead to temporary retention
+     * of memory if there a large volume of pending cancelled tasks. And this can
+     * lead to gc/performance problems as we saw with the transaction tests.
+     *
+     * However if this automatic removal of cancelled tasks start to become a
+     * performance problem, it can be disabled in Java 6.
+     *
+     * For more information see the {@link com.hazelcast.util.executor.LoggingScheduledExecutor}.
      */
     public static final HazelcastProperty TASK_SCHEDULER_REMOVE_ON_CANCEL =
-            new HazelcastProperty("hazelcast.executionservice.taskscheduler.remove.oncancel", false);
+            new HazelcastProperty("hazelcast.executionservice.taskscheduler.remove.oncancel", true);
 
     private GroupProperty() {
     }

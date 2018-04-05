@@ -33,7 +33,7 @@ import org.springframework.test.context.ContextConfiguration;
 @RunWith(CustomSpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"readtimeout-config-prop-file.xml"})
 @Category(QuickTest.class)
-public class HazelcastCacheReadTimeoutTestWithPropFile extends AbstractHazelcastCacheReadTimeoutTest{
+public class HazelcastCacheReadTimeoutTestWithPropFile extends AbstractHazelcastCacheReadTimeoutTest {
 
     @BeforeClass
     @AfterClass

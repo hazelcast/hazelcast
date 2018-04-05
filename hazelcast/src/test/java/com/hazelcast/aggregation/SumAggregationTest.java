@@ -83,7 +83,8 @@ public class SumAggregationTest {
             aggregation.accumulate(createExtractableEntryWithValue(value));
         }
 
-        Aggregator<Map.Entry<ValueContainer, ValueContainer>, BigDecimal> resultAggregation = Aggregators.bigDecimalSum("bigDecimal");
+        Aggregator<Map.Entry<ValueContainer, ValueContainer>, BigDecimal> resultAggregation
+                = Aggregators.bigDecimalSum("bigDecimal");
         resultAggregation.combine(aggregation);
         BigDecimal result = resultAggregation.aggregate();
 
@@ -129,7 +130,8 @@ public class SumAggregationTest {
             aggregation.accumulate(createExtractableEntryWithValue(value));
         }
 
-        Aggregator<Map.Entry<ValueContainer, ValueContainer>, BigInteger> resultAggregation = Aggregators.bigIntegerSum("bigInteger");
+        Aggregator<Map.Entry<ValueContainer, ValueContainer>, BigInteger> resultAggregation
+                = Aggregators.bigIntegerSum("bigInteger");
         resultAggregation.combine(aggregation);
         BigInteger result = resultAggregation.aggregate();
 
@@ -367,7 +369,8 @@ public class SumAggregationTest {
             aggregation.accumulate(createExtractableEntryWithValue(value));
         }
 
-        Aggregator<Map.Entry<ValueContainer, ValueContainer>, Double> resultAggregation = Aggregators.floatingPointSum("numberValue");
+        Aggregator<Map.Entry<ValueContainer, ValueContainer>, Double> resultAggregation
+                = Aggregators.floatingPointSum("numberValue");
         resultAggregation.combine(aggregation);
         double result = resultAggregation.aggregate();
 

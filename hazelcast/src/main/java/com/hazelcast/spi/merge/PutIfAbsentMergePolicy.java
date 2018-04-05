@@ -16,28 +16,29 @@
 
 package com.hazelcast.spi.merge;
 
-import com.hazelcast.spi.SplitBrainMergeEntryView;
+import com.hazelcast.spi.impl.merge.AbstractSplitBrainMergePolicy;
+import com.hazelcast.spi.impl.merge.SplitBrainDataSerializerHook;
 
 /**
  * Merges data structure entries from source to destination if they don't exist in the destination data structure.
  *
  * @since 3.10
  */
-public class PutIfAbsentMergePolicy extends AbstractMergePolicy {
+public class PutIfAbsentMergePolicy extends AbstractSplitBrainMergePolicy {
 
-    PutIfAbsentMergePolicy() {
+    public PutIfAbsentMergePolicy() {
     }
 
     @Override
-    public <K, V> V merge(SplitBrainMergeEntryView<K, V> mergingEntry, SplitBrainMergeEntryView<K, V> existingEntry) {
-        if (existingEntry == null) {
-            return mergingEntry.getValue();
+    public <V> V merge(MergingValue<V> mergingValue, MergingValue<V> existingValue) {
+        if (existingValue == null) {
+            return mergingValue.getValue();
         }
-        return existingEntry.getValue();
+        return existingValue.getValue();
     }
 
     @Override
     public int getId() {
-        return SplitBrainMergePolicyDataSerializerHook.PUT_IF_ABSENT;
+        return SplitBrainDataSerializerHook.PUT_IF_ABSENT;
     }
 }

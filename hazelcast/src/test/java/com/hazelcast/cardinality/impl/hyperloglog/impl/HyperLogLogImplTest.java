@@ -44,7 +44,6 @@ import static org.junit.Assert.fail;
 @Category(SlowTest.class)
 public class HyperLogLogImplTest {
 
-    private static final int PRIME_PRECISION = 25;
     private static final int DEFAULT_RUN_LENGTH = 10000000;
 
     @Parameters(name = "precision:{0}, errorRange:{1}")
@@ -69,7 +68,7 @@ public class HyperLogLogImplTest {
 
     @Before
     public void setup() {
-        hyperLogLog = new HyperLogLogImpl(precision, PRIME_PRECISION);
+        hyperLogLog = new HyperLogLogImpl(precision);
     }
 
     @Test

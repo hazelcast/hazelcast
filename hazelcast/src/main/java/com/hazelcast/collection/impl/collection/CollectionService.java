@@ -20,12 +20,10 @@ import com.hazelcast.collection.impl.collection.operations.CollectionMergeOperat
 import com.hazelcast.collection.impl.collection.operations.CollectionOperation;
 import com.hazelcast.collection.impl.common.DataAwareItemEvent;
 import com.hazelcast.collection.impl.txncollection.operations.CollectionTransactionRollbackOperation;
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
@@ -40,11 +38,10 @@ import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.spi.QuorumAwareService;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.SplitBrainHandlerService;
-import com.hazelcast.spi.SplitBrainMergeEntryView;
-import com.hazelcast.spi.SplitBrainMergePolicy;
 import com.hazelcast.spi.TransactionalService;
-import com.hazelcast.spi.merge.DiscardMergePolicy;
-import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
+import com.hazelcast.spi.impl.merge.AbstractContainerMerger;
+import com.hazelcast.spi.merge.MergingValue;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.partition.MigrationEndpoint;
 import com.hazelcast.spi.serialization.SerializationService;
@@ -57,12 +54,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-import java.util.concurrent.Semaphore;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ConcurrentMap;
 
-import static com.hazelcast.spi.merge.SplitBrainEntryViews.createSplitBrainMergeEntryView;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
-import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingValue;
 
 public abstract class CollectionService implements ManagedService, RemoteService, EventPublishingService<CollectionEvent,
         ItemListener<Data>>, TransactionalService, MigrationAwareService, QuorumAwareService, SplitBrainHandlerService {
@@ -70,7 +64,6 @@ public abstract class CollectionService implements ManagedService, RemoteService
     protected final NodeEngine nodeEngine;
     protected final SerializationService serializationService;
     protected final IPartitionService partitionService;
-    protected final SplitBrainMergePolicyProvider mergePolicyProvider;
 
     private final ILogger logger;
 
@@ -78,7 +71,6 @@ public abstract class CollectionService implements ManagedService, RemoteService
         this.nodeEngine = nodeEngine;
         this.serializationService = nodeEngine.getSerializationService();
         this.partitionService = nodeEngine.getPartitionService();
-        this.mergePolicyProvider = nodeEngine.getSplitBrainMergePolicyProvider();
         this.logger = nodeEngine.getLogger(getClass());
     }
 
@@ -104,7 +96,7 @@ public abstract class CollectionService implements ManagedService, RemoteService
 
     public abstract CollectionContainer getOrCreateContainer(String name, boolean backup);
 
-    public abstract Map<String, ? extends CollectionContainer> getContainerMap();
+    public abstract ConcurrentMap<String, ? extends CollectionContainer> getContainerMap();
 
     public abstract String getServiceName();
 
@@ -192,130 +184,67 @@ public abstract class CollectionService implements ManagedService, RemoteService
     }
 
     public void addContainer(String name, CollectionContainer container) {
-        final Map map = getContainerMap();
-        map.put(name, container);
+        getRawContainerMap().put(name, container);
+    }
+
+    @SuppressWarnings("unchecked")
+    private ConcurrentMap<String, CollectionContainer> getRawContainerMap() {
+        return (ConcurrentMap<String, CollectionContainer>) getContainerMap();
     }
 
     @Override
     public Runnable prepareMergeRunnable() {
-        Map<String, ? extends CollectionContainer> containers = getContainerMap();
-        Map<Integer, Map<CollectionContainer, List<CollectionItem>>> itemMap
-                = createHashMap(partitionService.getPartitionCount());
-
-        for (CollectionContainer container : containers.values()) {
-            String name = container.getName();
-            Data partitionAwareName = serializationService.toData(name, StringPartitioningStrategy.INSTANCE);
-            int partitionId = partitionService.getPartitionId(partitionAwareName);
-            if (partitionService.isPartitionOwner(partitionId)) {
-                // add your owned entries to the map so they will be merged
-                if (!(getMergePolicy(container) instanceof DiscardMergePolicy)) {
-                    Map<CollectionContainer, List<CollectionItem>> containerMap = itemMap.get(partitionId);
-                    if (containerMap == null) {
-                        containerMap = new HashMap<CollectionContainer, List<CollectionItem>>();
-                        itemMap.put(partitionId, containerMap);
-                    }
-                    containerMap.put(container, new ArrayList<CollectionItem>(container.getCollection()));
-                }
-            }
-            // clear all items either owned or backup
-            container.clear();
-        }
-        containers.clear();
-
-        return new Merger(itemMap);
+        CollectionContainerCollector collector = new CollectionContainerCollector(nodeEngine, getRawContainerMap());
+        collector.run();
+        return new Merger(collector);
     }
 
-    private SplitBrainMergePolicy getMergePolicy(CollectionContainer container) {
-        String mergePolicyName = container.getConfig().getMergePolicyConfig().getPolicy();
-        return mergePolicyProvider.getMergePolicy(mergePolicyName);
-    }
+    private class Merger extends AbstractContainerMerger<CollectionContainer> {
 
-    private class Merger implements Runnable {
-
-        private static final int TIMEOUT_FACTOR = 500;
-
-        private final Map<Integer, Map<CollectionContainer, List<CollectionItem>>> itemMap;
-
-        Merger(Map<Integer, Map<CollectionContainer, List<CollectionItem>>> itemMap) {
-            this.itemMap = itemMap;
+        Merger(CollectionContainerCollector collector) {
+            super(collector, nodeEngine);
         }
 
         @Override
-        public void run() {
-            final ILogger logger = nodeEngine.getLogger(CollectionService.class);
-            final Semaphore semaphore = new Semaphore(0);
+        protected String getLabel() {
+            return "collection";
+        }
 
-            ExecutionCallback<Object> mergeCallback = new ExecutionCallback<Object>() {
-                @Override
-                public void onResponse(Object response) {
-                    semaphore.release(1);
-                }
-
-                @Override
-                public void onFailure(Throwable t) {
-                    logger.warning("Error while running merge operation: " + t.getMessage());
-                    semaphore.release(1);
-                }
-            };
-
-            // we cannot merge into a 3.9 cluster, since not all members may understand the CollectionMergeOperation
-            if (nodeEngine.getClusterService().getClusterVersion().isLessThan(Versions.V3_10)) {
-                logger.info("Cluster needs to run version " + Versions.V3_10 + " to merge collection instances");
-                return;
-            }
-
-            int itemCount = 0;
-            int operationCount = 0;
-            List<SplitBrainMergeEntryView<Long, Data>> mergeEntries;
-            for (Map.Entry<Integer, Map<CollectionContainer, List<CollectionItem>>> partitionEntry : itemMap.entrySet()) {
-                int partitionId = partitionEntry.getKey();
-                Map<CollectionContainer, List<CollectionItem>> containerMap = partitionEntry.getValue();
-                for (Map.Entry<CollectionContainer, List<CollectionItem>> containerEntry : containerMap.entrySet()) {
-                    CollectionContainer container = containerEntry.getKey();
-                    Collection<CollectionItem> itemList = containerEntry.getValue();
+        @Override
+        public void runInternal() {
+            List<MergingValue<Data>> mergingValues;
+            for (Map.Entry<Integer, Collection<CollectionContainer>> entry : collector.getCollectedContainers().entrySet()) {
+                int partitionId = entry.getKey();
+                Collection<CollectionContainer> containerList = entry.getValue();
+                for (CollectionContainer container : containerList) {
+                    Collection<CollectionItem> itemList = container.getCollection();
 
                     String name = container.getName();
                     int batchSize = container.getConfig().getMergePolicyConfig().getBatchSize();
-                    SplitBrainMergePolicy mergePolicy = getMergePolicy(container);
+                    SplitBrainMergePolicy mergePolicy = getMergePolicy(container.getConfig().getMergePolicyConfig());
 
-                    mergeEntries = new ArrayList<SplitBrainMergeEntryView<Long, Data>>();
+                    mergingValues = new ArrayList<MergingValue<Data>>();
                     for (CollectionItem item : itemList) {
-                        SplitBrainMergeEntryView<Long, Data> entryView = createSplitBrainMergeEntryView(item);
-                        mergeEntries.add(entryView);
-                        itemCount++;
+                        MergingValue<Data> mergingValue = createMergingValue(serializationService, item);
+                        mergingValues.add(mergingValue);
 
-                        if (mergeEntries.size() == batchSize) {
-                            sendBatch(partitionId, name, mergePolicy, mergeEntries, mergeCallback);
-                            mergeEntries = new ArrayList<SplitBrainMergeEntryView<Long, Data>>(batchSize);
-                            operationCount++;
+                        if (mergingValues.size() == batchSize) {
+                            sendBatch(partitionId, name, mergePolicy, mergingValues);
+                            mergingValues = new ArrayList<MergingValue<Data>>(batchSize);
                         }
                     }
                     itemList.clear();
-                    if (mergeEntries.size() > 0) {
-                        sendBatch(partitionId, name, mergePolicy, mergeEntries, mergeCallback);
-                        operationCount++;
+                    if (mergingValues.size() > 0) {
+                        sendBatch(partitionId, name, mergePolicy, mergingValues);
                     }
                 }
-            }
-            itemMap.clear();
-
-            try {
-                semaphore.tryAcquire(operationCount, itemCount * TIMEOUT_FACTOR, TimeUnit.MILLISECONDS);
-            } catch (InterruptedException e) {
-                logger.finest("Interrupted while waiting for merge operation...");
             }
         }
 
         private void sendBatch(int partitionId, String name, SplitBrainMergePolicy mergePolicy,
-                               List<SplitBrainMergeEntryView<Long, Data>> mergeEntries, ExecutionCallback<Object> mergeCallback) {
-            CollectionOperation operation = new CollectionMergeOperation(name, mergePolicy, mergeEntries);
-            try {
-                nodeEngine.getOperationService()
-                        .invokeOnPartition(getServiceName(), operation, partitionId)
-                        .andThen(mergeCallback);
-            } catch (Throwable t) {
-                throw rethrow(t);
-            }
+                               List<MergingValue<Data>> mergingValues) {
+            CollectionOperation operation = new CollectionMergeOperation(name, mergePolicy, mergingValues);
+            invoke(getServiceName(), operation, partitionId);
         }
     }
 }

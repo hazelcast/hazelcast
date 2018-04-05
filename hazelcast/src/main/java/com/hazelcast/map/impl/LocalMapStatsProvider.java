@@ -42,6 +42,7 @@ import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
+import static java.lang.Thread.currentThread;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
@@ -277,6 +278,7 @@ public class LocalMapStatsProvider {
         try {
             MILLISECONDS.sleep(WAIT_PARTITION_TABLE_UPDATE_MILLIS);
         } catch (InterruptedException e) {
+            currentThread().interrupt();
             throw ExceptionUtil.rethrow(e);
         }
     }

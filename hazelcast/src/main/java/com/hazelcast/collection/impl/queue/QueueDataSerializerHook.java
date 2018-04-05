@@ -28,6 +28,7 @@ import com.hazelcast.collection.impl.queue.operations.DrainBackupOperation;
 import com.hazelcast.collection.impl.queue.operations.DrainOperation;
 import com.hazelcast.collection.impl.queue.operations.IsEmptyOperation;
 import com.hazelcast.collection.impl.queue.operations.IteratorOperation;
+import com.hazelcast.collection.impl.queue.operations.QueueMergeOperation;
 import com.hazelcast.collection.impl.queue.operations.OfferBackupOperation;
 import com.hazelcast.collection.impl.queue.operations.OfferOperation;
 import com.hazelcast.collection.impl.queue.operations.PeekOperation;
@@ -122,6 +123,7 @@ public final class QueueDataSerializerHook implements DataSerializerHook {
     public static final int TXN_COMMIT = 42;
     public static final int TXN_COMMIT_BACKUP = 43;
 
+    public static final int MERGE = 44;
 
     public int getFactoryId() {
         return F_ID;
@@ -129,7 +131,7 @@ public final class QueueDataSerializerHook implements DataSerializerHook {
 
     public DataSerializableFactory createFactory() {
 
-        ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors = new ConstructorFunction[TXN_COMMIT_BACKUP + 1];
+        ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors = new ConstructorFunction[MERGE + 1];
         constructors[OFFER] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new OfferOperation();
@@ -349,6 +351,12 @@ public final class QueueDataSerializerHook implements DataSerializerHook {
             @Override
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new TxnCommitBackupOperation();
+            }
+        };
+        constructors[MERGE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            @Override
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new QueueMergeOperation();
             }
         };
 

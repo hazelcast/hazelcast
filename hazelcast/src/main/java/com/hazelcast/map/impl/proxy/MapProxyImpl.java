@@ -23,13 +23,11 @@ import com.hazelcast.core.EntryView;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.ManagedContext;
-import com.hazelcast.internal.cluster.Versions;
-import com.hazelcast.journal.EventJournalInitialSubscriberState;
-import com.hazelcast.journal.EventJournalReader;
+import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
+import com.hazelcast.internal.journal.EventJournalReader;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.QueryCache;
@@ -40,8 +38,6 @@ import com.hazelcast.map.impl.iterator.MapQueryPartitionIterator;
 import com.hazelcast.map.impl.journal.MapEventJournalReadOperation;
 import com.hazelcast.map.impl.journal.MapEventJournalSubscribeOperation;
 import com.hazelcast.map.impl.query.AggregationResult;
-import com.hazelcast.map.impl.query.MapQueryEngine;
-import com.hazelcast.map.impl.query.Query;
 import com.hazelcast.map.impl.query.QueryResult;
 import com.hazelcast.map.impl.query.Target;
 import com.hazelcast.map.impl.querycache.QueryCacheContext;
@@ -66,7 +62,6 @@ import com.hazelcast.mapreduce.aggregation.Supplier;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.PagingPredicate;
-import com.hazelcast.query.PartitionPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.TruePredicate;
 import com.hazelcast.ringbuffer.ReadResultSet;
@@ -594,29 +589,8 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         loadInternal(keys, null, replaceExistingValues);
     }
 
-    /**
-     * This method clears the map and calls deleteAll on MapStore which if connected to a database,
-     * will delete the records from that database.
-     * <p>
-     * If you wish to clear the map only without calling deleteAll, use #clearMapOnly.
-     *
-     * @see #clearMapOnly
-     */
     @Override
     public void clear() {
-        clearInternal();
-    }
-
-    /**
-     * This method clears the map. It does not invoke deleteAll on any associated MapStore.
-     *
-     * @see #clear
-     */
-    //TODO: why is this not tested?
-    //TODO: how come the implementation is the same as clear? I think this code is broken
-    //TODO: This method also isn't part of the IMap API
-    public void clearMapOnly() {
-        // TODO: need a different method here that does not call deleteAll()
         clearInternal();
     }
 
@@ -628,7 +602,6 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     @Override
     @SuppressWarnings("unchecked")
     public Set<K> keySet(Predicate predicate) {
-        handleHazelcastInstanceAwareParams(predicate);
         return executePredicate(predicate, IterationType.KEY, true);
     }
 
@@ -639,7 +612,6 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
 
     @Override
     public Set<Map.Entry<K, V>> entrySet(Predicate predicate) {
-        handleHazelcastInstanceAwareParams(predicate);
         return executePredicate(predicate, IterationType.ENTRY, true);
     }
 
@@ -651,32 +623,12 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     @Override
     @SuppressWarnings("unchecked")
     public Collection<V> values(Predicate predicate) {
-        handleHazelcastInstanceAwareParams(predicate);
         return executePredicate(predicate, IterationType.VALUE, false);
     }
 
     private Set executePredicate(Predicate predicate, IterationType iterationType, boolean uniqueResult) {
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
-        MapQueryEngine queryEngine = getMapQueryEngine();
-        QueryResult result;
-        if (predicate instanceof PartitionPredicate) {
-            PartitionPredicate partitionPredicate = (PartitionPredicate) predicate;
-            Data key = toData(partitionPredicate.getPartitionKey());
-            int partitionId = partitionService.getPartitionId(key);
-            Query query = Query.of()
-                    .mapName(getName())
-                    .predicate(partitionPredicate.getTarget())
-                    .iterationType(iterationType)
-                    .build();
-            result = queryEngine.execute(query, Target.of().partitionOwner(partitionId).build());
-        } else {
-            Query query = Query.of()
-                    .mapName(getName())
-                    .predicate(predicate)
-                    .iterationType(iterationType)
-                    .build();
-            result = queryEngine.execute(query, Target.ALL_NODES);
-        }
+        QueryResult result = executeQueryInternal(predicate, iterationType, Target.ALL_NODES);
         return transformToSet(serializationService, result, predicate, iterationType, uniqueResult, false);
     }
 
@@ -689,15 +641,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     @SuppressWarnings("unchecked")
     public Set<K> localKeySet(Predicate predicate) {
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
-        handleHazelcastInstanceAwareParams(predicate);
-
-        MapQueryEngine queryEngine = getMapQueryEngine();
-        Query query = Query.of()
-                .mapName(getName())
-                .predicate(predicate)
-                .iterationType(IterationType.KEY)
-                .build();
-        QueryResult result = queryEngine.execute(query, Target.LOCAL_NODE);
+        QueryResult result = executeQueryInternal(predicate, IterationType.KEY, Target.LOCAL_NODE);
         return transformToSet(serializationService, result, predicate, IterationType.KEY, false, false);
     }
 
@@ -767,20 +711,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
 
     @Override
     public <R> R aggregate(Aggregator<Map.Entry<K, V>, R> aggregator) {
-        checkNotNull(aggregator, NULL_AGGREGATOR_IS_NOT_ALLOWED);
-
-        MapQueryEngine queryEngine = getMapQueryEngine();
-        // HazelcastInstanceAware handled by cloning
-        aggregator = serializationService.toObject(serializationService.toData(aggregator));
-
-        Query query = Query.of()
-                .mapName(getName())
-                .predicate(TruePredicate.INSTANCE)
-                .iterationType(IterationType.ENTRY)
-                .aggregator(aggregator)
-                .build();
-        AggregationResult result = queryEngine.execute(query, Target.ALL_NODES);
-        return result.<R>getAggregator().aggregate();
+        return aggregate(aggregator, TruePredicate.<K, V>truePredicate());
     }
 
     @Override
@@ -788,38 +719,17 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         checkNotNull(aggregator, NULL_AGGREGATOR_IS_NOT_ALLOWED);
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
         checkNotPagingPredicate(predicate, "aggregate");
-        handleHazelcastInstanceAwareParams(predicate);
 
         // HazelcastInstanceAware handled by cloning
         aggregator = serializationService.toObject(serializationService.toData(aggregator));
-        MapQueryEngine queryEngine = getMapQueryEngine();
 
-        Query query = Query.of()
-                .mapName(getName())
-                .predicate(predicate)
-                .iterationType(IterationType.ENTRY)
-                .aggregator(aggregator)
-                .build();
-        AggregationResult result = queryEngine.execute(query, Target.ALL_NODES);
+        AggregationResult result = executeQueryInternal(predicate, aggregator, null, IterationType.ENTRY, Target.ALL_NODES);
         return result.<R>getAggregator().aggregate();
     }
 
     @Override
     public <R> Collection<R> project(Projection<Map.Entry<K, V>, R> projection) {
-        checkNotNull(projection, NULL_PROJECTION_IS_NOT_ALLOWED);
-
-        MapQueryEngine queryEngine = getMapQueryEngine();
-        // HazelcastInstanceAware handled by cloning
-        projection = serializationService.toObject(serializationService.toData(projection));
-
-        Query query = Query.of()
-                .mapName(getName())
-                .predicate(TruePredicate.INSTANCE)
-                .iterationType(IterationType.VALUE)
-                .projection(projection)
-                .build();
-        QueryResult result = queryEngine.execute(query, Target.ALL_NODES);
-        return transformToSet(serializationService, result, TruePredicate.INSTANCE, IterationType.VALUE, false, false);
+        return project(projection, TruePredicate.INSTANCE);
     }
 
     @Override
@@ -827,19 +737,11 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         checkNotNull(projection, NULL_PROJECTION_IS_NOT_ALLOWED);
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
         checkNotPagingPredicate(predicate, "project");
-        handleHazelcastInstanceAwareParams(predicate);
 
         // HazelcastInstanceAware handled by cloning
         projection = serializationService.toObject(serializationService.toData(projection));
-        MapQueryEngine queryEngine = getMapQueryEngine();
 
-        Query query = Query.of()
-                .mapName(getName())
-                .predicate(predicate)
-                .iterationType(IterationType.VALUE)
-                .projection(projection)
-                .build();
-        QueryResult result = queryEngine.execute(query, Target.ALL_NODES);
+        QueryResult result = executeQueryInternal(predicate, null, projection, IterationType.VALUE, Target.ALL_NODES);
         return transformToSet(serializationService, result, predicate, IterationType.VALUE, false, false);
     }
 
@@ -947,15 +849,11 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
      * @param predicate   the predicate which the entries must match. {@code null} value is not allowed
      * @param <R>         the return type
      * @return the iterator for the projected entries
-     * @throws UnsupportedOperationException when cluster version is less than {@link Versions#V3_9}
-     * @throws IllegalArgumentException      if the predicate is of type {@link PagingPredicate}
+     * @throws IllegalArgumentException if the predicate is of type {@link PagingPredicate}
      * @since 3.9
      */
     public <R> Iterator<R> iterator(int fetchSize, int partitionId, Projection<Map.Entry<K, V>, R> projection,
                                     Predicate<K, V> predicate) {
-        if (getNodeEngine().getClusterService().getClusterVersion().isLessThan(Versions.V3_9)) {
-            throw new UnsupportedOperationException("Iterate map by query is available when cluster version is 3.9 or higher");
-        }
         if (predicate instanceof PagingPredicate) {
             throw new IllegalArgumentException("Paging predicate is not allowed when iterating map by query");
         }
@@ -976,7 +874,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * This implementation will skip cloning of the predicate and projection
      * for performance reasons. Because of this, the results of the projection
      * and predicate should not depend on any state that will be lost while
@@ -991,7 +889,11 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
             int maxSize,
             int partitionId,
             com.hazelcast.util.function.Predicate<? super EventJournalMapEvent<K, V>> predicate,
-            Projection<? super EventJournalMapEvent<K, V>, T> projection) {
+            Projection<? super EventJournalMapEvent<K, V>, ? extends T> projection) {
+        if (maxSize < minSize) {
+            throw new IllegalArgumentException("maxSize " + maxSize
+                    + " must be greater or equal to minSize " + minSize);
+        }
         final ManagedContext context = serializationService.getManagedContext();
         context.initialize(predicate);
         context.initialize(projection);
@@ -1053,16 +955,8 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         QueryCacheContext queryCacheContext = request.getContext();
         SubscriberContext subscriberContext = queryCacheContext.getSubscriberContext();
         QueryCacheEndToEndProvider queryCacheEndToEndProvider = subscriberContext.getEndToEndQueryCacheProvider();
-        return queryCacheEndToEndProvider.getOrCreateQueryCache(request.getMapName(), request.getCacheName(),
+        return queryCacheEndToEndProvider.getOrCreateQueryCache(request.getMapName(), request.getCacheId(),
                 new NodeQueryCacheEndToEndConstructor(request));
-    }
-
-    private void handleHazelcastInstanceAwareParams(Object... objects) {
-        for (Object object : objects) {
-            if (object instanceof HazelcastInstanceAware) {
-                ((HazelcastInstanceAware) object).setHazelcastInstance(getNodeEngine().getHazelcastInstance());
-            }
-        }
     }
 
     private static void checkNotPagingPredicate(Predicate predicate, String method) {

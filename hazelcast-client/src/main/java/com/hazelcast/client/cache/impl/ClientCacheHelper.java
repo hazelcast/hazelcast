@@ -17,21 +17,25 @@
 package com.hazelcast.client.cache.impl;
 
 import com.hazelcast.cache.impl.CacheProxyUtil;
+import com.hazelcast.client.HazelcastClientNotActiveException;
 import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheCreateConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheGetConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheManagementConfigCodec;
+import com.hazelcast.client.spi.impl.AbstractClientInvocationService;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.properties.ClientProperty;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.LegacyCacheConfig;
 import com.hazelcast.core.Member;
+import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.FutureUtil;
 
 import java.io.IOException;
@@ -42,6 +46,7 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.util.StringUtil.timeToString;
 
 /**
  * Helper class for some client cache related stuff.
@@ -100,40 +105,27 @@ final class ClientCacheHelper {
      * Creates a new cache configuration on Hazelcast members.
      *
      * @param client             the client instance which will send the operation to server
-     * @param existingConfig     an existing {@link CacheConfig}, already known to the client
      * @param newCacheConfig     the cache configuration to be sent to server
-     * @param createAlsoOnOthers when {@code true} the {@code newCacheConfig}
-     *                           will be sent to all cluster members by the target member that receives the
-     *                           invocation
-     * @param syncCreate         when {@code true}, this call will block until response is received from the member. This does not
-     *                           imply that when this method exits the {@code CacheConfig} is already created on all members.
      * @param <K>                type of the key of the cache
      * @param <V>                type of the value of the cache
      * @return the created cache configuration
      * @see com.hazelcast.cache.impl.operation.CacheCreateConfigOperation
      */
     static <K, V> CacheConfig<K, V> createCacheConfig(HazelcastClientInstanceImpl client,
-                                                      CacheConfig<K, V> existingConfig,
-                                                      CacheConfig<K, V> newCacheConfig,
-                                                      boolean createAlsoOnOthers,
-                                                      boolean syncCreate) {
+                                                      CacheConfig<K, V> newCacheConfig) {
         try {
             String nameWithPrefix = newCacheConfig.getNameWithPrefix();
             int partitionId = client.getClientPartitionService().getPartitionId(nameWithPrefix);
 
-            Object resolvedConfig = resolveCacheConfig(client, newCacheConfig, partitionId);
+            Object resolvedConfig = resolveCacheConfigWithRetry(client, newCacheConfig, partitionId);
 
             Data configData = client.getSerializationService().toData(resolvedConfig);
-            ClientMessage request = CacheCreateConfigCodec.encodeRequest(configData, createAlsoOnOthers);
+            ClientMessage request = CacheCreateConfigCodec.encodeRequest(configData, true);
             ClientInvocation clientInvocation = new ClientInvocation(client, request, nameWithPrefix, partitionId);
             Future<ClientMessage> future = clientInvocation.invoke();
-            if (syncCreate) {
-                final ClientMessage response = future.get();
-                final Data data = CacheCreateConfigCodec.decodeResponse(response).response;
-                return resolveCacheConfig(client, clientInvocation, data);
-            } else {
-                return existingConfig;
-            }
+            final ClientMessage response = future.get();
+            final Data data = CacheCreateConfigCodec.decodeResponse(response).response;
+            return resolveCacheConfig(client, clientInvocation, data);
         } catch (Exception e) {
             throw rethrow(e);
         }
@@ -185,6 +177,59 @@ final class ClientCacheHelper {
         }
         return address;
     }
+
+    private static <K, V> Object resolveCacheConfigWithRetry(HazelcastClientInstanceImpl client,
+                                                             CacheConfig<K, V> newCacheConfig, int partitionId) {
+        AbstractClientInvocationService invocationService = (AbstractClientInvocationService) client.getInvocationService();
+        long invocationRetryPauseMillis = invocationService.getInvocationRetryPauseMillis();
+        long invocationTimeoutMillis = invocationService.getInvocationTimeoutMillis();
+        long startMillis = System.currentTimeMillis();
+        Exception lastException;
+        do {
+            try {
+                return resolveCacheConfig(client, newCacheConfig, partitionId);
+            } catch (Exception e) {
+                lastException = e;
+            }
+
+            timeOutOrSleepBeforeNextTry(startMillis, invocationRetryPauseMillis, invocationTimeoutMillis, lastException);
+
+        } while (client.getLifecycleService().isRunning());
+        throw new HazelcastClientNotActiveException("Client is shut down");
+    }
+
+    private static void sleepBeforeNextTry(long invocationRetryPauseMillis) {
+        try {
+            Thread.sleep(invocationRetryPauseMillis);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw ExceptionUtil.rethrow(e);
+        }
+    }
+
+    private static void timeOutOrSleepBeforeNextTry(long startMillis, long invocationRetryPauseMillis,
+                                                    long invocationTimeoutMillis, Exception lastException) {
+        long nowInMillis = System.currentTimeMillis();
+        long elapsedMillis = nowInMillis - startMillis;
+        boolean timedOut = elapsedMillis > invocationTimeoutMillis;
+
+        if (timedOut) {
+            throwOperationTimeoutException(startMillis, nowInMillis, elapsedMillis, invocationTimeoutMillis, lastException);
+        } else {
+            sleepBeforeNextTry(invocationRetryPauseMillis);
+        }
+    }
+
+    private static void throwOperationTimeoutException(long startMillis, long nowInMillis,
+                                                       long elapsedMillis, long invocationTimeoutMillis,
+                                                       Exception lastException) {
+        throw new OperationTimeoutException("Creating cache config is timed out."
+                + " Current time: " + timeToString(nowInMillis) + ", "
+                + " Start time : " + timeToString(startMillis) + ", "
+                + " Client invocation timeout : " + invocationTimeoutMillis + " ms, "
+                + " Elapsed time : " + elapsedMillis + " ms. ", lastException);
+    }
+
 
     /**
      * Enables/disables statistics or management support of cache on the all servers in the cluster.

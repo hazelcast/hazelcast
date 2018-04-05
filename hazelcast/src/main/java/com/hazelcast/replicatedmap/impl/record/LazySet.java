@@ -51,7 +51,7 @@ class LazySet<K, V, R> implements Set<R> {
 
     @Override
     public Iterator<R> iterator() {
-        final Iterator<Map.Entry<K, ReplicatedRecord<K, V>>> iterator = storage.entrySet().iterator();
+        Iterator<Map.Entry<K, ReplicatedRecord<K, V>>> iterator = storage.entrySet().iterator();
         return iteratorFactory.create(iterator);
     }
 

@@ -21,7 +21,6 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.ringbuffer.StaleSequenceException;
@@ -39,7 +38,13 @@ import java.util.Random;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.hazelcast.logging.Logger.getLogger;
 import static com.hazelcast.ringbuffer.OverflowPolicy.FAIL;
+import static com.hazelcast.spi.properties.GroupProperty.EVENT_THREAD_COUNT;
+import static com.hazelcast.spi.properties.GroupProperty.GENERIC_OPERATION_THREAD_COUNT;
+import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
+import static com.hazelcast.spi.properties.GroupProperty.PARTITION_OPERATION_THREAD_COUNT;
+import static com.hazelcast.test.TimeConstants.MINUTE;
 import static java.lang.Math.max;
 import static java.lang.System.currentTimeMillis;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -50,9 +55,11 @@ import static org.junit.Assert.assertEquals;
 @Category(NightlyTest.class)
 public class RingbufferAddAllReadManyStressTest extends HazelcastTestSupport {
 
-    private final ILogger logger = Logger.getLogger(RingbufferAddAllReadManyStressTest.class);
     private static final int MAX_BATCH = 100;
+
+    private final ILogger logger = getLogger(RingbufferAddAllReadManyStressTest.class);
     private final AtomicBoolean stop = new AtomicBoolean();
+
     private Ringbuffer<Long> ringbuffer;
 
     @After
@@ -62,8 +69,8 @@ public class RingbufferAddAllReadManyStressTest extends HazelcastTestSupport {
         }
     }
 
-    @Test
-    public void whenNoTTL() throws Exception {
+    @Test(timeout = MINUTE * 10)
+    public void whenNoTTL() {
         RingbufferConfig ringbufferConfig = new RingbufferConfig("rb")
                 .setCapacity(20 * 1000 * 1000)
                 .setInMemoryFormat(InMemoryFormat.OBJECT)
@@ -71,24 +78,24 @@ public class RingbufferAddAllReadManyStressTest extends HazelcastTestSupport {
         test(ringbufferConfig);
     }
 
-    @Test
-    public void whenTTLEnabled() throws Exception {
+    @Test(timeout = MINUTE * 10)
+    public void whenTTLEnabled() {
         RingbufferConfig ringbufferConfig = new RingbufferConfig("rb")
                 .setCapacity(200 * 1000)
                 .setTimeToLiveSeconds(2);
         test(ringbufferConfig);
     }
 
-    @Test
-    public void whenLongTTLAndSmallBuffer() throws Exception {
+    @Test(timeout = MINUTE * 10)
+    public void whenLongTTLAndSmallBuffer() {
         RingbufferConfig ringbufferConfig = new RingbufferConfig("rb")
                 .setCapacity(1000)
                 .setTimeToLiveSeconds(30);
         test(ringbufferConfig);
     }
 
-    @Test
-    public void whenShortTTLAndBigBuffer() throws Exception {
+    @Test(timeout = MINUTE * 10)
+    public void whenShortTTLAndBigBuffer() {
         RingbufferConfig ringbufferConfig = new RingbufferConfig("rb")
                 .setInMemoryFormat(InMemoryFormat.OBJECT)
                 .setCapacity(20 * 1000 * 1000)
@@ -96,8 +103,9 @@ public class RingbufferAddAllReadManyStressTest extends HazelcastTestSupport {
         test(ringbufferConfig);
     }
 
-    public void test(RingbufferConfig ringbufferConfig) throws Exception {
-        Config config = new Config();
+    public void test(RingbufferConfig ringbufferConfig) {
+        Config config = smallInstanceConfig();
+
         config.addRingBufferConfig(ringbufferConfig);
         HazelcastInstance[] instances = createHazelcastInstanceFactory(2).newInstances(config);
 
@@ -128,12 +136,13 @@ public class RingbufferAddAllReadManyStressTest extends HazelcastTestSupport {
     }
 
     class ProduceThread extends TestThread {
-        private final ILogger logger = Logger.getLogger(ProduceThread.class);
+
+        private final ILogger logger = getLogger(ProduceThread.class);
+        private final Random random = new Random();
+
+        private long lastLogMs = 0;
+
         private volatile long produced;
-        Random random = new Random();
-
-        long lastLogMs = 0;
-
 
         public ProduceThread() {
             super("ProduceThread");
@@ -154,6 +163,7 @@ public class RingbufferAddAllReadManyStressTest extends HazelcastTestSupport {
             ringbuffer.add(Long.MIN_VALUE);
         }
 
+        @SuppressWarnings("NonAtomicOperationOnVolatileField")
         private LinkedList<Long> makeBatch() {
             int count = max(1, random.nextInt(MAX_BATCH));
             LinkedList<Long> items = new LinkedList<Long>();
@@ -189,11 +199,15 @@ public class RingbufferAddAllReadManyStressTest extends HazelcastTestSupport {
     }
 
     class ConsumeThread extends TestThread {
-        private final ILogger logger = Logger.getLogger(ConsumeThread.class);
-        volatile long seq;
-        long lastLogMs = 0;
 
-        public ConsumeThread(int id) {
+        private final ILogger logger = getLogger(ConsumeThread.class);
+        private final Random random = new Random();
+
+        private long lastLogMs = 0;
+
+        private volatile long seq;
+
+        ConsumeThread(int id) {
             super("ConsumeThread-" + id);
         }
 
@@ -203,10 +217,9 @@ public class RingbufferAddAllReadManyStressTest extends HazelcastTestSupport {
         }
 
         @Override
+        @SuppressWarnings("NonAtomicOperationOnVolatileField")
         public void doRun() throws Throwable {
             seq = ringbuffer.headSequence();
-
-            Random random = new Random();
 
             for (; ; ) {
                 int max = max(1, random.nextInt(MAX_BATCH));

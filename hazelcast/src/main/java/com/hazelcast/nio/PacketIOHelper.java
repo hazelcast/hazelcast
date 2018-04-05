@@ -16,6 +16,8 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.spi.annotation.PrivateApi;
+
 import java.nio.ByteBuffer;
 
 import static com.hazelcast.nio.Bits.BYTE_SIZE_IN_BYTES;
@@ -35,6 +37,7 @@ import static com.hazelcast.nio.Packet.VERSION;
  *
  * A {@link PacketIOHelper} is designed to be reused.
  */
+@PrivateApi
 public class PacketIOHelper {
     static final int HEADER_SIZE = BYTE_SIZE_IN_BYTES + SHORT_SIZE_IN_BYTES + INT_SIZE_IN_BYTES + INT_SIZE_IN_BYTES;
 

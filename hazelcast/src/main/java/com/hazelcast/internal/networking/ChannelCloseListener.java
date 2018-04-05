@@ -19,7 +19,8 @@ package com.hazelcast.internal.networking;
 /**
  * A listener called when a {@link Channel} is closed.
  *
- * One of the potential usages is to release resources attached to a channel e.g. deregistration of metrics.
+ * One of the potential usages is to release resources attached to a channel e.g.
+ * deregistration of metrics.
  */
 public interface ChannelCloseListener {
 

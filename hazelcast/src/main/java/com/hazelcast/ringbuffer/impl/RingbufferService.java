@@ -24,6 +24,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.quorum.QuorumService;
 import com.hazelcast.quorum.QuorumType;
+import com.hazelcast.ringbuffer.impl.operations.MergeOperation;
 import com.hazelcast.ringbuffer.impl.operations.ReplicationOperation;
 import com.hazelcast.spi.DistributedObjectNamespace;
 import com.hazelcast.spi.FragmentedMigrationAwareService;
@@ -36,17 +37,23 @@ import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.spi.QuorumAwareService;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.ServiceNamespace;
+import com.hazelcast.spi.SplitBrainHandlerService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.merge.AbstractContainerMerger;
+import com.hazelcast.spi.merge.MergingEntry;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
+import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ContextMutexFactory;
-import com.hazelcast.version.Version;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
@@ -54,6 +61,8 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import static com.hazelcast.internal.config.ConfigValidator.checkRingbufferConfig;
+import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntry;
 import static com.hazelcast.spi.partition.MigrationEndpoint.DESTINATION;
 import static com.hazelcast.spi.partition.MigrationEndpoint.SOURCE;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
@@ -63,7 +72,8 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 /**
  * The SPI Service that deals with the {@link com.hazelcast.ringbuffer.Ringbuffer}.
  */
-public class RingbufferService implements ManagedService, RemoteService, FragmentedMigrationAwareService, QuorumAwareService {
+public class RingbufferService implements ManagedService, RemoteService, FragmentedMigrationAwareService, QuorumAwareService,
+        SplitBrainHandlerService {
 
     /**
      * Prefix of ringbuffers that are created for topics. Using a prefix prevents users accidentally retrieving the ringbuffer.
@@ -83,12 +93,6 @@ public class RingbufferService implements ManagedService, RemoteService, Fragmen
      */
     private final ConcurrentMap<Integer, Map<ObjectNamespace, RingbufferContainer>> containers
             = new ConcurrentHashMap<Integer, Map<ObjectNamespace, RingbufferContainer>>();
-    /**
-     * The node engine for this node.
-     */
-    private NodeEngine nodeEngine;
-
-    private final QuorumService quorumService;
 
     private final ConcurrentMap<String, Object> quorumConfigCache = new ConcurrentHashMap<String, Object>();
     private final ContextMutexFactory quorumConfigCacheMutexFactory = new ContextMutexFactory();
@@ -103,16 +107,21 @@ public class RingbufferService implements ManagedService, RemoteService, Fragmen
         }
     };
 
+    private NodeEngine nodeEngine;
+    private SerializationService serializationService;
+    private IPartitionService partitionService;
+    private QuorumService quorumService;
+
     public RingbufferService(NodeEngineImpl nodeEngine) {
-        this.nodeEngine = checkNotNull(nodeEngine, "nodeEngine can't be null");
-        this.quorumService = nodeEngine.getQuorumService();
+        init(nodeEngine, null);
     }
 
-    private static String getConfigName(String name) {
-        if (name.startsWith(TOPIC_RB_PREFIX)) {
-            name = name.substring(TOPIC_RB_PREFIX.length());
-        }
-        return name;
+    @Override
+    public void init(NodeEngine nodeEngine, Properties properties) {
+        this.nodeEngine = checkNotNull(nodeEngine, "nodeEngine can't be null");
+        this.serializationService = nodeEngine.getSerializationService();
+        this.partitionService = nodeEngine.getPartitionService();
+        this.quorumService = nodeEngine.getQuorumService();
     }
 
     // just for testing
@@ -122,7 +131,9 @@ public class RingbufferService implements ManagedService, RemoteService, Fragmen
 
     @Override
     public DistributedObject createDistributedObject(String objectName) {
-        final RingbufferConfig ringbufferConfig = getRingbufferConfig(objectName);
+        RingbufferConfig ringbufferConfig = getRingbufferConfig(objectName);
+        checkRingbufferConfig(ringbufferConfig);
+
         return new RingbufferProxy(nodeEngine, this, objectName, ringbufferConfig);
     }
 
@@ -142,11 +153,6 @@ public class RingbufferService implements ManagedService, RemoteService, Fragmen
     }
 
     @Override
-    public void init(NodeEngine nodeEngine, Properties properties) {
-        this.nodeEngine = nodeEngine;
-    }
-
-    @Override
     public void reset() {
         containers.clear();
     }
@@ -159,41 +165,26 @@ public class RingbufferService implements ManagedService, RemoteService, Fragmen
     /**
      * Return the ringbuffer containter for the specified {@code namespace}.
      * If there is no ringbuffer container, create it using the {@code config}.
-     * When the cluster version is less than {@link Versions#V3_9} then the only
-     * supported namespace is for the ringbuffer service, other namespaces will
-     * throw an {@link UnsupportedOperationException}.
      *
      * @param namespace the ringbuffer container namespace
      * @param config    the ringbuffer config. Used to create the container when the container doesn't exist
      * @return the ringbuffer container
-     * @throws UnsupportedOperationException if the cluster version is less than {@link Versions#V3_9} and the service name
-     *                                       in the object namespace is not {@link RingbufferService#SERVICE_NAME}
-     * @throws NullPointerException          if the {@code config} is {@code null}
+     * @throws NullPointerException if the {@code config} is {@code null}
      */
     @SuppressWarnings("unchecked")
-    public <T> RingbufferContainer<T> getOrCreateContainer(int partitionId, ObjectNamespace namespace, RingbufferConfig config) {
+    public <T, E> RingbufferContainer<T, E> getOrCreateContainer(int partitionId, ObjectNamespace namespace,
+                                                                 RingbufferConfig config) {
         if (config == null) {
             throw new NullPointerException("Ringbuffer config should not be null when ringbuffer is being created");
         }
-        final Version clusterVersion = nodeEngine.getClusterService().getClusterVersion();
-        if (clusterVersion.isLessThan(Versions.V3_9)
-                && !SERVICE_NAME.equals(namespace.getServiceName())) {
-            throw new UnsupportedOperationException("Ringbuffer containers for service "
-                    + namespace.getServiceName() + " are not supported when cluster version is " + clusterVersion);
-        }
-
         final Map<ObjectNamespace, RingbufferContainer> partitionContainers = getOrCreateRingbufferContainers(partitionId);
 
-        RingbufferContainer<T> ringbuffer = partitionContainers.get(namespace);
+        RingbufferContainer<T, E> ringbuffer = partitionContainers.get(namespace);
         if (ringbuffer != null) {
             return ringbuffer;
         }
 
-        ringbuffer = new RingbufferContainer<T>(
-                namespace,
-                config,
-                nodeEngine.getSerializationService(),
-                nodeEngine.getConfigClassLoader(), partitionId);
+        ringbuffer = new RingbufferContainer<T, E>(namespace, config, nodeEngine, partitionId);
         ringbuffer.getStore().instrument(nodeEngine);
         partitionContainers.put(namespace, ringbuffer);
         return ringbuffer;
@@ -207,10 +198,11 @@ public class RingbufferService implements ManagedService, RemoteService, Fragmen
      * @param partitionId the partition ID of the ringbuffer container
      * @param namespace   the namespace of the ringbuffer container
      * @param <T>         the type of items in the ringbuffer container
+     * @param <E>         the type of items in the ringbuffer
      * @return the ringbuffer container or {@code null} if it has not been created
      */
     @SuppressWarnings("unchecked")
-    public <T> RingbufferContainer<T> getContainerOrNull(int partitionId, ObjectNamespace namespace) {
+    public <T, E> RingbufferContainer<T, E> getContainerOrNull(int partitionId, ObjectNamespace namespace) {
         final Map<ObjectNamespace, RingbufferContainer> partitionContainers = containers.get(partitionId);
         return partitionContainers != null ? partitionContainers.get(namespace) : null;
     }
@@ -233,15 +225,13 @@ public class RingbufferService implements ManagedService, RemoteService, Fragmen
     }
 
     public int getRingbufferPartitionId(String ringbufferName) {
-        final Data partitionAwareData =
-                nodeEngine.getSerializationService().toData(ringbufferName, StringPartitioningStrategy.INSTANCE);
-        return nodeEngine.getPartitionService().getPartitionId(partitionAwareData);
+        Data partitionAwareData = serializationService.toData(ringbufferName, StringPartitioningStrategy.INSTANCE);
+        return partitionService.getPartitionId(partitionAwareData);
     }
 
     public void addRingbuffer(int partitionId, RingbufferContainer ringbuffer, RingbufferConfig config) {
         checkNotNull(ringbuffer, "ringbuffer can't be null");
-        final SerializationService serializationService = nodeEngine.getSerializationService();
-        ringbuffer.init(config, serializationService, nodeEngine.getConfigClassLoader());
+        ringbuffer.init(config, nodeEngine);
         ringbuffer.getStore().instrument(nodeEngine);
         getOrCreateRingbufferContainers(partitionId).put(ringbuffer.getNamespace(), ringbuffer);
     }
@@ -308,7 +298,6 @@ public class RingbufferService implements ManagedService, RemoteService, Fragmen
         }
     }
 
-
     @Override
     public Collection<ServiceNamespace> getAllServiceNamespaces(PartitionReplicationEvent event) {
         final int partitionId = event.getPartitionId();
@@ -346,4 +335,65 @@ public class RingbufferService implements ManagedService, RemoteService, Fragmen
         quorumService.ensureQuorumPresent(getQuorumName(distributedObjectName), requiredQuorumPermissionType);
     }
 
+    @Override
+    public Runnable prepareMergeRunnable() {
+        RingbufferContainerCollector collector = new RingbufferContainerCollector(nodeEngine, containers);
+        collector.run();
+        return new Merger(collector);
+    }
+
+    private class Merger extends AbstractContainerMerger<RingbufferContainer> {
+
+        Merger(RingbufferContainerCollector collector) {
+            super(collector, nodeEngine);
+        }
+
+        @Override
+        protected String getLabel() {
+            return "ringbuffer";
+        }
+
+        @Override
+        protected void runInternal() {
+            List<MergingEntry<Long, Object>> mergingEntries;
+            for (Entry<Integer, Collection<RingbufferContainer>> entry : collector.getCollectedContainers().entrySet()) {
+                int partitionId = entry.getKey();
+                Collection<RingbufferContainer> containerList = entry.getValue();
+
+                for (RingbufferContainer container : containerList) {
+                    Ringbuffer ringbuffer = container.getRingbuffer();
+                    int batchSize = container.getConfig().getMergePolicyConfig().getBatchSize();
+                    SplitBrainMergePolicy mergePolicy = getMergePolicy(container.getConfig().getMergePolicyConfig());
+
+                    mergingEntries = new ArrayList<MergingEntry<Long, Object>>(batchSize);
+                    for (long sequence = ringbuffer.headSequence(); sequence <= ringbuffer.tailSequence(); sequence++) {
+                        Object item = ringbuffer.read(sequence);
+                        MergingEntry<Long, Object> mergingEntry = createMergingEntry(serializationService, sequence, item);
+                        mergingEntries.add(mergingEntry);
+
+                        if (mergingEntries.size() == batchSize) {
+                            sendBatch(partitionId, container.getNamespace(), mergePolicy, mergingEntries);
+                            mergingEntries = new ArrayList<MergingEntry<Long, Object>>(batchSize);
+                        }
+                    }
+                    if (mergingEntries.size() > 0) {
+                        sendBatch(partitionId, container.getNamespace(), mergePolicy, mergingEntries);
+                    }
+                }
+            }
+        }
+
+        private void sendBatch(int partitionId, ObjectNamespace namespace, SplitBrainMergePolicy mergePolicy,
+                               List<MergingEntry<Long, Object>> mergingEntries) {
+            MergeOperation operation = new MergeOperation(namespace, mergePolicy, mergingEntries);
+            invoke(SERVICE_NAME, operation, partitionId);
+        }
+    }
+
+    private static String getConfigName(String name) {
+        if (name.startsWith(TOPIC_RB_PREFIX)) {
+            name = name.substring(TOPIC_RB_PREFIX.length());
+        }
+        return name;
+    }
 }

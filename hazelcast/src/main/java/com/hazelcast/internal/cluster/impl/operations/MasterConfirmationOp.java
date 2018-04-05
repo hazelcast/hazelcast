@@ -29,6 +29,8 @@ import java.io.IOException;
  */
 @Deprecated
 // Master confirmation logic is not needed in 3.10. This operation is still here to remain compatible with 3.9.
+// RU_COMPAT_39: Do not remove Versioned interface!
+// Version info is needed on 3.9 members while deserializing the operation.
 public class MasterConfirmationOp extends AbstractClusterOperation implements Versioned {
 
     private MembersViewMetadata membersViewMetadata;

@@ -26,6 +26,8 @@ import com.hazelcast.cache.impl.operation.CacheGetAndReplaceOperation;
 import com.hazelcast.cache.impl.operation.CacheGetOperation;
 import com.hazelcast.cache.impl.operation.CacheKeyIteratorOperation;
 import com.hazelcast.cache.impl.operation.CacheLoadAllOperationFactory;
+import com.hazelcast.cache.impl.operation.CacheMergeOperation;
+import com.hazelcast.cache.impl.operation.CacheMergeOperationFactory;
 import com.hazelcast.cache.impl.operation.CachePutAllOperation;
 import com.hazelcast.cache.impl.operation.CachePutIfAbsentOperation;
 import com.hazelcast.cache.impl.operation.CachePutOperation;
@@ -37,6 +39,8 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.spi.merge.MergingEntry;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 
 import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.processor.EntryProcessor;
@@ -114,6 +118,19 @@ public class DefaultOperationProvider implements CacheOperationProvider {
     @Override
     public Operation createEntryIteratorOperation(int lastTableIndex, int fetchSize) {
         return new CacheEntryIteratorOperation(nameWithPrefix, lastTableIndex, fetchSize);
+    }
+
+    @Override
+    public Operation createMergeOperation(String name, List<MergingEntry<Data, Data>> mergingEntries,
+                                          SplitBrainMergePolicy policy) {
+        return new CacheMergeOperation(name, mergingEntries, policy);
+    }
+
+    @Override
+    public OperationFactory createMergeOperationFactory(String name, int[] partitions,
+                                                        List<MergingEntry<Data, Data>>[] mergingEntries,
+                                                        SplitBrainMergePolicy policy) {
+        return new CacheMergeOperationFactory(name, partitions, mergingEntries, policy);
     }
 
     @Override

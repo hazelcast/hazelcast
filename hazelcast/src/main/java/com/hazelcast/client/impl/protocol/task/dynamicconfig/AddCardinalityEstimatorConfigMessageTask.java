@@ -19,6 +19,7 @@ package com.hazelcast.client.impl.protocol.task.dynamicconfig;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddCardinalityEstimatorConfigCodec;
 import com.hazelcast.config.CardinalityEstimatorConfig;
+import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -44,7 +45,12 @@ public class AddCardinalityEstimatorConfigMessageTask
     protected IdentifiedDataSerializable getConfig() {
         CardinalityEstimatorConfig config = new CardinalityEstimatorConfig(parameters.name, parameters.backupCount,
                 parameters.asyncBackupCount);
-
+        // avoid overwriting the default HyperLogLogMergePolicy when receiving a config from older client
+        if (parameters.mergePolicyExist) {
+            MergePolicyConfig mergePolicyConfig = mergePolicyConfig(parameters.mergePolicyExist, parameters.mergePolicy,
+                    parameters.mergeBatchSize);
+            config.setMergePolicyConfig(mergePolicyConfig);
+        }
         return config;
     }
 

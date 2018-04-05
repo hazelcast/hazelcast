@@ -28,6 +28,8 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.merge.FullMergingEntryImpl;
+import com.hazelcast.spi.merge.MergingEntry;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
@@ -46,6 +48,7 @@ import static com.hazelcast.map.impl.ExpirationTimeSetter.getLifeStartTime;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.setExpirationTime;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.map.impl.eviction.Evictor.NULL_EVICTOR;
+import static com.hazelcast.util.Preconditions.checkInstanceOf;
 
 
 /**
@@ -317,16 +320,22 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     }
 
     protected void mergeRecordExpiration(Record record, EntryView mergingEntry) {
-        long ttlMillis = mergingEntry.getTtl();
+        mergeRecordExpiration(record, mergingEntry.getTtl(), mergingEntry.getCreationTime(), mergingEntry.getLastAccessTime(),
+                mergingEntry.getLastUpdateTime());
+    }
+
+    protected void mergeRecordExpiration(Record record, MergingEntry mergingEntry) {
+        checkInstanceOf(FullMergingEntryImpl.class, mergingEntry);
+        FullMergingEntryImpl fullMergingEntry = (FullMergingEntryImpl) mergingEntry;
+        mergeRecordExpiration(record, fullMergingEntry.getTtl(), fullMergingEntry.getCreationTime(),
+                fullMergingEntry.getLastAccessTime(), fullMergingEntry.getLastUpdateTime());
+    }
+
+    private void mergeRecordExpiration(Record record, long ttlMillis, long creationTime, long lastAccessTime,
+                                       long lastUpdateTime) {
         record.setTtl(ttlMillis);
-
-        long creationTime = mergingEntry.getCreationTime();
         record.setCreationTime(creationTime);
-
-        long lastAccessTime = mergingEntry.getLastAccessTime();
         record.setLastAccessTime(lastAccessTime);
-
-        long lastUpdateTime = mergingEntry.getLastUpdateTime();
         record.setLastUpdateTime(lastUpdateTime);
 
         long maxIdleMillis = calculateMaxIdleMillis(mapContainer.getMapConfig());

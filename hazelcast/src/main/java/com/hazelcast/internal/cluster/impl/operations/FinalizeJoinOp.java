@@ -30,6 +30,7 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationAccessor;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.operationservice.TargetAware;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.version.Version;
 
@@ -41,7 +42,7 @@ import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createEmpty
 /**
  * Sent by the master to all members to finalize the join operation from a joining/returning node.
  */
-public class FinalizeJoinOp extends MembersUpdateOp {
+public class FinalizeJoinOp extends MembersUpdateOp implements TargetAware {
     /**
      * Operations to be executed before node is marked as joined.
      * @see com.hazelcast.spi.PreJoinAwareService
@@ -64,8 +65,8 @@ public class FinalizeJoinOp extends MembersUpdateOp {
     @SuppressWarnings("checkstyle:parameternumber")
     public FinalizeJoinOp(String targetUuid, MembersView members, OnJoinOp preJoinOp, OnJoinOp postJoinOp,
                           long masterTime, String clusterId, long clusterStartTime, ClusterState clusterState,
-                          Version clusterVersion, PartitionRuntimeState partitionRuntimeState, boolean sendResponse) {
-        super(targetUuid, members, masterTime, partitionRuntimeState, sendResponse);
+                          Version clusterVersion, PartitionRuntimeState partitionRuntimeState) {
+        super(targetUuid, members, masterTime, partitionRuntimeState, true);
         this.preJoinOp = preJoinOp;
         this.postJoinOp = postJoinOp;
         this.clusterId = clusterId;
@@ -76,17 +77,16 @@ public class FinalizeJoinOp extends MembersUpdateOp {
 
     @Override
     public void run() throws Exception {
-        checkLocalMemberUuid();
-
         ClusterServiceImpl clusterService = getService();
         Address callerAddress = getConnectionEndpointOrThisAddress();
         String callerUuid = getCallerUuid();
+        String targetUuid = getTargetUuid();
 
         checkDeserializationFailure(clusterService);
 
         preparePostOp(preJoinOp);
-        finalized = clusterService.finalizeJoin(getMembersView(), callerAddress, callerUuid,
-                clusterId, clusterState, clusterVersion, clusterStartTime, masterTime, preJoinOp);
+        finalized = clusterService.finalizeJoin(getMembersView(), callerAddress, callerUuid, targetUuid, clusterId, clusterState,
+                clusterVersion, clusterStartTime, masterTime, preJoinOp);
 
         if (!finalized) {
             return;
@@ -113,13 +113,14 @@ public class FinalizeJoinOp extends MembersUpdateOp {
         }
 
         sendPostJoinOperations();
-        preparePostOp(postJoinOp);
-        getNodeEngine().getOperationService().run(postJoinOp);
+        if (preparePostOp(postJoinOp)) {
+            getNodeEngine().getOperationService().run(postJoinOp);
+        }
     }
 
-    private void preparePostOp(Operation postOp) {
+    private boolean preparePostOp(Operation postOp) {
         if (postOp == null) {
-            return;
+            return false;
         }
 
         ClusterServiceImpl clusterService = getService();
@@ -129,6 +130,7 @@ public class FinalizeJoinOp extends MembersUpdateOp {
         OperationAccessor.setCallerAddress(postOp, getCallerAddress());
         OperationAccessor.setConnection(postOp, getConnection());
         postOp.setOperationResponseHandler(createEmptyResponseHandler());
+        return true;
     }
 
     private void sendPostJoinOperations() {
@@ -204,6 +206,16 @@ public class FinalizeJoinOp extends MembersUpdateOp {
     @Override
     public int getId() {
         return ClusterDataSerializerHook.FINALIZE_JOIN;
+    }
+
+    @Override
+    public void setTarget(Address address) {
+        if (preJoinOp != null) {
+            preJoinOp.setTarget(address);
+        }
+        if (postJoinOp != null) {
+            postJoinOp.setTarget(address);
+        }
     }
 }
 

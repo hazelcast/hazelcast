@@ -94,8 +94,9 @@ public class ClientRingbufferProxy<E> extends ClientProxy implements Ringbuffer<
             @Override
             public PortableReadResultSet decodeClientMessage(ClientMessage clientMessage) {
                 final RingbufferReadManyCodec.ResponseParameters params = RingbufferReadManyCodec.decodeResponse(clientMessage);
-                final PortableReadResultSet readResultSet
-                        = new PortableReadResultSet(params.readCount, params.items, params.itemSeqs);
+                final PortableReadResultSet readResultSet = new PortableReadResultSet(
+                        params.readCount, params.items, params.itemSeqs,
+                        params.nextSeqExist ? params.nextSeq : ReadResultSet.SEQUENCE_UNAVAILABLE);
                 readResultSet.setSerializationService(getSerializationService());
                 return readResultSet;
             }

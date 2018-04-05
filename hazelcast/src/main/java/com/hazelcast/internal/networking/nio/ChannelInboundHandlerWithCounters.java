@@ -20,8 +20,9 @@ import com.hazelcast.internal.networking.ChannelInboundHandler;
 import com.hazelcast.internal.util.counters.Counter;
 
 /**
- * Trigger for the ChannelReader to inject the appropriate counters. This is a temporary solution, it would be
- * best if the counters could be defined directly on handlers and automatically get registered + unregistered.
+ * Trigger for the ChannelReader to inject the appropriate counters. This is a
+ * temporary solution, it would be best if the counters could be defined directly
+ * on handlers and automatically get registered + unregistered.
  */
 public abstract class ChannelInboundHandlerWithCounters implements ChannelInboundHandler {
     protected Counter normalPacketsRead;

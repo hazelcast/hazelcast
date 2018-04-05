@@ -24,11 +24,8 @@ import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitNotifyKey;
-import com.hazelcast.version.Version;
 
 import java.io.IOException;
-
-import static com.hazelcast.internal.cluster.Versions.V3_9;
 
 public class PutResultOperation
         extends AbstractDurableExecutorOperation
@@ -37,7 +34,6 @@ public class PutResultOperation
     private int sequence;
 
     private Object result;
-
 
     public PutResultOperation() {
     }
@@ -66,10 +62,7 @@ public class PutResultOperation
 
     @Override
     public Operation getBackupOperation() {
-        Version version = getNodeEngine().getClusterService().getClusterVersion();
-        return version.isGreaterOrEqual(V3_9)
-                ? new PutResultBackupOperation(name, sequence, result)
-                : new PutResultOperation(name, sequence, result);
+        return new PutResultBackupOperation(name, sequence, result);
     }
 
     @Override

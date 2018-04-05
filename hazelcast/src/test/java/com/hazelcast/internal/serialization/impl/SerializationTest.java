@@ -29,7 +29,7 @@ import org.junit.runner.RunWith;
 public class SerializationTest extends HazelcastTestSupport {
 
     @Test
-    public void testPrivateConstructors() throws Exception {
+    public void testPrivateConstructors() {
         assertUtilityConstructor(FactoryIdHelper.class);
         assertUtilityConstructor(SerializationUtil.class);
         assertUtilityConstructor(JavaDefaultSerializers.class);

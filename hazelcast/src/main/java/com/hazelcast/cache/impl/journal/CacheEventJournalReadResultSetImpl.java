@@ -30,9 +30,11 @@ public class CacheEventJournalReadResultSetImpl<K, V, T> extends ReadResultSetIm
     public CacheEventJournalReadResultSetImpl() {
     }
 
-    CacheEventJournalReadResultSetImpl(int minSize, int maxSize, SerializationService serializationService,
-                                       final Predicate<? super EventJournalCacheEvent<K, V>> predicate,
-                                       final Projection<? super EventJournalCacheEvent<K, V>, T> projection) {
+    CacheEventJournalReadResultSetImpl(
+            int minSize, int maxSize, SerializationService serializationService,
+            final Predicate<? super EventJournalCacheEvent<K, V>> predicate,
+            final Projection<? super EventJournalCacheEvent<K, V>, ? extends T> projection
+    ) {
         super(minSize, maxSize, serializationService,
                 predicate == null ? null : new Predicate<InternalEventJournalCacheEvent>() {
                     @Override
@@ -67,9 +69,9 @@ public class CacheEventJournalReadResultSetImpl<K, V, T> extends ReadResultSetIm
     @SerializableByConvention
     private static class ProjectionAdapter<K, V, T> extends Projection<InternalEventJournalCacheEvent, T> {
 
-        private final Projection<? super EventJournalCacheEvent<K, V>, T> projection;
+        private final Projection<? super EventJournalCacheEvent<K, V>, ? extends T> projection;
 
-        ProjectionAdapter(Projection<? super EventJournalCacheEvent<K, V>, T> projection) {
+        ProjectionAdapter(Projection<? super EventJournalCacheEvent<K, V>, ? extends T> projection) {
             this.projection = projection;
         }
 

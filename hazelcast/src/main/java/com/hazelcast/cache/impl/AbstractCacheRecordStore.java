@@ -45,9 +45,11 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.InternalEventService;
+import com.hazelcast.spi.merge.MergingEntry;
+import com.hazelcast.spi.merge.MergingExpirationTime;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.Clock;
-import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -76,7 +78,10 @@ import static com.hazelcast.cache.impl.CacheEventContextUtil.createCacheUpdatedE
 import static com.hazelcast.cache.impl.operation.MutableOperation.IGNORE_COMPLETION;
 import static com.hazelcast.cache.impl.record.CacheRecordFactory.isExpiredAt;
 import static com.hazelcast.internal.config.ConfigValidator.checkEvictionConfig;
+import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntry;
+import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.util.Preconditions.checkInstanceOf;
 import static com.hazelcast.util.SetUtil.createHashSet;
 import static java.util.Collections.emptySet;
 
@@ -465,7 +470,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
                 }
             }
         } catch (Exception e) {
-            EmptyStatement.ignore(e);
+            ignore(e);
         }
         return expiryTime;
     }
@@ -555,7 +560,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
                              boolean disableWriteThrough, int completionId, String origin) {
         R record = createRecord(value, now, expiryTime);
         try {
-            doPutRecord(key, record, origin);
+            doPutRecord(key, record, origin, true);
         } catch (Throwable error) {
             onCreateRecordError(key, value, expiryTime, now, disableWriteThrough,
                     completionId, origin, record, error);
@@ -598,12 +603,12 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
     protected R createRecordWithExpiry(Data key, Object value, long expiryTime,
                                        long now, boolean disableWriteThrough, int completionId) {
-        return createRecordWithExpiry(key, value, expiryTime, now, disableWriteThrough, completionId, null);
+        return createRecordWithExpiry(key, value, expiryTime, now, disableWriteThrough, completionId, SOURCE_NOT_AVAILABLE);
     }
 
     protected R createRecordWithExpiry(Data key, Object value, ExpiryPolicy expiryPolicy,
                                        long now, boolean disableWriteThrough, int completionId) {
-        return createRecordWithExpiry(key, value, expiryPolicy, now, disableWriteThrough, completionId, null);
+        return createRecordWithExpiry(key, value, expiryPolicy, now, disableWriteThrough, completionId, SOURCE_NOT_AVAILABLE);
     }
 
     protected R createRecordWithExpiry(Data key, Object value, ExpiryPolicy expiryPolicy,
@@ -741,7 +746,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
                 expiryTime = getAdjustedExpireTime(expiryDuration, now);
             }
         } catch (Exception e) {
-            EmptyStatement.ignore(e);
+            ignore(e);
         }
         return updateRecordWithExpiry(key, value, record, expiryTime, now,
                 disableWriteThrough, completionId, source, origin);
@@ -914,22 +919,21 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     @Override
-    public void putRecord(Data key, CacheRecord record) {
+    public void putRecord(Data key, CacheRecord record, boolean updateJournal) {
         evictIfRequired();
-        doPutRecord(key, (R) record);
+        doPutRecord(key, (R) record, SOURCE_NOT_AVAILABLE, updateJournal);
     }
 
-    public final R doPutRecord(Data key, R record) {
-        return doPutRecord(key, record, SOURCE_NOT_AVAILABLE);
-    }
-
-    protected R doPutRecord(Data key, R record, String source) {
+    protected R doPutRecord(Data key, R record, String source, boolean updateJournal) {
         R oldRecord = records.put(key, record);
-        if (oldRecord != null) {
-            cacheService.eventJournal.writeUpdateEvent(
-                    eventJournalConfig, objectNamespace, partitionId, key, oldRecord.getValue(), record.getValue());
-        } else {
-            cacheService.eventJournal.writeCreatedEvent(eventJournalConfig, objectNamespace, partitionId, key, record.getValue());
+        if (updateJournal) {
+            if (oldRecord != null) {
+                cacheService.eventJournal.writeUpdateEvent(
+                        eventJournalConfig, objectNamespace, partitionId, key, oldRecord.getValue(), record.getValue());
+            } else {
+                cacheService.eventJournal.writeCreatedEvent(
+                        eventJournalConfig, objectNamespace, partitionId, key, record.getValue());
+            }
         }
         invalidateEntry(key, source);
         return oldRecord;
@@ -937,10 +941,6 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
     @Override
     public CacheRecord removeRecord(Data key) {
-        return doRemoveRecord(key);
-    }
-
-    protected R doRemoveRecord(Data key) {
         return doRemoveRecord(key, SOURCE_NOT_AVAILABLE);
     }
 
@@ -1447,6 +1447,45 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     @Override
+    public CacheRecord merge(MergingEntry<Data, Data> mergingEntry, SplitBrainMergePolicy mergePolicy) {
+        final long now = Clock.currentTimeMillis();
+        final long start = isStatisticsEnabled() ? System.nanoTime() : 0;
+
+        injectDependencies(mergingEntry);
+        injectDependencies(mergePolicy);
+
+        boolean merged = false;
+        Data key = mergingEntry.getKey();
+        checkInstanceOf(MergingExpirationTime.class, mergingEntry);
+        long expiryTime = ((MergingExpirationTime) mergingEntry).getExpirationTime();
+        R record = records.get(key);
+        boolean isExpired = processExpiredEntry(key, record, now);
+
+        if (record == null || isExpired) {
+            Data newValue = mergePolicy.merge(mergingEntry, null);
+            if (newValue != null) {
+                record = createRecordWithExpiry(key, newValue, expiryTime, now, true, IGNORE_COMPLETION);
+                merged = record != null;
+            }
+        } else {
+            SerializationService serializationService = nodeEngine.getSerializationService();
+            Data oldValue = serializationService.toData(record.getValue());
+            MergingEntry<Data, Data> existingEntry = createMergingEntry(serializationService, key, oldValue, record);
+            Data newValue = mergePolicy.merge(mergingEntry, existingEntry);
+            if (newValue != null && newValue != oldValue) {
+                merged = updateRecordWithExpiry(key, newValue, record, expiryTime, now, true, IGNORE_COMPLETION);
+            }
+        }
+
+        if (merged && isStatisticsEnabled()) {
+            statistics.increaseCachePuts(1);
+            statistics.addPutTimeNanos(System.nanoTime() - start);
+        }
+
+        return merged ? record : null;
+    }
+
+    @Override
     public CacheRecord merge(CacheEntryView<Data, Data> cacheEntryView, CacheMergePolicy mergePolicy,
                              String caller, String origin, int completionId) {
         final long now = Clock.currentTimeMillis();
@@ -1588,8 +1627,17 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
     @Override
     public void clear() {
-        records.clear();
+        reset();
+        destroyEventJournal();
+    }
+
+    protected void destroyEventJournal() {
         cacheService.eventJournal.destroy(objectNamespace, partitionId);
+    }
+
+    @Override
+    public void reset() {
+        records.clear();
     }
 
     @Override
@@ -1624,5 +1672,10 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     @Override
     public ObjectNamespace getObjectNamespace() {
         return objectNamespace;
+    }
+
+    @Override
+    public int getPartitionId() {
+        return partitionId;
     }
 }

@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.instance.Node;
@@ -51,26 +67,25 @@ public class OutboundResponseHandlerTest {
     public ByteOrder byteOrder;
 
     private OutboundResponseHandler handler;
-    private Address thisAddress;
     private InternalSerializationService serializationService;
     private ILogger logger = Logger.getLogger(OutboundResponseHandlerTest.class);
-    private Node node;
     private Address thatAddress;
     private ConnectionManager connectionManager;
 
     @Parameters(name = "{0}")
     public static Object[][] parameters() {
-        return new Object[][] {
-                {BIG_ENDIAN}, {LITTLE_ENDIAN}
+        return new Object[][]{
+                {BIG_ENDIAN},
+                {LITTLE_ENDIAN},
         };
     }
 
     @Before
     public void setup() throws Exception {
-        thisAddress = new Address("127.0.0.1", 5701);
+        Address thisAddress = new Address("127.0.0.1", 5701);
         thatAddress = new Address("127.0.0.1", 5702);
         serializationService = new DefaultSerializationServiceBuilder().setByteOrder(byteOrder).build();
-        node = mock(Node.class);
+        Node node = mock(Node.class);
         connectionManager = mock(ConnectionManager.class);
         when(node.getConnectionManager()).thenReturn(connectionManager);
         handler = new OutboundResponseHandler(thisAddress, serializationService, node, logger);
@@ -95,7 +110,7 @@ public class OutboundResponseHandlerTest {
 
     @Test
     public void sendResponse_whenPortable() {
-        Object response = new PortableAddress("Sesame Street",1);
+        Object response = new PortableAddress("Sesame Street", 1);
         Operation op = new DummyOperation();
         setCallId(op, 10);
         setCallerAddress(op, thatAddress);

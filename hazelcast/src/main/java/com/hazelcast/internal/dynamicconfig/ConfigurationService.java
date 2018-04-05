@@ -28,6 +28,7 @@ import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.LockConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MultiMapConfig;
+import com.hazelcast.config.PNCounterConfig;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.ReliableTopicConfig;
@@ -91,6 +92,14 @@ public interface ConfigurationService {
      * @return Cardinality Estimator config or {@code null} when requested Cardinality Estimator configuration does not exist
      */
     CardinalityEstimatorConfig findCardinalityEstimatorConfig(String name);
+
+    /**
+     * Finds existing PN counter config.
+     *
+     * @param name name of the config
+     * @return PN counter config or {@code null} when requested PN counter configuration does not exist
+     */
+    PNCounterConfig findPNCounterConfig(String name);
 
     /**
      * Finds existing Executor config.
@@ -351,6 +360,13 @@ public interface ConfigurationService {
      * @return registered cardinality estimator configurations
      */
     Map<String, CardinalityEstimatorConfig> getCardinalityEstimatorConfigs();
+
+    /**
+     * Returns all registered PN counter configurations.
+     *
+     * @return registered PN counter configurations
+     */
+    Map<String, PNCounterConfig> getPNCounterConfigs();
 
     /**
      * Returns all registered semaphore configurations.

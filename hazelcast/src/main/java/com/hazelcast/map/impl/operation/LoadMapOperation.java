@@ -19,6 +19,7 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
 
@@ -27,7 +28,7 @@ import java.io.IOException;
  * partition of the map key loader with the
  * {@link com.hazelcast.map.impl.MapKeyLoader.Role#SENDER} role.
  */
-public class LoadMapOperation extends MapOperation {
+public class LoadMapOperation extends MapOperation implements MutatingOperation {
 
     private boolean replaceExistingValues;
 

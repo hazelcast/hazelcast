@@ -105,9 +105,9 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * </ul>
  * </li>
  * </ul>
- *
+ * <p>
  * For examples on how to use this rule, see {@code BounceMemberRuleTest} and {@code QueryBounceTest}.
- *
+ * <p>
  * {@code BounceMemberRule} integrates with test lifecycle as described below:
  * <ol>
  * <li>{@code BounceMemberRule} creates the cluster and test drivers</li>
@@ -122,6 +122,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * </ol>
  */
 public class BounceMemberRule implements TestRule {
+
     public static final long STALENESS_DETECTOR_DISABLED = Long.MAX_VALUE;
 
     private static final ILogger LOGGER = Logger.getLogger(BounceMemberRule.class);
@@ -190,17 +191,14 @@ public class BounceMemberRule implements TestRule {
      * The {@code task} is executed in a loop until either the configured test's duration is reached or an exception
      * is thrown from the {@code task}, in which case the test is marked as failed and the exception will be propagated
      * as test failure cause.
-     *
+     * <p>
      * This method blocks until all test tasks have been completed or one of them throws an exception.
-     *
-     * @param concurrency
-     * @param task
      */
     public void testRepeatedly(int concurrency, Runnable task, long durationSeconds) {
         assert concurrency > 0 : "Concurrency level should be greater than 0";
 
-        TestTaskRunable[] tasks = new TestTaskRunable[concurrency];
-        Arrays.fill(tasks, new TestTaskRunable(task));
+        TestTaskRunnable[] tasks = new TestTaskRunnable[concurrency];
+        Arrays.fill(tasks, new TestTaskRunnable(task));
         testRepeatedly(tasks, durationSeconds);
     }
 
@@ -217,17 +215,15 @@ public class BounceMemberRule implements TestRule {
      * The {@code task} is executed in a loop until either the configured test's duration is reached or an exception
      * is thrown from the {@code task}, in which case the test is marked as failed and the exception will be propagated
      * as test failure cause.
-     *
+     * <p>
      * This method blocks until all test tasks have been completed or one of them throws an exception.
-     *
-     * @param tasks
      */
     public void testRepeatedly(Runnable[] tasks, long durationSeconds) {
         assert tasks != null && tasks.length > 0 : "Some tasks must be submitted for execution";
 
-        TestTaskRunable[] runnables = new TestTaskRunable[tasks.length];
+        TestTaskRunnable[] runnables = new TestTaskRunnable[tasks.length];
         for (int i = 0; i < tasks.length; i++) {
-            runnables[i] = new TestTaskRunable(tasks[i]);
+            runnables[i] = new TestTaskRunnable(tasks[i]);
         }
         testWithDuration(runnables, durationSeconds);
     }
@@ -235,10 +231,8 @@ public class BounceMemberRule implements TestRule {
     /**
      * Submit Runnables to be executed concurrently. Each {@code task} is executed once. Exceptions thrown from a {@code task}
      * will mark the test as failed and the exception will be propagated as test failure cause.
-     *
+     * <p>
      * This method blocks until all test tasks have been completed or one of them throws an exception.
-     *
-     * @param tasks
      */
     public void test(Runnable[] tasks) {
         testWithDuration(tasks, 0);
@@ -437,7 +431,7 @@ public class BounceMemberRule implements TestRule {
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 } catch (ExecutionException e) {
-                    rethrow(e.getCause());
+                    throw rethrow(e.getCause());
                 } catch (TimeoutException e) {
                 }
             }
@@ -449,7 +443,9 @@ public class BounceMemberRule implements TestRule {
     }
 
     public static class Builder {
+
         private final Config memberConfig;
+
         private int clusterSize = DEFAULT_CLUSTER_SIZE;
         private int driversCount = DEFAULT_DRIVERS_COUNT;
         private DriverFactory driverFactory;
@@ -594,14 +590,16 @@ public class BounceMemberRule implements TestRule {
      * Wraps a {@code Runnable} to be executed repeatedly until testRunning becomes false or an exception is thrown
      * which sets the test as failed.
      */
-    final class TestTaskRunable implements Runnable {
+    final class TestTaskRunnable implements Runnable {
+
         private final Runnable task;
+
         private volatile long lastIterationStartedTimestamp;
         private volatile Thread currentThread;
         private volatile long iterationCounter;
         private volatile long maxLatencyNanos;
 
-        public TestTaskRunable(Runnable task) {
+        TestTaskRunnable(Runnable task) {
             this.task = task;
         }
 
@@ -618,7 +616,7 @@ public class BounceMemberRule implements TestRule {
                     maxLatencyNanos = max(maxLatencyNanos, latencyNanos);
                 } catch (Throwable t) {
                     testFailed.set(true);
-                    rethrow(t);
+                    throw rethrow(t);
                 }
             }
         }
@@ -642,9 +640,9 @@ public class BounceMemberRule implements TestRule {
 
         @Override
         public String toString() {
-            return "TestTaskRunable{" +
-                    "task=" + task +
-                    '}';
+            return "TestTaskRunnable{"
+                    + "task=" + task
+                    + '}';
         }
     }
 }

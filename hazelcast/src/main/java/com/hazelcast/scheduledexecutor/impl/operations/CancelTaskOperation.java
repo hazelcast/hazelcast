@@ -26,7 +26,8 @@ import com.hazelcast.spi.impl.MutatingOperation;
 import java.io.IOException;
 
 public class CancelTaskOperation
-        extends AbstractBackupAwareSchedulerOperation implements MutatingOperation {
+        extends AbstractBackupAwareSchedulerOperation
+        implements MutatingOperation {
 
     private String taskName;
 

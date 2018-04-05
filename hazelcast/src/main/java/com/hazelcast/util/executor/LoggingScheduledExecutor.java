@@ -17,7 +17,9 @@
 package com.hazelcast.util.executor;
 
 import com.hazelcast.logging.ILogger;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import java.lang.reflect.Method;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.Delayed;
@@ -42,18 +44,39 @@ import static java.util.logging.Level.SEVERE;
  * Logs execution exceptions by overriding {@link ScheduledThreadPoolExecutor#afterExecute}
  * and {@link ScheduledThreadPoolExecutor#decorateTask} methods.
  *
- * Reasoning is given tasks to {@link ScheduledThreadPoolExecutor} stops silently if there is an execution exception.
+ * Reasoning is given tasks to {@link ScheduledThreadPoolExecutor} stops silently if there is an
+ * execution exception.
  *
  * Note: Task decoration is only needed to call given tasks {@code toString} methods.
  *
  * {@link java.util.concurrent.ScheduledExecutorService#scheduleWithFixedDelay}
+ *
+ * Remove on cancel:
+ * To prevent running into an accumulation of cancelled task which can cause gc related problems
+ * (e.g. transactions in combination with LockResource eviction), it is best that tasks are
+ * removed from the scheduler on cancellation.
+ *
+ * In Java 7+ the there is a method {@code ScheduledThreadPoolExecutor#setRemoveOnCancelPolicy(boolean)}
+ * which removes the runnable on cancellation. Removal of tasks is done in logarithmic time
+ * (see ScheduledThreadPoolExecutor.DelayedWorkQueue.indexOf where there is a direct lookup
+ * instead of a linear scan over the queue). So in Java 7 we try to set this method using
+ * reflection. In Java 7+ the manualRemoveOnCancel is ignored, since it has an efficient removal
+ * of cancelled tasks and therefore it will always apply it. If we would wrap the task with the
+ * RemoveOnCancelFuture, it would even prevent constant time removal.
+ *
+ * In Java 6 there is no such method setRemoveOnCancelPolicy and therefore the task is
+ * wrapped in a RemoveOnCancelFuture which will remove itself from the work-queue
+ * on cancellation. However this removal isn't done in constant time, but in linear time
+ * because Java 6 ScheduledThreadPoolExecutor doesn't support a constant time removal.
+ *
+ * By default in Java 6, the removal of this task is done based on the 'removeOnCancel'
+ * property which gets its value from the
+ * {@link com.hazelcast.spi.properties.GroupProperty#TASK_SCHEDULER_REMOVE_ON_CANCEL}
  */
 public class LoggingScheduledExecutor extends ScheduledThreadPoolExecutor {
 
-    /**
-     * Default {@link ScheduledThreadPoolExecutor#removeOnCancel} policy is not working when tasks are decorated.
-     */
-    private final boolean removeOnCancel;
+    // this property is accessible for for testing purposes.
+    boolean manualRemoveOnCancel;
     private final ILogger logger;
     private volatile boolean shutdownInitiated;
 
@@ -65,7 +88,7 @@ public class LoggingScheduledExecutor extends ScheduledThreadPoolExecutor {
                                     boolean removeOnCancel) {
         super(corePoolSize, threadFactory);
         this.logger = checkNotNull(logger, "logger cannot be null");
-        this.removeOnCancel = removeOnCancel;
+        this.manualRemoveOnCancel = manualRemoveOnCancel(removeOnCancel);
     }
 
     public LoggingScheduledExecutor(ILogger logger, int corePoolSize, ThreadFactory threadFactory,
@@ -78,17 +101,44 @@ public class LoggingScheduledExecutor extends ScheduledThreadPoolExecutor {
                                     RejectedExecutionHandler handler) {
         super(corePoolSize, threadFactory, handler);
         this.logger = checkNotNull(logger, "logger cannot be null");
-        this.removeOnCancel = removeOnCancel;
+        this.manualRemoveOnCancel = manualRemoveOnCancel(removeOnCancel);
+    }
+
+    private boolean manualRemoveOnCancel(boolean removeOnCancel) {
+        if (trySetRemoveOnCancelPolicy()) {
+            return false;
+        } else {
+            return removeOnCancel;
+        }
+    }
+
+    @SuppressFBWarnings("REC_CATCH_EXCEPTION")
+    private boolean trySetRemoveOnCancelPolicy() {
+        try {
+            Method method = ScheduledThreadPoolExecutor.class.getMethod("setRemoveOnCancelPolicy", Boolean.TYPE);
+            method.invoke(this, true);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     @Override
     protected <V> RunnableScheduledFuture<V> decorateTask(Runnable runnable, RunnableScheduledFuture<V> task) {
-        return new LoggingDelegatingFuture<V>(runnable, task, this, removeOnCancel);
+        if (!manualRemoveOnCancel) {
+            return super.decorateTask(runnable, task);
+        }
+
+        return new RemoveOnCancelFuture<V>(runnable, task, this);
     }
 
     @Override
     protected <V> RunnableScheduledFuture<V> decorateTask(Callable<V> callable, RunnableScheduledFuture<V> task) {
-        return new LoggingDelegatingFuture<V>(callable, task, this, removeOnCancel);
+        if (!manualRemoveOnCancel) {
+            return super.decorateTask(callable, task);
+        }
+
+        return new RemoveOnCancelFuture<V>(callable, task, this);
     }
 
     @Override
@@ -124,25 +174,19 @@ public class LoggingScheduledExecutor extends ScheduledThreadPoolExecutor {
     }
 
     /**
-     * Only goal of this wrapping is to call given tasks {@code toString} method. Because
-     * there is no straightforward way to reach it due to the internal wrapping done by
-     * {@link ScheduledThreadPoolExecutor}
-     *
-     * {@link ScheduledThreadPoolExecutor#scheduleWithFixedDelay}
+     * The only goal of this task is to enable removal of the task from the executor
+     * when the future is cancelled.
      */
-    static class LoggingDelegatingFuture<V> implements RunnableScheduledFuture<V> {
+    static class RemoveOnCancelFuture<V> implements RunnableScheduledFuture<V> {
 
         private final Object task;
         private final RunnableScheduledFuture<V> delegate;
         private final LoggingScheduledExecutor executor;
-        private final boolean removeOnCancel;
 
-        LoggingDelegatingFuture(Object task, RunnableScheduledFuture<V> delegate, LoggingScheduledExecutor executor,
-                                boolean removeOnCancel) {
+        RemoveOnCancelFuture(Object task, RunnableScheduledFuture<V> delegate, LoggingScheduledExecutor executor) {
             this.task = task;
             this.delegate = delegate;
             this.executor = executor;
-            this.removeOnCancel = removeOnCancel;
         }
 
         @Override
@@ -170,10 +214,10 @@ public class LoggingScheduledExecutor extends ScheduledThreadPoolExecutor {
             if (this == o) {
                 return true;
             }
-            if (!(o instanceof LoggingDelegatingFuture)) {
+            if (!(o instanceof RemoveOnCancelFuture)) {
                 return false;
             }
-            LoggingDelegatingFuture<?> that = (LoggingDelegatingFuture<?>) o;
+            RemoveOnCancelFuture<?> that = (RemoveOnCancelFuture<?>) o;
             return delegate.equals(that.delegate);
         }
 
@@ -184,7 +228,7 @@ public class LoggingScheduledExecutor extends ScheduledThreadPoolExecutor {
 
         @Override
         public boolean cancel(boolean mayInterruptIfRunning) {
-            boolean removeOnCancel = !executor.isShutdown() && this.removeOnCancel;
+            boolean removeOnCancel = !executor.isShutdown();
             boolean cancelled = delegate.cancel(mayInterruptIfRunning);
             if (cancelled && removeOnCancel) {
                 executor.remove(this);
@@ -215,7 +259,7 @@ public class LoggingScheduledExecutor extends ScheduledThreadPoolExecutor {
 
         @Override
         public String toString() {
-            return "LoggingDelegatingFuture{task=" + task + '}';
+            return "RemoveOnCancelFuture{task=" + task + '}';
         }
     }
 }

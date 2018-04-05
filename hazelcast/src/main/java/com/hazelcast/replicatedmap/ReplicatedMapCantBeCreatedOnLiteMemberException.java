@@ -22,8 +22,7 @@ import com.hazelcast.nio.Address;
 /**
  * Thrown when {@link com.hazelcast.core.HazelcastInstance#getReplicatedMap(String)} is invoked on a lite member.
  */
-public class ReplicatedMapCantBeCreatedOnLiteMemberException
-        extends HazelcastException {
+public class ReplicatedMapCantBeCreatedOnLiteMemberException extends HazelcastException {
 
     public ReplicatedMapCantBeCreatedOnLiteMemberException(Address address) {
         this("Can't create replicated map instance on " + address);

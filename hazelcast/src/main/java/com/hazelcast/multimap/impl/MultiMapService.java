@@ -24,9 +24,11 @@ import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.Versions;
+import com.hazelcast.internal.config.ConfigValidator;
 import com.hazelcast.map.impl.event.EventData;
 import com.hazelcast.monitor.LocalMultiMapStats;
 import com.hazelcast.monitor.impl.LocalMultiMapStatsImpl;
+import com.hazelcast.multimap.impl.operations.MergeOperation;
 import com.hazelcast.multimap.impl.operations.MultiMapReplicationOperation;
 import com.hazelcast.multimap.impl.txn.TransactionalMultiMapProxy;
 import com.hazelcast.nio.Address;
@@ -46,8 +48,11 @@ import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.spi.QuorumAwareService;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.ServiceNamespace;
+import com.hazelcast.spi.SplitBrainHandlerService;
 import com.hazelcast.spi.StatisticsAwareService;
 import com.hazelcast.spi.TransactionalService;
+import com.hazelcast.spi.impl.merge.AbstractContainerMerger;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.spi.partition.MigrationEndpoint;
 import com.hazelcast.spi.serialization.SerializationService;
@@ -57,11 +62,13 @@ import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ContextMutexFactory;
 import com.hazelcast.util.ExceptionUtil;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EventListener;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -74,10 +81,11 @@ import static com.hazelcast.util.MapUtil.createConcurrentHashMap;
 import static com.hazelcast.util.MapUtil.createHashMap;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
+import static java.lang.Thread.currentThread;
 
 public class MultiMapService implements ManagedService, RemoteService, FragmentedMigrationAwareService,
         EventPublishingService<EventData, EntryListener>, TransactionalService, StatisticsAwareService<LocalMultiMapStats>,
-        QuorumAwareService {
+        QuorumAwareService, SplitBrainHandlerService {
 
     public static final String SERVICE_NAME = "hz:impl:multiMapService";
 
@@ -176,7 +184,10 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
 
     @Override
     public DistributedObject createDistributedObject(String name) {
-        return new ObjectMultiMapProxy(this, nodeEngine, name);
+        MultiMapConfig multiMapConfig = nodeEngine.getConfig().findMultiMapConfig(name);
+        ConfigValidator.checkMultiMapConfig(multiMapConfig);
+
+        return new ObjectMultiMapProxy(multiMapConfig, this, nodeEngine, name);
     }
 
     @Override
@@ -456,6 +467,7 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
             try {
                 Thread.sleep(REPLICA_ADDRESS_SLEEP_WAIT_MILLIS);
             } catch (InterruptedException e) {
+                currentThread().interrupt();
                 throw ExceptionUtil.rethrow(e);
             }
             replicaAddress = partition.getReplicaAddress(replicaIndex);
@@ -476,5 +488,64 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
 
     public void ensureQuorumPresent(String distributedObjectName, QuorumType requiredQuorumPermissionType) {
         quorumService.ensureQuorumPresent(getQuorumName(distributedObjectName), requiredQuorumPermissionType);
+    }
+
+    @Override
+    public Runnable prepareMergeRunnable() {
+        MultiMapContainerCollector collector = new MultiMapContainerCollector(nodeEngine, partitionContainers);
+        collector.run();
+        return new Merger(collector);
+    }
+
+    private class Merger extends AbstractContainerMerger<MultiMapContainer> {
+
+        Merger(MultiMapContainerCollector collector) {
+            super(collector, nodeEngine);
+        }
+
+        @Override
+        protected String getLabel() {
+            return "MultiMap";
+        }
+
+        @Override
+        public void runInternal() {
+            for (Map.Entry<Integer, Collection<MultiMapContainer>> entry : collector.getCollectedContainers().entrySet()) {
+                int partitionId = entry.getKey();
+                Collection<MultiMapContainer> containers = entry.getValue();
+
+                for (MultiMapContainer container : containers) {
+                    String name = container.getObjectNamespace().getObjectName();
+                    SplitBrainMergePolicy mergePolicy = getMergePolicy(container.getConfig().getMergePolicyConfig());
+                    int batchSize = container.getConfig().getMergePolicyConfig().getBatchSize();
+
+                    List<MultiMapMergeContainer> mergeContainers = new ArrayList<MultiMapMergeContainer>(batchSize);
+                    for (Map.Entry<Data, MultiMapValue> multiMapValueEntry : container.getMultiMapValues().entrySet()) {
+                        Data key = multiMapValueEntry.getKey();
+                        MultiMapValue multiMapValue = multiMapValueEntry.getValue();
+                        Collection<MultiMapRecord> records = multiMapValue.getCollection(false);
+
+                        MultiMapMergeContainer mergeContainer = new MultiMapMergeContainer(key, records,
+                                container.getCreationTime(), container.getLastAccessTime(), container.getLastUpdateTime(),
+                                multiMapValue.getHits());
+                        mergeContainers.add(mergeContainer);
+
+                        if (mergeContainers.size() == batchSize) {
+                            sendBatch(partitionId, name, mergePolicy, mergeContainers);
+                            mergeContainers = new ArrayList<MultiMapMergeContainer>(batchSize);
+                        }
+                    }
+                    if (mergeContainers.size() > 0) {
+                        sendBatch(partitionId, name, mergePolicy, mergeContainers);
+                    }
+                }
+            }
+        }
+
+        private void sendBatch(int partitionId, String name, SplitBrainMergePolicy mergePolicy,
+                               List<MultiMapMergeContainer> mergeContainers) {
+            MergeOperation operation = new MergeOperation(name, mergeContainers, mergePolicy);
+            invoke(SERVICE_NAME, operation, partitionId);
+        }
     }
 }

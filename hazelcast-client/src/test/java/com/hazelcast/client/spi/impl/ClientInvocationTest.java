@@ -192,7 +192,8 @@ public class ClientInvocationTest extends ClientTestSupport {
         hazelcastFactory.newHazelcastInstance();
         HazelcastInstance client = hazelcastFactory.newHazelcastClient();
         HazelcastClientInstanceImpl clientInstanceImpl = getHazelcastClientInstanceImpl(client);
-        SmartClientInvocationService spyInvocationService = spy((SmartClientInvocationService) clientInstanceImpl.getInvocationService());
+        SmartClientInvocationService spyInvocationService
+                = spy((SmartClientInvocationService) clientInstanceImpl.getInvocationService());
 
         //trying to simulate late partition table update here in case a member removed
         //in that case, the member that partitionService returns should not be in member list

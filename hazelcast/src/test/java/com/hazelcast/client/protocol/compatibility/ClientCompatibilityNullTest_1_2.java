@@ -393,6 +393,8 @@ public class ClientCompatibilityNullTest_1_2 {
 
 
 
+
+
 {
     ClientMessage clientMessage = MapPutCodec.encodeRequest(    aString ,    aData ,    aData ,    aLong ,    aLong   );
     int length = inputStream.readInt();
@@ -1882,6 +1884,8 @@ public class ClientCompatibilityNullTest_1_2 {
     MultiMapRemoveEntryCodec.ResponseParameters params = MultiMapRemoveEntryCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
                 assertTrue(isEqual(aBoolean, params.response));
 }
+
+
 
 
 
@@ -3759,6 +3763,8 @@ public class ClientCompatibilityNullTest_1_2 {
     SemaphoreTryAcquireCodec.ResponseParameters params = SemaphoreTryAcquireCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
                 assertTrue(isEqual(aBoolean, params.response));
 }
+
+
 
 
 
@@ -5810,7 +5816,7 @@ public class ClientCompatibilityNullTest_1_2 {
     ClientMessage clientMessage = RingbufferReadManyCodec.encodeRequest(    aString ,    aLong ,    anInt ,    anInt ,    null   );
     int length = inputStream.readInt();
     // Since the test is generated for protocol version (1.2) which is earlier than latest change in the message
-    // (version 1.5), only the bytes after frame length fields are compared
+    // (version 1.6), only the bytes after frame length fields are compared
     int frameLength = clientMessage.getFrameLength();
     assertTrue(frameLength >= length);
     inputStream.skipBytes(FRAME_LEN_FIELD_SIZE);
@@ -5826,6 +5832,7 @@ public class ClientCompatibilityNullTest_1_2 {
                 assertTrue(isEqual(anInt, params.readCount));
                 assertTrue(isEqual(datas, params.items));
                 assertFalse(params.itemSeqsExist);
+                assertFalse(params.nextSeqExist);
 }
 
 
@@ -5922,6 +5929,28 @@ public class ClientCompatibilityNullTest_1_2 {
     DurableExecutorRetrieveAndDisposeResultCodec.ResponseParameters params = DurableExecutorRetrieveAndDisposeResultCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
                 assertTrue(isEqual(null, params.response));
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

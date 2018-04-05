@@ -26,6 +26,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.serialization.SerializationService;
 
 import java.io.IOException;
 
@@ -65,34 +66,32 @@ public class CachePutBackupOperation
     }
 
     @Override
-    public void runInternal()
-            throws Exception {
+    public void runInternal() {
         ICacheService service = getService();
         ICacheRecordStore cache = service.getOrCreateRecordStore(name, getPartitionId());
-        cache.putRecord(key, cacheRecord);
+        cache.putRecord(key, cacheRecord, true);
         response = Boolean.TRUE;
     }
 
     @Override
-    public void afterRunInternal() throws Exception {
+    public void afterRunInternal() {
         if (!wanOriginated && cache.isWanReplicationEnabled()) {
+            SerializationService serializationService = getNodeEngine().getSerializationService();
             CacheEntryView<Data, Data> entryView = CacheEntryViews.createDefaultEntryView(key,
-                    getNodeEngine().getSerializationService().toData(cacheRecord.getValue()), cacheRecord);
+                    serializationService.toData(cacheRecord.getValue()), cacheRecord);
             wanEventPublisher.publishWanReplicationUpdateBackup(name, entryView);
         }
     }
 
     @Override
-    protected void writeInternal(ObjectDataOutput out)
-            throws IOException {
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeObject(cacheRecord);
         out.writeBoolean(wanOriginated);
     }
 
     @Override
-    protected void readInternal(ObjectDataInput in)
-            throws IOException {
+    protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         cacheRecord = in.readObject();
         wanOriginated = in.readBoolean();
@@ -102,5 +101,4 @@ public class CachePutBackupOperation
     public int getId() {
         return CacheDataSerializerHook.PUT_BACKUP;
     }
-
 }

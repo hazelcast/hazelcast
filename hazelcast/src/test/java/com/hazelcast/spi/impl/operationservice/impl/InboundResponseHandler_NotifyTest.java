@@ -60,7 +60,7 @@ public class InboundResponseHandler_NotifyTest extends HazelcastTestSupport {
 
         operationService = getOperationServiceImpl(local);
         invocationRegistry = operationService.invocationRegistry;
-        inboundResponseHandler = operationService.getInboundResponseHandler();
+        inboundResponseHandler = operationService.getBackupHandler();
     }
 
     private Invocation newInvocation() {

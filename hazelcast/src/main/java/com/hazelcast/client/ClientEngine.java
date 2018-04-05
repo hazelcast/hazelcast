@@ -16,14 +16,13 @@
 
 package com.hazelcast.client;
 
-import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.util.ClientMessageHandler;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.ClientType;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.ProxyService;
@@ -39,7 +38,7 @@ import java.util.Map;
  * todo: what is the purpose of the client engine.
  */
 @PrivateApi
-public interface ClientEngine {
+public interface ClientEngine extends ClientMessageHandler {
 
     int getClientEndpointCount();
 
@@ -151,6 +150,4 @@ public interface ClientEngine {
     Map<String, String> getClientStatistics();
 
     String getOwnerUuid(String clientUuid);
-
-    void handleClientMessage(ClientMessage message, Connection connection);
 }

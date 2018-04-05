@@ -34,6 +34,7 @@ import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.core.MigrationListener;
+import com.hazelcast.crdt.CRDTReplicationMigrationService;
 import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.internal.ascii.TextCommandServiceImpl;
 import com.hazelcast.internal.cluster.impl.ClusterJoinManager;
@@ -74,8 +75,6 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.Clock;
-import com.hazelcast.util.EmptyStatement;
-import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.PhoneHome;
 import com.hazelcast.version.MemberVersion;
 import com.hazelcast.version.Version;
@@ -95,6 +94,7 @@ import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_S
 import static com.hazelcast.instance.MemberImpl.NA_MEMBER_LIST_JOIN_VERSION;
 import static com.hazelcast.instance.NodeShutdownHelper.shutdownNodeByFiringEvents;
 import static com.hazelcast.internal.cluster.impl.MulticastService.createMulticastService;
+import static com.hazelcast.nio.IOUtil.closeResource;
 import static com.hazelcast.spi.properties.GroupProperty.DISCOVERY_SPI_ENABLED;
 import static com.hazelcast.spi.properties.GroupProperty.DISCOVERY_SPI_PUBLIC_IP_ENABLED;
 import static com.hazelcast.spi.properties.GroupProperty.GRACEFUL_SHUTDOWN_MAX_WAIT;
@@ -102,7 +102,11 @@ import static com.hazelcast.spi.properties.GroupProperty.LOGGING_TYPE;
 import static com.hazelcast.spi.properties.GroupProperty.MAX_JOIN_SECONDS;
 import static com.hazelcast.spi.properties.GroupProperty.SHUTDOWNHOOK_ENABLED;
 import static com.hazelcast.spi.properties.GroupProperty.SHUTDOWNHOOK_POLICY;
+import static com.hazelcast.util.EmptyStatement.ignore;
+import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.util.StringUtil.isNullOrEmpty;
 import static com.hazelcast.util.ThreadUtil.createThreadName;
+import static java.lang.Thread.currentThread;
 import static java.security.AccessController.doPrivileged;
 
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:visibilitymodifier", "checkstyle:classdataabstractioncoupling",
@@ -184,7 +188,7 @@ public class Node {
         try {
             addressPicker.pickAddress();
         } catch (Throwable e) {
-            throw ExceptionUtil.rethrow(e);
+            throw rethrow(e);
         }
 
         final ServerSocketChannel serverSocketChannel = addressPicker.getServerSocketChannel();
@@ -199,6 +203,7 @@ public class Node {
             logger = loggingService.getLogger(Node.class.getName());
 
             nodeExtension.printNodeInfo();
+            logGroupPasswordInfo();
             nodeExtension.beforeStart();
 
             serializationService = nodeExtension.createSerializationService();
@@ -223,12 +228,13 @@ public class Node {
 
             config.setClusterService(clusterService);
         } catch (Throwable e) {
+            closeResource(serverSocketChannel);
             try {
-                serverSocketChannel.close();
+                shutdownServices(true);
             } catch (Throwable ignored) {
-                EmptyStatement.ignore(ignored);
+                ignore(ignored);
             }
-            throw ExceptionUtil.rethrow(e);
+            throw rethrow(e);
         }
     }
 
@@ -419,6 +425,7 @@ public class Node {
         }
 
         if (!terminate) {
+            replicateCRDTs();
             final int maxWaitSeconds = properties.getSeconds(GRACEFUL_SHUTDOWN_MAX_WAIT);
             if (!partitionService.prepareToSafeShutdown(maxWaitSeconds, TimeUnit.SECONDS)) {
                 logger.warning("Graceful shutdown could not be completed in " + maxWaitSeconds + " seconds!");
@@ -436,13 +443,13 @@ public class Node {
                 Runtime.getRuntime().removeShutdownHook(shutdownHookThread);
             }
         } catch (Throwable ignored) {
-            EmptyStatement.ignore(ignored);
+            ignore(ignored);
         }
 
         try {
             discoveryService.destroy();
         } catch (Throwable ignored) {
-            EmptyStatement.ignore(ignored);
+            ignore(ignored);
         }
 
         try {
@@ -456,32 +463,59 @@ public class Node {
         }
     }
 
+    /**
+     * Synchronously replicate the unreplicated CRDT states to a data member
+     * in the cluster.
+     */
+    private void replicateCRDTs() {
+        final CRDTReplicationMigrationService replicationMigrationService
+                = nodeEngine.getService(CRDTReplicationMigrationService.SERVICE_NAME);
+        replicationMigrationService.syncReplicateDirtyCRDTs();
+    }
+
+    @SuppressWarnings("checkstyle:npathcomplexity")
     private void shutdownServices(boolean terminate) {
-        nodeExtension.beforeShutdown();
-        phoneHome.shutdown();
+        if (nodeExtension != null) {
+            nodeExtension.beforeShutdown();
+        }
+        if (phoneHome != null) {
+            phoneHome.shutdown();
+        }
         if (managementCenterService != null) {
             managementCenterService.shutdown();
         }
 
-        textCommandService.stop();
+        if (textCommandService != null) {
+            textCommandService.stop();
+        }
         if (multicastService != null) {
             logger.info("Shutting down multicast service...");
             multicastService.stop();
         }
-        logger.info("Shutting down connection manager...");
-        connectionManager.shutdown();
+        if (connectionManager != null) {
+            logger.info("Shutting down connection manager...");
+            connectionManager.shutdown();
+        }
 
-        logger.info("Shutting down node engine...");
-        nodeEngine.shutdown(terminate);
+        if (nodeEngine != null) {
+            logger.info("Shutting down node engine...");
+            nodeEngine.shutdown(terminate);
+        }
 
         if (securityContext != null) {
             securityContext.destroy();
         }
-        logger.finest("Destroying serialization service...");
-        serializationService.dispose();
+        if (serializationService != null) {
+            logger.finest("Destroying serialization service...");
+            serializationService.dispose();
+        }
 
-        nodeExtension.shutdown();
-        healthMonitor.stop();
+        if (nodeExtension != null) {
+            nodeExtension.shutdown();
+        }
+        if (healthMonitor != null) {
+            healthMonitor.stop();
+        }
     }
 
     private void mergeEnvironmentProvidedMemberMetadata() {
@@ -509,7 +543,7 @@ public class Node {
         }
     }
 
-    private boolean setShuttingDown() {
+    public boolean setShuttingDown() {
         if (shuttingDown.compareAndSet(false, true)) {
             state = NodeState.PASSIVE;
             return true;
@@ -535,6 +569,7 @@ public class Node {
             try {
                 Thread.sleep(THREAD_SLEEP_DURATION_MS);
             } catch (InterruptedException e) {
+                currentThread().interrupt();
                 logger.warning("Interrupted while waiting for shutdown!");
                 return;
             }
@@ -668,7 +703,7 @@ public class Node {
 
     public ConfigCheck createConfigCheck() {
         String joinerType = joiner == null ? "" : joiner.getType();
-        return new ConfigCheck(config, joinerType, clusterService.getClusterVersion());
+        return new ConfigCheck(config, joinerType);
     }
 
     public void join() {
@@ -728,7 +763,7 @@ public class Node {
                     Constructor constructor = clazz.getConstructor(Node.class);
                     return (Joiner) constructor.newInstance(this);
                 } catch (Exception e) {
-                    throw ExceptionUtil.rethrow(e);
+                    throw rethrow(e);
                 }
             }
         }
@@ -787,4 +822,12 @@ public class Node {
         return attributes;
     }
 
+    private void logGroupPasswordInfo() {
+        if (!isNullOrEmpty(config.getGroupConfig().getPassword())) {
+            logger.info("A non-empty group password is configured for the Hazelcast member."
+                    + " Starting with Hazelcast version 3.8.2, members with the same group name,"
+                    + " but with different group passwords (that do not use authentication) form a cluster."
+                    + " The group password configuration will be removed completely in a future release.");
+        }
+    }
 }

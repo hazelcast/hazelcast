@@ -25,4 +25,8 @@ public class MutableInteger {
 
     //CHECKSTYLE:OFF
     public int value;
+
+    public int getAndInc(){
+        return value++;
+    }
 }

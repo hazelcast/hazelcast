@@ -23,6 +23,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.Offloadable;
 import com.hazelcast.core.ReadOnly;
+import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.SlowTest;
@@ -43,7 +44,7 @@ public class EntryProcessorOffloadableBouncingNodesTest extends HazelcastTestSup
 
     public static final String MAP_NAME = "EntryProcessorOffloadableTest";
     public static final int COUNT_ENTRIES = 1000;
-    private static final int CONCURRENCY = Runtime.getRuntime().availableProcessors();
+    private static final int CONCURRENCY = RuntimeAvailableProcessors.get();
 
     @Rule
     public BounceMemberRule bounceMemberRule = BounceMemberRule.with(getBouncingTestConfig()).build();

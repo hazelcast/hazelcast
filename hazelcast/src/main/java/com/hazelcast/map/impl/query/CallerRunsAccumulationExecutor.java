@@ -46,7 +46,7 @@ public class CallerRunsAccumulationExecutor implements AccumulationExecutor {
             resultAggregator.onAccumulationFinished();
         }
 
-        AggregationResult result = new AggregationResult(resultAggregator);
+        AggregationResult result = new AggregationResult(resultAggregator, serializationService);
         result.setPartitionIds(partitionIds);
         return result;
     }

@@ -21,24 +21,22 @@ import com.hazelcast.cardinality.impl.hyperloglog.impl.HyperLogLogImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.SplitBrainAwareDataContainer;
-import com.hazelcast.spi.SplitBrainMergeEntryView;
-import com.hazelcast.spi.SplitBrainMergePolicy;
+import com.hazelcast.spi.merge.MergingEntry;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
+import com.hazelcast.spi.serialization.SerializationService;
 
 import java.io.IOException;
 
 import static com.hazelcast.config.CardinalityEstimatorConfig.DEFAULT_ASYNC_BACKUP_COUNT;
 import static com.hazelcast.config.CardinalityEstimatorConfig.DEFAULT_SYNC_BACKUP_COUNT;
-import static com.hazelcast.spi.merge.SplitBrainEntryViews.createSplitBrainMergeEntryView;
+import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntry;
 
 public class CardinalityEstimatorContainer
-        implements SplitBrainAwareDataContainer<String, HyperLogLog, HyperLogLog>,
-                   IdentifiedDataSerializable {
+        implements IdentifiedDataSerializable {
 
     HyperLogLog hll;
 
     private int backupCount;
-
     private int asyncBackupCount;
 
     public CardinalityEstimatorContainer() {
@@ -71,14 +69,23 @@ public class CardinalityEstimatorContainer
         return backupCount + asyncBackupCount;
     }
 
-    @Override
-    public HyperLogLog merge(SplitBrainMergeEntryView<String, HyperLogLog> mergingEntry,
-                                               SplitBrainMergePolicy mergePolicy) {
+    /**
+     * Merges the given {@link MergingEntry} via the given {@link SplitBrainMergePolicy}.
+     *
+     * @param mergingEntry         the {@link MergingEntry} instance to merge
+     * @param mergePolicy          the {@link SplitBrainMergePolicy} instance to apply
+     * @param serializationService the {@link SerializationService} to inject dependencies
+     * @return the used {@link HyperLogLog} if merge is applied, otherwise {@code null}
+     */
+    public HyperLogLog merge(MergingEntry<String, HyperLogLog> mergingEntry, SplitBrainMergePolicy mergePolicy,
+                             SerializationService serializationService) {
+        serializationService.getManagedContext().initialize(mergingEntry);
+        serializationService.getManagedContext().initialize(mergePolicy);
+
         String name = mergingEntry.getKey();
         if (hll.estimate() != 0) {
-            SplitBrainMergeEntryView<String, HyperLogLog> existing =
-                    createSplitBrainMergeEntryView(name, hll);
-            HyperLogLog newValue = mergePolicy.merge(mergingEntry, existing);
+            MergingEntry<String, HyperLogLog> existingEntry = createMergingEntry(serializationService, name, hll);
+            HyperLogLog newValue = mergePolicy.merge(mergingEntry, existingEntry);
             if (newValue != null && !newValue.equals(hll)) {
                 setValue(newValue);
                 return hll;
@@ -90,7 +97,6 @@ public class CardinalityEstimatorContainer
                 return hll;
             }
         }
-
         return null;
     }
 
@@ -132,7 +138,6 @@ public class CardinalityEstimatorContainer
         }
 
         CardinalityEstimatorContainer that = (CardinalityEstimatorContainer) o;
-
         return hll.equals(that.hll);
     }
 
@@ -140,5 +145,4 @@ public class CardinalityEstimatorContainer
     public int hashCode() {
         return hll.hashCode();
     }
-
 }

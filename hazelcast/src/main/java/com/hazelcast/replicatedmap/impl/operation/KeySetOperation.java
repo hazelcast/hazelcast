@@ -33,6 +33,7 @@ import java.util.List;
 public class KeySetOperation extends AbstractNamedSerializableOperation implements ReadonlyOperation {
 
     private String name;
+
     private transient Object response;
 
     public KeySetOperation() {
@@ -46,7 +47,7 @@ public class KeySetOperation extends AbstractNamedSerializableOperation implemen
     public void run() throws Exception {
         ReplicatedMapService service = getService();
         Collection<ReplicatedRecordStore> stores = service.getAllReplicatedRecordStores(name);
-        List keys = new ArrayList();
+        List<Object> keys = new ArrayList<Object>();
         for (ReplicatedRecordStore store : stores) {
             keys.addAll(store.keySet(false));
         }

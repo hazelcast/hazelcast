@@ -33,7 +33,7 @@ import static org.junit.Assert.assertTrue;
 
 /**
  * Includes tests for node and cluster safety.
- *
+ * <p>
  * TODO: tests are not sufficient -> add more tests
  */
 @RunWith(HazelcastParallelClassRunner.class)

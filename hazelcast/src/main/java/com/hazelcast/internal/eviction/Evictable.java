@@ -48,5 +48,4 @@ public interface Evictable<V> {
      * @return the value of this {@link Evictable}
      */
     V getValue();
-
 }

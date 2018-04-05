@@ -59,6 +59,8 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.util.CollectionUtil.objectToDataCollection;
 import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.util.Preconditions.isNotNull;
+import static java.lang.Thread.currentThread;
 
 /**
  * Proxy implementation of {@link IQueue}.
@@ -73,6 +75,7 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
 
     @Override
     public String addItemListener(final ItemListener<E> listener, final boolean includeValue) {
+        isNotNull(listener, "listener");
         EventHandler<ClientMessage> eventHandler = new ItemEventHandler(includeValue, listener);
         return registerListener(createItemListenerCodec(includeValue), eventHandler);
     }
@@ -166,6 +169,7 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
         try {
             return offer(e, 0, TimeUnit.SECONDS);
         } catch (InterruptedException ex) {
+            currentThread().interrupt();
             return false;
         }
     }
@@ -270,6 +274,7 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
         try {
             return poll(0, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
+            currentThread().interrupt();
             return null;
         }
     }
