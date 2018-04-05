@@ -217,7 +217,8 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
         }
         boolean done = emitFromTraverserToSnapshot(snapshotTraverser);
         if (done) {
-            logFinest(getLogger(), "Saved snapshot. Offsets: %s", emitOffsets);
+            logFinest(getLogger(), "Saved snapshot. partitions=%s, offsets=%s",
+                    Arrays.toString(partitionIds), Arrays.toString(emitOffsets));
             snapshotTraverser = null;
         }
         return done;
@@ -240,7 +241,8 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
 
     @Override
     public boolean finishSnapshotRestore() {
-        logFinest(getLogger(), "Restored snapshot. Offsets: %s", readOffsets);
+        logFinest(getLogger(), "Restored snapshot. partitions=%s, offsets=%s",
+                Arrays.toString(partitionIds), Arrays.toString(readOffsets));
         return true;
     }
 
@@ -273,15 +275,16 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
                 long prevSequence = readOffsets[currentPartitionIndex];
                 long lostCount = resultSet.getNextSequenceToReadFrom() - resultSet.readCount() - prevSequence;
                 if (lostCount > 0) {
-                    getLogger().warning(lostCount +  " events lost for partition " +
-                            partitionId + " due to journal overflow when reading from event journal." +
-                            " Increase journal size to avoid this error.");
+                    getLogger().warning(lostCount +  " events lost for partition "
+                            + partitionId + " due to journal overflow when reading from event journal."
+                            + " Increase journal size to avoid this error. nextSequenceToReadFrom="
+                            + resultSet.getNextSequenceToReadFrom() + ", readCount=" + resultSet.readCount()
+                            + ", prevSeq=" + prevSequence);
                 }
                 readOffsets[currentPartitionIndex] = resultSet.getNextSequenceToReadFrom();
             }
             // make another read on the same partition
-            readFutures[currentPartitionIndex] = readFromJournal(partitionId,
-                    readOffsets[currentPartitionIndex]);
+            readFutures[currentPartitionIndex] = readFromJournal(partitionId, readOffsets[currentPartitionIndex]);
         }
 
         if (currentPartitionIndex == partitionIds.length) {

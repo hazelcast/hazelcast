@@ -497,7 +497,7 @@ public class JobCoordinationService {
         if (masterContext != null) {
             if (masterContext.completionFuture().isDone() || masterContext.isCancelled()
                     || masterContext.jobStatus() != RUNNING) {
-                logger.warning("Not starting snapshot since " + jobAndExecutionId(jobId, executionId) + " is done.");
+                logger.fine("Not starting snapshot since " + jobAndExecutionId(jobId, executionId) + " is done.");
                 return;
             }
 

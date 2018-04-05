@@ -195,7 +195,7 @@ public class MasterContext {
                         + snapshotIdToRestore);
                 rewriteDagWithSnapshotRestore(dag, snapshotIdToRestore);
             } else {
-                logger.warning("No usable snapshot for " + jobIdString() + " found.");
+                logger.info("No previous snapshot for " + jobIdString() + " found.");
             }
             if (lastStartedSnapshot != null) {
                 lastSnapshotId = lastStartedSnapshot;
