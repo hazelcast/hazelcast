@@ -382,6 +382,12 @@ public interface RecordStore<R extends Record> {
     void destroy();
 
     /**
+     * Like {@link #destroy()} but does not touch state on other services
+     * like lock service or event journal service.
+     */
+    void destroyInternals();
+
+    /**
      * Initialize the recordStore after creation
      */
     void init();

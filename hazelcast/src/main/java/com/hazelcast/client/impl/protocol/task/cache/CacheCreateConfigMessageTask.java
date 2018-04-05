@@ -54,7 +54,7 @@ public class CacheCreateConfigMessageTask
         CacheService cacheService = getService(CacheService.SERVICE_NAME);
 
         if (cacheConfig != null) {
-            CacheMergePolicyProvider mergePolicyProvider = cacheService.getCacheMergePolicyProvider();
+            CacheMergePolicyProvider mergePolicyProvider = cacheService.getMergePolicyProvider();
             checkCacheConfig(cacheConfig, mergePolicyProvider);
 
             Object mergePolicy = mergePolicyProvider.getMergePolicy(cacheConfig.getMergePolicy());
