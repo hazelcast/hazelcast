@@ -284,11 +284,30 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
 
     @Override
     public String toString() {
+        return toString(-1);
+    }
+
+    /**
+     * Returns a string representation of the DAG.
+     *
+     * @param defaultLocalParallelism the local parallelism that will be shown if
+     *                                neither overridden on the vertex nor the
+     *                                preferred parallelism is defined by
+     *                                meta-supplier
+     */
+    public String toString(int defaultLocalParallelism) {
         final StringBuilder b = new StringBuilder("dag\n");
         for (Vertex v : this) {
             b.append("    .vertex(\"").append(v.getName()).append("\")");
-            if (v.getLocalParallelism() != -1) {
-                b.append(".localParallelism(").append(v.getLocalParallelism()).append(')');
+            int localParallelism = v.getLocalParallelism();
+            if (localParallelism == -1) {
+                localParallelism = v.getMetaSupplier().preferredLocalParallelism();
+                if (localParallelism == -1) {
+                    localParallelism = defaultLocalParallelism;
+                }
+            }
+            if (localParallelism != -1) {
+                b.append(".localParallelism(").append(localParallelism).append(')');
             }
             b.append('\n');
         }

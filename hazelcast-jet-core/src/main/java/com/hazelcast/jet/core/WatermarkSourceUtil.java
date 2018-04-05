@@ -158,7 +158,7 @@ public class WatermarkSourceUtil<T> {
                 "items from the traverser before you call this method again.";
         if (event != null) {
             long eventTime = timestampFn.applyAsLong(event);
-            handleEventInt(now, partitionIndex, event, eventTime);
+            handleEventInt(now, partitionIndex, eventTime);
             traverser.append(wrapFn.apply(event, eventTime));
         } else {
             handleNoEventInt(now);
@@ -166,7 +166,7 @@ public class WatermarkSourceUtil<T> {
         return traverser;
     }
 
-    private void handleEventInt(long now, int partitionIndex, @Nonnull T event, long eventTime) {
+    private void handleEventInt(long now, int partitionIndex, long eventTime) {
         wmPolicies[partitionIndex].reportEvent(eventTime);
         markIdleAt[partitionIndex] = now + idleTimeoutNanos;
         allAreIdle = false;
