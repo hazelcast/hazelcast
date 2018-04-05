@@ -35,6 +35,11 @@ public class PingMessageTask extends AbstractCallableMessageTask<ClientPingCodec
     }
 
     @Override
+    protected boolean isPingMessage() {
+        return true;
+    }
+
+    @Override
     protected ClientMessage encodeResponse(Object response) {
         return ClientPingCodec.encodeResponse();
     }

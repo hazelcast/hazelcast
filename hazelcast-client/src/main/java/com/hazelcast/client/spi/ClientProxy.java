@@ -109,7 +109,7 @@ public abstract class ClientProxy implements DistributedObject {
     protected final int getConnectedServerVersion() {
         HazelcastClientInstanceImpl client = getClient();
         ClientConnectionManager connectionManager = client.getConnectionManager();
-        Collection<ClientConnection> activeConnections = connectionManager.getActiveConnections();
+        Collection<ClientConnection> activeConnections = connectionManager.getAuthenticatedConnections();
         for (ClientConnection connection : activeConnections) {
             return connection.getConnectedServerVersion();
         }

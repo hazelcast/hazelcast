@@ -100,6 +100,8 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
         try {
             if (isAuthenticationMessage()) {
                 initializeAndProcessMessage();
+            } else if (isPingMessage()) {
+                initializeAndProcessMessage();
             } else {
                 ClientEndpoint endpoint = getEndpoint();
                 if (endpoint == null) {
@@ -119,16 +121,24 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
         return false;
     }
 
+    protected boolean isPingMessage() {
+        return false;
+    }
+
     private void initializeAndProcessMessage() throws Throwable {
         if (!node.getNodeExtension().isStartCompleted()) {
             throw new HazelcastInstanceNotActiveException("Hazelcast instance is not ready yet!");
         }
         parameters = decodeClientMessage(clientMessage);
-        Credentials credentials = endpoint.getCredentials();
-        interceptBefore(credentials);
-        checkPermissions(endpoint);
-        processMessage();
-        interceptAfter(credentials);
+        if (isPingMessage()) {
+            processMessage();
+        } else {
+            Credentials credentials = endpoint.getCredentials();
+            interceptBefore(credentials);
+            checkPermissions(endpoint);
+            processMessage();
+            interceptAfter(credentials);
+        }
     }
 
     private void handleAuthenticationFailure() {

@@ -551,7 +551,7 @@ public class ClientServiceTest extends ClientTestSupport {
         IMap<Object, Object> map = client.getMap("test");
         map.addEntryListener(mock(EntryListener.class), false);
 
-        assertEquals(memberCount, connectionManager.getActiveConnections().size());
+        assertEquals(memberCount, connectionManager.getAuthenticatedConnections().size());
 
     }
 }

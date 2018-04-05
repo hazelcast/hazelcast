@@ -19,6 +19,7 @@ package com.hazelcast.client.spi.impl;
 import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.Connection;
 
 import java.io.IOException;
 
@@ -52,10 +53,10 @@ public class NonSmartClientInvocationService extends AbstractClientInvocationSer
 
     private ClientConnection getOwnerConnection() throws IOException {
         Address ownerConnectionAddress = connectionManager.getOwnerConnectionAddress();
-        ClientConnection ownerConnection = (ClientConnection) connectionManager.getActiveConnection(ownerConnectionAddress);
+        Connection ownerConnection = connectionManager.getAuthenticatedConnection(ownerConnectionAddress);
         if (ownerConnection == null) {
             throw new IOException("NonSmartClientInvocationService: Owner connection is not available.");
         }
-        return ownerConnection;
+        return (ClientConnection) ownerConnection;
     }
 }

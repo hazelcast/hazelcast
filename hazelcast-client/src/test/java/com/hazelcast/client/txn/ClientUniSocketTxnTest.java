@@ -84,6 +84,6 @@ public class ClientUniSocketTxnTest extends ClientTestSupport {
         context.beginTransaction();
         context.commitTransaction();
 
-        assertEquals(1, connectionManager.getActiveConnections().size());
+        assertEquals(1, connectionManager.getAuthenticatedConnections().size());
     }
 }

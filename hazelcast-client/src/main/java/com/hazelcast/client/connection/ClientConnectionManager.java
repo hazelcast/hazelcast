@@ -46,6 +46,8 @@ public interface ClientConnectionManager extends ConnectionListenable {
      */
     Connection getActiveConnection(Address address);
 
+    Connection getAuthenticatedConnection(Address target);
+
     /**
      * @param address to be connected
      * @return associated connection if available, creates new connection otherwise
@@ -61,6 +63,8 @@ public interface ClientConnectionManager extends ConnectionListenable {
     Connection getOrTriggerConnect(Address address, boolean acquiresResource) throws IOException;
 
     void addConnectionHeartbeatListener(ConnectionHeartbeatListener connectionHeartbeatListener);
+
+    Collection<ClientConnection> getAuthenticatedConnections();
 
     Collection<ClientConnection> getActiveConnections();
 

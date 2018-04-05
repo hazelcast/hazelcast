@@ -148,7 +148,7 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertEquals(3, clientInstanceImpl.getConnectionManager().getActiveConnections().size());
+                assertEquals(3, clientInstanceImpl.getConnectionManager().getAuthenticatedConnections().size());
             }
         });
 

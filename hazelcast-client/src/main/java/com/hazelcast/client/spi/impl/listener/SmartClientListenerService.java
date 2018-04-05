@@ -83,7 +83,7 @@ public class SmartClientListenerService extends AbstractClientListenerService
 
                 ClientRegistrationKey registrationKey = new ClientRegistrationKey(userRegistrationId, handler, codec);
                 registrations.put(registrationKey, new ConcurrentHashMap<Connection, ClientEventRegistration>());
-                Collection<ClientConnection> connections = clientConnectionManager.getActiveConnections();
+                Collection<ClientConnection> connections = clientConnectionManager.getAuthenticatedConnections();
                 for (ClientConnection connection : connections) {
                     try {
                         invoke(registrationKey, connection);

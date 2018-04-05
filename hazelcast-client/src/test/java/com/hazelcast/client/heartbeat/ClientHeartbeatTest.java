@@ -385,7 +385,7 @@ public class ClientHeartbeatTest extends ClientTestSupport {
 
         HazelcastInstance hazelcastInstance2 = hazelcastFactory.newHazelcastInstance();
 
-        assertSizeEventually(2, clientInstanceImpl.getConnectionManager().getActiveConnections());
+        assertSizeEventually(2, clientInstanceImpl.getConnectionManager().getAuthenticatedConnections());
 
         blockMessagesFromInstance(hazelcastInstance2, client);
         assertOpenEventually(heartbeatStopped);

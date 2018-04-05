@@ -83,7 +83,7 @@ public class ClientTestSupport extends HazelcastTestSupport {
             @Override
             public void run() throws Exception {
                 ClientConnectionManager connectionManager = getHazelcastClientInstanceImpl(client).getConnectionManager();
-                assertEquals(numberOfServers, connectionManager.getActiveConnections().size());
+                assertEquals(numberOfServers, connectionManager.getAuthenticatedConnections().size());
             }
         });
     }
