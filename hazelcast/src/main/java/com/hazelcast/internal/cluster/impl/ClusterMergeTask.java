@@ -20,7 +20,6 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.instance.LifecycleServiceImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.ClusterService;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Disposable;
 import com.hazelcast.spi.CoreService;
 import com.hazelcast.spi.ManagedService;
@@ -46,16 +45,12 @@ class ClusterMergeTask implements Runnable {
 
     private static final String MERGE_TASKS_EXECUTOR = "hz:cluster-merge";
 
-    private final boolean wasLiteMember;
     private final Node node;
-    private final ILogger logger;
     private final LifecycleServiceImpl lifecycleService;
 
     ClusterMergeTask(Node node) {
         this.node = node;
-        this.logger = node.getLogger(getClass());
         this.lifecycleService = node.hazelcastInstance.getLifecycleService();
-        this.wasLiteMember = node.clusterService.getLocalMember().isLiteMember();
     }
 
     public void run() {
@@ -83,13 +78,7 @@ class ClusterMergeTask implements Runnable {
                 }
             }
         } finally {
-            try {
-                if (joined) {
-                    tryToPromoteLocalLiteMember();
-                }
-            } finally {
-                lifecycleService.fireLifecycleEvent(joined ? MERGED : MERGE_FAILED);
-            }
+            lifecycleService.fireLifecycleEvent(joined ? MERGED : MERGE_FAILED);
         }
     }
 
@@ -104,19 +93,6 @@ class ClusterMergeTask implements Runnable {
                 }
             }
         }
-    }
-
-    private void tryToPromoteLocalLiteMember() {
-        if (wasLiteMember) {
-            // this node was a lite-member so no promotion needed after merging
-            return;
-        }
-
-        logger.info("Local lite-member was previously a data-member, now trying to promote it back...");
-
-        node.clusterService.promoteLocalLiteMember();
-
-        logger.info("Promoted local lite-member upon finish of split brain healing");
     }
 
     private boolean isJoined() {
