@@ -31,7 +31,7 @@ import com.hazelcast.spi.WaitNotifyKey;
 
 import java.util.Collection;
 
-public class GetAllOperation extends MultiMapKeyBasedOperation implements BlockingOperation, ReadonlyOperation {
+public class GetAllOperation extends AbstractKeyBasedMultiMapOperation implements BlockingOperation, ReadonlyOperation {
 
     public GetAllOperation() {
     }
@@ -66,7 +66,7 @@ public class GetAllOperation extends MultiMapKeyBasedOperation implements Blocki
     public boolean shouldWait() {
         MultiMapContainer container = getOrCreateContainer();
         if (container.isTransactionallyLocked(dataKey)) {
-            return !container.canAcquireLock(dataKey, getCallerUuid(), getThreadId());
+            return !container.canAcquireLock(dataKey, getCallerUuid(), threadId);
         }
         return false;
     }

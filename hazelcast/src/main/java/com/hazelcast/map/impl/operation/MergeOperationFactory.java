@@ -22,8 +22,8 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionAwareOperationFactory;
-import com.hazelcast.spi.merge.MergingEntry;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
+import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
@@ -40,15 +40,15 @@ import java.util.List;
 public class MergeOperationFactory extends PartitionAwareOperationFactory {
 
     protected String name;
-    protected List<MergingEntry<Data, Data>>[] mergingEntries;
-    protected SplitBrainMergePolicy mergePolicy;
+    protected List<MapMergeTypes>[] mergingEntries;
+    protected SplitBrainMergePolicy<Data, MapMergeTypes> mergePolicy;
 
     public MergeOperationFactory() {
     }
 
     @SuppressFBWarnings("EI_EXPOSE_REP2")
-    public MergeOperationFactory(String name, int[] partitions, List<MergingEntry<Data, Data>>[] mergingEntries,
-                                 SplitBrainMergePolicy mergePolicy) {
+    public MergeOperationFactory(String name, int[] partitions, List<MapMergeTypes>[] mergingEntries,
+                                 SplitBrainMergePolicy<Data, MapMergeTypes> mergePolicy) {
         this.name = name;
         this.partitions = partitions;
         this.mergingEntries = mergingEntries;
@@ -69,9 +69,9 @@ public class MergeOperationFactory extends PartitionAwareOperationFactory {
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
         out.writeIntArray(partitions);
-        for (List<MergingEntry<Data, Data>> list : mergingEntries) {
+        for (List<MapMergeTypes> list : mergingEntries) {
             out.writeInt(list.size());
-            for (MergingEntry<Data, Data> mergingEntry : list) {
+            for (MapMergeTypes mergingEntry : list) {
                 out.writeObject(mergingEntry);
             }
         }
@@ -86,9 +86,9 @@ public class MergeOperationFactory extends PartitionAwareOperationFactory {
         mergingEntries = new List[partitions.length];
         for (int partitionIndex = 0; partitionIndex < partitions.length; partitionIndex++) {
             int size = in.readInt();
-            List<MergingEntry<Data, Data>> list = new ArrayList<MergingEntry<Data, Data>>(size);
+            List<MapMergeTypes> list = new ArrayList<MapMergeTypes>(size);
             for (int i = 0; i < size; i++) {
-                MergingEntry<Data, Data> mergingEntry = in.readObject();
+                MapMergeTypes mergingEntry = in.readObject();
                 list.add(mergingEntry);
             }
             mergingEntries[partitionIndex] = list;

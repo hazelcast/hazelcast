@@ -29,8 +29,8 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.impl.merge.AbstractMergeRunnable;
-import com.hazelcast.spi.merge.MergingEntry;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
+import com.hazelcast.spi.merge.SplitBrainMergeTypes.ReplicatedMapMergeTypes;
 import com.hazelcast.util.function.BiConsumer;
 
 import java.util.Collection;
@@ -41,7 +41,7 @@ import java.util.Map;
 import static com.hazelcast.replicatedmap.impl.ReplicatedMapService.SERVICE_NAME;
 import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntry;
 
-class ReplicatedMapMergeRunnable extends AbstractMergeRunnable<ReplicatedRecordStore, MergingEntry<Object, Object>> {
+class ReplicatedMapMergeRunnable extends AbstractMergeRunnable<Object, Object, ReplicatedRecordStore, ReplicatedMapMergeTypes> {
 
     private final ReplicatedMapSplitBrainHandlerService replicatedMapSplitBrainHandlerService;
 
@@ -55,14 +55,14 @@ class ReplicatedMapMergeRunnable extends AbstractMergeRunnable<ReplicatedRecordS
     }
 
     @Override
-    protected void consumeStore(ReplicatedRecordStore store, BiConsumer<Integer, MergingEntry<Object, Object>> consumer) {
+    protected void consumeStore(ReplicatedRecordStore store, BiConsumer<Integer, ReplicatedMapMergeTypes> consumer) {
         int partitionId = store.getPartitionId();
 
         Iterator<ReplicatedRecord> iterator = store.recordIterator();
         while (iterator.hasNext()) {
             ReplicatedRecord record = iterator.next();
 
-            MergingEntry<Object, Object> mergingEntry = createMergingEntry(getSerializationService(), record);
+            ReplicatedMapMergeTypes mergingEntry = createMergingEntry(getSerializationService(), record);
             consumer.accept(partitionId, mergingEntry);
         }
     }
@@ -120,9 +120,8 @@ class ReplicatedMapMergeRunnable extends AbstractMergeRunnable<ReplicatedRecordS
 
     @Override
     protected OperationFactory createMergeOperationFactory(String dataStructureName,
-                                                           SplitBrainMergePolicy mergePolicy,
-                                                           int[] partitions,
-                                                           List<MergingEntry<Object, Object>>[] entries) {
+                                                           SplitBrainMergePolicy<Object, ReplicatedMapMergeTypes> mergePolicy,
+                                                           int[] partitions, List<ReplicatedMapMergeTypes>[] entries) {
         return new MergeOperationFactory(dataStructureName, partitions, entries, mergePolicy);
     }
 }

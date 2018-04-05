@@ -37,6 +37,8 @@ import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.impl.PartitionServiceState;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.map.impl.operation.DefaultMapOperationProvider;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
@@ -93,6 +95,7 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -360,6 +363,42 @@ public abstract class HazelcastTestSupport {
             TimeUnit.SECONDS.sleep(seconds);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
+        }
+    }
+
+    /**
+     * Sleeps for time that is left until referenceTime + seconds. If no
+     * time is left until that time, a warning is logged and no sleep
+     * will happen.
+     * <p>
+     * Opposed to the language provided sleep constructs, this method
+     * does not guarantee minimum sleep time as it assumes that no time
+     * elapsed since {@code referenceTime} which is never true.
+     * <p>
+     * This method can be useful in hiding occasional hiccups of the
+     * execution environment in tests which are sensitive to
+     * oversleeping. Tests like the ones verify TTL, lease time behavior
+     * are typical examples for that.
+     *
+     * @param referenceTime the time in milliseconds since which the
+     *                      sleep end time should be calculated
+     * @param seconds       desired sleep duration in seconds
+     */
+    public static void sleepAtMostSeconds(long referenceTime, int seconds) {
+        long now = System.currentTimeMillis();
+        long sleepEnd = referenceTime + SECONDS.toMillis(seconds);
+        long sleepTime = sleepEnd - now;
+
+        if (sleepTime > 0) {
+            try {
+                MILLISECONDS.sleep(sleepTime);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        } else {
+            ILogger logger = Logger.getLogger(HazelcastTestSupport.class);
+            long absSleepTime = Math.abs(sleepTime);
+            logger.warning("There is no time left to sleep. We are beyond the desired end of sleep by " + absSleepTime + "ms");
         }
     }
 
@@ -1243,6 +1282,18 @@ public abstract class HazelcastTestSupport {
      */
     public static void assertEqualsStringFormat(String message, Object expected, Object actual) {
         assertEquals(format(message, expected, actual), expected, actual);
+    }
+
+    /**
+     * This method executes the normal assertNotEquals with expected and actual values.
+     * In addition it formats the given string with those values to provide a good assert message.
+     *
+     * @param message  assert message which is formatted with expected and actual values
+     * @param expected expected value which is used for assert
+     * @param actual   actual value which is used for assert
+     */
+    public static void assertNotEqualsStringFormat(String message, Object expected, Object actual) {
+        assertNotEquals(format(message, expected, actual), expected, actual);
     }
 
     public static void assertBetween(String label, long actualValue, long lowerBound, long upperBound) {

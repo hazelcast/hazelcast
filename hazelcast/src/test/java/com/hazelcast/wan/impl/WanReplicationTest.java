@@ -38,8 +38,8 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
-import com.hazelcast.spi.merge.MergingEntry;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
+import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -283,8 +283,9 @@ public class WanReplicationTest extends HazelcastTestSupport {
             op = operationProvider.createLegacyMergeOperation(mapName, entryView, new PassThroughMergePolicy(),
                     !enableWANReplicationEvent);
         } else {
-            MergingEntry<Data, Data> mergingEntry = createMergingEntry(serializationService, entryView);
-            SplitBrainMergePolicy mergePolicy = new com.hazelcast.spi.merge.PassThroughMergePolicy();
+            MapMergeTypes mergingEntry = createMergingEntry(serializationService, entryView);
+            SplitBrainMergePolicy<Data, MapMergeTypes> mergePolicy
+                    = new com.hazelcast.spi.merge.PassThroughMergePolicy<Data, MapMergeTypes>();
             op = operationProvider.createMergeOperation(mapName, mergingEntry, mergePolicy, !enableWANReplicationEvent);
         }
         operationService.createInvocationBuilder(MapService.SERVICE_NAME, op, partitionService.getPartitionId(data)).invoke();

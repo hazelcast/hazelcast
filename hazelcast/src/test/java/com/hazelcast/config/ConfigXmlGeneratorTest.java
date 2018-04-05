@@ -41,6 +41,7 @@ import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Properties;
 
 import static com.google.common.collect.Sets.newHashSet;
@@ -303,6 +304,51 @@ public class ConfigXmlGeneratorTest {
     }
 
     @Test
+    public void testSecurityConfig() {
+        Config cfg = new Config();
+
+        Properties dummyprops = new Properties();
+        dummyprops.put("a", "b");
+
+        SecurityConfig expectedConfig = new SecurityConfig();
+        expectedConfig.setEnabled(true)
+          .setClientBlockUnmappedActions(false)
+          .setClientLoginModuleConfigs(Arrays.asList(
+                  new LoginModuleConfig()
+                          .setClassName("f.o.o")
+                          .setUsage(LoginModuleConfig.LoginModuleUsage.OPTIONAL),
+                  new LoginModuleConfig()
+                          .setClassName("b.a.r")
+                          .setUsage(LoginModuleConfig.LoginModuleUsage.SUFFICIENT),
+                  new LoginModuleConfig()
+                          .setClassName("l.o.l")
+                          .setUsage(LoginModuleConfig.LoginModuleUsage.REQUIRED)))
+          .setMemberLoginModuleConfigs(Arrays.asList(
+                  new LoginModuleConfig()
+                          .setClassName("member.f.o.o")
+                          .setUsage(LoginModuleConfig.LoginModuleUsage.OPTIONAL),
+                  new LoginModuleConfig()
+                          .setClassName("member.b.a.r")
+                          .setUsage(LoginModuleConfig.LoginModuleUsage.SUFFICIENT),
+                  new LoginModuleConfig()
+                          .setClassName("member.l.o.l")
+                          .setUsage(LoginModuleConfig.LoginModuleUsage.REQUIRED)))
+        .setMemberCredentialsConfig(new CredentialsFactoryConfig().setClassName("foo.bar").setProperties(dummyprops))
+        .setClientPermissionConfigs(new HashSet<PermissionConfig>(Arrays.asList(
+                new PermissionConfig()
+                        .setActions(newHashSet("read", "remove"))
+                        .setEndpoints(newHashSet("127.0.0.1", "127.0.0.2"))
+                        .setType(PermissionConfig.PermissionType.ATOMIC_LONG)
+                        .setName("mycounter")
+                        .setPrincipal("devos"))));
+
+        cfg.setSecurityConfig(expectedConfig);
+
+        SecurityConfig actualConfig = getNewConfigViaXMLGenerator(cfg).getSecurityConfig();
+        assertEquals(expectedConfig, actualConfig);
+    }
+
+    @Test
     public void testSerializationConfig() {
         Config cfg = new Config();
 
@@ -433,6 +479,7 @@ public class ConfigXmlGeneratorTest {
                 .setPrefetchCount(3)
                 .setPrefetchValidityMillis(10L)
                 .setIdOffset(20L)
+                .setNodeIdOffset(30L)
                 .setStatisticsEnabled(false);
 
         Config config = new Config()
@@ -829,24 +876,22 @@ public class ConfigXmlGeneratorTest {
         NativeMemoryConfig expectedConfig = new NativeMemoryConfig();
         expectedConfig.setEnabled(true);
         expectedConfig.setAllocatorType(NativeMemoryConfig.MemoryAllocatorType.STANDARD);
-        expectedConfig.setMetadataSpacePercentage((float) 12.5);
+        expectedConfig.setMetadataSpacePercentage(12.5f);
         expectedConfig.setMinBlockSize(50);
         expectedConfig.setPageSize(100);
         expectedConfig.setSize(new MemorySize(20, MemoryUnit.MEGABYTES));
 
-        Config config = new Config()
-                .setNativeMemoryConfig(expectedConfig);
-
+        Config config = new Config().setNativeMemoryConfig(expectedConfig);
         Config xmlConfig = getNewConfigViaXMLGenerator(config);
 
         NativeMemoryConfig actualConfig = xmlConfig.getNativeMemoryConfig();
         assertTrue(actualConfig.isEnabled());
-        assertEquals(NativeMemoryConfig.MemoryAllocatorType.STANDARD, expectedConfig.getAllocatorType());
-        assertEquals(12.5, expectedConfig.getMetadataSpacePercentage(), 0.0001);
-        assertEquals(50, expectedConfig.getMinBlockSize());
-        assertEquals(100, expectedConfig.getPageSize());
-        assertEquals(new MemorySize(20, MemoryUnit.MEGABYTES).getUnit(), expectedConfig.getSize().getUnit());
-        assertEquals(new MemorySize(20, MemoryUnit.MEGABYTES).getValue(), expectedConfig.getSize().getValue());
+        assertEquals(NativeMemoryConfig.MemoryAllocatorType.STANDARD, actualConfig.getAllocatorType());
+        assertEquals(12.5, actualConfig.getMetadataSpacePercentage(), 0.0001);
+        assertEquals(50, actualConfig.getMinBlockSize());
+        assertEquals(100, actualConfig.getPageSize());
+        assertEquals(new MemorySize(20, MemoryUnit.MEGABYTES).getUnit(), actualConfig.getSize().getUnit());
+        assertEquals(new MemorySize(20, MemoryUnit.MEGABYTES).getValue(), actualConfig.getSize().getValue());
         assertEquals(expectedConfig, actualConfig);
     }
 

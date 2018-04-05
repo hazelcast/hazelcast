@@ -72,7 +72,7 @@ public abstract class AbstractCollectionProxyImpl<S extends RemoteService, E> ex
     public void initialize() {
         final NodeEngine nodeEngine = getNodeEngine();
         CollectionConfig config = getConfig(nodeEngine);
-        checkCollectionConfig(config);
+        checkCollectionConfig(config, nodeEngine.getSplitBrainMergePolicyProvider());
 
         final List<ItemListenerConfig> itemListenerConfigs = config.getItemListenerConfigs();
         for (ItemListenerConfig itemListenerConfig : itemListenerConfigs) {

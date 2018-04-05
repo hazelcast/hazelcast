@@ -31,6 +31,7 @@ import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.SplitBrainHandlerService;
 import com.hazelcast.spi.impl.merge.AbstractContainerMerger;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
+import com.hazelcast.spi.merge.SplitBrainMergeTypes.AtomicLongMergeTypes;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.partition.MigrationEndpoint;
 import com.hazelcast.util.ConstructorFunction;
@@ -108,7 +109,7 @@ public class AtomicLongService
     @Override
     public AtomicLongProxy createDistributedObject(String name) {
         AtomicLongConfig atomicLongConfig = nodeEngine.getConfig().findAtomicLongConfig(name);
-        checkBasicConfig(atomicLongConfig);
+        checkBasicConfig(atomicLongConfig, nodeEngine.getSplitBrainMergePolicyProvider());
 
         return new AtomicLongProxy(name, nodeEngine, this);
     }
@@ -195,7 +196,7 @@ public class AtomicLongService
         return new Merger(collector);
     }
 
-    private class Merger extends AbstractContainerMerger<AtomicLongContainer> {
+    private class Merger extends AbstractContainerMerger<AtomicLongContainer, Long, AtomicLongMergeTypes> {
 
         Merger(AtomicLongContainerCollector collector) {
             super(collector, nodeEngine);
@@ -217,7 +218,8 @@ public class AtomicLongService
 
                 for (AtomicLongContainer container : containerList) {
                     String name = collector.getContainerName(container);
-                    SplitBrainMergePolicy mergePolicy = getMergePolicy(collector.getMergePolicyConfig(container));
+                    SplitBrainMergePolicy<Long, AtomicLongMergeTypes> mergePolicy
+                            = getMergePolicy(collector.getMergePolicyConfig(container));
 
                     MergeOperation operation = new MergeOperation(name, mergePolicy, container.get());
                     invoke(SERVICE_NAME, operation, partitionId);

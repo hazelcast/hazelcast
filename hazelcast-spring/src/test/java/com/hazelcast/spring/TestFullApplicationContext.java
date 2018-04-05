@@ -431,6 +431,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(3, c.getPrefetchCount());
         assertEquals(10L, c.getPrefetchValidityMillis());
         assertEquals(20L, c.getIdOffset());
+        assertEquals(30L, c.getNodeIdOffset());
         assertEquals("flakeIdGenerator*", c.getName());
         assertFalse(c.isStatisticsEnabled());
     }
@@ -544,6 +545,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     @Test
     public void testSecurity() {
         final Set<PermissionConfig> clientPermissionConfigs = config.getSecurityConfig().getClientPermissionConfigs();
+        assertFalse(config.getSecurityConfig().getClientBlockUnmappedActions());
         assertTrue(isNotEmpty(clientPermissionConfigs));
         assertEquals(1, clientPermissionConfigs.size());
         final PermissionConfig pnCounterPermission = new PermissionConfig(PermissionType.PN_COUNTER, "pnCounterPermission", "*")

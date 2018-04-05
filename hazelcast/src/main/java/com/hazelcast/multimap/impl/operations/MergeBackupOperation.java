@@ -38,7 +38,7 @@ import static com.hazelcast.util.MapUtil.createHashMap;
  *
  * @since 3.10
  */
-public class MergeBackupOperation extends MultiMapOperation implements BackupOperation {
+public class MergeBackupOperation extends AbstractMultiMapOperation implements BackupOperation {
 
     private Map<Data, Collection<MultiMapRecord>> backupEntries;
 

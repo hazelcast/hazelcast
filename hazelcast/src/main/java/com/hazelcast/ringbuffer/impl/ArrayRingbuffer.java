@@ -17,8 +17,8 @@
 package com.hazelcast.ringbuffer.impl;
 
 import com.hazelcast.ringbuffer.StaleSequenceException;
-import com.hazelcast.spi.merge.MergingEntry;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
+import com.hazelcast.spi.merge.SplitBrainMergeTypes.RingbufferMergeTypes;
 import com.hazelcast.spi.serialization.SerializationService;
 
 import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntry;
@@ -168,7 +168,8 @@ public class ArrayRingbuffer<E> implements Ringbuffer<E> {
     }
 
     @Override
-    public long merge(MergingEntry<Long, E> mergingEntry, SplitBrainMergePolicy mergePolicy, long remainingCapacity) {
+    public long merge(RingbufferMergeTypes mergingEntry, SplitBrainMergePolicy<Object, RingbufferMergeTypes> mergePolicy,
+                      long remainingCapacity) {
         serializationService.getManagedContext().initialize(mergingEntry);
         serializationService.getManagedContext().initialize(mergePolicy);
 
@@ -190,15 +191,15 @@ public class ArrayRingbuffer<E> implements Ringbuffer<E> {
                 return -1L;
             }
 
-            E newValue = mergePolicy.merge(mergingEntry, null);
+            Object newValue = mergePolicy.merge(mergingEntry, null);
             if (newValue != null) {
-                return add(newValue);
+                return add((E) newValue);
             }
         } else {
-            MergingEntry<Long, E> existingEntry = createMergingEntry(serializationService, existingSequence, existingItem);
-            E newValue = mergePolicy.merge(mergingEntry, existingEntry);
+            RingbufferMergeTypes existingEntry = createMergingEntry(serializationService, existingSequence, existingItem);
+            Object newValue = mergePolicy.merge(mergingEntry, existingEntry);
             if (newValue != null && !newValue.equals(existingItem)) {
-                set(existingSequence, newValue);
+                set(existingSequence, (E) newValue);
                 return existingSequence;
             }
         }

@@ -28,8 +28,8 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.impl.merge.AbstractMergeRunnable;
-import com.hazelcast.spi.merge.MergingEntry;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
+import com.hazelcast.spi.merge.SplitBrainMergeTypes.CacheMergeTypes;
 import com.hazelcast.util.function.BiConsumer;
 
 import java.util.Collection;
@@ -40,7 +40,7 @@ import static com.hazelcast.cache.impl.ICacheService.SERVICE_NAME;
 import static com.hazelcast.config.MergePolicyConfig.DEFAULT_BATCH_SIZE;
 import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntry;
 
-class CacheMergeRunnable extends AbstractMergeRunnable<ICacheRecordStore, MergingEntry<Data, Data>> {
+class CacheMergeRunnable extends AbstractMergeRunnable<Data, Data, ICacheRecordStore, CacheMergeTypes> {
 
     private final CacheService cacheService;
     private final CacheSplitBrainHandlerService cacheSplitBrainHandlerService;
@@ -57,7 +57,7 @@ class CacheMergeRunnable extends AbstractMergeRunnable<ICacheRecordStore, Mergin
     }
 
     @Override
-    protected void consumeStore(ICacheRecordStore store, BiConsumer<Integer, MergingEntry<Data, Data>> consumer) {
+    protected void consumeStore(ICacheRecordStore store, BiConsumer<Integer, CacheMergeTypes> consumer) {
         int partitionId = store.getPartitionId();
 
         for (Map.Entry<Data, CacheRecord> entry : store.getReadOnlyRecords().entrySet()) {
@@ -97,9 +97,9 @@ class CacheMergeRunnable extends AbstractMergeRunnable<ICacheRecordStore, Mergin
 
     @Override
     protected int getBatchSize(String dataStructureName) {
-        // Batch size cannot be get from MergePolicyConfig. Because
-        // there is no MergePolicyConfig in CacheConfig. Adding it breaks
-        // backward compatibility
+        // the batch size cannot be retrieved from the MergePolicyConfig,
+        // because there is no MergePolicyConfig in CacheConfig
+        // (adding it breaks backward compatibility)
         return DEFAULT_BATCH_SIZE;
     }
 
@@ -115,9 +115,8 @@ class CacheMergeRunnable extends AbstractMergeRunnable<ICacheRecordStore, Mergin
 
     @Override
     protected OperationFactory createMergeOperationFactory(String dataStructureName,
-                                                           SplitBrainMergePolicy mergePolicy,
-                                                           int[] partitions,
-                                                           List<MergingEntry<Data, Data>>[] entries) {
+                                                           SplitBrainMergePolicy<Data, CacheMergeTypes> mergePolicy,
+                                                           int[] partitions, List<CacheMergeTypes>[] entries) {
         CacheConfig cacheConfig = cacheService.getCacheConfig(dataStructureName);
         CacheOperationProvider operationProvider
                 = cacheService.getCacheOperationProvider(dataStructureName, cacheConfig.getInMemoryFormat());

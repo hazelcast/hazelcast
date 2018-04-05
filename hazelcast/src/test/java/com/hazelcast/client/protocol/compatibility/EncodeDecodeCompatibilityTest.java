@@ -326,6 +326,15 @@ public class EncodeDecodeCompatibilityTest {
      }
 }
 {
+    ClientMessage clientMessage = ClientCreateProxiesCodec.encodeRequest(    aListOfStringToString   );
+    ClientCreateProxiesCodec.RequestParameters params = ClientCreateProxiesCodec.decodeRequest(ClientMessage.createForDecode(clientMessage.buffer(), 0));
+            assertTrue(isEqual(aListOfStringToString, params.proxies));
+}
+{
+    ClientMessage clientMessage = ClientCreateProxiesCodec.encodeResponse( );
+    ClientCreateProxiesCodec.ResponseParameters params = ClientCreateProxiesCodec.decodeResponse(ClientMessage.createForDecode(clientMessage.buffer(), 0));
+}
+{
     ClientMessage clientMessage = MapPutCodec.encodeRequest(    aString ,    aData ,    aData ,    aLong ,    aLong   );
     MapPutCodec.RequestParameters params = MapPutCodec.decodeRequest(ClientMessage.createForDecode(clientMessage.buffer(), 0));
             assertTrue(isEqual(aString, params.name));
@@ -2922,6 +2931,16 @@ public class EncodeDecodeCompatibilityTest {
             assertTrue(isEqual(aBoolean, params.response));
 }
 {
+    ClientMessage clientMessage = SemaphoreIncreasePermitsCodec.encodeRequest(    aString ,    anInt   );
+    SemaphoreIncreasePermitsCodec.RequestParameters params = SemaphoreIncreasePermitsCodec.decodeRequest(ClientMessage.createForDecode(clientMessage.buffer(), 0));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(anInt, params.increase));
+}
+{
+    ClientMessage clientMessage = SemaphoreIncreasePermitsCodec.encodeResponse( );
+    SemaphoreIncreasePermitsCodec.ResponseParameters params = SemaphoreIncreasePermitsCodec.decodeResponse(ClientMessage.createForDecode(clientMessage.buffer(), 0));
+}
+{
     ClientMessage clientMessage = ReplicatedMapPutCodec.encodeRequest(    aString ,    aData ,    aData ,    aLong   );
     ReplicatedMapPutCodec.RequestParameters params = ReplicatedMapPutCodec.decodeRequest(ClientMessage.createForDecode(clientMessage.buffer(), 0));
             assertTrue(isEqual(aString, params.name));
@@ -5212,13 +5231,14 @@ public class EncodeDecodeCompatibilityTest {
     DynamicConfigAddEventJournalConfigCodec.ResponseParameters params = DynamicConfigAddEventJournalConfigCodec.decodeResponse(ClientMessage.createForDecode(clientMessage.buffer(), 0));
 }
 {
-    ClientMessage clientMessage = DynamicConfigAddFlakeIdGeneratorConfigCodec.encodeRequest(    aString ,    anInt ,    aLong ,    aLong ,    aBoolean   );
+    ClientMessage clientMessage = DynamicConfigAddFlakeIdGeneratorConfigCodec.encodeRequest(    aString ,    anInt ,    aLong ,    aLong ,    aBoolean ,    aLong   );
     DynamicConfigAddFlakeIdGeneratorConfigCodec.RequestParameters params = DynamicConfigAddFlakeIdGeneratorConfigCodec.decodeRequest(ClientMessage.createForDecode(clientMessage.buffer(), 0));
             assertTrue(isEqual(aString, params.name));
             assertTrue(isEqual(anInt, params.prefetchCount));
             assertTrue(isEqual(aLong, params.prefetchValidity));
             assertTrue(isEqual(aLong, params.idOffset));
             assertTrue(isEqual(aBoolean, params.statisticsEnabled));
+            assertTrue(isEqual(aLong, params.nodeIdOffset));
 }
 {
     ClientMessage clientMessage = DynamicConfigAddFlakeIdGeneratorConfigCodec.encodeResponse( );

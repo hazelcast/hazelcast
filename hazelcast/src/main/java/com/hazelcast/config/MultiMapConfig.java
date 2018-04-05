@@ -21,6 +21,8 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.impl.Versioned;
+import com.hazelcast.spi.merge.SplitBrainMergeTypeProvider;
+import com.hazelcast.spi.merge.SplitBrainMergeTypes;
 import com.hazelcast.util.StringUtil;
 
 import java.io.IOException;
@@ -35,7 +37,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  * Configuration for MultiMap.
  */
 @SuppressWarnings("checkstyle:methodcount")
-public class MultiMapConfig implements IdentifiedDataSerializable, Versioned {
+public class MultiMapConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSerializable, Versioned {
 
     /**
      * The default number of synchronous backups for this MultiMap.
@@ -325,6 +327,11 @@ public class MultiMapConfig implements IdentifiedDataSerializable, Versioned {
     public MultiMapConfig setMergePolicyConfig(MergePolicyConfig mergePolicyConfig) {
         this.mergePolicyConfig = checkNotNull(mergePolicyConfig, "mergePolicyConfig cannot be null");
         return this;
+    }
+
+    @Override
+    public Class getProvidedMergeTypes() {
+        return SplitBrainMergeTypes.MultiMapMergeTypes.class;
     }
 
     public String toString() {

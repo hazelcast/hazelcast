@@ -2642,6 +2642,16 @@
             <xs:element name="client-permission-policy" type="security-object" minOccurs="0" maxOccurs="1"/>
             <xs:element name="client-permissions" type="permissions" minOccurs="0" maxOccurs="1"/>
             <xs:element name="security-interceptors" type="interceptors" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="client-block-unmapped-actions" type="xs:boolean" default="true" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Block or allow actions, submitted as tasks in an Executor from clients and have no permission mappings.
+
+                        true: Blocks all actions that have no permission mapping
+                        false: Allows all actions that have no permission mapping
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
         </xs:all>
         <xs:attribute name="enabled" type="xs:boolean" default="false"/>
     </xs:complexType>
@@ -3774,6 +3784,18 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+
+            <xs:element name="node-id-offset" type="xs:long" minOccurs="0" default="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Sets the offset that will be added to the node ID assigned to cluster member for this generator.
+                        Might be useful in A/B deployment scenarios where you have cluster A which you want to upgrade.
+                        You create cluster B and for some time both will generate IDs and you want to have them unique.
+                        In this case, configure node ID offset for generators on cluster B.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+
 
             <xs:element name="statistics-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true">
                 <xs:annotation>

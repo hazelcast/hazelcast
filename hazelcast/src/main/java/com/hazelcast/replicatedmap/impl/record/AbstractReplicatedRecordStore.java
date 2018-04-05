@@ -26,8 +26,8 @@ import com.hazelcast.replicatedmap.impl.operation.ReplicateUpdateOperation;
 import com.hazelcast.replicatedmap.impl.operation.VersionResponsePair;
 import com.hazelcast.replicatedmap.merge.ReplicatedMapMergePolicy;
 import com.hazelcast.spi.OperationService;
-import com.hazelcast.spi.merge.MergingEntry;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
+import com.hazelcast.spi.merge.SplitBrainMergeTypes.ReplicatedMapMergeTypes;
 import com.hazelcast.util.Clock;
 
 import java.util.ArrayList;
@@ -342,7 +342,8 @@ public abstract class AbstractReplicatedRecordStore<K, V> extends AbstractBaseRe
 
     @Override
     @SuppressWarnings("unchecked")
-    public boolean merge(MergingEntry<Object, Object> mergingEntry, SplitBrainMergePolicy mergePolicy) {
+    public boolean merge(ReplicatedMapMergeTypes mergingEntry,
+                         SplitBrainMergePolicy<Object, ReplicatedMapMergeTypes> mergePolicy) {
         serializationService.getManagedContext().initialize(mergingEntry);
         serializationService.getManagedContext().initialize(mergePolicy);
 
@@ -362,7 +363,7 @@ public abstract class AbstractReplicatedRecordStore<K, V> extends AbstractBaseRe
             VersionResponsePair responsePair = new VersionResponsePair(mergingEntry.getValue(), getVersion());
             sendReplicationOperation(false, name, dataKey, dataValue, record.getTtlMillis(), responsePair);
         } else {
-            MergingEntry<Object, Object> existingEntry = createMergingEntry(serializationService, record);
+            ReplicatedMapMergeTypes existingEntry = createMergingEntry(serializationService, record);
             V newValue = (V) mergePolicy.merge(mergingEntry, existingEntry);
             if (newValue == null) {
                 storage.remove(marshalledKey, record);
@@ -430,8 +431,8 @@ public abstract class AbstractReplicatedRecordStore<K, V> extends AbstractBaseRe
         return true;
     }
 
-    protected void sendReplicationOperation(boolean isRemove, String name, Data key, Data value, long ttl,
-                                            VersionResponsePair response) {
+    private void sendReplicationOperation(boolean isRemove, String name, Data key, Data value, long ttl,
+                                          VersionResponsePair response) {
         Collection<Member> members = nodeEngine.getClusterService().getMembers(MemberSelectors.DATA_MEMBER_SELECTOR);
         for (Member member : members) {
             invoke(isRemove, member.getAddress(), name, key, value, ttl, response);

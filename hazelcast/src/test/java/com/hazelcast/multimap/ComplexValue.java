@@ -18,12 +18,14 @@ package com.hazelcast.multimap;
 
 import java.io.Serializable;
 
-public class ComplexValue implements Serializable {
+class ComplexValue implements Serializable {
 
-    String name;
-    int time;
+    private static final long serialVersionUID = -6926569333412274188L;
 
-    public ComplexValue(String name, int time) {
+    private String name;
+    private int time;
+
+    ComplexValue(String name, int time) {
         this.name = name;
         this.time = time;
     }
@@ -36,8 +38,9 @@ public class ComplexValue implements Serializable {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        ComplexValue value = (ComplexValue) o;
-        if (name != null ? !name.equals(value.name) : value.name != null) {
+
+        ComplexValue that = (ComplexValue) o;
+        if (name != null ? !name.equals(that.name) : that.name != null) {
             return false;
         }
         return true;

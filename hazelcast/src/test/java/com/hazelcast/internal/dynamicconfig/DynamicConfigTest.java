@@ -561,6 +561,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
                 .setPrefetchCount(123)
                 .setPrefetchValidityMillis(456)
                 .setIdOffset(789)
+                .setNodeIdOffset(890)
                 .setStatisticsEnabled(false);
         driver.getConfig().addFlakeIdGeneratorConfig(config);
         assertConfigurationsEqualsOnAllMembers(config);

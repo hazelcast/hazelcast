@@ -49,7 +49,6 @@ import java.util.Map.Entry;
 
 import static com.hazelcast.query.PagingPredicateAccessor.getNearestAnchorEntry;
 import static com.hazelcast.util.SortingUtil.compareAnchor;
-import static com.hazelcast.util.SortingUtil.getSortedSubList;
 
 /**
  * Responsible for running a full-partition scna for a single partition in the calling thread.
@@ -75,9 +74,8 @@ public class PartitionScanRunner {
     }
 
     @SuppressWarnings("unchecked")
-    public Collection<QueryableEntry> run(String mapName, Predicate predicate, int partitionId) {
+    public void run(String mapName, Predicate predicate, int partitionId, Result result) {
         PagingPredicate pagingPredicate = predicate instanceof PagingPredicate ? (PagingPredicate) predicate : null;
-        List<QueryableEntry> resultList = new LinkedList<QueryableEntry>();
 
         PartitionContainer partitionContainer = mapServiceContext.getPartitionContainer(partitionId);
         MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
@@ -85,6 +83,7 @@ public class PartitionScanRunner {
         Map.Entry<Integer, Map.Entry> nearestAnchorEntry = getNearestAnchorEntry(pagingPredicate);
         boolean useCachedValues = isUseCachedDeserializedValuesEnabled(mapContainer, partitionId);
         Extractors extractors = mapServiceContext.getExtractors(mapName);
+        LazyMapEntry queryEntry = new LazyMapEntry();
         while (iterator.hasNext()) {
             Record record = iterator.next();
             Data key = (Data) toData(record.getKey());
@@ -93,14 +92,17 @@ public class PartitionScanRunner {
             if (value == null) {
                 continue;
             }
-            //we want to always use CachedQueryEntry as these are short-living objects anyway
-            QueryableEntry queryEntry = new LazyMapEntry(key, value, serializationService, extractors);
 
+            queryEntry.init(serializationService, key, value, extractors);
             if (predicate.apply(queryEntry) && compareAnchor(pagingPredicate, queryEntry, nearestAnchorEntry)) {
-                resultList.add(queryEntry);
+                result.add(queryEntry);
+
+                // We can't reuse the existing entry after it was added to the
+                // result. Allocate the new one.
+                queryEntry = new LazyMapEntry();
             }
         }
-        return getSortedSubList(resultList, pagingPredicate, nearestAnchorEntry);
+        result.orderAndLimit(pagingPredicate, nearestAnchorEntry);
     }
 
     /**

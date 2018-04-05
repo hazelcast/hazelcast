@@ -16,6 +16,10 @@
 
 package com.hazelcast.spi.merge;
 
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
+import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -32,20 +36,21 @@ import static org.mockito.Mockito.when;
 @Category({QuickTest.class, ParallelTest.class})
 public class PassThroughMergePolicyTest {
 
-    private static final String EXISTING = "EXISTING";
-    private static final String MERGING = "MERGING";
+    private static final SerializationService SERIALIZATION_SERVICE = new DefaultSerializationServiceBuilder().build();
+    private static final Data EXISTING = SERIALIZATION_SERVICE.toData("EXISTING");
+    private static final Data MERGING = SERIALIZATION_SERVICE.toData("MERGING");
 
-    protected SplitBrainMergePolicy mergePolicy;
+    private SplitBrainMergePolicy<Data, MapMergeTypes> mergePolicy;
 
     @Before
     public void setup() {
-        mergePolicy = new PassThroughMergePolicy();
+        mergePolicy = new PassThroughMergePolicy<Data, MapMergeTypes>();
     }
 
     @Test
     public void merge_mergingNotNull() {
-        MergingValue existing = mergingValueWithGivenValue(EXISTING);
-        MergingValue merging = mergingValueWithGivenValue(MERGING);
+        MapMergeTypes existing = mergingValueWithGivenValue(EXISTING);
+        MapMergeTypes merging = mergingValueWithGivenValue(MERGING);
 
         assertEquals(MERGING, mergePolicy.merge(merging, existing));
     }
@@ -53,14 +58,14 @@ public class PassThroughMergePolicyTest {
     @Test
     @SuppressWarnings("ConstantConditions")
     public void merge_mergingNull() {
-        MergingValue existing = mergingValueWithGivenValue(EXISTING);
-        MergingValue merging = null;
+        MapMergeTypes existing = mergingValueWithGivenValue(EXISTING);
+        MapMergeTypes merging = null;
 
         assertEquals(EXISTING, mergePolicy.merge(merging, existing));
     }
 
-    private MergingValue mergingValueWithGivenValue(String value) {
-        MergingValue mergingValue = mock(MergingValue.class);
+    private MapMergeTypes mergingValueWithGivenValue(Data value) {
+        MapMergeTypes mergingValue = mock(MapMergeTypes.class);
         try {
             when(mergingValue.getValue()).thenReturn(value);
             return mergingValue;

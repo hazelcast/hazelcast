@@ -29,6 +29,7 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.SplitBrainHandlerService;
+import com.hazelcast.spi.merge.MergingEntry;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.util.MutableLong;
@@ -44,18 +45,23 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.internal.cluster.Versions.V3_10;
-import static com.hazelcast.internal.config.ConfigValidator.checkMergePolicySupportsInMemoryFormat;
+import static com.hazelcast.internal.config.MergePolicyValidator.checkMergePolicySupportsInMemoryFormat;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static java.lang.String.format;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
- * Used by {@link com.hazelcast.cache.ICache} and {@link com.hazelcast.core.IMap}
- * to provide a shared merge runnable for {@link SplitBrainHandlerService#prepareMergeRunnable()}.
+ * Used by {@link com.hazelcast.cache.ICache}, {@link com.hazelcast.core.IMap}
+ * and {@link com.hazelcast.core.ReplicatedMap} to provide a merge runnable
+ * for {@link SplitBrainHandlerService#prepareMergeRunnable()}.
  *
- * @param <Store> type of the store in a partition
+ * @param <K>           type of the store key
+ * @param <V>           type of the store value
+ * @param <Store>       type of the store in a partition
+ * @param <MergingItem> type of the merging item
  */
-public abstract class AbstractMergeRunnable<Store, MergingItem> implements Runnable, Disposable {
+public abstract class AbstractMergeRunnable<K, V, Store, MergingItem extends MergingEntry<K, V>>
+        implements Runnable, Disposable {
 
     private static final long TIMEOUT_FACTOR = 500;
     private static final long MINIMAL_TIMEOUT_MILLIS = TimeUnit.SECONDS.toMillis(5);
@@ -100,20 +106,19 @@ public abstract class AbstractMergeRunnable<Store, MergingItem> implements Runna
         int mergedCount = 0;
         for (Map.Entry<String, Collection<Store>> entry : collectedStores.entrySet()) {
             String dataStructureName = entry.getKey();
-            Collection<Store> recordStores = entry.getValue();
 
-            SplitBrainMergePolicy mergePolicy = ((SplitBrainMergePolicy) getMergePolicy(dataStructureName));
+            //noinspection unchecked
+            SplitBrainMergePolicy<V, MergingItem> mergePolicy
+                    = ((SplitBrainMergePolicy<V, MergingItem>) getMergePolicy(dataStructureName));
             if (!isClusterVersion310OrLater(dataStructureName, mergePolicy)) {
                 continue;
             }
 
             int batchSize = getBatchSize(dataStructureName);
             MergingItemBiConsumer consumer = new MergingItemBiConsumer(dataStructureName, mergePolicy, batchSize);
-
-            for (Store recordStore : recordStores) {
+            for (Store recordStore : entry.getValue()) {
                 consumeStore(recordStore, consumer);
             }
-
             consumer.consumeRemaining();
 
             mergedCount += consumer.mergedCount;
@@ -121,18 +126,15 @@ public abstract class AbstractMergeRunnable<Store, MergingItem> implements Runna
         return mergedCount;
     }
 
+    // RU_COMPAT_3_9
     private boolean isClusterVersion310OrLater(String dataStructureName, SplitBrainMergePolicy policy) {
-        Version v310 = V3_10;
         Version currentVersion = clusterService.getClusterVersion();
-
-        if (currentVersion.isGreaterOrEqual(v310)) {
+        if (currentVersion.isGreaterOrEqual(V3_10)) {
             return true;
         }
-        // RU_COMPAT_3_9
-        String msg = "Cannot merge '%s' with merge policy '%s'."
-                + " Cluster version should be %s or later but found %s";
-        logger.info(format(msg, dataStructureName, policy, v310, currentVersion));
 
+        String msg = "Cannot merge '%s' with merge policy '%s'. Cluster version should be %s or later, but is %s";
+        logger.info(format(msg, dataStructureName, policy, V3_10, currentVersion));
         return false;
     }
 
@@ -168,7 +170,7 @@ public abstract class AbstractMergeRunnable<Store, MergingItem> implements Runna
     }
 
     /**
-     * Consumer to use when a {@link SplitBrainMergePolicy} type is used
+     * Consumer for {@link SplitBrainMergePolicy}.
      */
     private class MergingItemBiConsumer implements BiConsumer<Integer, MergingItem> {
 
@@ -177,13 +179,13 @@ public abstract class AbstractMergeRunnable<Store, MergingItem> implements Runna
         private final String dataStructureName;
         private final Address[] addresses;
         private final MutableLong[] counterPerMember;
-        private final SplitBrainMergePolicy mergePolicy;
+        private final SplitBrainMergePolicy<V, MergingItem> mergePolicy;
         private final List<MergingItem>[] mergingItemsPerPartition;
         private final Map<Address, List<Integer>> memberPartitionsMap;
 
         private int mergedCount;
 
-        MergingItemBiConsumer(String dataStructureName, SplitBrainMergePolicy mergePolicy, int batchSize) {
+        MergingItemBiConsumer(String dataStructureName, SplitBrainMergePolicy<V, MergingItem> mergePolicy, int batchSize) {
             this.dataStructureName = dataStructureName;
             this.batchSize = batchSize;
             this.mergePolicy = mergePolicy;
@@ -237,9 +239,8 @@ public abstract class AbstractMergeRunnable<Store, MergingItem> implements Runna
             }
         }
 
-        private void sendBatch(String dataStructureName, List<Integer> memberPartitions,
-                               List<MergingItem>[] entriesPerPartition,
-                               SplitBrainMergePolicy mergePolicy) {
+        private void sendBatch(String dataStructureName, List<Integer> memberPartitions, List<MergingItem>[] entriesPerPartition,
+                               SplitBrainMergePolicy<V, MergingItem> mergePolicy) {
             int size = memberPartitions.size();
             int[] partitions = new int[size];
             int index = 0;
@@ -274,11 +275,10 @@ public abstract class AbstractMergeRunnable<Store, MergingItem> implements Runna
             sendMergingData(dataStructureName, mergePolicy, partitions, entries, totalSize);
         }
 
-        private void sendMergingData(String dataStructureName, SplitBrainMergePolicy mergePolicy,
+        private void sendMergingData(String dataStructureName, SplitBrainMergePolicy<V, MergingItem> mergePolicy,
                                      int[] partitions, List<MergingItem>[] entries, int totalSize) {
             try {
-                OperationFactory factory
-                        = createMergeOperationFactory(dataStructureName, mergePolicy, partitions, entries);
+                OperationFactory factory = createMergeOperationFactory(dataStructureName, mergePolicy, partitions, entries);
                 operationService.invokeOnPartitions(serviceName, factory, partitions);
             } catch (Throwable t) {
                 logger.warning("Error while running merge operation: " + t.getMessage());
@@ -290,7 +290,7 @@ public abstract class AbstractMergeRunnable<Store, MergingItem> implements Runna
     }
 
     /**
-     * Consumer to use with legacy merge operations.
+     * Consumer for legacy merge operations.
      */
     private class LegacyOperationBiConsumer implements BiConsumer<Integer, Operation> {
 
@@ -344,24 +344,23 @@ public abstract class AbstractMergeRunnable<Store, MergingItem> implements Runna
     }
 
     /**
-     * Destroy a collection of stores
+     * Destroys a collection of stores.
      */
     protected abstract void destroyStores(Collection<Store> stores);
 
     /**
-     * Use to merge with policies which are a type of {@link SplitBrainMergePolicy}
+     * Used to merge with {@link SplitBrainMergePolicy}.
      */
     protected abstract void consumeStore(Store recordStore, BiConsumer<Integer, MergingItem> consumer);
 
     /**
-     * Use to merge with legacy merge policies
+     * Used to merge with legacy merge policies.
      */
     protected abstract void consumeStoreLegacy(Store recordStore, BiConsumer<Integer, Operation> consumer);
 
     /**
-     * This batch size can only be used when merge policy is
-     * a type of {@link SplitBrainMergePolicy}, legacy merge policies
-     * don't support batch data sending.
+     * This batch size can only be used with {@link SplitBrainMergePolicy},
+     * legacy merge policies don't support batch data sending.
      *
      * @return batch size from {@link com.hazelcast.config.MergePolicyConfig}
      */
@@ -378,13 +377,12 @@ public abstract class AbstractMergeRunnable<Store, MergingItem> implements Runna
     protected abstract InMemoryFormat getInMemoryFormat(String dataStructureName);
 
     /**
-     * Returned {@link OperationFactory} is used for
-     * {@link SplitBrainMergePolicy} types, legacy ones don't use this method.
+     * Returns an {@link OperationFactory} for {@link SplitBrainMergePolicy},
+     * legacy merge policies don't use this method.
      *
      * @return a new operation factory
      */
     protected abstract OperationFactory createMergeOperationFactory(String dataStructureName,
-                                                                    SplitBrainMergePolicy mergePolicy,
-                                                                    int[] partitions,
-                                                                    List<MergingItem>[] entries);
+                                                                    SplitBrainMergePolicy<V, MergingItem> mergePolicy,
+                                                                    int[] partitions, List<MergingItem>[] entries);
 }

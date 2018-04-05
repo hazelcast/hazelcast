@@ -30,7 +30,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Iterator;
 
-public class RemoveOperation extends MultiMapBackupAwareOperation implements MutatingOperation {
+public class RemoveOperation extends AbstractBackupAwareMultiMapOperation implements MutatingOperation {
 
     private Data value;
     private long recordId;

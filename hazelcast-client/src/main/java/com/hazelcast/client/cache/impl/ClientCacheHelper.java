@@ -105,23 +105,14 @@ final class ClientCacheHelper {
      * Creates a new cache configuration on Hazelcast members.
      *
      * @param client             the client instance which will send the operation to server
-     * @param existingConfig     an existing {@link CacheConfig}, already known to the client
      * @param newCacheConfig     the cache configuration to be sent to server
-     * @param createAlsoOnOthers when {@code true} the {@code newCacheConfig}
-     *                           will be sent to all cluster members by the target member that receives the
-     *                           invocation
-     * @param syncCreate         when {@code true}, this call will block until response is received from the member. This does not
-     *                           imply that when this method exits the {@code CacheConfig} is already created on all members.
      * @param <K>                type of the key of the cache
      * @param <V>                type of the value of the cache
      * @return the created cache configuration
      * @see com.hazelcast.cache.impl.operation.CacheCreateConfigOperation
      */
     static <K, V> CacheConfig<K, V> createCacheConfig(HazelcastClientInstanceImpl client,
-                                                      CacheConfig<K, V> existingConfig,
-                                                      CacheConfig<K, V> newCacheConfig,
-                                                      boolean createAlsoOnOthers,
-                                                      boolean syncCreate) {
+                                                      CacheConfig<K, V> newCacheConfig) {
         try {
             String nameWithPrefix = newCacheConfig.getNameWithPrefix();
             int partitionId = client.getClientPartitionService().getPartitionId(nameWithPrefix);
@@ -129,16 +120,12 @@ final class ClientCacheHelper {
             Object resolvedConfig = resolveCacheConfigWithRetry(client, newCacheConfig, partitionId);
 
             Data configData = client.getSerializationService().toData(resolvedConfig);
-            ClientMessage request = CacheCreateConfigCodec.encodeRequest(configData, createAlsoOnOthers);
+            ClientMessage request = CacheCreateConfigCodec.encodeRequest(configData, true);
             ClientInvocation clientInvocation = new ClientInvocation(client, request, nameWithPrefix, partitionId);
             Future<ClientMessage> future = clientInvocation.invoke();
-            if (syncCreate) {
-                final ClientMessage response = future.get();
-                final Data data = CacheCreateConfigCodec.decodeResponse(response).response;
-                return resolveCacheConfig(client, clientInvocation, data);
-            } else {
-                return existingConfig;
-            }
+            final ClientMessage response = future.get();
+            final Data data = CacheCreateConfigCodec.decodeResponse(response).response;
+            return resolveCacheConfig(client, clientInvocation, data);
         } catch (Exception e) {
             throw rethrow(e);
         }

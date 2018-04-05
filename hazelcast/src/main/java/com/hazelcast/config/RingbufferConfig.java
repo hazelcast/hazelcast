@@ -22,6 +22,8 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.annotation.Beta;
+import com.hazelcast.spi.merge.SplitBrainMergeTypeProvider;
+import com.hazelcast.spi.merge.SplitBrainMergeTypes;
 
 import java.io.IOException;
 
@@ -41,7 +43,7 @@ import static com.hazelcast.util.Preconditions.checkPositive;
  * in the cluster and its backup in another member in the cluster.
  */
 @Beta
-public class RingbufferConfig implements IdentifiedDataSerializable, Versioned {
+public class RingbufferConfig implements SplitBrainMergeTypeProvider, IdentifiedDataSerializable, Versioned {
 
     /**
      * Default value of capacity of the RingBuffer.
@@ -348,6 +350,11 @@ public class RingbufferConfig implements IdentifiedDataSerializable, Versioned {
     public RingbufferConfig setMergePolicyConfig(MergePolicyConfig mergePolicyConfig) {
         this.mergePolicyConfig = mergePolicyConfig;
         return this;
+    }
+
+    @Override
+    public Class getProvidedMergeTypes() {
+        return SplitBrainMergeTypes.RingbufferMergeTypes.class;
     }
 
     @Override

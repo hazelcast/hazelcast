@@ -45,6 +45,14 @@ class ReplicatedMapSplitBrainHandlerService extends AbstractSplitBrainHandlerSer
         this.mergePolicyProvider = mergePolicyProvider;
     }
 
+    public ReplicatedMapConfig getReplicatedMapConfig(String name) {
+        return service.getReplicatedMapConfig(name);
+    }
+
+    public MergePolicyProvider getMergePolicyProvider() {
+        return mergePolicyProvider;
+    }
+
     @Override
     protected Runnable newMergeRunnable(Map<String, Collection<ReplicatedRecordStore>> collectedStores,
                                         Map<String, Collection<ReplicatedRecordStore>> collectedStoresWithLegacyPolicies,
@@ -78,9 +86,5 @@ class ReplicatedMapSplitBrainHandlerService extends AbstractSplitBrainHandlerSer
     @Override
     protected void destroyStore(ReplicatedRecordStore store) {
         store.destroy();
-    }
-
-    public ReplicatedMapConfig getReplicatedMapConfig(String name) {
-        return service.getReplicatedMapConfig(name);
     }
 }

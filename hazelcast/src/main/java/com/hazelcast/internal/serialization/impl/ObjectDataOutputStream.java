@@ -282,8 +282,12 @@ public class ObjectDataOutputStream extends VersionedObjectDataOutput implements
         return byteOrder;
     }
 
+    @Override
+    public InternalSerializationService getSerializationService() {
+        return serializationService;
+    }
+
     private boolean bigEndian() {
         return byteOrder == ByteOrder.BIG_ENDIAN;
     }
-
 }

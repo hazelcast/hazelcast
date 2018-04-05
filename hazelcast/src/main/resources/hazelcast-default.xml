@@ -98,6 +98,9 @@
         <!--Queue capacity. 0 means Integer.MAX_VALUE.-->
         <queue-capacity>0</queue-capacity>
     </executor-service>
+    <security>
+        <client-block-unmapped-actions>true</client-block-unmapped-actions>
+    </security>
     <queue name="default">
         <!--
             Maximum size of the queue. When a JVM's local queue size reaches the maximum,
@@ -289,6 +292,7 @@
         <prefetch-count>100</prefetch-count>
         <prefetch-validity-millis>600000</prefetch-validity-millis>
         <id-offset>0</id-offset>
+        <node-id-offset>0</node-id-offset>
         <statistics-enabled>true</statistics-enabled>
     </flake-id-generator>
 

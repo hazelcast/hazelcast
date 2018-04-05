@@ -40,8 +40,8 @@ import static org.junit.Assert.assertTrue;
 public class MultiMapReturnedCollectionTest extends HazelcastTestSupport {
 
     @Test
-    public void testGet_withSetBackedValueCollection() throws Exception {
-        MultiMap<Integer, Integer> multiMap = createMultiMapWithCollectionType(MultiMapConfig.ValueCollectionType.SET, 2);
+    public void testGet_withSetBackedValueCollection() {
+        MultiMap<Integer, Integer> multiMap = createMultiMapWithCollectionType(MultiMapConfig.ValueCollectionType.SET);
 
         multiMap.put(0, 1);
         multiMap.put(0, 2);
@@ -53,16 +53,16 @@ public class MultiMapReturnedCollectionTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testGet_withSetBackedValueCollection_onEmptyMultiMap() throws Exception {
-        MultiMap<Integer, Integer> multiMap = createMultiMapWithCollectionType(MultiMapConfig.ValueCollectionType.SET, 2);
+    public void testGet_withSetBackedValueCollection_onEmptyMultiMap() {
+        MultiMap<Integer, Integer> multiMap = createMultiMapWithCollectionType(MultiMapConfig.ValueCollectionType.SET);
         Collection<Integer> collection = multiMap.get(0);
 
         assertTrue(collection instanceof Set);
     }
 
     @Test
-    public void testGet_withListBackedValueCollection() throws Exception {
-        MultiMap<Integer, Integer> multiMap = createMultiMapWithCollectionType(MultiMapConfig.ValueCollectionType.LIST, 2);
+    public void testGet_withListBackedValueCollection() {
+        MultiMap<Integer, Integer> multiMap = createMultiMapWithCollectionType(MultiMapConfig.ValueCollectionType.LIST);
 
         multiMap.put(0, 1);
         multiMap.put(0, 2);
@@ -74,16 +74,16 @@ public class MultiMapReturnedCollectionTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testGet_withListBackedValueCollection_onEmptyMultiMap() throws Exception {
-        MultiMap<Integer, Integer> multiMap = createMultiMapWithCollectionType(MultiMapConfig.ValueCollectionType.LIST, 2);
+    public void testGet_withListBackedValueCollection_onEmptyMultiMap() {
+        MultiMap<Integer, Integer> multiMap = createMultiMapWithCollectionType(MultiMapConfig.ValueCollectionType.LIST);
         Collection<Integer> collection = multiMap.get(0);
 
         assertTrue(collection instanceof List);
     }
 
     @Test
-    public void testRemove_withSetBackedValueCollection() throws Exception {
-        MultiMap<Integer, Integer> multiMap = createMultiMapWithCollectionType(MultiMapConfig.ValueCollectionType.SET, 2);
+    public void testRemove_withSetBackedValueCollection() {
+        MultiMap<Integer, Integer> multiMap = createMultiMapWithCollectionType(MultiMapConfig.ValueCollectionType.SET);
 
         multiMap.put(0, 1);
         multiMap.put(0, 2);
@@ -95,16 +95,16 @@ public class MultiMapReturnedCollectionTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testRemove_withSetBackedValueCollection_onEmptyMultiMap() throws Exception {
-        MultiMap<Integer, Integer> multiMap = createMultiMapWithCollectionType(MultiMapConfig.ValueCollectionType.SET, 2);
+    public void testRemove_withSetBackedValueCollection_onEmptyMultiMap() {
+        MultiMap<Integer, Integer> multiMap = createMultiMapWithCollectionType(MultiMapConfig.ValueCollectionType.SET);
         Collection<Integer> collection = multiMap.remove(0);
 
         assertTrue(collection instanceof Set);
     }
 
     @Test
-    public void testRemove_withListBackedValueCollection() throws Exception {
-        MultiMap<Integer, Integer> multiMap = createMultiMapWithCollectionType(MultiMapConfig.ValueCollectionType.LIST, 2);
+    public void testRemove_withListBackedValueCollection() {
+        MultiMap<Integer, Integer> multiMap = createMultiMapWithCollectionType(MultiMapConfig.ValueCollectionType.LIST);
 
         multiMap.put(0, 1);
         multiMap.put(0, 2);
@@ -116,20 +116,21 @@ public class MultiMapReturnedCollectionTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testRemove_withListBackedValueCollection_onEmptyMultiMap() throws Exception {
-        MultiMap<Integer, Integer> multiMap = createMultiMapWithCollectionType(MultiMapConfig.ValueCollectionType.LIST, 2);
+    public void testRemove_withListBackedValueCollection_onEmptyMultiMap() {
+        MultiMap<Integer, Integer> multiMap = createMultiMapWithCollectionType(MultiMapConfig.ValueCollectionType.LIST);
         Collection<Integer> collection = multiMap.remove(0);
 
         assertTrue(collection instanceof List);
     }
 
-
-    private MultiMap<Integer, Integer> createMultiMapWithCollectionType(MultiMapConfig.ValueCollectionType collectionType, int nodeCount) {
+    private MultiMap<Integer, Integer> createMultiMapWithCollectionType(MultiMapConfig.ValueCollectionType collectionType) {
         String multiMapName = randomMapName();
         Config config = new Config();
-        config.getMultiMapConfig(multiMapName).setValueCollectionType(collectionType);
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(nodeCount);
-        final HazelcastInstance[] instances = factory.newInstances(config);
+        config.getMultiMapConfig(multiMapName)
+                .setValueCollectionType(collectionType);
+
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance[] instances = factory.newInstances(config);
         return instances[0].getMultiMap(multiMapName);
     }
 }

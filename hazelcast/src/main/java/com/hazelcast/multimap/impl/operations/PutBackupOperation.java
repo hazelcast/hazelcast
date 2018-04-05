@@ -27,7 +27,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 
-public class PutBackupOperation extends MultiMapKeyBasedOperation implements BackupOperation {
+public class PutBackupOperation extends AbstractKeyBasedMultiMapOperation implements BackupOperation {
 
     private long recordId;
     private Data value;

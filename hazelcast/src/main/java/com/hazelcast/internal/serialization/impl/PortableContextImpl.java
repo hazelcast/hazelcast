@@ -120,7 +120,7 @@ final class PortableContextImpl implements PortableContext {
             String name = new String(chars);
             int fieldFactoryId = 0;
             int fieldClassId = 0;
-            int fieldVersion = 0;
+            int fieldVersion = version;
             if (type == FieldType.PORTABLE) {
                 // is null
                 if (in.readBoolean()) {

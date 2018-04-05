@@ -21,7 +21,7 @@ import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.spi.ReadonlyOperation;
 
-public class SizeOperation extends MultiMapOperation implements ReadonlyOperation {
+public class SizeOperation extends AbstractMultiMapOperation implements ReadonlyOperation {
 
     public SizeOperation() {
     }

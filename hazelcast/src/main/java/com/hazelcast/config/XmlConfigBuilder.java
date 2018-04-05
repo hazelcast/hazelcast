@@ -784,6 +784,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 generatorConfig.setPrefetchValidityMillis(Long.parseLong(value));
             } else if ("id-offset".equalsIgnoreCase(nodeName)) {
                 generatorConfig.setIdOffset(Long.parseLong(value));
+            } else if ("node-id-offset".equalsIgnoreCase(nodeName)) {
+                generatorConfig.setNodeIdOffset(Long.parseLong(value));
             } else if ("statistics-enabled".equals(nodeName)) {
                 generatorConfig.setStatisticsEnabled(getBooleanValue(value));
             }
@@ -1535,7 +1537,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             }
         }
         try {
-            checkCacheConfig(cacheConfig);
+            checkCacheConfig(cacheConfig, null);
         } catch (IllegalArgumentException e) {
             throw new InvalidConfigurationException(e.getMessage());
         }
@@ -2340,6 +2342,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 handleSecurityPermissions(child);
             } else if ("security-interceptors".equals(nodeName)) {
                 handleSecurityInterceptors(child);
+            } else if ("client-block-unmapped-actions".equals(nodeName)) {
+                config.getSecurityConfig().setClientBlockUnmappedActions(getBooleanValue(getTextContent(child)));
             }
         }
     }

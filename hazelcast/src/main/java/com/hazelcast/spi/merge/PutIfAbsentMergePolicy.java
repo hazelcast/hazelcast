@@ -22,15 +22,17 @@ import com.hazelcast.spi.impl.merge.SplitBrainDataSerializerHook;
 /**
  * Merges data structure entries from source to destination if they don't exist in the destination data structure.
  *
+ * @param <V> the type of the merged value
+ * @param <T> the type of the merging value
  * @since 3.10
  */
-public class PutIfAbsentMergePolicy extends AbstractSplitBrainMergePolicy {
+public class PutIfAbsentMergePolicy<V, T extends MergingValue<V>> extends AbstractSplitBrainMergePolicy<V, T> {
 
     public PutIfAbsentMergePolicy() {
     }
 
     @Override
-    public <V> V merge(MergingValue<V> mergingValue, MergingValue<V> existingValue) {
+    public V merge(T mergingValue, T existingValue) {
         if (existingValue == null) {
             return mergingValue.getValue();
         }

@@ -674,6 +674,11 @@ class ByteArrayObjectDataInput extends VersionedObjectDataInput implements Buffe
         return service.getClassLoader();
     }
 
+    @Override
+    public InternalSerializationService getSerializationService() {
+        return service;
+    }
+
     public ByteOrder getByteOrder() {
         return bigEndian ? ByteOrder.BIG_ENDIAN : ByteOrder.LITTLE_ENDIAN;
     }

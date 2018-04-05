@@ -2784,6 +2784,16 @@
                 </xs:complexType>
             </xs:element>
             <xs:element name="security-interceptors" type="interceptors" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="client-block-unmapped-actions" type="xs:boolean" default="true" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Block or allow actions, submitted as tasks in an Executor from clients and have no permission mappings.
+
+                        true: Blocks all actions that have no permission mapping
+                        false: Allows all actions that have no permission mapping
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
         </xs:sequence>
         <xs:attribute name="enabled" type="xs:string" default="false"/>
     </xs:complexType>
@@ -3309,6 +3319,16 @@
 
                     Negative values are allowed to increase the lifespan of the generator, however keep in
                     mind that the generated IDs might also be negative.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="nodeIdOffset" type="xs:long" default="0" use="optional">
+            <xs:annotation>
+                <xs:documentation>
+                    Sets the offset that will be added to the node ID assigned to cluster member for this generator.
+                    Might be useful in A/B deployment scenarios where you have cluster A which you want to upgrade.
+                    You create cluster B and for some time both will generate IDs and you want to have them unique.
+                    In this case, configure node ID offset for generators on cluster B.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
