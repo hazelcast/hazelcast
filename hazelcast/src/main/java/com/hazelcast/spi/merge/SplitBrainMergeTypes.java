@@ -87,7 +87,7 @@ public class SplitBrainMergeTypes {
      *
      * @since 3.10
      */
-    public interface QueueMergeTypes extends MergingValue<Data> {
+    public interface QueueMergeTypes extends MergingValue<Collection<Object>> {
     }
 
     /**

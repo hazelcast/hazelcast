@@ -18,13 +18,14 @@ package com.hazelcast.collection.impl.queue;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MergePolicyConfig;
+import com.hazelcast.config.QueueStoreConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IQueue;
+import com.hazelcast.core.QueueStore;
 import com.hazelcast.spi.merge.DiscardMergePolicy;
 import com.hazelcast.spi.merge.PassThroughMergePolicy;
 import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.SplitBrainTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -37,12 +38,18 @@ import org.junit.runners.Parameterized.Parameters;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.util.Collection;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.Queue;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.collection.impl.CollectionTestUtil.getBackupQueue;
 import static java.util.Arrays.asList;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static java.util.Collections.emptyMap;
+import static java.util.Collections.emptySet;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -59,8 +66,7 @@ import static org.junit.Assert.fail;
 @Category({QuickTest.class, ParallelTest.class})
 public class QueueSplitBrainTest extends SplitBrainTestSupport {
 
-    private static final int INITIAL_COUNT = 10;
-    private static final int NEW_ITEMS = 15;
+    private static final int ITEM_COUNT = 25;
 
     @Parameters(name = "mergePolicy:{0}")
     public static Collection<Object> parameters() {
@@ -68,7 +74,9 @@ public class QueueSplitBrainTest extends SplitBrainTestSupport {
                 DiscardMergePolicy.class,
                 PassThroughMergePolicy.class,
                 PutIfAbsentMergePolicy.class,
-                MergeIntegerValuesMergePolicy.class,
+                RemoveValuesMergePolicy.class,
+                ReturnPiCollectionMergePolicy.class,
+                MergeCollectionOfIntegerValuesMergePolicy.class,
         });
     }
 
@@ -77,6 +85,8 @@ public class QueueSplitBrainTest extends SplitBrainTestSupport {
 
     private String queueNameA = randomMapName("QueueA-");
     private String queueNameB = randomMapName("QueueB-");
+    private SplitBrainQueueStore queueStoreA = new SplitBrainQueueStore();
+    private SplitBrainQueueStore queueStoreB = new SplitBrainQueueStore();
     private IQueue<Object> queueA1;
     private IQueue<Object> queueA2;
     private IQueue<Object> queueB1;
@@ -93,32 +103,17 @@ public class QueueSplitBrainTest extends SplitBrainTestSupport {
         Config config = super.config();
         config.getQueueConfig(queueNameA)
                 .setMergePolicyConfig(mergePolicyConfig)
+                .setQueueStoreConfig(new QueueStoreConfig()
+                        .setStoreImplementation(queueStoreA))
                 .setBackupCount(1)
                 .setAsyncBackupCount(0);
         config.getQueueConfig(queueNameB)
                 .setMergePolicyConfig(mergePolicyConfig)
+                .setQueueStoreConfig(new QueueStoreConfig()
+                        .setStoreImplementation(queueStoreB))
                 .setBackupCount(1)
                 .setAsyncBackupCount(0);
         return config;
-    }
-
-    @Override
-    protected void onBeforeSplitBrainCreated(HazelcastInstance[] instances) {
-        IQueue<Object> queue = instances[0].getQueue(queueNameA);
-        for (int i = 0; i < INITIAL_COUNT; i++) {
-            queue.add("item" + i);
-        }
-
-        waitAllForSafeState(instances);
-
-        int partitionId = ((QueueProxySupport) queue).getPartitionId();
-        HazelcastInstance backupInstance = getFirstBackupInstance(instances, partitionId);
-        Queue<Object> backupQueue = getBackupQueue(backupInstance, queueNameA);
-
-        assertEquals("backupQueue should contain " + INITIAL_COUNT + " items", INITIAL_COUNT, backupQueue.size());
-        for (int i = 0; i < INITIAL_COUNT; i++) {
-            assertTrue("backupQueue should contain item" + i + " " + toString(backupQueue), backupQueue.contains("item" + i));
-        }
     }
 
     @Override
@@ -132,9 +127,6 @@ public class QueueSplitBrainTest extends SplitBrainTestSupport {
         queueA2 = secondBrain[0].getQueue(queueNameA);
 
         queueB2 = secondBrain[0].getQueue(queueNameB);
-        for (int i = 0; i < INITIAL_COUNT; i++) {
-            queueB2.add("item" + i);
-        }
 
         if (mergePolicyClass == DiscardMergePolicy.class) {
             afterSplitDiscardMergePolicy();
@@ -142,7 +134,11 @@ public class QueueSplitBrainTest extends SplitBrainTestSupport {
             afterSplitPassThroughMergePolicy();
         } else if (mergePolicyClass == PutIfAbsentMergePolicy.class) {
             afterSplitPutIfAbsentMergePolicy();
-        } else if (mergePolicyClass == MergeIntegerValuesMergePolicy.class) {
+        } else if (mergePolicyClass == RemoveValuesMergePolicy.class) {
+            afterSplitRemoveValuesMergePolicy();
+        } else if (mergePolicyClass == ReturnPiCollectionMergePolicy.class) {
+            afterSplitReturnPiCollectionMergePolicy();
+        } else if (mergePolicyClass == MergeCollectionOfIntegerValuesMergePolicy.class) {
             afterSplitCustomMergePolicy();
         } else {
             fail();
@@ -153,6 +149,10 @@ public class QueueSplitBrainTest extends SplitBrainTestSupport {
     protected void onAfterSplitBrainHealed(HazelcastInstance[] instances) {
         // wait until merge completes
         mergeLifecycleListener.await();
+
+        // we manually purge the unwanted items from the QueueStore, to test if the expected items are correctly stored
+        queueStoreA.purgeValuesWithPrefix("lostItem");
+        queueStoreB.purgeValuesWithPrefix("lostItem");
 
         int partitionId = ((QueueProxySupport) queueA1).getPartitionId();
         HazelcastInstance backupInstance = getFirstBackupInstance(instances, partitionId);
@@ -166,7 +166,11 @@ public class QueueSplitBrainTest extends SplitBrainTestSupport {
             afterMergePassThroughMergePolicy();
         } else if (mergePolicyClass == PutIfAbsentMergePolicy.class) {
             afterMergePutIfAbsentMergePolicy();
-        } else if (mergePolicyClass == MergeIntegerValuesMergePolicy.class) {
+        } else if (mergePolicyClass == RemoveValuesMergePolicy.class) {
+            afterMergeRemoveValuesMergePolicy();
+        } else if (mergePolicyClass == ReturnPiCollectionMergePolicy.class) {
+            afterMergeReturnPiCollectionMergePolicy();
+        } else if (mergePolicyClass == MergeCollectionOfIntegerValuesMergePolicy.class) {
             afterMergeCustomMergePolicy();
         } else {
             fail();
@@ -174,111 +178,260 @@ public class QueueSplitBrainTest extends SplitBrainTestSupport {
     }
 
     private void afterSplitDiscardMergePolicy() {
-        // we should have these items in the merged queueA, since they are added in both clusters
-        for (int i = INITIAL_COUNT; i < INITIAL_COUNT + NEW_ITEMS; i++) {
+        for (int i = 0; i < ITEM_COUNT; i++) {
             queueA1.add("item" + i);
-            queueA2.add("item" + i);
-        }
+            queueA2.add("lostItem" + i);
 
-        // we should not have these items in the merged queues, since they are in the smaller cluster only
-        for (int i = 0; i < NEW_ITEMS; i++) {
-            queueA2.add("discardedItem" + i);
-            queueB2.add("discardedItem" + i);
+            queueB2.add("lostItem" + i);
         }
     }
 
     private void afterMergeDiscardMergePolicy() {
-        assertQueueContent(queueA1, false);
-        assertQueueContent(queueA2, false);
-        assertQueueContent(backupQueue, false);
+        assertQueueContent(queueA1);
+        assertQueueContent(queueA2);
+        assertQueueContent(backupQueue);
+        assertQueueStoreContent(queueStoreA);
 
-        assertTrue(queueB1.isEmpty());
-        assertTrue(queueB2.isEmpty());
+        assertQueueContent(queueB1, 0);
+        assertQueueContent(queueB2, 0);
+        assertQueueStoreContent(queueStoreB, 0);
     }
 
     private void afterSplitPassThroughMergePolicy() {
-        for (int i = INITIAL_COUNT; i < INITIAL_COUNT + NEW_ITEMS; i++) {
-            queueA1.add("item" + i);
-            queueB2.add("item" + i);
-        }
-
-        // we should not lose the additional items from queueA2 or the new queueB2
-        for (int i = INITIAL_COUNT; i < INITIAL_COUNT + NEW_ITEMS * 2; i++) {
+        for (int i = 0; i < ITEM_COUNT; i++) {
+            queueA1.add("lostItem" + i);
             queueA2.add("item" + i);
+
             queueB2.add("item" + i);
         }
     }
 
     private void afterMergePassThroughMergePolicy() {
-        assertQueueContent(queueA1, true);
-        assertQueueContent(queueA2, true);
-        assertQueueContent(backupQueue, true);
+        assertQueueContent(queueA1);
+        assertQueueContent(queueA2);
+        assertQueueContent(backupQueue);
+        assertQueueStoreContent(queueStoreA);
 
-        assertQueueContent(queueB1, true);
-        assertQueueContent(queueB2, true);
+        assertQueueContent(queueB1);
+        assertQueueContent(queueB2);
+        assertQueueStoreContent(queueStoreB);
     }
 
     private void afterSplitPutIfAbsentMergePolicy() {
-        for (int i = INITIAL_COUNT; i < INITIAL_COUNT + NEW_ITEMS; i++) {
+        for (int i = 0; i < ITEM_COUNT; i++) {
             queueA1.add("item" + i);
-            queueB2.add("item" + i);
-        }
+            queueA2.add("lostItem" + i);
 
-        // we should not lose the additional items from queueA2 or the new queueB2
-        for (int i = INITIAL_COUNT; i < INITIAL_COUNT + NEW_ITEMS * 2; i++) {
-            queueA2.add("item" + i);
             queueB2.add("item" + i);
         }
     }
 
     private void afterMergePutIfAbsentMergePolicy() {
-        assertQueueContent(queueA1, true);
-        assertQueueContent(queueA2, true);
-        assertQueueContent(backupQueue, true);
+        assertQueueContent(queueA1);
+        assertQueueContent(queueA2);
+        assertQueueContent(backupQueue);
+        assertQueueStoreContent(queueStoreA);
 
-        assertQueueContent(queueB1, true);
-        assertQueueContent(queueB2, true);
+        assertQueueContent(queueB1);
+        assertQueueContent(queueB2);
+        assertQueueStoreContent(queueStoreB);
+    }
+
+    private void afterSplitRemoveValuesMergePolicy() {
+        for (int i = 0; i < ITEM_COUNT; i++) {
+            queueA1.add("lostItem" + i);
+            queueA2.add("lostItem" + i);
+
+            queueB2.add("lostItem" + i);
+        }
+    }
+
+    private void afterMergeRemoveValuesMergePolicy() {
+        assertQueueContent(queueA1, 0);
+        assertQueueContent(queueA2, 0);
+        assertQueueContent(backupQueue, 0);
+        assertQueueStoreContent(queueStoreA, 0);
+
+        assertQueueContent(queueB1, 0);
+        assertQueueContent(queueB2, 0);
+        assertQueueStoreContent(queueStoreB, 0);
+    }
+
+    private void afterSplitReturnPiCollectionMergePolicy() {
+        for (int i = 0; i < ITEM_COUNT; i++) {
+            queueA1.add("lostItem" + i);
+            queueA2.add("lostItem" + i);
+
+            queueB2.add("lostItem" + i);
+        }
+    }
+
+    private void afterMergeReturnPiCollectionMergePolicy() {
+        assertPiCollection(queueA1);
+        assertPiCollection(queueA2);
+        assertPiCollection(backupQueue);
+
+        assertPiCollection(queueB1);
+        assertPiCollection(queueB2);
     }
 
     private void afterSplitCustomMergePolicy() {
-        for (int i = 0; i < NEW_ITEMS; i++) {
+        for (int i = 0; i < ITEM_COUNT; i++) {
             queueA2.add(i);
-            queueA2.add("discardedItem" + i);
+            queueA2.add("lostItem" + i);
         }
+        // we clear the QueueStore, so we can check that the custom created items are correctly stored
+        queueStoreA.clear();
     }
 
     private void afterMergeCustomMergePolicy() {
-        assertEquals(INITIAL_COUNT + NEW_ITEMS, queueA1.size());
-        assertEquals(INITIAL_COUNT + NEW_ITEMS, queueA2.size());
-        assertEquals(INITIAL_COUNT + NEW_ITEMS, backupQueue.size());
+        assertQueueContent(queueA1, ITEM_COUNT);
+        assertQueueContent(queueA2, ITEM_COUNT);
+        assertQueueContent(backupQueue, ITEM_COUNT);
+        assertQueueStoreContent(queueStoreA, ITEM_COUNT);
+    }
 
-        for (int i = 0; i < INITIAL_COUNT; i++) {
-            assertTrue("queueA1 should contain 'item" + i + "' " + toString(queueA1), queueA1.contains("item" + i));
-            assertTrue("queueA2 should contain 'item" + i + "' " + toString(queueA2), queueA2.contains("item" + i));
-            assertTrue("backupQueue should contain 'item" + i + "' " + toString(backupQueue), backupQueue.contains("item" + i));
-        }
-        for (int i = 0; i < NEW_ITEMS; i++) {
-            assertTrue("queueA1 should contain '" + i + "' " + toString(queueA1), queueA1.contains(i));
-            assertTrue("queueA2 should contain '" + i + "' " + toString(queueA2), queueA2.contains(i));
-            assertTrue("backupQueue should contain '" + i + "' " + backupQueue, backupQueue.contains(i));
+    private static void assertQueueContent(Queue<Object> queue) {
+        assertQueueContent(queue, ITEM_COUNT, "item");
+    }
 
-            assertFalse("queueA1 should not contain 'discardedItem" + i + "'", queueA1.contains("discardedItem" + i));
-            assertFalse("queueA2 should not contain 'discardedItem" + i + "'", queueA2.contains("discardedItem" + i));
-            assertFalse("backupQueue should not contain 'discardedItem" + i + "'", backupQueue.contains("discardedItem" + i));
+    private static void assertQueueContent(Queue<Object> queue, int expectedSize) {
+        assertQueueContent(queue, expectedSize, null);
+    }
+
+    private static void assertQueueContent(Queue<Object> queue, int expectedSize, String prefix) {
+        assertEqualsStringFormat("queue " + toString(queue) + " should contain %d items, but was %d", expectedSize, queue.size());
+
+        for (int i = 0; i < expectedSize; i++) {
+            Object expectedValue = prefix == null ? i : prefix + i;
+            assertTrue("queue " + toString(queue) + " should contain " + expectedValue, queue.contains(expectedValue));
         }
     }
 
-    private static void assertQueueContent(final Queue<Object> queue, boolean hasMergedItems) {
-        final int expectedCount = INITIAL_COUNT + NEW_ITEMS * (hasMergedItems ? 2 : 1);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals("queue should contain " + expectedCount + " items", expectedCount, queue.size());
-            }
-        });
+    private static void assertQueueStoreContent(SplitBrainQueueStore queueStore) {
+        assertQueueStoreContent(queueStore, ITEM_COUNT, "item");
+    }
 
-        for (int i = 0; i < INITIAL_COUNT + NEW_ITEMS * (hasMergedItems ? 2 : 1); i++) {
-            assertTrue("queue should contain item" + i + " " + toString(queue), queue.contains("item" + i));
+    private static void assertQueueStoreContent(SplitBrainQueueStore queueStore, int expectedSize) {
+        assertQueueStoreContent(queueStore, expectedSize, null);
+    }
+
+    private static void assertQueueStoreContent(SplitBrainQueueStore queueStore, int expectedSize, String prefix) {
+        assertEqualsStringFormat("queueStore " + queueStore + " should contain %d items, but was %d",
+                expectedSize, queueStore.size());
+
+        for (int i = 0; i < expectedSize; i++) {
+            Object expectedValue = prefix == null ? i : prefix + i;
+            assertTrue("queueStore " + queueStore + " should contain " + expectedValue, queueStore.contains(expectedValue));
+        }
+    }
+
+    /**
+     * A {@link QueueStore} implementation for split-brain tests.
+     * <p>
+     * <b>Note</b>: The {@link QueueStore} uses the internal item ID from the {@link QueueItem}.
+     * This ID is not reliable during a split-brain situation, since there can be duplicates in each sub-cluster.
+     * Also the order is not guaranteed to be the same between the sub-clusters.
+     * So after the split-brain healing we cannot make a strict test on the stored items.
+     * The split-brain healing also doesn't try to delete any old items, but adds newly created items to the store.
+     */
+    private static class SplitBrainQueueStore implements QueueStore<Object> {
+
+        private final ConcurrentMap<Long, Collection<Object>> store = new ConcurrentHashMap<Long, Collection<Object>>();
+
+        @Override
+        public Object load(Long key) {
+            return null;
+        }
+
+        @Override
+        public Map<Long, Object> loadAll(Collection<Long> keys) {
+            return emptyMap();
+        }
+
+        @Override
+        public Set<Long> loadAllKeys() {
+            return emptySet();
+        }
+
+        @Override
+        public void store(Long key, Object value) {
+            Collection<Object> collection = getCollection(key);
+            collection.add(value);
+        }
+
+        @Override
+        public void storeAll(Map<Long, Object> map) {
+            for (Map.Entry<Long, Object> entry : map.entrySet()) {
+                Collection<Object> collection = getCollection(entry.getKey());
+                collection.add(entry.getValue());
+            }
+        }
+
+        @Override
+        public void delete(Long key) {
+            store.remove(key);
+        }
+
+        @Override
+        public void deleteAll(Collection<Long> keys) {
+            for (Long key : keys) {
+                store.remove(key);
+            }
+        }
+
+        @Override
+        public String toString() {
+            return store.toString();
+        }
+
+        void clear() {
+            store.clear();
+        }
+
+        @SuppressWarnings("SameParameterValue")
+        void purgeValuesWithPrefix(String prefix) {
+            Iterator<Collection<Object>> iterator = store.values().iterator();
+            while (iterator.hasNext()) {
+                Collection<Object> collection = iterator.next();
+                Iterator<Object> collectionIterator = collection.iterator();
+                while (collectionIterator.hasNext()) {
+                    Object value = collectionIterator.next();
+                    if (value instanceof String) {
+                        if (((String) value).startsWith(prefix)) {
+                            collectionIterator.remove();
+                        }
+                    }
+                }
+                if (collection.isEmpty()) {
+                    iterator.remove();
+                }
+            }
+        }
+
+        int size() {
+            return store.size();
+        }
+
+        boolean contains(Object expectedValue) {
+            for (Collection<Object> collection : store.values()) {
+                if (collection.contains(expectedValue)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private Collection<Object> getCollection(Long key) {
+            Collection<Object> collection = store.get(key);
+            if (collection == null) {
+                collection = new ConcurrentLinkedQueue<Object>();
+                Collection<Object> candidate = store.putIfAbsent(key, collection);
+                if (candidate != null) {
+                    return candidate;
+                }
+            }
+            return collection;
         }
     }
 }

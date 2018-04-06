@@ -16,9 +16,10 @@
 
 package com.hazelcast.spi.impl.merge;
 
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.QueueMergeTypes;
 import com.hazelcast.spi.serialization.SerializationService;
+
+import java.util.Collection;
 
 /**
  * Implementation of {@link QueueMergeTypes}.
@@ -26,7 +27,8 @@ import com.hazelcast.spi.serialization.SerializationService;
  * @since 3.10
  */
 @SuppressWarnings("WeakerAccess")
-public class QueueMergingValueImpl extends AbstractMergingValueImpl<Data, QueueMergingValueImpl> implements QueueMergeTypes {
+public class QueueMergingValueImpl extends AbstractCollectionMergingValueImpl<Collection<Object>, QueueMergingValueImpl>
+        implements QueueMergeTypes {
 
     public QueueMergingValueImpl() {
     }
