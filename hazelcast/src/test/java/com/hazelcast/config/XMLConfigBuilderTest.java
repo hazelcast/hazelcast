@@ -1707,7 +1707,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         assertEquals(2, cardinalityEstimatorConfig.getBackupCount());
         assertEquals(3, cardinalityEstimatorConfig.getAsyncBackupCount());
         assertEquals("com.hazelcast.spi.merge.HyperLogLogMergePolicy",
-                cardinalityEstimatorConfig.getMergePolicyConfig().policy);
+                cardinalityEstimatorConfig.getMergePolicyConfig().getPolicy());
         assertEquals("customQuorumRule", cardinalityEstimatorConfig.getQuorumName());
     }
 
