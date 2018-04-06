@@ -53,7 +53,7 @@ public class MergeBackupOperation extends AbstractMultiMapOperation implements B
     @Override
     public void run() throws Exception {
         response = true;
-        MultiMapContainer container = getOrCreateContainer();
+        MultiMapContainer container = getOrCreateContainerWithoutAccess();
         for (Map.Entry<Data, Collection<MultiMapRecord>> entry : backupEntries.entrySet()) {
             Data key = entry.getKey();
             Collection<MultiMapRecord> value = entry.getValue();

@@ -80,7 +80,7 @@ public class TxnRemoveAllOperation extends AbstractKeyBasedMultiMapOperation imp
             }
         }
         if (coll.isEmpty()) {
-            delete();
+            container.delete(dataKey);
         }
     }
 

@@ -58,7 +58,7 @@ public class TxnLockAndGetOperation extends AbstractKeyBasedMultiMapOperation im
         if (!container.txnLock(dataKey, getCallerUuid(), threadId, getCallId(), ttl, blockReads)) {
             throw new TransactionException("Transaction couldn't obtain lock!");
         }
-        MultiMapValue multiMapValue = getMultiMapValueOrNull();
+        MultiMapValue multiMapValue = container.getMultiMapValueOrNull(dataKey);
         boolean isLocal = executedLocally();
         Collection<MultiMapRecord> collection = multiMapValue == null ? null : multiMapValue.getCollection(isLocal);
         MultiMapResponse multiMapResponse = new MultiMapResponse(collection, getValueCollectionType(container));

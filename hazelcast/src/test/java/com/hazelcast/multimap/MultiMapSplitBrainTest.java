@@ -243,19 +243,13 @@ public class MultiMapSplitBrainTest extends SplitBrainTestSupport {
      */
     private void afterSplitLatestAccessMergePolicy() {
         multiMapA1.put("key", "value");
-        // access to record
-        multiMapA1.get("key");
 
         // prevent updating at the same time
         sleepAtLeastMillis(100);
 
         multiMapA2.put("key", "LatestAccessedValue");
-        // access to record
-        multiMapA2.get("key");
 
         multiMapB2.put("key", "LatestAccessedValue");
-        // access to record
-        multiMapB2.get("key");
     }
 
     private void afterMergeLatestAccessMergePolicy() {

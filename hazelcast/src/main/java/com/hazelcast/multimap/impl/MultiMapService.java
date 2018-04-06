@@ -299,7 +299,7 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
             assert isKnownServiceNamespace(namespace) : namespace + " is not a MultiMapService namespace!";
 
             ObjectNamespace ns = (ObjectNamespace) namespace;
-            MultiMapContainer container = partitionContainer.getMultiMapContainer(ns.getObjectName());
+            MultiMapContainer container = partitionContainer.containerMap.get(ns.getObjectName());
             if (container == null) {
                 continue;
             }
@@ -315,7 +315,7 @@ public class MultiMapService implements ManagedService, RemoteService, Fragmente
     public void insertMigratedData(int partitionId, Map<String, Map<Data, MultiMapValue>> map) {
         for (Map.Entry<String, Map<Data, MultiMapValue>> entry : map.entrySet()) {
             String name = entry.getKey();
-            MultiMapContainer container = getOrCreateCollectionContainer(partitionId, name);
+            MultiMapContainer container = getOrCreateCollectionContainerWithoutAccess(partitionId, name);
             Map<Data, MultiMapValue> collections = entry.getValue();
             long maxRecordId = -1;
 

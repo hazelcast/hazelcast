@@ -16,19 +16,14 @@
 
 package com.hazelcast.multimap.impl.operations;
 
-import com.hazelcast.multimap.impl.MultiMapContainer;
-import com.hazelcast.multimap.impl.MultiMapRecord;
-import com.hazelcast.multimap.impl.MultiMapValue;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.PartitionAwareOperation;
 
 import java.io.IOException;
-import java.util.Collection;
 
-public abstract class AbstractKeyBasedMultiMapOperation extends AbstractMultiMapOperation
-        implements PartitionAwareOperation {
+public abstract class AbstractKeyBasedMultiMapOperation extends AbstractMultiMapOperation implements PartitionAwareOperation {
 
     protected Data dataKey;
     protected long threadId;
@@ -49,23 +44,6 @@ public abstract class AbstractKeyBasedMultiMapOperation extends AbstractMultiMap
 
     public final void setThreadId(long threadId) {
         this.threadId = threadId;
-    }
-
-    public final MultiMapValue getOrCreateMultiMapValue() {
-        return getOrCreateContainer().getOrCreateMultiMapValue(dataKey);
-    }
-
-    public final MultiMapValue getMultiMapValueOrNull() {
-        MultiMapContainer container = getOrCreateContainer();
-        return container.getMultiMapValueOrNull(dataKey);
-    }
-
-    public final Collection<MultiMapRecord> remove(boolean copyOf) {
-        return getOrCreateContainer().remove(dataKey, copyOf);
-    }
-
-    public final boolean delete() {
-        return getOrCreateContainer().delete(dataKey);
     }
 
     @Override

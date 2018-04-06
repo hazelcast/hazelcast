@@ -53,7 +53,7 @@ public class TxnCommitBackupOperation extends AbstractKeyBasedMultiMapOperation 
         }
         // changed to forceUnlock because replica-sync of lock causes problems, same as IMap
         // real solution is to make 'lock-and-get' backup-aware
-        getOrCreateContainer().forceUnlock(dataKey);
+        getOrCreateContainerWithoutAccess().forceUnlock(dataKey);
     }
 
     @Override
