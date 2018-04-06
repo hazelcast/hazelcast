@@ -20,9 +20,11 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapService;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
@@ -38,26 +40,34 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelTest.class})
 public class MultiMapContainerStatisticsTest extends HazelcastTestSupport {
 
+    private static final String MULTI_MAP_NAME = "multiMap";
+
     private String key;
     private MultiMap<String, String> multiMap;
     private MultiMapContainer mapContainer;
+    private MultiMapContainer mapBackupContainer;
 
     private long previousAccessTime;
     private long previousUpdateTime;
 
+    private long previousAccessTimeOnBackup;
+    private long previousUpdateTimeOnBackup;
+
     @Before
     public void setUp() {
-        HazelcastInstance hz = createHazelcastInstance(smallInstanceConfig());
-        key = generateKeyForPartition(hz, 0);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance[] instances = factory.newInstances(smallInstanceConfig());
 
-        NodeEngineImpl nodeEngine = HazelcastTestSupport.getNodeEngineImpl(hz);
-        MultiMapService mapService = nodeEngine.getService(MultiMapService.SERVICE_NAME);
-
-        multiMap = hz.getMultiMap("multiMap");
-        mapContainer = mapService.getOrCreateCollectionContainerWithoutAccess(0, "multiMap");
+        key = generateKeyOwnedBy(instances[0]);
+        multiMap = instances[0].getMultiMap(MULTI_MAP_NAME);
+        mapContainer = getMultiMapContainer(instances[0], key);
+        mapBackupContainer = getMultiMapContainer(instances[1], key);
 
         previousAccessTime = mapContainer.getLastAccessTime();
         previousUpdateTime = mapContainer.getLastUpdateTime();
+
+        previousAccessTimeOnBackup = mapBackupContainer.getLastAccessTime();
+        previousUpdateTimeOnBackup = mapBackupContainer.getLastUpdateTime();
     }
 
     @Test
@@ -65,6 +75,13 @@ public class MultiMapContainerStatisticsTest extends HazelcastTestSupport {
         assertNotEqualsStringFormat("Expected the creationTime not to be %d, but was %d", 0L, mapContainer.getCreationTime());
         assertEqualsStringFormat("Expected the lastAccessTime to be %d, but was %d", 0L, mapContainer.getLastAccessTime());
         assertEqualsStringFormat("Expected the lastUpdateTime to be %d, but was %d", 0L, mapContainer.getLastUpdateTime());
+
+        assertNotEqualsStringFormat("Expected the creationTime on backup not to be %d, but was %d",
+                0L, mapBackupContainer.getCreationTime());
+        assertEqualsStringFormat("Expected the lastAccessTime on backup to be %d, but was %d",
+                0L, mapBackupContainer.getLastAccessTime());
+        assertEqualsStringFormat("Expected the lastUpdateTime on backup to be %d, but was %d",
+                0L, mapBackupContainer.getLastUpdateTime());
 
         // a get operation updates the lastAccessTime, but not the lastUpdateTime
         sleepMillis(10);
@@ -125,6 +142,10 @@ public class MultiMapContainerStatisticsTest extends HazelcastTestSupport {
         multiMap.clear();
         assertNewLastAccessTime();
         assertNewLastUpdateTime();
+
+        // no operation should update the lastAccessTime or lastUpdateTime on the backup container
+        assertSameLastAccessTimeOnBackup();
+        assertSameLastUpdateTimeOnBackup();
     }
 
     private void assertNewLastAccessTime() {
@@ -147,5 +168,29 @@ public class MultiMapContainerStatisticsTest extends HazelcastTestSupport {
                 lastUpdateTime, previousUpdateTime, lastUpdateTime - previousUpdateTime),
                 lastUpdateTime > previousUpdateTime);
         previousUpdateTime = lastUpdateTime;
+    }
+
+    private void assertSameLastAccessTimeOnBackup() {
+        long lastAccessTime = mapBackupContainer.getLastAccessTime();
+        assertEqualsStringFormat("Expected the lastAccessTime on backup to be %d, but was %d",
+                previousAccessTimeOnBackup, lastAccessTime);
+        previousAccessTimeOnBackup = lastAccessTime;
+    }
+
+    private void assertSameLastUpdateTimeOnBackup() {
+        long lastUpdateTime = mapBackupContainer.getLastUpdateTime();
+        assertEqualsStringFormat("Expected the lastUpdateTime on backup to be %d, but was %d",
+                previousUpdateTimeOnBackup, lastUpdateTime);
+        previousUpdateTimeOnBackup = lastUpdateTime;
+    }
+
+    private static MultiMapContainer getMultiMapContainer(HazelcastInstance hz, String key) {
+        NodeEngineImpl nodeEngine = getNodeEngineImpl(hz);
+        MultiMapService mapService = nodeEngine.getService(MultiMapService.SERVICE_NAME);
+
+        Data dataKey = nodeEngine.getSerializationService().toData(key);
+        int partitionId = nodeEngine.getPartitionService().getPartitionId(dataKey);
+
+        return mapService.getOrCreateCollectionContainerWithoutAccess(partitionId, MULTI_MAP_NAME);
     }
 }

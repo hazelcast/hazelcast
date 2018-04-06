@@ -42,11 +42,9 @@ public class TxnRollbackBackupOperation extends AbstractKeyBasedMultiMapOperatio
 
     @Override
     public void run() throws Exception {
-        MultiMapContainer container = getOrCreateContainer();
+        MultiMapContainer container = getOrCreateContainerWithoutAccess();
         if (container.isLocked(dataKey) && !container.unlock(dataKey, caller, threadId, getCallId())) {
-            throw new TransactionException(
-                    "Lock is not owned by the transaction! -> " + container.getLockOwnerInfo(dataKey)
-            );
+            throw new TransactionException("Lock is not owned by the transaction! -> " + container.getLockOwnerInfo(dataKey));
         }
     }
 

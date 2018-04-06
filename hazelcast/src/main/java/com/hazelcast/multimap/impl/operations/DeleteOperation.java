@@ -35,8 +35,9 @@ public class DeleteOperation extends AbstractBackupAwareMultiMapOperation {
 
     @Override
     public void run() throws Exception {
-        if (delete()) {
-            getOrCreateContainer().update();
+        MultiMapContainer container = getOrCreateContainer();
+        if (container.delete(dataKey)) {
+            container.update();
         }
         shouldBackup = true;
     }

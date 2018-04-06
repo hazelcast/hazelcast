@@ -69,7 +69,7 @@ public class TxnRemoveOperation extends AbstractKeyBasedMultiMapOperation implem
             }
         }
         if (coll.isEmpty()) {
-            delete();
+            container.delete(dataKey);
         }
     }
 

@@ -45,7 +45,7 @@ public class TxnPutBackupOperation extends AbstractKeyBasedMultiMapOperation imp
 
     @Override
     public void run() throws Exception {
-        MultiMapContainer container = getOrCreateContainer();
+        MultiMapContainer container = getOrCreateContainerWithoutAccess();
         MultiMapValue multiMapValue = container.getOrCreateMultiMapValue(dataKey);
         response = true;
         if (multiMapValue.containsRecordId(recordId)) {
