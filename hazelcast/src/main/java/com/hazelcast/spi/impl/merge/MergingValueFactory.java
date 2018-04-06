@@ -105,9 +105,10 @@ public final class MergingValueFactory {
                 .setCost(record.getCost());
     }
 
-    public static MapMergeTypes createMergingEntry(SerializationService serializationService, Record record, Data dataValue) {
+    public static MapMergeTypes createMergingEntry(SerializationService serializationService,
+                                                   Data dataKey, Data dataValue, Record record) {
         return new MapMergingEntryImpl(serializationService)
-                .setKey(record.getKey())
+                .setKey(dataKey)
                 .setValue(dataValue)
                 .setCreationTime(record.getCreationTime())
                 .setExpirationTime(record.getExpirationTime())

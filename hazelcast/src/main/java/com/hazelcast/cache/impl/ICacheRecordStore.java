@@ -358,6 +358,12 @@ public interface ICacheRecordStore {
     void destroy();
 
     /**
+     * Like {@link #destroy()} but does not touch state on other services
+     * like event journal service.
+     */
+    void destroyInternals();
+
+    /**
      * Gets the configuration of the cache that this store belongs to.
      *
      * @return {@link CacheConfig}

@@ -130,6 +130,14 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     @Override
+    public void destroyInternals() {
+        clearIndexes();
+        clearMapStore();
+        clearStorage(false);
+        storage.destroy(false);
+    }
+
+    @Override
     public long softFlush() {
         updateStoreStats();
         return mapDataStore.softFlush();
@@ -216,13 +224,40 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     @Override
     public void clearPartition(boolean onShutdown) {
+        clearLockStore();
+        clearIndexes();
+        clearMapStore();
+        clearStorage(onShutdown);
+    }
+
+    protected void clearLockStore() {
         NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
         if (lockService != null) {
             ObjectNamespace namespace = MapService.getObjectNamespace(name);
             lockService.clearLockStore(partitionId, namespace);
         }
+    }
 
+    protected void clearStorage(boolean onShutdown) {
+        if (onShutdown) {
+            NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
+            NativeMemoryConfig nativeMemoryConfig = nodeEngine.getConfig().getNativeMemoryConfig();
+            boolean shouldClear = (nativeMemoryConfig != null && nativeMemoryConfig.getAllocatorType() != POOLED);
+            if (shouldClear) {
+                storage.clear(true);
+            }
+            storage.destroy(true);
+        } else {
+            storage.clear(false);
+        }
+    }
+
+    protected void clearMapStore() {
+        mapDataStore.reset();
+    }
+
+    protected void clearIndexes() {
         Indexes indexes = mapContainer.getIndexes(partitionId);
         if (indexes.isGlobal()) {
             if (indexes.hasIndex()) {
@@ -234,19 +269,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             }
         } else {
             indexes.clearIndexes();
-        }
-
-        mapDataStore.reset();
-
-        if (onShutdown) {
-            NativeMemoryConfig nativeMemoryConfig = nodeEngine.getConfig().getNativeMemoryConfig();
-            boolean shouldClear = (nativeMemoryConfig != null && nativeMemoryConfig.getAllocatorType() != POOLED);
-            if (shouldClear) {
-                storage.clear(true);
-            }
-            storage.destroy(true);
-        } else {
-            storage.clear(false);
         }
     }
 
@@ -384,7 +406,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         // This conversion is required by mapDataStore#removeAll call.
         List<Data> keys = getKeysFromRecords(clearableRecords);
         mapDataStore.removeAll(keys);
-        mapDataStore.reset();
+        clearMapStore();
         removeIndex(clearableRecords);
         return removeRecords(clearableRecords);
     }
@@ -439,7 +461,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
      */
     @Override
     public void reset() {
-        mapDataStore.reset();
+        clearMapStore();
         storage.clear(false);
         stats.reset();
     }

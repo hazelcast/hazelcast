@@ -134,10 +134,7 @@ public class MemberListJoinVersionTest extends HazelcastTestSupport {
         assertNotEquals(afterJoinVersionOnMember1, beforeJoinVersionOnMember3);
 
         int versionOnLocalMember3 = getNode(member3).getLocalMember().getMemberListJoinVersion();
-        // during join, we are forcibly changing member-type of member3 to lite member, upon end of merge operations
-        // promoting that member3 to data member, in this scenario, local members version is not incremented and
-        // in this test it should be off by 1.
-        assertEquals(afterJoinVersionOnMember1, versionOnLocalMember3 + 1);
+        assertEquals(afterJoinVersionOnMember1, versionOnLocalMember3);
 
         assertMemberViewsAreSame(getMemberMap(member1), getMemberMap(member3));
         assertTrueEventually(new AssertTask() {

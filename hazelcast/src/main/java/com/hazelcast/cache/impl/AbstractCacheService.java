@@ -135,12 +135,13 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
                 }
             };
 
+    protected ILogger logger;
     protected NodeEngine nodeEngine;
     protected CachePartitionSegment[] segments;
     protected CacheEventHandler cacheEventHandler;
-    protected CacheSplitBrainHandlerService splitBrainHandlerService;
     protected RingbufferCacheEventJournalImpl eventJournal;
-    protected ILogger logger;
+    protected CacheMergePolicyProvider mergePolicyProvider;
+    protected CacheSplitBrainHandlerService splitBrainHandlerService;
 
     @Override
     public final void init(NodeEngine nodeEngine, Properties properties) {
@@ -151,15 +152,20 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
             segments[i] = newPartitionSegment(i);
         }
         this.cacheEventHandler = new CacheEventHandler(nodeEngine);
-        this.splitBrainHandlerService = newSplitBrainHandlerService(nodeEngine);
+        this.splitBrainHandlerService = new CacheSplitBrainHandlerService(nodeEngine, segments);
         this.logger = nodeEngine.getLogger(getClass());
         this.eventJournal = new RingbufferCacheEventJournalImpl(nodeEngine);
+        this.mergePolicyProvider = new CacheMergePolicyProvider(nodeEngine);
+
         postInit(nodeEngine, properties);
     }
 
-    // this method is overridden on ee
-    protected CacheSplitBrainHandlerService newSplitBrainHandlerService(NodeEngine nodeEngine) {
-        return new CacheSplitBrainHandlerService(nodeEngine, configs, segments);
+    public CacheMergePolicyProvider getMergePolicyProvider() {
+        return mergePolicyProvider;
+    }
+
+    public ConcurrentMap<String, CacheConfig> getConfigs() {
+        return configs;
     }
 
     protected void postInit(NodeEngine nodeEngine, Properties properties) {
@@ -237,7 +243,6 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
                     cacheConfig.setManagerPrefix(HazelcastCacheManager.CACHE_MANAGER_PREFIX);
                 }
 
-                CacheMergePolicyProvider mergePolicyProvider = splitBrainHandlerService.getMergePolicyProvider();
                 checkCacheConfig(cacheConfig, mergePolicyProvider);
 
                 Object mergePolicy = mergePolicyProvider.getMergePolicy(cacheConfig.getMergePolicy());
@@ -742,10 +747,6 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
     @Override
     public Runnable prepareMergeRunnable() {
         return splitBrainHandlerService.prepareMergeRunnable();
-    }
-
-    public CacheMergePolicyProvider getCacheMergePolicyProvider() {
-        return splitBrainHandlerService.getMergePolicyProvider();
     }
 
     public CacheEventHandler getCacheEventHandler() {

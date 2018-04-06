@@ -1650,6 +1650,13 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         onDestroy();
     }
 
+    @Override
+    public void destroyInternals() {
+        reset();
+        closeListeners();
+        onDestroy();
+    }
+
     protected void onDestroy() {
     }
 
