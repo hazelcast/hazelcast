@@ -46,6 +46,7 @@ import com.hazelcast.spi.serialization.SerializationService;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Queue;
 
 /**
  * Provides static factory methods to create {@link MergingValue} and {@link MergingEntry} instances.
@@ -70,9 +71,16 @@ public final class MergingValueFactory {
                 .setValue(values);
     }
 
-    public static QueueMergeTypes createMergingValue(SerializationService serializationService, QueueItem item) {
+    public static QueueMergeTypes createMergingValue(SerializationService serializationService, Queue<QueueItem> items) {
+        if (items.isEmpty()) {
+            return null;
+        }
+        Collection<Object> values = new ArrayList<Object>(items.size());
+        for (QueueItem item : items) {
+            values.add(item.getData());
+        }
         return new QueueMergingValueImpl(serializationService)
-                .setValue(item.getData());
+                .setValue(values);
     }
 
     public static AtomicLongMergeTypes createMergingValue(SerializationService serializationService, Long value) {

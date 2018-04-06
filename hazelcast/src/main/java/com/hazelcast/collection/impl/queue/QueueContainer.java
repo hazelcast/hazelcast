@@ -27,8 +27,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.merge.SplitBrainMergePolicy;
-import com.hazelcast.spi.merge.SplitBrainMergeTypes.QueueMergeTypes;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.util.Clock;
@@ -49,7 +47,6 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.collection.impl.collection.CollectionContainer.ID_PROMOTION_OFFSET;
-import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingValue;
 import static com.hazelcast.util.MapUtil.createHashMap;
 import static com.hazelcast.util.MapUtil.createLinkedHashMap;
 import static com.hazelcast.util.SetUtil.createHashSet;
@@ -956,8 +953,12 @@ public class QueueContainer implements IdentifiedDataSerializable {
     /**
      * Returns the next ID that can be used for uniquely identifying queue items
      */
-    long nextId() {
+    private long nextId() {
         return ++idGenerator;
+    }
+
+    public long getCurrentId() {
+        return idGenerator;
     }
 
     public QueueWaitNotifyKey getPollWaitNotifyKey() {
@@ -1093,46 +1094,5 @@ public class QueueContainer implements IdentifiedDataSerializable {
 
     void setId(long itemId) {
         idGenerator = Math.max(itemId + 1, idGenerator);
-    }
-
-    /**
-     * Merges the given {@link QueueMergeTypes} via the given {@link SplitBrainMergePolicy}.
-     *
-     * @param mergingValue the {@link QueueMergeTypes} instance to merge
-     * @param mergePolicy  the {@link SplitBrainMergePolicy} instance to apply
-     * @return the used {@link QueueItem} if merge is applied, otherwise {@code null}
-     */
-    public QueueItem merge(QueueMergeTypes mergingValue, SplitBrainMergePolicy<Data, QueueMergeTypes> mergePolicy) {
-        SerializationService serializationService = nodeEngine.getSerializationService();
-        serializationService.getManagedContext().initialize(mergingValue);
-        serializationService.getManagedContext().initialize(mergePolicy);
-
-        // try to find an existing item with the same value
-        QueueItem existingItem = null;
-        for (QueueItem item : getItemQueue()) {
-            if (mergingValue.getValue().equals(item.getData())) {
-                existingItem = item;
-                break;
-            }
-        }
-
-        QueueItem mergedItem = null;
-        if (existingItem == null) {
-            Data newValue = mergePolicy.merge(mergingValue, null);
-            if (newValue != null) {
-                QueueItem item = new QueueItem(this, nextId(), newValue);
-                if (getItemQueue().add(item)) {
-                    mergedItem = item;
-                }
-            }
-        } else {
-            QueueMergeTypes existingValue = createMergingValue(serializationService, existingItem);
-            Data newValue = mergePolicy.merge(mergingValue, existingValue);
-            if (newValue != null && !newValue.equals(existingValue.getValue())) {
-                existingItem.setData(newValue);
-                mergedItem = existingItem;
-            }
-        }
-        return mergedItem;
     }
 }

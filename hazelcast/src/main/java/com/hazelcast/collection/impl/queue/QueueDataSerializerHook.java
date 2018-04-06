@@ -28,12 +28,13 @@ import com.hazelcast.collection.impl.queue.operations.DrainBackupOperation;
 import com.hazelcast.collection.impl.queue.operations.DrainOperation;
 import com.hazelcast.collection.impl.queue.operations.IsEmptyOperation;
 import com.hazelcast.collection.impl.queue.operations.IteratorOperation;
-import com.hazelcast.collection.impl.queue.operations.QueueMergeOperation;
 import com.hazelcast.collection.impl.queue.operations.OfferBackupOperation;
 import com.hazelcast.collection.impl.queue.operations.OfferOperation;
 import com.hazelcast.collection.impl.queue.operations.PeekOperation;
 import com.hazelcast.collection.impl.queue.operations.PollBackupOperation;
 import com.hazelcast.collection.impl.queue.operations.PollOperation;
+import com.hazelcast.collection.impl.queue.operations.QueueMergeBackupOperation;
+import com.hazelcast.collection.impl.queue.operations.QueueMergeOperation;
 import com.hazelcast.collection.impl.queue.operations.QueueReplicationOperation;
 import com.hazelcast.collection.impl.queue.operations.RemainingCapacityOperation;
 import com.hazelcast.collection.impl.queue.operations.RemoveBackupOperation;
@@ -124,6 +125,7 @@ public final class QueueDataSerializerHook implements DataSerializerHook {
     public static final int TXN_COMMIT_BACKUP = 43;
 
     public static final int MERGE = 44;
+    public static final int MERGE_BACKUP = 45;
 
     public int getFactoryId() {
         return F_ID;
@@ -131,7 +133,8 @@ public final class QueueDataSerializerHook implements DataSerializerHook {
 
     public DataSerializableFactory createFactory() {
 
-        ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors = new ConstructorFunction[MERGE + 1];
+        //noinspection unchecked
+        ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors = new ConstructorFunction[MERGE_BACKUP + 1];
         constructors[OFFER] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new OfferOperation();
@@ -357,6 +360,12 @@ public final class QueueDataSerializerHook implements DataSerializerHook {
             @Override
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new QueueMergeOperation();
+            }
+        };
+        constructors[MERGE_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            @Override
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new QueueMergeBackupOperation();
             }
         };
 
