@@ -822,25 +822,27 @@ public abstract class HazelcastTestSupport {
 
     public static <E> void assertContains(Collection<E> collection, E expected) {
         if (!collection.contains(expected)) {
-            fail(format("Collection %s didn't contain expected '%s'", collection, expected));
+            fail(format("Collection %s (%d) didn't contain expected '%s'", collection, collection.size(), expected));
         }
     }
 
     public static <E> void assertNotContains(Collection<E> collection, E expected) {
         if (collection.contains(expected)) {
-            fail(format("Collection %s contained unexpected '%s'", collection, expected));
+            fail(format("Collection %s (%d) contained unexpected '%s'", collection, collection.size(), expected));
         }
     }
 
     public static <E> void assertContainsAll(Collection<E> collection, Collection<E> expected) {
         if (!collection.containsAll(expected)) {
-            fail(format("Collection %s didn't contain expected %s", collection, expected));
+            fail(format("Collection %s (%d) didn't contain expected %s (%d)",
+                    collection, collection.size(), expected, expected.size()));
         }
     }
 
     public static <E> void assertNotContainsAll(Collection<E> collection, Collection<E> expected) {
         if (collection.containsAll(expected)) {
-            fail(format("Collection %s contained unexpected %s", collection, expected));
+            fail(format("Collection %s (%d) contained unexpected %s (%d)",
+                    collection, collection.size(), expected, expected.size()));
         }
     }
 

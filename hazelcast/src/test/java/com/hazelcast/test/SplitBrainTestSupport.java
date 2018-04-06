@@ -474,4 +474,51 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
         public void readData(ObjectDataInput in) {
         }
     }
+
+    protected static class MergeCollectionOfIntegerValuesMergePolicy
+            implements SplitBrainMergePolicy<Collection<Object>, MergingValue<Collection<Object>>> {
+
+        @Override
+        public Collection<Object> merge(MergingValue<Collection<Object>> mergingValue,
+                                        MergingValue<Collection<Object>> existingValue) {
+            Collection<Object> result = new ArrayList<Object>();
+            for (Object value : mergingValue.<Collection<Object>>getDeserializedValue()) {
+                if (value instanceof Integer) {
+                    result.add(value);
+                }
+            }
+            if (existingValue != null) {
+                for (Object value : existingValue.<Collection<Object>>getDeserializedValue()) {
+                    if (value instanceof Integer) {
+                        result.add(value);
+                    }
+                }
+            }
+            return result;
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) {
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) {
+        }
+    }
+
+    protected static class RemoveValuesMergePolicy implements SplitBrainMergePolicy<Object, MergingValue<Object>> {
+
+        @Override
+        public Object merge(MergingValue<Object> mergingValue, MergingValue<Object> existingValue) {
+            return null;
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) {
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) {
+        }
+    }
 }
