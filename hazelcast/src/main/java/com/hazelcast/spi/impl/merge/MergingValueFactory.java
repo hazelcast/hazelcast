@@ -57,9 +57,17 @@ public final class MergingValueFactory {
     private MergingValueFactory() {
     }
 
-    public static CollectionMergeTypes createMergingValue(SerializationService serializationService, CollectionItem item) {
+    public static CollectionMergeTypes createMergingValue(SerializationService serializationService,
+                                                          Collection<CollectionItem> items) {
+        if (items.isEmpty()) {
+            return null;
+        }
+        Collection<Object> values = new ArrayList<Object>(items.size());
+        for (CollectionItem item : items) {
+            values.add(item.getValue());
+        }
         return new CollectionMergingValueImpl(serializationService)
-                .setValue(item.getValue());
+                .setValue(values);
     }
 
     public static QueueMergeTypes createMergingValue(SerializationService serializationService, QueueItem item) {
