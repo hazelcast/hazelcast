@@ -27,6 +27,8 @@ import java.util.Collection;
 
 /**
  * Container for the merge operation of a {@link com.hazelcast.core.MultiMap}.
+ *
+ * @since 3.10
  */
 public class MultiMapMergeContainer implements IdentifiedDataSerializable {
 
@@ -35,13 +37,13 @@ public class MultiMapMergeContainer implements IdentifiedDataSerializable {
     private long creationTime;
     private long lastAccessTime;
     private long lastUpdateTime;
-    private int hits;
+    private long hits;
 
     public MultiMapMergeContainer() {
     }
 
     public MultiMapMergeContainer(Data key, Collection<MultiMapRecord> records, long creationTime, long lastAccessTime,
-                                  long lastUpdateTime, int hits) {
+                                  long lastUpdateTime, long hits) {
         this.key = key;
         this.records = records;
         this.creationTime = creationTime;
@@ -70,7 +72,7 @@ public class MultiMapMergeContainer implements IdentifiedDataSerializable {
         return lastUpdateTime;
     }
 
-    public int getHits() {
+    public long getHits() {
         return hits;
     }
 
@@ -94,7 +96,7 @@ public class MultiMapMergeContainer implements IdentifiedDataSerializable {
         out.writeLong(creationTime);
         out.writeLong(lastAccessTime);
         out.writeLong(lastUpdateTime);
-        out.writeInt(hits);
+        out.writeLong(hits);
     }
 
     @Override
@@ -109,6 +111,6 @@ public class MultiMapMergeContainer implements IdentifiedDataSerializable {
         creationTime = in.readLong();
         lastAccessTime = in.readLong();
         lastUpdateTime = in.readLong();
-        hits = in.readInt();
+        hits = in.readLong();
     }
 }

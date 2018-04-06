@@ -20,6 +20,8 @@ import com.hazelcast.cardinality.impl.hyperloglog.HyperLogLog;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.scheduledexecutor.impl.ScheduledTaskDescriptor;
 
+import java.util.Collection;
+
 /**
  * Collection of interfaces which define the provided merge types for each data structure.
  * <p>
@@ -67,8 +69,9 @@ public class SplitBrainMergeTypes {
      *
      * @since 3.10
      */
-    public interface MultiMapMergeTypes extends MergingEntry<Data, Object>, MergingCreationTime<Object>, MergingHits<Object>,
-            MergingLastAccessTime<Object>, MergingLastUpdateTime<Object> {
+    public interface MultiMapMergeTypes extends MergingEntry<Data, Collection<Object>>, MergingCreationTime<Collection<Object>>,
+            MergingHits<Collection<Object>>, MergingLastAccessTime<Collection<Object>>,
+            MergingLastUpdateTime<Collection<Object>> {
     }
 
     /**

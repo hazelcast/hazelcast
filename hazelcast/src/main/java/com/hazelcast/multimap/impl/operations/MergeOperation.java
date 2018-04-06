@@ -39,14 +39,14 @@ import java.util.Map;
 import static com.hazelcast.util.MapUtil.createHashMap;
 
 /**
- * Contains multiple merge entries for split-brain healing with a {@link SplitBrainMergePolicy}.
+ * Merges multiple {@link MultiMapMergeContainer} for split-brain healing with a {@link SplitBrainMergePolicy}.
  *
  * @since 3.10
  */
 public class MergeOperation extends AbstractMultiMapOperation implements BackupAwareOperation {
 
     private List<MultiMapMergeContainer> mergeContainers;
-    private SplitBrainMergePolicy<Object, MultiMapMergeTypes> mergePolicy;
+    private SplitBrainMergePolicy<Collection<Object>, MultiMapMergeTypes> mergePolicy;
 
     private transient Map<Data, Collection<MultiMapRecord>> resultMap;
 
@@ -54,7 +54,7 @@ public class MergeOperation extends AbstractMultiMapOperation implements BackupA
     }
 
     public MergeOperation(String name, List<MultiMapMergeContainer> mergeContainers,
-                          SplitBrainMergePolicy<Object, MultiMapMergeTypes> mergePolicy) {
+                          SplitBrainMergePolicy<Collection<Object>, MultiMapMergeTypes> mergePolicy) {
         super(name);
         this.mergeContainers = mergeContainers;
         this.mergePolicy = mergePolicy;
@@ -72,7 +72,7 @@ public class MergeOperation extends AbstractMultiMapOperation implements BackupA
                 continue;
             }
 
-            MultiMapValue result = container.merge(key, mergeContainer, mergePolicy);
+            MultiMapValue result = container.merge(mergeContainer, mergePolicy);
             if (result != null) {
                 resultMap.put(key, result.getCollection(false));
                 publishEvent(EntryEventType.MERGED, key, result, null);
@@ -82,13 +82,13 @@ public class MergeOperation extends AbstractMultiMapOperation implements BackupA
     }
 
     @Override
-    public Operation getBackupOperation() {
-        return new MergeBackupOperation(name, resultMap);
+    public boolean shouldBackup() {
+        return !resultMap.isEmpty();
     }
 
     @Override
-    public boolean shouldBackup() {
-        return !resultMap.isEmpty();
+    public Operation getBackupOperation() {
+        return new MergeBackupOperation(name, resultMap);
     }
 
     @Override
