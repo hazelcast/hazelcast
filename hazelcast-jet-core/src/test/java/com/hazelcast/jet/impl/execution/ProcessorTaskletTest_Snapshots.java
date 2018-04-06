@@ -164,8 +164,8 @@ public class ProcessorTaskletTest_Snapshots {
         callUntil(tasklet, NO_PROGRESS);
 
         // Then
-        assertEquals(asList(barrier(0), 2), outstream1.getBuffer());
-        assertEquals(asList(0 , 1, barrier(0)), getSnapshotBufferValues());
+        assertEquals(asList(2, barrier(0)), outstream1.getBuffer());
+        assertEquals(asList(0 , 1, 2, barrier(0)), getSnapshotBufferValues());
     }
 
     @Test
@@ -233,6 +233,7 @@ public class ProcessorTaskletTest_Snapshots {
         int nullaryProcessCallCountdown;
         int itemsToEmitInComplete;
         int completedCount;
+        boolean offerSucceeded = true;
         private Outbox outbox;
 
         private Queue<Map.Entry> snapshotQueue = new ArrayDeque<>();
@@ -258,12 +259,21 @@ public class ProcessorTaskletTest_Snapshots {
             if (completedCount == itemsToEmitInComplete) {
                 return true;
             }
-            boolean accepted = outbox.offer(completedCount);
-            if (accepted) {
+            offerSucceeded = false;
+            finishOffering();
+            return completedCount == itemsToEmitInComplete;
+        }
+
+        private boolean finishOffering() {
+            if (offerSucceeded) {
+                return true;
+            }
+            offerSucceeded = outbox.offer(completedCount);
+            if (offerSucceeded) {
                 snapshotQueue.offer(entry(UuidUtil.newUnsecureUUID(), completedCount));
                 completedCount++;
             }
-            return completedCount == itemsToEmitInComplete;
+            return offerSucceeded;
         }
 
         @Override
@@ -273,6 +283,9 @@ public class ProcessorTaskletTest_Snapshots {
 
         @Override
         public boolean saveToSnapshot() {
+            if (!finishOffering()) {
+                return false;
+            }
             for (Map.Entry item; (item = snapshotQueue.peek()) != null; ) {
                 if (!outbox.offerToSnapshot(item.getKey(), item.getValue())) {
                     return false;

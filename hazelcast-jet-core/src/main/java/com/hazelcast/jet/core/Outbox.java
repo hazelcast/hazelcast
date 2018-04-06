@@ -64,7 +64,7 @@ public interface Outbox {
      * @return {@code true} if the outbox accepted the item
      */
     @CheckReturnValue
-    boolean offer(int[] ordinals, @Nonnull Object item);
+    boolean offer(@Nonnull int[] ordinals, @Nonnull Object item);
 
     /**
      * Offers the given key and value pair to the processor's snapshot

@@ -276,8 +276,10 @@ public class ProcessorTaskletTest {
 
         @Override
         public void process(int ordinal, @Nonnull Inbox inbox) {
-            for (Object item; (item = inbox.poll()) != null; ) {
-                if (!outbox.offer(item)) {
+            for (Object item; (item = inbox.peek()) != null; ) {
+                if (outbox.offer(item)) {
+                    inbox.remove();
+                } else {
                     return;
                 }
             }

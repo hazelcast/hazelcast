@@ -25,7 +25,6 @@ import com.hazelcast.jet.impl.util.ProgressTracker;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.serialization.SerializationService;
 
-import javax.annotation.CheckReturnValue;
 import javax.annotation.Nonnull;
 import java.time.LocalTime;
 import java.util.ArrayDeque;
@@ -38,7 +37,6 @@ import java.util.function.Function;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.Util.entry;
-import static com.hazelcast.jet.core.test.JetAssert.assertSame;
 import static com.hazelcast.util.Preconditions.checkNotNegative;
 import static java.util.function.Function.identity;
 
@@ -51,13 +49,6 @@ public final class TestOutbox implements Outbox {
     private final Queue<Entry<Data, Data>> snapshotQueue = new ArrayDeque<>();
     private final OutboxImpl outbox;
     private final SerializationService serializationService;
-
-    /** Items that were rejected for each output ordinal */
-    private final Object[] rejectedItems;
-    /** Rejected snapshot key */
-    private Object rejectedSnapshotKey;
-    /** Rejected snapshot value */
-    private Object rejectedSnapshotValue;
 
     private final int[] allOrdinals;
 
@@ -82,7 +73,6 @@ public final class TestOutbox implements Outbox {
         buckets = new Queue[edgeCapacities.length];
         Arrays.setAll(buckets, i -> new ArrayDeque());
 
-        rejectedItems = new Object[edgeCapacities.length];
         allOrdinals = IntStream.range(0, edgeCapacities.length).toArray();
 
         OutboundCollector[] outstreams = new OutboundCollector[edgeCapacities.length + (snapshotCapacity > 0 ? 1 : 0)];
@@ -122,28 +112,13 @@ public final class TestOutbox implements Outbox {
     }
 
     @Override
-    public boolean offer(int[] ordinals, @Nonnull Object item) {
-        boolean offerResult = outbox.offer(ordinals, item);
-        for (int ordinal : ordinals) {
-            rejectedItems[ordinal] = check(item, rejectedItems[ordinal], offerResult);
-        }
-        return offerResult;
+    public boolean offer(@Nonnull int[] ordinals, @Nonnull Object item) {
+        return outbox.offer(ordinals, item);
     }
 
     @Override
     public boolean offerToSnapshot(@Nonnull Object key, @Nonnull Object value) {
-        boolean offerResult = outbox.offerToSnapshot(key, value);
-        rejectedSnapshotKey = check(key, rejectedSnapshotKey, offerResult);
-        rejectedSnapshotValue = check(value, rejectedSnapshotValue, offerResult);
-        return offerResult;
-    }
-
-    @CheckReturnValue
-    private Object check(Object item, Object rejectedItem, boolean offerResult) {
-        if (rejectedItem != null) {
-            assertSame("Different item provided after offer() was rejected", rejectedItem, item);
-        }
-        return offerResult ? null : item;
+        return outbox.offerToSnapshot(key, value);
     }
 
     /**

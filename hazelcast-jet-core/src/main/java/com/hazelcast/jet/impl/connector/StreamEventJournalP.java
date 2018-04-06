@@ -32,7 +32,6 @@ import com.hazelcast.jet.core.BroadcastKey;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
-import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.WatermarkGenerationParams;
 import com.hazelcast.jet.core.WatermarkSourceUtil;
 import com.hazelcast.jet.core.processor.Processors;
@@ -163,7 +162,7 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
         if (readFutures == null) {
             initialRead();
         }
-        if (!emitFromTraverser(traverser, this::afterEmit)) {
+        if (!emitFromTraverser(traverser)) {
             return false;
         }
         do {
@@ -180,15 +179,15 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
         assert resultSet != null : "null resultSet";
         while (resultSetPosition < resultSet.size()) {
             T event = resultSet.get(resultSetPosition);
+            emitOffsets[currentPartitionIndex] = resultSet.getSequence(resultSetPosition) + 1;
+            resultSetPosition++;
             if (event != null) {
                 // Always use partition index of 0, treating all the partitions the
                 // same for coalescing purposes.
                 traverser = watermarkSourceUtil.handleEvent(event, 0);
-                if (!emitFromTraverser(traverser, this::afterEmit)) {
+                if (!emitFromTraverser(traverser)) {
                     return;
                 }
-            } else {
-                afterEmit(null);
             }
         }
         // we're done with current resultSet
@@ -196,17 +195,12 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
         resultSet = null;
     }
 
-    private void afterEmit(@Nullable Object object) {
-        if (object instanceof Watermark) {
-            return;
-        }
-        assert resultSet != null;
-        emitOffsets[currentPartitionIndex] = resultSet.getSequence(resultSetPosition) + 1;
-        resultSetPosition++;
-    }
-
     @Override
     public boolean saveToSnapshot() {
+        if (!emitFromTraverser(traverser)) {
+            return false;
+        }
+
         if (snapshotTraverser == null) {
             snapshotTraverser = traverseStream(IntStream.range(0, partitionIds.length)
                     .mapToObj(pIdx -> entry(

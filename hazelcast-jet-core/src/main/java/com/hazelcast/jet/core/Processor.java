@@ -184,7 +184,7 @@ public interface Processor {
     }
 
     /**
-     * Stores its snapshotted state by adding items to the outbox's {@link
+     * Stores its snapshotted state by adding items to the outbox's {@linkplain
      * Outbox#offerToSnapshot(Object, Object) snapshot bucket}. If it returns
      * {@code false}, it will be called again before proceeding to call any
      * other method.
@@ -194,6 +194,11 @@ public interface Processor {
      * exhausted, it may also be called between {@link #complete()} calls. Once
      * {@code complete()} returns {@code true}, this method won't be called
      * anymore.
+     * <p>
+     * <b>Note:</b> if you returned from {@link #complete()} because some of
+     * the {@code Outbox.offer()} method returned false, you need to make sure
+     * to re-offer the pending item in this method before offering any items to
+     * {@link Outbox#offerToSnapshot}.
      * <p>
      * The default implementation takes no action and returns {@code true}.
      */

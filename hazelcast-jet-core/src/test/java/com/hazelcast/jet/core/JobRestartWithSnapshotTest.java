@@ -411,6 +411,7 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
         private int ptionCursor;
         private MyTraverser traverser;
         private Traverser<Entry<BroadcastKey<Integer>, Integer>> snapshotTraverser;
+        private Entry<Integer, Integer> pendingItem;
 
         SequencesInPartitionsGeneratorP(int[] assignedPtions, int elementsInPartition) {
             this.assignedPtions = assignedPtions;
@@ -421,17 +422,25 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
         }
 
         @Override
-        protected void init(@Nonnull Context context) throws Exception {
+        protected void init(@Nonnull Context context) {
             getLogger().info("assignedPtions=" + Arrays.toString(assignedPtions));
         }
 
         @Override
         public boolean complete() {
-            return emitFromTraverser(traverser, traverser::commit);
+            return emitFromTraverserInt(traverser);
         }
 
         @Override
         public boolean saveToSnapshot() {
+            // finish emitting any pending item first before starting snapshot
+            if (pendingItem != null) {
+                if (tryEmit(pendingItem)) {
+                    pendingItem = null;
+                } else {
+                    return false;
+                }
+            }
             if (snapshotTraverser == null) {
                 snapshotTraverser = Traversers.traverseStream(IntStream.range(0, assignedPtions.length).boxed())
                                               // save {partitionId; partitionOffset} tuples
@@ -462,6 +471,24 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
             return true;
         }
 
+        // this method is required to keep track of pending item
+        private boolean emitFromTraverserInt(MyTraverser traverser) {
+            Entry<Integer, Integer> item;
+            if (pendingItem != null) {
+                item = pendingItem;
+                pendingItem = null;
+            } else {
+                item = traverser.next();
+            }
+            for (; item != null; item = traverser.next()) {
+                if (!tryEmit(item)) {
+                    pendingItem = item;
+                    return false;
+                }
+            }
+            return true;
+        }
+
         private void advanceCursor() {
             ptionCursor = 0;
             int min = ptionOffsets[0];
@@ -476,15 +503,13 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
         private class MyTraverser implements Traverser<Entry<Integer, Integer>> {
             @Override
             public Entry<Integer, Integer> next() {
-                return ptionOffsets[ptionCursor] < elementsInPartition
-                        ? entry(assignedPtions[ptionCursor], ptionOffsets[ptionCursor]) : null;
-            }
-
-            void commit(Entry<Integer, Integer> item) {
-                assert item.getKey().equals(assignedPtions[ptionCursor]);
-                assert item.getValue().equals(ptionOffsets[ptionCursor]);
-                ptionOffsets[ptionCursor]++;
-                advanceCursor();
+                try {
+                    return ptionOffsets[ptionCursor] < elementsInPartition
+                            ? entry(assignedPtions[ptionCursor], ptionOffsets[ptionCursor]) : null;
+                } finally {
+                    ptionOffsets[ptionCursor]++;
+                    advanceCursor();
+                }
             }
         }
     }

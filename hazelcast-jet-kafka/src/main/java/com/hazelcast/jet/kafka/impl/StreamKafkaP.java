@@ -21,7 +21,6 @@ import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.BroadcastKey;
 import com.hazelcast.jet.core.Processor;
-import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.WatermarkGenerationParams;
 import com.hazelcast.jet.core.WatermarkSourceUtil;
 import com.hazelcast.jet.function.DistributedFunction;
@@ -84,8 +83,7 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor {
     private final Map<String, long[]> offsets = new HashMap<>();
     private Traverser<Entry<BroadcastKey<TopicPartition>, long[]>> snapshotTraverser;
     private int processorIndex;
-    private Traverser<Object> traverser;
-    private ConsumerRecord<K, V> lastEmittedItem;
+    private Traverser<Object> traverser = Traversers.empty();
 
     StreamKafkaP(
             @Nonnull Properties properties,
@@ -166,42 +164,35 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor {
     public boolean complete() {
         assignPartitions(true);
 
-        if (traverser == null) {
-            ConsumerRecords<K, V> records = null;
-            if (!currentAssignment.isEmpty()) {
-                try {
-                    records = consumer.poll(POLL_TIMEOUT_MS);
-                } catch (InterruptException e) {
-                    // note this is Kafka's exception, not Java's
-                    Thread.currentThread().interrupt();
-                    return false;
-                }
-            }
-            if (records == null || records.isEmpty()) {
-                traverser = watermarkSourceUtil.handleNoEvent();
-            } else {
-                traverser = traverseIterable(records)
-                        .flatMap(r -> {
-                            lastEmittedItem = r;
-                            T projectedRecord = projectionFn.apply(r);
-                            if (projectedRecord == null) {
-                                return Traversers.empty();
-                            }
-                            TopicPartition topicPartition = new TopicPartition(lastEmittedItem.topic(),
-                                    lastEmittedItem.partition());
-                            return watermarkSourceUtil.handleEvent(projectedRecord, currentAssignment.get(topicPartition));
-                        });
-            }
-
-            traverser = traverser.onFirstNull(() -> traverser = null);
+        if (!emitFromTraverser(traverser)) {
+            return false;
         }
 
-        emitFromTraverser(traverser,
-                e -> {
-                    if (!(e instanceof Watermark)) {
-                        offsets.get(lastEmittedItem.topic())[lastEmittedItem.partition()] = lastEmittedItem.offset();
+        ConsumerRecords<K, V> records = null;
+        if (!currentAssignment.isEmpty()) {
+            try {
+                records = consumer.poll(POLL_TIMEOUT_MS);
+            } catch (InterruptException e) {
+                // note this is Kafka's exception, not Java's
+                Thread.currentThread().interrupt();
+                return false;
+            }
+        }
+
+        traverser = isEmpty(records) ?
+                watermarkSourceUtil.handleNoEvent()
+                :
+                traverseIterable(records).flatMap(record -> {
+                    offsets.get(record.topic())[record.partition()] = record.offset();
+                    T projectedRecord = projectionFn.apply(record);
+                    if (projectedRecord == null) {
+                        return Traversers.empty();
                     }
+                    TopicPartition topicPartition = new TopicPartition(record.topic(), record.partition());
+                    return watermarkSourceUtil.handleEvent(projectedRecord, currentAssignment.get(topicPartition));
                 });
+
+        emitFromTraverser(traverser);
 
         if (!snapshottingEnabled) {
             consumer.commitSync();
@@ -224,6 +215,10 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor {
 
     @Override
     public boolean saveToSnapshot() {
+        if (!emitFromTraverser(traverser)) {
+            return false;
+        }
+
         if (snapshotTraverser == null) {
             Stream<Entry<BroadcastKey<TopicPartition>, long[]>> snapshotStream =
                     offsets.entrySet().stream()
@@ -265,6 +260,10 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor {
             consumer.seek(topicPartition, offset + 1);
             watermarkSourceUtil.restoreWatermark(partitionIndex, watermark);
         }
+    }
+
+    private boolean isEmpty(ConsumerRecords<K, V> records) {
+        return records == null || records.isEmpty();
     }
 
     @Nonnull

@@ -37,7 +37,7 @@ public class OutboxImplTest {
     @Rule
     public ExpectedException exception = ExpectedException.none();
 
-    private OutboxImpl outbox = new OutboxImpl(new OutboundCollector[] {e -> DONE, e -> DONE},
+    private OutboxImpl outbox = new OutboxImpl(new OutboundCollector[] {e -> DONE, e -> DONE, e -> DONE},
             true, new ProgressTracker(), mock(SerializationService.class), 3);
 
     @Before
@@ -68,6 +68,13 @@ public class OutboxImplTest {
     @Test
     public void when_offer5_then_rateLimited() {
         do_when_offer_then_rateLimited(e -> outbox.offerToEdgesAndSnapshot(e));
+    }
+
+    private void do_when_offer_then_rateLimited(Predicate<Object> offerF) {
+        assertTrue(offerF.test(1));
+        assertTrue(offerF.test(2));
+        assertTrue(offerF.test(3));
+        assertFalse(offerF.test(4));
     }
 
     @Test
@@ -112,10 +119,72 @@ public class OutboxImplTest {
         assertTrue(outbox.offer(item));
     }
 
-    private void do_when_offer_then_rateLimited(Predicate<Object> offerF) {
+    @Test
+    public void when_offer1FailsAndDifferentItemOffered_then_fail() {
+        do_when_offerDifferent_then_fail(e -> outbox.offer(e));
+    }
+
+    @Test
+    public void when_offer2FailsAndDifferentItemOffered_then_fail() {
+        do_when_offerDifferent_then_fail(e -> outbox.offer(0, e));
+    }
+
+    @Test
+    public void when_offer3FailsAndDifferentItemOffered_then_fail() {
+        do_when_offerDifferent_then_fail(e -> outbox.offerToSnapshot(e, e));
+    }
+
+    @Test
+    public void when_offer4FailsAndDifferentItemOffered_then_fail() {
+        do_when_offerDifferent_then_fail(e -> outbox.offer(new int[] {0}, e));
+    }
+
+    @Test
+    public void when_offer5FailsAndDifferentItemOffered_then_fail() {
+        do_when_offerDifferent_then_fail(e -> outbox.offerToEdgesAndSnapshot(e));
+    }
+
+    @Test
+    public void when_offerFailsAndOfferedToDifferentOrdinal_then_fail_1() {
+        do_when_offerToDifferentOrdinal_then_fail(e -> outbox.offer(0, e), e -> outbox.offer(1, e));
+    }
+
+    @Test
+    public void when_offerFailsAndOfferedToDifferentOrdinal_then_fail_2() {
+        do_when_offerToDifferentOrdinal_then_fail(e -> outbox.offer(0, e), e -> outbox.offerToSnapshot(e, e));
+    }
+
+    @Test
+    public void when_offerFailsAndOfferedToDifferentOrdinal_then_fail_3() {
+        do_when_offerToDifferentOrdinal_then_fail(e -> outbox.offer(0, e), e -> outbox.offer(e));
+    }
+
+    @Test
+    public void when_offerFailsAndOfferedToDifferentOrdinal_then_fail_4() {
+        do_when_offerToDifferentOrdinal_then_fail(e -> outbox.offer(0, e), e -> outbox.offerToEdgesAndSnapshot(e));
+    }
+
+    private void do_when_offerDifferent_then_fail(Predicate<Object> offerF) {
         assertTrue(offerF.test(1));
         assertTrue(offerF.test(2));
         assertTrue(offerF.test(3));
         assertFalse(offerF.test(4));
+
+        exception.expect(AssertionError.class);
+        exception.expectMessage("Different");
+        // we offer the different item than the last false-returning call
+        offerF.test(5);
+    }
+
+    private void do_when_offerToDifferentOrdinal_then_fail(Predicate<Object> offerF1, Predicate<Object> offerF2) {
+        assertTrue(offerF1.test(1));
+        assertTrue(offerF1.test(2));
+        assertTrue(offerF1.test(3));
+        assertFalse(offerF1.test(4));
+
+        exception.expect(AssertionError.class);
+        exception.expectMessage("ifferent");
+        // we offer the same item as the last false-returning call, but to different offer function
+        offerF2.test(4);
     }
 }
