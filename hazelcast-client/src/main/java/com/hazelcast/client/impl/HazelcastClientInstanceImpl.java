@@ -42,6 +42,7 @@ import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.client.spi.ClientListenerService;
 import com.hazelcast.client.spi.ClientPartitionService;
+import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.ClientTransactionManagerService;
 import com.hazelcast.client.spi.ProxyManager;
 import com.hazelcast.client.spi.impl.AbstractClientInvocationService;
@@ -659,7 +660,10 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
             }
 
             for (DistributedObjectInfo distributedObjectInfo : localDistributedObjects) {
-                proxyManager.removeProxy(distributedObjectInfo.getServiceName(), distributedObjectInfo.getName());
+                ClientProxy proxy = proxyManager.getProxy(distributedObjectInfo.getServiceName(), distributedObjectInfo.getName());
+                if (proxy != null) {
+                    proxy.destroyLocally();
+                }
             }
             return (Collection<DistributedObject>) proxyManager.getDistributedObjects();
         } catch (Exception e) {

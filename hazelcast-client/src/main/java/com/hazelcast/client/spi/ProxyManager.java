@@ -323,6 +323,22 @@ public final class ProxyManager {
         }
     }
 
+    /**
+     * Returns the registered proxy instance for the given service and object
+     * ID. Unlike {@link #getOrCreateProxy} doesn't try to create a proxy
+     * instance if it's not registered in this proxy manager.
+     *
+     * @param service the service associated with the object.
+     * @param id      the ID of the object to obtain the proxy of.
+     * @return the registered proxy or {@code null} if there are no proxy
+     * registered.
+     */
+    public ClientProxy getProxy(String service, String id) {
+        final ObjectNamespace ns = new DistributedObjectNamespace(service, id);
+        ClientProxyFuture proxyFuture = proxies.get(ns);
+        return proxyFuture == null ? null : proxyFuture.get();
+    }
+
     private ClientProxy createClientProxy(String id, ClientProxyFactory factory) {
         if (factory instanceof ClientProxyFactoryWithContext) {
             return ((ClientProxyFactoryWithContext) factory).create(id, context);
