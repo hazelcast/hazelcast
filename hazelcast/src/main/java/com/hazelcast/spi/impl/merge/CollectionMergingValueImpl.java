@@ -16,9 +16,10 @@
 
 package com.hazelcast.spi.impl.merge;
 
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.CollectionMergeTypes;
 import com.hazelcast.spi.serialization.SerializationService;
+
+import java.util.Collection;
 
 /**
  * Implementation of {@link CollectionMergeTypes}.
@@ -27,7 +28,7 @@ import com.hazelcast.spi.serialization.SerializationService;
  */
 @SuppressWarnings("WeakerAccess")
 public class CollectionMergingValueImpl
-        extends AbstractMergingValueImpl<Data, CollectionMergingValueImpl>
+        extends AbstractCollectionMergingValueImpl<Collection<Object>, CollectionMergingValueImpl>
         implements CollectionMergeTypes {
 
     public CollectionMergingValueImpl() {

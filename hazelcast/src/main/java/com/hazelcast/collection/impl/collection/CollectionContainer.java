@@ -23,9 +23,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.merge.SplitBrainMergePolicy;
-import com.hazelcast.spi.merge.SplitBrainMergeTypes.CollectionMergeTypes;
-import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.transaction.TransactionException;
 
 import java.io.IOException;
@@ -37,7 +34,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingValue;
 import static com.hazelcast.util.MapUtil.createHashMap;
 
 @SuppressWarnings("checkstyle:methodcount")
@@ -111,13 +107,17 @@ public abstract class CollectionContainer implements IdentifiedDataSerializable 
         return getCollection().size();
     }
 
-    public Map<Long, Data> clear() {
-        final Collection<CollectionItem> coll = getCollection();
-        Map<Long, Data> itemIdMap = createHashMap(coll.size());
-        for (CollectionItem item : coll) {
-            itemIdMap.put(item.getItemId(), item.getValue());
+    public Map<Long, Data> clear(boolean returnValues) {
+        Map<Long, Data> itemIdMap = null;
+        Collection<CollectionItem> collection = getCollection();
+        if (returnValues) {
+            itemIdMap = createHashMap(collection.size());
+            for (CollectionItem item : collection) {
+                itemIdMap.put(item.getItemId(), item.getValue());
+            }
         }
-        coll.clear();
+        collection.clear();
+        txMap.clear();
         return itemIdMap;
     }
 
@@ -190,7 +190,6 @@ public abstract class CollectionContainer implements IdentifiedDataSerializable 
 
     /*
      * TX methods
-     *
      */
 
     public Long reserveAdd(String transactionId, Data value) {
@@ -329,6 +328,10 @@ public abstract class CollectionContainer implements IdentifiedDataSerializable 
         return ++idGenerator;
     }
 
+    public long getCurrentId() {
+        return idGenerator;
+    }
+
     protected void setId(long itemId) {
         idGenerator = Math.max(itemId + 1, idGenerator);
     }
@@ -342,48 +345,6 @@ public abstract class CollectionContainer implements IdentifiedDataSerializable 
     }
 
     protected abstract void onDestroy();
-
-    /**
-     * Merges the given {@link CollectionMergeTypes} via the given {@link SplitBrainMergePolicy}.
-     *
-     * @param mergingValue the {@link CollectionMergeTypes} instance to merge
-     * @param mergePolicy  the {@link SplitBrainMergePolicy} instance to apply
-     * @return the used {@link CollectionItem} if merge is applied, otherwise {@code null}
-     */
-    public CollectionItem merge(CollectionMergeTypes mergingValue,
-                                SplitBrainMergePolicy<Data, CollectionMergeTypes> mergePolicy) {
-        SerializationService serializationService = nodeEngine.getSerializationService();
-        serializationService.getManagedContext().initialize(mergingValue);
-        serializationService.getManagedContext().initialize(mergePolicy);
-
-        // try to find an existing item with the same value
-        CollectionItem existingItem = null;
-        for (CollectionItem item : getCollection()) {
-            if (mergingValue.getValue().equals(item.getValue())) {
-                existingItem = item;
-                break;
-            }
-        }
-
-        CollectionItem mergedItem = null;
-        if (existingItem == null) {
-            Data newValue = mergePolicy.merge(mergingValue, null);
-            if (newValue != null) {
-                CollectionItem item = new CollectionItem(nextId(), newValue);
-                if (getCollection().add(item)) {
-                    mergedItem = item;
-                }
-            }
-        } else {
-            CollectionMergeTypes existingValue = createMergingValue(serializationService, existingItem);
-            Data newValue = mergePolicy.merge(mergingValue, existingValue);
-            if (newValue != null && !newValue.equals(existingValue.getValue())) {
-                existingItem.setValue(newValue);
-                mergedItem = existingItem;
-            }
-        }
-        return mergedItem;
-    }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {

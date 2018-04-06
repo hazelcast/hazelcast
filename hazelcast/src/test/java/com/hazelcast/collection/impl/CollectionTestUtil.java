@@ -40,6 +40,8 @@ import java.util.Queue;
 import java.util.Set;
 
 import static com.hazelcast.test.HazelcastTestSupport.getNodeEngineImpl;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.emptySet;
 
 public final class CollectionTestUtil {
 
@@ -59,6 +61,9 @@ public final class CollectionTestUtil {
     public static <E> List<E> getBackupList(HazelcastInstance backupInstance, String listName) {
         CollectionService service = getNodeEngineImpl(backupInstance).getService(ListService.SERVICE_NAME);
         CollectionContainer collectionContainer = service.getContainerMap().get(listName);
+        if (collectionContainer == null) {
+            return emptyList();
+        }
         // the replica items are retrieved via `getMap()`, the primary items via `getCollection()`
         Map<Long, CollectionItem> map = collectionContainer.getMap();
 
@@ -108,6 +113,9 @@ public final class CollectionTestUtil {
     public static <E> Set<E> getBackupSet(HazelcastInstance backupInstance, String setName) {
         CollectionService service = getNodeEngineImpl(backupInstance).getService(SetService.SERVICE_NAME);
         CollectionContainer collectionContainer = service.getContainerMap().get(setName);
+        if (collectionContainer == null) {
+            return emptySet();
+        }
         // the replica items are retrieved via `getMap()`, the primary items via `getCollection()`
         Map<Long, CollectionItem> map = collectionContainer.getMap();
 

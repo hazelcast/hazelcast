@@ -79,7 +79,7 @@ public class SplitBrainMergeTypes {
      *
      * @since 3.10
      */
-    public interface CollectionMergeTypes extends MergingValue<Data> {
+    public interface CollectionMergeTypes extends MergingValue<Collection<Object>> {
     }
 
     /**
