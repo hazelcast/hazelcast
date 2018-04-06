@@ -41,6 +41,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.LockSupport;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
+import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static java.lang.Thread.currentThread;
 import static java.util.concurrent.Executors.newCachedThreadPool;
@@ -230,6 +231,7 @@ public class TaskletExecutionService {
                         t.stealingWorker.set(null);
                         trackers.remove(t);
                         stealingWorker.trackers.add(t);
+                        logFine(logger, "Tasklet %s was stolen from this worker", t.tasklet);
                         continue;
                     }
                     try {
