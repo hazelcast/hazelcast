@@ -545,6 +545,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
         return liveMappings.isEmpty() ? null : new OnJoinClientOperation(liveMappings);
     }
 
+    @SuppressWarnings("checkstyle:methodlength")
     @Override
     public Map<ClientType, Integer> getConnectedClientStats() {
 
@@ -553,6 +554,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
         int numberOfJavaClients = 0;
         int numberOfNodeJSClients = 0;
         int numberOfPythonClients = 0;
+        int numberOfGoClients = 0;
         int numberOfOtherClients = 0;
 
         OperationService operationService = node.nodeEngine.getOperationService();
@@ -596,6 +598,9 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
                 case PYTHON:
                     numberOfPythonClients++;
                     break;
+                case GO:
+                    numberOfGoClients++;
+                    break;
                 default:
                     numberOfOtherClients++;
             }
@@ -606,6 +611,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
         resultMap.put(ClientType.JAVA, numberOfJavaClients);
         resultMap.put(ClientType.NODEJS, numberOfNodeJSClients);
         resultMap.put(ClientType.PYTHON, numberOfPythonClients);
+        resultMap.put(ClientType.GO, numberOfGoClients);
         resultMap.put(ClientType.OTHER, numberOfOtherClients);
 
         return resultMap;

@@ -223,6 +223,8 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractStableClu
             connection.setType(ConnectionType.RUBY_CLIENT);
         } else if (ClientTypes.NODEJS.equals(type)) {
             connection.setType(ConnectionType.NODEJS_CLIENT);
+        } else if (ClientTypes.GO.equals(type)) {
+            connection.setType(ConnectionType.GO_CLIENT);
         } else {
             clientEngine.getLogger(getClass()).info("Unknown client type: " + type);
             connection.setType(ConnectionType.BINARY_CLIENT);

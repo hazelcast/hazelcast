@@ -32,6 +32,7 @@ public enum ConnectionType {
     PYTHON_CLIENT(false, true),
     RUBY_CLIENT(false, true),
     NODEJS_CLIENT(false, true),
+    GO_CLIENT(false, true),
     BINARY_CLIENT(false, true),
     REST_CLIENT(false, false),
     MEMCACHE_CLIENT(false, false);
