@@ -23,6 +23,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -78,6 +79,7 @@ public class SemaphoreAdvancedTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = 300000)
+    @Ignore(value = "Known issue in operation system. See: https://github.com/hazelcast/hazelcast/issues/11839")
     public void testSemaphoreWithFailuresAndJoin() {
         final String semaphoreName = randomString();
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
