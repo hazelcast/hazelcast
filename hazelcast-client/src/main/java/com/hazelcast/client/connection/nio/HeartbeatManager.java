@@ -71,6 +71,10 @@ public class HeartbeatManager implements Runnable {
         clientICMPManager.start();
     }
 
+    long getHeartbeatTimeout() {
+        return heartbeatTimeout;
+    }
+
     @Override
     public void run() {
         if (!clientConnectionManager.alive) {
