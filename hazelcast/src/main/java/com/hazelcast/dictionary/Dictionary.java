@@ -29,6 +29,8 @@ import javax.cache.Cache;
  * - no available check in case of variable length record
  * - mechanism for fast loading huge quantities of data.
  * - mechanism to constrain the total memory of a segment
+ *      perhaps this should be taken care of on the partition level? So partition is allowed to have a max size and
+ *      the segments just take from this available space when incrementing.
  * - for put/get the key isn't checked; just the hashcode.
  * - 64 bit hash; 32bit hash only effectively maps up tp 4.3B items
  * - concurrent access segment
@@ -37,8 +39,10 @@ import javax.cache.Cache;
  *      - memory allocated
  *      - memory used
  *      - load factor
- * - currently the segment size increases with a fixed factor of 2, this should be configurable.
- * - type checking should be added to the codec.
+ * - data region
+ *      - garbage collection
+ *      - currently the data segment size increases with a fixed factor of 2, this should be configurable.
+ *      - instead of having a single data region, perhaps chop it up in multiple so that growing is less of pain?
  * - add optional statistics to the map entry
  *      hits
  *      lastAccessTime
@@ -48,17 +52,18 @@ import javax.cache.Cache;
  *        byte-array is known, unless a table is kept. For fixed length fields this is less of an issue; they
  *        can be written first. Perhaps keeping such a table should be optional; makes sense if you don't need
  *        all fields and can deal with some extra memory consumption
- * - blob option: so no analysis of the object; just store the blob
- *         - for key
- *         - for value
  * - replication
  * - dictionary write variable length key
  * - values iterator
+ *          - this will force dealing with non contiguous memory
  * - mapping
+ *          - type checking should be added to the codec.
+ *          - blob option: so no analysis of the object; just store the blob
+ *                  - for key
+ *                  - for value
  *          - enum
  *          - fixed length strings
  *          - string field
- *          - add tests for illegal type of fields
  *          - currently primitive fields are without order.
  *          - boolean compression by storing in bit
  *          - Primitive wrapper compression: every wrapper only needs a bit for a null marker; not a byte.
@@ -71,6 +76,7 @@ import javax.cache.Cache;
  *          - write array does no availability check
  *
  * done:
+ * - add tests for illegal type of fields
  * - overwrite value for variable size record not working
  * - when partition count configured with same value as segment count then error
  * - replace: variable length; don't fix fragmentation, just write the value in different location

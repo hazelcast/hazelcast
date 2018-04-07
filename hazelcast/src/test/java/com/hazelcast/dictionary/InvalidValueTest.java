@@ -7,6 +7,7 @@ import com.hazelcast.dictionary.examples.EmptyObject;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Test;
 
+import java.io.Serializable;
 import java.util.List;
 
 public class InvalidValueTest extends HazelcastTestSupport {
@@ -21,6 +22,11 @@ public class InvalidValueTest extends HazelcastTestSupport {
         newDictionary(EmptyObject.class).size();
     }
 
+    @Test(expected = RuntimeException.class)
+    public void whenUnrecognizedFIeld() {
+        newDictionary(ListField.class).size();
+    }
+
     private Dictionary<Long, Long> newDictionary(Class valueClass) {
         Config config = new Config();
         config.addDictionaryConfig(
@@ -32,4 +38,7 @@ public class InvalidValueTest extends HazelcastTestSupport {
         return hz.getDictionary("foo");
     }
 
+    public static class ListField implements Serializable {
+        public List list;
+    }
 }
