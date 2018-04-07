@@ -24,10 +24,8 @@ import javax.cache.Cache;
 
 /**
  * todo:
- * - todo come up with better name than dictionary since already used in java.util
  * - ClassField should have a 'Type'
  * - xml configuration
- * - overwrite value for variable size record not working
  * - no available check in case of variable length record
  * - mechanism for fast loading huge quantities of data.
  * - mechanism to constrain the total memory of a segment
@@ -46,14 +44,19 @@ import javax.cache.Cache;
  *      lastAccessTime
  *      lastUpdateTime
  * - how to deal with finding a particular field in a non fixed length record?
- * so imagine there are 2 byte-array fields, then the second byte array can only be found if the first
- * byte-array is known, unless a table is kept. For fixed length fields this is less of an issue; they
- * can be written first. Perhaps keeping such a table should be optional; makes sense if you don't need
- * all fields and can deal with some extra memory consumption
+ *        so imagine there are 2 byte-array fields, then the second byte array can only be found if the first
+ *        byte-array is known, unless a table is kept. For fixed length fields this is less of an issue; they
+ *        can be written first. Perhaps keeping such a table should be optional; makes sense if you don't need
+ *        all fields and can deal with some extra memory consumption
+ * - blob option: so no analysis of the object; just store the blob
+ *         - for key
+ *         - for value
  * - replication
  * - dictionary write variable length key
  * - values iterator
  * - mapping
+ *          - enum
+ *          - fixed length strings
  *          - string field
  *          - add tests for illegal type of fields
  *          - currently primitive fields are without order.
@@ -68,6 +71,7 @@ import javax.cache.Cache;
  *          - write array does no availability check
  *
  * done:
+ * - overwrite value for variable size record not working
  * - when partition count configured with same value as segment count then error
  * - replace: variable length; don't fix fragmentation, just write the value in different location
  * - basic remove; don't fix fragmentation, just remove the item
