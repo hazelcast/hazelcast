@@ -24,15 +24,12 @@ import javax.cache.Cache;
 
 /**
  * todo:
- * - ClassField should have a 'Type'
+ * - concurrency
+ *          - concurrent access segment
+ *          -
  * - xml configuration
- * - no available check in case of variable length record
  * - mechanism for fast loading huge quantities of data.
- * - mechanism to constrain the total memory of a segment
- *      perhaps this should be taken care of on the partition level? So partition is allowed to have a max size and
- *      the segments just take from this available space when incrementing.
  * - 64 bit hash; 32bit hash only effectively maps up tp 4.3B items
- * - concurrent access segment
  * - get segment usage data
  *      - number of items
  *      - memory allocated
@@ -42,6 +39,13 @@ import javax.cache.Cache;
  *      - garbage collection
  *      - currently the data segment size increases with a fixed factor of 2, this should be configurable.
  *      - instead of having a single data region, perhaps chop it up in multiple so that growing is less of pain?
+ *      - mechanism to constrain the total memory of a segment
+ *        perhaps this should be taken care of on the partition level? So partition is allowed to have a max size and
+ *        the segments just take from this available space when incrementing. Or maybe like HD native-memory global.
+ *      - explicit option for compaction? So will defragment the memory and ditch everything not used
+ *      - currently there is no knowledge how much data memory is garbage (it isn't easy to determine the size
+ *      of an non fixed length entry).
+ *
  * - add optional statistics to the map entry
  *      hits
  *      lastAccessTime
@@ -52,10 +56,17 @@ import javax.cache.Cache;
  *        can be written first. Perhaps keeping such a table should be optional; makes sense if you don't need
  *        all fields and can deal with some extra memory consumption
  * - replication
- * - dictionary write variable length key
  * - values iterator
  *          - this will force dealing with non contiguous memory
  * - mapping
+ *          - a variable sized entry should always have a 'size' header so that one can jump
+ *          over a record. Also needed for removal. Currently the only way to determine the size
+ *          is to read the full key/value
+ *          - ClassField should have a 'Type'
+ *          - ambiguity between fixed length records and primitive wrappers
+ *          - key-checking limited to fixed length records
+ *          - no available check in case of variable length record
+ *          - dictionary write variable length key
  *          - type checking should be added to the codec.
  *          - blob option: so no analysis of the object; just store the blob
  *                  - for key

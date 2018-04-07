@@ -48,7 +48,6 @@ public class Segment {
                    DictionaryConfig config) {
         this.serializationService = serializationService;
         this.dataRegion = new DataRegion(config, encoder, entryType);
-        //todo: this part is ugly
         this.offsetRegion = new OffsetRegion(config.getInitialSegmentSize(), dataRegion, encoder);
         this.isFixedLengthValue = entryType.value().isFixedLength();
     }

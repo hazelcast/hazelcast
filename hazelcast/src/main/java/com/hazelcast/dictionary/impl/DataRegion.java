@@ -26,7 +26,7 @@ import sun.misc.Unsafe;
  * actual key/values are stored.
  *
  * Currently a DataRegion contains a single block of memory that gets
- * increased or decreased in side by copying the data into a larger or
+ * increased or decreased in size by copying the data into a larger or
  * smaller block of memory.
  *
  * In the future the DataRegion could become smarter and instead of
