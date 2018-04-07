@@ -76,6 +76,9 @@ import javax.cache.Cache;
  *          - write array does no availability check
  *
  * done:
+ * - when dictionary proxy is created, type validation logic should be done.
+ *       - it is confusing that only on true interaction errors are detected. This should be done
+ *       as soon as the proxy is created.
  * - add tests for illegal type of fields
  * - overwrite value for variable size record not working
  * - when partition count configured with same value as segment count then error

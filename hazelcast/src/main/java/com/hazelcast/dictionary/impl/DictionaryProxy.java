@@ -71,6 +71,9 @@ public class DictionaryProxy<K, V>
         this.partitionService = nodeEngine.getPartitionService();
         this.operationService = nodeEngine.getOperationService();
         this.partitionCount = nodeEngine.getPartitionService().getPartitionCount();
+
+        // causes the config to be validated.
+        memoryInfo(0);
     }
 
     @Override
@@ -94,9 +97,9 @@ public class DictionaryProxy<K, V>
 
         Data keyData = toData(key);
 
-        return operationService.invokeOnPartition(
-                new GetOperation(name, keyData)
-                        .setPartitionId(partitionService.getPartitionId(keyData)));
+        Operation op = new GetOperation(name, keyData)
+                .setPartitionId(partitionService.getPartitionId(keyData));
+        return operationService.invokeOnPartition(op);
     }
 
     @Override
@@ -230,10 +233,9 @@ public class DictionaryProxy<K, V>
 
         Data keyData = toData(key);
 
-        return (Boolean) operationService.invokeOnPartition(
-                new ContainsKeyOperation(name, keyData)
-                        .setPartitionId(partitionService.getPartitionId(keyData))
-        ).join();
+        Operation op = new ContainsKeyOperation(name, keyData)
+                .setPartitionId(partitionService.getPartitionId(keyData));
+        return (Boolean) operationService.invokeOnPartition(op).join();
     }
 
     @Override
@@ -261,7 +263,6 @@ public class DictionaryProxy<K, V>
 
         Operation op = new PutOperation(name, false, keyData, valueData)
                 .setPartitionId(partitionService.getPartitionId(keyData));
-
         return (boolean) operationService.invokeOnPartition(op).join();
     }
 
