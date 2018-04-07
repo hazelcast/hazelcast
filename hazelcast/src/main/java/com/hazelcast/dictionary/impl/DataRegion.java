@@ -61,6 +61,10 @@ public class DataRegion {
         this.encoder = encoder;
     }
 
+    public long address(){
+        return address;
+    }
+
     public void init() {
         this.address = unsafe.allocateMemory(length);
         this.available = length;

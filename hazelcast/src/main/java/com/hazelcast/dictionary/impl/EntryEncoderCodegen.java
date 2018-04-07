@@ -381,9 +381,27 @@ public class EntryEncoderCodegen extends AbstractCodeGen {
 
     private void generateKeyMatches() {
         addLn("@Override");
-        addLn("public boolean keyMatches(final long entryAddress, %s key){", keyType.name());
+        addLn("public boolean keyMatches(final long address, %s key){", keyType.name());
         indent();
-        addLn("return false;");
+
+        switch (keyType.kind()) {
+            case FIXED_LENGTH_RECORD:
+                for (ClassField field : keyType.fixedLengthFields()) {
+                    switch (field.kind()) {
+                        case PRIMITIVE:
+                            String getMethod = unsafeGetMethod(field.clazz());
+                            addLn("if(unsafe.%s(null, address+%s)!=unsafe.%s(key,%s)) return false;",
+                                    getMethod, field.offsetOffheap(), getMethod, field.offsetHeap());
+                            break;
+                        default:
+                            throw new IllegalStateException("Unhandled field:" + field);
+                    }
+                }
+                addLn("return true;");
+                break;
+            default:
+                throw new IllegalStateException("Unhandled valueType:" + valueType);
+        }
         unindent();
         addLn("}");
     }

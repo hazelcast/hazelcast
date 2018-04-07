@@ -31,6 +31,8 @@ public class OffsetRegion {
     private static final Unsafe UNSAFE = UnsafeUtil.UNSAFE;
     private static final int INT_SIZE = INT_SIZE_IN_BYTES;
     private static final int EMPTY_HASH = 0;
+    private final DataRegion dataRegion;
+    private final EntryEncoder entryEncoder;
 
     private long address;
     private volatile int length;
@@ -38,8 +40,10 @@ public class OffsetRegion {
     private int slotsOccupied;
     private float maxLoadFactor = 0.5f;
 
-    public OffsetRegion(int length) {
+    public OffsetRegion(int length, DataRegion dataRegion, EntryEncoder entryEncoder) {
         this.length = length;
+        this.dataRegion = dataRegion;
+        this.entryEncoder = entryEncoder;
     }
 
     public void init() {
@@ -75,7 +79,10 @@ public class OffsetRegion {
             if (foundHash == EMPTY_HASH) {
                 return -1;
             } else if (foundHash == hash) {
-                return UNSAFE.getInt(slotAddress + INT_SIZE);
+                int offset = UNSAFE.getInt(slotAddress + INT_SIZE);
+                if (entryEncoder.keyMatches(dataRegion.address() + offset, key)) {
+                    return offset;
+                }
             }
 
             i++;
@@ -179,6 +186,12 @@ public class OffsetRegion {
             if (foundHash == EMPTY_HASH) {
                 return -1;
             } else if (foundHash == hash) {
+                int offset = UNSAFE.getInt(slotAddress + INT_SIZE);
+
+                if (entryEncoder.keyMatches(dataRegion.address() + offset, key)) {
+                    return offset;
+                }
+
                 UNSAFE.putInt(slotAddress, EMPTY_HASH);
                 return UNSAFE.getInt(slotAddress + INT_SIZE);
             }

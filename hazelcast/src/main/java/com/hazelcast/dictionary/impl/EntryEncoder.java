@@ -20,6 +20,13 @@ import com.hazelcast.dictionary.impl.type.EntryType;
 import com.hazelcast.internal.memory.impl.UnsafeUtil;
 import sun.misc.Unsafe;
 
+/**
+ * Subclasses are created using the {@link EntryEncoderCodegen}. They are tailored
+ * to {@link com.hazelcast.config.DictionaryConfig}.
+ *
+ * @param <K>
+ * @param <V>
+ */
 public abstract class EntryEncoder<K, V> {
 
     protected final EntryType entryType;

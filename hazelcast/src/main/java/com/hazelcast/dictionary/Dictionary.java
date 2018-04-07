@@ -31,7 +31,6 @@ import javax.cache.Cache;
  * - mechanism to constrain the total memory of a segment
  *      perhaps this should be taken care of on the partition level? So partition is allowed to have a max size and
  *      the segments just take from this available space when incrementing.
- * - for put/get the key isn't checked; just the hashcode.
  * - 64 bit hash; 32bit hash only effectively maps up tp 4.3B items
  * - concurrent access segment
  * - get segment usage data
@@ -76,6 +75,7 @@ import javax.cache.Cache;
  *          - write array does no availability check
  *
  * done:
+ * - for put/get the key isn't checked; just the hashcode.
  * - when dictionary proxy is created, type validation logic should be done.
  *       - it is confusing that only on true interaction errors are detected. This should be done
  *       as soon as the proxy is created.

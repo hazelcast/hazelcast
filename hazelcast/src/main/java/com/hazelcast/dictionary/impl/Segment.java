@@ -49,7 +49,7 @@ public class Segment {
         this.serializationService = serializationService;
         this.dataRegion = new DataRegion(config, encoder, entryType);
         //todo: this part is ugly
-        this.offsetRegion = new OffsetRegion(config.getInitialSegmentSize());
+        this.offsetRegion = new OffsetRegion(config.getInitialSegmentSize(), dataRegion, encoder);
         this.isFixedLengthValue = entryType.value().isFixedLength();
     }
 
@@ -129,9 +129,12 @@ public class Segment {
 
         Object key = serializationService.toObject(keyData);
         int offset = offsetRegion.search(key, partitionHash);
-        return offset == -1 ? null : dataRegion.readValue(offset);
-    }
+        if (offset == -1) {
+            return null;
+        }
 
+        return dataRegion.readValue(offset);
+    }
 
     public boolean containsKey(Data keyData, int partitionHash) {
         if (!allocated) {
@@ -161,7 +164,6 @@ public class Segment {
         dataRegion.clear();
         offsetRegion.clear();
     }
-
 
     public boolean replace(Data keyData, int partitionHash, Data updatedValueData) {
         if (!allocated) {
