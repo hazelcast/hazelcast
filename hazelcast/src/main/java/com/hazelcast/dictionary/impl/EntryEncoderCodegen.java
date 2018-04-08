@@ -63,9 +63,12 @@ public class EntryEncoderCodegen extends AbstractCodeGen {
         generateReadKey();
         addLn();
         generateKeyMatches();
+        addLn();
+        generateSize();
         unindent();
         addLn("}");
     }
+
 
     private void generateConstructor() {
         addLn("public %s(EntryType entryType){", className());
@@ -401,6 +404,19 @@ public class EntryEncoderCodegen extends AbstractCodeGen {
                 break;
             default:
                 throw new IllegalStateException("Unhandled valueType:" + valueType);
+        }
+        unindent();
+        addLn("}");
+    }
+
+    private void generateSize() {
+        addLn("@Override");
+        addLn("public int size(final long address){", className());
+        indent();
+        if (keyType.isFixedLength() && valueType.isFixedLength()) {
+            addLn("return %s;", keyType.fixedLength() + valueType.fixedLength());
+        }else{
+            addLn("return unsafe.getInt(null, address);");
         }
         unindent();
         addLn("}");

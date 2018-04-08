@@ -57,7 +57,7 @@ public class GetAndReplaceOperation extends DictionaryOperation {
 
     @Override
     public int getId() {
-        return DictionaryDataSerializerHook.REMOVE_OPERATION;
+        return DictionaryDataSerializerHook.GET_AND_REPLACE_OPERATION;
     }
 
     @Override

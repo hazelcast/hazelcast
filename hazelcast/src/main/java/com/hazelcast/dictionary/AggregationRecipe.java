@@ -44,7 +44,7 @@ public class AggregationRecipe<In, Out> implements DataSerializable {
         this.projectionClassName = projectionClass.getName();
         this.aggregatorClassName = aggregator.getClass().getName();
         this.predicate = predicate;
-        this.parameters = new HashMap<>();
+        this.parameters = new HashMap<String,Object>();
     }
 
     public Map<String, Object> getParameters() {

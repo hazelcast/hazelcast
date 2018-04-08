@@ -57,4 +57,12 @@ public abstract class EntryEncoder<K, V> {
     public abstract K readKey(long address);
 
     public abstract boolean keyMatches(long address, K key);
+
+    /**
+     * Returns the size in bytes of the map entry at the given address.
+     *
+     * @param address the address of the map entry
+     * @return the size of the map entry
+     */
+    public abstract int size(long address);
 }

@@ -36,6 +36,7 @@ import javax.cache.Cache;
  *      - memory used
  *      - load factor
  * - data region
+ *      - shrinking of the data region gets below the low water mark
  *      - garbage collection
  *      - currently the data segment size increases with a fixed factor of 2, this should be configurable.
  *      - instead of having a single data region, perhaps chop it up in multiple so that growing is less of pain?
@@ -84,8 +85,11 @@ import javax.cache.Cache;
  *          - primitive array field test not working
  *          - PrimitiveWrappers should not need 'null' byte since they can't be null.
  *          - write array does no availability check
+ *          - certain primitive wrapper values can be cached instead of recreated (litter reduction)
+ *          - a non fixed length map entry should add the size in the header.
  *
  * done:
+ * - add size method in entry codec that returns the size of the record
  * - for put/get the key isn't checked; just the hashcode.
  * - when dictionary proxy is created, type validation logic should be done.
  *       - it is confusing that only on true interaction errors are detected. This should be done

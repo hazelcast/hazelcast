@@ -25,10 +25,6 @@ import java.util.concurrent.atomic.AtomicReference;
 
 
 /**
- * http://www.docjar.com/docs/api/sun/misc/Unsafe.html
- *
- * http://hg.openjdk.java.net/jdk8/jdk8/jdk/file/687fd7c7986d/src/share/classes/sun/misc/Unsafe.java
- *
  * The Segment is created eagerly as soon as the partition for the dictionary
  * is created, but the memory is allocated lazily.
  */
@@ -83,6 +79,24 @@ public class Segment {
     }
 
     /**
+     * Executes the task on this segment.
+     *
+     * The task is executed immediately if the segment is available, or parked for later
+     * execution when the segment is in use.
+     *
+     * @param task
+     * @return true if the task got executed, false if the task is appended for later execution.
+     */
+    public boolean execute(SegmentTask task) {
+        return false;
+    }
+
+    public void clear() {
+        dataRegion.clear();
+        offsetRegion.clear();
+    }
+
+    /**
      * Returns the number of entries in this Segment.
      *
      * This method is thread-safe.
@@ -128,11 +142,7 @@ public class Segment {
 
         Object key = serializationService.toObject(keyData);
         int offset = offsetRegion.search(key, partitionHash);
-        if (offset == -1) {
-            return null;
-        }
-
-        return dataRegion.readValue(offset);
+        return offset == -1 ? null : dataRegion.readValue(offset);
     }
 
     public boolean containsKey(Data keyData, int partitionHash) {
@@ -146,24 +156,6 @@ public class Segment {
         return offset != -1;
     }
 
-    /**
-     * Executes the task on this segment.
-     *
-     * The task is executed immediately if the segment is available, or parked for later
-     * execution when the semgnet is in use.
-     *
-     * @param task
-     * @return true if the task got executed, false if the task is appended for later execution.
-     */
-    public boolean execute(SegmentTask task) {
-        return false;
-    }
-
-    public void clear() {
-        dataRegion.clear();
-        offsetRegion.clear();
-    }
-
     public boolean replace(Data keyData, int partitionHash, Data updatedValueData) {
         if (!allocated) {
             return false;
@@ -174,6 +166,7 @@ public class Segment {
         Object key = serializationService.toObject(keyData);
 
         if (isFixedLengthValue) {
+            // fixed length value can be overwritten
             int offset = offsetRegion.search(key, partitionHash);
 
             if (offset == -1) {
@@ -181,13 +174,9 @@ public class Segment {
             }
 
             Object updatedValue = serializationService.toObject(updatedValueData);
-
-            //System.out.println("previous updatedValue found, overwriting");
-            // todo: we assume that we can overwrite; but with variable length records this doesn't need to be the case
             dataRegion.overwrite(updatedValue, offset);
-
-            return true;
         } else {
+            // in case of variable length value, the entry is removed and re-inserted.
             int offset = offsetRegion.remove(key, partitionHash);
 
             if (offset == -1) {
@@ -197,12 +186,11 @@ public class Segment {
             dataRegion.remove(offset);
 
             Object updatedValue = serializationService.toObject(updatedValueData);
-
             offset = dataRegion.insert(key, updatedValue);
             offsetRegion.insert(key, partitionHash, offset);
-
-            return true;
         }
+
+        return true;
     }
 
     public Object getAndReplace(Data keyData, int partitionHash, Data valueData) {

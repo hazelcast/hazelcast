@@ -36,7 +36,8 @@ public class DictionaryService implements ManagedService, RemoteService {
     public static final String SERVICE_NAME = "hz:impl:dictionaryService";
 
     private final Compiler compiler = new Compiler("dictionary-src");
-    private final ConcurrentMap<String, DictionaryContainer> containers = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, DictionaryContainer> containers
+            = new ConcurrentHashMap<String,DictionaryContainer>();
 
     private final ConstructorFunction<String, DictionaryContainer> containerConstructorFunction =
             new ConstructorFunction<String, DictionaryContainer>() {

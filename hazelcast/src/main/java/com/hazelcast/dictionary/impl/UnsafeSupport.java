@@ -6,6 +6,11 @@ import sun.misc.Unsafe;
 import static com.hazelcast.nio.Bits.BYTE_SIZE_IN_BYTES;
 import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
 
+/**
+ *
+ *
+ * http://hg.openjdk.java.net/jdk8/jdk8/jdk/file/687fd7c7986d/src/share/classes/sun/misc/Unsafe.java
+ */
 public class UnsafeSupport {
 
     protected final Unsafe unsafe = UnsafeUtil.UNSAFE;
