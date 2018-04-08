@@ -16,6 +16,8 @@
 
 package com.hazelcast.config;
 
+import static com.hazelcast.util.Preconditions.checkHasText;
+import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * This segment contains a single chunk of memory contolled by
@@ -42,6 +44,10 @@ public class DictionaryConfig {
     private int maxSegmentSize = DEFAULT_MAX_SEGMENT_SIZE_BYTES;
     private int segmentsPerPartition = DEFAULT_SEGMENTS_PER_PARTITION;
 
+    public DictionaryConfig(String name) {
+        setName(name);
+    }
+
     public DictionaryConfig(DictionaryConfig config) {
         this.name = config.name;
         this.keyClass = config.keyClass;
@@ -51,16 +57,12 @@ public class DictionaryConfig {
         this.segmentsPerPartition = config.segmentsPerPartition;
     }
 
-    public DictionaryConfig(String name) {
-        this.name = name;
-    }
-
     public Class getKeyClass() {
         return keyClass;
     }
 
     public DictionaryConfig setKeyClass(Class keyClass) {
-        this.keyClass = keyClass;
+        this.keyClass = checkNotNull(keyClass,"keyClass can't be null");
         return this;
     }
 
@@ -69,7 +71,7 @@ public class DictionaryConfig {
     }
 
     public DictionaryConfig setValueClass(Class valueClass) {
-        this.valueClass = valueClass;
+        this.valueClass = checkNotNull(valueClass,"valueClass can't be null");
         return this;
     }
 
@@ -78,7 +80,7 @@ public class DictionaryConfig {
     }
 
     public DictionaryConfig setName(String name) {
-        this.name = name;
+        this.name = checkHasText(name,"name can't be empty or null");
         return this;
     }
 
