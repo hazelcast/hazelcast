@@ -68,6 +68,7 @@ import static com.hazelcast.config.XmlElements.CACHE;
 import static com.hazelcast.config.XmlElements.CARDINALITY_ESTIMATOR;
 import static com.hazelcast.config.XmlElements.COUNT_DOWN_LATCH;
 import static com.hazelcast.config.XmlElements.CRDT_REPLICATION;
+import static com.hazelcast.config.XmlElements.DICTIONARY;
 import static com.hazelcast.config.XmlElements.DURABLE_EXECUTOR_SERVICE;
 import static com.hazelcast.config.XmlElements.EVENT_JOURNAL;
 import static com.hazelcast.config.XmlElements.EXECUTOR_SERVICE;
@@ -357,6 +358,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             handleSemaphore(node);
         } else if (LOCK.isEqual(nodeName)) {
             handleLock(node);
+        } else if (DICTIONARY.isEqual(nodeName)) {
+            handleDictionary(node);
         } else if (RINGBUFFER.isEqual(nodeName)) {
             handleRingbuffer(node);
         } else if (ATOMIC_LONG.isEqual(nodeName)) {
@@ -391,7 +394,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             handleCardinalityEstimator(node);
         } else if (FLAKE_ID_GENERATOR.isEqual(nodeName)) {
             handleFlakeIdGenerator(node);
-        }  else if (CRDT_REPLICATION.isEqual(nodeName)) {
+        } else if (CRDT_REPLICATION.isEqual(nodeName)) {
             handleCRDTReplication(node);
         } else if (PN_COUNTER.isEqual(nodeName)) {
             handlePNCounter(node);
@@ -2159,6 +2162,46 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
         EventJournalConfig journalConfig = new EventJournalConfig();
         handleViaReflection(node, config, journalConfig);
         config.addEventJournalConfig(journalConfig);
+    }
+
+    private void handleDictionary(Node node) {
+        Node attName = node.getAttributes().getNamedItem("name");
+        String name = getTextContent(attName);
+        DictionaryConfig dicConfig = new DictionaryConfig(name);
+        for (Node n : childElements(node)) {
+            String nodeName = cleanNodeName(n);
+            String value = getTextContent(n).trim();
+            if ("key-class".equals(nodeName)) {
+                ClassLoader classLoader = XmlConfigBuilder.class.getClassLoader();
+                Class keyClass;
+                try {
+                    keyClass = classLoader.loadClass(value);
+                } catch (ClassNotFoundException e) {
+                    throw new RuntimeException(e);
+                }
+                dicConfig.setKeyClass(keyClass);
+            } else if ("value-class".equals(nodeName)) {
+                ClassLoader classLoader = XmlConfigBuilder.class.getClassLoader();
+                Class valueClass;
+                try {
+                    valueClass = classLoader.loadClass(value);
+                } catch (ClassNotFoundException e) {
+                    throw new RuntimeException(e);
+                }
+                dicConfig.setValueClass(valueClass);
+            } else if ("initial-segment-size".equals(nodeName)) {
+                int initialSegmentSize = getIntegerValue("initial-segment-size", value);
+                dicConfig.setInitialSegmentSize(initialSegmentSize);
+            } else if ("max-segment-size".equals(nodeName)) {
+                int maxSegmentSize = getIntegerValue("max-segment-size", value);
+                dicConfig.setMaxSegmentSize(maxSegmentSize);
+            } else if ("segments-per-partition".equals(nodeName)) {
+                int segmentsPerPartition = getIntegerValue("segments-per-partition", value);
+                dicConfig.setSegmentsPerPartition(segmentsPerPartition);
+            }
+        }
+
+        config.addDictionaryConfig(dicConfig);
     }
 
     private void handleRingbuffer(Node node) {

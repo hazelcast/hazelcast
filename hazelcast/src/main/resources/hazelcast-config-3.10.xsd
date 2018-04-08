@@ -612,6 +612,56 @@
         </xs:attribute>
     </xs:complexType>
 
+    <xs:complexType name="dictionary">
+        <xs:all>
+            <xs:element name="initial-segment-size" type="xs:unsignedInt" minOccurs="0" default="16384">
+                <xs:annotation>
+                    <xs:documentation>
+                        The initial size of a segment
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="max-segment-size" type="xs:unsignedInt" minOccurs="0" default="2147483647">
+                <xs:annotation>
+                    <xs:documentation>
+                       The maximum size of a segment
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="segments-per-partition" type="xs:unsignedInt" minOccurs="0" default="256">
+                <xs:annotation>
+                    <xs:documentation>
+                        The maximum size of a segment
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="key-class" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>
+                        The class of the key
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="value-class" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>
+                        The class of the value
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:all>
+        <xs:attribute name="name" use="optional" default="default">
+            <xs:annotation>
+                <xs:documentation>
+                    Name of the queue.
+                </xs:documentation>
+            </xs:annotation>
+            <xs:simpleType>
+                <xs:restriction base="xs:string"/>
+            </xs:simpleType>
+        </xs:attribute>
+    </xs:complexType>
+
     <xs:complexType name="queue">
         <xs:all>
             <xs:element name="statistics-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true">

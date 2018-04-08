@@ -26,8 +26,8 @@ import javax.cache.Cache;
  * todo:
  * - concurrency
  *          - concurrent access segment
- *          -
- * - xml configuration
+ *          - concurrent operations in single partition and partition migration
+ *          - caller runs?
  * - mechanism for fast loading huge quantities of data.
  * - 64 bit hash; 32bit hash only effectively maps up tp 4.3B items
  * - get segment usage data
@@ -89,20 +89,7 @@ import javax.cache.Cache;
  *          - a non fixed length map entry should add the size in the header.
  *
  * done:
- * - add size method in entry codec that returns the size of the record
- * - for put/get the key isn't checked; just the hashcode.
- * - when dictionary proxy is created, type validation logic should be done.
- *       - it is confusing that only on true interaction errors are detected. This should be done
- *       as soon as the proxy is created.
- * - add tests for illegal type of fields
- * - overwrite value for variable size record not working
- * - when partition count configured with same value as segment count then error
- * - replace: variable length; don't fix fragmentation, just write the value in different location
- * - basic remove; don't fix fragmentation, just remove the item
- * - pulled out AbstractCodeGen
- * - support for byte-array value
- * - add tests for illegal classes (interface e.g.)
- * - support for primitive-array value
+ * - xml configuration
  *
  * @param <K>
  * @param <V>
