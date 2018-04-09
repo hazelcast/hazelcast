@@ -162,7 +162,7 @@ public abstract class ClientProxy implements DistributedObject {
      * does.
      * <p>
      * This local destroy operation still may perform some communication with
-     * the cluster, for example, to unregister remote event subscriptions.
+     * the cluster; for example, to unregister remote event subscriptions.
      */
     public final void destroyLocally() {
         if (preDestroy()) {

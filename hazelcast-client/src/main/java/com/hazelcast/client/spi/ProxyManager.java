@@ -330,7 +330,7 @@ public final class ProxyManager {
      *
      * @param service the service associated with the object.
      * @param id      the ID of the object to obtain the proxy of.
-     * @return the registered proxy or {@code null} if there are no proxy
+     * @return the registered proxy or {@code null} if there is no proxy
      * registered.
      */
     public ClientProxy getProxy(String service, String id) {
