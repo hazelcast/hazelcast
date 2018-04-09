@@ -10,7 +10,7 @@ import java.io.Serializable;
 
 import static org.junit.Assert.assertEquals;
 
-public class MixedFieldTest extends HazelcastTestSupport {
+public class Value_MixedFieldTest extends HazelcastTestSupport {
 
 
     @Test

@@ -22,6 +22,7 @@ import com.hazelcast.dictionary.MemoryInfo;
 import com.hazelcast.dictionary.PreparedAggregation;
 import com.hazelcast.dictionary.impl.operations.ClearOperationFactory;
 import com.hazelcast.dictionary.impl.operations.ContainsKeyOperation;
+import com.hazelcast.dictionary.impl.operations.EntriesOperation;
 import com.hazelcast.dictionary.impl.operations.GetAndReplaceOperation;
 import com.hazelcast.dictionary.impl.operations.GetOperation;
 import com.hazelcast.dictionary.impl.operations.MemoryInfoOperation;
@@ -48,6 +49,7 @@ import javax.cache.processor.EntryProcessor;
 import javax.cache.processor.EntryProcessorException;
 import javax.cache.processor.EntryProcessorResult;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Spliterator;
@@ -100,6 +102,17 @@ public class DictionaryProxy<K, V>
         Operation op = new GetOperation(name, keyData)
                 .setPartitionId(partitionService.getPartitionId(keyData));
         return operationService.invokeOnPartition(op);
+    }
+
+    @Override
+    public Iterator<Map.Entry<K, V>> entries(int partitionId, int segmentId) {
+
+        Operation op = new EntriesOperation(name, segmentId)
+                .setPartitionId(partitionId);
+        // returning a list isn't the most efficient way; it would be better to deserialize when needed
+        // but for the time being it is more important to just get the data.
+        List<Map.Entry<K,V>> entries = (List<Map.Entry<K,V>>) operationService.invokeOnPartition(op).join();
+        return entries.iterator();
     }
 
     @Override
@@ -291,7 +304,7 @@ public class DictionaryProxy<K, V>
 
         Operation op = new ReplaceOperation(name, keyData, valueData)
                 .setPartitionId(partitionService.getPartitionId(keyData));
-        return (boolean)operationService.invokeOnPartition(op).join();
+        return (boolean) operationService.invokeOnPartition(op).join();
     }
 
     @Override

@@ -19,6 +19,7 @@ package com.hazelcast.dictionary.impl;
 import com.hazelcast.dictionary.impl.operations.ClearOperation;
 import com.hazelcast.dictionary.impl.operations.ClearOperationFactory;
 import com.hazelcast.dictionary.impl.operations.ContainsKeyOperation;
+import com.hazelcast.dictionary.impl.operations.EntriesOperation;
 import com.hazelcast.dictionary.impl.operations.GetAndReplaceOperation;
 import com.hazelcast.dictionary.impl.operations.GetOperation;
 import com.hazelcast.dictionary.impl.operations.MemoryInfoOperation;
@@ -55,6 +56,7 @@ public class DictionaryDataSerializerHook implements DataSerializerHook {
     public static final int CONTAINS_KEY_OPERATION = 11;
     public static final int REPLACE_OPERATION = 12;
     public static final int GET_AND_REPLACE_OPERATION = 13;
+    public static final int ENTRIES_OPERATION = 14;
 
     @Override
     public int getFactoryId() {
@@ -93,6 +95,8 @@ public class DictionaryDataSerializerHook implements DataSerializerHook {
                     return new ReplaceOperation();
                 case GET_AND_REPLACE_OPERATION:
                     return new GetAndReplaceOperation();
+                case ENTRIES_OPERATION:
+                    return new EntriesOperation();
                 default:
                     return null;
             }

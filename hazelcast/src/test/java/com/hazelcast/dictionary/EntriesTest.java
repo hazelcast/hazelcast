@@ -3,18 +3,22 @@ package com.hazelcast.dictionary;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.DictionaryConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
-public class GetTest extends HazelcastTestSupport {
+public class EntriesTest extends HazelcastTestSupport {
 
     private Dictionary<Long, Long> newDictionary() {
-        Config config = new Config();
+        Config config = new Config()
+                .setProperty(GroupProperty.PARTITION_COUNT.getName(), "1");
         config.addDictionaryConfig(
                 new DictionaryConfig("foo")
+                        .setSegmentsPerPartition(1)
                         .setKeyClass(Long.class)
                         .setValueClass(Long.class));
 
@@ -22,18 +26,11 @@ public class GetTest extends HazelcastTestSupport {
         return hz.getDictionary("foo");
     }
 
-    @Test(expected = NullPointerException.class)
-    public void whenNullKey() {
-        Dictionary<Long, Long> dictionary = newDictionary();
-
-        dictionary.get(null);
-    }
-
     @Test
-    public void whenNonExisting() {
+    public void whenNotUsed() {
         Dictionary<Long, Long> dictionary = newDictionary();
 
-        assertNull(dictionary.get(1L));
+        assertFalse(dictionary.entries(0, 0).hasNext());
     }
 
     @Test
@@ -41,6 +38,10 @@ public class GetTest extends HazelcastTestSupport {
         Dictionary<Long, Long> dictionary = newDictionary();
         dictionary.put(1L, 2L);
 
-        assertEquals(new Long(2), dictionary.get(1L));
+        // more asserts needed.
+        assertTrue(dictionary.entries(0, 0).hasNext());
+
     }
+
+
 }

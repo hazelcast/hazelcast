@@ -61,7 +61,7 @@ public class DataRegion {
         this.encoder = encoder;
     }
 
-    public long address(){
+    public long address() {
         return address;
     }
 
@@ -72,6 +72,7 @@ public class DataRegion {
     }
 
     public void clear() {
+        this.count = 0;
         this.freeOffset = 0;
         this.available = length;
     }

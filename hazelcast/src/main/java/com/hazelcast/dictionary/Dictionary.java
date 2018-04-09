@@ -20,10 +20,13 @@ import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.ICompletableFuture;
 
 import javax.cache.Cache;
+import java.util.Iterator;
+import java.util.Map;
 
 
 /**
  * todo:
+ * - aggregation
  * - concurrency
  *          - concurrent access segment
  *          - concurrent operations in single partition and partition migration
@@ -68,6 +71,8 @@ import javax.cache.Cache;
  *          - a variable sized entry should always have a 'size' header so that one can jump
  *          over a record. Also needed for removal. Currently the only way to determine the size
  *          is to read the full key/value
+ *          - Should the key be put next to the value? If one needs to scan through a huge amount of values and isn't
+ *          needing the key, then memory bandwidth is wasted.
  *          - ClassField should have a 'Type'
  *          - ambiguity between fixed length records and primitive wrappers
  *          - key-checking limited to fixed length records
@@ -94,6 +99,7 @@ import javax.cache.Cache;
  *
  * done:
  * - xml configuration
+ * - fixed test failure in dictionary.clear
  *
  * @param <K>
  * @param <V>
@@ -141,4 +147,6 @@ public interface Dictionary<K, V> extends Cache<K, V>, DistributedObject {
      * @return the prepared aggregation.
      */
     PreparedAggregation prepare(AggregationRecipe recipe);
+
+    Iterator<Map.Entry<K,V>> entries(int partitionId, int segmentId);
 }

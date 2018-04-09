@@ -21,6 +21,9 @@ import com.hazelcast.dictionary.impl.type.EntryType;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.serialization.SerializationService;
 
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 
@@ -235,5 +238,13 @@ public class Segment {
         dataRegion.remove(offset);
 
         return true;
+    }
+
+    public List<Map .Entry> entries() {
+        if(!allocated){
+            return new LinkedList<>();
+        }
+
+        return new LinkedList<>();
     }
 }
