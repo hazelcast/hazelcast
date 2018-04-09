@@ -21,6 +21,10 @@ import com.hazelcast.dictionary.impl.type.EntryType;
 import com.hazelcast.internal.memory.impl.UnsafeUtil;
 import sun.misc.Unsafe;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
 /**
  * A DataRegion is the region of memory in {@link Segment} where the
  * actual key/values are stored.
@@ -34,6 +38,14 @@ import sun.misc.Unsafe;
  * can be added and removed. The advantage would be that a memory a
  * allocation that doesn't fit into the existing claimed memory, doesn't
  * lead to a full copy of the whole data region.
+ *
+ * The contains 2 types of content for now:
+ * - map entries
+ * - gap records
+ *      - previous offset (offset to the previous gap record)
+ *      - next offset (offset to the next map entry)
+ *      - count: the number of map entries.
+ *
  */
 public class DataRegion {
     private static final Unsafe unsafe = UnsafeUtil.UNSAFE;
@@ -75,6 +87,21 @@ public class DataRegion {
         this.count = 0;
         this.freeOffset = 0;
         this.available = length;
+    }
+
+    public List<Map.Entry> entries() {
+        List<Map.Entry> result = new ArrayList<>(count());
+
+        if (address == 0) {
+            // no items.
+            return result;
+        }
+
+        // this will be the interesting part; how are we going to get the values.
+        // - we need to know the size of the entries so we can step over them
+        // - we need to know about which pieces of memory are occupied
+
+        return result;
     }
 
     public int insert(Object key, Object value) {

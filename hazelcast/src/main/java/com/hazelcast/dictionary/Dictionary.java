@@ -40,7 +40,9 @@ import java.util.Map;
  *      - load factor
  * - data region
  *      - shrinking of the data region gets below the low water mark
- *      - garbage collection
+ *      - compact function that compact all the records in the data region and moves them to one side.
+ *          - the offset table needs to be updated so that the offset of the key is pointing to the right
+ *          offset. A simple way to do it is to delete and then insert.
  *      - currently the data segment size increases with a fixed factor of 2, this should be configurable.
  *      - instead of having a single data region, perhaps chop it up in multiple so that growing is less of pain?
  *      - mechanism to constrain the total memory of a segment
