@@ -21,6 +21,7 @@ import com.hazelcast.dictionary.impl.type.EntryType;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.serialization.SerializationService;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -240,11 +241,18 @@ public class Segment {
         return true;
     }
 
-    public List<Map .Entry> entries() {
-        if(!allocated){
-            return new LinkedList<>();
+    public List<Map.Entry> entries() {
+        List<Map.Entry> result = new ArrayList<>(dataRegion.count());
+
+        if (!allocated) {
+            // no items.
+            return result;
         }
 
-        return new LinkedList<>();
+        // this will be the interesting part; how are we going to get the values.
+        // - we need to know the size of the entries so we can step over them
+        // - we need to know about which pieces of memory are occupied
+
+        return result;
     }
 }

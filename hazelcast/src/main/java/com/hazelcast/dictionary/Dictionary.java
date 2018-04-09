@@ -148,5 +148,14 @@ public interface Dictionary<K, V> extends Cache<K, V>, DistributedObject {
      */
     PreparedAggregation prepare(AggregationRecipe recipe);
 
+    /**
+     * Gets the entries for the given partition/segmentId.
+     *
+     * This method is temporary; it will help to test the underlying logic for iteration.
+     *
+     * @param partitionId
+     * @param segmentId
+     * @return
+     */
     Iterator<Map.Entry<K,V>> entries(int partitionId, int segmentId);
 }

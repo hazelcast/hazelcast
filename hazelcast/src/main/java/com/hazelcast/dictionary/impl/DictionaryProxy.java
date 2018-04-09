@@ -106,7 +106,6 @@ public class DictionaryProxy<K, V>
 
     @Override
     public Iterator<Map.Entry<K, V>> entries(int partitionId, int segmentId) {
-
         Operation op = new EntriesOperation(name, segmentId)
                 .setPartitionId(partitionId);
         // returning a list isn't the most efficient way; it would be better to deserialize when needed

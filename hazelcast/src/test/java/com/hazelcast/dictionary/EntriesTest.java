@@ -7,7 +7,6 @@ import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -42,6 +41,4 @@ public class EntriesTest extends HazelcastTestSupport {
         assertTrue(dictionary.entries(0, 0).hasNext());
 
     }
-
-
 }
