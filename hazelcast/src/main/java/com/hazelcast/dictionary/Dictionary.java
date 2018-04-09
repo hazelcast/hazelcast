@@ -60,6 +60,11 @@ import javax.cache.Cache;
  * - values iterator
  *          - this will force dealing with non contiguous memory
  * - mapping
+ *          - length info
+ *              - if the value is fixed length and the value is a primitive array,
+ *              no additional size info is needed since the size of the key can be
+ *              determined based on the length of the key (which is already in the front
+ *              and the size of the value is fixed length
  *          - a variable sized entry should always have a 'size' header so that one can jump
  *          over a record. Also needed for removal. Currently the only way to determine the size
  *          is to read the full key/value
@@ -84,7 +89,6 @@ import javax.cache.Cache;
  *          dictionary the content of the object is stored as key
  *          - primitive array field test not working
  *          - PrimitiveWrappers should not need 'null' byte since they can't be null.
- *          - write array does no availability check
  *          - certain primitive wrapper values can be cached instead of recreated (litter reduction)
  *          - a non fixed length map entry should add the size in the header.
  *

@@ -60,15 +60,12 @@ public class EntryEncoderCodegen extends AbstractCodeGen {
         addLn();
         generateReadValue();
         addLn();
-        generateReadKey();
-        addLn();
         generateKeyMatches();
         addLn();
         generateSize();
         unindent();
         addLn("}");
     }
-
 
     private void generateConstructor() {
         addLn("public %s(EntryType entryType){", className());
@@ -373,21 +370,20 @@ public class EntryEncoderCodegen extends AbstractCodeGen {
         }
     }
 
-    private void generateReadKey() {
-        addLn("@Override");
-        addLn("public %s readKey(final long entryAddress){", keyType.name());
-        indent();
-        addLn("return null;");
-        unindent();
-        addLn("}");
-    }
-
     private void generateKeyMatches() {
         addLn("@Override");
         addLn("public boolean keyMatches(final long address, %s key){", keyType.name());
         indent();
 
         switch (keyType.kind()) {
+            case PRIMITIVE_ARRAY:
+                Class arrayElementClazz  = keyType.arrayElementClass();
+                addLn("int storedBytes = unsafe.getInt(null, address);");
+                addLn("int actualBytes = key.length*unsafe.arrayIndexScale_%s;", arrayElementClazz.getName());
+                addLn("if (storedBytes!=actualBytes) return false;");
+                //todo: actual content checking needed
+                addLn("return true;");
+                break;
             case FIXED_LENGTH_RECORD:
                 for (ClassField field : keyType.fixedLengthFields()) {
                     switch (field.kind()) {
