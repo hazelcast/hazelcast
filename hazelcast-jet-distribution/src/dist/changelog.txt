@@ -1,3 +1,19 @@
+** Hazelcast Jet 0.6 **
+
+* Pipeline API has been extended with support for windowing operations
+including co grouped windows and support for event time.
+* Pipeline API now allows stateful transforms using a context object.
+* Parallelism and name of each stage on the pipeline API can now be set individually.
+* New custom sink builder for building sink connectors without writing custom processors.
+* Merging and updating map sinks, which can update a value in place rather than overwriting it.
+* It is now possible to set names for jobs and retrieve them by name.
+* Running jobs can now be manually restarted and scaled up.
+* Spring integration module which brings support for XML and annotation
+based Spring configuration
+* Jet builds on Java 9 and has an explicit automatic module name.
+* New Jet demos repository added to showcase several new use cases for Jet.
+* Hazelcast version is updated to 3.10.
+
 ** Hazelcast Jet 0.5 **
 
 * Introduction of Pipeline API for building Jet applications with support for
