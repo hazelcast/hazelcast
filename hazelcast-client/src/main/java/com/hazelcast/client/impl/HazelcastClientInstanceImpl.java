@@ -660,7 +660,9 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
             }
 
             for (DistributedObjectInfo distributedObjectInfo : localDistributedObjects) {
-                ClientProxy proxy = proxyManager.getProxy(distributedObjectInfo.getServiceName(), distributedObjectInfo.getName());
+                String serviceName = distributedObjectInfo.getServiceName();
+                String objectName = distributedObjectInfo.getName();
+                ClientProxy proxy = proxyManager.getProxy(serviceName, objectName);
                 if (proxy != null) {
                     proxy.destroyLocally();
                 }
