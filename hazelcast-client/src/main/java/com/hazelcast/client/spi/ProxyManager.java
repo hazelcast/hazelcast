@@ -324,19 +324,22 @@ public final class ProxyManager {
     }
 
     /**
-     * Returns the registered proxy instance for the given service and object
-     * ID. Unlike {@link #getOrCreateProxy} doesn't try to create a proxy
-     * instance if it's not registered in this proxy manager.
+     * Locally destroys the proxy identified by the given service and object ID.
+     * <p>
+     * Upon successful completion the proxy is unregistered in this proxy
+     * manager and all local resources associated with the proxy are released.
+     * See {@link ClientProxy#destroyLocally} for more details.
      *
-     * @param service the service associated with the object.
-     * @param id      the ID of the object to obtain the proxy of.
-     * @return the registered proxy or {@code null} if there is no proxy
-     * registered.
+     * @param service the service associated with the proxy.
+     * @param id      the ID of the object.
      */
-    public ClientProxy getProxy(String service, String id) {
-        final ObjectNamespace ns = new DistributedObjectNamespace(service, id);
-        ClientProxyFuture proxyFuture = proxies.get(ns);
-        return proxyFuture == null ? null : proxyFuture.get();
+    public void destroyProxyLocally(String service, String id) {
+        ObjectNamespace objectNamespace = new DistributedObjectNamespace(service, id);
+        ClientProxyFuture clientProxyFuture = proxies.remove(objectNamespace);
+        if (clientProxyFuture != null) {
+            ClientProxy clientProxy = clientProxyFuture.get();
+            clientProxy.destroyLocally();
+        }
     }
 
     private ClientProxy createClientProxy(String id, ClientProxyFactory factory) {
