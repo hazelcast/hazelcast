@@ -45,7 +45,6 @@ public class TxnRemoveAllBackupOperation extends AbstractKeyBasedMultiMapOperati
 
     @Override
     public void run() throws Exception {
-        response = true;
         MultiMapContainer container = getOrCreateContainerWithoutAccess();
         MultiMapValue multiMapValue = container.getOrCreateMultiMapValue(dataKey);
         for (Long recordId : recordIds) {
@@ -54,6 +53,7 @@ public class TxnRemoveAllBackupOperation extends AbstractKeyBasedMultiMapOperati
                 return;
             }
         }
+        response = true;
         Collection<MultiMapRecord> coll = multiMapValue.getCollection(false);
         for (Long recordId : recordIds) {
             Iterator<MultiMapRecord> iterator = coll.iterator();
