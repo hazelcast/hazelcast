@@ -19,10 +19,7 @@ package com.hazelcast.spi.discovery.impl;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.InvalidConfigurationException;
-import com.hazelcast.config.properties.PropertyDefinition;
 import com.hazelcast.config.properties.ValidationException;
-import com.hazelcast.config.properties.ValueValidator;
-import com.hazelcast.core.TypeConverter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.DiscoveryStrategy;
@@ -34,7 +31,6 @@ import com.hazelcast.util.ServiceLoader;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -42,21 +38,20 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static com.hazelcast.util.MapUtil.createHashMap;
-
 public class DefaultDiscoveryService
         implements DiscoveryService {
 
     private static final String SERVICE_LOADER_TAG = DiscoveryStrategyFactory.class.getCanonicalName();
 
-    private final DiscoveryNode discoveryNode;
     private final ILogger logger;
-    private final Iterable<DiscoveryStrategy> discoveryStrategies;
+    private final DiscoveryServicePropertiesBuilder propertiesBuilder = new DiscoveryServicePropertiesBuilder();
+    private final DiscoveryNode discoveryNode;
     private final NodeFilter nodeFilter;
+    private final Iterable<DiscoveryStrategy> discoveryStrategies;
 
     public DefaultDiscoveryService(DiscoveryServiceSettings settings) {
-        this.discoveryNode = settings.getDiscoveryNode();
         this.logger = settings.getLogger();
+        this.discoveryNode = settings.getDiscoveryNode();
         this.nodeFilter = getNodeFilter(settings);
         this.discoveryStrategies = loadDiscoveryStrategies(settings);
     }
@@ -183,57 +178,14 @@ public class DefaultDiscoveryService
             String className = discoveryStrategyType.getName();
             String factoryClassName = getFactoryClassName(config);
             if (className.equals(factoryClassName)) {
-                Map<String, Comparable> properties = buildProperties(factory, config, className);
+                Map<String, Comparable> properties = propertiesBuilder
+                        .buildProperties(config.getProperties(), factory.getConfigurationProperties());
                 return factory.newDiscoveryStrategy(discoveryNode, logger, properties);
             }
         }
         throw new ValidationException(
                 "There is no discovery strategy factory to create '" + config + "' Is it a typo in a strategy classname? "
                         + "Perhaps you forgot to include implementation on a classpath?");
-    }
-
-    private Map<String, Comparable> buildProperties(DiscoveryStrategyFactory factory, DiscoveryStrategyConfig config,
-                                                    String className) {
-        Collection<PropertyDefinition> propertyDefinitions = factory.getConfigurationProperties();
-        if (propertyDefinitions == null) {
-            return Collections.emptyMap();
-        }
-
-        Map<String, Comparable> properties = config.getProperties();
-        Map<String, Comparable> mappedProperties = createHashMap(propertyDefinitions.size());
-
-        for (PropertyDefinition propertyDefinition : propertyDefinitions) {
-            String propertyKey = propertyDefinition.key();
-            Comparable value = properties.get(propertyKey);
-            if (value == null) {
-                if (!propertyDefinition.optional()) {
-                    throw new InvalidConfigurationException(
-                            String.format("Missing property '%s' on discovery strategy '%s' configuration", propertyKey,
-                                    className));
-                }
-                continue;
-            }
-
-            TypeConverter typeConverter = propertyDefinition.typeConverter();
-            Comparable mappedValue = typeConverter.convert(value);
-
-            ValueValidator validator = propertyDefinition.validator();
-            if (validator != null) {
-                validator.validate(mappedValue);
-            }
-
-            mappedProperties.put(propertyKey, mappedValue);
-        }
-
-        Set<String> notMappedProperties = new HashSet<String>(properties.keySet());
-        notMappedProperties.removeAll(mappedProperties.keySet());
-
-        if (!notMappedProperties.isEmpty()) {
-            throw new InvalidConfigurationException(
-                    String.format("Unknown properties: '%s' on discovery strategy '%s'", notMappedProperties, className));
-        }
-
-        return mappedProperties;
     }
 
     private String getFactoryClassName(DiscoveryStrategyConfig config) {
