@@ -343,4 +343,10 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
             }
         }
     }
+
+    @Override
+    protected void postDestroy() {
+        // this will trigger all listeners to destroy themselves.
+        ringbuffer.destroy();
+    }
 }
