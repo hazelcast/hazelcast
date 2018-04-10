@@ -48,7 +48,7 @@ public class LossToleranceTest extends HazelcastTestSupport {
 
     @Before
     public void setup() {
-        Config config = smallInstanceConfig().addRingBufferConfig(
+        Config config = getConfig().addRingBufferConfig(
                 new RingbufferConfig(RELIABLE_TOPIC_NAME)
                         .setCapacity(100)
                         .setTimeToLiveSeconds(0)
