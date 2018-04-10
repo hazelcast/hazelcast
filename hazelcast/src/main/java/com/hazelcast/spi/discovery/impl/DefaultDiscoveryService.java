@@ -22,7 +22,6 @@ import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.properties.PropertyDefinition;
 import com.hazelcast.config.properties.ValidationException;
 import com.hazelcast.config.properties.ValueValidator;
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.TypeConverter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.discovery.DiscoveryNode;
@@ -158,7 +157,8 @@ public class DefaultDiscoveryService
     }
 
     private List<DiscoveryStrategyFactory> collectFactories(Collection<DiscoveryStrategyConfig> strategyConfigs,
-                                                            ClassLoader classloader) throws Exception {
+                                                            ClassLoader classloader)
+            throws Exception {
         Iterator<DiscoveryStrategyFactory> iterator = ServiceLoader
                 .iterator(DiscoveryStrategyFactory.class, SERVICE_LOADER_TAG, classloader);
 
@@ -187,9 +187,9 @@ public class DefaultDiscoveryService
                 return factory.newDiscoveryStrategy(discoveryNode, logger, properties);
             }
         }
-        throw new ValidationException("There is no discovery strategy factory to create '"
-                + config + "' Is it a typo in a strategy classname? "
-                + "Perhaps you forgot to include implementation on a classpath?");
+        throw new ValidationException(
+                "There is no discovery strategy factory to create '" + config + "' Is it a typo in a strategy classname? "
+                        + "Perhaps you forgot to include implementation on a classpath?");
     }
 
     private Map<String, Comparable> buildProperties(DiscoveryStrategyFactory factory, DiscoveryStrategyConfig config,
@@ -207,8 +207,9 @@ public class DefaultDiscoveryService
             Comparable value = properties.get(propertyKey);
             if (value == null) {
                 if (!propertyDefinition.optional()) {
-                    throw new HazelcastException(
-                            "Missing property '" + propertyKey + "' on discovery strategy '" + className + "' configuration");
+                    throw new InvalidConfigurationException(
+                            String.format("Missing property '%s' on discovery strategy '%s' configuration", propertyKey,
+                                    className));
                 }
                 continue;
             }
@@ -222,6 +223,14 @@ public class DefaultDiscoveryService
             }
 
             mappedProperties.put(propertyKey, mappedValue);
+        }
+
+        Set<String> notMappedProperties = new HashSet<String>(properties.keySet());
+        notMappedProperties.removeAll(mappedProperties.keySet());
+
+        if (!notMappedProperties.isEmpty()) {
+            throw new InvalidConfigurationException(
+                    String.format("Unknown properties: '%s' on discovery strategy '%s'", notMappedProperties, className));
         }
 
         return mappedProperties;
