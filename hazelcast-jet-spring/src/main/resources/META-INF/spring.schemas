@@ -1,2 +1,2 @@
-http\://www.hazelcast.com/schema/jet-spring/hazelcast-jet-spring-0.7.xsd=hazelcast-jet-spring-0.6.xsd
-https\://www.hazelcast.com/schema/jet-spring/hazelcast-jet-spring-0.7.xsd=hazelcast-jet-spring-0-6.xsd
+http\://www.hazelcast.com/schema/jet-spring/hazelcast-jet-spring-0.7.xsd=hazelcast-jet-spring-0.7.xsd
+https\://www.hazelcast.com/schema/jet-spring/hazelcast-jet-spring-0.7.xsd=hazelcast-jet-spring-0-7.xsd
