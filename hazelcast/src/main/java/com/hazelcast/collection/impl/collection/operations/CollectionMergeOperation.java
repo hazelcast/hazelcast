@@ -23,8 +23,8 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.merge.MergingValue;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
+import com.hazelcast.spi.merge.SplitBrainMergeTypes.CollectionMergeTypes;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -40,13 +40,13 @@ import static com.hazelcast.util.MapUtil.createHashMap;
  */
 public class CollectionMergeOperation extends CollectionBackupAwareOperation {
 
-    private SplitBrainMergePolicy mergePolicy;
-    private List<MergingValue<Data>> mergingValues;
+    private SplitBrainMergePolicy<Data, CollectionMergeTypes> mergePolicy;
+    private List<CollectionMergeTypes> mergingValues;
 
     private transient Map<Long, Data> valueMap;
 
-    public CollectionMergeOperation(String name, SplitBrainMergePolicy mergePolicy,
-                                    List<MergingValue<Data>> mergingValues) {
+    public CollectionMergeOperation(String name, SplitBrainMergePolicy<Data, CollectionMergeTypes> mergePolicy,
+                                    List<CollectionMergeTypes> mergingValues) {
         super(name);
         this.mergePolicy = mergePolicy;
         this.mergingValues = mergingValues;
@@ -74,7 +74,7 @@ public class CollectionMergeOperation extends CollectionBackupAwareOperation {
     public void run() throws Exception {
         CollectionContainer collectionContainer = getOrCreateContainer();
         valueMap = createHashMap(mergingValues.size());
-        for (MergingValue<Data> mergingValue : mergingValues) {
+        for (CollectionMergeTypes mergingValue : mergingValues) {
             CollectionItem mergedItem = collectionContainer.merge(mergingValue, mergePolicy);
             if (mergedItem != null) {
                 valueMap.put(mergedItem.getItemId(), mergedItem.getValue());
@@ -87,7 +87,7 @@ public class CollectionMergeOperation extends CollectionBackupAwareOperation {
         super.writeInternal(out);
         out.writeObject(mergePolicy);
         out.writeInt(mergingValues.size());
-        for (MergingValue<Data> mergingValue : mergingValues) {
+        for (CollectionMergeTypes mergingValue : mergingValues) {
             out.writeObject(mergingValue);
         }
     }
@@ -97,9 +97,9 @@ public class CollectionMergeOperation extends CollectionBackupAwareOperation {
         super.readInternal(in);
         mergePolicy = in.readObject();
         int size = in.readInt();
-        mergingValues = new ArrayList<MergingValue<Data>>(size);
+        mergingValues = new ArrayList<CollectionMergeTypes>(size);
         for (int i = 0; i < size; i++) {
-            MergingValue<Data> mergingValue = in.readObject();
+            CollectionMergeTypes mergingValue = in.readObject();
             mergingValues.add(mergingValue);
         }
     }

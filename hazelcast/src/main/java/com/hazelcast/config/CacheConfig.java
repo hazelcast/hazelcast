@@ -24,6 +24,8 @@ import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.BinaryInterface;
+import com.hazelcast.spi.merge.SplitBrainMergeTypeProvider;
+import com.hazelcast.spi.merge.SplitBrainMergeTypes;
 
 import javax.cache.configuration.CacheEntryListenerConfiguration;
 import javax.cache.configuration.CompleteConfiguration;
@@ -60,7 +62,7 @@ import static com.hazelcast.util.Preconditions.isNotNull;
  * @param <V> the value type
  */
 @BinaryInterface
-public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
+public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> implements SplitBrainMergeTypeProvider {
 
     private String name;
     private String managerPrefix;
@@ -476,6 +478,11 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
      */
     public void setMergePolicy(String mergePolicy) {
         this.mergePolicy = mergePolicy;
+    }
+
+    @Override
+    public Class getProvidedMergeTypes() {
+        return SplitBrainMergeTypes.CacheMergeTypes.class;
     }
 
     /**

@@ -24,41 +24,40 @@ import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.merge.MapMergePolicy;
+import com.hazelcast.map.merge.MergePolicyProvider;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.impl.merge.AbstractMergeRunnable;
-import com.hazelcast.spi.merge.MergingEntry;
+import com.hazelcast.spi.impl.merge.BaseSplitBrainHandlerService;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
+import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.function.BiConsumer;
 
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
 import static com.hazelcast.map.impl.EntryViews.createSimpleEntryView;
 import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntry;
 
-class MapMergeRunnable extends AbstractMergeRunnable<RecordStore, MergingEntry<Data, Data>> {
+class MapMergeRunnable extends AbstractMergeRunnable<Data, Data, RecordStore, MapMergeTypes> {
 
     private final MapServiceContext mapServiceContext;
-    private final MapSplitBrainHandlerService mapSplitBrainHandlerService;
+    private final MergePolicyProvider mergePolicyProvider;
 
-    MapMergeRunnable(Map<String, Collection<RecordStore>> collectedStores,
-                     Map<String, Collection<RecordStore>> collectedStoresWithLegacyPolicies,
-                     Collection<RecordStore> backupStores, MapServiceContext mapServiceContext,
-                     MapSplitBrainHandlerService mapSplitBrainHandlerService) {
-        super(MapService.SERVICE_NAME, collectedStores, collectedStoresWithLegacyPolicies,
-                backupStores, mapServiceContext.getNodeEngine());
+    MapMergeRunnable(Collection<RecordStore> mergingStores,
+                     BaseSplitBrainHandlerService splitBrainHandlerService,
+                     MapServiceContext mapServiceContext) {
+        super(MapService.SERVICE_NAME, mergingStores, splitBrainHandlerService, mapServiceContext.getNodeEngine());
 
         this.mapServiceContext = mapServiceContext;
-        this.mapSplitBrainHandlerService = mapSplitBrainHandlerService;
+        this.mergePolicyProvider = mapServiceContext.getMergePolicyProvider();
     }
 
     @Override
-    protected void consumeStore(RecordStore store, BiConsumer<Integer, MergingEntry<Data, Data>> consumer) {
+    protected void mergeStore(RecordStore store, BiConsumer<Integer, MapMergeTypes> consumer) {
         long now = Clock.currentTimeMillis();
         int partitionId = store.getPartitionId();
 
@@ -66,14 +65,16 @@ class MapMergeRunnable extends AbstractMergeRunnable<RecordStore, MergingEntry<D
         while (iterator.hasNext()) {
             Record record = iterator.next();
 
-            Data dataValue = toData(record.getValue());
-            MergingEntry<Data, Data> mergingEntry = createMergingEntry(getSerializationService(), record, dataValue);
-            consumer.accept(partitionId, mergingEntry);
+            Data dataKey = toHeapData(record.getKey());
+            Data dataValue = toHeapData(record.getValue());
+
+            consumer.accept(partitionId,
+                    createMergingEntry(getSerializationService(), dataKey, dataValue, record));
         }
     }
 
     @Override
-    protected void consumeStoreLegacy(RecordStore store, BiConsumer<Integer, Operation> consumer) {
+    protected void mergeStoreLegacy(RecordStore store, BiConsumer<Integer, Operation> consumer) {
         long now = Clock.currentTimeMillis();
         int partitionId = store.getPartitionId();
         String name = store.getName();
@@ -95,32 +96,43 @@ class MapMergeRunnable extends AbstractMergeRunnable<RecordStore, MergingEntry<D
 
     @Override
     protected int getBatchSize(String dataStructureName) {
-        MapConfig mapConfig = mapSplitBrainHandlerService.getMapConfig(dataStructureName);
+        MapConfig mapConfig = getMapConfig(dataStructureName);
         MergePolicyConfig mergePolicyConfig = mapConfig.getMergePolicyConfig();
         return mergePolicyConfig.getBatchSize();
     }
 
     @Override
     protected InMemoryFormat getInMemoryFormat(String dataStructureName) {
-        MapConfig mapConfig = mapSplitBrainHandlerService.getMapConfig(dataStructureName);
+        MapConfig mapConfig = getMapConfig(dataStructureName);
         return mapConfig.getInMemoryFormat();
     }
 
     @Override
     protected Object getMergePolicy(String dataStructureName) {
-        return mapSplitBrainHandlerService.getMergePolicy(dataStructureName);
+        MapConfig mapConfig = getMapConfig(dataStructureName);
+        MergePolicyConfig mergePolicyConfig = mapConfig.getMergePolicyConfig();
+        return mergePolicyProvider.getMergePolicy(mergePolicyConfig.getPolicy());
+    }
+
+    private MapConfig getMapConfig(String dataStructureName) {
+        MapContainer mapContainer = mapServiceContext.getMapContainer(dataStructureName);
+        return mapContainer.getMapConfig();
     }
 
     @Override
-    protected void destroyStores(Collection<RecordStore> stores) {
-        mapSplitBrainHandlerService.destroyStores(stores);
+    protected String getDataStructureName(RecordStore recordStore) {
+        return recordStore.getName();
+    }
+
+    @Override
+    protected int getPartitionId(RecordStore store) {
+        return store.getPartitionId();
     }
 
     @Override
     protected OperationFactory createMergeOperationFactory(String dataStructureName,
-                                                           SplitBrainMergePolicy mergePolicy,
-                                                           int[] partitions,
-                                                           List<MergingEntry<Data, Data>>[] entries) {
+                                                           SplitBrainMergePolicy<Data, MapMergeTypes> mergePolicy,
+                                                           int[] partitions, List<MapMergeTypes>[] entries) {
         MapOperationProvider operationProvider = mapServiceContext.getMapOperationProvider(dataStructureName);
         return operationProvider.createMergeOperationFactory(dataStructureName, partitions, entries, mergePolicy);
     }

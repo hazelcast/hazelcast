@@ -20,8 +20,8 @@ import com.hazelcast.cardinality.impl.hyperloglog.HyperLogLog;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.merge.MergingEntry;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
+import com.hazelcast.spi.merge.SplitBrainMergeTypes.CardinalityEstimatorMergeTypes;
 import com.hazelcast.spi.serialization.SerializationService;
 
 import java.io.IOException;
@@ -37,7 +37,7 @@ import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntr
 public class MergeOperation
         extends CardinalityEstimatorBackupAwareOperation {
 
-    private SplitBrainMergePolicy mergePolicy;
+    private SplitBrainMergePolicy<HyperLogLog, CardinalityEstimatorMergeTypes> mergePolicy;
     private HyperLogLog value;
 
     private transient HyperLogLog backupValue;
@@ -45,7 +45,8 @@ public class MergeOperation
     public MergeOperation() {
     }
 
-    public MergeOperation(String name, SplitBrainMergePolicy mergePolicy, HyperLogLog value) {
+    public MergeOperation(String name, SplitBrainMergePolicy<HyperLogLog, CardinalityEstimatorMergeTypes> mergePolicy,
+                          HyperLogLog value) {
         super(name);
         this.mergePolicy = mergePolicy;
         this.value = value;
@@ -54,7 +55,7 @@ public class MergeOperation
     @Override
     public void run() throws Exception {
         SerializationService serializationService = getNodeEngine().getSerializationService();
-        MergingEntry<String, HyperLogLog> mergingEntry = createMergingEntry(serializationService, name, value);
+        CardinalityEstimatorMergeTypes mergingEntry = createMergingEntry(serializationService, name, value);
         backupValue = getCardinalityEstimatorContainer().merge(mergingEntry, mergePolicy, serializationService);
     }
 

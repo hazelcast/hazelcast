@@ -17,8 +17,8 @@
 package com.hazelcast.ringbuffer.impl;
 
 import com.hazelcast.ringbuffer.StaleSequenceException;
-import com.hazelcast.spi.merge.MergingEntry;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
+import com.hazelcast.spi.merge.SplitBrainMergeTypes.RingbufferMergeTypes;
 import com.hazelcast.spi.serialization.SerializationService;
 
 /**
@@ -172,12 +172,13 @@ public interface Ringbuffer<E> {
     void clear();
 
     /**
-     * Merges the given {@link MergingEntry} with the given {@link SplitBrainMergePolicy}.
+     * Merges the given {@link RingbufferMergeTypes} with the given {@link SplitBrainMergePolicy}.
      *
-     * @param mergingEntry      the {@link MergingEntry} instance to merge
+     * @param mergingEntry      the {@link RingbufferMergeTypes} instance to merge
      * @param mergePolicy       the {@link SplitBrainMergePolicy} instance to use
      * @param remainingCapacity the remaining ringbuffer capacity, which is checked if a new item has to be added
      * @return the sequence ID of the merged item or {@code -1} if no item was merged
      */
-    long merge(MergingEntry<Long, E> mergingEntry, SplitBrainMergePolicy mergePolicy, long remainingCapacity);
+    long merge(RingbufferMergeTypes mergingEntry, SplitBrainMergePolicy<Object, RingbufferMergeTypes> mergePolicy,
+               long remainingCapacity);
 }

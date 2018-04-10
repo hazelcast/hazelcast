@@ -23,8 +23,8 @@ import com.hazelcast.config.CacheConfig;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.ObjectNamespace;
-import com.hazelcast.spi.merge.MergingEntry;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
+import com.hazelcast.spi.merge.SplitBrainMergeTypes.CacheMergeTypes;
 
 import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.processor.EntryProcessor;
@@ -358,6 +358,12 @@ public interface ICacheRecordStore {
     void destroy();
 
     /**
+     * Like {@link #destroy()} but does not touch state on other services
+     * like event journal service.
+     */
+    void destroyInternals();
+
+    /**
      * Gets the configuration of the cache that this store belongs to.
      *
      * @return {@link CacheConfig}
@@ -484,6 +490,15 @@ public interface ICacheRecordStore {
     ObjectNamespace getObjectNamespace();
 
     /**
+     * Merges the given {@link CacheMergeTypes} via the given {@link SplitBrainMergePolicy}.
+     *
+     * @param mergingEntry the {@link CacheMergeTypes} instance to merge
+     * @param mergePolicy  the {@link SplitBrainMergePolicy} instance to apply
+     * @return the used {@link CacheRecord} if merge is applied, otherwise {@code null}
+     */
+    CacheRecord merge(CacheMergeTypes mergingEntry, SplitBrainMergePolicy<Data, CacheMergeTypes> mergePolicy);
+
+    /**
      * Merges the given {@link CacheEntryView} via the given {@link CacheMergePolicy}.
      *
      * @param cacheEntryView the {@link CacheEntryView} instance to merge
@@ -496,16 +511,6 @@ public interface ICacheRecordStore {
      */
     CacheRecord merge(CacheEntryView<Data, Data> cacheEntryView, CacheMergePolicy mergePolicy,
                       String caller, String origin, int completionId);
-
-    /**
-     * Merges the given {@link MergingEntry} via the given {@link SplitBrainMergePolicy}.
-     *
-     * @param mergingEntry the {@link MergingEntry} instance to merge
-     * @param mergePolicy  the {@link SplitBrainMergePolicy} instance to apply
-     * @return the used {@link CacheRecord} if merge is applied, otherwise {@code null}
-     */
-    CacheRecord merge(MergingEntry<Data, Data> mergingEntry, SplitBrainMergePolicy mergePolicy);
-
 
     /**
      * @return partition ID of this store

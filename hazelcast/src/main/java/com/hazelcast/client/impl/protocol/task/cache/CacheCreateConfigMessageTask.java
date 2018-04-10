@@ -19,6 +19,7 @@ package com.hazelcast.client.impl.protocol.task.cache;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.cache.impl.PreJoinCacheConfig;
+import com.hazelcast.cache.impl.merge.policy.CacheMergePolicyProvider;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheCreateConfigCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
@@ -31,6 +32,9 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.properties.GroupProperty;
 
 import java.security.Permission;
+
+import static com.hazelcast.internal.config.ConfigValidator.checkCacheConfig;
+import static com.hazelcast.internal.config.MergePolicyValidator.checkMergePolicySupportsInMemoryFormat;
 
 /**
  * Creates the given CacheConfig on all members of the cluster.
@@ -47,14 +51,23 @@ public class CacheCreateConfigMessageTask
     @Override
     protected Object call() throws Exception {
         CacheConfig cacheConfig = extractCacheConfigFromMessage();
-        ICacheService cacheService = getService(CacheService.SERVICE_NAME);
-        cacheService.createCacheConfigOnAllMembers(PreJoinCacheConfig.of(cacheConfig));
+        CacheService cacheService = getService(CacheService.SERVICE_NAME);
+
+        if (cacheConfig != null) {
+            CacheMergePolicyProvider mergePolicyProvider = cacheService.getMergePolicyProvider();
+            checkCacheConfig(cacheConfig, mergePolicyProvider);
+
+            Object mergePolicy = mergePolicyProvider.getMergePolicy(cacheConfig.getMergePolicy());
+            checkMergePolicySupportsInMemoryFormat(cacheConfig.getName(), mergePolicy, cacheConfig.getInMemoryFormat(),
+                    nodeEngine.getClusterService().getClusterVersion(), true, logger);
+
+            cacheService.createCacheConfigOnAllMembers(PreJoinCacheConfig.of(cacheConfig));
+        }
         return null;
     }
 
     private CacheConfig extractCacheConfigFromMessage() {
         int clientVersion = getClientVersion();
-        CacheConfig cacheConfig = null;
         if (BuildInfo.UNKNOWN_HAZELCAST_VERSION == clientVersion) {
             boolean compatibilityEnabled = nodeEngine.getProperties().getBoolean(GroupProperty.COMPATIBILITY_3_6_CLIENT_ENABLED);
             if (compatibilityEnabled) {

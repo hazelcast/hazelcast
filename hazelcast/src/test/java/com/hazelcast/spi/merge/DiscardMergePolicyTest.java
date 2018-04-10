@@ -16,6 +16,10 @@
 
 package com.hazelcast.spi.merge;
 
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
+import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -33,29 +37,30 @@ import static org.mockito.Mockito.when;
 @Category({QuickTest.class, ParallelTest.class})
 public class DiscardMergePolicyTest {
 
-    private static final String EXISTING = "EXISTING";
-    private static final String MERGING = "MERGING";
+    private static final SerializationService SERIALIZATION_SERVICE = new DefaultSerializationServiceBuilder().build();
+    private static final Data EXISTING = SERIALIZATION_SERVICE.toData("EXISTING");
+    private static final Data MERGING = SERIALIZATION_SERVICE.toData("MERGING");
 
-    protected SplitBrainMergePolicy mergePolicy;
+    private SplitBrainMergePolicy<Data, MapMergeTypes> mergePolicy;
 
     @Before
     public void setup() {
-        mergePolicy = new DiscardMergePolicy();
+        mergePolicy = new DiscardMergePolicy<Data, MapMergeTypes>();
     }
 
     @Test
     @SuppressWarnings("ConstantConditions")
     public void merge_existingValueAbsent() {
-        MergingValue existing = null;
-        MergingValue merging = mergingValueWithGivenValue(MERGING);
+        MapMergeTypes existing = null;
+        MapMergeTypes merging = mergingValueWithGivenValue(MERGING);
 
         assertNull(mergePolicy.merge(merging, existing));
     }
 
     @Test
     public void merge_existingValuePresent() {
-        MergingValue existing = mergingValueWithGivenValue(EXISTING);
-        MergingValue merging = mergingValueWithGivenValue(MERGING);
+        MapMergeTypes existing = mergingValueWithGivenValue(EXISTING);
+        MapMergeTypes merging = mergingValueWithGivenValue(MERGING);
 
         assertEquals(EXISTING, mergePolicy.merge(merging, existing));
     }
@@ -63,22 +68,22 @@ public class DiscardMergePolicyTest {
     @Test
     @SuppressWarnings("ConstantConditions")
     public void merge_mergingNull() {
-        MergingValue existing = mergingValueWithGivenValue(EXISTING);
-        MergingValue merging = null;
+        MapMergeTypes existing = mergingValueWithGivenValue(EXISTING);
+        MapMergeTypes merging = null;
 
         assertEquals(EXISTING, mergePolicy.merge(merging, existing));
     }
 
     @Test
     public void merge_bothValuesNull() {
-        MergingValue existing = mergingValueWithGivenValue(null);
-        MergingValue merging = mergingValueWithGivenValue(null);
+        MapMergeTypes existing = mergingValueWithGivenValue(null);
+        MapMergeTypes merging = mergingValueWithGivenValue(null);
 
         assertNull(mergePolicy.merge(merging, existing));
     }
 
-    private MergingValue mergingValueWithGivenValue(String value) {
-        MergingValue mergingValue = mock(MergingValue.class);
+    private MapMergeTypes mergingValueWithGivenValue(Data value) {
+        MapMergeTypes mergingValue = mock(MapMergeTypes.class);
         try {
             when(mergingValue.getValue()).thenReturn(value);
             return mergingValue;

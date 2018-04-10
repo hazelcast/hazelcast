@@ -32,16 +32,18 @@ import java.io.IOException;
  * @param <V> the type of value
  * @since 3.10
  */
-public class MergingValueImpl<V> implements MergingValue<V>, SerializationServiceAware, IdentifiedDataSerializable {
+@SuppressWarnings("WeakerAccess")
+public abstract class AbstractMergingValueImpl<V, T extends AbstractMergingValueImpl<V, T>>
+        implements MergingValue<V>, SerializationServiceAware, IdentifiedDataSerializable {
 
     private V value;
 
     private transient SerializationService serializationService;
 
-    public MergingValueImpl() {
+    public AbstractMergingValueImpl() {
     }
 
-    public MergingValueImpl(SerializationService serializationService) {
+    public AbstractMergingValueImpl(SerializationService serializationService) {
         this.serializationService = serializationService;
     }
 
@@ -55,9 +57,10 @@ public class MergingValueImpl<V> implements MergingValue<V>, SerializationServic
         return serializationService.toObject(value);
     }
 
-    public MergingValueImpl<V> setValue(V value) {
+    public T setValue(V value) {
         this.value = value;
-        return this;
+        //noinspection unchecked
+        return (T) this;
     }
 
     @Override
@@ -81,20 +84,15 @@ public class MergingValueImpl<V> implements MergingValue<V>, SerializationServic
     }
 
     @Override
-    public int getId() {
-        return SplitBrainDataSerializerHook.MERGING_VALUE;
-    }
-
-    @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof MergingValueImpl)) {
+        if (!(o instanceof AbstractMergingValueImpl)) {
             return false;
         }
 
-        MergingValueImpl<?> that = (MergingValueImpl<?>) o;
+        AbstractMergingValueImpl<?, ?> that = (AbstractMergingValueImpl<?, ?>) o;
         return value != null ? value.equals(that.value) : that.value == null;
     }
 

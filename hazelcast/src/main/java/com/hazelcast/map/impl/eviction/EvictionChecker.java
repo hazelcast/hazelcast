@@ -53,6 +53,7 @@ import static java.lang.String.format;
 public class EvictionChecker {
 
     protected static final double ONE_HUNDRED_PERCENT = 100D;
+    private static final int MIN_SANE_PER_PARTITION_SIZE = 2;
 
     protected final ILogger logger;
     protected final MapServiceContext mapServiceContext;
@@ -123,14 +124,17 @@ public class EvictionChecker {
         int memberCount = nodeEngine.getClusterService().getSize(DATA_MEMBER_SELECTOR);
         int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
 
-        final double perNodeMaxRecordStoreSize = (1D * configuredMaxSize * memberCount / partitionCount);
-        if (perNodeMaxRecordStoreSize < 1
-                && misconfiguredPerNodeMaxSizeWarningLogged.compareAndSet(false, true)) {
-            int minMaxSize = (int) Math.ceil((1D * partitionCount / memberCount));
-            String msg = "The max size configuration for map '%s' does not allow "
-                    + " any data in the map. Given the current cluster size of %d "
-                    + "members with %d partitions, max size should be at least %d.";
-            logger.warning(format(msg, mapConfig.getName(), memberCount, partitionCount, minMaxSize));
+        double perNodeMaxRecordStoreSize = (1D * configuredMaxSize * memberCount / partitionCount);
+        if (perNodeMaxRecordStoreSize < 1) {
+            perNodeMaxRecordStoreSize = MIN_SANE_PER_PARTITION_SIZE;
+            if (misconfiguredPerNodeMaxSizeWarningLogged.compareAndSet(false, true)) {
+                int minMaxSize = (int) Math.ceil((1D * partitionCount / memberCount));
+                int newSize = MIN_SANE_PER_PARTITION_SIZE * partitionCount / memberCount;
+                logger.warning(format("The max size configuration for map \"%s\" does not allow any data in the map. "
+                                + "Given the current cluster size of %d members with %d partitions, max size should be at "
+                                + "least %d. Map size is forced set to %d for backward compatibility", mapConfig.getName(),
+                        memberCount, partitionCount, minMaxSize, newSize));
+            }
         }
         return perNodeMaxRecordStoreSize;
     }

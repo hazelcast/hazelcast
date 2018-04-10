@@ -107,10 +107,12 @@ public class ReplicatedMapSplitBrainTest extends SplitBrainTestSupport {
         Config config = super.config();
         config.getReplicatedMapConfig(replicatedMapNameA)
                 .setInMemoryFormat(inMemoryFormat)
-                .setMergePolicyConfig(mergePolicyConfig);
+                .setMergePolicyConfig(mergePolicyConfig)
+                .setStatisticsEnabled(false);
         config.getReplicatedMapConfig(replicatedMapNameB)
                 .setInMemoryFormat(inMemoryFormat)
-                .setMergePolicyConfig(mergePolicyConfig);
+                .setMergePolicyConfig(mergePolicyConfig)
+                .setStatisticsEnabled(false);
         return config;
     }
 

@@ -19,57 +19,45 @@ package com.hazelcast.spi.impl.merge;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.merge.MergingCosts;
-import com.hazelcast.spi.merge.MergingCreationTime;
-import com.hazelcast.spi.merge.MergingEntry;
-import com.hazelcast.spi.merge.MergingExpirationTime;
-import com.hazelcast.spi.merge.MergingHits;
-import com.hazelcast.spi.merge.MergingLastAccessTime;
-import com.hazelcast.spi.merge.MergingLastStoredTime;
-import com.hazelcast.spi.merge.MergingLastUpdateTime;
-import com.hazelcast.spi.merge.MergingTTL;
-import com.hazelcast.spi.merge.MergingVersion;
+import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.spi.serialization.SerializationServiceAware;
 
 import java.io.IOException;
 
 /**
- * Implementation of {@link MergingEntry} and all other merging type interfaces.
+ * Implementation of {@link MapMergeTypes}.
  *
- * @param <K> the type of key
- * @param <V> the type of value
  * @since 3.10
  */
-@SuppressWarnings("checkstyle:methodcount")
-public class FullMergingEntryImpl<K, V> implements MergingEntry<K, V>, MergingCosts, MergingCreationTime,
-        MergingExpirationTime, MergingHits, MergingLastAccessTime, MergingLastStoredTime, MergingLastUpdateTime,
-        MergingVersion, MergingTTL, SerializationServiceAware, IdentifiedDataSerializable {
+@SuppressWarnings({"WeakerAccess", "checkstyle:methodcount"})
+public class MapMergingEntryImpl implements MapMergeTypes, SerializationServiceAware, IdentifiedDataSerializable {
 
-    private V value;
-    private K key;
+    private Data value;
+    private Data key;
     private long cost = -1;
     private long creationTime = -1;
-    private long expirationTime;
+    private long expirationTime = -1;
     private long hits = -1;
     private long lastAccessTime = -1;
     private long lastStoredTime = -1;
     private long lastUpdateTime = -1;
-    private long version;
-    private long ttl;
+    private long version = -1;
+    private long ttl = -1;
 
     private transient SerializationService serializationService;
 
-    public FullMergingEntryImpl() {
+    public MapMergingEntryImpl() {
     }
 
-    public FullMergingEntryImpl(SerializationService serializationService) {
+    public MapMergingEntryImpl(SerializationService serializationService) {
         this.serializationService = serializationService;
     }
 
     @Override
-    public V getValue() {
+    public Data getValue() {
         return value;
     }
 
@@ -78,13 +66,13 @@ public class FullMergingEntryImpl<K, V> implements MergingEntry<K, V>, MergingCo
         return serializationService.toObject(value);
     }
 
-    public FullMergingEntryImpl<K, V> setValue(V value) {
+    public MapMergingEntryImpl setValue(Data value) {
         this.value = value;
         return this;
     }
 
     @Override
-    public K getKey() {
+    public Data getKey() {
         return key;
     }
 
@@ -93,7 +81,7 @@ public class FullMergingEntryImpl<K, V> implements MergingEntry<K, V>, MergingCo
         return serializationService.toObject(key);
     }
 
-    public FullMergingEntryImpl<K, V> setKey(K key) {
+    public MapMergingEntryImpl setKey(Data key) {
         this.key = key;
         return this;
     }
@@ -103,7 +91,7 @@ public class FullMergingEntryImpl<K, V> implements MergingEntry<K, V>, MergingCo
         return cost;
     }
 
-    public FullMergingEntryImpl<K, V> setCost(long cost) {
+    public MapMergingEntryImpl setCost(long cost) {
         this.cost = cost;
         return this;
     }
@@ -113,7 +101,7 @@ public class FullMergingEntryImpl<K, V> implements MergingEntry<K, V>, MergingCo
         return creationTime;
     }
 
-    public FullMergingEntryImpl<K, V> setCreationTime(long creationTime) {
+    public MapMergingEntryImpl setCreationTime(long creationTime) {
         this.creationTime = creationTime;
         return this;
     }
@@ -123,7 +111,7 @@ public class FullMergingEntryImpl<K, V> implements MergingEntry<K, V>, MergingCo
         return expirationTime;
     }
 
-    public FullMergingEntryImpl<K, V> setExpirationTime(long expirationTime) {
+    public MapMergingEntryImpl setExpirationTime(long expirationTime) {
         this.expirationTime = expirationTime;
         return this;
     }
@@ -133,7 +121,7 @@ public class FullMergingEntryImpl<K, V> implements MergingEntry<K, V>, MergingCo
         return hits;
     }
 
-    public FullMergingEntryImpl<K, V> setHits(long hits) {
+    public MapMergingEntryImpl setHits(long hits) {
         this.hits = hits;
         return this;
     }
@@ -143,7 +131,7 @@ public class FullMergingEntryImpl<K, V> implements MergingEntry<K, V>, MergingCo
         return lastAccessTime;
     }
 
-    public FullMergingEntryImpl<K, V> setLastAccessTime(long lastAccessTime) {
+    public MapMergingEntryImpl setLastAccessTime(long lastAccessTime) {
         this.lastAccessTime = lastAccessTime;
         return this;
     }
@@ -153,7 +141,7 @@ public class FullMergingEntryImpl<K, V> implements MergingEntry<K, V>, MergingCo
         return lastStoredTime;
     }
 
-    public FullMergingEntryImpl<K, V> setLastStoredTime(long lastStoredTime) {
+    public MapMergingEntryImpl setLastStoredTime(long lastStoredTime) {
         this.lastStoredTime = lastStoredTime;
         return this;
     }
@@ -163,7 +151,7 @@ public class FullMergingEntryImpl<K, V> implements MergingEntry<K, V>, MergingCo
         return lastUpdateTime;
     }
 
-    public FullMergingEntryImpl<K, V> setLastUpdateTime(long lastUpdateTime) {
+    public MapMergingEntryImpl setLastUpdateTime(long lastUpdateTime) {
         this.lastUpdateTime = lastUpdateTime;
         return this;
     }
@@ -173,7 +161,7 @@ public class FullMergingEntryImpl<K, V> implements MergingEntry<K, V>, MergingCo
         return version;
     }
 
-    public FullMergingEntryImpl<K, V> setVersion(long version) {
+    public MapMergingEntryImpl setVersion(long version) {
         this.version = version;
         return this;
     }
@@ -183,7 +171,7 @@ public class FullMergingEntryImpl<K, V> implements MergingEntry<K, V>, MergingCo
         return ttl;
     }
 
-    public FullMergingEntryImpl<K, V> setTtl(long ttl) {
+    public MapMergingEntryImpl setTtl(long ttl) {
         this.ttl = ttl;
         return this;
     }
@@ -230,7 +218,7 @@ public class FullMergingEntryImpl<K, V> implements MergingEntry<K, V>, MergingCo
 
     @Override
     public int getId() {
-        return SplitBrainDataSerializerHook.FULL_MERGING_ENTRY;
+        return SplitBrainDataSerializerHook.MAP_MERGING_ENTRY;
     }
 
     @Override
@@ -243,7 +231,7 @@ public class FullMergingEntryImpl<K, V> implements MergingEntry<K, V>, MergingCo
             return false;
         }
 
-        FullMergingEntryImpl<?, ?> that = (FullMergingEntryImpl<?, ?>) o;
+        MapMergingEntryImpl that = (MapMergingEntryImpl) o;
         if (cost != that.cost) {
             return false;
         }
@@ -295,7 +283,7 @@ public class FullMergingEntryImpl<K, V> implements MergingEntry<K, V>, MergingCo
 
     @Override
     public String toString() {
-        return "FullMergingEntry{"
+        return "MapMergingEntry{"
                 + "key=" + key
                 + ", value=" + value
                 + ", cost=" + cost

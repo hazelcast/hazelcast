@@ -25,12 +25,13 @@ import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import java.util.List;
 
 /**
- * This is the interface that needs to be implemented by actual InternalOperationService. Currently there is a single
- * InternalOperationService: {@link com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl}, but in the
- * future others can be added.
+ * This is the interface that needs to be implemented by actual
+ * InternalOperationService. Currently there is a single InternalOperationService:
+ * {@link com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl}, but
+ * in the future others can be added.
  * <p/>
- * It exposes methods that will not be called by regular code, like shutdown, but will only be called by
- * the the SPI management.
+ * It exposes methods that will not be called by regular code, like shutdown,
+ * but will only be called by the the SPI management.
  */
 public interface InternalOperationService extends OperationService {
 
@@ -73,7 +74,8 @@ public interface InternalOperationService extends OperationService {
     int getGenericThreadCount();
 
     /**
-     * Checks if this call is timed out. A timed out call is not going to be executed.
+     * Checks if this call is timed out. A timed out call is not going to be
+     * executed.
      *
      * @param op the operation to check.
      * @return true if it is timed out, false otherwise.
@@ -81,20 +83,22 @@ public interface InternalOperationService extends OperationService {
     boolean isCallTimedOut(Operation op);
 
     /**
-     * Returns true if the given operation is allowed to run on the calling thread, false otherwise.
-     * If this method returns true, then the operation can be executed using {@link #run(Operation)}
-     * method, otherwise {@link #execute(Operation)} should be used.
+     * Returns true if the given operation is allowed to run on the calling
+     * thread, false otherwise. If this method returns true, then the operation
+     * can be executed using {@link #run(Operation)} method, otherwise
+     * {@link #execute(Operation)} should be used.
      *
      * @param op the operation to check.
-     * @return true if the operation is allowed to run on the calling thread, false otherwise.
+     * @return true if the operation is allowed to run on the calling thread,
+     * false otherwise.
      */
     boolean isRunAllowed(Operation op);
 
     /**
      * Executes a PartitionSpecificRunnable.
      * <p/>
-     * This method is typically used by the {@link com.hazelcast.client.ClientEngine} when it has received a Packet containing
-     * a request that needs to be processed.
+     * This method is typically used by the {@link com.hazelcast.client.ClientEngine}
+     * when it has received a Packet containing a request that needs to be processed.
      *
      * @param task the task to execute
      */

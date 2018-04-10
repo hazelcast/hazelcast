@@ -27,8 +27,8 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.executionservice.InternalExecutionService;
-import com.hazelcast.spi.merge.MergingEntry;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
+import com.hazelcast.spi.merge.SplitBrainMergeTypes.ScheduledExecutorMergeTypes;
 import com.hazelcast.spi.serialization.SerializationService;
 
 import java.util.Collection;
@@ -234,14 +234,15 @@ public class ScheduledExecutorContainer {
     }
 
     /**
-     * Merges the given {@link MergingEntry} via the given {@link SplitBrainMergePolicy}.
+     * Merges the given {@link ScheduledExecutorMergeTypes} via the given {@link SplitBrainMergePolicy}.
      *
-     * @param mergingEntry the {@link MergingEntry} instance to merge
+     * @param mergingEntry the {@link ScheduledExecutorMergeTypes} instance to merge
      * @param mergePolicy  the {@link SplitBrainMergePolicy} instance to apply
      * @return the used {@link ScheduledTaskDescriptor} if merge is applied, otherwise {@code null}
      */
-    public ScheduledTaskDescriptor merge(MergingEntry<String, ScheduledTaskDescriptor> mergingEntry,
-                                         SplitBrainMergePolicy mergePolicy) {
+    public ScheduledTaskDescriptor merge(
+            ScheduledExecutorMergeTypes mergingEntry,
+            SplitBrainMergePolicy<ScheduledTaskDescriptor, ScheduledExecutorMergeTypes> mergePolicy) {
         SerializationService serializationService = nodeEngine.getSerializationService();
         serializationService.getManagedContext().initialize(mergingEntry);
         serializationService.getManagedContext().initialize(mergePolicy);
@@ -262,8 +263,7 @@ public class ScheduledExecutorContainer {
                 return newTask;
             }
         } else {
-            MergingEntry<String, ScheduledTaskDescriptor> existingEntry
-                    = createMergingEntry(serializationService, existingTask);
+            ScheduledExecutorMergeTypes existingEntry = createMergingEntry(serializationService, existingTask);
             ScheduledTaskDescriptor newTask = mergePolicy.merge(mergingEntry, existingEntry);
             // we are using == instead of equals() for the task comparison,
             // since the descriptor may have the same fields for merging and existing entry,

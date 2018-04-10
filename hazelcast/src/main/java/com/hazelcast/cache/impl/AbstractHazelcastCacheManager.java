@@ -45,7 +45,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.cache.CacheUtil.getPrefix;
-import static com.hazelcast.internal.config.ConfigValidator.checkCacheConfig;
 import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.SetUtil.createLinkedHashSet;
@@ -116,8 +115,7 @@ public abstract class AbstractHazelcastCacheManager
         checkNotNull(configuration, "configuration must not be null");
 
         CacheConfig<K, V> newCacheConfig = createCacheConfig(cacheName, configuration);
-        checkCacheConfig(newCacheConfig.getInMemoryFormat(), newCacheConfig.getEvictionConfig(),
-                newCacheConfig.isStatisticsEnabled(), newCacheConfig.getMergePolicy());
+        validateCacheConfig(newCacheConfig);
 
         if (caches.containsKey(newCacheConfig.getNameWithPrefix())) {
             throw new CacheException("A cache named '" + cacheName + "' already exists.");
@@ -427,6 +425,8 @@ public abstract class AbstractHazelcastCacheManager
     public String toString() {
         return "HazelcastCacheManager{hazelcastInstance=" + hazelcastInstance + ", cachingProvider=" + cachingProvider + '}';
     }
+
+    protected abstract <K, V> void validateCacheConfig(CacheConfig<K, V> cacheConfig);
 
     protected abstract <K, V> void addCacheConfigIfAbsent(CacheConfig<K, V> cacheConfig);
 

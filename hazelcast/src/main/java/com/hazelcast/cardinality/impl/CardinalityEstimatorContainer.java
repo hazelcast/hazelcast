@@ -21,8 +21,8 @@ import com.hazelcast.cardinality.impl.hyperloglog.impl.HyperLogLogImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.merge.MergingEntry;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
+import com.hazelcast.spi.merge.SplitBrainMergeTypes.CardinalityEstimatorMergeTypes;
 import com.hazelcast.spi.serialization.SerializationService;
 
 import java.io.IOException;
@@ -70,21 +70,22 @@ public class CardinalityEstimatorContainer
     }
 
     /**
-     * Merges the given {@link MergingEntry} via the given {@link SplitBrainMergePolicy}.
+     * Merges the given {@link CardinalityEstimatorMergeTypes} via the given {@link SplitBrainMergePolicy}.
      *
-     * @param mergingEntry         the {@link MergingEntry} instance to merge
+     * @param mergingEntry         the {@link CardinalityEstimatorMergeTypes} instance to merge
      * @param mergePolicy          the {@link SplitBrainMergePolicy} instance to apply
      * @param serializationService the {@link SerializationService} to inject dependencies
      * @return the used {@link HyperLogLog} if merge is applied, otherwise {@code null}
      */
-    public HyperLogLog merge(MergingEntry<String, HyperLogLog> mergingEntry, SplitBrainMergePolicy mergePolicy,
+    public HyperLogLog merge(CardinalityEstimatorMergeTypes mergingEntry,
+                             SplitBrainMergePolicy<HyperLogLog, CardinalityEstimatorMergeTypes> mergePolicy,
                              SerializationService serializationService) {
         serializationService.getManagedContext().initialize(mergingEntry);
         serializationService.getManagedContext().initialize(mergePolicy);
 
         String name = mergingEntry.getKey();
         if (hll.estimate() != 0) {
-            MergingEntry<String, HyperLogLog> existingEntry = createMergingEntry(serializationService, name, hll);
+            CardinalityEstimatorMergeTypes existingEntry = createMergingEntry(serializationService, name, hll);
             HyperLogLog newValue = mergePolicy.merge(mergingEntry, existingEntry);
             if (newValue != null && !newValue.equals(hll)) {
                 setValue(newValue);

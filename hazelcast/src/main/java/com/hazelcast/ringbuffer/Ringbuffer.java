@@ -47,13 +47,14 @@ import java.util.Collection;
  * {@link StaleSequenceException} is thrown.
  * <p>
  * A Ringbuffer currently is a replicated but not partitioned data-structure.
- * So all data is stored in a single partition; comparable to the IQueue
- * implementation.
+ * So all data is stored in a single partition; similarly to the {@link
+ * com.hazelcast.core.IQueue} implementation.
  * <p>
  * A Ringbuffer can be used in a similar way as a queue, but one of the key
- * differences is that a queue.take is destructive, meaning that only 1 thread
- * is able to take an item. A ringbuffer.read is not destructive, so you can
- * have multiple threads reading the same item multiple times.
+ * differences is that a {@code queue.take} is destructive, meaning that only 1
+ * thread is able to take an item. A {@code ringbuffer.read} is not
+ * destructive, so you can have multiple threads reading the same item multiple
+ * times.
  * <p>
  * The Ringbuffer is the backing data-structure for the reliable
  * {@link com.hazelcast.core.ITopic} implementation. See

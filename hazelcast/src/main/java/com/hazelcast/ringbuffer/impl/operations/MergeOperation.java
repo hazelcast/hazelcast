@@ -34,8 +34,8 @@ import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.ServiceNamespace;
 import com.hazelcast.spi.ServiceNamespaceAware;
-import com.hazelcast.spi.merge.MergingEntry;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
+import com.hazelcast.spi.merge.SplitBrainMergeTypes.RingbufferMergeTypes;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -55,8 +55,8 @@ import static com.hazelcast.util.MapUtil.createHashMap;
 public class MergeOperation extends Operation implements IdentifiedDataSerializable, BackupAwareOperation, ServiceNamespaceAware {
 
     private ObjectNamespace namespace;
-    private SplitBrainMergePolicy mergePolicy;
-    private List<MergingEntry<Long, Object>> mergingEntries;
+    private SplitBrainMergePolicy<Object, RingbufferMergeTypes> mergePolicy;
+    private List<RingbufferMergeTypes> mergingEntries;
 
     private transient RingbufferConfig config;
     private transient RingbufferContainer<Object, Object> ringbuffer;
@@ -65,8 +65,8 @@ public class MergeOperation extends Operation implements IdentifiedDataSerializa
     public MergeOperation() {
     }
 
-    public MergeOperation(ObjectNamespace namespace, SplitBrainMergePolicy mergePolicy,
-                          List<MergingEntry<Long, Object>> mergingEntries) {
+    public MergeOperation(ObjectNamespace namespace, SplitBrainMergePolicy<Object, RingbufferMergeTypes> mergePolicy,
+                          List<RingbufferMergeTypes> mergingEntries) {
         this.namespace = namespace;
         this.mergePolicy = mergePolicy;
         this.mergingEntries = mergingEntries;
@@ -82,7 +82,7 @@ public class MergeOperation extends Operation implements IdentifiedDataSerializa
     @Override
     public void run() throws Exception {
         valueMap = createHashMap(mergingEntries.size());
-        for (MergingEntry<Long, Object> mergingEntry : mergingEntries) {
+        for (RingbufferMergeTypes mergingEntry : mergingEntries) {
             long resultSequence = ringbuffer.merge(mergingEntry, mergePolicy);
             if (resultSequence != -1) {
                 valueMap.put(resultSequence, ringbuffer.readAsData(resultSequence));
@@ -170,7 +170,7 @@ public class MergeOperation extends Operation implements IdentifiedDataSerializa
         out.writeObject(namespace);
         out.writeObject(mergePolicy);
         out.writeInt(mergingEntries.size());
-        for (MergingEntry<Long, Object> mergingEntry : mergingEntries) {
+        for (RingbufferMergeTypes mergingEntry : mergingEntries) {
             out.writeObject(mergingEntry);
         }
     }
@@ -181,9 +181,9 @@ public class MergeOperation extends Operation implements IdentifiedDataSerializa
         namespace = in.readObject();
         mergePolicy = in.readObject();
         int size = in.readInt();
-        mergingEntries = new ArrayList<MergingEntry<Long, Object>>(size);
+        mergingEntries = new ArrayList<RingbufferMergeTypes>(size);
         for (int i = 0; i < size; i++) {
-            MergingEntry<Long, Object> mergingEntry = in.readObject();
+            RingbufferMergeTypes mergingEntry = in.readObject();
             mergingEntries.add(mergingEntry);
         }
     }

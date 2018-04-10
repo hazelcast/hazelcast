@@ -1540,7 +1540,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             }
         }
         try {
-            checkCacheConfig(cacheConfig);
+            checkCacheConfig(cacheConfig, null);
         } catch (IllegalArgumentException e) {
             throw new InvalidConfigurationException(e.getMessage());
         }

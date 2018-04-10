@@ -16,6 +16,8 @@
 
 package com.hazelcast.spi.merge;
 
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -27,7 +29,7 @@ import org.junit.runner.RunWith;
 public class LatestAccessSplitBrainMergePolicyTest extends AbstractSplitBrainMergePolicyTest {
 
     @Override
-    protected SplitBrainMergePolicy createMergePolicy() {
-        return new LatestAccessMergePolicy();
+    protected SplitBrainMergePolicy<Data, MapMergeTypes> createMergePolicy() {
+        return new LatestAccessMergePolicy<Data, MapMergeTypes>();
     }
 }
