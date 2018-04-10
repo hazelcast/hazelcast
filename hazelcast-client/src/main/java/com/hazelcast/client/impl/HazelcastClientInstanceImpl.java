@@ -42,7 +42,6 @@ import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.client.spi.ClientListenerService;
 import com.hazelcast.client.spi.ClientPartitionService;
-import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.ClientTransactionManagerService;
 import com.hazelcast.client.spi.ProxyManager;
 import com.hazelcast.client.spi.impl.AbstractClientInvocationService;
