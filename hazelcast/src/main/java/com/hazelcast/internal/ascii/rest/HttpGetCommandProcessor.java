@@ -79,11 +79,19 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
 
         String healthParameter = uri.substring(URI_HEALTH_URL.length());
         if (healthParameter.equals(HEALTH_PATH_PARAM_NODE_STATE)) {
-            command.setResponse(null, stringToBytes(nodeState.toString()));
+            if (NodeState.SHUT_DOWN.equals(nodeState)) {
+                command.setResponse(HttpCommand.RES_503);
+            } else {
+                command.setResponse(null, stringToBytes(nodeState.toString()));
+            }
         } else if (healthParameter.equals(HEALTH_PATH_PARAM_CLUSTER_STATE)) {
             command.setResponse(null, stringToBytes(clusterState.toString()));
         } else if (healthParameter.equals(HEALTH_PATH_PARAM_CLUSTER_SAFE)) {
-            command.setResponse(null, stringToBytes(booleanToString(clusterSafe)));
+            if (clusterSafe) {
+                command.send200();
+            } else {
+                command.setResponse(HttpCommand.RES_503);
+            }
         } else if (healthParameter.equals(HEALTH_PATH_PARAM_MIGRATION_QUEUE_SIZE)) {
             command.setResponse(null, stringToBytes(Long.toString(migrationQueueSize)));
         } else if (healthParameter.equals(HEALTH_PATH_PARAM_CLUSTER_SIZE)) {

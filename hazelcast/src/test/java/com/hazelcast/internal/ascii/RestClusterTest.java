@@ -254,7 +254,7 @@ public class RestClusterTest extends HazelcastTestSupport {
 
         assertEquals("ACTIVE", communicator.getClusterHealth("/node-state"));
         assertEquals("ACTIVE", communicator.getClusterHealth("/cluster-state"));
-        assertEquals("TRUE", communicator.getClusterHealth("/cluster-safe"));
+        assertEquals(HttpURLConnection.HTTP_OK, communicator.getClusterHealthResponseCode("/cluster-safe"));
         assertEquals("0", communicator.getClusterHealth("/migration-queue-size"));
         assertEquals("1", communicator.getClusterHealth("/cluster-size"));
     }
