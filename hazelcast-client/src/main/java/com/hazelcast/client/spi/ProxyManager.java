@@ -316,6 +316,25 @@ public final class ProxyManager {
         }
     }
 
+    /**
+     * Locally destroys the proxy identified by the given service and object ID.
+     * <p>
+     * Upon successful completion the proxy is unregistered in this proxy
+     * manager and all local resources associated with the proxy are released.
+     * See {@link ClientProxy#destroyLocally} for more details.
+     *
+     * @param service the service associated with the proxy.
+     * @param id      the ID of the object.
+     */
+    public void destroyProxyLocally(String service, String id) {
+        ObjectNamespace objectNamespace = new DistributedObjectNamespace(service, id);
+        ClientProxyFuture clientProxyFuture = proxies.remove(objectNamespace);
+        if (clientProxyFuture != null) {
+            ClientProxy clientProxy = clientProxyFuture.get();
+            clientProxy.destroyLocally();
+        }
+    }
+
     private ClientProxy createClientProxy(String id, ClientProxyFactory factory) {
         if (factory instanceof ClientProxyFactoryWithContext) {
             return ((ClientProxyFactoryWithContext) factory).create(id, context);

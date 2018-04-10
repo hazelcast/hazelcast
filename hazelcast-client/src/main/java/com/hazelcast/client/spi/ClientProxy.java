@@ -157,6 +157,26 @@ public abstract class ClientProxy implements DistributedObject {
     }
 
     /**
+     * Destroys this client proxy instance locally without issuing distributed
+     * object destroy request to the cluster as the {@link #destroy} method
+     * does.
+     * <p>
+     * The local destruction operation still may perform some communication
+     * with the cluster; for example, to unregister remote event subscriptions.
+     */
+    public final void destroyLocally() {
+        if (preDestroy()) {
+            try {
+                onDestroy();
+            } catch (Exception e) {
+                throw rethrow(e);
+            } finally {
+                postDestroy();
+            }
+        }
+    }
+
+    /**
      * Called when proxy is created.
      * Overriding implementations can add initialization specific logic into this method
      * like registering a listener, creating a cleanup task etc.

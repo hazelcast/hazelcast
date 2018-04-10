@@ -643,7 +643,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
             }
 
             for (DistributedObjectInfo distributedObjectInfo : localDistributedObjects) {
-                proxyManager.removeProxy(distributedObjectInfo.getServiceName(), distributedObjectInfo.getName());
+                proxyManager.destroyProxyLocally(distributedObjectInfo.getServiceName(), distributedObjectInfo.getName());
             }
             return (Collection<DistributedObject>) proxyManager.getDistributedObjects();
         } catch (Exception e) {
