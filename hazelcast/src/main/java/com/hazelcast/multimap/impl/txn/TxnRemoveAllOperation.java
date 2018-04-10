@@ -59,13 +59,14 @@ public class TxnRemoveAllOperation extends AbstractKeyBasedMultiMapOperation imp
         startTimeNanos = System.nanoTime();
         MultiMapContainer container = getOrCreateContainer();
         MultiMapValue multiMapValue = container.getOrCreateMultiMapValue(dataKey);
-        response = true;
         for (Long recordId : recordIds) {
             if (!multiMapValue.containsRecordId(recordId)) {
                 response = false;
                 return;
             }
         }
+        response = true;
+        container.update();
         Collection<MultiMapRecord> coll = multiMapValue.getCollection(false);
         removed = new LinkedList<MultiMapRecord>();
         for (Long recordId : recordIds) {
@@ -90,7 +91,6 @@ public class TxnRemoveAllOperation extends AbstractKeyBasedMultiMapOperation imp
         MultiMapService service = getService();
         service.getLocalMultiMapStatsImpl(name).incrementRemoveLatencyNanos(elapsed);
         if (removed != null) {
-            getOrCreateContainer().update();
             for (MultiMapRecord record : removed) {
                 publishEvent(EntryEventType.REMOVED, dataKey, null, record.getObject());
             }

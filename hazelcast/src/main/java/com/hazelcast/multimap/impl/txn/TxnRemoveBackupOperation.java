@@ -48,11 +48,11 @@ public class TxnRemoveBackupOperation extends AbstractKeyBasedMultiMapOperation 
     public void run() throws Exception {
         MultiMapContainer container = getOrCreateContainerWithoutAccess();
         MultiMapValue multiMapValue = container.getMultiMapValueOrNull(dataKey);
-        response = true;
         if (multiMapValue == null || !multiMapValue.containsRecordId(recordId)) {
             response = false;
             return;
         }
+        response = true;
         Collection<MultiMapRecord> coll = multiMapValue.getCollection(false);
         Iterator<MultiMapRecord> iterator = coll.iterator();
         while (iterator.hasNext()) {
