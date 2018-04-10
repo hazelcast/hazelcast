@@ -138,7 +138,8 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
     private volatile Address ownerConnectionAddress;
     private volatile Address previousOwnerConnectionAddress;
 
-    private HeartbeatManager heartbeat;
+    private final HeartbeatManager heartbeat;
+    private final long authenticationTimeout;
     private volatile ClientPrincipal principal;
     private final ClientConnectionStrategy connectionStrategy;
     private final ExecutorService clusterConnectionExecutor;
@@ -177,7 +178,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
         this.clusterConnectionExecutor = createSingleThreadExecutorService(client);
         this.shuffleMemberList = client.getProperties().getBoolean(SHUFFLE_MEMBER_LIST);
         this.addressProviders = addressProviders;
-        connectionAttemptPeriod = networkConfig.getConnectionAttemptPeriod();
+        this.connectionAttemptPeriod = networkConfig.getConnectionAttemptPeriod();
 
         int connAttemptLimit = networkConfig.getConnectionAttemptLimit();
         boolean isAsync = client.getClientConfig().getConnectionStrategyConfig().isAsyncStart();
@@ -191,7 +192,8 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
 
         this.outboundPorts.addAll(getOutboundPorts(networkConfig));
         this.outboundPortCount = outboundPorts.size();
-
+        this.heartbeat = new HeartbeatManager(this, client);
+        this.authenticationTimeout = heartbeat.getHeartbeatTimeout();
         checkSslAllowed();
     }
 
@@ -291,7 +293,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
         }
         alive = true;
         startEventLoopGroup();
-        heartbeat = new HeartbeatManager(this, client);
+
         heartbeat.start();
         addConnectionHeartbeatListener(this);
         connectionStrategy.init(clientContext);
@@ -648,8 +650,9 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
         ClientMessage clientMessage = encodeAuthenticationRequest(asOwner, client.getSerializationService(), principal);
         ClientInvocation clientInvocation = new ClientInvocation(client, clientMessage, null, connection);
         ClientInvocationFuture invocationFuture = clientInvocation.invokeUrgent();
-        ScheduledFuture timeoutTaskFuture = executionService.schedule(new TimeoutAuthenticationTask(invocationFuture),
-                connectionTimeoutMillis, MILLISECONDS);
+
+        ScheduledFuture timeoutTaskFuture = executionService.schedule(
+                new TimeoutAuthenticationTask(invocationFuture), authenticationTimeout, MILLISECONDS);
         invocationFuture.andThen(new AuthCallback(connection, asOwner, target, future, timeoutTaskFuture));
     }
 
@@ -741,7 +744,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
                 return;
             }
             future.complete(new TimeoutException("Authentication response did not come back in "
-                    + connectionTimeoutMillis + " millis"));
+                    + authenticationTimeout + " millis"));
         }
 
     }
