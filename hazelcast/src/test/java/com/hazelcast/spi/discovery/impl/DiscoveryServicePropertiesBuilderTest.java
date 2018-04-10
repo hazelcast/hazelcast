@@ -21,7 +21,6 @@ import com.hazelcast.config.properties.PropertyDefinition;
 import com.hazelcast.config.properties.SimplePropertyDefinition;
 import com.hazelcast.config.properties.ValidationException;
 import com.hazelcast.config.properties.ValueValidator;
-import com.hazelcast.core.TypeConverter;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -32,6 +31,7 @@ import org.junit.runner.RunWith;
 import java.util.Collection;
 import java.util.Map;
 
+import static com.hazelcast.config.properties.PropertyTypeConverter.STRING;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
@@ -44,8 +44,7 @@ import static org.junit.Assert.assertTrue;
 public class DiscoveryServicePropertiesBuilderTest {
     private static final String PROPERTY_KEY_1 = "property1";
     private static final String PROPERTY_VALUE_1 = "propertyValue1";
-    private static final TypeConverter TYPE_CONVERTER = new DummyTypeConverter();
-    private static final PropertyDefinition PROPERTY_DEFINITION_1 = new SimplePropertyDefinition(PROPERTY_KEY_1, TYPE_CONVERTER);
+    private static final PropertyDefinition PROPERTY_DEFINITION_1 = new SimplePropertyDefinition(PROPERTY_KEY_1, STRING);
 
     private DiscoveryServicePropertiesBuilder propertiesBuilder = new DiscoveryServicePropertiesBuilder();
 
@@ -80,7 +79,7 @@ public class DiscoveryServicePropertiesBuilderTest {
         // given
         Map<String, Comparable> properties = emptyMap();
         Collection<PropertyDefinition> propertyDefinitions = singletonList(
-                (PropertyDefinition) new SimplePropertyDefinition(PROPERTY_KEY_1, true, TYPE_CONVERTER));
+                (PropertyDefinition) new SimplePropertyDefinition(PROPERTY_KEY_1, true, STRING));
 
         // when
         Map<String, Comparable> result = propertiesBuilder.buildProperties(properties, propertyDefinitions);
@@ -94,7 +93,7 @@ public class DiscoveryServicePropertiesBuilderTest {
         // given
         Map<String, Comparable> properties = singletonMap(PROPERTY_KEY_1, (Comparable) PROPERTY_VALUE_1);
         Collection<PropertyDefinition> propertyDefinitions = singletonList(
-                (PropertyDefinition) new SimplePropertyDefinition(PROPERTY_KEY_1, false, TYPE_CONVERTER, new DummyValidator()));
+                (PropertyDefinition) new SimplePropertyDefinition(PROPERTY_KEY_1, false, STRING, new DummyValidator()));
 
         // when
         propertiesBuilder.buildProperties(properties, propertyDefinitions);
@@ -114,14 +113,6 @@ public class DiscoveryServicePropertiesBuilderTest {
 
         // then
         // throw exception
-    }
-
-    private static class DummyTypeConverter
-            implements TypeConverter {
-        @Override
-        public Comparable convert(Comparable value) {
-            return value;
-        }
     }
 
     private static class DummyValidator
