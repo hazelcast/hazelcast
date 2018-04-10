@@ -87,6 +87,7 @@ public class ReceiverTasklet implements Tasklet {
 
     // read by a task scheduler thread, written by a tasklet execution thread
     private volatile long ackedSeq;
+    private volatile int numWaitingInInbox;
 
     // read and written by updateAndGetSendSeqLimitCompressed(), which is invoked sequentially by a task scheduler
     private int receiveWindowCompressed;
@@ -129,6 +130,7 @@ public class ReceiverTasklet implements Tasklet {
             inbox.remove();
             ackItem(o.estimatedMemoryFootprint);
         }
+        numWaitingInInbox = inbox.size();
         return tracker.toProgressState();
     }
 
@@ -188,18 +190,31 @@ public class ReceiverTasklet implements Tasklet {
         if (hadPrevStats) {
             final double ackedSeqsPerAckPeriod = flowControlPeriodNs * ackedSeqCompressedDelta / ackTimeDelta;
             final int targetRwin = rwinMultiplier * (int) ceil(ackedSeqsPerAckPeriod);
-            final int rwinDiff = targetRwin - receiveWindowCompressed;
+            int rwinDiff = targetRwin - receiveWindowCompressed;
+            int numWaitingInInbox = this.numWaitingInInbox;
+            // If nothing is waiting in the inbox, our processing speed isn't the cause
+            // for less traffic through the processor, it's the sender who's not
+            // sending enough data. Don't shrink the RWIN in this case.
+            if (numWaitingInInbox == 0 && rwinDiff < 0) {
+                rwinDiff = 0;
+            }
             receiveWindowCompressed += rwinDiff / 2;
             LoggingUtil.logFinest(LOG, "receiveWindowCompressed=%d", receiveWindowCompressed);
         }
         return ackedSeqCompressed + receiveWindowCompressed;
     }
 
+    // Only one thread writes to ackedSeq
+    @SuppressWarnings("NonAtomicOperationOnVolatileField")
     long ackItem(long itemWeight) {
-        final long seqNow = ackedSeq;
-        final long seqToBe = seqNow + itemWeight;
-        ackedSeq = seqToBe;
-        return seqToBe;
+        return ackedSeq += itemWeight;
+    }
+
+    /**
+     * To be called only from testing code.
+     */
+    void setNumWaitingInInbox(int value) {
+        this.numWaitingInInbox = value;
     }
 
     @Override
