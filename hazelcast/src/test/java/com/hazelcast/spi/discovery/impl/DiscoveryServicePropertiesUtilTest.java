@@ -32,21 +32,22 @@ import java.util.Collection;
 import java.util.Map;
 
 import static com.hazelcast.config.properties.PropertyTypeConverter.STRING;
+import static com.hazelcast.spi.discovery.impl.DiscoveryServicePropertiesUtil.prepareProperties;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.BDDMockito.willThrow;
+import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class DiscoveryServicePropertiesBuilderTest {
+public class DiscoveryServicePropertiesUtilTest {
     private static final String PROPERTY_KEY_1 = "property1";
     private static final String PROPERTY_VALUE_1 = "propertyValue1";
     private static final PropertyDefinition PROPERTY_DEFINITION_1 = new SimplePropertyDefinition(PROPERTY_KEY_1, STRING);
-
-    private DiscoveryServicePropertiesBuilder propertiesBuilder = new DiscoveryServicePropertiesBuilder();
 
     @Test
     public void correctProperties() {
@@ -55,7 +56,7 @@ public class DiscoveryServicePropertiesBuilderTest {
         Collection<PropertyDefinition> propertyDefinitions = singletonList(PROPERTY_DEFINITION_1);
 
         // when
-        Map<String, Comparable> result = propertiesBuilder.buildProperties(properties, propertyDefinitions);
+        Map<String, Comparable> result = prepareProperties(properties, propertyDefinitions);
 
         // then
         assertEquals(PROPERTY_VALUE_1, result.get(PROPERTY_KEY_1));
@@ -68,7 +69,7 @@ public class DiscoveryServicePropertiesBuilderTest {
         Collection<PropertyDefinition> propertyDefinitions = singletonList(PROPERTY_DEFINITION_1);
 
         // when
-        propertiesBuilder.buildProperties(properties, propertyDefinitions);
+        prepareProperties(properties, propertyDefinitions);
 
         // then
         // throw exception
@@ -82,7 +83,7 @@ public class DiscoveryServicePropertiesBuilderTest {
                 (PropertyDefinition) new SimplePropertyDefinition(PROPERTY_KEY_1, true, STRING));
 
         // when
-        Map<String, Comparable> result = propertiesBuilder.buildProperties(properties, propertyDefinitions);
+        Map<String, Comparable> result = prepareProperties(properties, propertyDefinitions);
 
         // then
         assertTrue(result.isEmpty());
@@ -92,11 +93,14 @@ public class DiscoveryServicePropertiesBuilderTest {
     public void invalidProperty() {
         // given
         Map<String, Comparable> properties = singletonMap(PROPERTY_KEY_1, (Comparable) PROPERTY_VALUE_1);
+
+        ValueValidator<String> valueValidator = mock(ValueValidator.class);
+        willThrow(new ValidationException("Invalid property")).given(valueValidator).validate(PROPERTY_VALUE_1);
         Collection<PropertyDefinition> propertyDefinitions = singletonList(
                 (PropertyDefinition) new SimplePropertyDefinition(PROPERTY_KEY_1, false, STRING, new DummyValidator()));
 
         // when
-        propertiesBuilder.buildProperties(properties, propertyDefinitions);
+        prepareProperties(properties, propertyDefinitions);
 
         // then
         // throw exception
@@ -109,7 +113,7 @@ public class DiscoveryServicePropertiesBuilderTest {
         Collection<PropertyDefinition> propertyDefinitions = emptyList();
 
         // when
-        propertiesBuilder.buildProperties(properties, propertyDefinitions);
+        prepareProperties(properties, propertyDefinitions);
 
         // then
         // throw exception

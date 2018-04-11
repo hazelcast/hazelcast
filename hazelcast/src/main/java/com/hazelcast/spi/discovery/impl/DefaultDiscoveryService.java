@@ -38,13 +38,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static com.hazelcast.util.CollectionUtil.nullToEmpty;
+
 public class DefaultDiscoveryService
         implements DiscoveryService {
 
     private static final String SERVICE_LOADER_TAG = DiscoveryStrategyFactory.class.getCanonicalName();
 
     private final ILogger logger;
-    private final DiscoveryServicePropertiesBuilder propertiesBuilder = new DiscoveryServicePropertiesBuilder();
     private final DiscoveryNode discoveryNode;
     private final NodeFilter nodeFilter;
     private final Iterable<DiscoveryStrategy> discoveryStrategies;
@@ -178,8 +179,8 @@ public class DefaultDiscoveryService
             String className = discoveryStrategyType.getName();
             String factoryClassName = getFactoryClassName(config);
             if (className.equals(factoryClassName)) {
-                Map<String, Comparable> properties = propertiesBuilder
-                        .buildProperties(config.getProperties(), factory.getConfigurationProperties());
+                Map<String, Comparable> properties = DiscoveryServicePropertiesUtil
+                        .prepareProperties(config.getProperties(), nullToEmpty(factory.getConfigurationProperties()));
                 return factory.newDiscoveryStrategy(discoveryNode, logger, properties);
             }
         }

@@ -23,7 +23,6 @@ import com.hazelcast.config.properties.ValueValidator;
 import com.hazelcast.core.TypeConverter;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -31,27 +30,26 @@ import java.util.Set;
 import static com.hazelcast.util.MapUtil.createHashMap;
 
 /**
- * Validates, verifies, and maps properties with the given definitions.
+ * Static utility class to validate, verify, and map Service Discovery related properties with the given definitions.
  */
-class DiscoveryServicePropertiesBuilder {
+final class DiscoveryServicePropertiesUtil {
+
+    private DiscoveryServicePropertiesUtil() {
+    }
 
     /**
      * Validates, verifies, and maps {@code properties} with the given {@code propertyDefinitions}.
      *
      * @param properties          properties from the Hazelcast node configuration (from the service-discovery section)
      * @param propertyDefinitions property definitions specific for the given
-     * {@link com.hazelcast.spi.discovery.DiscoveryStrategy}
+     *                            {@link com.hazelcast.spi.discovery.DiscoveryStrategy}
      * @return mapped properties
      * @throws InvalidConfigurationException if the the required properties are not satisfied or any property is not not
-     * applicable to the given definitions
+     *                                       applicable to the given definitions
      * @throws ValidationException           if any property is invalid
      */
-    Map<String, Comparable> buildProperties(Map<String, Comparable> properties,
-                                            Collection<PropertyDefinition> propertyDefinitions) {
-        if (propertyDefinitions == null) {
-            return Collections.emptyMap();
-        }
-
+    static Map<String, Comparable> prepareProperties(Map<String, Comparable> properties,
+                                                     Collection<PropertyDefinition> propertyDefinitions) {
         Map<String, Comparable> mappedProperties = createHashMap(propertyDefinitions.size());
 
         for (PropertyDefinition propertyDefinition : propertyDefinitions) {
