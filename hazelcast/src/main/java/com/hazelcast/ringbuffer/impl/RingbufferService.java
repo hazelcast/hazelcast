@@ -40,6 +40,7 @@ import com.hazelcast.spi.ServiceNamespace;
 import com.hazelcast.spi.SplitBrainHandlerService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.merge.AbstractContainerMerger;
+import com.hazelcast.spi.merge.RingbufferMergeData;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.RingbufferMergeTypes;
 import com.hazelcast.spi.partition.IPartitionService;
@@ -47,13 +48,11 @@ import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ContextMutexFactory;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
@@ -62,7 +61,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.internal.config.ConfigValidator.checkRingbufferConfig;
-import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntry;
 import static com.hazelcast.spi.partition.MigrationEndpoint.DESTINATION;
 import static com.hazelcast.spi.partition.MigrationEndpoint.SOURCE;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
@@ -342,7 +340,8 @@ public class RingbufferService implements ManagedService, RemoteService, Fragmen
         return new Merger(collector);
     }
 
-    private class Merger extends AbstractContainerMerger<RingbufferContainer, Object, RingbufferMergeTypes> {
+    private class Merger
+            extends AbstractContainerMerger<RingbufferContainer, RingbufferMergeData<Object>, RingbufferMergeTypes> {
 
         Merger(RingbufferContainerCollector collector) {
             super(collector, nodeEngine);
@@ -354,40 +353,25 @@ public class RingbufferService implements ManagedService, RemoteService, Fragmen
         }
 
         @Override
-        protected void runInternal() {
-            List<RingbufferMergeTypes> mergingEntries;
+        public void runInternal() {
             for (Entry<Integer, Collection<RingbufferContainer>> entry : collector.getCollectedContainers().entrySet()) {
                 int partitionId = entry.getKey();
                 Collection<RingbufferContainer> containerList = entry.getValue();
-
                 for (RingbufferContainer container : containerList) {
-                    Ringbuffer ringbuffer = container.getRingbuffer();
-                    int batchSize = container.getConfig().getMergePolicyConfig().getBatchSize();
-                    SplitBrainMergePolicy<Object, RingbufferMergeTypes> mergePolicy
+                    // TODO: add batching (which is a bit complex, since collections don't have a multi-name operation yet
+                    SplitBrainMergePolicy<RingbufferMergeData<Object>, RingbufferMergeTypes> mergePolicy
                             = getMergePolicy(container.getConfig().getMergePolicyConfig());
 
-                    mergingEntries = new ArrayList<RingbufferMergeTypes>(batchSize);
-                    for (long sequence = ringbuffer.headSequence(); sequence <= ringbuffer.tailSequence(); sequence++) {
-                        Object item = ringbuffer.read(sequence);
-                        RingbufferMergeTypes mergingEntry = createMergingEntry(serializationService, sequence, item);
-                        mergingEntries.add(mergingEntry);
-
-                        if (mergingEntries.size() == batchSize) {
-                            sendBatch(partitionId, container.getNamespace(), mergePolicy, mergingEntries);
-                            mergingEntries = new ArrayList<RingbufferMergeTypes>(batchSize);
-                        }
-                    }
-                    if (mergingEntries.size() > 0) {
-                        sendBatch(partitionId, container.getNamespace(), mergePolicy, mergingEntries);
-                    }
+                    sendBatch(partitionId, mergePolicy, container);
                 }
             }
         }
 
-        private void sendBatch(int partitionId, ObjectNamespace namespace,
-                               SplitBrainMergePolicy<Object, RingbufferMergeTypes> mergePolicy,
-                               List<RingbufferMergeTypes> mergingEntries) {
-            MergeOperation operation = new MergeOperation(namespace, mergePolicy, mergingEntries);
+        private void sendBatch(int partitionId,
+                               SplitBrainMergePolicy<RingbufferMergeData<Object>, RingbufferMergeTypes> mergePolicy,
+                               RingbufferContainer mergingContainer) {
+            final MergeOperation operation = new MergeOperation(mergingContainer.getNamespace(), mergePolicy,
+                    mergingContainer.getRingbuffer());
             invoke(SERVICE_NAME, operation, partitionId);
         }
     }

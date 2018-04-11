@@ -123,7 +123,7 @@ public final class SplitBrainDataSerializerHook implements DataSerializerHook {
         };
         constructors[RINGBUFFER_MERGING_ENTRY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
-                return new RingbufferMergingEntryImpl();
+                return new RingbufferMergingValueImpl();
             }
         };
         constructors[CARDINALITY_ESTIMATOR_MERGING_ENTRY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
