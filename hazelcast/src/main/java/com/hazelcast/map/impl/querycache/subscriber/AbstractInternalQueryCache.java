@@ -107,7 +107,7 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
 
     private QueryCacheConfig getQueryCacheConfig() {
         QueryCacheConfigurator queryCacheConfigurator = context.getQueryCacheConfigurator();
-        return queryCacheConfigurator.getOrCreateConfiguration(mapName, cacheName);
+        return queryCacheConfigurator.getOrCreateConfiguration(mapName, cacheName, cacheId);
     }
 
     private EvictionListener getEvictionListener() {

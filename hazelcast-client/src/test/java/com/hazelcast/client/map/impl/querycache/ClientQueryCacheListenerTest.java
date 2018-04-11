@@ -16,7 +16,11 @@
 
 package com.hazelcast.client.map.impl.querycache;
 
+import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.config.EntryListenerConfig;
+import com.hazelcast.config.PredicateConfig;
+import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
@@ -167,6 +171,28 @@ public class ClientQueryCacheListenerTest extends HazelcastTestSupport {
     public void shouldNotReceiveValue_whenIncludeValue_disabled() {
         boolean includeValue = false;
         testIncludeValue(includeValue);
+    }
+
+    @Test
+    public void listenerShouldBeRegistered_whenConfiguredProgrammatically() {
+        int valueCount = 100;
+        CountDownLatch completionLatch = new CountDownLatch(valueCount);
+        String mapName = randomString();
+        String qcName = randomString();
+        QueryCacheConfig queryCacheConfig = new QueryCacheConfig(qcName)
+                .setPredicateConfig(new PredicateConfig(TRUE_PREDICATE))
+                .addEntryListenerConfig(
+                        new EntryListenerConfig(new QueryCacheAdditionListener(completionLatch), true, true));
+        ClientConfig config = new ClientConfig().addQueryCacheConfig(mapName, queryCacheConfig);
+
+        HazelcastInstance instance = factory.newHazelcastClient(config);
+        IMap<Integer, Employee> map = instance.getMap(mapName);
+        // trigger creation of the query cache
+        map.getQueryCache(qcName);
+        for (int i = 0; i < valueCount; i++) {
+            map.put(i, new Employee(i));
+        }
+        assertOpenEventually(completionLatch, 30);
     }
 
     private void testIncludeValue(final boolean includeValue) {
