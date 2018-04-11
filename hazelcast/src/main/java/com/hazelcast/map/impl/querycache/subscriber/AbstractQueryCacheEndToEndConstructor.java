@@ -140,7 +140,7 @@ public abstract class AbstractQueryCacheEndToEndConstructor implements QueryCach
         if (predicate == null) {
             queryCacheConfig = getOrNullQueryCacheConfig(mapName, request.getCacheName());
         } else {
-            queryCacheConfig = getOrCreateQueryCacheConfig(mapName, request.getCacheName());
+            queryCacheConfig = getOrCreateQueryCacheConfig(mapName, request.getCacheName(), request.getCacheId());
             queryCacheConfig.setIncludeValue(request.isIncludeValue());
             queryCacheConfig.getPredicateConfig().setImplementation(predicate);
         }
@@ -156,9 +156,9 @@ public abstract class AbstractQueryCacheEndToEndConstructor implements QueryCach
         return queryCacheConfig;
     }
 
-    private QueryCacheConfig getOrCreateQueryCacheConfig(String mapName, String cacheName) {
+    private QueryCacheConfig getOrCreateQueryCacheConfig(String mapName, String cacheName, String cacheId) {
         QueryCacheConfigurator queryCacheConfigurator = subscriberContext.geQueryCacheConfigurator();
-        return queryCacheConfigurator.getOrCreateConfiguration(mapName, cacheName);
+        return queryCacheConfigurator.getOrCreateConfiguration(mapName, cacheName, cacheId);
     }
 
     private QueryCacheConfig getOrNullQueryCacheConfig(String mapName, String cacheName) {
