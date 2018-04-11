@@ -435,7 +435,7 @@ public final class ProxyManager {
         ClientMessage clientMessage = ClientCreateProxyCodec.encodeRequest(namespace.getObjectName(),
                 namespace.getServiceName(), initializationTarget);
         try {
-            new ClientInvocation(client, clientMessage, namespace.getServiceName(), ownerConnection).invoke().join();
+            new ClientInvocation(client, clientMessage, namespace.getServiceName(), ownerConnection).invokeUrgent().join();
         } catch (ReplicatedMapCantBeCreatedOnLiteMemberException e) {
             ignore(e);
         } catch (CacheNotExistsException e) {
