@@ -455,7 +455,7 @@ public final class ProxyManager {
             return;
         }
         ClientMessage clientMessage = ClientCreateProxiesCodec.encodeRequest(proxyEntries);
-        new ClientInvocation(client, clientMessage, null, ownerConnection).invoke();
+        new ClientInvocation(client, clientMessage, null, ownerConnection).invokeUrgent();
     }
 
     private final class DistributedObjectEventHandler extends ClientAddDistributedObjectListenerCodec.AbstractEventHandler
