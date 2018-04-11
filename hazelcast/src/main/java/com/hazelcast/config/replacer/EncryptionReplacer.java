@@ -51,8 +51,14 @@ import com.hazelcast.nio.IOUtil;
 import com.hazelcast.util.Base64;
 
 /**
- * Implementation of {@link AbstractPbeReplacer} which reads password from the provided file. The first line in the file is used
- * as a password.
+ * This class is an <b>example</b> {@link com.hazelcast.config.replacer.spi.ConfigReplacer} implementation which decrypts
+ * encrypted values.
+ * <p>
+ * The {@link #main(String...)} method is provided to generate the encrypted variables.
+ * <p>
+ * This class extends {@link AbstractPbeReplacer} where the main encryption logic is located. This class implements
+ * {@link #getPassword()} method and dependig on configuration allows to use a password file and/or user properties (name and
+ * HOME) and/or network interface properties (MAC address).
  */
 public class EncryptionReplacer extends AbstractPbeReplacer {
 
