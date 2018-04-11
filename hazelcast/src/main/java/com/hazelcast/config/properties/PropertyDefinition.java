@@ -54,7 +54,8 @@ public interface PropertyDefinition {
      * Returns an optional validator to validate a value before finalizing the
      * configuration.
      *
-     * @return {@code true} if validation passed, {@code false} otherwise
+     * @return the optional validator. Is allowed to be <code>null</code> in case
+     * there is no validation required.
      */
     ValueValidator validator();
 
