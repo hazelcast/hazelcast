@@ -324,21 +324,56 @@ public final class ProxyManager {
     }
 
     /**
+     * Destroys the given proxy in a cluster-wide way.
+     * <p>
+     * Upon successful completion the proxy is unregistered in this proxy
+     * manager, all local resources associated with the proxy are released and
+     * a distributed object destruction operation is issued to the cluster.
+     * <p>
+     * If the given proxy instance is not registered in this proxy manager, the
+     * proxy instance is considered stale. In this case, this stale instance is
+     * a subject to a local-only destruction and its registered counterpart, if
+     * there is any, is a subject to a cluster-wide destruction.
+     *
+     * @param proxy the proxy to destroy.
+     * @see ClientProxy#destroy(boolean)
+     */
+    public void destroyProxy(ClientProxy proxy) {
+        ObjectNamespace objectNamespace = new DistributedObjectNamespace(proxy.getServiceName(),
+                proxy.getDistributedObjectName());
+        ClientProxyFuture registeredProxyFuture = proxies.remove(objectNamespace);
+        if (registeredProxyFuture != null) {
+            ClientProxy registeredProxy = registeredProxyFuture.get();
+            registeredProxy.destroy(true);
+            if (proxy == registeredProxy) {
+                return;
+            }
+        }
+
+        // The given proxy is stale and was already destroyed, but the caller
+        // may have allocated local resources in the context of this stale proxy
+        // instance after it was destroyed, so we have to cleanup it locally one
+        // more time to make sure there are no leaking local resources.
+        proxy.destroy(false);
+    }
+
+    /**
      * Locally destroys the proxy identified by the given service and object ID.
      * <p>
      * Upon successful completion the proxy is unregistered in this proxy
      * manager and all local resources associated with the proxy are released.
-     * See {@link ClientProxy#destroyLocally} for more details.
      *
-     * @param service the service associated with the proxy.
-     * @param id      the ID of the object.
+     * @param service      the service associated with the proxy.
+     * @param id           the ID of the object to destroy the proxy of.
+     *
+     * @see ClientProxy#destroy(boolean)
      */
     public void destroyProxyLocally(String service, String id) {
         ObjectNamespace objectNamespace = new DistributedObjectNamespace(service, id);
         ClientProxyFuture clientProxyFuture = proxies.remove(objectNamespace);
         if (clientProxyFuture != null) {
             ClientProxy clientProxy = clientProxyFuture.get();
-            clientProxy.destroyLocally();
+            clientProxy.destroy(false);
         }
     }
 
@@ -348,11 +383,6 @@ public final class ProxyManager {
         }
         return factory.create(id)
                 .setContext(context);
-    }
-
-    public void removeProxy(String service, String id) {
-        final ObjectNamespace ns = new DistributedObjectNamespace(service, id);
-        proxies.remove(ns);
     }
 
     private void initializeWithRetry(ClientProxy clientProxy) throws Exception {

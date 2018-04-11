@@ -143,31 +143,39 @@ public abstract class ClientProxy implements DistributedObject {
 
     @Override
     public final void destroy() {
-        if (preDestroy()) {
-            onDestroy();
-            ClientMessage clientMessage = ClientDestroyProxyCodec.encodeRequest(getDistributedObjectName(), getServiceName());
-            getContext().getProxyManager().removeProxy(getServiceName(), getDistributedObjectName());
-            try {
-                new ClientInvocation(getClient(), clientMessage, getName()).invoke().get();
-                postDestroy();
-            } catch (Exception e) {
-                throw rethrow(e);
-            }
-        }
+        getContext().getProxyManager().destroyProxy(this);
     }
 
     /**
-     * Destroys this client proxy instance locally without issuing distributed
-     * object destroy request to the cluster as the {@link #destroy} method
-     * does.
+     * Destroys this proxy.
      * <p>
-     * The local destruction operation still may perform some communication
-     * with the cluster; for example, to unregister remote event subscriptions.
+     * Optionally, the remote distributed object counterpart also can be
+     * destroyed by passing {@code true} for the {@code alsoRemotely} parameter.
+     * In this case, a distributed object destruction operation will be issued
+     * to the cluster.
+     * <p>
+     * However, even a pure local-only destruction still may involve some
+     * communication with the cluster; for example, to unregister remote event
+     * subscriptions.
+     *
+     * @param alsoRemotely {@code false} to perform the local destruction only,
+     *                     {@code true} to destroy the remote distributed
+     *                     counterpart in addition to the local destruction.
+     * @see ProxyManager#destroyProxyLocally(String, String)
+     * @see ProxyManager#destroyProxy(ClientProxy)
      */
-    public final void destroyLocally() {
+    public final void destroy(boolean alsoRemotely) {
         if (preDestroy()) {
             try {
-                onDestroy();
+                try {
+                    onDestroy();
+                } finally {
+                    if (alsoRemotely) {
+                        ClientMessage clientMessage = ClientDestroyProxyCodec
+                                .encodeRequest(getDistributedObjectName(), getServiceName());
+                        new ClientInvocation(getClient(), clientMessage, getName()).invoke().get();
+                    }
+                }
             } catch (Exception e) {
                 throw rethrow(e);
             } finally {
