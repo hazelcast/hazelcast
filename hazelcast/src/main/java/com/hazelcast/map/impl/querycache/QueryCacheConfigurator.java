@@ -31,7 +31,7 @@ public interface QueryCacheConfigurator {
      * @param cacheName query cache name.
      * @return {@link QueryCacheConfig} for the requested {@code cacheName}.
      */
-    QueryCacheConfig getOrCreateConfiguration(String mapName, String cacheName);
+    QueryCacheConfig getOrCreateConfiguration(String mapName, String cacheName, String cacheId);
 
     /**
      * Returns {@link QueryCacheConfig} for the requested {@code cacheName} or null
