@@ -122,7 +122,7 @@ public class SplitBrainMergeTypes {
      * @since 3.10
      */
     @Beta
-    public interface AtomicReferenceMergeTypes extends MergingValue<Data> {
+    public interface AtomicReferenceMergeTypes extends MergingValue<Object> {
     }
 
     /**

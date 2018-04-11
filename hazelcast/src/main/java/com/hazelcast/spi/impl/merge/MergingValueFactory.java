@@ -94,6 +94,9 @@ public final class MergingValueFactory {
     }
 
     public static AtomicReferenceMergeTypes createMergingValue(SerializationService serializationService, Data value) {
+        if (value == null) {
+            return null;
+        }
         return new AtomicReferenceMergingValueImpl(serializationService)
                 .setValue(value);
     }
