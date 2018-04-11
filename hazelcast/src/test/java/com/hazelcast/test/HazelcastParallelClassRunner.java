@@ -16,6 +16,7 @@
 
 package com.hazelcast.test;
 
+import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.test.annotation.ConfigureParallelRunnerWith;
 import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.model.FrameworkMethod;
@@ -49,6 +50,14 @@ public class HazelcastParallelClassRunner extends AbstractHazelcastClassRunner {
 
     private static final boolean SPAWN_MULTIPLE_THREADS = TestEnvironment.isMockNetwork();
     private static final int DEFAULT_MAX_THREADS = getDefaultMaxThreads();
+
+    static {
+        boolean multipleJVM = Boolean.getBoolean("multipleJVM");
+        if (multipleJVM) {
+            // decrease the amount of resources used when running in multiple JVM
+            RuntimeAvailableProcessors.overrideDefault(min(getRuntime().availableProcessors(), 8));
+        }
+    }
 
     private static int getDefaultMaxThreads() {
         int cpuWorkers = max(getRuntime().availableProcessors(), 8);
