@@ -86,6 +86,9 @@ public final class MergingValueFactory {
     }
 
     public static AtomicLongMergeTypes createMergingValue(SerializationService serializationService, Long value) {
+        if (value == null) {
+            return null;
+        }
         return new AtomicLongMergingValueImpl(serializationService)
                 .setValue(value);
     }
