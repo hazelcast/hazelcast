@@ -78,7 +78,6 @@ public class RingbufferContainer<T, E> implements IdentifiedDataSerializable, No
      * </ul>
      */
     private Ringbuffer<E> ringbuffer;
-    private NodeEngine nodeEngine;
 
     /**
      * For purposes of {@link IdentifiedDataSerializable} instance creation.
@@ -136,7 +135,6 @@ public class RingbufferContainer<T, E> implements IdentifiedDataSerializable, No
     public void init(RingbufferConfig config, NodeEngine nodeEngine) {
         this.config = config;
         this.serializationService = nodeEngine.getSerializationService();
-        this.nodeEngine = nodeEngine;
         initRingbufferStore(nodeEngine.getConfigClassLoader());
     }
 
@@ -640,7 +638,6 @@ public class RingbufferContainer<T, E> implements IdentifiedDataSerializable, No
      * Clears the data in the ringbuffer.
      */
     public void clear() {
-        System.out.println("CLEARING RINGBUFFER " + ringbuffer + " on " + nodeEngine.getThisAddress());
         ringbuffer.clear();
         if (expirationPolicy != null) {
             expirationPolicy.clear();
