@@ -22,7 +22,6 @@ import com.hazelcast.jet.impl.util.ProgressState;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.Repeat;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -32,6 +31,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 
 import javax.annotation.Nonnull;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
@@ -50,6 +50,7 @@ import static com.hazelcast.jet.impl.util.ProgressState.MADE_PROGRESS;
 import static com.hazelcast.jet.impl.util.ProgressState.NO_PROGRESS;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -341,21 +342,24 @@ public class TaskletExecutionServiceTest extends JetTestSupport {
     }
 
     @Test
-    @Repeat(100)
     public void workStealing_stressTest() throws Exception {
-        // create THREAD_COUNT + 1 tasklets: first worker will have 2 tasklets, other workers just 1 tasklet.
         final List<SynchronizationTestTasklet> tasklets =
-                IntStream.range(0, THREAD_COUNT + 1)
+                IntStream.range(0, 10000)
                 .mapToObj(SynchronizationTestTasklet::new)
                 .collect(toList());
 
         CompletableFuture<Void> f = es.beginExecute(tasklets, cancellationFuture, classLoaderMock);
-        Thread.sleep(50);
-        tasklets.get(1).terminated = true;
-        assertTrueEventually(() -> assertTrue(tasklets.get(0).sawDifferentThread), 10);
-        tasklets.forEach(t -> t.terminated = true);
-        // get the future to see eventual exception in the tasklet
+        Collections.shuffle(tasklets);
+        long start = System.nanoTime();
+        for (int i = 0; i < tasklets.size(); i++) {
+            tasklets.get(i).terminated = true;
+            LockSupport.parkNanos(MILLISECONDS.toNanos(i) - (System.nanoTime() - start));
+        }
+        // get the future to see eventual exception in the tasklets
         f.get();
+        // when run locally it happened between 5000-5500 times
+        assertGreaterOrEquals("tasklet on different thread count",
+                tasklets.stream().filter(t -> t.sawDifferentThread).count(), 100);
     }
 
     /**
