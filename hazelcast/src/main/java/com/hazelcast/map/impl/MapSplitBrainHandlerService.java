@@ -18,14 +18,15 @@ package com.hazelcast.map.impl;
 
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.merge.IgnoreMergingEntryMapMergePolicy;
-import com.hazelcast.spi.impl.merge.BaseSplitBrainHandlerService;
+import com.hazelcast.spi.impl.merge.AbstractSplitBrainHandlerService;
+import com.hazelcast.spi.merge.DiscardMergePolicy;
 
 import java.util.Collection;
 import java.util.Iterator;
 
 import static com.hazelcast.util.ThreadUtil.assertRunningOnPartitionThread;
 
-class MapSplitBrainHandlerService extends BaseSplitBrainHandlerService<RecordStore> {
+class MapSplitBrainHandlerService extends AbstractSplitBrainHandlerService<RecordStore> {
 
     private final MapServiceContext mapServiceContext;
 
@@ -35,9 +36,8 @@ class MapSplitBrainHandlerService extends BaseSplitBrainHandlerService<RecordSto
     }
 
     @Override
-    protected Runnable newMergeRunnable(Collection<RecordStore> mergingStores,
-                                        BaseSplitBrainHandlerService<RecordStore> splitBrainHandlerService) {
-        return new MapMergeRunnable(mergingStores, splitBrainHandlerService, mapServiceContext);
+    protected Runnable newMergeRunnable(Collection<RecordStore> mergingStores) {
+        return new MapMergeRunnable(mergingStores, this, mapServiceContext);
     }
 
     @Override
@@ -55,15 +55,15 @@ class MapSplitBrainHandlerService extends BaseSplitBrainHandlerService<RecordSto
     }
 
     @Override
-    protected boolean hasDiscardPolicy(Object mergePolicy) {
-        return mergePolicy instanceof IgnoreMergingEntryMapMergePolicy
-                || super.hasDiscardPolicy(mergePolicy);
+    protected boolean hasEntries(RecordStore store) {
+        assertRunningOnPartitionThread();
+
+        return !store.isEmpty();
     }
 
     @Override
-    protected boolean hasEntry(RecordStore store) {
-        assertRunningOnPartitionThread();
-
-        return store.size() > 0;
+    protected boolean hasMergeablePolicy(RecordStore store) {
+        Object mergePolicy = mapServiceContext.getMergePolicy(store.getName());
+        return !(mergePolicy instanceof DiscardMergePolicy || mergePolicy instanceof IgnoreMergingEntryMapMergePolicy);
     }
 }

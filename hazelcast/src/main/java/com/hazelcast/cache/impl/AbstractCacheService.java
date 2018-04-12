@@ -164,6 +164,12 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
         return mergePolicyProvider;
     }
 
+    public Object getMergePolicy(String name) {
+            CacheConfig cacheConfig = configs.get(name);
+            String mergePolicyName = cacheConfig.getMergePolicy();
+            return mergePolicyProvider.getMergePolicy(mergePolicyName);
+    }
+
     public ConcurrentMap<String, CacheConfig> getConfigs() {
         return configs;
     }

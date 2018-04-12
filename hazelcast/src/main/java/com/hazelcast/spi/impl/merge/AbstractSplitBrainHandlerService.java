@@ -21,8 +21,6 @@ import com.hazelcast.spi.SplitBrainHandlerService;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
-import com.hazelcast.spi.merge.DiscardMergePolicy;
-import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.spi.partition.IPartitionService;
 
 import java.util.Collection;
@@ -37,14 +35,14 @@ import static java.lang.Thread.currentThread;
  * Collects mergeable stores and passes them to merge-runnable.
  *
  * @param <Store> store of a partition
+ * @since 3.10
  */
-@SuppressWarnings("WeakerAccess")
-public abstract class BaseSplitBrainHandlerService<Store> implements SplitBrainHandlerService {
+public abstract class AbstractSplitBrainHandlerService<Store> implements SplitBrainHandlerService {
 
     private final IPartitionService partitionService;
     private final OperationExecutor operationExecutor;
 
-    protected BaseSplitBrainHandlerService(NodeEngine nodeEngine) {
+    protected AbstractSplitBrainHandlerService(NodeEngine nodeEngine) {
         this.partitionService = nodeEngine.getPartitionService();
         this.operationExecutor = ((OperationServiceImpl) nodeEngine.getOperationService()).getOperationExecutor();
     }
@@ -55,7 +53,7 @@ public abstract class BaseSplitBrainHandlerService<Store> implements SplitBrainH
 
         collectStores(mergingStores);
 
-        return newMergeRunnable(mergingStores, this);
+        return newMergeRunnable(mergingStores);
     }
 
     private void collectStores(final ConcurrentLinkedQueue<Store> mergingStores) {
@@ -74,13 +72,14 @@ public abstract class BaseSplitBrainHandlerService<Store> implements SplitBrainH
     }
 
     private class StoreCollector implements PartitionSpecificRunnable {
+
         private final int partitionId;
         private final CountDownLatch latch;
         private final ConcurrentLinkedQueue<Store> mergingStores;
 
-        public StoreCollector(ConcurrentLinkedQueue<Store> mergingStores,
-                              int partitionId,
-                              CountDownLatch latch) {
+        StoreCollector(ConcurrentLinkedQueue<Store> mergingStores,
+                       int partitionId,
+                       CountDownLatch latch) {
             this.mergingStores = mergingStores;
             this.partitionId = partitionId;
             this.latch = latch;
@@ -98,20 +97,14 @@ public abstract class BaseSplitBrainHandlerService<Store> implements SplitBrainH
                 Iterator<Store> iterator = storeIterator(partitionId);
                 while (iterator.hasNext()) {
                     Store store = iterator.next();
-
-                    if (isLocalPartition(partitionId)
-                            && hasEntry(store)
-                            && !hasDiscardPolicy(store)) {
+                    if (isLocalPartition(partitionId) && hasEntries(store) && hasMergeablePolicy(store)) {
                         mergingStores.add(store);
                     } else {
                         storesToDestroy.add(store);
                     }
-
                     iterator.remove();
                 }
-
                 asyncDestroyStores(storesToDestroy, partitionId);
-
             } finally {
                 latch.countDown();
             }
@@ -135,24 +128,39 @@ public abstract class BaseSplitBrainHandlerService<Store> implements SplitBrainH
     }
 
     private boolean isLocalPartition(int partitionId) {
-        IPartition partition = partitionService.getPartition(partitionId, false);
-        return partition.isLocal();
+        return partitionService.isPartitionOwner(partitionId);
     }
-
-    // overridden in implementations
-    protected boolean hasDiscardPolicy(Object mergePolicy) {
-        return mergePolicy instanceof DiscardMergePolicy;
-    }
-
-    protected abstract void destroyStore(Store store);
-
-    protected abstract boolean hasEntry(Store store);
-
-    protected abstract Runnable newMergeRunnable(Collection<Store> mergingStores,
-                                                 BaseSplitBrainHandlerService<Store> splitBrainHandlerService);
 
     /**
-     * @return collection of iterators to scan data in the partition
+     * Returns a runnable which merges the given {@link Store} instances.
+     *
+     * @return a merge runnable for the given stores
+     */
+    protected abstract Runnable newMergeRunnable(Collection<Store> mergingStores);
+
+    /**
+     * Returns an {@link Iterator} over all {@link Store} instances in the given partition.
+     *
+     * @return an iterator over all stores
      */
     protected abstract Iterator<Store> storeIterator(int partitionId);
+
+    /**
+     * Destroys the given {@link Store}.
+     */
+    protected abstract void destroyStore(Store store);
+
+    /**
+     * Checks if the given {@link Store} has entries.
+     *
+     * @return {@code true} if the store has entries, {@code false} otherwise
+     */
+    protected abstract boolean hasEntries(Store store);
+
+    /**
+     * Checks if the given {@link Store} has a mergeable merge policy.
+     *
+     * @return {@code true} if the store has a mergeable merge policy, {@code false} otherwise
+     */
+    protected abstract boolean hasMergeablePolicy(Store store);
 }

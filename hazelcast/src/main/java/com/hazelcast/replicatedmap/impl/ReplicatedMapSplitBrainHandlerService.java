@@ -18,7 +18,8 @@ package com.hazelcast.replicatedmap.impl;
 
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
-import com.hazelcast.spi.impl.merge.BaseSplitBrainHandlerService;
+import com.hazelcast.spi.impl.merge.AbstractSplitBrainHandlerService;
+import com.hazelcast.spi.merge.DiscardMergePolicy;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -30,7 +31,7 @@ import static com.hazelcast.util.ThreadUtil.assertRunningOnPartitionThread;
 /**
  * Contains split-brain handling logic for {@link com.hazelcast.core.ReplicatedMap}.
  */
-class ReplicatedMapSplitBrainHandlerService extends BaseSplitBrainHandlerService<ReplicatedRecordStore> {
+class ReplicatedMapSplitBrainHandlerService extends AbstractSplitBrainHandlerService<ReplicatedRecordStore> {
 
     private final ReplicatedMapService service;
 
@@ -44,9 +45,8 @@ class ReplicatedMapSplitBrainHandlerService extends BaseSplitBrainHandlerService
     }
 
     @Override
-    protected Runnable newMergeRunnable(Collection<ReplicatedRecordStore> mergingStores,
-                                        BaseSplitBrainHandlerService<ReplicatedRecordStore> splitBrainHandlerService) {
-        return new ReplicatedMapMergeRunnable(mergingStores, splitBrainHandlerService, service.getNodeEngine());
+    protected Runnable newMergeRunnable(Collection<ReplicatedRecordStore> mergingStores) {
+        return new ReplicatedMapMergeRunnable(mergingStores, this, service.getNodeEngine());
     }
 
     @Override
@@ -67,9 +67,15 @@ class ReplicatedMapSplitBrainHandlerService extends BaseSplitBrainHandlerService
     }
 
     @Override
-    protected boolean hasEntry(ReplicatedRecordStore store) {
+    protected boolean hasEntries(ReplicatedRecordStore store) {
         assertRunningOnPartitionThread();
 
-        return store.size() > 0;
+        return !store.isEmpty();
+    }
+
+    @Override
+    protected boolean hasMergeablePolicy(ReplicatedRecordStore store) {
+        Object mergePolicy = service.getMergePolicy(store.getName());
+        return !(mergePolicy instanceof DiscardMergePolicy);
     }
 }
