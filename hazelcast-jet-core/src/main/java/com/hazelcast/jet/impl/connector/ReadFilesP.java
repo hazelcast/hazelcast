@@ -37,7 +37,6 @@ import java.util.stream.Stream;
 
 import static com.hazelcast.jet.Traversers.traverseStream;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
-import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -79,11 +78,7 @@ public final class ReadFilesP<R> extends AbstractProcessor {
         directoryStream = Files.newDirectoryStream(directory, glob);
         outputTraverser = Traversers.traverseIterator(directoryStream.iterator())
                                     .filter(this::shouldProcessEvent)
-                                    .flatMap(this::processFile)
-                                    .onFirstNull(() -> {
-                                        uncheckRun(() -> close(null));
-                                        directoryStream = null;
-                                    });
+                                    .flatMap(this::processFile);
     }
 
     @Override

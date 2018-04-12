@@ -141,9 +141,6 @@ public class StreamFilesP<R> extends AbstractProcessor {
     public void close(@Nullable Throwable error) {
         try {
             closeCurrentFile();
-            if (isClosed()) {
-                return;
-            }
             getLogger().fine("Closing StreamFilesP");
             watcher.close();
         } catch (IOException e) {
@@ -155,37 +152,39 @@ public class StreamFilesP<R> extends AbstractProcessor {
 
     @Override
     public boolean complete() {
-        if (isClosed()) {
+        if (!drainWatcherEvents()) {
             return true;
         }
-        try {
-            drainWatcherEvents();
-            if (currentFile == null) {
-                currentFile = eventQueue.poll();
-                currentFileName = currentFile != null ? String.valueOf(currentFile.getFileName()) : null;
-            }
-            if (currentFile != null) {
-                processFile();
-            }
-            return false;
-        } catch (InterruptedException e) {
-            close(e);
-            return true;
+        if (currentFile == null) {
+            currentFile = eventQueue.poll();
+            currentFileName = currentFile != null ? String.valueOf(currentFile.getFileName()) : null;
         }
+        if (currentFile != null) {
+            processFile();
+        }
+        return false;
     }
 
-    private void drainWatcherEvents() throws InterruptedException {
+    /**
+     * @return false, if the watcher should be closed
+     */
+    private boolean drainWatcherEvents() {
         final ILogger logger = getLogger();
         // poll with blocking only when there is no other work to do
-        final WatchKey key = (currentFile == null && eventQueue.isEmpty())
-                ? watcher.poll(1, SECONDS)
-                : watcher.poll();
+        final WatchKey key;
+        try {
+            key = (currentFile == null && eventQueue.isEmpty())
+                    ? watcher.poll(1, SECONDS)
+                    : watcher.poll();
+        } catch (InterruptedException e) {
+            return false;
+        }
         if (key == null) {
             if (!Files.exists(watchedDirectory)) {
                 logger.info("Directory " + watchedDirectory + " does not exist, stopped watching");
-                close(null);
+                return false;
             }
-            return;
+            return true;
         }
         for (WatchEvent<?> event : key.pollEvents()) {
             final WatchEvent.Kind<?> kind = event.kind();
@@ -207,8 +206,9 @@ public class StreamFilesP<R> extends AbstractProcessor {
         }
         if (!key.reset()) {
             logger.info("Watch key is invalid. Stopping watcher.");
-            close(null);
+            return false;
         }
+        return true;
     }
 
     private boolean belongsToThisProcessor(Path path) {
@@ -239,7 +239,6 @@ public class StreamFilesP<R> extends AbstractProcessor {
                 }
             }
         } catch (IOException e) {
-            close(e);
             throw sneakyThrow(e);
         }
     }
@@ -338,10 +337,6 @@ public class StreamFilesP<R> extends AbstractProcessor {
         currentFileName = null;
         currentReader = null;
         currentInputStream = null;
-    }
-
-    private boolean isClosed() {
-        return watcher == null;
     }
 
     /**
