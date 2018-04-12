@@ -30,6 +30,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAddDistributedObjectListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientCreateProxiesCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientCreateProxyCodec;
+import com.hazelcast.client.impl.protocol.codec.ClientDestroyProxyCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientRemoveDistributedObjectListenerCodec;
 import com.hazelcast.client.proxy.ClientAtomicLongProxy;
 import com.hazelcast.client.proxy.ClientAtomicReferenceProxy;
@@ -336,25 +337,30 @@ public final class ProxyManager {
      * there is any, is a subject to a cluster-wide destruction.
      *
      * @param proxy the proxy to destroy.
-     * @see ClientProxy#destroy(boolean)
      */
     public void destroyProxy(ClientProxy proxy) {
         ObjectNamespace objectNamespace = new DistributedObjectNamespace(proxy.getServiceName(),
                 proxy.getDistributedObjectName());
         ClientProxyFuture registeredProxyFuture = proxies.remove(objectNamespace);
-        if (registeredProxyFuture != null) {
-            ClientProxy registeredProxy = registeredProxyFuture.get();
-            registeredProxy.destroy(true);
-            if (proxy == registeredProxy) {
-                return;
+        ClientProxy registeredProxy = registeredProxyFuture == null ? null : registeredProxyFuture.get();
+
+        try {
+            if (registeredProxy != null) {
+                try {
+                    registeredProxy.destroyLocally();
+                } finally {
+                    destroyRemoteDistributedObject(registeredProxy);
+                }
+            }
+        } finally {
+            if (proxy != registeredProxy) {
+                // The given proxy is stale and was already destroyed, but the caller
+                // may have allocated local resources in the context of this stale proxy
+                // instance after it was destroyed, so we have to cleanup it locally one
+                // more time to make sure there are no leaking local resources.
+                proxy.destroyLocally();
             }
         }
-
-        // The given proxy is stale and was already destroyed, but the caller
-        // may have allocated local resources in the context of this stale proxy
-        // instance after it was destroyed, so we have to cleanup it locally one
-        // more time to make sure there are no leaking local resources.
-        proxy.destroy(false);
     }
 
     /**
@@ -365,15 +371,13 @@ public final class ProxyManager {
      *
      * @param service      the service associated with the proxy.
      * @param id           the ID of the object to destroy the proxy of.
-     *
-     * @see ClientProxy#destroy(boolean)
      */
     public void destroyProxyLocally(String service, String id) {
         ObjectNamespace objectNamespace = new DistributedObjectNamespace(service, id);
         ClientProxyFuture clientProxyFuture = proxies.remove(objectNamespace);
         if (clientProxyFuture != null) {
             ClientProxy clientProxy = clientProxyFuture.get();
-            clientProxy.destroy(false);
+            clientProxy.destroyLocally();
         }
     }
 
@@ -409,6 +413,16 @@ public final class ProxyManager {
         throw new OperationTimeoutException("Initializing  " + clientProxy.getServiceName() + ":"
                 + clientProxy.getName() + " is timed out after " + elapsedTime
                 + " ms. Configured invocation timeout is " + invocationTimeoutMillis + " ms");
+    }
+
+    private void destroyRemoteDistributedObject(ClientProxy proxy) {
+        try {
+            ClientMessage clientMessage = ClientDestroyProxyCodec
+                    .encodeRequest(proxy.getDistributedObjectName(), proxy.getServiceName());
+            new ClientInvocation(proxy.getClient(), clientMessage, proxy.getName()).invoke().get();
+        } catch (Exception e) {
+            throw rethrow(e);
+        }
     }
 
     private boolean isRetryable(final Throwable t) {
