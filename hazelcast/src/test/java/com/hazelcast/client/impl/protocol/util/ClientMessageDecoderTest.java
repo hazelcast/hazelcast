@@ -17,8 +17,6 @@
 package com.hazelcast.client.impl.protocol.util;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.util.ClientMessageDecoder;
-import com.hazelcast.client.impl.protocol.util.ClientMessageHandler;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.test.HazelcastParallelClassRunner;

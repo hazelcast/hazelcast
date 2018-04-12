@@ -16,6 +16,18 @@
 
 package com.hazelcast.config.replacer;
 
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.QuickTest;
+import org.junit.AssumptionViolatedException;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+
+import javax.crypto.Cipher;
+import javax.crypto.SecretKeyFactory;
+import java.util.Properties;
+
 import static com.hazelcast.config.replacer.AbstractPbeReplacer.DEFAULT_CIPHER_ALGORITHM;
 import static com.hazelcast.config.replacer.AbstractPbeReplacer.DEFAULT_SECRET_KEY_FACTORY_ALGORITHM;
 import static org.hamcrest.CoreMatchers.containsString;
@@ -23,20 +35,6 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
-
-import java.util.Properties;
-
-import javax.crypto.Cipher;
-import javax.crypto.SecretKeyFactory;
-
-import org.junit.AssumptionViolatedException;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
-import com.hazelcast.test.annotation.QuickTest;
 
 /**
  * Unit tests for {@link AbstractPbeReplacer}.

@@ -40,10 +40,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.logging.Logger.getLogger;
 import static com.hazelcast.ringbuffer.OverflowPolicy.FAIL;
-import static com.hazelcast.spi.properties.GroupProperty.EVENT_THREAD_COUNT;
-import static com.hazelcast.spi.properties.GroupProperty.GENERIC_OPERATION_THREAD_COUNT;
-import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
-import static com.hazelcast.spi.properties.GroupProperty.PARTITION_OPERATION_THREAD_COUNT;
 import static com.hazelcast.test.TimeConstants.MINUTE;
 import static java.lang.Math.max;
 import static java.lang.System.currentTimeMillis;

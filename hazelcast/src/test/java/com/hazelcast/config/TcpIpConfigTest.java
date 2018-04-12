@@ -18,10 +18,9 @@ package com.hazelcast.config;
 
 import nl.jqno.equalsverifier.EqualsVerifier;
 import nl.jqno.equalsverifier.Warning;
+import org.junit.Test;
 
 import static com.hazelcast.test.HazelcastTestSupport.assumeDifferentHashCodes;
-
-import org.junit.Test;
 
 public class TcpIpConfigTest {
 

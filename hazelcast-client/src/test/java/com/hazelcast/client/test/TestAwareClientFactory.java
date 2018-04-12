@@ -16,17 +16,17 @@
 
 package com.hazelcast.client.test;
 
-import static com.hazelcast.test.AbstractHazelcastClassRunner.getTestMethodName;
-
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.TestAwareInstanceFactory;
+
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+import static com.hazelcast.test.AbstractHazelcastClassRunner.getTestMethodName;
 
 /**
  * Per test-method factory for Hazelcast clients (and also members as it inherits from {@link TestAwareInstanceFactory}).

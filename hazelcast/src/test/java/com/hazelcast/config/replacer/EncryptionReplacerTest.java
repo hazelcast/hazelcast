@@ -16,12 +16,18 @@
 
 package com.hazelcast.config.replacer;
 
-import static com.hazelcast.config.replacer.EncryptionReplacer.encrypt;
-import static org.hamcrest.CoreMatchers.*;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assume.assumeNotNull;
+import com.hazelcast.core.HazelcastException;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
+import com.hazelcast.nio.IOUtil;
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.OverridePropertyRule;
+import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.rules.TemporaryFolder;
+import org.junit.runner.RunWith;
 
 import java.io.File;
 import java.io.IOException;
@@ -30,19 +36,14 @@ import java.net.NetworkInterface;
 import java.util.Enumeration;
 import java.util.Properties;
 
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.rules.TemporaryFolder;
-import org.junit.runner.RunWith;
-
-import com.hazelcast.core.HazelcastException;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
-import com.hazelcast.nio.IOUtil;
-import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.OverridePropertyRule;
-import com.hazelcast.test.annotation.QuickTest;
+import static com.hazelcast.config.replacer.EncryptionReplacer.encrypt;
+import static org.hamcrest.CoreMatchers.allOf;
+import static org.hamcrest.CoreMatchers.endsWith;
+import static org.hamcrest.CoreMatchers.startsWith;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assume.assumeNotNull;
 
 /**
  * Unit tests for {@link EncryptionReplacer}.

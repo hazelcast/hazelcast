@@ -2,7 +2,6 @@ package com.hazelcast.cache.impl.journal;
 
 import com.hazelcast.cache.journal.EventJournalCacheEvent;
 import com.hazelcast.journal.EventJournalEventAdapter;
-import com.hazelcast.map.journal.EventJournalMapEvent;
 
 public class EventJournalCacheEventAdapter<K, V> implements EventJournalEventAdapter<K, V, EventJournalCacheEvent<K, V>> {
     @Override
