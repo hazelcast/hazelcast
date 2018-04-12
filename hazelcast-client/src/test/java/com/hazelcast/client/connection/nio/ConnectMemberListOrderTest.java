@@ -94,7 +94,8 @@ public class ConnectMemberListOrderTest extends ClientTestSupport {
         assertEquals(3, possibleMemberAddresses.size());
 
         //make sure previous owner is not first one to tried in next owner connection selection
-        assertNotEquals(lastConnectedMemberAddress, possibleMemberAddresses.iterator().next());
+        assertNotEquals("possibleMemberAddresses : " + possibleMemberAddresses + ", lastConnectedMemberAddress "
+                + lastConnectedMemberAddress, possibleMemberAddresses.iterator().next(), lastConnectedMemberAddress);
     }
 
     private Collection<Address> getPossibleMemberAddresses(HazelcastInstance client) {
