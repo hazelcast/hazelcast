@@ -115,11 +115,13 @@ import static org.junit.Assume.assumeTrue;
 @SuppressWarnings({"unused", "SameParameterValue", "WeakerAccess"})
 public abstract class HazelcastTestSupport {
 
-    private static final boolean EXPECT_DIFFERENT_HASHCODES = (new Object().hashCode() != new Object().hashCode());
-
     public static final String JAVA_VERSION = System.getProperty("java.version");
     public static final String JVM_NAME = System.getProperty("java.vm.name");
+
     public static final int ASSERT_TRUE_EVENTUALLY_TIMEOUT;
+
+    private static final boolean EXPECT_DIFFERENT_HASHCODES = (new Object().hashCode() != new Object().hashCode());
+    private static final ILogger LOGGER = Logger.getLogger(HazelcastTestSupport.class);
 
     @Rule
     public JitterRule jitterRule = new JitterRule();
@@ -127,12 +129,12 @@ public abstract class HazelcastTestSupport {
     @Rule
     public DumpBuildInfoOnFailureRule dumpInfoRule = new DumpBuildInfoOnFailureRule();
 
+    private TestHazelcastInstanceFactory factory;
+
     static {
         ASSERT_TRUE_EVENTUALLY_TIMEOUT = getInteger("hazelcast.assertTrueEventually.timeout", 120);
-        System.out.println("ASSERT_TRUE_EVENTUALLY_TIMEOUT = " + ASSERT_TRUE_EVENTUALLY_TIMEOUT);
+        LOGGER.fine("ASSERT_TRUE_EVENTUALLY_TIMEOUT = " + ASSERT_TRUE_EVENTUALLY_TIMEOUT);
     }
-
-    private TestHazelcastInstanceFactory factory;
 
     @After
     public final void shutdownNodeFactory() {
@@ -400,9 +402,8 @@ public abstract class HazelcastTestSupport {
                 Thread.currentThread().interrupt();
             }
         } else {
-            ILogger logger = Logger.getLogger(HazelcastTestSupport.class);
             long absSleepTime = Math.abs(sleepTime);
-            logger.warning("There is no time left to sleep. We are beyond the desired end of sleep by " + absSleepTime + "ms");
+            LOGGER.warning("There is no time left to sleep. We are beyond the desired end of sleep by " + absSleepTime + "ms");
         }
     }
 
@@ -1442,14 +1443,13 @@ public abstract class HazelcastTestSupport {
     }
 
     private interface Latch {
-        boolean await(long timeout, TimeUnit unit)
-                throws InterruptedException;
+
+        boolean await(long timeout, TimeUnit unit) throws InterruptedException;
 
         long getCount();
     }
 
-    private static class ICountdownLatchAdapter
-            implements Latch {
+    private static class ICountdownLatchAdapter implements Latch {
 
         private final ICountDownLatch latch;
 
@@ -1458,8 +1458,7 @@ public abstract class HazelcastTestSupport {
         }
 
         @Override
-        public boolean await(long timeout, TimeUnit unit)
-                throws InterruptedException {
+        public boolean await(long timeout, TimeUnit unit) throws InterruptedException {
             return latch.await(timeout, unit);
         }
 
@@ -1469,8 +1468,7 @@ public abstract class HazelcastTestSupport {
         }
     }
 
-    private static class CountdownLatchAdapter
-            implements Latch {
+    private static class CountdownLatchAdapter implements Latch {
 
         private final CountDownLatch latch;
 
@@ -1479,8 +1477,7 @@ public abstract class HazelcastTestSupport {
         }
 
         @Override
-        public boolean await(long timeout, TimeUnit unit)
-                throws InterruptedException {
+        public boolean await(long timeout, TimeUnit unit) throws InterruptedException {
             return latch.await(timeout, unit);
         }
 
