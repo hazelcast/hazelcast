@@ -19,6 +19,7 @@ package com.hazelcast.spi.merge;
 import com.hazelcast.cardinality.impl.hyperloglog.HyperLogLog;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.scheduledexecutor.impl.ScheduledTaskDescriptor;
+import com.hazelcast.spi.annotation.Beta;
 
 import java.util.Collection;
 
@@ -34,6 +35,7 @@ import java.util.Collection;
  *
  * @since 3.10
  */
+@Beta
 public class SplitBrainMergeTypes {
 
     /**
@@ -41,6 +43,7 @@ public class SplitBrainMergeTypes {
      *
      * @since 3.10
      */
+    @Beta
     public interface MapMergeTypes extends MergingEntry<Data, Data>, MergingCreationTime<Data>, MergingHits<Data>,
             MergingLastAccessTime<Data>, MergingLastUpdateTime<Data>, MergingTTL<Data>, MergingCosts<Data>, MergingVersion<Data>,
             MergingExpirationTime<Data>, MergingLastStoredTime<Data> {
@@ -51,6 +54,7 @@ public class SplitBrainMergeTypes {
      *
      * @since 3.10
      */
+    @Beta
     public interface CacheMergeTypes extends MergingEntry<Data, Data>, MergingCreationTime<Data>, MergingHits<Data>,
             MergingLastAccessTime<Data>, MergingExpirationTime<Data> {
     }
@@ -60,6 +64,7 @@ public class SplitBrainMergeTypes {
      *
      * @since 3.10
      */
+    @Beta
     public interface ReplicatedMapMergeTypes extends MergingEntry<Object, Object>, MergingCreationTime<Object>,
             MergingHits<Object>, MergingLastAccessTime<Object>, MergingLastUpdateTime<Object>, MergingTTL<Object> {
     }
@@ -69,6 +74,7 @@ public class SplitBrainMergeTypes {
      *
      * @since 3.10
      */
+    @Beta
     public interface MultiMapMergeTypes extends MergingEntry<Data, Collection<Object>>, MergingCreationTime<Collection<Object>>,
             MergingHits<Collection<Object>>, MergingLastAccessTime<Collection<Object>>,
             MergingLastUpdateTime<Collection<Object>> {
@@ -79,6 +85,7 @@ public class SplitBrainMergeTypes {
      *
      * @since 3.10
      */
+    @Beta
     public interface CollectionMergeTypes extends MergingValue<Collection<Object>> {
     }
 
@@ -87,6 +94,7 @@ public class SplitBrainMergeTypes {
      *
      * @since 3.10
      */
+    @Beta
     public interface QueueMergeTypes extends MergingValue<Collection<Object>> {
     }
 
@@ -95,6 +103,7 @@ public class SplitBrainMergeTypes {
      *
      * @since 3.10
      */
+    @Beta
     public interface RingbufferMergeTypes extends MergingValue<RingbufferMergeData> {
     }
 
@@ -103,6 +112,7 @@ public class SplitBrainMergeTypes {
      *
      * @since 3.10
      */
+    @Beta
     public interface AtomicLongMergeTypes extends MergingValue<Long> {
     }
 
@@ -111,6 +121,7 @@ public class SplitBrainMergeTypes {
      *
      * @since 3.10
      */
+    @Beta
     public interface AtomicReferenceMergeTypes extends MergingValue<Data> {
     }
 
@@ -119,6 +130,7 @@ public class SplitBrainMergeTypes {
      *
      * @since 3.10
      */
+    @Beta
     public interface ScheduledExecutorMergeTypes extends MergingEntry<String, ScheduledTaskDescriptor> {
     }
 
@@ -127,6 +139,7 @@ public class SplitBrainMergeTypes {
      *
      * @since 3.10
      */
+    @Beta
     public interface CardinalityEstimatorMergeTypes extends MergingEntry<String, HyperLogLog> {
     }
 }
