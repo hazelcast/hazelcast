@@ -24,13 +24,11 @@ import com.hazelcast.replicatedmap.impl.operation.MergeOperationFactory;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedMapEntryView;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecord;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
-import com.hazelcast.replicatedmap.merge.MergePolicyProvider;
 import com.hazelcast.replicatedmap.merge.ReplicatedMapMergePolicy;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.impl.merge.AbstractMergeRunnable;
-import com.hazelcast.spi.impl.merge.BaseSplitBrainHandlerService;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.ReplicatedMapMergeTypes;
 import com.hazelcast.util.function.BiConsumer;
@@ -46,15 +44,13 @@ class ReplicatedMapMergeRunnable
         extends AbstractMergeRunnable<Object, Object, ReplicatedRecordStore, ReplicatedMapMergeTypes> {
 
     private final ReplicatedMapService service;
-    private final MergePolicyProvider mergePolicyProvider;
 
     ReplicatedMapMergeRunnable(Collection<ReplicatedRecordStore> mergingStores,
-                               BaseSplitBrainHandlerService<ReplicatedRecordStore> splitBrainHandlerService,
+                               ReplicatedMapSplitBrainHandlerService splitBrainHandlerService,
                                NodeEngine nodeEngine) {
         super(SERVICE_NAME, mergingStores, splitBrainHandlerService, nodeEngine);
 
         this.service = nodeEngine.getService(SERVICE_NAME);
-        this.mergePolicyProvider = service.getMergePolicyProvider();
     }
 
     @Override
@@ -113,12 +109,7 @@ class ReplicatedMapMergeRunnable
 
     @Override
     protected Object getMergePolicy(String dataStructureName) {
-        MergePolicyConfig mergePolicyConfig = getReplicatedMapConfig(dataStructureName).getMergePolicyConfig();
-        return mergePolicyProvider.getMergePolicy(mergePolicyConfig.getPolicy());
-    }
-
-    private ReplicatedMapConfig getReplicatedMapConfig(String name) {
-        return service.getReplicatedMapConfig(name);
+        return service.getMergePolicy(dataStructureName);
     }
 
     @Override
@@ -136,5 +127,9 @@ class ReplicatedMapMergeRunnable
                                                            SplitBrainMergePolicy<Object, ReplicatedMapMergeTypes> mergePolicy,
                                                            int[] partitions, List<ReplicatedMapMergeTypes>[] entries) {
         return new MergeOperationFactory(dataStructureName, partitions, entries, mergePolicy);
+    }
+
+    private ReplicatedMapConfig getReplicatedMapConfig(String name) {
+        return service.getReplicatedMapConfig(name);
     }
 }

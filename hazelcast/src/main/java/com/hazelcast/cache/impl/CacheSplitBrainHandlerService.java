@@ -17,7 +17,8 @@
 package com.hazelcast.cache.impl;
 
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.impl.merge.BaseSplitBrainHandlerService;
+import com.hazelcast.spi.impl.merge.AbstractSplitBrainHandlerService;
+import com.hazelcast.spi.merge.DiscardMergePolicy;
 
 import java.util.Collection;
 import java.util.Iterator;
@@ -28,22 +29,20 @@ import static com.hazelcast.util.ThreadUtil.assertRunningOnPartitionThread;
 /**
  * Handles split-brain functionality for cache.
  */
-class CacheSplitBrainHandlerService extends BaseSplitBrainHandlerService<ICacheRecordStore> {
+class CacheSplitBrainHandlerService extends AbstractSplitBrainHandlerService<ICacheRecordStore> {
 
     private final CacheService cacheService;
     private final CachePartitionSegment[] segments;
 
-    CacheSplitBrainHandlerService(NodeEngine nodeEngine,
-                                  CachePartitionSegment[] segments) {
+    CacheSplitBrainHandlerService(NodeEngine nodeEngine, CachePartitionSegment[] segments) {
         super(nodeEngine);
         this.segments = segments;
         this.cacheService = nodeEngine.getService(SERVICE_NAME);
     }
 
     @Override
-    protected Runnable newMergeRunnable(Collection<ICacheRecordStore> mergingStores,
-                                        BaseSplitBrainHandlerService<ICacheRecordStore> splitBrainHandlerService) {
-        return new CacheMergeRunnable(mergingStores, splitBrainHandlerService, cacheService.nodeEngine);
+    protected Runnable newMergeRunnable(Collection<ICacheRecordStore> mergingStores) {
+        return new CacheMergeRunnable(mergingStores, this, cacheService.nodeEngine);
     }
 
     @Override
@@ -59,9 +58,15 @@ class CacheSplitBrainHandlerService extends BaseSplitBrainHandlerService<ICacheR
     }
 
     @Override
-    protected boolean hasEntry(ICacheRecordStore store) {
+    protected boolean hasEntries(ICacheRecordStore store) {
         assertRunningOnPartitionThread();
 
         return store.size() > 0;
+    }
+
+    @Override
+    protected boolean hasMergeablePolicy(ICacheRecordStore store) {
+        Object mergePolicy = cacheService.getMergePolicy(store.getName());
+        return !(mergePolicy instanceof DiscardMergePolicy);
     }
 }

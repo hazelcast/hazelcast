@@ -24,12 +24,10 @@ import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.merge.MapMergePolicy;
-import com.hazelcast.map.merge.MergePolicyProvider;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.impl.merge.AbstractMergeRunnable;
-import com.hazelcast.spi.impl.merge.BaseSplitBrainHandlerService;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
 import com.hazelcast.util.Clock;
@@ -45,15 +43,13 @@ import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntr
 class MapMergeRunnable extends AbstractMergeRunnable<Data, Data, RecordStore, MapMergeTypes> {
 
     private final MapServiceContext mapServiceContext;
-    private final MergePolicyProvider mergePolicyProvider;
 
     MapMergeRunnable(Collection<RecordStore> mergingStores,
-                     BaseSplitBrainHandlerService splitBrainHandlerService,
+                     MapSplitBrainHandlerService splitBrainHandlerService,
                      MapServiceContext mapServiceContext) {
         super(MapService.SERVICE_NAME, mergingStores, splitBrainHandlerService, mapServiceContext.getNodeEngine());
 
         this.mapServiceContext = mapServiceContext;
-        this.mergePolicyProvider = mapServiceContext.getMergePolicyProvider();
     }
 
     @Override
@@ -61,6 +57,7 @@ class MapMergeRunnable extends AbstractMergeRunnable<Data, Data, RecordStore, Ma
         long now = Clock.currentTimeMillis();
         int partitionId = store.getPartitionId();
 
+        //noinspection unchecked
         Iterator<Record> iterator = store.iterator(now, false);
         while (iterator.hasNext()) {
             Record record = iterator.next();
@@ -68,8 +65,7 @@ class MapMergeRunnable extends AbstractMergeRunnable<Data, Data, RecordStore, Ma
             Data dataKey = toHeapData(record.getKey());
             Data dataValue = toHeapData(record.getValue());
 
-            consumer.accept(partitionId,
-                    createMergingEntry(getSerializationService(), dataKey, dataValue, record));
+            consumer.accept(partitionId, createMergingEntry(getSerializationService(), dataKey, dataValue, record));
         }
     }
 
@@ -81,6 +77,7 @@ class MapMergeRunnable extends AbstractMergeRunnable<Data, Data, RecordStore, Ma
         MapOperationProvider operationProvider = mapServiceContext.getMapOperationProvider(name);
         MapMergePolicy mergePolicy = ((MapMergePolicy) getMergePolicy(name));
 
+        //noinspection unchecked
         Iterator<Record> iterator = store.iterator(now, false);
         while (iterator.hasNext()) {
             Record record = iterator.next();
@@ -109,14 +106,7 @@ class MapMergeRunnable extends AbstractMergeRunnable<Data, Data, RecordStore, Ma
 
     @Override
     protected Object getMergePolicy(String dataStructureName) {
-        MapConfig mapConfig = getMapConfig(dataStructureName);
-        MergePolicyConfig mergePolicyConfig = mapConfig.getMergePolicyConfig();
-        return mergePolicyProvider.getMergePolicy(mergePolicyConfig.getPolicy());
-    }
-
-    private MapConfig getMapConfig(String dataStructureName) {
-        MapContainer mapContainer = mapServiceContext.getMapContainer(dataStructureName);
-        return mapContainer.getMapConfig();
+        return mapServiceContext.getMergePolicy(dataStructureName);
     }
 
     @Override
@@ -135,5 +125,10 @@ class MapMergeRunnable extends AbstractMergeRunnable<Data, Data, RecordStore, Ma
                                                            int[] partitions, List<MapMergeTypes>[] entries) {
         MapOperationProvider operationProvider = mapServiceContext.getMapOperationProvider(dataStructureName);
         return operationProvider.createMergeOperationFactory(dataStructureName, partitions, entries, mergePolicy);
+    }
+
+    private MapConfig getMapConfig(String dataStructureName) {
+        MapContainer mapContainer = mapServiceContext.getMapContainer(dataStructureName);
+        return mapContainer.getMapConfig();
     }
 }

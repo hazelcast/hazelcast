@@ -19,7 +19,6 @@ package com.hazelcast.cache.impl;
 import com.hazelcast.cache.CacheEntryView;
 import com.hazelcast.cache.CacheMergePolicy;
 import com.hazelcast.cache.impl.merge.entry.DefaultCacheEntryView;
-import com.hazelcast.cache.impl.merge.policy.CacheMergePolicyProvider;
 import com.hazelcast.cache.impl.operation.CacheLegacyMergeOperation;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.config.CacheConfig;
@@ -29,7 +28,6 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.impl.merge.AbstractMergeRunnable;
-import com.hazelcast.spi.impl.merge.BaseSplitBrainHandlerService;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.CacheMergeTypes;
 import com.hazelcast.util.function.BiConsumer;
@@ -37,7 +35,6 @@ import com.hazelcast.util.function.BiConsumer;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.cache.impl.AbstractCacheRecordStore.SOURCE_NOT_AVAILABLE;
 import static com.hazelcast.cache.impl.ICacheService.SERVICE_NAME;
@@ -47,15 +44,13 @@ import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntr
 class CacheMergeRunnable extends AbstractMergeRunnable<Data, Data, ICacheRecordStore, CacheMergeTypes> {
 
     private final CacheService cacheService;
-    private final CacheMergePolicyProvider mergePolicyProvider;
 
     CacheMergeRunnable(Collection<ICacheRecordStore> mergingStores,
-                       BaseSplitBrainHandlerService<ICacheRecordStore> splitBrainHandlerService,
+                       CacheSplitBrainHandlerService splitBrainHandlerService,
                        NodeEngine nodeEngine) {
         super(CacheService.SERVICE_NAME, mergingStores, splitBrainHandlerService, nodeEngine);
 
         this.cacheService = nodeEngine.getService(SERVICE_NAME);
-        this.mergePolicyProvider = cacheService.mergePolicyProvider;
     }
 
     @Override
@@ -112,10 +107,7 @@ class CacheMergeRunnable extends AbstractMergeRunnable<Data, Data, ICacheRecordS
 
     @Override
     protected Object getMergePolicy(String dataStructureName) {
-        ConcurrentMap<String, CacheConfig> configs = cacheService.getConfigs();
-        CacheConfig cacheConfig = configs.get(dataStructureName);
-        String mergePolicyName = cacheConfig.getMergePolicy();
-        return mergePolicyProvider.getMergePolicy(mergePolicyName);
+        return cacheService.getMergePolicy(dataStructureName);
     }
 
     @Override
