@@ -204,7 +204,7 @@ public final class MergingValueFactory {
         if (items.isEmpty()) {
             return null;
         }
-        final RingbufferMergeData<Object> mergingData = new RingbufferMergeData<Object>(items);
+        final RingbufferMergeData mergingData = new RingbufferMergeData(items);
         return new RingbufferMergingValueImpl(serializationService)
                 .setValues(mergingData);
     }

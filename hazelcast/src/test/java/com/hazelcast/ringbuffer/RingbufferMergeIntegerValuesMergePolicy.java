@@ -7,28 +7,26 @@ import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.RingbufferMergeTypes;
 
 class RingbufferMergeIntegerValuesMergePolicy
-        implements SplitBrainMergePolicy<RingbufferMergeData<Object>, RingbufferMergeTypes> {
+        implements SplitBrainMergePolicy<RingbufferMergeData, RingbufferMergeTypes> {
 
     @Override
-    public RingbufferMergeData<Object> merge(RingbufferMergeTypes mergingValue, RingbufferMergeTypes existingValue) {
-        final RingbufferMergeData<Object> mergingRingbuffer = mergingValue.getDeserializedValue();
-        final RingbufferMergeData<Object> result = new RingbufferMergeData<Object>(mergingRingbuffer.getCapacity());
-        RingbufferMergeData<Object> existingRingbuffer;
+    public RingbufferMergeData merge(RingbufferMergeTypes mergingValue, RingbufferMergeTypes existingValue) {
+        final RingbufferMergeData mergingRingbuffer = mergingValue.getDeserializedValue();
+        final RingbufferMergeData result = new RingbufferMergeData(mergingRingbuffer.getCapacity());
+        RingbufferMergeData existingRingbuffer;
         if (existingValue != null) {
             existingRingbuffer = existingValue.getDeserializedValue();
         } else {
-            existingRingbuffer = new RingbufferMergeData<Object>(mergingRingbuffer.getCapacity());
+            existingRingbuffer = new RingbufferMergeData(mergingRingbuffer.getCapacity());
         }
 
-        for (long seq = mergingRingbuffer.getHeadSequence(); seq <= mergingRingbuffer.getTailSequence(); seq++) {
-            final Object value = mergingRingbuffer.read(seq);
+        for (Object value : mergingRingbuffer) {
             if (value instanceof Integer) {
                 result.add(value);
             }
         }
 
-        for (long seq = existingRingbuffer.getHeadSequence(); seq <= existingRingbuffer.getTailSequence(); seq++) {
-            final Object value = existingRingbuffer.read(seq);
+        for (Object value : existingRingbuffer) {
             if (value instanceof Integer) {
                 result.add(value);
             }

@@ -60,7 +60,7 @@ public class MergeOperation extends Operation
         implements IdentifiedDataSerializable, BackupAwareOperation, ServiceNamespaceAware {
 
     private ObjectNamespace namespace;
-    private SplitBrainMergePolicy<RingbufferMergeData<Object>, RingbufferMergeTypes> mergePolicy;
+    private SplitBrainMergePolicy<RingbufferMergeData, RingbufferMergeTypes> mergePolicy;
     private Ringbuffer<Object> mergingRingbuffer;
 
     private transient Ringbuffer<Object> resultRingbuffer;
@@ -72,7 +72,7 @@ public class MergeOperation extends Operation
     }
 
     public MergeOperation(ObjectNamespace namespace,
-                          SplitBrainMergePolicy<RingbufferMergeData<Object>, RingbufferMergeTypes> mergePolicy,
+                          SplitBrainMergePolicy<RingbufferMergeData, RingbufferMergeTypes> mergePolicy,
                           Ringbuffer<Object> mergingRingbuffer) {
         this.namespace = namespace;
         this.mergePolicy = mergePolicy;
@@ -112,7 +112,7 @@ public class MergeOperation extends Operation
                 ? createMergingValue(serializationService, existingContainer.getRingbuffer())
                 : null;
 
-        RingbufferMergeData<Object> resultData = mergePolicy.merge(mergingValue, existingValue);
+        RingbufferMergeData resultData = mergePolicy.merge(mergingValue, existingValue);
 
         if (resultData == null) {
             ringbufferService.destroyDistributedObject(namespace.getObjectName());
@@ -132,10 +132,10 @@ public class MergeOperation extends Operation
      * {@code toContainer}.
      *
      * @param fromMergeData the data which needs to be set into the containter
-     * @param toContainer the target ringbuffer container
+     * @param toContainer   the target ringbuffer container
      */
     private void setRingbufferData(
-            RingbufferMergeData<Object> fromMergeData,
+            RingbufferMergeData fromMergeData,
             RingbufferContainer<Object, Object> toContainer) {
         boolean storeEnabled = toContainer.getStore().isEnabled();
         Data[] storeItems = storeEnabled ? new Data[fromMergeData.size()] : null;

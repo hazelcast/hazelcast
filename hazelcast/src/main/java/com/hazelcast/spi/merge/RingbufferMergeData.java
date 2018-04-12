@@ -22,24 +22,25 @@ import com.hazelcast.spi.impl.merge.RingbufferMergingValueImpl;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.Arrays;
+import java.util.Iterator;
 
 /**
  * A ringbuffer implementation holding data involved in split-brain healing.
  *
- * @param <E> the type of the data stored in the ringbuffer
  * @see RingbufferMergingValueImpl
+ * @since 3.10
  */
-public class RingbufferMergeData<E> {
-    private E[] items;
+public class RingbufferMergeData implements Iterable<Object> {
+    private Object[] items;
     private long tailSequence = -1;
     private long headSequence = tailSequence + 1;
 
     @SuppressWarnings("unchecked")
     public RingbufferMergeData(int capacity) {
-        this.items = (E[]) new Object[capacity];
+        this.items = new Object[capacity];
     }
 
-    public RingbufferMergeData(Ringbuffer<E> ringbuffer) {
+    public RingbufferMergeData(Ringbuffer<Object> ringbuffer) {
         this.items = ringbuffer.getItems();
         this.headSequence = ringbuffer.headSequence();
         this.tailSequence = ringbuffer.tailSequence();
@@ -134,7 +135,7 @@ public class RingbufferMergeData<E> {
      * @param item the item to add
      * @return the sequence of the added item
      */
-    public long add(E item) {
+    public long add(Object item) {
         tailSequence++;
 
         if (tailSequence - items.length == headSequence) {
@@ -152,13 +153,14 @@ public class RingbufferMergeData<E> {
      * Reads one item from the ringbuffer.
      *
      * @param sequence the sequence of the item to read
-     * @return the read item
+     * @param <E>      ringbuffer item type
+     * @return the ringbuffer item
      * @throws StaleSequenceException if the sequence is smaller then {@link #getHeadSequence()} or larger than
      *                                {@link #getTailSequence()}.
      */
-    public E read(long sequence) {
+    public <E> E read(long sequence) {
         checkReadSequence(sequence);
-        return items[toIndex(sequence)];
+        return (E) items[toIndex(sequence)];
     }
 
     /**
@@ -167,7 +169,7 @@ public class RingbufferMergeData<E> {
      * @param seq  the target sequence
      * @param data the data to be set
      */
-    public void set(long seq, E data) {
+    public void set(long seq, Object data) {
         items[toIndex(seq)] = data;
     }
 
@@ -205,7 +207,17 @@ public class RingbufferMergeData<E> {
      * using the sequence and the modulo of the array.
      */
     @SuppressFBWarnings("EI_EXPOSE_REP")
-    public E[] getItems() {
+    public Object[] getItems() {
         return items;
+    }
+
+    /**
+     * {@inheritDoc}
+     * Returns a read-only iterator. Mutation methods will throw a
+     * {@link UnsupportedOperationException}.
+     */
+    @Override
+    public Iterator<Object> iterator() {
+        return new RingbufferMergeDataReadOnlyIterator<Object>(this);
     }
 }

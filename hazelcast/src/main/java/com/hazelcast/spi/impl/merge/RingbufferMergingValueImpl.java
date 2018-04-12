@@ -39,7 +39,7 @@ import static com.hazelcast.nio.IOUtil.writeObject;
 public class RingbufferMergingValueImpl
         implements RingbufferMergeTypes, SerializationServiceAware, IdentifiedDataSerializable {
 
-    private RingbufferMergeData<Object> value;
+    private RingbufferMergeData value;
 
     private transient SerializationService serializationService;
 
@@ -51,13 +51,13 @@ public class RingbufferMergingValueImpl
     }
 
     @Override
-    public RingbufferMergeData<Object> getValue() {
+    public RingbufferMergeData getValue() {
         return value;
     }
 
     @Override
     public <DV> DV getDeserializedValue() {
-        final RingbufferMergeData<Object> deserializedValues = new RingbufferMergeData<Object>(value.getItems().length);
+        final RingbufferMergeData deserializedValues = new RingbufferMergeData(value.getItems().length);
         deserializedValues.setHeadSequence(value.getHeadSequence());
         deserializedValues.setTailSequence(value.getTailSequence());
 
@@ -68,7 +68,7 @@ public class RingbufferMergingValueImpl
         return (DV) deserializedValues;
     }
 
-    public RingbufferMergingValueImpl setValues(RingbufferMergeData<Object> values) {
+    public RingbufferMergingValueImpl setValues(RingbufferMergeData values) {
         this.value = values;
         return this;
     }
@@ -94,7 +94,7 @@ public class RingbufferMergingValueImpl
         final long tailSequence = in.readLong();
         final long headSequence = in.readLong();
         final int capacity = in.readInt();
-        value = new RingbufferMergeData<Object>(capacity);
+        value = new RingbufferMergeData(capacity);
         value.setTailSequence(tailSequence);
         value.setHeadSequence(headSequence);
 

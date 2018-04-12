@@ -7,10 +7,10 @@ import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.RingbufferMergeTypes;
 
 class RingbufferRemoveValuesMergePolicy
-        implements SplitBrainMergePolicy<RingbufferMergeData<Object>, RingbufferMergeTypes> {
+        implements SplitBrainMergePolicy<RingbufferMergeData, RingbufferMergeTypes> {
 
     @Override
-    public RingbufferMergeData<Object> merge(RingbufferMergeTypes mergingValue, RingbufferMergeTypes existingValue) {
+    public RingbufferMergeData merge(RingbufferMergeTypes mergingValue, RingbufferMergeTypes existingValue) {
         return null;
     }
 

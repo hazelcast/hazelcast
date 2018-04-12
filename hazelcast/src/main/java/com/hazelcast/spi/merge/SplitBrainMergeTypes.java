@@ -95,7 +95,7 @@ public class SplitBrainMergeTypes {
      *
      * @since 3.10
      */
-    public interface RingbufferMergeTypes extends MergingValue<RingbufferMergeData<Object>> {
+    public interface RingbufferMergeTypes extends MergingValue<RingbufferMergeData> {
     }
 
     /**
