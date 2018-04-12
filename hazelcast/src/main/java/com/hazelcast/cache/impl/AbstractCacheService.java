@@ -39,7 +39,6 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
-import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
@@ -78,6 +77,7 @@ import static com.hazelcast.internal.cluster.Versions.V3_10;
 import static com.hazelcast.internal.config.ConfigValidator.checkCacheConfig;
 import static com.hazelcast.internal.config.MergePolicyValidator.checkMergePolicySupportsInMemoryFormat;
 import static com.hazelcast.util.EmptyStatement.ignore;
+import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.FutureUtil.RETHROW_EVERYTHING;
 import static java.util.Collections.singleton;
 
@@ -760,27 +760,35 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
 
     @Override
     public <K, V> void createCacheConfigOnAllMembers(PreJoinCacheConfig<K, V> cacheConfig) {
+        ICompletableFuture future = createCacheConfigOnAllMembersAsync(cacheConfig);
         Version version = getNodeEngine().getClusterService().getClusterVersion();
         if (version.isGreaterOrEqual(V3_10)) {
-            ICompletableFuture future = InvocationUtil.invokeOnStableClusterSerial(getNodeEngine(),
-                    new AddCacheConfigOperationSupplier(cacheConfig),
-                    MAX_ADD_CACHE_CONFIG_RETRIES);
             FutureUtil.waitForever(singleton(future), RETHROW_EVERYTHING);
         } else {
             // RU_COMPAT_3_9
-            OperationService operationService = nodeEngine.getOperationService();
-            // wrap the CacheConfig in a PreJoinCacheConfig with KV type class names instead of implementations,
-            // to prevent de-serialization failures on remote nodes
-            CacheCreateConfigOperation op = new CacheCreateConfigOperation(cacheConfig, true, false);
             try {
-                InternalCompletableFuture future = operationService.invokeOnTarget(CacheService.SERVICE_NAME, op,
-                        nodeEngine.getThisAddress());
-                future.join();
+                future.get();
             } catch (HazelcastInstanceNotActiveException e) {
                 // do not fail the cache proxy creation if the operation invocation fails
                 // (eg node is in PASSIVE state due to being restored from hot restart),
                 ignore(e);
+            } catch (Throwable throwable) {
+                throw rethrow(throwable);
             }
+        }
+    }
+
+    public <K, V> ICompletableFuture createCacheConfigOnAllMembersAsync(PreJoinCacheConfig<K, V> cacheConfig) {
+        Version version = getNodeEngine().getClusterService().getClusterVersion();
+        if (version.isGreaterOrEqual(V3_10)) {
+            return InvocationUtil.invokeOnStableClusterSerial(getNodeEngine(),
+                    new AddCacheConfigOperationSupplier(cacheConfig),
+                    MAX_ADD_CACHE_CONFIG_RETRIES);
+        } else {
+            // RU_COMPAT_3_9
+            OperationService operationService = nodeEngine.getOperationService();
+            CacheCreateConfigOperation op = new CacheCreateConfigOperation(cacheConfig, true, false);
+            return operationService.invokeOnTarget(CacheService.SERVICE_NAME, op, nodeEngine.getThisAddress());
         }
     }
 }
