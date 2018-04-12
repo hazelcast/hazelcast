@@ -68,7 +68,9 @@ class RingbufferContainerCollector extends AbstractContainerCollector<Ringbuffer
     protected int getMergingValueCount() {
         int size = 0;
         for (Collection<RingbufferContainer> containers : getCollectedContainers().values()) {
-            size += containers.size();
+            for (RingbufferContainer container : containers) {
+                size += container.size();
+            }
         }
         return size;
     }
