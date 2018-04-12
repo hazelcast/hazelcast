@@ -66,6 +66,7 @@ public class SetSplitBrainTest extends SplitBrainTestSupport {
                 PassThroughMergePolicy.class,
                 PutIfAbsentMergePolicy.class,
                 RemoveValuesMergePolicy.class,
+                ReturnPiCollectionMergePolicy.class,
                 MergeCollectionOfIntegerValuesMergePolicy.class,
         });
     }
@@ -120,6 +121,8 @@ public class SetSplitBrainTest extends SplitBrainTestSupport {
             afterSplitPutIfAbsentMergePolicy();
         } else if (mergePolicyClass == RemoveValuesMergePolicy.class) {
             afterSplitRemoveValuesMergePolicy();
+        } else if (mergePolicyClass == ReturnPiCollectionMergePolicy.class) {
+            afterSplitReturnPiCollectionMergePolicy();
         } else if (mergePolicyClass == MergeCollectionOfIntegerValuesMergePolicy.class) {
             afterSplitCustomMergePolicy();
         } else {
@@ -146,6 +149,8 @@ public class SetSplitBrainTest extends SplitBrainTestSupport {
             afterMergePutIfAbsentMergePolicy();
         } else if (mergePolicyClass == RemoveValuesMergePolicy.class) {
             afterMergeRemoveValuesMergePolicy();
+        } else if (mergePolicyClass == ReturnPiCollectionMergePolicy.class) {
+            afterMergeReturnPiCollectionMergePolicy();
         } else if (mergePolicyClass == MergeCollectionOfIntegerValuesMergePolicy.class) {
             afterMergeCustomMergePolicy();
         } else {
@@ -223,6 +228,24 @@ public class SetSplitBrainTest extends SplitBrainTestSupport {
 
         assertSetContent(setB1, 0);
         assertSetContent(setB2, 0);
+    }
+
+    private void afterSplitReturnPiCollectionMergePolicy() {
+        for (int i = 0; i < ITEM_COUNT; i++) {
+            setA1.add("lostItem" + i);
+            setA2.add("lostItem" + i);
+
+            setB2.add("lostItem" + i);
+        }
+    }
+
+    private void afterMergeReturnPiCollectionMergePolicy() {
+        assertPiSet(setA1);
+        assertPiSet(setA2);
+        assertPiSet(backupSet);
+
+        assertPiSet(setB1);
+        assertPiSet(setB2);
     }
 
     private void afterSplitCustomMergePolicy() {

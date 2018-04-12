@@ -66,6 +66,7 @@ public class ListSplitBrainTest extends SplitBrainTestSupport {
                 PassThroughMergePolicy.class,
                 PutIfAbsentMergePolicy.class,
                 RemoveValuesMergePolicy.class,
+                ReturnPiCollectionMergePolicy.class,
                 MergeCollectionOfIntegerValuesMergePolicy.class,
         });
     }
@@ -120,6 +121,8 @@ public class ListSplitBrainTest extends SplitBrainTestSupport {
             afterSplitPutIfAbsentMergePolicy();
         } else if (mergePolicyClass == RemoveValuesMergePolicy.class) {
             afterSplitRemoveValuesMergePolicy();
+        } else if (mergePolicyClass == ReturnPiCollectionMergePolicy.class) {
+            afterSplitReturnPiCollectionMergePolicy();
         } else if (mergePolicyClass == MergeCollectionOfIntegerValuesMergePolicy.class) {
             afterSplitCustomMergePolicy();
         } else {
@@ -146,6 +149,8 @@ public class ListSplitBrainTest extends SplitBrainTestSupport {
             afterMergePutIfAbsentMergePolicy();
         } else if (mergePolicyClass == RemoveValuesMergePolicy.class) {
             afterMergeRemoveValuesMergePolicy();
+        } else if (mergePolicyClass == ReturnPiCollectionMergePolicy.class) {
+            afterMergeReturnPiCollectionMergePolicy();
         } else if (mergePolicyClass == MergeCollectionOfIntegerValuesMergePolicy.class) {
             afterMergeCustomMergePolicy();
         } else {
@@ -223,6 +228,24 @@ public class ListSplitBrainTest extends SplitBrainTestSupport {
 
         assertListContent(listB1, 0);
         assertListContent(listB2, 0);
+    }
+
+    private void afterSplitReturnPiCollectionMergePolicy() {
+        for (int i = 0; i < ITEM_COUNT; i++) {
+            listA1.add("lostItem" + i);
+            listA2.add("lostItem" + i);
+
+            listB2.add("lostItem" + i);
+        }
+    }
+
+    private void afterMergeReturnPiCollectionMergePolicy() {
+        assertPiCollection(listA1);
+        assertPiCollection(listA2);
+        assertPiCollection(backupList);
+
+        assertPiCollection(listB1);
+        assertPiCollection(listB2);
     }
 
     private void afterSplitCustomMergePolicy() {
