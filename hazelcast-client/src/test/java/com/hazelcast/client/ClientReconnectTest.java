@@ -17,6 +17,7 @@
 package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.spi.properties.ClientProperty;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.SerializationConfig;
@@ -251,9 +252,12 @@ public class ClientReconnectTest extends HazelcastTestSupport {
     public void testEndpointCleanup_withFirstAuthenticationTakingLong() throws InterruptedException {
         final AtomicInteger customCredentialsRunCount = new AtomicInteger();
         ClientConfig clientConfig = new ClientConfig();
-        int defaultConnectionTimeoutMillis = clientConfig.getNetworkConfig().getConnectionTimeout();
+        int heartbeatTimeoutMillis = 5000;
+        int authenticationTimeout = heartbeatTimeoutMillis;
+        clientConfig.setProperty(ClientProperty.HEARTBEAT_TIMEOUT.getName(), String.valueOf(heartbeatTimeoutMillis));
+        clientConfig.setProperty(ClientProperty.HEARTBEAT_INTERVAL.getName(), "1000");
         //Credentials will take longer than connection timeout so that client will close the connection
-        final long customCredentialsSleepMillis = defaultConnectionTimeoutMillis * 2;
+        final long customCredentialsSleepMillis = authenticationTimeout * 2;
 
         SerializationConfig serializationConfig = new SerializationConfig();
         serializationConfig.addPortableFactory(1, new PortableFactory() {
