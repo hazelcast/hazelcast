@@ -30,7 +30,6 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAddDistributedObjectListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientCreateProxiesCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientCreateProxyCodec;
-import com.hazelcast.client.impl.protocol.codec.ClientDestroyProxyCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientRemoveDistributedObjectListenerCodec;
 import com.hazelcast.client.proxy.ClientAtomicLongProxy;
 import com.hazelcast.client.proxy.ClientAtomicReferenceProxy;
@@ -349,7 +348,7 @@ public final class ProxyManager {
                 try {
                     registeredProxy.destroyLocally();
                 } finally {
-                    destroyRemoteDistributedObject(registeredProxy);
+                    registeredProxy.destroyRemotely();
                 }
             }
         } finally {
@@ -413,16 +412,6 @@ public final class ProxyManager {
         throw new OperationTimeoutException("Initializing  " + clientProxy.getServiceName() + ":"
                 + clientProxy.getName() + " is timed out after " + elapsedTime
                 + " ms. Configured invocation timeout is " + invocationTimeoutMillis + " ms");
-    }
-
-    private void destroyRemoteDistributedObject(ClientProxy proxy) {
-        try {
-            ClientMessage clientMessage = ClientDestroyProxyCodec
-                    .encodeRequest(proxy.getDistributedObjectName(), proxy.getServiceName());
-            new ClientInvocation(proxy.getClient(), clientMessage, proxy.getName()).invoke().get();
-        } catch (Exception e) {
-            throw rethrow(e);
-        }
     }
 
     private boolean isRetryable(final Throwable t) {

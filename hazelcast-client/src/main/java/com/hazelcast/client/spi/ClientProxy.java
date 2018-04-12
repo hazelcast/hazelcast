@@ -20,6 +20,7 @@ import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.codec.ClientDestroyProxyCodec;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ListenerMessageCodec;
 import com.hazelcast.core.DistributedObject;
@@ -160,6 +161,19 @@ public abstract class ClientProxy implements DistributedObject {
             } finally {
                 postDestroy();
             }
+        }
+    }
+
+    /**
+     * Destroys the remote distributed object counterpart of this proxy by
+     * issuing the destruction request to the cluster.
+     */
+    public final void destroyRemotely() {
+        ClientMessage clientMessage = ClientDestroyProxyCodec.encodeRequest(getDistributedObjectName(), getServiceName());
+        try {
+            new ClientInvocation(getClient(), clientMessage, getName()).invoke().get();
+        } catch (Exception e) {
+            throw rethrow(e);
         }
     }
 
