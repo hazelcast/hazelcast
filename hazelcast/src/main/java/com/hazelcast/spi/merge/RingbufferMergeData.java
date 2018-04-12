@@ -31,6 +31,7 @@ import java.util.Iterator;
  * @since 3.10
  */
 public class RingbufferMergeData implements Iterable<Object> {
+
     private Object[] items;
     private long tailSequence = -1;
     private long headSequence = tailSequence + 1;
@@ -49,6 +50,7 @@ public class RingbufferMergeData implements Iterable<Object> {
     /**
      * Returns the sequence of the tail. The tail is the side of the ringbuffer
      * where the items are added to.
+     * <p>
      * The initial value of the tail is {@code -1}.
      *
      * @return the sequence of the tail
@@ -73,8 +75,10 @@ public class RingbufferMergeData implements Iterable<Object> {
     /**
      * Returns the sequence of the head. The head is the side of the ringbuffer
      * where the oldest items in the ringbuffer are found.
+     * <p>
      * If the RingBuffer is empty, the head will be one more than the
      * {@link #getTailSequence()}.
+     * <p>
      * The initial value of the head is 0 (1 more than tail).
      *
      * @return the sequence of the head
@@ -85,7 +89,7 @@ public class RingbufferMergeData implements Iterable<Object> {
 
     /**
      * Sets the head sequence. The head sequence cannot be larger than
-     * {@code tailSequence() + 1}
+     * {@code tailSequence() + 1}.
      *
      * @param sequence the new head sequence
      * @throws IllegalArgumentException if the target sequence is greater than {@code tailSequence() + 1}
@@ -155,9 +159,10 @@ public class RingbufferMergeData implements Iterable<Object> {
      * @param sequence the sequence of the item to read
      * @param <E>      ringbuffer item type
      * @return the ringbuffer item
-     * @throws StaleSequenceException if the sequence is smaller then {@link #getHeadSequence()} or larger than
-     *                                {@link #getTailSequence()}.
+     * @throws StaleSequenceException if the sequence is smaller then {@link #getHeadSequence()}
+     *                                or larger than {@link #getTailSequence()}
      */
+    @SuppressWarnings("unchecked")
     public <E> E read(long sequence) {
         checkReadSequence(sequence);
         return (E) items[toIndex(sequence)];
@@ -201,6 +206,7 @@ public class RingbufferMergeData implements Iterable<Object> {
 
     /**
      * Returns the array representing this ringbuffer.
+     * <p>
      * Items at the beginning of this array may have higher sequence IDs than
      * items at the end of this array. This means that this array is not sorted
      * by sequence ID and the index of the item in this array must be calculated

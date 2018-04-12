@@ -25,6 +25,7 @@ import java.util.Iterator;
  * @since 3.10
  */
 public class RingbufferMergeDataReadOnlyIterator<E> implements Iterator<E> {
+
     private final RingbufferMergeData ringbuffer;
     private long sequence;
 
