@@ -369,8 +369,8 @@ public final class ProxyManager {
      * Upon successful completion the proxy is unregistered in this proxy
      * manager and all local resources associated with the proxy are released.
      *
-     * @param service      the service associated with the proxy.
-     * @param id           the ID of the object to destroy the proxy of.
+     * @param service the service associated with the proxy.
+     * @param id      the ID of the object to destroy the proxy of.
      */
     public void destroyProxyLocally(String service, String id) {
         ObjectNamespace objectNamespace = new DistributedObjectNamespace(service, id);
