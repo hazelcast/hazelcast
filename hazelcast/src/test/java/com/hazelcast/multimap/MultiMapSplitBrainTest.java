@@ -66,27 +66,29 @@ import static org.junit.Assert.fail;
 @Category({QuickTest.class, ParallelTest.class})
 public class MultiMapSplitBrainTest extends SplitBrainTestSupport {
 
-    @Parameters(name = "isBinary:{0}, mergePolicy:{1}")
+    @Parameters(name = "mergePolicy:{0}, isBinary:{1}")
     public static Collection<Object[]> parameters() {
         return asList(new Object[][]{
-                {true, DiscardMergePolicy.class},
-                {true, HigherHitsMergePolicy.class},
-                {true, LatestAccessMergePolicy.class},
-                {true, LatestUpdateMergePolicy.class},
-                {true, PassThroughMergePolicy.class},
-                {true, PutIfAbsentMergePolicy.class},
+                {DiscardMergePolicy.class, true},
+                {HigherHitsMergePolicy.class, true},
+                {LatestAccessMergePolicy.class, true},
+                {LatestUpdateMergePolicy.class, true},
+                {PassThroughMergePolicy.class, true},
+                {PutIfAbsentMergePolicy.class, true},
+                {RemoveValuesMergePolicy.class, true},
 
-                {true, RemoveValuesMergePolicy.class},
-                {true, MergeCollectionOfIntegerValuesMergePolicy.class},
-                {false, MergeCollectionOfIntegerValuesMergePolicy.class},
+                {ReturnPiCollectionMergePolicy.class, true},
+                {ReturnPiCollectionMergePolicy.class, false},
+                {MergeCollectionOfIntegerValuesMergePolicy.class, true},
+                {MergeCollectionOfIntegerValuesMergePolicy.class, false},
         });
     }
 
     @Parameter
-    public boolean isBinary;
+    public Class<? extends SplitBrainMergePolicy> mergePolicyClass;
 
     @Parameter(value = 1)
-    public Class<? extends SplitBrainMergePolicy> mergePolicyClass;
+    public boolean isBinary;
 
     private String multiMapNameA = randomMapName("multiMapA-");
     private String multiMapNameB = randomMapName("multiMapB-");
@@ -153,6 +155,8 @@ public class MultiMapSplitBrainTest extends SplitBrainTestSupport {
             afterSplitPutIfAbsentMergePolicy();
         } else if (mergePolicyClass == RemoveValuesMergePolicy.class) {
             afterSplitRemoveValuesMergePolicy();
+        } else if (mergePolicyClass == ReturnPiCollectionMergePolicy.class) {
+            afterSplitReturnPiCollectionMergePolicy();
         } else if (mergePolicyClass == MergeCollectionOfIntegerValuesMergePolicy.class) {
             afterSplitCustomMergePolicy();
         } else {
@@ -184,6 +188,8 @@ public class MultiMapSplitBrainTest extends SplitBrainTestSupport {
             afterMergePutIfAbsentMergePolicy();
         } else if (mergePolicyClass == RemoveValuesMergePolicy.class) {
             afterMergeRemoveValuesMergePolicy();
+        } else if (mergePolicyClass == ReturnPiCollectionMergePolicy.class) {
+            afterMergeReturnPiCollectionMergePolicy();
         } else if (mergePolicyClass == MergeCollectionOfIntegerValuesMergePolicy.class) {
             afterMergeCustomMergePolicy();
         } else {
@@ -348,6 +354,30 @@ public class MultiMapSplitBrainTest extends SplitBrainTestSupport {
 
         assertMultiMapsB("key");
         assertMultiMapsSizeB(0);
+    }
+
+    private void afterSplitReturnPiCollectionMergePolicy() {
+        multiMapA1.put("key1", "discardedValue1a");
+        multiMapA1.put("key1", "discardedValue1b");
+
+        multiMapA2.put("key1", "discardedValue2");
+        multiMapA2.put("key2", "discardedValue2a");
+        multiMapA2.put("key2", "discardedValue2b");
+
+        multiMapB2.put("key", "discardedValue");
+    }
+
+    private void afterMergeReturnPiCollectionMergePolicy() {
+        assertPiSet(multiMapA1.get("key1"));
+        assertPiSet(multiMapA2.get("key1"));
+        assertPiSet(backupMultiMapA.get("key1"));
+
+        assertPiSet(multiMapA1.get("key2"));
+        assertPiSet(multiMapA2.get("key2"));
+        assertPiSet(backupMultiMapA.get("key2"));
+
+        assertPiSet(multiMapB1.get("key"));
+        assertPiSet(multiMapB2.get("key"));
     }
 
     private void afterSplitCustomMergePolicy() {
