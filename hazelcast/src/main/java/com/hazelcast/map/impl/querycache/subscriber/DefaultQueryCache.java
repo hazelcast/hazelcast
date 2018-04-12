@@ -240,7 +240,7 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
     private boolean removeInternalQueryCache() {
         SubscriberContext subscriberContext = context.getSubscriberContext();
         QueryCacheEndToEndProvider cacheProvider = subscriberContext.getEndToEndQueryCacheProvider();
-        cacheProvider.removeSingleQueryCache(mapName, cacheId);
+        cacheProvider.removeSingleQueryCache(mapName, cacheName);
         clear();
         return subscriberContext.getQueryCacheFactory().remove(this);
     }
