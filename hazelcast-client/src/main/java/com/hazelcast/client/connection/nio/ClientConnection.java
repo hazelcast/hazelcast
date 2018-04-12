@@ -67,7 +67,7 @@ public class ClientConnection implements Connection {
     // the time in millis the last heartbeat was received. 0 indicates that no heartbeat has ever been received.
     private volatile long lastHeartbeatRequestedMillis;
     private volatile long lastHeartbeatReceivedMillis;
-    private boolean isAuthenticatedAsOwner;
+    private volatile boolean isAuthenticatedAsOwner;
     @Probe(level = ProbeLevel.DEBUG)
     private final AtomicLong closedTime = new AtomicLong();
 
