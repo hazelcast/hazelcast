@@ -418,6 +418,11 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
         return sb.toString();
     }
 
+    public static void assertPi(Object value) {
+        assertInstanceOf(Double.class, value);
+        assertEquals("Expected the value to be PI", Math.PI, (Double) value, 0.00000001d);
+    }
+
     public static void assertPiCollection(Collection<Object> collection) {
         assertEquals("Expected the collection to be a PI collection", ReturnPiCollectionMergePolicy.PI_COLLECTION, collection);
     }
