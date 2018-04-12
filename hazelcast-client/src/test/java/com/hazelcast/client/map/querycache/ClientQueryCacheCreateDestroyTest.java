@@ -23,7 +23,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.map.QueryCache;
 import com.hazelcast.query.TruePredicate;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -34,8 +34,9 @@ import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class ClientQueryCacheCreateDestroyTest extends HazelcastTestSupport {
 
@@ -55,9 +56,11 @@ public class ClientQueryCacheCreateDestroyTest extends HazelcastTestSupport {
         HazelcastInstance client = factory.newHazelcastClient(newClientConfigWithQueryCache(mapName, queryCacheName));
         // create client-side query-cache
         IMap clientMap = client.getMap(mapName);
+
         QueryCache clientQueryCache = clientMap.getQueryCache(queryCacheName);
 
         clientQueryCache.destroy();
+
         QueryCache newQueryCache = clientMap.getQueryCache(queryCacheName);
 
         assertFalse(clientQueryCache == newQueryCache);
@@ -112,5 +115,21 @@ public class ClientQueryCacheCreateDestroyTest extends HazelcastTestSupport {
         clientConfig.addQueryCacheConfig(mapName, queryCacheConfig);
 
         return clientConfig;
+    }
+
+    @Test
+    public void multiple_getQueryCache_calls_returns_same_query_cache_instance() {
+        final String mapName = "someMap";
+        final String queryCacheName = "testCache";
+
+        HazelcastInstance server = factory.newHazelcastInstance();
+        HazelcastInstance client = factory.newHazelcastClient(newClientConfigWithQueryCache(mapName, queryCacheName));
+        // create client-side query-cache
+        IMap clientMap = client.getMap(mapName);
+
+        QueryCache clientQueryCache1 = clientMap.getQueryCache(queryCacheName);
+        QueryCache clientQueryCache2 = clientMap.getQueryCache(queryCacheName);
+
+        assertTrue(clientQueryCache1 == clientQueryCache2);
     }
 }

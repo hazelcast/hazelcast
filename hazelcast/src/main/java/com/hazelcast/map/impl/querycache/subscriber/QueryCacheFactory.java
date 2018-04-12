@@ -41,8 +41,7 @@ public class QueryCacheFactory {
         }
 
         @Override
-        public InternalQueryCache createNew(String ignored) {
-            String cacheId = request.getCacheId();
+        public InternalQueryCache createNew(String cacheId) {
             String cacheName = request.getCacheName();
             IMap delegate = request.getMap();
             QueryCacheContext context = request.getContext();
@@ -57,9 +56,9 @@ public class QueryCacheFactory {
         this.internalQueryCaches = new ConcurrentHashMap<String, InternalQueryCache>();
     }
 
-    public InternalQueryCache create(QueryCacheRequest request) {
+    public InternalQueryCache create(QueryCacheRequest request, String cacheId) {
         return ConcurrencyUtil.getOrPutIfAbsent(internalQueryCaches,
-                request.getCacheId(), new InternalQueryCacheConstructor(request));
+                cacheId, new InternalQueryCacheConstructor(request));
     }
 
     public boolean remove(InternalQueryCache queryCache) {

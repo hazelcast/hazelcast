@@ -149,7 +149,6 @@ import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.CollectionUtil;
 import com.hazelcast.util.IterationType;
 import com.hazelcast.util.Preconditions;
-import com.hazelcast.util.UuidUtil;
 import com.hazelcast.util.collection.InflatableSet;
 
 import java.util.AbstractMap;
@@ -165,7 +164,7 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.map.impl.ListenerAdapters.createListenerAdapter;
 import static com.hazelcast.map.impl.MapListenerFlagOperator.setAndGetListenerFlags;
-import static com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequests.newQueryCacheRequest;
+import static com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequest.newQueryCacheRequest;
 import static com.hazelcast.util.CollectionUtil.objectToDataCollection;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.MapUtil.createHashMap;
@@ -1479,7 +1478,6 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V>, Eve
                                                    IMap map) {
         QueryCacheRequest request = newQueryCacheRequest()
                 .withCacheName(name)
-                .withCacheId(UuidUtil.newUnsecureUuidString())
                 .withListener(listener)
                 .withPredicate(predicate)
                 .withIncludeValue(includeValue)
@@ -1493,7 +1491,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V>, Eve
     private QueryCache<K, V> createQueryCache(QueryCacheRequest request) {
         SubscriberContext subscriberContext = queryCacheContext.getSubscriberContext();
         QueryCacheEndToEndProvider queryCacheEndToEndProvider = subscriberContext.getEndToEndQueryCacheProvider();
-        return queryCacheEndToEndProvider.getOrCreateQueryCache(request.getMapName(), request.getCacheId(),
+        return queryCacheEndToEndProvider.getOrCreateQueryCache(request.getMapName(), request.getCacheName(),
                 new ClientQueryCacheEndToEndConstructor(request));
     }
 
