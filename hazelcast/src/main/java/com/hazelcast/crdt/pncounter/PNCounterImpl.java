@@ -16,11 +16,11 @@
 
 package com.hazelcast.crdt.pncounter;
 
+import com.hazelcast.cluster.impl.VectorClock;
+import com.hazelcast.core.ConsistencyLostException;
 import com.hazelcast.crdt.CRDT;
 import com.hazelcast.crdt.CRDTDataSerializerHook;
 import com.hazelcast.crdt.MutationDisallowedException;
-import com.hazelcast.core.ConsistencyLostException;
-import com.hazelcast.cluster.impl.VectorClock;
 import com.hazelcast.crdt.pncounter.operations.CRDTTimestampedLong;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;

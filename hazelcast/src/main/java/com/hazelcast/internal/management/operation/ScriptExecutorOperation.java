@@ -24,11 +24,10 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.util.ExceptionUtil;
 
-import java.io.IOException;
-
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
+import java.io.IOException;
 
 import static com.hazelcast.internal.cluster.Versions.V3_10;
 

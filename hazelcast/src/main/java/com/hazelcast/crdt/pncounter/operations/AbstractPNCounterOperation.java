@@ -16,12 +16,12 @@
 
 package com.hazelcast.crdt.pncounter.operations;
 
+import com.hazelcast.cluster.impl.VectorClock;
 import com.hazelcast.cluster.memberselector.MemberSelectors;
+import com.hazelcast.core.ConsistencyLostException;
 import com.hazelcast.core.Member;
 import com.hazelcast.crdt.CRDTDataSerializerHook;
-import com.hazelcast.core.ConsistencyLostException;
 import com.hazelcast.crdt.TargetNotReplicaException;
-import com.hazelcast.cluster.impl.VectorClock;
 import com.hazelcast.crdt.pncounter.PNCounterImpl;
 import com.hazelcast.crdt.pncounter.PNCounterService;
 import com.hazelcast.nio.Address;

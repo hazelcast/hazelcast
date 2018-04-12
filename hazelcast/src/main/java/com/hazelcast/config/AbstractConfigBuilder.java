@@ -16,11 +16,20 @@
 
 package com.hazelcast.config;
 
-import static com.hazelcast.config.XmlElements.CONFIG_REPLACERS;
-import static com.hazelcast.config.XmlElements.IMPORT;
-import static com.hazelcast.util.StringUtil.isNullOrEmpty;
-import static java.lang.String.format;
+import com.hazelcast.config.replacer.PropertyReplacer;
+import com.hazelcast.config.replacer.spi.ConfigReplacer;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
+import javax.xml.namespace.NamespaceContext;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathFactory;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
@@ -30,21 +39,10 @@ import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 
-import javax.xml.namespace.NamespaceContext;
-import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathConstants;
-import javax.xml.xpath.XPathFactory;
-
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NamedNodeMap;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-
-import com.hazelcast.config.replacer.PropertyReplacer;
-import com.hazelcast.config.replacer.spi.ConfigReplacer;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
+import static com.hazelcast.config.XmlElements.CONFIG_REPLACERS;
+import static com.hazelcast.config.XmlElements.IMPORT;
+import static com.hazelcast.util.StringUtil.isNullOrEmpty;
+import static java.lang.String.format;
 
 /**
  * Contains logic for replacing system variables in the XML file and importing XML files from different locations.
