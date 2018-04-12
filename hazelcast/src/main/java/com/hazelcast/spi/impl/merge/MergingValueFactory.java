@@ -28,9 +28,11 @@ import com.hazelcast.multimap.impl.MultiMapMergeContainer;
 import com.hazelcast.multimap.impl.MultiMapRecord;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecord;
+import com.hazelcast.ringbuffer.impl.Ringbuffer;
 import com.hazelcast.scheduledexecutor.impl.ScheduledTaskDescriptor;
 import com.hazelcast.spi.merge.MergingEntry;
 import com.hazelcast.spi.merge.MergingValue;
+import com.hazelcast.spi.merge.RingbufferMergeData;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.AtomicLongMergeTypes;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.AtomicReferenceMergeTypes;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.CacheMergeTypes;
@@ -197,10 +199,14 @@ public final class MergingValueFactory {
                 .setHits(hits);
     }
 
-    public static RingbufferMergeTypes createMergingEntry(SerializationService serializationService, Long key, Object value) {
-        return new RingbufferMergingEntryImpl(serializationService)
-                .setKey(key)
-                .setValue(value);
+    public static RingbufferMergeTypes createMergingValue(SerializationService serializationService,
+                                                          Ringbuffer<Object> items) {
+        if (items.isEmpty()) {
+            return null;
+        }
+        final RingbufferMergeData mergingData = new RingbufferMergeData(items);
+        return new RingbufferMergingValueImpl(serializationService)
+                .setValues(mergingData);
     }
 
     public static CardinalityEstimatorMergeTypes createMergingEntry(SerializationService serializationService,

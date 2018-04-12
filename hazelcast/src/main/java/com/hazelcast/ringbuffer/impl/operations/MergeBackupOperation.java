@@ -18,41 +18,51 @@ package com.hazelcast.ringbuffer.impl.operations;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.ringbuffer.impl.ArrayRingbuffer;
+import com.hazelcast.ringbuffer.impl.Ringbuffer;
 import com.hazelcast.ringbuffer.impl.RingbufferContainer;
+import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
-import com.hazelcast.util.MapUtil;
 
 import java.io.IOException;
-import java.util.Map;
 
+import static com.hazelcast.nio.IOUtil.readObject;
+import static com.hazelcast.nio.IOUtil.writeObject;
 import static com.hazelcast.ringbuffer.impl.RingbufferDataSerializerHook.MERGE_BACKUP_OPERATION;
 
 /**
- * Contains multiple backup entries for split-brain healing with a {@link SplitBrainMergePolicy}.
+ * Contains the entire ringbuffer as a result of split-brain healing with a
+ * {@link SplitBrainMergePolicy}.
  *
  * @since 3.10
  */
 public class MergeBackupOperation extends AbstractRingBufferOperation implements BackupOperation {
 
-    private Map<Long, Data> backupEntries;
+    private Ringbuffer<Object> ringbuffer;
 
     public MergeBackupOperation() {
     }
 
-    MergeBackupOperation(String name, Map<Long, Data> backupEntries) {
+    MergeBackupOperation(String name, Ringbuffer<Object> ringbuffer) {
         super(name);
-        this.backupEntries = backupEntries;
+        this.ringbuffer = ringbuffer;
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public void run() throws Exception {
-        RingbufferContainer ringbuffer = getRingBufferContainer();
+        final RingbufferService service = getService();
+        if (ringbuffer == null) {
+            service.destroyDistributedObject(name);
+        } else {
+            final RingbufferContainer existingContainer = getRingBufferContainer();
+            existingContainer.setHeadSequence(ringbuffer.headSequence());
+            existingContainer.setTailSequence(ringbuffer.tailSequence());
 
-        for (Map.Entry<Long, Data> entry : backupEntries.entrySet()) {
-            ringbuffer.set(entry.getKey(), entry.getValue());
+            for (long seq = ringbuffer.headSequence(); seq <= ringbuffer.tailSequence(); seq++) {
+                existingContainer.set(seq, ringbuffer.read(seq));
+            }
         }
     }
 
@@ -64,20 +74,30 @@ public class MergeBackupOperation extends AbstractRingBufferOperation implements
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeInt(backupEntries.size());
-        for (Map.Entry<Long, Data> entry : backupEntries.entrySet()) {
-            out.writeLong(entry.getKey());
-            out.writeData(entry.getValue());
+        out.writeInt(ringbuffer != null ? (int) ringbuffer.getCapacity() : 0);
+        if (ringbuffer != null) {
+            out.writeLong(ringbuffer.tailSequence());
+            out.writeLong(ringbuffer.headSequence());
+            for (Object item : ringbuffer) {
+                writeObject(out, item);
+            }
         }
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        int size = in.readInt();
-        backupEntries = MapUtil.createHashMap(size);
-        for (int i = 0; i < size; i++) {
-            backupEntries.put(in.readLong(), in.readData());
+        final int capacity = in.readInt();
+        if (capacity > 0) {
+            final long tailSequence = in.readLong();
+            final long headSequence = in.readLong();
+            ringbuffer = new ArrayRingbuffer<Object>(capacity);
+            ringbuffer.setTailSequence(tailSequence);
+            ringbuffer.setHeadSequence(headSequence);
+
+            for (long seq = headSequence; seq <= tailSequence; seq++) {
+                ringbuffer.set(seq, readObject(in));
+            }
         }
     }
 }

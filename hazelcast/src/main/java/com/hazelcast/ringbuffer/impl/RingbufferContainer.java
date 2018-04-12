@@ -30,8 +30,6 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.WaitNotifyKey;
-import com.hazelcast.spi.merge.SplitBrainMergePolicy;
-import com.hazelcast.spi.merge.SplitBrainMergeTypes.RingbufferMergeTypes;
 import com.hazelcast.spi.serialization.SerializationService;
 
 import java.io.IOException;
@@ -42,12 +40,12 @@ import static com.hazelcast.config.InMemoryFormat.values;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
- * The RingbufferContainer is responsible for creating the actual ring buffer, handling optional ring buffer storage,
- * keeping the wait/notify key for blocking operations, ring buffer item expiration and other things not related to the
- * actual ring buffer data structure.
- * <p>
- * The expirationPolicy contains the expiration policy of the items. If a time to live is set, the policy is created, otherwise
- * it is null to save space.
+ * The RingbufferContainer is responsible for the functionalities supporting
+ * the underlying ringbuffer structure containing the data.
+ * This includes creating the actual ringbuffer, handling optional ringbuffer
+ * storage, keeping the wait/notify key for blocking operations, ringbuffer
+ * item expiration and other things not related to the ringbuffer data
+ * structure.
  *
  * @param <T> the type of items in the ringbuffer container
  * @param <E> the type of items in the ringbuffer
@@ -61,6 +59,11 @@ public class RingbufferContainer<T, E> implements IdentifiedDataSerializable, No
 
     // a cached version of the wait notify key needed to wait for a change if the ringbuffer is empty
     private RingbufferWaitNotifyKey emptyRingWaitNotifyKey;
+    /**
+     * The expirationPolicy contains the expiration policy of the items. If a
+     * time to live is set, the policy is created, otherwise it is {@code null}
+     * to save space.
+     */
     private RingbufferExpirationPolicy expirationPolicy;
     private InMemoryFormat inMemoryFormat;
     private RingbufferConfig config;
@@ -84,12 +87,13 @@ public class RingbufferContainer<T, E> implements IdentifiedDataSerializable, No
     }
 
     /**
-     * Constructs the ring buffer container with only the name and the key for blocking operations. This does not fully
-     * prepare the container for usage. The caller must invoke the
+     * Constructs the ring buffer container with only the name and the key for
+     * blocking operations. This does not fully prepare the container for usage.
+     * The caller must invoke the
      * {@link #init(RingbufferConfig, NodeEngine)}
      * method to complete the initialization before usage.
      *
-     * @param namespace the namespace of the ring buffer container
+     * @param namespace the namespace of the ringbuffer container
      */
     public RingbufferContainer(ObjectNamespace namespace, int partitionId) {
         this.namespace = namespace;
@@ -97,8 +101,9 @@ public class RingbufferContainer<T, E> implements IdentifiedDataSerializable, No
     }
 
     /**
-     * Constructs a fully initialized ring buffer that can be used immediately. References to other services, the ring buffer
-     * store, expiration policy and the config are all set.
+     * Constructs a fully initialized ringbuffer that can be used immediately.
+     * References to other services, the ringbuffer store, expiration policy
+     * and the config are all set.
      *
      * @param namespace  the namespace of the ring buffer container
      * @param config     the configuration of the ring buffer
@@ -118,9 +123,11 @@ public class RingbufferContainer<T, E> implements IdentifiedDataSerializable, No
     }
 
     /**
-     * Initializes the ring buffer with references to other services, the ring buffer store and the config. This is because
-     * on a replication operation the container is only partially constructed. The init method finishes the configuration
-     * of the ring buffer container for further usage.
+     * Initializes the ring buffer with references to other services, the
+     * ringbuffer store and the config. This is because on a replication
+     * operation the container is only partially constructed. The init method
+     * finishes the configuration of the ring buffer container for further
+     * usage.
      *
      * @param config     the configuration of the ring buffer
      * @param nodeEngine the NodeEngine
@@ -128,7 +135,6 @@ public class RingbufferContainer<T, E> implements IdentifiedDataSerializable, No
     public void init(RingbufferConfig config, NodeEngine nodeEngine) {
         this.config = config;
         this.serializationService = nodeEngine.getSerializationService();
-        ringbuffer.setSerializationService(serializationService);
         initRingbufferStore(nodeEngine.getConfigClassLoader());
     }
 
@@ -141,8 +147,10 @@ public class RingbufferContainer<T, E> implements IdentifiedDataSerializable, No
         if (store.isEnabled()) {
             try {
                 final long storeSequence = store.getLargestSequence();
-                ringbuffer.setTailSequence(storeSequence);
-                ringbuffer.setHeadSequence(storeSequence + 1);
+                if (tailSequence() < storeSequence) {
+                    ringbuffer.setTailSequence(storeSequence);
+                    ringbuffer.setHeadSequence(storeSequence + 1);
+                }
             } catch (Exception e) {
                 throw new HazelcastException(e);
             }
@@ -174,11 +182,36 @@ public class RingbufferContainer<T, E> implements IdentifiedDataSerializable, No
         return ringbuffer.headSequence();
     }
 
-    // just for testing
+    /**
+     * Sets the head sequence. The head sequence cannot be larger than
+     * {@code tailSequence() + 1}
+     *
+     * @param sequence the new head sequence
+     * @throws IllegalArgumentException if the target sequence is greater than {@code tailSequence() + 1}
+     * @see #tailSequence()
+     */
     public void setHeadSequence(long sequence) {
         ringbuffer.setHeadSequence(sequence);
     }
 
+    /**
+     * Sets the tail sequence. The tail sequence cannot be less than
+     * {@code headSequence() - 1}.
+     *
+     * @param sequence the new tail sequence
+     * @throws IllegalArgumentException if the target sequence is less than
+     *                                  {@code headSequence() - 1}
+     * @see #headSequence()
+     */
+    public void setTailSequence(long sequence) {
+        ringbuffer.setTailSequence(sequence);
+    }
+
+    /**
+     * Returns the capacity of this ringbuffer.
+     *
+     * @return the capacity
+     */
     public long getCapacity() {
         return ringbuffer.getCapacity();
     }
@@ -545,7 +578,6 @@ public class RingbufferContainer<T, E> implements IdentifiedDataSerializable, No
         ringbuffer = new ArrayRingbuffer(capacity);
         ringbuffer.setTailSequence(tailSequence);
         ringbuffer.setHeadSequence(headSequence);
-        ringbuffer.setSerializationService(serializationService);
 
         boolean ttlEnabled = ttlMs != TTL_DISABLED;
         if (ttlEnabled) {
@@ -567,7 +599,10 @@ public class RingbufferContainer<T, E> implements IdentifiedDataSerializable, No
         }
     }
 
-    Ringbuffer<E> getRingbuffer() {
+    /**
+     * Returns the ringbuffer containing the actual items.
+     */
+    public Ringbuffer<E> getRingbuffer() {
         return ringbuffer;
     }
 
@@ -604,16 +639,8 @@ public class RingbufferContainer<T, E> implements IdentifiedDataSerializable, No
      */
     public void clear() {
         ringbuffer.clear();
-    }
-
-    /**
-     * Merges the given {@link RingbufferMergeTypes} via the given {@link SplitBrainMergePolicy}.
-     *
-     * @param mergingEntry the {@link RingbufferMergeTypes} instance to merge
-     * @param mergePolicy  the {@link SplitBrainMergePolicy} instance to apply
-     * @return the sequence ID of the merged item or {@code -1} if no item was merged
-     */
-    public long merge(RingbufferMergeTypes mergingEntry, SplitBrainMergePolicy<Object, RingbufferMergeTypes> mergePolicy) {
-        return ringbuffer.merge(mergingEntry, mergePolicy, remainingCapacity());
+        if (expirationPolicy != null) {
+            expirationPolicy.clear();
+        }
     }
 }

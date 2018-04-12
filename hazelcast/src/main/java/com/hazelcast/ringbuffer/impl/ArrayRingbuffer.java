@@ -17,33 +17,28 @@
 package com.hazelcast.ringbuffer.impl;
 
 import com.hazelcast.ringbuffer.StaleSequenceException;
-import com.hazelcast.spi.merge.SplitBrainMergePolicy;
-import com.hazelcast.spi.merge.SplitBrainMergeTypes.RingbufferMergeTypes;
-import com.hazelcast.spi.serialization.SerializationService;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntry;
+import java.util.Arrays;
+import java.util.Iterator;
 
 /**
- * The ArrayRingbuffer is responsible for storing the actual content of a ringbuffer.
+ * The ArrayRingbuffer is responsible for storing the actual content of a
+ * ringbuffer.
  * <p>
- * Currently the Ringbuffer is not a partitioned data-structure. So all data of a ringbuffer is stored in a single partition
- * and replicated to the replica's. No thread-safety is needed since a partition can only be accessed by a single thread at
- * any given moment.
- * <p>
- * The ringItems is the ring that contains the actual items.
+ * Currently the Ringbuffer is not a partitioned data-structure. So all
+ * data of a ringbuffer is stored in a single partition and replicated to
+ * the replica's. No thread-safety is needed since a partition can only be
+ * accessed by a single thread at any given moment.
  *
  * @param <E> the type of the data stored in the ringbuffer
  */
 public class ArrayRingbuffer<E> implements Ringbuffer<E> {
 
-    // contains the actual items
-    E[] ringItems;
-
+    private E[] ringItems;
     private long tailSequence = -1;
     private long headSequence = tailSequence + 1;
     private int capacity;
-
-    private SerializationService serializationService;
 
     @SuppressWarnings("unchecked")
     public ArrayRingbuffer(int capacity) {
@@ -155,54 +150,19 @@ public class ArrayRingbuffer<E> implements Ringbuffer<E> {
 
     @Override
     public void clear() {
-        for (int i = 0; i < ringItems.length; i++) {
-            ringItems[i] = null;
-        }
+        Arrays.fill(ringItems, null);
         tailSequence = -1;
         headSequence = tailSequence + 1;
     }
 
     @Override
-    public void setSerializationService(SerializationService serializationService) {
-        this.serializationService = serializationService;
+    public Iterator<E> iterator() {
+        return new ReadOnlyRingbufferIterator<E>(this);
     }
 
     @Override
-    public long merge(RingbufferMergeTypes mergingEntry, SplitBrainMergePolicy<Object, RingbufferMergeTypes> mergePolicy,
-                      long remainingCapacity) {
-        serializationService.getManagedContext().initialize(mergingEntry);
-        serializationService.getManagedContext().initialize(mergePolicy);
-
-        // try to find an existing item with the same value
-        E existingItem = null;
-        long existingSequence = -1;
-        for (long sequence = headSequence; sequence <= tailSequence; sequence++) {
-            E item = read(sequence);
-            if (mergingEntry.getValue().equals(item)) {
-                existingItem = item;
-                existingSequence = sequence;
-                break;
-            }
-        }
-
-        if (existingItem == null) {
-            // if there is no capacity for another item, we don't merge
-            if (remainingCapacity < 1) {
-                return -1L;
-            }
-
-            Object newValue = mergePolicy.merge(mergingEntry, null);
-            if (newValue != null) {
-                return add((E) newValue);
-            }
-        } else {
-            RingbufferMergeTypes existingEntry = createMergingEntry(serializationService, existingSequence, existingItem);
-            Object newValue = mergePolicy.merge(mergingEntry, existingEntry);
-            if (newValue != null && !newValue.equals(existingItem)) {
-                set(existingSequence, (E) newValue);
-                return existingSequence;
-            }
-        }
-        return -1L;
+    @SuppressFBWarnings("EI_EXPOSE_REP")
+    public E[] getItems() {
+        return ringItems;
     }
 }
