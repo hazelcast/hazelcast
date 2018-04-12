@@ -122,14 +122,14 @@ public class DefaultOperationProvider implements CacheOperationProvider {
 
     @Override
     public Operation createMergeOperation(String name, List<CacheMergeTypes> mergingEntries,
-                                          SplitBrainMergePolicy<Data, CacheMergeTypes> policy) {
+                                          SplitBrainMergePolicy<Object, CacheMergeTypes> policy) {
         return new CacheMergeOperation(name, mergingEntries, policy);
     }
 
     @Override
     public OperationFactory createMergeOperationFactory(String name, int[] partitions,
                                                         List<CacheMergeTypes>[] mergingEntries,
-                                                        SplitBrainMergePolicy<Data, CacheMergeTypes> policy) {
+                                                        SplitBrainMergePolicy<Object, CacheMergeTypes> policy) {
         return new CacheMergeOperationFactory(name, partitions, mergingEntries, policy);
     }
 

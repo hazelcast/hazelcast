@@ -43,27 +43,24 @@ import static com.hazelcast.cache.impl.CacheEntryViews.createDefaultEntryView;
 import static com.hazelcast.util.MapUtil.createHashMap;
 
 /**
- * Contains multiple merging entries for split-brain healing with a {@link SplitBrainMergePolicy}.
+ * Merges multiple {@link CacheMergeTypes} for split-brain healing with a {@link SplitBrainMergePolicy}.
  *
  * @since 3.10
  */
 public class CacheMergeOperation extends AbstractNamedOperation implements BackupAwareOperation, ServiceNamespaceAware {
 
     private List<CacheMergeTypes> mergingEntries;
-    private SplitBrainMergePolicy<Data, CacheMergeTypes> mergePolicy;
+    private SplitBrainMergePolicy<Object, CacheMergeTypes> mergePolicy;
 
-    private transient SerializationService serializationService;
     private transient ICacheRecordStore cache;
-    private transient CacheWanEventPublisher wanEventPublisher;
-
-    private transient boolean hasBackups;
     private transient Map<Data, CacheRecord> backupRecords;
+    private transient CacheWanEventPublisher wanEventPublisher;
 
     public CacheMergeOperation() {
     }
 
     public CacheMergeOperation(String name, List<CacheMergeTypes> mergingEntries,
-                               SplitBrainMergePolicy<Data, CacheMergeTypes> mergePolicy) {
+                               SplitBrainMergePolicy<Object, CacheMergeTypes> mergePolicy) {
         super(name);
         this.mergingEntries = mergingEntries;
         this.mergePolicy = mergePolicy;
@@ -71,39 +68,36 @@ public class CacheMergeOperation extends AbstractNamedOperation implements Backu
 
     @Override
     public void beforeRun() throws Exception {
-        serializationService = getNodeEngine().getSerializationService();
         ICacheService cacheService = getService();
         cache = cacheService.getOrCreateRecordStore(name, getPartitionId());
+        if (getSyncBackupCount() + getAsyncBackupCount() > 0) {
+            backupRecords = createHashMap(mergingEntries.size());
+        }
         if (cache.isWanReplicationEnabled()) {
             wanEventPublisher = cacheService.getCacheWanEventPublisher();
-        }
-        hasBackups = getSyncBackupCount() + getAsyncBackupCount() > 0;
-        if (hasBackups) {
-            backupRecords = createHashMap(mergingEntries.size());
         }
     }
 
     @Override
     public void run() {
+        SerializationService serializationService = getNodeEngine().getSerializationService();
+
         for (CacheMergeTypes mergingEntry : mergingEntries) {
-            merge(mergingEntry);
-        }
-    }
-
-    private void merge(CacheMergeTypes mergingEntry) {
-        Data dataKey = mergingEntry.getKey();
-
-        CacheRecord backupRecord = cache.merge(mergingEntry, mergePolicy);
-        if (backupRecord != null) {
-            backupRecords.put(dataKey, backupRecord);
-        }
-        if (cache.isWanReplicationEnabled()) {
-            if (backupRecord != null) {
-                CacheEntryView<Data, Data> entryView
-                        = createDefaultEntryView(dataKey, serializationService.toData(backupRecord.getValue()), backupRecord);
-                wanEventPublisher.publishWanReplicationUpdate(name, entryView);
-            } else {
-                wanEventPublisher.publishWanReplicationRemove(name, dataKey);
+            if (cache.merge(mergingEntry, mergePolicy)) {
+                Data dataKey = mergingEntry.getKey();
+                CacheRecord backupRecord = cache.getRecord(dataKey);
+                if (backupRecords != null) {
+                    backupRecords.put(dataKey, backupRecord);
+                }
+                if (wanEventPublisher != null) {
+                    if (backupRecord == null) {
+                        wanEventPublisher.publishWanReplicationRemove(name, dataKey);
+                    } else {
+                        Data dataValue = serializationService.toData(backupRecord.getValue());
+                        CacheEntryView<Data, Data> entryView = createDefaultEntryView(dataKey, dataValue, backupRecord);
+                        wanEventPublisher.publishWanReplicationUpdate(name, entryView);
+                    }
+                }
             }
         }
     }
@@ -115,7 +109,12 @@ public class CacheMergeOperation extends AbstractNamedOperation implements Backu
 
     @Override
     public boolean shouldBackup() {
-        return hasBackups && !backupRecords.isEmpty();
+        return backupRecords != null && !backupRecords.isEmpty();
+    }
+
+    @Override
+    public Operation getBackupOperation() {
+        return new CacheMergeBackupOperation(name, backupRecords);
     }
 
     @Override
@@ -126,11 +125,6 @@ public class CacheMergeOperation extends AbstractNamedOperation implements Backu
     @Override
     public int getAsyncBackupCount() {
         return cache != null ? cache.getConfig().getAsyncBackupCount() : 0;
-    }
-
-    @Override
-    public Operation getBackupOperation() {
-        return new CachePutAllBackupOperation(name, backupRecords);
     }
 
     @Override

@@ -58,11 +58,11 @@ public interface CacheOperationProvider {
     Operation createEntryIteratorOperation(int lastTableIndex, int fetchSize);
 
     Operation createMergeOperation(String name, List<CacheMergeTypes> mergingEntries,
-                                   SplitBrainMergePolicy<Data, CacheMergeTypes> policy);
+                                   SplitBrainMergePolicy<Object, CacheMergeTypes> policy);
 
     OperationFactory createMergeOperationFactory(String name, int[] partitions,
                                                  List<CacheMergeTypes>[] mergingEntries,
-                                                 SplitBrainMergePolicy<Data, CacheMergeTypes> policy);
+                                                 SplitBrainMergePolicy<Object, CacheMergeTypes> policy);
 
     OperationFactory createGetAllOperationFactory(Set<Data> keySet, ExpiryPolicy policy);
 

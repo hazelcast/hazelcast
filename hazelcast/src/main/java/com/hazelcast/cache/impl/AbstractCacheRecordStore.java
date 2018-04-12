@@ -83,7 +83,7 @@ import static com.hazelcast.util.MapUtil.createHashMap;
 import static com.hazelcast.util.SetUtil.createHashSet;
 import static java.util.Collections.emptySet;
 
-@SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity"})
+@SuppressWarnings({"WeakerAccess", "checkstyle:methodcount", "checkstyle:classfanoutcomplexity"})
 public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extends SampleableCacheRecordMap<Data, R>>
         implements ICacheRecordStore, EvictionListener<Data, R> {
 
@@ -522,14 +522,14 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         }
     }
 
-    protected boolean compare(Object v1, Object v2) {
+    protected boolean isEqual(Object v1, Object v2) {
         if (v1 == null && v2 == null) {
             return true;
         }
         if (v1 == null || v2 == null) {
             return false;
         }
-        return v1.equals(v2);
+        return toStorageValue(v1).equals(toStorageValue(v2));
     }
 
     protected R createRecord(long expiryTime) {
@@ -1178,10 +1178,8 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         try {
             if (record != null && !isExpired) {
                 isHit = true;
-                Object currentValue = toStorageValue(record);
-                if (compare(currentValue, toStorageValue(oldValue))) {
-                    replaced = updateRecordWithExpiry(key, newValue, record, expiryPolicy,
-                            now, false, completionId, source);
+                if (isEqual(record, oldValue)) {
+                    replaced = updateRecordWithExpiry(key, newValue, record, expiryPolicy, now, false, completionId, source);
                 } else {
                     onRecordAccess(key, record, expiryPolicy, now);
                 }
@@ -1289,7 +1287,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
                 }
             } else {
                 hitCount++;
-                if (compare(toStorageValue(record), toStorageValue(value))) {
+                if (isEqual(record, value)) {
                     deleteCacheEntry(key);
                     removed = deleteRecord(key, completionId, source, origin);
                 } else {
@@ -1445,41 +1443,74 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     @Override
-    public CacheRecord merge(CacheMergeTypes mergingEntry, SplitBrainMergePolicy<Data, CacheMergeTypes> mergePolicy) {
-        final long now = Clock.currentTimeMillis();
-        final long start = isStatisticsEnabled() ? System.nanoTime() : 0;
+    public boolean merge(CacheMergeTypes mergingEntry, SplitBrainMergePolicy<Object, CacheMergeTypes> mergePolicy) {
+        long now = Clock.currentTimeMillis();
+        long start = isStatisticsEnabled() ? System.nanoTime() : 0;
 
         injectDependencies(mergingEntry);
         injectDependencies(mergePolicy);
 
-        boolean merged = false;
-        Data key = mergingEntry.getKey();
+        Data dataKey = mergingEntry.getKey();
         long expiryTime = mergingEntry.getExpirationTime();
-        R record = records.get(key);
-        boolean isExpired = processExpiredEntry(key, record, now);
+        R record = records.get(dataKey);
+        boolean isExpired = processExpiredEntry(dataKey, record, now);
 
-        if (record == null || isExpired) {
-            Data newValue = mergePolicy.merge(mergingEntry, null);
-            if (newValue != null) {
-                record = createRecordWithExpiry(key, newValue, expiryTime, now, true, IGNORE_COMPLETION);
-                merged = record != null;
+        CacheMergeTypes existingEntry = createMergingEntryOrNull(dataKey, record, isExpired);
+        Object newValue = mergePolicy.merge(mergingEntry, existingEntry);
+
+        if (existingEntry == null) {
+            if (newValue == null) {
+                return false;
             }
-        } else {
-            SerializationService serializationService = nodeEngine.getSerializationService();
-            Data oldValue = serializationService.toData(record.getValue());
-            CacheMergeTypes existingEntry = createMergingEntry(serializationService, key, oldValue, record);
-            Data newValue = mergePolicy.merge(mergingEntry, existingEntry);
-            if (newValue != null && newValue != oldValue) {
-                merged = updateRecordWithExpiry(key, newValue, record, expiryTime, now, true, IGNORE_COMPLETION);
-            }
+            record = createRecordWithExpiry(dataKey, newValue, expiryTime, now, true, IGNORE_COMPLETION);
+            updateRecordStatistics(mergingEntry, record);
+            boolean merged = record != null;
+            increasePutStatistics(start, merged);
+            return merged;
+        } else if (newValue == null) {
+            removeRecord(dataKey);
+            increaseRemoveStatistics(start);
+            return true;
+        } else if (isEqual(record, newValue)) {
+            return false;
         }
+        if (newValue == mergingEntry.getValue()) {
+            updateRecordStatistics(mergingEntry, record);
+        }
+        boolean merged = updateRecordWithExpiry(dataKey, newValue, record, expiryTime, now, true, IGNORE_COMPLETION);
+        increasePutStatistics(start, merged);
+        return merged;
+    }
 
-        if (merged && isStatisticsEnabled()) {
+    private CacheMergeTypes createMergingEntryOrNull(Data dataKey, R record, boolean isExpired) {
+        if (isExpired || record == null) {
+            return null;
+        }
+        Data dataValue = toHeapData(record.getValue());
+        return createMergingEntry(nodeEngine.getSerializationService(), dataKey, dataValue, record);
+    }
+
+    private void updateRecordStatistics(CacheMergeTypes mergingEntry, R record) {
+        if (record != null) {
+            record.setCreationTime(mergingEntry.getCreationTime());
+            record.setExpirationTime(mergingEntry.getExpirationTime());
+            record.setAccessTime(mergingEntry.getLastAccessTime());
+            record.setAccessHit((int) mergingEntry.getHits());
+        }
+    }
+
+    private void increasePutStatistics(long start, boolean merged) {
+        if (isStatisticsEnabled() && merged) {
             statistics.increaseCachePuts(1);
             statistics.addPutTimeNanos(System.nanoTime() - start);
         }
+    }
 
-        return merged ? record : null;
+    private void increaseRemoveStatistics(long start) {
+        if (isStatisticsEnabled()) {
+            statistics.increaseCacheRemovals(1);
+            statistics.addRemoveTimeNanos(System.nanoTime() - start);
+        }
     }
 
     @Override

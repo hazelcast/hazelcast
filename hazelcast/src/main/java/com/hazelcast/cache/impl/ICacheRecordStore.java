@@ -494,9 +494,9 @@ public interface ICacheRecordStore {
      *
      * @param mergingEntry the {@link CacheMergeTypes} instance to merge
      * @param mergePolicy  the {@link SplitBrainMergePolicy} instance to apply
-     * @return the used {@link CacheRecord} if merge is applied, otherwise {@code null}
+     * @return {@code true} if the merge is applied, {@code false} otherwise
      */
-    CacheRecord merge(CacheMergeTypes mergingEntry, SplitBrainMergePolicy<Data, CacheMergeTypes> mergePolicy);
+    boolean merge(CacheMergeTypes mergingEntry, SplitBrainMergePolicy<Object, CacheMergeTypes> mergePolicy);
 
     /**
      * Merges the given {@link CacheEntryView} via the given {@link CacheMergePolicy}.
@@ -507,7 +507,7 @@ public interface ICacheRecordStore {
      * @param completionId   User generated id which shall be received as a field of the cache event upon completion of
      *                       the request in the cluster.
      * @param origin         source of the call
-     * @return the used {@link CacheRecord} if merge is applied, otherwise {@code null}
+     * @return the used {@link CacheRecord} if merge is applied, {@code null} otherwise
      */
     CacheRecord merge(CacheEntryView<Data, Data> cacheEntryView, CacheMergePolicy mergePolicy,
                       String caller, String origin, int completionId);

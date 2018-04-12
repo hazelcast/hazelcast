@@ -41,7 +41,7 @@ import static com.hazelcast.cache.impl.ICacheService.SERVICE_NAME;
 import static com.hazelcast.config.MergePolicyConfig.DEFAULT_BATCH_SIZE;
 import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntry;
 
-class CacheMergeRunnable extends AbstractMergeRunnable<Data, Data, ICacheRecordStore, CacheMergeTypes> {
+class CacheMergeRunnable extends AbstractMergeRunnable<Data, Object, ICacheRecordStore, CacheMergeTypes> {
 
     private final CacheService cacheService;
 
@@ -63,11 +63,12 @@ class CacheMergeRunnable extends AbstractMergeRunnable<Data, Data, ICacheRecordS
         int partitionId = store.getPartitionId();
 
         for (Map.Entry<Data, CacheRecord> entry : store.getReadOnlyRecords().entrySet()) {
-            Data key = toHeapData(entry.getKey());
             CacheRecord record = entry.getValue();
+
+            Data dataKey = toHeapData(entry.getKey());
             Data dataValue = toHeapData(record.getValue());
 
-            consumer.accept(partitionId, createMergingEntry(getSerializationService(), key, dataValue, record));
+            consumer.accept(partitionId, createMergingEntry(getSerializationService(), dataKey, dataValue, record));
         }
     }
 
@@ -122,7 +123,7 @@ class CacheMergeRunnable extends AbstractMergeRunnable<Data, Data, ICacheRecordS
 
     @Override
     protected OperationFactory createMergeOperationFactory(String dataStructureName,
-                                                           SplitBrainMergePolicy<Data, CacheMergeTypes> mergePolicy,
+                                                           SplitBrainMergePolicy<Object, CacheMergeTypes> mergePolicy,
                                                            int[] partitions, List<CacheMergeTypes>[] entries) {
         CacheConfig cacheConfig = cacheService.getCacheConfig(dataStructureName);
         CacheOperationProvider operationProvider

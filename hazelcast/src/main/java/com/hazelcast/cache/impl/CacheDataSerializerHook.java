@@ -47,6 +47,7 @@ import com.hazelcast.cache.impl.operation.CacheListenerRegistrationOperation;
 import com.hazelcast.cache.impl.operation.CacheLoadAllOperation;
 import com.hazelcast.cache.impl.operation.CacheLoadAllOperationFactory;
 import com.hazelcast.cache.impl.operation.CacheManagementConfigOperation;
+import com.hazelcast.cache.impl.operation.CacheMergeBackupOperation;
 import com.hazelcast.cache.impl.operation.CacheMergeOperation;
 import com.hazelcast.cache.impl.operation.CacheMergeOperationFactory;
 import com.hazelcast.cache.impl.operation.CacheNearCacheStateHolder;
@@ -157,7 +158,8 @@ public final class CacheDataSerializerHook
 
     public static final int MERGE_FACTORY = 64;
     public static final int MERGE = 65;
-    public static final int ADD_CACHE_CONFIG_OPERATION = 66;
+    public static final int MERGE_BACKUP = 66;
+    public static final int ADD_CACHE_CONFIG_OPERATION = 67;
 
     private static final int LEN = ADD_CACHE_CONFIG_OPERATION + 1;
 
@@ -493,6 +495,13 @@ public final class CacheDataSerializerHook
                     @Override
                     public IdentifiedDataSerializable createNew(Integer arg) {
                         return new CacheMergeOperation();
+                    }
+                };
+        constructors[MERGE_BACKUP] =
+                new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+                    @Override
+                    public IdentifiedDataSerializable createNew(Integer arg) {
+                        return new CacheMergeBackupOperation();
                     }
                 };
         constructors[ADD_CACHE_CONFIG_OPERATION] =

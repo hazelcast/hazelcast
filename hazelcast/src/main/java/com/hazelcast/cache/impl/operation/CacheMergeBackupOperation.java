@@ -30,6 +30,8 @@ import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.ServiceNamespaceAware;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
+import com.hazelcast.spi.serialization.SerializationService;
 
 import java.io.IOException;
 import java.util.Map;
@@ -38,21 +40,20 @@ import static com.hazelcast.cache.impl.CacheEntryViews.createDefaultEntryView;
 import static com.hazelcast.util.MapUtil.createHashMap;
 
 /**
- * Cache PutAllBackup Operation is the backup operation used by load all operation. Provides backup of
- * multiple entries.
+ * Creates backups for merged {@link CacheRecord} after split-brain healing with a {@link SplitBrainMergePolicy}.
  *
- * @see com.hazelcast.cache.impl.operation.CacheLoadAllOperation
+ * @since 3.10
  */
-public class CachePutAllBackupOperation extends AbstractNamedOperation implements BackupOperation, ServiceNamespaceAware {
+public class CacheMergeBackupOperation extends AbstractNamedOperation implements BackupOperation, ServiceNamespaceAware {
 
     private Map<Data, CacheRecord> cacheRecords;
 
     private transient ICacheRecordStore cache;
 
-    public CachePutAllBackupOperation() {
+    public CacheMergeBackupOperation() {
     }
 
-    public CachePutAllBackupOperation(String cacheNameWithPrefix, Map<Data, CacheRecord> cacheRecords) {
+    public CacheMergeBackupOperation(String cacheNameWithPrefix, Map<Data, CacheRecord> cacheRecords) {
         super(cacheNameWithPrefix);
         this.cacheRecords = cacheRecords;
     }
@@ -69,25 +70,35 @@ public class CachePutAllBackupOperation extends AbstractNamedOperation implement
 
     @Override
     public void run() throws Exception {
-        if (cache == null || cacheRecords == null) {
+        if (cache == null) {
             return;
         }
+
+        SerializationService serializationService = getNodeEngine().getSerializationService();
+
+        CacheWanEventPublisher publisher = null;
+        if (cache.isWanReplicationEnabled()) {
+            ICacheService service = getService();
+            publisher = service.getCacheWanEventPublisher();
+        }
+
         for (Map.Entry<Data, CacheRecord> entry : cacheRecords.entrySet()) {
             Data key = entry.getKey();
             CacheRecord record = entry.getValue();
-            cache.putRecord(key, record, true);
-
-            if (cache.isWanReplicationEnabled()) {
-                ICacheService service = getService();
-                CacheWanEventPublisher publisher = service.getCacheWanEventPublisher();
-                CacheEntryView<Data, Data> view = createDefaultEntryView(key, toData(record.getValue()), record);
-                publisher.publishWanReplicationUpdateBackup(name, view);
+            if (record == null) {
+                cache.removeRecord(key);
+                if (publisher != null) {
+                    publisher.publishWanReplicationRemoveBackup(name, key);
+                }
+            } else {
+                cache.putRecord(key, record, true);
+                if (publisher != null) {
+                    Data dataValue = serializationService.toData(record.getValue());
+                    CacheEntryView<Data, Data> view = createDefaultEntryView(key, dataValue, record);
+                    publisher.publishWanReplicationUpdateBackup(name, view);
+                }
             }
         }
-    }
-
-    private Data toData(Object o) {
-        return getNodeEngine().getSerializationService().toData(o);
     }
 
     @Override
@@ -103,36 +114,28 @@ public class CachePutAllBackupOperation extends AbstractNamedOperation implement
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeBoolean(cacheRecords != null);
-        if (cacheRecords != null) {
-            out.writeInt(cacheRecords.size());
-            for (Map.Entry<Data, CacheRecord> entry : cacheRecords.entrySet()) {
-                Data key = entry.getKey();
-                CacheRecord record = entry.getValue();
-                out.writeData(key);
-                out.writeObject(record);
-            }
+        out.writeInt(cacheRecords.size());
+        for (Map.Entry<Data, CacheRecord> entry : cacheRecords.entrySet()) {
+            out.writeData(entry.getKey());
+            out.writeObject(entry.getValue());
         }
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        boolean recordNotNull = in.readBoolean();
-        if (recordNotNull) {
-            int size = in.readInt();
-            cacheRecords = createHashMap(size);
-            for (int i = 0; i < size; i++) {
-                Data key = in.readData();
-                CacheRecord record = in.readObject();
-                cacheRecords.put(key, record);
-            }
+        int size = in.readInt();
+        cacheRecords = createHashMap(size);
+        for (int i = 0; i < size; i++) {
+            Data key = in.readData();
+            CacheRecord record = in.readObject();
+            cacheRecords.put(key, record);
         }
     }
 
     @Override
     public int getId() {
-        return CacheDataSerializerHook.PUT_ALL_BACKUP;
+        return CacheDataSerializerHook.MERGE_BACKUP;
     }
 
     @Override

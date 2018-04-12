@@ -55,8 +55,8 @@ public class SplitBrainMergeTypes {
      * @since 3.10
      */
     @Beta
-    public interface CacheMergeTypes extends MergingEntry<Data, Data>, MergingCreationTime<Data>, MergingHits<Data>,
-            MergingLastAccessTime<Data>, MergingExpirationTime<Data> {
+    public interface CacheMergeTypes extends MergingEntry<Data, Object>, MergingCreationTime<Object>, MergingHits<Object>,
+            MergingLastAccessTime<Object>, MergingExpirationTime<Object> {
     }
 
     /**

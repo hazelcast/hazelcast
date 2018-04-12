@@ -19,7 +19,6 @@ package com.hazelcast.cache.impl.operation;
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionAwareOperationFactory;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
@@ -40,14 +39,14 @@ public class CacheMergeOperationFactory extends PartitionAwareOperationFactory {
 
     private String name;
     private List<CacheMergeTypes>[] mergingEntries;
-    private SplitBrainMergePolicy<Data, CacheMergeTypes> mergePolicy;
+    private SplitBrainMergePolicy<Object, CacheMergeTypes> mergePolicy;
 
     public CacheMergeOperationFactory() {
     }
 
     @SuppressFBWarnings("EI_EXPOSE_REP2")
     public CacheMergeOperationFactory(String name, int[] partitions, List<CacheMergeTypes>[] mergingEntries,
-                                      SplitBrainMergePolicy<Data, CacheMergeTypes> mergePolicy) {
+                                      SplitBrainMergePolicy<Object, CacheMergeTypes> mergePolicy) {
         this.name = name;
         this.partitions = partitions;
         this.mergingEntries = mergingEntries;

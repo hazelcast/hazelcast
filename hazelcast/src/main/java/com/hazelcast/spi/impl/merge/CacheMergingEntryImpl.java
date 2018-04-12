@@ -35,7 +35,7 @@ import java.io.IOException;
 @SuppressWarnings("WeakerAccess")
 public class CacheMergingEntryImpl implements CacheMergeTypes, SerializationServiceAware, IdentifiedDataSerializable {
 
-    private Data value;
+    private Object value;
     private Data key;
     private long creationTime = -1;
     private long expirationTime = -1;
@@ -52,16 +52,16 @@ public class CacheMergingEntryImpl implements CacheMergeTypes, SerializationServ
     }
 
     @Override
-    public Data getValue() {
+    public Object getValue() {
         return value;
     }
 
     @Override
-    public Object getDeserializedValue() {
+    public <DV> DV getDeserializedValue() {
         return serializationService.toObject(value);
     }
 
-    public CacheMergingEntryImpl setValue(Data value) {
+    public CacheMergingEntryImpl setValue(Object value) {
         this.value = value;
         return this;
     }
@@ -72,7 +72,7 @@ public class CacheMergingEntryImpl implements CacheMergeTypes, SerializationServ
     }
 
     @Override
-    public Object getDeserializedKey() {
+    public <DV> DV getDeserializedKey() {
         return serializationService.toObject(key);
     }
 
