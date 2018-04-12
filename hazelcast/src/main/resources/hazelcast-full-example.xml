@@ -109,7 +109,7 @@ https://hazelcast.org/documentation/.
         at most 2 members in your cluster. To use it for more members, you need to have either a Management Center,
         Hazelcast Enterprise or Hazelcast Enterprise HD license.
     -->
-    <management-center enabled="true" update-interval="2">http://localhost:8080/mancenter</management-center>
+    <management-center enabled="true" update-interval="2">http://localhost:8080/hazelcast-mancenter</management-center>
     <!--
         The <properties> element lets you add properties to some of the Hazelcast elements used to configure some of
         the Hazelcast modules.
