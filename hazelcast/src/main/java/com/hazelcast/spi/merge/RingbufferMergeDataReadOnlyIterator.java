@@ -21,6 +21,7 @@ import java.util.Iterator;
 /**
  * Read-only iterator over items in a provided {@link RingbufferMergeData}.
  *
+ * @param <E> ringbuffer item types
  * @since 3.10
  */
 public class RingbufferMergeDataReadOnlyIterator<E> implements Iterator<E> {
