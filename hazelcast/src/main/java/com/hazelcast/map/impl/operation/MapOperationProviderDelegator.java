@@ -147,7 +147,7 @@ abstract class MapOperationProviderDelegator implements MapOperationProvider {
 
     @Override
     public OperationFactory createMergeOperationFactory(String name, int[] partitions, List<MapMergeTypes>[] mergingEntries,
-                                                        SplitBrainMergePolicy<Data, MapMergeTypes> mergePolicy) {
+                                                        SplitBrainMergePolicy<Object, MapMergeTypes> mergePolicy) {
         return getDelegate().createMergeOperationFactory(name, partitions, mergingEntries, mergePolicy);
     }
 
@@ -180,7 +180,7 @@ abstract class MapOperationProviderDelegator implements MapOperationProvider {
 
     @Override
     public MapOperation createMergeOperation(String name, MapMergeTypes mergingValue,
-                                             SplitBrainMergePolicy<Data, MapMergeTypes> mergePolicy,
+                                             SplitBrainMergePolicy<Object, MapMergeTypes> mergePolicy,
                                              boolean disableWanReplicationEvent) {
         return getDelegate().createMergeOperation(name, mergingValue, mergePolicy, disableWanReplicationEvent);
     }

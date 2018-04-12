@@ -175,7 +175,7 @@ public class WANAwareOperationProvider extends MapOperationProviderDelegator {
 
     @Override
     public MapOperation createMergeOperation(String name, MapMergeTypes mergingValue,
-                                             SplitBrainMergePolicy<Data, MapMergeTypes> mergePolicy,
+                                             SplitBrainMergePolicy<Object, MapMergeTypes> mergePolicy,
                                              boolean disableWanReplicationEvent) {
         checkWanReplicationQueues(name);
         return getDelegate().createMergeOperation(name, mergingValue, mergePolicy, disableWanReplicationEvent);

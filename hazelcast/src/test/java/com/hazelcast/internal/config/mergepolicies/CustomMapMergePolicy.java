@@ -30,7 +30,7 @@ import java.io.IOException;
  *
  * @see SplitBrainMergeTypes
  */
-public class CustomMapMergePolicy<T extends SplitBrainMergeTypes.MapMergeTypes> implements SplitBrainMergePolicy<Data, T> {
+public class CustomMapMergePolicy<T extends SplitBrainMergeTypes.MapMergeTypes> implements SplitBrainMergePolicy<Object, T> {
 
     @Override
     public Data merge(T mergingValue, T existingValue) {

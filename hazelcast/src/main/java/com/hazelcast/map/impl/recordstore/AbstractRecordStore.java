@@ -43,7 +43,6 @@ import java.util.Collection;
 
 import static com.hazelcast.map.impl.ExpirationTimeSetter.setTTLAndUpdateExpiryTime;
 
-
 /**
  * Contains record store common parts.
  */
@@ -150,7 +149,6 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
             indexes.saveEntryIndex(queryableEntry, oldValue);
         }
     }
-
 
     protected void removeIndex(Record record) {
         Indexes indexes = mapContainer.getIndexes(partitionId);

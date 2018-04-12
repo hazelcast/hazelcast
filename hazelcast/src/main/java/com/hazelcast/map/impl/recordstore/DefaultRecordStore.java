@@ -751,7 +751,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     @Override
-    public boolean merge(MapMergeTypes mergingEntry, SplitBrainMergePolicy<Data, MapMergeTypes> mergePolicy) {
+    public boolean merge(MapMergeTypes mergingEntry, SplitBrainMergePolicy<Object, MapMergeTypes> mergePolicy) {
         checkIfLoaded();
         long now = getNow();
 
@@ -760,10 +760,10 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
         Data key = mergingEntry.getKey();
         Record record = getRecordOrNull(key, now, false);
-        Object newValue;
-        Object oldValue = null;
-        if (record == null) {
-            newValue = mergePolicy.merge(mergingEntry, null);
+        MapMergeTypes existingEntry = createMergingEntryOrNull(record);
+        Object newValue = mergePolicy.merge(mergingEntry, existingEntry);
+
+        if (existingEntry == null) {
             if (newValue == null) {
                 return false;
             }
@@ -773,35 +773,33 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             storage.put(key, record);
             eventJournal.writeUpdateEvent(mapContainer.getEventJournalConfig(), mapContainer.getObjectNamespace(), partitionId,
                     key, null, record.getValue());
-        } else {
-            oldValue = record.getValue();
-            MapMergeTypes existingEntry = createMergingEntry(serializationService, record);
-            newValue = mergePolicy.merge(mergingEntry, existingEntry);
-            // existing entry will be removed
-            if (newValue == null) {
-                removeIndex(record);
-                mapDataStore.remove(key, now);
-                onStore(record);
-                eventJournal.writeUpdateEvent(mapContainer.getEventJournalConfig(), mapContainer.getObjectNamespace(),
-                        partitionId, key, oldValue, null);
-                storage.removeRecord(record);
-                return true;
-            }
-            if (newValue == mergingEntry.getValue()) {
-                mergeRecordExpiration(record, mergingEntry);
-            }
-            // same with the existing entry so no need to map-store etc operations.
-            if (recordComparator.isEqual(newValue, oldValue)) {
-                return true;
-            }
-            newValue = mapDataStore.add(key, newValue, now);
+            saveIndex(record, null);
+            return true;
+        } else if (newValue == null) {
+            mapDataStore.remove(key, now);
             onStore(record);
-            eventJournal.writeUpdateEvent(mapContainer.getEventJournalConfig(), mapContainer.getObjectNamespace(), partitionId,
-                    key, oldValue, newValue);
-            storage.updateRecordValue(key, record, newValue);
+            eventJournal.writeRemoveEvent(mapContainer.getEventJournalConfig(), mapContainer.getObjectNamespace(), partitionId,
+                    key, existingEntry.getValue());
+            storage.removeRecord(record);
+            removeIndex(record);
+            return true;
+        } else if (recordComparator.isEqual(newValue, existingEntry.getValue())) {
+            return false;
         }
-        saveIndex(record, oldValue);
+        if (newValue == mergingEntry.getValue()) {
+            mergeRecordExpiration(record, mergingEntry);
+        }
+        newValue = mapDataStore.add(key, newValue, now);
+        onStore(record);
+        eventJournal.writeUpdateEvent(mapContainer.getEventJournalConfig(), mapContainer.getObjectNamespace(), partitionId,
+                key, existingEntry.getValue(), newValue);
+        storage.updateRecordValue(key, record, newValue);
+        saveIndex(record, existingEntry.getValue());
         return newValue != null;
+    }
+
+    private MapMergeTypes createMergingEntryOrNull(Record record) {
+        return record == null ? null : createMergingEntry(serializationService, record);
     }
 
     @Override
@@ -836,8 +834,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                 removeIndex(record);
                 mapDataStore.remove(key, now);
                 onStore(record);
-                eventJournal.writeUpdateEvent(mapContainer.getEventJournalConfig(), mapContainer.getObjectNamespace(),
-                        partitionId, key, oldValue, null);
+                eventJournal.writeRemoveEvent(mapContainer.getEventJournalConfig(), mapContainer.getObjectNamespace(),
+                        partitionId, key, oldValue);
                 storage.removeRecord(record);
                 return true;
             }

@@ -174,7 +174,7 @@ public interface RecordStore<R extends Record> {
      * @param mergePolicy  the {@link SplitBrainMergePolicy} instance to apply
      * @return {@code true} if merge is applied, otherwise {@code false}
      */
-    boolean merge(MapMergeTypes mergingEntry, SplitBrainMergePolicy<Data, MapMergeTypes> mergePolicy);
+    boolean merge(MapMergeTypes mergingEntry, SplitBrainMergePolicy<Object, MapMergeTypes> mergePolicy);
 
     /**
      * Merges the given {@link EntryView} via the given {@link MapMergePolicy}.

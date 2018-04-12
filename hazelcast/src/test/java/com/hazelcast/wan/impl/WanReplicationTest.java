@@ -284,8 +284,8 @@ public class WanReplicationTest extends HazelcastTestSupport {
                     !enableWANReplicationEvent);
         } else {
             MapMergeTypes mergingEntry = createMergingEntry(serializationService, entryView);
-            SplitBrainMergePolicy<Data, MapMergeTypes> mergePolicy
-                    = new com.hazelcast.spi.merge.PassThroughMergePolicy<Data, MapMergeTypes>();
+            SplitBrainMergePolicy<Object, MapMergeTypes> mergePolicy
+                    = new com.hazelcast.spi.merge.PassThroughMergePolicy<Object, MapMergeTypes>();
             op = operationProvider.createMergeOperation(mapName, mergingEntry, mergePolicy, !enableWANReplicationEvent);
         }
         operationService.createInvocationBuilder(MapService.SERVICE_NAME, op, partitionService.getPartitionId(data)).invoke();

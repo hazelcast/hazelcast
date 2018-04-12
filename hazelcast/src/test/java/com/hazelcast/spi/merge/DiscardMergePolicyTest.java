@@ -41,11 +41,11 @@ public class DiscardMergePolicyTest {
     private static final Data EXISTING = SERIALIZATION_SERVICE.toData("EXISTING");
     private static final Data MERGING = SERIALIZATION_SERVICE.toData("MERGING");
 
-    private SplitBrainMergePolicy<Data, MapMergeTypes> mergePolicy;
+    private SplitBrainMergePolicy<Object, MapMergeTypes> mergePolicy;
 
     @Before
     public void setup() {
-        mergePolicy = new DiscardMergePolicy<Data, MapMergeTypes>();
+        mergePolicy = new DiscardMergePolicy<Object, MapMergeTypes>();
     }
 
     @Test

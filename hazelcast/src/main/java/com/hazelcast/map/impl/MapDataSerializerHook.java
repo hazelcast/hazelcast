@@ -79,6 +79,7 @@ import com.hazelcast.map.impl.operation.MapNearCacheStateHolder;
 import com.hazelcast.map.impl.operation.MapReplicationOperation;
 import com.hazelcast.map.impl.operation.MapReplicationStateHolder;
 import com.hazelcast.map.impl.operation.MapSizeOperation;
+import com.hazelcast.map.impl.operation.MergeBackupOperation;
 import com.hazelcast.map.impl.operation.MergeOperation;
 import com.hazelcast.map.impl.operation.MergeOperationFactory;
 import com.hazelcast.map.impl.operation.MultipleEntryBackupOperation;
@@ -308,8 +309,9 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     public static final int EVENT_JOURNAL_READ_RESULT_SET = 145;
     public static final int MERGE_FACTORY = 146;
     public static final int MERGE = 147;
+    public static final int MERGE_BACKUP = 148;
 
-    private static final int LEN = MERGE + 1;
+    private static final int LEN = MERGE_BACKUP + 1;
 
     @Override
     public int getFactoryId() {
@@ -1038,6 +1040,11 @@ public final class MapDataSerializerHook implements DataSerializerHook {
         constructors[MERGE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new MergeOperation();
+            }
+        };
+        constructors[MERGE_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new MergeBackupOperation();
             }
         };
 

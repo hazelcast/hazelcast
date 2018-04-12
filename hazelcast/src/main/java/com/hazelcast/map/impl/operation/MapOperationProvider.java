@@ -111,7 +111,8 @@ public interface MapOperationProvider {
                                             boolean disableWanReplicationEvent);
 
     MapOperation createMergeOperation(String name, MapMergeTypes mergingValue,
-                                      SplitBrainMergePolicy<Data, MapMergeTypes> mergePolicy, boolean disableWanReplicationEvent);
+                                      SplitBrainMergePolicy<Object, MapMergeTypes> mergePolicy,
+                                      boolean disableWanReplicationEvent);
 
     MapOperation createMapFlushOperation(String name);
 
@@ -154,5 +155,5 @@ public interface MapOperationProvider {
     OperationFactory createPutAllOperationFactory(String name, int[] partitions, MapEntries[] mapEntries);
 
     OperationFactory createMergeOperationFactory(String name, int[] partitions, List<MapMergeTypes>[] mergingEntries,
-                                                 SplitBrainMergePolicy<Data, MapMergeTypes> mergePolicy);
+                                                 SplitBrainMergePolicy<Object, MapMergeTypes> mergePolicy);
 }

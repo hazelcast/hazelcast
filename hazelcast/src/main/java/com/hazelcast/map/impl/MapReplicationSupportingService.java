@@ -86,7 +86,7 @@ class MapReplicationSupportingService implements ReplicationSupportingService {
             MapMergeTypes mergingEntry = createMergingEntry(serializationService, replicationUpdate.getEntryView());
             //noinspection unchecked
             operation = operationProvider.createMergeOperation(mapName, mergingEntry,
-                    (SplitBrainMergePolicy<Data, MapMergeTypes>) mergePolicy, true);
+                    (SplitBrainMergePolicy<Object, MapMergeTypes>) mergePolicy, true);
         } else {
             EntryView<Data, Data> entryView = replicationUpdate.getEntryView();
             operation = operationProvider.createLegacyMergeOperation(mapName, entryView, (MapMergePolicy) mergePolicy, true);

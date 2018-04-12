@@ -40,7 +40,7 @@ import java.util.List;
 import static com.hazelcast.map.impl.EntryViews.createSimpleEntryView;
 import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntry;
 
-class MapMergeRunnable extends AbstractMergeRunnable<Data, Data, RecordStore, MapMergeTypes> {
+class MapMergeRunnable extends AbstractMergeRunnable<Data, Object, RecordStore, MapMergeTypes> {
 
     private final MapServiceContext mapServiceContext;
 
@@ -121,7 +121,7 @@ class MapMergeRunnable extends AbstractMergeRunnable<Data, Data, RecordStore, Ma
 
     @Override
     protected OperationFactory createMergeOperationFactory(String dataStructureName,
-                                                           SplitBrainMergePolicy<Data, MapMergeTypes> mergePolicy,
+                                                           SplitBrainMergePolicy<Object, MapMergeTypes> mergePolicy,
                                                            int[] partitions, List<MapMergeTypes>[] entries) {
         MapOperationProvider operationProvider = mapServiceContext.getMapOperationProvider(dataStructureName);
         return operationProvider.createMergeOperationFactory(dataStructureName, partitions, entries, mergePolicy);

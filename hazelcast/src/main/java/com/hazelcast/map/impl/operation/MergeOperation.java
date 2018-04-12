@@ -29,6 +29,7 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
+import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -39,14 +40,14 @@ import static com.hazelcast.map.impl.EntryViews.createSimpleEntryView;
 import static com.hazelcast.map.impl.record.Records.buildRecordInfo;
 
 /**
- * Contains multiple merge entries for split-brain healing with a {@link SplitBrainMergePolicy}.
+ * Merges multiple {@link MapMergeTypes} for split-brain healing with a {@link SplitBrainMergePolicy}.
  *
  * @since 3.10
  */
 public class MergeOperation extends MapOperation implements PartitionAwareOperation, BackupAwareOperation {
 
     private List<MapMergeTypes> mergingEntries;
-    private SplitBrainMergePolicy<Data, MapMergeTypes> mergePolicy;
+    private SplitBrainMergePolicy<Object, MapMergeTypes> mergePolicy;
     private boolean disableWanReplicationEvent;
 
     private transient boolean hasMapListener;
@@ -62,7 +63,7 @@ public class MergeOperation extends MapOperation implements PartitionAwareOperat
     public MergeOperation() {
     }
 
-    MergeOperation(String name, List<MapMergeTypes> mergingEntries, SplitBrainMergePolicy<Data, MapMergeTypes> mergePolicy,
+    MergeOperation(String name, List<MapMergeTypes> mergingEntries, SplitBrainMergePolicy<Object, MapMergeTypes> mergePolicy,
                    boolean disableWanReplicationEvent) {
         super(name);
         this.mergingEntries = mergingEntries;
@@ -94,22 +95,16 @@ public class MergeOperation extends MapOperation implements PartitionAwareOperat
         Data dataKey = mergingEntry.getKey();
         Data oldValue = hasMapListener ? getValue(dataKey) : null;
 
-        //noinspection unchecked
         if (recordStore.merge(mergingEntry, mergePolicy)) {
             hasMergedValues = true;
-            Data dataValue = getValueOrPostProcessedValue(dataKey, getValue(dataKey));
-            mapServiceContext.interceptAfterPut(name, dataValue);
+            Data newValue = getValue(dataKey);
+            mapServiceContext.interceptAfterPut(name, newValue);
 
-            if (hasMapListener) {
-                mapEventPublisher.publishEvent(getCallerAddress(), name, MERGED, dataKey, oldValue, dataValue);
-            }
-            if (hasWanReplication) {
-                EntryView entryView = createSimpleEntryView(dataKey, dataValue, recordStore.getRecord(dataKey));
-                mapEventPublisher.publishWanReplicationUpdate(name, entryView);
-            }
+            publishListenerEvent(dataKey, oldValue, newValue);
+            publishWanReplication(dataKey, newValue);
             if (hasBackups) {
-                mapEntries.add(dataKey, dataValue);
-                backupRecordInfos.add(buildRecordInfo(recordStore.getRecord(dataKey)));
+                mapEntries.add(dataKey, newValue);
+                backupRecordInfos.add(newValue == null ? null : buildRecordInfo(recordStore.getRecord(dataKey)));
             }
             evict(dataKey);
             if (hasInvalidation) {
@@ -118,12 +113,21 @@ public class MergeOperation extends MapOperation implements PartitionAwareOperat
         }
     }
 
-    private Data getValueOrPostProcessedValue(Data dataKey, Data dataValue) {
-        if (!isPostProcessing(recordStore)) {
-            return dataValue;
+    private void publishListenerEvent(Data dataKey, Data oldValue, Data dataValue) {
+        if (hasMapListener) {
+            mapEventPublisher.publishEvent(getCallerAddress(), name, MERGED, dataKey, oldValue, dataValue);
         }
-        Record record = recordStore.getRecord(dataKey);
-        return mapServiceContext.toData(record.getValue());
+    }
+
+    private void publishWanReplication(Data dataKey, Data dataValue) {
+        if (hasWanReplication) {
+            if (dataValue == null) {
+                mapEventPublisher.publishWanReplicationRemove(name, dataKey, Clock.currentTimeMillis());
+            } else {
+                EntryView<Data, Data> entryView = createSimpleEntryView(dataKey, dataValue, recordStore.getRecord(dataKey));
+                mapEventPublisher.publishWanReplicationUpdate(name, entryView);
+            }
+        }
     }
 
     private Data getValue(Data dataKey) {
@@ -163,7 +167,7 @@ public class MergeOperation extends MapOperation implements PartitionAwareOperat
 
     @Override
     public Operation getBackupOperation() {
-        return new PutAllBackupOperation(name, mapEntries, backupRecordInfos);
+        return new MergeBackupOperation(name, mapEntries, backupRecordInfos, hasWanReplication);
     }
 
     @Override

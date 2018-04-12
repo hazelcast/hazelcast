@@ -67,28 +67,29 @@ import static org.junit.Assert.fail;
 @SuppressWarnings("WeakerAccess")
 public class LegacyMapSplitBrainTest extends SplitBrainTestSupport {
 
-    @Parameters(name = "format:{0}, mergePolicy:{1}")
+    @Parameters(name = "mergePolicy:{0}, format:{1}")
     public static Collection<Object[]> parameters() {
         return asList(new Object[][]{
-                {BINARY, IgnoreMergingEntryMapMergePolicy.class},
-                {BINARY, HigherHitsMapMergePolicy.class},
-                {BINARY, LatestUpdateMapMergePolicy.class},
-                {BINARY, PassThroughMergePolicy.class},
-                {BINARY, PutIfAbsentMapMergePolicy.class},
+                {IgnoreMergingEntryMapMergePolicy.class, BINARY},
+                {HigherHitsMapMergePolicy.class, BINARY},
+                {LatestUpdateMapMergePolicy.class, BINARY},
+                {PassThroughMergePolicy.class, BINARY},
+                {PutIfAbsentMapMergePolicy.class, BINARY},
 
-                {BINARY, CustomLegacyMergePolicy.class},
-                {OBJECT, CustomLegacyMergePolicy.class},
+                {CustomLegacyMergePolicy.class, BINARY},
+                {CustomLegacyMergePolicy.class, OBJECT},
         });
     }
 
     @Parameter
-    public InMemoryFormat inMemoryFormat;
+    public Class<? extends MapMergePolicy> mergePolicyClass;
 
     @Parameter(value = 1)
-    public Class<? extends MapMergePolicy> mergePolicyClass;
+    public InMemoryFormat inMemoryFormat;
 
     protected String mapNameA = randomMapName("mapA-");
     protected String mapNameB = randomMapName("mapB-");
+
     private IMap<Object, Object> mapA1;
     private IMap<Object, Object> mapA2;
     private IMap<Object, Object> mapB1;

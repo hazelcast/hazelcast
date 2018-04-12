@@ -34,14 +34,14 @@ public abstract class AbstractSplitBrainMergePolicyTest {
     private static final Data EXISTING = SERIALIZATION_SERVICE.toData("EXISTING");
     private static final Data MERGING = SERIALIZATION_SERVICE.toData("MERGING");
 
-    protected SplitBrainMergePolicy<Data, MapMergeTypes> mergePolicy;
+    protected SplitBrainMergePolicy<Object, MapMergeTypes> mergePolicy;
 
     @Before
     public void setup() {
         mergePolicy = createMergePolicy();
     }
 
-    protected abstract SplitBrainMergePolicy<Data, MapMergeTypes> createMergePolicy();
+    protected abstract SplitBrainMergePolicy<Object, MapMergeTypes> createMergePolicy();
 
     @Test
     public void merge_mergingWins() {

@@ -195,7 +195,7 @@ public class DefaultMapOperationProvider implements MapOperationProvider {
 
     @Override
     public MapOperation createMergeOperation(String name, MapMergeTypes mergingValue,
-                                             SplitBrainMergePolicy<Data, MapMergeTypes> mergePolicy,
+                                             SplitBrainMergePolicy<Object, MapMergeTypes> mergePolicy,
                                              boolean disableWanReplicationEvent) {
         return new MergeOperation(name, singletonList(mergingValue), mergePolicy, disableWanReplicationEvent);
     }
@@ -255,7 +255,7 @@ public class DefaultMapOperationProvider implements MapOperationProvider {
 
     @Override
     public OperationFactory createMergeOperationFactory(String name, int[] partitions, List<MapMergeTypes>[] mergingEntries,
-                                                        SplitBrainMergePolicy<Data, MapMergeTypes> mergePolicy) {
+                                                        SplitBrainMergePolicy<Object, MapMergeTypes> mergePolicy) {
         return new MergeOperationFactory(name, partitions, mergingEntries, mergePolicy);
     }
 

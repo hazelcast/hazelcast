@@ -19,7 +19,6 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionAwareOperationFactory;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
@@ -41,14 +40,14 @@ public class MergeOperationFactory extends PartitionAwareOperationFactory {
 
     protected String name;
     protected List<MapMergeTypes>[] mergingEntries;
-    protected SplitBrainMergePolicy<Data, MapMergeTypes> mergePolicy;
+    protected SplitBrainMergePolicy<Object, MapMergeTypes> mergePolicy;
 
     public MergeOperationFactory() {
     }
 
     @SuppressFBWarnings("EI_EXPOSE_REP2")
     public MergeOperationFactory(String name, int[] partitions, List<MapMergeTypes>[] mergingEntries,
-                                 SplitBrainMergePolicy<Data, MapMergeTypes> mergePolicy) {
+                                 SplitBrainMergePolicy<Object, MapMergeTypes> mergePolicy) {
         this.name = name;
         this.partitions = partitions;
         this.mergingEntries = mergingEntries;

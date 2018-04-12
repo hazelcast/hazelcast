@@ -44,9 +44,9 @@ public class SplitBrainMergeTypes {
      * @since 3.10
      */
     @Beta
-    public interface MapMergeTypes extends MergingEntry<Data, Data>, MergingCreationTime<Data>, MergingHits<Data>,
-            MergingLastAccessTime<Data>, MergingLastUpdateTime<Data>, MergingTTL<Data>, MergingCosts<Data>, MergingVersion<Data>,
-            MergingExpirationTime<Data>, MergingLastStoredTime<Data> {
+    public interface MapMergeTypes extends MergingEntry<Data, Object>, MergingCreationTime<Object>, MergingHits<Object>,
+            MergingLastAccessTime<Object>, MergingLastUpdateTime<Object>, MergingTTL<Object>, MergingCosts<Object>,
+            MergingVersion<Object>, MergingExpirationTime<Object>, MergingLastStoredTime<Object> {
     }
 
     /**

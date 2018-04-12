@@ -33,7 +33,6 @@ import com.hazelcast.test.SplitBrainTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.backup.BackupAccessor;
-import com.hazelcast.test.backup.TestBackupUtils;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -48,6 +47,7 @@ import static com.hazelcast.config.InMemoryFormat.OBJECT;
 import static com.hazelcast.test.backup.TestBackupUtils.assertBackupEntryEqualsEventually;
 import static com.hazelcast.test.backup.TestBackupUtils.assertBackupEntryNullEventually;
 import static com.hazelcast.test.backup.TestBackupUtils.assertBackupSizeEventually;
+import static com.hazelcast.test.backup.TestBackupUtils.newMapAccessor;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -72,26 +72,28 @@ public class MapSplitBrainTest extends SplitBrainTestSupport {
 
     private static final int[] BRAINS = new int[]{3, 3};
 
-    @Parameters(name = "format:{0}, mergePolicy:{1}")
+    @Parameters(name = "mergePolicy:{0}, format:{1}")
     public static Collection<Object[]> parameters() {
         return asList(new Object[][]{
-                {BINARY, DiscardMergePolicy.class},
-                {BINARY, HigherHitsMergePolicy.class},
-                {BINARY, LatestAccessMergePolicy.class},
-                {BINARY, LatestUpdateMergePolicy.class},
-                {BINARY, PassThroughMergePolicy.class},
-                {BINARY, PutIfAbsentMergePolicy.class},
+                {DiscardMergePolicy.class, BINARY},
+                {HigherHitsMergePolicy.class, BINARY},
+                {LatestAccessMergePolicy.class, BINARY},
+                {PassThroughMergePolicy.class, BINARY},
+                {PutIfAbsentMergePolicy.class, BINARY},
+                {RemoveValuesMergePolicy.class, BINARY},
 
-                {BINARY, MergeIntegerValuesMergePolicy.class},
-                {OBJECT, MergeIntegerValuesMergePolicy.class},
+                {ReturnPiMergePolicy.class, BINARY},
+                {ReturnPiMergePolicy.class, OBJECT},
+                {MergeIntegerValuesMergePolicy.class, BINARY},
+                {MergeIntegerValuesMergePolicy.class, OBJECT},
         });
     }
 
     @Parameter
-    public InMemoryFormat inMemoryFormat;
+    public Class<? extends SplitBrainMergePolicy> mergePolicyClass;
 
     @Parameter(value = 1)
-    public Class<? extends SplitBrainMergePolicy> mergePolicyClass;
+    public InMemoryFormat inMemoryFormat;
 
     protected String mapNameA = randomMapName("mapA-");
     protected String mapNameB = randomMapName("mapB-");
@@ -100,8 +102,8 @@ public class MapSplitBrainTest extends SplitBrainTestSupport {
     private IMap<Object, Object> mapA2;
     private IMap<Object, Object> mapB1;
     private IMap<Object, Object> mapB2;
-    private BackupAccessor<Object, Object> backupMapA;
-    private BackupAccessor<Object, Object> backupMapB;
+    private BackupAccessor<Object, Object> backupAccessorA;
+    private BackupAccessor<Object, Object> backupAccessorB;
     private MergeLifecycleListener mergeLifecycleListener;
 
     @Override
@@ -135,7 +137,7 @@ public class MapSplitBrainTest extends SplitBrainTestSupport {
     protected void onBeforeSplitBrainCreated(HazelcastInstance[] instances) {
         waitAllForSafeState(instances);
 
-        BackupAccessor<Object, Object> accessor = TestBackupUtils.newMapAccessor(instances, mapNameA);
+        BackupAccessor<Object, Object> accessor = newMapAccessor(instances, mapNameA);
         assertEquals("backupMap should contain 0 entries", 0, accessor.size());
     }
 
@@ -162,6 +164,10 @@ public class MapSplitBrainTest extends SplitBrainTestSupport {
             afterSplitPassThroughMergePolicy();
         } else if (mergePolicyClass == PutIfAbsentMergePolicy.class) {
             afterSplitPutIfAbsentMergePolicy();
+        } else if (mergePolicyClass == RemoveValuesMergePolicy.class) {
+            afterSplitRemoveValuesMergePolicy();
+        } else if (mergePolicyClass == ReturnPiMergePolicy.class) {
+            afterSplitReturnPiMergePolicy();
         } else if (mergePolicyClass == MergeIntegerValuesMergePolicy.class) {
             afterSplitCustomMergePolicy();
         } else {
@@ -176,8 +182,8 @@ public class MapSplitBrainTest extends SplitBrainTestSupport {
 
         mapB1 = instances[0].getMap(mapNameB);
 
-        backupMapA = TestBackupUtils.newMapAccessor(instances, mapNameA);
-        backupMapB = TestBackupUtils.newMapAccessor(instances, mapNameB);
+        backupAccessorA = newMapAccessor(instances, mapNameA);
+        backupAccessorB = newMapAccessor(instances, mapNameB);
 
         if (mergePolicyClass == DiscardMergePolicy.class) {
             afterMergeDiscardMergePolicy();
@@ -191,6 +197,10 @@ public class MapSplitBrainTest extends SplitBrainTestSupport {
             afterMergePassThroughMergePolicy();
         } else if (mergePolicyClass == PutIfAbsentMergePolicy.class) {
             afterMergePutIfAbsentMergePolicy();
+        } else if (mergePolicyClass == RemoveValuesMergePolicy.class) {
+            afterMergeRemoveValuesMergePolicy();
+        } else if (mergePolicyClass == ReturnPiMergePolicy.class) {
+            afterMergeReturnPiMergePolicy();
         } else if (mergePolicyClass == MergeIntegerValuesMergePolicy.class) {
             afterMergeCustomMergePolicy();
         } else {
@@ -210,53 +220,53 @@ public class MapSplitBrainTest extends SplitBrainTestSupport {
     private void afterMergeDiscardMergePolicy() {
         assertEquals("value1", mapA1.get("key1"));
         assertEquals("value1", mapA2.get("key1"));
-        assertBackupEntryEqualsEventually("key1", "value1", backupMapA);
+        assertBackupEntryEqualsEventually("key1", "value1", backupAccessorA);
 
         assertNull(mapA1.get("key2"));
         assertNull(mapA2.get("key2"));
-        assertBackupEntryNullEventually("key2", backupMapA);
+        assertBackupEntryNullEventually("key2", backupAccessorA);
 
         assertEquals(1, mapA1.size());
         assertEquals(1, mapA2.size());
-        assertBackupSizeEventually(1, backupMapA);
+        assertBackupSizeEventually(1, backupAccessorA);
 
         assertNull(mapB1.get("key"));
         assertNull(mapB2.get("key"));
-        assertBackupEntryNullEventually("key", backupMapB);
+        assertBackupEntryNullEventually("key", backupAccessorB);
 
         assertTrue(mapB1.isEmpty());
         assertTrue(mapB2.isEmpty());
-        assertBackupSizeEventually(0, backupMapB);
+        assertBackupSizeEventually(0, backupAccessorB);
     }
 
     private void afterSplitHigherHitsMergePolicy() {
-        mapA1.put("key1", "higherHitsValue1");
+        mapA1.put("key1", "HigherHitsValue1");
         mapA1.put("key2", "value2");
 
         // increase hits number
-        assertEquals("higherHitsValue1", mapA1.get("key1"));
-        assertEquals("higherHitsValue1", mapA1.get("key1"));
+        assertEquals("HigherHitsValue1", mapA1.get("key1"));
+        assertEquals("HigherHitsValue1", mapA1.get("key1"));
 
         mapA2.put("key1", "value1");
-        mapA2.put("key2", "higherHitsValue2");
+        mapA2.put("key2", "HigherHitsValue2");
 
         // increase hits number
-        assertEquals("higherHitsValue2", mapA2.get("key2"));
-        assertEquals("higherHitsValue2", mapA2.get("key2"));
+        assertEquals("HigherHitsValue2", mapA2.get("key2"));
+        assertEquals("HigherHitsValue2", mapA2.get("key2"));
     }
 
     private void afterMergeHigherHitsMergePolicy() {
-        assertEquals("higherHitsValue1", mapA1.get("key1"));
-        assertEquals("higherHitsValue1", mapA2.get("key1"));
-        assertBackupEntryEqualsEventually("key1", "higherHitsValue1", backupMapA);
+        assertEquals("HigherHitsValue1", mapA1.get("key1"));
+        assertEquals("HigherHitsValue1", mapA2.get("key1"));
+        assertBackupEntryEqualsEventually("key1", "HigherHitsValue1", backupAccessorA);
 
-        assertEquals("higherHitsValue2", mapA1.get("key2"));
-        assertEquals("higherHitsValue2", mapA2.get("key2"));
-        assertBackupEntryEqualsEventually("key2", "higherHitsValue2", backupMapA);
+        assertEquals("HigherHitsValue2", mapA1.get("key2"));
+        assertEquals("HigherHitsValue2", mapA2.get("key2"));
+        assertBackupEntryEqualsEventually("key2", "HigherHitsValue2", backupAccessorA);
 
         assertEquals(2, mapA1.size());
         assertEquals(2, mapA2.size());
-        assertBackupSizeEventually(2, backupMapA);
+        assertBackupSizeEventually(2, backupAccessorA);
     }
 
     private void afterSplitLatestAccessMergePolicy() {
@@ -286,15 +296,15 @@ public class MapSplitBrainTest extends SplitBrainTestSupport {
     private void afterMergeLatestAccessMergePolicy() {
         assertEquals("LatestAccessedValue1", mapA1.get("key1"));
         assertEquals("LatestAccessedValue1", mapA2.get("key1"));
-        assertBackupEntryEqualsEventually("key1", "LatestAccessedValue1", backupMapA);
+        assertBackupEntryEqualsEventually("key1", "LatestAccessedValue1", backupAccessorA);
 
         assertEquals("LatestAccessedValue2", mapA1.get("key2"));
         assertEquals("LatestAccessedValue2", mapA2.get("key2"));
-        assertBackupEntryEqualsEventually("key2", "LatestAccessedValue2", backupMapA);
+        assertBackupEntryEqualsEventually("key2", "LatestAccessedValue2", backupAccessorA);
 
         assertEquals(2, mapA1.size());
         assertEquals(2, mapA2.size());
-        assertBackupSizeEventually(2, backupMapA);
+        assertBackupSizeEventually(2, backupAccessorA);
     }
 
     private void afterSplitLatestUpdateMergePolicy() {
@@ -315,15 +325,15 @@ public class MapSplitBrainTest extends SplitBrainTestSupport {
     private void afterMergeLatestUpdateMergePolicy() {
         assertEquals("LatestUpdatedValue1", mapA1.get("key1"));
         assertEquals("LatestUpdatedValue1", mapA2.get("key1"));
-        assertBackupEntryEqualsEventually("key1", "LatestUpdatedValue1", backupMapA);
+        assertBackupEntryEqualsEventually("key1", "LatestUpdatedValue1", backupAccessorA);
 
         assertEquals("LatestUpdatedValue2", mapA1.get("key2"));
         assertEquals("LatestUpdatedValue2", mapA2.get("key2"));
-        assertBackupEntryEqualsEventually("key2", "LatestUpdatedValue2", backupMapA);
+        assertBackupEntryEqualsEventually("key2", "LatestUpdatedValue2", backupAccessorA);
 
         assertEquals(2, mapA1.size());
         assertEquals(2, mapA2.size());
-        assertBackupSizeEventually(2, backupMapA);
+        assertBackupSizeEventually(2, backupAccessorA);
     }
 
     private void afterSplitPassThroughMergePolicy() {
@@ -332,29 +342,29 @@ public class MapSplitBrainTest extends SplitBrainTestSupport {
         mapA2.put("key1", "PassThroughValue1");
         mapA2.put("key2", "PassThroughValue2");
 
-        mapB2.put("key", "PutIfAbsentValue");
+        mapB2.put("key", "PassThroughValue");
     }
 
     private void afterMergePassThroughMergePolicy() {
         assertEquals("PassThroughValue1", mapA1.get("key1"));
         assertEquals("PassThroughValue1", mapA2.get("key1"));
-        assertBackupEntryEqualsEventually("key1", "PassThroughValue1", backupMapA);
+        assertBackupEntryEqualsEventually("key1", "PassThroughValue1", backupAccessorA);
 
         assertEquals("PassThroughValue2", mapA1.get("key2"));
         assertEquals("PassThroughValue2", mapA2.get("key2"));
-        assertBackupEntryEqualsEventually("key2", "PassThroughValue2", backupMapA);
+        assertBackupEntryEqualsEventually("key2", "PassThroughValue2", backupAccessorA);
 
         assertEquals(2, mapA1.size());
         assertEquals(2, mapA2.size());
-        assertBackupSizeEventually(2, backupMapA);
+        assertBackupSizeEventually(2, backupAccessorA);
 
-        assertEquals("PutIfAbsentValue", mapB1.get("key"));
-        assertEquals("PutIfAbsentValue", mapB2.get("key"));
-        assertBackupEntryEqualsEventually("key", "PutIfAbsentValue", backupMapB);
+        assertEquals("PassThroughValue", mapB1.get("key"));
+        assertEquals("PassThroughValue", mapB2.get("key"));
+        assertBackupEntryEqualsEventually("key", "PassThroughValue", backupAccessorB);
 
         assertEquals(1, mapB1.size());
         assertEquals(1, mapB2.size());
-        assertBackupSizeEventually(1, backupMapB);
+        assertBackupSizeEventually(1, backupAccessorB);
     }
 
     private void afterSplitPutIfAbsentMergePolicy() {
@@ -369,23 +379,75 @@ public class MapSplitBrainTest extends SplitBrainTestSupport {
     private void afterMergePutIfAbsentMergePolicy() {
         assertEquals("PutIfAbsentValue1", mapA1.get("key1"));
         assertEquals("PutIfAbsentValue1", mapA2.get("key1"));
-        assertBackupEntryEqualsEventually("key1", "PutIfAbsentValue1", backupMapA);
+        assertBackupEntryEqualsEventually("key1", "PutIfAbsentValue1", backupAccessorA);
 
         assertEquals("PutIfAbsentValue2", mapA1.get("key2"));
         assertEquals("PutIfAbsentValue2", mapA2.get("key2"));
-        assertBackupEntryEqualsEventually("key2", "PutIfAbsentValue2", backupMapA);
+        assertBackupEntryEqualsEventually("key2", "PutIfAbsentValue2", backupAccessorA);
 
         assertEquals(2, mapA1.size());
         assertEquals(2, mapA2.size());
-        assertBackupSizeEventually(2, backupMapA);
+        assertBackupSizeEventually(2, backupAccessorA);
 
         assertEquals("PutIfAbsentValue", mapB1.get("key"));
         assertEquals("PutIfAbsentValue", mapB2.get("key"));
-        assertBackupEntryEqualsEventually("key", "PutIfAbsentValue", backupMapB);
+        assertBackupEntryEqualsEventually("key", "PutIfAbsentValue", backupAccessorB);
 
         assertEquals(1, mapB1.size());
         assertEquals(1, mapB2.size());
-        assertBackupSizeEventually(1, backupMapB);
+        assertBackupSizeEventually(1, backupAccessorB);
+    }
+
+    private void afterSplitRemoveValuesMergePolicy() {
+        mapA1.put("key", "discardedValue1");
+
+        mapA2.put("key", "discardedValue2");
+
+        mapB2.put("key", "discardedValue");
+    }
+
+    private void afterMergeRemoveValuesMergePolicy() {
+        assertNull(mapA1.get("key"));
+        assertNull(mapA2.get("key"));
+        assertBackupEntryNullEventually("key", backupAccessorA);
+
+        assertEquals(0, mapA1.size());
+        assertEquals(0, mapA2.size());
+        assertBackupSizeEventually(0, backupAccessorA);
+
+        assertNull(mapB1.get("key"));
+        assertNull(mapB2.get("key"));
+        assertBackupEntryNullEventually("key", backupAccessorB);
+
+        assertEquals(0, mapB1.size());
+        assertEquals(0, mapB2.size());
+        assertBackupSizeEventually(0, backupAccessorB);
+    }
+
+    private void afterSplitReturnPiMergePolicy() {
+        mapA1.put("key", "discardedValue1");
+
+        mapA2.put("key", "discardedValue2");
+
+        mapB2.put("key", "discardedValue");
+    }
+
+    private void afterMergeReturnPiMergePolicy() {
+        assertPi(mapA1.get("key"));
+        assertPi(mapA2.get("key"));
+        assertBackupEntryEqualsEventually("key", Math.PI, backupAccessorA);
+
+        assertEquals(1, mapA1.size());
+        assertEquals(1, mapA2.size());
+        assertBackupSizeEventually(1, backupAccessorA);
+
+        assertPi(mapB1.get("key"));
+        assertPi(mapB2.get("key"));
+        assertBackupEntryEqualsEventually("key", Math.PI, backupAccessorB);
+
+        assertEquals(1, mapB1.size());
+        assertEquals(1, mapB2.size());
+        assertBackupSizeEventually(1, backupAccessorB);
     }
 
     private void afterSplitCustomMergePolicy() {
@@ -396,10 +458,10 @@ public class MapSplitBrainTest extends SplitBrainTestSupport {
     private void afterMergeCustomMergePolicy() {
         assertEquals(1, mapA1.get("key"));
         assertEquals(1, mapA2.get("key"));
-        assertBackupEntryEqualsEventually("key", 1, backupMapA);
+        assertBackupEntryEqualsEventually("key", 1, backupAccessorA);
 
         assertEquals(1, mapA1.size());
         assertEquals(1, mapA2.size());
-        assertBackupSizeEventually(1, backupMapA);
+        assertBackupSizeEventually(1, backupAccessorA);
     }
 }
