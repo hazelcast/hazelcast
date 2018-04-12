@@ -57,7 +57,7 @@ import com.hazelcast.util.Base64;
  * The {@link #main(String...)} method is provided to generate the encrypted variables.
  * <p>
  * This class extends {@link AbstractPbeReplacer} where the main encryption logic is located. This class implements
- * {@link #getPassword()} method and dependig on configuration allows to use a password file and/or user properties (name and
+ * {@link #getPassword()} method and depending on configuration allows to use a password file and/or user properties (name and
  * HOME) and/or network interface properties (MAC address).
  */
 public class EncryptionReplacer extends AbstractPbeReplacer {
