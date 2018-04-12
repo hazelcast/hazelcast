@@ -143,17 +143,7 @@ public abstract class ClientProxy implements DistributedObject {
 
     @Override
     public final void destroy() {
-        if (preDestroy()) {
-            onDestroy();
-            ClientMessage clientMessage = ClientDestroyProxyCodec.encodeRequest(getDistributedObjectName(), getServiceName());
-            getContext().getProxyManager().removeProxy(getServiceName(), getDistributedObjectName());
-            try {
-                new ClientInvocation(getClient(), clientMessage, getName()).invoke().get();
-                postDestroy();
-            } catch (Exception e) {
-                throw rethrow(e);
-            }
-        }
+        getContext().getProxyManager().destroyProxy(this);
     }
 
     /**
@@ -168,11 +158,22 @@ public abstract class ClientProxy implements DistributedObject {
         if (preDestroy()) {
             try {
                 onDestroy();
-            } catch (Exception e) {
-                throw rethrow(e);
             } finally {
                 postDestroy();
             }
+        }
+    }
+
+    /**
+     * Destroys the remote distributed object counterpart of this proxy by
+     * issuing the destruction request to the cluster.
+     */
+    public final void destroyRemotely() {
+        ClientMessage clientMessage = ClientDestroyProxyCodec.encodeRequest(getDistributedObjectName(), getServiceName());
+        try {
+            new ClientInvocation(getClient(), clientMessage, getName()).invoke().get();
+        } catch (Exception e) {
+            throw rethrow(e);
         }
     }
 
