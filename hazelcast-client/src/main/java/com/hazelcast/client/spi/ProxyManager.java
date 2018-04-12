@@ -112,7 +112,7 @@ import static com.hazelcast.util.ServiceLoader.classIterator;
  * The ProxyManager handles client proxy instantiation and retrieval at start and runtime by registering
  * corresponding service manager names and their {@link com.hazelcast.client.spi.ClientProxyFactory}s.
  */
-@SuppressWarnings("checkstyle:classfanoutcomplexity")
+@SuppressWarnings({"checkstyle:classfanoutcomplexity", "checkstyle:methodcount"})
 public final class ProxyManager {
 
     private static final String PROVIDER_ID = ClientProxyDescriptorProvider.class.getCanonicalName();
