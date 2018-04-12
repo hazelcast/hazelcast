@@ -19,6 +19,7 @@ package com.hazelcast.map.impl.tx;
 import com.hazelcast.concurrent.lock.LockResource;
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
@@ -999,6 +1000,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
     @Test
     public void testContainsValue() throws TransactionException {
         Config config = getConfig();
+        config.getMapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT);
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance h1 = factory.newHazelcastInstance(config);
         final IMap<String, String> map = h1.getMap("default");

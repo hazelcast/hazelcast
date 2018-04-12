@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.map.impl.LocalMapStatsProvider;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
@@ -23,12 +24,18 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.ReadonlyOperation;
+import com.hazelcast.util.SetUtil;
 
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
+/**
+ * Checks if a value is in the map. Ignores the keys which are deleted.
+ *
+ * @since 3.10
+ */
 public class ContainsValueExceptKeysOperation extends MapOperation implements PartitionAwareOperation, ReadonlyOperation {
 
     private boolean contains;
@@ -51,16 +58,10 @@ public class ContainsValueExceptKeysOperation extends MapOperation implements Pa
 
     @Override
     public void run() throws Exception {
-        final Iterator<Record> iterator = recordStore.iterator();
-        while (iterator.hasNext()) {
-            Record record = iterator.next();
-            Object value = record.getValue();
-            Data key = record.getKey();
-            if (this.value.equals(value)
-                    && !deletedKeys.contains(key)) {
-                contains = true;
-                break;
-            }
+        contains = recordStore.containsValue(value, deletedKeys);
+        if (mapContainer.getMapConfig().isStatisticsEnabled()) {
+            LocalMapStatsProvider localMapStatsProvider = mapServiceContext.getLocalMapStatsProvider();
+            localMapStatsProvider.getLocalMapStatsImpl(name).incrementOtherOperations();
         }
     }
 
@@ -84,7 +85,7 @@ public class ContainsValueExceptKeysOperation extends MapOperation implements Pa
         super.readInternal(in);
         value = in.readObject();
         int size = in.readInt();
-        deletedKeys = new HashSet<Data>(size);
+        deletedKeys = SetUtil.createHashSet(size);
         for (int i = 0; i < size; i++) {
             deletedKeys.add(in.readData());
         }

@@ -156,5 +156,5 @@ public interface MapOperationProvider {
     OperationFactory createMergeOperationFactory(String name, int[] partitions, List<MapMergeTypes>[] mergingEntries,
                                                  SplitBrainMergePolicy<Data, MapMergeTypes> mergePolicy);
   
-    OperationFactory createContainsValueExceptKeysOperation(String name, Object value, Set<Data> deletedKeys)
+    OperationFactory createContainsValueExceptKeysOperation(String name, Object value, Set<Data> deletedKeys);
 }

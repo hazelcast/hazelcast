@@ -261,6 +261,8 @@ public interface RecordStore<R extends Record> {
 
     boolean containsValue(Object testValue);
 
+    boolean containsValue(Object testValue, Set<Data> deletedKeys);
+
     Object evict(Data key, boolean backup);
 
     /**

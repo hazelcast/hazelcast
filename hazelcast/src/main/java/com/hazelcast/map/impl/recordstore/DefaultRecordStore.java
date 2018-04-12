@@ -270,6 +270,11 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     @Override
     public boolean containsValue(Object value) {
+        return containsValue(value, null);
+    }
+
+    @Override
+    public boolean containsValue(Object value, Set<Data> deletedKeys) {
         checkIfLoaded();
         long now = getNow();
         Collection<Record> records = storage.values();
@@ -286,7 +291,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             if (getOrNullIfExpired(record, now, false) == null) {
                 continue;
             }
-            if (recordComparator.isEqual(value, record.getValue())) {
+            if (recordComparator.isEqual(value, record.getValue())
+                    && (deletedKeys == null || !deletedKeys.contains(record.getKey()))) {
                 return true;
             }
         }

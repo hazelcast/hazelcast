@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,11 +21,17 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.util.SetUtil;
 
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * Operation factory for {@link ContainsValueExceptKeysOperation}.
+ *
+ * @since 3.10
+ */
 public class ContainsValueExceptKeysFactory extends AbstractMapOperationFactory {
     private String name;
     private Object value;
@@ -65,7 +71,7 @@ public class ContainsValueExceptKeysFactory extends AbstractMapOperationFactory 
         name = in.readUTF();
         value = in.readObject();
         int size = in.readInt();
-        deletedKeys = new HashSet<Data>(size);
+        deletedKeys = SetUtil.createHashSet(size);
         for (int i = 0; i < size; i++) {
             deletedKeys.add(in.readData());
         }

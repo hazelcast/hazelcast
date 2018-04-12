@@ -129,7 +129,6 @@ public abstract class TransactionalMapProxySupport extends TransactionalDistribu
     }
 
     boolean containsValueInternal(Object value, Set<Data> removedKeys) {
-        // TODO: what to do if near cache is enabled?
         OperationFactory operationFactory = operationProvider.createContainsValueExceptKeysOperation(name, value, removedKeys);
         try {
             Map<Integer, Object> results = operationService.invokeOnAllPartitions(SERVICE_NAME, operationFactory);
