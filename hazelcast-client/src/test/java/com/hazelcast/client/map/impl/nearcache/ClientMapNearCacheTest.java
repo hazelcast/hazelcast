@@ -625,7 +625,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
         int randomKey = random.nextInt(mapSize);
         clientMap.submitToKey(randomKey, new IncrementEntryProcessor(), callback);
 
-        assertOpenEventually(latch, 3);
+        assertOpenEventually(latch);
         assertTrueEventually(new AssertTask() {
             public void run() {
                 assertThatOwnedEntryCountEquals(clientMap, mapSize - 1);
