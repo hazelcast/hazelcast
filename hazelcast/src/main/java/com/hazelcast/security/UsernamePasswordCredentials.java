@@ -16,9 +16,9 @@
 
 package com.hazelcast.security;
 
+import com.hazelcast.nio.serialization.BinaryInterface;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
-import com.hazelcast.nio.serialization.BinaryInterface;
 import com.hazelcast.spi.impl.SpiPortableHook;
 
 import java.io.IOException;

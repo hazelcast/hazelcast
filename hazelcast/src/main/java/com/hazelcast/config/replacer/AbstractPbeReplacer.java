@@ -16,22 +16,21 @@
 
 package com.hazelcast.config.replacer;
 
-import static com.hazelcast.util.Preconditions.checkPositive;
-import static com.hazelcast.util.Preconditions.checkTrue;
-import static com.hazelcast.util.StringUtil.UTF8_CHARSET;
-
-import java.security.SecureRandom;
-import java.util.Properties;
+import com.hazelcast.config.replacer.spi.ConfigReplacer;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
+import com.hazelcast.util.Base64;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
+import java.security.SecureRandom;
+import java.util.Properties;
 
-import com.hazelcast.config.replacer.spi.ConfigReplacer;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
-import com.hazelcast.util.Base64;
+import static com.hazelcast.util.Preconditions.checkPositive;
+import static com.hazelcast.util.Preconditions.checkTrue;
+import static com.hazelcast.util.StringUtil.UTF8_CHARSET;
 
 /**
  * The common parent for {@link ConfigReplacer} implementations which allow to mask values by encrypting the value. This parent

@@ -25,8 +25,8 @@ import com.hazelcast.internal.partition.impl.PartitionStateManager;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.PartitionMigrationEvent;
-import com.hazelcast.spi.partition.IPartitionLostEvent;
 import com.hazelcast.spi.ServiceNamespace;
+import com.hazelcast.spi.partition.IPartitionLostEvent;
 
 import java.util.Arrays;
 
