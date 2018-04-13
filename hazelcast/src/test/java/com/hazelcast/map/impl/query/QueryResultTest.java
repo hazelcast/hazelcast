@@ -46,7 +46,7 @@ public class QueryResultTest extends HazelcastTestSupport {
 
     @Test
     public void serialization() {
-        QueryResult expected = new QueryResult(IterationType.ENTRY, 100);
+        QueryResult expected = new QueryResult(IterationType.ENTRY, null, null, 100, false);
         QueryResultRow row = new QueryResultRow(serializationService.toData("1"), serializationService.toData("row"));
         expected.addRow(row);
 
