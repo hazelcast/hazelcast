@@ -16,6 +16,8 @@
 
 package com.hazelcast.spi.merge;
 
+import com.hazelcast.spi.annotation.Beta;
+
 import java.util.Iterator;
 
 /**
@@ -24,6 +26,7 @@ import java.util.Iterator;
  * @param <E> ringbuffer item types
  * @since 3.10
  */
+@Beta
 public class RingbufferMergeDataReadOnlyIterator<E> implements Iterator<E> {
 
     private final RingbufferMergeData ringbuffer;
