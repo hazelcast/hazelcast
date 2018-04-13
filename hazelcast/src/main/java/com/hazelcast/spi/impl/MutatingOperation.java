@@ -19,7 +19,7 @@ package com.hazelcast.spi.impl;
 import com.hazelcast.spi.annotation.Beta;
 
 /**
- * Marker interface for operations that changes map state/data.
+ * Marker interface for operations that change state/data.
  * Used for quorum to reject operations if quorum size not satisfied
  */
 @Beta
