@@ -87,14 +87,16 @@ public class ClientScheduledFutureProxy<V>
             ScheduledExecutorGetStatsFromAddressCodec.ResponseParameters responseParameters =
                     ScheduledExecutorGetStatsFromAddressCodec.decodeResponse(response);
             return new ScheduledTaskStatisticsImpl(responseParameters.totalRuns, responseParameters.lastIdleTimeNanos,
-                    responseParameters.totalRunTimeNanos, responseParameters.totalIdleTimeNanos);
+                    responseParameters.totalRunTimeNanos, responseParameters.totalIdleTimeNanos,
+                    responseParameters.lastRunDurationNanos);
         } else {
             ClientMessage request = ScheduledExecutorGetStatsFromPartitionCodec.encodeRequest(schedulerName, taskName);
             ClientMessage response = invokeOnPartition(request, partitionId);
             ScheduledExecutorGetStatsFromAddressCodec.ResponseParameters responseParameters =
                     ScheduledExecutorGetStatsFromAddressCodec.decodeResponse(response);
             return new ScheduledTaskStatisticsImpl(responseParameters.totalRuns, responseParameters.lastIdleTimeNanos,
-                    responseParameters.totalRunTimeNanos, responseParameters.totalIdleTimeNanos);
+                    responseParameters.totalRunTimeNanos, responseParameters.totalIdleTimeNanos,
+                    responseParameters.lastRunDurationNanos);
         }
 
     }

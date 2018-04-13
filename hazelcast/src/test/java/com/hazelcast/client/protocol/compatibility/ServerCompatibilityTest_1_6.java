@@ -4438,6 +4438,23 @@ public class ServerCompatibilityTest_1_6 {
      int length = inputStream.readInt();
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
+    TransactionalMapContainsValueCodec.RequestParameters params = TransactionalMapContainsValueCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
+                assertTrue(isEqual(aString, params.name));
+                assertTrue(isEqual(aString, params.txnId));
+                assertTrue(isEqual(aLong, params.threadId));
+                assertTrue(isEqual(aData, params.value));
+}
+{
+    ClientMessage clientMessage = TransactionalMapContainsValueCodec.encodeResponse(    aBoolean   );
+    int length = inputStream.readInt();
+    byte[] bytes = new byte[length];
+    inputStream.read(bytes);
+    assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
+}
+{
+     int length = inputStream.readInt();
+        byte[] bytes = new byte[length];
+        inputStream.read(bytes);
     TransactionalMultiMapPutCodec.RequestParameters params = TransactionalMultiMapPutCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
                 assertTrue(isEqual(aString, params.name));
                 assertTrue(isEqual(aString, params.txnId));
@@ -5916,7 +5933,7 @@ public class ServerCompatibilityTest_1_6 {
                 assertTrue(isEqual(aString, params.taskName));
 }
 {
-    ClientMessage clientMessage = ScheduledExecutorGetStatsFromPartitionCodec.encodeResponse(    aLong ,    aLong ,    aLong ,    aLong   );
+    ClientMessage clientMessage = ScheduledExecutorGetStatsFromPartitionCodec.encodeResponse(    aLong ,    aLong ,    aLong ,    aLong ,    aLong   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
@@ -5932,7 +5949,7 @@ public class ServerCompatibilityTest_1_6 {
                 assertTrue(isEqual(anAddress, params.address));
 }
 {
-    ClientMessage clientMessage = ScheduledExecutorGetStatsFromAddressCodec.encodeResponse(    aLong ,    aLong ,    aLong ,    aLong   );
+    ClientMessage clientMessage = ScheduledExecutorGetStatsFromAddressCodec.encodeResponse(    aLong ,    aLong ,    aLong ,    aLong ,    aLong   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
