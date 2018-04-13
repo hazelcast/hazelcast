@@ -29,6 +29,7 @@ import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.BinaryOperationFactory;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionIteratingOperation;
+import com.hazelcast.util.ExceptionUtil;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -37,6 +38,7 @@ import java.util.List;
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.spi.ExceptionAction.THROW_EXCEPTION;
 import static com.hazelcast.util.CollectionUtil.toIntArray;
+import static com.hazelcast.util.ExceptionUtil.rethrow;
 
 /**
  * Native handling only for RU compatibility purposes, can be deleted in 3.10 master
@@ -87,9 +89,9 @@ public class QueryOperation extends MapOperation implements ReadonlyOperation {
                        try {
                            modifiableResult = queryRunner.populateEmptyResult(query, initialPartitions);
                            populateResult((PartitionIteratingOperation.PartitionResponse) response, modifiableResult);
-                       } catch (Throwable throwable) {
-                           QueryOperation.this.sendResponse(throwable);
-                           return;
+                       } catch (Exception e) {
+                           QueryOperation.this.sendResponse(e);
+                           throw rethrow(e);
                        }
                        QueryOperation.this.sendResponse(modifiableResult);
                    } finally {
