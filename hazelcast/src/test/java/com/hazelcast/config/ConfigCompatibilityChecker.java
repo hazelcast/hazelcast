@@ -21,6 +21,7 @@ import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.Duration
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.config.ConfigUtils;
+import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.util.CollectionUtil;
 import org.apache.commons.lang3.ArrayUtils;
 
@@ -451,7 +452,7 @@ class ConfigCompatibilityChecker {
             final int max1 = c1.getMaxThreadSize();
             final int max2 = c2.getMaxThreadSize();
             return nullSafeEqual(c1.getName(), c2.getName())
-                    && (nullSafeEqual(max1, max2) || (Math.min(max1, max2) == 0 && Math.max(max1, max2) == Runtime.getRuntime().availableProcessors()))
+                    && (nullSafeEqual(max1, max2) || (Math.min(max1, max2) == 0 && Math.max(max1, max2) == RuntimeAvailableProcessors.get()))
                     && nullSafeEqual(c1.getRetryCount(), c2.getRetryCount())
                     && nullSafeEqual(c1.getChunkSize(), c2.getChunkSize())
                     && nullSafeEqual(c1.getQueueSize(), c2.getQueueSize())
