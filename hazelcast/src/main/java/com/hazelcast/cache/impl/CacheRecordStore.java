@@ -111,7 +111,7 @@ public class CacheRecordStore
 
     protected CacheRecordFactory createCacheRecordFactory() {
         return new CacheRecordFactory(cacheConfig.getInMemoryFormat(),
-                                      nodeEngine.getSerializationService());
+                nodeEngine.getSerializationService());
     }
 
     @Override
@@ -203,15 +203,15 @@ public class CacheRecordStore
         if (record == null || isExpired) {
             Object newValue =
                     mergePolicy.merge(name,
-                                      createCacheEntryView(
-                                            key,
-                                            value,
-                                            cacheEntryView.getCreationTime(),
-                                            cacheEntryView.getExpirationTime(),
-                                            cacheEntryView.getLastAccessTime(),
-                                            cacheEntryView.getAccessHit(),
-                                            mergePolicy),
-                                      null);
+                            createCacheEntryView(
+                                    key,
+                                    value,
+                                    cacheEntryView.getCreationTime(),
+                                    cacheEntryView.getExpirationTime(),
+                                    cacheEntryView.getLastAccessTime(),
+                                    cacheEntryView.getAccessHit(),
+                                    mergePolicy),
+                            null);
             if (newValue != null) {
                 record = createRecordWithExpiry(key, newValue, expiryTime, now, true, IGNORE_COMPLETION);
                 merged = record != null;
@@ -220,23 +220,24 @@ public class CacheRecordStore
             Object existingValue = record.getValue();
             Object newValue =
                     mergePolicy.merge(name,
-                                      createCacheEntryView(
-                                            key,
-                                            value,
-                                            cacheEntryView.getCreationTime(),
-                                            cacheEntryView.getExpirationTime(),
-                                            cacheEntryView.getLastAccessTime(),
-                                            cacheEntryView.getAccessHit(),
-                                            mergePolicy),
-                                      createCacheEntryView(
-                                            key,
-                                            existingValue,
-                                            cacheEntryView.getCreationTime(),
-                                            record.getExpirationTime(),
-                                            record.getLastAccessTime(),
-                                            record.getAccessHit(),
-                                            mergePolicy));
-            if (existingValue != newValue) {
+                            createCacheEntryView(
+                                    key,
+                                    value,
+                                    cacheEntryView.getCreationTime(),
+                                    cacheEntryView.getExpirationTime(),
+                                    cacheEntryView.getLastAccessTime(),
+                                    cacheEntryView.getAccessHit(),
+                                    mergePolicy),
+                            createCacheEntryView(
+                                    key,
+                                    existingValue,
+                                    cacheEntryView.getCreationTime(),
+                                    record.getExpirationTime(),
+                                    record.getLastAccessTime(),
+                                    record.getAccessHit(),
+                                    mergePolicy));
+
+            if (!cacheRecordFactory.isEqual(existingValue, newValue)) {
                 merged = updateRecordWithExpiry(key, newValue, record, expiryTime, now, true, IGNORE_COMPLETION);
             }
         }
