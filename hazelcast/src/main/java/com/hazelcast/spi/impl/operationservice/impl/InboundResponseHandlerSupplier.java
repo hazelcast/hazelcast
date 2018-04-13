@@ -39,6 +39,7 @@ import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutOfMemo
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.spi.properties.GroupProperty.RESPONSE_THREAD_COUNT;
 import static com.hazelcast.util.EmptyStatement.ignore;
+import static com.hazelcast.util.HashUtil.hashToIndex;
 import static com.hazelcast.util.ThreadUtil.createThreadName;
 import static com.hazelcast.util.concurrent.BackoffIdleStrategy.createBackoffIdleStrategy;
 import static java.util.concurrent.TimeUnit.MICROSECONDS;
@@ -242,7 +243,7 @@ public class InboundResponseHandlerSupplier implements MetricsProvider, Supplier
     final class AsyncMultithreadedResponseHandler implements PacketHandler {
         @Override
         public void handle(Packet packet) {
-            int threadIndex = INT_HOLDER.get().getAndInc() % responseThreads.length;
+            int threadIndex = hashToIndex(INT_HOLDER.get().getAndInc(), responseThreads.length);
             responseThreads[threadIndex].responseQueue.add(packet);
         }
     }
