@@ -17,12 +17,13 @@
 package com.hazelcast.jet.config;
 
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
-import org.junit.Test;
-import org.junit.runner.RunWith;
 
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static org.junit.Assert.assertEquals;
@@ -38,7 +39,7 @@ public class JobConfigTest {
     public void when_setName_thenReturnsName() {
         // When
         JobConfig config = new JobConfig();
-        String name = "myjobname";
+        String name = "myJobName";
         config.setName(name);
 
         // Then
@@ -67,7 +68,7 @@ public class JobConfigTest {
 
 
     @Test
-    public void when_setProcessingGuarentee_thenReturnsProcessingGuarantee() {
+    public void when_setProcessingGuarantee_thenReturnsProcessingGuarantee() {
         // When
         JobConfig config = new JobConfig();
         config.setProcessingGuarantee(EXACTLY_ONCE);
@@ -170,7 +171,7 @@ public class JobConfigTest {
     }
 
     @Test
-    public void when_addResourceWithPathandId_thenReturnsResourceConfig() throws MalformedURLException {
+    public void when_addResourceWithPathAndId_thenReturnsResourceConfig() throws MalformedURLException {
         // When
         JobConfig config = new JobConfig();
         String path = "/path/to/my.txt";
@@ -210,7 +211,6 @@ public class JobConfigTest {
         assertEquals(file.toURI().toURL(), resourceConfig.getUrl());
         assertEquals("customId", resourceConfig.getId());
     }
-
 
     @Test
     public void when_addResourceWithURL_thenReturnsResourceConfig() throws MalformedURLException {

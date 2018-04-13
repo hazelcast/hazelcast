@@ -28,6 +28,7 @@ import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.TestProcessors.MockPS;
 import com.hazelcast.jet.core.TestProcessors.StuckProcessor;
 import com.hazelcast.jet.impl.JetService;
+import com.hazelcast.jet.impl.JobRecord;
 import com.hazelcast.jet.impl.JobRepository;
 import com.hazelcast.jet.impl.JobResult;
 import com.hazelcast.jet.impl.MasterContext;
@@ -54,6 +55,7 @@ import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.MEMB
 import static com.hazelcast.internal.partition.impl.PartitionDataSerializerHook.SHUTDOWN_REQUEST;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.STARTING;
+import static com.hazelcast.jet.impl.JobRepository.JOB_RECORDS_MAP_NAME;
 import static com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook.INIT_EXECUTION_OP;
 import static com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook.START_EXECUTION_OP;
 import static com.hazelcast.test.PacketFiltersUtil.dropOperationsBetween;
@@ -462,14 +464,17 @@ public class TopologyChangeTest extends JetTestSupport {
 
     @Test
     public void when_nodeIsNotJobParticipant_then_initFails() throws Throwable {
-        int jobId = 1;
-        int executionId = 1;
+        final long jobId = 1;
+        final long executionId = 1;
         HazelcastInstance master = instances[0].getHazelcastInstance();
         int memberListVersion = getClusterService(master).getMemberListVersion();
         Set<MemberInfo> memberInfos = new HashSet<>();
         for (int i = 1; i < instances.length; i++) {
             memberInfos.add(new MemberInfo(getNode(instances[i].getHazelcastInstance()).getLocalMember()));
         }
+
+        JobRecord jobRecord = new JobRecord(jobId, 0, null, new JobConfig(), 2);
+        instances[0].getMap(JOB_RECORDS_MAP_NAME).put(jobId, jobRecord);
 
         InitExecutionOperation op = new InitExecutionOperation(jobId, executionId, memberListVersion, memberInfos, null);
         Future<Object> future = getOperationService(master)
@@ -481,6 +486,8 @@ public class TopologyChangeTest extends JetTestSupport {
             fail();
         } catch (ExecutionException e) {
             assertInstanceOf(IllegalArgumentException.class, e.getCause());
+            assertTrue("Expected: contains 'is not in participants'\nActual: '" + e.getMessage() + "'",
+                    e.getMessage().contains("is not in participants"));
         }
     }
 }

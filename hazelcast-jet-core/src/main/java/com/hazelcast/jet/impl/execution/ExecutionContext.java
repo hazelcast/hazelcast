@@ -106,7 +106,7 @@ public class ExecutionContext {
     /**
      * Starts local execution of job by submitting tasklets to execution service. If
      * execution was cancelled earlier then execution will not be started.
-     *
+     * <p>
      * Returns a future which is completed only when all tasklets are completed. If
      * execution was already cancelled before this method is called then the returned
      * future is completed immediately. The future returned can't be cancelled,

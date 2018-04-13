@@ -21,6 +21,8 @@ import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.nio.Address;
+
+import javax.annotation.Nonnull;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -31,12 +33,10 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Stream;
-import javax.annotation.Nonnull;
 
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
 
 public class LoadResource extends AbstractProcessor {
 
@@ -55,7 +55,7 @@ public class LoadResource extends AbstractProcessor {
             readFromStreamAndAssert(resource.openStream());
             readFromStreamAndAssert(resourceAsStream);
         } catch (Exception e) {
-            fail();
+            throw new RuntimeException(e);
         }
         return true;
     }

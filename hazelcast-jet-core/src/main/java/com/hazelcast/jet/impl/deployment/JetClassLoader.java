@@ -19,8 +19,8 @@ package com.hazelcast.jet.impl.deployment;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.nio.IOUtil;
 
+import javax.annotation.Nullable;
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -38,10 +38,13 @@ public class JetClassLoader extends ClassLoader {
     private static final String JOB_URL_PROTOCOL = "jet-job-resource";
 
     private final Map<String, byte[]> resources;
+    private JobResourceURLStreamHandler jobResourceURLStreamHandler;
 
-    public JetClassLoader(Map<String, byte[]> resources) {
-        super(JetClassLoader.class.getClassLoader());
+    public JetClassLoader(@Nullable ClassLoader parent, Map<String, byte[]> resources) {
+        super(parent == null ? JetClassLoader.class.getClassLoader() : parent);
         this.resources = resources;
+
+        jobResourceURLStreamHandler = new JobResourceURLStreamHandler();
     }
 
     @Override
@@ -64,20 +67,17 @@ public class JetClassLoader extends ClassLoader {
             return null;
         }
 
-        return uncheckCall(() -> createResourceURL(name));
-    }
-
-    @Override
-    protected Enumeration<URL> findResources(String name) throws IOException {
-        return new SingleURLEnumeration(findResource(name));
-    }
-
-    @Override
-    public InputStream getResourceAsStream(String name) {
-        if (isEmpty(name)) {
-            return null;
+        try {
+            return new URL(JOB_URL_PROTOCOL, null, -1, name, jobResourceURLStreamHandler);
+        } catch (MalformedURLException e) {
+            // this should never happen with custom URLStreamHandler
+            throw new RuntimeException(e);
         }
-        return resourceStream(name);
+    }
+
+    @Override
+    protected Enumeration<URL> findResources(String name) {
+        return new SingleURLEnumeration(findResource(name));
     }
 
     @SuppressWarnings("unchecked")
@@ -89,10 +89,6 @@ public class JetClassLoader extends ClassLoader {
         return new InflaterInputStream(new ByteArrayInputStream(classData));
     }
 
-    private URL createResourceURL(String name) throws MalformedURLException {
-        return new URL(JOB_URL_PROTOCOL, null, -1, name, new JobResourceURLStreamHandler());
-    }
-
     private static boolean isEmpty(String className) {
         return className == null || className.isEmpty();
     }
@@ -100,7 +96,7 @@ public class JetClassLoader extends ClassLoader {
     private final class JobResourceURLStreamHandler extends URLStreamHandler {
 
         @Override
-        protected URLConnection openConnection(URL url) throws IOException {
+        protected URLConnection openConnection(URL url) {
             return new JobResourceURLConnection(url);
         }
     }
@@ -112,11 +108,11 @@ public class JetClassLoader extends ClassLoader {
         }
 
         @Override
-        public void connect() throws IOException {
+        public void connect() {
         }
 
         @Override
-        public InputStream getInputStream() throws IOException {
+        public InputStream getInputStream() {
             return resourceStream(url.getFile());
         }
     }

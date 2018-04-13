@@ -16,27 +16,33 @@
 
 package com.hazelcast.jet.impl.deployment;
 
+import com.hazelcast.jet.IMapJet;
 import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.config.JobClassLoaderFactory;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.impl.deployment.LoadPersonIsolated.LoadPersonIsolatedMetaSupplier;
 import com.hazelcast.jet.impl.deployment.LoadResource.LoadResourceMetaSupplier;
 import com.hazelcast.jet.stream.DistributedStream;
-import com.hazelcast.jet.IMapJet;
 import com.hazelcast.jet.test.IgnoredForCoverage;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
+import javax.annotation.Nonnull;
 import java.io.Serializable;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
 import static com.hazelcast.jet.core.TestUtil.executeAndPeel;
 import static com.hazelcast.jet.stream.DistributedCollectors.toList;
+import static java.util.Collections.emptyEnumeration;
+import static java.util.Collections.enumeration;
+import static java.util.Collections.singleton;
 import static java.util.stream.IntStream.range;
 import static org.junit.Assert.assertEquals;
 
@@ -99,7 +105,6 @@ public abstract class AbstractDeploymentTest extends HazelcastTestSupport {
         executeAndPeel(getJetInstance().newJob(dag, jobConfig));
     }
 
-
     @Test
     public void testDeployment_whenFileAddedAsResource_thenAvailableOnClassLoader() throws Throwable {
         createCluster();
@@ -111,6 +116,43 @@ public abstract class AbstractDeploymentTest extends HazelcastTestSupport {
         jobConfig.addResource(this.getClass().getResource("/deployment/resource.txt"), "customId");
 
         executeAndPeel(getJetInstance().newJob(dag, jobConfig));
+    }
+
+    @Test
+    public void testDeployment_when_customClassLoaderFactory_then_used() throws Throwable {
+        createCluster();
+
+        DAG dag = new DAG();
+        dag.newVertex("load resource", new LoadResourceMetaSupplier());
+
+        JobConfig jobConfig = new JobConfig();
+        jobConfig.setClassLoaderFactory(new MyJobClassLoaderFactory());
+
+        executeAndPeel(getJetInstance().newJob(dag, jobConfig));
+    }
+
+    static class MyJobClassLoaderFactory implements JobClassLoaderFactory {
+
+        @Nonnull
+        @Override
+        public ClassLoader getJobClassLoader() {
+            return new ClassLoader() {
+                @Override
+                protected Enumeration<URL> findResources(String name) {
+                    if (name.equals("customId")) {
+                        return enumeration(singleton(this.getClass().getResource("/deployment/resource.txt")));
+                    }
+                    return emptyEnumeration();
+                }
+
+                @Override
+                protected URL findResource(String name) {
+                    // return first resource from findResources
+                    Enumeration<URL> en = findResources(name);
+                    return en.hasMoreElements() ? en.nextElement() : null;
+                }
+            };
+        }
     }
 
     static class MyMapper implements Function<Map.Entry<Integer, Integer>, Integer>, Serializable {

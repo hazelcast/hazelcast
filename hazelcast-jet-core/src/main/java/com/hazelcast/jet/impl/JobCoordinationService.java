@@ -101,7 +101,13 @@ public class JobCoordinationService {
     }
 
     public ClassLoader getClassLoader(long jobId) {
-        PrivilegedAction<JetClassLoader> action = () -> new JetClassLoader(jobRepository.getJobResources(jobId));
+        PrivilegedAction<JetClassLoader> action = () -> {
+            JobConfig jobConfig = getJobConfig(jobId);
+            ClassLoader parent = jobConfig.getClassLoaderFactory() != null
+                    ? jobConfig.getClassLoaderFactory().getJobClassLoader()
+                    : null;
+            return new JetClassLoader(parent, jobRepository.getJobResources(jobId));
+        };
         return jobExecutionService.getClassLoader(jobId, action);
     }
 
@@ -381,11 +387,6 @@ public class JobCoordinationService {
      * if the requested job is not found.
      */
     public JobConfig getJobConfig(long jobId) {
-        if (!isMaster()) {
-            throw new JetException("Cannot query config of Job " + idToString(jobId) + ". Master address: "
-                    + nodeEngine.getClusterService().getMasterAddress());
-        }
-
         JobRecord jobRecord = jobRepository.getJobRecord(jobId);
         if (jobRecord != null) {
             return jobRecord.getConfig();

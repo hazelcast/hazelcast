@@ -14,21 +14,27 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.core;
+package com.hazelcast.jet.config;
 
-import com.hazelcast.jet.JetException;
-import com.hazelcast.jet.impl.util.Util;
+import javax.annotation.Nonnull;
+import java.io.Serializable;
 
 /**
- * Thrown when a job could not be found on the master node
+ * An interface that can be implemented to provide custom class loader for Jet
+ * job.
+ * <p>
+ * The classloader must be serializable: it is set in the {@link
+ * JobConfig#setClassLoaderFactory config} and sent to members in a serialized
+ * form.
+ * <p>
+ * It is useful in custom class-loading environments, for example in OSGi.
  */
-public class JobNotFoundException extends JetException {
+public interface JobClassLoaderFactory extends Serializable {
 
-    public JobNotFoundException(long jobId) {
-       super("Job with id " + Util.idToString(jobId) + " not found");
-    }
+    /**
+     * Return the class loader instance.
+     */
+    @Nonnull
+    ClassLoader getJobClassLoader();
 
-    public JobNotFoundException(String message, Throwable cause) {
-        super(message, cause);
-    }
 }

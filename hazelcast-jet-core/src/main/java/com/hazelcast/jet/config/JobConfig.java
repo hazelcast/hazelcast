@@ -45,6 +45,7 @@ public class JobConfig implements Serializable {
     private final List<ResourceConfig> resourceConfigs = new ArrayList<>();
     private boolean autoRestartEnabled = true;
     private int maxWatermarkRetainMillis = -1;
+    private JobClassLoaderFactory classLoaderFactory;
 
     /**
      * Returns the name of the job or {@code null} if no name was given.
@@ -391,4 +392,22 @@ public class JobConfig implements Serializable {
         return urlFile.substring(urlFile.lastIndexOf('/') + 1, urlFile.length());
     }
 
+    /**
+     * Sets a custom {@link JobClassLoaderFactory} that will be used to load
+     * job classes and resources on Jet members.
+     *
+     * @return {@code this} instance for fluent API
+     */
+    public JobConfig setClassLoaderFactory(@Nullable JobClassLoaderFactory classLoaderFactory) {
+        this.classLoaderFactory = classLoaderFactory;
+        return this;
+    }
+
+    /**
+     * Returns the configured {@link JobClassLoaderFactory}.
+     */
+    @Nullable
+    public JobClassLoaderFactory getClassLoaderFactory() {
+        return classLoaderFactory;
+    }
 }
