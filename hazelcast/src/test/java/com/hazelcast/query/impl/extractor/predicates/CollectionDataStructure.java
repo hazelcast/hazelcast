@@ -37,6 +37,7 @@ public class CollectionDataStructure {
         Limb[] limbs_array = null;
 
         private Map<String, Tatoo> tatoos = new HashMap<String, Tatoo>();
+        private Map<Short, Achievement> achievementsPerYear = new HashMap<Short, Achievement>();
 
         @Override
         public boolean equals(Object o) {
@@ -72,6 +73,13 @@ public class CollectionDataStructure {
         public Person withTatoos(Tatoo... tatoos) {
             for (Tatoo tatoo : tatoos) {
                 this.tatoos.put(tatoo.location, tatoo);
+            }
+            return this;
+        }
+
+        public Person withAchievements(Achievement... achievements) {
+            for (Achievement achievement : achievements) {
+                this.achievementsPerYear.put(achievement.year, achievement);
             }
             return this;
         }
@@ -156,11 +164,54 @@ public class CollectionDataStructure {
                     ", image='" + image + '\'' +
                     '}';
         }
+
     }
 
     public static Tatoo tatoo(String location, int size, String image) {
         return new Tatoo(location, size, image);
     }
+
+    public static class Achievement implements Serializable {
+
+        private final Short year;
+        private final String description;
+
+        public Achievement(Short year, String description) {
+            this.year = year;
+            this.description = description;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            Achievement that = (Achievement) o;
+            return ObjectTestUtils.equals(year, that.year) &&
+                    ObjectTestUtils.equals(description, that.description);
+        }
+
+        @Override
+        public int hashCode() {
+            return ObjectTestUtils.hash(year, description);
+        }
+
+        @Override
+        public String toString() {
+            return "Achievement{" +
+                    "year=" + year +
+                    ", description='" + description + '\'' +
+                    '}';
+        }
+    }
+
+    public static Achievement achievement(Short year, String description) {
+        return new Achievement(year, description);
+    }
+
 
     public static Limb limb(String name, Integer power) {
         Limb limb = new Limb();

@@ -39,6 +39,6 @@ public class FieldGetter extends AbstractMultiValueGetter {
 
     @Override
     public String toString() {
-        return "FieldGetter [parent=" + parent + ", field=" + field + ", modifier = " + getModifier() + "]";
+        return "FieldGetter [parent=" + parent + ", field=" + field + ", " + super.toString() + "]";
     }
 }

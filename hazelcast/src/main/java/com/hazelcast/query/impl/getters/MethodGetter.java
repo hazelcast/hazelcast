@@ -40,6 +40,6 @@ final class MethodGetter extends AbstractMultiValueGetter {
 
     @Override
     public String toString() {
-        return "MethodGetter [parent=" + parent + ", method=" + method.getName() + ", modifier = " + getModifier() + "]";
+        return "MethodGetter [parent=" + parent + ", method=" + method.getName() + ", " + super.toString() + "]";
     }
 }

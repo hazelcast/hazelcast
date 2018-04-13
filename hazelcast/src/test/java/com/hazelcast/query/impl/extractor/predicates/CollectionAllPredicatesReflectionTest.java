@@ -24,6 +24,7 @@ import static com.hazelcast.query.impl.extractor.AbstractExtractionSpecification
 import static com.hazelcast.query.impl.extractor.AbstractExtractionSpecification.Multivalue.ARRAY;
 import static com.hazelcast.query.impl.extractor.AbstractExtractionSpecification.Multivalue.LIST;
 import static com.hazelcast.query.impl.extractor.predicates.CollectionDataStructure.Person;
+import static com.hazelcast.query.impl.extractor.predicates.CollectionDataStructure.achievement;
 import static com.hazelcast.query.impl.extractor.predicates.CollectionDataStructure.limb;
 import static com.hazelcast.query.impl.extractor.predicates.CollectionDataStructure.person;
 import static com.hazelcast.query.impl.extractor.predicates.CollectionDataStructure.tatoo;
@@ -69,9 +70,12 @@ import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 public class CollectionAllPredicatesReflectionTest extends AbstractExtractionTest {
 
     private static final Person BOND = person(limb("left", 49), limb("right", 51))
-            .withTatoos(tatoo("back", 2, "dragon"), tatoo("leg", 1, "spider"));
+            .withTatoos(tatoo("back", 2, "dragon"), tatoo("leg", 1, "spider"))
+            .withAchievements(achievement((short) 5, "Finished first assignement"));
     private static final Person KRUEGER = person(limb("links", 27), limb("rechts", 29))
-            .withTatoos(tatoo("back", 3, "angel"), tatoo("arm", 1, "spider"));
+            .withTatoos(tatoo("back", 3, "angel"), tatoo("arm", 1, "spider"))
+            .withAchievements(achievement((short) 5, "Finished fifth assignement"),
+                    achievement((short) 11, "Made first open-source contribution"));
 
     @Parameters(name = "{index}: {0}, {1}, {2}")
     public static Collection<Object[]> data() {
@@ -239,6 +243,27 @@ public class CollectionAllPredicatesReflectionTest extends AbstractExtractionTes
 
         execute(Input.of(guyWithoutTatoos),
                 Query.of(Predicates.greaterThan("tatoos[any].size", 0), mv),
+                Expected.empty());
+    }
+
+    @Test
+    public void givenTwoPersonsWhenMapIsQueriedByShortKeyWithMatchingConditionThenEverybodyAreExtracted() {
+        execute(Input.of(BOND, KRUEGER),
+                Query.of(Predicates.like("achievementsPerYear['5'].description", "%assignement%"), mv),
+                Expected.of(BOND, KRUEGER));
+    }
+
+    @Test
+    public void givenTwoPersonsWhenMapIsQueriedByShortKeyWithMatchingConditionForOneThenOneIsExtracted() {
+        execute(Input.of(BOND, KRUEGER),
+                Query.of(Predicates.like("achievementsPerYear['11'].description", "%open%"), mv),
+                Expected.of( KRUEGER));
+    }
+
+    @Test
+    public void givenTwoPersonsWhenMapIsQueriedByShortKeyWithUnfitYearThenNooneIsExtracted() {
+        execute(Input.of(BOND, KRUEGER),
+                Query.of(Predicates.like("achievementsPerYear['99'].description", "%open%"), mv),
                 Expected.empty());
     }
 }

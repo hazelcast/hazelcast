@@ -16,6 +16,7 @@
 
 package com.hazelcast.query.impl.getters;
 
+import com.hazelcast.query.impl.AttributeType;
 import com.hazelcast.util.CollectionUtil;
 import com.hazelcast.util.collection.ArrayUtils;
 import java.lang.reflect.Array;
@@ -29,9 +30,7 @@ public abstract class AbstractMultiValueGetter extends Getter {
     public static final String REDUCER_ANY_TOKEN = "any";
     public static final String REDUCER_ANY_TOKEN_EMBRACED = "[any]";
 
-    public static final int DO_NOT_REDUCE = -1;
-    public static final int REDUCE_EVERYTHING = -2;
-    public static final int MODIFIER_NOT_USED = -3;
+    public static final int UNSET_INDEX = -1;
 
     static final String WRONG_MODIFIER_SUFFIX_ERROR = "Only non-empty reducers allowed for maps. ['value'] or"
             + " [any]. Not: %s";
@@ -41,10 +40,12 @@ public abstract class AbstractMultiValueGetter extends Getter {
     private static final int STRING_OFFSET = 2;
     private static final int BRACKETS_LENGTH = 4;
 
-    private final int modifier;
-    private final String mapKey;
+    private final int index;
+    private final String mapKeyAsString;
     private final ReduceType reduceType;
     private final Class resultType;
+
+    private Object cachedMapKey;
 
     public AbstractMultiValueGetter(Getter parent, String modifierSuffix, Class<?> inputType, Class resultType) {
         super(parent);
@@ -53,20 +54,17 @@ public abstract class AbstractMultiValueGetter extends Getter {
 
         switch (reduceType) {
             case REDUCE_BY_INDEX:
-                modifier = parseModifier(modifierSuffix);
-                mapKey = UNSET_VALUE;
+                index = parseIndex(modifierSuffix);
+                mapKeyAsString = UNSET_VALUE;
                 break;
             case REDUCE_BY_MAP_KEY:
-                modifier = MODIFIER_NOT_USED;
-                mapKey = parseMapKey(modifierSuffix);
+                index = UNSET_INDEX;
+                mapKeyAsString = parseMapKey(modifierSuffix);
                 break;
             case DO_NOT_REDUCE:
-                modifier = DO_NOT_REDUCE;
-                mapKey = UNSET_VALUE;
-                break;
             case REDUCE_EVERYTHING:
-                modifier = REDUCE_EVERYTHING;
-                mapKey = UNSET_VALUE;
+                index = UNSET_INDEX;
+                mapKeyAsString = UNSET_VALUE;
                 break;
             default:
                 throw new IllegalStateException("Getter incorrectly initialized `reduceType` to " + reduceType);
@@ -147,9 +145,9 @@ public abstract class AbstractMultiValueGetter extends Getter {
                 reduceInto(collector, o);
                 return collector;
             case REDUCE_BY_INDEX:
-                return getItemAtPositionOrNull(o, (Integer) modifier);
+                return getItemAtPositionOrNull(o, index);
             case REDUCE_BY_MAP_KEY:
-                return getFromMapByKey(o, mapKey);
+                return getFromMapByKey(o, mapKeyAsString);
             default:
                 throw new IllegalStateException("Getter incorrectly initialized `reduceType` to " + reduceType);
         }
@@ -159,11 +157,40 @@ public abstract class AbstractMultiValueGetter extends Getter {
         if (!(o instanceof Map)) {
             throw new IllegalArgumentException("Can get from object " + o + "only if it's a map for key " + mapKey);
         }
-        return ((Map) o).get(mapKey);
+        if (((Map) o).isEmpty()) {
+            return null;
+        }
+
+        return getFromMapBasedOnTheAttributeType((Map) o, mapKey);
     }
 
-    protected int getModifier() {
-        return modifier;
+    private Object getFromMapBasedOnTheAttributeType(Map map, String mapKeyAsString) {
+        Object convertedToMapKey = convertToCorrectMapKey(map, mapKeyAsString);
+
+        return map.get(convertedToMapKey);
+    }
+
+    private Object convertToCorrectMapKey(Map map, String mapKeyAsString) {
+        if (cachedMapKey != null) {
+            return cachedMapKey;
+        }
+        AttributeType attributeType = defineMapKeyType(map);
+        cachedMapKey = attributeType.getConverter().convert(mapKeyAsString);
+        return cachedMapKey;
+    }
+
+    private AttributeType defineMapKeyType(Map map) {
+        for (Object key : map.keySet()) {
+            if (key != null) {
+                AttributeType attributeTypeViaReflection = ReflectionHelper.getAttributeType(key.getClass());
+                return attributeTypeViaReflection == null ? AttributeType.STRING : attributeTypeViaReflection;
+            }
+        }
+        return AttributeType.STRING;
+    }
+
+    protected int getIndex() {
+        return index;
     }
 
     private Class getResultType(Class inputType, Class resultType) {
@@ -176,13 +203,13 @@ public abstract class AbstractMultiValueGetter extends Getter {
 
         if (reduceType == ReduceType.DO_NOT_REDUCE) {
             //We are returning the object as it is.
-            //No modifier suffix was defined
+            //No index suffix was defined
             return inputType;
         }
 
         if (!inputType.isArray()) {
-            throw new IllegalArgumentException("Cannot infer a return type with modifier "
-                    + modifier + " on type " + inputType.getName());
+            throw new IllegalArgumentException("Cannot infer a return type with index "
+                    + index + " on type " + inputType.getName());
         }
 
         //ok, it must be an array. let's return array type
@@ -275,12 +302,12 @@ public abstract class AbstractMultiValueGetter extends Getter {
 
     protected void reduceInto(MultiResult collector, Object currentObject) {
         if (reduceType == ReduceType.REDUCE_BY_INDEX) {
-            Object item = getItemAtPositionOrNull(currentObject, modifier);
+            Object item = getItemAtPositionOrNull(currentObject, index);
             collector.add(item);
             return;
         }
         if (reduceType == ReduceType.REDUCE_BY_MAP_KEY) {
-            collector.add(getFromMapByKey(currentObject, mapKey));
+            collector.add(getFromMapByKey(currentObject, mapKeyAsString));
             return;
         }
 
@@ -315,10 +342,16 @@ public abstract class AbstractMultiValueGetter extends Getter {
         }
     }
 
-    private static int parseModifier(String modifier) {
+    @Override
+    public String toString() {
+        return "index=" + index + ", mapKeyAsString='" + mapKeyAsString + '\'' + ", reduceType=" + reduceType
+                + ", cachedMapKey=" + cachedMapKey;
+    }
+
+    private static int parseIndex(String modifier) {
         String stringValue = removeBrackets(modifier);
         if (REDUCER_ANY_TOKEN.equals(stringValue)) {
-            return MODIFIER_NOT_USED;
+            return UNSET_INDEX;
         }
 
         int pos = Integer.parseInt(stringValue);
@@ -329,7 +362,7 @@ public abstract class AbstractMultiValueGetter extends Getter {
     }
 
     static void validateModifier(String modifier) {
-        parseModifier(modifier);
+        parseIndex(modifier);
     }
 
     private enum ReduceType {
