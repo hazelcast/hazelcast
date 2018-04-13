@@ -5,6 +5,36 @@ In this Release Notes document, you will find the new features, enhancements and
 The numbers in the square brackets refer to the issue number in Hazelcast’s GitHub repository. You can reach
 to the full descriptions of the issues at https://github.com/hazelcast/hazelcast/issues/<issue number>.
 
+==== 3.9.4 RELEASE NOTES ====
+
+Enhancements: 
+
+- Introduced variable replacers. [#12809]
+- Reporting of the ExecuteScriptRequest and ThreadDumpRequest: These two types of requests are sent from the Hazelcast Management Center to members. When they finish, there is no distinction between the logs (it is not obvious whether the responses end up with error or success). [#12437]
+- Version of the client should be added to the Statistics API. [#12394]
+- Outdated warnings regarding to time-to-live should be removed from IMap's Javadoc. [#12357]
+
+Fixes:
+
+- Query cache listener which is configured declaratively is not registered properly. [#12825]
+- Query cache is created after each getQueryCache() call. [#12814]
+- Portable serialization is mistakenly reporting incompatible class definitions when nested portables are used in certain scenarios. [#12733]
+- ILock cannot the release lock properly based on the leasing time, if the lock name contains "@". [#12614]
+- When map has a query cache, oldValue must be published after the method IMap.set(). [#12576]
+- The method IMap.addEntryListener throws NullPointerException when a null is provided instead of a listener object. The same check should be done in all similar addListener methods in all proxies. [#12552]
+- When an entry event listener is registered with oldValueRequired==false then both CacheEntryEvent#value and CacheEntryEvent#oldValue must be null or equal to the value that was removed/expired. [#12507]
+- When using AWS discovery on a Hazelcast client, if the initial connection fails due to a 503 error being returned from AWS, then the connection is not retried as per the configured retry count. [#12457]
+- IMap MBean is not created when a client reconnects to the cluster (when it uses cached map proxy). [#12417]
+- ClientJoinOperation should be moved to PreJoin: the client ownership information is carried via the method OnJoinClientOperation. It is invoked after the joins, which creates a potential race. In rare cases, it is possible that a recently joined member is not aware of the client, if a client is also joined recently. [#12375]
+- Authentication timeout logic must be revised to prevent the slow shutdowns: the clients need to wait all the scheduled tasks to finish before shutdown. [#12362]
+- The method HazelcastCache#getNativeCache should define a narrowed type: Currently, it does not narrow the return type to the actual native cache that is used internally. This requires unnecessary cast in the calling code. [#12342]
+- Shutting down members via console on Hazelcast Management Center should be disabled: it does not ask for credentials when stopping a member. [#12328]
+- The text connection send buffer is not correctly sized: it is based on the server setting, not on the client. [#12326]
+- Adding dynamic map configuration from HazelcastClient omits the time-to-live-seconds value. [#12292]
+- The methods QueryCache#destroy and then create does not give a fresh query cache. [#12246]
+- When using a HazelcastClient instance to add dynamic map configuration, it generally works for most of other parameters but the parameter timeToLiveSeconds is always 0. [#12273]
+- A dynamically added configuration for Replicate Map structure causes a ConfigurationException. [#12222]
+
 ==== 3.9.3 RELEASE NOTES ====
 
 Enhancements:
