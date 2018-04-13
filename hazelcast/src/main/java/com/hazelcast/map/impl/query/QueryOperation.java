@@ -29,7 +29,6 @@ import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.BinaryOperationFactory;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionIteratingOperation;
-import com.hazelcast.util.ExceptionUtil;
 
 import java.io.IOException;
 import java.util.ArrayList;
