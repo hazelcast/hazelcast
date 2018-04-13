@@ -19,7 +19,6 @@ package com.hazelcast.map.impl.eviction;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
-import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationQueue;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.PartitionContainer;
@@ -138,7 +137,6 @@ public final class ExpirationManager implements OperationResponseHandler, Lifecy
     private final int cleanupOperationCount;
     private final Address thisAddress;
     private final NodeEngine nodeEngine;
-    private final ClusterService clusterService;
     private final HazelcastProperties properties;
     private final TaskScheduler globalTaskScheduler;
     private final IPartitionService partitionService;
@@ -167,7 +165,6 @@ public final class ExpirationManager implements OperationResponseHandler, Lifecy
         this.globalTaskScheduler = nodeEngine.getExecutionService().getGlobalTaskScheduler();
         this.operationService = (InternalOperationService) nodeEngine.getOperationService();
         this.partitionCount = partitionService.getPartitionCount();
-        this.clusterService = nodeEngine.getClusterService();
         this.properties = nodeEngine.getProperties();
         this.taskPeriodSeconds = properties.getSeconds(TASK_PERIOD_SECONDS);
         checkPositive(taskPeriodSeconds, "taskPeriodSeconds should be a positive number");
