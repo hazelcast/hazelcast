@@ -106,11 +106,8 @@ public class MergeOperation extends Operation
      * @param mergingValue      the data to merge
      * @return the merged ringbuffer
      */
-    private Ringbuffer<Object> merge(RingbufferContainer<Object, Object> existingContainer,
-                                     RingbufferMergeTypes mergingValue) {
-        RingbufferMergeTypes existingValue = existingContainer != null
-                ? createMergingValue(serializationService, existingContainer.getRingbuffer())
-                : null;
+    private Ringbuffer<Object> merge(RingbufferContainer<Object, Object> existingContainer, RingbufferMergeTypes mergingValue) {
+        RingbufferMergeTypes existingValue = createMergingValueOrNull(existingContainer);
 
         RingbufferMergeData resultData = mergePolicy.merge(mergingValue, existingValue);
 
@@ -125,6 +122,12 @@ public class MergeOperation extends Operation
             setRingbufferData(resultData, existingContainer);
             return existingContainer.getRingbuffer();
         }
+    }
+
+    private RingbufferMergeTypes createMergingValueOrNull(RingbufferContainer<Object, Object> existingContainer) {
+        return existingContainer == null || existingContainer.getRingbuffer().isEmpty()
+                ? null
+                : createMergingValue(serializationService, existingContainer.getRingbuffer());
     }
 
     /**
@@ -152,7 +155,7 @@ public class MergeOperation extends Operation
         }
         if (storeEnabled) {
             toContainer.getStore()
-                       .storeAll(fromMergeData.getHeadSequence(), storeItems);
+                    .storeAll(fromMergeData.getHeadSequence(), storeItems);
         }
     }
 

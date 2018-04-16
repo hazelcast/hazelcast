@@ -74,7 +74,7 @@ public class CollectionMergeOperation extends CollectionBackupAwareOperation {
 
         Collection<CollectionItem> existingItems = container.getCollection();
 
-        CollectionMergeTypes existingValue = createMergingValue(serializationService, existingItems);
+        CollectionMergeTypes existingValue = createMergingValueOrNull(serializationService, existingItems);
         Collection<Object> newValues = mergePolicy.merge(mergingValue, existingValue);
 
         if (isEmpty(newValues)) {
@@ -87,6 +87,11 @@ public class CollectionMergeOperation extends CollectionBackupAwareOperation {
             createNewCollectionItems(container, existingItems, newValues, serializationService);
         }
         return existingItems;
+    }
+
+    private CollectionMergeTypes createMergingValueOrNull(SerializationService serializationService,
+                                                          Collection<CollectionItem> existingItems) {
+        return existingItems.isEmpty() ? null : createMergingValue(serializationService, existingItems);
     }
 
     private void createNewCollectionItems(CollectionContainer container, Collection<CollectionItem> items,
