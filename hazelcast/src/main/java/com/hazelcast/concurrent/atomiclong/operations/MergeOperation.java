@@ -62,7 +62,7 @@ public class MergeOperation extends AtomicLongBackupAwareOperation {
         serializationService.getManagedContext().initialize(mergePolicy);
 
         AtomicLongMergeTypes mergeValue = createMergingValue(serializationService, mergingValue);
-        AtomicLongMergeTypes existingValue = createMergingValue(serializationService, oldValue);
+        AtomicLongMergeTypes existingValue = isExistingContainer ? createMergingValue(serializationService, oldValue) : null;
         Long newValue = mergePolicy.merge(mergeValue, existingValue);
 
         backupValue = setNewValue(service, container, oldValue, newValue);
