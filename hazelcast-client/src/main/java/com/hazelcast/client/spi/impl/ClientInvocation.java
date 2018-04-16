@@ -204,7 +204,7 @@ public class ClientInvocation implements Runnable {
         logException(exception);
 
         if (!lifecycleService.isRunning()) {
-            clientInvocationFuture.complete(new HazelcastClientNotActiveException(exception.getMessage(), exception));
+            clientInvocationFuture.complete(new HazelcastClientNotActiveException("Client is shutting down", exception));
             return;
         }
 
