@@ -51,11 +51,13 @@ public class ScheduledTaskStatisticsImpl
                 copy.getTotalIdleTime(MEASUREMENT_UNIT), copy.getLastRunDuration(MEASUREMENT_UNIT));
     }
 
-    public ScheduledTaskStatisticsImpl(long runs, long lastIdleTimeNanos, long totalRunTimeNanos, long totalIdleTimeNanos) {
+    public ScheduledTaskStatisticsImpl(long runs, long lastIdleTimeNanos, long totalRunTimeNanos, long totalIdleTimeNanos,
+                                       long lastRunDuration) {
         this.runs = runs;
         this.lastIdleDuration = lastIdleTimeNanos;
         this.totalRunDuration = totalRunTimeNanos;
         this.totalIdleDuration = totalIdleTimeNanos;
+        this.lastRunDuration = lastRunDuration;
     }
 
     ScheduledTaskStatisticsImpl(long createdAt, long runs, long firstRunStartNanos, long lastRunStartNanos, long lastRunEndNanos,
