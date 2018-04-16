@@ -74,7 +74,7 @@ public class QueueMergeOperation extends QueueBackupAwareOperation implements Mu
         serializationService.getManagedContext().initialize(mergePolicy);
 
         Queue<QueueItem> existingItems = container.getItemQueue();
-        QueueMergeTypes existingValue = createMergingValue(serializationService, existingItems);
+        QueueMergeTypes existingValue = createMergingValueOrNull(serializationService, existingItems);
         Collection<Object> newValues = mergePolicy.merge(mergingValue, existingValue);
 
         if (isEmpty(newValues)) {
@@ -89,6 +89,10 @@ public class QueueMergeOperation extends QueueBackupAwareOperation implements Mu
             createNewQueueItems(container, newValues, serializationService);
         }
         return existingItems;
+    }
+
+    private QueueMergeTypes createMergingValueOrNull(SerializationService serializationService, Queue<QueueItem> existingItems) {
+        return existingItems.isEmpty() ? null : createMergingValue(serializationService, existingItems);
     }
 
     private void createNewQueueItems(QueueContainer container, Collection<Object> values,

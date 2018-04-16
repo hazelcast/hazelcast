@@ -62,9 +62,6 @@ public final class MergingValueFactory {
 
     public static CollectionMergeTypes createMergingValue(SerializationService serializationService,
                                                           Collection<CollectionItem> items) {
-        if (items.isEmpty()) {
-            return null;
-        }
         Collection<Object> values = new ArrayList<Object>(items.size());
         for (CollectionItem item : items) {
             values.add(item.getValue());
@@ -74,9 +71,6 @@ public final class MergingValueFactory {
     }
 
     public static QueueMergeTypes createMergingValue(SerializationService serializationService, Queue<QueueItem> items) {
-        if (items.isEmpty()) {
-            return null;
-        }
         Collection<Object> values = new ArrayList<Object>(items.size());
         for (QueueItem item : items) {
             values.add(item.getData());
@@ -86,17 +80,11 @@ public final class MergingValueFactory {
     }
 
     public static AtomicLongMergeTypes createMergingValue(SerializationService serializationService, Long value) {
-        if (value == null) {
-            return null;
-        }
         return new AtomicLongMergingValueImpl(serializationService)
                 .setValue(value);
     }
 
     public static AtomicReferenceMergeTypes createMergingValue(SerializationService serializationService, Data value) {
-        if (value == null) {
-            return null;
-        }
         return new AtomicReferenceMergingValueImpl(serializationService)
                 .setValue(value);
     }
@@ -213,12 +201,8 @@ public final class MergingValueFactory {
                 .setHits(hits);
     }
 
-    public static RingbufferMergeTypes createMergingValue(SerializationService serializationService,
-                                                          Ringbuffer<Object> items) {
-        if (items.isEmpty()) {
-            return null;
-        }
-        final RingbufferMergeData mergingData = new RingbufferMergeData(items);
+    public static RingbufferMergeTypes createMergingValue(SerializationService serializationService, Ringbuffer<Object> items) {
+        RingbufferMergeData mergingData = new RingbufferMergeData(items);
         return new RingbufferMergingValueImpl(serializationService)
                 .setValues(mergingData);
     }
