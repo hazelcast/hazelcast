@@ -121,13 +121,16 @@ public final class IOUtil {
     }
 
     /**
-     * Fills a buffer from an {@link InputStream}.
+     * Fills a buffer from an {@link InputStream}. If it doesn't contain any
+     * more data, returns {@code false}. If it contains some data, but not
+     * enough to fill the buffer, {@link EOFException} is thrown.
      *
      * @param in     the {@link InputStream} to read from
      * @param buffer the buffer to fill
-     * @return {@code true} if the buffer could be filled completely,
-     * {@code false} if there was no data in the {@link InputStream}
-     * @throws IOException if there was not enough data in the {@link InputStream} to fill the buffer
+     * @return {@code true} if the buffer was filled completely,
+     *         {@code false} if there was no data in the {@link InputStream}
+     * @throws EOFException if there was some, but not enough, data in the
+     *         {@link InputStream} to fill the buffer
      */
     public static boolean readFullyOrNothing(InputStream in, byte[] buffer) throws IOException {
         int bytesRead = 0;
@@ -145,11 +148,11 @@ public final class IOUtil {
     }
 
     /**
-     * Fills a buffer from an {@link InputStream} unless it doesn't contain enough data.
+     * Fills a buffer from an {@link InputStream}.
      *
      * @param in     the {@link InputStream} to read from
      * @param buffer the buffer to fill
-     * @throws IOException if there was no data or not enough data in the {@link InputStream} to fill the buffer
+     * @throws EOFException if there was not enough data in the {@link InputStream} to fill the buffer
      */
     public static void readFully(InputStream in, byte[] buffer) throws IOException {
         if (!readFullyOrNothing(in, buffer)) {
@@ -214,7 +217,7 @@ public final class IOUtil {
         return n;
     }
 
-    public static byte[] compress(byte[] input) throws IOException {
+    public static byte[] compress(byte[] input) {
         if (input.length == 0) {
             return new byte[0];
         }
@@ -230,12 +233,11 @@ public final class IOUtil {
             int count = compressor.deflate(buf);
             bos.write(buf, 0, count);
         }
-        bos.close();
         compressor.end();
         return bos.toByteArray();
     }
 
-    public static byte[] decompress(byte[] compressedData) throws IOException {
+    public static byte[] decompress(byte[] compressedData) {
         if (compressedData.length == 0) {
             return compressedData;
         }
@@ -251,7 +253,6 @@ public final class IOUtil {
                 Logger.getLogger(IOUtil.class).finest("Decompression failed", e);
             }
         }
-        bos.close();
         inflater.end();
         return bos.toByteArray();
     }
