@@ -40,6 +40,7 @@ import com.hazelcast.core.MessageListener;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.core.Partition;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.util.Clock;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -496,13 +497,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
             } catch (IOException e) {
                 e.printStackTrace();
             } finally {
-                if (br != null) {
-                    try {
-                        br.close();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
+                IOUtil.closeResource(br);
             }
         } else {
             println("File not found! " + f.getAbsolutePath());

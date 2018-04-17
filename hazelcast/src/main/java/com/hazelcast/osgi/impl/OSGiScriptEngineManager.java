@@ -19,6 +19,7 @@ package com.hazelcast.osgi.impl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.ClassLoaderUtil;
+import com.hazelcast.nio.IOUtil;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 
@@ -321,9 +322,7 @@ public class OSGiScriptEngineManager extends ScriptEngineManager {
                         }
                     }
                 } finally {
-                    if (reader != null) {
-                        reader.close();
-                    }
+                    IOUtil.closeResource(reader);
                 }
             }
         }
