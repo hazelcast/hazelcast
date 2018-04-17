@@ -53,7 +53,7 @@ public interface StageWithGrouping<T, K> extends GeneralStageWithGrouping<T, K> 
      * @param <OUT> type of the output item
      */
     @Nonnull
-    <A, R, OUT> BatchStage<Entry<K, R>> aggregate(
+    <A, R, OUT> BatchStage<OUT> aggregate(
             @Nonnull AggregateOperation1<? super T, A, R> aggrOp,
             @Nonnull DistributedBiFunction<? super K, ? super R, OUT> mapToOutputFn);
 
@@ -98,7 +98,7 @@ public interface StageWithGrouping<T, K> extends GeneralStageWithGrouping<T, K> 
      * @param <OUT> type of the output item
      */
     @Nonnull
-    <T1, A, R, OUT> BatchStage<Entry<K, R>> aggregate2(
+    <T1, A, R, OUT> BatchStage<OUT> aggregate2(
             @Nonnull StageWithGrouping<T1, ? extends K> stage1,
             @Nonnull AggregateOperation2<? super T, ? super T1, A, R> aggrOp,
             @Nonnull DistributedBiFunction<? super K, ? super R, OUT> mapToOutputFn);
@@ -154,7 +154,7 @@ public interface StageWithGrouping<T, K> extends GeneralStageWithGrouping<T, K> 
      * @param <OUT> type of the output item
      */
     @Nonnull
-    <T1, T2, A, R, OUT> BatchStage<Entry<K, R>> aggregate3(
+    <T1, T2, A, R, OUT> BatchStage<OUT> aggregate3(
             @Nonnull StageWithGrouping<T1, ? extends K> stage1,
             @Nonnull StageWithGrouping<T2, ? extends K> stage2,
             @Nonnull AggregateOperation3<? super T, ? super T1, ? super T2, A, R> aggrOp,

@@ -26,7 +26,6 @@ import com.hazelcast.jet.pipeline.BatchStage;
 import com.hazelcast.jet.pipeline.StageWithGrouping;
 
 import javax.annotation.Nonnull;
-import java.util.Map.Entry;
 
 import static com.hazelcast.jet.impl.pipeline.ComputeStageImplBase.DONT_ADAPT;
 import static java.util.Arrays.asList;
@@ -42,7 +41,7 @@ public class StageWithGroupingImpl<T, K> extends StageWithGroupingBase<T, K> imp
     }
 
     @Nonnull
-    public <A, R, OUT> BatchStage<Entry<K, R>> aggregate(
+    public <A, R, OUT> BatchStage<OUT> aggregate(
             @Nonnull AggregateOperation1<? super T, A, R> aggrOp,
             @Nonnull DistributedBiFunction<? super K, ? super R, OUT> mapToOutputFn
     ) {
@@ -55,7 +54,7 @@ public class StageWithGroupingImpl<T, K> extends StageWithGroupingBase<T, K> imp
     }
 
     @Nonnull
-    public <T1, A, R, OUT> BatchStage<Entry<K, R>> aggregate2(
+    public <T1, A, R, OUT> BatchStage<OUT> aggregate2(
             @Nonnull StageWithGrouping<T1, ? extends K> stage1,
             @Nonnull AggregateOperation2<? super T, ? super T1, A, R> aggrOp,
             @Nonnull DistributedBiFunction<? super K, ? super R, OUT> mapToOutputFn
@@ -70,7 +69,7 @@ public class StageWithGroupingImpl<T, K> extends StageWithGroupingBase<T, K> imp
     }
 
     @Nonnull
-    public <T1, T2, A, R, OUT> BatchStage<Entry<K, R>> aggregate3(
+    public <T1, T2, A, R, OUT> BatchStage<OUT> aggregate3(
             @Nonnull StageWithGrouping<T1, ? extends K> stage1,
             @Nonnull StageWithGrouping<T2, ? extends K> stage2,
             @Nonnull AggregateOperation3<? super T, ? super T1, ? super T2, A, R> aggrOp,

@@ -26,14 +26,17 @@ import com.hazelcast.jet.datamodel.Tag;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.datamodel.Tuple3;
 import com.hazelcast.test.HazelcastTestSupport;
+import org.junit.Before;
+import org.junit.Test;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.LongStream;
 import java.util.stream.Stream;
-import org.junit.Before;
-import org.junit.Test;
 
 import static com.hazelcast.jet.Traversers.traverseIterable;
 import static com.hazelcast.jet.Util.entry;
@@ -264,6 +267,24 @@ public class BatchStageTest extends PipelineTestSupport {
     }
 
     @Test
+    public void groupBy_withOutputFn() {
+        //Given
+        List<Integer> input = IntStream.range(1, 100).boxed()
+                                       .flatMap(i -> Collections.nCopies(i, i).stream())
+                                       .collect(toList());
+        putToSrcMap(input);
+
+        // When
+        BatchStage<Long> grouped = srcStage.groupingKey(wholeItem()).aggregate(counting(), (k, v) -> v);
+        grouped.drainTo(sink);
+        execute();
+
+        // Then
+        List<Long> expected = LongStream.range(1, 100).boxed().collect(Collectors.toList());
+        assertEquals(toBag(expected), sinkToBag());
+    }
+
+    @Test
     public void hashJoinTwo() {
         // Given
         List<Integer> input = sequence(ITEM_COUNT);
@@ -380,6 +401,37 @@ public class BatchStageTest extends PipelineTestSupport {
     }
 
     @Test
+    public void coGroupTwo_withOutputFn() {
+        //Given
+        String src1Name = HazelcastTestSupport.randomName();
+        BatchStage<Integer> srcStage1 = p.drawFrom(mapValuesSource(src1Name));
+        List<Integer> input = IntStream.range(1, 100).boxed()
+                                       .flatMap(i -> Collections.nCopies(i, i).stream())
+                                       .collect(toList());
+        putToSrcMap(input);
+        putToMap(jet().getMap(src1Name), input);
+
+        // When
+        StageWithGrouping<Integer, Integer> stage0 = srcStage.groupingKey(wholeItem());
+        StageWithGrouping<Integer, Integer> stage1 = srcStage1.groupingKey(wholeItem());
+        BatchStage<Long> coGrouped = stage0.aggregate2(stage1,
+                AggregateOperation
+                        .withCreate(LongAccumulator::new)
+                        .andAccumulate0((count, item) -> count.add(1))
+                        .andAccumulate1((count, item) -> count.add(10))
+                        .andCombine(LongAccumulator::add)
+                        .andFinish(LongAccumulator::get), (k, v) -> v);
+        coGrouped.drainTo(sink);
+        execute();
+
+        // Then
+        List<Long> expected = IntStream.range(1, 100)
+                                                       .mapToObj(i -> 11L * i)
+                                                       .collect(toList());
+        assertEquals(toBag(expected), sinkToBag());
+    }
+
+    @Test
     public void coGroupThree() {
         //Given
         List<Integer> input = IntStream.range(1, 100).boxed()
@@ -400,9 +452,9 @@ public class BatchStageTest extends PipelineTestSupport {
         BatchStage<Entry<Integer, Long>> coGrouped = stage0.aggregate3(stage1, stage2,
                 AggregateOperation
                         .withCreate(LongAccumulator::new)
-                        .andAccumulate0((count, item) -> count.addAllowingOverflow(1))
-                        .andAccumulate1((count, item) -> count.addAllowingOverflow(10))
-                        .andAccumulate2((count, item) -> count.addAllowingOverflow(100))
+                        .andAccumulate0((count, item) -> count.add(1))
+                        .andAccumulate1((count, item) -> count.add(10))
+                        .andAccumulate2((count, item) -> count.add(100))
                         .andCombine(LongAccumulator::addAllowingOverflow)
                         .andFinish(LongAccumulator::get));
         coGrouped.drainTo(sink);
@@ -411,6 +463,42 @@ public class BatchStageTest extends PipelineTestSupport {
         // Then
         List<Entry<Integer, Long>> expected = IntStream.range(1, 100)
                                                        .mapToObj(i -> entry(i, 111L * i))
+                                                       .collect(toList());
+        assertEquals(toBag(expected), sinkToBag());
+    }
+
+    @Test
+    public void coGroupThree_withOutputFn() {
+        //Given
+        List<Integer> input = IntStream.range(1, 100).boxed()
+                                       .flatMap(i -> Collections.nCopies(i, i).stream())
+                                       .collect(toList());
+        putToSrcMap(input);
+        String src1Name = HazelcastTestSupport.randomName();
+        String src2Name = HazelcastTestSupport.randomName();
+        BatchStage<Integer> src1 = p.drawFrom(mapValuesSource(src1Name));
+        BatchStage<Integer> src2 = p.drawFrom(mapValuesSource(src2Name));
+        putToMap(jet().getMap(src1Name), input);
+        putToMap(jet().getMap(src2Name), input);
+
+        // When
+        StageWithGrouping<Integer, Integer> stage0 = srcStage.groupingKey(wholeItem());
+        StageWithGrouping<Integer, Integer> stage1 = src1.groupingKey(wholeItem());
+        StageWithGrouping<Integer, Integer> stage2 = src2.groupingKey(wholeItem());
+        BatchStage<Long> coGrouped = stage0.aggregate3(stage1, stage2,
+                AggregateOperation
+                        .withCreate(LongAccumulator::new)
+                        .andAccumulate0((count, item) -> count.add(1))
+                        .andAccumulate1((count, item) -> count.add(10))
+                        .andAccumulate2((count, item) -> count.add(100))
+                        .andCombine(LongAccumulator::addAllowingOverflow)
+                        .andFinish(LongAccumulator::get), (k, v) -> v);
+        coGrouped.drainTo(sink);
+        execute();
+
+        // Then
+        List<Long> expected = IntStream.range(1, 100)
+                                                       .mapToObj(i ->111L * i)
                                                        .collect(toList());
         assertEquals(toBag(expected), sinkToBag());
     }
