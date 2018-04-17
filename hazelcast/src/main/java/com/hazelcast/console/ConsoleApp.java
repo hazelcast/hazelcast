@@ -485,16 +485,24 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
         File f = new File(first.substring(1));
         println("Executing script file " + f.getAbsolutePath());
         if (f.exists()) {
+            BufferedReader br = null;
             try {
-                BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(f), "UTF-8"));
+                br = new BufferedReader(new InputStreamReader(new FileInputStream(f), "UTF-8"));
                 String l = br.readLine();
                 while (l != null) {
                     handleCommand(l);
                     l = br.readLine();
                 }
-                br.close();
             } catch (IOException e) {
                 e.printStackTrace();
+            } finally {
+                if (br != null) {
+                    try {
+                        br.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
             }
         } else {
             println("File not found! " + f.getAbsolutePath());
@@ -1540,7 +1548,7 @@ public class ConsoleApp implements EntryListener<Object, Object>, ItemListener<O
 
     /**
      * Starts the test application.
-     *
+     * <p>
      * Loads the config from classpath hazelcast.xml, if it fails to load, will use default config.
      */
     public static void main(String[] args) throws Exception {

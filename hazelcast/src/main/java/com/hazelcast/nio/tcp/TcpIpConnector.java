@@ -185,10 +185,11 @@ public class TcpIpConnector {
                 TcpIpConnection connection = connectionManager.newConnection(channel, address);
                 connectionManager.sendBindRequest(connection, address, true);
             } catch (Exception e) {
-                closeSocket(socketChannel);
                 logger.log(level, "Could not connect to: " + socketAddress + ". Reason: " + e.getClass().getSimpleName()
                         + "[" + e.getMessage() + "]");
                 throw e;
+            } finally {
+                closeSocket(socketChannel);
             }
         }
 

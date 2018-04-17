@@ -309,16 +309,22 @@ public class OSGiScriptEngineManager extends ScriptEngineManager {
             }
             while (urls.hasMoreElements()) {
                 URL u = (URL) urls.nextElement();
-                BufferedReader reader = new BufferedReader(
-                        new InputStreamReader(u.openStream(), "UTF-8"));
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    line = line.trim();
-                    if (!line.startsWith("#") && line.length() > 0) {
-                        factoryCandidates.add(line);
+                BufferedReader reader = null;
+                try {
+                    reader = new BufferedReader(
+                            new InputStreamReader(u.openStream(), "UTF-8"));
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        line = line.trim();
+                        if (!line.startsWith("#") && line.length() > 0) {
+                            factoryCandidates.add(line);
+                        }
+                    }
+                } finally {
+                    if (reader != null) {
+                        reader.close();
                     }
                 }
-                reader.close();
             }
         }
 
