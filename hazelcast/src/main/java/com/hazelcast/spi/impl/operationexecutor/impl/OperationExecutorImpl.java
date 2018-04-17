@@ -28,6 +28,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.LiveOperations;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.PartitionTaskFactory;
 import com.hazelcast.spi.UrgentSystemOperation;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
@@ -180,7 +181,8 @@ public final class OperationExecutorImpl implements OperationExecutor, MetricsPr
         return threads;
     }
 
-    private static int getPartitionThreadId(int partitionId, int partitionThreadCount) {
+
+    static int getPartitionThreadId(int partitionId, int partitionThreadCount) {
         return partitionId % partitionThreadCount;
     }
 
@@ -354,6 +356,17 @@ public final class OperationExecutorImpl implements OperationExecutor, MetricsPr
         checkNotNull(op, "op can't be null");
 
         execute(op, op.getPartitionId(), op.isUrgent());
+    }
+
+    @Override
+    public void execute(PartitionTaskFactory taskFactory, int[] partitions) {
+        checkNotNull(taskFactory, "taskFactory can't be null");
+        checkNotNull(partitions, "partitions can't be null");
+
+        for (PartitionOperationThread partitionThread : partitionThreads) {
+            TaskBatch batch = new TaskBatch(taskFactory, partitions, partitionThread.threadId, partitionThreads.length);
+            partitionThread.queue.add(batch, false);
+        }
     }
 
     @Override
