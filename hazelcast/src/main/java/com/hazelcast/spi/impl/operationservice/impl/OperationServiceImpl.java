@@ -21,6 +21,7 @@ import com.hazelcast.core.LocalMemberResetException;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.ClusterClock;
+import com.hazelcast.internal.management.dto.OperationServiceDTO;
 import com.hazelcast.internal.management.dto.SlowOperationDTO;
 import com.hazelcast.internal.metrics.MetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
@@ -175,6 +176,11 @@ public final class OperationServiceImpl implements InternalOperationService, Met
         this.slowOperationDetector = new SlowOperationDetector(node.loggingService,
                 operationExecutor.getGenericOperationRunners(), operationExecutor.getPartitionOperationRunners(),
                 node.getProperties(), hzName);
+    }
+
+    @Override
+    public void populate(OperationServiceDTO dto) {
+
     }
 
     public OutboundResponseHandler getOutboundResponseHandler() {

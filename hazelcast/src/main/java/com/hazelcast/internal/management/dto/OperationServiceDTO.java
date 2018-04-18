@@ -39,12 +39,7 @@ public class OperationServiceDTO implements JsonSerializable {
     }
 
     public OperationServiceDTO(InternalOperationService os) {
-        responseQueueSize = os.getResponseQueueSize();
-        operationExecutorQueueSize = os.getOperationExecutorQueueSize();
-        runningOperationsCount = os.getRunningOperationsCount();
-        remoteOperationCount = os.getRemoteOperationsCount();
-        executedOperationCount = os.getExecutedOperationCount();
-        operationThreadCount = os.getPartitionThreadCount();
+        os.populate(this);
     }
 
     @Override

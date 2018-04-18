@@ -17,6 +17,7 @@
 package com.hazelcast.spi.impl.operationexecutor.impl;
 
 import com.hazelcast.instance.NodeExtension;
+import com.hazelcast.internal.management.dto.OperationServiceDTO;
 import com.hazelcast.internal.metrics.MetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
@@ -178,6 +179,14 @@ public final class OperationExecutorImpl implements OperationExecutor, MetricsPr
         }
 
         return threads;
+    }
+
+    @Override
+    public void populate(OperationServiceDTO dto) {
+        dto.operationExecutorQueueSize = getQueueSize();
+        dto.runningOperationsCount = getRunningOperationCount();
+        dto.executedOperationCount = getExecutedOperationCount();
+        dto.operationThreadCount = getPartitionThreadCount();
     }
 
     private static int getPartitionThreadId(int partitionId, int partitionThreadCount) {

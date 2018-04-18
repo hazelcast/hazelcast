@@ -16,6 +16,7 @@
 
 package com.hazelcast.spi.impl.operationexecutor;
 
+import com.hazelcast.internal.management.dto.OperationServiceDTO;
 import com.hazelcast.spi.LiveOperationsTracker;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.PacketHandler;
@@ -35,6 +36,8 @@ import com.hazelcast.spi.impl.operationexecutor.impl.OperationExecutorImpl;
  * {@link OperationRunner}.
  */
 public interface OperationExecutor extends PacketHandler, LiveOperationsTracker {
+
+    void populate(OperationServiceDTO dto);
 
     /**
      * Gets all the operation handlers for the partitions. Each partition will have its own operation handler. So if

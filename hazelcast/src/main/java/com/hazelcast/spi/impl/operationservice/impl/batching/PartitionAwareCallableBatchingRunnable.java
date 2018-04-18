@@ -21,7 +21,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.AbstractCompletableFuture;
 import com.hazelcast.spi.impl.operationexecutor.impl.PartitionOperationThread;
-import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.util.ThreadUtil;
@@ -67,7 +66,8 @@ public class PartitionAwareCallableBatchingRunnable implements Runnable {
     public PartitionAwareCallableBatchingRunnable(NodeEngine nodeEngine, PartitionAwareCallableFactory factory) {
         this.factory = factory;
         this.partitionService = nodeEngine.getPartitionService();
-        this.partitionThreadCount = ((OperationServiceImpl) nodeEngine.getOperationService()).getPartitionThreadCount();
+        this.partitionThreadCount = 0;
+        //((OperationServiceImpl) nodeEngine.getOperationService()).getPartitionThreadCount();
         this.future = new ResultFuture(nodeEngine, nodeEngine.getLogger(getClass()));
     }
 

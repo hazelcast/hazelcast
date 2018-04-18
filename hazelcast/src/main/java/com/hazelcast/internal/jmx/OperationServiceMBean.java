@@ -32,7 +32,8 @@ public class OperationServiceMBean extends HazelcastMBean<InternalOperationServi
 
     private static final int INITIAL_CAPACITY = 3;
 
-    public OperationServiceMBean(HazelcastInstance hazelcastInstance, InternalOperationService operationService,
+    public OperationServiceMBean(HazelcastInstance hazelcastInstance,
+                                 InternalOperationService operationService,
                                  ManagementService service) {
         super(operationService, service);
 
@@ -43,40 +44,40 @@ public class OperationServiceMBean extends HazelcastMBean<InternalOperationServi
 
         setObjectName(properties);
     }
-
-    @ManagedAnnotation("responseQueueSize")
-    @ManagedDescription("The size of the response queue")
-    public int getResponseQueueSize() {
-        return managedObject.getResponseQueueSize();
-    }
-
-    @ManagedAnnotation("operationExecutorQueueSize")
-    @ManagedDescription("The size of the operation executor queue")
-    int getOperationExecutorQueueSize() {
-        return managedObject.getOperationExecutorQueueSize();
-    }
-
-    @ManagedAnnotation("runningOperationsCount")
-    @ManagedDescription("the running operations count")
-    public int getRunningOperationsCount() {
-        return managedObject.getRunningOperationsCount();
-    }
-
-    @ManagedAnnotation("remoteOperationCount")
-    @ManagedDescription("The number of remote operations")
-    public int getRemoteOperationsCount() {
-        return managedObject.getRemoteOperationsCount();
-    }
-
-    @ManagedAnnotation("executedOperationCount")
-    @ManagedDescription("The number of executed operations")
-    public long getExecutedOperationCount() {
-        return managedObject.getExecutedOperationCount();
-    }
-
-    @ManagedAnnotation("operationThreadCount")
-    @ManagedDescription("Number of threads executing operations")
-    public long getOperationThreadCount() {
-        return managedObject.getPartitionThreadCount();
-    }
+//
+//    @ManagedAnnotation("responseQueueSize")
+//    @ManagedDescription("The size of the response queue")
+//    public int getResponseQueueSize() {
+//        //return managedObject.getResponseQueueSize();
+//    }
+//
+//    @ManagedAnnotation("operationExecutorQueueSize")
+//    @ManagedDescription("The size of the operation executor queue")
+//    int getOperationExecutorQueueSize() {
+//        return managedObject.getOperationExecutorQueueSize();
+//    }
+//
+//    @ManagedAnnotation("runningOperationsCount")
+//    @ManagedDescription("the running operations count")
+//    public int getRunningOperationsCount() {
+//        return managedObject.getRunningOperationsCount();
+//    }
+//
+//    @ManagedAnnotation("remoteOperationCount")
+//    @ManagedDescription("The number of remote operations")
+//    public int getRemoteOperationsCount() {
+//        return managedObject.getRemoteOperationsCount();
+//    }
+//
+//    @ManagedAnnotation("executedOperationCount")
+//    @ManagedDescription("The number of executed operations")
+//    public long getExecutedOperationCount() {
+//        return managedObject.getExecutedOperationCount();
+//    }
+//
+//    @ManagedAnnotation("operationThreadCount")
+//    @ManagedDescription("Number of threads executing operations")
+//    public long getOperationThreadCount() {
+//        return managedObject.getPartitionThreadCount();
+//    }
 }
