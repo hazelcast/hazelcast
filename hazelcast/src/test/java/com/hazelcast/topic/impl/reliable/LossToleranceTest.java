@@ -56,6 +56,7 @@ public class LossToleranceTest extends HazelcastTestSupport {
                         .setAsyncBackupCount(0));
         final HazelcastInstance[] instances = createHazelcastInstanceFactory(2).newInstances(config);
 
+        warmUpPartitions(instances);
         for (HazelcastInstance instance : instances) {
             final Member owner = instance.getPartitionService().getPartition(TOPIC_RB_PREFIX + RELIABLE_TOPIC_NAME).getOwner();
             final Member localMember = instance.getCluster().getLocalMember();
