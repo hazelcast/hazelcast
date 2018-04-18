@@ -180,7 +180,9 @@ public final class OperationServiceImpl implements InternalOperationService, Met
 
     @Override
     public void populate(OperationServiceDTO dto) {
-
+        operationExecutor.populate(dto);
+        dto.responseQueueSize = inboundResponseHandlerSupplier.responseQueueSize();
+        dto.remoteOperationCount = invocationRegistry.size();
     }
 
     public OutboundResponseHandler getOutboundResponseHandler() {
