@@ -378,6 +378,14 @@ public final class OperationExecutorImpl implements OperationExecutor, MetricsPr
     }
 
     @Override
+    public void executeBatch(Operation...ops) {
+        Batch batch = Batch.of(getPartitionThreadCount(), ops);
+        for (OperationThread partitionThread : partitionThreads) {
+            partitionThread.queue.add(batch, true);
+        }
+    }
+
+    @Override
     public void executeOnPartitionThreads(Runnable task) {
         checkNotNull(task, "task can't be null");
 

@@ -134,8 +134,7 @@ public final class PartitionIteratingOperation extends Operation implements Iden
             OperationAccessor.setCallerAddress(operation, getCallerAddress());
             batch[i] = operation;
         }
-        OperationExecutor executor = getOperationServiceImpl().getOperationExecutor();
-        executor.executeOnPartitionThreads(Batch.of(executor.getPartitionThreadCount(), batch));
+        getOperationServiceImpl().getOperationExecutor().executeBatch(batch);
     }
 
     private void executePartitionAwareOperations(PartitionAwareOperationFactory givenFactory) {
@@ -162,8 +161,7 @@ public final class PartitionIteratingOperation extends Operation implements Iden
             OperationAccessor.setCallerAddress(op, getCallerAddress());
             batch[i] = op;
         }
-        OperationExecutor executor = getOperationServiceImpl().getOperationExecutor();
-        executor.executeOnPartitionThreads(Batch.of(executor.getPartitionThreadCount(), batch));
+        getOperationServiceImpl().getOperationExecutor().executeBatch(batch);
     }
 
     private OperationServiceImpl getOperationServiceImpl() {

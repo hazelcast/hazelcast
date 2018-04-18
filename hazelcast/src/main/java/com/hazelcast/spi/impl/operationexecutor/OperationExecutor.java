@@ -178,4 +178,6 @@ public interface OperationExecutor extends PacketHandler, LiveOperationsTracker 
      * Shuts down this OperationExecutor. Any pending tasks are discarded.
      */
     void shutdown();
+
+    void executeBatch(Operation... ops);
 }
