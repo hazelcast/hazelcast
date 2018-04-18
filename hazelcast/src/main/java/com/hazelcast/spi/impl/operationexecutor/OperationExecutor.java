@@ -171,13 +171,6 @@ public interface OperationExecutor extends PacketHandler, LiveOperationsTracker 
     boolean isInvocationAllowed(Operation op, boolean isAsync);
 
     /**
-     * Checks if the current thread is an {@link Operation} thread.
-     *
-     * @return true if is an {@link Operation} thread, false otherwise.
-     */
-    boolean isOperationThread();
-
-    /**
      * Returns the ID of the partitionThread assigned to handle partition
      * with given partitionId
      *

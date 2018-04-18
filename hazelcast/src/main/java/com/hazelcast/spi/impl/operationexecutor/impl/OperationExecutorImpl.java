@@ -342,11 +342,6 @@ public final class OperationExecutorImpl implements OperationExecutor, MetricsPr
     }
 
     @Override
-    public boolean isOperationThread() {
-        return Thread.currentThread() instanceof OperationThread;
-    }
-
-    @Override
     public int getPartitionThreadId(int partitionId) {
         return getPartitionThreadId(partitionId, partitionThreads.length);
     }
