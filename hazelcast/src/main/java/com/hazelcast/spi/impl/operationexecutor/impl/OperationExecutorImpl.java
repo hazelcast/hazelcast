@@ -255,7 +255,6 @@ public final class OperationExecutorImpl implements OperationExecutor, MetricsPr
     }
 
     @Probe(name = "runningCount")
-    @Override
     public int getRunningOperationCount() {
         return getRunningPartitionOperationCount() + getRunningGenericOperationCount();
     }
@@ -280,7 +279,6 @@ public final class OperationExecutorImpl implements OperationExecutor, MetricsPr
         return result;
     }
 
-    @Override
     @Probe(name = "queueSize", level = MANDATORY)
     public int getQueueSize() {
         int size = 0;
@@ -291,7 +289,6 @@ public final class OperationExecutorImpl implements OperationExecutor, MetricsPr
         return size;
     }
 
-    @Override
     @Probe(name = "priorityQueueSize", level = MANDATORY)
     public int getPriorityQueueSize() {
         int size = 0;
@@ -327,13 +324,11 @@ public final class OperationExecutorImpl implements OperationExecutor, MetricsPr
         return result;
     }
 
-    @Override
     @Probe
     public int getPartitionThreadCount() {
         return partitionThreads.length;
     }
 
-    @Override
     @Probe
     public int getGenericThreadCount() {
         return genericThreads.length;

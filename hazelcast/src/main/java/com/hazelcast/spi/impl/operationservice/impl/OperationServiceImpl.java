@@ -202,48 +202,8 @@ public final class OperationServiceImpl implements InternalOperationService, Met
         return inboundResponseHandlerSupplier.backupHandler();
     }
 
-    @Override
-    public int getPartitionThreadCount() {
-        return operationExecutor.getPartitionThreadCount();
-    }
-
-    @Override
-    public int getGenericThreadCount() {
-        return operationExecutor.getGenericThreadCount();
-    }
-
-    @Override
-    public int getRunningOperationsCount() {
-        return operationExecutor.getRunningOperationCount();
-    }
-
-    @Override
-    public long getExecutedOperationCount() {
-        return operationExecutor.getExecutedOperationCount();
-    }
-
-    @Override
-    public int getRemoteOperationsCount() {
-        return invocationRegistry.size();
-    }
-
-    @Override
-    public int getOperationExecutorQueueSize() {
-        return operationExecutor.getQueueSize();
-    }
-
-    @Override
-    public int getPriorityOperationExecutorQueueSize() {
-        return operationExecutor.getPriorityQueueSize();
-    }
-
     public OperationExecutor getOperationExecutor() {
         return operationExecutor;
-    }
-
-    @Override
-    public int getResponseQueueSize() {
-        return inboundResponseHandlerSupplier.responseQueueSize();
     }
 
     @Override

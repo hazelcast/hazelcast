@@ -38,42 +38,6 @@ public interface InternalOperationService extends OperationService {
     String SERVICE_NAME = "hz:impl:operationService";
 
     /**
-     * Returns the size of the response queue.
-     *
-     * @return the size of the response queue.
-     */
-    int getResponseQueueSize();
-
-    int getOperationExecutorQueueSize();
-
-    int getPriorityOperationExecutorQueueSize();
-
-    int getRunningOperationsCount();
-
-    int getRemoteOperationsCount();
-
-    /**
-     * Returns the number of executed operations.
-     *
-     * @return the number of executed operations.
-     */
-    long getExecutedOperationCount();
-
-    /**
-     * Returns the number of partition threads.
-     *
-     * @return the number of partition threads.
-     */
-    int getPartitionThreadCount();
-
-    /**
-     * Returns the number of generic threads.
-     *
-     * @return number of generic threads.
-     */
-    int getGenericThreadCount();
-
-    /**
      * Checks if this call is timed out. A timed out call is not going to be
      * executed.
      *
