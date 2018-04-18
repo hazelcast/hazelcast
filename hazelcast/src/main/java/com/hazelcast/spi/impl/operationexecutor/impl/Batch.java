@@ -13,7 +13,7 @@ import com.hazelcast.spi.Operation;
  * From the threadId we can infer the tasks that should run on the executor that
  * called {@link #next(int)} so we feed it the list.
  */
-public final class Batch implements Runnable {
+public final class Batch {
 
     private final ConcurrentMap<Integer, Queue<Object>> tasksByThreadId;
 
@@ -44,8 +44,4 @@ public final class Batch implements Runnable {
         return partitionId % partitionThreadCount;
     }
 
-    @Override
-    public void run() {
-        // NOOP - will never be called, was just needed to get the batch executed
-    }
 }
