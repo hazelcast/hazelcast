@@ -28,7 +28,7 @@ import com.hazelcast.spi.OperationResponseHandler;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
 import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
-import com.hazelcast.spi.impl.operationexecutor.impl.BatchOperation;
+import com.hazelcast.spi.impl.operationexecutor.impl.Batch;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
@@ -135,7 +135,7 @@ public final class PartitionIteratingOperation extends Operation implements Iden
             batch[i] = operation;
         }
         OperationExecutor executor = getOperationServiceImpl().getOperationExecutor();
-        executor.executeOnPartitionThreads(BatchOperation.of(executor.getPartitionThreadCount(), batch));
+        executor.executeOnPartitionThreads(Batch.of(executor.getPartitionThreadCount(), batch));
     }
 
     private void executePartitionAwareOperations(PartitionAwareOperationFactory givenFactory) {
@@ -163,7 +163,7 @@ public final class PartitionIteratingOperation extends Operation implements Iden
             batch[i] = op;
         }
         OperationExecutor executor = getOperationServiceImpl().getOperationExecutor();
-        executor.executeOnPartitionThreads(BatchOperation.of(executor.getPartitionThreadCount(), batch));
+        executor.executeOnPartitionThreads(Batch.of(executor.getPartitionThreadCount(), batch));
     }
 
     private OperationServiceImpl getOperationServiceImpl() {

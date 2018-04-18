@@ -109,8 +109,8 @@ public abstract class OperationThread extends HazelcastManagedThread implements 
 
     private void process(Object task) {
         try {
-            if (task instanceof BatchOperation) {
-              BatchOperation batch = (BatchOperation) task;
+            if (task instanceof Batch) {
+              Batch batch = (Batch) task;
               Object next = batch.next(getThreadId());
               if (next != null) {
                   process(next);
