@@ -970,7 +970,7 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
         }
     }
 
-    @SuppressWarnings("LockAcquiredButNotSafelyReleased")
+    @SuppressWarnings({"LockAcquiredButNotSafelyReleased", "squid:S2222"})
     protected void handleLock(String[] args) {
         String lockStr = args[0];
         String key = args[1];
