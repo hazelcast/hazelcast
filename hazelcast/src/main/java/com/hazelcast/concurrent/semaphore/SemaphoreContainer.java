@@ -92,7 +92,7 @@ public class SemaphoreContainer implements IdentifiedDataSerializable {
     }
 
     public int getAvailable() {
-        return available < 0 ? 0 : available;
+        return available;
     }
 
     public boolean isAvailable(int permitCount) {
