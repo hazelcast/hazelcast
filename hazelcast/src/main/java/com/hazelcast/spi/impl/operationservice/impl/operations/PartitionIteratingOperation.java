@@ -27,6 +27,8 @@ import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationResponseHandler;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
+import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
+import com.hazelcast.spi.impl.operationexecutor.impl.BatchOperation;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
@@ -117,13 +119,12 @@ public final class PartitionIteratingOperation extends Operation implements Iden
     private void executeOperations() {
         NodeEngine nodeEngine = getNodeEngine();
         OperationResponseHandler responseHandler = new OperationResponseHandlerImpl(partitions);
-        OperationService operationService = nodeEngine.getOperationService();
         Object service = getServiceName() == null ? null : getService();
-
-        for (int partitionId : partitions) {
+        Operation[] batch = new Operation[partitions.length];
+        for (int i = 0; i < partitions.length; i++) {
             Operation operation = operationFactory.createOperation()
                     .setNodeEngine(nodeEngine)
-                    .setPartitionId(partitionId)
+                    .setPartitionId(partitions[i])
                     .setReplicaIndex(getReplicaIndex())
                     .setOperationResponseHandler(responseHandler)
                     .setServiceName(getServiceName())
@@ -131,8 +132,10 @@ public final class PartitionIteratingOperation extends Operation implements Iden
                     .setCallerUuid(extractCallerUuid());
 
             OperationAccessor.setCallerAddress(operation, getCallerAddress());
-            operationService.execute(operation);
+            batch[i] = operation;
         }
+        OperationExecutor executor = getOperationServiceImpl().getOperationExecutor();
+        executor.executeOnPartitionThreads(BatchOperation.of(executor.getPartitionThreadCount(), batch));
     }
 
     private void executePartitionAwareOperations(PartitionAwareOperationFactory givenFactory) {
@@ -143,13 +146,13 @@ public final class PartitionIteratingOperation extends Operation implements Iden
         partitions = operationFactoryPartitions == null ? partitions : operationFactoryPartitions;
 
         OperationResponseHandler responseHandler = new OperationResponseHandlerImpl(partitions);
-        OperationService operationService = nodeEngine.getOperationService();
         Object service = getServiceName() == null ? null : getService();
 
-        for (int partitionId : partitions) {
-            Operation op = factory.createPartitionOperation(partitionId)
+        Operation[] batch = new Operation[partitions.length];
+        for (int i = 0; i < partitions.length; i++) {
+            Operation op = factory.createPartitionOperation(partitions[i])
                     .setNodeEngine(nodeEngine)
-                    .setPartitionId(partitionId)
+                    .setPartitionId(partitions[i])
                     .setReplicaIndex(getReplicaIndex())
                     .setOperationResponseHandler(responseHandler)
                     .setServiceName(getServiceName())
@@ -157,8 +160,10 @@ public final class PartitionIteratingOperation extends Operation implements Iden
                     .setCallerUuid(extractCallerUuid());
 
             OperationAccessor.setCallerAddress(op, getCallerAddress());
-            operationService.execute(op);
+            batch[i] = op;
         }
+        OperationExecutor executor = getOperationServiceImpl().getOperationExecutor();
+        executor.executeOnPartitionThreads(BatchOperation.of(executor.getPartitionThreadCount(), batch));
     }
 
     private OperationServiceImpl getOperationServiceImpl() {

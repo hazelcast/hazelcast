@@ -109,7 +109,14 @@ public abstract class OperationThread extends HazelcastManagedThread implements 
 
     private void process(Object task) {
         try {
-            if (task.getClass() == Packet.class) {
+            if (task instanceof BatchOperation) {
+              BatchOperation batch = (BatchOperation) task;
+              Object next = batch.next(getThreadId());
+              if (next != null) {
+                  process(next);
+                  queue.add(batch, false); // re-queue for rest of the batch
+              }
+            } else if (task.getClass() == Packet.class) {
                 Packet packet = (Packet) task;
                 currentRunner = getOperationRunner(packet.getPartitionId());
                 currentRunner.run(packet);
