@@ -120,7 +120,7 @@ public class ClientSemaphoreTest {
         final ISemaphore semaphore = client.getSemaphore(randomString());
         semaphore.init(0);
         semaphore.reducePermits(1);
-        assertEquals(0, semaphore.availablePermits());
+        assertEquals(-1, semaphore.availablePermits());
     }
 
     @Test
@@ -138,6 +138,22 @@ public class ClientSemaphoreTest {
         semaphore.init(0);
         semaphore.increasePermits(1);
         assertEquals(1, semaphore.availablePermits());
+    }
+
+    @Test
+    public void testNegativePermitsJucCompatibility() throws Exception {
+        final ISemaphore semaphore = client.getSemaphore(randomString());
+        semaphore.init(0);
+        semaphore.reducePermits(100);
+        semaphore.release(10);
+
+        assertEquals(-90, semaphore.availablePermits());
+        assertEquals(-90, semaphore.drainPermits());
+
+        semaphore.release(10);
+
+        assertEquals(10, semaphore.availablePermits());
+        assertEquals(10, semaphore.drainPermits());
     }
 
     @Test
