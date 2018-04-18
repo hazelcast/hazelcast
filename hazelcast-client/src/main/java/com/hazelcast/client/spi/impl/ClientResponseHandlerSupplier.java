@@ -31,6 +31,7 @@ import java.util.concurrent.BlockingQueue;
 import static com.hazelcast.client.spi.properties.ClientProperty.RESPONSE_THREAD_COUNT;
 import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.onOutOfMemory;
 import static com.hazelcast.spi.impl.operationservice.impl.InboundResponseHandlerSupplier.getIdleStrategy;
+import static com.hazelcast.util.HashUtil.hashToIndex;
 
 /**
  * A {@link Supplier} for {@link ClientResponseHandler} instance.
@@ -186,7 +187,7 @@ public class ClientResponseHandlerSupplier implements Supplier<ClientResponseHan
     class AsyncMultiThreadedResponseHandler implements ClientResponseHandler {
         @Override
         public void handle(ClientMessage message, ClientConnection connection) {
-            int threadIndex = INT_HOLDER.get().getAndInc() % responseThreads.length;
+            int threadIndex = hashToIndex(INT_HOLDER.get().getAndInc(), responseThreads.length);
             responseThreads[threadIndex].responseQueue.add(new ClientPacket(connection, message));
         }
     }
