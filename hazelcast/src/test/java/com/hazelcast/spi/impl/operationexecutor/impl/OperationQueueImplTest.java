@@ -35,9 +35,9 @@ import static org.junit.Assert.assertSame;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class DefaultOperationQueueTest extends HazelcastTestSupport {
+public class OperationQueueImplTest extends HazelcastTestSupport {
 
-    private DefaultOperationQueue operationQueue;
+    private OperationQueueImpl operationQueue;
     private ArrayBlockingQueue<Object> normalQueue;
     private ArrayBlockingQueue<Object> priorityQueue;
 
@@ -45,7 +45,7 @@ public class DefaultOperationQueueTest extends HazelcastTestSupport {
     public void setup() {
         normalQueue = new ArrayBlockingQueue<Object>(100);
         priorityQueue = new ArrayBlockingQueue<Object>(100);
-        operationQueue = new DefaultOperationQueue(normalQueue, priorityQueue);
+        operationQueue = new OperationQueueImpl(normalQueue, priorityQueue);
     }
 
     // ================== add =====================
@@ -67,7 +67,7 @@ public class DefaultOperationQueueTest extends HazelcastTestSupport {
         assertEquals(1, normalQueue.size());
 
         assertSame(task, priorityQueue.iterator().next());
-        assertSame(DefaultOperationQueue.TRIGGER_TASK, normalQueue.iterator().next());
+        assertSame(OperationQueueImpl.TRIGGER_TASK, normalQueue.iterator().next());
     }
 
     @Test
@@ -214,7 +214,7 @@ public class DefaultOperationQueueTest extends HazelcastTestSupport {
         assertSame(normalTask3, operationQueue.take(false));
 
         assertEmpty(priorityQueue);
-        //assertContent(normalQueue, DefaultOperationQueue.TRIGGER_TASK);
+        //assertContent(normalQueue, OperationQueueImpl.TRIGGER_TASK);
     }
 
     public void assertEmpty(Queue<Object> q) {
