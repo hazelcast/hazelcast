@@ -89,7 +89,7 @@ public class OperationServiceImpl_asyncInvokeOnPartitionTest extends HazelcastTe
             InternalPartitionService partitionService = nodeEngine.getPartitionService();
             int sourcePartitionId = partitionService.getPartitionId(sourceKey);
             OperationServiceImpl operationService = (OperationServiceImpl) nodeEngine.getOperationService();
-            int threadCount = operationService.operationExecutor.getPartitionThreadCount();
+            int threadCount = 0;//operationService.operationExecutor.getPartitionThreadCount();
             int sourceThreadId = sourcePartitionId % threadCount;
 
             while (true) {

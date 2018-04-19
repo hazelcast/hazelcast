@@ -171,8 +171,9 @@ public final class ExpirationManager implements OperationResponseHandler, Lifecy
         this.cleanupPercentage = properties.getInteger(CLEANUP_PERCENTAGE);
         checkTrue(cleanupPercentage > 0 && cleanupPercentage <= 100,
                 "cleanupPercentage should be in range (0,100]");
-        this.cleanupOperationCount
-                = calculateCleanupOperationCount(properties, partitionCount, operationService.getPartitionThreadCount());
+//        this.cleanupOperationCount
+//                = calculateCleanupOperationCount(properties, partitionCount, operationService.getPartitionThreadCount());
+        this.cleanupOperationCount = 1;
         checkPositive(cleanupOperationCount, "cleanupOperationCount should be a positive number");
         this.primaryDrivesEviction = properties.getBoolean(PRIMARY_DRIVES_BACKUP);
         this.nodeEngine.getHazelcastInstance().getLifecycleService().addLifecycleListener(this);

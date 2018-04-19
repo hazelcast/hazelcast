@@ -17,6 +17,7 @@
 package com.hazelcast.spi.impl.operationexecutor.impl;
 
 import com.hazelcast.instance.NodeExtension;
+import com.hazelcast.internal.management.dto.OperationServiceDTO;
 import com.hazelcast.internal.metrics.MetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
@@ -180,6 +181,14 @@ public final class OperationExecutorImpl implements OperationExecutor, MetricsPr
         return threads;
     }
 
+    @Override
+    public void populate(OperationServiceDTO dto) {
+        dto.operationExecutorQueueSize = getQueueSize();
+        dto.runningOperationsCount = getRunningOperationCount();
+        dto.executedOperationCount = getExecutedOperationCount();
+        dto.operationThreadCount = getPartitionThreadCount();
+    }
+
     private static int getPartitionThreadId(int partitionId, int partitionThreadCount) {
         return partitionId % partitionThreadCount;
     }
@@ -255,7 +264,6 @@ public final class OperationExecutorImpl implements OperationExecutor, MetricsPr
     }
 
     @Probe(name = "runningCount")
-    @Override
     public int getRunningOperationCount() {
         return getRunningPartitionOperationCount() + getRunningGenericOperationCount();
     }
@@ -280,7 +288,6 @@ public final class OperationExecutorImpl implements OperationExecutor, MetricsPr
         return result;
     }
 
-    @Override
     @Probe(name = "queueSize", level = MANDATORY)
     public int getQueueSize() {
         int size = 0;
@@ -291,7 +298,6 @@ public final class OperationExecutorImpl implements OperationExecutor, MetricsPr
         return size;
     }
 
-    @Override
     @Probe(name = "priorityQueueSize", level = MANDATORY)
     public int getPriorityQueueSize() {
         int size = 0;
@@ -327,13 +333,11 @@ public final class OperationExecutorImpl implements OperationExecutor, MetricsPr
         return result;
     }
 
-    @Override
     @Probe
     public int getPartitionThreadCount() {
         return partitionThreads.length;
     }
 
-    @Override
     @Probe
     public int getGenericThreadCount() {
         return genericThreads.length;

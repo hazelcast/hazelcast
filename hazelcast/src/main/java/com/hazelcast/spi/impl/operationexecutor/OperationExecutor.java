@@ -16,6 +16,7 @@
 
 package com.hazelcast.spi.impl.operationexecutor;
 
+import com.hazelcast.internal.management.dto.OperationServiceDTO;
 import com.hazelcast.spi.LiveOperationsTracker;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.PacketHandler;
@@ -36,36 +37,7 @@ import com.hazelcast.spi.impl.operationexecutor.impl.OperationExecutorImpl;
  */
 public interface OperationExecutor extends PacketHandler, LiveOperationsTracker {
 
-    // Will be replaced by metrics
-    @Deprecated
-    int getRunningOperationCount();
-
-    // Will be replaced by metrics
-    @Deprecated
-    int getQueueSize();
-
-    // Will be replaced by metrics
-    @Deprecated
-    int getPriorityQueueSize();
-
-    /**
-     * Returns the number of executed operations.
-     */
-    long getExecutedOperationCount();
-
-    /**
-     * Returns the number of partition threads.
-     *
-     * @return number of partition threads.
-     */
-    int getPartitionThreadCount();
-
-    /**
-     * Returns the number of generic threads.
-     *
-     * @return number of generic threads.
-     */
-    int getGenericThreadCount();
+    void populate(OperationServiceDTO dto);
 
     /**
      * Gets all the operation handlers for the partitions. Each partition will have its own operation handler. So if

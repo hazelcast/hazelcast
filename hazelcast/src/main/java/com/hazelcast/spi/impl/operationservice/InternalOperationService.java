@@ -17,6 +17,7 @@
 package com.hazelcast.spi.impl.operationservice;
 
 import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.internal.management.dto.OperationServiceDTO;
 import com.hazelcast.internal.management.dto.SlowOperationDTO;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
@@ -37,41 +38,7 @@ public interface InternalOperationService extends OperationService {
 
     String SERVICE_NAME = "hz:impl:operationService";
 
-    /**
-     * Returns the size of the response queue.
-     *
-     * @return the size of the response queue.
-     */
-    int getResponseQueueSize();
-
-    int getOperationExecutorQueueSize();
-
-    int getPriorityOperationExecutorQueueSize();
-
-    int getRunningOperationsCount();
-
-    int getRemoteOperationsCount();
-
-    /**
-     * Returns the number of executed operations.
-     *
-     * @return the number of executed operations.
-     */
-    long getExecutedOperationCount();
-
-    /**
-     * Returns the number of partition threads.
-     *
-     * @return the number of partition threads.
-     */
-    int getPartitionThreadCount();
-
-    /**
-     * Returns the number of generic threads.
-     *
-     * @return number of generic threads.
-     */
-    int getGenericThreadCount();
+    void populate(OperationServiceDTO dto);
 
     /**
      * Checks if this call is timed out. A timed out call is not going to be

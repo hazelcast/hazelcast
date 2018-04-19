@@ -16,7 +16,6 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
-import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.executor.impl.DistributedExecutorService;
@@ -43,35 +42,12 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.concurrent.ExecutionException;
 
-import static com.hazelcast.spi.properties.GroupProperty.GENERIC_OPERATION_THREAD_COUNT;
-import static com.hazelcast.spi.properties.GroupProperty.PARTITION_OPERATION_THREAD_COUNT;
-import static com.hazelcast.spi.properties.GroupProperty.PRIORITY_GENERIC_OPERATION_THREAD_COUNT;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class OperationServiceImpl_BasicTest extends HazelcastTestSupport {
 
-    @Test
-    public void testGetPartitionThreadCount() {
-        Config config = new Config();
-        config.setProperty(PARTITION_OPERATION_THREAD_COUNT.getName(), "5");
-        HazelcastInstance hz = createHazelcastInstance(config);
-        OperationServiceImpl operationService = getOperationServiceImpl(hz);
-
-        assertEquals(5, operationService.getPartitionThreadCount());
-    }
-
-    @Test
-    public void testGetGenericThreadCount() {
-        Config config = new Config();
-        config.setProperty(GENERIC_OPERATION_THREAD_COUNT.getName(), "5");
-        config.setProperty(PRIORITY_GENERIC_OPERATION_THREAD_COUNT.getName(), "1");
-        HazelcastInstance hz = createHazelcastInstance(config);
-        OperationServiceImpl operationService = getOperationServiceImpl(hz);
-
-        assertEquals(6, operationService.getGenericThreadCount());
-    }
 
     // there was a memory leak caused by the invocation not releasing the backup registration
     // when Future.get() is not called.
