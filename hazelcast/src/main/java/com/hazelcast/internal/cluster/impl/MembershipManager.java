@@ -320,6 +320,7 @@ public class MembershipManager {
         setMembers(MemberMap.createNew(membersView.getVersion(), members));
 
         for (MemberImpl member : removedMembers) {
+            closeConnection(member.getAddress(), "Member left event received from master");
             handleMemberRemove(memberMapRef.get(), member);
         }
 
