@@ -16,6 +16,8 @@ Enhancements:
 
 Fixes:
 
+- Reliable Topic cannot continue to operate if owner and backup of the backed ringbuffer go down at the same time. [#12919]
+- `NullPointerException` is thrown when the method `QueryCache.getAll()` is called. [#12918]
 - Query cache listener which is configured declaratively is not registered properly. [#12825]
 - Query cache is created after each getQueryCache() call. [#12814]
 - Portable serialization is mistakenly reporting incompatible class definitions when nested portables are used in certain scenarios. [#12733]
