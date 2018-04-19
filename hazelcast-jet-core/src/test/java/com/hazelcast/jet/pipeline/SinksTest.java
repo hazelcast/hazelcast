@@ -557,6 +557,18 @@ public class SinksTest extends PipelineTestSupport {
         assertEquals(ITEM_COUNT, remoteHz.getList(sinkName).size());
     }
 
+    @Test
+    public void noop() {
+        populateList(srcList);
+
+        p.drawFrom(Sources.list(srcName))
+         .drainTo(Sinks.noop());
+
+        execute();
+
+        // nothing to assert here
+    }
+
     private static void populateList(List<Object> list) {
         list.addAll(range(0, ITEM_COUNT).boxed().collect(toList()));
     }

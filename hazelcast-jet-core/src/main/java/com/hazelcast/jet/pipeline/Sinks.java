@@ -30,7 +30,9 @@ import javax.annotation.Nonnull;
 import java.nio.charset.Charset;
 import java.util.Map;
 
+import static com.hazelcast.jet.core.ProcessorMetaSupplier.preferLocalParallelismOne;
 import static com.hazelcast.jet.core.processor.DiagnosticProcessors.writeLoggerP;
+import static com.hazelcast.jet.core.processor.Processors.noopP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.mergeMapP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.mergeRemoteMapP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.updateMapP;
@@ -578,5 +580,13 @@ public final class Sinks {
             @Nonnull DistributedFunction<? super JetInstance, ? extends W> createFn
     ) {
         return new SinkBuilder<>(createFn);
+    }
+
+    /**
+     * Returns a sink which discards all received items.
+     */
+    @Nonnull
+    public static <T> Sink<T> noop() {
+        return fromProcessor("noop", preferLocalParallelismOne(noopP()));
     }
 }
