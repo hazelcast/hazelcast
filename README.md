@@ -13,6 +13,9 @@
   * [IAM Roles](#iam-roles)
     * [IAM Roles in ECS Environment](#iam-roles-in-ecs-environment)
     * [Policy for IAM User](#policy-for-iam-user)
+  * [AWS Autoscaling](#aws-autoscaling)
+    * [AWS Autoscaling Architecture](#aws-autoscaling-architecture)
+    * [Lifecycle Hook Listener Script](#lifecycle-hook-listener-script)
   * [AWSClient Configuration](#awsclient-configuration)
   * [Debugging](#debugging)
   * [Hazelcast Performance on AWS](#hazelcast-performance-on-aws)
@@ -293,6 +296,46 @@ If you are using IAM role configuration (`iam-role`) for EC2 discovery, you need
     }
   ]
 }
+```
+
+## AWS Autoscaling
+
+There are specific requirements for the Hazelcast cluster to work correctly in the AWS Autoscaling Group:
+* the number of instances must change by 1 at the time
+* when an instance is launched or terminated, the cluster must be in the safe state
+
+Otherwise, there is a risk of data loss or an impact on performance.
+
+The recommended solution is to use **[Autoscaling Lifecycle Hooks](https://docs.aws.amazon.com/autoscaling/ec2/userguide/lifecycle-hooks.html)** with **Amazon SQS**, and the **custom lifecycle hook listener script**.
+
+### AWS Autoscaling Architecture
+
+The necessary autoscaling architecture is presented on the diagram.
+
+![architecture](markdown/images/aws-autoscaling-architecture.png)
+
+The following activities must be performed to set up the Hazelcast AWS Autoscaling process:
+
+* Create **AWS SQS** queue
+* Add **`lifecycle_hook_listener.sh`** to each instance
+  * The `lifecycle_hook_listener.sh` script can be started as the User Data script
+  * Alternatively, it's possible to create a separate dedicated EC2 Instance running only `lifecycle_hook_listener.sh` in the same network and leave the autoscaled EC2 Instances only for Hazelcast members
+* Set `Scaling Policy` to `Step scaling` and increase/decrease always by adding/removing `1 instance`
+* Create `Lifecycle Hooks`
+  * Instance Launch Hook
+  * Instance Terminate Hook
+
+### Lifecycle Hook Listener Script
+
+The `lifecycle_hook_listener.sh` script takes one argument as a parameter: `queue_name` (AWS SQS name). It performs operations that can be expressed in the following pseudocode.
+
+```
+while true:
+    message = receive_message_from(queue_name)
+    instance_ip = extract_instance_ip_from(message)
+    while not is_cluster_safe(instance_ip):
+        sleep 5
+    send_continue_message
 ```
 
 ## AWSClient Configuration
