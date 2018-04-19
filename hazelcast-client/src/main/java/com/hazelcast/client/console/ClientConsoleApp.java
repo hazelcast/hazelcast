@@ -386,8 +386,6 @@ public class ClientConsoleApp implements EntryListener, ItemListener, MessageLis
             handleAddListener(args);
         } else if (first.equals("m.removeMapListener")) {
             handleRemoveListener(args);
-        } else if (first.equals("m.unlock")) {
-            handleMapUnlock(args);
         } else if (first.equals("mm.put")) {
             handleMultiMapPut(args);
         } else if (first.equals("mm.get")) {

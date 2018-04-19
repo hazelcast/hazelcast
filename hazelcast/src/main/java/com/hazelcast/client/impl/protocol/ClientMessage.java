@@ -412,19 +412,14 @@ public class ClientMessage
     }
 
     public static ClientMessage createForEncode(int initialCapacity) {
-        initialCapacity = findSuitableMessageSize(initialCapacity);
+        if (initialCapacity < 0) {
+            throw new MaxMessageSizeExceeded();
+        }
         if (USE_UNSAFE) {
             return createForEncode(new UnsafeBuffer(new byte[initialCapacity]), 0);
         } else {
             return createForEncode(new SafeBuffer(new byte[initialCapacity]), 0);
         }
-    }
-
-    public static int findSuitableMessageSize(int desiredMessageSize) {
-        if (desiredMessageSize < 0) {
-            throw new MaxMessageSizeExceeded();
-        }
-        return desiredMessageSize;
     }
 
     public static ClientMessage createForEncode(ClientProtocolBuffer buffer, int offset) {

@@ -42,6 +42,8 @@ class IOBalancerThread extends Thread {
         interrupt();
     }
 
+    // squid:S2142 is suppressed since Sonar analysis gives false positive for an already handled or known case.
+    @SuppressWarnings("squid:S2142")
     @Override
     public void run() {
         try {
