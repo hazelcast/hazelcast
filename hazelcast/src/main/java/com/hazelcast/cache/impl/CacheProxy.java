@@ -31,9 +31,13 @@ import com.hazelcast.internal.journal.EventJournalReader;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.ringbuffer.ReadResultSet;
-import com.hazelcast.spi.*;
+import com.hazelcast.spi.EventFilter;
+import com.hazelcast.spi.EventRegistration;
+import com.hazelcast.spi.InternalCompletableFuture;
+import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationService;
 import com.hazelcast.util.function.Predicate;
-
 import javax.cache.CacheException;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
 import javax.cache.configuration.Configuration;
