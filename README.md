@@ -3,9 +3,13 @@
 
 # Table of Contents
 
-  * [Supported Hazelcast Versions](#supported-hazelcast-versions)
+  * [Requirements](#requirements)
   * [Discovering Members within EC2 Cloud](#discovering-members-within-ec2-cloud)
     * [Zone Aware Support](#zone-aware-support)
+    * [Configuring Hazelcast Members with Discovery SPI](#configuring-hazelcast-members-with-discovery-spi)
+    * [Configuring Hazelcast Members for AWS ECS](#configuring-hazelcast-members-for-aws-ecs)
+    * [Configuring Hazelcast Client with Discovery SPI](#configuring-hazelcast-client-with-discovery-spi)
+    * [Configuring with "AwsConfig" (Deprecated)](#configuring-with-awsconfig-deprecated)
   * [IAM Roles](#iam-roles)
     * [IAM Roles in ECS Environment](#iam-roles-in-ecs-environment)
     * [Policy for IAM User](#policy-for-iam-user)
@@ -16,16 +20,10 @@
     * [Dealing with Network Latency](#dealing-with-network-latency)
     * [Selecting Virtualization](#selecting-virtualization)
 
-## Supported Hazelcast Versions
+## Requirements
 
 - Hazelcast 3.6+
-
-<br></br>
-***NOTE***
-
-*We recommend you to use Linux Kernel versions 3.19 and higher. TCP connections may get stuck when used with older Kernel versions, resulting in undefined timeouts.*
-
-<br></br>
+- Linux Kernel 3.19+ (TCP connections may get stuck when used with older Kernel versions, resulting in undefined timeouts)
 
 ## Discovering Members within EC2 Cloud
 
@@ -64,7 +62,7 @@ partitionGroupConfig.setEnabled( true )
     .setGroupType( MemberGroupType.ZONE_AWARE );
 ```
 
-### Configuring AWS Discovery using Discovery SPI for Hazelcast Cluster Members
+### Configuring Hazelcast Members with Discovery SPI
 
 - Add the *hazelcast-aws.jar* dependency to your project. The hazelcast-aws plugin does not depend on any other third party modules.
 - Disable join over multicast, TCP/IP and AWS by setting the `enabled` attribute of the related tags to `false`.
@@ -142,7 +140,7 @@ Here are the definitions of the properties
 * `connection-timeout-seconds`: The maximum amount of time Hazelcast will try to connect to a well known member before giving up. Setting this value too low could mean that a member is not able to connect to a cluster. Setting the value too high means that member startup could slow down because of longer timeouts (for example, when a well known member is not up). Increasing this value is recommended if you have many IPs listed and the members cannot properly build up the cluster. Its default value is 5.
 * `hz-port`: You can set searching for other ports rather than 5701 if you've members on different ports. It is optional.
 
-### Configuring Hazelcast Cluster Members for AWS ECS 
+### Configuring Hazelcast Members for AWS ECS
 
 In order to enable discovery within AWS ECS Cluster, within `taskdef.json` or container settings, Hazelcast member should be bind to `host` network. Therefore, proper json representation for task should contain below segment:
 ```
@@ -158,7 +156,7 @@ Also, cluster member should have below interface binding in `hazelcast.xml` conf
 Please note that `10.0.*.*` value depends on your CIDR block definition.
 If more than one `subnet` or `custom VPC` is used for cluster, it should be checked that `container instances` within cluster have newtork connectivity or have `tracepath` to each other. 
 
-### Configuring AWS Discovery using Discovery SPI for Hazelcast Client
+### Configuring Hazelcast Client with Discovery SPI
 
 - Add the *hazelcast-aws.jar* dependency to your project. The hazelcast-aws plugin does not depend on any other third party modules.
 - Enable Discovery SPI by adding "hazelcast.discovery.enabled" property to your config.
@@ -322,7 +320,7 @@ public static void main( String[] args )throws Exception{
 
 ## Debugging
 
-When needed, Hazelcast can log the events for the instances that exist in a region. To see what has happened or to trace the activities while forming the cluster, change the log level in your logging mechanism to `FINEST` or `DEBUG`. After this change, you can also see in the generated log whether the instances are accepted or rejected, and the reason the instances were rejected. Note that changing the log level in this way may affect the performance of the cluster. Please see the <a href="http://docs.hazelcast.org/docs/latest-dev/manual/html-single/index.html#logging-configuration" target="_blank">Logging Configuration</a> for information on logging mechanisms.
+When needed, Hazelcast can log the events for the instances that exist in a region. To see what has happened or to trace the activities while forming the cluster, change the log level in your logging mechanism to `FINEST` or `DEBUG`. After this change, you can also see in the generated log whether the instances are accepted or rejected, and the reason the instances were rejected. Note that changing the log level in this way may affect the performance of the cluster. Please see the [Logging Configuration](http://docs.hazelcast.org/docs/latest-dev/manual/html-single/index.html#logging-configuration) for information on logging mechanisms.
 
 
 ## Hazelcast Performance on AWS
@@ -333,8 +331,7 @@ Amazon Web Services (AWS) platform can be an unpredictable environment compared 
 
 Hazelcast is an in-memory data grid that distributes the data and computation to the members that are connected with a network, making Hazelcast very sensitive to the network. Not all EC2 Instance types are the same in terms of the network performance. It is recommended that you choose instances that have **High** or **10 Gigabit+** network performance for Hazelcast deployments.
 
-You can check latest Instance Types on <a href="https://aws.amazon.com/ec2/instance-types/" target="_blank">
-Amazon EC2 Instance Types </a>
+You can check latest Instance Types on [Amazon EC2 Instance Types](https://aws.amazon.com/ec2/instance-types/).
 
 ### Dealing with Network Latency
 
@@ -343,19 +340,14 @@ Since data is sent and received very frequently in Hazelcast applications, laten
 When you do not pay attention to AWS regions, Hazelcast applications may run tens or even hundreds of times slower than necessary. The following notes are potential workarounds.
 
 - Create a cluster only within a region. It is not recommended that you deploy a single cluster that spans across multiple regions.
-- If a Hazelcast application is hosted on Amazon EC2 instances in multiple EC2 regions, you can reduce the latency by serving the end users` requests from the EC2 region which has the lowest network latency. Changes in network connectivity and routing result in changes in the latency between hosts on the Internet. Amazon has a web service (Route 53) that lets the cloud architects use DNS to route end-user requests to the EC2 region that gives the fastest response. This latency-based routing is based on latency measurements performed over a period of time. Please have a look at <a href="http://docs.aws.amazon.com/Route53/latest/DeveloperGuide/HowDoesRoute53Work.html" target="_blank">Route53</a>.
-- Move the deployment to another region. The <a href="http://www.cloudping.info/" target="_blank">CloudPing</a> tool gives instant estimates on the latency from your location. By using it frequently, CloudPing can be helpful to determine the regions which have the lowest latency.
-- The <a href="http://cloudharmony.com/speedtest" target="_blank">SpeedTest</a> tool allows you to test the network latency and also the downloading/uploading speeds.
+- If a Hazelcast application is hosted on Amazon EC2 instances in multiple EC2 regions, you can reduce the latency by serving the end users requests from the EC2 region which has the lowest network latency. Changes in network connectivity and routing result in changes in the latency between hosts on the Internet. Amazon has a web service (Route 53) that lets the cloud architects use DNS to route end-user requests to the EC2 region that gives the fastest response. This latency-based routing is based on latency measurements performed over a period of time. Please have a look at [Route53](http://docs.aws.amazon.com/Route53/latest/DeveloperGuide/HowDoesRoute53Work.html).
+- Move the deployment to another region. The [CloudPing](http://www.cloudping.info/) tool gives instant estimates on the latency from your location. By using it frequently, CloudPing can be helpful to determine the regions which have the lowest latency.
+- The [SpeedTest](http://cloudharmony.com/speedtest) tool allows you to test the network latency and also the downloading/uploading speeds.
 
 ### Selecting Virtualization
 
 AWS uses two virtualization types to launch the EC2 instances: Para-Virtualization (PV) and Hardware-assisted Virtual Machine (HVM). According to the tests we performed, HVM provided up to three times higher throughput than PV. Therefore, we recommend you use HVM when you run Hazelcast on EC2.
 
-
-
-
-
-
 ***RELATED INFORMATION***
 
-*You can download the white paper "Amazon EC2 Deployment Guide for Hazelcast IMDG" <a href="https://hazelcast.com/resources/amazon-ec2-deployment-guide/" target="_blank">here</a>.*
+*You can download the white paper "Amazon EC2 Deployment Guide for Hazelcast IMDG" [here](https://hazelcast.com/resources/amazon-ec2-deployment-guide/).*
