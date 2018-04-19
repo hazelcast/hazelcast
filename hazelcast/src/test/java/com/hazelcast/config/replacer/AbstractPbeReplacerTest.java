@@ -118,8 +118,9 @@ public class AbstractPbeReplacerTest {
         assertNull(replacer.getReplacement(null));
         assertNull(replacer.getReplacement("WronglyFormatted"));
         assertNull(replacer.getReplacement("aSalt:1:EncryptedValue"));
-        String encryptedStr = replacer.encrypt("test", 777);
-        assertNull(replacer.getReplacement(encryptedStr.replace(":777:", ":1:")));
+        // following incorrect value was generated using replacer.encrypt("test", 777).replace(":777:", ":1:");
+        assertNull("Null value expected as javax.crypto.BadPaddingException should be thrown in the AbstractPbeReplacer",
+                replacer.getReplacement("IVJXCMo0XBE=:1:NnZjBhX7sB/IT0sTFZ2eIA=="));
     }
 
     protected void assertReplacerWorks(AbstractPbeReplacer replacer) throws Exception {
