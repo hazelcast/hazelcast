@@ -39,7 +39,6 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.SimpleExecutionCallback;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
-import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
 
 import java.io.IOException;
@@ -69,7 +68,7 @@ public class MigrationRequestOperation extends BaseMigrationSourceOperation {
     }
 
     public MigrationRequestOperation(MigrationInfo migrationInfo, int partitionStateVersion,
-            boolean fragmentedMigrationEnabled) {
+                                     boolean fragmentedMigrationEnabled) {
         super(migrationInfo, partitionStateVersion);
         this.fragmentedMigrationEnabled = fragmentedMigrationEnabled;
     }
@@ -118,7 +117,7 @@ public class MigrationRequestOperation extends BaseMigrationSourceOperation {
 
     @Override
     void onMigrationStart() {
-        ((OperationServiceImpl) getNodeEngine().getOperationService()).onStartAsyncOperation(this);
+        ((InternalOperationService) getNodeEngine().getOperationService()).onStartAsyncOperation(this);
         super.onMigrationStart();
     }
 
@@ -127,7 +126,7 @@ public class MigrationRequestOperation extends BaseMigrationSourceOperation {
         try {
             super.onMigrationComplete(result);
         } finally {
-            ((OperationServiceImpl) getNodeEngine().getOperationService()).onCompletionAsyncOperation(this);
+            ((InternalOperationService) getNodeEngine().getOperationService()).onCompletionAsyncOperation(this);
         }
     }
 
@@ -139,7 +138,7 @@ public class MigrationRequestOperation extends BaseMigrationSourceOperation {
 
         boolean lastFragment = !fragmentedMigrationEnabled || !namespacesContext.hasNext();
         Operation operation = new MigrationOperation(migrationInfo, partitionStateVersion, migrationState,
-                                                     firstFragment, lastFragment);
+                firstFragment, lastFragment);
 
         ILogger logger = getLogger();
         if (logger.isFinestEnabled()) {
@@ -153,14 +152,14 @@ public class MigrationRequestOperation extends BaseMigrationSourceOperation {
         InternalPartitionServiceImpl partitionService = getService();
 
         nodeEngine.getOperationService()
-                  .createInvocationBuilder(InternalPartitionService.SERVICE_NAME, operation, destination)
-                  .setExecutionCallback(new MigrationCallback())
-                  .setResultDeserialized(true)
-                  .setCallTimeout(partitionService.getPartitionMigrationTimeout())
-                  .setTryCount(InternalPartitionService.MIGRATION_RETRY_COUNT)
-                  .setTryPauseMillis(InternalPartitionService.MIGRATION_RETRY_PAUSE)
-                  .setReplicaIndex(getReplicaIndex())
-                  .invoke();
+                .createInvocationBuilder(InternalPartitionService.SERVICE_NAME, operation, destination)
+                .setExecutionCallback(new MigrationCallback())
+                .setResultDeserialized(true)
+                .setCallTimeout(partitionService.getPartitionMigrationTimeout())
+                .setTryCount(InternalPartitionService.MIGRATION_RETRY_COUNT)
+                .setTryPauseMillis(InternalPartitionService.MIGRATION_RETRY_PAUSE)
+                .setReplicaIndex(getReplicaIndex())
+                .invoke();
     }
 
     private void trySendNewFragment() {
@@ -197,7 +196,7 @@ public class MigrationRequestOperation extends BaseMigrationSourceOperation {
         assert fragmentedMigrationEnabled : "Fragmented migration should be enabled!";
 
         if (!namespacesContext.hasNext()) {
-             return null;
+            return null;
         }
 
         ServiceNamespace namespace = namespacesContext.next();
@@ -229,8 +228,8 @@ public class MigrationRequestOperation extends BaseMigrationSourceOperation {
         return createReplicaFragmentMigrationState(namespacesContext.allNamespaces, operations);
     }
 
-    private ReplicaFragmentMigrationState createReplicaFragmentMigrationState(Collection<ServiceNamespace>
-            namespaces, Collection<Operation> operations) {
+    private ReplicaFragmentMigrationState createReplicaFragmentMigrationState(Collection<ServiceNamespace> namespaces,
+                                                                              Collection<Operation> operations) {
 
         InternalPartitionService partitionService = getService();
         PartitionReplicaVersionManager versionManager = partitionService.getPartitionReplicaVersionManager();

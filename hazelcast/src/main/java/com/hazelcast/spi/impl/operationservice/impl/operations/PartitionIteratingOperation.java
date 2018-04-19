@@ -27,7 +27,7 @@ import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationResponseHandler;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
-import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
+import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -93,7 +93,7 @@ public final class PartitionIteratingOperation extends Operation implements Iden
             return;
         }
 
-        getOperationServiceImpl().onStartAsyncOperation(this);
+        getOperationService().onStartAsyncOperation(this);
         PartitionAwareOperationFactory partitionAwareFactory = extractPartitionAware(operationFactory);
         if (partitionAwareFactory != null) {
             executePartitionAwareOperations(partitionAwareFactory);
@@ -109,7 +109,7 @@ public final class PartitionIteratingOperation extends Operation implements Iden
             sendResponse(new ErrorResponse(cause, getCallId(), isUrgent()));
         } finally {
             // in case of an error, we need to de-register to prevent leaks.
-            getOperationServiceImpl().onCompletionAsyncOperation(this);
+            getOperationService().onCompletionAsyncOperation(this);
         }
         getLogger().severe(cause);
     }
@@ -161,8 +161,8 @@ public final class PartitionIteratingOperation extends Operation implements Iden
         }
     }
 
-    private OperationServiceImpl getOperationServiceImpl() {
-        return (OperationServiceImpl) getNodeEngine().getOperationService();
+    private InternalOperationService getOperationService() {
+        return (InternalOperationService) getNodeEngine().getOperationService();
     }
 
     private String extractCallerUuid() {
@@ -246,7 +246,7 @@ public final class PartitionIteratingOperation extends Operation implements Iden
                 try {
                     sendResponse();
                 } finally {
-                    getOperationServiceImpl().onCompletionAsyncOperation(PartitionIteratingOperation.this);
+                    getOperationService().onCompletionAsyncOperation(PartitionIteratingOperation.this);
                 }
             }
         }

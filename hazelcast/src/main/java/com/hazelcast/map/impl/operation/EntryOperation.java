@@ -39,6 +39,7 @@ import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
 import com.hazelcast.spi.serialization.SerializationService;
@@ -151,7 +152,7 @@ public class EntryOperation extends KeyBasedMapOperation implements BackupAwareO
     private transient boolean readOnly;
     private transient int setUnlockRetryCount;
     private transient long begin;
-    private transient OperationServiceImpl ops;
+    private transient InternalOperationService ops;
     private transient ExecutionService exs;
 
     public EntryOperation() {
@@ -165,7 +166,7 @@ public class EntryOperation extends KeyBasedMapOperation implements BackupAwareO
     @Override
     public void innerBeforeRun() throws Exception {
         super.innerBeforeRun();
-        this.ops = (OperationServiceImpl) getNodeEngine().getOperationService();
+        this.ops = (InternalOperationService) getNodeEngine().getOperationService();
         this.exs = getNodeEngine().getExecutionService();
         this.begin = Clock.currentTimeMillis();
         this.readOnly = entryProcessor instanceof ReadOnly;
