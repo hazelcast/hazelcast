@@ -21,11 +21,13 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.JetBuildInfo;
+import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.core.TopologyChangedException;
 import com.hazelcast.jet.impl.execution.TaskletExecutionService;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
+import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Packet;
@@ -43,10 +45,13 @@ import com.hazelcast.spi.impl.PacketHandler;
 import java.io.IOException;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 
 public class JetService
         implements ManagedService, ConfigurableService<JetConfig>, PacketHandler, MembershipAwareService,
         LiveOperationsTracker {
+
+    public static final int MAX_PARALLEL_ASYNC_OPS = 1000;
 
     public static final String SERVICE_NAME = "hz:impl:jetService";
 
@@ -59,11 +64,12 @@ public class JetService
     private Networking networking;
     private TaskletExecutionService taskletExecutionService;
     private JobRepository jobRepository;
-    private SnapshotRepository snapshotRepository;
     private JobCoordinationService jobCoordinationService;
     private JobExecutionService jobExecutionService;
 
-    private final AtomicInteger numConcurrentPutAllOps = new AtomicInteger();
+    private final AtomicInteger numConcurrentAsyncOps = new AtomicInteger();
+
+    private final Supplier<int[]> sharedPartitionKeys = Util.memoizeConcurrent(this::computeSharedPartitionKeys);
 
     public JetService(NodeEngine nodeEngine) {
         this.nodeEngine = (NodeEngineImpl) nodeEngine;
@@ -89,7 +95,7 @@ public class JetService
         taskletExecutionService = new TaskletExecutionService(nodeEngine.getHazelcastInstance(),
                 config.getInstanceConfig().getCooperativeThreadCount());
 
-        snapshotRepository = new SnapshotRepository(jetInstance);
+        SnapshotRepository snapshotRepository = new SnapshotRepository(jetInstance);
         jobRepository = new JobRepository(jetInstance, snapshotRepository);
 
         jobExecutionService = new JobExecutionService(nodeEngine, taskletExecutionService);
@@ -174,12 +180,34 @@ public class JetService
     public void memberAttributeChanged(MemberAttributeServiceEvent event) {
     }
 
-    public AtomicInteger numConcurrentPutAllOps() {
-        return numConcurrentPutAllOps;
+    public AtomicInteger numConcurrentAsyncOps() {
+        return numConcurrentAsyncOps;
     }
 
     @Override
     public void populate(LiveOperations liveOperations) {
         liveOperationRegistry.populate(liveOperations);
+    }
+
+    /**
+     * Returns an array of pre-generated keys, one for each partition. At index
+     * <em>i</em> there's a key, that we know will go to partition <em>i</em>.
+     */
+    public int[] getSharedPartitionKeys() {
+        return sharedPartitionKeys.get();
+    }
+
+    private int[] computeSharedPartitionKeys() {
+        InternalPartitionService partitionService = nodeEngine.getPartitionService();
+        int[] keys = new int[partitionService.getPartitionCount()];
+        int remainingCount = partitionService.getPartitionCount();
+        for (int i = 1; remainingCount > 0; i++) {
+            int partitionId = partitionService.getPartitionId(i);
+            if (keys[partitionId] == 0) {
+                keys[partitionId] = i;
+                remainingCount--;
+            }
+        }
+        return keys;
     }
 }

@@ -34,6 +34,7 @@ import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionIteratin
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.CollectionUtil;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -47,8 +48,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.Util.entry;
-import static com.hazelcast.jet.impl.util.Util.tryIncrement;
+import static com.hazelcast.jet.impl.JetService.MAX_PARALLEL_ASYNC_OPS;
 import static com.hazelcast.jet.impl.util.Util.callbackOf;
+import static com.hazelcast.jet.impl.util.Util.tryIncrement;
 import static com.hazelcast.util.CollectionUtil.toIntArray;
 
 /**
@@ -56,8 +58,6 @@ import static com.hazelcast.util.CollectionUtil.toIntArray;
  * Not thread-safe.
  */
 public class AsyncMapWriter {
-
-    public static final int MAX_PARALLEL_ASYNC_OPS = 1000;
 
     // These magic values are copied from com.hazelcast.spi.impl.operationservice.impl.InvokeOnPartitions
     private static final int TRY_COUNT = 10;
@@ -83,9 +83,9 @@ public class AsyncMapWriter {
         this.outputBuffers = new MapEntries[partitionService.getPartitionCount()];
         this.serializationService = nodeEngine.getSerializationService();
         this.executionService = nodeEngine.getExecutionService();
-        this.logger = nodeEngine.getLogger(AsyncMapWriter.class);
+        this.logger = nodeEngine.getLogger(getClass());
         JetService jetService = nodeEngine.getService(JetService.SERVICE_NAME);
-        this.numConcurrentOps = jetService.numConcurrentPutAllOps();
+        this.numConcurrentOps = jetService.numConcurrentAsyncOps();
     }
 
     public void put(Map.Entry<Data, Data> entry) {

@@ -22,15 +22,12 @@ import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.MembersView;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
-import com.hazelcast.jet.core.BroadcastKey;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Edge;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.core.TopologyChangedException;
 import com.hazelcast.jet.core.Vertex;
-import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.impl.exception.JobRestartRequestedException;
-import com.hazelcast.jet.impl.execution.BroadcastEntry;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
 import com.hazelcast.jet.impl.operation.CancelExecutionOperation;
 import com.hazelcast.jet.impl.operation.CompleteExecutionOperation;
@@ -72,7 +69,6 @@ import static com.hazelcast.jet.core.JobStatus.NOT_STARTED;
 import static com.hazelcast.jet.core.JobStatus.RESTARTING;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.STARTING;
-import static com.hazelcast.jet.core.processor.Processors.mapP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.readMapP;
 import static com.hazelcast.jet.function.DistributedFunctions.entryKey;
 import static com.hazelcast.jet.impl.SnapshotRepository.snapshotDataMapName;
@@ -230,26 +226,19 @@ public class MasterContext {
     private void rewriteDagWithSnapshotRestore(DAG dag, long snapshotId) {
         logger.info(jobIdString() + ": restoring state from snapshotId=" + snapshotId);
         for (Vertex vertex : dag) {
-            // items with keys of type BroadcastKey need to be broadcast to all processors
-            DistributedFunction<Entry<Object, Object>, ?> projection = (Entry<Object, Object> e) ->
-                    (e.getKey() instanceof BroadcastKey) ? new BroadcastEntry<>(e) : e;
             // We add the vertex even in case when the map is empty: this ensures, that
             // Processor.finishSnapshotRestore() method is always called on all vertices in
             // a job which is restored from a snapshot.
             String mapName = snapshotDataMapName(jobId, snapshotId, vertex.getName());
             Vertex readSnapshotVertex = dag.newVertex("__snapshot_read." + vertex.getName(), readMapP(mapName));
-            // We need a separate mapping vertex and can't use readMapP's projectionFn:
-            // the projection will cause key/value deserialization on partition thread, which doesn't have job's
-            // class loader. If the key/value uses a custom object, it will fail. For example, StreamKafkaP uses
-            // TopicPartition as the key or a custom processor can use custom key.
-            Vertex mapSnapshotVertex = dag.newVertex("__snapshot_map_." + vertex.getName(), mapP(projection));
+            Vertex explodeVertex = dag.newVertex("__snapshot_explode." + vertex.getName(), ExplodeSnapshotP::new);
 
             readSnapshotVertex.localParallelism(vertex.getLocalParallelism());
-            mapSnapshotVertex.localParallelism(vertex.getLocalParallelism());
+            explodeVertex.localParallelism(vertex.getLocalParallelism());
 
             int destOrdinal = dag.getInboundEdges(vertex.getName()).size();
-            dag.edge(between(readSnapshotVertex, mapSnapshotVertex).isolated())
-               .edge(new SnapshotRestoreEdge(mapSnapshotVertex, vertex, destOrdinal));
+            dag.edge(between(readSnapshotVertex, explodeVertex).isolated())
+               .edge(new SnapshotRestoreEdge(explodeVertex, vertex, destOrdinal));
         }
     }
 

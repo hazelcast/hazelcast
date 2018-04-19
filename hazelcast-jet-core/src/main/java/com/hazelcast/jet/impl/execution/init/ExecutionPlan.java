@@ -42,6 +42,7 @@ import com.hazelcast.jet.impl.execution.StoreSnapshotTasklet;
 import com.hazelcast.jet.impl.execution.Tasklet;
 import com.hazelcast.jet.impl.execution.init.Contexts.ProcCtx;
 import com.hazelcast.jet.impl.execution.init.Contexts.ProcSupplierCtx;
+import com.hazelcast.jet.impl.util.AsyncSnapshotWriterImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
@@ -137,7 +138,8 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
             StoreSnapshotTasklet ssTasklet = new StoreSnapshotTasklet(snapshotContext, jobId,
                     new ConcurrentInboundEdgeStream(ssConveyor, 0, 0, lastSnapshotId, true, -1,
                             "ssFrom:" + vertex.name()),
-                    nodeEngine, vertex.name(), vertex.isHigherPriorityUpstream());
+                    new AsyncSnapshotWriterImpl(nodeEngine), nodeEngine.getLogger(StoreSnapshotTasklet.class),
+                    vertex.name(), vertex.isHigherPriorityUpstream());
             tasklets.add(ssTasklet);
 
             int localProcessorIdx = 0;

@@ -28,7 +28,6 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.util.function.Predicate;
 
 import java.util.BitSet;
-import java.util.function.Consumer;
 
 import static com.hazelcast.jet.impl.execution.DoneItem.DONE_ITEM;
 import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.NO_NEW_WM;
@@ -88,12 +87,12 @@ public class ConcurrentInboundEdgeStream implements InboundEdgeStream {
     }
 
     @Override
-    public ProgressState drainTo(Consumer<Object> dest) {
+    public ProgressState drainTo(Predicate<Object> dest) {
         return drainTo(watermarkCoalescer.getTime(), dest);
     }
 
     // package-visible for testing
-    ProgressState drainTo(long now, Consumer<Object> dest) {
+    ProgressState drainTo(long now, Predicate<Object> dest) {
         tracker.reset();
         for (int queueIndex = 0; queueIndex < conveyor.queueCount(); queueIndex++) {
             final QueuedPipe<Object> q = conveyor.queue(queueIndex);
@@ -139,7 +138,8 @@ public class ConcurrentInboundEdgeStream implements InboundEdgeStream {
             if (itemDetector.item != null) {
                 // if we have received the current snapshot from all active queues, forward it
                 if (receivedBarriers.cardinality() == numActiveQueues) {
-                    dest.accept(new SnapshotBarrier(pendingSnapshotId));
+                    boolean res = dest.test(new SnapshotBarrier(pendingSnapshotId));
+                    assert res : "test result expected to be true";
                     pendingSnapshotId++;
                     receivedBarriers.clear();
                     return MADE_PROGRESS;
@@ -158,9 +158,10 @@ public class ConcurrentInboundEdgeStream implements InboundEdgeStream {
         return tracker.toProgressState();
     }
 
-    private boolean maybeEmitWm(long timestamp, Consumer<Object> dest) {
+    private boolean maybeEmitWm(long timestamp, Predicate<Object> dest) {
         if (timestamp != NO_NEW_WM) {
-            dest.accept(new Watermark(timestamp));
+            boolean res = dest.test(new Watermark(timestamp));
+            assert res : "test result expected to be true";
             return true;
         }
         return false;
@@ -176,7 +177,7 @@ public class ConcurrentInboundEdgeStream implements InboundEdgeStream {
      * {@link Watermark} or {@link SnapshotBarrier}. Also updates the {@code tracker} with new status.
      *
      */
-    private ProgressState drainQueue(Pipe<Object> queue, Consumer<Object> dest) {
+    private ProgressState drainQueue(Pipe<Object> queue, Predicate<Object> dest) {
         itemDetector.reset(dest);
 
         int drainedCount = queue.drain(itemDetector);
@@ -199,10 +200,10 @@ public class ConcurrentInboundEdgeStream implements InboundEdgeStream {
      * When encountering either of them it prevents draining more items.
      */
     private static final class ItemDetector implements Predicate<Object> {
-        Consumer<Object> dest;
+        Predicate<Object> dest;
         BroadcastItem item;
 
-        void reset(Consumer<Object> newDest) {
+        void reset(Predicate<Object> newDest) {
             dest = newDest;
             item = null;
         }
@@ -214,8 +215,7 @@ public class ConcurrentInboundEdgeStream implements InboundEdgeStream {
                 item = (BroadcastItem) o;
                 return false;
             }
-            dest.accept(o);
-            return true;
+            return dest.test(o);
         }
     }
 }

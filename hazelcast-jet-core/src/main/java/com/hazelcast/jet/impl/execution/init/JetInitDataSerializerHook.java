@@ -43,6 +43,7 @@ import com.hazelcast.jet.impl.operation.SnapshotOperation;
 import com.hazelcast.jet.impl.operation.SubmitJobOperation;
 import com.hazelcast.jet.impl.processor.SessionWindowP;
 import com.hazelcast.jet.impl.processor.SnapshotKey;
+import com.hazelcast.jet.impl.util.AsyncSnapshotWriterImpl;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
@@ -79,6 +80,8 @@ public final class JetInitDataSerializerHook implements DataSerializerHook {
     public static final int GET_JOB_SUBMISSION_TIME_OP = 25;
     public static final int GET_JOB_CONFIG_OP = 26;
     public static final int RESTART_JOB_OP = 27;
+    public static final int ASYNC_SNAPSHOT_WRITER_SNAPSHOT_DATA_KEY = 28;
+    public static final int ASYNC_SNAPSHOT_WRITER_SNAPSHOT_DATA_VALUE_TERMINATOR = 29;
 
     public static final int FACTORY_ID = FactoryIdHelper.getFactoryId(JET_IMPL_DS_FACTORY, JET_IMPL_DS_FACTORY_ID);
 
@@ -154,6 +157,10 @@ public final class JetInitDataSerializerHook implements DataSerializerHook {
                     return new GetJobConfigOperation();
                 case RESTART_JOB_OP:
                     return new RestartJobOperation();
+                case ASYNC_SNAPSHOT_WRITER_SNAPSHOT_DATA_KEY:
+                    return new AsyncSnapshotWriterImpl.SnapshotDataKey();
+                case ASYNC_SNAPSHOT_WRITER_SNAPSHOT_DATA_VALUE_TERMINATOR:
+                    return AsyncSnapshotWriterImpl.SnapshotDataValueTerminator.INSTANCE;
                 default:
                     throw new IllegalArgumentException("Unknown type id " + typeId);
             }

@@ -37,7 +37,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-import static com.hazelcast.jet.impl.util.AsyncMapWriter.MAX_PARALLEL_ASYNC_OPS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -128,7 +127,7 @@ public class AsyncMapWriterTest extends JetTestSupport {
     public void when_flushedSeveralTimes_then_doesPut() throws Exception {
         // When
         List<CompletableFuture> futures = new ArrayList<>();
-        for (int i = 0; i < MAX_PARALLEL_ASYNC_OPS; i++) {
+        for (int i = 0; i < JetService.MAX_PARALLEL_ASYNC_OPS; i++) {
             CompletableFuture<Void> future = new CompletableFuture<>();
             writer.put(i, i);
             assertTrue("tryFlushAsync returned false", writer.tryFlushAsync(future));
@@ -137,7 +136,7 @@ public class AsyncMapWriterTest extends JetTestSupport {
 
         // Then
         CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).get();
-        for (int i = 0; i < MAX_PARALLEL_ASYNC_OPS; i++) {
+        for (int i = 0; i < JetService.MAX_PARALLEL_ASYNC_OPS; i++) {
             assertEquals(i, map.get(i));
         }
     }
@@ -152,12 +151,12 @@ public class AsyncMapWriterTest extends JetTestSupport {
         CompletableFuture<Void> future = new CompletableFuture<>();
 
         JetService service = nodeEngine.getService(JetService.SERVICE_NAME);
-        service.numConcurrentPutAllOps().set(MAX_PARALLEL_ASYNC_OPS - NODE_COUNT + 1);
+        service.numConcurrentAsyncOps().set(JetService.MAX_PARALLEL_ASYNC_OPS - NODE_COUNT + 1);
         // When
         boolean flushed = writer.tryFlushAsync(future);
 
         // Then
-        assertFalse("tryFlushAsync should fail", flushed);
+        assertFalse("tryFlushAsync should return false", flushed);
     }
 
     @Test
@@ -167,7 +166,7 @@ public class AsyncMapWriterTest extends JetTestSupport {
         CompletableFuture<Void> future = new CompletableFuture<>();
 
         JetService service = nodeEngine.getService(JetService.SERVICE_NAME);
-        service.numConcurrentPutAllOps().set(MAX_PARALLEL_ASYNC_OPS - NODE_COUNT);
+        service.numConcurrentAsyncOps().set(JetService.MAX_PARALLEL_ASYNC_OPS - NODE_COUNT);
         // When
         boolean flushed = writer.tryFlushAsync(future);
         assertTrue("tryFlushAsync returned false", flushed);
@@ -191,7 +190,7 @@ public class AsyncMapWriterTest extends JetTestSupport {
         CompletableFuture<Void> future = new CompletableFuture<>();
 
         JetService service = nodeEngine.getService(JetService.SERVICE_NAME);
-        service.numConcurrentPutAllOps().set(MAX_PARALLEL_ASYNC_OPS - NODE_COUNT);
+        service.numConcurrentAsyncOps().set(JetService.MAX_PARALLEL_ASYNC_OPS - NODE_COUNT);
 
         // When
         boolean flushed = writer.tryFlushAsync(future);

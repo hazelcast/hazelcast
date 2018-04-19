@@ -367,9 +367,8 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
                            .orElse(null);
     }
 
-    // This is a "test of a test" - it checks, that SequencesInPartitionsGeneratorP generates correct output
     @Test
-    @Ignore
+    @Ignore("This is a \"test of a test\" - it checks, that SequencesInPartitionsGeneratorP generates correct output")
     public void test_SequencesInPartitionsGeneratorP() throws Exception {
         SequencesInPartitionsMetaSupplier pms = new SequencesInPartitionsMetaSupplier(3, 2);
         pms.init(new TestProcessorMetaSupplierContext().setLocalParallelism(1).setTotalParallelism(2));

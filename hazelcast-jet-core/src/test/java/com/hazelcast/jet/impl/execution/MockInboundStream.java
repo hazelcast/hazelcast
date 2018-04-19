@@ -18,11 +18,12 @@ package com.hazelcast.jet.impl.execution;
 
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.impl.util.ProgressState;
+import com.hazelcast.util.function.Predicate;
 
-import java.util.ArrayList;
+import java.util.ArrayDeque;
 import java.util.Arrays;
+import java.util.Deque;
 import java.util.List;
-import java.util.function.Consumer;
 
 import static com.hazelcast.jet.impl.execution.DoneItem.DONE_ITEM;
 import static com.hazelcast.jet.impl.util.ProgressState.DONE;
@@ -33,16 +34,15 @@ import static com.hazelcast.jet.impl.util.ProgressState.WAS_ALREADY_DONE;
 public class MockInboundStream implements InboundEdgeStream {
     private int ordinal;
     private int priority;
-    private final List<Object> mockData;
+    private final Deque<Object> mockData;
     private final int chunkSize;
 
-    private int dataIndex;
     private boolean done;
 
     MockInboundStream(int priority, List<?> mockData, int chunkSize) {
         this.priority = priority;
         this.chunkSize = chunkSize;
-        this.mockData = new ArrayList<>(mockData);
+        this.mockData = new ArrayDeque<>(mockData);
     }
 
     void push(Object... items) {
@@ -54,25 +54,20 @@ public class MockInboundStream implements InboundEdgeStream {
     }
 
     @Override
-    public ProgressState drainTo(Consumer<Object> dest) {
+    public ProgressState drainTo(Predicate<Object> dest) {
         if (done) {
             return WAS_ALREADY_DONE;
         }
-        if (dataIndex == mockData.size()) {
+        if (mockData.isEmpty()) {
             return NO_PROGRESS;
         }
-        final int limit = Math.min(mockData.size(), dataIndex + chunkSize);
-        for (; dataIndex < limit; dataIndex++) {
-            final Object item = mockData.get(dataIndex);
+        for (int i = 0; i < chunkSize && !mockData.isEmpty(); i++) {
+            final Object item = mockData.poll();
             if (item == DONE_ITEM) {
                 done = true;
                 break;
-            } else if (item instanceof SnapshotBarrier || item instanceof Watermark) {
-                dest.accept(item);
-                dataIndex++;
+            } else if (!dest.test(item) || item instanceof SnapshotBarrier || item instanceof Watermark) {
                 break;
-            } else {
-                dest.accept(item);
             }
         }
         return done ? DONE : MADE_PROGRESS;
@@ -91,5 +86,9 @@ public class MockInboundStream implements InboundEdgeStream {
     @Override
     public int priority() {
         return priority;
+    }
+
+    public Deque<Object> remainingItems() {
+        return mockData;
     }
 }

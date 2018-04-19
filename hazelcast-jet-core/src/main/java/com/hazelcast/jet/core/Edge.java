@@ -383,6 +383,9 @@ public class Edge implements IdentifiedDataSerializable {
         if (isDistributed()) {
             b.append(".distributed()");
         }
+        if (getPriority() != 0) {
+            b.append(".priority(").append(getPriority()).append(')');
+        }
         return b.toString();
     }
 

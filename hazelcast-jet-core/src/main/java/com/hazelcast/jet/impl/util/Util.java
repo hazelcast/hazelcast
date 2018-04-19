@@ -38,6 +38,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
+import javax.annotation.CheckReturnValue;
 import javax.annotation.Nonnull;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -139,6 +140,7 @@ public final class Util {
      * @param limit maximum value the {@code value} can take (inclusive)
      * @return {@code true}, if successful, {@code false}, if {@code limit} would be exceeded.
      */
+    @CheckReturnValue
     public static boolean tryIncrement(AtomicInteger value, int increment, int limit) {
         int prev;
         int next;

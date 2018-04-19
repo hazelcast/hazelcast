@@ -138,7 +138,7 @@ public class SnapshotContext {
             lastSnapshotId.set(snapshotId);
         } else {
             logger.warning("Snapshot " + snapshotId + " for " + jobAndExecutionId(jobId, executionId) + " is postponed" +
-                    " until all higher priority vertices are completed (number of vertices = "
+                    " until all higher priority vertices are completed (number of such vertices = "
                     + numHigherPriorityTasklets + ')');
             snapshotPostponed = true;
         }

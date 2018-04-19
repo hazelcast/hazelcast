@@ -18,10 +18,10 @@ package com.hazelcast.jet.impl;
 
 import com.hazelcast.aggregation.impl.MaxByAggregator;
 import com.hazelcast.core.IMap;
+import com.hazelcast.jet.IMapJet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.impl.execution.SnapshotRecord;
 import com.hazelcast.jet.impl.execution.SnapshotRecord.SnapshotStatus;
-import com.hazelcast.jet.IMapJet;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.query.Predicate;
 

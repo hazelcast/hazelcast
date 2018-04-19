@@ -16,101 +16,187 @@
 
 package com.hazelcast.jet.impl.execution;
 
-import com.hazelcast.instance.HazelcastInstanceImpl;
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.JetTestSupport;
-import com.hazelcast.jet.IMapJet;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.jet.impl.util.MockAsyncSnapshotWriter;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import org.junit.Before;
+import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.concurrent.CompletableFuture;
 
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.impl.execution.DoneItem.DONE_ITEM;
+import static com.hazelcast.jet.impl.util.ProgressState.DONE;
+import static com.hazelcast.jet.impl.util.ProgressState.MADE_PROGRESS;
+import static com.hazelcast.jet.impl.util.ProgressState.NO_PROGRESS;
 import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
+@Category(QuickTest.class)
 public class StoreSnapshotTaskletTest extends JetTestSupport {
 
-    private JetInstance instance;
+    @Rule
+    public ExpectedException exception = ExpectedException.none();
+
     private SnapshotContext ssContext;
     private MockInboundStream input;
     private StoreSnapshotTasklet sst;
-    private NodeEngineImpl nodeEngine;
-
-    @Before
-    public void before() {
-        instance = createJetMember();
-    }
+    private MockAsyncSnapshotWriter mockSsWriter;
 
     private void init(List<Object> inputData) {
-        nodeEngine = ((HazelcastInstanceImpl) instance.getHazelcastInstance()).node.nodeEngine;
-        ssContext = new SnapshotContext(nodeEngine.getLogger(SnapshotContext.class), 1, 1, 1,
+        ssContext = new SnapshotContext(Logger.getLogger(SnapshotContext.class), 1, 1, 1,
                 ProcessingGuarantee.EXACTLY_ONCE);
         ssContext.initTaskletCount(1, 0);
         inputData = new ArrayList<>(inputData);
         // serialize input data
         for (int i = 0; i < inputData.size(); i++) {
             if (inputData.get(i) instanceof Entry) {
-                Entry<?, ?> en = (Entry<?, ?>) inputData.get(i);
+                Entry<String, String> en = (Entry<String, String>) inputData.get(i);
                 inputData.set(i, entry(serialize(en.getKey()), serialize(en.getValue())));
             }
         }
-        input = new MockInboundStream(0, inputData, 1);
-        sst = new StoreSnapshotTasklet(ssContext, 1, input, nodeEngine, "myVertex", false);
+        input = new MockInboundStream(0, inputData, 128);
+        mockSsWriter = new MockAsyncSnapshotWriter();
+        sst = new StoreSnapshotTasklet(ssContext, 1, input, mockSsWriter, Logger.getLogger(mockSsWriter.getClass()),
+                "myVertex", false);
     }
 
     @Test
     public void when_doneItemOnInput_then_eventuallyDone() {
-        init(Collections.singletonList(DONE_ITEM));
-        assertTrueEventually(() -> assertTrue("tasklet not done", sst.call().isDone()), 3);
+        // When
+        init(singletonList(DONE_ITEM));
+
+        // Then
+        assertEquals(DONE, sst.call());
     }
 
     @Test
-    public void when_item_then_storedToMap() {
-        init(Collections.singletonList(entry("k", "v")));
-        IMapJet<Object, Object> map = instance.getMap(sst.currMapName());
-        assertTrueEventually(() -> {
-            sst.call();
-            assertEquals("v", map.get("k"));
-        }, 3);
+    public void when_item_then_offeredToSsWriter() {
+        // When
+        init(singletonList(entry("k", "v")));
+        assertEquals(MADE_PROGRESS, sst.call());
+
+        // Then
+        assertEquals(entry(serialize("k"), serialize("v")), mockSsWriter.poll());
+        assertNull(mockSsWriter.poll());
+    }
+
+    @Test
+    public void when_notAbleToOffer_then_offeredLater() {
+        // When
+        init(singletonList(entry("k", "v")));
+        mockSsWriter.ableToOffer = false;
+        assertEquals(MADE_PROGRESS, sst.call());
+        assertEquals(0, input.remainingItems().size());
+        assertEquals(NO_PROGRESS, sst.call());
+        assertNull(mockSsWriter.poll());
+
+        // Then
+        mockSsWriter.ableToOffer = true;
+        assertEquals(MADE_PROGRESS, sst.call());
+        assertEquals(entry(serialize("k"), serialize("v")), mockSsWriter.poll());
+        assertNull(mockSsWriter.poll());
     }
 
     @Test
     public void when_barrier_then_snapshotDone() {
-        init(Collections.singletonList(new SnapshotBarrier(2)));
+        // When
+        init(singletonList(new SnapshotBarrier(2)));
         ssContext.startNewSnapshot(2);
-        assertEquals(2, sst.pendingSnapshotId);
-        assertTrueEventually(() -> {
-            sst.call();
-            assertEquals(3, sst.pendingSnapshotId);
-        }, 3);
+        assertEquals(MADE_PROGRESS, sst.call());
+        assertEquals(MADE_PROGRESS, sst.call());
+
+        // Then
+        assertEquals(3, sst.pendingSnapshotId);
     }
 
     @Test
     public void when_itemAndBarrier_then_snapshotDone() {
-        init(asList(entry("k", "v"), new SnapshotBarrier(2)));
+        // When
+        Entry<String, String> entry = entry("k", "v");
+        init(asList(entry, new SnapshotBarrier(2)));
         ssContext.startNewSnapshot(2);
         assertEquals(2, sst.pendingSnapshotId);
-        IMapJet<Object, Object> map = instance.getMap(sst.currMapName());
-        assertTrueEventually(() -> {
-            sst.call();
-            assertEquals(3, sst.pendingSnapshotId);
-            assertEquals("v", map.get("k"));
-        }, 3);
+        assertEquals(MADE_PROGRESS, sst.call());
+        mockSsWriter.hasPendingFlushes = false;
+        assertEquals(MADE_PROGRESS, sst.call());
+
+        // Then
+        assertEquals(3, sst.pendingSnapshotId);
+        assertEquals(entry(serialize("k"), serialize("v")), mockSsWriter.poll());
     }
 
-    private Data serialize(Object o) {
-        return nodeEngine.getSerializationService().toData(o);
+    @Test
+    public void when_notAbleToFlush_then_tryAgain() {
+        // When
+        init(singletonList(new SnapshotBarrier(2)));
+        ssContext.startNewSnapshot(2);
+        mockSsWriter.ableToFlushRemaining = false;
+        assertEquals(MADE_PROGRESS, sst.call());
+        assertEquals(NO_PROGRESS, sst.call());
+        assertEquals(NO_PROGRESS, sst.call());
+
+        // Then
+        mockSsWriter.ableToFlushRemaining = true;
+        assertEquals(MADE_PROGRESS, sst.call());
+        assertEquals(MADE_PROGRESS, sst.call());
+        assertEquals(NO_PROGRESS, sst.call());
+        assertEquals(3, sst.pendingSnapshotId);
+    }
+
+    @Test
+    public void test_waitingForFlushesToComplete() {
+        // When
+        Entry<String, String> entry = entry("k", "v");
+        init(asList(entry, new SnapshotBarrier(2)));
+        ssContext.startNewSnapshot(2);
+        assertEquals(MADE_PROGRESS, sst.call());
+        assertEquals(NO_PROGRESS, sst.call());
+        assertTrue(mockSsWriter.hasPendingFlushes);
+
+        // Then
+        mockSsWriter.hasPendingFlushes = false;
+        assertEquals(MADE_PROGRESS, sst.call());
+        assertEquals(NO_PROGRESS, sst.call());
+        assertEquals(3, sst.pendingSnapshotId);
+    }
+
+    @Test
+    public void when_snapshotFails_then_reportedToContext() throws Exception {
+        // When
+        init(singletonList(new SnapshotBarrier(2)));
+        mockSsWriter.failure = new RuntimeException("mock failure");
+        CompletableFuture<Void> future = ssContext.startNewSnapshot(2);
+        assertEquals(MADE_PROGRESS, sst.call());
+        assertFalse(future.isDone());
+        assertEquals(MADE_PROGRESS, sst.call());
+
+        // Then
+        assertTrue(future.isCompletedExceptionally());
+        assertEquals(3, sst.pendingSnapshotId);
+
+        exception.expectMessage("mock failure");
+        future.get();
+    }
+
+    private HeapData serialize(String o) {
+        // "aaaa" is here to create 8 bytes for HeapData header (we use UTF-16)
+        return new HeapData(("abcd" + o).getBytes(StandardCharsets.UTF_16));
     }
 }
