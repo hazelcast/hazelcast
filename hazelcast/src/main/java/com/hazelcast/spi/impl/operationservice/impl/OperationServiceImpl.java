@@ -335,10 +335,12 @@ public final class OperationServiceImpl implements InternalOperationService, Met
         }
     }
 
+    @Override
     public void onStartAsyncOperation(Operation op) {
         asyncOperations.add(op);
     }
 
+    @Override
     public void onCompletionAsyncOperation(Operation op) {
         asyncOperations.remove(op);
     }

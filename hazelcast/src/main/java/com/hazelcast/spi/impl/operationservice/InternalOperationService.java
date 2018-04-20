@@ -74,6 +74,24 @@ public interface InternalOperationService extends OperationService {
     int getGenericThreadCount();
 
     /**
+     * Should be called when an asynchronous operations not running on a operation thread is running.
+     *
+     * Primary purpose is to provide heartbeats
+     *
+     * @param op
+     */
+    void onStartAsyncOperation(Operation op);
+
+    /**
+     * Should be called when the asynchronous operation has completed.
+     *
+     * @see #onStartAsyncOperation(Operation)
+     *
+     * @param op
+     */
+    void onCompletionAsyncOperation(Operation op);
+
+    /**
      * Checks if this call is timed out. A timed out call is not going to be
      * executed.
      *
