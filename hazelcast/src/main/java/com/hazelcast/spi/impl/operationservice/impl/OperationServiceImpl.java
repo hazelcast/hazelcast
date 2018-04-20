@@ -41,6 +41,7 @@ import com.hazelcast.spi.LiveOperationsTracker;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.impl.operationservice.PartitionTaskFactory;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
@@ -258,6 +259,11 @@ public final class OperationServiceImpl implements InternalOperationService, Met
     @Override
     public void execute(PartitionSpecificRunnable task) {
         operationExecutor.execute(task);
+    }
+
+    @Override
+    public void execute(PartitionTaskFactory taskFactory, int[] partitions) {
+        operationExecutor.execute(taskFactory, partitions);
     }
 
     @Override

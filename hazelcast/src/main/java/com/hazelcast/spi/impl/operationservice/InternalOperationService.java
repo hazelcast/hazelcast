@@ -123,6 +123,27 @@ public interface InternalOperationService extends OperationService {
     void execute(PartitionSpecificRunnable task);
 
     /**
+     * Executes for each of the partitions, a task created by the
+     * taskFactory.
+     *
+     * The reason this method exists is to prevent a bubble of operations/tasks
+     * to be created on the work-queue if the regular {@link #execute(Operation)}
+     * would be called in a loop.
+     *
+     * The consequence of this bubble is that no other operations can interleave
+     * and this can lead to very bad latency for the other operations.
+     *
+     * This method can be used to create Operations and Runnable's to be executed
+     * on a partition thread.
+     *
+     * @param taskFactory the PartitionTaskFactory used to create
+     *                         operations.
+     * @param partitions the partitions to execute an operation on.
+     * @throws NullPointerException if taskFactory or partitions is null.
+     */
+    void execute(PartitionTaskFactory taskFactory, int[] partitions);
+
+    /**
      * Returns information about long running operations.
      *
      * @return list of {@link SlowOperationDTO} instances.
