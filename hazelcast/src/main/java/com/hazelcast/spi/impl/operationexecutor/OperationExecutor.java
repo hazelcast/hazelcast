@@ -165,11 +165,6 @@ public interface OperationExecutor extends PacketHandler, LiveOperationsTracker 
     int getPartitionThreadId(int partitionId);
 
     /**
-     * Interrupts the partition threads.
-     */
-    void interruptPartitionThreads();
-
-    /**
      * Starts this OperationExecutor
      */
     void start();
