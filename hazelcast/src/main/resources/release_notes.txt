@@ -9,6 +9,8 @@ This document lists the new features, enhancements, fixed issues and, removed or
 - Extended Merge Policies: Merge policies applied after a Split-Brain syndrome has been implemented for more Hazelcast data structures (it was for IMap, ICache and Replicated Map before 3.10).
 - Flake ID Generator: Introduced to overcome the duplicate ID generation in case of a network split, by the deprecated IdGenerator data structure. Please see the FlakeIdGenerator section.
 - PN Counter: Introduced CRDT PN Counter (Positive-Negative Counter), which allows incrementing and decrementing a counter value and propagating the results to all cluster members. Please see the PN-Counter section.
+- Health Check Script: Introduced a command line tool to check the health of your Hazelcast cluster. Please see the Health Check Script section.
+
 
 The following are the other improvements performed to solve the enhancement issues opened by the Hazelcast customers/team.
 
@@ -102,12 +104,14 @@ The following are the other improvements performed to solve the enhancement issu
 
 4. Behavioral Changes
 
-Up to 3.9.x, the method Config.findCacheConfig looks up a CacheSimpleConfig: if none is found, then null is returned. This behavior has been not like all the other findXXConfig methods in the following ways:
+* Up to 3.9.x, the method Config.findCacheConfig looks up a CacheSimpleConfig: if none is found, then null is returned. This behavior has been not like all the other findXXConfig methods in the following ways:
 
 - findXXConfig never returns null, it falls back to defaults, creates the missing data structure configuration and stores it in Config.
 - findXXConfig returns a read-only copy of the actual configuration, while findCacheConfig returns the found configuration object itself.
 
 With 3.10, the method Config.findCacheConfig is aligned to behave like the other findXXConfig methods; it now returns a read-only copy and does fallback to defaults. If you who want the old behavior for this method in 3.10.x, you should use the method Config.findCacheConfigOrNull.
+
+* Starting with 3.10, any unknown property of Discovery SPI in the Hazelcast configuration will result in an exception blocking the Hazelcast member from starting. This approach restricts the configuration (both XML and Object-based) and prevents typos.
 
 5. Known Problems
 
