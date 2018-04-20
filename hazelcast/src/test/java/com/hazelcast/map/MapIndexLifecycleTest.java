@@ -324,7 +324,7 @@ public class MapIndexLifecycleTest extends HazelcastTestSupport {
         public Map<Integer, Book> loadAll(Collection<Integer> keys) {
             Map<Integer, Book> map = new TreeMap<Integer, Book>();
             for (int key : keys) {
-                map.put(key, new Book(key, String.valueOf(key), String.valueOf(key % 7), 1800 + key % 200));
+                map.put(key, new Book(key, String.valueOf(key), getAuthorNameByKey(key), getYearByKey(key)));
             }
             return map;
         }
@@ -365,7 +365,7 @@ public class MapIndexLifecycleTest extends HazelcastTestSupport {
                 break;
             }
         }
-        return String.valueOf(ownedKey % 7);
+        return getAuthorNameByKey(ownedKey);
     }
 
     private Integer findYearOwnedBy(HazelcastInstance hz) {
@@ -377,6 +377,14 @@ public class MapIndexLifecycleTest extends HazelcastTestSupport {
                 break;
             }
         }
-        return 1800 + ownedKey % 200;
+        return getYearByKey(ownedKey);
+    }
+
+    private static int getYearByKey(int key) {
+        return 1800 + key % 200;
+    }
+
+    private static String getAuthorNameByKey(int key) {
+        return String.valueOf(key % 7);
     }
 }
