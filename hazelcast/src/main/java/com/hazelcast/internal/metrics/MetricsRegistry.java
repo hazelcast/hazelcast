@@ -25,13 +25,13 @@ import java.util.concurrent.TimeUnit;
  * The MetricsRegistry is responsible for recording all kinds of Hazelcast/JVM
  * specific information to help out with issues like performance or stability
  * problems.
- *
+ * <p>
  * Each HazelcastInstance has its own MetricsRegistry instance.
- *
+ * <p>
  * A MetricsRegistry can contain many {@link Probe} instances. A probe is
- * registered under a certain name, and can be read by creating a Gauge, see
- * {@link #newLongGauge(String)}.
- *
+ * registered under a certain name, and can be read by creating a {@link Gauge},
+ * see {@link #newLongGauge(String)}.
+ * <p>
  * This name can be any string, e.g.:
  * <ol>
  * <li>proxy.count</li>
@@ -41,14 +41,14 @@ import java.util.concurrent.TimeUnit;
  * For the time being there the MetricsRegistry doesn't require any syntax for
  * the name content; so any String is fine.
  *
- * <h1>Duplicate Registrations</h1>
+ * <h3>Duplicate Registrations</h3>
  * The MetricsRegistry is lenient regarding duplicate registrations of probes.
  * So if there is an existing probe for a given name and a new probe with the
  * same name is registered, the old probe is overwritten. The reason to be
  * lenient is that the MetricRegistry should not throw exception. Of course
  * there will be a log warning.
  *
- * <h1>Performance</h1>
+ * <h3>Performance</h3>
  * The MetricRegistry is designed for low overhead probes. So once a probe is
  * registered, there is no overhead for the provider of the probe data. The
  * provider could have for example a volatile long field and increment this
@@ -108,12 +108,12 @@ public interface MetricsRegistry {
      * Scans the source object for any fields/methods that have been annotated
      * with {@link Probe} annotation, and registering these fields/methods as
      * probes instances.
-     *
-     * If a probe is called, 'queueSize' and the namePrefix is 'operations,
+     * <p>
+     * If a probe is called 'queueSize' and the namePrefix is 'operations',
      * then the name of the probe-instance is 'operations.queueSize'.
-     *
+     * <p>
      * If probes with the same name already exist, then the probes are replaced.
-     *
+     * <p>
      * If an object has no @Gauge annotations, the call is ignored.
      *
      * @param source     the object to scan.
@@ -137,7 +137,7 @@ public interface MetricsRegistry {
     <S> void register(S source, String name, ProbeLevel level, LongProbeFunction<S> probe);
 
     /**
-     * Registers a probe
+     * Registers a probe.
      *
      * If a probe for the given name exists, it will be overwritten.
      *
@@ -168,7 +168,7 @@ public interface MetricsRegistry {
      *
      * @param publisher the published task that needs to be executed
      * @param period    the time between executions
-     * @param timeUnit  the timeunit for period
+     * @param timeUnit  the time unit for period
      * @throws NullPointerException if publisher or timeUnit is null.
      */
     void scheduleAtFixedRate(Runnable publisher, long period, TimeUnit timeUnit);

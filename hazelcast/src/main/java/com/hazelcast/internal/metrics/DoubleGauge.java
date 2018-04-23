@@ -17,8 +17,8 @@
 package com.hazelcast.internal.metrics;
 
 /**
- * A DoubleGauge is {link Gauge} where a particular double value is read
- * instantaneous. E.g. the current os load.
+ * A DoubleGauge is a {@link Gauge} where a particular double value is read
+ * instantaneously. E.g. the current OS load.
  *
  * {@link LongGauge}
  */

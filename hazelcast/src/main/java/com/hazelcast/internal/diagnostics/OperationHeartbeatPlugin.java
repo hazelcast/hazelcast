@@ -36,7 +36,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * network related problems like split-brain.
  * <p>
  * It does this by checking the deviation in the interval between operation-heartbeat packets. Operation-heartbeat packets
- * are send at a fixed interval (operation-call-timeout/4) and are not processed by operation-threads; but by their own system.
+ * are sent at a fixed interval (operation-call-timeout/4) and are not processed by operation-threads, but by their own system.
  * If there is a big deviation, then it could indicate networking problems. But it could also indicate other problems like JVM
  * issues.
  */
