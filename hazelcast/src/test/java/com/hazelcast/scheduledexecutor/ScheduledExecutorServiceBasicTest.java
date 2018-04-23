@@ -874,7 +874,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
 
         assertEquals(expectedPartition, handler.getPartitionId());
 
-        latch.await(10, SECONDS);
+        latch.await(60, SECONDS);
         assertEquals(0, latch.getCount());
     }
 
