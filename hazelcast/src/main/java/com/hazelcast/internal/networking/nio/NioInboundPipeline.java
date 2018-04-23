@@ -71,7 +71,7 @@ public final class NioInboundPipeline extends NioPipeline {
 
     @Override
     public long load() {
-        switch (LOAD_TYPE) {
+        switch (loadType) {
             case LOAD_BALANCING_HANDLE:
                 return processCount.get();
             case LOAD_BALANCING_BYTE:
