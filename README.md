@@ -14,8 +14,12 @@
     * [IAM Roles in ECS Environment](#iam-roles-in-ecs-environment)
     * [Policy for IAM User](#policy-for-iam-user)
   * [AWS Autoscaling](#aws-autoscaling)
-    * [AWS Autoscaling Architecture](#aws-autoscaling-architecture)
-    * [Lifecycle Hook Listener Script](#lifecycle-hook-listener-script)
+    * [AWS Autoscaling using Lifecycle Hooks](#aws-autoscaling-using-lifecycle-hooks)
+      * [AWS Autoscaling Architecture](#aws-autoscaling-architecture)
+      * [Lifecycle Hook Listener Script](#lifecycle-hook-listener-script)
+    * [AWS Autoscaling Alternative Solutions](#aws-autoscaling-alternative-solutions)
+      * [Cooldown Period](#cooldown-period)
+      * [Graceful Shutdown](#graceful-shutdown)
   * [AWSClient Configuration](#awsclient-configuration)
   * [Debugging](#debugging)
   * [Hazelcast Performance on AWS](#hazelcast-performance-on-aws)
@@ -41,7 +45,7 @@ the former one will be deprecated.
 ### Zone Aware Support
 
 ***NOTE:*** 
-ZONE_AWARE configuration is only valid when you use Hazelcast Discovery SPI based configuration with `<discovery-strategies>`. `<aws>` based configuration is still using old implemenation and does not support ZONE_AWARE feature
+ZONE_AWARE configuration is only valid when you use Hazelcast Discovery SPI based configuration with `<discovery-strategies>`. `<aws>` based configuration is still using old implementation and does not support ZONE_AWARE feature
 
 Zone Aware Support is available for Hazelcast Client 3.8.6 and newer releases.
 
@@ -306,9 +310,13 @@ There are specific requirements for the Hazelcast cluster to work correctly in t
 
 Otherwise, there is a risk of data loss or an impact on performance.
 
-The recommended solution is to use **[Autoscaling Lifecycle Hooks](https://docs.aws.amazon.com/autoscaling/ec2/userguide/lifecycle-hooks.html)** with **Amazon SQS**, and the **custom lifecycle hook listener script**.
+The recommended solution is to use **[Autoscaling Lifecycle Hooks](https://docs.aws.amazon.com/autoscaling/ec2/userguide/lifecycle-hooks.html)** with **Amazon SQS**, and the **custom lifecycle hook listener script**. If your cluster is small and predictable, then you can try the simpler alternative solution using **[Cooldown Period](https://docs.aws.amazon.com/autoscaling/ec2/userguide/Cooldown.html)**.
 
-### AWS Autoscaling Architecture
+### AWS Autoscaling using Lifecycle Hooks
+
+This solution is recommended and safe, no matter what your cluster and data sizes are. Nevertheless, if you find it too complex, you may want to try alternative solutions.
+
+#### AWS Autoscaling Architecture
 
 The necessary autoscaling architecture is presented on the diagram.
 
@@ -325,7 +333,7 @@ The following activities must be performed to set up the Hazelcast AWS Autoscali
   * Instance Launch Hook
   * Instance Terminate Hook
 
-### Lifecycle Hook Listener Script
+#### Lifecycle Hook Listener Script
 
 The `lifecycle_hook_listener.sh` script takes one argument as a parameter: `queue_name` (AWS SQS name). It performs operations that can be expressed in the following pseudocode.
 
@@ -337,6 +345,32 @@ while true:
         sleep 5
     send_continue_message
 ```
+
+### AWS Autoscaling Alternative Solutions
+
+The solutions below are not recommended, since they may not operate well under certain conditions. Therefore, please use them with caution.
+
+#### Cooldown Period
+
+[Cooldown Period](https://docs.aws.amazon.com/autoscaling/ec2/userguide/Cooldown.html) is a statically defined time interval that AWS Autoscaling Group waits before the next autoscaling operation takes place. If your cluster is small and predictable, then you can use it instead of Lifecycle Hooks. 
+
+* Set `Scaling Policy` to `Step scaling` and increase/decrease always by adding/removing `1 instance`
+* Set `Cooldown Period` to a reasonable value (which depends on the cluster and data size)
+
+Note the drawbacks:
+
+ * If the cluster contains a significant amount of data, it may be impossible to define one static cooldown period
+ * Even if the cluster comes back to the safe state quicker, the next operation needs to wait the defined cooldown period
+
+#### Graceful Shutdown
+
+A solution that may sound simple and good (but is actually not recommended) is to use **[Hazelcast Graceful Shutdown](http://docs.hazelcast.org/docs/latest-development/manual/html/FAQ.html#page_How+can+I+shutdown+a+Hazelcast+member)** as a hook on the EC2 Instance Termination. In other words, without any Autoscaling-specific features (like Lifecycle Hooks), you could adapt the EC2 Instance to wait for the Hazelcast member to shutdown before terminating the instance.
+
+Such solution may work correctly, however is definitely not recommended for the following reasons:
+
+* [AWS Autoscaling documentation](https://docs.aws.amazon.com/autoscaling/ec2/userguide/what-is-amazon-ec2-auto-scaling.html) does not specify the instance termination process, so it's hard to rely on anything
+* Some sources ([here](https://stackoverflow.com/questions/11208869/amazon-ec2-autoscaling-down-with-graceful-shutdown)) specify that it's possible to gracefully shut down the processes, however after 20 seconds (which may not be enough for Hazelcast) the processes can be killed anyway
+* The [Amazon's recommended way](https://docs.aws.amazon.com/autoscaling/ec2/userguide/lifecycle-hooks.html) to deal with graceful shutdowns is to use Lifecycle Hooks
 
 ## AWSClient Configuration
 
