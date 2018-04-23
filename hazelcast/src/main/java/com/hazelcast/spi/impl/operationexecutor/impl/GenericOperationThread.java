@@ -27,9 +27,14 @@ public final class GenericOperationThread extends OperationThread {
 
     private final OperationRunner operationRunner;
 
-    public GenericOperationThread(String name, int threadId, OperationQueue queue, ILogger logger,
-                                  NodeExtension nodeExtension, OperationRunner operationRunner,
-                                  boolean priority, ClassLoader configClassLoader) {
+    public GenericOperationThread(String name,
+                                  int threadId,
+                                  OperationQueue queue,
+                                  ILogger logger,
+                                  NodeExtension nodeExtension,
+                                  OperationRunner operationRunner,
+                                  boolean priority,
+                                  ClassLoader configClassLoader) {
         super(name, threadId, queue, logger, nodeExtension, priority, configClassLoader);
         this.operationRunner = operationRunner;
     }
