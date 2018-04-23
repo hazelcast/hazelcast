@@ -35,7 +35,7 @@ public final class GenericOperationThread extends OperationThread {
     }
 
     @Override
-    public OperationRunner getOperationRunner(int partitionId) {
+    public OperationRunner operationRunner(int partitionId) {
         return operationRunner;
     }
 }

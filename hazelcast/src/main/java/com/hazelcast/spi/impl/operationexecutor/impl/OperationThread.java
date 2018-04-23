@@ -86,7 +86,7 @@ public abstract class OperationThread extends HazelcastManagedThread implements 
         return threadId;
     }
 
-    public abstract OperationRunner getOperationRunner(int partitionId);
+    public abstract OperationRunner operationRunner(int partitionId);
 
     @Override
     public final void run() {
@@ -136,19 +136,19 @@ public abstract class OperationThread extends HazelcastManagedThread implements 
     }
 
     private void process(Operation operation) {
-        currentRunner = getOperationRunner(operation.getPartitionId());
+        currentRunner = operationRunner(operation.getPartitionId());
         currentRunner.run(operation);
         completedOperationCount.inc();
     }
 
     private void process(Packet packet) throws Exception {
-        currentRunner = getOperationRunner(packet.getPartitionId());
+        currentRunner = operationRunner(packet.getPartitionId());
         currentRunner.run(packet);
         completedPacketCount.inc();
     }
 
     private void process(PartitionSpecificRunnable runnable) {
-        currentRunner = getOperationRunner(runnable.getPartitionId());
+        currentRunner = operationRunner(runnable.getPartitionId());
         currentRunner.run(runnable);
         completedPartitionSpecificRunnableCount.inc();
     }
