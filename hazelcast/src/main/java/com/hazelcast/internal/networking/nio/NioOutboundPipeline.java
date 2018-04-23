@@ -90,6 +90,7 @@ public final class NioOutboundPipeline extends NioPipeline implements Runnable {
 
     @Override
     public long load() {
+        logger.info("Load type is set to " + LOAD_TYPE);
         switch (LOAD_TYPE) {
             case LOAD_BALANCING_HANDLE:
                 return processCount.get();

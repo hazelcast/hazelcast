@@ -346,21 +346,8 @@
                                         ${extraVmArgs}
                                     </argLine>
                                     <includes>
-                                        <include>**/**.java</include>
+                                        <include>**/networking/nio/iobalancer/IOBalancerSt*</include>
                                     </includes>
-                                    <excludes>
-                                        <exclude>**/jsr/**.java</exclude>
-                                        <exclude>**/**IT.java</exclude>
-                                        <exclude>**/mapreduce/**.java</exclude>
-                                    </excludes>
-                                    <groups>
-                                        com.hazelcast.test.annotation.QuickTest AND
-                                        com.hazelcast.test.annotation.ParallelTest
-                                    </groups>
-                                    <excludedGroups>
-                                        com.hazelcast.test.annotation.SlowTest,
-                                        com.hazelcast.test.annotation.NightlyTest
-                                    </excludedGroups>
                                     <systemPropertyVariables>
                                         <multipleJVM>true</multipleJVM>
                                     </systemPropertyVariables>
@@ -385,19 +372,8 @@
                                         ${extraVmArgs}
                                     </argLine>
                                     <includes>
-                                        <include>**/**.java</include>
+                                        <include>**/networking/nio/iobalancer/IOBalancerSt**</include>
                                     </includes>
-                                    <excludes>
-                                        <exclude>**/jsr/**.java</exclude>
-                                        <exclude>**/**IT.java</exclude>
-                                        <exclude>**/mapreduce/**.java</exclude>
-                                    </excludes>
-                                    <groups>com.hazelcast.test.annotation.QuickTest</groups>
-                                    <excludedGroups>
-                                        com.hazelcast.test.annotation.SlowTest,
-                                        com.hazelcast.test.annotation.NightlyTest,
-                                        com.hazelcast.test.annotation.ParallelTest
-                                    </excludedGroups>
                                 </configuration>
                             </execution>
                         </executions>
@@ -431,19 +407,10 @@
                                 -Dhazelcast.test.use.network=false
                                 ${extraVmArgs}
                             </argLine>
+
                             <includes>
-                                <include>**/**.java</include>
+                                <include>**/networking/nio/iobalancer/**</include>
                             </includes>
-                            <excludes>
-                                <exclude>**/jsr/**.java</exclude>
-                                <exclude>**/**IT.java</exclude>
-                                <exclude>**/mapreduce/**.java</exclude>
-                            </excludes>
-                            <groups>com.hazelcast.test.annotation.QuickTest</groups>
-                            <excludedGroups>
-                                com.hazelcast.test.annotation.SlowTest,
-                                com.hazelcast.test.annotation.NightlyTest
-                            </excludedGroups>
                         </configuration>
                         <dependencies>
                             <dependency>
@@ -471,10 +438,9 @@
                             <useManifestOnlyJar>false</useManifestOnlyJar>
                             <useSystemClassLoader>true</useSystemClassLoader>
                             <groups>com.hazelcast.test.annotation.QuickTest</groups>
-                            <excludedGroups>
-                                com.hazelcast.test.annotation.SlowTest,
-                                com.hazelcast.test.annotation.NightlyTest
-                            </excludedGroups>
+                            <includes>
+                                <include>**/networking/nio/iobalancer/**</include>
+                            </includes>
                         </configuration>
                         <executions>
                             <execution>
