@@ -23,7 +23,7 @@ import com.hazelcast.logging.ILogger;
  * <p>
  * The plugin will not be called concurrently, unless threads are introduced outside of the {@link Diagnostics}.
  * <p>
- * There is a happens before relation between {@link #onStart()} and {@link #run(DiagnosticsLogWriter)}, and therefor
+ * There is a happens-before relation between {@link #onStart()} and {@link #run(DiagnosticsLogWriter)}, and therefore
  * there is no need to make variables volatile. The source of the happens-before relation is the scheduler.queue inside
  * of the {@link Diagnostics} or the AtomicReference in case of static plugins.
  */

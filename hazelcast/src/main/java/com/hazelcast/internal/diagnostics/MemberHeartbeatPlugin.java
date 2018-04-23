@@ -28,9 +28,9 @@ import static com.hazelcast.internal.diagnostics.Diagnostics.PREFIX;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
- * A Diagnostics plugin that checks the quality of member/member heartbeats.
+ * A diagnostics plugin that checks the quality of member/member heartbeats.
  * <p>
- * Normally heartbeats are sent at a fixed frequency, but if there is a deviation in this frequency, it could indicate problems.
+ * Normally, heartbeats are sent at a fixed frequency, but if there is a deviation in this frequency, it could indicate problems.
  */
 public class MemberHeartbeatPlugin extends DiagnosticsPlugin {
 

@@ -17,8 +17,8 @@
 package com.hazelcast.internal.metrics;
 
 /**
- * A LongGauge is {@link Gauge} where a particular long value is read
- * instantaneous. E.g. the current size of the pending operations queue.
+ * A LongGauge is a {@link Gauge} where a particular long value is read
+ * instantaneously. E.g. the current size of the pending operations queue.
  *
  * {@link DoubleGauge}
  */

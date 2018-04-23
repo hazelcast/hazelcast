@@ -30,9 +30,9 @@ import com.hazelcast.topic.TopicOverloadException;
  * m1, m2, m3...mn to a topic T, then Hazelcast makes sure that all of the subscribers of topic T will receive
  * and process m1, m2, m3...mn in order.
  * <p>
- * Since Hazelcast 3.5 it is possible to have reliable topics. Normally all topics rely on the a shared eventing system and
- * shared threads. With Hazelcast 3.5 it is possible to configure a topic to be reliable and to gets its own
- * {@link com.hazelcast.ringbuffer.Ringbuffer} to store events and to gets its own executor to process events. The events
+ * Since Hazelcast 3.5 it is possible to have reliable topics. Normally all topics rely on the shared eventing system and
+ * shared threads. With Hazelcast 3.5 it is possible to configure a topic to be reliable and to get its own
+ * {@link com.hazelcast.ringbuffer.Ringbuffer} to store events and to get its own executor to process events. The events
  * in the ringbuffer are replicated, so they won't get lost when a node goes down.
  */
 public interface ITopic<E> extends DistributedObject {

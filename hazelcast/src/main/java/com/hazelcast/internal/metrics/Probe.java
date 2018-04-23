@@ -25,22 +25,22 @@ import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 /**
- * Annotation that can be placed on a field or method of an object to indicate
+ * Annotation that can be placed on a field or a method of an object to indicate
  * that it should be tracked by the MetricsRegistry when the
  * {@link MetricsRegistry#scanAndRegister(Object, String)} is called.
- *
+ * <p>
  * The MetricsRegistry will automatically scan all interfaces and super classes
  * of an object (recursively). So it is possible to define a Probe on e.g. an
- * interface or abstract class.
+ * interface or an abstract class.
  *
  * <h1>Prefer field</h1>
- * Prefer placing a Probe to a field above a method if the type is a primitive.
+ * Prefer placing the Probe to a field rather than to a method if the type is primitive.
  * The {@link java.lang.reflect.Field} provides access to the actual field
  * without the need for autoboxing. With the {@link java.lang.reflect.Method}
  * a wrapper object is created when a primitive is returned by the method.
- * Therefor fields produce less garbage than methods.
- *
- * A Probe can be placed on field or methods with the following (return) type:
+ * Therefore, fields produce less garbage than methods.
+ * <p>
+ * A Probe can be placed on fields or methods with the following (return) type:
  * <ol>
  * <li>byte</li>
  * <li>short</li>
