@@ -17,6 +17,7 @@
 package com.hazelcast.spi.impl.operationexecutor.impl;
 
 import com.hazelcast.spi.impl.operationservice.PartitionTaskFactory;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import static com.hazelcast.spi.impl.operationexecutor.impl.OperationExecutorImpl.getPartitionThreadId;
 
@@ -31,6 +32,7 @@ public class TaskBatch {
     private final int partitionThreadCount;
     private int partitionIndex;
 
+    @SuppressFBWarnings("EI_EXPOSE_REP")
     public TaskBatch(PartitionTaskFactory taskFactory, int[] partitions, int threadId, int partitionThreadCount) {
         this.taskFactory = taskFactory;
         this.partitions = partitions;
