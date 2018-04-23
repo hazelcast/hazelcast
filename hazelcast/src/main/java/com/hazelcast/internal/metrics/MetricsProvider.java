@@ -17,7 +17,8 @@
 package com.hazelcast.internal.metrics;
 
 /**
- * To be implemented by an object that can provide metrics (so has a bunch of probes).
+ * To be implemented by an object that can provide metrics (so has a bunch of
+ * probes).
  */
 public interface MetricsProvider {
 

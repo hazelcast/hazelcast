@@ -25,16 +25,20 @@ import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 /**
- * Annotation that can be placed on a field or method of an object to indicate that it should be tracked by the
- * MetricsRegistry when the {@link MetricsRegistry#scanAndRegister(Object, String)} is called.
+ * Annotation that can be placed on a field or method of an object to indicate
+ * that it should be tracked by the MetricsRegistry when the
+ * {@link MetricsRegistry#scanAndRegister(Object, String)} is called.
  *
- * The MetricsRegistry will automatically scan all interfaces and super classes of an object (recursively). So it is possible
- * to define a Probe on e.g. an interface or abstract class.
+ * The MetricsRegistry will automatically scan all interfaces and super classes
+ * of an object (recursively). So it is possible to define a Probe on e.g. an
+ * interface or abstract class.
  *
  * <h1>Prefer field</h1>
- * Prefer placing a Probe to a field above a method if the type is a primitive. The {@link java.lang.reflect.Field}
- * provides access to the actual field without the need for autoboxing. With the {@link java.lang.reflect.Method} a wrapper
- * object is created when a primitive is returned by the method. Therefor fields produce less garbage than methods.
+ * Prefer placing a Probe to a field above a method if the type is a primitive.
+ * The {@link java.lang.reflect.Field} provides access to the actual field
+ * without the need for autoboxing. With the {@link java.lang.reflect.Method}
+ * a wrapper object is created when a primitive is returned by the method.
+ * Therefor fields produce less garbage than methods.
  *
  * A Probe can be placed on field or methods with the following (return) type:
  * <ol>
@@ -54,7 +58,8 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  * <li>{@link Double}</li>
  * <li>{@link java.util.Collection}: it will return the size</li>
  * <li>{@link java.util.Map}: it will return the size</li>
- * <li>{@link java.util.concurrent.Semaphore}: it will return the number of available permits</li>
+ * <li>{@link java.util.concurrent.Semaphore}: it will return the number of
+ * available permits</li>
  * </ol>
  *
  * If the field or method points to a null reference, it is interpreted as 0.
@@ -73,8 +78,8 @@ public @interface Probe {
     /**
      * Returns the ProbeLevel.
      *
-     * Using ProbeLevel one can indicate how 'important' this Probe is. This is useful to reduce memory overhead due
-     * to tracking of probes.
+     * Using ProbeLevel one can indicate how 'important' this Probe is. This is
+     * useful to reduce memory overhead due to tracking of probes.
      *
      * @return the ProbeLevel.
      */
