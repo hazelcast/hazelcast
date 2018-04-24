@@ -364,7 +364,7 @@ Note the drawbacks:
 
 #### Graceful Shutdown
 
-A solution that may sound simple and good (but is actually not recommended) is to use **[Hazelcast Graceful Shutdown](http://docs.hazelcast.org/docs/latest-development/manual/html/FAQ.html#page_How+can+I+shutdown+a+Hazelcast+member)** as a hook on the EC2 Instance Termination. In other words, without any Autoscaling-specific features (like Lifecycle Hooks), you could adapt the EC2 Instance to wait for the Hazelcast member to shutdown before terminating the instance.
+A solution that may sound simple and good (but is actually not recommended) is to use **[Hazelcast Graceful Shutdown](http://docs.hazelcast.org/docs/3.9.4/manual/html-single/index.html#how-can-i-shutdown-a-hazelcast-member)** as a hook on the EC2 Instance Termination. In other words, without any Autoscaling-specific features (like Lifecycle Hooks), you could adapt the EC2 Instance to wait for the Hazelcast member to shutdown before terminating the instance.
 
 Such solution may work correctly, however is definitely not recommended for the following reasons:
 
