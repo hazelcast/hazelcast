@@ -78,10 +78,10 @@ public interface StageWithGroupingAndWindow<T, K> {
 
     /**
      * Attaches to this stage a stage that performs the given
-     * group-and-aggregate operation. It emits one key-value pair (in a {@code
-     * Map.Entry}) for each distinct key it observes in its input belonging to
-     * a given window. The value is the result of the aggregate operation
-     * across all the items with the given grouping key.
+     * group-and-aggregate operation. It emits one key-value pair (in a {@link
+     * TimestampedEntry}) for each distinct key it observes in its input
+     * belonging to a given window. The value is the result of the aggregate
+     * operation across all the items with the given grouping key.
      *
      * @see com.hazelcast.jet.aggregate.AggregateOperations AggregateOperations
      * @param aggrOp the aggregate operation to perform
@@ -125,10 +125,10 @@ public interface StageWithGroupingAndWindow<T, K> {
     /**
      * Attaches to this stage a stage that performs the given
      * cogroup-and-aggregate operation over the items from both this stage
-     * and {@code stage1} you supply. It emits one key-value pair (in a {@code
-     * Map.Entry}) for each distinct key it observes in the input belonging to
-     * a given window. The value is the result of the aggregate operation
-     * across all the items with the given grouping key.
+     * and {@code stage1} you supply. It emits one key-value pair (in a {@link
+     * TimestampedEntry}) for each distinct key it observes in the input
+     * belonging to a given window. The value is the result of the aggregate
+     * operation across all the items with the given grouping key.
      * <p>
      * The aggregate operation must specify a separate accumulator function for
      * each of the two streams (refer to its {@link AggregateOperation2 Javadoc}
@@ -179,8 +179,8 @@ public interface StageWithGroupingAndWindow<T, K> {
      * Attaches to this stage a stage that performs the given
      * cogroup-and-aggregate operation over the items from this stage as well
      * as {@code stage1} and {@code stage2} you supply. It emits one key-value
-     * pair (in a {@code Map.Entry}) for each distinct key it observes in the
-     * input belonging to a given window. The value is the result of the
+     * pair (in a {@link TimestampedEntry}) for each distinct key it observes
+     * in the input belonging to a given window. The value is the result of the
      * aggregate operation across all the items with the given grouping key.
      * <p>
      * The aggregate operation must specify a separate accumulator function for
