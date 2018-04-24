@@ -1230,9 +1230,6 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     cacheConfigBuilder.addPropertyValue("partitionLostListenerConfigs", listeners);
                 } else if ("quorum-ref".equals(cleanNodeName(childNode))) {
                     cacheConfigBuilder.addPropertyValue("quorumName", getTextContent(childNode));
-                } else if ("partition-lost-listeners".equals(cleanNodeName(childNode))) {
-                    ManagedList listeners = parseListeners(childNode, CachePartitionLostListenerConfig.class);
-                    cacheConfigBuilder.addPropertyValue("partitionLostListenerConfigs", listeners);
                 } else if ("merge-policy".equals(cleanNodeName(childNode))) {
                     cacheConfigBuilder.addPropertyValue("mergePolicy", getTextContent(childNode));
                 } else if ("hot-restart".equals(cleanNodeName(childNode))) {
