@@ -33,14 +33,25 @@ final class PartitionInvocation extends Invocation {
 
     final boolean failOnIndeterminateOperationState;
 
-    PartitionInvocation(Context context, Operation op, Runnable doneCallback, int tryCount, long tryPauseMillis,
-                        long callTimeoutMillis, boolean deserialize, boolean failOnIndeterminateOperationState) {
+    PartitionInvocation(Context context,
+                        Operation op,
+                        Runnable doneCallback,
+                        int tryCount,
+                        long tryPauseMillis,
+                        long callTimeoutMillis,
+                        boolean deserialize,
+                        boolean failOnIndeterminateOperationState) {
         super(context, op, doneCallback, tryCount, tryPauseMillis, callTimeoutMillis, deserialize);
         this.failOnIndeterminateOperationState = failOnIndeterminateOperationState && !(op instanceof ReadonlyOperation);
     }
 
-    PartitionInvocation(Context context, Operation op, int tryCount, long tryPauseMillis,
-                        long callTimeoutMillis, boolean deserialize, boolean failOnIndeterminateOperationState) {
+    PartitionInvocation(Context context,
+                        Operation op,
+                        int tryCount,
+                        long tryPauseMillis,
+                        long callTimeoutMillis,
+                        boolean deserialize,
+                        boolean failOnIndeterminateOperationState) {
         this(context, op, null, tryCount, tryPauseMillis, callTimeoutMillis, deserialize,
                 failOnIndeterminateOperationState);
     }

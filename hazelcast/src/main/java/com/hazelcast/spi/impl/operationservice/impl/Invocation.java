@@ -180,8 +180,13 @@ public abstract class Invocation implements OperationResponseHandler {
      */
     private final Runnable taskDoneCallback;
 
-    Invocation(Context context, Operation op, Runnable taskDoneCallback, int tryCount, long tryPauseMillis,
-               long callTimeoutMillis, boolean deserialize) {
+    Invocation(Context context,
+               Operation op,
+               Runnable taskDoneCallback,
+               int tryCount,
+               long tryPauseMillis,
+               long callTimeoutMillis,
+               boolean deserialize) {
         this.context = context;
         this.op = op;
         this.taskDoneCallback = taskDoneCallback;
