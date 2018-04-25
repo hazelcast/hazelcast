@@ -82,6 +82,8 @@ public class TestProcessorMetaSupplierContext implements ProcessorMetaSupplier.C
 
     @Override
     public int localParallelism() {
+        assert totalParallelism % localParallelism == 0 :
+                "totalParallelism=" + totalParallelism + " not divisible with localParallelism=" + localParallelism;
         return localParallelism;
     }
 
@@ -92,6 +94,11 @@ public class TestProcessorMetaSupplierContext implements ProcessorMetaSupplier.C
     public TestProcessorMetaSupplierContext setLocalParallelism(int localParallelism) {
         this.localParallelism = localParallelism;
         return this;
+    }
+
+    @Override
+    public int memberCount() {
+        return totalParallelism() / localParallelism();
     }
 
     @Nonnull @Override

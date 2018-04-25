@@ -34,6 +34,7 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.partition.IPartitionService;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -46,7 +47,6 @@ import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 import static com.hazelcast.jet.impl.util.Util.getJetInstance;
 import static java.lang.Integer.min;
 import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toMap;
 
 public final class ExecutionPlanBuilder {
 
@@ -66,8 +66,11 @@ public final class ExecutionPlanBuilder {
         final int clusterSize = members.size();
         final boolean isJobDistributed = clusterSize > 1;
         final EdgeConfig defaultEdgeConfig = instance.getConfig().getDefaultEdgeConfig();
-        final Map<MemberInfo, ExecutionPlan> plans = members.stream()
-                .collect(toMap(m -> m, m -> new ExecutionPlan(partitionOwners, jobConfig, lastSnapshotId)));
+        final Map<MemberInfo, ExecutionPlan> plans = new HashMap<>();
+        int memberIndex = 0;
+        for (MemberInfo member : members) {
+            plans.put(member, new ExecutionPlan(partitionOwners, jobConfig, lastSnapshotId, memberIndex++, clusterSize));
+        }
         final Map<String, Integer> vertexIdMap = assignVertexIds(dag);
         for (Entry<String, Integer> entry : vertexIdMap.entrySet()) {
             final Vertex vertex = dag.getVertex(entry.getKey());
@@ -83,20 +86,16 @@ public final class ExecutionPlanBuilder {
             final ILogger logger = nodeEngine.getLogger(String.format("%s.%s#ProcessorMetaSupplier",
                     metaSupplier.getClass().getName(), vertex.getName()));
             metaSupplier.init(new MetaSupplierCtx(instance, logger, vertex.getName(),
-                    localParallelism, totalParallelism));
+                    localParallelism, totalParallelism, clusterSize));
 
             Function<Address, ProcessorSupplier> procSupplierFn = metaSupplier.get(addresses);
-            int procIdxOffset = 0;
             for (Entry<MemberInfo, ExecutionPlan> e : plans.entrySet()) {
                 final ProcessorSupplier processorSupplier = procSupplierFn.apply(e.getKey().getAddress());
                 checkSerializable(processorSupplier, "ProcessorSupplier in vertex '" + vertex.getName() + '\'');
-                final VertexDef vertexDef = new VertexDef(
-                        vertexId, vertex.getName(), processorSupplier, procIdxOffset, localParallelism, totalParallelism
-                );
+                final VertexDef vertexDef = new VertexDef(vertexId, vertex.getName(), processorSupplier, localParallelism);
                 vertexDef.addInboundEdges(inbound);
                 vertexDef.addOutboundEdges(outbound);
                 e.getValue().addVertex(vertexDef);
-                procIdxOffset += localParallelism;
             }
         }
         return plans;

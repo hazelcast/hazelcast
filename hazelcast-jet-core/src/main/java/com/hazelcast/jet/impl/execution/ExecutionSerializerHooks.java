@@ -129,13 +129,12 @@ class ExecutionSerializerHooks {
 
                 @Override
                 public void write(ObjectDataOutput out, BroadcastKeyReference object) throws IOException {
-                    out.writeLong(object.id());
                     out.writeObject(object.key());
                 }
 
                 @Override
                 public BroadcastKeyReference read(ObjectDataInput in) throws IOException {
-                    return new BroadcastKeyReference(in.readLong(), in.readObject());
+                    return new BroadcastKeyReference(in.readObject());
                 }
             };
         }

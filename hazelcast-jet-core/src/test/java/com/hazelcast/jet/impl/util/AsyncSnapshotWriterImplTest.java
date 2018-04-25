@@ -85,7 +85,7 @@ public class AsyncSnapshotWriterImplTest extends JetTestSupport {
         NodeEngineImpl nodeEngine = ((HazelcastInstanceImpl) instance.getHazelcastInstance()).node.nodeEngine;
         serializationService = ((HazelcastInstanceImpl) instance.getHazelcastInstance()).getSerializationService();
         partitionService = nodeEngine.getPartitionService();
-        writer = new AsyncSnapshotWriterImpl(128, nodeEngine);
+        writer = new AsyncSnapshotWriterImpl(128, nodeEngine, 0, 1);
         writer.setCurrentMap("map1");
         map = instance.getHazelcastInstance().getMap("map1");
         assertTrue(writer.usableChunkSize > 0);
@@ -160,7 +160,7 @@ public class AsyncSnapshotWriterImplTest extends JetTestSupport {
 
         // Then
         assertTargetMapEntry("k", 0, serializedLength(entry1));
-        assertTargetMapEntry("kk", 0, serializedLength(entry2));
+        assertTargetMapEntry("kk", 1, serializedLength(entry2));
     }
 
     @Test
@@ -221,7 +221,7 @@ public class AsyncSnapshotWriterImplTest extends JetTestSupport {
         assertTrue(writer.flush());
 
         assertTargetMapEntry("k", 0, serializedLength(entry1));
-        assertTargetMapEntry("kk", 0, serializedLength(entry2));
+        assertTargetMapEntry("kk", 1, serializedLength(entry2));
     }
 
     @Test

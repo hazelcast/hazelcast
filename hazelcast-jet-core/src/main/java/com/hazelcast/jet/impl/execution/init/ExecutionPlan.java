@@ -94,6 +94,9 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
     private JobConfig jobConfig;
     private List<VertexDef> vertices = new ArrayList<>();
 
+    private int memberIndex;
+    private int memberCount;
+
     private final Map<String, ConcurrentConveyor<Object>[]> localConveyorMap = new HashMap<>();
     private final Map<String, Map<Address, ConcurrentConveyor<Object>>> edgeSenderConveyorMap = new HashMap<>();
     private final List<Processor> processors = new ArrayList<>();
@@ -114,10 +117,13 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
     ExecutionPlan() {
     }
 
-    ExecutionPlan(Address[] partitionOwners, JobConfig jobConfig, long lastSnapshotId) {
+    ExecutionPlan(Address[] partitionOwners, JobConfig jobConfig, long lastSnapshotId,
+                  int memberIndex, int memberCount) {
         this.partitionOwners = partitionOwners;
         this.jobConfig = jobConfig;
         this.lastSnapshotId = lastSnapshotId;
+        this.memberIndex = memberIndex;
+        this.memberCount = memberCount;
     }
 
     public void initialize(NodeEngine nodeEngine, long jobId, long executionId, SnapshotContext snapshotContext) {
@@ -138,13 +144,14 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
             StoreSnapshotTasklet ssTasklet = new StoreSnapshotTasklet(snapshotContext, jobId,
                     new ConcurrentInboundEdgeStream(ssConveyor, 0, 0, lastSnapshotId, true, -1,
                             "ssFrom:" + vertex.name()),
-                    new AsyncSnapshotWriterImpl(nodeEngine), nodeEngine.getLogger(StoreSnapshotTasklet.class),
+                    new AsyncSnapshotWriterImpl(nodeEngine, memberIndex, memberCount),
+                    nodeEngine.getLogger(StoreSnapshotTasklet.class),
                     vertex.name(), vertex.isHigherPriorityUpstream());
             tasklets.add(ssTasklet);
 
             int localProcessorIdx = 0;
             for (Processor p : processors) {
-                int globalProcessorIndex = vertex.getProcIdxOffset() + localProcessorIdx;
+                int globalProcessorIndex = memberIndex * vertex.localParallelism() + localProcessorIdx;
                 String loggerName = createLoggerName(p.getClass().getName(), vertex.name(), globalProcessorIndex);
                 ProcCtx context = new ProcCtx(
                         instance,
@@ -153,7 +160,10 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                         vertex.name(),
                         globalProcessorIndex,
                         jobConfig.getProcessingGuarantee(),
-                        vertex.localParallelism(), vertex.totalParallelism()
+                        vertex.localParallelism(),
+                        memberCount * vertex.localParallelism(),
+                        memberIndex,
+                        memberCount
                 );
 
                  String probePrefix = String.format("jet.job.%s.%s#%d", idToString(executionId), vertex.name(),
@@ -231,6 +241,8 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
             out.writeObject(address);
         }
         out.writeObject(jobConfig);
+        out.writeInt(memberIndex);
+        out.writeInt(memberCount);
     }
 
     @Override
@@ -243,6 +255,8 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
             partitionOwners[i] = in.readObject();
         }
         jobConfig = in.readObject();
+        memberIndex = in.readInt();
+        memberCount = in.readInt();
     }
 
     // End implementation of IdentifiedDataSerializable
@@ -258,7 +272,10 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                     service.getJetInstance(),
                     logger,
                     vertex.name(),
-                    vertex.localParallelism(), vertex.totalParallelism()
+                    vertex.localParallelism(),
+                    vertex.localParallelism() * memberCount,
+                    memberIndex,
+                    memberCount
             ));
         }
     }

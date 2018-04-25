@@ -29,6 +29,8 @@ public class TestProcessorSupplierContext
         extends TestProcessorMetaSupplierContext
         implements ProcessorSupplier.Context {
 
+    private int memberIndex;
+
     @Nonnull @Override
     public TestProcessorSupplierContext setLogger(@Nonnull ILogger logger) {
         return (TestProcessorContext) super.setLogger(logger);
@@ -52,6 +54,21 @@ public class TestProcessorSupplierContext
     @Nonnull @Override
     public TestProcessorSupplierContext setLocalParallelism(int localParallelism) {
         return (TestProcessorSupplierContext) super.setLocalParallelism(localParallelism);
+    }
+
+    @Override
+    public int memberIndex() {
+        assert memberIndex >= 0 && memberIndex < memberCount()
+                : "memberIndex should be in range 0.." + (memberCount() - 1);
+        return memberIndex;
+    }
+
+    /**
+     * Set the member index.
+     */
+    public TestProcessorSupplierContext setMemberIndex(int memberIndex) {
+        this.memberIndex = memberIndex;
+        return this;
     }
 
     @Override

@@ -52,12 +52,12 @@ public interface ProcessorSupplier extends Serializable {
 
     /**
      * Called after the execution has finished on all members - successfully or
-     * not. This method will be called after {@link Processor#close()} has been
+     * not. This method will be called after {@link Processor#close} has been
      * called on all <em>available</em> members.
      * <p>
      * If the execution was <em>aborted</em> due to a member leaving the
      * cluster, it is called immediately (but not before {@link
-     * Processor#close()} for local processors). In this case, it can happen
+     * Processor#close} for local processors). In this case, it can happen
      * that the job is still running on some other member (but not on this
      * member).
      * <p>
@@ -93,5 +93,13 @@ public interface ProcessorSupplier extends Serializable {
          */
         @Nonnull
         ILogger logger();
+
+        /**
+         * Returns the index of the member among all the members that run this
+         * job: it's a unique cluster-wide index.
+         * <p>
+         * The value is in the range {@code [0...memberCount-1]}.
+         */
+        int memberIndex();
     }
 }

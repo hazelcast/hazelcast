@@ -40,6 +40,8 @@ public class TestProcessorContext extends TestProcessorSupplierContext implement
 
     @Override
     public int globalProcessorIndex() {
+        assert globalProcessorIndex >= 0 && globalProcessorIndex < totalParallelism()
+                : "globalProcessorIndex should be in range 0.." + (totalParallelism() - 1);
         return globalProcessorIndex;
     }
 

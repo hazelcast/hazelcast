@@ -47,7 +47,7 @@ import java.util.function.Supplier;
 
 public class AsyncSnapshotWriterImpl implements AsyncSnapshotWriter {
 
-    private static final int MAX_CHUNK_SIZE = 128 * 1024;
+    private static final int DEFAULT_CHUNK_SIZE = 128 * 1024;
 
     final int usableChunkSize; // this includes the serialization header for byte[], but not the terminator
     final byte[] serializedByteArrayHeader = new byte[3 * Bits.INT_SIZE_IN_BYTES];
@@ -58,10 +58,11 @@ public class AsyncSnapshotWriterImpl implements AsyncSnapshotWriter {
 
     private final CustomByteArrayOutputStream[] buffers;
     private final int[] partitionKeys;
-    private final int[] partitionSequences;
+    private int partitionSequence;
     private final ILogger logger;
     private final NodeEngine nodeEngine;
     private final boolean useBigEndian;
+    private final int memberCount;
     private IMap<SnapshotDataKey, byte[]> currentMap;
     private final AtomicReference<Throwable> lastError = new AtomicReference<>();
     private final AtomicInteger numActiveFlushes = new AtomicInteger();
@@ -87,15 +88,16 @@ public class AsyncSnapshotWriterImpl implements AsyncSnapshotWriter {
         }
     };
 
-    public AsyncSnapshotWriterImpl(NodeEngine nodeEngine) {
-        this(MAX_CHUNK_SIZE, nodeEngine);
+    public AsyncSnapshotWriterImpl(NodeEngine nodeEngine, int memberIndex, int memberCount) {
+        this(DEFAULT_CHUNK_SIZE, nodeEngine, memberIndex, memberCount);
     }
 
     // for test
-    AsyncSnapshotWriterImpl(int chunkSize, NodeEngine nodeEngine) {
+    AsyncSnapshotWriterImpl(int chunkSize, NodeEngine nodeEngine, int memberIndex, int memberCount) {
         this.nodeEngine = nodeEngine;
         this.partitionService = nodeEngine.getPartitionService();
         this.logger = nodeEngine.getLogger(getClass());
+        this.memberCount = memberCount;
 
         useBigEndian = !nodeEngine.getHazelcastInstance().getConfig().getSerializationConfig().isUseNativeByteOrder()
                 || ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN;
@@ -111,7 +113,7 @@ public class AsyncSnapshotWriterImpl implements AsyncSnapshotWriter {
 
         JetService jetService = nodeEngine.getService(JetService.SERVICE_NAME);
         this.partitionKeys = jetService.getSharedPartitionKeys();
-        this.partitionSequences = new int[partitionService.getPartitionCount()];
+        this.partitionSequence = memberIndex;
 
         this.numConcurrentAsyncOps = jetService.numConcurrentAsyncOps();
 
@@ -226,7 +228,8 @@ public class AsyncSnapshotWriterImpl implements AsyncSnapshotWriter {
 
         // we put a Data instance to the map directly to avoid the serialization of the byte array
         ICompletableFuture<Void> future = ((IMap) currentMap).setAsync(
-                new SnapshotDataKey(partitionKeys[partitionId], partitionSequences[partitionId]++), dataSupplier.get());
+                new SnapshotDataKey(partitionKeys[partitionId], partitionSequence), dataSupplier.get());
+        partitionSequence += memberCount;
         future.andThen(callback);
         numActiveFlushes.incrementAndGet();
         return true;

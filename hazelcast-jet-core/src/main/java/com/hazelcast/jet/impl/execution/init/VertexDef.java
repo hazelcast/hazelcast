@@ -35,23 +35,16 @@ public class VertexDef implements IdentifiedDataSerializable {
     private List<EdgeDef> outboundEdges = new ArrayList<>();
     private String name;
     private ProcessorSupplier processorSupplier;
-    private int procIdxOffset;
     private int localParallelism;
-    private int totalParallelism;
 
     VertexDef() {
     }
 
-    VertexDef(
-            int id, String name, ProcessorSupplier processorSupplier, int procIdxOffset,
-            int localParallelism, int totalParallelism
-    ) {
+    VertexDef(int id, String name, ProcessorSupplier processorSupplier, int localParallelism) {
         this.id = id;
         this.name = name;
         this.processorSupplier = processorSupplier;
-        this.procIdxOffset = procIdxOffset;
         this.localParallelism = localParallelism;
-        this.totalParallelism = totalParallelism;
     }
 
     String name() {
@@ -60,10 +53,6 @@ public class VertexDef implements IdentifiedDataSerializable {
 
     int localParallelism() {
         return localParallelism;
-    }
-
-    int totalParallelism() {
-        return totalParallelism;
     }
 
     int vertexId() {
@@ -88,10 +77,6 @@ public class VertexDef implements IdentifiedDataSerializable {
 
     ProcessorSupplier processorSupplier() {
         return processorSupplier;
-    }
-
-    int getProcIdxOffset() {
-        return procIdxOffset;
     }
 
     /**
@@ -140,9 +125,7 @@ public class VertexDef implements IdentifiedDataSerializable {
         writeList(out, inboundEdges);
         writeList(out, outboundEdges);
         CustomClassLoadedObject.write(out, processorSupplier);
-        out.writeInt(procIdxOffset);
         out.writeInt(localParallelism);
-        out.writeInt(totalParallelism);
     }
 
     @Override
@@ -152,8 +135,6 @@ public class VertexDef implements IdentifiedDataSerializable {
         inboundEdges = readList(in);
         outboundEdges = readList(in);
         processorSupplier = CustomClassLoadedObject.read(in);
-        procIdxOffset = in.readInt();
         localParallelism = in.readInt();
-        totalParallelism = in.readInt();
     }
 }

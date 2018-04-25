@@ -74,7 +74,7 @@ public class ProcessorTaskletTest_Snapshots {
         this.processor = new SnapshottableProcessor();
         this.context = new ProcCtx(
                 null, new DefaultSerializationServiceBuilder().build(), null, null, 0,
-                EXACTLY_ONCE, 1, 1
+                EXACTLY_ONCE, 1, 1, 0, 1
         );
         this.instreams = new ArrayList<>();
         this.outstreams = new ArrayList<>();

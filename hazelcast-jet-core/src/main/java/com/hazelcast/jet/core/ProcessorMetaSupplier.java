@@ -309,18 +309,27 @@ public interface ProcessorMetaSupplier extends Serializable {
         /**
          * Returns the total number of {@code Processor}s that will be created
          * across the cluster. This number remains stable for entire job
-         * execution.
+         * execution. It is equal to {@link #memberCount()} * {@link
+         * #localParallelism()}.
          */
         int totalParallelism();
 
         /**
          * Returns the number of processors that each {@code ProcessorSupplier}
          * will be asked to create once deserialized on each member. All
-         * members have equal local parallelism; dividing {@link
-         * #totalParallelism} by local parallelism gives you the participating
-         * member count. The count doesn't change unless the job restarts.
+         * members have equal local parallelism. The count doesn't change
+         * unless the job restarts.
          */
         int localParallelism();
+
+        /**
+         * Returns the number of members running this job.
+         * <p>
+         * Note that the value might be lower than current member count if
+         * members were added after the job started. The count doesn't change
+         * unless the job restarts.
+         */
+        int memberCount();
 
         /**
          * Returns the name of the associated vertex.

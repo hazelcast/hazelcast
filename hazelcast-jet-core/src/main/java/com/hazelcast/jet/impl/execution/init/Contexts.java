@@ -37,15 +37,17 @@ public final class Contexts {
         private final String vertexName;
         private final int localParallelism;
         private final int totalParallelism;
+        private final int memberCount;
 
         MetaSupplierCtx(
-                JetInstance jetInstance, ILogger logger, String vertexName, int localParallelism, int totalParallelism
-        ) {
+                JetInstance jetInstance, ILogger logger, String vertexName, int localParallelism, int totalParallelism,
+                int memberCount) {
             this.jetInstance = jetInstance;
             this.logger = logger;
             this.vertexName = vertexName;
             this.totalParallelism = totalParallelism;
             this.localParallelism = localParallelism;
+            this.memberCount = memberCount;
         }
 
         @Nonnull
@@ -64,6 +66,11 @@ public final class Contexts {
             return localParallelism;
         }
 
+        @Override
+        public int memberCount() {
+            return memberCount;
+        }
+
         @Nonnull @Override
         public String vertexName() {
             return vertexName;
@@ -73,14 +80,22 @@ public final class Contexts {
         public ILogger logger() {
             return logger;
         }
-
     }
 
     static class ProcSupplierCtx extends MetaSupplierCtx implements ProcessorSupplier.Context {
 
+        private final int memberIndex;
+
         ProcSupplierCtx(
-                JetInstance jetInstance, ILogger logger, String vertexName, int localParallelism, int totalParallelism) {
-            super(jetInstance, logger, vertexName, localParallelism, totalParallelism);
+                JetInstance jetInstance, ILogger logger, String vertexName, int localParallelism, int totalParallelism,
+                int memberIndex, int memberCount) {
+            super(jetInstance, logger, vertexName, localParallelism, totalParallelism, memberCount);
+            this.memberIndex = memberIndex;
+        }
+
+        @Override
+        public int memberIndex() {
+            return memberIndex;
         }
     }
 
@@ -91,8 +106,9 @@ public final class Contexts {
         private final ProcessingGuarantee processingGuarantee;
 
         public ProcCtx(JetInstance instance, SerializationService serService, ILogger logger, String vertexName,
-                       int index, ProcessingGuarantee processingGuarantee, int localParallelism, int totalParallelism) {
-            super(instance, logger, vertexName, localParallelism, totalParallelism);
+                       int index, ProcessingGuarantee processingGuarantee, int localParallelism, int totalParallelism,
+                       int memberIndex, int memberCount) {
+            super(instance, logger, vertexName, localParallelism, totalParallelism, memberIndex, memberCount);
             this.serService = serService;
             this.index = index;
             this.processingGuarantee = processingGuarantee;
@@ -112,8 +128,4 @@ public final class Contexts {
             return serService;
         }
     }
-
-
-
 }
-

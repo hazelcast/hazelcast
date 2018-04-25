@@ -55,6 +55,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.CancellationException;
 import java.util.function.Function;
 import java.util.stream.IntStream;
 
@@ -205,13 +206,10 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
         // wait until we have at least one snapshot
         IMapJet<Long, Object> snapshotsMap = snapshotRepository.getSnapshotMap(job.getId());
 
-        assertTrueEventually(() -> assertTrue("No snapshot produced", snapshotsMap.entrySet().stream()
-                .anyMatch(en -> en.getValue() instanceof SnapshotRecord
-                        && ((SnapshotRecord) en.getValue()).isSuccessful())), timeout);
-
+        waitForFirstSnapshot(snapshotsMap, timeout);
         waitForNextSnapshot(snapshotsMap, timeout);
         // wait a little more to emit something, so that it will be overwritten in the sink map
-        Thread.sleep(300);
+        Thread.sleep(3000);
 
         instance2.shutdown();
 
@@ -350,6 +348,13 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
         return executionContext.snapshotContext();
     }
 
+    private void waitForFirstSnapshot(IMapJet<Long, Object> snapshotsMap, int timeout) {
+        assertTrueEventually(() -> assertTrue("No snapshot produced",
+                snapshotsMap.entrySet().stream()
+                            .anyMatch(en -> en.getValue() instanceof SnapshotRecord
+                                    && ((SnapshotRecord) en.getValue()).isSuccessful())), timeout);
+    }
+
     private void waitForNextSnapshot(IMapJet<Long, Object> snapshotsMap, int timeoutSeconds) {
         SnapshotRecord maxRecord = findMaxRecord(snapshotsMap);
         assertNotNull("no snapshot found", maxRecord);
@@ -393,6 +398,72 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
                 entry(1, 0),
                 entry(1, 1)
         ));
+    }
+
+    @Test
+    public void stressTest() throws Exception {
+        SnapshotRepository snapshotRepository = new SnapshotRepository(instance1);
+
+        DAG dag = new DAG();
+        dag.newVertex("generator", SnapshotStressSourceP::new)
+           .localParallelism(1);
+
+        Job job = instance1.newJob(dag,
+                new JobConfig().setSnapshotIntervalMillis(10)
+                               .setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE));
+
+        IMapJet<Long, Object> snapshotsMap = snapshotRepository.getSnapshotMap(job.getId());
+        waitForFirstSnapshot(snapshotsMap, 5);
+        spawn(() -> {
+            for (int i = 0; i < 10; i++) {
+                job.restart();
+                waitForNextSnapshot(snapshotsMap, 5);
+                Thread.sleep(500);
+            }
+            return null;
+        }).get();
+
+        job.cancel();
+        try {
+            job.join();
+        } catch (CancellationException expected) {
+        }
+    }
+
+    private static class SnapshotStressSourceP extends AbstractProcessor {
+        private static final int ITEMS_TO_SAVE = 100;
+
+        private Traverser<Map.Entry<BroadcastKey, Integer>> traverser;
+        private int numRestored;
+
+        @Override
+        public boolean complete() {
+            traverser = null;
+            return false;
+        }
+
+        @Override
+        public boolean saveToSnapshot() {
+            if (traverser == null) {
+                traverser = Traversers
+                        .traverseStream(IntStream.range(0, ITEMS_TO_SAVE)
+                                                 .mapToObj(i -> entry(broadcastKey(i), i)));
+            }
+            return emitFromTraverserToSnapshot(traverser);
+        }
+
+        @Override
+        protected void restoreFromSnapshot(@Nonnull Object key, @Nonnull Object value) {
+            numRestored++;
+        }
+
+        @Override
+        public boolean finishSnapshotRestore() {
+            // multiply expected count by 2 because the restored items are broadcast from 2 members
+            assertEquals(ITEMS_TO_SAVE * 2, numRestored);
+            numRestored = 0;
+            return true;
+        }
     }
 
     /**

@@ -20,8 +20,6 @@ import com.hazelcast.jet.impl.execution.BroadcastKeyReference;
 
 import javax.annotation.Nonnull;
 
-import static com.hazelcast.jet.impl.util.Util.secureRandomNextLong;
-
 /**
  * Marker interface for a key in the snapshot state that indicates the
  * corresponding entry should be broadcast to all processors
@@ -47,6 +45,6 @@ public interface BroadcastKey<K> {
      */
     @Nonnull
     static <K> BroadcastKey<K> broadcastKey(@Nonnull K key) {
-        return new BroadcastKeyReference<>(secureRandomNextLong(), key);
+        return new BroadcastKeyReference<>(key);
     }
 }
