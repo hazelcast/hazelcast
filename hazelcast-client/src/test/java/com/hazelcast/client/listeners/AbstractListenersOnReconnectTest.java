@@ -38,8 +38,10 @@ import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceSegment;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
+import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -214,14 +216,14 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
     }
 
     @Test
+    @Category(SlowTest.class)
     public void testListenersWhenClientDisconnectedOperationRuns_whenOwnerConnectionRemoved() {
         Config config = new Config();
-        int endpointDelaySeconds = 2;
+        int endpointDelaySeconds = 10;
         config.setProperty(GroupProperty.CLIENT_ENDPOINT_REMOVE_DELAY_SECONDS.getName(), String.valueOf(endpointDelaySeconds));
-        config.setProperty(GroupProperty.CLIENT_HEARTBEAT_TIMEOUT_SECONDS.getName(), "4");
+        config.setProperty(GroupProperty.CLIENT_HEARTBEAT_TIMEOUT_SECONDS.getName(), "20");
         HazelcastInstance ownerServer = factory.newHazelcastInstance(config);
         ClientConfig smartClientConfig = getSmartClientConfig();
-        smartClientConfig.setProperty(ClientProperty.HEARTBEAT_INTERVAL.getName(), "500");
 
         client = factory.newHazelcastClient(smartClientConfig);
         factory.newHazelcastInstance(config);
