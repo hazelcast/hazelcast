@@ -38,7 +38,7 @@ public abstract class NioPipeline implements MigratablePipeline, Closeable {
     protected static final int LOAD_BALANCING_FRAME = 2;
 
     // for the time being we configure using a int until we have decided which load strategy to use.
-    protected static final int LOAD_TYPE = Integer.getInteger("hazelcast.io.load", LOAD_BALANCING_BYTE);
+    protected final int LOAD_TYPE = Integer.getInteger("hazelcast.io.load", LOAD_BALANCING_BYTE);
 
     @Probe
     protected final SwCounter processCount = newSwCounter();
