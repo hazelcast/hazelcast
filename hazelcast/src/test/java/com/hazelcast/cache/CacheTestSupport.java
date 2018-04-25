@@ -53,7 +53,7 @@ public abstract class CacheTestSupport extends HazelcastTestSupport {
 
     @After
     public final void tearDown() {
-        if (cacheManager != null) {
+        if (cacheManager != null && !cacheManager.isClosed()) {
             Iterable<String> cacheNames = cacheManager.getCacheNames();
             for (String name : cacheNames) {
                 cacheManager.destroyCache(name);
