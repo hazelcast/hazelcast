@@ -129,8 +129,11 @@ public class ClientCacheStatsTest extends CacheStatsTest {
     @Override
     @Test
     public void testEvictions() {
+        ICache<Integer, String> cache = createCache();
+        CacheStatistics stats = cache.getLocalCacheStatistics();
+
         expectedException.expect(UnsupportedOperationException.class);
-        super.testEvictions();
+        stats.getCacheEvictions();
     }
 
     @Override
