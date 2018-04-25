@@ -114,7 +114,7 @@ public class WriteBufferedPTest extends JetTestSupport {
         return SinkProcessors.writeBufferedP(
                 idx -> {
                     events.add("new");
-                    return null;
+                    return "foo";
                 },
                 (buffer, item) -> events.add("add:" + item),
                 buffer -> events.add("flush"),

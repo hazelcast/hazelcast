@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl.connector;
 
+import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.core.Inbox;
 import com.hazelcast.jet.core.Outbox;
 import com.hazelcast.jet.core.Processor;
@@ -51,21 +52,9 @@ public final class WriteBufferedP<B, T> implements Processor {
     @Override
     public void init(@Nonnull Outbox outbox, @Nonnull Context context) {
         buffer = createFn.apply(context);
-    }
-
-    /**
-     * This is private API. Call
-     * {@link com.hazelcast.jet.core.processor.SinkProcessors#writeBufferedP
-     * SinkProcessors.writeBuffered()} instead.
-     */
-    @Nonnull
-    public static <B, T> DistributedSupplier<Processor> supplier(
-            @Nonnull DistributedFunction<? super Context, ? extends B> createFn,
-            @Nonnull DistributedBiConsumer<? super B, ? super T> onReceiveFn,
-            @Nonnull DistributedConsumer<? super B> flushFn,
-            @Nonnull DistributedConsumer<? super B> destroyFn
-    ) {
-        return () -> new WriteBufferedP<>(createFn, onReceiveFn, flushFn, destroyFn);
+        if (buffer == null) {
+            throw new JetException("Null buffer created");
+        }
     }
 
     @Override
@@ -84,7 +73,7 @@ public final class WriteBufferedP<B, T> implements Processor {
     public void close(@Nullable Throwable error) {
         // avoid double destroyFn call: close() method is called from complete(), as well as by
         // the Jet engine
-        if (destroyFn != null) {
+        if (destroyFn != null && buffer != null) {
             destroyFn.accept(buffer);
             destroyFn = null;
         }
@@ -95,4 +84,18 @@ public final class WriteBufferedP<B, T> implements Processor {
         return false;
     }
 
+    /**
+     * This is private API. Call
+     * {@link com.hazelcast.jet.core.processor.SinkProcessors#writeBufferedP
+     * SinkProcessors.writeBuffered()} instead.
+     */
+    @Nonnull
+    public static <B, T> DistributedSupplier<Processor> supplier(
+            @Nonnull DistributedFunction<? super Context, ? extends B> createFn,
+            @Nonnull DistributedBiConsumer<? super B, ? super T> onReceiveFn,
+            @Nonnull DistributedConsumer<? super B> flushFn,
+            @Nonnull DistributedConsumer<? super B> destroyFn
+    ) {
+        return () -> new WriteBufferedP<>(createFn, onReceiveFn, flushFn, destroyFn);
+    }
 }
