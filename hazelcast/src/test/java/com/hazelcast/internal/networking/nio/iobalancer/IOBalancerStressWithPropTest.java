@@ -51,16 +51,24 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(NightlyTest.class)
-public class IOBalancerStressTest extends HazelcastTestSupport {
-
-    @Rule
-    public final OverridePropertyRule overridePropertyRule = OverridePropertyRule.set("hazelcast.io.load", "0");
+public class IOBalancerStressWithPropTest extends HazelcastTestSupport {
+    private String oldValue;
 
     @Before
+    public void setup() {
+        System.out.println("In before, hazelcast.io.load: " + System.getProperty("hazelcast.io.load"));
+        oldValue = System.getProperty("hazelcast.io.load");
+        System.setProperty("hazelcast.io.load", "0");
+    }
+
     @After
     public void killAllHazelcastInstances() {
         HazelcastInstanceFactory.terminateAll();
-        System.out.println("In before/after, hazelcast.io.load: " + System.getProperty("hazelcast.io.load"));
+        if (oldValue != null) {
+            System.setProperty("hazelcast.io.load", oldValue);
+        } else {
+            System.clearProperty("hazelcast.io.load");
+        }
     }
 
     @Test
