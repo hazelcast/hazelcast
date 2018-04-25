@@ -333,12 +333,14 @@ public final class Packet extends HeapData implements OutboundFrame {
 
         final char headerEncoding;
 
+        private static final Type[] VALUES = values();
+
         Type() {
             headerEncoding = (char) encodeOrdinal();
         }
 
         public static Type fromFlags(int flags) {
-            return values()[headerDecode(flags)];
+            return VALUES[headerDecode(flags)];
         }
 
         public String describeFlags(char flags) {
