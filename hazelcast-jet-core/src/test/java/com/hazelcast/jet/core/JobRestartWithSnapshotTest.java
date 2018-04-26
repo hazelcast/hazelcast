@@ -150,7 +150,7 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
         IMap<List<Long>, Long> result = instance1.getMap("result");
         result.clear();
 
-        SequencesInPartitionsMetaSupplier sup = new SequencesInPartitionsMetaSupplier(3, 180);
+        SequencesInPartitionsMetaSupplier sup = new SequencesInPartitionsMetaSupplier(3, 200, true);
         Vertex generator = dag.newVertex("generator", throttle(sup, 30))
                               .localParallelism(1);
         Vertex insWm = dag.newVertex("insWm", insertWatermarksP(wmGenParams(
@@ -209,7 +209,7 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
         waitForFirstSnapshot(snapshotsMap, timeout);
         waitForNextSnapshot(snapshotsMap, timeout);
         // wait a little more to emit something, so that it will be overwritten in the sink map
-        Thread.sleep(3000);
+        Thread.sleep(300);
 
         instance2.shutdown();
 
@@ -359,8 +359,12 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
         SnapshotRecord maxRecord = findMaxRecord(snapshotsMap);
         assertNotNull("no snapshot found", maxRecord);
         // wait until there is at least one more snapshot
-        assertTrueEventually(() -> assertTrue("No more snapshots produced after restart",
-                findMaxRecord(snapshotsMap).snapshotId() > maxRecord.snapshotId()), timeoutSeconds);
+        assertTrueEventually(() -> {
+            SnapshotRecord currentMaxRecord = findMaxRecord(snapshotsMap);
+            assertNotNull("No snapshot record found - job likely finished", currentMaxRecord);
+            assertTrue("No more snapshots produced after restart",
+                    currentMaxRecord.snapshotId() > maxRecord.snapshotId());
+        }, timeoutSeconds);
     }
 
     private SnapshotRecord findMaxRecord(IMapJet<Long, Object> snapshotsMap) {
@@ -375,7 +379,7 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
     @Test
     @Ignore("This is a \"test of a test\" - it checks, that SequencesInPartitionsGeneratorP generates correct output")
     public void test_SequencesInPartitionsGeneratorP() throws Exception {
-        SequencesInPartitionsMetaSupplier pms = new SequencesInPartitionsMetaSupplier(3, 2);
+        SequencesInPartitionsMetaSupplier pms = new SequencesInPartitionsMetaSupplier(3, 2, true);
         pms.init(new TestProcessorMetaSupplierContext().setLocalParallelism(1).setTotalParallelism(2));
         Address a1 = new Address("127.0.0.1", 0);
         Address a2 = new Address("127.0.0.2", 0);
@@ -477,16 +481,19 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
         private final int[] assignedPtions;
         private final int[] ptionOffsets;
         private final int elementsInPartition;
+        private final boolean assertJobRestart;
 
         private int ptionCursor;
         private MyTraverser traverser;
         private Traverser<Entry<BroadcastKey<Integer>, Integer>> snapshotTraverser;
         private Entry<Integer, Integer> pendingItem;
+        private boolean wasRestored;
 
-        SequencesInPartitionsGeneratorP(int[] assignedPtions, int elementsInPartition) {
+        SequencesInPartitionsGeneratorP(int[] assignedPtions, int elementsInPartition, boolean assertJobRestart) {
             this.assignedPtions = assignedPtions;
             this.ptionOffsets = new int[assignedPtions.length];
             this.elementsInPartition = elementsInPartition;
+            this.assertJobRestart = assertJobRestart;
 
             this.traverser = new MyTraverser();
         }
@@ -498,7 +505,11 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
 
         @Override
         public boolean complete() {
-            return emitFromTraverserInt(traverser);
+            boolean res = emitFromTraverserInt(traverser);
+            if (res) {
+                assertTrue("Reached end of batch without restoring from a snapshot", wasRestored || !assertJobRestart);
+            }
+            return res;
         }
 
         @Override
@@ -538,6 +549,7 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
                     + Arrays.toString(assignedPtions));
             // we'll start at the most-behind partition
             advanceCursor();
+            wasRestored = true;
             return true;
         }
 
@@ -588,13 +600,15 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
 
         private final int numPartitions;
         private final int elementsInPartition;
+        private final boolean assertJobRestart;
 
         private int totalParallelism;
         private int localParallelism;
 
-        SequencesInPartitionsMetaSupplier(int numPartitions, int elementsInPartition) {
+        SequencesInPartitionsMetaSupplier(int numPartitions, int elementsInPartition, boolean assertJobRestart) {
             this.numPartitions = numPartitions;
             this.elementsInPartition = elementsInPartition;
+            this.assertJobRestart = assertJobRestart;
         }
 
         @Override
@@ -611,7 +625,7 @@ public class JobRestartWithSnapshotTest extends JetTestSupport {
                 return count -> IntStream.range(0, count)
                                          .mapToObj(index -> new SequencesInPartitionsGeneratorP(
                                                  assignedPtions(startIndex + index, totalParallelism, numPartitions),
-                                                 elementsInPartition))
+                                                 elementsInPartition, assertJobRestart))
                                          .collect(toList());
             };
         }

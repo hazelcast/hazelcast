@@ -91,7 +91,7 @@ public class SnapshotFailureTest extends JetTestSupport {
         IMapJet<Object, Object> results = instance1.getMap("results");
 
         DAG dag = new DAG();
-        SequencesInPartitionsMetaSupplier sup = new SequencesInPartitionsMetaSupplier(numPartitions, numElements);
+        SequencesInPartitionsMetaSupplier sup = new SequencesInPartitionsMetaSupplier(numPartitions, numElements, false);
         Vertex generator = dag.newVertex("generator", peekOutputP(throttle(sup, 2)))
                               .localParallelism(1);
         Vertex writeMap = dag.newVertex("writeMap", writeMapP(results.getName())).localParallelism(1);

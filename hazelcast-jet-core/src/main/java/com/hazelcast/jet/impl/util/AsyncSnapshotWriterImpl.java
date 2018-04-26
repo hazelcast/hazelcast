@@ -72,9 +72,10 @@ public class AsyncSnapshotWriterImpl implements AsyncSnapshotWriter {
     private long totalChunks;
     private long totalPayloadBytes;
 
-    private final ExecutionCallback<Void> callback = new ExecutionCallback<Void>() {
+    private final ExecutionCallback<Object> callback = new ExecutionCallback<Object>() {
         @Override
-        public void onResponse(Void response) {
+        public void onResponse(Object response) {
+            assert response == null : "put operation overwrote a previous value: " + response;
             numActiveFlushes.decrementAndGet();
             numConcurrentAsyncOps.decrementAndGet();
         }
@@ -227,7 +228,7 @@ public class AsyncSnapshotWriterImpl implements AsyncSnapshotWriter {
         }
 
         // we put a Data instance to the map directly to avoid the serialization of the byte array
-        ICompletableFuture<Void> future = ((IMap) currentMap).setAsync(
+        ICompletableFuture<Object> future = ((IMap) currentMap).putAsync(
                 new SnapshotDataKey(partitionKeys[partitionId], partitionSequence), dataSupplier.get());
         partitionSequence += memberCount;
         future.andThen(callback);
