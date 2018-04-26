@@ -44,7 +44,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.instance.TestUtil.terminateInstance;
 import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.EXPLICIT_SUSPICION;
@@ -658,11 +657,12 @@ public class MembershipFailureTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test_whenNodesStartedTerminatedConcurrently() throws InterruptedException {
+    public void test_whenNodesStartedTerminatedConcurrently() {
         newHazelcastInstance();
 
         for (int i = 0; i < 3; i++) {
             startInstancesConcurrently(4);
+            assertClusterSizeEventually(i + 5, getAllHazelcastInstances());
             terminateRandomInstancesConcurrently(3);
 
             HazelcastInstance[] instances = getAllHazelcastInstances().toArray(new HazelcastInstance[0]);
@@ -675,7 +675,7 @@ public class MembershipFailureTest extends HazelcastTestSupport {
         }
     }
 
-    private void startInstancesConcurrently(int count) throws InterruptedException {
+    private void startInstancesConcurrently(int count) {
         final CountDownLatch latch = new CountDownLatch(count);
         for (int i = 0; i < count; i++) {
             new Thread() {
@@ -685,10 +685,10 @@ public class MembershipFailureTest extends HazelcastTestSupport {
                 }
             }.start();
         }
-        assertTrue(latch.await(2, TimeUnit.MINUTES));
+        assertOpenEventually(latch);
     }
 
-    private void terminateRandomInstancesConcurrently(int count) throws InterruptedException {
+    private void terminateRandomInstancesConcurrently(int count) {
         List<HazelcastInstance> instances = new ArrayList<HazelcastInstance>(getAllHazelcastInstances());
         assertThat(instances.size(), greaterThanOrEqualTo(count));
 
@@ -704,7 +704,7 @@ public class MembershipFailureTest extends HazelcastTestSupport {
                 }
             }.start();
         }
-        assertTrue(latch.await(2, TimeUnit.MINUTES));
+        assertOpenEventually(latch);
     }
 
     HazelcastInstance newHazelcastInstance() {
