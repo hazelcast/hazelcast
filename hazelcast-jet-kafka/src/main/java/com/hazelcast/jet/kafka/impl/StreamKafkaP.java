@@ -162,27 +162,25 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor {
 
     @Override
     public boolean complete() {
-        assignPartitions(true);
-
         if (!emitFromTraverser(traverser)) {
             return false;
         }
 
         ConsumerRecords<K, V> records = null;
-        if (!currentAssignment.isEmpty()) {
-            try {
+        try {
+            assignPartitions(true);
+            if (!currentAssignment.isEmpty()) {
                 records = consumer.poll(POLL_TIMEOUT_MS);
-            } catch (InterruptException e) {
-                // note this is Kafka's exception, not Java's
-                Thread.currentThread().interrupt();
-                return false;
             }
+        } catch (InterruptException e) {
+            // note this is Kafka's exception, not Java's
+            Thread.currentThread().interrupt();
+            return false;
         }
 
-        traverser = isEmpty(records) ?
-                watermarkSourceUtil.handleNoEvent()
-                :
-                traverseIterable(records).flatMap(record -> {
+        traverser = isEmpty(records)
+                ? watermarkSourceUtil.handleNoEvent()
+                : traverseIterable(records).flatMap(record -> {
                     offsets.get(record.topic())[record.partition()] = record.offset();
                     T projectedRecord = projectionFn.apply(record);
                     if (projectedRecord == null) {
