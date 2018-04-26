@@ -1,5 +1,8 @@
 package com.hazelcast.spi.impl.operationexecutor.impl;
 
+import com.hazelcast.internal.metrics.LongGauge;
+import com.hazelcast.internal.metrics.ProbeLevel;
+import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.operationservice.PartitionTaskFactory;
 import com.hazelcast.test.AssertTask;
@@ -13,7 +16,6 @@ import org.junit.runner.RunWith;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.spi.properties.GroupProperty.PARTITION_OPERATION_THREAD_COUNT;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -69,7 +71,31 @@ public class OperationExecutorImpl_ExecuteBatchTest extends OperationExecutorImp
             public void run() {
                 assertTrue(op.completed);
             }
-        }, SECONDS.toMillis(5));
+        }, 5);
+    }
+
+    @Test
+    public void noCompletedBatchOperation_whenPartitionArrayIsEmpty() {
+        config.setProperty(PARTITION_OPERATION_THREAD_COUNT.getName(), "1");
+        initExecutor();
+        final LongGauge completedBatchOp = registerAndGetCompletedOperationBatchCountGauge();
+
+        int[] emptyPartitionArray = {};
+        executor.execute(new DummyPartitionTaskFactory(), emptyPartitionArray);
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertEquals(0, completedBatchOp.read());
+            }
+        }, 5);
+    }
+
+    private LongGauge registerAndGetCompletedOperationBatchCountGauge() {
+        MetricsRegistryImpl registry = new MetricsRegistryImpl(loggingService.getLogger(getClass()), ProbeLevel.INFO);
+        LongGauge gauge = registry.newLongGauge("operation.thread[hz.hzName.partition-operation.thread-0].completedOperationBatchCount");
+        executor.provideMetrics(registry);
+        return gauge;
     }
 
     private int[] newPartitions() {
