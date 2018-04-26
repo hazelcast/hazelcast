@@ -16,6 +16,8 @@
 
 package com.hazelcast.map.impl.querycache.accumulator;
 
+import java.util.concurrent.ConcurrentMap;
+
 /**
  * Supplies {@link AccumulatorInfo} according to name of {@code IMap} and name of {@code QueryCache}.
  */
@@ -45,4 +47,9 @@ public interface AccumulatorInfoSupplier {
      * @param cacheId cache name.
      */
     void remove(String mapName, String cacheId);
+
+    /**
+     * @return all {@link AccumulatorInfo} of all {@code QueryCache} by map name
+     */
+    ConcurrentMap<String, ConcurrentMap<String, AccumulatorInfo>> getAll();
 }
