@@ -23,6 +23,7 @@ import com.hazelcast.core.TransactionalSet;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.SerializationSamplesExcluded;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionOptions;
 import org.junit.AfterClass;
@@ -41,7 +42,7 @@ import static com.hazelcast.transaction.TransactionOptions.TransactionType.ONE_P
  * Quorum test proving that newly supported quorum-aware structures do not respect quorum below version 3.10.
  */
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class})
+@Category({QuickTest.class, SerializationSamplesExcluded.class})
 public class QuorumRollingUpgradeTest extends AbstractQuorumTest {
 
     private static final int NO_QUORUM_CLUSTER = 3;
