@@ -252,7 +252,7 @@ public class ExecutionLifecycleTest extends JetTestSupport {
         Job job = runJobExpectFailure(dag, e);
 
         // Then
-        assertPClosedWithError(e, true);
+        assertPClosedWithError(e);
         assertPsClosedWithError(e);
         assertPmsClosedWithError(e);
         assertJobFailed(job, e);
@@ -272,7 +272,7 @@ public class ExecutionLifecycleTest extends JetTestSupport {
         Job job = runJobExpectFailure(dag, e);
 
         // Then
-        assertPClosedWithError(e, false);
+        assertPClosedWithError(e);
         assertPsClosedWithError(e);
         assertPmsClosedWithError(e);
         assertJobFailed(job, e);
@@ -290,7 +290,7 @@ public class ExecutionLifecycleTest extends JetTestSupport {
         Job job = runJobExpectFailure(dag, e);
 
         // Then
-        assertPClosedWithError(e, false);
+        assertPClosedWithError(e);
         assertPsClosedWithError(e);
         assertPmsClosedWithError(e);
         assertJobFailed(job, e);
@@ -308,7 +308,7 @@ public class ExecutionLifecycleTest extends JetTestSupport {
         Job job = runJobExpectFailure(dag, e);
 
         // Then
-        assertPClosedWithError(e, false);
+        assertPClosedWithError(e);
         assertPsClosedWithError(e);
         assertPmsClosedWithError(e);
         assertJobFailed(job, e);
@@ -519,11 +519,7 @@ public class ExecutionLifecycleTest extends JetTestSupport {
         assertEquals(0, MockP.receivedCloseErrors.size());
     }
 
-    private void assertPClosedWithError(Throwable e, boolean initExpectedToFail) {
-        // can't assert initCount here, init() is not called on next processor after first processor fails
-        if (!initExpectedToFail) {
-            assertEquals(TOTAL_PARALLELISM, MockP.initCount.get());
-        }
+    private void assertPClosedWithError(Throwable e) {
         assertEquals(TOTAL_PARALLELISM, MockP.closeCount.get());
         assertEquals(TOTAL_PARALLELISM, MockP.receivedCloseErrors.size());
 
