@@ -228,14 +228,13 @@ public class SplitBrainTest extends JetSplitBrainTestSupport {
     public void when_jobIsSubmittedToMinoritySide_then_jobIsCancelledDuringMerge() {
         int firstSubClusterSize = 3;
         int secondSubClusterSize = 2;
-        int clusterSize = firstSubClusterSize + secondSubClusterSize;
         StuckProcessor.executionStarted = new CountDownLatch(secondSubClusterSize * PARALLELISM);
         Job[] jobRef = new Job[1];
 
         BiConsumer<JetInstance[], JetInstance[]> onSplit = (firstSubCluster, secondSubCluster) -> {
-            MockPS processorSupplier = new MockPS(StuckProcessor::new, clusterSize);
+            MockPS processorSupplier = new MockPS(StuckProcessor::new, secondSubClusterSize);
             DAG dag = new DAG().vertex(new Vertex("test", processorSupplier));
-            jobRef[0] = secondSubCluster[1].newJob(dag, new JobConfig().setSplitBrainProtection(true));
+            jobRef[0] = secondSubCluster[0].newJob(dag, new JobConfig().setSplitBrainProtection(true));
             assertOpenEventually(StuckProcessor.executionStarted);
         };
 
