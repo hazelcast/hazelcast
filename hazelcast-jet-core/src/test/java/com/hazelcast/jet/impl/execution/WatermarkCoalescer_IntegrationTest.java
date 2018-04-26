@@ -128,16 +128,15 @@ public class WatermarkCoalescer_IntegrationTest extends JetTestSupport {
         dag = createDag(mode, singletonList(wm(100)), singletonList(entry(1, 1)));
 
         JobConfig config = new JobConfig().setMaxWatermarkRetainMillis(5000);
+        long time = System.nanoTime();
         instance.newJob(dag, config);
 
         assertTrueEventually(() -> assertEquals(1, sinkList.size()), 3);
         assertEquals(entry(1, 1), sinkList.get(0));
-        long time = System.nanoTime();
 
         assertTrueEventually(() -> assertEquals(2, sinkList.size()), 6);
         assertEquals("wm(100)", sinkList.get(1));
-        long elapsedMs = NANOSECONDS.toMillis(System.nanoTime() - time);
-        assertTrue("Too little elapsed time, WM probably emitted immediately", elapsedMs > 3000);
+        assertElapsedTime(time);
     }
 
     @Test
@@ -145,16 +144,15 @@ public class WatermarkCoalescer_IntegrationTest extends JetTestSupport {
         dag = createDag(mode, singletonList(entry(1, 1)), singletonList(wm(100)));
 
         JobConfig config = new JobConfig().setMaxWatermarkRetainMillis(5000);
+        long time = System.nanoTime();
         instance.newJob(dag, config);
 
         assertTrueEventually(() -> assertEquals(1, sinkList.size()), 3);
         assertEquals(entry(1, 1), sinkList.get(0));
-        long time = System.nanoTime();
 
         assertTrueEventually(() -> assertEquals(2, sinkList.size()), 6);
         assertEquals("wm(100)", sinkList.get(1));
-        long elapsedMs = NANOSECONDS.toMillis(System.nanoTime() - time);
-        assertTrue("Too little elapsed time, WM probably emitted immediately", elapsedMs > 3000);
+        assertElapsedTime(time);
     }
 
     @Test
@@ -192,8 +190,7 @@ public class WatermarkCoalescer_IntegrationTest extends JetTestSupport {
         assertTrueEventually(() -> assertEquals(2, sinkList.size()), 6);
 
         assertEquals("wm(150)", sinkList.get(1));
-        long elapsedMs = NANOSECONDS.toMillis(System.nanoTime() - time);
-        assertTrue("Too little elapsed time, WM probably emitted immediately: " + elapsedMs, elapsedMs > 3000);
+        assertElapsedTime(time);
     }
 
     @Test
@@ -201,16 +198,15 @@ public class WatermarkCoalescer_IntegrationTest extends JetTestSupport {
         dag = createDag(mode, singletonList(entry(1, 1)), asList(wm(150), IDLE_MESSAGE));
 
         JobConfig config = new JobConfig().setMaxWatermarkRetainMillis(5000);
+        long time = System.nanoTime();
         instance.newJob(dag, config);
 
         assertTrueEventually(() -> assertEquals(1, sinkList.size()), 3);
         assertEquals(entry(1, 1), sinkList.get(0));
-        long time = System.nanoTime();
 
         assertTrueEventually(() -> assertEquals(2, sinkList.size()), 6);
         assertEquals("wm(150)", sinkList.get(1));
-        long elapsedMs = NANOSECONDS.toMillis(System.nanoTime() - time);
-        assertTrue("Too little elapsed time, WM probably emitted immediately", elapsedMs > 3000);
+        assertElapsedTime(time);
     }
 
     @Test
@@ -218,16 +214,15 @@ public class WatermarkCoalescer_IntegrationTest extends JetTestSupport {
         dag = createDag(mode, asList(wm(150), IDLE_MESSAGE), singletonList(entry(1, 1)));
 
         JobConfig config = new JobConfig().setMaxWatermarkRetainMillis(5000);
+        long time = System.nanoTime();
         instance.newJob(dag, config);
 
         assertTrueEventually(() -> assertEquals(1, sinkList.size()), 3);
         assertEquals(entry(1, 1), sinkList.get(0));
-        long time = System.nanoTime();
 
         assertTrueEventually(() -> assertEquals(2, sinkList.size()), 6);
         assertEquals("wm(150)", sinkList.get(1));
-        long elapsedMs = NANOSECONDS.toMillis(System.nanoTime() - time);
-        assertTrue("Too little elapsed time, WM probably emitted immediately", elapsedMs > 3000);
+        assertElapsedTime(time);
     }
 
     @Test
@@ -270,6 +265,12 @@ public class WatermarkCoalescer_IntegrationTest extends JetTestSupport {
 
     private ListSource.Delay delay(long ms) {
         return new ListSource.Delay(ms);
+    }
+
+    private void assertElapsedTime(long start) {
+        long elapsedMs = NANOSECONDS.toMillis(System.nanoTime() - start);
+        assertTrue("Too little elapsed time, WM probably emitted immediately: " + elapsedMs,
+                elapsedMs > 3000);
     }
 
     /**
