@@ -127,7 +127,7 @@ Following are example declarative and programmatic configuration snippets:
         properties.put("security-group-name","hazelcast");
         properties.put("tag-key","aws-test-cluster");
         properties.put("tag-value","cluster1");
-        properties.put("hzPort","5701");
+        properties.put("hz-port","5701");
         DiscoveryStrategyConfig discoveryStrategyConfig = new DiscoveryStrategyConfig(awsDiscoveryStrategyFactory, properties);
         joinConfig.getDiscoveryConfig().addDiscoveryStrategyConfig(discoveryStrategyConfig);
         
@@ -215,7 +215,7 @@ Following are example declarative and programmatic configuration snippets:
         properties.put("security-group-name","hazelcast");
         properties.put("tag-key","aws-test-cluster");
         properties.put("tag-value","cluster1");
-        properties.put("hzPort","5701");
+        properties.put("hz-port","5701");
         AwsDiscoveryStrategyFactory awsDiscoveryStrategyFactory = new AwsDiscoveryStrategyFactory();
         DiscoveryStrategyConfig discoveryStrategyConfig = new DiscoveryStrategyConfig(awsDiscoveryStrategyFactory, properties);
         ClientNetworkConfig clientNetworkConfig = clientConfig.getNetworkConfig();
