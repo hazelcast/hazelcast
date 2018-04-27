@@ -17,6 +17,7 @@
 package com.hazelcast.client.cache;
 
 import com.hazelcast.cache.CacheContextTest;
+import com.hazelcast.client.HazelcastClientManager;
 import com.hazelcast.client.cache.impl.HazelcastClientCachingProvider;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -48,6 +49,7 @@ public class ClientCacheContextTest extends CacheContextTest {
         driverInstance.shutdown();
         hazelcastInstance1.shutdown();
         hazelcastInstance2.shutdown();
+        HazelcastClientManager.shutdownAll();
     }
 
     @Test
