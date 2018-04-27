@@ -18,6 +18,7 @@ package com.hazelcast.client.cache;
 
 import com.hazelcast.cache.CacheClearTest;
 import com.hazelcast.cache.ICache;
+import com.hazelcast.client.HazelcastClientManager;
 import com.hazelcast.client.cache.impl.HazelcastClientCachingProvider;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
@@ -210,6 +211,7 @@ public class ClientCacheClearTest extends CacheClearTest {
         // Client factory is already shutdown at this test's super class (`CachePutAllTest`)
         // because it is returned instance factory from overridden `getInstanceFactory` method.
         client = null;
+        HazelcastClientManager.shutdownAll();
     }
 
     @Override
