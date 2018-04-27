@@ -21,6 +21,7 @@ import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.LocalExecutorStats;
 import com.hazelcast.monitor.impl.LocalExecutorStatsImpl;
+import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.LiveOperations;
 import com.hazelcast.spi.LiveOperationsTracker;
@@ -309,7 +310,11 @@ public class DistributedExecutorService implements ManagedService, RemoteService
 
         private boolean sendResponse(Object result) {
             if (RESPONSE_FLAG.compareAndSet(this, Boolean.FALSE, Boolean.TRUE)) {
-                op.sendResponse(result);
+                try {
+                    op.sendResponse(result);
+                } catch (HazelcastSerializationException e) {
+                    op.sendResponse(e);
+                }
                 return true;
             }
 
