@@ -259,7 +259,7 @@ public class MigrationInvocationsSafetyTest extends PartitionCorrectnessTestSupp
         final HazelcastInstance slave1 = factory.newHazelcastInstance(config);
         final HazelcastInstance slave2 = factory.newHazelcastInstance(config);
 
-        assertClusterSizeEventually(3, slave1, slave2);
+        assertClusterSizeEventually(3, master, slave1, slave2);
         warmUpPartitions(master, slave1, slave2);
 
         fillData(master);
@@ -269,7 +269,7 @@ public class MigrationInvocationsSafetyTest extends PartitionCorrectnessTestSupp
         rejectOperationsFrom(master, F_ID, singletonList(MIGRATION_COMMIT));
 
         final HazelcastInstance slave3 = factory.newHazelcastInstance(config);
-        assertClusterSizeEventually(4, slave1, slave2);
+        assertClusterSizeEventually(4, master, slave1, slave2, slave3);
 
         dropOperationsBetween(slave3, master, SpiDataSerializerHook.F_ID, singletonList(SpiDataSerializerHook.NORMAL_RESPONSE));
         resetPacketFiltersFrom(master);
