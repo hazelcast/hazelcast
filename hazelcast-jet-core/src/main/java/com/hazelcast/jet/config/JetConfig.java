@@ -17,7 +17,12 @@
 package com.hazelcast.jet.config;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.jet.impl.config.XmlJetConfigBuilder;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 
+import javax.annotation.Nonnull;
+import java.io.InputStream;
 import java.util.Properties;
 
 /**
@@ -31,6 +36,7 @@ public class JetConfig {
      */
     public static final int DEFAULT_JET_MULTICAST_PORT = 54326;
 
+    private static final ILogger LOGGER = Logger.getLogger(JetConfig.class);
 
     private Config hazelcastConfig = defaultHazelcastConfig();
     private InstanceConfig instanceConfig = new InstanceConfig();
@@ -38,14 +44,146 @@ public class JetConfig {
     private Properties properties = new Properties();
 
     /**
-     * Returns the configuration object for the underlying Hazelcast instance.
+     * Creates a new JetConfig with the default configuration. Doesn't
+     * consider any files.
+     */
+    public JetConfig() {
+    }
+
+    /**
+     * Loads JetConfig using the default lookup mechanism to locate the
+     * configuration file. Loads the nested {@linkplain #getHazelcastConfig()
+     * Hazelcast config} also by using its default lookup mechanism. Uses
+     * {@code System.getProperties()} to resolve the variables in the XML.
+     * <p>
+     * This is the lookup mechanism for the Jet configuration:
+     * <ol><li>
+     *     Read the system property {@code hazelcast.jet.config}. If it starts with
+     *     {@code classpath:}, treat it as a classpath resource, otherwise it's a
+     *     file pathname. If it's defined but Jet can't find the file it specifies,
+     *     startup fails.
+     * </li><li>
+     *     Look for {@code hazelcast-jet.xml} in the working directory.
+     * </li><li>
+     *     Look for {@code hazelcast-jet.xml} in the classpath.
+     * </li><li>
+     *     Load the default XML configuration packaged in Jet's JAR.
+     * </li></ol>
+     * The mechanism is the same for the nested Hazelcast config, just with the
+     * {@code hazelcast.config} system property.
+     */
+    public static JetConfig loadDefault() {
+        return XmlJetConfigBuilder.loadConfig(null, null);
+    }
+
+    /**
+     * Loads JetConfig using the built-in {@link #loadDefault lookup mechanism}
+     * to locate the configuration file. Loads the nested {@linkplain
+     * #getHazelcastConfig() Hazelcast config} also by using the lookup
+     * mechanism. Uses the given {@code properties} to resolve the variables in
+     * the XML.
+     */
+    public static JetConfig loadDefault(@Nonnull Properties properties) {
+        return XmlJetConfigBuilder.loadConfig(null, properties);
+    }
+
+    /**
+     * Uses the thread's context class loader to load JetConfig from the
+     * classpath resource named by the argument. Uses {@code
+     * System.getProperties()} to resolve the variables in the XML.
+     * <p>
+     * This method loads the nested {@linkplain #getHazelcastConfig() Hazelcast
+     * config} using the built-in {@link #loadDefault lookup mechanism}, but
+     * you can replace it afterwards by calling {@link #setHazelcastConfig
+     * setHazelcastConfig()} with, for example, {@link
+     * com.hazelcast.config.ClasspathXmlConfig ClasspathXmlConfig} or {@link
+     * com.hazelcast.config.FileSystemXmlConfig FileSystemXmlConfig}.
+     *
+     * @param resource names the classpath resource containing the XML configuration file
+     *
+     * @throws com.hazelcast.core.HazelcastException if the XML content is invalid
+     * @throws IllegalArgumentException if classpath resource is not found
+     */
+    public static JetConfig loadFromClasspath(@Nonnull String resource) {
+        return loadFromClasspath(resource, System.getProperties());
+    }
+
+    /**
+     * Uses the thread's context class loader to load JetConfig from the
+     * classpath resource named by the argument. Uses the given {@code
+     * properties} to resolve the variables in the XML.
+     * <p>
+     * This method loads the nested {@linkplain #getHazelcastConfig() Hazelcast
+     * config} using the built-in {@link #loadDefault lookup mechanism}, but
+     * you can replace it afterwards by calling {@link #setHazelcastConfig
+     * setHazelcastConfig()} with, for example, {@link
+     * com.hazelcast.config.ClasspathXmlConfig ClasspathXmlConfig} or {@link
+     * com.hazelcast.config.FileSystemXmlConfig FileSystemXmlConfig}.
+     *
+     * @param resource the classpath resource, an XML configuration file on the
+     *      classpath
+     *
+     * @throws com.hazelcast.core.HazelcastException if the XML content is invalid
+     * @throws IllegalArgumentException if classpath resource is not found
+     */
+    public static JetConfig loadFromClasspath(@Nonnull String resource, @Nonnull Properties properties) {
+        LOGGER.info("Configuring Hazelcast Jet from '" + resource + "' on classpath");
+        InputStream stream = Thread.currentThread().getContextClassLoader().getResourceAsStream(resource);
+        if (stream == null) {
+            throw new IllegalArgumentException("Specified resource '" + resource + "' cannot be found on classpath");
+        }
+        return loadFromStream(stream, properties);
+    }
+
+    /**
+     * Loads JetConfig from the supplied input stream. Uses {@code
+     * System.getProperties()} to resolve the variables in the XML.
+     * <p>
+     * This method loads the nested {@linkplain #getHazelcastConfig() Hazelcast
+     * config} using the built-in {@link #loadDefault lookup mechanism}, but
+     * you can replace it afterwards by calling {@link #setHazelcastConfig
+     * setHazelcastConfig()} with, for example, {@link
+     * com.hazelcast.config.ClasspathXmlConfig ClasspathXmlConfig} or {@link
+     * com.hazelcast.config.FileSystemXmlConfig FileSystemXmlConfig}.
+     *
+     * @param configStream the InputStream to load the config from
+     *
+     * @throws com.hazelcast.core.HazelcastException if the XML content is invalid
+     */
+    public static JetConfig loadFromStream(@Nonnull InputStream configStream) {
+        return loadFromStream(configStream, System.getProperties());
+    }
+
+    /**
+     * Loads JetConfig from the supplied input stream. Uses the given {@code
+     * properties} to resolve the variables in the XML.
+     * <p>
+     * This method loads the nested {@linkplain #getHazelcastConfig() Hazelcast
+     * config} using the built-in {@link #loadDefault lookup mechanism}, but
+     * you can replace it afterwards by calling {@link #setHazelcastConfig
+     * setHazelcastConfig()} with, for example, {@link
+     * com.hazelcast.config.ClasspathXmlConfig ClasspathXmlConfig} or {@link
+     * com.hazelcast.config.FileSystemXmlConfig FileSystemXmlConfig}.
+     *
+     * @param configStream the InputStream to load the config from
+     * @param properties the properties to resolve variables in the XML
+     *
+     * @throws com.hazelcast.core.HazelcastException if the XML content is invalid
+     */
+    public static JetConfig loadFromStream(@Nonnull InputStream configStream, @Nonnull Properties properties) {
+        return XmlJetConfigBuilder.loadConfig(configStream, properties);
+    }
+
+    /**
+     * Returns the configuration object for the underlying Hazelcast IMDG
+     * instance.
      */
     public Config getHazelcastConfig() {
         return hazelcastConfig;
     }
 
     /**
-     * Sets the underlying IMDG instance's configuration object.
+     * Sets the underlying Hazelcast IMDG instance's configuration object.
      */
     public JetConfig setHazelcastConfig(Config config) {
         hazelcastConfig = config;

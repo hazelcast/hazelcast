@@ -30,7 +30,6 @@ import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.impl.JetClientInstanceImpl;
 import com.hazelcast.jet.impl.JetInstanceImpl;
 import com.hazelcast.jet.impl.JetService;
-import com.hazelcast.jet.impl.config.XmlJetConfigBuilder;
 import com.hazelcast.map.merge.IgnoreMergingEntryMapMergePolicy;
 
 import static com.hazelcast.jet.impl.config.XmlJetConfigBuilder.getClientConfig;
@@ -60,11 +59,11 @@ public final class Jet {
     }
 
     /**
-     * Creates a member of the Jet cluster with the default configuration.
+     * Creates a member of the Jet cluster with the configuration loaded from
+     * default location.
      */
     public static JetInstance newJetInstance() {
-        JetConfig config = XmlJetConfigBuilder.getConfig();
-        return newJetInstance(config);
+        return newJetInstance(JetConfig.loadDefault());
     }
 
     /**

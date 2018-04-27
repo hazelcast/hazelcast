@@ -43,10 +43,10 @@ import javax.annotation.Nonnull;
  * @param <K> type of the key
  */
 public class WindowGroupAggregateBuilder<T0, K> {
-    private final GrAggBuilder<K> graggBuilder;
+    private final GrAggBuilder<K> grAggBuilder;
 
     WindowGroupAggregateBuilder(StageWithGroupingAndWindow<T0, K> s) {
-        graggBuilder = new GrAggBuilder<>(s);
+        grAggBuilder = new GrAggBuilder<>(s);
     }
 
     /**
@@ -67,7 +67,7 @@ public class WindowGroupAggregateBuilder<T0, K> {
      */
     @SuppressWarnings("unchecked")
     public <E> Tag<E> add(StreamStageWithGrouping<E, K> stage) {
-        return graggBuilder.add(stage);
+        return grAggBuilder.add(stage);
     }
 
     /**
@@ -112,7 +112,7 @@ public class WindowGroupAggregateBuilder<T0, K> {
             @Nonnull AggregateOperation<A, R> aggrOp,
             @Nonnull KeyedWindowResultFunction<? super K, ? super R, OUT> mapToOutputFn
     ) {
-        return graggBuilder.buildStream(aggrOp, mapToOutputFn);
+        return grAggBuilder.buildStream(aggrOp, mapToOutputFn);
     }
 
     /**
@@ -123,6 +123,6 @@ public class WindowGroupAggregateBuilder<T0, K> {
     public <A, R> StreamStage<TimestampedEntry<K, R>> build(
             @Nonnull AggregateOperation<A, R> aggrOp
     ) {
-        return graggBuilder.buildStream(aggrOp, TimestampedEntry::new);
+        return grAggBuilder.buildStream(aggrOp, TimestampedEntry::new);
     }
 }
