@@ -115,6 +115,8 @@ public abstract class HazelcastTestSupport {
 
     private static final boolean EXPECT_DIFFERENT_HASHCODES = (new Object().hashCode() != new Object().hashCode());
 
+    public static final String JAVA_VERSION = System.getProperty("java.version");
+    public static final String JVM_NAME = System.getProperty("java.vm.name");
     public static final int ASSERT_TRUE_EVENTUALLY_TIMEOUT;
 
     @Rule
@@ -1505,8 +1507,11 @@ public abstract class HazelcastTestSupport {
     }
 
     public static void assumeThatNoJDK6() {
-        String javaVersion = System.getProperty("java.version");
-        assumeFalse("Java 6 used", javaVersion.startsWith("1.6."));
+        assumeFalse("Java 6 used", JAVA_VERSION.startsWith("1.6."));
+    }
+
+    public static void assumeThatNotZingJDK6() {
+        assumeFalse("Zing JDK6 used", JAVA_VERSION.startsWith("1.6.") && JVM_NAME.startsWith("Zing"));
     }
 
     /**
