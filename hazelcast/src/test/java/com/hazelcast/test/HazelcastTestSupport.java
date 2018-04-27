@@ -56,6 +56,7 @@ import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.jitter.JitterRule;
+import com.hazelcast.util.function.Supplier;
 import org.junit.After;
 import org.junit.ComparisonFailure;
 import org.junit.Rule;
@@ -1515,5 +1516,14 @@ public abstract class HazelcastTestSupport {
      */
     public static void assumeDifferentHashCodes() {
         assumeTrue("Hash codes are equal for different objects", EXPECT_DIFFERENT_HASHCODES);
+    }
+
+    public static <T> Supplier<T> supplierFor(final T value) {
+        return new Supplier<T>() {
+            @Override
+            public T get() {
+                return value;
+            }
+        };
     }
 }

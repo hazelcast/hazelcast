@@ -32,6 +32,7 @@ import org.junit.runner.RunWith;
 
 import static com.hazelcast.internal.nearcache.NearCacheRecord.NOT_RESERVED;
 import static com.hazelcast.internal.nearcache.NearCacheRecord.READ_PERMITTED;
+import static com.hazelcast.test.HazelcastTestSupport.supplierFor;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
@@ -56,7 +57,8 @@ public class AbstractNearCacheRecordStoreTest {
 
         serializationService = new DefaultSerializationServiceBuilder().build();
 
-        store = new NearCacheObjectRecordStore("name", config, serializationService, getClass().getClassLoader());
+        store = new NearCacheObjectRecordStore("name", supplierFor(config), serializationService,
+                getClass().getClassLoader());
         store.initialize();
     }
 

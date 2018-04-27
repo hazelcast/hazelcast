@@ -33,7 +33,7 @@ public class NearCacheTest extends NearCacheTestSupport {
     @Override
     protected NearCache<Integer, String> createNearCache(String name, NearCacheConfig nearCacheConfig,
                                                          ManagedNearCacheRecordStore nearCacheRecordStore) {
-        return new DefaultNearCache<Integer, String>(name, nearCacheConfig,
+        return new DefaultNearCache<Integer, String>(name, supplierFor(nearCacheConfig),
                 nearCacheRecordStore, ss, executionService.getGlobalTaskScheduler(), null);
     }
 

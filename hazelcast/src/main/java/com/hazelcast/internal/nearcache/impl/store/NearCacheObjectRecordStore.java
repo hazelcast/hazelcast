@@ -20,6 +20,7 @@ import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.internal.nearcache.impl.record.NearCacheObjectRecord;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.util.function.Supplier;
 
 import static com.hazelcast.internal.nearcache.NearCache.CACHED_AS_NULL;
 import static com.hazelcast.internal.nearcache.NearCacheRecord.TIME_NOT_SET;
@@ -35,10 +36,10 @@ import static com.hazelcast.util.Clock.currentTimeMillis;
 public class NearCacheObjectRecordStore<K, V> extends BaseHeapNearCacheRecordStore<K, V, NearCacheObjectRecord<V>> {
 
     public NearCacheObjectRecordStore(String name,
-                                      NearCacheConfig nearCacheConfig,
+                                      Supplier<NearCacheConfig> nearCacheConfigSupplier,
                                       SerializationService serializationService,
                                       ClassLoader classLoader) {
-        super(name, nearCacheConfig, serializationService, classLoader);
+        super(name, nearCacheConfigSupplier, serializationService, classLoader);
     }
 
     @Override
@@ -57,8 +58,8 @@ public class NearCacheObjectRecordStore<K, V> extends BaseHeapNearCacheRecordSto
     protected NearCacheObjectRecord<V> valueToRecord(V value) {
         value = toValue(value);
         long creationTime = currentTimeMillis();
-        if (timeToLiveMillis > 0) {
-            return new NearCacheObjectRecord<V>(value, creationTime, creationTime + timeToLiveMillis);
+        if (getTimeToLiveMillis() > 0) {
+            return new NearCacheObjectRecord<V>(value, creationTime, creationTime + getTimeToLiveMillis());
         } else {
             return new NearCacheObjectRecord<V>(value, creationTime, TIME_NOT_SET);
         }

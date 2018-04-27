@@ -24,6 +24,7 @@ import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.spi.TaskScheduler;
 import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.util.function.Supplier;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -64,21 +65,21 @@ public class DefaultNearCacheManager implements NearCacheManager {
     }
 
     @Override
-    public <K, V> NearCache<K, V> getOrCreateNearCache(String name, NearCacheConfig nearCacheConfig) {
+    public <K, V> NearCache<K, V> getOrCreateNearCache(String name, Supplier<NearCacheConfig> nearCacheConfig) {
         return getOrCreateNearCache(name, nearCacheConfig, null);
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public <K, V> NearCache<K, V> getOrCreateNearCache(String name,
-                                                       NearCacheConfig nearCacheConfig,
+                                                       Supplier<NearCacheConfig> nearCacheConfigSupplier,
                                                        DataStructureAdapter dataStructureAdapter) {
         NearCache<K, V> nearCache = nearCacheMap.get(name);
         if (nearCache == null) {
             synchronized (mutex) {
                 nearCache = nearCacheMap.get(name);
                 if (nearCache == null) {
-                    nearCache = createNearCache(name, nearCacheConfig);
+                    nearCache = createNearCache(name, nearCacheConfigSupplier);
                     nearCache.initialize();
 
                     nearCacheMap.put(name, nearCache);
@@ -93,8 +94,8 @@ public class DefaultNearCacheManager implements NearCacheManager {
         return nearCache;
     }
 
-    protected <K, V> NearCache<K, V> createNearCache(String name, NearCacheConfig nearCacheConfig) {
-        return new DefaultNearCache<K, V>(name, nearCacheConfig, serializationService, scheduler, classLoader);
+    protected <K, V> NearCache<K, V> createNearCache(String name, Supplier<NearCacheConfig> nearCacheConfigSupplier) {
+        return new DefaultNearCache<K, V>(name, nearCacheConfigSupplier, serializationService, scheduler, classLoader);
     }
 
     @Override

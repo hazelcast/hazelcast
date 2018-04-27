@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.nearcache.impl.store;
 
-import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionConfig.MaxSizePolicy;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.NearCachePreloaderConfig;
@@ -28,6 +27,7 @@ import com.hazelcast.internal.nearcache.impl.maxsize.EntryCountNearCacheEviction
 import com.hazelcast.internal.nearcache.impl.preloader.NearCachePreloader;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.util.function.Supplier;
 
 import java.util.Map;
 
@@ -48,23 +48,28 @@ public abstract class BaseHeapNearCacheRecordStore<K, V, R extends NearCacheReco
 
     private final NearCachePreloader<K> nearCachePreloader;
 
-    BaseHeapNearCacheRecordStore(String name, NearCacheConfig nearCacheConfig, SerializationService serializationService,
-                                 ClassLoader classLoader) {
-        super(nearCacheConfig, serializationService, classLoader);
+    BaseHeapNearCacheRecordStore(String name, Supplier<NearCacheConfig> nearCacheConfigSupplier,
+                                 SerializationService serializationService, ClassLoader classLoader) {
+        super(nearCacheConfigSupplier, serializationService, classLoader);
 
-        NearCachePreloaderConfig preloaderConfig = nearCacheConfig.getPreloaderConfig();
+        NearCachePreloaderConfig preloaderConfig = nearCacheConfigSupplier.get().getPreloaderConfig();
         this.nearCachePreloader = preloaderConfig.isEnabled() ? new NearCachePreloader<K>(name, preloaderConfig, nearCacheStats,
                 serializationService) : null;
     }
 
     @Override
-    protected EvictionChecker createNearCacheEvictionChecker(EvictionConfig evictionConfig, NearCacheConfig nearCacheConfig) {
-        MaxSizePolicy maxSizePolicy = evictionConfig.getMaximumSizePolicy();
+    protected EvictionChecker createNearCacheEvictionChecker(final Supplier<NearCacheConfig> nearCacheConfigSupplier) {
+        MaxSizePolicy maxSizePolicy = nearCacheConfigSupplier.get().getEvictionConfig().getMaximumSizePolicy();
         if (maxSizePolicy != MaxSizePolicy.ENTRY_COUNT) {
             throw new IllegalArgumentException(format("Invalid max-size policy (%s) for %s! Only %s is supported.",
                     maxSizePolicy, getClass().getName(), MaxSizePolicy.ENTRY_COUNT));
         }
-        return new EntryCountNearCacheEvictionChecker(evictionConfig.getSize(), records);
+        return new EntryCountNearCacheEvictionChecker(new Supplier<Integer>(){
+            @Override
+            public Integer get() {
+                return nearCacheConfigSupplier.get().getEvictionConfig().getSize();
+            }
+        }, records);
     }
 
     @Override

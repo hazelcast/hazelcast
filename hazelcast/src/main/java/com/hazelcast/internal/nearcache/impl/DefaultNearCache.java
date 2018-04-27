@@ -28,6 +28,7 @@ import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.TaskScheduler;
 import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.util.function.Supplier;
 
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -40,7 +41,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 public class DefaultNearCache<K, V> implements NearCache<K, V> {
 
     protected final String name;
-    protected final NearCacheConfig nearCacheConfig;
+    protected final Supplier<NearCacheConfig> nearCacheConfigSupplier;
     protected final SerializationService serializationService;
     protected final TaskScheduler scheduler;
     protected final ClassLoader classLoader;
@@ -52,51 +53,53 @@ public class DefaultNearCache<K, V> implements NearCache<K, V> {
 
     private volatile boolean preloadDone;
 
-    public DefaultNearCache(String name, NearCacheConfig nearCacheConfig,
+    public DefaultNearCache(String name, Supplier<NearCacheConfig> nearCacheConfigSupplier,
                             SerializationService serializationService, TaskScheduler scheduler,
                             ClassLoader classLoader) {
-        this(name, nearCacheConfig, null, serializationService, scheduler, classLoader);
+        this(name, nearCacheConfigSupplier, null, serializationService, scheduler, classLoader);
     }
 
-    public DefaultNearCache(String name, NearCacheConfig nearCacheConfig, NearCacheRecordStore<K, V> nearCacheRecordStore,
+    public DefaultNearCache(String name, Supplier<NearCacheConfig> nearCacheConfigSupplier,
+                            NearCacheRecordStore<K, V> nearCacheRecordStore,
                             SerializationService serializationService, TaskScheduler scheduler,
                             ClassLoader classLoader) {
         this.name = name;
-        this.nearCacheConfig = nearCacheConfig;
+        this.nearCacheConfigSupplier = nearCacheConfigSupplier;
         this.serializationService = serializationService;
         this.classLoader = classLoader;
         this.scheduler = scheduler;
         this.nearCacheRecordStore = nearCacheRecordStore;
-        this.serializeKeys = nearCacheConfig.isSerializeKeys();
+        this.serializeKeys = nearCacheConfigSupplier.get().isSerializeKeys();
     }
 
     @Override
     public void initialize() {
         if (nearCacheRecordStore == null) {
-            nearCacheRecordStore = createNearCacheRecordStore(name, nearCacheConfig);
+            nearCacheRecordStore = createNearCacheRecordStore(name);
         }
         nearCacheRecordStore.initialize();
 
         expirationTaskFuture = createAndScheduleExpirationTask();
     }
 
-    protected NearCacheRecordStore<K, V> createNearCacheRecordStore(String name, NearCacheConfig nearCacheConfig) {
-        InMemoryFormat inMemoryFormat = nearCacheConfig.getInMemoryFormat();
+    protected NearCacheRecordStore<K, V> createNearCacheRecordStore(String name) {
+        InMemoryFormat inMemoryFormat = nearCacheConfigSupplier.get().getInMemoryFormat();
         if (inMemoryFormat == null) {
             inMemoryFormat = DEFAULT_MEMORY_FORMAT;
         }
         switch (inMemoryFormat) {
             case BINARY:
-                return new NearCacheDataRecordStore<K, V>(name, nearCacheConfig, serializationService, classLoader);
+                return new NearCacheDataRecordStore<K, V>(name, nearCacheConfigSupplier, serializationService, classLoader);
             case OBJECT:
-                return new NearCacheObjectRecordStore<K, V>(name, nearCacheConfig, serializationService, classLoader);
+                return new NearCacheObjectRecordStore<K, V>(name, nearCacheConfigSupplier, serializationService, classLoader);
             default:
                 throw new IllegalArgumentException("Invalid in memory format: " + inMemoryFormat);
         }
     }
 
     private ScheduledFuture createAndScheduleExpirationTask() {
-        if (nearCacheConfig.getMaxIdleSeconds() > 0L || nearCacheConfig.getTimeToLiveSeconds() > 0L) {
+        if (nearCacheConfigSupplier.get().getMaxIdleSeconds() > 0L ||
+                nearCacheConfigSupplier.get().getTimeToLiveSeconds() > 0L) {
             ExpirationTask expirationTask = new ExpirationTask();
             return expirationTask.schedule(scheduler);
         }
@@ -149,12 +152,12 @@ public class DefaultNearCache<K, V> implements NearCache<K, V> {
 
     @Override
     public InMemoryFormat getInMemoryFormat() {
-        return nearCacheConfig.getInMemoryFormat();
+        return nearCacheConfigSupplier.get().getInMemoryFormat();
     }
 
     @Override
     public NearCachePreloaderConfig getPreloaderConfig() {
-        return nearCacheConfig.getPreloaderConfig();
+        return nearCacheConfigSupplier.get().getPreloaderConfig();
     }
 
     @Override

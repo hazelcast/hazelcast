@@ -37,6 +37,7 @@ import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.executor.CompletedFuture;
+import com.hazelcast.util.function.Supplier;
 
 import java.util.Collection;
 import java.util.Iterator;
@@ -92,7 +93,13 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
         super.initialize();
 
         mapNearCacheManager = mapServiceContext.getMapNearCacheManager();
-        nearCache = mapNearCacheManager.getOrCreateNearCache(name, mapConfig.getNearCacheConfig());
+        Supplier<NearCacheConfig> nearCacheConfigSupplier = new Supplier<NearCacheConfig>() {
+            @Override
+            public NearCacheConfig get() {
+                return getService().getMapServiceContext().getMapContainer(getName()).getMapConfig().getNearCacheConfig();
+            }
+        };
+        nearCache = mapNearCacheManager.getOrCreateNearCache(name, nearCacheConfigSupplier);
         if (invalidateOnChange) {
             registerInvalidationListener();
         }
@@ -102,6 +109,7 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
     @Override
     @SuppressWarnings("unchecked")
     protected V getInternal(Object key) {
+        System.out.println("Near cache size is: " + nearCache.size());
         key = toNearCacheKeyWithStrategy(key);
         V value = (V) getCachedValue(key, true);
         if (value != NOT_CACHED) {

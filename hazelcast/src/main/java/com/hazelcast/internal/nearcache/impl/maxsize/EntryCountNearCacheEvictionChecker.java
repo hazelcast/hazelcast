@@ -18,6 +18,7 @@ package com.hazelcast.internal.nearcache.impl.maxsize;
 
 import com.hazelcast.internal.eviction.EvictionChecker;
 import com.hazelcast.internal.nearcache.impl.SampleableNearCacheRecordMap;
+import com.hazelcast.util.function.Supplier;
 
 /**
  * Near Cache max-size policy implementation for {@link com.hazelcast.config.EvictionConfig.MaxSizePolicy#ENTRY_COUNT}.
@@ -30,16 +31,16 @@ public class EntryCountNearCacheEvictionChecker
         implements EvictionChecker {
 
     private final SampleableNearCacheRecordMap nearCacheRecordMap;
-    private final int maxSize;
+    private final Supplier<Integer> maxSizeSupplier;
 
-    public EntryCountNearCacheEvictionChecker(final int size,
+    public EntryCountNearCacheEvictionChecker(final Supplier<Integer> maxSizeSupplier,
                                               final SampleableNearCacheRecordMap nearCacheRecordMap) {
-        this.maxSize = size;
+        this.maxSizeSupplier = maxSizeSupplier;
         this.nearCacheRecordMap = nearCacheRecordMap;
     }
 
     @Override
     public boolean isEvictionRequired() {
-        return nearCacheRecordMap.size() >= maxSize;
+        return nearCacheRecordMap.size() >= maxSizeSupplier.get();
     }
 }

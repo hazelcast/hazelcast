@@ -51,7 +51,7 @@ public abstract class NearCacheManagerTestSupport extends CommonNearCacheTestSup
 
     protected NearCache createNearCache(NearCacheManager nearCacheManager, String name) {
         NearCacheConfig nearCacheConfig = createNearCacheConfig(DEFAULT_NEAR_CACHE_NAME, DEFAULT_MEMORY_FORMAT);
-        return nearCacheManager.getOrCreateNearCache(name, nearCacheConfig);
+        return nearCacheManager.getOrCreateNearCache(name, supplierFor(nearCacheConfig));
     }
 
     protected void doCreateAndGetNearCache() {

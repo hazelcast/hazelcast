@@ -286,7 +286,7 @@ public class NearCacheTestSupport extends HazelcastTestSupport {
         MapServiceContext mapServiceContext = service.getMapServiceContext();
         MapNearCacheManager mapNearCacheManager = mapServiceContext.getMapNearCacheManager();
         NearCacheConfig nearCacheConfig = nodeEngine.getConfig().getMapConfig(mapName).getNearCacheConfig();
-        return mapNearCacheManager.getOrCreateNearCache(mapName, nearCacheConfig);
+        return mapNearCacheManager.getOrCreateNearCache(mapName, supplierFor(nearCacheConfig));
     }
 
     protected int getNearCacheSize(IMap map) {

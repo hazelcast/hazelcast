@@ -18,6 +18,7 @@ package com.hazelcast.internal.nearcache;
 
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.internal.adapter.DataStructureAdapter;
+import com.hazelcast.util.function.Supplier;
 
 import java.util.Collection;
 
@@ -47,7 +48,7 @@ public interface NearCacheManager {
      * @param <V>             the value type of the {@link NearCache}
      * @return the created or existing {@link NearCache} instance associated with given {@code name}
      */
-    <K, V> NearCache<K, V> getOrCreateNearCache(String name, NearCacheConfig nearCacheConfig);
+    <K, V> NearCache<K, V> getOrCreateNearCache(String name, Supplier<NearCacheConfig> nearCacheConfig);
 
     /**
      * Creates a new {@link NearCache} with given configurations or returns existing one.
@@ -63,7 +64,7 @@ public interface NearCacheManager {
      * @return the created or existing {@link NearCache} instance associated with given {@code name}
      */
     <K, V> NearCache<K, V> getOrCreateNearCache(String name,
-                                                NearCacheConfig nearCacheConfig,
+                                                Supplier<NearCacheConfig> nearCacheConfig,
                                                 DataStructureAdapter dataStructureAdapter);
 
     /**

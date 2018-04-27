@@ -35,6 +35,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializableByConvention;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.Clock;
+import com.hazelcast.util.function.Supplier;
 
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
@@ -77,14 +78,10 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
     protected static final long REFERENCE_SIZE = MEM_AVAILABLE ? MEM.arrayIndexScale(Object[].class) : (Integer.SIZE / Byte.SIZE);
     protected static final long MILLI_SECONDS_IN_A_SECOND = 1000;
 
-    protected final long timeToLiveMillis;
-    protected final long maxIdleMillis;
-    protected final NearCacheConfig nearCacheConfig;
+    protected final Supplier<NearCacheConfig> nearCacheConfigSupplier;
     protected final SerializationService serializationService;
     protected final ClassLoader classLoader;
     protected final NearCacheStatsImpl nearCacheStats;
-
-    protected final boolean evictionDisabled;
 
     protected EvictionChecker evictionChecker;
     protected SamplingEvictionStrategy<KS, R, NCRM> evictionStrategy;
@@ -93,33 +90,39 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
 
     protected volatile StaleReadDetector staleReadDetector = ALWAYS_FRESH;
     protected volatile long reservationId;
+    private EvictionConfig evictionConfig;
 
-    public AbstractNearCacheRecordStore(NearCacheConfig nearCacheConfig, SerializationService serializationService,
-                                        ClassLoader classLoader) {
-        this(nearCacheConfig, new NearCacheStatsImpl(), serializationService, classLoader);
+    public AbstractNearCacheRecordStore(Supplier<NearCacheConfig> nearCacheConfigSupplier,
+                                        SerializationService serializationService, ClassLoader classLoader) {
+        this(nearCacheConfigSupplier, new NearCacheStatsImpl(), serializationService, classLoader);
     }
 
     // extended in EE
-    protected AbstractNearCacheRecordStore(NearCacheConfig nearCacheConfig, NearCacheStatsImpl nearCacheStats,
+    protected AbstractNearCacheRecordStore(Supplier<NearCacheConfig> nearCacheConfigSupplier,
+                                           NearCacheStatsImpl nearCacheStats,
                                            SerializationService serializationService, ClassLoader classLoader) {
-        this.nearCacheConfig = nearCacheConfig;
-        this.timeToLiveMillis = nearCacheConfig.getTimeToLiveSeconds() * MILLI_SECONDS_IN_A_SECOND;
-        this.maxIdleMillis = nearCacheConfig.getMaxIdleSeconds() * MILLI_SECONDS_IN_A_SECOND;
+        this.nearCacheConfigSupplier = nearCacheConfigSupplier;
         this.serializationService = serializationService;
         this.classLoader = classLoader;
         this.nearCacheStats = nearCacheStats;
-
-        this.evictionDisabled = nearCacheConfig.getEvictionConfig().getEvictionPolicy() == EvictionPolicy.NONE;
+        this.evictionConfig = nearCacheConfigSupplier.get().getEvictionConfig();
     }
 
     @Override
     public void initialize() {
-        this.records = createNearCacheRecordMap(nearCacheConfig);
-        EvictionConfig evictionConfig = nearCacheConfig.getEvictionConfig();
-        this.evictionChecker = createNearCacheEvictionChecker(evictionConfig, nearCacheConfig);
-        if (!evictionDisabled) {
-            this.evictionStrategy = SamplingEvictionStrategy.INSTANCE;
-            this.evictionPolicyEvaluator = getEvictionPolicyEvaluator(evictionConfig, classLoader);
+        this.records = createNearCacheRecordMap(nearCacheConfigSupplier.get());
+        this.evictionChecker = createNearCacheEvictionChecker(nearCacheConfigSupplier);
+        this.evictionStrategy = SamplingEvictionStrategy.INSTANCE;
+        this.evictionPolicyEvaluator = getEvictionPolicyEvaluator(nearCacheConfigSupplier.get().getEvictionConfig(), classLoader);
+    }
+
+    /**
+     * Checks ("lazily") if eviction config was changed to update eviction policy evaluator.
+     */
+    protected void checkEvictor() {
+        EvictionConfig currentEvictionConfig = nearCacheConfigSupplier.get().getEvictionConfig();
+        if(!currentEvictionConfig.equals(evictionConfig)) {
+            this.evictionPolicyEvaluator = getEvictionPolicyEvaluator(currentEvictionConfig, classLoader);
         }
     }
 
@@ -136,8 +139,8 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
     @Override
     public abstract R getRecord(K key);
 
-    protected abstract EvictionChecker createNearCacheEvictionChecker(EvictionConfig evictionConfig,
-                                                                      NearCacheConfig nearCacheConfig);
+    protected abstract EvictionChecker createNearCacheEvictionChecker(Supplier<NearCacheConfig>
+                                                                              nearCacheConfigSupplier);
 
     protected abstract NCRM createNearCacheRecordMap(NearCacheConfig nearCacheConfig);
 
@@ -163,8 +166,21 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
 
     protected void checkAvailable() {
         if (!isAvailable()) {
-            throw new IllegalStateException(nearCacheConfig.getName() + " named Near Cache record store is not available");
+            throw new IllegalStateException(nearCacheConfigSupplier.get().getName() +
+                    " named Near Cache record store is not available");
         }
+    }
+
+    protected boolean isEvictionDisabled() {
+        return nearCacheConfigSupplier.get().getEvictionConfig().getEvictionPolicy() == EvictionPolicy.NONE;
+    }
+
+    protected long getMaxIdleMillis() {
+        return nearCacheConfigSupplier.get().getMaxIdleSeconds() * MILLI_SECONDS_IN_A_SECOND;
+    }
+
+    protected long getTimeToLiveMillis() {
+        return nearCacheConfigSupplier.get().getTimeToLiveSeconds() * MILLI_SECONDS_IN_A_SECOND;
     }
 
     protected boolean isAvailable() {
@@ -218,7 +234,7 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
         if (record.isExpiredAt(now)) {
             return true;
         } else {
-            return record.isIdleAt(maxIdleMillis, now);
+            return record.isIdleAt(getMaxIdleMillis(), now);
         }
     }
 
@@ -253,6 +269,7 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
 
     @Override
     public void onEvict(KS key, R record, boolean wasExpired) {
+        checkEvictor();
         if (wasExpired) {
             nearCacheStats.incrementExpirations();
         } else {
@@ -304,7 +321,7 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
         checkAvailable();
         // if there is no eviction configured we return if the Near Cache is full and it's a new key
         // (we have to check the key, otherwise we might lose updates on existing keys)
-        if (evictionDisabled && evictionChecker.isEvictionRequired() && !containsRecordKey(key)) {
+        if (isEvictionDisabled() && evictionChecker.isEvictionRequired() && !containsRecordKey(key)) {
             return;
         }
 
@@ -376,7 +393,7 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
     public void doEvictionIfRequired() {
         checkAvailable();
 
-        if (!evictionDisabled) {
+        if (!isEvictionDisabled()) {
             evictionStrategy.evict(records, evictionPolicyEvaluator, evictionChecker, this);
         }
     }
@@ -385,7 +402,7 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
     public void doEviction() {
         checkAvailable();
 
-        if (!evictionDisabled) {
+        if (!isEvictionDisabled()) {
             evictionStrategy.evict(records, evictionPolicyEvaluator, null, this);
         }
     }
@@ -395,7 +412,7 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
         checkAvailable();
         // if there is no eviction configured we return if the Near Cache is full and it's a new key
         // (we have to check the key, otherwise we might lose updates on existing keys)
-        if (evictionDisabled && evictionChecker.isEvictionRequired() && !containsRecordKey(key)) {
+        if (isEvictionDisabled() && evictionChecker.isEvictionRequired() && !containsRecordKey(key)) {
             return NOT_RESERVED;
         }
 
