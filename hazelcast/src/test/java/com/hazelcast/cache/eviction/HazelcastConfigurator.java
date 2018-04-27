@@ -9,7 +9,7 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 
 public class HazelcastConfigurator {
-    static MapConfig convertAndStoreMapConfig(String mapName, Config config, MyCustomSettings settings) {
+    static MapConfig updateMapConfig(String mapName, Config config, MyCustomSettings settings) {
         System.out.println("convertAndStoreMapConfig for " + mapName);
         MapConfig newMapConfig = new MapConfig(config.findMapConfig(mapName));
         newMapConfig.getMaxSizeConfig().setSize(settings.getCapacity());
@@ -21,13 +21,12 @@ public class HazelcastConfigurator {
         }
         nearCacheConfig.getEvictionConfig().setSize(settings.getCapacity());
         newMapConfig.setNearCacheConfig(nearCacheConfig);
-        config.addMapConfig(newMapConfig);
         return newMapConfig;
     }
 
     @SuppressWarnings("unchecked")
     static void configureMap(HazelcastInstance hazelcast, String mapName, MyCustomSettings settings) {
-        MapConfig mapConfig = convertAndStoreMapConfig(mapName, hazelcast.getConfig(), settings);
+        MapConfig mapConfig = updateMapConfig(mapName, hazelcast.getConfig(), settings);
 
         UpdateMapConfigOperation operation = new UpdateMapConfigOperation(mapName, mapConfig);
         MapProxyImpl proxy = hazelcast.getDistributedObject(MapService.SERVICE_NAME, mapName);

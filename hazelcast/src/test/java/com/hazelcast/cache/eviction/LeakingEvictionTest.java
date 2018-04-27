@@ -11,7 +11,6 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -26,22 +25,13 @@ import static java.util.UUID.randomUUID;
 @RunWith(JUnit4.class)
 public class LeakingEvictionTest {
 
-    protected static final String WILDCARD_NAME = "my.custom.map.*";
     protected static final String MAP_NAME = "my.custom.map.test";
+    protected static final String YOUR_IP_TO_BIND = "192.168.0.1";
 
     protected HazelcastInstance hazelcast1;
     protected HazelcastInstance hazelcast2;
     protected int size = 500;
     protected int multiplier = 4;
-
-    @Before
-    public void setUp() {
-        Config hazelcastConfig = createHazelcastConfig();
-
-        System.out.print("Starting first node of the cluster... ");
-        hazelcast1 = newHazelcastInstance(hazelcastConfig);
-        System.out.println("[Done]");
-    }
 
     @After
     public void tearDown() {
@@ -52,7 +42,11 @@ public class LeakingEvictionTest {
     public void testCacheEviction() {
         final List<String> keys = new ArrayList<String>();
 
-        // Configure new map
+        Config hazelcastConfig = createHazelcastConfig();
+        System.out.print("Starting first node of the cluster... ");
+        hazelcast1 = newHazelcastInstance(hazelcastConfig);
+        System.out.println("[Done]");
+
         IMap map1 = hazelcast1.getMap(MAP_NAME);
         System.out.print("Re-configuring map on node 1... ");
         configureMap(hazelcast1, MAP_NAME, new MyCustomSettings(size));
@@ -74,7 +68,7 @@ public class LeakingEvictionTest {
         System.out.println("Map size is " + map1.size());
 
         System.out.print("Starting second node of the cluster... ");
-        Config hazelcastConfig = createHazelcastConfig();
+        hazelcastConfig = createHazelcastConfig();
         hazelcast2 = newHazelcastInstance(hazelcastConfig);
         System.out.println("[Done]");
         System.out.print("Re-configuring map on node 2... ");
@@ -95,20 +89,6 @@ public class LeakingEvictionTest {
         }
         System.out.println("[Done]");
         System.out.println("Map size is " + map2.size());
-
-        /*System.out.print("Rerunning experiment for map from node 1... ");
-        for (int i = 0; i < size * multiplier; i++) {
-            String key = randomUUID().toString();
-            keys.add(key);
-            map1.put(key, randomUUID().toString());
-        }
-        System.out.println(map1.size());
-        System.out.print("Reading data to populate near cache... ");
-        for (String key: keys) {
-            map1.get(key);
-        }
-        System.out.println("[Done]");
-        System.out.println("Size: " + map1.size());*/
     }
 
     protected Config createHazelcastConfig() {
@@ -123,7 +103,7 @@ public class LeakingEvictionTest {
                 .setCacheLocalEntries(true);
 
         hazelcastConfig.addMapConfig(new MapConfig(hazelcastConfig.getMapConfig("default"))
-                .setName(WILDCARD_NAME)
+                .setName(MAP_NAME)
                 .setMaxSizeConfig(new MaxSizeConfig(50000, MaxSizeConfig.MaxSizePolicy.PER_NODE))
                 .setTimeToLiveSeconds(0)
                 .setBackupCount(0)
@@ -137,7 +117,7 @@ public class LeakingEvictionTest {
 
         InterfacesConfig interfacesConfig = hazelcastConfig.getNetworkConfig().getInterfaces();
         interfacesConfig.setEnabled(true);
-        interfacesConfig.addInterface("172.22.48.124"); // <- set correct value for your machine here
+        interfacesConfig.addInterface(YOUR_IP_TO_BIND); // <- set correct value for your machine here
         hazelcastConfig.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(true);
 
         return hazelcastConfig;
