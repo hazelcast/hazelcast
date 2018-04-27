@@ -16,7 +16,9 @@
 
 package com.hazelcast.internal.management.operation;
 
+import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.internal.management.ManagementDataSerializerHook;
 import com.hazelcast.internal.management.dto.MapConfigDTO;
 import com.hazelcast.map.impl.MapContainer;
@@ -57,6 +59,18 @@ public class UpdateMapConfigOperation extends AbstractManagementOperation {
         newConfig.setBackupCount(mapConfig.getBackupCount());
         newConfig.setAsyncBackupCount(mapConfig.getAsyncBackupCount());
         newConfig.setMaxSizeConfig(mapConfig.getMaxSizeConfig());
+        if (oldConfig.isNearCacheEnabled() && mapConfig.isNearCacheEnabled()) {
+            NearCacheConfig oldNearCacheConfig = oldConfig.getNearCacheConfig();
+            EvictionConfig oldEvictionConfig = new EvictionConfig(oldNearCacheConfig.getEvictionConfig());
+            NearCacheConfig newNearCacheConfig = new NearCacheConfig(oldNearCacheConfig.getTimeToLiveSeconds(),
+                    oldNearCacheConfig.getMaxIdleSeconds(), oldNearCacheConfig.isInvalidateOnChange(),
+                    oldNearCacheConfig.getInMemoryFormat(), oldEvictionConfig);
+            NearCacheConfig nearCacheConfig = mapConfig.getNearCacheConfig();
+            newNearCacheConfig.getEvictionConfig().setSize(nearCacheConfig.getEvictionConfig().getSize());
+            newNearCacheConfig.getEvictionConfig().setEvictionPolicy(nearCacheConfig.getEvictionConfig().getEvictionPolicy());
+            newNearCacheConfig.getEvictionConfig().setMaximumSizePolicy(nearCacheConfig.getEvictionConfig().getMaximumSizePolicy());
+            newConfig.setNearCacheConfig(newNearCacheConfig);
+        }
         MapContainer mapContainer = service.getMapServiceContext().getMapContainer(mapName);
         mapContainer.setMapConfig(newConfig.getAsReadOnly());
         mapContainer.initEvictor();
