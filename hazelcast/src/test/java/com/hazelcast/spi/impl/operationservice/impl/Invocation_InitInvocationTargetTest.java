@@ -16,21 +16,46 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
+import com.hazelcast.config.Config;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
+import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+
+import static com.hazelcast.spi.properties.GroupProperty.PARTITION_TABLE_SEND_INTERVAL;
+import static com.hazelcast.test.PacketFiltersUtil.dropOperationsBetween;
+import static com.hazelcast.test.PacketFiltersUtil.resetPacketFiltersFrom;
+import static java.util.Collections.singletonList;
+
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class Invocation_InitInvocationTargetTest {
+public class Invocation_InitInvocationTargetTest extends HazelcastTestSupport {
 
     @Test
-    @Ignore
-    public void test() {
-        // TODO: needs to be implemented
+    public void testPartitionTableIsFetchedLazilyOnPartitionInvocation() throws ExecutionException, InterruptedException {
+        Config config = new Config();
+        config.setProperty(PARTITION_TABLE_SEND_INTERVAL.getName(), String.valueOf(Integer.MAX_VALUE));
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance[] instances = factory.newInstances(config);
+
+        dropOperationsBetween(instances[0], instances[1], PartitionDataSerializerHook.F_ID,
+                singletonList(PartitionDataSerializerHook.PARTITION_STATE_OP));
+
+        InternalOperationService operationService = getNodeEngineImpl(instances[1]).getOperationService();
+        Future<Object> future = operationService.invokeOnPartition(null, new DummyOperation(), 0);
+
+        resetPacketFiltersFrom(instances[0]);
+
+        future.get();
     }
 }
