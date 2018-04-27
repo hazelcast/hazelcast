@@ -53,6 +53,7 @@ import com.hazelcast.util.executor.ExecutorType;
 import com.hazelcast.util.executor.ManagedExecutorService;
 
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -262,8 +263,8 @@ public final class OperationServiceImpl implements InternalOperationService, Met
     }
 
     @Override
-    public void execute(PartitionTaskFactory taskFactory, int[] partitions) {
-        operationExecutor.execute(taskFactory, partitions);
+    public void executeOnPartitions(PartitionTaskFactory taskFactory, BitSet partitions) {
+        operationExecutor.executeOnPartitions(taskFactory, partitions);
     }
 
     @Override

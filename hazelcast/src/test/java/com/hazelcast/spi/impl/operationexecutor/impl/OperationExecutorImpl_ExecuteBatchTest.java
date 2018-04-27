@@ -2,6 +2,8 @@ package com.hazelcast.spi.impl.operationexecutor.impl;
 
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.operationservice.PartitionTaskFactory;
+import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -10,8 +12,10 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.BitSet;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
 import static com.hazelcast.spi.properties.GroupProperty.PARTITION_OPERATION_THREAD_COUNT;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
@@ -26,14 +30,14 @@ public class OperationExecutorImpl_ExecuteBatchTest extends OperationExecutorImp
     public void whenNullFactory() {
         initExecutor();
 
-        executor.execute(null, new int[]{});
+        executor.executeOnPartitions(null, new BitSet());
     }
 
     @Test(expected = NullPointerException.class)
     public void whenNullPartitions() {
         initExecutor();
 
-        executor.execute(mock(PartitionTaskFactory.class), null);
+        executor.executeOnPartitions(mock(PartitionTaskFactory.class), null);
     }
 
     @Test
@@ -41,14 +45,14 @@ public class OperationExecutorImpl_ExecuteBatchTest extends OperationExecutorImp
         config.setProperty(PARTITION_OPERATION_THREAD_COUNT.getName(), "16");
         initExecutor();
 
-        final int[] partitions = newPartitions();
+        final BitSet partitions = newPartitions();
         final DummyPartitionTaskFactory taskFactory = new DummyPartitionTaskFactory();
-        executor.execute(taskFactory, partitions);
+        executor.executeOnPartitions(taskFactory, partitions);
 
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                assertEquals(partitions.length, taskFactory.completed.get());
+                assertEquals(partitions.length(), taskFactory.completed.get());
             }
         });
     }
@@ -60,7 +64,7 @@ public class OperationExecutorImpl_ExecuteBatchTest extends OperationExecutorImp
 
         final DummyPartitionTaskFactory taskFactory = new DummyPartitionTaskFactory();
         taskFactory.delayMs = 1000;
-        executor.execute(taskFactory, newPartitions());
+        executor.executeOnPartitions(taskFactory, newPartitions());
 
         final DummyOperation op = new DummyOperation();
         executor.execute(op);
@@ -69,15 +73,16 @@ public class OperationExecutorImpl_ExecuteBatchTest extends OperationExecutorImp
             public void run() {
                 assertTrue(op.completed);
             }
-        }, SECONDS.toMillis(5));
+        }, 5);
     }
 
-    private int[] newPartitions() {
-        final int[] partitions = new int[props.getInteger(PARTITION_OPERATION_THREAD_COUNT)];
-        for (int k = 0; k < partitions.length; k++) {
-            partitions[k] = k;
+    private BitSet newPartitions() {
+        HazelcastProperties properties = new HazelcastProperties(config);
+        BitSet bitSet = new BitSet(properties.getInteger(PARTITION_COUNT));
+        for (int k = 0; k < bitSet.size(); k++) {
+            bitSet.set(k);
         }
-        return partitions;
+        return bitSet;
     }
 
     class DummyOperation extends Operation {
