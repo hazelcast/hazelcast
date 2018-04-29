@@ -25,6 +25,9 @@ import org.junit.runner.RunWith;
 
 import java.util.Collections;
 
+import static com.hazelcast.test.HazelcastTestSupport.randomName;
+import static org.junit.Assert.assertSame;
+
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class ReplicatedMapConfigReadOnlyTest {
@@ -86,5 +89,12 @@ public class ReplicatedMapConfigReadOnlyTest {
     @Test(expected = UnsupportedOperationException.class)
     public void testSetMergePolicyConfig() {
         getReadOnlyConfig().setMergePolicyConfig(new MergePolicyConfig());
+    }
+
+    @Test
+    public void testGetReadOnly_returnsSameInstance() {
+        ReplicatedMapConfig replicatedMapConfig = new ReplicatedMapConfig(randomName());
+        ReplicatedMapConfig readOnly = replicatedMapConfig.getAsReadOnly();
+        assertSame(readOnly, replicatedMapConfig.getAsReadOnly());
     }
 }

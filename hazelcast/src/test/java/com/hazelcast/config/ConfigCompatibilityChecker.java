@@ -29,12 +29,15 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
 import static com.hazelcast.internal.config.ConfigUtils.lookupByPattern;
 import static java.text.MessageFormat.format;
+import static java.util.Collections.singletonMap;
+import static org.codehaus.groovy.runtime.InvokerHelper.asList;
 
 class ConfigCompatibilityChecker {
 
@@ -121,6 +124,8 @@ class ConfigCompatibilityChecker {
         checkCompatibleConfigs("pn counter", c1, c2, c1.getPNCounterConfigs(), c2.getPNCounterConfigs(),
                 new PNCounterConfigChecker());
         checkCompatibleConfigs("quorum", c1, c2, c1.getQuorumConfigs(), c2.getQuorumConfigs(), new QuorumConfigChecker());
+        checkCompatibleConfigs("security", c1, c2, singletonMap("", c1.getSecurityConfig()),
+                singletonMap("", c2.getSecurityConfig()), new SecurityConfigChecker());
 
         return true;
     }
@@ -619,6 +624,7 @@ class ConfigCompatibilityChecker {
                     && c1.getPrefetchCount() == c2.getPrefetchCount()
                     && c1.getPrefetchValidityMillis() == c2.getPrefetchValidityMillis()
                     && c1.getIdOffset() == c2.getIdOffset()
+                    && c1.getNodeIdOffset() == c2.getNodeIdOffset()
                     && c1.isStatisticsEnabled() == c2.isStatisticsEnabled();
         }
 
@@ -1109,6 +1115,123 @@ class ConfigCompatibilityChecker {
                     && nullSafeEqual(c1.getImplementation(), c2.getImplementation())
                     && nullSafeEqual(c1.getProperties(), c2.getProperties())
                     && nullSafeEqual(c1.getConfigObject(), c2.getConfigObject()));
+        }
+    }
+
+    private static class SecurityConfigChecker extends ConfigChecker<SecurityConfig> {
+
+        @Override
+        boolean check(SecurityConfig c1, SecurityConfig c2) {
+            return c1 == c2 || !(c1 == null || c2 == null)
+                    && nullSafeEqual(c1.isEnabled(), c2.isEnabled())
+                    && nullSafeEqual(c1.getClientBlockUnmappedActions(), c2.getClientBlockUnmappedActions())
+                    && isCompatible(c1.getMemberCredentialsConfig(), c2.getMemberCredentialsConfig())
+                    && isCompatible(c1.getSecurityInterceptorConfigs(), c2.getSecurityInterceptorConfigs())
+                    && isCompatible(c1.getClientPolicyConfig(), c2.getClientPolicyConfig())
+                    && isCompatible(c1.getClientPermissionConfigs(), c2.getClientPermissionConfigs())
+                    && isCompatibleLoginModule(c1.getMemberLoginModuleConfigs(), c2.getMemberLoginModuleConfigs())
+                    && isCompatibleLoginModule(c1.getClientLoginModuleConfigs(), c2.getClientLoginModuleConfigs());
+        }
+
+        private static boolean isCompatible(CredentialsFactoryConfig c1, CredentialsFactoryConfig c2) {
+            return c1 == c2 || !(c1 == null || c2 == null)
+                    && nullSafeEqual(c1.getProperties(), c2.getProperties())
+                    && nullSafeEqual(c1.getClassName(), c2.getClassName())
+                    && nullSafeEqual(c1.getImplementation(), c2.getImplementation());
+        }
+
+        private static boolean isCompatibleLoginModule(List<LoginModuleConfig> c1, List<LoginModuleConfig> c2) {
+            if (c1 == c2) {
+                return true;
+            }
+            if (c1 == null || c2 == null || c1.size() != c2.size()) {
+                return false;
+            }
+
+            Map<String, LoginModuleConfig> config1 = new HashMap<String, LoginModuleConfig>();
+            Map<String, LoginModuleConfig> config2 = new HashMap<String, LoginModuleConfig>();
+
+            for (LoginModuleConfig loginModuleConfig : c1) {
+                config1.put(loginModuleConfig.getClassName(), loginModuleConfig);
+            }
+            for (LoginModuleConfig loginModuleConfig : c2) {
+                config2.put(loginModuleConfig.getClassName(), loginModuleConfig);
+            }
+
+            if (!config1.keySet().equals(config2.keySet())) {
+                return false;
+            }
+
+            for (LoginModuleConfig a : c1) {
+                LoginModuleConfig b = config2.get(a.getClassName());
+
+                if (!(a == b || (nullSafeEqual(a.getProperties(), b.getProperties())
+                        && nullSafeEqual(a.getUsage(), b.getUsage())))) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private static boolean isCompatible(List<SecurityInterceptorConfig> c1, List<SecurityInterceptorConfig> c2) {
+            if (c1 == c2) {
+                return true;
+            }
+            if (c1 == null || c2 == null || c1.size() != c2.size()) {
+                return false;
+            }
+
+            Map<String, SecurityInterceptorConfig> config1 = new HashMap<String, SecurityInterceptorConfig>();
+            Map<String, SecurityInterceptorConfig> config2 = new HashMap<String, SecurityInterceptorConfig>();
+
+            for (SecurityInterceptorConfig securityInterceptorConfig : c1) {
+                config1.put(securityInterceptorConfig.getClassName(), securityInterceptorConfig);
+            }
+            for (SecurityInterceptorConfig securityInterceptorConfig : c2) {
+                config2.put(securityInterceptorConfig.getClassName(), securityInterceptorConfig);
+            }
+
+            if (!config1.keySet().equals(config2.keySet())) {
+                return false;
+            }
+
+            for (SecurityInterceptorConfig a : c1) {
+                SecurityInterceptorConfig b = config2.get(a.getClassName());
+
+                if (!(a == b || nullSafeEqual(a.getImplementation(), b.getImplementation()))) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private static boolean isCompatible(PermissionPolicyConfig c1, PermissionPolicyConfig c2) {
+            return c1 == c2 || !(c1 == null || c2 == null)
+                    && nullSafeEqual(c1.getProperties(), c2.getProperties())
+                    && nullSafeEqual(c1.getClassName(), c2.getClassName())
+                    && nullSafeEqual(c1.getImplementation(), c2.getImplementation());
+        }
+
+        private static boolean isCompatible(Set<PermissionConfig> c1, Set<PermissionConfig> c2) {
+            if (c1 == c2) {
+                return true;
+            }
+            if (c1 == null || c2 == null || c1.size() != c2.size()) {
+                return false;
+            }
+
+            List<PermissionConfig> configs1 = asList(c1.toArray());
+            List<PermissionConfig> configs2 = asList(c2.toArray());
+
+            for (PermissionConfig a : configs1) {
+                if (!configs2.contains(a)) {
+                    return false;
+                }
+            }
+
+            return true;
         }
     }
 

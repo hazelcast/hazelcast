@@ -20,7 +20,7 @@ import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
 import com.hazelcast.multimap.impl.MultiMapRecord;
 import com.hazelcast.multimap.impl.MultiMapValue;
-import com.hazelcast.multimap.impl.operations.MultiMapKeyBasedOperation;
+import com.hazelcast.multimap.impl.operations.AbstractKeyBasedMultiMapOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -29,10 +29,10 @@ import com.hazelcast.spi.BackupOperation;
 import java.io.IOException;
 import java.util.Collection;
 
-public class TxnPutBackupOperation extends MultiMapKeyBasedOperation implements BackupOperation {
+public class TxnPutBackupOperation extends AbstractKeyBasedMultiMapOperation implements BackupOperation {
 
-    long recordId;
-    Data value;
+    private long recordId;
+    private Data value;
 
     public TxnPutBackupOperation() {
     }
@@ -45,7 +45,7 @@ public class TxnPutBackupOperation extends MultiMapKeyBasedOperation implements 
 
     @Override
     public void run() throws Exception {
-        MultiMapContainer container = getOrCreateContainer();
+        MultiMapContainer container = getOrCreateContainerWithoutAccess();
         MultiMapValue multiMapValue = container.getOrCreateMultiMapValue(dataKey);
         response = true;
         if (multiMapValue.containsRecordId(recordId)) {

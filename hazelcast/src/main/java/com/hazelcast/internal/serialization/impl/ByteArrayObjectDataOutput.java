@@ -444,6 +444,11 @@ class ByteArrayObjectDataOutput extends VersionedObjectDataOutput implements Buf
     }
 
     @Override
+    public InternalSerializationService getSerializationService() {
+        return service;
+    }
+
+    @Override
     public String toString() {
         return "ByteArrayObjectDataOutput{"
                 + "size=" + (buffer != null ? buffer.length : 0)

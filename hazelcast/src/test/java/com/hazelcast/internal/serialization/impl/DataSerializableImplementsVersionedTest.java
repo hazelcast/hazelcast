@@ -17,6 +17,7 @@
 package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.internal.cluster.Versions;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.VersionAware;
@@ -53,6 +54,7 @@ import static org.mockito.Mockito.when;
 @SuppressWarnings("WeakerAccess")
 public class DataSerializableImplementsVersionedTest {
 
+    private InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
     private Set<Class<? extends IdentifiedDataSerializable>> idsClasses;
     private Set<Class<? extends DataSerializable>> dsClasses;
 
@@ -170,7 +172,9 @@ public class DataSerializableImplementsVersionedTest {
 
     // overridden in EE
     protected ObjectDataOutput getObjectDataOutput() {
-        return spy(ObjectDataOutput.class);
+        ObjectDataOutput output = spy(ObjectDataOutput.class);
+        when(output.getSerializationService()).thenReturn(serializationService);
+        return output;
     }
 
     // overridden in EE

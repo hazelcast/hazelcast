@@ -33,6 +33,7 @@ import static com.hazelcast.config.RingbufferConfig.DEFAULT_ASYNC_BACKUP_COUNT;
 import static com.hazelcast.config.RingbufferConfig.DEFAULT_CAPACITY;
 import static com.hazelcast.config.RingbufferConfig.DEFAULT_SYNC_BACKUP_COUNT;
 import static com.hazelcast.internal.partition.InternalPartition.MAX_BACKUP_COUNT;
+import static com.hazelcast.test.HazelcastTestSupport.assumeDifferentHashCodes;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -320,6 +321,7 @@ public class RingbufferConfigTest {
 
     @Test
     public void testEqualsAndHashCode() {
+        assumeDifferentHashCodes();
         EqualsVerifier.forClass(RingbufferConfig.class)
                 .allFieldsShouldBeUsed()
                 .suppress(Warning.NULL_FIELDS, Warning.NONFINAL_FIELDS)

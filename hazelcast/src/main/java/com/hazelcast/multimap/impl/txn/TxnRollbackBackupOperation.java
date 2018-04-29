@@ -18,7 +18,7 @@ package com.hazelcast.multimap.impl.txn;
 
 import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
-import com.hazelcast.multimap.impl.operations.MultiMapKeyBasedOperation;
+import com.hazelcast.multimap.impl.operations.AbstractKeyBasedMultiMapOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -27,9 +27,9 @@ import com.hazelcast.transaction.TransactionException;
 
 import java.io.IOException;
 
-public class TxnRollbackBackupOperation extends MultiMapKeyBasedOperation implements BackupOperation {
+public class TxnRollbackBackupOperation extends AbstractKeyBasedMultiMapOperation implements BackupOperation {
 
-    String caller;
+    private String caller;
 
     public TxnRollbackBackupOperation() {
     }
@@ -42,11 +42,9 @@ public class TxnRollbackBackupOperation extends MultiMapKeyBasedOperation implem
 
     @Override
     public void run() throws Exception {
-        MultiMapContainer container = getOrCreateContainer();
+        MultiMapContainer container = getOrCreateContainerWithoutAccess();
         if (container.isLocked(dataKey) && !container.unlock(dataKey, caller, threadId, getCallId())) {
-            throw new TransactionException(
-                    "Lock is not owned by the transaction! -> " + container.getLockOwnerInfo(dataKey)
-            );
+            throw new TransactionException("Lock is not owned by the transaction! -> " + container.getLockOwnerInfo(dataKey));
         }
     }
 

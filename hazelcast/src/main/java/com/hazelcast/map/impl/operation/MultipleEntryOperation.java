@@ -70,7 +70,7 @@ public class MultipleEntryOperation extends MapOperation
     public void run() throws Exception {
         responses = new MapEntries(keys.size());
 
-        operator = operator(this, entryProcessor, getPredicate(), true);
+        operator = operator(this, entryProcessor, getPredicate());
         for (Data key : keys) {
             Data response = operator.operateOnKey(key).doPostOperateOps().getResult();
             if (response != null) {
@@ -109,7 +109,6 @@ public class MultipleEntryOperation extends MapOperation
         MultipleEntryBackupOperation backupOperation = null;
         if (backupProcessor != null) {
             backupOperation = new MultipleEntryBackupOperation(name, keys, backupProcessor);
-            backupOperation.setWanEventList(operator.getWanEventList());
         }
         return backupOperation;
     }

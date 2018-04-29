@@ -16,28 +16,29 @@
 
 package com.hazelcast.concurrent.atomicreference.operations;
 
+import com.hazelcast.concurrent.atomicreference.AtomicReferenceContainer;
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.SplitBrainMergePolicy;
-import com.hazelcast.spi.merge.MergingValueHolder;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
+import com.hazelcast.spi.merge.SplitBrainMergeTypes.AtomicReferenceMergeTypes;
 import com.hazelcast.spi.serialization.SerializationService;
 
 import java.io.IOException;
 
 import static com.hazelcast.concurrent.atomicreference.AtomicReferenceDataSerializerHook.MERGE;
-import static com.hazelcast.spi.impl.merge.MergingHolders.createMergeHolder;
+import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingValue;
 
 /**
- * Contains a merge value for split-brain healing with a {@link SplitBrainMergePolicy}.
+ * Merges a {@link AtomicReferenceMergeTypes} for split-brain healing with a {@link SplitBrainMergePolicy}.
  *
  * @since 3.10
  */
 public class MergeOperation extends AtomicReferenceBackupAwareOperation {
 
-    private SplitBrainMergePolicy mergePolicy;
+    private SplitBrainMergePolicy<Object, AtomicReferenceMergeTypes> mergePolicy;
     private Data mergingValue;
 
     private transient Data backupValue;
@@ -45,7 +46,7 @@ public class MergeOperation extends AtomicReferenceBackupAwareOperation {
     public MergeOperation() {
     }
 
-    public MergeOperation(String name, SplitBrainMergePolicy mergePolicy, Data mergingValue) {
+    public MergeOperation(String name, SplitBrainMergePolicy<Object, AtomicReferenceMergeTypes> mergePolicy, Data mergingValue) {
         super(name);
         this.mergePolicy = mergePolicy;
         this.mergingValue = mergingValue;
@@ -55,20 +56,38 @@ public class MergeOperation extends AtomicReferenceBackupAwareOperation {
     public void run() throws Exception {
         AtomicReferenceService service = getService();
         boolean isExistingContainer = service.containsReferenceContainer(name);
+        AtomicReferenceContainer container = isExistingContainer ? getReferenceContainer() : null;
+        Data oldValue = isExistingContainer ? container.get() : null;
 
         SerializationService serializationService = getNodeEngine().getSerializationService();
-        MergingValueHolder<Data> mergeHolder = createMergeHolder(serializationService, mergingValue);
-        backupValue = getReferenceContainer().merge(mergeHolder, mergePolicy, isExistingContainer, serializationService);
+        serializationService.getManagedContext().initialize(mergePolicy);
+
+        AtomicReferenceMergeTypes mergeValue = createMergingValue(serializationService, mergingValue);
+        AtomicReferenceMergeTypes existingValue = isExistingContainer ? createMergingValue(serializationService, oldValue) : null;
+        Data newValue = serializationService.toData(mergePolicy.merge(mergeValue, existingValue));
+
+        backupValue = setNewValue(service, container, oldValue, newValue);
+        shouldBackup = (backupValue == null && oldValue != null) || (backupValue != null && !backupValue.equals(oldValue));
     }
 
-    @Override
-    public boolean shouldBackup() {
-        return backupValue != null;
+    private Data setNewValue(AtomicReferenceService service, AtomicReferenceContainer container, Data oldValue, Data newValue) {
+        if (newValue == null) {
+            service.destroyDistributedObject(name);
+            return null;
+        } else if (container == null) {
+            container = getReferenceContainer();
+            container.set(newValue);
+            return newValue;
+        } else if (!newValue.equals(oldValue)) {
+            container.set(newValue);
+            return newValue;
+        }
+        return oldValue;
     }
 
     @Override
     public Operation getBackupOperation() {
-        return new SetBackupOperation(name, backupValue);
+        return new MergeBackupOperation(name, backupValue);
     }
 
     @Override

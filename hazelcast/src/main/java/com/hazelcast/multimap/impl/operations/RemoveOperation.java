@@ -17,6 +17,7 @@
 package com.hazelcast.multimap.impl.operations;
 
 import com.hazelcast.core.EntryEventType;
+import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
 import com.hazelcast.multimap.impl.MultiMapRecord;
 import com.hazelcast.multimap.impl.MultiMapValue;
@@ -30,7 +31,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Iterator;
 
-public class RemoveOperation extends MultiMapBackupAwareOperation implements MutatingOperation {
+public class RemoveOperation extends AbstractBackupAwareMultiMapOperation implements MutatingOperation {
 
     private Data value;
     private long recordId;
@@ -46,7 +47,8 @@ public class RemoveOperation extends MultiMapBackupAwareOperation implements Mut
     @Override
     public void run() throws Exception {
         response = false;
-        MultiMapValue multiMapValue = getMultiMapValueOrNull();
+        MultiMapContainer container = getOrCreateContainer();
+        MultiMapValue multiMapValue = container.getMultiMapValueOrNull(dataKey);
         if (multiMapValue == null) {
             return;
         }
@@ -60,7 +62,7 @@ public class RemoveOperation extends MultiMapBackupAwareOperation implements Mut
                 recordId = r.getRecordId();
                 response = true;
                 if (coll.isEmpty()) {
-                    delete();
+                    container.delete(dataKey);
                 }
                 break;
             }

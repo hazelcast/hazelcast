@@ -16,11 +16,12 @@
 
 package com.hazelcast.multimap.impl.operations;
 
+import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
 
-public class DeleteBackupOperation extends MultiMapKeyBasedOperation implements BackupOperation {
+public class DeleteBackupOperation extends AbstractKeyBasedMultiMapOperation implements BackupOperation {
 
     public DeleteBackupOperation() {
     }
@@ -31,7 +32,8 @@ public class DeleteBackupOperation extends MultiMapKeyBasedOperation implements 
 
     @Override
     public void run() throws Exception {
-        delete();
+        MultiMapContainer container = getOrCreateContainerWithoutAccess();
+        container.delete(dataKey);
     }
 
     @Override

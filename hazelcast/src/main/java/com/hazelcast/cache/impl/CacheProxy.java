@@ -28,7 +28,6 @@ import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.Member;
 import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.internal.journal.EventJournalReader;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.ringbuffer.ReadResultSet;
@@ -39,7 +38,6 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.util.function.Predicate;
-
 import javax.cache.CacheException;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
 import javax.cache.configuration.Configuration;
@@ -81,11 +79,8 @@ import static com.hazelcast.util.SetUtil.createHashSet;
 public class CacheProxy<K, V> extends AbstractCacheProxy<K, V>
         implements EventJournalReader<EventJournalCacheEvent<K, V>> {
 
-    protected final ILogger logger;
-
     CacheProxy(CacheConfig<K, V> cacheConfig, NodeEngine nodeEngine, ICacheService cacheService) {
         super(cacheConfig, nodeEngine, cacheService);
-        logger = getNodeEngine().getLogger(getClass());
     }
 
     @Override

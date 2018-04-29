@@ -18,6 +18,7 @@ package com.hazelcast.map.impl.querycache.subscriber;
 
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ContextMutexFactory;
+import com.hazelcast.util.UuidUtil;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -34,8 +35,8 @@ import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 public class QueryCacheEndToEndProvider<K, V> {
 
     private final ContextMutexFactory mutexFactory;
-    private final ConcurrentMap<String, ConcurrentMap<String, InternalQueryCache<K, V>>> mapNameToQueryCaches;
-    private final ConstructorFunction<String, ConcurrentMap<String, InternalQueryCache<K, V>>> ctor
+    private final ConcurrentMap<String, ConcurrentMap<String, InternalQueryCache<K, V>>> queryCacheRegistryPerMap;
+    private final ConstructorFunction<String, ConcurrentMap<String, InternalQueryCache<K, V>>> queryCacheRegistryConstructor
             = new ConstructorFunction<String, ConcurrentMap<String, InternalQueryCache<K, V>>>() {
         @Override
         public ConcurrentMap<String, InternalQueryCache<K, V>> createNew(String arg) {
@@ -45,39 +46,60 @@ public class QueryCacheEndToEndProvider<K, V> {
 
     public QueryCacheEndToEndProvider(ContextMutexFactory mutexFactory) {
         this.mutexFactory = mutexFactory;
-        this.mapNameToQueryCaches = new ConcurrentHashMap<String, ConcurrentMap<String, InternalQueryCache<K, V>>>();
+        this.queryCacheRegistryPerMap = new ConcurrentHashMap<String, ConcurrentMap<String, InternalQueryCache<K, V>>>();
     }
 
-    public InternalQueryCache<K, V> getOrCreateQueryCache(String mapName, String cacheId,
+    public InternalQueryCache<K, V> getOrCreateQueryCache(String mapName, String cacheName,
                                                           ConstructorFunction<String, InternalQueryCache<K, V>> constructor) {
+
+        InternalQueryCache<K, V> existingQueryCache = getExistingQueryCacheOrNull(mapName, cacheName);
+        if (existingQueryCache != null) {
+            return existingQueryCache;
+        }
+
         ContextMutexFactory.Mutex mutex = mutexFactory.mutexFor(mapName);
         try {
             synchronized (mutex) {
-                ConcurrentMap<String, InternalQueryCache<K, V>> cacheIdToQueryCache
-                        = getOrPutIfAbsent(mapNameToQueryCaches, mapName, ctor);
-                InternalQueryCache<K, V> queryCache = cacheIdToQueryCache.get(cacheId);
-                if (queryCache == null) {
-                    queryCache = constructor.createNew(cacheId);
-                    if (queryCache == NULL_QUERY_CACHE) {
-                        queryCache = null;
-                    } else {
-                        cacheIdToQueryCache.put(cacheId, queryCache);
-                    }
+                ConcurrentMap<String, InternalQueryCache<K, V>> queryCacheRegistry
+                        = getOrPutIfAbsent(queryCacheRegistryPerMap, mapName, queryCacheRegistryConstructor);
+
+                InternalQueryCache<K, V> queryCache = queryCacheRegistry.get(cacheName);
+                if (queryCache != null) {
+                    return queryCache;
                 }
-                return queryCache;
+
+                String cacheId = UuidUtil.newUnsecureUuidString();
+                queryCache = constructor.createNew(cacheId);
+                if (queryCache != NULL_QUERY_CACHE) {
+                    queryCacheRegistry.put(cacheName, queryCache);
+                    return queryCache;
+                }
+
+                return null;
             }
         } finally {
             closeResource(mutex);
         }
     }
 
-    public void removeSingleQueryCache(String mapName, String cacheId) {
+    private InternalQueryCache<K, V> getExistingQueryCacheOrNull(String mapName, String cacheName) {
+        ConcurrentMap<String, InternalQueryCache<K, V>> queryCacheRegistry = queryCacheRegistryPerMap.get(mapName);
+        if (queryCacheRegistry != null) {
+            InternalQueryCache<K, V> queryCache = queryCacheRegistry.get(cacheName);
+            if (queryCache != null) {
+                return queryCache;
+            }
+        }
+        return null;
+    }
+
+    public void removeSingleQueryCache(String mapName, String cacheName) {
         ContextMutexFactory.Mutex mutex = mutexFactory.mutexFor(mapName);
         try {
             synchronized (mutex) {
-                Map<String, InternalQueryCache<K, V>> cacheIdToQueryCache = mapNameToQueryCaches.get(mapName);
-                if (cacheIdToQueryCache != null) {
-                    cacheIdToQueryCache.remove(cacheId);
+                Map<String, InternalQueryCache<K, V>> queryCacheRegistry = queryCacheRegistryPerMap.get(mapName);
+                if (queryCacheRegistry != null) {
+                    queryCacheRegistry.remove(cacheName);
                 }
             }
         } finally {
@@ -89,9 +111,9 @@ public class QueryCacheEndToEndProvider<K, V> {
         ContextMutexFactory.Mutex mutex = mutexFactory.mutexFor(mapName);
         try {
             synchronized (mutex) {
-                Map<String, InternalQueryCache<K, V>> cacheIdToQueryCache = mapNameToQueryCaches.remove(mapName);
-                if (cacheIdToQueryCache != null) {
-                    for (InternalQueryCache<K, V> queryCache : cacheIdToQueryCache.values()) {
+                Map<String, InternalQueryCache<K, V>> queryCacheRegistry = queryCacheRegistryPerMap.remove(mapName);
+                if (queryCacheRegistry != null) {
+                    for (InternalQueryCache<K, V> queryCache : queryCacheRegistry.values()) {
                         queryCache.destroy();
                     }
                 }
@@ -103,10 +125,10 @@ public class QueryCacheEndToEndProvider<K, V> {
 
     // only used in tests
     public int getQueryCacheCount(String mapName) {
-        Map<String, InternalQueryCache<K, V>> cacheIdToQueryCache = mapNameToQueryCaches.get(mapName);
-        if (cacheIdToQueryCache == null) {
+        Map<String, InternalQueryCache<K, V>> queryCacheRegistry = queryCacheRegistryPerMap.get(mapName);
+        if (queryCacheRegistry == null) {
             return 0;
         }
-        return cacheIdToQueryCache.size();
+        return queryCacheRegistry.size();
     }
 }

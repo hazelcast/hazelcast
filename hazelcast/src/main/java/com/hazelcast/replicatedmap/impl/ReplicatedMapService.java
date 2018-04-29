@@ -19,6 +19,7 @@ package com.hazelcast.replicatedmap.impl;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.ListenerConfig;
+import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.EntryListener;
@@ -126,6 +127,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
     private final ReplicatedMapSplitBrainHandlerService splitBrainHandlerService;
 
     private ScheduledFuture antiEntropyFuture;
+    private MergePolicyProvider mergePolicyProvider;
 
     public ReplicatedMapService(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -135,8 +137,9 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
         this.operationService = nodeEngine.getOperationService();
         this.partitionContainers = new PartitionContainer[nodeEngine.getPartitionService().getPartitionCount()];
         this.eventPublishingService = new ReplicatedMapEventPublishingService(this);
-        this.splitBrainHandlerService = new ReplicatedMapSplitBrainHandlerService(this, new MergePolicyProvider(nodeEngine));
+        this.splitBrainHandlerService = new ReplicatedMapSplitBrainHandlerService(this);
         this.quorumService = nodeEngine.getQuorumService();
+        this.mergePolicyProvider = new MergePolicyProvider(nodeEngine);
     }
 
     @Override
@@ -206,7 +209,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
     @Override
     public DistributedObject createDistributedObject(String objectName) {
         ReplicatedMapConfig replicatedMapConfig = getReplicatedMapConfig(objectName);
-        checkReplicatedMapConfig(replicatedMapConfig);
+        checkReplicatedMapConfig(replicatedMapConfig, mergePolicyProvider);
         if (nodeEngine.getLocalMember().isLiteMember()) {
             throw new ReplicatedMapCantBeCreatedOnLiteMemberException(nodeEngine.getThisAddress());
         }
@@ -240,7 +243,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
 
     @SuppressWarnings("deprecation")
     public ReplicatedMapConfig getReplicatedMapConfig(String name) {
-        return config.getReplicatedMapConfig(name).getAsReadOnly();
+        return config.findReplicatedMapConfig(name);
     }
 
     public ReplicatedRecordStore getReplicatedRecordStore(String name, boolean create, Object key) {
@@ -286,7 +289,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
     }
 
     public void initializeListeners(String name) {
-        List<ListenerConfig> listenerConfigs = config.getReplicatedMapConfig(name).getListenerConfigs();
+        List<ListenerConfig> listenerConfigs = getReplicatedMapConfig(name).getListenerConfigs();
         for (ListenerConfig listenerConfig : listenerConfigs) {
             EntryListener listener = null;
             if (listenerConfig.getImplementation() != null) {
@@ -384,6 +387,11 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
     // needed for a test
     public void triggerAntiEntropy() {
         antiEntropyTask.triggerAntiEntropy();
+    }
+
+    public Object getMergePolicy(String name) {
+        MergePolicyConfig mergePolicyConfig = getReplicatedMapConfig(name).getMergePolicyConfig();
+        return mergePolicyProvider.getMergePolicy(mergePolicyConfig.getPolicy());
     }
 
     private class AntiEntropyTask implements Runnable {

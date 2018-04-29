@@ -81,6 +81,8 @@ import java.util.LinkedList;
 
 import static com.hazelcast.internal.diagnostics.Diagnostics.METRICS_DISTRIBUTED_DATASTRUCTURES;
 import static com.hazelcast.internal.diagnostics.Diagnostics.METRICS_LEVEL;
+import static com.hazelcast.util.EmptyStatement.ignore;
+import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static java.lang.System.currentTimeMillis;
 
 /**
@@ -119,41 +121,49 @@ public class NodeEngineImpl implements NodeEngine {
     @SuppressWarnings("checkstyle:executablestatementcount")
     public NodeEngineImpl(Node node) {
         this.node = node;
-        this.serializationService = node.getSerializationService();
-        this.loggingService = node.loggingService;
-        this.logger = node.getLogger(NodeEngine.class.getName());
-        this.metricsRegistry = newMetricRegistry(node);
-        this.proxyService = new ProxyServiceImpl(this);
-        this.serviceManager = new ServiceManagerImpl(this);
-        this.executionService = new ExecutionServiceImpl(this);
-        this.operationService = new OperationServiceImpl(this);
-        this.eventService = new EventServiceImpl(this);
-        this.operationParker = new OperationParkerImpl(this);
-        UserCodeDeploymentService userCodeDeploymentService = new UserCodeDeploymentService();
-        DynamicConfigListener dynamicConfigListener = node.getNodeExtension().createDynamicConfigListener();
-        this.configurationService = new ClusterWideConfigurationService(this, dynamicConfigListener);
-        ClassLoader configClassLoader = node.getConfigClassLoader();
-        if (configClassLoader instanceof UserCodeDeploymentClassLoader) {
-            ((UserCodeDeploymentClassLoader) configClassLoader).setUserCodeDeploymentService(userCodeDeploymentService);
+        try {
+            this.serializationService = node.getSerializationService();
+            this.loggingService = node.loggingService;
+            this.logger = node.getLogger(NodeEngine.class.getName());
+            this.metricsRegistry = newMetricRegistry(node);
+            this.proxyService = new ProxyServiceImpl(this);
+            this.serviceManager = new ServiceManagerImpl(this);
+            this.executionService = new ExecutionServiceImpl(this);
+            this.operationService = new OperationServiceImpl(this);
+            this.eventService = new EventServiceImpl(this);
+            this.operationParker = new OperationParkerImpl(this);
+            UserCodeDeploymentService userCodeDeploymentService = new UserCodeDeploymentService();
+            DynamicConfigListener dynamicConfigListener = node.getNodeExtension().createDynamicConfigListener();
+            this.configurationService = new ClusterWideConfigurationService(this, dynamicConfigListener);
+            ClassLoader configClassLoader = node.getConfigClassLoader();
+            if (configClassLoader instanceof UserCodeDeploymentClassLoader) {
+                ((UserCodeDeploymentClassLoader) configClassLoader).setUserCodeDeploymentService(userCodeDeploymentService);
+            }
+            this.transactionManagerService = new TransactionManagerServiceImpl(this);
+            this.wanReplicationService = node.getNodeExtension().createService(WanReplicationService.class);
+            this.packetDispatcher = new PacketDispatcher(
+                    logger,
+                    operationService.getOperationExecutor(),
+                    operationService.getInboundResponseHandlerSupplier().get(),
+                    operationService.getInvocationMonitor(),
+                    eventService,
+                    new ConnectionManagerPacketHandler(),
+                    new JetPacketHandler());
+            this.quorumService = new QuorumServiceImpl(this);
+            this.diagnostics = newDiagnostics();
+            this.splitBrainMergePolicyProvider = new SplitBrainMergePolicyProvider(this);
+            serviceManager.registerService(InternalOperationService.SERVICE_NAME, operationService);
+            serviceManager.registerService(OperationParker.SERVICE_NAME, operationParker);
+            serviceManager.registerService(UserCodeDeploymentService.SERVICE_NAME, userCodeDeploymentService);
+            serviceManager.registerService(ClusterWideConfigurationService.SERVICE_NAME, configurationService);
+        } catch (Throwable e) {
+            try {
+                shutdown(true);
+            } catch (Throwable ignored) {
+                ignore(ignored);
+            }
+            throw rethrow(e);
         }
-        this.transactionManagerService = new TransactionManagerServiceImpl(this);
-        this.wanReplicationService = node.getNodeExtension().createService(WanReplicationService.class);
-        this.packetDispatcher = new PacketDispatcher(
-                logger,
-                operationService.getOperationExecutor(),
-                operationService.getAsyncInboundResponseHandler(),
-                operationService.getInvocationMonitor(),
-                eventService,
-                new ConnectionManagerPacketHandler(),
-                new JetPacketHandler());
-        this.quorumService = new QuorumServiceImpl(this);
-        this.diagnostics = newDiagnostics();
-        this.splitBrainMergePolicyProvider = new SplitBrainMergePolicyProvider(this);
-
-        serviceManager.registerService(InternalOperationService.SERVICE_NAME, operationService);
-        serviceManager.registerService(OperationParker.SERVICE_NAME, operationParker);
-        serviceManager.registerService(UserCodeDeploymentService.SERVICE_NAME, userCodeDeploymentService);
-        serviceManager.registerService(ClusterWideConfigurationService.SERVICE_NAME, configurationService);
     }
 
     private MetricsRegistryImpl newMetricRegistry(Node node) {
@@ -456,18 +466,39 @@ public class NodeEngineImpl implements NodeEngine {
         operationService.reset();
     }
 
+    @SuppressWarnings("checkstyle:npathcomplexity")
     public void shutdown(boolean terminate) {
         logger.finest("Shutting down services...");
-        operationParker.shutdown();
-        operationService.shutdownInvocations();
-        proxyService.shutdown();
-        serviceManager.shutdown(terminate);
-        eventService.shutdown();
-        operationService.shutdownOperationExecutor();
-        wanReplicationService.shutdown();
-        executionService.shutdown();
-        metricsRegistry.shutdown();
-        diagnostics.shutdown();
+        if (operationParker != null) {
+            operationParker.shutdown();
+        }
+        if (operationService != null) {
+            operationService.shutdownInvocations();
+        }
+        if (proxyService != null) {
+            proxyService.shutdown();
+        }
+        if (serviceManager != null) {
+            serviceManager.shutdown(terminate);
+        }
+        if (eventService != null) {
+            eventService.shutdown();
+        }
+        if (operationService != null) {
+            operationService.shutdownOperationExecutor();
+        }
+        if (wanReplicationService != null) {
+            wanReplicationService.shutdown();
+        }
+        if (executionService != null) {
+            executionService.shutdown();
+        }
+        if (metricsRegistry != null) {
+            metricsRegistry.shutdown();
+        }
+        if (diagnostics != null) {
+            diagnostics.shutdown();
+        }
     }
 
     private class ConnectionManagerPacketHandler implements PacketHandler {

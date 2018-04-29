@@ -66,6 +66,7 @@ public class FlakeIdGeneratorProxy
 
     private final String name;
     private final long epochStart;
+    private final long nodeIdOffset;
     private volatile int nodeId = NODE_ID_NOT_YET_SET;
     private volatile long nextNodeIdUpdate = Long.MIN_VALUE;
     private final ILogger logger;
@@ -91,6 +92,7 @@ public class FlakeIdGeneratorProxy
 
         FlakeIdGeneratorConfig config = nodeEngine.getConfig().findFlakeIdGeneratorConfig(getName());
         epochStart = EPOCH_START - (config.getIdOffset() >> (BITS_SEQUENCE + BITS_NODE_ID));
+        nodeIdOffset = config.getNodeIdOffset();
         batcher = new AutoBatcher(config.getPrefetchCount(), config.getPrefetchValidityMillis(),
                 new AutoBatcher.IdBatchSupplier() {
                     @Override
@@ -195,7 +197,7 @@ public class FlakeIdGeneratorProxy
         long waitTime = Math.max(0, ((base + batchSize - now) >> BITS_SEQUENCE) - ALLOWED_FUTURE_MILLIS);
         base = base << BITS_NODE_ID | nodeId;
 
-        getService().incrementStatsForNewId(name);
+        getService().updateStatsForBatch(name, batchSize);
         return new IdBatchAndWaitTime(new IdBatch(base, INCREMENT, batchSize), waitTime);
     }
 
@@ -219,6 +221,7 @@ public class FlakeIdGeneratorProxy
         if (nodeId != NODE_ID_OUT_OF_RANGE && nextNodeIdUpdate <= nanoTime) {
             int newNodeId = getNodeEngine().getClusterService().getMemberListJoinVersion();
             assert newNodeId >= 0 : "newNodeId=" + newNodeId;
+            newNodeId += nodeIdOffset;
             nextNodeIdUpdate = nanoTime + NODE_ID_UPDATE_INTERVAL_NS;
             if (newNodeId != nodeId) {
                 // we ignore possible double initialization

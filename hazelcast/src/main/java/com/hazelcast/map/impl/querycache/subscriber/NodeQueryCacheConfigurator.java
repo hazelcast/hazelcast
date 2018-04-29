@@ -44,14 +44,14 @@ public class NodeQueryCacheConfigurator extends AbstractQueryCacheConfigurator {
     }
 
     @Override
-    public QueryCacheConfig getOrCreateConfiguration(String mapName, String cacheName) {
+    public QueryCacheConfig getOrCreateConfiguration(String mapName, String cacheName, String cacheId) {
         MapConfig mapConfig = config.getMapConfig(mapName);
 
         QueryCacheConfig queryCacheConfig = findQueryCacheConfigFromMapConfig(mapConfig, cacheName);
 
         if (null != queryCacheConfig) {
             setPredicateImpl(queryCacheConfig);
-            setEntryListener(mapName, cacheName, queryCacheConfig);
+            setEntryListener(mapName, cacheId, queryCacheConfig);
             return queryCacheConfig;
         }
 

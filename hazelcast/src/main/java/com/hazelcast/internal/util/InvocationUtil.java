@@ -21,16 +21,15 @@ import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.core.Member;
 import com.hazelcast.internal.cluster.ClusterService;
-import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.util.futures.ChainingFuture;
 import com.hazelcast.internal.util.iterator.RestartingMemberIterator;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.SerializableByConvention;
-import com.hazelcast.partition.NoDataMemberInClusterException;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationResponseHandler;
 import com.hazelcast.spi.impl.AbstractCompletableFuture;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.util.executor.CompletedFuture;
@@ -63,15 +62,13 @@ public final class InvocationUtil {
      * is interrupted and the exception is propagated to the caller.
      */
     public static ICompletableFuture<Object> invokeOnStableClusterSerial(NodeEngine nodeEngine,
-                                                                         Supplier<Operation> operationSupplier,
+                                                                         Supplier<? extends Operation> operationSupplier,
                                                                          int maxRetries) {
 
         ClusterService clusterService = nodeEngine.getClusterService();
         if (!clusterService.isJoined()) {
             return new CompletedFuture<Object>(null, null, new CallerRunsExecutor());
         }
-
-        warmUpPartitions(nodeEngine);
 
         RestartingMemberIterator memberIterator = new RestartingMemberIterator(clusterService, maxRetries);
 
@@ -90,29 +87,32 @@ public final class InvocationUtil {
         return new ChainingFuture<Object>(invocationIterator, executor, memberIterator, logger);
     }
 
-    private static void warmUpPartitions(NodeEngine nodeEngine) {
-        ClusterService clusterService = nodeEngine.getClusterService();
-        if (!clusterService.getClusterState().isMigrationAllowed()) {
-            return;
+    /**
+     * Constructs a local execution with retry logic. The operation must not
+     * have an {@link OperationResponseHandler}, it must return a response
+     * and it must not validate the target.
+     *
+     * @return the local execution
+     * @throws IllegalArgumentException if the operation has a response handler
+     *                                  set, if it does not return a response
+     *                                  or if it validates the operation target
+     * @see Operation#returnsResponse()
+     * @see Operation#getOperationResponseHandler()
+     * @see Operation#validatesTarget()
+     */
+    public static LocalRetryableExecution executeLocallyWithRetry(NodeEngine nodeEngine, Operation operation) {
+        if (operation.getOperationResponseHandler() != null) {
+            throw new IllegalArgumentException("Operation must not have a response handler set");
         }
-
-        InternalPartitionService partitionService = (InternalPartitionService) nodeEngine.getPartitionService();
-        if (partitionService.getMemberGroupsSize() == 0) {
-            return;
+        if (!operation.returnsResponse()) {
+            throw new IllegalArgumentException("Operation must return a response");
         }
-
-        for (int i = 0; i < partitionService.getPartitionCount(); i++) {
-            try {
-                partitionService.getPartitionOwnerOrWait(i);
-            } catch (IllegalStateException e) {
-                if (!clusterService.getClusterState().isMigrationAllowed()) {
-                    return;
-                }
-                throw e;
-            } catch (NoDataMemberInClusterException e) {
-                return;
-            }
+        if (operation.validatesTarget()) {
+            throw new IllegalArgumentException("Operation must not validate the target");
         }
+        final LocalRetryableExecution execution = new LocalRetryableExecution(nodeEngine, operation);
+        execution.run();
+        return execution;
     }
 
     // IFunction extends Serializable, but this function is only executed locally
@@ -120,13 +120,13 @@ public final class InvocationUtil {
     private static class InvokeOnMemberFunction implements IFunction<Member, ICompletableFuture<Object>> {
         private static final long serialVersionUID = 2903680336421872278L;
 
-        private final transient Supplier<Operation> operationSupplier;
+        private final transient Supplier<? extends Operation> operationSupplier;
         private final transient NodeEngine nodeEngine;
         private final transient RestartingMemberIterator memberIterator;
         private final long retryDelayMillis;
         private volatile int lastRetryCount;
 
-        InvokeOnMemberFunction(Supplier<Operation> operationSupplier, NodeEngine nodeEngine,
+        InvokeOnMemberFunction(Supplier<? extends Operation> operationSupplier, NodeEngine nodeEngine,
                 RestartingMemberIterator memberIterator) {
             this.operationSupplier = operationSupplier;
             this.nodeEngine = nodeEngine;

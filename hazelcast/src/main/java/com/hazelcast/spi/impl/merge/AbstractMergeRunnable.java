@@ -22,14 +22,15 @@ import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Disposable;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.DataType;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.SplitBrainHandlerService;
-import com.hazelcast.spi.SplitBrainMergePolicy;
+import com.hazelcast.spi.merge.MergingEntry;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.util.MutableLong;
 import com.hazelcast.util.function.BiConsumer;
@@ -37,6 +38,8 @@ import com.hazelcast.version.Version;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -44,18 +47,23 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.internal.cluster.Versions.V3_10;
-import static com.hazelcast.internal.config.ConfigValidator.checkMergePolicySupportsInMemoryFormat;
+import static com.hazelcast.internal.config.MergePolicyValidator.checkMergePolicySupportsInMemoryFormat;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static java.lang.String.format;
+import static java.util.Collections.singleton;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
- * Used by {@link com.hazelcast.cache.ICache} and {@link com.hazelcast.core.IMap}
- * to provide a shared merge runnable for {@link SplitBrainHandlerService#prepareMergeRunnable()}.
+ * Used by {@link com.hazelcast.cache.ICache}, {@link com.hazelcast.core.IMap}
+ * and {@link com.hazelcast.core.ReplicatedMap} to provide a merge runnable
+ * for {@link SplitBrainHandlerService#prepareMergeRunnable()}.
  *
- * @param <Store> type of the store in a partition
+ * @param <K>           type of the store key
+ * @param <V>           type of the store value
+ * @param <Store>       type of the store in a partition
+ * @param <MergingItem> type of the merging item
  */
-public abstract class AbstractMergeRunnable<Store, MergingItem> implements Runnable, Disposable {
+public abstract class AbstractMergeRunnable<K, V, Store, MergingItem extends MergingEntry<K, V>> implements Runnable {
 
     private static final long TIMEOUT_FACTOR = 500;
     private static final long MINIMAL_TIMEOUT_MILLIS = TimeUnit.SECONDS.toMillis(5);
@@ -65,25 +73,40 @@ public abstract class AbstractMergeRunnable<Store, MergingItem> implements Runna
     private final ILogger logger;
     private final String serviceName;
     private final ClusterService clusterService;
-    private final InternalSerializationService serializationService;
     private final OperationService operationService;
     private final IPartitionService partitionService;
-    private final Collection<Store> backupStores;
-    private final Map<String, Collection<Store>> collectedStores;
-    private final Map<String, Collection<Store>> collectedStoresWithLegacyPolicies;
+    private final AbstractSplitBrainHandlerService<Store> splitBrainHandlerService;
+    private final InternalSerializationService serializationService;
 
-    protected AbstractMergeRunnable(String serviceName, Map<String, Collection<Store>> collectedStores,
-                                    Map<String, Collection<Store>> collectedStoresWithLegacyPolicies,
-                                    Collection<Store> backupStores, NodeEngine nodeEngine) {
+    private Map<String, Collection<Store>> mergingStoresByName;
+
+    protected AbstractMergeRunnable(String serviceName,
+                                    Collection<Store> mergingStores,
+                                    AbstractSplitBrainHandlerService<Store> splitBrainHandlerService,
+                                    NodeEngine nodeEngine) {
+        this.mergingStoresByName = groupStoresByName(mergingStores);
         this.serviceName = serviceName;
         this.logger = nodeEngine.getLogger(getClass());
         this.partitionService = nodeEngine.getPartitionService();
         this.clusterService = nodeEngine.getClusterService();
         this.operationService = nodeEngine.getOperationService();
         this.serializationService = (InternalSerializationService) nodeEngine.getSerializationService();
-        this.backupStores = backupStores;
-        this.collectedStores = collectedStores;
-        this.collectedStoresWithLegacyPolicies = collectedStoresWithLegacyPolicies;
+        this.splitBrainHandlerService = splitBrainHandlerService;
+    }
+
+    private Map<String, Collection<Store>> groupStoresByName(Collection<Store> stores) {
+        Map<String, Collection<Store>> storesByName = new HashMap<String, Collection<Store>>();
+        for (Store store : stores) {
+            String dataStructureName = getDataStructureName(store);
+
+            Collection<Store> storeList = storesByName.get(dataStructureName);
+            if (storeList == null) {
+                storeList = new LinkedList<Store>();
+                storesByName.put(dataStructureName, storeList);
+            }
+            storeList.add(store);
+        }
+        return storesByName;
     }
 
     @Override
@@ -98,63 +121,102 @@ public abstract class AbstractMergeRunnable<Store, MergingItem> implements Runna
 
     private int mergeWithSplitBrainMergePolicy() {
         int mergedCount = 0;
-        for (Map.Entry<String, Collection<Store>> entry : collectedStores.entrySet()) {
+        Iterator<Map.Entry<String, Collection<Store>>> iterator = mergingStoresByName.entrySet().iterator();
+        while (iterator.hasNext()) {
+            Map.Entry<String, Collection<Store>> entry = iterator.next();
+
             String dataStructureName = entry.getKey();
-            Collection<Store> recordStores = entry.getValue();
+            Collection<Store> stores = entry.getValue();
 
-            SplitBrainMergePolicy mergePolicy = ((SplitBrainMergePolicy) getMergePolicy(dataStructureName));
-            if (!isClusterVersion310OrLater(dataStructureName, mergePolicy)) {
-                continue;
+            if (getMergePolicy(dataStructureName) instanceof SplitBrainMergePolicy) {
+                if (canMerge(dataStructureName)) {
+                    MergingItemBiConsumer consumer = newConsumer(dataStructureName);
+                    for (Store store : stores) {
+                        try {
+                            mergeStore(store, consumer);
+                            consumer.consumeRemaining();
+                        } finally {
+                            asyncDestroyStores(singleton(store));
+                        }
+                    }
+                    mergedCount += consumer.mergedCount;
+                    onMerge(dataStructureName);
+                } else {
+                    asyncDestroyStores(stores);
+                }
+                iterator.remove();
             }
-
-            int batchSize = getBatchSize(dataStructureName);
-            MergingItemBiConsumer consumer = new MergingItemBiConsumer(dataStructureName, mergePolicy, batchSize);
-
-            for (Store recordStore : recordStores) {
-                consumeStore(recordStore, consumer);
-            }
-
-            consumer.consumeRemaining();
-
-            mergedCount += consumer.mergedCount;
         }
         return mergedCount;
     }
 
-    private boolean isClusterVersion310OrLater(String dataStructureName, SplitBrainMergePolicy policy) {
-        Version v310 = V3_10;
+    /**
+     * Check if data structure can use {@link SplitBrainMergePolicy}
+     */
+    private boolean canMerge(String dataStructureName) {
         Version currentVersion = clusterService.getClusterVersion();
-
-        if (currentVersion.isGreaterOrEqual(v310)) {
+        if (currentVersion.isGreaterOrEqual(V3_10)) {
             return true;
         }
         // RU_COMPAT_3_9
-        String msg = "Cannot merge '%s' with merge policy '%s'."
-                + " Cluster version should be %s or later but found %s";
-        logger.info(format(msg, dataStructureName, policy, v310, currentVersion));
-
+        String msg = "Cannot merge '%s' with merge policy '%s'. Cluster version should be %s or later but found %s";
+        logger.info(format(msg, dataStructureName, getMergePolicy(dataStructureName), V3_10, currentVersion));
         return false;
+    }
+
+    private MergingItemBiConsumer newConsumer(String dataStructureName) {
+        SplitBrainMergePolicy<V, MergingItem> policy = getSplitBrainMergePolicy(dataStructureName);
+        int batchSize = getBatchSize(dataStructureName);
+        return new MergingItemBiConsumer(dataStructureName, policy, batchSize);
+    }
+
+    @SuppressWarnings("unchecked")
+    private SplitBrainMergePolicy<V, MergingItem> getSplitBrainMergePolicy(String dataStructureName) {
+        return ((SplitBrainMergePolicy<V, MergingItem>) getMergePolicy(dataStructureName));
     }
 
     private int mergeWithLegacyMergePolicy() {
         LegacyOperationBiConsumer consumer = new LegacyOperationBiConsumer();
 
-        for (Map.Entry<String, Collection<Store>> entry : collectedStoresWithLegacyPolicies.entrySet()) {
-            String dataStructureName = entry.getKey();
+        Iterator<Map.Entry<String, Collection<Store>>> iterator = mergingStoresByName.entrySet().iterator();
+        while (iterator.hasNext()) {
+            try {
+                Map.Entry<String, Collection<Store>> entry = iterator.next();
 
-            if (checkMergePolicySupportsInMemoryFormat(dataStructureName,
-                    getMergePolicy(dataStructureName).getClass().getName(),
-                    getInMemoryFormat(dataStructureName),
-                    clusterService.getClusterVersion(), false, logger)) {
+                String dataStructureName = entry.getKey();
+                Collection<Store> stores = entry.getValue();
 
-                Collection<Store> recordStores = entry.getValue();
-                for (Store recordStore : recordStores) {
-                    consumeStoreLegacy(recordStore, consumer);
+                if (canMergeLegacy(dataStructureName)) {
+                    for (Store store : stores) {
+                        try {
+                            mergeStoreLegacy(store, consumer);
+                        } finally {
+                            asyncDestroyStores(singleton(store));
+                        }
+                    }
+                    onMerge(dataStructureName);
+                } else {
+                    asyncDestroyStores(stores);
                 }
+            } finally {
+                iterator.remove();
             }
         }
 
         return consumer.mergedCount;
+    }
+
+    /**
+     * Check if data structures in-memory-format appropriate to merge
+     * with legacy policies
+     */
+    private boolean canMergeLegacy(String dataStructureName) {
+        Object mergePolicy = getMergePolicy(dataStructureName);
+        InMemoryFormat inMemoryFormat = getInMemoryFormat(dataStructureName);
+        Version clusterVersion = clusterService.getClusterVersion();
+
+        return checkMergePolicySupportsInMemoryFormat(dataStructureName,
+                mergePolicy, inMemoryFormat, clusterVersion, false, logger);
     }
 
     private void waitMergeEnd(int mergedCount) {
@@ -170,7 +232,7 @@ public abstract class AbstractMergeRunnable<Store, MergingItem> implements Runna
     }
 
     /**
-     * Consumer to use when a {@link SplitBrainMergePolicy} type is used
+     * Consumer for {@link SplitBrainMergePolicy}.
      */
     private class MergingItemBiConsumer implements BiConsumer<Integer, MergingItem> {
 
@@ -179,13 +241,13 @@ public abstract class AbstractMergeRunnable<Store, MergingItem> implements Runna
         private final String dataStructureName;
         private final Address[] addresses;
         private final MutableLong[] counterPerMember;
-        private final SplitBrainMergePolicy mergePolicy;
+        private final SplitBrainMergePolicy<V, MergingItem> mergePolicy;
         private final List<MergingItem>[] mergingItemsPerPartition;
         private final Map<Address, List<Integer>> memberPartitionsMap;
 
         private int mergedCount;
 
-        MergingItemBiConsumer(String dataStructureName, SplitBrainMergePolicy mergePolicy, int batchSize) {
+        MergingItemBiConsumer(String dataStructureName, SplitBrainMergePolicy<V, MergingItem> mergePolicy, int batchSize) {
             this.dataStructureName = dataStructureName;
             this.batchSize = batchSize;
             this.mergePolicy = mergePolicy;
@@ -239,9 +301,8 @@ public abstract class AbstractMergeRunnable<Store, MergingItem> implements Runna
             }
         }
 
-        private void sendBatch(String dataStructureName, List<Integer> memberPartitions,
-                               List<MergingItem>[] entriesPerPartition,
-                               SplitBrainMergePolicy mergePolicy) {
+        private void sendBatch(String dataStructureName, List<Integer> memberPartitions, List<MergingItem>[] entriesPerPartition,
+                               SplitBrainMergePolicy<V, MergingItem> mergePolicy) {
             int size = memberPartitions.size();
             int[] partitions = new int[size];
             int index = 0;
@@ -276,11 +337,10 @@ public abstract class AbstractMergeRunnable<Store, MergingItem> implements Runna
             sendMergingData(dataStructureName, mergePolicy, partitions, entries, totalSize);
         }
 
-        private void sendMergingData(String dataStructureName, SplitBrainMergePolicy mergePolicy,
+        private void sendMergingData(String dataStructureName, SplitBrainMergePolicy<V, MergingItem> mergePolicy,
                                      int[] partitions, List<MergingItem>[] entries, int totalSize) {
             try {
-                OperationFactory factory
-                        = createMergeOperationFactory(dataStructureName, mergePolicy, partitions, entries);
+                OperationFactory factory = createMergeOperationFactory(dataStructureName, mergePolicy, partitions, entries);
                 operationService.invokeOnPartitions(serviceName, factory, partitions);
             } catch (Throwable t) {
                 logger.warning("Error while running merge operation: " + t.getMessage());
@@ -292,7 +352,7 @@ public abstract class AbstractMergeRunnable<Store, MergingItem> implements Runna
     }
 
     /**
-     * Consumer to use with legacy merge operations.
+     * Consumer for legacy merge operations.
      */
     private class LegacyOperationBiConsumer implements BiConsumer<Integer, Operation> {
 
@@ -324,19 +384,6 @@ public abstract class AbstractMergeRunnable<Store, MergingItem> implements Runna
         }
     }
 
-    @Override
-    public final void dispose() {
-        for (Collection<Store> stores : collectedStores.values()) {
-            destroyStores(stores);
-        }
-
-        for (Collection<Store> stores : collectedStoresWithLegacyPolicies.values()) {
-            destroyStores(stores);
-        }
-
-        destroyStores(backupStores);
-    }
-
     protected InternalSerializationService getSerializationService() {
         return serializationService;
     }
@@ -345,25 +392,33 @@ public abstract class AbstractMergeRunnable<Store, MergingItem> implements Runna
         return serializationService.toData(object);
     }
 
-    /**
-     * Destroy a collection of stores
-     */
-    protected abstract void destroyStores(Collection<Store> stores);
+    protected Data toHeapData(Object object) {
+        return serializationService.toData(object, DataType.HEAP);
+    }
+
+    private void asyncDestroyStores(Collection<Store> stores) {
+        for (Store store : stores) {
+            splitBrainHandlerService.asyncDestroyStores(singleton(store), getPartitionId(store));
+        }
+    }
+
+    protected void onMerge(String dataStructureName) {
+        // override to take action on merge
+    }
 
     /**
-     * Use to merge with policies which are a type of {@link SplitBrainMergePolicy}
+     * Used to merge with {@link SplitBrainMergePolicy}.
      */
-    protected abstract void consumeStore(Store recordStore, BiConsumer<Integer, MergingItem> consumer);
+    protected abstract void mergeStore(Store recordStore, BiConsumer<Integer, MergingItem> consumer);
 
     /**
-     * Use to merge with legacy merge policies
+     * Used to merge with legacy merge policies.
      */
-    protected abstract void consumeStoreLegacy(Store recordStore, BiConsumer<Integer, Operation> consumer);
+    protected abstract void mergeStoreLegacy(Store recordStore, BiConsumer<Integer, Operation> consumer);
 
     /**
-     * This batch size can only be used when merge policy is
-     * a type of {@link SplitBrainMergePolicy}, legacy merge policies
-     * don't support batch data sending.
+     * This batch size can only be used with {@link SplitBrainMergePolicy},
+     * legacy merge policies don't support batch data sending.
      *
      * @return batch size from {@link com.hazelcast.config.MergePolicyConfig}
      */
@@ -374,19 +429,22 @@ public abstract class AbstractMergeRunnable<Store, MergingItem> implements Runna
      */
     protected abstract Object getMergePolicy(String dataStructureName);
 
+    protected abstract String getDataStructureName(Store store);
+
+    protected abstract int getPartitionId(Store store);
+
     /**
      * @return in memory format of data structure
      */
     protected abstract InMemoryFormat getInMemoryFormat(String dataStructureName);
 
     /**
-     * Returned {@link OperationFactory} is used for
-     * {@link SplitBrainMergePolicy} types, legacy ones don't use this method.
+     * Returns an {@link OperationFactory} for {@link SplitBrainMergePolicy},
+     * legacy merge policies don't use this method.
      *
      * @return a new operation factory
      */
     protected abstract OperationFactory createMergeOperationFactory(String dataStructureName,
-                                                                    SplitBrainMergePolicy mergePolicy,
-                                                                    int[] partitions,
-                                                                    List<MergingItem>[] entries);
+                                                                    SplitBrainMergePolicy<V, MergingItem> mergePolicy,
+                                                                    int[] partitions, List<MergingItem>[] entries);
 }

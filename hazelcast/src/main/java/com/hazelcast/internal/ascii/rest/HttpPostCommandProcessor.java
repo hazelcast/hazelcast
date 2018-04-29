@@ -567,6 +567,9 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
     private boolean checkCredentials(HttpPostCommand command) throws UnsupportedEncodingException {
         byte[] data = command.getData();
         final String[] strList = bytesToString(data).split("&");
+        if (strList.length < 2) {
+            return false;
+        }
         final String groupName = URLDecoder.decode(strList[0], "UTF-8");
         final String groupPass = URLDecoder.decode(strList[1], "UTF-8");
         final GroupConfig groupConfig = textCommandService.getNode().getConfig().getGroupConfig();

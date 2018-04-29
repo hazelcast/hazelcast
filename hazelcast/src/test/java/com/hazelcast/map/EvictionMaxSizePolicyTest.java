@@ -65,7 +65,6 @@ import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
@@ -90,7 +89,7 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
         int perNodeMaxSize = 1000;
 
         // eviction takes place if a partitions size exceeds this number
-        // see EvictionChecker#translatePerNodeSizeToRecordStoreSize
+        // see EvictionChecker#translatePerNodeSizeToPartitionSize
         double maxPartitionSize = 1D * nodeCount * perNodeMaxSize / PARTITION_COUNT;
 
         String mapName = "testPerNodePolicy_afterGracefulShutdown";
@@ -113,12 +112,33 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
                 int mapSize = node.getMap(mapName).size();
                 String message = format("map size is %d and it should be smaller "
                                 + "than maxPartitionSize * PARTITION_COUNT which is %.0f",
-                        mapSize,  maxPartitionSize * PARTITION_COUNT);
-
-                System.err.println(message);
+                        mapSize, maxPartitionSize * PARTITION_COUNT);
 
                 assertTrue(message, mapSize <= maxPartitionSize * PARTITION_COUNT);
             }
+        }
+    }
+
+    /**
+     * Eviction starts if a partitions' size exceeds this number:
+     *
+     * double maxPartitionSize = 1D * nodeCount * perNodeMaxSize / PARTITION_COUNT;
+     *
+     * when calculated `maxPartitionSize` is under 1, we should forcibly set it
+     * to 1, otherwise all puts will immediately be removed by eviction.
+     */
+    @Test
+    public void testPerNodePolicy_does_not_cause_unexpected_eviction_when_translated_partition_size_under_one() {
+        String mapName = randomMapName();
+        int maxSize = PARTITION_COUNT / 2;
+        Config config = createConfig(PER_NODE, maxSize, mapName);
+        HazelcastInstance node = createHazelcastInstance(config);
+        IMap map = node.getMap(mapName);
+
+        for (int i = 0; i < PARTITION_COUNT; i++) {
+            String keyForPartition = generateKeyForPartition(node, i);
+            map.put(keyForPartition, i);
+            assertEquals(i, map.get(keyForPartition));
         }
     }
 

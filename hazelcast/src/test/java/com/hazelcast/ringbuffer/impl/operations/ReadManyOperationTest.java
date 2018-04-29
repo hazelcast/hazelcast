@@ -20,13 +20,11 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IFunction;
-import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.ringbuffer.StaleSequenceException;
 import com.hazelcast.ringbuffer.impl.ReadResultSetImpl;
 import com.hazelcast.ringbuffer.impl.RingbufferContainer;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
-import com.hazelcast.ringbuffer.impl.client.PortableReadResultSet;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -274,29 +272,6 @@ public class ReadManyOperationTest extends HazelcastTestSupport {
         assertEquals(startSequence + 3, op.sequence);
         assertEquals(asList("item1", "item2", "item3"), response);
         assertEquals(3, response.readCount());
-    }
-
-    @Test
-    public void whenEnoughItemsAvailableAndReturnPortable() throws Exception {
-        long startSequence = ringbuffer.tailSequence() + 1;
-        final ReadManyOperation<String> op = new ReadManyOperation<String>(ringbuffer.getName(), startSequence, 1, 3, null, true);
-        op.setPartitionId(ringbufferService.getRingbufferPartitionId(ringbuffer.getName()));
-        op.setNodeEngine(nodeEngine);
-
-        ringbuffer.add("item1");
-        ringbuffer.add("item2");
-        ringbuffer.add("item3");
-        ringbuffer.add("item4");
-        ringbuffer.add("item5");
-
-        assertFalse(op.shouldWait());
-        HeapData response = assertInstanceOf(HeapData.class, op.getResponse());
-        PortableReadResultSet readResultSet = serializationService.toObject(response);
-        assertEquals(startSequence + 3, op.sequence);
-        assertEquals(3, readResultSet.readCount());
-        assertEquals(3, readResultSet.getDataItems().size());
-        readResultSet.setSerializationService(serializationService);
-        assertIterableEquals(readResultSet, "item1", "item2", "item3");
     }
 
     private ReadResultSetImpl getReadResultSet(ReadManyOperation op) {

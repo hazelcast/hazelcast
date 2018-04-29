@@ -47,10 +47,11 @@ public abstract class AbstractQueryCacheEndToEndConstructor implements QueryCach
     protected final SubscriberContext subscriberContext;
     protected final ILogger logger = Logger.getLogger(getClass());
 
-    protected Predicate predicate;
     protected boolean includeValue;
     protected InternalQueryCache queryCache;
-    protected String publisherListenerId;
+
+    private Predicate predicate;
+    private String publisherListenerId;
 
     public AbstractQueryCacheEndToEndConstructor(QueryCacheRequest request) {
         this.request = request;
@@ -70,18 +71,18 @@ public abstract class AbstractQueryCacheEndToEndConstructor implements QueryCach
      * Here order of method calls should not change.
      */
     @Override
-    public final InternalQueryCache createNew(String arg) {
+    public final InternalQueryCache createNew(String cacheId) {
         try {
-            QueryCacheConfig queryCacheConfig = initQueryCacheConfig(request);
+            QueryCacheConfig queryCacheConfig = initQueryCacheConfig(request, cacheId);
             if (queryCacheConfig == null) {
                 return NULL_QUERY_CACHE;
             }
-            queryCache = createUnderlyingQueryCache(request);
+            queryCache = createUnderlyingQueryCache(request, cacheId);
             // this is users listener which can be given as a parameter
             // when calling `IMap.getQueryCache` method
-            addListener(request);
+            addListener(mapName, cacheId);
 
-            AccumulatorInfo info = createAccumulatorInfo(queryCacheConfig, mapName, request.getCacheId(), predicate);
+            AccumulatorInfo info = createAccumulatorInfo(queryCacheConfig, mapName, cacheId, predicate);
             addInfoToSubscriberContext(info);
 
             info.setPublishable(true);
@@ -102,10 +103,10 @@ public abstract class AbstractQueryCacheEndToEndConstructor implements QueryCach
     /**
      * This is the cache which we store all key-value pairs.
      */
-    private InternalQueryCache createUnderlyingQueryCache(QueryCacheRequest request) {
+    private InternalQueryCache createUnderlyingQueryCache(QueryCacheRequest request, String cacheId) {
         SubscriberContext subscriberContext = context.getSubscriberContext();
         QueryCacheFactory queryCacheFactory = subscriberContext.getQueryCacheFactory();
-        return queryCacheFactory.create(request);
+        return queryCacheFactory.create(request, cacheId);
     }
 
     private void addInfoToSubscriberContext(AccumulatorInfo info) {
@@ -114,24 +115,20 @@ public abstract class AbstractQueryCacheEndToEndConstructor implements QueryCach
         accumulatorInfoSupplier.putIfAbsent(info.getMapName(), info.getCacheId(), info);
     }
 
-    private String addListener(QueryCacheRequest request) {
+    private String addListener(String mapName, String cacheId) {
         MapListener listener = request.getListener();
         if (listener == null) {
             return null;
         }
         QueryCacheEventService eventService = subscriberContext.getEventService();
-        return eventService.addListener(request.getMapName(), request.getCacheId(), listener);
-    }
-
-    public String getCacheName() {
-        return request.getCacheId();
+        return eventService.addListener(mapName, cacheId, listener);
     }
 
     protected Object toObject(Object data) {
         return context.toObject(data);
     }
 
-    protected QueryCacheConfig initQueryCacheConfig(QueryCacheRequest request) {
+    private QueryCacheConfig initQueryCacheConfig(QueryCacheRequest request, String cacheId) {
         Predicate predicate = request.getPredicate();
 
         QueryCacheConfig queryCacheConfig;
@@ -139,7 +136,7 @@ public abstract class AbstractQueryCacheEndToEndConstructor implements QueryCach
         if (predicate == null) {
             queryCacheConfig = getOrNullQueryCacheConfig(mapName, request.getCacheName());
         } else {
-            queryCacheConfig = getOrCreateQueryCacheConfig(mapName, request.getCacheName());
+            queryCacheConfig = getOrCreateQueryCacheConfig(mapName, request.getCacheName(), cacheId);
             queryCacheConfig.setIncludeValue(request.isIncludeValue());
             queryCacheConfig.getPredicateConfig().setImplementation(predicate);
         }
@@ -155,9 +152,9 @@ public abstract class AbstractQueryCacheEndToEndConstructor implements QueryCach
         return queryCacheConfig;
     }
 
-    private QueryCacheConfig getOrCreateQueryCacheConfig(String mapName, String cacheName) {
+    private QueryCacheConfig getOrCreateQueryCacheConfig(String mapName, String cacheName, String cacheId) {
         QueryCacheConfigurator queryCacheConfigurator = subscriberContext.geQueryCacheConfigurator();
-        return queryCacheConfigurator.getOrCreateConfiguration(mapName, cacheName);
+        return queryCacheConfigurator.getOrCreateConfiguration(mapName, cacheName, cacheId);
     }
 
     private QueryCacheConfig getOrNullQueryCacheConfig(String mapName, String cacheName) {

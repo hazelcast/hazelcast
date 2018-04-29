@@ -33,11 +33,12 @@ import com.hazelcast.topic.ReliableMessageListener;
 
 
 /**
- * An {@link com.hazelcast.core.ExecutionCallback} that will try to read an item from the ringbuffer or blocks
- * if no item is available. All data that are read is pushed into the {@link com.hazelcast.core.MessageListener}. It is
- * a self-perpetuating stream of async calls.
+ * An {@link com.hazelcast.core.ExecutionCallback} that will try to read an
+ * item from the ringbuffer or blocks if no item is available. All data
+ * that are read is pushed into the {@link com.hazelcast.core.MessageListener}.
+ * It is a self-perpetuating stream of async calls.
  * <p/>
- * The ReliableTopicRunner keeps track of the sequence.
+ * The runner keeps track of the sequence.
  */
 class ReliableMessageListenerRunner<E> implements ExecutionCallback<ReadResultSet<ReliableTopicMessage>> {
 
@@ -81,7 +82,8 @@ class ReliableMessageListenerRunner<E> implements ExecutionCallback<ReadResultSe
             return;
         }
 
-        ICompletableFuture<ReadResultSet<ReliableTopicMessage>> f = ringbuffer.readManyAsync(sequence, 1, batchSze, null);
+        ICompletableFuture<ReadResultSet<ReliableTopicMessage>> f =
+                ringbuffer.readManyAsync(sequence, 1, batchSze, null);
         f.andThen(this, proxy.executor);
     }
 
@@ -109,7 +111,6 @@ class ReliableMessageListenerRunner<E> implements ExecutionCallback<ReadResultSe
 
             sequence++;
         }
-
         next();
     }
 
@@ -138,23 +139,14 @@ class ReliableMessageListenerRunner<E> implements ExecutionCallback<ReadResultSe
             return;
         }
 
-        if (t instanceof StaleSequenceException) {
-            StaleSequenceException staleSequenceException = (StaleSequenceException) t;
-
-            if (listener.isLossTolerant()) {
-                if (logger.isFinestEnabled()) {
-                    logger.finest("MessageListener " + listener + " on topic: " + topicName + " ran into a stale sequence. "
-                            + "Jumping from oldSequence: " + sequence
-                            + " to sequence: " + staleSequenceException.getHeadSeq());
-                }
-                sequence = staleSequenceException.getHeadSeq();
-                next();
+        if (t instanceof IllegalArgumentException && listener.isLossTolerant()) {
+            if (handleIllegalArgumentException((IllegalArgumentException) t)) {
                 return;
             }
-
-            logger.warning("Terminating MessageListener:" + listener + " on topic: " + topicName + ". "
-                    + "Reason: The listener was too slow or the retention period of the message has been violated. "
-                    + "head: " + staleSequenceException.getHeadSeq() + " sequence:" + sequence);
+        } else if (t instanceof StaleSequenceException) {
+            if (handleStaleSequenceException((StaleSequenceException) t)) {
+                return;
+            }
         } else if (t instanceof HazelcastInstanceNotActiveException) {
             if (logger.isFinestEnabled()) {
                 logger.finest("Terminating MessageListener " + listener + " on topic: " + topicName + ". "
@@ -171,6 +163,54 @@ class ReliableMessageListenerRunner<E> implements ExecutionCallback<ReadResultSe
         }
 
         cancel();
+    }
+
+    /**
+     * Handles a {@link StaleSequenceException} associated with requesting
+     * a sequence older than the {@code headSequence}.
+     * This may indicate that the reader was too slow and items in the
+     * ringbuffer were already overwritten.
+     *
+     * @param staleSequenceException the exception
+     * @return if the exception was handled and the listener may continue reading
+     */
+    private boolean handleStaleSequenceException(StaleSequenceException staleSequenceException) {
+        if (listener.isLossTolerant()) {
+            if (logger.isFinestEnabled()) {
+                logger.finest("MessageListener " + listener + " on topic: " + topicName + " ran into a stale sequence. "
+                        + "Jumping from oldSequence: " + sequence
+                        + " to sequence: " + staleSequenceException.getHeadSeq());
+            }
+            sequence = staleSequenceException.getHeadSeq();
+            next();
+            return true;
+        }
+
+        logger.warning("Terminating MessageListener:" + listener + " on topic: " + topicName + ". "
+                + "Reason: The listener was too slow or the retention period of the message has been violated. "
+                + "head: " + staleSequenceException.getHeadSeq() + " sequence:" + sequence);
+        return false;
+    }
+
+    /**
+     * Handles the {@link IllegalArgumentException} associated with requesting
+     * a sequence larger than the {@code tailSequence + 1}.
+     * This may indicate that an entire partition or an entire ringbuffer was
+     * lost.
+     *
+     * @param t the exception
+     * @return if the exception was handled and the listener may continue reading
+     */
+    private boolean handleIllegalArgumentException(IllegalArgumentException t) {
+        final long currentHeadSequence = ringbuffer.headSequence();
+        if (logger.isFinestEnabled()) {
+            logger.finest(String.format("MessageListener %s on topic %s requested a too large sequence: %s. "
+                            + ". Jumping from old sequence: %s to sequence: %s",
+                    listener, topicName, t.getMessage(), sequence, currentHeadSequence));
+        }
+        this.sequence = currentHeadSequence;
+        next();
+        return true;
     }
 
     void cancel() {

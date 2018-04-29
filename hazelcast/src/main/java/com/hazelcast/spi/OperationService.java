@@ -25,9 +25,11 @@ import java.util.Map;
  * The OperationService is responsible for executing operations.
  * <p/>
  * A single operation can be executed locally using {@link #run(Operation)}
- * and {@link #execute(Operation)}. Or it can executed remotely using one of the send methods.
+ * and {@link #execute(Operation)}. Or it can executed remotely using one of
+ * the send methods.
  * <p/>
- * It also is possible to execute multiple operation on multiple partitions using one of the invoke methods.
+ * It also is possible to execute multiple operation on multiple partitions
+ * using one of the invoke methods.
  */
 public interface OperationService {
 
@@ -69,7 +71,8 @@ public interface OperationService {
      *
      * @param serviceName      the name of the service.
      * @param operationFactory the factory responsible for creating operations
-     * @return a Map with partitionId as key and the outcome of the operation as value.
+     * @return a Map with partitionId as key and the outcome of the operation
+     * as value.
      * @throws Exception
      */
     Map<Integer, Object> invokeOnAllPartitions(String serviceName, OperationFactory operationFactory)
@@ -83,7 +86,8 @@ public interface OperationService {
      * @param serviceName      the name of the service
      * @param operationFactory the factory responsible for creating operations
      * @param partitions       the partitions the operation should be executed on.
-     * @return a Map with partitionId as key and the outcome of the operation as value.
+     * @return a Map with partitionId as key and the outcome of the operation as
+     * value.
      * @throws Exception
      */
     Map<Integer, Object> invokeOnPartitions(String serviceName, OperationFactory operationFactory,

@@ -96,7 +96,7 @@ public class SemaphoreContainer implements IdentifiedDataSerializable {
     }
 
     public boolean isAvailable(int permitCount) {
-        return available - permitCount >= 0;
+        return available > 0 && available - permitCount >= 0;
     }
 
     public boolean acquire(String owner, int permitCount) {
@@ -119,14 +119,27 @@ public class SemaphoreContainer implements IdentifiedDataSerializable {
         return drain;
     }
 
-    public boolean reduce(int permitCount) {
-        if (available == 0 || permitCount == 0) {
+    public boolean increase(int permitCount) {
+        if (permitCount == 0) {
             return false;
         }
-        available -= permitCount;
-        if (available < 0) {
-            available = 0;
+        int newAvailable = available + permitCount;
+        if (newAvailable < available) {
+            return false;
         }
+        available = newAvailable;
+        return true;
+    }
+
+    public boolean reduce(int permitCount) {
+        if (permitCount == 0) {
+            return false;
+        }
+        int newAvailable = available - permitCount;
+        if (newAvailable > available) {
+            return false;
+        }
+        available = newAvailable;
         return true;
     }
 

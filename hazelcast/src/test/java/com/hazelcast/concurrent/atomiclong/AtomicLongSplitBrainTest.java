@@ -22,11 +22,11 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.DiscardMergePolicy;
-import com.hazelcast.spi.merge.MergingValueHolder;
 import com.hazelcast.spi.merge.PassThroughMergePolicy;
 import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
+import com.hazelcast.spi.merge.SplitBrainMergeTypes.AtomicLongMergeTypes;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.SplitBrainTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -60,6 +60,8 @@ public class AtomicLongSplitBrainTest extends SplitBrainTestSupport {
                 {DiscardMergePolicy.class},
                 {PassThroughMergePolicy.class},
                 {PutIfAbsentMergePolicy.class},
+                {RemoveValuesMergePolicy.class},
+                {ReturnLongPiMergePolicy.class},
                 {MergeGreaterValueMergePolicy.class},
         });
     }
@@ -113,6 +115,10 @@ public class AtomicLongSplitBrainTest extends SplitBrainTestSupport {
             afterSplitPassThroughMergePolicy();
         } else if (mergePolicyClass == PutIfAbsentMergePolicy.class) {
             afterSplitPutIfAbsentMergePolicy();
+        } else if (mergePolicyClass == RemoveValuesMergePolicy.class) {
+            afterSplitRemoveValuesMergePolicy();
+        } else if (mergePolicyClass == ReturnLongPiMergePolicy.class) {
+            afterSplitReturnLongPiMergePolicy();
         } else if (mergePolicyClass == MergeGreaterValueMergePolicy.class) {
             afterSplitCustomMergePolicy();
         } else {
@@ -136,6 +142,10 @@ public class AtomicLongSplitBrainTest extends SplitBrainTestSupport {
             afterMergePassThroughMergePolicy();
         } else if (mergePolicyClass == PutIfAbsentMergePolicy.class) {
             afterMergePutIfAbsentMergePolicy();
+        } else if (mergePolicyClass == RemoveValuesMergePolicy.class) {
+            afterMergeRemoveValuesMergePolicy();
+        } else if (mergePolicyClass == ReturnLongPiMergePolicy.class) {
+            afterMergeReturnLongPiMergePolicy();
         } else if (mergePolicyClass == MergeGreaterValueMergePolicy.class) {
             afterMergeCustomMergePolicy();
         } else {
@@ -194,6 +204,40 @@ public class AtomicLongSplitBrainTest extends SplitBrainTestSupport {
         assertEquals(43, backupAtomicLongB.get());
     }
 
+    private void afterSplitRemoveValuesMergePolicy() {
+        atomicLongA1.set(23);
+
+        atomicLongA2.set(42);
+        atomicLongB2.set(43);
+    }
+
+    private void afterMergeRemoveValuesMergePolicy() {
+        assertEquals(0, atomicLongA1.get());
+        assertEquals(0, atomicLongA2.get());
+        assertEquals(0, backupAtomicLongA.get());
+
+        assertEquals(0, atomicLongB1.get());
+        assertEquals(0, atomicLongB2.get());
+        assertEquals(0, backupAtomicLongB.get());
+    }
+
+    private void afterSplitReturnLongPiMergePolicy() {
+        atomicLongA1.set(23);
+
+        atomicLongA2.set(42);
+        atomicLongB2.set(43);
+    }
+
+    private void afterMergeReturnLongPiMergePolicy() {
+        assertEquals(ReturnLongPiMergePolicy.LONG_PI, atomicLongA1.get());
+        assertEquals(ReturnLongPiMergePolicy.LONG_PI, atomicLongA2.get());
+        assertEquals(ReturnLongPiMergePolicy.LONG_PI, backupAtomicLongA.get());
+
+        assertEquals(ReturnLongPiMergePolicy.LONG_PI, atomicLongB1.get());
+        assertEquals(ReturnLongPiMergePolicy.LONG_PI, atomicLongB2.get());
+        assertEquals(ReturnLongPiMergePolicy.LONG_PI, backupAtomicLongB.get());
+    }
+
     private void afterSplitCustomMergePolicy() {
         atomicLongA1.set(23);
 
@@ -206,11 +250,29 @@ public class AtomicLongSplitBrainTest extends SplitBrainTestSupport {
         assertEquals(42, backupAtomicLongA.get());
     }
 
-    private static class MergeGreaterValueMergePolicy implements SplitBrainMergePolicy {
+    private static class ReturnLongPiMergePolicy implements SplitBrainMergePolicy<Long, AtomicLongMergeTypes> {
+
+        private static long LONG_PI = 31415L;
 
         @Override
-        public <T> T merge(MergingValueHolder<T> mergingValue, MergingValueHolder<T> existingValue) {
-            if ((Long) mergingValue.getValue() > (Long) existingValue.getValue()) {
+        public Long merge(AtomicLongMergeTypes mergingValue, AtomicLongMergeTypes existingValue) {
+            return LONG_PI;
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) {
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) {
+        }
+    }
+
+    private static class MergeGreaterValueMergePolicy implements SplitBrainMergePolicy<Long, AtomicLongMergeTypes> {
+
+        @Override
+        public Long merge(AtomicLongMergeTypes mergingValue, AtomicLongMergeTypes existingValue) {
+            if (mergingValue.getValue() > existingValue.getValue()) {
                 return mergingValue.getValue();
             }
             return existingValue.getValue();

@@ -16,6 +16,7 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.serialization.Data;
 
 import java.io.DataInput;
@@ -127,4 +128,9 @@ public interface ObjectDataInput extends DataInput, VersionAware {
      * @return ByteOrder BIG_ENDIAN or LITTLE_ENDIAN
      */
     ByteOrder getByteOrder();
+
+    /**
+     * @return serialization service for this object
+     */
+    InternalSerializationService getSerializationService();
 }

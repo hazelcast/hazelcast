@@ -77,6 +77,7 @@ public class SecureApplicationContextTest {
     public void testBasics() {
         assertNotNull(securityConfig);
         assertTrue(securityConfig.isEnabled());
+        assertTrue(securityConfig.getClientBlockUnmappedActions());
         assertNotNull(securityConfig.getClientLoginModuleConfigs());
         assertFalse(securityConfig.getClientLoginModuleConfigs().isEmpty());
         assertNotNull(securityConfig.getClientPermissionConfigs());

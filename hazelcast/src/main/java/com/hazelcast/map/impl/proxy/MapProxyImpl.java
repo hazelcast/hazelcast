@@ -26,7 +26,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.ManagedContext;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.internal.journal.EventJournalReader;
 import com.hazelcast.map.EntryProcessor;
@@ -71,7 +70,6 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.util.CollectionUtil;
 import com.hazelcast.util.IterationType;
-import com.hazelcast.util.UuidUtil;
 import com.hazelcast.util.executor.DelegatingFuture;
 
 import java.util.ArrayList;
@@ -87,7 +85,7 @@ import java.util.concurrent.TimeUnit;
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.map.impl.query.QueryResultUtils.transformToSet;
-import static com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequests.newQueryCacheRequest;
+import static com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequest.newQueryCacheRequest;
 import static com.hazelcast.util.MapUtil.createHashMap;
 import static com.hazelcast.util.Preconditions.checkNoNullInside;
 import static com.hazelcast.util.Preconditions.checkNotInstanceOf;
@@ -850,15 +848,11 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
      * @param predicate   the predicate which the entries must match. {@code null} value is not allowed
      * @param <R>         the return type
      * @return the iterator for the projected entries
-     * @throws UnsupportedOperationException when cluster version is less than {@link Versions#V3_9}
-     * @throws IllegalArgumentException      if the predicate is of type {@link PagingPredicate}
+     * @throws IllegalArgumentException if the predicate is of type {@link PagingPredicate}
      * @since 3.9
      */
     public <R> Iterator<R> iterator(int fetchSize, int partitionId, Projection<Map.Entry<K, V>, R> projection,
                                     Predicate<K, V> predicate) {
-        if (getNodeEngine().getClusterService().getClusterVersion().isLessThan(Versions.V3_9)) {
-            throw new UnsupportedOperationException("Iterate map by query is available when cluster version is 3.9 or higher");
-        }
         if (predicate instanceof PagingPredicate) {
             throw new IllegalArgumentException("Paging predicate is not allowed when iterating map by query");
         }
@@ -946,7 +940,6 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
 
         QueryCacheRequest request = newQueryCacheRequest()
                 .forMap(map)
-                .withCacheId(UuidUtil.newUnsecureUuidString())
                 .withCacheName(name)
                 .withListener(listener)
                 .withPredicate(predicate)
@@ -960,7 +953,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
         QueryCacheContext queryCacheContext = request.getContext();
         SubscriberContext subscriberContext = queryCacheContext.getSubscriberContext();
         QueryCacheEndToEndProvider queryCacheEndToEndProvider = subscriberContext.getEndToEndQueryCacheProvider();
-        return queryCacheEndToEndProvider.getOrCreateQueryCache(request.getMapName(), request.getCacheId(),
+        return queryCacheEndToEndProvider.getOrCreateQueryCache(request.getMapName(), request.getCacheName(),
                 new NodeQueryCacheEndToEndConstructor(request));
     }
 

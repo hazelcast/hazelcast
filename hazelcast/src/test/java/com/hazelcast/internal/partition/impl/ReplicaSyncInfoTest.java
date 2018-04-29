@@ -26,6 +26,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.test.HazelcastTestSupport.assumeDifferentHashCodes;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
@@ -79,6 +80,7 @@ public class ReplicaSyncInfoTest {
         assertEquals(replicaSyncInfo.hashCode(), replicaSyncInfoSameAttributes.hashCode());
         assertEquals(replicaSyncInfo.hashCode(), replicaSyncInfoOtherTarget.hashCode());
 
+        assumeDifferentHashCodes();
         assertNotEquals(replicaSyncInfo.hashCode(), replicaSyncInfoOtherPartitionId.hashCode());
         assertNotEquals(replicaSyncInfo.hashCode(), replicaSyncInfoOtherReplicaIndex.hashCode());
     }

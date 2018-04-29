@@ -15,7 +15,7 @@
  */
 
 /**
- * This package contains out-of-the-box split-brain merge policies.
+ * This package contains interfaces and classes of the split-brain merging SPI.
  *
  * @since 3.10
  */

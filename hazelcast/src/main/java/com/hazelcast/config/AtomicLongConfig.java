@@ -18,6 +18,7 @@ package com.hazelcast.config;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.spi.merge.SplitBrainMergeTypes;
 
 import java.io.IOException;
 
@@ -39,6 +40,11 @@ public class AtomicLongConfig extends AbstractBasicConfig<AtomicLongConfig> {
 
     public AtomicLongConfig(AtomicLongConfig config) {
         super(config);
+    }
+
+    @Override
+    public Class getProvidedMergeTypes() {
+        return SplitBrainMergeTypes.AtomicLongMergeTypes.class;
     }
 
     @Override

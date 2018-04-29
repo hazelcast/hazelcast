@@ -20,6 +20,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.SemaphoreAcquireCodec;
 import com.hazelcast.client.impl.protocol.codec.SemaphoreAvailablePermitsCodec;
 import com.hazelcast.client.impl.protocol.codec.SemaphoreDrainPermitsCodec;
+import com.hazelcast.client.impl.protocol.codec.SemaphoreIncreasePermitsCodec;
 import com.hazelcast.client.impl.protocol.codec.SemaphoreInitCodec;
 import com.hazelcast.client.impl.protocol.codec.SemaphoreReducePermitsCodec;
 import com.hazelcast.client.impl.protocol.codec.SemaphoreReleaseCodec;
@@ -85,6 +86,13 @@ public class ClientSemaphoreProxy extends PartitionSpecificClientProxy implement
     public void reducePermits(int reduction) {
         checkNegative(reduction);
         ClientMessage request = SemaphoreReducePermitsCodec.encodeRequest(name, reduction);
+        invokeOnPartition(request);
+    }
+
+    @Override
+    public void increasePermits(int increase) {
+        checkNegative(increase);
+        ClientMessage request = SemaphoreIncreasePermitsCodec.encodeRequest(name, increase);
         invokeOnPartition(request);
     }
 

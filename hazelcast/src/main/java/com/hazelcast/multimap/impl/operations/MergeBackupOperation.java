@@ -24,6 +24,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -33,11 +34,11 @@ import java.util.Map;
 import static com.hazelcast.util.MapUtil.createHashMap;
 
 /**
- * Contains multiple backup entries for split-brain healing with a {@link com.hazelcast.spi.SplitBrainMergePolicy}.
+ * Creates backups for merged {@link MultiMapRecord} after split-brain healing with a {@link SplitBrainMergePolicy}.
  *
  * @since 3.10
  */
-public class MergeBackupOperation extends MultiMapOperation implements BackupOperation {
+public class MergeBackupOperation extends AbstractMultiMapOperation implements BackupOperation {
 
     private Map<Data, Collection<MultiMapRecord>> backupEntries;
 
@@ -52,15 +53,19 @@ public class MergeBackupOperation extends MultiMapOperation implements BackupOpe
     @Override
     public void run() throws Exception {
         response = true;
-        MultiMapContainer container = getOrCreateContainer();
+        MultiMapContainer container = getOrCreateContainerWithoutAccess();
         for (Map.Entry<Data, Collection<MultiMapRecord>> entry : backupEntries.entrySet()) {
             Data key = entry.getKey();
             Collection<MultiMapRecord> value = entry.getValue();
-            MultiMapValue containerValue = container.getOrCreateMultiMapValue(key);
-            Collection<MultiMapRecord> collection = containerValue.getCollection(false);
-            collection.clear();
-            if (!collection.addAll(value)) {
-                response = false;
+            if (value.isEmpty()) {
+                container.remove(key, false);
+            } else {
+                MultiMapValue containerValue = container.getOrCreateMultiMapValue(key);
+                Collection<MultiMapRecord> collection = containerValue.getCollection(false);
+                collection.clear();
+                if (!collection.addAll(value)) {
+                    response = false;
+                }
             }
         }
     }

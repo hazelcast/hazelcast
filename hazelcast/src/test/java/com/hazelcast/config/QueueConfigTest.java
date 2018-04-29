@@ -27,6 +27,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.test.HazelcastTestSupport.assumeDifferentHashCodes;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
@@ -85,6 +86,7 @@ public class QueueConfigTest {
 
     @Test
     public void testEqualsAndHashCode() {
+        assumeDifferentHashCodes();
         EqualsVerifier.forClass(QueueConfig.class)
                 .allFieldsShouldBeUsedExcept("readOnly")
                 .suppress(Warning.NONFINAL_FIELDS, Warning.NULL_FIELDS)

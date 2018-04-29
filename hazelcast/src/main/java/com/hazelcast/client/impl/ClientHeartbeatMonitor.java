@@ -17,8 +17,10 @@
 package com.hazelcast.client.impl;
 
 import com.hazelcast.client.ClientEndpoint;
+import com.hazelcast.client.ClientEndpointManager;
 import com.hazelcast.client.ClientEngine;
 import com.hazelcast.core.ClientType;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.properties.GroupProperty;
@@ -37,17 +39,19 @@ public class ClientHeartbeatMonitor implements Runnable {
     private static final int HEART_BEAT_CHECK_INTERVAL_SECONDS = 10;
     private static final int DEFAULT_CLIENT_HEARTBEAT_TIMEOUT_SECONDS = 60;
 
-    private final ClientEndpointManagerImpl clientEndpointManager;
+    private final ClientEndpointManager clientEndpointManager;
     private final ClientEngine clientEngine;
     private final long heartbeatTimeoutSeconds;
     private final ExecutionService executionService;
+    private final ILogger logger;
 
-    public ClientHeartbeatMonitor(ClientEndpointManagerImpl endpointManager,
+    public ClientHeartbeatMonitor(ClientEndpointManager clientEndpointManager,
                                   ClientEngine clientEngine,
                                   ExecutionService executionService,
                                   HazelcastProperties hazelcastProperties) {
-        this.clientEndpointManager = endpointManager;
+        this.clientEndpointManager = clientEndpointManager;
         this.clientEngine = clientEngine;
+        this.logger = clientEngine.getLogger(ClientHeartbeatMonitor.class);
         this.executionService = executionService;
         this.heartbeatTimeoutSeconds = getHeartbeatTimeout(hazelcastProperties);
     }
@@ -68,15 +72,35 @@ public class ClientHeartbeatMonitor implements Runnable {
 
     @Override
     public void run() {
+        cleanupEndpointsWithDeadConnections();
+
         String memberUuid = clientEngine.getThisUuid();
-        for (ClientEndpoint ce : clientEndpointManager.getEndpoints()) {
-            ClientEndpointImpl clientEndpoint = (ClientEndpointImpl) ce;
+        for (ClientEndpoint clientEndpoint : clientEndpointManager.getEndpoints()) {
             monitor(memberUuid, clientEndpoint);
         }
     }
 
-    private void monitor(String memberUuid, ClientEndpointImpl clientEndpoint) {
-        if (clientEndpoint.isFirstConnection() && ClientType.CPP.equals(clientEndpoint.getClientType())) {
+    private void cleanupEndpointsWithDeadConnections() {
+        for (ClientEndpoint endpoint : clientEndpointManager.getEndpoints()) {
+            if (!endpoint.getConnection().isAlive()) {
+                //if connection is not alive, it means we come across an edge case.
+                //normally connection close should remove endpoint from client endpoint manager
+                //this means that connection.close happened before, authentication complete(endpoint registered to manager)
+                //therefore connection.close could not remove the endpoint.
+                //we will remove the endpoint here when detected.
+                if (logger.isFineEnabled()) {
+                    logger.fine("Cleaning up endpoints with dead connection " + endpoint);
+                }
+                clientEndpointManager.removeEndpoint(endpoint);
+            }
+        }
+
+    }
+
+    private void monitor(String memberUuid, ClientEndpoint clientEndpoint) {
+        // C++ client sends heartbeat over its non-owner connections
+        // For other client types, disregard non-owner connections for heartbeat monitoring purposes
+        if (clientEndpoint.isOwnerConnection() == ClientType.CPP.equals(clientEndpoint.getClientType())) {
             return;
         }
 

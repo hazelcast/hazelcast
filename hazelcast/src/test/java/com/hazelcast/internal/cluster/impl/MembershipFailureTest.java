@@ -44,7 +44,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.instance.TestUtil.terminateInstance;
 import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.EXPLICIT_SUSPICION;
@@ -53,6 +52,7 @@ import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.F_ID
 import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.HEARTBEAT;
 import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.HEARTBEAT_COMPLAINT;
 import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.MEMBER_INFO_UPDATE;
+import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.SPLIT_BRAIN_MERGE_VALIDATION;
 import static com.hazelcast.internal.cluster.impl.MembershipUpdateTest.assertMemberViewsAreSame;
 import static com.hazelcast.internal.cluster.impl.MembershipUpdateTest.getMemberMap;
 import static com.hazelcast.spi.properties.GroupProperty.HEARTBEAT_INTERVAL_SECONDS;
@@ -485,7 +485,7 @@ public class MembershipFailureTest extends HazelcastTestSupport {
     @Test
     public void slave_splits_and_eventually_merges_back() {
         Config config = new Config();
-        config.setProperty(MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "15")
+        config.setProperty(MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "5")
                 .setProperty(MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "5");
         final HazelcastInstance member1 = newHazelcastInstance(config);
         final HazelcastInstance member2 = newHazelcastInstance(config);
@@ -504,11 +504,19 @@ public class MembershipFailureTest extends HazelcastTestSupport {
             }
         });
 
+        // prevent heartbeats to member3 to prevent suspicion to be removed
+        dropOperationsBetween(member1, member3, F_ID, singletonList(HEARTBEAT));
+        dropOperationsBetween(member2, member3, F_ID, singletonList(HEARTBEAT));
+        dropOperationsFrom(member3, F_ID, singletonList(SPLIT_BRAIN_MERGE_VALIDATION));
         suspectMember(member3, member1);
         suspectMember(member3, member2);
         assertClusterSizeEventually(1, member3);
 
+        resetPacketFiltersFrom(member1);
+        resetPacketFiltersFrom(member2);
+        resetPacketFiltersFrom(member3);
         assertOpenEventually(mergeLatch);
+
         assertMemberViewsAreSame(getMemberMap(member1), getMemberMap(member3));
 
         assertTrueEventually(new AssertTask() {
@@ -649,11 +657,12 @@ public class MembershipFailureTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test_whenNodesStartedTerminatedConcurrently() throws InterruptedException {
+    public void test_whenNodesStartedTerminatedConcurrently() {
         newHazelcastInstance();
 
         for (int i = 0; i < 3; i++) {
             startInstancesConcurrently(4);
+            assertClusterSizeEventually(i + 5, getAllHazelcastInstances());
             terminateRandomInstancesConcurrently(3);
 
             HazelcastInstance[] instances = getAllHazelcastInstances().toArray(new HazelcastInstance[0]);
@@ -666,7 +675,7 @@ public class MembershipFailureTest extends HazelcastTestSupport {
         }
     }
 
-    private void startInstancesConcurrently(int count) throws InterruptedException {
+    private void startInstancesConcurrently(int count) {
         final CountDownLatch latch = new CountDownLatch(count);
         for (int i = 0; i < count; i++) {
             new Thread() {
@@ -676,10 +685,10 @@ public class MembershipFailureTest extends HazelcastTestSupport {
                 }
             }.start();
         }
-        assertTrue(latch.await(2, TimeUnit.MINUTES));
+        assertOpenEventually(latch);
     }
 
-    private void terminateRandomInstancesConcurrently(int count) throws InterruptedException {
+    private void terminateRandomInstancesConcurrently(int count) {
         List<HazelcastInstance> instances = new ArrayList<HazelcastInstance>(getAllHazelcastInstances());
         assertThat(instances.size(), greaterThanOrEqualTo(count));
 
@@ -695,7 +704,7 @@ public class MembershipFailureTest extends HazelcastTestSupport {
                 }
             }.start();
         }
-        assertTrue(latch.await(2, TimeUnit.MINUTES));
+        assertOpenEventually(latch);
     }
 
     HazelcastInstance newHazelcastInstance() {

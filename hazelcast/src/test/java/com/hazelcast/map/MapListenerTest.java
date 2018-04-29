@@ -42,10 +42,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.map.impl.event.MapEventPublisherImpl.LISTENER_WITH_PREDICATE_PRODUCES_NATURAL_EVENT_TYPES;
-import static com.hazelcast.spi.properties.GroupProperty.EVENT_THREAD_COUNT;
-import static com.hazelcast.spi.properties.GroupProperty.GENERIC_OPERATION_THREAD_COUNT;
-import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
-import static com.hazelcast.spi.properties.GroupProperty.PARTITION_OPERATION_THREAD_COUNT;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)

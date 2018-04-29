@@ -21,12 +21,12 @@ import com.hazelcast.nio.serialization.FieldType;
 
 public class FieldDefinitionImpl implements FieldDefinition {
 
-    int index;
-    String fieldName;
-    FieldType type;
-    int classId;
-    int factoryId;
-    int version;
+    private final int index;
+    private final String fieldName;
+    private final FieldType type;
+    private final int classId;
+    private final int factoryId;
+    private final int version;
 
     public FieldDefinitionImpl(int index, String fieldName, FieldType type, int version) {
         this(index, fieldName, type, 0, 0, version);

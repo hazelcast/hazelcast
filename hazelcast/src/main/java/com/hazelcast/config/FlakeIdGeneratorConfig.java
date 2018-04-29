@@ -61,6 +61,7 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable {
     private int prefetchCount = DEFAULT_PREFETCH_COUNT;
     private long prefetchValidityMillis = DEFAULT_PREFETCH_VALIDITY_MILLIS;
     private long idOffset;
+    private long nodeIdOffset;
     private boolean statisticsEnabled = true;
 
     private transient FlakeIdGeneratorConfigReadOnly readOnly;
@@ -81,6 +82,7 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable {
         this.prefetchCount = other.prefetchCount;
         this.prefetchValidityMillis = other.prefetchValidityMillis;
         this.idOffset = other.idOffset;
+        this.nodeIdOffset = other.nodeIdOffset;
         this.statisticsEnabled = other.statisticsEnabled;
     }
 
@@ -158,7 +160,7 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable {
      * @return this instance for fluent API
      */
     public FlakeIdGeneratorConfig setPrefetchValidityMillis(long prefetchValidityMs) {
-        checkNotNegative(prefetchValidityMs, "");
+        checkNotNegative(prefetchValidityMs, "prefetchValidityMs must be non negative");
         this.prefetchValidityMillis = prefetchValidityMs;
         return this;
     }
@@ -189,6 +191,30 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable {
      */
     public FlakeIdGeneratorConfig setIdOffset(long idOffset) {
         this.idOffset = idOffset;
+        return this;
+    }
+
+    /**
+     * @see #setNodeIdOffset(long)
+     */
+    public long getNodeIdOffset() {
+        return nodeIdOffset;
+    }
+
+    /**
+     * Sets the offset that will be added to the node ID assigned to cluster member for this generator.
+     * Might be useful in A/B deployment scenarios where you have cluster A which you want to upgrade.
+     * You create cluster B and for some time both will generate IDs and you want to have them unique.
+     * In this case, configure node ID offset for generators on cluster B.
+     *
+     * @see FlakeIdGenerator for the node id logic
+     *
+     * @param nodeIdOffset the value added to the node id
+     * @return this instance for fluent API
+     */
+    public FlakeIdGeneratorConfig setNodeIdOffset(long nodeIdOffset) {
+        checkNotNegative(nodeIdOffset, "node id offset must be non-negative");
+        this.nodeIdOffset = nodeIdOffset;
         return this;
     }
 
@@ -226,6 +252,7 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable {
         return prefetchCount == that.prefetchCount
                 && prefetchValidityMillis == that.prefetchValidityMillis
                 && idOffset == that.idOffset
+                && nodeIdOffset == that.nodeIdOffset
                 && (name != null ? name.equals(that.name) : that.name == null)
                 && statisticsEnabled == that.statisticsEnabled;
     }
@@ -242,6 +269,7 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable {
                 + ", prefetchCount=" + prefetchCount
                 + ", prefetchValidityMillis=" + prefetchValidityMillis
                 + ", idOffset=" + idOffset
+                + ", nodeIdOffset=" + nodeIdOffset
                 + ", statisticsEnabled=" + statisticsEnabled
                 + '}';
     }
@@ -262,6 +290,7 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable {
         out.writeInt(prefetchCount);
         out.writeLong(prefetchValidityMillis);
         out.writeLong(idOffset);
+        out.writeLong(nodeIdOffset);
         out.writeBoolean(statisticsEnabled);
     }
 
@@ -271,6 +300,7 @@ public class FlakeIdGeneratorConfig implements IdentifiedDataSerializable {
         prefetchCount = in.readInt();
         prefetchValidityMillis = in.readLong();
         idOffset = in.readLong();
+        nodeIdOffset = in.readLong();
         statisticsEnabled = in.readBoolean();
     }
 }

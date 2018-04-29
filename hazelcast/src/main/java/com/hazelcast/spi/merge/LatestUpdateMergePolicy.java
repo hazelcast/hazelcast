@@ -16,6 +16,7 @@
 
 package com.hazelcast.spi.merge;
 
+import com.hazelcast.spi.annotation.Beta;
 import com.hazelcast.spi.impl.merge.AbstractSplitBrainMergePolicy;
 import com.hazelcast.spi.impl.merge.SplitBrainDataSerializerHook;
 
@@ -25,26 +26,26 @@ import com.hazelcast.spi.impl.merge.SplitBrainDataSerializerHook;
  * <p>
  * <b>Note:</b> This policy can only be used if the clocks of the nodes are in sync.
  *
+ * @param <V> the type of the merged value
+ * @param <T> the type of the merging value
  * @since 3.10
  */
-public class LatestUpdateMergePolicy extends AbstractSplitBrainMergePolicy {
+@Beta
+public class LatestUpdateMergePolicy<V, T extends MergingLastUpdateTime<V>>
+        extends AbstractSplitBrainMergePolicy<V, T> {
 
     public LatestUpdateMergePolicy() {
     }
 
     @Override
-    public <V> V merge(MergingValueHolder<V> mergingValue, MergingValueHolder<V> existingValue) {
-        checkInstanceOf(mergingValue, LastUpdateTimeHolder.class);
-        checkInstanceOf(existingValue, LastUpdateTimeHolder.class);
+    public V merge(T mergingValue, T existingValue) {
         if (mergingValue == null) {
             return existingValue.getValue();
         }
         if (existingValue == null) {
             return mergingValue.getValue();
         }
-        LastUpdateTimeHolder merging = (LastUpdateTimeHolder) mergingValue;
-        LastUpdateTimeHolder existing = (LastUpdateTimeHolder) existingValue;
-        if (merging.getLastUpdateTime() >= existing.getLastUpdateTime()) {
+        if (mergingValue.getLastUpdateTime() >= existingValue.getLastUpdateTime()) {
             return mergingValue.getValue();
         }
         return existingValue.getValue();

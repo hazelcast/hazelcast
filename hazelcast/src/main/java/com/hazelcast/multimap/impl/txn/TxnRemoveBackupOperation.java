@@ -20,7 +20,7 @@ import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
 import com.hazelcast.multimap.impl.MultiMapRecord;
 import com.hazelcast.multimap.impl.MultiMapValue;
-import com.hazelcast.multimap.impl.operations.MultiMapKeyBasedOperation;
+import com.hazelcast.multimap.impl.operations.AbstractKeyBasedMultiMapOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -30,10 +30,10 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Iterator;
 
-public class TxnRemoveBackupOperation extends MultiMapKeyBasedOperation implements BackupOperation {
+public class TxnRemoveBackupOperation extends AbstractKeyBasedMultiMapOperation implements BackupOperation {
 
-    long recordId;
-    Data value;
+    private long recordId;
+    private Data value;
 
     public TxnRemoveBackupOperation() {
     }
@@ -46,13 +46,13 @@ public class TxnRemoveBackupOperation extends MultiMapKeyBasedOperation implemen
 
     @Override
     public void run() throws Exception {
-        MultiMapContainer container = getOrCreateContainer();
+        MultiMapContainer container = getOrCreateContainerWithoutAccess();
         MultiMapValue multiMapValue = container.getMultiMapValueOrNull(dataKey);
-        response = true;
         if (multiMapValue == null || !multiMapValue.containsRecordId(recordId)) {
             response = false;
             return;
         }
+        response = true;
         Collection<MultiMapRecord> coll = multiMapValue.getCollection(false);
         Iterator<MultiMapRecord> iterator = coll.iterator();
         while (iterator.hasNext()) {
@@ -62,7 +62,7 @@ public class TxnRemoveBackupOperation extends MultiMapKeyBasedOperation implemen
             }
         }
         if (coll.isEmpty()) {
-            delete();
+            container.delete(dataKey);
         }
     }
 

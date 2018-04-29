@@ -27,8 +27,8 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
-import com.hazelcast.spi.SplitBrainMergePolicy;
-import com.hazelcast.spi.merge.MergingEntryHolder;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
+import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -45,8 +45,8 @@ import static com.hazelcast.map.impl.record.Records.buildRecordInfo;
  */
 public class MergeOperation extends MapOperation implements PartitionAwareOperation, BackupAwareOperation {
 
-    private List<MergingEntryHolder<Data, Data>> mergingEntries;
-    private SplitBrainMergePolicy mergePolicy;
+    private List<MapMergeTypes> mergingEntries;
+    private SplitBrainMergePolicy<Data, MapMergeTypes> mergePolicy;
     private boolean disableWanReplicationEvent;
 
     private transient boolean hasMapListener;
@@ -62,7 +62,7 @@ public class MergeOperation extends MapOperation implements PartitionAwareOperat
     public MergeOperation() {
     }
 
-    MergeOperation(String name, List<MergingEntryHolder<Data, Data>> mergingEntries, SplitBrainMergePolicy mergePolicy,
+    MergeOperation(String name, List<MapMergeTypes> mergingEntries, SplitBrainMergePolicy<Data, MapMergeTypes> mergePolicy,
                    boolean disableWanReplicationEvent) {
         super(name);
         this.mergingEntries = mergingEntries;
@@ -85,12 +85,12 @@ public class MergeOperation extends MapOperation implements PartitionAwareOperat
             invalidationKeys = new ArrayList<Data>(mergingEntries.size());
         }
 
-        for (MergingEntryHolder<Data, Data> mergingEntry : mergingEntries) {
+        for (MapMergeTypes mergingEntry : mergingEntries) {
             merge(mergingEntry);
         }
     }
 
-    private void merge(MergingEntryHolder<Data, Data> mergingEntry) {
+    private void merge(MapMergeTypes mergingEntry) {
         Data dataKey = mergingEntry.getKey();
         Data oldValue = hasMapListener ? getValue(dataKey) : null;
 
@@ -170,7 +170,7 @@ public class MergeOperation extends MapOperation implements PartitionAwareOperat
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeInt(mergingEntries.size());
-        for (MergingEntryHolder<Data, Data> mergingEntry : mergingEntries) {
+        for (MapMergeTypes mergingEntry : mergingEntries) {
             out.writeObject(mergingEntry);
         }
         out.writeObject(mergePolicy);
@@ -181,9 +181,9 @@ public class MergeOperation extends MapOperation implements PartitionAwareOperat
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         int size = in.readInt();
-        mergingEntries = new ArrayList<MergingEntryHolder<Data, Data>>();
+        mergingEntries = new ArrayList<MapMergeTypes>(size);
         for (int i = 0; i < size; i++) {
-            MergingEntryHolder<Data, Data> mergingEntry = in.readObject();
+            MapMergeTypes mergingEntry = in.readObject();
             mergingEntries.add(mergingEntry);
         }
         mergePolicy = in.readObject();

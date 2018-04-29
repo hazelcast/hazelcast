@@ -20,11 +20,12 @@ import com.hazelcast.cardinality.impl.CardinalityEstimatorDataSerializerHook;
 import com.hazelcast.cardinality.impl.hyperloglog.HyperLogLog;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 
 import java.io.IOException;
 
 /**
- * Contains a backup {@link HyperLogLog} for split-brain healing with a {@link com.hazelcast.spi.SplitBrainMergePolicy}.
+ * Contains a backup {@link HyperLogLog} for split-brain healing with a {@link SplitBrainMergePolicy}.
  *
  * @since 3.10
  */

@@ -26,6 +26,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.test.HazelcastTestSupport.assumeDifferentHashCodes;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 
@@ -79,6 +80,7 @@ public class ClusterStateChangeTest {
         assertEquals(clusterStateChange.hashCode(), clusterStateChange.hashCode());
         assertEquals(clusterStateChange.hashCode(), clusterStateChangeSameAttributes.hashCode());
 
+        assumeDifferentHashCodes();
         assertNotEquals(clusterStateChange.hashCode(), clusterStateChangeOtherType.hashCode());
         assertNotEquals(clusterStateChange.hashCode(), clusterStateChangeOtherNewState.hashCode());
     }

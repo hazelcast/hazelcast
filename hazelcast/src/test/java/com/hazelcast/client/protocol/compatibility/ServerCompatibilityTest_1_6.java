@@ -364,6 +364,20 @@ public class ServerCompatibilityTest_1_6 {
      int length = inputStream.readInt();
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
+    ClientCreateProxiesCodec.RequestParameters params = ClientCreateProxiesCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
+                assertTrue(isEqual(aListOfStringToString, params.proxies));
+}
+{
+    ClientMessage clientMessage = ClientCreateProxiesCodec.encodeResponse( );
+    int length = inputStream.readInt();
+    byte[] bytes = new byte[length];
+    inputStream.read(bytes);
+    assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
+}
+{
+     int length = inputStream.readInt();
+        byte[] bytes = new byte[length];
+        inputStream.read(bytes);
     MapPutCodec.RequestParameters params = MapPutCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
                 assertTrue(isEqual(aString, params.name));
                 assertTrue(isEqual(aData, params.key));
@@ -3650,6 +3664,21 @@ public class ServerCompatibilityTest_1_6 {
      int length = inputStream.readInt();
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
+    SemaphoreIncreasePermitsCodec.RequestParameters params = SemaphoreIncreasePermitsCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
+                assertTrue(isEqual(aString, params.name));
+                assertTrue(isEqual(anInt, params.increase));
+}
+{
+    ClientMessage clientMessage = SemaphoreIncreasePermitsCodec.encodeResponse( );
+    int length = inputStream.readInt();
+    byte[] bytes = new byte[length];
+    inputStream.read(bytes);
+    assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
+}
+{
+     int length = inputStream.readInt();
+        byte[] bytes = new byte[length];
+        inputStream.read(bytes);
     ReplicatedMapPutCodec.RequestParameters params = ReplicatedMapPutCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
                 assertTrue(isEqual(aString, params.name));
                 assertTrue(isEqual(aData, params.key));
@@ -4400,6 +4429,23 @@ public class ServerCompatibilityTest_1_6 {
 }
 {
     ClientMessage clientMessage = TransactionalMapValuesWithPredicateCodec.encodeResponse(    datas   );
+    int length = inputStream.readInt();
+    byte[] bytes = new byte[length];
+    inputStream.read(bytes);
+    assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
+}
+{
+     int length = inputStream.readInt();
+        byte[] bytes = new byte[length];
+        inputStream.read(bytes);
+    TransactionalMapContainsValueCodec.RequestParameters params = TransactionalMapContainsValueCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
+                assertTrue(isEqual(aString, params.name));
+                assertTrue(isEqual(aString, params.txnId));
+                assertTrue(isEqual(aLong, params.threadId));
+                assertTrue(isEqual(aData, params.value));
+}
+{
+    ClientMessage clientMessage = TransactionalMapContainsValueCodec.encodeResponse(    aBoolean   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
@@ -5887,7 +5933,7 @@ public class ServerCompatibilityTest_1_6 {
                 assertTrue(isEqual(aString, params.taskName));
 }
 {
-    ClientMessage clientMessage = ScheduledExecutorGetStatsFromPartitionCodec.encodeResponse(    aLong ,    aLong ,    aLong ,    aLong   );
+    ClientMessage clientMessage = ScheduledExecutorGetStatsFromPartitionCodec.encodeResponse(    aLong ,    aLong ,    aLong ,    aLong ,    aLong   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
@@ -5903,7 +5949,7 @@ public class ServerCompatibilityTest_1_6 {
                 assertTrue(isEqual(anAddress, params.address));
 }
 {
-    ClientMessage clientMessage = ScheduledExecutorGetStatsFromAddressCodec.encodeResponse(    aLong ,    aLong ,    aLong ,    aLong   );
+    ClientMessage clientMessage = ScheduledExecutorGetStatsFromAddressCodec.encodeResponse(    aLong ,    aLong ,    aLong ,    aLong ,    aLong   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
@@ -6482,6 +6528,7 @@ public class ServerCompatibilityTest_1_6 {
                 assertTrue(isEqual(aLong, params.prefetchValidity));
                 assertTrue(isEqual(aLong, params.idOffset));
                 assertTrue(isEqual(aBoolean, params.statisticsEnabled));
+                assertTrue(isEqual(aLong, params.nodeIdOffset));
 }
 {
     ClientMessage clientMessage = DynamicConfigAddFlakeIdGeneratorConfigCodec.encodeResponse( );

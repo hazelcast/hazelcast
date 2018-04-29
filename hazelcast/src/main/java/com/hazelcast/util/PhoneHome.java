@@ -236,7 +236,8 @@ public final class PhoneHome {
                 .addParam("cdn", Integer.toString(clusterClientStats.get(ClientType.CSHARP)))
                 .addParam("cjv", Integer.toString(clusterClientStats.get(ClientType.JAVA)))
                 .addParam("cnjs", Integer.toString(clusterClientStats.get(ClientType.NODEJS)))
-                .addParam("cpy", Integer.toString(clusterClientStats.get(ClientType.PYTHON)));
+                .addParam("cpy", Integer.toString(clusterClientStats.get(ClientType.PYTHON)))
+                .addParam("cgo", Integer.toString(clusterClientStats.get(ClientType.GO)));
     }
 
     private void addManCenterInfo(Node hazelcastNode, int clusterSize, PhoneHomeParameterCreator parameterCreator) {

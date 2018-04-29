@@ -82,11 +82,11 @@ class DefaultQueryCacheRecordStore implements QueryCacheRecordStore {
     public QueryCacheRecord add(Data keyData, Data valueData) {
         evictionOperator.evictIfRequired();
 
-        QueryCacheRecord entry = recordFactory.createEntry(keyData, valueData);
-        QueryCacheRecord oldEntry = cache.put(keyData, entry);
-        saveIndex(keyData, entry, oldEntry);
+        QueryCacheRecord newRecord = recordFactory.createRecord(valueData);
+        QueryCacheRecord oldRecord = cache.put(keyData, newRecord);
+        saveIndex(keyData, newRecord, oldRecord);
 
-        return oldEntry;
+        return oldRecord;
     }
 
     private void saveIndex(Data keyData, QueryCacheRecord currentRecord, QueryCacheRecord oldRecord) {

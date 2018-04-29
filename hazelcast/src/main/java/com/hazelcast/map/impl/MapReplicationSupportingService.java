@@ -25,15 +25,16 @@ import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ReplicationSupportingService;
-import com.hazelcast.spi.SplitBrainMergePolicy;
-import com.hazelcast.spi.merge.MergingEntryHolder;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
+import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
+import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.wan.WanReplicationEvent;
 import com.hazelcast.wan.WanReplicationService;
 
 import java.util.concurrent.Future;
 
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
-import static com.hazelcast.spi.impl.merge.MergingHolders.createMergeHolder;
+import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntry;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 
 class MapReplicationSupportingService implements ReplicationSupportingService {
@@ -81,9 +82,11 @@ class MapReplicationSupportingService implements ReplicationSupportingService {
 
         MapOperation operation;
         if (mergePolicy instanceof SplitBrainMergePolicy) {
-            MergingEntryHolder<Data, Data> mergingEntry = createMergeHolder(nodeEngine.getSerializationService(),
-                    replicationUpdate.getEntryView());
-            operation = operationProvider.createMergeOperation(mapName, mergingEntry, (SplitBrainMergePolicy) mergePolicy, true);
+            SerializationService serializationService = nodeEngine.getSerializationService();
+            MapMergeTypes mergingEntry = createMergingEntry(serializationService, replicationUpdate.getEntryView());
+            //noinspection unchecked
+            operation = operationProvider.createMergeOperation(mapName, mergingEntry,
+                    (SplitBrainMergePolicy<Data, MapMergeTypes>) mergePolicy, true);
         } else {
             EntryView<Data, Data> entryView = replicationUpdate.getEntryView();
             operation = operationProvider.createLegacyMergeOperation(mapName, entryView, (MapMergePolicy) mergePolicy, true);

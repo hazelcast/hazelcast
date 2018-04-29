@@ -53,6 +53,7 @@ import static java.lang.String.format;
 public class EvictionChecker {
 
     protected static final double ONE_HUNDRED_PERCENT = 100D;
+    private static final int MIN_TRANSLATED_PARTITION_SIZE = 1;
 
     protected final ILogger logger;
     protected final MapServiceContext mapServiceContext;
@@ -106,15 +107,15 @@ public class EvictionChecker {
     }
 
     protected boolean checkPerNodeEviction(RecordStore recordStore) {
-        double recordStoreSize = translatePerNodeSizeToRecordStoreSize(recordStore);
-        return recordStore.size() > recordStoreSize;
+        double maxAllowedStoreSize = translatePerNodeSizeToPartitionSize(recordStore);
+        return recordStore.size() > maxAllowedStoreSize;
     }
 
     /**
      * Calculates and returns the expected maximum size of an evicted record-store
      * when {@link com.hazelcast.config.MaxSizeConfig.MaxSizePolicy#PER_NODE PER_NODE} max-size-policy is used.
      */
-    public double translatePerNodeSizeToRecordStoreSize(RecordStore recordStore) {
+    public double translatePerNodeSizeToPartitionSize(RecordStore recordStore) {
         MapConfig mapConfig = recordStore.getMapContainer().getMapConfig();
         MaxSizeConfig maxSizeConfig = mapConfig.getMaxSizeConfig();
         NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
@@ -123,16 +124,19 @@ public class EvictionChecker {
         int memberCount = nodeEngine.getClusterService().getSize(DATA_MEMBER_SELECTOR);
         int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
 
-        final double perNodeMaxRecordStoreSize = (1D * configuredMaxSize * memberCount / partitionCount);
-        if (perNodeMaxRecordStoreSize < 1
-                && misconfiguredPerNodeMaxSizeWarningLogged.compareAndSet(false, true)) {
-            int minMaxSize = (int) Math.ceil((1D * partitionCount / memberCount));
-            String msg = "The max size configuration for map '%s' does not allow "
-                    + " any data in the map. Given the current cluster size of %d "
-                    + "members with %d partitions, max size should be at least %d.";
-            logger.warning(format(msg, mapConfig.getName(), memberCount, partitionCount, minMaxSize));
+        double translatedPartitionSize = (1D * configuredMaxSize * memberCount / partitionCount);
+        if (translatedPartitionSize < 1) {
+            translatedPartitionSize = MIN_TRANSLATED_PARTITION_SIZE;
+            if (misconfiguredPerNodeMaxSizeWarningLogged.compareAndSet(false, true)) {
+                int minMaxSize = (int) Math.ceil((1D * partitionCount / memberCount));
+                int newSize = MIN_TRANSLATED_PARTITION_SIZE * partitionCount / memberCount;
+                logger.warning(format("The max size configuration for map \"%s\" does not allow any data in the map. "
+                                + "Given the current cluster size of %d members with %d partitions, max size should be at "
+                                + "least %d. Map size is forced set to %d for backward compatibility", mapConfig.getName(),
+                        memberCount, partitionCount, minMaxSize, newSize));
+            }
         }
-        return perNodeMaxRecordStoreSize;
+        return translatedPartitionSize;
     }
 
     protected boolean checkPerPartitionEviction(String mapName, MaxSizeConfig maxSizeConfig, int partitionId) {

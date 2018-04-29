@@ -23,7 +23,7 @@
     <groupId>com.hazelcast</groupId>
     <artifactId>hazelcast-root</artifactId>
     <packaging>pom</packaging>
-    <version>3.10-SNAPSHOT</version>
+    <version>3.11-SNAPSHOT</version>
     <name>Hazelcast Root</name>
     <description>Hazelcast In-Memory DataGrid</description>
     <url>http://www.hazelcast.com/</url>
@@ -38,7 +38,7 @@
 
     <properties>
         <main.basedir>${project.basedir}</main.basedir>
-        <client.protocol.version>1.6.0-9</client.protocol.version>
+        <client.protocol.version>1.6.0-12</client.protocol.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
         <jdk.version>1.6</jdk.version>
@@ -333,7 +333,7 @@
                                     <redirectTestOutputToFile>true</redirectTestOutputToFile>
                                     <useFile>false</useFile>
                                     <!-- 1C means 1 process per cpu core -->
-                                    <forkCount>1C</forkCount>
+                                    <forkCount>0.5C</forkCount>
                                     <reuseForks>true</reuseForks>
                                     <argLine>
                                         -Xms512m -Xmx2G -XX:MaxPermSize=1024M -ea
@@ -565,6 +565,8 @@
                     -Dhazelcast.logging.type=none
                     -Dhazelcast.test.use.network=false
                     -Dlog4j.skipJansi=true
+                    -Dhazelcast.operation.call.timeout.millis=120000
+                    -Dhazelcast.graceful.shutdown.max.wait=240
                     ${extraVmArgs}
                 </argLine>
             </properties>
@@ -1236,7 +1238,8 @@
                             <groups>com.hazelcast.test.annotation.QuickTest</groups>
                             <excludedGroups>
                                 com.hazelcast.test.annotation.SlowTest,
-                                com.hazelcast.test.annotation.NightlyTest
+                                com.hazelcast.test.annotation.NightlyTest,
+                                com.hazelcast.test.annotation.SerializationSamplesExcluded
                             </excludedGroups>
                         </configuration>
                     </plugin>

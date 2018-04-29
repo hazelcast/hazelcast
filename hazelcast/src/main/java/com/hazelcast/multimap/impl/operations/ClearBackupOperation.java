@@ -20,7 +20,7 @@ import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
 import com.hazelcast.spi.BackupOperation;
 
-public class ClearBackupOperation extends MultiMapOperation implements BackupOperation {
+public class ClearBackupOperation extends AbstractMultiMapOperation implements BackupOperation {
 
     public ClearBackupOperation() {
     }
@@ -31,7 +31,7 @@ public class ClearBackupOperation extends MultiMapOperation implements BackupOpe
 
     @Override
     public void run() throws Exception {
-        MultiMapContainer container = getOrCreateContainer();
+        MultiMapContainer container = getOrCreateContainerWithoutAccess();
         container.clear();
         response = true;
     }

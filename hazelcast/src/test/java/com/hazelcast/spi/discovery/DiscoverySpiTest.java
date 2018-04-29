@@ -83,7 +83,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.config.PartitionGroupConfig.MemberGroupType.SPI;
 import static com.hazelcast.config.properties.PropertyTypeConverter.BOOLEAN;
+import static com.hazelcast.config.properties.PropertyTypeConverter.INTEGER;
+import static com.hazelcast.config.properties.PropertyTypeConverter.STRING;
 import static com.hazelcast.spi.discovery.DiscoverySpiTest.ParametrizedDiscoveryStrategyFactory.BOOL_PROPERTY;
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -667,7 +670,9 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
 
         @Override
         public Collection<PropertyDefinition> getConfigurationProperties() {
-            return Collections.emptyList();
+            return asList((PropertyDefinition) new SimplePropertyDefinition("key-string", true, STRING),
+                    new SimplePropertyDefinition("key-int", true, INTEGER),
+                    new SimplePropertyDefinition("key-boolean", true, BOOLEAN));
         }
     }
 

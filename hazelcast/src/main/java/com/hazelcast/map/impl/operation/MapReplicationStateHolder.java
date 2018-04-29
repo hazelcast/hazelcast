@@ -17,12 +17,15 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.core.Member;
+import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordReplicationInfo;
 import com.hazelcast.map.impl.recordstore.RecordStore;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -35,9 +38,11 @@ import com.hazelcast.query.impl.MapIndexInfo;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.ServiceNamespace;
+import com.hazelcast.spi.impl.operationservice.TargetAware;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ThreadUtil;
+import com.hazelcast.version.Version;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -48,6 +53,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static com.hazelcast.instance.BuildInfoProvider.getBuildInfo;
+import static com.hazelcast.internal.cluster.Versions.V3_10;
+import static com.hazelcast.internal.cluster.Versions.V3_9;
 import static com.hazelcast.map.impl.record.Records.applyRecordInfo;
 import static com.hazelcast.map.impl.record.Records.getValueOrCachedValue;
 import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_TTL;
@@ -57,7 +65,19 @@ import static com.hazelcast.util.MapUtil.createHashMap;
  * Holder for raw IMap key-value pairs and their metadata.
  */
 // keep this `protected`, extended in another context.
-public class MapReplicationStateHolder implements IdentifiedDataSerializable, Versioned {
+public class MapReplicationStateHolder implements IdentifiedDataSerializable, Versioned, TargetAware {
+
+    // RU_COMPAT_3_9
+    // When cluster version is 3.9, 3.9 EE members:
+    //    Never write index info
+    //    Don't read index info when coming from 3.9 member
+    //    Read index info when coming from 3.10
+    // When cluster version is 3.9, 3.10 EE members:
+    //    Write index info when target is 3.9
+    //    Don't write index info when target member is 3.10
+    //    Never read index info
+    // When cluster version is 3.10:
+    //    Always read and write index info
 
     // holds recordStore-references of this partitions' maps
     protected transient Map<String, RecordStore<Record>> storesByMapName;
@@ -75,6 +95,8 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
     // on order of execution, so it was possible that the post-join operations were executed after some map-replication
     // operations, which meant that the index did not include some data.
     protected transient List<MapIndexInfo> mapIndexInfos;
+
+    private transient Address target;
 
     private MapReplicationOperation operation;
 
@@ -136,9 +158,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
     void applyState() {
         ThreadUtil.assertRunningOnPartitionThread();
 
-        for (MapIndexInfo mapIndexInfo : mapIndexInfos) {
-            addIndexes(mapIndexInfo.getMapName(), mapIndexInfo.getIndexInfos());
-        }
+        applyIndexesState();
 
         if (data != null) {
             for (Map.Entry<String, Collection<RecordReplicationInfo>> dataEntry : data.entrySet()) {
@@ -180,10 +200,33 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
                         }
                     }
 
-                    recordStore.evictEntries(key);
+                    if (recordStore.shouldEvict()) {
+                        // No need to continue replicating records anymore.
+                        // We are already over eviction threshold, each put record will cause another eviction.
+                        recordStore.evictEntries(key);
+                        break;
+                    }
                     recordStore.disposeDeferredBlocks();
                 }
             }
+        }
+    }
+
+    private void applyIndexesState() {
+        if (mapIndexInfos != null) {
+            for (MapIndexInfo mapIndexInfo : mapIndexInfos) {
+                addIndexes(mapIndexInfo.getMapName(), mapIndexInfo.getIndexInfos());
+            }
+        }
+
+        // RU_COMPAT_3_9
+        // Old nodes (3.9-) won't send mapIndexInfos to new nodes (3.9+) in the map-replication operation.
+        // This is the reason why we pick up the mapContainer.getIndexesToAdd() that were added by the PostJoinMapOperation
+        // and we add them to the map, before we add data
+        for (String mapName : data.keySet()) {
+            RecordStore recordStore = operation.getRecordStore(mapName);
+            MapContainer mapContainer = recordStore.getMapContainer();
+            addIndexes(mapName, mapContainer.getPartitionIndexesToAdd());
         }
     }
 
@@ -237,9 +280,12 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
             out.writeBoolean(loadedEntry.getValue());
         }
 
-        out.writeInt(mapIndexInfos.size());
-        for (MapIndexInfo mapIndexInfo : mapIndexInfos) {
-            out.writeObject(mapIndexInfo);
+        // RU_COMPAT_3_9
+        if (mustWriteIndexInfos(out.getVersion())) {
+            out.writeInt(mapIndexInfos.size());
+            for (MapIndexInfo mapIndexInfo : mapIndexInfos) {
+                out.writeObject(mapIndexInfo);
+            }
         }
     }
 
@@ -270,11 +316,14 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
             loaded.put(in.readUTF(), in.readBoolean());
         }
 
-        int mapIndexInfosSize = in.readInt();
-        mapIndexInfos = new ArrayList<MapIndexInfo>(mapIndexInfosSize);
-        for (int i = 0; i < mapIndexInfosSize; i++) {
-            MapIndexInfo mapIndexInfo = in.readObject();
-            mapIndexInfos.add(mapIndexInfo);
+        // RU_COMPAT_3_9
+        if (mustReadMapIndexInfos(in.getVersion())) {
+            int mapIndexInfosSize = in.readInt();
+            mapIndexInfos = new ArrayList<MapIndexInfo>(mapIndexInfosSize);
+            for (int i = 0; i < mapIndexInfosSize; i++) {
+                MapIndexInfo mapIndexInfo = in.readObject();
+                mapIndexInfos.add(mapIndexInfo);
+            }
         }
     }
 
@@ -286,6 +335,35 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
     @Override
     public int getId() {
         return MapDataSerializerHook.MAP_REPLICATION_STATE_HOLDER;
+    }
+
+    @Override
+    public void setTarget(Address address) {
+        this.target = address;
+    }
+
+    private boolean mustWriteIndexInfos(Version clusterVersion) {
+        // 3.10 OS always writes mapIndexInfos
+        // 3.10 EE on cluster version 3.10 must write index info
+        if (!getBuildInfo().isEnterprise() || clusterVersion.isGreaterOrEqual(V3_10)) {
+            return true;
+        }
+
+        ClusterService clusterService = operation.getNodeEngine().getClusterService();
+        Member targetMember = clusterService.getMember(target);
+        // When cluster version is 3.9, only write mapIndexInfo if target member is 3.9 EE. Reasoning:
+        // 3.9 EE expects to read mapIndexInfos when object data input comes with 3.9+ version. This is
+        // the case when the object stream originates from a versioned 3.10 member.
+        return targetMember.getVersion().asVersion().isEqualTo(V3_9) && clusterVersion.isEqualTo(V3_9);
+    }
+
+    private boolean mustReadMapIndexInfos(Version version) {
+        // 3.10 OS always reads mapIndexInfos
+        // 3.10 EE always read mapIndexInfos when cluster version >= 3.10
+        // When cluster version is 3.9:
+        //  - an object input from 3.9 EE does not contain mapIndexInfo and arrives with UNKNOWN version
+        //  - an object input from 3.10 EE comes with version 3.9 and contains mapIndexInfo
+        return !getBuildInfo().isEnterprise() || version.isGreaterOrEqual(V3_10);
     }
 
     private static boolean indexesMustBePopulated(Indexes indexes, MapReplicationOperation operation) {

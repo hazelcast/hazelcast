@@ -23,7 +23,6 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestTaskExecutorUtil;
 
 import javax.cache.spi.CachingProvider;
-
 import java.util.Arrays;
 import java.util.concurrent.Callable;
 

@@ -21,13 +21,13 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.spi.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.DiscardMergePolicy;
 import com.hazelcast.spi.merge.HigherHitsMergePolicy;
 import com.hazelcast.spi.merge.LatestAccessMergePolicy;
 import com.hazelcast.spi.merge.LatestUpdateMergePolicy;
 import com.hazelcast.spi.merge.PassThroughMergePolicy;
 import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.SplitBrainTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -121,13 +121,13 @@ public class MapSplitBrainTest extends SplitBrainTestSupport {
                 .setMergePolicyConfig(mergePolicyConfig)
                 .setBackupCount(1)
                 .setAsyncBackupCount(0)
-                .setStatisticsEnabled(true);
+                .setStatisticsEnabled(false);
         config.getMapConfig(mapNameB)
                 .setInMemoryFormat(inMemoryFormat)
                 .setMergePolicyConfig(mergePolicyConfig)
                 .setBackupCount(1)
                 .setAsyncBackupCount(0)
-                .setStatisticsEnabled(true);
+                .setStatisticsEnabled(false);
         return config;
     }
 

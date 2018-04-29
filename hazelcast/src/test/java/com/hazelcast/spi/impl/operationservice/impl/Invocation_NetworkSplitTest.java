@@ -19,7 +19,6 @@ package com.hazelcast.spi.impl.operationservice.impl;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.MemberLeftException;
-import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.spi.AbstractWaitNotifyKey;
 import com.hazelcast.spi.BlockingOperation;
@@ -42,6 +41,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import static com.hazelcast.test.SplitBrainTestSupport.blockCommunicationBetween;
+import static com.hazelcast.test.SplitBrainTestSupport.unblockCommunicationBetween;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
@@ -50,13 +51,13 @@ import static org.junit.Assert.fail;
 public class Invocation_NetworkSplitTest extends HazelcastTestSupport {
 
     @Test
-    public void testWaitingInvocations_whenNodeSplitFromCluster() throws Exception {
+    public void testWaitingInvocations_whenNodeSplitFromCluster() {
         SplitAction action = new FullSplitAction();
         testWaitingInvocations_whenNodeSplitFromCluster(action);
     }
 
     @Test
-    public void testWaitingInvocations_whenNodePartiallySplitFromCluster() throws Exception {
+    public void testWaitingInvocations_whenNodePartiallySplitFromCluster() {
         SplitAction action = new PartialSplitAction();
         testWaitingInvocations_whenNodeSplitFromCluster(action);
     }
@@ -80,10 +81,12 @@ public class Invocation_NetworkSplitTest extends HazelcastTestSupport {
                 final OperationParkerImpl waitNotifyService3 = (OperationParkerImpl) getNodeEngineImpl(hz2).getOperationParker();
                 assertEquals(1, waitNotifyService3.getTotalParkedOperationCount());
             }
-        }, 20);
+        });
 
         // execute the given split action
-        action.run(getNode(hz1), getNode(hz2), getNode(hz3));
+        action.run(hz1, hz2, hz3);
+
+        unblock(hz1, hz2, hz3);
 
         // Let node3 detect the split and merge it back to other two.
         ClusterServiceImpl clusterService3 = (ClusterServiceImpl) getClusterService(hz3);
@@ -102,13 +105,13 @@ public class Invocation_NetworkSplitTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testWaitNotifyService_whenNodeSplitFromCluster() throws Exception {
+    public void testWaitNotifyService_whenNodeSplitFromCluster() {
         SplitAction action = new FullSplitAction();
         testWaitNotifyService_whenNodeSplitFromCluster(action);
     }
 
     @Test
-    public void testWaitNotifyService_whenNodePartiallySplitFromCluster() throws Exception {
+    public void testWaitNotifyService_whenNodePartiallySplitFromCluster() {
         SplitAction action = new PartialSplitAction();
         testWaitNotifyService_whenNodeSplitFromCluster(action);
     }
@@ -133,7 +136,7 @@ public class Invocation_NetworkSplitTest extends HazelcastTestSupport {
             }
         });
 
-        action.run(getNode(hz1), getNode(hz2), getNode(hz3));
+        action.run(hz1, hz2, hz3);
 
         // create a new node to prevent same partition assignments
         // after node3 rejoins
@@ -145,6 +148,8 @@ public class Invocation_NetworkSplitTest extends HazelcastTestSupport {
                 assertEquals(0, getPartitionService(hz1).getMigrationQueueSize());
             }
         });
+
+        unblock(hz1, hz2, hz3);
 
         // Let node3 detect the split and merge it back to other two.
         ClusterServiceImpl clusterService3 = (ClusterServiceImpl) getClusterService(hz3);
@@ -161,6 +166,12 @@ public class Invocation_NetworkSplitTest extends HazelcastTestSupport {
         config.setProperty(GroupProperty.MASTER_CONFIRMATION_INTERVAL_SECONDS.getName(), "1");
         config.setProperty(GroupProperty.MEMBER_LIST_PUBLISH_INTERVAL_SECONDS.getName(), "10");
         return config;
+    }
+
+    private void unblock(HazelcastInstance instance1, HazelcastInstance instance2, HazelcastInstance instance3) {
+        unblockCommunicationBetween(instance1, instance2);
+        unblockCommunicationBetween(instance1, instance3);
+        unblockCommunicationBetween(instance2, instance3);
     }
 
     private static class AlwaysBlockingOperation extends Operation implements BlockingOperation {
@@ -197,46 +208,50 @@ public class Invocation_NetworkSplitTest extends HazelcastTestSupport {
     }
 
     private interface SplitAction {
-        void run(Node node1, Node node2, Node node3);
+        void run(HazelcastInstance instance1, HazelcastInstance instance2, HazelcastInstance instance3);
     }
 
     private static class FullSplitAction implements SplitAction {
 
         @Override
-        public void run(final Node node1, final Node node2, final Node node3) {
+        public void run(final HazelcastInstance instance1, final HazelcastInstance instance2, final HazelcastInstance instance3) {
             // Artificially create a network-split
-            suspectMember(node1, node3);
+            blockCommunicationBetween(instance1, instance3);
+            blockCommunicationBetween(instance2, instance3);
 
-            suspectMember(node3, node1);
-            suspectMember(node3, node2);
+            closeConnectionBetween(instance1, instance3);
+            closeConnectionBetween(instance2, instance3);
 
             assertTrueEventually(new AssertTask() {
                 @Override
-                public void run() throws Exception {
-                    assertEquals(2, node1.getClusterService().getSize());
-                    assertEquals(2, node2.getClusterService().getSize());
-                    assertEquals(1, node3.getClusterService().getSize());
+                public void run() {
+                    assertEquals(2, getNodeEngineImpl(instance1).getClusterService().getSize());
+                    assertEquals(2, getNodeEngineImpl(instance2).getClusterService().getSize());
+                    assertEquals(1, getNodeEngineImpl(instance3).getClusterService().getSize());
                 }
-            }, 10);
+            });
         }
     }
 
     private static class PartialSplitAction implements SplitAction {
 
         @Override
-        public void run(final Node node1, final Node node2, final Node node3) {
+        public void run(final HazelcastInstance instance1, final HazelcastInstance instance2, final HazelcastInstance instance3) {
             // Artificially create a partial network-split;
             // node1 and node2 will be split from node3
             // but node 3 will not be able to detect that.
-            suspectMember(node1, node3);
+            blockCommunicationBetween(instance1, instance3);
+            blockCommunicationBetween(instance2, instance3);
+            suspectMember(getNode(instance1), getNode(instance3));
+
             assertTrueEventually(new AssertTask() {
                 @Override
-                public void run() throws Exception {
-                    assertEquals(2, node1.getClusterService().getSize());
-                    assertEquals(2, node2.getClusterService().getSize());
-                    assertEquals(1, node3.getClusterService().getSize());
+                public void run() {
+                    assertEquals(2, getNodeEngineImpl(instance1).getClusterService().getSize());
+                    assertEquals(2, getNodeEngineImpl(instance2).getClusterService().getSize());
+                    assertEquals(3, getNodeEngineImpl(instance3).getClusterService().getSize());
                 }
-            }, 10);
+            });
         }
     }
 }

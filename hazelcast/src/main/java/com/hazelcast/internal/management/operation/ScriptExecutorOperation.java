@@ -16,58 +16,52 @@
 
 package com.hazelcast.internal.management.operation;
 
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.management.ManagementDataSerializerHook;
 import com.hazelcast.internal.management.ScriptEngineManagerContext;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.impl.Versioned;
+import com.hazelcast.util.ExceptionUtil;
+
+import java.io.IOException;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
-import java.io.IOException;
-import java.util.Map;
-import java.util.Set;
 
-import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.cluster.Versions.V3_10;
 
 /**
  * Operation to execute script on the node.
  */
-public class ScriptExecutorOperation extends AbstractManagementOperation {
+public class ScriptExecutorOperation extends AbstractManagementOperation implements Versioned {
 
     private String engineName;
     private String script;
-    private Map<String, Object> bindings;
     private Object result;
 
     @SuppressWarnings("unused")
     public ScriptExecutorOperation() {
     }
 
-    public ScriptExecutorOperation(String engineName, String script, Map<String, Object> bindings) {
+    public ScriptExecutorOperation(String engineName, String script) {
         this.engineName = engineName;
         this.script = script;
-        this.bindings = bindings;
     }
 
     @Override
-    public void run() throws Exception {
+    public void run() {
         ScriptEngineManager scriptEngineManager = ScriptEngineManagerContext.getScriptEngineManager();
         ScriptEngine engine = scriptEngineManager.getEngineByName(engineName);
         if (engine == null) {
             throw new IllegalArgumentException("Could not find ScriptEngine named '" + engineName + "'.");
         }
         engine.put("hazelcast", getNodeEngine().getHazelcastInstance());
-        if (bindings != null) {
-            Set<Map.Entry<String, Object>> entries = bindings.entrySet();
-            for (Map.Entry<String, Object> entry : entries) {
-                engine.put(entry.getKey(), entry.getValue());
-            }
-        }
         try {
             this.result = engine.eval(script);
         } catch (ScriptException e) {
-            this.result = e.getMessage();
+            throw new HazelcastException(ExceptionUtil.toString(e));
         }
     }
 
@@ -80,14 +74,7 @@ public class ScriptExecutorOperation extends AbstractManagementOperation {
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeUTF(engineName);
         out.writeUTF(script);
-        if (bindings != null) {
-            out.writeInt(bindings.size());
-            Set<Map.Entry<String, Object>> entries = bindings.entrySet();
-            for (Map.Entry<String, Object> entry : entries) {
-                out.writeUTF(entry.getKey());
-                out.writeObject(entry.getValue());
-            }
-        } else {
+        if (out.getVersion().isUnknownOrLessThan(V3_10)) {
             out.writeInt(0);
         }
     }
@@ -96,14 +83,8 @@ public class ScriptExecutorOperation extends AbstractManagementOperation {
     protected void readInternal(ObjectDataInput in) throws IOException {
         engineName = in.readUTF();
         script = in.readUTF();
-        int size = in.readInt();
-        if (size > 0) {
-            bindings = createHashMap(size);
-            for (int i = 0; i < size; i++) {
-                String key = in.readUTF();
-                Object value = in.readObject();
-                bindings.put(key, value);
-            }
+        if (in.getVersion().isUnknownOrLessThan(V3_10)) {
+            in.readInt();
         }
     }
 

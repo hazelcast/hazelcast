@@ -45,12 +45,12 @@ import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.spi.QuorumAwareService;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.SplitBrainHandlerService;
-import com.hazelcast.spi.SplitBrainMergePolicy;
 import com.hazelcast.spi.StatisticsAwareService;
 import com.hazelcast.spi.TaskScheduler;
 import com.hazelcast.spi.TransactionalService;
 import com.hazelcast.spi.impl.merge.AbstractContainerMerger;
-import com.hazelcast.spi.merge.MergingValueHolder;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
+import com.hazelcast.spi.merge.SplitBrainMergeTypes.QueueMergeTypes;
 import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.partition.MigrationEndpoint;
@@ -62,21 +62,19 @@ import com.hazelcast.util.ContextMutexFactory;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
 import com.hazelcast.util.scheduler.EntryTaskSchedulerFactory;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Deque;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
+import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.internal.config.ConfigValidator.checkQueueConfig;
-import static com.hazelcast.spi.impl.merge.MergingHolders.createMergeHolder;
+import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingValue;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 import static com.hazelcast.util.MapUtil.createHashMap;
 import static com.hazelcast.util.scheduler.ScheduleType.POSTPONE;
@@ -259,14 +257,17 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
     @Override
     public QueueProxyImpl createDistributedObject(String objectId) {
         QueueConfig queueConfig = nodeEngine.getConfig().findQueueConfig(objectId);
-        checkQueueConfig(queueConfig);
+        checkQueueConfig(queueConfig, nodeEngine.getSplitBrainMergePolicyProvider());
 
         return new QueueProxyImpl(objectId, this, nodeEngine, queueConfig);
     }
 
     @Override
     public void destroyDistributedObject(String name) {
-        containerMap.remove(name);
+        QueueContainer container = containerMap.remove(name);
+        if (container != null) {
+            container.destroy();
+        }
         nodeEngine.getEventService().deregisterAllListeners(SERVICE_NAME, name);
         quorumConfigCache.remove(name);
     }
@@ -393,7 +394,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
         return partitionService.getPartitionId(keyData);
     }
 
-    private class Merger extends AbstractContainerMerger<QueueContainer> {
+    private class Merger extends AbstractContainerMerger<QueueContainer, Collection<Object>, QueueMergeTypes> {
 
         Merger(QueueContainerCollector collector) {
             super(collector, nodeEngine);
@@ -406,38 +407,27 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
 
         @Override
         public void runInternal() {
-            List<MergingValueHolder<Data>> mergingValues;
             for (Entry<Integer, Collection<QueueContainer>> entry : collector.getCollectedContainers().entrySet()) {
                 int partitionId = entry.getKey();
                 Collection<QueueContainer> containerList = entry.getValue();
                 for (QueueContainer container : containerList) {
-                    Deque<QueueItem> itemList = container.getItemQueue();
+                    // TODO: add batching (which is a bit complex, since collections don't have a multi-name operation yet
+                    Queue<QueueItem> items = container.getItemQueue();
 
                     String name = container.getName();
-                    int batchSize = container.getConfig().getMergePolicyConfig().getBatchSize();
-                    SplitBrainMergePolicy mergePolicy = getMergePolicy(container.getConfig().getMergePolicyConfig());
+                    SplitBrainMergePolicy<Collection<Object>, QueueMergeTypes> mergePolicy
+                            = getMergePolicy(container.getConfig().getMergePolicyConfig());
 
-                    mergingValues = new ArrayList<MergingValueHolder<Data>>(batchSize);
-                    for (QueueItem item : itemList) {
-                        MergingValueHolder<Data> mergingValue = createMergeHolder(serializationService, item);
-                        mergingValues.add(mergingValue);
-
-                        if (mergingValues.size() == batchSize) {
-                            sendBatch(partitionId, name, mergePolicy, mergingValues);
-                            mergingValues = new ArrayList<MergingValueHolder<Data>>(batchSize);
-                        }
-                    }
-                    itemList.clear();
-                    if (mergingValues.size() > 0) {
-                        sendBatch(partitionId, name, mergePolicy, mergingValues);
-                    }
+                    QueueMergeTypes mergingValue = createMergingValue(serializationService, items);
+                    sendBatch(partitionId, name, mergePolicy, mergingValue);
                 }
             }
         }
 
-        private void sendBatch(int partitionId, String name, SplitBrainMergePolicy mergePolicy,
-                               List<MergingValueHolder<Data>> mergingValues) {
-            QueueMergeOperation operation = new QueueMergeOperation(name, mergePolicy, mergingValues);
+        private void sendBatch(int partitionId, String name,
+                               SplitBrainMergePolicy<Collection<Object>, QueueMergeTypes> mergePolicy,
+                               QueueMergeTypes mergingValue) {
+            QueueMergeOperation operation = new QueueMergeOperation(name, mergePolicy, mergingValue);
             invoke(SERVICE_NAME, operation, partitionId);
         }
     }

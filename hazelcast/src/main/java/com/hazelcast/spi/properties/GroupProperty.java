@@ -43,17 +43,17 @@ public final class GroupProperty {
      * Use this property to verify that Hazelcast nodes only join the cluster when their 'application' level configuration is the
      * same.
      * <p/>
-     * If you have multiple machines, and you want to make sure that each machine that joins the cluster
+     * If you have multiple machines, you want to make sure that each machine that joins the cluster
      * has exactly the same 'application level' settings (such as settings that are not part of the Hazelcast configuration,
-     * maybe some filepath). To prevent these machines with potential different application level configuration from forming
+     * maybe some file path). To prevent the machines with potentially different application level configuration from forming
      * a cluster, you can set this property.
      * <p/>
-     * You could use actual values, such as string paths, but you can also use an md5 hash. We'll give the guarantee
-     * that nodes will form a cluster (become a member) only where the token is an exact match. If this token is different, the
+     * You could use actual values, such as string paths, but you can also use an md5 hash. We make a guarantee
+     * that nodes will form a cluster (become a member) only if the token is an exact match. If this token is different, the
      * member can't be started and therefore you will get the guarantee that all members in the cluster will have exactly the same
      * application validation token.
      * <p/>
-     * This validation-token will be checked before member join the cluster.
+     * This validation token will be checked before a member joins the cluster.
      */
     public static final HazelcastProperty APPLICATION_VALIDATION_TOKEN
             = new HazelcastProperty("hazelcast.application.validation.token");
@@ -65,9 +65,9 @@ public final class GroupProperty {
             = new HazelcastProperty("hazelcast.partition.count", 271);
 
     /**
-     * The number of partition operation handler threads per Member.
+     * The number of partition operation handler threads per member.
      * <p/>
-     * If this is less than the number of partitions on a Member partition operations
+     * If this is less than the number of partitions on a member, partition operations
      * will queue behind other operations of different partitions.
      * <p/>
      * The default is -1, which means that the value is determined dynamically.
@@ -76,43 +76,60 @@ public final class GroupProperty {
             = new HazelcastProperty("hazelcast.operation.thread.count", -1);
 
     /**
-     * The number of generic operation handler threads per Member.
+     * The number of generic operation handler threads per member.
      * <p/>
      * The default is -1, which means that the value is determined dynamically.
      */
     public static final HazelcastProperty GENERIC_OPERATION_THREAD_COUNT
             = new HazelcastProperty("hazelcast.operation.generic.thread.count", -1);
+
     /**
-     * The number of priority generic operation handler threads per Member.
+     * The number of priority generic operation handler threads per member.
      * <p/>
      * The default is 1.
      * <p>
-     * Having at least 1 priority generic operation thread helps to improve cluster stability since a lot of the cluster
+     * Having at least 1 priority generic operation thread helps to improve cluster stability since a lot of cluster
      * operations are generic priority operations and they should get executed as soon as possible. If there is a dedicated
-     * generic operation thread, than these operations don't get delayed because the generic threads are busy executing regular
+     * generic operation thread then these operations don't get delayed because the generic threads are busy executing regular
      * user operations. So unless memory consumption is an issue, make sure there is at least 1 thread.
      */
     public static final HazelcastProperty PRIORITY_GENERIC_OPERATION_THREAD_COUNT
             = new HazelcastProperty("hazelcast.operation.priority.generic.thread.count", 1);
 
     /**
+     * The number of threads that process responses.
+     * <p>
+     * By default there are 2 response threads; this gives stable and good performance.
+     * <p>
+     * If set to 0, the response threads are bypassed and the response handling is done
+     * on the IO threads. Under certain conditions this can give a higher throughput, but
+     * setting it to 0 should be regarded an experimental feature.
+     */
+    public static final HazelcastProperty RESPONSE_THREAD_COUNT
+            = new HazelcastProperty("hazelcast.operation.response.thread.count", 2);
+
+    /**
      * The number of threads that the client engine has available for processing requests that are not partition specific.
-     * Most of the requests, such as map.put and map.get, are partition specific and will use a partition-operation-thread, but
-     * there are also requests that can't be executed on a partition-specific operation-thread, such as multimap.contain(value);
-     * because they need to access all partitions on a given member.
+     * Most of the requests, such as {@code map.put} and {@code map.get}, are partition specific and will use a
+     * partition-specific operation thread, but there are also requests that can't be executed on a partition-specific operation
+     * thread, such as {@code multimap.containsValue(value)}, because they need to access all partitions on a given
+     * member.
      */
     public static final HazelcastProperty CLIENT_ENGINE_THREAD_COUNT
             = new HazelcastProperty("hazelcast.clientengine.thread.count", -1);
 
     public static final HazelcastProperty CLIENT_ENGINE_QUERY_THREAD_COUNT
             = new HazelcastProperty("hazelcast.clientengine.query.thread.count", -1);
+
     /**
-     * Client connection is removed or owner node of a client is removed from cluster
-     * ClientDisconnectedOperation runs and clean all resources of client(listeners are removed, locks/txn are released)
+     * Time after which client connection is removed or owner node of a client is removed from the cluster.
+     * <p>
+     * ClientDisconnectionOperation runs and cleans all resources of a client (listeners are removed, locks/txn are released).
      * With this property, client has a window to connect back and prevent cleaning up its resources.
      */
     public static final HazelcastProperty CLIENT_ENDPOINT_REMOVE_DELAY_SECONDS
-            = new HazelcastProperty("hazelcast.client.endpoint.remove.delay.seconds", 10);
+            = new HazelcastProperty("hazelcast.client.endpoint.remove.delay.seconds", 60);
+
     /**
      * Number of threads for the {@link com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl} executor.
      * The executor is responsible for executing the events. If you process a lot of events and have many cores, setting
@@ -128,25 +145,26 @@ public final class GroupProperty {
      * are not small enough to fit in memory. This capacity is shared between event topics.
      * When the maximum capacity is reached, the items are dropped. This means that the event system is a 'best effort' system
      * and there is no guarantee that you are going to get an event.
-     * Since the capacity is shared between topics, one topic might fill the entire queue thus causing
+     * Since the capacity is shared between topics, one topic might fill the entire queue and cause
      * other topics to drop their messages.
      */
     public static final HazelcastProperty EVENT_QUEUE_CAPACITY
             = new HazelcastProperty("hazelcast.event.queue.capacity", 1000000);
+
     /**
-     * The timeout for offering the an event to the event executor for processing. If the event queue is full,
+     * The timeout for offering an event to the event executor for processing. If the event queue is full,
      * the event might not be accepted to the queue and it will be dropped.
-     * This applies only to processing local events. Remote events (events on a remote subscriber) have no timeout,
+     * This applies only to processing of local events. Remote events (events on a remote subscriber) have no timeout,
      * meaning that the event can be rejected immediately.
      */
     public static final HazelcastProperty EVENT_QUEUE_TIMEOUT_MILLIS
             = new HazelcastProperty("hazelcast.event.queue.timeout.millis", 250, MILLISECONDS);
 
     /**
-     * To prevent overload on the outbound connections, once and a while an event is made synchronous by wrapping it in a
-     * fake operation and waiting for a fake response. This cases the outbound write queue of the connection to get drained.
-     *
-     * This timeout configures the maximum amount of waiting time for this fake response. Setting it too a too low value
+     * To prevent overloading of the outbound connections, once in a while an event is made synchronous by wrapping it in a
+     * fake operation and waiting for a fake response. This causes the outbound write queue of the connection to get drained.
+     * <p>
+     * This timeout configures the maximum amount of waiting time for this fake response. Setting it to a too low value
      * can lead to an uncontrolled growth of the outbound write queue of the connection.
      */
     public static final HazelcastProperty EVENT_SYNC_TIMEOUT_MILLIS
@@ -165,10 +183,10 @@ public final class GroupProperty {
     /**
      * The number of threads doing socket input and the number of threads doing socket output.
      * <p/>
-     * If e.g. 3 is configured, then you get 3 threads doing input and 3 doing output. For individual control
+     * E.g., if 3 is configured, then you get 3 threads doing input and 3 doing output. For individual control,
      * check {@link #IO_INPUT_THREAD_COUNT} and {@link #IO_OUTPUT_THREAD_COUNT}.
      * <p/>
-     * The default is 3 (so 6 threads).
+     * The default is 3 (i.e. 6 threads).
      */
     public static final HazelcastProperty IO_THREAD_COUNT
             = new HazelcastProperty("hazelcast.io.thread.count", 3);
@@ -871,7 +889,6 @@ public final class GroupProperty {
     public static final HazelcastProperty INDEX_COPY_BEHAVIOR
             = new HazelcastProperty("hazelcast.index.copy.behavior", IndexCopyBehavior.COPY_ON_READ.toString());
 
-
     /**
      * Forces the JCache provider, which can have values client or server, to force the provider type.
      * If not provided, the provider will be client or server, whichever is found on the classpath first respectively.
@@ -936,12 +953,27 @@ public final class GroupProperty {
             new HazelcastProperty("hazelcast.nio.tcp.spoofing.checks", false);
 
     /**
-     * Controls whether the task scheduler removes tasks immediately upon cancellation.
-     * This is disabled by default, because it can cause severe delays on other operations. By default all cancelled
-     * tasks will eventually get removed by scheduler workers.
+     * This is a Java 6 specific property. In Java 7+ tasks are always removed
+     * on cancellation due to the explicit
+     * {@code java.util.concurrent.ScheduledThreadPoolExecutor#setRemoveOnCancelPolicy(boolean)}
+     * and constant time removal.
+     *
+     * In Java 6 there is no out-of-the-box support for removal of cancelled tasks,
+     * and the only way to implement this is using a linear scan of all pending
+     * tasks. Therefore in Java 6 there is a performance penalty.
+     *
+     * Using this property, in Java 6, one can control if cancelled tasks are removed.
+     * By default tasks are removed, because it can lead to temporary retention
+     * of memory if there a large volume of pending cancelled tasks. And this can
+     * lead to gc/performance problems as we saw with the transaction tests.
+     *
+     * However if this automatic removal of cancelled tasks start to become a
+     * performance problem, it can be disabled in Java 6.
+     *
+     * For more information see the {@link com.hazelcast.util.executor.LoggingScheduledExecutor}.
      */
     public static final HazelcastProperty TASK_SCHEDULER_REMOVE_ON_CANCEL =
-            new HazelcastProperty("hazelcast.executionservice.taskscheduler.remove.oncancel", false);
+            new HazelcastProperty("hazelcast.executionservice.taskscheduler.remove.oncancel", true);
 
     private GroupProperty() {
     }

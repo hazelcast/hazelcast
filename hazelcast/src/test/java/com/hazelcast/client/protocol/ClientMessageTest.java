@@ -407,6 +407,6 @@ public class ClientMessageTest {
 
     @Test(expected = MaxMessageSizeExceeded.class)
     public void testMessageSizeOverflow() {
-        ClientMessage.findSuitableMessageSize(Integer.MAX_VALUE << 1);
+        ClientMessage.createForEncode(Integer.MAX_VALUE << 1);
     }
 }

@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.querycache.subscriber;
 
+import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.PartitioningStrategy;
@@ -80,6 +81,14 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
         this.partitioningStrategy = getPartitioningStrategy();
         this.recordStore = new DefaultQueryCacheRecordStore(serializationService, indexes, getQueryCacheConfig(),
                 getEvictionListener());
+
+        for (MapIndexConfig indexConfig : getQueryCacheConfig().getIndexConfigs()) {
+            indexes.addOrGetIndex(indexConfig.getAttribute(), indexConfig.isOrdered());
+        }
+    }
+
+    public QueryCacheContext getContext() {
+        return context;
     }
 
     @Override
@@ -98,7 +107,7 @@ abstract class AbstractInternalQueryCache<K, V> implements InternalQueryCache<K,
 
     private QueryCacheConfig getQueryCacheConfig() {
         QueryCacheConfigurator queryCacheConfigurator = context.getQueryCacheConfigurator();
-        return queryCacheConfigurator.getOrCreateConfiguration(mapName, cacheName);
+        return queryCacheConfigurator.getOrCreateConfiguration(mapName, cacheName, cacheId);
     }
 
     private EvictionListener getEvictionListener() {

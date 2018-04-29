@@ -16,8 +16,9 @@
 
 package com.hazelcast.cache.impl;
 
+import com.hazelcast.cache.HazelcastCacheManager;
 import com.hazelcast.cache.HazelcastCachingProvider;
-import com.hazelcast.cache.impl.operation.CacheCreateConfigOperation;
+import com.hazelcast.cache.impl.merge.policy.CacheMergePolicyProvider;
 import com.hazelcast.cache.impl.operation.CacheGetConfigOperation;
 import com.hazelcast.cache.impl.operation.CacheManagementConfigOperation;
 import com.hazelcast.config.CacheConfig;
@@ -27,7 +28,6 @@ import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.HazelcastInstanceProxy;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.OperationService;
 
 import java.net.URI;
 import java.util.ArrayList;
@@ -36,6 +36,8 @@ import java.util.Properties;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.internal.config.ConfigValidator.checkCacheConfig;
+import static com.hazelcast.internal.config.MergePolicyValidator.checkMergePolicySupportsInMemoryFormat;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
@@ -58,7 +60,7 @@ public class HazelcastServerCacheManager
 
     private final HazelcastInstanceImpl instance;
     private final NodeEngine nodeEngine;
-    private final ICacheService cacheService;
+    private final CacheService cacheService;
 
     public HazelcastServerCacheManager(HazelcastServerCachingProvider cachingProvider, HazelcastInstance hazelcastInstance,
                                        URI uri, ClassLoader classLoader, Properties properties) {
@@ -109,7 +111,7 @@ public class HazelcastServerCacheManager
                 CacheManagementConfigOperation op =
                         new CacheManagementConfigOperation(cacheNameWithPrefix, statOrMan, enabled);
                 Future future = nodeEngine.getOperationService()
-                                          .invokeOnTarget(CacheService.SERVICE_NAME, op, member.getAddress());
+                        .invokeOnTarget(CacheService.SERVICE_NAME, op, member.getAddress());
                 futures.add(future);
             }
         }
@@ -123,9 +125,7 @@ public class HazelcastServerCacheManager
 
     @Override
     protected <K, V> CacheConfig<K, V> findCacheConfig(String cacheName,
-                                                       String simpleCacheName,
-                                                       boolean createAlsoOnOthers,
-                                                       boolean syncCreate) {
+                                                       String simpleCacheName) {
         CacheConfig<K, V> config = cacheService.getCacheConfig(cacheName);
         if (config == null) {
             config = cacheService.findCacheConfig(simpleCacheName);
@@ -141,37 +141,21 @@ public class HazelcastServerCacheManager
             // This is needed because even though cache config is exist on this node
             // (for example added by an in-flight cache config creation operation)
             // it still might not exist on other nodes yet (but will created eventually).
-            createCacheConfig(cacheName, config, createAlsoOnOthers, syncCreate);
+            createCacheConfig(cacheName, config);
         }
         return config;
     }
 
     @Override
-    protected <K, V> CacheConfig<K, V> createCacheConfig(String cacheName,
-                                                         CacheConfig<K, V> config,
-                                                         boolean createAlsoOnOthers,
-                                                         boolean syncCreate) {
-        CacheConfig<K, V> currentCacheConfig = cacheService.getCacheConfig(cacheName);
-        OperationService operationService = nodeEngine.getOperationService();
-        // Create cache config on all nodes.
-        CacheCreateConfigOperation op =
-                new CacheCreateConfigOperation(config, createAlsoOnOthers);
-        // Run "CacheCreateConfigOperation" on this node. Its itself handles interaction with other nodes.
-        // This operation doesn't block operation thread even "syncCreate" is specified.
-        // In that case, scheduled thread is used, not operation thread.
-        InternalCompletableFuture future =
-                operationService.invokeOnTarget(CacheService.SERVICE_NAME, op, nodeEngine.getThisAddress());
-        if (syncCreate) {
-            return (CacheConfig<K, V>) future.join();
-        } else {
-            return currentCacheConfig;
-        }
+    protected <K, V> void createCacheConfig(String cacheName,
+                                            CacheConfig<K, V> config) {
+        cacheService.createCacheConfigOnAllMembers(PreJoinCacheConfig.of(config));
     }
 
     @Override
     protected <K, V> ICacheInternal<K, V> createCacheProxy(CacheConfig<K, V> cacheConfig) {
         CacheProxy<K, V> cacheProxy = (CacheProxy<K, V>) instance.getCacheManager()
-                                                                 .getCacheByFullName(cacheConfig.getNameWithPrefix());
+                .getCacheByFullName(cacheConfig.getNameWithPrefix());
         cacheProxy.setCacheManager(this);
         return cacheProxy;
     }
@@ -182,7 +166,7 @@ public class HazelcastServerCacheManager
         int partitionId = nodeEngine.getPartitionService().getPartitionId(cacheNameWithPrefix);
         InternalCompletableFuture<CacheConfig> f =
                 nodeEngine.getOperationService()
-                          .invokeOnPartition(CacheService.SERVICE_NAME, op, partitionId);
+                        .invokeOnPartition(CacheService.SERVICE_NAME, op, partitionId);
         return f.join();
     }
 
@@ -190,6 +174,16 @@ public class HazelcastServerCacheManager
     protected void removeCacheConfigFromLocal(String cacheNameWithPrefix) {
         cacheService.deleteCacheConfig(cacheNameWithPrefix);
         super.removeCacheConfigFromLocal(cacheNameWithPrefix);
+    }
+
+    @Override
+    protected <K, V> void validateCacheConfig(CacheConfig<K, V> cacheConfig) {
+        CacheMergePolicyProvider mergePolicyProvider = cacheService.getMergePolicyProvider();
+        checkCacheConfig(cacheConfig, mergePolicyProvider);
+
+        Object mergePolicy = mergePolicyProvider.getMergePolicy(cacheConfig.getMergePolicy());
+        checkMergePolicySupportsInMemoryFormat(cacheConfig.getName(), mergePolicy, cacheConfig.getInMemoryFormat(),
+                nodeEngine.getClusterService().getClusterVersion(), true, nodeEngine.getLogger(HazelcastCacheManager.class));
     }
 
     @Override

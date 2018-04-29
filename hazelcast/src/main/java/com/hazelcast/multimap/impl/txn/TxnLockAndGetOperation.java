@@ -22,7 +22,7 @@ import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
 import com.hazelcast.multimap.impl.MultiMapRecord;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.multimap.impl.MultiMapValue;
-import com.hazelcast.multimap.impl.operations.MultiMapKeyBasedOperation;
+import com.hazelcast.multimap.impl.operations.AbstractKeyBasedMultiMapOperation;
 import com.hazelcast.multimap.impl.operations.MultiMapResponse;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -36,10 +36,9 @@ import com.hazelcast.transaction.TransactionException;
 import java.io.IOException;
 import java.util.Collection;
 
-public class TxnLockAndGetOperation extends MultiMapKeyBasedOperation implements BlockingOperation, MutatingOperation {
+public class TxnLockAndGetOperation extends AbstractKeyBasedMultiMapOperation implements BlockingOperation, MutatingOperation {
 
     private long ttl;
-
     private boolean blockReads;
 
     public TxnLockAndGetOperation() {
@@ -59,7 +58,7 @@ public class TxnLockAndGetOperation extends MultiMapKeyBasedOperation implements
         if (!container.txnLock(dataKey, getCallerUuid(), threadId, getCallId(), ttl, blockReads)) {
             throw new TransactionException("Transaction couldn't obtain lock!");
         }
-        MultiMapValue multiMapValue = getMultiMapValueOrNull();
+        MultiMapValue multiMapValue = container.getMultiMapValueOrNull(dataKey);
         boolean isLocal = executedLocally();
         Collection<MultiMapRecord> collection = multiMapValue == null ? null : multiMapValue.getCollection(isLocal);
         MultiMapResponse multiMapResponse = new MultiMapResponse(collection, getValueCollectionType(container));

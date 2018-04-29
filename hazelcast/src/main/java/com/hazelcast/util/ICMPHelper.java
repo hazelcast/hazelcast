@@ -24,13 +24,14 @@ import static com.hazelcast.nio.IOUtil.copy;
 import static com.hazelcast.nio.IOUtil.getFileFromResourcesAsStream;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.JVMUtil.is32bitJVM;
+import static com.hazelcast.util.OsHelper.OS;
+import static com.hazelcast.util.OsHelper.isUnixFamily;
 
 /**
  * Helper class that uses JNI to check whether the JVM process has enough permission to create raw-sockets.
  */
 public final class ICMPHelper {
 
-    private static final String OS = System.getProperty("os.name").toLowerCase();
     static {
         System.load(extractBundledLib());
     }
@@ -42,10 +43,6 @@ public final class ICMPHelper {
 
     public static boolean isRawSocketPermitted() {
         return isRawSocketPermitted0();
-    }
-
-    private static boolean isLinux() {
-        return (OS.contains("nix") || OS.contains("nux") || OS.contains("aix"));
     }
 
     private static String extractBundledLib() {
@@ -65,7 +62,7 @@ public final class ICMPHelper {
     }
 
     private static String getBundledLibraryPath() {
-        if (!isLinux()) {
+        if (!isUnixFamily()) {
             throw new IllegalStateException("ICMP not supported in this platform: " + OS);
         }
 

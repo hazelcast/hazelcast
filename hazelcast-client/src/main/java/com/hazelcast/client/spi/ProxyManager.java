@@ -28,6 +28,7 @@ import com.hazelcast.client.config.ProxyFactoryConfig;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAddDistributedObjectListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.ClientCreateProxiesCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientCreateProxyCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientRemoveDistributedObjectListenerCodec;
 import com.hazelcast.client.proxy.ClientAtomicLongProxy;
@@ -85,6 +86,7 @@ import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
+import com.hazelcast.nio.Connection;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
@@ -96,10 +98,12 @@ import com.hazelcast.transaction.impl.xa.XAService;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
+import java.util.AbstractMap;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
@@ -319,17 +323,69 @@ public final class ProxyManager {
         }
     }
 
+    /**
+     * Destroys the given proxy in a cluster-wide way.
+     * <p>
+     * Upon successful completion the proxy is unregistered in this proxy
+     * manager, all local resources associated with the proxy are released and
+     * a distributed object destruction operation is issued to the cluster.
+     * <p>
+     * If the given proxy instance is not registered in this proxy manager, the
+     * proxy instance is considered stale. In this case, this stale instance is
+     * a subject to a local-only destruction and its registered counterpart, if
+     * there is any, is a subject to a cluster-wide destruction.
+     *
+     * @param proxy the proxy to destroy.
+     */
+    public void destroyProxy(ClientProxy proxy) {
+        ObjectNamespace objectNamespace = new DistributedObjectNamespace(proxy.getServiceName(),
+                proxy.getDistributedObjectName());
+        ClientProxyFuture registeredProxyFuture = proxies.remove(objectNamespace);
+        ClientProxy registeredProxy = registeredProxyFuture == null ? null : registeredProxyFuture.get();
+
+        try {
+            if (registeredProxy != null) {
+                try {
+                    registeredProxy.destroyLocally();
+                } finally {
+                    registeredProxy.destroyRemotely();
+                }
+            }
+        } finally {
+            if (proxy != registeredProxy) {
+                // The given proxy is stale and was already destroyed, but the caller
+                // may have allocated local resources in the context of this stale proxy
+                // instance after it was destroyed, so we have to cleanup it locally one
+                // more time to make sure there are no leaking local resources.
+                proxy.destroyLocally();
+            }
+        }
+    }
+
+    /**
+     * Locally destroys the proxy identified by the given service and object ID.
+     * <p>
+     * Upon successful completion the proxy is unregistered in this proxy
+     * manager and all local resources associated with the proxy are released.
+     *
+     * @param service the service associated with the proxy.
+     * @param id      the ID of the object to destroy the proxy of.
+     */
+    public void destroyProxyLocally(String service, String id) {
+        ObjectNamespace objectNamespace = new DistributedObjectNamespace(service, id);
+        ClientProxyFuture clientProxyFuture = proxies.remove(objectNamespace);
+        if (clientProxyFuture != null) {
+            ClientProxy clientProxy = clientProxyFuture.get();
+            clientProxy.destroyLocally();
+        }
+    }
+
     private ClientProxy createClientProxy(String id, ClientProxyFactory factory) {
         if (factory instanceof ClientProxyFactoryWithContext) {
             return ((ClientProxyFactoryWithContext) factory).create(id, context);
         }
         return factory.create(id)
                 .setContext(context);
-    }
-
-    public void removeProxy(String service, String id) {
-        final ObjectNamespace ns = new DistributedObjectNamespace(service, id);
-        proxies.remove(ns);
     }
 
     private void initializeWithRetry(ClientProxy clientProxy) throws Exception {
@@ -419,6 +475,20 @@ public final class ProxyManager {
     public String addDistributedObjectListener(final DistributedObjectListener listener) {
         final EventHandler<ClientMessage> eventHandler = new DistributedObjectEventHandler(listener, this);
         return client.getListenerService().registerListener(distributedObjectListenerCodec, eventHandler);
+    }
+
+    public void createDistributedObjectsOnCluster(Connection ownerConnection) {
+        List<Map.Entry<String, String>> proxyEntries = new LinkedList<Map.Entry<String, String>>();
+        for (ObjectNamespace objectNamespace : proxies.keySet()) {
+            String name = objectNamespace.getObjectName();
+            String serviceName = objectNamespace.getServiceName();
+            proxyEntries.add(new AbstractMap.SimpleEntry<String, String>(name, serviceName));
+        }
+        if (proxyEntries.isEmpty()) {
+            return;
+        }
+        ClientMessage clientMessage = ClientCreateProxiesCodec.encodeRequest(proxyEntries);
+        new ClientInvocation(client, clientMessage, null, ownerConnection).invokeUrgent();
     }
 
     private final class DistributedObjectEventHandler extends ClientAddDistributedObjectListenerCodec.AbstractEventHandler

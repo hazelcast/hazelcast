@@ -21,12 +21,13 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.map.impl.proxy.NearCachedMapProxyImpl;
+import com.hazelcast.map.merge.MergePolicyProvider;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.RemoteService;
 
-import static com.hazelcast.internal.config.ConfigValidator.checkMergePolicySupportsInMemoryFormat;
 import static com.hazelcast.internal.config.ConfigValidator.checkMapConfig;
 import static com.hazelcast.internal.config.ConfigValidator.checkNearCacheConfig;
+import static com.hazelcast.internal.config.MergePolicyValidator.checkMergePolicySupportsInMemoryFormat;
 
 /**
  * Defines remote service behavior of map service.
@@ -47,16 +48,15 @@ class MapRemoteService implements RemoteService {
     public DistributedObject createDistributedObject(String name) {
         Config config = nodeEngine.getConfig();
         MapConfig mapConfig = config.findMapConfig(name);
-        checkMapConfig(mapConfig);
-        checkMergePolicySupportsInMemoryFormat(name,
-                mapConfig.getMergePolicyConfig().getPolicy(),
-                mapConfig.getInMemoryFormat(),
-                nodeEngine.getClusterService().getClusterVersion(),
-                true, nodeEngine.getLogger(getClass()));
+        MergePolicyProvider mergePolicyProvider = mapServiceContext.getMergePolicyProvider();
+        checkMapConfig(mapConfig, mergePolicyProvider);
+
+        Object mergePolicy = mergePolicyProvider.getMergePolicy(mapConfig.getMergePolicyConfig().getPolicy());
+        checkMergePolicySupportsInMemoryFormat(name, mergePolicy, mapConfig.getInMemoryFormat(),
+                nodeEngine.getClusterService().getClusterVersion(), true, nodeEngine.getLogger(getClass()));
 
         if (mapConfig.isNearCacheEnabled()) {
             checkNearCacheConfig(name, mapConfig.getNearCacheConfig(), config.getNativeMemoryConfig(), false);
-
             return new NearCachedMapProxyImpl(name, mapServiceContext.getService(), nodeEngine, mapConfig);
         } else {
             return new MapProxyImpl(name, mapServiceContext.getService(), nodeEngine, mapConfig);

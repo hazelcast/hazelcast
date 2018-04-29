@@ -16,8 +16,10 @@
 
 package com.hazelcast.multimap.impl.operations;
 
+import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
 import com.hazelcast.multimap.impl.MultiMapRecord;
+import com.hazelcast.multimap.impl.MultiMapValue;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -27,7 +29,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 
-public class PutBackupOperation extends MultiMapKeyBasedOperation implements BackupOperation {
+public class PutBackupOperation extends AbstractKeyBasedMultiMapOperation implements BackupOperation {
 
     private long recordId;
     private Data value;
@@ -45,13 +47,16 @@ public class PutBackupOperation extends MultiMapKeyBasedOperation implements Bac
 
     @Override
     public void run() throws Exception {
+        MultiMapContainer container = getOrCreateContainerWithoutAccess();
+        MultiMapValue multiMapValue = container.getOrCreateMultiMapValue(dataKey);
+        Collection<MultiMapRecord> collection = multiMapValue.getCollection(false);
+
         MultiMapRecord record = new MultiMapRecord(recordId, isBinary() ? value : toObject(value));
-        Collection<MultiMapRecord> coll = getOrCreateMultiMapValue().getCollection(false);
         if (index == -1) {
-            response = coll.add(record);
+            response = collection.add(record);
         } else {
             try {
-                ((List<MultiMapRecord>) coll).add(index, record);
+                ((List<MultiMapRecord>) collection).add(index, record);
                 response = true;
             } catch (IndexOutOfBoundsException e) {
                 response = e;

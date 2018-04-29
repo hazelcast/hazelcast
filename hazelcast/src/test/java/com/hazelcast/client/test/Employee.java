@@ -63,7 +63,7 @@ class Employee implements Portable {
     }
 
     public int getFactoryId() {
-        return 666;
+        return PortableFactory.FACTORY_ID;
     }
 
     public int getClassId() {

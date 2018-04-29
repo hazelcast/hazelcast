@@ -16,29 +16,31 @@
 
 package com.hazelcast.multimap.impl.txn;
 
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
-import com.hazelcast.multimap.impl.operations.MultiMapBackupAwareOperation;
+import com.hazelcast.multimap.impl.operations.AbstractBackupAwareMultiMapOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.transaction.TransactionException;
 
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 
-public class TxnPrepareOperation extends MultiMapBackupAwareOperation {
+public class TxnPrepareOperation extends AbstractBackupAwareMultiMapOperation implements Versioned {
 
-    private static final long LOCK_EXTENSION_TIME_IN_MILLIS = 10000L;
-    private long ttl;
+    static final long LOCK_EXTENSION_TIME_IN_MILLIS = TimeUnit.SECONDS.toMillis(10);
 
     public TxnPrepareOperation() {
     }
 
-    public TxnPrepareOperation(int partitionId, String name, Data dataKey, long ttl, long threadId) {
+    public TxnPrepareOperation(int partitionId, String name, Data dataKey, long threadId) {
         super(name, dataKey, threadId);
+
         setPartitionId(partitionId);
-        this.ttl = ttl;
     }
 
     @Override
@@ -64,7 +66,7 @@ public class TxnPrepareOperation extends MultiMapBackupAwareOperation {
 
     @Override
     public Operation getBackupOperation() {
-        return new TxnPrepareBackupOperation(name, dataKey, getCallerUuid(), threadId);
+        return new TxnPrepareBackupOperation(name, dataKey, threadId, getCallerUuid());
     }
 
     @Override
@@ -75,12 +77,18 @@ public class TxnPrepareOperation extends MultiMapBackupAwareOperation {
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeLong(ttl);
+        // RU_COMPAT_3_9
+        if (out.getVersion().isUnknownOrLessThan(Versions.V3_10)) {
+            out.writeLong(0);
+        }
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        ttl = in.readLong();
+        // RU_COMPAT_3_9
+        if (in.getVersion().isUnknownOrLessThan(Versions.V3_10)) {
+            in.readLong();
+        }
     }
 }

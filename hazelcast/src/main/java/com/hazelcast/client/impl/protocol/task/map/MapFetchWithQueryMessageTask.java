@@ -19,7 +19,6 @@ package com.hazelcast.client.impl.protocol.task.map;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapFetchWithQueryCodec;
 import com.hazelcast.instance.Node;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.map.impl.query.Query;
@@ -53,9 +52,6 @@ public class MapFetchWithQueryMessageTask extends AbstractMapPartitionMessageTas
 
     @Override
     protected Operation prepareOperation() {
-        if (nodeEngine.getClusterService().getClusterVersion().isLessThan(Versions.V3_9)) {
-            throw new UnsupportedOperationException("Iterate map by query is available when cluster version is 3.9 or higher");
-        }
         final MapOperationProvider operationProvider = getMapOperationProvider(parameters.name);
         final Projection<?, ?> projection = nodeEngine.getSerializationService().toObject(parameters.projection);
         final Predicate predicate = nodeEngine.getSerializationService().toObject(parameters.predicate);

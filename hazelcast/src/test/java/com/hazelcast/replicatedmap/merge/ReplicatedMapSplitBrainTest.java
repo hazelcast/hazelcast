@@ -22,13 +22,13 @@ import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.ReplicatedMap;
-import com.hazelcast.spi.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.DiscardMergePolicy;
 import com.hazelcast.spi.merge.HigherHitsMergePolicy;
 import com.hazelcast.spi.merge.LatestAccessMergePolicy;
 import com.hazelcast.spi.merge.LatestUpdateMergePolicy;
 import com.hazelcast.spi.merge.PassThroughMergePolicy;
 import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.SplitBrainTestSupport;
@@ -47,8 +47,6 @@ import static com.hazelcast.config.InMemoryFormat.BINARY;
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
@@ -66,26 +64,28 @@ import static org.junit.Assert.fail;
 @Category({QuickTest.class, ParallelTest.class})
 public class ReplicatedMapSplitBrainTest extends SplitBrainTestSupport {
 
-    @Parameters(name = "format:{0}, mergePolicy:{1}")
+    @Parameters(name = "mergePolicy:{0}, format:{1}")
     public static Collection<Object[]> parameters() {
         return asList(new Object[][]{
-                {BINARY, DiscardMergePolicy.class},
-                {BINARY, HigherHitsMergePolicy.class},
-                {BINARY, LatestAccessMergePolicy.class},
-                {BINARY, LatestUpdateMergePolicy.class},
-                {BINARY, PassThroughMergePolicy.class},
-                {BINARY, PutIfAbsentMergePolicy.class},
+                {DiscardMergePolicy.class, BINARY},
+                {HigherHitsMergePolicy.class, BINARY},
+                {LatestAccessMergePolicy.class, BINARY},
+                {PassThroughMergePolicy.class, BINARY},
+                {PutIfAbsentMergePolicy.class, BINARY},
+                {RemoveValuesMergePolicy.class, BINARY},
 
-                {BINARY, MergeIntegerValuesMergePolicy.class},
-                {OBJECT, MergeIntegerValuesMergePolicy.class},
+                {ReturnPiMergePolicy.class, BINARY},
+                {ReturnPiMergePolicy.class, OBJECT},
+                {MergeIntegerValuesMergePolicy.class, BINARY},
+                {MergeIntegerValuesMergePolicy.class, OBJECT},
         });
     }
 
     @Parameter
-    public InMemoryFormat inMemoryFormat;
+    public Class<? extends SplitBrainMergePolicy> mergePolicyClass;
 
     @Parameter(value = 1)
-    public Class<? extends SplitBrainMergePolicy> mergePolicyClass;
+    public InMemoryFormat inMemoryFormat;
 
     private String replicatedMapNameA = randomMapName("replicatedMapA-");
     private String replicatedMapNameB = randomMapName("replicatedMapB-");
@@ -107,10 +107,12 @@ public class ReplicatedMapSplitBrainTest extends SplitBrainTestSupport {
         Config config = super.config();
         config.getReplicatedMapConfig(replicatedMapNameA)
                 .setInMemoryFormat(inMemoryFormat)
-                .setMergePolicyConfig(mergePolicyConfig);
+                .setMergePolicyConfig(mergePolicyConfig)
+                .setStatisticsEnabled(false);
         config.getReplicatedMapConfig(replicatedMapNameB)
                 .setInMemoryFormat(inMemoryFormat)
-                .setMergePolicyConfig(mergePolicyConfig);
+                .setMergePolicyConfig(mergePolicyConfig)
+                .setStatisticsEnabled(false);
         return config;
     }
 
@@ -148,6 +150,10 @@ public class ReplicatedMapSplitBrainTest extends SplitBrainTestSupport {
             afterSplitPassThroughMergePolicy();
         } else if (mergePolicyClass == PutIfAbsentMergePolicy.class) {
             afterSplitPutIfAbsentMergePolicy();
+        } else if (mergePolicyClass == RemoveValuesMergePolicy.class) {
+            afterSplitRemoveValuesMergePolicy();
+        } else if (mergePolicyClass == ReturnPiMergePolicy.class) {
+            afterSplitReturnPiMergePolicy();
         } else if (mergePolicyClass == MergeIntegerValuesMergePolicy.class) {
             afterSplitCustomMergePolicy();
         } else {
@@ -162,31 +168,27 @@ public class ReplicatedMapSplitBrainTest extends SplitBrainTestSupport {
 
         replicatedMapB1 = instances[0].getReplicatedMap(replicatedMapNameB);
 
-        AssertTask assertTask = new AssertTask() {
-            @Override
-            public void run() {
-                if (mergePolicyClass == DiscardMergePolicy.class) {
-                    afterMergeDiscardMergePolicy();
-                } else if (mergePolicyClass == HigherHitsMergePolicy.class) {
-                    afterMergeHigherHitsMergePolicy();
-                } else if (mergePolicyClass == LatestAccessMergePolicy.class) {
-                    afterMergeLatestAccessMergePolicy();
-                } else if (mergePolicyClass == LatestUpdateMergePolicy.class) {
-                    afterMergeLatestUpdateMergePolicy();
-                } else if (mergePolicyClass == PassThroughMergePolicy.class) {
-                    afterMergePassThroughMergePolicy();
-                } else if (mergePolicyClass == PutIfAbsentMergePolicy.class) {
-                    afterMergePutIfAbsentMergePolicy();
-                } else if (mergePolicyClass == MergeIntegerValuesMergePolicy.class) {
-                    afterMergeCustomMergePolicy();
-                } else {
-                    fail();
-                }
-            }
-        };
-
-        // wait completion of migration tasks after lite member promotion
-        assertTrueEventually(assertTask);
+        if (mergePolicyClass == DiscardMergePolicy.class) {
+            afterMergeDiscardMergePolicy();
+        } else if (mergePolicyClass == HigherHitsMergePolicy.class) {
+            afterMergeHigherHitsMergePolicy();
+        } else if (mergePolicyClass == LatestAccessMergePolicy.class) {
+            afterMergeLatestAccessMergePolicy();
+        } else if (mergePolicyClass == LatestUpdateMergePolicy.class) {
+            afterMergeLatestUpdateMergePolicy();
+        } else if (mergePolicyClass == PassThroughMergePolicy.class) {
+            afterMergePassThroughMergePolicy();
+        } else if (mergePolicyClass == PutIfAbsentMergePolicy.class) {
+            afterMergePutIfAbsentMergePolicy();
+        } else if (mergePolicyClass == RemoveValuesMergePolicy.class) {
+            afterMergeRemoveValuesMergePolicy();
+        } else if (mergePolicyClass == ReturnPiMergePolicy.class) {
+            afterMergeReturnPiMergePolicy();
+        } else if (mergePolicyClass == MergeIntegerValuesMergePolicy.class) {
+            afterMergeCustomMergePolicy();
+        } else {
+            fail();
+        }
     }
 
     private void afterSplitDiscardMergePolicy() {
@@ -199,47 +201,34 @@ public class ReplicatedMapSplitBrainTest extends SplitBrainTestSupport {
     }
 
     private void afterMergeDiscardMergePolicy() {
-        assertEquals("value1", replicatedMapA1.get(key1));
-        assertEquals("value1", replicatedMapA2.get(key1));
+        assertReplicatedMapsA(key1, "value1");
+        assertReplicatedMapsA(key2, null);
+        assertReplicatedMapsSizeA(1);
 
-        assertNull(replicatedMapA1.get(key2));
-        assertNull(replicatedMapA2.get(key2));
-
-        assertEquals(1, replicatedMapA1.size());
-        assertEquals(1, replicatedMapA2.size());
-
-        assertNull(replicatedMapB1.get(key));
-        assertNull(replicatedMapB2.get(key));
-
-        assertTrue(replicatedMapB1.isEmpty());
-        assertTrue(replicatedMapB2.isEmpty());
+        assertReplicatedMapsB(key, null);
+        assertReplicatedMapsSizeB(0);
     }
 
     private void afterSplitHigherHitsMergePolicy() {
-        replicatedMapA1.put(key1, "higherHitsValue1");
+        replicatedMapA1.put(key1, "HigherHitsValue1");
         replicatedMapA1.put(key2, "value2");
 
         // increase hits number
-        assertEquals("higherHitsValue1", replicatedMapA1.get(key1));
-        assertEquals("higherHitsValue1", replicatedMapA1.get(key1));
+        assertEquals("HigherHitsValue1", replicatedMapA1.get(key1));
+        assertEquals("HigherHitsValue1", replicatedMapA1.get(key1));
 
         replicatedMapA2.put(key1, "value1");
-        replicatedMapA2.put(key2, "higherHitsValue2");
+        replicatedMapA2.put(key2, "HigherHitsValue2");
 
         // increase hits number
-        assertEquals("higherHitsValue2", replicatedMapA2.get(key2));
-        assertEquals("higherHitsValue2", replicatedMapA2.get(key2));
+        assertEquals("HigherHitsValue2", replicatedMapA2.get(key2));
+        assertEquals("HigherHitsValue2", replicatedMapA2.get(key2));
     }
 
     private void afterMergeHigherHitsMergePolicy() {
-        assertEquals("higherHitsValue1", replicatedMapA1.get(key1));
-        assertEquals("higherHitsValue1", replicatedMapA2.get(key1));
-
-        assertEquals("higherHitsValue2", replicatedMapA1.get(key2));
-        assertEquals("higherHitsValue2", replicatedMapA2.get(key2));
-
-        assertEquals(2, replicatedMapA1.size());
-        assertEquals(2, replicatedMapA2.size());
+        assertReplicatedMapsA(key1, "HigherHitsValue1");
+        assertReplicatedMapsA(key2, "HigherHitsValue2");
+        assertReplicatedMapsSizeA(2);
     }
 
     private void afterSplitLatestAccessMergePolicy() {
@@ -267,14 +256,9 @@ public class ReplicatedMapSplitBrainTest extends SplitBrainTestSupport {
     }
 
     private void afterMergeLatestAccessMergePolicy() {
-        assertEquals("LatestAccessedValue1", replicatedMapA1.get(key1));
-        assertEquals("LatestAccessedValue1", replicatedMapA2.get(key1));
-
-        assertEquals("LatestAccessedValue2", replicatedMapA1.get(key2));
-        assertEquals("LatestAccessedValue2", replicatedMapA2.get(key2));
-
-        assertEquals(2, replicatedMapA1.size());
-        assertEquals(2, replicatedMapA2.size());
+        assertReplicatedMapsA(key1, "LatestAccessedValue1");
+        assertReplicatedMapsA(key2, "LatestAccessedValue2");
+        assertReplicatedMapsSizeA(2);
     }
 
     private void afterSplitLatestUpdateMergePolicy() {
@@ -293,14 +277,9 @@ public class ReplicatedMapSplitBrainTest extends SplitBrainTestSupport {
     }
 
     private void afterMergeLatestUpdateMergePolicy() {
-        assertEquals("LatestUpdatedValue1", replicatedMapA1.get(key1));
-        assertEquals("LatestUpdatedValue1", replicatedMapA2.get(key1));
-
-        assertEquals("LatestUpdatedValue2", replicatedMapA1.get(key2));
-        assertEquals("LatestUpdatedValue2", replicatedMapA2.get(key2));
-
-        assertEquals(2, replicatedMapA1.size());
-        assertEquals(2, replicatedMapA2.size());
+        assertReplicatedMapsA(key1, "LatestUpdatedValue1");
+        assertReplicatedMapsA(key2, "LatestUpdatedValue2");
+        assertReplicatedMapsSizeA(2);
     }
 
     private void afterSplitPassThroughMergePolicy() {
@@ -309,24 +288,16 @@ public class ReplicatedMapSplitBrainTest extends SplitBrainTestSupport {
         replicatedMapA2.put(key1, "PassThroughValue1");
         replicatedMapA2.put(key2, "PassThroughValue2");
 
-        replicatedMapB2.put(key, "PutIfAbsentValue");
+        replicatedMapB2.put(key, "PassThroughValue");
     }
 
     private void afterMergePassThroughMergePolicy() {
-        assertEquals("PassThroughValue1", replicatedMapA1.get(key1));
-        assertEquals("PassThroughValue1", replicatedMapA2.get(key1));
+        assertReplicatedMapsA(key1, "PassThroughValue1");
+        assertReplicatedMapsA(key2, "PassThroughValue2");
+        assertReplicatedMapsSizeA(2);
 
-        assertEquals("PassThroughValue2", replicatedMapA1.get(key2));
-        assertEquals("PassThroughValue2", replicatedMapA2.get(key2));
-
-        assertEquals(2, replicatedMapA1.size());
-        assertEquals(2, replicatedMapA2.size());
-
-        assertEquals("PutIfAbsentValue", replicatedMapB1.get(key));
-        assertEquals("PutIfAbsentValue", replicatedMapB2.get(key));
-
-        assertEquals(1, replicatedMapB1.size());
-        assertEquals(1, replicatedMapB2.size());
+        assertReplicatedMapsB(key, "PassThroughValue");
+        assertReplicatedMapsSizeB(1);
     }
 
     private void afterSplitPutIfAbsentMergePolicy() {
@@ -339,32 +310,106 @@ public class ReplicatedMapSplitBrainTest extends SplitBrainTestSupport {
     }
 
     private void afterMergePutIfAbsentMergePolicy() {
-        assertEquals("PutIfAbsentValue1", replicatedMapA1.get(key1));
-        assertEquals("PutIfAbsentValue1", replicatedMapA2.get(key1));
+        assertReplicatedMapsA(key1, "PutIfAbsentValue1");
+        assertReplicatedMapsA(key2, "PutIfAbsentValue2");
+        assertReplicatedMapsSizeA(2);
 
-        assertEquals("PutIfAbsentValue2", replicatedMapA1.get(key2));
-        assertEquals("PutIfAbsentValue2", replicatedMapA2.get(key2));
+        assertReplicatedMapsB(key, "PutIfAbsentValue");
+        assertReplicatedMapsSizeB(1);
+    }
 
-        assertEquals(2, replicatedMapA1.size());
-        assertEquals(2, replicatedMapA2.size());
+    private void afterSplitRemoveValuesMergePolicy() {
+        replicatedMapA1.put(key, "discardedValue1");
 
-        assertEquals("PutIfAbsentValue", replicatedMapB1.get(key));
-        assertEquals("PutIfAbsentValue", replicatedMapB2.get(key));
+        replicatedMapA2.put(key, "discardedValue2");
 
-        assertEquals(1, replicatedMapB1.size());
-        assertEquals(1, replicatedMapB2.size());
+        replicatedMapB2.put(key, "discardedValue");
+    }
+
+    private void afterMergeRemoveValuesMergePolicy() {
+        assertReplicatedMapsA(key, null);
+        assertReplicatedMapsSizeA(0);
+
+        assertReplicatedMapsB(key, null);
+        assertReplicatedMapsSizeB(0);
     }
 
     private void afterSplitCustomMergePolicy() {
         replicatedMapA1.put(key, "value");
-        replicatedMapA2.put(key, 1);
+        replicatedMapA2.put(key, 23);
+    }
+
+    private void afterSplitReturnPiMergePolicy() {
+        replicatedMapA1.put("key", "discardedValue1");
+
+        replicatedMapA2.put("key", "discardedValue2");
+
+        replicatedMapB2.put("key", "discardedValue");
+    }
+
+    private void afterMergeReturnPiMergePolicy() {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertPi(replicatedMapA1.get("key"));
+                assertPi(replicatedMapA2.get("key"));
+
+                assertEquals(1, replicatedMapA1.size());
+                assertEquals(1, replicatedMapA2.size());
+
+                assertPi(replicatedMapB1.get("key"));
+                assertPi(replicatedMapB2.get("key"));
+
+                assertEquals(1, replicatedMapB1.size());
+                assertEquals(1, replicatedMapB2.size());
+            }
+        });
     }
 
     private void afterMergeCustomMergePolicy() {
-        assertEquals(1, replicatedMapA1.get(key));
-        assertEquals(1, replicatedMapA2.get(key));
+        assertReplicatedMapsA(key, 23);
+        assertReplicatedMapsSizeA(1);
+    }
 
-        assertEquals(1, replicatedMapA1.size());
-        assertEquals(1, replicatedMapA2.size());
+    private void assertReplicatedMapsA(Object key, Object expectedValue) {
+        assertReplicatedMaps(replicatedMapA1, replicatedMapA2, key, expectedValue);
+    }
+
+    private void assertReplicatedMapsB(Object key, Object expectedValue) {
+        assertReplicatedMaps(replicatedMapB1, replicatedMapB2, key, expectedValue);
+    }
+
+    private static void assertReplicatedMaps(final ReplicatedMap<Object, Object> replicatedMap1,
+                                             final ReplicatedMap<Object, Object> replicatedMap2,
+                                             final Object key, final Object expectedValue) {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertEqualsStringFormat("expected value %s in replicatedMap1, but was %s",
+                        expectedValue, replicatedMap1.get(key));
+                assertEqualsStringFormat("expected value %s in replicatedMap2, but was %s",
+                        expectedValue, replicatedMap2.get(key));
+            }
+        });
+    }
+
+    private void assertReplicatedMapsSizeA(int expectedSize) {
+        assertReplicatedMapsSize(replicatedMapA1, replicatedMapA2, expectedSize);
+    }
+
+    private void assertReplicatedMapsSizeB(int expectedSize) {
+        assertReplicatedMapsSize(replicatedMapB1, replicatedMapB2, expectedSize);
+    }
+
+    private static void assertReplicatedMapsSize(final ReplicatedMap<Object, Object> replicatedMap1,
+                                                 final ReplicatedMap<Object, Object> replicatedMap2,
+                                                 final int expectedSize) {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertEqualsStringFormat("replicatedMap1 should have size %d, but was %d", expectedSize, replicatedMap1.size());
+                assertEqualsStringFormat("replicatedMap2 should have size %d, but was %d", expectedSize, replicatedMap2.size());
+            }
+        });
     }
 }

@@ -8,10 +8,16 @@ This document lists the new features, enhancements, fixed issues and, removed or
 - Shorter Split-Brain Detection Window: In addition to the current quorum function, which uses the list of members to determine whether a minimum number of members is available in the cluster, a new quorum implementation has been introduced to shorten the time between the occurrence of a network partitioning and its detection: it takes advantage of information about the cluster health (heartbeats and ICMP pings).
 - Extended Merge Policies: Merge policies applied after a Split-Brain syndrome has been implemented for more Hazelcast data structures (it was for IMap, ICache and Replicated Map before 3.10).
 - Flake ID Generator: Introduced to overcome the duplicate ID generation in case of a network split, by the deprecated IdGenerator data structure. Please see the FlakeIdGenerator section.
-- PN-Counter: Introduced CRDT PN-Counter (Positive-Negative Counter), which allows incrementing and decrementing a counter value and propagating the results to all cluster members. Please see the PN-Counter section.
+- PN Counter: Introduced CRDT PN Counter (Positive-Negative Counter), which allows incrementing and decrementing a counter value and propagating the results to all cluster members. Please see the PN-Counter section.
+- Health Check Script: Introduced a command line tool to check the health of your Hazelcast cluster. Please see the Health Check Script section.
+
 
 The following are the other improvements performed to solve the enhancement issues opened by the Hazelcast customers/team.
 
+- Split-brain merge policy design issues: the SPI design requires downcasting in the merge policy classes. It is also unclear which merge policy is compatible with which data structure. [#12721]
+- Added ID count to flake ID generators statistics. [#12612]
+- MemberMap.SINGLETON_MEMBER_LIST_VERSION value should be configurable. [#12528]
+- It is still required to provide a group and password while configuring with Spring: the attribute required should be removed from the tag group both for name and password elements. [#12462]
 - Group passwords should not be serialized in ConfigCheck. [#12303]
 - Code comments for Hazelcast.shutdownAll() should be improved: it talks about shutting down all running Hazelcast instances in the JVM. However, native clients, which are also Hazelcast instances, are not shut down when this method is called. [#12217]
 - An initialization exception should be thrown when Symmetric Encryption is configured on Hazelcast Open Source edition. [#12203]
@@ -30,6 +36,39 @@ The following are the other improvements performed to solve the enhancement issu
 
 2. Fixes
 
+- Split-brain merge policy configuration validation is not properly working: The merge policy checks in ConfigValidator are based on false assumptions regarding SomeConfig.isStatisticsEnabled() and valid split-brain merge types. [#12722]
+- XmlConfigBuilder wrongly uses Locale dependent number format for nativeMemory.metadataSpacePercentage. [#12656]
+- NullPointerException is thrown when the method QueryCache#getAll is called. [#12656]
+- Query cache is not consistent with its IMap: After the construction of a continuous query cache, all changes on the underlying IMap are immediately reflected to this cache as a stream of events. Therefore, this cache will be an always up-to-date view of the IMap. This is not always true. [#12599]
+- When minority of members have network delays, there occurs transactional exceptions on the client. [#12252]
+- Delayed resolutions for other types in CacheConfig should be implemented: In addition to key and value types, the following need to be deferred: cacheLoaderFactory, cacheWriterFactory, expiryPolicyFactory and `listenerConfiguration`s. [#11905]
+- ReplicatedMapConfig must not be mutated while constructing read-only variant. [#12620]
+- Exception in Node constructor doesn't shutdown services properly. [#12587]
+- CacheNotExistsException must be thrown when cache configuration does not exist. [#12593]
+- Index configurations must be respected in query caches. [#12577]
+- Issues with replicated map and lite members: (i) replicated map cannot be used after lite member promotion, (ii) replicated map runs into NPE after a split-brain healing. [#12537]
+- Eviction causes absence of an entry in IMap and MapStore at the same time: just after the method evictAll is invoked, the map is cleared and the eviction is done in a different thread. This causes the objects not being available both IMap and MapStore. [#12455]
+- JCache 1.1 TCK: the test org.jsr107.tck.event.CacheListenerTest passes, but there are assertion errors in the log. [#12390]
+- An index aware predicate does not invoke its apply method: only the index operation is performed and the apply filter is silently ignored. [#12352]
+- Query with predicates on IMap does not use index when running locally. [#12351]
+- EventJournal loses data if two members terminate: Scenario is starting a cluster with four members and a client, producing data for the event journal, terminating one member and terminating another member after some time. When checking the total count of events, it is seen that some data is lost. [#12300]
+- When minority of members are removed from the network, read/write failures occur on the cluster. [#12240]
+- A merge policy cannot be defined for replicated maps using declarative configuration (XML). [#12223]
+- All dynamic configurations are sent out in a prejoin operation regardless of the cluster version. [#12151]
+- When using PagingPredicate, setting a too big page ends up with IllegalArgumentException. [#12079]
+- There is a performance regression on predicate queries for 3.9.1 and 3.8.7 versions. [#12018]
+- Each new configuration method introduced in 3.10 must be overridden in the client-side dynamic configuration support class. [#12010]
+- For some of the scheduled jobs, the method getLastRunDuration() returns negative values for quick executions. [#11929]
+- Exception in ResponseThreadRunnable causes the REST API to fail: When there is an exception while processing a single command, the entire thread is killed. It causes an unrecoverable condition when the system does not process any incoming REST commands, and hence the memory leak (incoming commands are accumulated in blockingQueue). [#11722]
+- Accessing a query cache with a reasonable amount of data can result in an NPE. [#11675]
+- IMap.add and IMap.remove: EntryListener randomly hangs. [#11470]
+- Members not rejoining cluster after an elongated network disconnectivity: Assuming that, initially there is a cluster of 8 members and when the connectivity for a member is broken it gets eliminated from the cluster. The original cluster contains now 7 members and this is working as expected. However, when the connectivity is restored, the disconnected member is not able to join the original cluster and remains isolated. [#11267]
+- There is a minor decrease in the performance of indexed searches for 3.7.6 and higher versions. [#11231]
+- The code comments for time-to-live expiration is not clear. [#11787]
+- When setting the same key value twice, NPE is thrown on the member. [#10556]
+- JCache fails to initialize when the type of a key or value is not available on a remote member. [#8972]
+- In Hazelcast 3.7, PollOperation invocation is failing to complete due to operation-heartbeat-timeout. [#8831]
+- Custom LoggerFactory is instantiating two times. [#5641]
 - Health Monitor reports load statistics incorrectly. [#12190]
 - Time-to-live for IMap is not working as documented: outdated warnings should be removed from the code comments. [#12144]
 - There are multiple top-level types missing in HazelcastNamespaceHandler, for example serializer. [#12121]
@@ -65,12 +104,14 @@ The following are the other improvements performed to solve the enhancement issu
 
 4. Behavioral Changes
 
-Up to 3.9.x, the method Config.findCacheConfig looks up a CacheSimpleConfig: if none is found, then null is returned. This behavior has been not like all the other findXXConfig methods in the following ways:
+* Up to 3.9.x, the method Config.findCacheConfig looks up a CacheSimpleConfig: if none is found, then null is returned. This behavior has been not like all the other findXXConfig methods in the following ways:
 
 - findXXConfig never returns null, it falls back to defaults, creates the missing data structure configuration and stores it in Config.
 - findXXConfig returns a read-only copy of the actual configuration, while findCacheConfig returns the found configuration object itself.
 
 With 3.10, the method Config.findCacheConfig is aligned to behave like the other findXXConfig methods; it now returns a read-only copy and does fallback to defaults. If you who want the old behavior for this method in 3.10.x, you should use the method Config.findCacheConfigOrNull.
+
+* Starting with 3.10, any unknown property of Discovery SPI in the Hazelcast configuration will result in an exception blocking the Hazelcast member from starting. This approach restricts the configuration (both XML and Object-based) and prevents typos.
 
 5. Known Problems
 

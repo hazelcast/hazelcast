@@ -16,8 +16,14 @@
 
 package com.hazelcast.map.impl.querycache;
 
+import com.hazelcast.config.Config;
+import com.hazelcast.config.EntryListenerConfig;
+import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.PredicateConfig;
+import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapEvent;
 import com.hazelcast.map.QueryCache;
 import com.hazelcast.map.listener.EntryAddedListener;
@@ -64,17 +70,12 @@ public class QueryCacheListenerTest extends AbstractQueryCacheTestSupport {
     @Parameterized.Parameter()
     public String useNaturalFilteringStrategy;
 
-    @Override
-    void prepare() {
-        config.setProperty("hazelcast.map.entry.filtering.natural.event.types", useNaturalFilteringStrategy);
-    }
-
     @Test
     public void listen_withPredicate_afterQueryCacheCreation() {
-        String cacheName = randomString();
+        IMap<Integer, Employee> map = getIMapWithDefaultConfig(TRUE_PREDICATE, useNaturalFilteringStrategy);
 
         CountDownLatch numberOfCaughtEvents = new CountDownLatch(10);
-        QueryCache<Integer, Employee> cache = map.getQueryCache(cacheName, TRUE_PREDICATE, true);
+        QueryCache<Integer, Employee> cache = map.getQueryCache(cacheName);
         cache.addEntryListener(new QueryCacheAdditionListener(numberOfCaughtEvents), SQL_PREDICATE_GT, true);
 
         int count = 111;
@@ -86,10 +87,10 @@ public class QueryCacheListenerTest extends AbstractQueryCacheTestSupport {
     @Test
     public void listenKey_withPredicate_afterQueryCacheCreation() {
         int keyToListen = 109;
-        String cacheName = randomString();
+        IMap<Integer, Employee> map = getIMapWithDefaultConfig(TRUE_PREDICATE, useNaturalFilteringStrategy);
 
         CountDownLatch numberOfCaughtEvents = new CountDownLatch(1);
-        QueryCache<Integer, Employee> cache = map.getQueryCache(cacheName, TRUE_PREDICATE, true);
+        QueryCache<Integer, Employee> cache = map.getQueryCache(cacheName);
         cache.addEntryListener(new QueryCacheAdditionListener(numberOfCaughtEvents), SQL_PREDICATE_GT, keyToListen, true);
 
         int count = 111;
@@ -101,11 +102,11 @@ public class QueryCacheListenerTest extends AbstractQueryCacheTestSupport {
     @Test
     public void listenKey_withMultipleListeners_afterQueryCacheCreation() {
         int keyToListen = 109;
-        String cacheName = randomString();
+        IMap<Integer, Employee> map = getIMapWithDefaultConfig(TRUE_PREDICATE, useNaturalFilteringStrategy);
 
         CountDownLatch additionCount = new CountDownLatch(2);
         CountDownLatch removalCount = new CountDownLatch(2);
-        final QueryCache<Integer, Employee> cache = map.getQueryCache(cacheName, TRUE_PREDICATE, true);
+        final QueryCache<Integer, Employee> cache = map.getQueryCache(cacheName);
         cache.addEntryListener(new QueryCacheAdditionListener(additionCount), SQL_PREDICATE_GT, keyToListen, true);
         cache.addEntryListener(new QueryCacheRemovalListener(removalCount), SQL_PREDICATE_GT, keyToListen, true);
 
@@ -143,7 +144,7 @@ public class QueryCacheListenerTest extends AbstractQueryCacheTestSupport {
 
     @Test
     public void listenerShouldReceive_CLEAR_ALL_Event_whenIMapCleared() {
-        String cacheName = randomString();
+        IMap<Integer, Employee> map = getIMapWithDefaultConfig(TRUE_PREDICATE, useNaturalFilteringStrategy);
         int entryCount = 1000;
 
         final AtomicInteger clearAllEventCount = new AtomicInteger();
@@ -172,10 +173,10 @@ public class QueryCacheListenerTest extends AbstractQueryCacheTestSupport {
 
     @Test
     public void listenKey_withPredicate_whenNoLongerMatching() {
-        String cacheName = randomString();
+        IMap<Integer, Employee> map = getIMapWithDefaultConfig(SQL_PREDICATE_LT, useNaturalFilteringStrategy);
 
         CountDownLatch numberOfCaughtEvents = new CountDownLatch(1);
-        QueryCache<Integer, Employee> cache = map.getQueryCache(cacheName, SQL_PREDICATE_LT, true);
+        QueryCache<Integer, Employee> cache = map.getQueryCache(cacheName);
 
         Employee employee = new Employee(0);
         map.put(0, employee);
@@ -191,10 +192,10 @@ public class QueryCacheListenerTest extends AbstractQueryCacheTestSupport {
 
     @Test
     public void listenKey_withPredicate_whenMatching() {
-        String cacheName = randomString();
+        IMap<Integer, Employee> map = getIMapWithDefaultConfig(SQL_PREDICATE_LT, useNaturalFilteringStrategy);
 
         CountDownLatch numberOfCaughtEvents = new CountDownLatch(1);
-        QueryCache<Integer, Employee> cache = map.getQueryCache(cacheName, SQL_PREDICATE_LT, true);
+        QueryCache<Integer, Employee> cache = map.getQueryCache(cacheName);
 
         Employee employee = new Employee(200);
         map.put(0, employee);
@@ -208,6 +209,25 @@ public class QueryCacheListenerTest extends AbstractQueryCacheTestSupport {
         assertOpenEventually(numberOfCaughtEvents);
     }
 
+    @Test
+    public void listenerShouldBeRegistered_whenConfiguredProgrammatically() {
+        CountDownLatch completionLatch = new CountDownLatch(100);
+        MapConfig mapConfig = new MapConfig(mapName);
+        QueryCacheConfig queryCacheConfig = new QueryCacheConfig(cacheName)
+                .setPredicateConfig(new PredicateConfig(TRUE_PREDICATE))
+                .addEntryListenerConfig(
+                    new EntryListenerConfig(new QueryCacheAdditionListener(completionLatch), true, true));
+        mapConfig.addQueryCacheConfig(queryCacheConfig);
+        Config config = new Config();
+        config.addMapConfig(mapConfig);
+
+        IMap<Integer, Employee> map = getIMap(config);
+        // trigger creation of the query cache
+        map.getQueryCache(cacheName);
+        populateMap(map, 100);
+        assertOpenEventually(completionLatch, 30);
+    }
+
     private void assertQueryCacheSizeEventually(final int expected, final QueryCache cache) {
         assertTrueEventually(new AssertTask() {
             @Override
@@ -218,9 +238,9 @@ public class QueryCacheListenerTest extends AbstractQueryCacheTestSupport {
     }
 
     private void testValueCaching(final boolean includeValue) {
-        String cacheName = randomString();
+        IMap<Integer, Employee> map = getIMapWithDefaultConfig(TRUE_PREDICATE, useNaturalFilteringStrategy);
 
-        final QueryCache<Integer, Employee> cache = map.getQueryCache(cacheName, TRUE_PREDICATE, true);
+        final QueryCache<Integer, Employee> cache = map.getQueryCache(cacheName);
         final TestIncludeValueListener listener = new TestIncludeValueListener();
         cache.addEntryListener(listener, includeValue);
 

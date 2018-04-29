@@ -19,6 +19,8 @@ package com.hazelcast.topic.impl.reliable;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.Member;
+import com.hazelcast.instance.TestUtil;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -30,6 +32,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.ringbuffer.impl.RingbufferService.TOPIC_RB_PREFIX;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -37,18 +40,34 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelTest.class})
 public class LossToleranceTest extends HazelcastTestSupport {
 
+    private static final String RELIABLE_TOPIC_NAME = "foo";
     private ReliableTopicProxy<String> topic;
     private Ringbuffer<ReliableTopicMessage> ringbuffer;
+    private HazelcastInstance topicOwnerInstance;
+    private HazelcastInstance topicBackupInstance;
 
     @Before
     public void setup() {
-        Config config = new Config();
-        config.addRingBufferConfig(new RingbufferConfig("foo")
-                .setCapacity(100)
-                .setTimeToLiveSeconds(0));
-        HazelcastInstance hz = createHazelcastInstance(config);
+        Config config = smallInstanceConfig().addRingBufferConfig(
+                new RingbufferConfig(RELIABLE_TOPIC_NAME)
+                        .setCapacity(100)
+                        .setTimeToLiveSeconds(0)
+                        .setBackupCount(0)
+                        .setAsyncBackupCount(0));
+        final HazelcastInstance[] instances = createHazelcastInstanceFactory(2).newInstances(config);
 
-        topic = (ReliableTopicProxy<String>) hz.<String>getReliableTopic("foo");
+        warmUpPartitions(instances);
+        for (HazelcastInstance instance : instances) {
+            final Member owner = instance.getPartitionService().getPartition(TOPIC_RB_PREFIX + RELIABLE_TOPIC_NAME).getOwner();
+            final Member localMember = instance.getCluster().getLocalMember();
+            if (localMember.equals(owner)) {
+                topicOwnerInstance = instance;
+            } else {
+                topicBackupInstance = instance;
+            }
+        }
+
+        topic = (ReliableTopicProxy<String>) topicBackupInstance.<String>getReliableTopic(RELIABLE_TOPIC_NAME);
         ringbuffer = topic.ringbuffer;
     }
 
@@ -71,7 +90,7 @@ public class LossToleranceTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertTrue(topic.runnersMap.isEmpty());
             }
         });
@@ -96,7 +115,36 @@ public class LossToleranceTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
+                assertContains(listener.objects, "newItem");
+                assertFalse(topic.runnersMap.isEmpty());
+            }
+        });
+    }
+
+    @Test
+    public void whenLossTolerant_andOwnerCrashes_thenContinue() {
+        final ReliableMessageListenerMock listener = new ReliableMessageListenerMock();
+        listener.isLossTolerant = true;
+        topic.addMessageListener(listener);
+        topic.publish("item1");
+        topic.publish("item2");
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertContains(listener.objects, "item1");
+                assertContains(listener.objects, "item2");
+            }
+        });
+        TestUtil.terminateInstance(topicOwnerInstance);
+
+        topic.publish("newItem");
+
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
                 assertContains(listener.objects, "newItem");
                 assertFalse(topic.runnersMap.isEmpty());
             }

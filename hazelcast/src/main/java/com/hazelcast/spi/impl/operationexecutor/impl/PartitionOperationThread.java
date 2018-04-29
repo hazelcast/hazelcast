@@ -23,26 +23,31 @@ import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /**
- * An {@link OperationThread} that executes Operations for a particular partition, e.g. a map.get operation.
+ * An {@link OperationThread} that executes Operations for a particular partition,
+ * e.g. a map.get operation.
  */
 public final class PartitionOperationThread extends OperationThread {
 
     private final OperationRunner[] partitionOperationRunners;
 
     @SuppressFBWarnings("EI_EXPOSE_REP")
-    public PartitionOperationThread(String name, int threadId,
-                                    OperationQueue queue, ILogger logger, NodeExtension nodeExtension,
-                                    OperationRunner[] partitionOperationRunners, ClassLoader configClassLoader) {
+    public PartitionOperationThread(String name,
+                                    int threadId,
+                                    OperationQueue queue,
+                                    ILogger logger,
+                                    NodeExtension nodeExtension,
+                                    OperationRunner[] partitionOperationRunners,
+                                    ClassLoader configClassLoader) {
         super(name, threadId, queue, logger, nodeExtension, false, configClassLoader);
         this.partitionOperationRunners = partitionOperationRunners;
     }
 
     /**
-     * For each partition there is a {@link com.hazelcast.spi.impl.operationexecutor.OperationRunner} instance.
-     * So we need to find the right one based on the partition ID.
+     * For each partition there is a {@link OperationRunner} instance. So we need
+     * to find the right one based on the partition ID.
      */
     @Override
-    public OperationRunner getOperationRunner(int partitionId) {
+    public OperationRunner operationRunner(int partitionId) {
         return partitionOperationRunners[partitionId];
     }
 

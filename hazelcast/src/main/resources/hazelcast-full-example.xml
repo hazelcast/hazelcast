@@ -47,6 +47,32 @@ https://hazelcast.org/documentation/.
 
     -->
     <import resource="your-configuration-XML-file"/>
+
+    <!--
+        The <config-replacers> allow to use variables (placeholders) within the configuration file and use an external
+        class to retrieve correct values (replacements).
+
+        It can be used for masking sensitive strings such as passwords for instance.
+
+        Format of a variable is:
+        $ PREFIX { STRING_TO_BE_REPLACED }      e.g. $ENC{nnPgTqJCcCQ=:23000:B4y/nlp6M0t3q6YiKImW+w==}
+
+        The PREFIX value depends on the replacer implementation (e.g. "ENC" is used for the EncryptionReplacer)
+        The STRING_TO_BE_REPLACED is the value which is provided to replacer implementation.
+    -->
+    <config-replacers fail-if-value-missing="false">
+        <replacer class-name="com.hazelcast.config.replacer.EncryptionReplacer">
+            <properties>
+                <property name="passwordFile">password.txt</property>
+                <property name="passwordUserProperties">false</property>
+                <property name="cipherAlgorithm">DES</property>
+                <property name="keyLengthBits">64</property>
+                <property name="secretKeyAlgorithm">DES</property>
+                <property name="secretKeyFactoryAlgorithm">PBKDF2WithHmacSHA1</property>
+            </properties>
+        </replacer>
+    </config-replacers>
+
     <!--
         Specifies the name and password for a cluster group you create.
         Cluster groups allow you to create separate sub-clusters within your Hazelcast cluster to
@@ -83,7 +109,7 @@ https://hazelcast.org/documentation/.
         at most 2 members in your cluster. To use it for more members, you need to have either a Management Center,
         Hazelcast Enterprise or Hazelcast Enterprise HD license.
     -->
-    <management-center enabled="true" update-interval="2">http://localhost:8080/mancenter</management-center>
+    <management-center enabled="true" update-interval="2">http://localhost:8080/hazelcast-mancenter</management-center>
     <!--
         The <properties> element lets you add properties to some of the Hazelcast elements used to configure some of
         the Hazelcast modules.
@@ -1657,6 +1683,12 @@ https://hazelcast.org/documentation/.
             Negative values are allowed to increase the lifespan of the generator, however keep in
             mind that the generated IDs might also be negative.
 
+        * <node-id-offset>:
+            Sets the offset that will be added to the node ID assigned to cluster member for this generator.
+            Might be useful in A/B deployment scenarios where you have cluster A which you want to upgrade.
+            You create cluster B and for some time both will generate IDs and you want to have them unique.
+            In this case, configure node ID offset for generators on cluster B.
+
         * <statistics-enabled>:
             When you enable it, you can retrieve the Flake ID generators statistics. Its default value is true.
     -->
@@ -1664,6 +1696,7 @@ https://hazelcast.org/documentation/.
         <prefetch-count>100</prefetch-count>
         <prefetch-validity-millis>600000</prefetch-validity-millis>
         <id-offset>0</id-offset>
+        <node-id-offset>0</node-id-offset>
         <statistics-enabled>true</statistics-enabled>
     </flake-id-generator>
 

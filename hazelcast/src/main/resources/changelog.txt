@@ -1,6 +1,6 @@
 You can also see the Release Notes document at http://docs.hazelcast.org/docs/release-notes/.
 
-2018.02.21, Release 3.10-BETA-1
+2018.04.??, Release 3.10
 
 - Split-Brain Healing for Hazelcast Data Structures with High-Density (HD) Memory Store.
 - Multiple Users/Roles in a Single Security Mapping.
@@ -9,7 +9,7 @@ You can also see the Release Notes document at http://docs.hazelcast.org/docs/re
 - Extended Merge Policies.
 - Introduced Flake ID Generator.
 - Deprecated ID Generator.
-- Introduced CRDT PN-Counter.
+- Introduced PN Counter.
 - More consistency on findXConfig methods.
 - Enabled Health Check on F5 BIG-IP LTM.
 - Deprecated:

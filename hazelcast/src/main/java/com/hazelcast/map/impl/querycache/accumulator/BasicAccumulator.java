@@ -43,7 +43,7 @@ public class BasicAccumulator<E extends Sequenced> extends AbstractAccumulator<E
     protected final ILogger logger = Logger.getLogger(getClass());
     protected final AccumulatorHandler<E> handler;
 
-    public BasicAccumulator(QueryCacheContext context, AccumulatorInfo info) {
+    protected BasicAccumulator(QueryCacheContext context, AccumulatorInfo info) {
         super(context, info);
         this.handler = createAccumulatorHandler(context, info);
     }

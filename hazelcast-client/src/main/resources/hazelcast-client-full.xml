@@ -19,6 +19,19 @@
                   xmlns="http://www.hazelcast.com/schema/client-config"
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 
+    <config-replacers fail-if-value-missing="false">
+        <replacer class-name="com.hazelcast.config.replacer.EncryptionReplacer">
+            <properties>
+                <property name="passwordFile">password.txt</property>
+                <property name="passwordUserProperties">false</property>
+                <property name="cipherAlgorithm">DES</property>
+                <property name="keyLengthBits">64</property>
+                <property name="secretKeyAlgorithm">DES</property>
+                <property name="secretKeyFactoryAlgorithm">PBKDF2WithHmacSHA1</property>
+            </properties>
+        </replacer>
+    </config-replacers>
+
     <group>
         <name>dev</name>
         <password>dev-pass</password>

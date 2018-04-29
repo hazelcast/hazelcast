@@ -21,86 +21,113 @@ import com.hazelcast.collection.impl.collection.CollectionDataSerializerHook;
 import com.hazelcast.collection.impl.collection.CollectionItem;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.SplitBrainMergePolicy;
-import com.hazelcast.spi.merge.MergingValueHolder;
+import com.hazelcast.spi.RemoteService;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
+import com.hazelcast.spi.merge.SplitBrainMergeTypes.CollectionMergeTypes;
+import com.hazelcast.spi.serialization.SerializationService;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.Collection;
 
-import static com.hazelcast.util.MapUtil.createHashMap;
+import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingValue;
+import static com.hazelcast.util.CollectionUtil.isEmpty;
 
 /**
- * Contains multiple merge entries for split-brain healing with a {@link SplitBrainMergePolicy}.
+ * Merges a {@link CollectionMergeTypes} for split-brain healing with a {@link SplitBrainMergePolicy}.
  *
  * @since 3.10
  */
 public class CollectionMergeOperation extends CollectionBackupAwareOperation {
 
-    private SplitBrainMergePolicy mergePolicy;
-    private List<MergingValueHolder<Data>> mergingValues;
+    private SplitBrainMergePolicy<Collection<Object>, CollectionMergeTypes> mergePolicy;
+    private CollectionMergeTypes mergingValue;
 
-    private transient Map<Long, Data> valueMap;
+    private transient Collection<CollectionItem> backupCollection;
+    private transient boolean shouldBackup;
 
-    public CollectionMergeOperation(String name, SplitBrainMergePolicy mergePolicy,
-                                    List<MergingValueHolder<Data>> mergingValues) {
+    public CollectionMergeOperation(String name, SplitBrainMergePolicy<Collection<Object>, CollectionMergeTypes> mergePolicy,
+                                    CollectionMergeTypes mergingValue) {
         super(name);
         this.mergePolicy = mergePolicy;
-        this.mergingValues = mergingValues;
+        this.mergingValue = mergingValue;
     }
 
     public CollectionMergeOperation() {
     }
 
     @Override
-    public int getId() {
-        return CollectionDataSerializerHook.COLLECTION_MERGE;
+    public void run() throws Exception {
+        CollectionContainer container = getOrCreateContainer();
+        boolean currentCollectionIsEmpty = container.getCollection().isEmpty();
+        long currentItemId = container.getCurrentId();
+
+        backupCollection = merge(container, mergingValue, mergePolicy);
+        shouldBackup = currentCollectionIsEmpty != backupCollection.isEmpty() || currentItemId != container.getCurrentId();
+    }
+
+    private Collection<CollectionItem> merge(CollectionContainer container, CollectionMergeTypes mergingValue,
+                                             SplitBrainMergePolicy<Collection<Object>, CollectionMergeTypes> mergePolicy) {
+        SerializationService serializationService = getNodeEngine().getSerializationService();
+        serializationService.getManagedContext().initialize(mergingValue);
+        serializationService.getManagedContext().initialize(mergePolicy);
+
+        Collection<CollectionItem> existingItems = container.getCollection();
+
+        CollectionMergeTypes existingValue = createMergingValueOrNull(serializationService, existingItems);
+        Collection<Object> newValues = mergePolicy.merge(mergingValue, existingValue);
+
+        if (isEmpty(newValues)) {
+            RemoteService service = getService();
+            service.destroyDistributedObject(name);
+        } else if (existingValue == null) {
+            createNewCollectionItems(container, existingItems, newValues, serializationService);
+        } else if (!newValues.equals(existingValue.getValue())) {
+            container.clear(false);
+            createNewCollectionItems(container, existingItems, newValues, serializationService);
+        }
+        return existingItems;
+    }
+
+    private CollectionMergeTypes createMergingValueOrNull(SerializationService serializationService,
+                                                          Collection<CollectionItem> existingItems) {
+        return existingItems.isEmpty() ? null : createMergingValue(serializationService, existingItems);
+    }
+
+    private void createNewCollectionItems(CollectionContainer container, Collection<CollectionItem> items,
+                                          Collection<Object> values, SerializationService serializationService) {
+        for (Object value : values) {
+            CollectionItem item = new CollectionItem(container.nextId(), serializationService.toData(value));
+            items.add(item);
+        }
     }
 
     @Override
     public boolean shouldBackup() {
-        return valueMap != null && !valueMap.isEmpty();
+        return shouldBackup;
     }
 
     @Override
     public Operation getBackupOperation() {
-        return new CollectionAddAllBackupOperation(name, valueMap);
-    }
-
-    @Override
-    public void run() throws Exception {
-        CollectionContainer collectionContainer = getOrCreateContainer();
-        valueMap = createHashMap(mergingValues.size());
-        for (MergingValueHolder<Data> mergingValue : mergingValues) {
-            CollectionItem mergedItem = collectionContainer.merge(mergingValue, mergePolicy);
-            if (mergedItem != null) {
-                valueMap.put(mergedItem.getItemId(), mergedItem.getValue());
-            }
-        }
+        return new CollectionMergeBackupOperation(name, backupCollection);
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeObject(mergePolicy);
-        out.writeInt(mergingValues.size());
-        for (MergingValueHolder<Data> mergingValue : mergingValues) {
-            out.writeObject(mergingValue);
-        }
+        out.writeObject(mergingValue);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         mergePolicy = in.readObject();
-        int size = in.readInt();
-        mergingValues = new ArrayList<MergingValueHolder<Data>>(size);
-        for (int i = 0; i < size; i++) {
-            MergingValueHolder<Data> mergingValue = in.readObject();
-            mergingValues.add(mergingValue);
-        }
+        mergingValue = in.readObject();
+    }
+
+    @Override
+    public int getId() {
+        return CollectionDataSerializerHook.COLLECTION_MERGE;
     }
 }

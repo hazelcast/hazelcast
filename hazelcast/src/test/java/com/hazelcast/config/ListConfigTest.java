@@ -27,12 +27,15 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.test.HazelcastTestSupport.assumeDifferentHashCodes;
+
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class ListConfigTest {
 
     @Test
     public void testEqualsAndHashCode() {
+        assumeDifferentHashCodes();
         EqualsVerifier.forClass(ListConfig.class)
                 .allFieldsShouldBeUsedExcept("readOnly")
                 .suppress(Warning.NONFINAL_FIELDS)

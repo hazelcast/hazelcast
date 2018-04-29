@@ -40,14 +40,12 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.util.Collections.newSetFromMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -55,233 +53,419 @@ public class MultiMapListenerTest extends HazelcastTestSupport {
 
     @Test(expected = IllegalArgumentException.class)
     public void testAddLocalEntryListener_whenNull() {
-        final MultiMap<String, String> mm = createHazelcastInstance().getMultiMap(randomString());
-        mm.addLocalEntryListener(null);
+        MultiMap<String, String> multiMap = createHazelcastInstance().getMultiMap(randomString());
+        multiMap.addLocalEntryListener(null);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testAddListener_whenListenerNull() throws InterruptedException {
-        final MultiMap<String, String> mm = createHazelcastInstance().getMultiMap(randomString());
-        mm.addEntryListener(null, true);
+    public void testAddListener_whenListenerNull() {
+        MultiMap<String, String> multiMap = createHazelcastInstance().getMultiMap(randomString());
+        multiMap.addEntryListener(null, true);
     }
 
     @Test
-    public void testRemoveListener() throws InterruptedException {
-        final MultiMap<Object, Object> mm = createHazelcastInstance().getMultiMap(randomString());
+    public void testRemoveListener() {
+        MultiMap<Object, Object> multiMap = createHazelcastInstance().getMultiMap(randomString());
         MyEntryListener listener = new CountDownValueNotNullListener(1);
-        final String id = mm.addEntryListener(listener, true);
-        assertTrue(mm.removeEntryListener(id));
+        String id = multiMap.addEntryListener(listener, true);
+        assertTrue(multiMap.removeEntryListener(id));
     }
 
     @Test
-    public void testRemoveListener_whenNotExist() throws InterruptedException {
-        final MultiMap<String, String> mm = createHazelcastInstance().getMultiMap(randomString());
-        assertFalse(mm.removeEntryListener("NOT_THERE"));
+    public void testRemoveListener_whenNotExist() {
+        MultiMap<String, String> multiMap = createHazelcastInstance().getMultiMap(randomString());
+        assertFalse(multiMap.removeEntryListener("NOT_THERE"));
     }
 
     @Test
-    public void testListenerEntryAddEvent() throws InterruptedException {
-        final int maxKeys = 12;
-        final int maxItems = 3;
-        final MultiMap<Object, Object> mm = createHazelcastInstance().getMultiMap(randomString());
+    public void testListenerEntryAddEvent() {
+        int maxKeys = 12;
+        int maxItems = 3;
+        MultiMap<Object, Object> multiMap = createHazelcastInstance().getMultiMap(randomString());
 
         MyEntryListener listener = new CountDownValueNotNullListener(maxKeys * maxItems);
-        mm.addEntryListener(listener, true);
+        multiMap.addEntryListener(listener, true);
 
         for (int i = 0; i < maxKeys; i++) {
             for (int j = 0; j < maxKeys; j++) {
-                mm.put(i, j);
+                multiMap.put(i, j);
             }
         }
         assertOpenEventually(listener.addLatch);
     }
 
     @Test
-    public void testListenerEntryAddEvent_whenValueNotIncluded() throws InterruptedException {
-        final int maxKeys = 21;
-        final int maxItems = 3;
-        final MultiMap<Object, Object> mm = createHazelcastInstance().getMultiMap(randomString());
+    public void testListenerEntryAddEvent_whenValueNotIncluded() {
+        int maxKeys = 21;
+        int maxItems = 3;
+        MultiMap<Object, Object> multiMap = createHazelcastInstance().getMultiMap(randomString());
 
         MyEntryListener listener = new CountDownValueNullListener(maxKeys * maxItems);
-        mm.addEntryListener(listener, false);
+        multiMap.addEntryListener(listener, false);
 
         for (int i = 0; i < maxKeys; i++) {
             for (int j = 0; j < maxKeys; j++) {
-                mm.put(i, j);
+                multiMap.put(i, j);
             }
         }
         assertOpenEventually(listener.addLatch);
     }
 
     @Test
-    public void testListenerEntryRemoveEvent() throws InterruptedException {
-        final int maxKeys = 25;
-        final int maxItems = 3;
-        final MultiMap<Object, Object> mm = createHazelcastInstance().getMultiMap(randomString());
+    public void testListenerEntryRemoveEvent() {
+        int maxKeys = 25;
+        int maxItems = 3;
+        MultiMap<Object, Object> multiMap = createHazelcastInstance().getMultiMap(randomString());
 
         MyEntryListener listener = new CountDownValueNotNullListener(maxKeys * maxItems);
-        mm.addEntryListener(listener, true);
+        multiMap.addEntryListener(listener, true);
 
         for (int i = 0; i < maxKeys; i++) {
             for (int j = 0; j < maxKeys; j++) {
-                mm.put(i, j);
-                mm.remove(i);
+                multiMap.put(i, j);
+                multiMap.remove(i);
             }
         }
         assertOpenEventually(listener.removeLatch);
     }
 
     @Test
-    public void testListenerEntryRemoveEvent_whenValueNotIncluded() throws InterruptedException {
-        final int maxKeys = 31;
-        final int maxItems = 3;
-        final MultiMap<Object, Object> mm = createHazelcastInstance().getMultiMap(randomString());
+    public void testListenerEntryRemoveEvent_whenValueNotIncluded() {
+        int maxKeys = 31;
+        int maxItems = 3;
+        MultiMap<Object, Object> multiMap = createHazelcastInstance().getMultiMap(randomString());
 
         MyEntryListener listener = new CountDownValueNullListener(maxKeys * maxItems);
-        mm.addEntryListener(listener, false);
+        multiMap.addEntryListener(listener, false);
 
         for (int i = 0; i < maxKeys; i++) {
             for (int j = 0; j < maxKeys; j++) {
-                mm.put(i, j);
-                mm.remove(i);
+                multiMap.put(i, j);
+                multiMap.remove(i);
             }
         }
         assertOpenEventually(listener.removeLatch);
     }
 
     @Test
-    public void testListenerOnKeyEntryAddEvent() throws InterruptedException {
-        final Object key = "key";
-        final int maxItems = 42;
-        final MultiMap<Object, Object> mm = createHazelcastInstance().getMultiMap(randomString());
+    public void testListenerOnKeyEntryAddEvent() {
+        Object key = "key";
+        int maxItems = 42;
+        MultiMap<Object, Object> multiMap = createHazelcastInstance().getMultiMap(randomString());
 
         MyEntryListener listener = new CountDownValueNotNullListener(maxItems);
-        mm.addEntryListener(listener, key, true);
+        multiMap.addEntryListener(listener, key, true);
 
         for (int i = 0; i < maxItems; i++) {
-            mm.put(key, i);
+            multiMap.put(key, i);
         }
 
         assertOpenEventually(listener.addLatch);
     }
 
     @Test
-    public void testListenerOnKeyEntryAddEvent_whenValueNotIncluded() throws InterruptedException {
-        final Object key = "key";
-        final int maxItems = 72;
-        final MultiMap<Object, Object> mm = createHazelcastInstance().getMultiMap(randomString());
+    public void testListenerOnKeyEntryAddEvent_whenValueNotIncluded() {
+        Object key = "key";
+        int maxItems = 72;
+        MultiMap<Object, Object> multiMap = createHazelcastInstance().getMultiMap(randomString());
 
         MyEntryListener listener = new CountDownValueNullListener(maxItems);
-        mm.addEntryListener(listener, key, false);
+        multiMap.addEntryListener(listener, key, false);
 
         for (int i = 0; i < maxItems; i++) {
-            mm.put(key, i);
+            multiMap.put(key, i);
         }
 
         assertOpenEventually(listener.addLatch);
     }
 
     @Test
-    public void testListenerOnKeyEntryRemoveEvent() throws InterruptedException {
-        final Object key = "key";
-        final int maxItems = 88;
-        final MultiMap<Object, Object> mm = createHazelcastInstance().getMultiMap(randomString());
+    public void testListenerOnKeyEntryRemoveEvent() {
+        Object key = "key";
+        int maxItems = 88;
+        MultiMap<Object, Object> multiMap = createHazelcastInstance().getMultiMap(randomString());
 
         MyEntryListener listener = new CountDownValueNotNullListener(maxItems);
-        mm.addEntryListener(listener, key, true);
+        multiMap.addEntryListener(listener, key, true);
 
         for (int i = 0; i < maxItems; i++) {
-            mm.put(key, i);
-            mm.remove(key, i);
+            multiMap.put(key, i);
+            multiMap.remove(key, i);
         }
 
         assertOpenEventually(listener.removeLatch);
     }
 
     @Test
-    public void testListenerOnKeyEntryRemoveEvent_whenValueNotIncluded() throws InterruptedException {
-        final Object key = "key";
-        final int maxItems = 62;
-        final MultiMap<Object, Object> mm = createHazelcastInstance().getMultiMap(randomString());
+    public void testListenerOnKeyEntryRemoveEvent_whenValueNotIncluded() {
+        Object key = "key";
+        int maxItems = 62;
+        MultiMap<Object, Object> multiMap = createHazelcastInstance().getMultiMap(randomString());
 
         MyEntryListener listener = new CountDownValueNullListener(maxItems);
-        mm.addEntryListener(listener, key, false);
+        multiMap.addEntryListener(listener, key, false);
 
         for (int i = 0; i < maxItems; i++) {
-            mm.put(key, i);
-            mm.remove(key, i);
+            multiMap.put(key, i);
+            multiMap.remove(key, i);
         }
 
         assertOpenEventually(listener.removeLatch);
     }
 
     @Test
-    public void testListenerOnKeyEntryRemove_WithOneRemove() throws InterruptedException {
-        final Object key = "key";
-        final int maxItems = 98;
-        final MultiMap<Object, Object> mm = createHazelcastInstance().getMultiMap(randomString());
+    public void testListenerOnKeyEntryRemove_WithOneRemove() {
+        Object key = "key";
+        int maxItems = 98;
+        MultiMap<Object, Object> multiMap = createHazelcastInstance().getMultiMap(randomString());
 
         MyEntryListener listener = new CountDownValueNotNullListener(maxItems, 1);
-        final String id = mm.addEntryListener(listener, key, true);
+        multiMap.addEntryListener(listener, key, true);
 
         for (int i = 0; i < maxItems; i++) {
-            mm.put(key, i);
+            multiMap.put(key, i);
         }
-        mm.remove(key);
+        multiMap.remove(key);
 
         assertOpenEventually(listener.removeLatch);
     }
 
     @Test
-    public void testListenerOnKeyEntryRemove_WithOneRemoveWhenValueNotIncluded() throws InterruptedException {
-        final Object key = "key";
-        final int maxItems = 56;
-        final MultiMap<Object, Object> mm = createHazelcastInstance().getMultiMap(randomString());
+    public void testListenerOnKeyEntryRemove_WithOneRemoveWhenValueNotIncluded() {
+        Object key = "key";
+        int maxItems = 56;
+        MultiMap<Object, Object> multiMap = createHazelcastInstance().getMultiMap(randomString());
 
         MyEntryListener listener = new CountDownValueNullListener(maxItems, 1);
-        final String id = mm.addEntryListener(listener, key, false);
+        multiMap.addEntryListener(listener, key, false);
 
         for (int i = 0; i < maxItems; i++) {
-            mm.put(key, i);
+            multiMap.put(key, i);
         }
-        mm.remove(key);
+        multiMap.remove(key);
 
         assertOpenEventually(listener.removeLatch);
     }
 
     @Test
     public void testListeners_clearAll() {
-        final MultiMap<Object, Object> mm = createHazelcastInstance().getMultiMap(randomString());
+        MultiMap<Object, Object> multiMap = createHazelcastInstance().getMultiMap(randomString());
+
         MyEntryListener listener = new CountDownValueNullListener(1);
-        mm.addEntryListener(listener, false);
-        mm.put("key", "value");
-        mm.clear();
+        multiMap.addEntryListener(listener, false);
+        multiMap.put("key", "value");
+        multiMap.clear();
+
         assertOpenEventually(listener.addLatch);
         assertOpenEventually(listener.clearLatch);
     }
 
     @Test
     public void testListeners_clearAllFromNode() {
-        final String name = randomString();
+        String name = randomString();
         HazelcastInstance instance = createHazelcastInstance();
-        final MultiMap<Object, Object> mm = instance.getMultiMap(name);
+        MultiMap<Object, Object> multiMap = instance.getMultiMap(name);
+
         MyEntryListener listener = new CountDownValueNullListener(1);
-        mm.addEntryListener(listener, false);
-        mm.put("key", "value");
-        mm.clear();
+        multiMap.addEntryListener(listener, false);
+        multiMap.put("key", "value");
+        multiMap.clear();
+
         assertOpenEventually(listener.addLatch);
         assertOpenEventually(listener.clearLatch);
     }
 
-    static abstract class MyEntryListener extends EntryAdapter<Object, Object> {
+    @Test
+    public void testConfigListenerRegistration() {
+        String name = "default";
 
-        final public CountDownLatch addLatch;
-        final public CountDownLatch removeLatch;
-        final public CountDownLatch updateLatch;
-        final public CountDownLatch evictLatch;
-        final public CountDownLatch clearLatch;
+        final CountDownLatch latch = new CountDownLatch(1);
+        EntryListenerConfig entryListenerConfig = new EntryListenerConfig().setImplementation(new EntryAdapter() {
+            public void entryAdded(EntryEvent event) {
+                latch.countDown();
+            }
+        });
 
-        public MyEntryListener(int latchCount) {
+        Config config = new Config();
+        config.getMultiMapConfig(name).addEntryListenerConfig(entryListenerConfig);
+
+        HazelcastInstance hz = createHazelcastInstance(config);
+        hz.getMultiMap(name).put(1, 1);
+
+        assertOpenEventually(latch);
+    }
+
+    @Test
+    public void testMultiMapEntryListener() {
+        HazelcastInstance instance = createHazelcastInstance();
+        MultiMap<String, String> multiMap = instance.getMultiMap("testMultiMapEntryListener");
+
+        final Set<String> expectedValues = new CopyOnWriteArraySet<String>();
+        expectedValues.add("hello");
+        expectedValues.add("world");
+        expectedValues.add("again");
+
+        final CountDownLatch latchAdded = new CountDownLatch(3);
+        final CountDownLatch latchRemoved = new CountDownLatch(1);
+        final CountDownLatch latchCleared = new CountDownLatch(1);
+        multiMap.addEntryListener(new EntryAdapter<String, String>() {
+            public void entryAdded(EntryEvent<String, String> event) {
+                String key = event.getKey();
+                String value = event.getValue();
+                if ("2".equals(key)) {
+                    assertEquals("again", value);
+                } else {
+                    assertEquals("1", key);
+                }
+                assertContains(expectedValues, value);
+                expectedValues.remove(value);
+                latchAdded.countDown();
+            }
+
+            public void entryRemoved(EntryEvent<String, String> event) {
+                assertEquals("2", event.getKey());
+                assertEquals("again", event.getOldValue());
+                latchRemoved.countDown();
+            }
+
+            public void entryUpdated(EntryEvent<String, String> event) {
+                throw new AssertionError("MultiMap cannot get update event!");
+            }
+
+            public void entryEvicted(EntryEvent<String, String> event) {
+                entryRemoved(event);
+            }
+
+            @Override
+            public void mapEvicted(MapEvent event) {
+            }
+
+            @Override
+            public void mapCleared(MapEvent event) {
+                latchCleared.countDown();
+            }
+        }, true);
+
+        multiMap.put("1", "hello");
+        multiMap.put("1", "world");
+        multiMap.put("2", "again");
+
+        Collection<String> values = multiMap.get("1");
+        assertEquals(2, values.size());
+        assertContains(values, "hello");
+        assertContains(values, "world");
+        assertEquals(1, multiMap.get("2").size());
+        assertEquals(3, multiMap.size());
+
+        multiMap.remove("2");
+        assertEquals(2, multiMap.size());
+
+        multiMap.clear();
+        assertOpenEventually(latchAdded);
+        assertOpenEventually(latchRemoved);
+        assertOpenEventually(latchCleared);
+    }
+
+    @Test
+    public void testListeners_local() {
+        String name = randomMapName();
+        Config config = new Config();
+        config.getMultiMapConfig(name).setValueCollectionType(MultiMapConfig.ValueCollectionType.LIST);
+
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(4);
+        HazelcastInstance[] instances = factory.newInstances(config);
+
+        HazelcastInstance localInstance = instances[0];
+        MultiMap<String, String> localMultiMap = localInstance.getMultiMap(name);
+        KeyCollectingListener<String> listener = new KeyCollectingListener<String>();
+        localMultiMap.addLocalEntryListener(listener);
+        localMultiMap.put("key1", "val1");
+        localMultiMap.put("key2", "val2");
+        localMultiMap.put("key3", "val3");
+        localMultiMap.put("key4", "val4");
+        localMultiMap.put("key5", "val5");
+        localMultiMap.put("key6", "val6");
+        localMultiMap.put("key7", "val7");
+
+        // we want at least one key to be guaranteed to trigger the local listener
+        localMultiMap.put(generateKeyOwnedBy(localInstance), "val8");
+
+        // see if the local listener was called for all local entries
+        assertContainsAllEventually(listener.keys, localMultiMap.localKeySet());
+
+        // remove something -> this should remove the key from the listener
+        String keyToRemove = listener.keys.iterator().next();
+        System.out.println("Local key set: " + localMultiMap.localKeySet());
+        System.out.println("Removing " + keyToRemove);
+        localMultiMap.remove(keyToRemove);
+        System.out.println("Local key set: " + localMultiMap.localKeySet());
+        assertContainsAllEventually(localMultiMap.localKeySet(), listener.keys);
+
+        localInstance.getMultiMap(name).clear();
+        assertSizeEventually(0, listener.keys);
+    }
+
+    @Test
+    public void testListeners_distributed() {
+        String name = randomMapName();
+        Config config = new Config();
+        config.getMultiMapConfig(name).setValueCollectionType(MultiMapConfig.ValueCollectionType.LIST);
+
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(4);
+        HazelcastInstance[] instances = factory.newInstances(config);
+        MultiMap<String, String> multiMap = instances[0].getMultiMap(name);
+
+        KeyCollectingListener<String> listener = new KeyCollectingListener<String>();
+        String id2 = multiMap.addEntryListener(listener, true);
+        getMultiMap(instances, name).put("key3", "val3");
+        getMultiMap(instances, name).put("key3", "val33");
+        getMultiMap(instances, name).put("key4", "val4");
+        getMultiMap(instances, name).remove("key3", "val33");
+
+        // awaitEventCount() acts as a barrier.
+        // without this barrier assertSize(-eventually) could pass just after receiving the very first
+        // event when inserting the first entry ("key3", "val3"). Events triggered by the other
+        // entries could be re-ordered with sub-sequent map.clear()
+        listener.awaitEventCount(4);
+        assertEquals(1, listener.size());
+
+        getMultiMap(instances, name).clear();
+        // it should fire the mapCleared event and listener will remove everything
+        assertSizeEventually(0, listener.keys);
+
+        multiMap.removeEntryListener(id2);
+        multiMap.addEntryListener(listener, "key7", true);
+
+        getMultiMap(instances, name).put("key2", "val2");
+        getMultiMap(instances, name).put("key3", "val3");
+        getMultiMap(instances, name).put("key7", "val7");
+
+        assertSizeEventually(1, listener.keys);
+    }
+
+    private static MultiMap<String, String> getMultiMap(HazelcastInstance[] instances, String name) {
+        Random rnd = new Random();
+        return instances[rnd.nextInt(instances.length)].getMultiMap(name);
+    }
+
+    private static <T> void assertContainsAllEventually(final Collection<T> collection, final Collection<T> expected) {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertContainsAll(collection, expected);
+            }
+        });
+    }
+
+    private static abstract class MyEntryListener extends EntryAdapter<Object, Object> {
+
+        final CountDownLatch addLatch;
+        final CountDownLatch removeLatch;
+        final CountDownLatch updateLatch;
+        final CountDownLatch evictLatch;
+        final CountDownLatch clearLatch;
+
+        MyEntryListener(int latchCount) {
             addLatch = new CountDownLatch(latchCount);
             removeLatch = new CountDownLatch(latchCount);
             updateLatch = new CountDownLatch(1);
@@ -289,8 +473,8 @@ public class MultiMapListenerTest extends HazelcastTestSupport {
             clearLatch = new CountDownLatch(1);
         }
 
-        public MyEntryListener(int addlatchCount, int removeLatchCount) {
-            addLatch = new CountDownLatch(addlatchCount);
+        MyEntryListener(int addLatchCount, int removeLatchCount) {
+            addLatch = new CountDownLatch(addLatchCount);
             removeLatch = new CountDownLatch(removeLatchCount);
             updateLatch = new CountDownLatch(1);
             evictLatch = new CountDownLatch(1);
@@ -298,14 +482,14 @@ public class MultiMapListenerTest extends HazelcastTestSupport {
         }
     }
 
-    static class CountDownValueNotNullListener extends MyEntryListener {
+    private static class CountDownValueNotNullListener extends MyEntryListener {
 
-        public CountDownValueNotNullListener(int latchCount) {
+        CountDownValueNotNullListener(int latchCount) {
             super(latchCount);
         }
 
-        public CountDownValueNotNullListener(int addlatchCount, int removeLatchCount) {
-            super(addlatchCount, removeLatchCount);
+        CountDownValueNotNullListener(int addLatchCount, int removeLatchCount) {
+            super(addLatchCount, removeLatchCount);
         }
 
         @Override
@@ -346,14 +530,14 @@ public class MultiMapListenerTest extends HazelcastTestSupport {
         }
     }
 
-    static class CountDownValueNullListener extends MyEntryListener {
+    private static class CountDownValueNullListener extends MyEntryListener {
 
-        public CountDownValueNullListener(int latchCount) {
+        CountDownValueNullListener(int latchCount) {
             super(latchCount);
         }
 
-        public CountDownValueNullListener(int addlatchCount, int removeLatchCount) {
-            super(addlatchCount, removeLatchCount);
+        CountDownValueNullListener(int addLatchCount, int removeLatchCount) {
+            super(addLatchCount, removeLatchCount);
         }
 
         @Override
@@ -394,184 +578,8 @@ public class MultiMapListenerTest extends HazelcastTestSupport {
         }
     }
 
-    @Test
-    public void testConfigListenerRegistration() throws InterruptedException {
-        Config config = new Config();
-        final String name = "default";
-        final CountDownLatch latch = new CountDownLatch(1);
-        config.getMultiMapConfig(name).addEntryListenerConfig(new EntryListenerConfig().setImplementation(new EntryAdapter() {
-            public void entryAdded(EntryEvent event) {
-                latch.countDown();
-            }
-        }));
-        final HazelcastInstance hz = createHazelcastInstance(config);
-        hz.getMultiMap(name).put(1, 1);
-        assertTrue(latch.await(10, TimeUnit.SECONDS));
-    }
-
-    @Test
-    public void testMultiMapEntryListener() {
-        final HazelcastInstance instance = createHazelcastInstance();
-        MultiMap<String, String> map = instance.getMultiMap("testMultiMapEntryListener");
-        final CountDownLatch latchAdded = new CountDownLatch(3);
-        final CountDownLatch latchRemoved = new CountDownLatch(1);
-        final CountDownLatch latchCleared = new CountDownLatch(1);
-        final Set<String> expectedValues = new CopyOnWriteArraySet<String>();
-        expectedValues.add("hello");
-        expectedValues.add("world");
-        expectedValues.add("again");
-        map.addEntryListener(new EntryAdapter<String, String>() {
-
-            public void entryAdded(EntryEvent<String, String> event) {
-                String key = event.getKey();
-                String value = event.getValue();
-                if ("2".equals(key)) {
-                    assertEquals("again", value);
-                } else {
-                    assertEquals("1", key);
-                }
-                assertContains(expectedValues, value);
-                expectedValues.remove(value);
-                latchAdded.countDown();
-            }
-
-            public void entryRemoved(EntryEvent<String, String> event) {
-                assertEquals("2", event.getKey());
-                assertEquals("again", event.getOldValue());
-                latchRemoved.countDown();
-            }
-
-            public void entryUpdated(EntryEvent<String, String> event) {
-                throw new AssertionError("MultiMap cannot get update event!");
-            }
-
-            public void entryEvicted(EntryEvent<String, String> event) {
-                entryRemoved(event);
-            }
-
-            @Override
-            public void mapEvicted(MapEvent event) {
-            }
-
-            @Override
-            public void mapCleared(MapEvent event) {
-                latchCleared.countDown();
-            }
-        }, true);
-        map.put("1", "hello");
-        map.put("1", "world");
-        map.put("2", "again");
-        Collection<String> values = map.get("1");
-        assertEquals(2, values.size());
-        assertContains(values, "hello");
-        assertContains(values, "world");
-        assertEquals(1, map.get("2").size());
-        assertEquals(3, map.size());
-        map.remove("2");
-        assertEquals(2, map.size());
-        map.clear();
-        try {
-            assertTrue(latchAdded.await(5, TimeUnit.SECONDS));
-            assertTrue(latchRemoved.await(5, TimeUnit.SECONDS));
-            assertTrue(latchCleared.await(5, TimeUnit.SECONDS));
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-            fail(e.getMessage());
-        }
-    }
-
-    @Test
-    public void testListeners_local() {
-        int count = 4;
-        String name = randomMapName();
-        Config config = new Config();
-        config.getMultiMapConfig(name).setValueCollectionType(MultiMapConfig.ValueCollectionType.LIST);
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(count);
-        HazelcastInstance[] instances = factory.newInstances(config);
-
-        HazelcastInstance localInstance = instances[0];
-        final MultiMap<String, String> localMultiMap = localInstance.getMultiMap(name);
-        final KeyCollectingListener<String> listener = new KeyCollectingListener<String>();
-        localMultiMap.addLocalEntryListener(listener);
-        localMultiMap.put("key1", "val1");
-        localMultiMap.put("key2", "val2");
-        localMultiMap.put("key3", "val3");
-        localMultiMap.put("key4", "val4");
-        localMultiMap.put("key5", "val5");
-        localMultiMap.put("key6", "val6");
-        localMultiMap.put("key7", "val7");
-
-        //we want at least one key to be guaranteed to trigger the local listener
-        localMultiMap.put(generateKeyOwnedBy(localInstance), "val8");
-
-        //see if the local listener was called for all local entries
-        assertContainsAllEventually(listener.keys, localMultiMap.localKeySet());
-
-        //remove something -> this should remove the key from the listener
-        String keyToRemove = listener.keys.iterator().next();
-        System.out.println("Local key set: " + localMultiMap.localKeySet());
-        System.out.println("Removing " + keyToRemove);
-        localMultiMap.remove(keyToRemove);
-        System.out.println("Local key set: " + localMultiMap.localKeySet());
-        assertContainsAllEventually(localMultiMap.localKeySet(), listener.keys);
-
-        localInstance.getMultiMap(name).clear();
-        assertSizeEventually(0, listener.keys);
-    }
-
-    @Test
-    public void testListeners_distributed() {
-        int count = 4;
-        String name = randomMapName();
-        Config config = new Config();
-        config.getMultiMapConfig(name).setValueCollectionType(MultiMapConfig.ValueCollectionType.LIST);
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(count);
-        HazelcastInstance[] instances = factory.newInstances(config);
-        final MultiMap<String, String> multiMap = instances[0].getMultiMap(name);
-
-        final KeyCollectingListener<String> listener = new KeyCollectingListener<String>();
-        final String id2 = multiMap.addEntryListener(listener, true);
-        getMultiMap(instances, name).put("key3", "val3");
-        getMultiMap(instances, name).put("key3", "val33");
-        getMultiMap(instances, name).put("key4", "val4");
-        getMultiMap(instances, name).remove("key3", "val33");
-
-        // awaitEventCount() acts as a barrier.
-        // without this barrier assertSize(-eventually) could pass just after receiving the very first
-        // event when inserting the first entry ("key3", "val3"). Events triggered by the other
-        // entries could be re-ordered with sub-sequent map.clear()
-        listener.awaitEventCount(4);
-        assertEquals(1, listener.size());
-
-        getMultiMap(instances, name).clear();
-        //it should fire the mapCleared event and listener will remove everything
-        assertSizeEventually(0, listener.keys);
-
-        multiMap.removeEntryListener(id2);
-        multiMap.addEntryListener(listener, "key7", true);
-
-        getMultiMap(instances, name).put("key2", "val2");
-        getMultiMap(instances, name).put("key3", "val3");
-        getMultiMap(instances, name).put("key7", "val7");
-
-        assertSizeEventually(1, listener.keys);
-    }
-
-    private <T> void assertContainsAllEventually(final Collection<T> collection, final Collection<T> expected) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertContainsAll(collection, expected);
-            }
-        });
-    }
-
-    private MultiMap<String, String> getMultiMap(HazelcastInstance[] instances, String name) {
-        final Random rnd = new Random();
-        return instances[rnd.nextInt(instances.length)].getMultiMap(name);
-    }
-
     private static class KeyCollectingListener<V> extends EntryAdapter<String, V> {
+
         private final Set<String> keys = newSetFromMap(new ConcurrentHashMap<String, Boolean>());
         private final AtomicInteger eventCount = new AtomicInteger();
 
@@ -595,9 +603,9 @@ public class MultiMapListenerTest extends HazelcastTestSupport {
             return keys.size();
         }
 
+        @SuppressWarnings("SameParameterValue")
         private void awaitEventCount(int expectedEventCount) {
             assertEqualsEventually(expectedEventCount, eventCount);
         }
-
     }
 }

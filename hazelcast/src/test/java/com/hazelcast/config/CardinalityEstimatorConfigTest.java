@@ -142,6 +142,7 @@ public class CardinalityEstimatorConfigTest extends HazelcastTestSupport {
 
     @Test
     public void testEqualsAndHashCode() {
+        assumeDifferentHashCodes();
         EqualsVerifier.forClass(CardinalityEstimatorConfig.class)
                 .allFieldsShouldBeUsedExcept("readOnly")
                 .suppress(Warning.NULL_FIELDS, Warning.NONFINAL_FIELDS)

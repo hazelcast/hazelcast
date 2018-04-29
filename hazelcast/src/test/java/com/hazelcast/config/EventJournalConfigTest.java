@@ -26,6 +26,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.test.HazelcastTestSupport.assumeDifferentHashCodes;
+
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class EventJournalConfigTest {
@@ -57,6 +59,7 @@ public class EventJournalConfigTest {
 
     @Test
     public void testEqualsAndHashCode() {
+        assumeDifferentHashCodes();
         EqualsVerifier.forClass(EventJournalConfig.class)
                 .suppress(Warning.NONFINAL_FIELDS)
                 .verify();

@@ -39,10 +39,11 @@ import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static com.hazelcast.nio.IOUtil.compactOrClear;
 import static java.lang.Math.max;
 import static java.lang.System.currentTimeMillis;
+import static java.lang.Thread.currentThread;
 import static java.nio.channels.SelectionKey.OP_WRITE;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
-public final class NioOutboundPipeline extends NioPipeline implements Runnable {
+public final class NioOutboundPipeline extends NioPipeline {
 
     private static final long TIMEOUT = 3;
 
@@ -68,11 +69,6 @@ public final class NioOutboundPipeline extends NioPipeline implements Runnable {
     private OutboundFrame currentFrame;
     private volatile long lastWriteTime;
 
-    // this field will be accessed by the NioThread or
-    // it is accessed by any other thread but only that thread managed to cas the scheduled flag to true.
-    // This prevents running into an NioThread that is migrating.
-    private NioThread newOwner;
-
     private long bytesReadLastPublish;
     private long normalFramesReadLastPublish;
     private long priorityFramesReadLastPublish;
@@ -80,8 +76,8 @@ public final class NioOutboundPipeline extends NioPipeline implements Runnable {
 
     public NioOutboundPipeline(NioChannel channel,
                                NioThread owner,
-        ChannelErrorHandler errorHandler,
-        ILogger logger,
+                               ChannelErrorHandler errorHandler,
+                               ILogger logger,
                                IOBalancer balancer,
                                ChannelInitializer initializer) {
         super(channel, owner, errorHandler, OP_WRITE, logger, balancer);
@@ -90,7 +86,7 @@ public final class NioOutboundPipeline extends NioPipeline implements Runnable {
 
     @Override
     public long load() {
-        switch (LOAD_TYPE) {
+        switch (loadType) {
             case LOAD_BALANCING_HANDLE:
                 return processCount.get();
             case LOAD_BALANCING_BYTE:
@@ -140,10 +136,6 @@ public final class NioOutboundPipeline extends NioPipeline implements Runnable {
         return scheduled.get() ? 1 : 0;
     }
 
-    public void flush() {
-        owner.addTaskAndWakeup(this);
-    }
-
     public void write(OutboundFrame frame) {
         if (frame.isUrgent()) {
             urgentWriteQueue.offer(frame);
@@ -155,26 +147,18 @@ public final class NioOutboundPipeline extends NioPipeline implements Runnable {
     }
 
     private OutboundFrame poll() {
-        for (; ; ) {
-            OutboundFrame frame = urgentWriteQueue.poll();
+        OutboundFrame frame = urgentWriteQueue.poll();
+        if (frame == null) {
+            frame = writeQueue.poll();
             if (frame == null) {
-                frame = writeQueue.poll();
-                if (frame == null) {
-                    return null;
-                }
-                normalFramesWritten.inc();
-            } else {
-                priorityFramesWritten.inc();
+                return null;
             }
-
-            if (frame.getClass() == TaskFrame.class) {
-                TaskFrame taskFrame = (TaskFrame) frame;
-                taskFrame.task.run();
-                continue;
-            }
-
-            return frame;
+            normalFramesWritten.inc();
+        } else {
+            priorityFramesWritten.inc();
         }
+
+        return frame;
     }
 
     /**
@@ -199,7 +183,8 @@ public final class NioOutboundPipeline extends NioPipeline implements Runnable {
 
         // We managed to schedule this ChannelOutboundHandler. This means we need to add a task to
         // the owner and give it a kick so that it processes our frames.
-        owner.addTaskAndWakeup(this);
+
+        wakeup();
     }
 
     /**
@@ -214,7 +199,7 @@ public final class NioOutboundPipeline extends NioPipeline implements Runnable {
      * If the outputBuffer is not dirty, then it will unregister itself from an OP_WRITE since it isn't interested
      * in space in the socket outputBuffer.
      * <p/>
-     * This call is only made by the IO thread.
+     * This call is only made by the owning IO thread.
      */
     private void unschedule() throws IOException {
         if (dirtyOutputBuffer() || currentFrame != null) {
@@ -247,12 +232,14 @@ public final class NioOutboundPipeline extends NioPipeline implements Runnable {
         // We managed to reschedule. So lets add ourselves to the owner so we are processed again.
         // We don't need to call wakeup because the current thread is the IO-thread and the selectionQueue will be processed
         // till it is empty. So it will also pick up tasks that are added while it is processing the selectionQueue.
+
+        // since this is executed from the owning io thread, owner will always be set to the correct value.
         owner.addTask(this);
     }
 
     @Override
     @SuppressWarnings("unchecked")
-    public void process() throws Exception {
+    void process() throws Exception {
         processCount.inc();
         lastWriteTime = currentTimeMillis();
 
@@ -266,11 +253,7 @@ public final class NioOutboundPipeline extends NioPipeline implements Runnable {
             writeOutputBufferToSocket();
         }
 
-        if (newOwner == null) {
-            unschedule();
-        } else {
-            startMigration();
-        }
+        unschedule();
     }
 
     /**
@@ -291,12 +274,6 @@ public final class NioOutboundPipeline extends NioPipeline implements Runnable {
         this.outboundHandler = init.getHandler();
         registerOp(OP_WRITE);
         return true;
-    }
-
-    private void startMigration() throws IOException {
-        NioThread newOwner = this.newOwner;
-        this.newOwner = null;
-        startMigration(newOwner);
     }
 
     /**
@@ -344,27 +321,13 @@ public final class NioOutboundPipeline extends NioPipeline implements Runnable {
     }
 
     @Override
-    public void run() {
-        try {
-            process();
-        } catch (Throwable t) {
-            onFailure(t);
-        }
-    }
-
-    @Override
     public void close() {
         writeQueue.clear();
         urgentWriteQueue.clear();
 
         CloseTask closeTask = new CloseTask();
-        write(new TaskFrame(closeTask));
+        addTaskAndWakeup(closeTask);
         closeTask.awaitCompletion();
-    }
-
-    @Override
-    public void requestMigration(NioThread newOwner) {
-        write(new TaskFrame(new StartMigrationTask(newOwner)));
     }
 
     @Override
@@ -372,56 +335,14 @@ public final class NioOutboundPipeline extends NioPipeline implements Runnable {
         return channel + ".outboundPipeline";
     }
 
-    /**
-     * The TaskFrame is not really a Frame. It is a way to put a task on one of the frame-queues. Using this approach we
-     * can lift on top of the Frame scheduling mechanism and we can prevent having:
-     * - multiple NioThread-tasks for a NioOutboundPipeline on multiple NioThread
-     * - multiple NioThread-tasks for a NioOutboundPipeline on the same NioThread.
-     */
-    private static final class TaskFrame implements OutboundFrame {
-
-        private final Runnable task;
-
-        private TaskFrame(Runnable task) {
-            this.task = task;
-        }
-
-        @Override
-        public boolean isUrgent() {
-            return true;
-        }
-    }
-
-    /**
-     * Triggers the migration when executed by setting the NioOutboundPipeline.newOwner field. When the handle method completes,
-     * it checks if this field if set, if so, the migration starts.
-     *
-     * If the current owner is the same as 'theNewOwner' then the call is ignored.
-     */
-    private final class StartMigrationTask implements Runnable {
-        // field is called 'theNewOwner' to prevent any ambiguity problems with the outboundHandler.newOwner.
-        // Else you get a lot of ugly ChannelOutboundHandler.this.newOwner is...
-        private final NioThread theNewOwner;
-
-        StartMigrationTask(NioThread theNewOwner) {
-            this.theNewOwner = theNewOwner;
-        }
-
-        @Override
-        public void run() {
-            assert newOwner == null : "No migration can be in progress";
-
-            if (owner == theNewOwner) {
-                // if there is no change, we are done
-                return;
-            }
-
-            newOwner = theNewOwner;
-        }
-    }
-
     @Override
-    protected void publishMetrics() {
+    void publishMetrics() {
+        if (currentThread() != owner) {
+            return;
+        }
+
+        // since this is executed by the owner, the owner field can't change while
+        // this method is executed.
         owner.bytesTransceived += bytesWritten.get() - bytesReadLastPublish;
         owner.framesTransceived += normalFramesWritten.get() - normalFramesReadLastPublish;
         owner.priorityFramesTransceived += priorityFramesWritten.get() - priorityFramesReadLastPublish;
@@ -433,11 +354,15 @@ public final class NioOutboundPipeline extends NioPipeline implements Runnable {
         processCountLastPublish = processCount.get();
     }
 
-    private class CloseTask implements Runnable {
+    private class CloseTask extends NioPipelineTask {
         private final CountDownLatch latch = new CountDownLatch(1);
 
+        CloseTask() {
+            super(NioOutboundPipeline.this);
+        }
+
         @Override
-        public void run() {
+        public void run0() {
             try {
                 channel.closeOutbound();
             } catch (IOException e) {
@@ -451,7 +376,7 @@ public final class NioOutboundPipeline extends NioPipeline implements Runnable {
             try {
                 latch.await(TIMEOUT, SECONDS);
             } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
+                currentThread().interrupt();
             }
         }
     }

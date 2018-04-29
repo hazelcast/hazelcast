@@ -16,27 +16,28 @@
 
 package com.hazelcast.concurrent.atomiclong.operations;
 
+import com.hazelcast.concurrent.atomiclong.AtomicLongContainer;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.SplitBrainMergePolicy;
-import com.hazelcast.spi.merge.MergingValueHolder;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
+import com.hazelcast.spi.merge.SplitBrainMergeTypes.AtomicLongMergeTypes;
 import com.hazelcast.spi.serialization.SerializationService;
 
 import java.io.IOException;
 
 import static com.hazelcast.concurrent.atomiclong.AtomicLongDataSerializerHook.MERGE;
-import static com.hazelcast.spi.impl.merge.MergingHolders.createMergeHolder;
+import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingValue;
 
 /**
- * Contains a merge value for split-brain healing with a {@link SplitBrainMergePolicy}.
+ * Merges a {@link AtomicLongMergeTypes} for split-brain healing with a {@link SplitBrainMergePolicy}.
  *
  * @since 3.10
  */
 public class MergeOperation extends AtomicLongBackupAwareOperation {
 
-    private SplitBrainMergePolicy mergePolicy;
+    private SplitBrainMergePolicy<Long, AtomicLongMergeTypes> mergePolicy;
     private long mergingValue;
 
     private transient Long backupValue;
@@ -44,7 +45,7 @@ public class MergeOperation extends AtomicLongBackupAwareOperation {
     public MergeOperation() {
     }
 
-    public MergeOperation(String name, SplitBrainMergePolicy mergePolicy, long mergingValue) {
+    public MergeOperation(String name, SplitBrainMergePolicy<Long, AtomicLongMergeTypes> mergePolicy, long mergingValue) {
         super(name);
         this.mergePolicy = mergePolicy;
         this.mergingValue = mergingValue;
@@ -54,20 +55,38 @@ public class MergeOperation extends AtomicLongBackupAwareOperation {
     public void run() throws Exception {
         AtomicLongService service = getService();
         boolean isExistingContainer = service.containsAtomicLong(name);
+        AtomicLongContainer container = isExistingContainer ? getLongContainer() : null;
+        Long oldValue = isExistingContainer ? container.get() : null;
 
         SerializationService serializationService = getNodeEngine().getSerializationService();
-        MergingValueHolder<Long> mergeHolder = createMergeHolder(serializationService, mergingValue);
-        backupValue = getLongContainer().merge(mergeHolder, mergePolicy, isExistingContainer, serializationService);
+        serializationService.getManagedContext().initialize(mergePolicy);
+
+        AtomicLongMergeTypes mergeValue = createMergingValue(serializationService, mergingValue);
+        AtomicLongMergeTypes existingValue = isExistingContainer ? createMergingValue(serializationService, oldValue) : null;
+        Long newValue = mergePolicy.merge(mergeValue, existingValue);
+
+        backupValue = setNewValue(service, container, oldValue, newValue);
+        shouldBackup = (backupValue == null && oldValue != null) || (backupValue != null && !backupValue.equals(oldValue));
     }
 
-    @Override
-    public boolean shouldBackup() {
-        return backupValue != null;
+    private Long setNewValue(AtomicLongService service, AtomicLongContainer container, Long oldValue, Long newValue) {
+        if (newValue == null) {
+            service.destroyDistributedObject(name);
+            return null;
+        } else if (container == null) {
+            container = getLongContainer();
+            container.set(newValue);
+            return newValue;
+        } else if (!newValue.equals(oldValue)) {
+            container.set(newValue);
+            return newValue;
+        }
+        return oldValue;
     }
 
     @Override
     public Operation getBackupOperation() {
-        return new SetBackupOperation(name, backupValue);
+        return new MergeBackupOperation(name, backupValue);
     }
 
     @Override

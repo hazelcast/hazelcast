@@ -18,6 +18,7 @@ package com.hazelcast.cache.merge;
 
 import com.hazelcast.cache.BuiltInCacheMergePolicies;
 import com.hazelcast.cache.CacheMergePolicy;
+import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.merge.policy.CacheMergePolicyProvider;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -46,7 +47,8 @@ public class CacheMergePolicyProviderTest extends HazelcastTestSupport {
 
     @Before
     public void setup() {
-        mergePolicyProvider = new CacheMergePolicyProvider(getNode(createHazelcastInstance()).getNodeEngine());
+        CacheService service = getNodeEngineImpl(createHazelcastInstance()).getService(CacheService.SERVICE_NAME);
+        mergePolicyProvider = service.getMergePolicyProvider();
     }
 
     @Test

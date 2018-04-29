@@ -17,42 +17,62 @@
 package com.hazelcast.client.impl.protocol.task.cache;
 
 import com.hazelcast.cache.impl.CacheService;
-import com.hazelcast.cache.impl.operation.CacheCreateConfigOperation;
+import com.hazelcast.cache.impl.ICacheService;
+import com.hazelcast.cache.impl.PreJoinCacheConfig;
+import com.hazelcast.cache.impl.merge.policy.CacheMergePolicyProvider;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheCreateConfigCodec;
+import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.LegacyCacheConfig;
+import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.properties.GroupProperty;
 
 import java.security.Permission;
 
+import static com.hazelcast.internal.config.ConfigValidator.checkCacheConfig;
+import static com.hazelcast.internal.config.MergePolicyValidator.checkMergePolicySupportsInMemoryFormat;
+
 /**
- * This client request  specifically calls {@link CacheCreateConfigOperation} on the server side.
+ * Creates the given CacheConfig on all members of the cluster.
  *
- * @see CacheCreateConfigOperation
+ * @see ICacheService#createCacheConfigOnAllMembers(PreJoinCacheConfig)
  */
 public class CacheCreateConfigMessageTask
-        extends AbstractCacheMessageTask<CacheCreateConfigCodec.RequestParameters> {
+        extends AbstractMessageTask<CacheCreateConfigCodec.RequestParameters>
+        implements ExecutionCallback {
 
     public CacheCreateConfigMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected Operation prepareOperation() {
+    protected void processMessage() {
         CacheConfig cacheConfig = extractCacheConfigFromMessage();
+        CacheService cacheService = getService(CacheService.SERVICE_NAME);
 
-        return new CacheCreateConfigOperation(cacheConfig, parameters.createAlsoOnOthers);
+        if (cacheConfig != null) {
+            CacheMergePolicyProvider mergePolicyProvider = cacheService.getMergePolicyProvider();
+            checkCacheConfig(cacheConfig, mergePolicyProvider);
+
+            Object mergePolicy = mergePolicyProvider.getMergePolicy(cacheConfig.getMergePolicy());
+            checkMergePolicySupportsInMemoryFormat(cacheConfig.getName(), mergePolicy, cacheConfig.getInMemoryFormat(),
+                    nodeEngine.getClusterService().getClusterVersion(), true, logger);
+
+            ICompletableFuture future = cacheService.createCacheConfigOnAllMembersAsync(PreJoinCacheConfig.of(cacheConfig));
+            future.andThen(this);
+        } else {
+            sendResponse(null);
+        }
     }
 
     private CacheConfig extractCacheConfigFromMessage() {
         int clientVersion = getClientVersion();
-        CacheConfig cacheConfig = null;
         if (BuildInfo.UNKNOWN_HAZELCAST_VERSION == clientVersion) {
             boolean compatibilityEnabled = nodeEngine.getProperties().getBoolean(GroupProperty.COMPATIBILITY_3_6_CLIENT_ENABLED);
             if (compatibilityEnabled) {
@@ -101,5 +121,30 @@ public class CacheCreateConfigMessageTask
     @Override
     public Object[] getParameters() {
         return null;
+    }
+
+    @Override
+    public void onResponse(Object response) {
+        sendResponse(response);
+    }
+
+    @Override
+    public void onFailure(Throwable t) {
+        handleProcessingFailure(t);
+    }
+
+    private Data serializeCacheConfig(Object response) {
+        Data responseData = null;
+        if (BuildInfo.UNKNOWN_HAZELCAST_VERSION == getClientVersion()) {
+            boolean compatibilityEnabled = nodeEngine.getProperties().getBoolean(GroupProperty.COMPATIBILITY_3_6_CLIENT_ENABLED);
+            if (compatibilityEnabled) {
+                responseData = nodeEngine.toData(response == null ? null : new LegacyCacheConfig((CacheConfig) response));
+            }
+        }
+
+        if (null == responseData) {
+            responseData = nodeEngine.toData(response);
+        }
+        return responseData;
     }
 }

@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * A SPI service for accessing partition related information.
+ * An SPI service for accessing partition related information.
  */
 public interface IPartitionService extends CoreService {
 
@@ -38,15 +38,18 @@ public interface IPartitionService extends CoreService {
 
     /**
      * Gets the owner of the partition if it's set.
-     * Otherwise it will trigger partition assignment.
+     * <p>
+     * If the owner of the partition is not set yet, it will trigger partition assignment.
      *
      * @param partitionId the partitionId
-     * @return owner of partition or null if it's not set yet.
+     * @return owner of partition or {@code null} if it's not set yet
      */
     Address getPartitionOwner(int partitionId);
 
     /**
-     * Gets the owner of the partition. If none is set, it will wait till the owner is set.
+     * Gets the owner of the partition.
+     * <p>
+     * If none is set, it will wait till the owner is set.
      *
      * @param partitionId the partitionId
      * @return owner of partition
@@ -56,66 +59,71 @@ public interface IPartitionService extends CoreService {
     Address getPartitionOwnerOrWait(int partitionId);
 
     /**
-     * Returns the IPartition for a given partitionId.
-     * If owner of the partition is not set yet, it will trigger partition assignment.
-     * <p/>
-     * The IPartition for a given partitionId will never change, so it can be cached safely.
+     * Returns the {@link IPartition} for a given partition ID.
+     * <p>
+     * If the owner of the partition is not set yet, it will trigger partition assignment.
+     * <p>
+     * The {@link IPartition} for a given partition ID will never change, so the result can be cached safely.
      *
-     * @param partitionId the partitionId
-     * @return the IPartition.
+     * @param partitionId the partition ID
+     * @return the IPartition
      */
     IPartition getPartition(int partitionId);
 
     /**
-     * Returns the IPartition for a given partitionId.
-     * If owner of the partition is not set yet and {@code triggerOwnerAssignment} is true,
+     * Returns the {@link IPartition} for a given partition ID.
+     * <p>
+     * If the owner of the partition is not set yet and {@code triggerOwnerAssignment} is {@code true},
      * it will trigger partition assignment.
-     * <p/>
-     * The IPartition for a given partitionId will never change, so it can be cached safely.
+     * <p>
+     * The {@link IPartition} for a given partition ID will never change, so the result can be cached safely.
      *
-     * @param partitionId            the partitionId
-     * @param triggerOwnerAssignment flag to trigger partition assignment
-     * @return the IPartition.
+     * @param partitionId            the partition ID
+     * @param triggerOwnerAssignment flag to trigger the partition assignment
+     * @return the IPartition
      */
     IPartition getPartition(int partitionId, boolean triggerOwnerAssignment);
 
     /**
-     * Returns the partition ID for a Data key.
+     * Returns the partition ID for a {@link Data} key.
      *
-     * @param key the Data key.
-     * @return the partition ID.
-     * @throws NullPointerException if key is null.
+     * @param key the {@link Data} key
+     * @return the partition ID
+     * @throws NullPointerException if key is {@code null}
      */
     int getPartitionId(Data key);
 
     /**
      * Returns the partition ID for a given object.
      *
-     * @param key the object key.
-     * @return the partition ID.
+     * @param key the object key
+     * @return the partition ID
      */
     int getPartitionId(Object key);
 
     /**
      * Returns the number of partitions.
      *
-     * @return the number of partitions.
+     * @return the number of partitions
      */
     int getPartitionCount();
 
     /**
      * Returns partition ID list assigned to given target.
-     * Triggers partition assignment if partitions are not assigned yet.
+     * <p>
+     * If the owner of the partition is not set yet, it will trigger partition assignment.
      *
      * @return partition ID list assigned to given target
      */
     List<Integer> getMemberPartitions(Address target);
 
     /**
-     * Gets member partition IDs. Blocks until partitions are assigned.
+     * Gets member partition IDs.
+     * <p>
+     * Blocks until partitions are assigned.
      *
      * @return map of member address to partition IDs
-     **/
+     */
     Map<Address, List<Integer>> getMemberPartitionsMap();
 
     String addMigrationListener(MigrationListener migrationListener);
@@ -131,18 +139,19 @@ public interface IPartitionService extends CoreService {
     long getMigrationQueueSize();
 
     /**
-     * Query and return if this member in a safe state or not.
+     * Queries and returns if this member in a safe state or not.
+     * <p>
      * This method just checks for a safe state, it doesn't force this member to be in a safe state.
      *
-     * @return <code>true</code> if this member in a safe state, otherwise <code>false</code>
+     * @return {@code true} if this member in a safe state, otherwise {@code false}
      */
     boolean isMemberStateSafe();
 
     /**
      * Returns maximum allowed backup count according to current
      * cluster formation and partition group configuration.
-     * <p/>
-     * Returned number will be in range of [0, {@link IPartition#MAX_BACKUP_COUNT}].
+     * <p>
+     * The returned number will be in the range of [0, {@link IPartition#MAX_BACKUP_COUNT}].
      *
      * @return max allowed backup count
      */
@@ -153,28 +162,32 @@ public interface IPartitionService extends CoreService {
     /**
      * Checks if there are any cluster-wide migrations.
      *
-     * @return true if there are migrations, false otherwise.
+     * @return {@code true} if there are migrations, {@code false} otherwise.
      */
     boolean hasOnGoingMigration();
 
     /**
      * Checks if there are any local migrations.
      *
-     * @return true if there are migrations, false otherwise.
+     * @return {@code true} if there are migrations, {@code false} otherwise.
      */
     boolean hasOnGoingMigrationLocal();
 
     /**
-     * Check if this node is the owner of a partition
+     * Check if this node is the owner of a partition.
      *
-     * @param partitionId
-     * @return true if it owns the partition. false if it doesn't or the partition hasn't been assigned yet.
+     * @param partitionId the partition ID
+     * @return {@code true} if the node owns the partition,
+     * {@code false} if the node doesn't own the partition or if the partition hasn't been assigned yet
      */
     boolean isPartitionOwner(int partitionId);
 
     /**
-     * @return copy of array with IPartition objects
-     * create new array on each invocation, not recommended to use in high-loaded parts of code
+     * Returns an array of {@link IPartition} instances.
+     * <p>
+     * <b>Note</b>: Creates a new array on each invocation, not recommended to use in high-loaded parts of code.
+     *
+     * @return array of {@link IPartition} instances
      */
     IPartition[] getPartitions();
 }

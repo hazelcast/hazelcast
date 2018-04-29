@@ -33,6 +33,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
 
+import static com.hazelcast.internal.config.ConfigValidator.checkCacheConfig;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
@@ -118,25 +119,22 @@ public final class HazelcastClientCacheManager extends AbstractHazelcastCacheMan
     }
 
     @Override
-    protected <K, V> CacheConfig<K, V> findCacheConfig(String cacheName, String simpleCacheName, boolean createAlsoOnOthers,
-                                                       boolean syncCreate) {
+    protected <K, V> CacheConfig<K, V> findCacheConfig(String cacheName, String simpleCacheName) {
         CacheConfig<K, V> config = clientCacheProxyFactory.getCacheConfig(cacheName);
         if (config == null) {
             // if cache config not found, try to find it from partition
             config = getCacheConfig(cacheName, simpleCacheName);
             if (config != null) {
                 // cache config possibly is not exist on other nodes, so create also on them if absent
-                createCacheConfig(cacheName, config, createAlsoOnOthers, syncCreate);
+                createCacheConfig(cacheName, config);
             }
         }
         return config;
     }
 
     @Override
-    protected <K, V> CacheConfig<K, V> createCacheConfig(String cacheName, CacheConfig<K, V> config,
-                                                         boolean createAlsoOnOthers, boolean syncCreate) {
-        return ClientCacheHelper.createCacheConfig(client, clientCacheProxyFactory.getCacheConfig(cacheName), config,
-                createAlsoOnOthers, syncCreate);
+    protected <K, V> void createCacheConfig(String cacheName, CacheConfig<K, V> config) {
+        ClientCacheHelper.createCacheConfig(client, config);
     }
 
     @Override
@@ -163,6 +161,11 @@ public final class HazelcastClientCacheManager extends AbstractHazelcastCacheMan
             clientCacheProxyFactory.removeCacheConfig(cacheName);
             iter.remove();
         }
+    }
+
+    @Override
+    protected <K, V> void validateCacheConfig(CacheConfig<K, V> cacheConfig) {
+        checkCacheConfig(cacheConfig, null);
     }
 
     @Override

@@ -25,7 +25,7 @@ import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.util.RootCauseMatcher;
-import com.hazelcast.util.executor.LoggingScheduledExecutor.LoggingDelegatingFuture;
+import com.hazelcast.util.executor.LoggingScheduledExecutor.RemoveOnCancelFuture;
 import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
@@ -33,14 +33,15 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
+import java.lang.reflect.Method;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionHandler;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicReference;
@@ -62,7 +63,7 @@ public class LoggingScheduledExecutorTest extends HazelcastTestSupport {
     private TestLogger logger = new TestLogger();
     private TestThreadFactory factory = new TestThreadFactory();
 
-    private ScheduledExecutorService executor;
+    private LoggingScheduledExecutor executor;
 
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
@@ -73,6 +74,17 @@ public class LoggingScheduledExecutorTest extends HazelcastTestSupport {
             executor.shutdownNow();
             executor.awaitTermination(5, SECONDS);
         }
+    }
+
+    @Test
+    public void test_setRemoveOnCancelPolicy_isCalledOnJava7() throws Exception {
+        assumeThatNoJDK6();
+
+        executor = new LoggingScheduledExecutor(logger, 1, factory);
+
+        Method method = ScheduledThreadPoolExecutor.class.getMethod("getRemoveOnCancelPolicy");
+        // will only return true when the setRemoveOnCancelPolicy was called with true.
+        assertEquals(Boolean.TRUE, method.invoke(executor));
     }
 
     @Test
@@ -144,6 +156,7 @@ public class LoggingScheduledExecutorTest extends HazelcastTestSupport {
     @Test
     public void logsExecutionException_withRunnable() {
         executor = new LoggingScheduledExecutor(logger, 1, factory);
+        executor.manualRemoveOnCancel = true;
         executor.submit(new FailedRunnable());
 
         assertTrueEventually(new AssertTask() {
@@ -196,19 +209,21 @@ public class LoggingScheduledExecutorTest extends HazelcastTestSupport {
         future.get();
     }
 
+
     @Test
-    public void testLoggingDelegatingFuture() {
+    public void testWhenManualRemoveOnCancel() {
         executor = new LoggingScheduledExecutor(logger, 1, factory);
+        executor.manualRemoveOnCancel = true;
         Runnable task = new FailedRunnable();
 
         ScheduledFuture<?> scheduledFuture1 = executor.schedule(task, 0, SECONDS);
         ScheduledFuture<?> scheduledFuture2 = executor.scheduleAtFixedRate(task, 0, 1, SECONDS);
 
-        assertInstanceOf(LoggingDelegatingFuture.class, scheduledFuture1);
-        assertInstanceOf(LoggingDelegatingFuture.class, scheduledFuture2);
+        assertInstanceOf(LoggingScheduledExecutor.RemoveOnCancelFuture.class, scheduledFuture1);
+        assertInstanceOf(RemoveOnCancelFuture.class, scheduledFuture2);
 
-        LoggingDelegatingFuture future1 = (LoggingDelegatingFuture) scheduledFuture1;
-        LoggingDelegatingFuture future2 = (LoggingDelegatingFuture) scheduledFuture2;
+        LoggingScheduledExecutor.RemoveOnCancelFuture future1 = (LoggingScheduledExecutor.RemoveOnCancelFuture) scheduledFuture1;
+        LoggingScheduledExecutor.RemoveOnCancelFuture future2 = (RemoveOnCancelFuture) scheduledFuture2;
 
         assertFalse(future1.isPeriodic());
         assertTrue(future2.isPeriodic());
@@ -218,6 +233,7 @@ public class LoggingScheduledExecutorTest extends HazelcastTestSupport {
         assertNotEquals(future1, null);
 
         assertEquals(future1.hashCode(), future1.hashCode());
+        assumeDifferentHashCodes();
         assertNotEquals(future1.hashCode(), future2.hashCode());
     }
 

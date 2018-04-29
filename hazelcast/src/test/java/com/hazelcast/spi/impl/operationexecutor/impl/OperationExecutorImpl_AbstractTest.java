@@ -45,9 +45,6 @@ import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 
-import static com.hazelcast.spi.properties.GroupProperty.GENERIC_OPERATION_THREAD_COUNT;
-import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
-import static com.hazelcast.spi.properties.GroupProperty.PARTITION_OPERATION_THREAD_COUNT;
 import static java.util.Collections.synchronizedList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;

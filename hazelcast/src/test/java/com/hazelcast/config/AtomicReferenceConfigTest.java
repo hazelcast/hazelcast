@@ -48,6 +48,7 @@ public class AtomicReferenceConfigTest extends AbstractBasicConfigTest<AtomicRef
 
     @Test
     public void testEqualsAndHashCode() {
+        assumeDifferentHashCodes();
         EqualsVerifier.forClass(AtomicReferenceConfig.class)
                 .allFieldsShouldBeUsedExcept("readOnly")
                 .suppress(Warning.NULL_FIELDS, Warning.NONFINAL_FIELDS, Warning.STRICT_INHERITANCE)

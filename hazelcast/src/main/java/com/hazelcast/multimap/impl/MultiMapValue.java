@@ -29,7 +29,7 @@ public class MultiMapValue {
 
     private final Collection<MultiMapRecord> collection;
 
-    private int hits;
+    private long hits;
 
     public MultiMapValue(Collection<MultiMapRecord> collection) {
         this.collection = collection;
@@ -55,8 +55,12 @@ public class MultiMapValue {
         hits++;
     }
 
-    public int getHits() {
+    public long getHits() {
         return hits;
+    }
+
+    public void setHits(long hits) {
+        this.hits = hits;
     }
 
     public boolean containsRecordId(long recordId) {

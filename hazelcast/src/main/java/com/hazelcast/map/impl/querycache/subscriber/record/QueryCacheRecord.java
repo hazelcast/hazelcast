@@ -17,7 +17,6 @@
 package com.hazelcast.map.impl.querycache.subscriber.record;
 
 import com.hazelcast.internal.eviction.Evictable;
-import com.hazelcast.nio.serialization.Data;
 
 /**
  * Represents a {@link com.hazelcast.map.QueryCache QueryCache} record.
@@ -25,8 +24,6 @@ import com.hazelcast.nio.serialization.Data;
  * @param <V> the type of the value of this record.
  */
 public interface QueryCacheRecord<V> extends Evictable {
-
-    Data getKey();
 
     @Override
     V getValue();

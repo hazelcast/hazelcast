@@ -121,6 +121,17 @@ public class SemaphoreQuorumWriteTest extends AbstractQuorumTest {
     }
 
     @Test
+    public void increase() {
+        semaphore(0).drainPermits();
+        semaphore(0).increasePermits(1);
+    }
+
+    @Test(expected = QuorumException.class)
+    public void increasePermits_successful_whenQuorumSize_notMet() {
+        semaphore(3).increasePermits(1);
+    }
+
+    @Test
     public void release_successful_whenQuorumSize_met() {
         semaphore(0).release();
     }

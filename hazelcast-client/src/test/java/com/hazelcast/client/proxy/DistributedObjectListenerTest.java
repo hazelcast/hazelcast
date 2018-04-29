@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.proxy;
 
+import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectEvent;
@@ -114,4 +115,59 @@ public class DistributedObjectListenerTest extends HazelcastTestSupport {
         assertEquals(1, client1.getDistributedObjects().size());
         assertEquals(1, client2.getDistributedObjects().size());
     }
+
+    @Test
+    public void distributedObjectsCreatedBack_whenClusterRestart_withSingleNode() {
+        final HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
+
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getNetworkConfig().setConnectionAttemptLimit(100);
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
+
+        client.getMap("test");
+
+        Collection<DistributedObject> distributedObjects = instance.getDistributedObjects();
+        assertEquals(1, distributedObjects.size());
+
+        instance.shutdown();
+
+        final HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance();
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                Collection<DistributedObject> distributedObjects = instance2.getDistributedObjects();
+                assertEquals(1, distributedObjects.size());
+            }
+        });
+    }
+
+    @Test
+    public void distributedObjectsCreatedBack_whenClusterRestart_withMultipleNode() {
+        final HazelcastInstance instance1 = hazelcastFactory.newHazelcastInstance();
+        final HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance();
+
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getNetworkConfig().setConnectionAttemptLimit(100);
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
+
+        client.getMap("test");
+
+        instance1.shutdown();
+        instance2.shutdown();
+
+        final HazelcastInstance newClusterInstance1 = hazelcastFactory.newHazelcastInstance();
+        final HazelcastInstance newClusterInstance2 = hazelcastFactory.newHazelcastInstance();
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                Collection<DistributedObject> distributedObjects1 = newClusterInstance1.getDistributedObjects();
+                assertEquals(1, distributedObjects1.size());
+                Collection<DistributedObject> distributedObjects2 = newClusterInstance2.getDistributedObjects();
+                assertEquals(1, distributedObjects2.size());
+            }
+        });
+    }
+
 }

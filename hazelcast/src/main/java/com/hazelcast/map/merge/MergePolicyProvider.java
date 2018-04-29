@@ -18,6 +18,7 @@ package com.hazelcast.map.merge;
 
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
 import com.hazelcast.util.ConstructorFunction;
 
@@ -26,8 +27,6 @@ import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.nio.ClassLoaderUtil.newInstance;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
-import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * A provider for {@link com.hazelcast.map.merge.MapMergePolicy} instances.
@@ -43,8 +42,7 @@ public final class MergePolicyProvider {
             try {
                 return newInstance(nodeEngine.getConfigClassLoader(), className);
             } catch (Exception e) {
-                nodeEngine.getLogger(getClass()).severe(e);
-                throw rethrow(e);
+                throw new InvalidConfigurationException("Invalid MapMergePolicy: " + className, e);
             }
         }
     };
@@ -68,7 +66,7 @@ public final class MergePolicyProvider {
     /**
      * Returns an instance of a merge policy by its classname.
      * <p>
-     * First tries to resolve the classname as {@link com.hazelcast.spi.SplitBrainMergePolicy},
+     * First tries to resolve the classname as {@link SplitBrainMergePolicy},
      * then as {@link com.hazelcast.map.merge.MapMergePolicy}.
      * <p>
      * If no merge policy matches an exception is thrown.
@@ -77,7 +75,9 @@ public final class MergePolicyProvider {
      * @return an instance of the merge policy class
      */
     public Object getMergePolicy(String className) {
-        checkNotNull(className, "Class name is mandatory!");
+        if (className == null) {
+            throw new InvalidConfigurationException("Class name is mandatory!");
+        }
         try {
             return policyProvider.getMergePolicy(className);
         } catch (InvalidConfigurationException e) {

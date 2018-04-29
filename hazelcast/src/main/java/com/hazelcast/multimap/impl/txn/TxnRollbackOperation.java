@@ -18,14 +18,14 @@ package com.hazelcast.multimap.impl.txn;
 
 import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
-import com.hazelcast.multimap.impl.operations.MultiMapBackupAwareOperation;
+import com.hazelcast.multimap.impl.operations.AbstractBackupAwareMultiMapOperation;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.transaction.TransactionException;
 
-public class TxnRollbackOperation extends MultiMapBackupAwareOperation implements Notifier {
+public class TxnRollbackOperation extends AbstractBackupAwareMultiMapOperation implements Notifier {
 
     public TxnRollbackOperation() {
     }

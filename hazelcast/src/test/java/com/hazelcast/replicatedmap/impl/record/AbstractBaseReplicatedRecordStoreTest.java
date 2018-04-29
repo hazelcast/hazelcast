@@ -90,6 +90,7 @@ public class AbstractBaseReplicatedRecordStoreTest extends HazelcastTestSupport 
         assertEquals(recordStore.hashCode(), recordStore.hashCode());
         assertEquals(recordStoreSameAttributes.hashCode(), recordStore.hashCode());
 
+        assumeDifferentHashCodes();
         assertNotEquals(recordStoreOtherStorage.hashCode(), recordStore.hashCode());
         assertNotEquals(recordStoreOtherName.hashCode(), recordStore.hashCode());
     }

@@ -16,12 +16,6 @@
 
 package com.hazelcast.concurrent.atomiclong;
 
-import com.hazelcast.spi.SplitBrainMergePolicy;
-import com.hazelcast.spi.merge.MergingValueHolder;
-import com.hazelcast.spi.serialization.SerializationService;
-
-import static com.hazelcast.spi.impl.merge.MergingHolders.createMergeHolder;
-
 public class AtomicLongContainer {
 
     private long value;
@@ -60,35 +54,5 @@ public class AtomicLongContainer {
         long tempValue = this.value;
         this.value = value;
         return tempValue;
-    }
-
-    /**
-     * Merges the given {@link MergingValueHolder} via the given {@link SplitBrainMergePolicy}.
-     *
-     * @param mergingValue         the {@link MergingValueHolder} instance to merge
-     * @param mergePolicy          the {@link SplitBrainMergePolicy} instance to apply
-     * @param serializationService the {@link SerializationService} to inject dependencies
-     * @return the new value if merge is applied, otherwise {@code null}
-     */
-    public Long merge(MergingValueHolder<Long> mergingValue, SplitBrainMergePolicy mergePolicy, boolean isExistingContainer,
-                      SerializationService serializationService) {
-        serializationService.getManagedContext().initialize(mergingValue);
-        serializationService.getManagedContext().initialize(mergePolicy);
-
-        if (isExistingContainer) {
-            MergingValueHolder<Long> existingValue = createMergeHolder(serializationService, value);
-            Long newValue = mergePolicy.merge(mergingValue, existingValue);
-            if (newValue != null && !newValue.equals(value)) {
-                value = newValue;
-                return newValue;
-            }
-        } else {
-            Long newValue = mergePolicy.merge(mergingValue, null);
-            if (newValue != null) {
-                value = newValue;
-                return newValue;
-            }
-        }
-        return null;
     }
 }

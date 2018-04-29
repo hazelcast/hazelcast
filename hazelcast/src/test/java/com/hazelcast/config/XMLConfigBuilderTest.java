@@ -88,6 +88,8 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
 
     @Test
     public void testConfigurationWithFileName() throws Exception {
+        assumeThatNotZingJDK6(); // https://github.com/hazelcast/hazelcast/issues/9044
+
         File file = createTempFile("foo", "bar");
         file.deleteOnExit();
 
@@ -143,6 +145,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
                 + "    <interceptor class-name=\"foo\"/>"
                 + "    <interceptor class-name=\"bar\"/>"
                 + "  </security-interceptors>"
+                + "  <client-block-unmapped-actions>false</client-block-unmapped-actions>"
                 + "</security>"
                 + HAZELCAST_END_TAG;
 
@@ -153,6 +156,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         assertEquals(2, interceptorConfigs.size());
         assertEquals("foo", interceptorConfigs.get(0).className);
         assertEquals("bar", interceptorConfigs.get(1).className);
+        assertFalse(securityConfig.getClientBlockUnmappedActions());
     }
 
     @Test
@@ -1163,6 +1167,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
                 + "  <prefetch-count>3</prefetch-count>"
                 + "  <prefetch-validity-millis>10</prefetch-validity-millis>"
                 + "  <id-offset>20</id-offset>"
+                + "  <node-id-offset>30</node-id-offset>"
                 + "  <statistics-enabled>false</statistics-enabled>"
                 + "</flake-id-generator>"
                 + HAZELCAST_END_TAG;
@@ -1172,6 +1177,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         assertEquals(3, fConfig.getPrefetchCount());
         assertEquals(10L, fConfig.getPrefetchValidityMillis());
         assertEquals(20L, fConfig.getIdOffset());
+        assertEquals(30L, fConfig.getNodeIdOffset());
         assertFalse(fConfig.isStatisticsEnabled());
     }
 
@@ -1703,7 +1709,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         assertEquals(2, cardinalityEstimatorConfig.getBackupCount());
         assertEquals(3, cardinalityEstimatorConfig.getAsyncBackupCount());
         assertEquals("com.hazelcast.spi.merge.HyperLogLogMergePolicy",
-                cardinalityEstimatorConfig.getMergePolicyConfig().policy);
+                cardinalityEstimatorConfig.getMergePolicyConfig().getPolicy());
         assertEquals("customQuorumRule", cardinalityEstimatorConfig.getQuorumName());
     }
 

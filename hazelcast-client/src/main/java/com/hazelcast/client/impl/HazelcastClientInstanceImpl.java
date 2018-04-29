@@ -460,6 +460,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         partitionService.listenPartitionTable(ownerConnection);
         clusterService.listenMembershipEvents(ownerConnection);
         userCodeDeploymentService.deploy(this, ownerConnection);
+        proxyManager.createDistributedObjectsOnCluster(ownerConnection);
     }
 
     public MetricsRegistryImpl getMetricsRegistry() {
@@ -658,7 +659,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
             }
 
             for (DistributedObjectInfo distributedObjectInfo : localDistributedObjects) {
-                proxyManager.removeProxy(distributedObjectInfo.getServiceName(), distributedObjectInfo.getName());
+                proxyManager.destroyProxyLocally(distributedObjectInfo.getServiceName(), distributedObjectInfo.getName());
             }
             return (Collection<DistributedObject>) proxyManager.getDistributedObjects();
         } catch (Exception e) {

@@ -210,7 +210,7 @@ public class ClientNetworkConfig {
     }
 
     /**
-     * Adds given addresses to candidate address list that client will use to establish initial connection
+     * Sets given addresses as candidate address list that client will use to establish initial connection
      *
      * @param addresses to be added to initial address list
      * @return configured {@link com.hazelcast.client.config.ClientNetworkConfig} for chaining

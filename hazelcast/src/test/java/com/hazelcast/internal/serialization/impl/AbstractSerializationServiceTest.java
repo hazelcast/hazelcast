@@ -73,7 +73,7 @@ public class AbstractSerializationServiceTest {
         String payload = "somepayload";
         int padding = 10;
 
-        byte[] unpadded = abstractSerializationService.toBytes(payload);
+        byte[] unpadded = abstractSerializationService.toBytes(payload, 0, true);
         byte[] padded = abstractSerializationService.toBytes(payload, 10, true);
 
         // make sure the size is expected

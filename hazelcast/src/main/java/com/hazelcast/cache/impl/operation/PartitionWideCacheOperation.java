@@ -28,7 +28,6 @@ import com.hazelcast.spi.impl.AbstractNamedOperation;
  * @see com.hazelcast.cache.impl.operation.CacheSizeOperation
  * @see com.hazelcast.cache.impl.operation.CacheGetAllOperation
  * @see com.hazelcast.cache.impl.operation.CacheClearOperation
- * @see com.hazelcast.cache.impl.operation.CacheGetConfigOperation
  */
 abstract class PartitionWideCacheOperation
         extends AbstractNamedOperation

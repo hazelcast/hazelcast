@@ -79,7 +79,7 @@ public class XmlClientConfigBuilderTest extends HazelcastTestSupport {
     static final String HAZELCAST_CLIENT_START_TAG =
             "<hazelcast-client xmlns=\"http://www.hazelcast.com/schema/client-config\">\n";
 
-    private static final String HAZELCAST_CLIENT_END_TAG = "</hazelcast-client>";
+    static final String HAZELCAST_CLIENT_END_TAG = "</hazelcast-client>";
 
     private ClientConfig fullClientConfig;
     private ClientConfig defaultClientConfig;

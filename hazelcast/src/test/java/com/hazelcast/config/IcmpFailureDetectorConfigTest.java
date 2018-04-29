@@ -20,10 +20,13 @@ import nl.jqno.equalsverifier.EqualsVerifier;
 import nl.jqno.equalsverifier.Warning;
 import org.junit.Test;
 
+import static com.hazelcast.test.HazelcastTestSupport.assumeDifferentHashCodes;
+
 public class IcmpFailureDetectorConfigTest {
 
     @Test
     public void testEqualsAndHashCode() {
+        assumeDifferentHashCodes();
         EqualsVerifier.forClass(IcmpFailureDetectorConfig.class)
                 .allFieldsShouldBeUsed()
                 .suppress(Warning.NONFINAL_FIELDS)

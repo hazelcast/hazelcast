@@ -28,6 +28,10 @@ import com.hazelcast.spi.OperationFactory;
 
 import java.io.IOException;
 
+/**
+ * An {@link OperationFactory} that creates operations by cloning
+ * the passed Operation.
+ */
 public final class BinaryOperationFactory implements OperationFactory, NodeAware, IdentifiedDataSerializable {
 
     private Data operationData;

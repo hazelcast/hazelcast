@@ -31,6 +31,7 @@ import com.hazelcast.internal.cluster.impl.operations.MembersUpdateOp;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.tcp.FirewallingConnectionManager;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.PostJoinAwareService;
@@ -64,6 +65,7 @@ import java.util.concurrent.locks.LockSupport;
 import static com.hazelcast.instance.HazelcastInstanceFactory.newHazelcastInstance;
 import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.FINALIZE_JOIN;
 import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.F_ID;
+import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.HEARTBEAT;
 import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.MEMBER_INFO_UPDATE;
 import static com.hazelcast.spi.properties.GroupProperty.MEMBER_LIST_PUBLISH_INTERVAL_SECONDS;
 import static com.hazelcast.test.PacketFiltersUtil.delayOperationsFrom;
@@ -79,6 +81,7 @@ import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -620,14 +623,16 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
 
     @Test
     public void memberListOrder_shouldBeSame_whenMemberRestartedWithSameIdentity() {
-        Config config = new Config();
-        config.setProperty(GroupProperty.MEMBER_LIST_PUBLISH_INTERVAL_SECONDS.getName(), "5");
-        config.setProperty(GroupProperty.MAX_JOIN_SECONDS.getName(), "5");
+        Config configMaster = new Config();
+        configMaster.setProperty(GroupProperty.MEMBER_LIST_PUBLISH_INTERVAL_SECONDS.getName(), "5");
+        // Needed only on master to prevent accepting stale join requests.
+        // See ClusterJoinManager#checkRecentlyJoinedMemberUuidBeforeJoin(target, uuid)
+        configMaster.setProperty(GroupProperty.MAX_JOIN_SECONDS.getName(), "5");
+        final HazelcastInstance hz1 = factory.newHazelcastInstance(configMaster);
 
-        final HazelcastInstance hz1 = factory.newHazelcastInstance(config);
-        final HazelcastInstance hz2 = factory.newHazelcastInstance(config);
-        HazelcastInstance hz3 = factory.newHazelcastInstance(config);
-        HazelcastInstance hz4 = factory.newHazelcastInstance(config);
+        final HazelcastInstance hz2 = factory.newHazelcastInstance();
+        HazelcastInstance hz3 = factory.newHazelcastInstance();
+        HazelcastInstance hz4 = factory.newHazelcastInstance();
 
         assertClusterSizeEventually(4, hz2, hz3);
 
@@ -639,7 +644,7 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         assertClusterSizeEventually(3, hz1, hz4);
         assertClusterSize(4, hz2);
 
-        hz3 = newHazelcastInstance(config, "test-instance", new StaticMemberNodeContext(factory, member3));
+        hz3 = newHazelcastInstance(new Config(), "test-instance", new StaticMemberNodeContext(factory, member3));
 
         assertClusterSizeEventually(4, hz1, hz4);
 
@@ -745,6 +750,55 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
             // expected
         }
         assertClusterSize(1, hz1);
+    }
+
+    @Test
+    public void connectionsToTerminatedMember_shouldBeClosed() {
+        HazelcastInstance hz1 = factory.newHazelcastInstance();
+        HazelcastInstance hz2 = factory.newHazelcastInstance();
+        HazelcastInstance hz3 = factory.newHazelcastInstance();
+
+        assertClusterSizeEventually(3, hz1, hz2, hz3);
+
+        Address target = getAddress(hz2);
+        hz2.getLifecycleService().terminate();
+
+        assertClusterSizeEventually(2, hz1, hz3);
+
+        assertNull(getConnectionManager(hz1).getConnection(target));
+        assertNull(getConnectionManager(hz3).getConnection(target));
+    }
+
+    @Test
+    public void connectionsToRemovedMember_shouldBeClosed() {
+        Config config = new Config()
+            .setProperty(GroupProperty.MAX_NO_HEARTBEAT_SECONDS.getName(), "10")
+            .setProperty(GroupProperty.HEARTBEAT_INTERVAL_SECONDS.getName(), "1");
+
+        HazelcastInstance hz1 = factory.newHazelcastInstance(config);
+        HazelcastInstance hz2 = factory.newHazelcastInstance(config);
+        HazelcastInstance hz3 = factory.newHazelcastInstance(config);
+
+        assertClusterSizeEventually(3, hz1, hz2, hz3);
+
+        Address target = getAddress(hz2);
+
+        FirewallingConnectionManager cm2 = getFireWallingConnectionManager(hz2);
+        cm2.blockNewConnection(getAddress(hz1));
+        cm2.blockNewConnection(getAddress(hz3));
+
+        FirewallingConnectionManager cm3 = getFireWallingConnectionManager(hz3);
+        cm3.blockNewConnection(getAddress((hz2)));
+
+        dropOperationsBetween(hz2, hz1, F_ID, singletonList(HEARTBEAT));
+        assertClusterSizeEventually(2, hz1, hz3);
+
+        assertNull(getConnectionManager(hz1).getConnection(target));
+        assertNull(getConnectionManager(hz3).getConnection(target));
+    }
+
+    private static FirewallingConnectionManager getFireWallingConnectionManager(HazelcastInstance hz) {
+        return (FirewallingConnectionManager) getConnectionManager(hz);
     }
 
     private Config getConfigWithService(Object service, String serviceName) {

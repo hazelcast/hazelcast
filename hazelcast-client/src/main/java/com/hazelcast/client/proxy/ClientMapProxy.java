@@ -149,7 +149,6 @@ import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.CollectionUtil;
 import com.hazelcast.util.IterationType;
 import com.hazelcast.util.Preconditions;
-import com.hazelcast.util.UuidUtil;
 import com.hazelcast.util.collection.InflatableSet;
 
 import java.util.AbstractMap;
@@ -165,7 +164,7 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.map.impl.ListenerAdapters.createListenerAdapter;
 import static com.hazelcast.map.impl.MapListenerFlagOperator.setAndGetListenerFlags;
-import static com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequests.newQueryCacheRequest;
+import static com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequest.newQueryCacheRequest;
 import static com.hazelcast.util.CollectionUtil.objectToDataCollection;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.MapUtil.createHashMap;
@@ -865,6 +864,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
     public String addEntryListener(MapListener listener, Predicate<K, V> predicate, K key, boolean includeValue) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        checkNotNull(key, NULL_PREDICATE_IS_NOT_ALLOWED);
         ListenerAdapter<IMapEvent> listenerAdaptor = createListenerAdapter(listener);
         return addEntryListenerInternal(listenerAdaptor, predicate, key, includeValue);
     }
@@ -872,6 +872,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
     @Override
     public String addEntryListener(EntryListener listener, Predicate<K, V> predicate, K key, boolean includeValue) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
+        checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         ListenerAdapter<IMapEvent> listenerAdaptor = createListenerAdapter(listener);
         return addEntryListenerInternal(listenerAdaptor, predicate, key, includeValue);
@@ -1147,8 +1148,8 @@ public class ClientMapProxy<K, V> extends ClientProxy
     @Override
     public Set<K> keySet(Predicate predicate) {
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
-        if (predicate instanceof PagingPredicate) {
-            return keySetWithPagingPredicate((PagingPredicate) predicate);
+        if (containsPagingPredicate(predicate)) {
+            return keySetWithPagingPredicate(predicate);
         }
 
         ClientMessage request = MapKeySetWithPredicateCodec.encodeRequest(name, toData(predicate));
@@ -1164,11 +1165,13 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     @SuppressWarnings("unchecked")
-    private Set<K> keySetWithPagingPredicate(PagingPredicate pagingPredicate) {
-        pagingPredicate.setIterationType(IterationType.KEY);
-        ClientMessage request = MapKeySetWithPagingPredicateCodec.encodeRequest(name, toData(pagingPredicate));
+    private Set<K> keySetWithPagingPredicate(Predicate predicate) {
+        PagingPredicate pagingPredicate = unwrapPagingPredicate(predicate);
 
-        ClientMessage response = invoke(request);
+        pagingPredicate.setIterationType(IterationType.KEY);
+        ClientMessage request = MapKeySetWithPagingPredicateCodec.encodeRequest(name, toData(predicate));
+
+        ClientMessage response = invokeWithPredicate(request, predicate);
         MapKeySetWithPagingPredicateCodec.ResponseParameters resultParameters = MapKeySetWithPagingPredicateCodec
                 .decodeResponse(response);
 
@@ -1182,8 +1185,8 @@ public class ClientMapProxy<K, V> extends ClientProxy
 
     @Override
     public Set<Entry<K, V>> entrySet(Predicate predicate) {
-        if (predicate instanceof PagingPredicate) {
-            return entrySetWithPagingPredicate((PagingPredicate) predicate);
+        if (containsPagingPredicate(predicate)) {
+            return entrySetWithPagingPredicate(predicate);
         }
         ClientMessage request = MapEntriesWithPredicateCodec.encodeRequest(name, toData(predicate));
 
@@ -1201,12 +1204,14 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     @SuppressWarnings("unchecked")
-    private Set<Entry<K, V>> entrySetWithPagingPredicate(PagingPredicate pagingPredicate) {
+    private Set<Entry<K, V>> entrySetWithPagingPredicate(Predicate predicate) {
+        PagingPredicate pagingPredicate = unwrapPagingPredicate(predicate);
+
         pagingPredicate.setIterationType(IterationType.ENTRY);
 
-        ClientMessage request = MapEntriesWithPagingPredicateCodec.encodeRequest(name, toData(pagingPredicate));
+        ClientMessage request = MapEntriesWithPagingPredicateCodec.encodeRequest(name, toData(predicate));
 
-        ClientMessage response = invoke(request);
+        ClientMessage response = invokeWithPredicate(request, predicate);
         MapEntriesWithPagingPredicateCodec.ResponseParameters resultParameters = MapEntriesWithPagingPredicateCodec
                 .decodeResponse(response);
 
@@ -1223,8 +1228,8 @@ public class ClientMapProxy<K, V> extends ClientProxy
     @Override
     public Collection<V> values(Predicate predicate) {
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
-        if (predicate instanceof PagingPredicate) {
-            return valuesForPagingPredicate((PagingPredicate) predicate);
+        if (containsPagingPredicate(predicate)) {
+            return valuesForPagingPredicate(predicate);
         }
 
         ClientMessage request = MapValuesWithPredicateCodec.encodeRequest(name, toData(predicate));
@@ -1246,11 +1251,12 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     @SuppressWarnings("unchecked")
-    private Collection<V> valuesForPagingPredicate(PagingPredicate pagingPredicate) {
+    private Collection<V> valuesForPagingPredicate(Predicate predicate) {
+        PagingPredicate pagingPredicate = unwrapPagingPredicate(predicate);
         pagingPredicate.setIterationType(IterationType.VALUE);
 
-        ClientMessage request = MapValuesWithPagingPredicateCodec.encodeRequest(name, toData(pagingPredicate));
-        ClientMessage response = invoke(request);
+        ClientMessage request = MapValuesWithPagingPredicateCodec.encodeRequest(name, toData(predicate));
+        ClientMessage response = invokeWithPredicate(request, predicate);
         MapValuesWithPagingPredicateCodec.ResponseParameters resultParameters = MapValuesWithPagingPredicateCodec
                 .decodeResponse(response);
 
@@ -1480,7 +1486,6 @@ public class ClientMapProxy<K, V> extends ClientProxy
                                                    IMap map) {
         QueryCacheRequest request = newQueryCacheRequest()
                 .withCacheName(name)
-                .withCacheId(UuidUtil.newUnsecureUuidString())
                 .withListener(listener)
                 .withPredicate(predicate)
                 .withIncludeValue(includeValue)
@@ -1494,7 +1499,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
     private QueryCache<K, V> createQueryCache(QueryCacheRequest request) {
         SubscriberContext subscriberContext = queryCacheContext.getSubscriberContext();
         QueryCacheEndToEndProvider queryCacheEndToEndProvider = subscriberContext.getEndToEndQueryCacheProvider();
-        return queryCacheEndToEndProvider.getOrCreateQueryCache(request.getMapName(), request.getCacheId(),
+        return queryCacheEndToEndProvider.getOrCreateQueryCache(request.getMapName(), request.getCacheName(),
                 new ClientQueryCacheEndToEndConstructor(request));
     }
 
@@ -1703,6 +1708,26 @@ public class ClientMapProxy<K, V> extends ClientProxy
         if (predicate instanceof PagingPredicate) {
             throw new IllegalArgumentException("PagingPredicate not supported in " + method + " method");
         }
+    }
+
+    private static boolean containsPagingPredicate(Predicate predicate) {
+        if (predicate instanceof PagingPredicate) {
+            return true;
+        }
+        if (!(predicate instanceof PartitionPredicate)) {
+            return false;
+        }
+        PartitionPredicate partitionPredicate = (PartitionPredicate) predicate;
+        return partitionPredicate.getTarget() instanceof PagingPredicate;
+    }
+
+    private static PagingPredicate unwrapPagingPredicate(Predicate predicate) {
+        if (predicate instanceof PagingPredicate) {
+            return (PagingPredicate) predicate;
+        }
+
+        Predicate unwrappedPredicate = ((PartitionPredicate) predicate).getTarget();
+        return (PagingPredicate) unwrappedPredicate;
     }
 
     private class ClientMapEventHandler

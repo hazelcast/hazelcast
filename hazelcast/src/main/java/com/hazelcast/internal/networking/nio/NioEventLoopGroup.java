@@ -231,7 +231,7 @@ public final class NioEventLoopGroup implements EventLoopGroup {
         int index = hashToIndex(nextOutputThreadIndex.getAndIncrement(), outputThreadCount);
         NioThread[] threads = outputThreads;
         if (threads == null) {
-            throw new IllegalStateException("IO thread is closed!");
+            throw new IllegalStateException("NioEventLoopGroup is shutdown!");
         }
 
         return new NioOutboundPipeline(
@@ -247,7 +247,7 @@ public final class NioEventLoopGroup implements EventLoopGroup {
         int index = hashToIndex(nextInputThreadIndex.getAndIncrement(), inputThreadCount);
         NioThread[] threads = inputThreads;
         if (threads == null) {
-            throw new IllegalStateException("IO thread is closed!");
+            throw new IllegalStateException("NioEventLoopGroup is shutdown!");
         }
 
         return new NioInboundPipeline(

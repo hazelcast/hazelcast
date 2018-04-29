@@ -63,6 +63,7 @@ import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.core.Message;
 import com.hazelcast.core.MessageListener;
+import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.core.RingbufferStore;
 import com.hazelcast.core.RingbufferStoreFactory;
 import com.hazelcast.internal.eviction.EvictableEntryView;
@@ -313,6 +314,15 @@ public class DynamicConfigTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testSameReplicatedMapConfig_canBeAddedTwice() {
+        ReplicatedMapConfig config = new ReplicatedMapConfig(name);
+        driver.getConfig().addReplicatedMapConfig(config);
+        ReplicatedMap map = driver.getReplicatedMap(name);
+        driver.getConfig().addReplicatedMapConfig(config);
+        assertConfigurationsEqualsOnAllMembers(config);
+    }
+
+    @Test
     public void testReplicatedMapConfig_withListenerByClassName() {
         ReplicatedMapConfig config = new ReplicatedMapConfig(name)
                 .setStatisticsEnabled(true)
@@ -551,6 +561,7 @@ public class DynamicConfigTest extends HazelcastTestSupport {
                 .setPrefetchCount(123)
                 .setPrefetchValidityMillis(456)
                 .setIdOffset(789)
+                .setNodeIdOffset(890)
                 .setStatisticsEnabled(false);
         driver.getConfig().addFlakeIdGeneratorConfig(config);
         assertConfigurationsEqualsOnAllMembers(config);

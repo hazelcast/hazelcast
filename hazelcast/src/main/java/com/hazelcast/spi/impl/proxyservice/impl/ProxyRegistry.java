@@ -24,6 +24,7 @@ import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.InitializingObject;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.impl.eventservice.InternalEventService;
+import com.hazelcast.util.EmptyStatement;
 
 import java.util.Collection;
 import java.util.Map;
@@ -262,11 +263,26 @@ public final class ProxyRegistry {
             if (!future.isSetAndInitialized()) {
                 continue;
             }
-            DistributedObject distributedObject = future.get();
-            if (distributedObject instanceof AbstractDistributedObject) {
-                ((AbstractDistributedObject) distributedObject).invalidate();
-            }
+
+            DistributedObject distributedObject = extractDistributedObject(future);
+            invalidate(distributedObject);
         }
         proxies.clear();
+    }
+
+    private DistributedObject extractDistributedObject(DistributedObjectFuture future) {
+        try {
+            return future.get();
+        } catch (Throwable ex) {
+            EmptyStatement.ignore(ex);
+        }
+        return null;
+    }
+
+    private void invalidate(DistributedObject distributedObject) {
+        if (distributedObject != null
+                && distributedObject instanceof AbstractDistributedObject) {
+            ((AbstractDistributedObject) distributedObject).invalidate();
+        }
     }
 }

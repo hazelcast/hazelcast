@@ -230,7 +230,9 @@ public class MapTransactionStressTest extends HazelcastTestSupport {
     }
 
     public static class ProducerThread extends Thread {
-        public static final String value = "some-value";
+
+        public static final String VALUE = "some-value";
+
         private final HazelcastInstance hz;
         private final String name;
         private final String dummyServiceName;
@@ -252,10 +254,10 @@ public class MapTransactionStressTest extends HazelcastTestSupport {
                     DummyTransactionalObject slowTxObject = tx.getTransactionalObject(dummyServiceName, name);
                     slowTxObject.doSomethingTxnal();
                     TransactionalMap<String, Object> map = tx.getMap(name);
-                    map.put(id, value);
+                    map.put(id, VALUE);
                     slowTxObject.doSomethingTxnal();
                     TransactionalMultiMap<Object, Object> multiMap = tx.getMultiMap(name);
-                    multiMap.put(id, value);
+                    multiMap.put(id, VALUE);
                     tx.commitTransaction();
                 } catch (TransactionException e) {
                     tx.rollbackTransaction();

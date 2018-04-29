@@ -36,6 +36,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.ServiceLoader;
+
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -44,6 +45,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
+import static com.hazelcast.util.StringUtil.lowerCaseInternal;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.fail;
 
@@ -84,7 +86,8 @@ public class QuorumOperationTest {
             "lock", "signal",
             "prepare", "commit",
             "load", "flush",
-            "clear", "destroy"
+            "clear", "destroy",
+            "increase"
     );
 
     /**
@@ -158,7 +161,7 @@ public class QuorumOperationTest {
 
                 Class<? extends IdentifiedDataSerializable> clazz = ids.getClass();
                 String className = clazz.getName();
-                String name = clazz.getSimpleName().toLowerCase();
+                String name = lowerCaseInternal(clazz.getSimpleName());
                 LOGGER.info(clazz.getSimpleName());
 
                 boolean shouldBeMutatingOperation = false;

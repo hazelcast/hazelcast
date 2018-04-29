@@ -29,9 +29,9 @@ import com.hazelcast.map.impl.record.RecordFactory;
 import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.monitor.LocalRecordStoreStats;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.SplitBrainMergePolicy;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
-import com.hazelcast.spi.merge.MergingEntryHolder;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
+import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
 
 import java.util.Iterator;
 import java.util.List;
@@ -168,6 +168,15 @@ public interface RecordStore<R extends Record> {
     Object putFromLoadBackup(Data key, Object value);
 
     /**
+     * Merges the given {@link MapMergeTypes} via the given {@link SplitBrainMergePolicy}.
+     *
+     * @param mergingEntry the {@link MapMergeTypes} instance to merge
+     * @param mergePolicy  the {@link SplitBrainMergePolicy} instance to apply
+     * @return {@code true} if merge is applied, otherwise {@code false}
+     */
+    boolean merge(MapMergeTypes mergingEntry, SplitBrainMergePolicy<Data, MapMergeTypes> mergePolicy);
+
+    /**
      * Merges the given {@link EntryView} via the given {@link MapMergePolicy}.
      *
      * @param mergingEntry the {@link EntryView} instance to merge
@@ -175,15 +184,6 @@ public interface RecordStore<R extends Record> {
      * @return {@code true} if merge is applied, otherwise {@code false}
      */
     boolean merge(Data dataKey, EntryView mergingEntry, MapMergePolicy mergePolicy);
-
-    /**
-     * Merges the given {@link MergingEntryHolder} via the given {@link SplitBrainMergePolicy}.
-     *
-     * @param mergingEntry the {@link MergingEntryHolder} instance to merge
-     * @param mergePolicy  the {@link SplitBrainMergePolicy} instance to apply
-     * @return {@code true} if merge is applied, otherwise {@code false}
-     */
-    boolean merge(MergingEntryHolder<Data, Object> mergingEntry, SplitBrainMergePolicy mergePolicy);
 
     R getRecord(Data key);
 
@@ -380,6 +380,12 @@ public interface RecordStore<R extends Record> {
     void disposeDeferredBlocks();
 
     void destroy();
+
+    /**
+     * Like {@link #destroy()} but does not touch state on other services
+     * like lock service or event journal service.
+     */
+    void destroyInternals();
 
     /**
      * Initialize the recordStore after creation

@@ -321,29 +321,29 @@ public class ReferenceObjects {
     }
 
     public static boolean isEqual(ListenerConfigHolder a, ListenerConfigHolder b) {
-            if (a == b) {
-                return true;
-            }
-            if (b == null) {
-                return false;
-            }
+        if (a == b) {
+            return true;
+        }
+        if (b == null) {
+            return false;
+        }
 
-            if (a.isIncludeValue() != b.isIncludeValue()) {
-                return false;
-            }
-            if (a.isLocal() != b.isLocal()) {
-                return false;
-            }
-            if (a.getListenerType() != b.getListenerType()) {
-                return false;
-            }
-            if (a.getClassName() != null ? !a.getClassName().equals(b.getClassName())
-                    : b.getClassName() != null) {
-                return false;
-            }
-            return a.getListenerImplementation() != null
-                    ? a.getListenerImplementation().equals(b.getListenerImplementation())
-                    : b.getListenerImplementation() == null;
+        if (a.isIncludeValue() != b.isIncludeValue()) {
+            return false;
+        }
+        if (a.isLocal() != b.isLocal()) {
+            return false;
+        }
+        if (a.getListenerType() != b.getListenerType()) {
+            return false;
+        }
+        if (a.getClassName() != null ? !a.getClassName().equals(b.getClassName())
+                : b.getClassName() != null) {
+            return false;
+        }
+        return a.getListenerImplementation() != null
+                ? a.getListenerImplementation().equals(b.getListenerImplementation())
+                : b.getListenerImplementation() == null;
     }
 
     public static boolean isEqual(MapIndexConfig a, MapIndexConfig that) {
@@ -668,9 +668,11 @@ public class ReferenceObjects {
             = Arrays.asList(aStringToByteArrEntry, aStringToByteArrEntry);
 
     public static List<Map.Entry<String, List<Map.Entry<Integer, Long>>>> aNamePartitionSequenceList;
-    public static long[] arrLongs = new long[] { aLong };
+    public static long[] arrLongs = new long[]{aLong};
     public static List<Map.Entry<String, Long>> aListOfStringToLong =
             Collections.<Map.Entry<String, Long>>singletonList(new AbstractMap.SimpleEntry<String, Long>("test", 3141592L));
+    public static List<Map.Entry<String, String>> aListOfStringToString =
+            Collections.<Map.Entry<String, String>>singletonList(new AbstractMap.SimpleEntry<String, String>("test", "testValue"));
 
     static {
         List<Map.Entry<Integer, Long>> list = Collections.<Map.Entry<Integer, Long>>singletonList(
@@ -682,13 +684,9 @@ public class ReferenceObjects {
     public static List<Map.Entry<Integer, UUID>> aPartitionUuidList = Collections.<Map.Entry<Integer, UUID>>singletonList(
             new AbstractMap.SimpleEntry<Integer, UUID>(anInt, aUUID));
 
-    static {
-
-    }
-
-     private static final DefaultSerializationServiceBuilder defaultSerializationServiceBuilder = new DefaultSerializationServiceBuilder();
-     public static final SerializationService serializationService = defaultSerializationServiceBuilder
-                .setVersion(InternalSerializationService.VERSION_1).build();
+    private static final DefaultSerializationServiceBuilder defaultSerializationServiceBuilder = new DefaultSerializationServiceBuilder();
+    public static final SerializationService serializationService = defaultSerializationServiceBuilder
+            .setVersion(InternalSerializationService.VERSION_1).build();
 
     public static RingbufferStoreConfigHolder ringbufferStore;
     public static QueueStoreConfigHolder queueStoreConfig;
@@ -734,7 +732,7 @@ public class ReferenceObjects {
 
         Properties props = new Properties();
         props.setProperty("a", "b");
-        ringbufferStore = new RingbufferStoreConfigHolder("com.hazelcast.RingbufferStore", null, null,null,
+        ringbufferStore = new RingbufferStoreConfigHolder("com.hazelcast.RingbufferStore", null, null, null,
                 props, true);
         queueStoreConfig = new QueueStoreConfigHolder("com.hazelcast.QueueStore", null, null, null, props, true);
 
@@ -800,7 +798,7 @@ public class ReferenceObjects {
     }
 
     public static class TestCachePartitionLostEventListener implements CachePartitionLostListener,
-                                                                       Serializable {
+            Serializable {
         @Override
         public void partitionLost(CachePartitionLostEvent event) {
 

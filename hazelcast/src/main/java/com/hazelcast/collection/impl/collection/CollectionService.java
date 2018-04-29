@@ -38,25 +38,23 @@ import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.spi.QuorumAwareService;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.SplitBrainHandlerService;
-import com.hazelcast.spi.SplitBrainMergePolicy;
 import com.hazelcast.spi.TransactionalService;
 import com.hazelcast.spi.impl.merge.AbstractContainerMerger;
-import com.hazelcast.spi.merge.MergingValueHolder;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
+import com.hazelcast.spi.merge.SplitBrainMergeTypes.CollectionMergeTypes;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.partition.MigrationEndpoint;
 import com.hazelcast.spi.serialization.SerializationService;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 
-import static com.hazelcast.spi.impl.merge.MergingHolders.createMergeHolder;
+import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingValue;
 
 public abstract class CollectionService implements ManagedService, RemoteService, EventPublishingService<CollectionEvent,
         ItemListener<Data>>, TransactionalService, MigrationAwareService, QuorumAwareService, SplitBrainHandlerService {
@@ -90,7 +88,10 @@ public abstract class CollectionService implements ManagedService, RemoteService
 
     @Override
     public void destroyDistributedObject(String name) {
-        getContainerMap().remove(name);
+        CollectionContainer container = getContainerMap().remove(name);
+        if (container != null) {
+            container.destroy();
+        }
         nodeEngine.getEventService().deregisterAllListeners(getServiceName(), name);
     }
 
@@ -199,7 +200,7 @@ public abstract class CollectionService implements ManagedService, RemoteService
         return new Merger(collector);
     }
 
-    private class Merger extends AbstractContainerMerger<CollectionContainer> {
+    private class Merger extends AbstractContainerMerger<CollectionContainer, Collection<Object>, CollectionMergeTypes> {
 
         Merger(CollectionContainerCollector collector) {
             super(collector, nodeEngine);
@@ -212,38 +213,29 @@ public abstract class CollectionService implements ManagedService, RemoteService
 
         @Override
         public void runInternal() {
-            List<MergingValueHolder<Data>> mergingValues;
             for (Map.Entry<Integer, Collection<CollectionContainer>> entry : collector.getCollectedContainers().entrySet()) {
                 int partitionId = entry.getKey();
                 Collection<CollectionContainer> containerList = entry.getValue();
                 for (CollectionContainer container : containerList) {
-                    Collection<CollectionItem> itemList = container.getCollection();
+                    // TODO: add batching (which is a bit complex, since collections don't have a multi-name operation yet
+                    Collection<CollectionItem> items = container.getCollection();
 
                     String name = container.getName();
-                    int batchSize = container.getConfig().getMergePolicyConfig().getBatchSize();
-                    SplitBrainMergePolicy mergePolicy = getMergePolicy(container.getConfig().getMergePolicyConfig());
+                    SplitBrainMergePolicy<Collection<Object>, CollectionMergeTypes> mergePolicy
+                            = getMergePolicy(container.getConfig().getMergePolicyConfig());
 
-                    mergingValues = new ArrayList<MergingValueHolder<Data>>();
-                    for (CollectionItem item : itemList) {
-                        MergingValueHolder<Data> mergingValue = createMergeHolder(serializationService, item);
-                        mergingValues.add(mergingValue);
+                    CollectionMergeTypes mergingValue = createMergingValue(serializationService, items);
+                    sendBatch(partitionId, name, mergePolicy, mergingValue);
 
-                        if (mergingValues.size() == batchSize) {
-                            sendBatch(partitionId, name, mergePolicy, mergingValues);
-                            mergingValues = new ArrayList<MergingValueHolder<Data>>(batchSize);
-                        }
-                    }
-                    itemList.clear();
-                    if (mergingValues.size() > 0) {
-                        sendBatch(partitionId, name, mergePolicy, mergingValues);
-                    }
+                    items.clear();
                 }
             }
         }
 
-        private void sendBatch(int partitionId, String name, SplitBrainMergePolicy mergePolicy,
-                               List<MergingValueHolder<Data>> mergingValues) {
-            CollectionOperation operation = new CollectionMergeOperation(name, mergePolicy, mergingValues);
+        private void sendBatch(int partitionId, String name,
+                               SplitBrainMergePolicy<Collection<Object>, CollectionMergeTypes> mergePolicy,
+                               CollectionMergeTypes mergingValue) {
+            CollectionOperation operation = new CollectionMergeOperation(name, mergePolicy, mergingValue);
             invoke(getServiceName(), operation, partitionId);
         }
     }

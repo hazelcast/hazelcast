@@ -19,9 +19,12 @@ package com.hazelcast.map.impl;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.util.InvocationUtil;
+import com.hazelcast.internal.util.LocalRetryableExecution;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.impl.event.MapEventPublisher;
@@ -36,7 +39,7 @@ import com.hazelcast.map.impl.operation.BaseRemoveOperation;
 import com.hazelcast.map.impl.operation.GetOperation;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.map.impl.operation.MapOperationProviders;
-import com.hazelcast.map.impl.operation.MapPartitionDestroyTask;
+import com.hazelcast.map.impl.operation.MapPartitionDestroyOperation;
 import com.hazelcast.map.impl.query.AccumulationExecutor;
 import com.hazelcast.map.impl.query.AggregationResult;
 import com.hazelcast.map.impl.query.AggregationResultProcessor;
@@ -75,15 +78,14 @@ import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ContextMutexFactory;
-import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.executor.ManagedExecutorService;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -94,7 +96,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -109,6 +110,7 @@ import static com.hazelcast.spi.properties.GroupProperty.AGGREGATION_ACCUMULATIO
 import static com.hazelcast.spi.properties.GroupProperty.INDEX_COPY_BEHAVIOR;
 import static com.hazelcast.spi.properties.GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS;
 import static com.hazelcast.spi.properties.GroupProperty.QUERY_PREDICATE_PARALLEL_EVALUATION;
+import static java.lang.Thread.currentThread;
 
 /**
  * Default implementation of {@link MapServiceContext}.
@@ -152,9 +154,11 @@ class MapServiceContextImpl implements MapServiceContext {
     protected final EventService eventService;
     protected final MapOperationProviders operationProviders;
     protected final ResultProcessorRegistry resultProcessorRegistry;
+    protected ILogger logger;
 
     protected MapService mapService;
 
+    @SuppressWarnings("checkstyle:executablestatementcount")
     MapServiceContextImpl(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
         this.serializationService = ((InternalSerializationService) nodeEngine.getSerializationService());
@@ -175,6 +179,7 @@ class MapServiceContextImpl implements MapServiceContext {
         this.eventService = nodeEngine.getEventService();
         this.operationProviders = createOperationProviders();
         this.partitioningStrategyFactory = new PartitioningStrategyFactory(nodeEngine.getConfigClassLoader());
+        this.logger = nodeEngine.getLogger(getClass());
 
         initRecordComparators();
     }
@@ -392,18 +397,30 @@ class MapServiceContextImpl implements MapServiceContext {
         destroyPartitionsAndMapContainer(mapContainer);
     }
 
+    /**
+     * Destroys the map data on local partition threads and waits for
+     * {@value #DESTROY_TIMEOUT_SECONDS} seconds
+     * for each partition segment destruction to complete.
+     *
+     * @param mapContainer the map container to destroy
+     */
     private void destroyPartitionsAndMapContainer(MapContainer mapContainer) {
-        Semaphore semaphore = new Semaphore(0);
-        InternalOperationService operationService = (InternalOperationService) nodeEngine.getOperationService();
+        final List<LocalRetryableExecution> executions = new ArrayList<LocalRetryableExecution>();
+
         for (PartitionContainer container : partitionContainers) {
-            MapPartitionDestroyTask partitionDestroyTask = new MapPartitionDestroyTask(container, mapContainer, semaphore);
-            operationService.execute(partitionDestroyTask);
+            final MapPartitionDestroyOperation op = new MapPartitionDestroyOperation(container, mapContainer);
+            executions.add(InvocationUtil.executeLocallyWithRetry(nodeEngine, op));
         }
 
-        try {
-            semaphore.tryAcquire(partitionContainers.length, DESTROY_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-        } catch (Throwable t) {
-            throw ExceptionUtil.rethrow(t);
+        for (LocalRetryableExecution execution : executions) {
+            try {
+                if (!execution.awaitCompletion(DESTROY_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
+                    logger.warning("Map partition was not destroyed in expected time, possible leak");
+                }
+            } catch (InterruptedException e) {
+                currentThread().interrupt();
+                nodeEngine.getLogger(getClass()).warning(e);
+            }
         }
     }
 
@@ -482,6 +499,13 @@ class MapServiceContextImpl implements MapServiceContext {
     @Override
     public MergePolicyProvider getMergePolicyProvider() {
         return mergePolicyProvider;
+    }
+
+    @Override
+    public Object getMergePolicy(String name) {
+        MapContainer mapContainer = getMapContainer(name);
+        MergePolicyConfig mergePolicyConfig = mapContainer.getMapConfig().getMergePolicyConfig();
+        return mergePolicyProvider.getMergePolicy(mergePolicyConfig.getPolicy());
     }
 
     @Override

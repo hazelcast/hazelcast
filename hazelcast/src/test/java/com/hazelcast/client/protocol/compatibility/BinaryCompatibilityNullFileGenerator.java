@@ -288,6 +288,18 @@ public class BinaryCompatibilityNullFileGenerator {
 
 
 {
+    ClientMessage clientMessage = ClientCreateProxiesCodec.encodeRequest(   aListOfStringToString   );
+     outputStream.writeInt(clientMessage.getFrameLength());
+     outputStream.write(clientMessage.buffer().byteArray(), 0 , clientMessage.getFrameLength());
+}
+{
+    ClientMessage clientMessage = ClientCreateProxiesCodec.encodeResponse( );
+    outputStream.writeInt(clientMessage.getFrameLength());
+    outputStream.write(clientMessage.buffer().byteArray(), 0 , clientMessage.getFrameLength());
+}
+
+
+{
     ClientMessage clientMessage = MapPutCodec.encodeRequest(   aString ,   aData ,   aData ,   aLong ,   aLong   );
      outputStream.writeInt(clientMessage.getFrameLength());
      outputStream.write(clientMessage.buffer().byteArray(), 0 , clientMessage.getFrameLength());
@@ -2837,6 +2849,18 @@ public class BinaryCompatibilityNullFileGenerator {
 
 
 {
+    ClientMessage clientMessage = SemaphoreIncreasePermitsCodec.encodeRequest(   aString ,   anInt   );
+     outputStream.writeInt(clientMessage.getFrameLength());
+     outputStream.write(clientMessage.buffer().byteArray(), 0 , clientMessage.getFrameLength());
+}
+{
+    ClientMessage clientMessage = SemaphoreIncreasePermitsCodec.encodeResponse( );
+    outputStream.writeInt(clientMessage.getFrameLength());
+    outputStream.write(clientMessage.buffer().byteArray(), 0 , clientMessage.getFrameLength());
+}
+
+
+{
     ClientMessage clientMessage = ReplicatedMapPutCodec.encodeRequest(   aString ,   aData ,   aData ,   aLong   );
      outputStream.writeInt(clientMessage.getFrameLength());
      outputStream.write(clientMessage.buffer().byteArray(), 0 , clientMessage.getFrameLength());
@@ -3370,6 +3394,18 @@ public class BinaryCompatibilityNullFileGenerator {
 }
 {
     ClientMessage clientMessage = TransactionalMapValuesWithPredicateCodec.encodeResponse(   datas   );
+    outputStream.writeInt(clientMessage.getFrameLength());
+    outputStream.write(clientMessage.buffer().byteArray(), 0 , clientMessage.getFrameLength());
+}
+
+
+{
+    ClientMessage clientMessage = TransactionalMapContainsValueCodec.encodeRequest(   aString ,   aString ,   aLong ,   aData   );
+     outputStream.writeInt(clientMessage.getFrameLength());
+     outputStream.write(clientMessage.buffer().byteArray(), 0 , clientMessage.getFrameLength());
+}
+{
+    ClientMessage clientMessage = TransactionalMapContainsValueCodec.encodeResponse(   aBoolean   );
     outputStream.writeInt(clientMessage.getFrameLength());
     outputStream.write(clientMessage.buffer().byteArray(), 0 , clientMessage.getFrameLength());
 }
@@ -4487,7 +4523,7 @@ public class BinaryCompatibilityNullFileGenerator {
      outputStream.write(clientMessage.buffer().byteArray(), 0 , clientMessage.getFrameLength());
 }
 {
-    ClientMessage clientMessage = ScheduledExecutorGetStatsFromPartitionCodec.encodeResponse(   aLong ,   aLong ,   aLong ,   aLong   );
+    ClientMessage clientMessage = ScheduledExecutorGetStatsFromPartitionCodec.encodeResponse(   aLong ,   aLong ,   aLong ,   aLong ,   aLong   );
     outputStream.writeInt(clientMessage.getFrameLength());
     outputStream.write(clientMessage.buffer().byteArray(), 0 , clientMessage.getFrameLength());
 }
@@ -4499,7 +4535,7 @@ public class BinaryCompatibilityNullFileGenerator {
      outputStream.write(clientMessage.buffer().byteArray(), 0 , clientMessage.getFrameLength());
 }
 {
-    ClientMessage clientMessage = ScheduledExecutorGetStatsFromAddressCodec.encodeResponse(   aLong ,   aLong ,   aLong ,   aLong   );
+    ClientMessage clientMessage = ScheduledExecutorGetStatsFromAddressCodec.encodeResponse(   aLong ,   aLong ,   aLong ,   aLong ,   aLong   );
     outputStream.writeInt(clientMessage.getFrameLength());
     outputStream.write(clientMessage.buffer().byteArray(), 0 , clientMessage.getFrameLength());
 }
@@ -4854,7 +4890,7 @@ public class BinaryCompatibilityNullFileGenerator {
 
 
 {
-    ClientMessage clientMessage = DynamicConfigAddFlakeIdGeneratorConfigCodec.encodeRequest(   aString ,   anInt ,   aLong ,   aLong ,   aBoolean   );
+    ClientMessage clientMessage = DynamicConfigAddFlakeIdGeneratorConfigCodec.encodeRequest(   aString ,   anInt ,   aLong ,   aLong ,   aBoolean ,   aLong   );
      outputStream.writeInt(clientMessage.getFrameLength());
      outputStream.write(clientMessage.buffer().byteArray(), 0 , clientMessage.getFrameLength());
 }

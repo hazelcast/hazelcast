@@ -22,7 +22,7 @@ import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
 import com.hazelcast.multimap.impl.MultiMapRecord;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.multimap.impl.MultiMapValue;
-import com.hazelcast.multimap.impl.operations.MultiMapKeyBasedOperation;
+import com.hazelcast.multimap.impl.operations.AbstractKeyBasedMultiMapOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -36,11 +36,12 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
 
-public class TxnRemoveAllOperation extends MultiMapKeyBasedOperation implements BackupAwareOperation, MutatingOperation {
+public class TxnRemoveAllOperation extends AbstractKeyBasedMultiMapOperation implements BackupAwareOperation, MutatingOperation {
 
-    Collection<Long> recordIds;
-    long startTimeNanos = -1;
-    Collection<MultiMapRecord> removed;
+    private Collection<Long> recordIds;
+
+    private transient long startTimeNanos;
+    private transient Collection<MultiMapRecord> removed;
 
     public TxnRemoveAllOperation() {
     }
@@ -58,13 +59,14 @@ public class TxnRemoveAllOperation extends MultiMapKeyBasedOperation implements 
         startTimeNanos = System.nanoTime();
         MultiMapContainer container = getOrCreateContainer();
         MultiMapValue multiMapValue = container.getOrCreateMultiMapValue(dataKey);
-        response = true;
         for (Long recordId : recordIds) {
             if (!multiMapValue.containsRecordId(recordId)) {
                 response = false;
                 return;
             }
         }
+        response = true;
+        container.update();
         Collection<MultiMapRecord> coll = multiMapValue.getCollection(false);
         removed = new LinkedList<MultiMapRecord>();
         for (Long recordId : recordIds) {
@@ -79,7 +81,7 @@ public class TxnRemoveAllOperation extends MultiMapKeyBasedOperation implements 
             }
         }
         if (coll.isEmpty()) {
-            delete();
+            container.delete(dataKey);
         }
     }
 
@@ -89,7 +91,6 @@ public class TxnRemoveAllOperation extends MultiMapKeyBasedOperation implements 
         MultiMapService service = getService();
         service.getLocalMultiMapStatsImpl(name).incrementRemoveLatencyNanos(elapsed);
         if (removed != null) {
-            getOrCreateContainer().update();
             for (MultiMapRecord record : removed) {
                 publishEvent(EntryEventType.REMOVED, dataKey, null, record.getObject());
             }

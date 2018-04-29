@@ -38,21 +38,18 @@ import com.hazelcast.map.impl.querycache.utils.QueryCacheUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.ExecutionService;
-import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.util.FutureUtil;
 import com.hazelcast.util.IterationType;
+import com.hazelcast.util.collection.Int2ObjectHashMap;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
+import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -153,7 +150,7 @@ public class PublisherCreateOperation extends MapOperation {
 
     private QueryResult createSnapshot() throws Exception {
         QueryResult queryResult = runInitialQuery();
-        replayEventsOnResultSet(queryResult);
+        replayEventsOverResultSet(queryResult);
         return queryResult;
     }
 
@@ -165,42 +162,77 @@ public class PublisherCreateOperation extends MapOperation {
     }
 
     /**
-     * Replay the events on returned result-set which are generated during `runInitialQuery` call.
+     * Replay events over the result set of initial query. These events are
+     * received events during execution of the initial query.
      */
-    private void replayEventsOnResultSet(final QueryResult queryResult) throws Exception {
-        Collection<Object> resultCollection = readAccumulators();
-        for (Object result : resultCollection) {
-            if (result == null) {
+    private void replayEventsOverResultSet(QueryResult queryResult) throws Exception {
+        Map<Integer, Future<Object>> future = readAccumulators();
+        for (Map.Entry<Integer, Future<Object>> entry : future.entrySet()) {
+            int partitionId = entry.getKey();
+            Object eventsInOneAcc = entry.getValue().get();
+            if (eventsInOneAcc == null) {
                 continue;
             }
-            Object toObject = mapServiceContext.toObject(result);
-            List<QueryCacheEventData> eventDataList = (List<QueryCacheEventData>) toObject;
+            eventsInOneAcc = mapServiceContext.toObject(eventsInOneAcc);
+            List<QueryCacheEventData> eventDataList = (List<QueryCacheEventData>) eventsInOneAcc;
             for (QueryCacheEventData eventData : eventDataList) {
-                QueryResultRow entry = createQueryResultEntry(eventData);
-                add(queryResult, entry);
+                if (eventData.getDataKey() == null) {
+                    // this means a map-wide event like clear-all or evict-all
+                    // is inside the accumulator buffers
+                    removePartitionResults(queryResult, partitionId);
+                } else {
+                    add(queryResult, newQueryResultRow(eventData));
+                }
             }
         }
     }
 
-    private Collection<Object> readAccumulators() {
+    /**
+     * Remove matching entries from given result set with the given
+     * partition ID.
+     */
+    private void removePartitionResults(QueryResult queryResult, int partitionId) {
+        List<QueryResultRow> rows = queryResult.getRows();
+        Iterator<QueryResultRow> iterator = rows.iterator();
+        while (iterator.hasNext()) {
+            QueryResultRow resultRow = iterator.next();
+            if (getPartitionId(resultRow) == partitionId) {
+                iterator.remove();
+            }
+        }
+    }
+
+    private int getPartitionId(QueryResultRow resultRow) {
+        return getNodeEngine().getPartitionService().getPartitionId(resultRow.getKey());
+    }
+
+    private Map<Integer, Future<Object>> readAccumulators() {
         String mapName = info.getMapName();
         String cacheId = info.getCacheId();
 
         Collection<Integer> partitionIds = getPartitionIdsOfAccumulators();
         if (partitionIds.isEmpty()) {
-            return Collections.emptyList();
+            return Collections.emptyMap();
         }
 
-        List<Future<Object>> lsFutures = new ArrayList<Future<Object>>(partitionIds.size());
-        NodeEngine nodeEngine = getNodeEngine();
-        ExecutorService executor = nodeEngine.getExecutionService().getExecutor(ExecutionService.QUERY_EXECUTOR);
+        Map<Integer, Future<Object>> futuresByPartitionId
+                = new Int2ObjectHashMap<Future<Object>>(partitionIds.size());
         for (Integer partitionId : partitionIds) {
-            PartitionCallable task = new PartitionCallable(mapName, cacheId, partitionId);
-            Future<Object> future = executor.submit(task);
-            lsFutures.add(future);
+            futuresByPartitionId.put(partitionId,
+                    readAndResetAccumulator(mapName, cacheId, partitionId));
         }
 
-        return getResult(lsFutures);
+        waitResult(futuresByPartitionId.values());
+        return futuresByPartitionId;
+    }
+
+    /**
+     * Read and reset the accumulator of query cache inside the given partition.
+     */
+    private Future<Object> readAndResetAccumulator(String mapName, String cacheId, Integer partitionId) {
+        Operation operation = new ReadAndResetAccumulatorOperation(mapName, cacheId);
+        OperationService operationService = getNodeEngine().getOperationService();
+        return operationService.invokeOnPartition(MapService.SERVICE_NAME, operation, partitionId);
     }
 
     private void add(QueryResult result, QueryResultRow row) {
@@ -215,7 +247,7 @@ public class PublisherCreateOperation extends MapOperation {
         result.addRow(row);
     }
 
-    private QueryResultRow createQueryResultEntry(QueryCacheEventData eventData) {
+    private QueryResultRow newQueryResultRow(QueryCacheEventData eventData) {
         Data dataKey = eventData.getDataKey();
         Data dataNewValue = eventData.getDataNewValue();
         return new QueryResultRow(dataKey, dataNewValue);
@@ -228,32 +260,7 @@ public class PublisherCreateOperation extends MapOperation {
         return QueryCacheUtil.getAccumulators(context, mapName, cacheId).keySet();
     }
 
-    /**
-     * Reads the accumulator in a partition.
-     */
-    private final class PartitionCallable implements Callable<Object> {
-
-        private final int partitionId;
-        private final String mapName;
-        private final String cacheId;
-
-        PartitionCallable(String mapName, String cacheId, int partitionId) {
-            this.mapName = mapName;
-            this.cacheId = cacheId;
-            this.partitionId = partitionId;
-        }
-
-        @Override
-        public Object call() throws Exception {
-            Operation operation = new ReadAndResetAccumulatorOperation(mapName, cacheId);
-            OperationService operationService = getNodeEngine().getOperationService();
-            InternalCompletableFuture<Object> future
-                    = operationService.invokeOnPartition(MapService.SERVICE_NAME, operation, partitionId);
-            return future.get();
-        }
-    }
-
-    private static Collection<Object> getResult(List<Future<Object>> lsFutures) {
+    private static Collection<Object> waitResult(Collection<Future<Object>> lsFutures) {
         return returnWithDeadline(lsFutures, ACCUMULATOR_READ_OPERATION_TIMEOUT_MINUTES,
                 TimeUnit.MINUTES, FutureUtil.RETHROW_EVERYTHING);
     }

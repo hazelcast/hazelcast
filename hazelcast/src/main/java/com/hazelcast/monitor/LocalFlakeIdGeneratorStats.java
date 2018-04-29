@@ -23,8 +23,20 @@ package com.hazelcast.monitor;
 public interface LocalFlakeIdGeneratorStats extends LocalInstanceStats {
 
     /**
+     * The average batch size can be calculated by dividing {@link #getIdCount()} by
+     * {@link #getBatchCount()}.
+     *
      * @return the total number of times the ID generator has been used to generate
      *         a new ID batch since its {@link #getCreationTime()}.
      */
-    long getUsageCount();
+    long getBatchCount();
+
+    /**
+     * Note that the ID count returned is the number of generated IDs not the number
+     * of consumed IDs.
+     *
+     * @return the total number of IDs generated (the sum of IDs for all batches)
+     *         since its {@link #getCreationTime()}.
+     */
+    long getIdCount();
 }

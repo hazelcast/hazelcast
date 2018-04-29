@@ -29,17 +29,23 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.tcp.FirewallingConnectionManager;
-import com.hazelcast.spi.SplitBrainMergePolicy;
-import com.hazelcast.spi.merge.MergingValueHolder;
+import com.hazelcast.spi.merge.MergingValue;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.properties.GroupProperty;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * A support class for high-level split-brain tests.
@@ -112,11 +118,23 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
         instances = startInitialCluster(config, clusterSize);
     }
 
+    @After
+    public final void tearDown() {
+        onTearDown();
+    }
+
     /**
      * Override this method to execute initialization that may be required before instantiating the cluster. This is the
      * first method executed by {@code @Before SplitBrainTestSupport.setupInternals}.
      */
     protected void onBeforeSetup() {
+    }
+
+    /**
+     * Override this method to execute clean up that may be required after finishing the test. This is the
+     * first method executed by {@code @After SplitBrainTestSupport.tearDown}.
+     */
+    protected void onTearDown() {
     }
 
     /**
@@ -134,7 +152,7 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
      * @return the default Hazelcast configuration
      */
     protected Config config() {
-        return new Config()
+        return smallInstanceConfig()
                 .setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "5")
                 .setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "5");
     }
@@ -400,10 +418,30 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
         return sb.toString();
     }
 
+    public static void assertPi(Object value) {
+        assertInstanceOf(Double.class, value);
+        assertEquals("Expected the value to be PI", Math.PI, (Double) value, 0.00000001d);
+    }
+
+    public static void assertPiCollection(Collection<Object> collection) {
+        assertEquals("Expected the collection to be a PI collection",
+                collection.size(), ReturnPiCollectionMergePolicy.PI_COLLECTION.size());
+        assertTrue("Expected the collection to be a PI collection",
+                collection.containsAll(ReturnPiCollectionMergePolicy.PI_COLLECTION));
+    }
+
+    public static void assertPiSet(Collection<Object> collection) {
+        assertEquals("Expected the collection to be a PI set", collection.size(), ReturnPiCollectionMergePolicy.PI_SET.size());
+        assertTrue("Expected the collection to be a PI set", collection.containsAll(ReturnPiCollectionMergePolicy.PI_SET));
+    }
+
     private interface SplitBrainAction {
         void apply(HazelcastInstance h1, HazelcastInstance h2);
     }
 
+    /**
+     * Contains the {@link HazelcastInstance} from the both sub-clusters (first and second brain).
+     */
     protected static class Brains {
 
         private final HazelcastInstance[] firstHalf;
@@ -423,6 +461,9 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
         }
     }
 
+    /**
+     * Listener to wait for the split-brain healing to be finished.
+     */
     protected static class MergeLifecycleListener implements LifecycleListener {
 
         private final CountDownLatch latch;
@@ -443,14 +484,136 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
         }
     }
 
-    protected static class MergeIntegerValuesMergePolicy implements SplitBrainMergePolicy {
+    /**
+     * Always returns {@code null} as merged value.
+     * <p>
+     * Used to test the removal of all values from a data structure.
+     */
+    protected static class RemoveValuesMergePolicy implements SplitBrainMergePolicy<Object, MergingValue<Object>> {
 
         @Override
-        public <T> T merge(MergingValueHolder<T> mergingValue, MergingValueHolder<T> existingValue) {
+        public Object merge(MergingValue<Object> mergingValue, MergingValue<Object> existingValue) {
+            return null;
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) {
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) {
+        }
+    }
+
+    /**
+     * Always returns {@link Math#PI} as merged value.
+     * <p>
+     * Used to test that data structures can deal with user created data in OBJECT format.
+     */
+    protected static class ReturnPiMergePolicy implements SplitBrainMergePolicy<Object, MergingValue<Object>> {
+
+        @Override
+        public Object merge(MergingValue<Object> mergingValue, MergingValue<Object> existingValue) {
+            return Math.PI;
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) {
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) {
+        }
+    }
+
+    /**
+     * Always returns a collection of {@link Math#PI} digits as merged value.
+     * <p>
+     * Used to test that data structures can deal with user created data in OBJECT format.
+     */
+    protected static class ReturnPiCollectionMergePolicy
+            implements SplitBrainMergePolicy<Collection<Object>, MergingValue<Collection<Object>>> {
+
+        private static Collection<Object> PI_COLLECTION;
+        private static Set<Object> PI_SET;
+
+        static {
+            PI_COLLECTION = new ArrayList<Object>(5);
+            PI_COLLECTION.add(3);
+            PI_COLLECTION.add(1);
+            PI_COLLECTION.add(4);
+            PI_COLLECTION.add(1);
+            PI_COLLECTION.add(5);
+            PI_SET = new HashSet<Object>(PI_COLLECTION);
+        }
+
+        @Override
+        public Collection<Object> merge(MergingValue<Collection<Object>> mergingValue,
+                                        MergingValue<Collection<Object>> existingValue) {
+            return PI_COLLECTION;
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) {
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) {
+        }
+    }
+
+    /**
+     * Merges only {@link Integer} values of the given values (preferring the merging value).
+     * <p>
+     * Used to test the deserialization of values.
+     */
+    protected static class MergeIntegerValuesMergePolicy<V, T extends MergingValue<V>> implements SplitBrainMergePolicy<V, T> {
+
+        @Override
+        public V merge(T mergingValue, T existingValue) {
             if (mergingValue.getDeserializedValue() instanceof Integer) {
                 return mergingValue.getValue();
             }
+            if (existingValue != null && existingValue.getDeserializedValue() instanceof Integer) {
+                return existingValue.getValue();
+            }
             return null;
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) {
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) {
+        }
+    }
+
+    /**
+     * Merges only {@link Integer} values of the given collections.
+     * <p>
+     * Used to test the deserialization of values.
+     */
+    protected static class MergeCollectionOfIntegerValuesMergePolicy
+            implements SplitBrainMergePolicy<Collection<Object>, MergingValue<Collection<Object>>> {
+
+        @Override
+        public Collection<Object> merge(MergingValue<Collection<Object>> mergingValue,
+                                        MergingValue<Collection<Object>> existingValue) {
+            Collection<Object> result = new ArrayList<Object>();
+            for (Object value : mergingValue.<Collection<Object>>getDeserializedValue()) {
+                if (value instanceof Integer) {
+                    result.add(value);
+                }
+            }
+            if (existingValue != null) {
+                for (Object value : existingValue.<Collection<Object>>getDeserializedValue()) {
+                    if (value instanceof Integer) {
+                        result.add(value);
+                    }
+                }
+            }
+            return result;
         }
 
         @Override

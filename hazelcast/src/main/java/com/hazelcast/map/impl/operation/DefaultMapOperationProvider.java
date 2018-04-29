@@ -29,8 +29,8 @@ import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.OperationFactory;
-import com.hazelcast.spi.SplitBrainMergePolicy;
-import com.hazelcast.spi.merge.MergingEntryHolder;
+import com.hazelcast.spi.merge.SplitBrainMergePolicy;
+import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
 
 import java.util.List;
 import java.util.Set;
@@ -194,8 +194,9 @@ public class DefaultMapOperationProvider implements MapOperationProvider {
     }
 
     @Override
-    public MapOperation createMergeOperation(String name, MergingEntryHolder<Data, Data> mergingValue,
-                                             SplitBrainMergePolicy mergePolicy, boolean disableWanReplicationEvent) {
+    public MapOperation createMergeOperation(String name, MapMergeTypes mergingValue,
+                                             SplitBrainMergePolicy<Data, MapMergeTypes> mergePolicy,
+                                             boolean disableWanReplicationEvent) {
         return new MergeOperation(name, singletonList(mergingValue), mergePolicy, disableWanReplicationEvent);
     }
 
@@ -253,9 +254,8 @@ public class DefaultMapOperationProvider implements MapOperationProvider {
     }
 
     @Override
-    public OperationFactory createMergeOperationFactory(String name, int[] partitions,
-                                                        List<MergingEntryHolder<Data, Data>>[] mergingEntries,
-                                                        SplitBrainMergePolicy mergePolicy) {
+    public OperationFactory createMergeOperationFactory(String name, int[] partitions, List<MapMergeTypes>[] mergingEntries,
+                                                        SplitBrainMergePolicy<Data, MapMergeTypes> mergePolicy) {
         return new MergeOperationFactory(name, partitions, mergingEntries, mergePolicy);
     }
 

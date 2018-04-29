@@ -21,6 +21,6 @@
  * This package should not contains server/client etc specific behavior. It should
  * remain neutral, so that the networking package remains reusable for all kinds of
  * purposes. E.g. if we want to totally isolate WAN replication, it should be
- * possible without needing to make (many) modifications to this page.
+ * possible without needing to make (many) modifications to this package.
  */
 package com.hazelcast.internal.networking;
