@@ -30,8 +30,9 @@ import java.util.concurrent.TimeUnit;
 public final class MetadataUtil {
 
     /**
-     * This IP is only accessible inside AWS and is used to fetch metadata of running EC2 Instance
-     * See details at http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-metadata.html
+     * This IP is only accessible inside AWS and is used to fetch metadata of running EC2 Instance.
+     * Outside connection is only possible with the keys.
+     * See details at http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-metadata.html.
      */
     public static final String INSTANCE_METADATA_URI = "http://169.254.169.254/latest/meta-data/";
 
