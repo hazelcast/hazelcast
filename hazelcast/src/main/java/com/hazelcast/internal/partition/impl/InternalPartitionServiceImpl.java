@@ -17,6 +17,7 @@
 package com.hazelcast.internal.partition.impl;
 
 import com.hazelcast.cluster.ClusterState;
+import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberLeftException;
@@ -65,6 +66,7 @@ import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.FutureUtil.ExceptionHandler;
 import com.hazelcast.util.HashUtil;
+import com.hazelcast.util.scheduler.CoalescingDelayedTrigger;
 import com.hazelcast.util.scheduler.ScheduledEntry;
 import com.hazelcast.version.Version;
 
@@ -98,6 +100,7 @@ import static java.lang.Math.ceil;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 import static java.lang.Thread.currentThread;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * The {@link InternalPartitionService} implementation.
@@ -112,6 +115,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
     private static final int PTABLE_SYNC_TIMEOUT_SECONDS = 10;
     private static final int SAFE_SHUTDOWN_MAX_AWAIT_STEP_MILLIS = 1000;
     private static final long FETCH_PARTITION_STATE_SECONDS = 5;
+    private static final long TRIGGER_MASTER_DELAY_MILLIS = 1000;
 
     private final Node node;
     private final NodeEngineImpl nodeEngine;
@@ -134,7 +138,8 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
     private final ExceptionHandler partitionStateSyncTimeoutHandler;
 
     /** Determines if a {@link AssignPartitions} is being sent to the master, used to limit partition assignment requests. */
-    private final AtomicBoolean triggerMasterFlag = new AtomicBoolean(false);
+    private final AtomicBoolean masterTriggered = new AtomicBoolean(false);
+    private final CoalescingDelayedTrigger masterTrigger;
 
     private final AtomicReference<CountDownLatch> shutdownLatchRef = new AtomicReference<CountDownLatch>();
 
@@ -159,6 +164,14 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         partitionReplicaStateChecker = new PartitionReplicaStateChecker(node, this);
         partitionEventManager = new PartitionEventManager(node);
 
+        masterTrigger = new CoalescingDelayedTrigger(nodeEngine.getExecutionService(), TRIGGER_MASTER_DELAY_MILLIS,
+                2 * TRIGGER_MASTER_DELAY_MILLIS, new Runnable() {
+            @Override
+            public void run() {
+                resetMasterTriggeredFlag();
+            }
+        });
+
         partitionStateSyncTimeoutHandler =
                 logAllExceptions(logger, EXCEPTION_MSG_PARTITION_STATE_SYNC_TIMEOUT, Level.FINEST);
 
@@ -181,7 +194,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         }
         ExecutionService executionService = nodeEngine.getExecutionService();
         executionService.scheduleWithRepetition(new PublishPartitionRuntimeStateTask(node, this),
-                partitionTableSendInterval, partitionTableSendInterval, TimeUnit.SECONDS);
+                partitionTableSendInterval, partitionTableSendInterval, SECONDS);
 
         migrationManager.start();
         replicaManager.scheduleReplicaVersionSync(executionService);
@@ -229,26 +242,22 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
     }
 
     @Override
-    public void firstArrangement() {
-        if (partitionStateManager.isInitialized()) {
-            return;
-        }
-
+    public PartitionRuntimeState firstArrangement() {
         if (!node.isMaster()) {
             triggerMasterToAssignPartitions();
-            return;
+            return null;
         }
 
         lock.lock();
         try {
-            if (partitionStateManager.isInitialized()) {
-                return;
+            if (!partitionStateManager.isInitialized()) {
+                Set<Address> excludedAddresses = migrationManager.getShutdownRequestedAddresses();
+                if (partitionStateManager.initializePartitionAssignments(excludedAddresses)) {
+                    publishPartitionRuntimeState();
+                }
             }
-            Set<Address> excludedAddresses = migrationManager.getShutdownRequestedAddresses();
-            if (!partitionStateManager.initializePartitionAssignments(excludedAddresses)) {
-                return;
-            }
-            publishPartitionRuntimeState();
+
+            return createPartitionStateInternal();
         } finally {
             lock.unlock();
         }
@@ -267,26 +276,44 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
 
         ClusterState clusterState = clusterService.getClusterState();
         if (!clusterState.isMigrationAllowed()) {
-            logger.warning("Partitions can't be assigned since cluster-state= " + clusterState);
+            logger.warning("Partitions can't be assigned since cluster-state=" + clusterState);
             return;
         }
 
-        if (!triggerMasterFlag.compareAndSet(false, true)) {
+        final Address masterAddress = clusterService.getMasterAddress();
+        if (masterAddress == null || masterAddress.equals(node.getThisAddress())) {
             return;
         }
 
-        try {
-            final Address masterAddress = clusterService.getMasterAddress();
-            if (masterAddress != null && !masterAddress.equals(node.getThisAddress())) {
-                Future f = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, new AssignPartitions(),
-                        masterAddress).setTryCount(1).invoke();
-                f.get(1, TimeUnit.SECONDS);
-            }
-        } catch (Exception e) {
-            logger.finest(e);
-        } finally {
-            triggerMasterFlag.set(false);
+        if (masterTriggered.compareAndSet(false, true)) {
+            InternalOperationService operationService = nodeEngine.getOperationService();
+            operationService.createInvocationBuilder(SERVICE_NAME, new AssignPartitions(), masterAddress)
+                            .setTryCount(1)
+                            .setCallTimeout(SECONDS.toMillis(1))
+                            .invoke()
+                            .andThen(new ExecutionCallback<Object>() {
+                                @Override
+                                public void onResponse(Object response) {
+                                    resetMasterTriggeredFlag();
+                                    // RU_COMPAT_39
+                                    if (response instanceof PartitionRuntimeState) {
+                                        PartitionRuntimeState partitionState = (PartitionRuntimeState) response;
+                                        partitionState.setEndpoint(masterAddress);
+                                        processPartitionRuntimeState(partitionState);
+                                    }
+                                }
+
+                                @Override
+                                public void onFailure(Throwable t) {
+                                    resetMasterTriggeredFlag();
+                                    logger.severe(t);
+                                }
+                            });
         }
+    }
+
+    private void resetMasterTriggeredFlag() {
+        masterTriggered.set(false);
     }
 
     private boolean isClusterFormedByOnlyLiteMembers() {
@@ -600,7 +627,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         Collection<MemberImpl> members = node.clusterService.getMemberImpls();
         List<Future<Boolean>> calls = firePartitionStateOperation(members, partitionState, operationService);
         Collection<Boolean> results = returnWithDeadline(calls, PTABLE_SYNC_TIMEOUT_SECONDS,
-                TimeUnit.SECONDS, partitionStateSyncTimeoutHandler);
+                SECONDS, partitionStateSyncTimeoutHandler);
 
         if (calls.size() != results.size()) {
             return false;
@@ -688,7 +715,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
      */
     private boolean applyNewState(PartitionRuntimeState partitionState, Address sender) {
         try {
-            if (!lock.tryLock(PTABLE_SYNC_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
+            if (!lock.tryLock(PTABLE_SYNC_TIMEOUT_SECONDS, SECONDS)) {
                 return false;
             }
         } catch (InterruptedException e) {
@@ -1259,7 +1286,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             boolean collectedState = true;
 
             try {
-                PartitionRuntimeState state = future.get(FETCH_PARTITION_STATE_SECONDS, TimeUnit.SECONDS);
+                PartitionRuntimeState state = future.get(FETCH_PARTITION_STATE_SECONDS, SECONDS);
                 if (state == null) {
                     logger.fine("Received NULL partition state from " + member);
                 } else {
