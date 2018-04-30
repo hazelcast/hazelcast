@@ -127,7 +127,7 @@ Following are example declarative and programmatic configuration snippets:
         properties.put("security-group-name","hazelcast");
         properties.put("tag-key","aws-test-cluster");
         properties.put("tag-value","cluster1");
-        properties.put("hzPort","5701");
+        properties.put("hz-port","5701");
         DiscoveryStrategyConfig discoveryStrategyConfig = new DiscoveryStrategyConfig(awsDiscoveryStrategyFactory, properties);
         joinConfig.getDiscoveryConfig().addDiscoveryStrategyConfig(discoveryStrategyConfig);
         
@@ -168,6 +168,7 @@ If more than one `subnet` or `custom VPC` is used for cluster, it should be chec
 - Add the *hazelcast-aws.jar* dependency to your project. The hazelcast-aws plugin does not depend on any other third party modules.
 - Enable Discovery SPI by adding "hazelcast.discovery.enabled" property to your config.
 - Enable public/private IP address translation using "hazelcast.discovery.public.ip.enabled" if your Hazelcast Client is not in AWS.
+- Make sure `access-key` and `secret-key` properties are set in case your client is outside AWS (`iam-role` works only for clients inside AWS)
 
 Following are example declarative and programmatic configuration snippets:
 
@@ -214,7 +215,7 @@ Following are example declarative and programmatic configuration snippets:
         properties.put("security-group-name","hazelcast");
         properties.put("tag-key","aws-test-cluster");
         properties.put("tag-value","cluster1");
-        properties.put("hzPort","5701");
+        properties.put("hz-port","5701");
         AwsDiscoveryStrategyFactory awsDiscoveryStrategyFactory = new AwsDiscoveryStrategyFactory();
         DiscoveryStrategyConfig discoveryStrategyConfig = new DiscoveryStrategyConfig(awsDiscoveryStrategyFactory, properties);
         ClientNetworkConfig clientNetworkConfig = clientConfig.getNetworkConfig();
