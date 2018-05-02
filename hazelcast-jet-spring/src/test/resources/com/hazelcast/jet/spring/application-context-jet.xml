@@ -28,7 +28,7 @@
     <jet:instance id="jet-instance">
         <hz:config>
             <hz:spring-aware/>
-            <hz:group name="jet-spring"/>
+            <hz:group name="jet-spring" password="jet-spring-pass"/>
             <hz:network port="5707" port-auto-increment="false">
                 <hz:join>
                     <hz:multicast enabled="false"/>
@@ -48,7 +48,7 @@
     </jet:instance>
 
     <jet:client id="jet-client" depends-on="jet-instance">
-        <jet:group name="jet-spring"/>
+        <jet:group name="jet-spring" password="jet-spring-pass"/>
         <jet:network>
             <hz:member>127.0.0.1:5707</hz:member>
         </jet:network>

@@ -75,12 +75,12 @@ public class TestApplicationContext {
 
     @Test
     public void test() {
-        assertNotNull(jetInstance);
-        assertNotNull(jetClient);
-        assertNotNull(hazelcastInstance);
-        assertNotNull(map);
-        assertNotNull(list);
-        assertNotNull(queue);
+        assertNotNull("jetInstance", jetInstance);
+        assertNotNull("jetClient", jetClient);
+        assertNotNull("hazelcastInstance", hazelcastInstance);
+        assertNotNull("map", map);
+        assertNotNull("list", list);
+        assertNotNull("queue", queue);
 
         assertJetConfig();
     }
@@ -107,6 +107,7 @@ public class TestApplicationContext {
     private void assertHazelcastConfig(Config cfg) {
         assertTrue(cfg.getManagedContext() instanceof SpringManagedContext);
         assertEquals("jet-spring", cfg.getGroupConfig().getName());
+        assertEquals("jet-spring-pass", cfg.getGroupConfig().getPassword());
 
         NetworkConfig networkConfig = cfg.getNetworkConfig();
         assertEquals(5707, networkConfig.getPort());

@@ -20,6 +20,7 @@
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <group>
         <name>imdg</name>
+        <password>${imdg.pass}</password>
     </group>
     <instance-name>${imdg.instance.name}</instance-name>
 </hazelcast>

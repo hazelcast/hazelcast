@@ -240,6 +240,7 @@ public class JetConfig {
         Config config = new Config();
         config.getNetworkConfig().getJoin().getMulticastConfig().setMulticastPort(DEFAULT_JET_MULTICAST_PORT);
         config.getGroupConfig().setName("jet");
+        config.getGroupConfig().setPassword("jet-pass");
         return config;
     }
 }

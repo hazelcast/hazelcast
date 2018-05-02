@@ -44,6 +44,7 @@ public class XmlConfigTest {
     private static final String TEST_XML_1 = "hazelcast-jet-test.xml";
     private static final String TEST_XML_2 = "hazelcast-jet-member-test.xml";
     private static final String TEST_XML_2_GROUP_NAME = "imdg";
+    private static final String PASSWORD = "123456";
     private static final String INSTANCE_NAME = "my-instance";
 
     @Test
@@ -148,6 +149,7 @@ public class XmlConfigTest {
         Properties properties = new Properties();
         properties.put(XmlJetConfigLocator.HAZELCAST_MEMBER_CONFIG_PROPERTY, "classpath:${my.filename}");
         properties.put("my.filename", TEST_XML_2);
+        properties.put("imdg.pass", PASSWORD);
         properties.put("imdg.instance.name", INSTANCE_NAME);
 
         // When
@@ -155,6 +157,7 @@ public class XmlConfigTest {
 
         // Then
         assertXmlMemberConfig(jetConfig.getHazelcastConfig());
+        assertThat(jetConfig.getHazelcastConfig().getGroupConfig().getPassword(), equalTo(PASSWORD));
         assertThat(jetConfig.getHazelcastConfig().getInstanceName(), equalTo(INSTANCE_NAME));
     }
 

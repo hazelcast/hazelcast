@@ -38,7 +38,7 @@ import static org.springframework.beans.factory.support.BeanDefinitionBuilder.ro
  * <jet:instance id="jet-instance">
  *      <hz:config>
  *          <hz:spring-aware/>
- *          <hz:group name="jet"/>
+ *          <hz:group name="jet" password="jet-pass"/>
  *          <hz:network port="5701" port-auto-increment="false">
  *              <hz:join>
  *                  <hz:multicast enabled="false"/>
