@@ -1,0 +1,18 @@
+#!/bin/bash
+
+set -e
+exec 1>&2
+
+# check tests for missing @Run or @RunWith annotation
+RUN=$(find . -name "*Test.java" -exec grep -L "@Run" {} \; | grep -vi abstract | egrep -v "/(annotation|standalone|generated-test-sources)/")
+if [ -n "$RUN" ]; then
+  echo "Missing @Run or @RunWith annotation: $RUN"
+  exit 1
+fi
+
+# check tests for missing @Category annotation
+CATEGORY=$(find . -name "*Test.java" -exec grep -L "@Category" {} \; | grep -vi abstract | egrep -v "/(annotation|standalone|generated-test-sources)/")
+if [ -n "$CATEGORY" ]; then
+  echo "Missing @Category annotation: $CATEGORY"
+  exit 1
+fi
