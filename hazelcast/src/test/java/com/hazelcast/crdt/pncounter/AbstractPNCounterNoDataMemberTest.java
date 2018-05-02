@@ -23,7 +23,7 @@ import org.junit.Test;
 /**
  * Base test for testing behaviour of PN counter behaviour when there are no data members in the cluster
  */
-public abstract class BasePNCounterNoDataMemberTest extends HazelcastTestSupport {
+public abstract class AbstractPNCounterNoDataMemberTest extends HazelcastTestSupport {
 
     @Test(expected = NoDataMemberInClusterException.class)
     public void noDataMemberExceptionIsThrown() {

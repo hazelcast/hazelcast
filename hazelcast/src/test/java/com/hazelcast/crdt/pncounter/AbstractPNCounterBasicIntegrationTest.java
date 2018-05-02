@@ -34,7 +34,7 @@ import static org.junit.Assert.assertEquals;
  * Concrete implementations must provide the two {@link HazelcastInstance}s
  * which will be used to perform the tests.
  */
-public abstract class BasePNCounterBasicIntegrationTest extends HazelcastTestSupport {
+public abstract class AbstractPNCounterBasicIntegrationTest extends HazelcastTestSupport {
 
     @Test
     public void testSimpleReplication() {

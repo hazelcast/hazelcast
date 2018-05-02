@@ -17,7 +17,11 @@
 package com.hazelcast.quorum.impl;
 
 import com.hazelcast.quorum.QuorumFunction;
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.lang.reflect.Constructor;
 import java.util.Arrays;
@@ -26,6 +30,8 @@ import static com.hazelcast.test.starter.HazelcastProxyFactory.proxyObjectForSta
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+@RunWith(HazelcastSerialClassRunner.class)
+@Category({QuickTest.class})
 public class RecentlyActiveQuorumFunctionTest extends AbstractQuorumFunctionTest {
 
     @Test
