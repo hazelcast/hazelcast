@@ -33,6 +33,7 @@ import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.config.XMLConfigBuilderTest;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -512,7 +513,8 @@ public class XmlClientConfigBuilderTest extends HazelcastTestSupport {
 
     private void testXSDConfigXML(String xmlFileName) throws SAXException, IOException {
         SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
-        URL schemaResource = XMLConfigBuilderTest.class.getClassLoader().getResource("hazelcast-client-config-3.10.xsd");
+        URL schemaResource = XMLConfigBuilderTest.class.getClassLoader().getResource("hazelcast-client-config-"
+                + Versions.CURRENT_CLUSTER_VERSION + ".xsd");
         InputStream xmlResource = XMLConfigBuilderTest.class.getClassLoader().getResourceAsStream(xmlFileName);
         Schema schema = factory.newSchema(schemaResource);
         Source source = new StreamSource(xmlResource);
