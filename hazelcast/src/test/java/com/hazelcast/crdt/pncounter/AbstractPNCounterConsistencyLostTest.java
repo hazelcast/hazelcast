@@ -26,7 +26,7 @@ import org.junit.Test;
 /**
  * Base test for testing behaviour of {@link ConsistencyLostException} in the case of CRDTs.
  */
-public abstract class BasePNCounterConsistencyLostTest extends HazelcastTestSupport {
+public abstract class AbstractPNCounterConsistencyLostTest extends HazelcastTestSupport {
 
     @Test(expected = ConsistencyLostException.class)
     public void consistencyLostExceptionIsThrownWhenTargetReplicaDisappears() {

@@ -31,7 +31,7 @@ import org.junit.runner.RunWith;
  */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class PNCounterNoDataMemberTest extends BasePNCounterNoDataMemberTest {
+public class PNCounterNoDataMemberTest extends AbstractPNCounterNoDataMemberTest {
 
     private HazelcastInstance liteMember;
     private String counterName = randomMapName("counter-");

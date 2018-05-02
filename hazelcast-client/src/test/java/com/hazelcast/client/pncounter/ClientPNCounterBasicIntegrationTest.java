@@ -5,7 +5,7 @@ import com.hazelcast.config.CRDTReplicationConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.PNCounterConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.crdt.pncounter.BasePNCounterBasicIntegrationTest;
+import com.hazelcast.crdt.pncounter.AbstractPNCounterBasicIntegrationTest;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -30,7 +30,7 @@ import static java.util.Arrays.asList;
 @RunWith(Parameterized.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class ClientPNCounterBasicIntegrationTest extends BasePNCounterBasicIntegrationTest {
+public class ClientPNCounterBasicIntegrationTest extends AbstractPNCounterBasicIntegrationTest {
 
     @Parameters(name = "replicaCount:{0}")
     public static Collection<Object[]> parameters() {

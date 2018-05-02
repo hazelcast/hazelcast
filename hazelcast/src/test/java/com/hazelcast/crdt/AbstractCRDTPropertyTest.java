@@ -27,7 +27,8 @@ import java.util.Random;
 
 import static org.junit.Assert.assertArrayEquals;
 
-public abstract class BaseCRDTPropertyTest<C extends CRDT<C>, H, S> {
+public abstract class AbstractCRDTPropertyTest<C extends CRDT<C>, H, S> {
+
     private final Random random = new Random();
     private int numCounters;
 
