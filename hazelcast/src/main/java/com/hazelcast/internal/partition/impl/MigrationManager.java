@@ -1225,11 +1225,13 @@ public class MigrationManager {
          * @return if the promotions were successful
          */
         private boolean commitPromotionMigrations(Address destination, Collection<MigrationInfo> migrations) {
+            internalMigrationListener.onPromotionStart(MigrationParticipant.MASTER, migrations);
             boolean success = commitPromotionsToDestination(destination, migrations);
             boolean local = node.getThisAddress().equals(destination);
             if (!local) {
                 processPromotionCommitResult(destination, migrations, success);
             }
+            internalMigrationListener.onPromotionComplete(MigrationParticipant.MASTER, migrations, success);
             partitionService.syncPartitionRuntimeState();
             return success;
         }
