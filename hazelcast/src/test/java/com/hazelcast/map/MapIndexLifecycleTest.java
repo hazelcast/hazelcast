@@ -205,11 +205,22 @@ public class MapIndexLifecycleTest extends HazelcastTestSupport {
         for (int i = 0; i < partitionCount; i++) {
             PartitionContainer container = context.getPartitionContainer(i);
 
-            ConcurrentMap<String, RecordStore> maps = container.getMaps();
-            assertTrue("record stores not empty", maps.isEmpty());
+            final ConcurrentMap<String, RecordStore> maps = container.getMaps();
+            assertTrueEventually(new AssertTask() {
+                @Override
+                public void run() throws Exception {
+                    assertTrue("record stores not empty", maps.isEmpty());
+                }
+            });
 
-            ConcurrentMap<String, Indexes> indexes = container.getIndexes();
-            assertTrue("indexes not empty", indexes.isEmpty());
+
+            final ConcurrentMap<String, Indexes> indexes = container.getIndexes();
+            assertTrueEventually(new AssertTask() {
+                @Override
+                public void run() throws Exception {
+                    assertTrue("indexes not empty", indexes.isEmpty());
+                }
+            });
         }
     }
 
