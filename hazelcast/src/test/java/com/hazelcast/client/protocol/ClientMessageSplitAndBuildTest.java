@@ -58,7 +58,7 @@ public class ClientMessageSplitAndBuildTest {
                 mock(Connection.class),
                 new ClientMessageHandler() {
                     @Override
-                    public void handle(ClientMessage message, Connection connection) {
+                    public void handle(ClientMessage message) {
                         message.addFlag(ClientMessage.BEGIN_AND_END_FLAGS);
                         assertEquals(expectedClientMessage, message);
                     }
@@ -107,7 +107,7 @@ public class ClientMessageSplitAndBuildTest {
                 mock(Connection.class),
                 new ClientMessageHandler() {
                     @Override
-                    public void handle(ClientMessage message, Connection connection) {
+                    public void handle(ClientMessage message) {
                         int correlationId = (int) message.getCorrelationId();
                         message.addFlag(ClientMessage.BEGIN_AND_END_FLAGS);
                         assertEquals(expectedClientMessages.get(correlationId), message);
@@ -142,7 +142,7 @@ public class ClientMessageSplitAndBuildTest {
                 mock(Connection.class),
                 new ClientMessageHandler() {
                     @Override
-                    public void handle(ClientMessage message, Connection connection) {
+                    public void handle(ClientMessage message) {
                         message.addFlag(ClientMessage.BEGIN_AND_END_FLAGS);
                         assertEquals(expectedClientMessage, message);
                     }

@@ -17,10 +17,9 @@
 package com.hazelcast.client.impl.protocol.util;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.nio.Connection;
 
 /**
- * Implementers will be responsible to messageHandler the constructed message
+ * Implementers will be responsible to handle the constructed message
  */
 public interface ClientMessageHandler {
 
@@ -28,7 +27,6 @@ public interface ClientMessageHandler {
      * Received message to be processed
      *
      * @param message the ClientMessage the process
-     * @param connection the connection responsible for creating the message
      */
-    void handle(ClientMessage message, Connection connection);
+    void handle(ClientMessage message);
 }

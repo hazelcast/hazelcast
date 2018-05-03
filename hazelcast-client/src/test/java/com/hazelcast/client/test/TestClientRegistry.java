@@ -259,9 +259,10 @@ class TestClientRegistry {
 
                 @Override
                 public void run() {
-                    ClientMessage newPacket = readFromPacket((ClientMessage) frame);
+                    ClientMessage clientMessage = readFromPacket((ClientMessage) frame);
                     lastWriteTime = System.currentTimeMillis();
-                    serverSideConnection.handleClientMessage(newPacket);
+                    clientMessage.setConnection(serverSideConnection);
+                    serverSideConnection.handleClientMessage(clientMessage);
                 }
             });
             return true;
@@ -387,6 +388,7 @@ class TestClientRegistry {
             if (isAlive()) {
                 lastWriteTimeMillis = System.currentTimeMillis();
                 ClientMessage newPacket = readFromPacket(packet);
+                newPacket.setConnection(responseConnection);
                 responseConnection.handleClientMessage(newPacket);
                 return true;
             }
@@ -395,7 +397,7 @@ class TestClientRegistry {
 
         void handleClientMessage(ClientMessage newPacket) {
             lastReadTimeMillis = System.currentTimeMillis();
-            remoteNodeEngine.getNode().clientEngine.handle(newPacket, this);
+            remoteNodeEngine.getNode().clientEngine.handle(newPacket);
         }
 
         @Override

@@ -110,18 +110,19 @@ public class ClientResponseHandlerSupplier implements Supplier<ClientResponseHan
         return responseHandler;
     }
 
-    private void process(ClientConnection connection, ClientMessage message) {
+    private void process(ClientMessage response) {
         try {
-            handleClientMessage(message);
+            handleResponse(response);
         } catch (Exception e) {
-            logger.severe("Failed to process task: " + new ClientPacket(connection, message)
+            logger.severe("Failed to process response: " + response
                     + " on responseThread: " + Thread.currentThread().getName(), e);
         } finally {
+            ClientConnection connection = (ClientConnection) response.getConnection();
             connection.decrementPendingPacketCount();
         }
     }
 
-    private void handleClientMessage(ClientMessage clientMessage) {
+    private void handleResponse(ClientMessage clientMessage) {
         long correlationId = clientMessage.getCorrelationId();
 
         ClientInvocation future = invocationService.deRegisterCallId(correlationId);
@@ -138,12 +139,12 @@ public class ClientResponseHandlerSupplier implements Supplier<ClientResponseHan
     }
 
     private class ResponseThread extends Thread {
-        private final BlockingQueue<ClientPacket> responseQueue;
+        private final BlockingQueue<ClientMessage> responseQueue;
 
         ResponseThread(String name) {
             super(name);
             setContextClassLoader(client.getClientConfig().getClassLoader());
-            this.responseQueue = new MPSCQueue<ClientPacket>(this, getIdleStrategy(client.getProperties(), IDLE_STRATEGY));
+            this.responseQueue = new MPSCQueue<ClientMessage>(this, getIdleStrategy(client.getProperties(), IDLE_STRATEGY));
         }
 
         @Override
@@ -159,48 +160,36 @@ public class ClientResponseHandlerSupplier implements Supplier<ClientResponseHan
 
         private void doRun() {
             while (!invocationService.isShutdown()) {
-                ClientPacket task;
+                ClientMessage response;
                 try {
-                    task = responseQueue.take();
+                    response = responseQueue.take();
                 } catch (InterruptedException e) {
                     continue;
                 }
-                process(task.connection, task.message);
+                process(response);
             }
         }
     }
 
     class SyncResponseHandler implements ClientResponseHandler {
         @Override
-        public void handle(ClientMessage message, ClientConnection connection) {
-            process(connection, message);
+        public void handle(ClientMessage message) {
+            process(message);
         }
     }
 
     class AsyncSingleThreadedResponseHandler implements ClientResponseHandler {
         @Override
-        public void handle(ClientMessage message, ClientConnection connection) {
-            responseThreads[0].responseQueue.add(new ClientPacket(connection, message));
+        public void handle(ClientMessage message) {
+            responseThreads[0].responseQueue.add(message);
         }
     }
 
     class AsyncMultiThreadedResponseHandler implements ClientResponseHandler {
         @Override
-        public void handle(ClientMessage message, ClientConnection connection) {
+        public void handle(ClientMessage message) {
             int threadIndex = hashToIndex(INT_HOLDER.get().getAndInc(), responseThreads.length);
-            responseThreads[threadIndex].responseQueue.add(new ClientPacket(connection, message));
-        }
-    }
-
-    // https://github.com/hazelcast/hazelcast/issues/12632
-    private static class ClientPacket {
-
-        private final ClientConnection connection;
-        private final ClientMessage message;
-
-        ClientPacket(ClientConnection connection, ClientMessage message) {
-            this.connection = connection;
-            this.message = message;
+            responseThreads[threadIndex].responseQueue.add(message);
         }
     }
 }

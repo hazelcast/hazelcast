@@ -93,7 +93,7 @@ public class ClientMessageDecoder extends ChannelInboundHandlerWithCounters {
 
     private void handleMessage(ClientMessage message) {
         message.index(message.getDataOffset());
-        messageHandler.handle(message, connection);
+        message.setConnection(connection);
+        messageHandler.handle(message);
     }
-
 }

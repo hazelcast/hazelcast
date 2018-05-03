@@ -67,6 +67,6 @@ public class ClientMessageDecoderTest {
 
         decoder.onRead(bb);
 
-        verify(messageHandler).handle(any(ClientMessage.class), eq(connection));
+        verify(messageHandler).handle(any(ClientMessage.class));
     }
 }
