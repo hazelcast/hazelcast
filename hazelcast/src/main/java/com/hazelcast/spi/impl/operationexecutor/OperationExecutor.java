@@ -16,12 +16,13 @@
 
 package com.hazelcast.spi.impl.operationexecutor;
 
+import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.LiveOperationsTracker;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.PacketHandler;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationexecutor.impl.OperationExecutorImpl;
 import com.hazelcast.spi.impl.operationservice.PartitionTaskFactory;
+import com.hazelcast.util.function.Consumer;
 
 /**
  * The OperationExecutor is responsible for scheduling work (packets/operations)
@@ -36,7 +37,7 @@ import com.hazelcast.spi.impl.operationservice.PartitionTaskFactory;
  * The actual processing of a operation-packet, Operation, or a
  * PartitionSpecificRunnable is forwarded to the {@link OperationRunner}.
  */
-public interface OperationExecutor extends PacketHandler, LiveOperationsTracker {
+public interface OperationExecutor extends Consumer<Packet>, LiveOperationsTracker {
 
     // Will be replaced by metrics
     @Deprecated

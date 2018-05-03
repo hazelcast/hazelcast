@@ -20,9 +20,9 @@ import com.hazelcast.internal.networking.nio.NioChannel;
 import com.hazelcast.internal.networking.nio.NioInboundPipeline;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.PacketIOHelper;
-import com.hazelcast.spi.impl.PacketHandler;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.function.Consumer;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -42,7 +42,7 @@ import static org.junit.Assert.assertEquals;
 public class PacketDecoderTest extends TcpIpConnection_AbstractTest {
 
     private MockPacketDispatcher dispatcher;
-    private PacketDecoder readHandler;
+    private PacketDecoder packetDecoder;
     private long oldPriorityPacketsRead;
     private long oldNormalPacketsRead;
     private NioInboundPipeline channelReader;
@@ -59,7 +59,7 @@ public class PacketDecoderTest extends TcpIpConnection_AbstractTest {
         TcpIpConnection connection = connect(connManagerA, addressB);
 
         dispatcher = new MockPacketDispatcher();
-        readHandler = new PacketDecoder(connection, dispatcher);
+        packetDecoder = new PacketDecoder(connection, dispatcher);
 
         channelReader = ((NioChannel) connection.getChannel()).inboundPipeline();
         oldNormalPacketsRead = channelReader.getNormalFramesReadCounter().get();
@@ -75,7 +75,7 @@ public class PacketDecoderTest extends TcpIpConnection_AbstractTest {
 
 
         buffer.flip();
-        readHandler.onRead(buffer);
+        packetDecoder.onRead(buffer);
 
         assertEquals(1, dispatcher.packets.size());
         Packet found = dispatcher.packets.get(0);
@@ -91,7 +91,7 @@ public class PacketDecoderTest extends TcpIpConnection_AbstractTest {
         new PacketIOHelper().writeTo(packet, buffer);
 
         buffer.flip();
-        readHandler.onRead(buffer);
+        packetDecoder.onRead(buffer);
 
         assertEquals(1, dispatcher.packets.size());
         Packet found = dispatcher.packets.get(0);
@@ -118,18 +118,18 @@ public class PacketDecoderTest extends TcpIpConnection_AbstractTest {
         new PacketIOHelper().writeTo(packet4, buffer);
 
         buffer.flip();
-        readHandler.onRead(buffer);
+        packetDecoder.onRead(buffer);
 
         assertEquals(asList(packet1, packet2, packet3, packet4), dispatcher.packets);
         assertEquals(oldNormalPacketsRead + 3, channelReader.getNormalFramesReadCounter().get());
         assertEquals(oldPriorityPacketsRead + 1, channelReader.getPriorityFramesReadCounter().get());
     }
 
-    class MockPacketDispatcher implements PacketHandler {
+    class MockPacketDispatcher implements Consumer<Packet> {
         private List<Packet> packets = new LinkedList<Packet>();
 
         @Override
-        public void handle(Packet packet) throws Exception {
+        public void accept(Packet packet) {
             packets.add(packet);
         }
     }

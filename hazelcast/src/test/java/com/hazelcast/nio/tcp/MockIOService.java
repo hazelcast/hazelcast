@@ -36,7 +36,7 @@ import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
-import com.hazelcast.spi.impl.PacketHandler;
+import com.hazelcast.util.function.Consumer;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -56,7 +56,7 @@ public class MockIOService implements IOService {
     public final LoggingServiceImpl loggingService;
     public final ConcurrentHashMap<Long, DummyPayload> payloads = new ConcurrentHashMap<Long, DummyPayload>();
     private final ChannelFactory channelFactory;
-    public volatile PacketHandler packetHandler;
+    public volatile Consumer<Packet> packetConsumer;
 
     public MockIOService(int port, ChannelFactory channelFactory) throws Exception {
         loggingService = new LoggingServiceImpl("somegroup", "log4j2", BuildInfoProvider.getBuildInfo());
@@ -352,18 +352,18 @@ public class MockIOService implements IOService {
 
     @Override
     public ChannelInboundHandler createInboundHandler(final TcpIpConnection connection) {
-        return new PacketDecoder(connection, new PacketHandler() {
+        return new PacketDecoder(connection, new Consumer<Packet>() {
             private ILogger logger = loggingService.getLogger("MockIOService");
 
             @Override
-            public void handle(Packet packet) {
+            public void accept(Packet packet) {
                 try {
                     if (packet.getPacketType() == Packet.Type.BIND) {
-                        connection.getConnectionManager().handle(packet);
+                        connection.getConnectionManager().accept(packet);
                     } else {
-                        PacketHandler handler = packetHandler;
-                        if (handler != null) {
-                            handler.handle(packet);
+                        Consumer<Packet> consumer = packetConsumer;
+                        if (consumer != null) {
+                            consumer.accept(packet);
                         }
                     }
                 } catch (Exception e) {
