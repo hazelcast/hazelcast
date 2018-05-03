@@ -216,8 +216,9 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
     }
 
     @Override
-    public void handle(ClientMessage clientMessage, Connection connection) {
+    public void handle(ClientMessage clientMessage) {
         int partitionId = clientMessage.getPartitionId();
+        Connection connection = clientMessage.getConnection();
         MessageTask messageTask = messageTaskFactory.create(clientMessage, connection);
         InternalOperationService operationService = nodeEngine.getOperationService();
         if (partitionId < 0) {

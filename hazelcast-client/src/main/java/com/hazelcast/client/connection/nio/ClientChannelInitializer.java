@@ -25,7 +25,6 @@ import com.hazelcast.internal.networking.ChannelInboundHandler;
 import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.networking.ChannelOutboundHandler;
 import com.hazelcast.internal.networking.InitResult;
-import com.hazelcast.nio.Connection;
 
 import java.nio.ByteBuffer;
 
@@ -56,7 +55,7 @@ class ClientChannelInitializer implements ChannelInitializer {
         ChannelInboundHandler inboundHandler = new ClientMessageDecoder(clientConnection,
                 new ClientMessageHandler() {
                     @Override
-                    public void handle(ClientMessage message, Connection connection) {
+                    public void handle(ClientMessage message) {
                         clientConnection.handleClientMessage(message);
                     }
                 });

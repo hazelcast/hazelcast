@@ -254,7 +254,7 @@ public class ClientConnection implements Connection {
             AbstractClientListenerService listenerService = (AbstractClientListenerService) client.getListenerService();
             listenerService.handleClientMessage(message, this);
         } else {
-            responseHandler.handle(message, this);
+            responseHandler.handle(message);
         }
     }
 
