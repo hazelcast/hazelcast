@@ -28,6 +28,7 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
+import org.junit.Assume;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -80,6 +81,9 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
     protected static final int KEY_COUNT = 10023;
     protected static final int THREAD_COUNT = 10;
     protected static final int CREATE_AND_DESTROY_RUNS = 5000;
+
+    private static final String BYTE_ORDER_OVERRIDE_PROPERTY = "hazelcast.serialization.byteOrder";
+    private static final String BYTE_ORDER_LITTLE_ENDIAN = "LITTLE_ENDIAN";
 
     protected final String defaultNearCache = randomName();
 
@@ -253,11 +257,13 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
 
     @Test
     public void testPreloadNearCache_withIntegerKeys() {
+        assumeBigEndian();
         preloadNearCache(preloadDir10kInt, 10000, INTEGER);
     }
 
     @Test
     public void testPreloadNearCache_withStringKeys() {
+        assumeBigEndian();
         preloadNearCache(preloadDir10kString, 10000, STRING);
     }
 
@@ -466,5 +472,13 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
 
             assertNearCacheRecord(getRecordFromNearCache(context, nearCacheKey), i, inMemoryFormat);
         }
+    }
+
+    // existing preloader test files in src/test/resources/nearcache-* are serialized in BIG_ENDIAN,
+    // therefore it only makes sense to test when serialization service byte order is not overridden to LITTLE_ENDIAN
+    private void assumeBigEndian() {
+        String byteOrderOverride = System.getProperty(BYTE_ORDER_OVERRIDE_PROPERTY);
+        boolean littleEndianOverride = byteOrderOverride != null && byteOrderOverride.equals(BYTE_ORDER_LITTLE_ENDIAN);
+        Assume.assumeTrue("Near cache preloader tests require BIG_ENDIAN byte order", !littleEndianOverride);
     }
 }
