@@ -61,7 +61,7 @@ public class Utils {
 
             return transferredThrowable;
         } catch (Exception e) {
-            throw new GuardianException("Throwable transfer failed for: " + throwable.getMessage(), e);
+            throw new GuardianException("Throwable transfer failed for: " + throwable, e);
         }
     }
 
