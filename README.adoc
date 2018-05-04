@@ -13,7 +13,7 @@ by resolving those requests against a link:http://kubernetes.io/[Kubernetes] Ser
 This plugin supports two different options of resolving against the discovery registry:
 
  - A request to the REST API
- - DNS Lookup against a given DNS service name
+ - DNS Lookup against a given *headless* DNS service name
 
 == Hazelcast Discovery SPI
 
@@ -123,7 +123,7 @@ If using maven, Gradle, sbt or similar tools, this is as easy as adding it to th
 This fragment will add the discovery plugin as well as necessary transitive dependencies into your application classpath. The
 second step is to configure the discovery plugin inside of your Hazelcast configuration.
 
-The service-dns value here is defined as documented in the official
+The service-dns value here should be a *headless* service name defined as documented in the official
 link:https://github.com/kubernetes/kubernetes/tree/v1.0.6/cluster/addons/dns[Kubernetes DNS] documentation.
 
 [source,xml]
