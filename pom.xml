@@ -32,11 +32,11 @@
     <log4j.version>1.2.12</log4j.version>
     <junit.version>4.12</junit.version>
     <mockito.version>1.10.19</mockito.version>
-    <powermock.version>1.6.6</powermock.version>
+    <powermock.version>1.7.3</powermock.version>
 
-    <hazelcast.version>3.8.2</hazelcast.version>
-    <kubernetes-client.version>3.0.3</kubernetes-client.version>
-    <dnsjava.version>2.1.7</dnsjava.version>
+    <hazelcast.version>3.9.3</hazelcast.version>
+    <kubernetes-client.version>3.1.10</kubernetes-client.version>
+    <dnsjava.version>2.1.8</dnsjava.version>
 
     <maven.checkstyle.plugin.version>2.15</maven.checkstyle.plugin.version>
     <maven.findbugs.plugin.version>3.0.1</maven.findbugs.plugin.version>
