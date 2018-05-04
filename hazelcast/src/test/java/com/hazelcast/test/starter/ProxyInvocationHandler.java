@@ -118,7 +118,7 @@ class ProxyInvocationHandler implements InvocationHandler, Serializable {
         } catch (IllegalAccessException e) {
             throw Utils.rethrow(e);
         } catch (InvocationTargetException e) {
-            throw e.getTargetException();
+            throw Utils.transferThrowable(e.getTargetException());
         }
         return delegateResult;
     }
