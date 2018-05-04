@@ -34,7 +34,7 @@
     <mockito.version>1.10.19</mockito.version>
     <powermock.version>1.7.3</powermock.version>
 
-    <hazelcast.version>3.9.3</hazelcast.version>
+    <hazelcast.version>3.10</hazelcast.version>
     <kubernetes-client.version>3.1.10</kubernetes-client.version>
     <dnsjava.version>2.1.8</dnsjava.version>
 
@@ -466,7 +466,7 @@
     <profile>
       <id>master</id>
       <properties>
-        <hazelcast.version>3.10-SNAPSHOT</hazelcast.version>
+        <hazelcast.version>3.11-SNAPSHOT</hazelcast.version>
       </properties>
       <dependencies>
         <dependency>
