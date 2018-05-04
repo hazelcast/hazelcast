@@ -16,6 +16,11 @@
 
 package com.hazelcast.test.starter;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+
 import static org.junit.Assert.assertEquals;
 
 public class Utils {
@@ -26,6 +31,38 @@ public class Utils {
             throw (RuntimeException) e;
         }
         throw new GuardianException(e);
+    }
+
+    /**
+     * Transfers the given throwable to the class loader hosting the
+     * compatibility tests.
+     *
+     * @param throwable the throwable to transfer.
+     * @return the transferred throwable.
+     */
+    public static Throwable transferThrowable(Throwable throwable) {
+        if (throwable.getClass().getClassLoader() == Utils.class.getClassLoader()) {
+            return throwable;
+        }
+
+        try {
+            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+            ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream);
+            objectOutputStream.writeObject(throwable);
+            objectOutputStream.close();
+            byteArrayOutputStream.close();
+            byte[] serializedThrowable = byteArrayOutputStream.toByteArray();
+
+            ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(serializedThrowable);
+            ObjectInputStream objectInputStream = new ObjectInputStream(byteArrayInputStream);
+            Throwable transferredThrowable = (Throwable) objectInputStream.readObject();
+            objectInputStream.close();
+            byteArrayInputStream.close();
+
+            return transferredThrowable;
+        } catch (Exception e) {
+            throw new GuardianException("Throwable transfer failed for: " + throwable.getMessage(), e);
+        }
     }
 
     public static void debug(String text) {
