@@ -39,7 +39,7 @@ public class HazelcastStarter {
     public static final File WORKING_DIRECTORY = Files.createTempDir();
 
     // Cache downloaded files & classloader used to load their classes per version string
-    private static final ConcurrentMap<String, HazelcastVersionClassloaderFuture> loadedVersions =
+    private static final ConcurrentMap<String, HazelcastVersionClassloaderFuture> LOADED_VERSIONS =
             new ConcurrentHashMap<String, HazelcastVersionClassloaderFuture>();
 
     /**
@@ -114,10 +114,18 @@ public class HazelcastStarter {
      * @param configClassLoader class loader given via config
      * @return a classloader with given version's artifacts in its classpath
      */
-    public static HazelcastAPIDelegatingClassloader getTargetVersionClassloader(String version, boolean enterprise, ClassLoader configClassLoader) {
+    public static HazelcastAPIDelegatingClassloader getTargetVersionClassloader(String version, boolean enterprise,
+                                                                                ClassLoader configClassLoader) {
+        HazelcastVersionClassloaderFuture future;
+        if (configClassLoader != null) {
+            // when a custom ClassLoader should be the parent of the target version ClassLoader,
+            // do not use the ClassLoader cache
+            future = new HazelcastVersionClassloaderFuture(version, enterprise, configClassLoader);
+            return future.get();
+        }
         String versionSpec = versionSpec(version, enterprise);
         HazelcastAPIDelegatingClassloader versionClassLoader = null;
-        HazelcastVersionClassloaderFuture future = loadedVersions.get(versionSpec);
+        future = LOADED_VERSIONS.get(versionSpec);
 
         if (future != null) {
             versionClassLoader = future.get();
@@ -125,7 +133,7 @@ public class HazelcastStarter {
         }
 
         future = new HazelcastVersionClassloaderFuture(version, enterprise, configClassLoader);
-        HazelcastVersionClassloaderFuture found = loadedVersions.putIfAbsent(versionSpec, future);
+        HazelcastVersionClassloaderFuture found = LOADED_VERSIONS.putIfAbsent(versionSpec, future);
 
         if (found != null) {
             versionClassLoader = found.get();
@@ -135,7 +143,7 @@ public class HazelcastStarter {
             try {
                 versionClassLoader = future.get();
             } catch (Throwable t) {
-                loadedVersions.remove(versionSpec, future);
+                LOADED_VERSIONS.remove(versionSpec, future);
                 throw rethrow(t);
             }
         }
