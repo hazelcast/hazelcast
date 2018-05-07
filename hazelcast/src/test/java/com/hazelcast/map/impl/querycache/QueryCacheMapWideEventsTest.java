@@ -56,6 +56,7 @@ public class QueryCacheMapWideEventsTest extends HazelcastTestSupport {
     private static final String QUERY_CACHE_NAME = "cacheName";
     private static final String PARTITION_COUNT = "1999";
     private static final int TEST_DURATION_SECONDS = 3;
+    private static final int TEN_MINUTES_TIMEOUT = 60000 * 10;
 
     private AtomicInteger eventLostCounter = new AtomicInteger();
     private TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
@@ -65,7 +66,7 @@ public class QueryCacheMapWideEventsTest extends HazelcastTestSupport {
         no_event_lost_during_migrations(1, 0);
     }
 
-    @Test
+    @Test(timeout = TEN_MINUTES_TIMEOUT)
     @Category(SlowTest.class)
     public void no_event_lost_during_migrations__with_many_parallel_nodes() {
         assertTrueEventually(new AssertTask() {
@@ -144,6 +145,7 @@ public class QueryCacheMapWideEventsTest extends HazelcastTestSupport {
 
     private IMap newQueryCacheOnNewNode() {
         HazelcastInstance node = factory.newHazelcastInstance(newConfig());
+        waitClusterForSafeState(node);
         IMap map = node.getMap(MAP_NAME);
         QueryCache queryCache = map.getQueryCache(QUERY_CACHE_NAME);
         addEventLostListenerToQueryCache(queryCache);
