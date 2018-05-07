@@ -33,6 +33,7 @@ import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
+import java.util.BitSet;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReferenceArray;
@@ -136,7 +137,15 @@ public final class PartitionIteratingOperation extends Operation implements Iden
             }
         };
 
-        getOperationService().execute(f, partitions);
+        getOperationService().executeOnPartitions(f, toPartitionBitSet());
+    }
+
+    private BitSet toPartitionBitSet() {
+        BitSet bitSet = new BitSet(getNodeEngine().getPartitionService().getPartitionCount());
+        for (int partition : partitions) {
+            bitSet.set(partition);
+        }
+        return bitSet;
     }
 
     private void executePartitionAwareOperations(PartitionAwareOperationFactory givenFactory) {
@@ -167,7 +176,7 @@ public final class PartitionIteratingOperation extends Operation implements Iden
             }
         };
 
-        getOperationService().execute(f, partitions);
+        getOperationService().executeOnPartitions(f, toPartitionBitSet());
     }
 
     private InternalOperationService getOperationService() {

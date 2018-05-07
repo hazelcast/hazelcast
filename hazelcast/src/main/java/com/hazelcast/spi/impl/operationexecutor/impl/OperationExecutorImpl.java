@@ -41,6 +41,7 @@ import com.hazelcast.spi.properties.HazelcastProperty;
 import com.hazelcast.util.concurrent.IdleStrategy;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import java.util.BitSet;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -353,7 +354,7 @@ public final class OperationExecutorImpl implements OperationExecutor, MetricsPr
     }
 
     @Override
-    public void execute(PartitionTaskFactory taskFactory, int[] partitions) {
+    public void executeOnPartitions(PartitionTaskFactory taskFactory, BitSet partitions) {
         checkNotNull(taskFactory, "taskFactory can't be null");
         checkNotNull(partitions, "partitions can't be null");
 

@@ -41,7 +41,7 @@ import com.hazelcast.util.scheduler.ScheduledEntry;
 import com.hazelcast.util.scheduler.ScheduledEntryProcessor;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.BitSet;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
@@ -436,20 +436,18 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
                     || !partitionService.isMigrationAllowed()) {
                 return;
             }
-            nodeEngine.getOperationService().execute(new PartitionAntiEntropyTaskFactory(), getLocalPartitions());
+            nodeEngine.getOperationService().executeOnPartitions(new PartitionAntiEntropyTaskFactory(), getLocalPartitions());
         }
 
-        private int[] getLocalPartitions() {
-            InternalPartition[] partitions = partitionStateManager.getPartitions();
-            int[] partitionIDs = new int[partitions.length];
-            int ix = 0;
+        private BitSet getLocalPartitions() {
+            BitSet localPartitions = new BitSet(partitionService.getPartitionCount());
 
-            for (InternalPartition partition : partitions) {
+            for (InternalPartition partition : partitionService.getInternalPartitions()) {
                 if (partition.isLocal()) {
-                    partitionIDs[ix++] = partition.getPartitionId();
+                    localPartitions.set(partition.getPartitionId());
                 }
             }
-            return Arrays.copyOfRange(partitionIDs, 0, ix);
+            return localPartitions;
         }
     }
 
