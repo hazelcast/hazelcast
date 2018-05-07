@@ -35,7 +35,6 @@ import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.core.MigrationListener;
-import com.hazelcast.crdt.CRDTReplicationMigrationService;
 import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.internal.ascii.TextCommandServiceImpl;
 import com.hazelcast.internal.cluster.impl.ClusterJoinManager;
@@ -430,7 +429,6 @@ public class Node {
         }
 
         if (!terminate) {
-            replicateCRDTs();
             int maxWaitSeconds = properties.getSeconds(GRACEFUL_SHUTDOWN_MAX_WAIT);
             boolean success = callGracefulShutdownAwareServices(maxWaitSeconds);
             if (!success) {
@@ -467,16 +465,6 @@ public class Node {
                 shuttingDown.compareAndSet(true, false);
             }
         }
-    }
-
-    /**
-     * Synchronously replicate the unreplicated CRDT states to a data member
-     * in the cluster.
-     */
-    private void replicateCRDTs() {
-        final CRDTReplicationMigrationService replicationMigrationService
-                = nodeEngine.getService(CRDTReplicationMigrationService.SERVICE_NAME);
-        replicationMigrationService.syncReplicateDirtyCRDTs();
     }
 
     private boolean callGracefulShutdownAwareServices(final int maxWaitSeconds) {

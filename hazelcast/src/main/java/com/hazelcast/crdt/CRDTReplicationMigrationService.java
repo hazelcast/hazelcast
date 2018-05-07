@@ -20,6 +20,8 @@ import com.hazelcast.cluster.impl.VectorClock;
 import com.hazelcast.config.CRDTReplicationConfig;
 import com.hazelcast.core.Member;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.GracefulShutdownAwareService;
+import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.MemberAttributeServiceEvent;
 import com.hazelcast.spi.MembershipAwareService;
@@ -55,7 +57,8 @@ import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_S
  * @see CRDTReplicationConfig#getReplicationPeriodMillis()
  * @see CRDTReplicationConfig#getMaxConcurrentReplicationTargets()
  */
-public class CRDTReplicationMigrationService implements ManagedService, MembershipAwareService {
+public class CRDTReplicationMigrationService implements ManagedService, MembershipAwareService,
+        GracefulShutdownAwareService {
     /** The name of this service */
     public static final String SERVICE_NAME = "hz:impl:CRDTReplicationMigrationService";
     /** The executor for the CRDT replication and migration tasks */
@@ -119,10 +122,12 @@ public class CRDTReplicationMigrationService implements ManagedService, Membersh
      *
      * @see CRDTReplicationTask
      */
-    public void syncReplicateDirtyCRDTs() {
+    @Override
+    public boolean onShutdown(long timeout, TimeUnit unit) {
         if (nodeEngine.getLocalMember().isLiteMember()) {
-            return;
+            return true;
         }
+        long timeoutNanos = unit.toNanos(timeout);
         for (CRDTReplicationAwareService service : getReplicationServices()) {
             service.prepareToSafeShutdown();
             final CRDTReplicationContainer replicationOperation = service.prepareReplicationOperation(
@@ -131,10 +136,16 @@ public class CRDTReplicationMigrationService implements ManagedService, Membersh
                 logger.fine("Skipping replication since all CRDTs are replicated");
                 continue;
             }
-            if (!tryProcessOnOtherMembers(replicationOperation.getOperation(), service.getName())) {
+            long start = System.nanoTime();
+            if (!tryProcessOnOtherMembers(replicationOperation.getOperation(), service.getName(), timeoutNanos)) {
                 logger.warning("Failed replication of CRDTs for " + service.getName() + ". CRDT state may be lost.");
             }
+            timeoutNanos -= (System.nanoTime() - start);
+            if (timeoutNanos < 0) {
+                return false;
+            }
         }
+        return true;
     }
 
     /**
@@ -148,7 +159,7 @@ public class CRDTReplicationMigrationService implements ManagedService, Membersh
      * @return {@code true} if at least one member successfully processed the
      * operation, {@code false} otherwise.
      */
-    private boolean tryProcessOnOtherMembers(Operation operation, String serviceName) {
+    private boolean tryProcessOnOtherMembers(Operation operation, String serviceName, long timeoutNanos) {
         final OperationService operationService = nodeEngine.getOperationService();
         final Collection<Member> targets = nodeEngine.getClusterService().getMembers(DATA_MEMBER_SELECTOR);
         final Member localMember = nodeEngine.getLocalMember();
@@ -157,14 +168,22 @@ public class CRDTReplicationMigrationService implements ManagedService, Membersh
             if (target.equals(localMember)) {
                 continue;
             }
+            long start = System.nanoTime();
             try {
                 logger.fine("Replicating " + serviceName + " to " + target);
-                operationService.createInvocationBuilder(null, operation, target.getAddress())
+                InternalCompletableFuture<Object> future =
+                        operationService.createInvocationBuilder(null, operation, target.getAddress())
                                 .setTryCount(1)
-                                .invoke().join();
+                                .invoke();
+                future.get(timeoutNanos, TimeUnit.NANOSECONDS);
                 return true;
             } catch (Exception e) {
                 logger.fine("Failed replication of " + serviceName + " for target " + target, e);
+            }
+
+            timeoutNanos -= (System.nanoTime() - start);
+            if (timeoutNanos < 0) {
+                break;
             }
         }
         return false;
