@@ -73,7 +73,7 @@ public class MockConnection implements Connection {
         Packet packet = (Packet) frame;
         Packet newPacket = readFromPacket(packet);
         try {
-            remoteNodeEngine.getPacketDispatcher().handle(newPacket);
+            remoteNodeEngine.getPacketDispatcher().accept(newPacket);
         } catch (Exception e) {
             throw rethrow(e);
         }
@@ -125,7 +125,6 @@ public class MockConnection implements Connection {
             ConnectionManager connectionManager = remoteNodeEngine.getNode().connectionManager;
             connectionManager.onConnectionClose(this);
         }
-
     }
 
     @Override

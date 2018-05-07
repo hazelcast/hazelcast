@@ -586,7 +586,7 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
      * @see #sendEvent(Address, EventEnvelope, int)
      */
     @Override
-    public void handle(Packet packet) {
+    public void accept(Packet packet) {
         try {
             eventExecutor.execute(new RemoteEventProcessor(this, packet));
         } catch (RejectedExecutionException e) {

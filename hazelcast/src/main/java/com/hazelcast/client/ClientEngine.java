@@ -16,7 +16,7 @@
 
 package com.hazelcast.client;
 
-import com.hazelcast.client.impl.protocol.util.ClientMessageHandler;
+import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.ClientType;
 import com.hazelcast.instance.MemberImpl;
@@ -29,6 +29,7 @@ import com.hazelcast.spi.ProxyService;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.util.function.Consumer;
 
 import java.util.Map;
 
@@ -38,7 +39,7 @@ import java.util.Map;
  * todo: what is the purpose of the client engine.
  */
 @PrivateApi
-public interface ClientEngine extends ClientMessageHandler {
+public interface ClientEngine extends Consumer<ClientMessage> {
 
     int getClientEndpointCount();
 
@@ -76,12 +77,11 @@ public interface ClientEngine extends ClientMessageHandler {
      *
      * The returned map can be used to get information about connected clients to the cluster.
      *
-     * @return Map<ClientType,Integer> .
+     * @return Map<ClientType , Integer> .
      */
     Map<ClientType, Integer> getConnectedClientStats();
 
     /**
-     *
      * The statistics is a String that is composed of key=value pairs separated by ',' . The following characters are escaped in
      * IMap and ICache names by the escape character '\' : '=' '.' ',' '\'
      *
@@ -143,7 +143,6 @@ public interface ClientEngine extends ClientMessageHandler {
      *
      * Not: Please observe that the name for the ICache appears to be the hazelcast instance name "hz" followed by "/" and
      * followed by the cache name provided which is StatTestCacheName.
-     *
      *
      * @return Map of [client UUID String, client statistics String]
      */

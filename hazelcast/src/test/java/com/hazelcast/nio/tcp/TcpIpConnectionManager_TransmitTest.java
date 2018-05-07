@@ -19,10 +19,10 @@ package com.hazelcast.nio.tcp;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.spi.impl.PacketHandler;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.function.Consumer;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -50,9 +50,9 @@ public class TcpIpConnectionManager_TransmitTest extends TcpIpConnection_Abstrac
         super.setup();
         connManagerA.start();
 
-        ioServiceB.packetHandler = new PacketHandler() {
+        ioServiceB.packetConsumer = new Consumer<Packet>() {
             @Override
-            public void handle(Packet packet) throws Exception {
+            public void accept(Packet packet) {
                 packetsB.add(packet);
             }
         };
