@@ -951,7 +951,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         assertTrue(mapStoreConfig.isWriteCoalescing());
     }
 
-    private MapStoreConfig  getWriteCoalescingMapStoreConfig(boolean writeCoalescing, boolean useDefault) {
+    private MapStoreConfig getWriteCoalescingMapStoreConfig(boolean writeCoalescing, boolean useDefault) {
         String xml = getWriteCoalescingConfigXml(writeCoalescing, useDefault);
         Config config = buildConfig(xml);
         return config.getMapConfig("mymap").getMapStoreConfig();
