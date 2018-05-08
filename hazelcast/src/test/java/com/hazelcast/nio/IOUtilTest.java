@@ -45,7 +45,29 @@ import java.nio.ByteBuffer;
 
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.createObjectDataInputStream;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.createObjectDataOutputStream;
-import static com.hazelcast.nio.IOUtil.*;
+import static com.hazelcast.nio.IOUtil.closeResource;
+import static com.hazelcast.nio.IOUtil.compress;
+import static com.hazelcast.nio.IOUtil.copy;
+import static com.hazelcast.nio.IOUtil.copyFile;
+import static com.hazelcast.nio.IOUtil.decompress;
+import static com.hazelcast.nio.IOUtil.delete;
+import static com.hazelcast.nio.IOUtil.deleteQuietly;
+import static com.hazelcast.nio.IOUtil.getFileFromResources;
+import static com.hazelcast.nio.IOUtil.newInputStream;
+import static com.hazelcast.nio.IOUtil.newOutputStream;
+import static com.hazelcast.nio.IOUtil.readByteArray;
+import static com.hazelcast.nio.IOUtil.readFully;
+import static com.hazelcast.nio.IOUtil.readFullyOrNothing;
+import static com.hazelcast.nio.IOUtil.readObject;
+import static com.hazelcast.nio.IOUtil.toFileName;
+import static com.hazelcast.nio.IOUtil.writeByteArray;
+import static com.hazelcast.nio.IOUtil.writeObject;
+import static com.hazelcast.nio.IOUtil.rename;
+import static com.hazelcast.nio.IOUtil.compactOrClear;
+import static com.hazelcast.nio.IOUtil.copyToHeapBuffer;
+import static com.hazelcast.nio.IOUtil.readAttributeValue;
+import static com.hazelcast.nio.IOUtil.close;
+import static com.hazelcast.nio.IOUtil.getPath;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -53,7 +75,11 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
