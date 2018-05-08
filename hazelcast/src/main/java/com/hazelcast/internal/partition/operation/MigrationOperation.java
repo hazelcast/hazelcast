@@ -16,8 +16,10 @@
 
 package com.hazelcast.internal.partition.operation;
 
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.internal.partition.ReplicaFragmentMigrationState;
+import com.hazelcast.internal.partition.impl.InternalMigrationListener.MigrationParticipant;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
 import com.hazelcast.internal.partition.impl.PartitionReplicaManager;
@@ -26,15 +28,21 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.MigrationAwareService;
+import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationAccessor;
+import com.hazelcast.spi.OperationResponseHandler;
+import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.ServiceNamespace;
 import com.hazelcast.spi.impl.operationservice.TargetAware;
+import com.hazelcast.spi.partition.MigrationEndpoint;
 
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.logging.Level;
 
 /**
  * Migration operation used by Hazelcast version 3.9
@@ -43,13 +51,19 @@ import java.util.Map.Entry;
  * Sent by the partition owner to the migration destination to start the migration process on the destination.
  * Contains the operations which will be executed on the destination node to migrate the data and the replica versions to be set.
  */
-public class MigrationOperation extends BaseMigrationDestinationOperation implements TargetAware {
+public class MigrationOperation extends BaseMigrationOperation implements TargetAware {
+
+    private static final OperationResponseHandler ERROR_RESPONSE_HANDLER = new OperationResponseHandler() {
+        @Override
+        public void sendResponse(Operation op, Object obj) {
+            throw new HazelcastException("Migration operations can not send response!");
+        }
+    };
 
     private ReplicaFragmentMigrationState fragmentMigrationState;
-
     private boolean firstFragment;
-
     private boolean lastFragment;
+    private Throwable failureReason;
 
     public MigrationOperation() {
     }
@@ -60,6 +74,57 @@ public class MigrationOperation extends BaseMigrationDestinationOperation implem
         this.fragmentMigrationState = fragmentMigrationState;
         this.firstFragment = firstFragment;
         this.lastFragment = lastFragment;
+        setReplicaIndex(migrationInfo.getDestinationNewReplicaIndex());
+    }
+
+    @Override
+    protected PartitionMigrationEvent getMigrationEvent() {
+        return new PartitionMigrationEvent(MigrationEndpoint.DESTINATION,
+                migrationInfo.getPartitionId(), migrationInfo.getDestinationCurrentReplicaIndex(),
+                migrationInfo.getDestinationNewReplicaIndex());
+    }
+
+    @Override
+    protected MigrationParticipant getMigrationParticipantType() {
+        return MigrationParticipant.DESTINATION;
+    }
+
+    protected void prepareOperation(Operation op) {
+        op.setNodeEngine(getNodeEngine())
+          .setPartitionId(getPartitionId())
+          .setReplicaIndex(getReplicaIndex());
+        op.setOperationResponseHandler(ERROR_RESPONSE_HANDLER);
+        OperationAccessor.setCallerAddress(op, migrationInfo.getSource());
+    }
+
+    private void verifyMasterOnMigrationDestination() {
+        NodeEngine nodeEngine = getNodeEngine();
+        Address masterAddress = nodeEngine.getMasterAddress();
+        if (!masterAddress.equals(migrationInfo.getMaster())) {
+            throw new IllegalStateException("Migration initiator is not master node! => " + toString());
+        }
+    }
+
+    private void runMigrationOperation(Operation op) throws Exception {
+        prepareOperation(op);
+        op.beforeRun();
+        op.run();
+        op.afterRun();
+    }
+
+    private void logMigrationCancelled() {
+        getLogger().warning("Migration is cancelled -> " + migrationInfo);
+    }
+
+    private void logMigrationFailure(Throwable e) {
+        Level level = Level.WARNING;
+        if (e instanceof IllegalStateException) {
+            level = Level.FINEST;
+        }
+        ILogger logger = getLogger();
+        if (logger.isLoggable(level)) {
+            logger.log(level, e.getMessage(), e);
+        }
     }
 
     /**
