@@ -58,7 +58,7 @@ public class HazelcastFactoryTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 touchRandomNode(client1);
                 touchRandomNode(client2);
 
@@ -86,7 +86,7 @@ public class HazelcastFactoryTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 touchRandomNode(client1);
                 touchRandomNode(client2);
 

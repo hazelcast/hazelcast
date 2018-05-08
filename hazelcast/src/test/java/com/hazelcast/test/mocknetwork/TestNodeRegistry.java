@@ -53,16 +53,15 @@ public final class TestNodeRegistry {
     }
 
     public NodeContext createNodeContext(final Address address, Set<Address> initiallyBlockedAddresses) {
-        final Node node;
-        if ((node = nodes.get(address)) != null) {
+        final Node node = nodes.get(address);
+        if (node != null) {
             assertFalse(address + " is already registered", node.isRunning());
             assertTrueEventually(new AssertTask() {
                 @Override
-                public void run() throws Exception {
+                public void run() {
                     assertEquals(address + " should be SHUT_DOWN", NodeState.SHUT_DOWN, node.getState());
                 }
             });
-
             nodes.remove(address, node);
         }
         return new MockNodeContext(this, address, initiallyBlockedAddresses);
@@ -89,8 +88,8 @@ public final class TestNodeRegistry {
         return node != null && node.isRunning() ? node.hazelcastInstance : null;
     }
 
-    public boolean removeInstance(Address address) {
-        return nodes.remove(address) != null;
+    public void removeInstance(Address address) {
+        nodes.remove(address);
     }
 
     public Collection<HazelcastInstance> getAllHazelcastInstances() {
