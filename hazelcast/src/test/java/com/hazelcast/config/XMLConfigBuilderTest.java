@@ -1504,7 +1504,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
                 + "    </quorum>\n"
                 + HAZELCAST_END_TAG;
 
-        Config config = buildConfig(xml);
+        buildConfig(xml);
     }
 
     @Test(expected = ConfigurationException.class)
@@ -1517,7 +1517,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
                 + "    </quorum>\n"
                 + HAZELCAST_END_TAG;
 
-        Config config = buildConfig(xml);
+        buildConfig(xml);
     }
 
     @Test(expected = InvalidConfigurationException.class)
@@ -1530,7 +1530,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
                 + "    </quorum>\n"
                 + HAZELCAST_END_TAG;
 
-        Config config = buildConfig(xml);
+        buildConfig(xml);
     }
 
     @Test
@@ -1619,15 +1619,67 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         String xml = HAZELCAST_START_TAG
                 + "    <cache name=\"foobar\">\n"
                 + "        <quorum-ref>customQuorumRule</quorum-ref>"
+                + "        <key-type class-name=\"java.lang.Object\"/>"
+                + "        <value-type class-name=\"java.lang.Object\"/>"
+                + "        <statistics-enabled>false</statistics-enabled>"
+                + "        <management-enabled>false</management-enabled>"
+                + "        <read-through>true</read-through>"
+                + "        <write-through>true</write-through>"
+                + "        <cache-loader-factory class-name=\"com.example.cache.MyCacheLoaderFactory\"/>"
+                + "        <cache-writer-factory class-name=\"com.example.cache.MyCacheWriterFactory\"/>"
+                + "        <expiry-policy-factory class-name=\"com.example.cache.MyExpirePolicyFactory\"/>"
+                + "        <in-memory-format>BINARY</in-memory-format>"
+                + "        <backup-count>1</backup-count>"
+                + "        <async-backup-count>0</async-backup-count>"
+                + "        <eviction size=\"1000\" max-size-policy=\"ENTRY_COUNT\" eviction-policy=\"LFU\"/>"
+                + "        <merge-policy>com.hazelcast.cache.merge.LatestAccessCacheMergePolicy</merge-policy>"
+                + "        <disable-per-entry-invalidation-events>true</disable-per-entry-invalidation-events>"
+                + "        <hot-restart enabled=\"false\">\n"
+                + "            <fsync>false</fsync>\n"
+                + "          </hot-restart>"
+                + "        <partition-lost-listeners>\n"
+                + "            <partition-lost-listener>com.your-package.YourPartitionLostListener</partition-lost-listener>\n"
+                + "          </partition-lost-listeners>"
+                + "        <cache-entry-listeners>\n"
+                + "            <cache-entry-listener old-value-required=\"false\" synchronous=\"false\">\n"
+                + "                <cache-entry-listener-factory\n"
+                + "                        class-name=\"com.example.cache.MyEntryListenerFactory\"/>\n"
+                + "                <cache-entry-event-filter-factory\n"
+                + "                        class-name=\"com.example.cache.MyEntryEventFilterFactory\"/>\n"
+                + "            </cache-entry-listener>\n"
+                + "        </cache-entry-listeners>"
                 + "    </cache>"
                 + HAZELCAST_END_TAG;
 
         Config config = buildConfig(xml);
         CacheSimpleConfig cacheConfig = config.getCacheConfig("foobar");
 
-        // TODO -> not full config checked
         assertFalse(config.getCacheConfigs().isEmpty());
         assertEquals("customQuorumRule", cacheConfig.getQuorumName());
+        assertEquals("java.lang.Object", cacheConfig.getKeyType());
+        assertEquals("java.lang.Object", cacheConfig.getValueType());
+        assertFalse(cacheConfig.isStatisticsEnabled());
+        assertFalse(cacheConfig.isManagementEnabled());
+        assertTrue(cacheConfig.isReadThrough());
+        assertTrue(cacheConfig.isWriteThrough());
+        assertEquals("com.example.cache.MyCacheLoaderFactory", cacheConfig.getCacheLoaderFactory());
+        assertEquals("com.example.cache.MyCacheWriterFactory", cacheConfig.getCacheWriterFactory());
+        assertEquals("com.example.cache.MyExpirePolicyFactory", cacheConfig.getExpiryPolicyFactoryConfig().getClassName());
+        assertEquals(InMemoryFormat.BINARY, cacheConfig.getInMemoryFormat());
+        assertEquals(1, cacheConfig.getBackupCount());
+        assertEquals(0, cacheConfig.getAsyncBackupCount());
+        assertEquals(1000, cacheConfig.getEvictionConfig().getSize());
+        assertEquals(EvictionConfig.MaxSizePolicy.ENTRY_COUNT, cacheConfig.getEvictionConfig().getMaximumSizePolicy());
+        assertEquals(EvictionPolicy.LFU, cacheConfig.getEvictionConfig().getEvictionPolicy());
+        assertEquals("com.hazelcast.cache.merge.LatestAccessCacheMergePolicy", cacheConfig.getMergePolicy());
+        assertTrue(cacheConfig.isDisablePerEntryInvalidationEvents());
+        assertFalse(cacheConfig.getHotRestartConfig().isEnabled());
+        assertFalse(cacheConfig.getHotRestartConfig().isFsync());
+        assertEquals(1, cacheConfig.getPartitionLostListenerConfigs().size());
+        assertEquals("com.your-package.YourPartitionLostListener", cacheConfig.getPartitionLostListenerConfigs().get(0).getClassName());
+        assertEquals(1, cacheConfig.getCacheEntryListeners().size());
+        assertEquals("com.example.cache.MyEntryListenerFactory", cacheConfig.getCacheEntryListeners().get(0).getCacheEntryListenerFactory());
+        assertEquals("com.example.cache.MyEntryEventFilterFactory", cacheConfig.getCacheEntryListeners().get(0).getCacheEntryEventFilterFactory());
     }
 
     @Test
@@ -1636,16 +1688,19 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
                 + "    <executor-service name=\"foobar\">\n"
                 + "        <pool-size>2</pool-size>\n"
                 + "        <quorum-ref>customQuorumRule</quorum-ref>"
+                + "        <statistics-enabled>true</statistics-enabled>"
+                + "        <queue-capacity>0</queue-capacity>"
                 + "    </executor-service>"
                 + HAZELCAST_END_TAG;
 
         Config config = buildConfig(xml);
         ExecutorConfig executorConfig = config.getExecutorConfig("foobar");
 
-        // TODO -> not full config checked
         assertFalse(config.getExecutorConfigs().isEmpty());
         assertEquals(2, executorConfig.getPoolSize());
         assertEquals("customQuorumRule", executorConfig.getQuorumName());
+        assertTrue(executorConfig.isStatisticsEnabled());
+        assertEquals(0, executorConfig.getQueueCapacity());
     }
 
     @Test
@@ -1755,7 +1810,12 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
                 + "  <multimap name=\"myMultiMap\">"
                 + "        <backup-count>2</backup-count>"
                 + "        <async-backup-count>3</async-backup-count>"
+                + "        <binary>false</binary>"
+                + "        <value-collection-type>SET</value-collection-type>"
                 + "        <quorum-ref>customQuorumRule</quorum-ref>"
+                + "        <entry-listeners>\n"
+                + "            <entry-listener include-value=\"true\" local=\"true\">com.hazelcast.examples.EntryListener</entry-listener>\n"
+                + "          </entry-listeners>"
                 + "        <merge-policy batch-size=\"23\">CustomMergePolicy</merge-policy>"
                 + "  </multimap>"
                 + HAZELCAST_END_TAG;
@@ -1763,10 +1823,15 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         Config config = buildConfig(xml);
         assertFalse(config.getMultiMapConfigs().isEmpty());
 
-        // TODO -> not full config checked
         MultiMapConfig multiMapConfig = config.getMultiMapConfig("myMultiMap");
         assertEquals(2, multiMapConfig.getBackupCount());
         assertEquals(3, multiMapConfig.getAsyncBackupCount());
+        assertFalse(multiMapConfig.isBinary());
+        assertEquals(MultiMapConfig.ValueCollectionType.SET, multiMapConfig.getValueCollectionType());
+        assertEquals(1, multiMapConfig.getEntryListenerConfigs().size());
+        assertEquals("com.hazelcast.examples.EntryListener", multiMapConfig.getEntryListenerConfigs().get(0).getClassName());
+        assertTrue(multiMapConfig.getEntryListenerConfigs().get(0).isIncludeValue());
+        assertTrue(multiMapConfig.getEntryListenerConfigs().get(0).isLocal());
 
         MergePolicyConfig mergePolicyConfig = multiMapConfig.getMergePolicyConfig();
         assertEquals("CustomMergePolicy", mergePolicyConfig.getPolicy());
@@ -1805,15 +1870,31 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         String xml = HAZELCAST_START_TAG
                 + "    <list name=\"foobar\">\n"
                 + "        <quorum-ref>customQuorumRule</quorum-ref>"
+                + "        <statistics-enabled>false</statistics-enabled>"
+                + "        <max-size>42</max-size>"
+                + "        <backup-count>2</backup-count>"
+                + "        <async-backup-count>1</async-backup-count>"
+                + "        <merge-policy batch-size=\"100\">SplitBrainMergePolicy</merge-policy>"
+                + "        <item-listeners>\n"
+                + "            <item-listener include-value=\"true\">com.hazelcast.examples.ItemListener</item-listener>\n"
+                + "        </item-listeners>"
                 + "    </list>\n"
                 + HAZELCAST_END_TAG;
 
         Config config = buildConfig(xml);
         ListConfig listConfig = config.getListConfig("foobar");
 
-        // TODO -> not full config checked
         assertFalse(config.getListConfigs().isEmpty());
         assertEquals("customQuorumRule", listConfig.getQuorumName());
+        assertEquals(42, listConfig.getMaxSize());
+        assertEquals(2, listConfig.getBackupCount());
+        assertEquals(1, listConfig.getAsyncBackupCount());
+        assertEquals(1, listConfig.getItemListenerConfigs().size());
+        assertEquals("com.hazelcast.examples.ItemListener", listConfig.getItemListenerConfigs().get(0).getClassName());
+
+        MergePolicyConfig mergePolicyConfig = listConfig.getMergePolicyConfig();
+        assertEquals(100, mergePolicyConfig.getBatchSize());
+        assertEquals("SplitBrainMergePolicy", mergePolicyConfig.getPolicy());
     }
 
     @Test
@@ -1821,15 +1902,31 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         String xml = HAZELCAST_START_TAG
                 + "    <set name=\"foobar\">\n"
                 + "        <quorum-ref>customQuorumRule</quorum-ref>"
+                + "        <backup-count>2</backup-count>"
+                + "        <async-backup-count>1</async-backup-count>"
+                + "        <max-size>42</max-size>"
+                + "        <merge-policy batch-size=\"42\">SplitBrainMergePolicy</merge-policy>"
+                + "        <item-listeners>\n"
+                + "            <item-listener include-value=\"true\">com.hazelcast.examples.ItemListener</item-listener>\n"
+                + "          </item-listeners>"
                 + "    </set>\n"
                 + HAZELCAST_END_TAG;
 
         Config config = buildConfig(xml);
         SetConfig setConfig = config.getSetConfig("foobar");
 
-        // TODO -> not full config checked
         assertFalse(config.getSetConfigs().isEmpty());
         assertEquals("customQuorumRule", setConfig.getQuorumName());
+        assertEquals(2, setConfig.getBackupCount());
+        assertEquals(1, setConfig.getAsyncBackupCount());
+        assertEquals(42, setConfig.getMaxSize());
+        assertEquals(1, setConfig.getItemListenerConfigs().size());
+        assertTrue(setConfig.getItemListenerConfigs().get(0).isIncludeValue());
+        assertEquals("com.hazelcast.examples.ItemListener", setConfig.getItemListenerConfigs().get(0).getClassName());
+
+        MergePolicyConfig mergePolicyConfig = setConfig.getMergePolicyConfig();
+        assertEquals(42, mergePolicyConfig.getBatchSize());
+        assertEquals("SplitBrainMergePolicy", mergePolicyConfig.getPolicy());
     }
 
     @Test
@@ -1837,15 +1934,127 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         String xml = HAZELCAST_START_TAG
                 + "    <map name=\"foobar\">\n"
                 + "        <quorum-ref>customQuorumRule</quorum-ref>"
+                + "        <in-memory-format>BINARY</in-memory-format>"
+                + "        <statistics-enabled>true</statistics-enabled>"
+                + "        <optimize-queries>false</optimize-queries>"
+                + "        <cache-deserialized-values>INDEX-ONLY</cache-deserialized-values>"
+                + "        <backup-count>2</backup-count>"
+                + "        <async-backup-count>1</async-backup-count>"
+                + "        <time-to-live-seconds>42</time-to-live-seconds>"
+                + "        <max-idle-seconds>42</max-idle-seconds>"
+                + "        <eviction-policy>RANDOM</eviction-policy>"
+                + "        <max-size policy=\"PER_NODE\">42</max-size>"
+                + "        <eviction-percentage>25</eviction-percentage>"
+                + "        <min-eviction-check-millis>256</min-eviction-check-millis>"
+                + "        <read-backup-data>true</read-backup-data>"
+                + "        <hot-restart enabled=\"false\">\n"
+                + "            <fsync>false</fsync>\n"
+                + "          </hot-restart>"
+                + "        <map-store enabled=\"true\" initial-mode=\"LAZY\">\n"
+                + "            <class-name>com.hazelcast.examples.DummyStore</class-name>\n"
+                + "            <write-delay-seconds>42</write-delay-seconds>\n"
+                + "            <write-batch-size>42</write-batch-size>\n"
+                + "            <write-coalescing>true</write-coalescing>\n"
+                + "            <properties>\n"
+                + "                <property name=\"jdbc_url\">my.jdbc.com</property>\n"
+                + "            </properties>\n"
+                + "          </map-store>"
+                + "        <near-cache>\n"
+                + "            <max-size>5000</max-size>\n"
+                + "            <time-to-live-seconds>42</time-to-live-seconds>\n"
+                + "            <max-idle-seconds>42</max-idle-seconds>\n"
+                + "            <eviction-policy>LRU</eviction-policy>\n"
+                + "            <invalidate-on-change>true</invalidate-on-change>\n"
+                + "            <in-memory-format>BINARY</in-memory-format>\n"
+                + "            <cache-local-entries>false</cache-local-entries>\n"
+                + "            <eviction size=\"1000\" max-size-policy=\"ENTRY_COUNT\" eviction-policy=\"LFU\"/>\n"
+                + "          </near-cache>"
+                + "        <wan-replication-ref name=\"my-wan-cluster-batch\">\n"
+                + "            <merge-policy>com.hazelcast.map.merge.PassThroughMergePolicy</merge-policy>\n"
+                + "            <filters>\n"
+                + "                <filter-impl>com.example.SampleFilter</filter-impl>\n"
+                + "            </filters>\n"
+                + "            <republishing-enabled>false</republishing-enabled>\n"
+                + "          </wan-replication-ref>"
+                + "        <indexes>\n"
+                + "            <index ordered=\"true\">age</index>\n"
+                + "          </indexes>"
+                + "        <attributes>\n"
+                + "            <attribute extractor=\"com.bank.CurrencyExtractor\">currency</attribute>\n"
+                + "           </attributes>"
+                + "        <partition-lost-listeners>\n"
+                + "            <partition-lost-listener>com.your-package.YourPartitionLostListener</partition-lost-listener>\n"
+                + "          </partition-lost-listeners>"
+                + "        <entry-listeners>\n"
+                + "            <entry-listener include-value=\"false\" local=\"false\">com.your-package.MyEntryListener</entry-listener>\n"
+                + "          </entry-listeners>"
                 + "    </map>\n"
                 + HAZELCAST_END_TAG;
 
         Config config = buildConfig(xml);
         MapConfig mapConfig = config.getMapConfig("foobar");
 
-        // TODO -> not full config checked
         assertFalse(config.getMapConfigs().isEmpty());
         assertEquals("customQuorumRule", mapConfig.getQuorumName());
+        assertEquals(InMemoryFormat.BINARY, mapConfig.getInMemoryFormat());
+        assertTrue(mapConfig.isStatisticsEnabled());
+        assertFalse(mapConfig.isOptimizeQueries());
+        assertEquals(CacheDeserializedValues.INDEX_ONLY, mapConfig.getCacheDeserializedValues());
+        assertEquals(2, mapConfig.getBackupCount());
+        assertEquals(1, mapConfig.getAsyncBackupCount());
+        assertEquals(1, mapConfig.getAsyncBackupCount());
+        assertEquals(42, mapConfig.getTimeToLiveSeconds());
+        assertEquals(42, mapConfig.getMaxIdleSeconds());
+        assertEquals(EvictionPolicy.RANDOM, mapConfig.getEvictionPolicy());
+        assertEquals(MaxSizeConfig.MaxSizePolicy.PER_NODE, mapConfig.getMaxSizeConfig().getMaxSizePolicy());
+        assertEquals(42, mapConfig.getMaxSizeConfig().getSize());
+        assertEquals(25, mapConfig.getEvictionPercentage());
+        assertEquals(256, mapConfig.getMinEvictionCheckMillis());
+        assertTrue(mapConfig.isReadBackupData());
+        assertEquals(1, mapConfig.getMapIndexConfigs().size());
+        assertEquals("age", mapConfig.getMapIndexConfigs().get(0).getAttribute());
+        assertTrue(mapConfig.getMapIndexConfigs().get(0).isOrdered());
+        assertEquals(1, mapConfig.getMapAttributeConfigs().size());
+        assertEquals("com.bank.CurrencyExtractor", mapConfig.getMapAttributeConfigs().get(0).getExtractor());
+        assertEquals("currency", mapConfig.getMapAttributeConfigs().get(0).getName());
+        assertEquals(1, mapConfig.getPartitionLostListenerConfigs().size());
+        assertEquals("com.your-package.YourPartitionLostListener", mapConfig.getPartitionLostListenerConfigs().get(0).getClassName());
+        assertEquals(1, mapConfig.getEntryListenerConfigs().size());
+        assertFalse(mapConfig.getEntryListenerConfigs().get(0).isIncludeValue());
+        assertFalse(mapConfig.getEntryListenerConfigs().get(0).isLocal());
+        assertEquals("com.your-package.MyEntryListener", mapConfig.getEntryListenerConfigs().get(0).getClassName());
+        assertFalse(mapConfig.getHotRestartConfig().isEnabled());
+        assertFalse(mapConfig.getHotRestartConfig().isFsync());
+
+        MapStoreConfig mapStoreConfig = mapConfig.getMapStoreConfig();
+        assertNotNull(mapStoreConfig);
+        assertTrue(mapStoreConfig.isEnabled());
+        assertEquals(MapStoreConfig.InitialLoadMode.LAZY, mapStoreConfig.getInitialLoadMode());
+        assertEquals(42, mapStoreConfig.getWriteDelaySeconds());
+        assertEquals(42, mapStoreConfig.getWriteBatchSize());
+        assertTrue(mapStoreConfig.isWriteCoalescing());
+        assertEquals("com.hazelcast.examples.DummyStore", mapStoreConfig.getClassName());
+        assertEquals(1, mapStoreConfig.getProperties().size());
+        assertEquals("my.jdbc.com", mapStoreConfig.getProperties().getProperty("jdbc_url"));
+
+        NearCacheConfig nearCacheConfig = mapConfig.getNearCacheConfig();
+        assertNotNull(nearCacheConfig);
+        assertEquals(5000, nearCacheConfig.getMaxSize());
+        assertEquals(42, nearCacheConfig.getMaxIdleSeconds());
+        assertEquals(42, nearCacheConfig.getTimeToLiveSeconds());
+        assertEquals(InMemoryFormat.BINARY, nearCacheConfig.getInMemoryFormat());
+        assertFalse(nearCacheConfig.isCacheLocalEntries());
+        assertTrue(nearCacheConfig.isInvalidateOnChange());
+        assertEquals(1000, nearCacheConfig.getEvictionConfig().getSize());
+        assertEquals(EvictionPolicy.LFU, nearCacheConfig.getEvictionConfig().getEvictionPolicy());
+        assertEquals(EvictionConfig.MaxSizePolicy.ENTRY_COUNT, nearCacheConfig.getEvictionConfig().getMaximumSizePolicy());
+
+        WanReplicationRef wanReplicationRef = mapConfig.getWanReplicationRef();
+        assertNotNull(wanReplicationRef);
+        assertFalse(wanReplicationRef.isRepublishingEnabled());
+        assertEquals("com.hazelcast.map.merge.PassThroughMergePolicy", wanReplicationRef.getMergePolicy());
+        assertEquals(1, wanReplicationRef.getFilters().size());
+        assertEquals("com.example.SampleFilter".toLowerCase(), wanReplicationRef.getFilters().get(0).toLowerCase());
     }
 
     @Test
@@ -2228,6 +2437,12 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         buildConfig(xml);
     }
 
+    @Test(expected = InvalidConfigurationException.class)
+    public void testHazelcastInstanceNameEmpty() {
+        String xml = HAZELCAST_START_TAG + "<instance-name></instance-name>" + HAZELCAST_END_TAG;
+        buildConfig(xml);
+    }
+
     @Test
     public void testMapEvictionPolicyClassName() {
         String mapEvictionPolicyClassName = "com.hazelcast.map.eviction.LRUEvictionPolicy";
@@ -2349,6 +2564,50 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         Properties properties = memberAddressProviderConfig.getProperties();
         assertEquals(1, properties.size());
         assertEquals("propValue1", properties.get("propName1"));
+    }
+
+    @Test
+    public void testFailureDetector_withProperties() {
+        String xml = HAZELCAST_START_TAG
+                + "<network>"
+                + "  <failure-detector>\n"
+                + "            <icmp enabled=\"true\">\n"
+                + "                <timeout-milliseconds>42</timeout-milliseconds>\n"
+                + "                <fail-fast-on-startup>true</fail-fast-on-startup>\n"
+                + "                <interval-milliseconds>4200</interval-milliseconds>\n"
+                + "                <max-attempts>42</max-attempts>\n"
+                + "                <parallel-mode>true</parallel-mode>\n"
+                + "                <ttl>255</ttl>\n"
+                + "            </icmp>\n"
+                + "  </failure-detector>"
+                + "</network>"
+                + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml);
+        NetworkConfig networkConfig = config.getNetworkConfig();
+        IcmpFailureDetectorConfig icmpFailureDetectorConfig = networkConfig.getIcmpFailureDetectorConfig();
+        assertNotNull(icmpFailureDetectorConfig);
+
+        assertTrue(icmpFailureDetectorConfig.isEnabled());
+        assertTrue(icmpFailureDetectorConfig.isParallelMode());
+        assertTrue(icmpFailureDetectorConfig.isFailFastOnStartup());
+        assertEquals(42, icmpFailureDetectorConfig.getTimeoutMilliseconds());
+        assertEquals(42, icmpFailureDetectorConfig.getMaxAttempts());
+        assertEquals(4200, icmpFailureDetectorConfig.getIntervalMilliseconds());
+    }
+
+    @Test
+    public void testHandleMemberAttributes() {
+        String xml = HAZELCAST_START_TAG
+                + "<member-attributes>\n"
+                + "     <attribute name=\"IDENTIFIER\" type=\"string\">ID</attribute>\n"
+                + "</member-attributes>"
+                + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml);
+        MemberAttributeConfig memberAttributeConfig = config.getMemberAttributeConfig();
+        assertNotNull(memberAttributeConfig);
+        assertEquals("ID", memberAttributeConfig.getStringAttribute("IDENTIFIER"));
     }
 
     @Test
