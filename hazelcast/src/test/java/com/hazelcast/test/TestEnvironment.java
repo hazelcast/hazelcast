@@ -18,6 +18,7 @@ package com.hazelcast.test;
 
 import com.hazelcast.test.compatibility.SamplingSerializationService;
 
+@SuppressWarnings("WeakerAccess")
 public final class TestEnvironment {
 
     public static final String HAZELCAST_TEST_USE_NETWORK = "hazelcast.test.use.network";

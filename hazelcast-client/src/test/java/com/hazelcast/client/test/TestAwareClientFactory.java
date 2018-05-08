@@ -32,7 +32,9 @@ import static com.hazelcast.test.AbstractHazelcastClassRunner.getTestMethodName;
  * Per test-method factory for Hazelcast clients (and also members as it inherits from {@link TestAwareInstanceFactory}).
  * It configures new clients in the same way as it's done for members in {@link TestAwareInstanceFactory#newHazelcastInstance(com.hazelcast.config.Config)}.
  */
+@SuppressWarnings({"unused", "WeakerAccess"})
 public class TestAwareClientFactory extends TestAwareInstanceFactory {
+
     protected final Map<String, List<HazelcastInstance>> perMethodClients = new ConcurrentHashMap<String, List<HazelcastInstance>>();
 
     /**

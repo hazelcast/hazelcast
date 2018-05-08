@@ -21,7 +21,6 @@ import com.hazelcast.client.config.ClientAwsConfig;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.XmlClientConfigBuilder;
 import com.hazelcast.client.connection.AddressProvider;
-import com.hazelcast.client.impl.ClientConnectionManagerFactory;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.HazelcastClientProxy;
 import com.hazelcast.client.spi.properties.ClientProperty;
@@ -36,11 +35,8 @@ import com.hazelcast.test.TestHazelcastInstanceFactory;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class TestHazelcastFactory extends TestHazelcastInstanceFactory {
-
-    private static final AtomicInteger CLIENT_PORTS = new AtomicInteger(40000);
 
     private final boolean mockNetwork = TestEnvironment.isMockNetwork();
     private final List<HazelcastClientInstanceImpl> clients = new ArrayList<HazelcastClientInstanceImpl>(10);
@@ -68,37 +64,31 @@ public class TestHazelcastFactory extends TestHazelcastInstanceFactory {
             config = new XmlClientConfigBuilder().build();
         }
 
-        ClassLoader tccl = Thread.currentThread().getContextClassLoader();
-        HazelcastClientProxy proxy;
+        Thread currentThread = Thread.currentThread();
+        ClassLoader tccl = currentThread.getContextClassLoader();
         try {
             if (tccl == ClassLoader.getSystemClassLoader()) {
-                Thread.currentThread().setContextClassLoader(HazelcastClient.class.getClassLoader());
+                currentThread.setContextClassLoader(HazelcastClient.class.getClassLoader());
             }
-            ClientConnectionManagerFactory clientConnectionManagerFactory =
-                    clientRegistry.createClientServiceFactory("127.0.0.1", CLIENT_PORTS);
-            AddressProvider testAddressProvider = createAddressProvider(config);
-            HazelcastClientInstanceImpl client =
-                    new HazelcastClientInstanceImpl(config, clientConnectionManagerFactory, testAddressProvider);
+            HazelcastClientInstanceImpl client = new HazelcastClientInstanceImpl(config,
+                    clientRegistry.createClientServiceFactory(), createAddressProvider(config));
             client.start();
             clients.add(client);
             OutOfMemoryErrorDispatcher.registerClient(client);
-            proxy = new HazelcastClientProxy(client);
+            return new HazelcastClientProxy(client);
         } finally {
-            Thread.currentThread().setContextClassLoader(tccl);
+            currentThread.setContextClassLoader(tccl);
         }
-        return proxy;
     }
 
     private AddressProvider createAddressProvider(ClientConfig config) {
         boolean discoveryEnabled = new HazelcastProperties(config.getProperties())
                 .getBoolean(ClientProperty.DISCOVERY_SPI_ENABLED);
-
         ClientAwsConfig awsConfig = config.getNetworkConfig().getAwsConfig();
-
         List<String> userConfiguredAddresses = config.getNetworkConfig().getAddresses();
 
-        boolean isAtLeastAProviderConfigured =
-                discoveryEnabled || (awsConfig != null ? awsConfig.isEnabled() : false) || !userConfiguredAddresses.isEmpty();
+        boolean isAtLeastAProviderConfigured
+                = discoveryEnabled || (awsConfig != null && awsConfig.isEnabled()) || !userConfiguredAddresses.isEmpty();
 
         if (isAtLeastAProviderConfigured) {
             // address providers or addresses are configured explicitly, don't add more addresses
