@@ -17,12 +17,10 @@
 package com.hazelcast.aws;
 
 import com.hazelcast.config.AwsConfig;
-import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.config.properties.PropertyDefinition;
 import com.hazelcast.config.properties.PropertyTypeConverter;
 import com.hazelcast.config.properties.SimplePropertyDefinition;
-import com.hazelcast.config.properties.ValidationException;
 import com.hazelcast.config.properties.ValueValidator;
 
 import static com.hazelcast.config.properties.PropertyTypeConverter.INTEGER;
@@ -85,14 +83,15 @@ public enum AwsProperties {
     CONNECTION_TIMEOUT_SECONDS("connection-timeout-seconds", INTEGER, true),
 
     /**
-     * The discovery mechanism will discover only IP addresses. You can define the port on which Hazelcast is expected to be
-     * running here. This port number is not used by the discovery mechanism itself, it is only returned by the discovery
-     * mechanism. The default port is {@link NetworkConfig#DEFAULT_PORT}
+     * The discovery mechanism will discover only IP addresses. You can define the port or the port range on which Hazelcast is
+     * expected to be running.
+     * <p>
+     * Sample values: "5701", "5701-5710".
+     * <p>
+     * The default value is "5701-5708".
      */
-    PORT("hz-port", INTEGER, true, new PortValueValidator());
+    PORT("hz-port", STRING, true);
 
-    private static final int MIN_PORT = 0;
-    private static final int MAX_PORT = 65535;
     private final PropertyDefinition propertyDefinition;
 
     AwsProperties(String key, PropertyTypeConverter typeConverter, boolean optional, ValueValidator validator) {
@@ -105,26 +104,5 @@ public enum AwsProperties {
 
     public PropertyDefinition getDefinition() {
         return propertyDefinition;
-    }
-
-    /**
-     * Validator for valid network ports
-     */
-    public static class PortValueValidator implements ValueValidator<Integer> {
-
-        /**
-         * Returns a validation
-         *
-         * @param value the integer to validate
-         * @throws ValidationException if value does not fall in valid port number range
-         */
-        public void validate(Integer value) throws ValidationException {
-            if (value < MIN_PORT) {
-                throw new ValidationException("hz-port number must be greater 0");
-            }
-            if (value > MAX_PORT) {
-                throw new ValidationException("hz-port number must be less or equal to 65535");
-            }
-        }
     }
 }

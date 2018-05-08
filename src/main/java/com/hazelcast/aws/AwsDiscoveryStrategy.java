@@ -51,20 +51,21 @@ import static com.hazelcast.util.ExceptionUtil.rethrow;
  *
  * @see AWSClient
  */
-public class AwsDiscoveryStrategy extends AbstractDiscoveryStrategy {
-
+public class AwsDiscoveryStrategy
+        extends AbstractDiscoveryStrategy {
     private static final ILogger LOGGER = Logger.getLogger(AwsDiscoveryStrategy.class);
-    private final AWSClient aws;
-    private final int port;
+    private static final String DEFAULT_PORT_RANGE = "5701-5708";
+
+    private final AWSClient awsClient;
+    private final PortRange portRange;
 
     private final Map<String, Object> memberMetadata = new HashMap<String, Object>();
 
-
     public AwsDiscoveryStrategy(Map<String, Comparable> properties) {
         super(LOGGER, properties);
-        this.port = getOrDefault(PORT.getDefinition(), NetworkConfig.DEFAULT_PORT);
+        this.portRange = new PortRange(getOrDefault(PORT.getDefinition(), DEFAULT_PORT_RANGE));
         try {
-            this.aws = new AWSClient(getAwsConfig());
+            this.awsClient = new AWSClient(getAwsConfig());
         } catch (IllegalArgumentException e) {
             throw new InvalidConfigurationException("AWS configuration is not valid", e);
         }
@@ -75,17 +76,15 @@ public class AwsDiscoveryStrategy extends AbstractDiscoveryStrategy {
      */
     AwsDiscoveryStrategy(Map<String, Comparable> properties, AWSClient client) {
         super(LOGGER, properties);
-        this.port = getOrDefault(PORT.getDefinition(), NetworkConfig.DEFAULT_PORT);
-        this.aws = client;
+        this.portRange = new PortRange(getOrDefault(PORT.getDefinition(), DEFAULT_PORT_RANGE));
+        this.awsClient = client;
     }
 
-    private AwsConfig getAwsConfig() throws IllegalArgumentException {
-        final AwsConfig config = new AwsConfig()
-                .setEnabled(true)
-                .setSecurityGroupName(getOrNull(SECURITY_GROUP_NAME))
-                .setTagKey(getOrNull(TAG_KEY))
-                .setTagValue(getOrNull(TAG_VALUE))
-                .setIamRole(getOrNull(IAM_ROLE));
+    private AwsConfig getAwsConfig()
+            throws IllegalArgumentException {
+        final AwsConfig config = new AwsConfig().setEnabled(true).setSecurityGroupName(getOrNull(SECURITY_GROUP_NAME))
+                                                .setTagKey(getOrNull(TAG_KEY)).setTagValue(getOrNull(TAG_VALUE))
+                                                .setIamRole(getOrNull(IAM_ROLE));
 
         String property = getOrNull(ACCESS_KEY);
         if (property != null) {
@@ -114,17 +113,9 @@ public class AwsDiscoveryStrategy extends AbstractDiscoveryStrategy {
         return config;
     }
 
-    @Override
-    public Map<String, Object> discoverLocalMetadata() {
-        if (memberMetadata.isEmpty()) {
-            memberMetadata.put(PartitionGroupMetaData.PARTITION_GROUP_ZONE, aws.getAvailabilityZone());
-        }
-        return memberMetadata;
-    }
-
     private void reviewConfiguration(AwsConfig config) {
-        if (StringUtil.isNullOrEmptyAfterTrim(config.getSecretKey())
-                || StringUtil.isNullOrEmptyAfterTrim(config.getAccessKey())) {
+        if (StringUtil.isNullOrEmptyAfterTrim(config.getSecretKey()) || StringUtil
+                .isNullOrEmptyAfterTrim(config.getAccessKey())) {
 
             if (!StringUtil.isNullOrEmptyAfterTrim(config.getIamRole())) {
                 getLogger().info("Describe instances will be queried with iam-role, "
@@ -141,9 +132,17 @@ public class AwsDiscoveryStrategy extends AbstractDiscoveryStrategy {
     }
 
     @Override
+    public Map<String, Object> discoverLocalMetadata() {
+        if (memberMetadata.isEmpty()) {
+            memberMetadata.put(PartitionGroupMetaData.PARTITION_GROUP_ZONE, awsClient.getAvailabilityZone());
+        }
+        return memberMetadata;
+    }
+
+    @Override
     public Iterable<DiscoveryNode> discoverNodes() {
         try {
-            final Map<String, String> privatePublicIpAddressPairs = aws.getAddresses();
+            final Map<String, String> privatePublicIpAddressPairs = awsClient.getAddresses();
             if (privatePublicIpAddressPairs.isEmpty()) {
                 getLogger().warning("No EC2 instances found!");
                 return Collections.emptyList();
@@ -159,7 +158,9 @@ public class AwsDiscoveryStrategy extends AbstractDiscoveryStrategy {
 
             final ArrayList<DiscoveryNode> nodes = new ArrayList<DiscoveryNode>(privatePublicIpAddressPairs.size());
             for (Map.Entry<String, String> entry : privatePublicIpAddressPairs.entrySet()) {
-                nodes.add(new SimpleDiscoveryNode(new Address(entry.getKey(), port), new Address(entry.getValue(), port)));
+                for (int port = portRange.getFromPort(); port <= portRange.getToPort(); port++) {
+                    nodes.add(new SimpleDiscoveryNode(new Address(entry.getKey(), port), new Address(entry.getValue(), port)));
+                }
             }
 
             return nodes;
