@@ -101,7 +101,7 @@ Following are example declarative and programmatic configuration snippets:
                    <property name="security-group-name">hazelcast</property>
                    <property name="tag-key">aws-test-cluster</property>
                    <property name="tag-value">cluster1</property>
-                   <property name="hz-port">5701</property>
+                   <property name="hz-port">5701-5708</property>
                 </properties>
             </discovery-strategy>
         </discovery-strategies>
@@ -127,7 +127,7 @@ Following are example declarative and programmatic configuration snippets:
         properties.put("security-group-name","hazelcast");
         properties.put("tag-key","aws-test-cluster");
         properties.put("tag-value","cluster1");
-        properties.put("hzPort","5701");
+        properties.put(hz-port,"5701-5708");
         DiscoveryStrategyConfig discoveryStrategyConfig = new DiscoveryStrategyConfig(awsDiscoveryStrategyFactory, properties);
         joinConfig.getDiscoveryConfig().addDiscoveryStrategyConfig(discoveryStrategyConfig);
         
@@ -145,7 +145,7 @@ Here are the definitions of the properties
 * `security-group-name`: Name of the security group you specified at the EC2 management console. It is used to narrow the Hazelcast members to be within this group. It is optional.
 * `tag-key`, `tag-value`: To narrow the members in the cloud down to only Hazelcast members, you can set these parameters as the ones you specified in the EC2 console. They are optional.
 * `connection-timeout-seconds`: The maximum amount of time Hazelcast will try to connect to a well known member before giving up. Setting this value too low could mean that a member is not able to connect to a cluster. Setting the value too high means that member startup could slow down because of longer timeouts (for example, when a well known member is not up). Increasing this value is recommended if you have many IPs listed and the members cannot properly build up the cluster. Its default value is 5.
-* `hz-port`: You can set searching for other ports rather than 5701 if you've members on different ports. It is optional.
+* `hz-port`: You can set searching for other ports rather than 5701-5708 if you've members on different ports. It is optional.
 
 ### Configuring Hazelcast Members for AWS ECS
 
@@ -192,7 +192,7 @@ Following are example declarative and programmatic configuration snippets:
                <property name="security-group-name">hazelcast</property>
                <property name="tag-key">aws-test-cluster</property>
                <property name="tag-value">cluster1</property>
-               <property name="hz-port">5701</property>
+               <property name="hz-port">5701-5708</property>
             </properties>
         </discovery-strategy>
     </discovery-strategies>
@@ -214,7 +214,7 @@ Following are example declarative and programmatic configuration snippets:
         properties.put("security-group-name","hazelcast");
         properties.put("tag-key","aws-test-cluster");
         properties.put("tag-value","cluster1");
-        properties.put("hzPort","5701");
+        properties.put("hz-port","5701-5708");
         AwsDiscoveryStrategyFactory awsDiscoveryStrategyFactory = new AwsDiscoveryStrategyFactory();
         DiscoveryStrategyConfig discoveryStrategyConfig = new DiscoveryStrategyConfig(awsDiscoveryStrategyFactory, properties);
         ClientNetworkConfig clientNetworkConfig = clientConfig.getNetworkConfig();
