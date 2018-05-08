@@ -39,28 +39,13 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.ServerSocket;
 import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
 
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.createObjectDataInputStream;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.createObjectDataOutputStream;
-import static com.hazelcast.nio.IOUtil.closeResource;
-import static com.hazelcast.nio.IOUtil.compress;
-import static com.hazelcast.nio.IOUtil.copy;
-import static com.hazelcast.nio.IOUtil.copyFile;
-import static com.hazelcast.nio.IOUtil.decompress;
-import static com.hazelcast.nio.IOUtil.delete;
-import static com.hazelcast.nio.IOUtil.deleteQuietly;
-import static com.hazelcast.nio.IOUtil.getFileFromResources;
-import static com.hazelcast.nio.IOUtil.newInputStream;
-import static com.hazelcast.nio.IOUtil.newOutputStream;
-import static com.hazelcast.nio.IOUtil.readByteArray;
-import static com.hazelcast.nio.IOUtil.readFully;
-import static com.hazelcast.nio.IOUtil.readFullyOrNothing;
-import static com.hazelcast.nio.IOUtil.readObject;
-import static com.hazelcast.nio.IOUtil.toFileName;
-import static com.hazelcast.nio.IOUtil.writeByteArray;
-import static com.hazelcast.nio.IOUtil.writeObject;
+import static com.hazelcast.nio.IOUtil.*;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -68,11 +53,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -349,7 +330,7 @@ public class IOUtilTest extends HazelcastTestSupport {
 
     @Test
     public void testCompressAndDecompress_withSingleByte() throws Exception {
-        byte[] input = new byte[] {111};
+        byte[] input = new byte[]{111};
 
         byte[] compressed = compress(input);
         byte[] decompressed = decompress(compressed);
@@ -621,6 +602,208 @@ public class IOUtilTest extends HazelcastTestSupport {
     @Test(expected = HazelcastException.class)
     public void testGetFileFromResources_shouldThrowExceptionIfFileDoesNotExist() {
         getFileFromResources("doesNotExist");
+    }
+
+    @Test
+    public void testCompactOrClearByteBuffer() {
+        final ByteBuffer buffer = ByteBuffer.wrap(new byte[SIZE]);
+        buffer.put((byte) 0xFF);
+        buffer.put((byte) 0xFF);
+        buffer.flip();
+        buffer.position(1);
+        compactOrClear(buffer);
+        assertEquals("Buffer position invalid", 1, buffer.position());
+
+        buffer.put((byte) 0xFF);
+        buffer.put((byte) 0xFF);
+        compactOrClear(buffer);
+        assertEquals("Buffer position invalid", 0, buffer.position());
+    }
+
+    @Test
+    public void testCopy_whenSourceIsNull() {
+        final ByteBuffer dst = ByteBuffer.wrap(new byte[SIZE]);
+        final ByteBuffer src = null;
+
+        assertEquals(0, copyToHeapBuffer(src, dst));
+    }
+
+    @Test
+    public void testReadAttributeValue_whenTypeBoolean() throws IOException {
+        ObjectDataInput input = mock(ObjectDataInput.class);
+        final boolean expected = true;
+        when(input.readByte()).thenReturn(IOUtil.PRIMITIVE_TYPE_BOOLEAN);
+        when(input.readBoolean()).thenReturn(expected);
+
+        Object actual = readAttributeValue(input);
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    public void testReadAttributeValue_whenTypeByte() throws IOException {
+        ObjectDataInput input = mock(ObjectDataInput.class);
+        final byte expected = (byte) 0xFF;
+        when(input.readByte()).thenReturn(IOUtil.PRIMITIVE_TYPE_BYTE).thenReturn(expected);
+
+        Object actual = readAttributeValue(input);
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    public void testReadAttributeValue_whenTypeShort() throws IOException {
+        ObjectDataInput input = mock(ObjectDataInput.class);
+        final short expected = 42;
+        when(input.readByte()).thenReturn(IOUtil.PRIMITIVE_TYPE_SHORT);
+        when(input.readShort()).thenReturn(expected);
+
+        Object actual = readAttributeValue(input);
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    public void testReadAttributeValue_whenTypeInteger() throws IOException {
+        ObjectDataInput input = mock(ObjectDataInput.class);
+        final int expected = 42;
+        when(input.readByte()).thenReturn(IOUtil.PRIMITIVE_TYPE_INTEGER);
+        when(input.readInt()).thenReturn(expected);
+
+        Object actual = readAttributeValue(input);
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    public void testReadAttributeValue_whenTypeLong() throws IOException {
+        ObjectDataInput input = mock(ObjectDataInput.class);
+        final long expected = 42L;
+        when(input.readByte()).thenReturn(IOUtil.PRIMITIVE_TYPE_LONG);
+        when(input.readLong()).thenReturn(expected);
+
+        Object actual = readAttributeValue(input);
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    public void testReadAttributeValue_whenTypeFloat() throws IOException {
+        ObjectDataInput input = mock(ObjectDataInput.class);
+        final float expected = 0.42f;
+        when(input.readByte()).thenReturn(IOUtil.PRIMITIVE_TYPE_FLOAT);
+        when(input.readFloat()).thenReturn(expected);
+
+        Object actual = readAttributeValue(input);
+        assertEquals(Float.floatToIntBits(expected), Float.floatToIntBits((Float) actual));
+    }
+
+    @Test
+    public void testReadAttributeValue_whenTypeDouble() throws IOException {
+        ObjectDataInput input = mock(ObjectDataInput.class);
+        final double expected = 42.42f;
+        when(input.readByte()).thenReturn(IOUtil.PRIMITIVE_TYPE_DOUBLE);
+        when(input.readDouble()).thenReturn(expected);
+
+        Object actual = readAttributeValue(input);
+        assertEquals(Double.doubleToLongBits(expected), Double.doubleToLongBits((Double) actual));
+    }
+
+    @Test
+    public void testReadAttributeValue_whenTypeUTF() throws IOException {
+        ObjectDataInput input = mock(ObjectDataInput.class);
+        final String expected = "UTF";
+        when(input.readByte()).thenReturn(IOUtil.PRIMITIVE_TYPE_UTF);
+        when(input.readUTF()).thenReturn(expected);
+
+        Object actual = readAttributeValue(input);
+        assertEquals(expected, actual);
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testReadAttributeValue_whenInvalidType() throws IOException {
+        ObjectDataInput input = mock(ObjectDataInput.class);
+        when(input.readByte()).thenReturn((byte) 0xFF);
+        readAttributeValue(input);
+    }
+
+    @Test
+    public void testCloseServerSocket_whenServerSocketThrows() throws IOException {
+        ServerSocket serverSocket = mock(ServerSocket.class);
+        doThrow(new IOException()).when(serverSocket).close();
+        try {
+            close(serverSocket);
+        } catch (Exception ex) {
+            fail("IOUtils should silently close server socket when exception thrown");
+        }
+    }
+
+    @Test(expected = HazelcastException.class)
+    public void testRename_whenFileNowNotExist() {
+        File now = mock(File.class);
+        File toBe = mock(File.class);
+
+        when(now.renameTo(toBe)).thenReturn(false);
+        when(now.exists()).thenReturn(false);
+        rename(now, toBe);
+    }
+
+    @Test(expected = HazelcastException.class)
+    public void testRename_whenFileToBeNotExist() {
+        File now = mock(File.class);
+        File toBe = mock(File.class);
+
+        when(now.renameTo(toBe)).thenReturn(false);
+        when(now.exists()).thenReturn(true);
+        when(toBe.exists()).thenReturn(false);
+        rename(now, toBe);
+    }
+
+    @Test(expected = HazelcastException.class)
+    public void testRename_whenFileToBeNotDeleted() {
+        File now = mock(File.class);
+        File toBe = mock(File.class);
+
+        when(now.renameTo(toBe)).thenReturn(false);
+        when(now.exists()).thenReturn(true);
+        when(toBe.exists()).thenReturn(true);
+        when(toBe.delete()).thenReturn(false);
+        rename(now, toBe);
+    }
+
+    @Test
+    public void testGetPath_shouldFormat() {
+        String root = "root";
+        String parent = "parent";
+        String child = "child";
+        String expected = String.format("%s/%s/%s", root, parent, child);
+        String actual = getPath(root, parent, child);
+        assertEquals(expected, actual);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testGetPath_whenPathsInvalid() {
+        getPath();
+    }
+
+    @Test
+    public void testCopy_shouldDeepCopy() throws IOException {
+        File target = createFile("destination");
+        File source = createFile("source");
+        writeTo(source, "test content");
+
+        InputStream inputStream = new FileInputStream(source);
+        try {
+            copy(inputStream, target);
+            assertTrue(equalContents(target, source));
+        } finally {
+            delete(target);
+            delete(source);
+            inputStream.close();
+        }
+    }
+
+    @Test(expected = HazelcastException.class)
+    public void testCopy_whenTargetNotExist() {
+        File target = mock(File.class);
+        when(target.exists()).thenReturn(false);
+        InputStream source = mock(InputStream.class);
+        copy(source, target);
     }
 
     private static void writeTo(File f1, String testContent) {
