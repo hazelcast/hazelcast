@@ -168,6 +168,7 @@ If more than one `subnet` or `custom VPC` is used for cluster, it should be chec
 - Add the *hazelcast-aws.jar* dependency to your project. The hazelcast-aws plugin does not depend on any other third party modules.
 - Enable Discovery SPI by adding "hazelcast.discovery.enabled" property to your config.
 - Enable public/private IP address translation using "hazelcast.discovery.public.ip.enabled" if your Hazelcast Client is not in AWS.
+- Make sure `access-key` and `secret-key` properties are set in case your client is outside AWS (`iam-role` works only for clients inside AWS)
 
 Following are example declarative and programmatic configuration snippets:
 
