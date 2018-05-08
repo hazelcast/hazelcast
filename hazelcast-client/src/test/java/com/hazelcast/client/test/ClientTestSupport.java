@@ -81,7 +81,7 @@ public class ClientTestSupport extends HazelcastTestSupport {
     protected void makeSureConnectedToServers(final HazelcastInstance client, final int numberOfServers) {
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 ClientConnectionManager connectionManager = getHazelcastClientInstanceImpl(client).getConnectionManager();
                 assertEquals(numberOfServers, connectionManager.getActiveConnections().size());
             }
