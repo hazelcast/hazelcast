@@ -63,7 +63,7 @@ public class ConfigConstructor extends AbstractStarterObjectConstructor {
         return !void.class.equals(method.getReturnType());
     }
 
-    private static Object cloneConfig(Object thisConfigObject, ClassLoader classloader) throws Exception {
+    static Object cloneConfig(Object thisConfigObject, ClassLoader classloader) throws Exception {
         if (thisConfigObject == null) {
             return null;
         }

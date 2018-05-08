@@ -58,7 +58,6 @@ import com.hazelcast.config.TopicConfig;
 import com.hazelcast.config.UserCodeDeploymentConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.core.ManagedContext;
-import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.security.SecurityService;
 import com.hazelcast.util.StringUtil;
 
@@ -83,14 +82,14 @@ public class DynamicConfigurationAwareConfig extends Config {
     private final ConfigPatternMatcher configPatternMatcher;
 
     private volatile ConfigurationService configurationService = new EmptyConfigurationService();
-    private volatile ClusterService clusterService;
     private volatile DynamicSecurityConfig dynamicSecurityConfig;
 
     public DynamicConfigurationAwareConfig(Config staticConfig) {
-        assert !(staticConfig instanceof DynamicConfigurationAwareConfig) : "A static Config object is required";
+        assert !DynamicConfigurationAwareConfig.class.getName().equals(staticConfig.getClass().getName())
+                : "A static Config object is required";
         this.staticConfig = staticConfig;
         this.configPatternMatcher = staticConfig.getConfigPatternMatcher();
-        dynamicSecurityConfig = new DynamicSecurityConfig(staticConfig.getSecurityConfig(), null);
+        this.dynamicSecurityConfig = new DynamicSecurityConfig(staticConfig.getSecurityConfig(), null);
     }
 
     @Override
@@ -1478,10 +1477,6 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     public void setConfigurationService(ConfigurationService configurationService) {
         this.configurationService = configurationService;
-    }
-
-    public void setClusterService(ClusterService clusterService) {
-        this.clusterService = clusterService;
     }
 
     public void onSecurityServiceUpdated(SecurityService securityService) {

@@ -24,12 +24,15 @@ import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.util.function.Consumer;
 
-import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
+import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.util.Preconditions.checkPositive;
+import static com.hazelcast.util.Preconditions.checkState;
+import static java.util.Collections.newSetFromMap;
+import static java.util.concurrent.Executors.newSingleThreadScheduledExecutor;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
@@ -38,19 +41,21 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  */
 public class FirewallingConnectionManager implements ConnectionManager, Consumer<Packet> {
 
-    private final ConnectionManager delegate;
-    private final Set<Address> blockedAddresses = Collections.newSetFromMap(new ConcurrentHashMap<Address, Boolean>());
     private final ScheduledExecutorService scheduledExecutor
-            = Executors.newSingleThreadScheduledExecutor(new ThreadFactoryImpl("FirewallingConnectionManager"));
+            = newSingleThreadScheduledExecutor(new ThreadFactoryImpl("FirewallingConnectionManager"));
+    private final Set<Address> blockedAddresses = newSetFromMap(new ConcurrentHashMap<Address, Boolean>());
+
+    private final ConnectionManager delegate;
     private final Consumer<Packet> packetConsumer;
 
     private volatile PacketFilter packetFilter;
     private volatile PacketDelayProps delayProps = new PacketDelayProps(500, 5000);
 
+    @SuppressWarnings("unchecked")
     public FirewallingConnectionManager(ConnectionManager delegate, Set<Address> initiallyBlockedAddresses) {
         this.delegate = delegate;
         this.blockedAddresses.addAll(initiallyBlockedAddresses);
-        packetConsumer = delegate instanceof Consumer ? (Consumer<Packet>) delegate : null;
+        this.packetConsumer = delegate instanceof Consumer ? (Consumer<Packet>) delegate : null;
     }
 
     @Override
@@ -93,8 +98,7 @@ public class FirewallingConnectionManager implements ConnectionManager, Consumer
     }
 
     public void setPacketFilter(PacketFilter packetFilter) {
-        assert packetFilter != null;
-        this.packetFilter = packetFilter;
+        this.packetFilter = checkNotNull(packetFilter, "the packetFilter cannot be null");
     }
 
     public void removePacketFilter() {
@@ -102,10 +106,6 @@ public class FirewallingConnectionManager implements ConnectionManager, Consumer
     }
 
     public void setDelayMillis(long minDelayMs, long maxDelayMs) {
-        assert minDelayMs > 0 : "Min delay must be positive: " + minDelayMs;
-        assert maxDelayMs > 0 : "Max delay must be positive: " + minDelayMs;
-        assert maxDelayMs >= minDelayMs : "Max delay must not be smaller than min delay. Max: "
-                + maxDelayMs + ", min: " + minDelayMs;
         this.delayProps = new PacketDelayProps(minDelayMs, maxDelayMs);
     }
 
@@ -224,20 +224,19 @@ public class FirewallingConnectionManager implements ConnectionManager, Consumer
     }
 
     private class DelayedPacketTask implements Runnable {
+
         Packet packet;
         Connection connection;
         Address target;
 
         DelayedPacketTask(Packet packet, Connection connection) {
-            assert connection != null;
             this.packet = packet;
-            this.connection = connection;
+            this.connection = checkNotNull(connection);
         }
 
         DelayedPacketTask(Packet packet, Address target) {
-            assert target != null;
             this.packet = packet;
-            this.target = target;
+            this.target = checkNotNull(target);
         }
 
         @Override
@@ -251,10 +250,16 @@ public class FirewallingConnectionManager implements ConnectionManager, Consumer
     }
 
     private static class PacketDelayProps {
+
         final long minDelayMs;
         final long maxDelayMs;
 
         private PacketDelayProps(long minDelayMs, long maxDelayMs) {
+            checkPositive(minDelayMs, "minDelayMs must be positive, but was " + minDelayMs);
+            checkPositive(maxDelayMs, "maxDelayMs must be positive, but was " + maxDelayMs);
+            checkState(maxDelayMs >= minDelayMs, "maxDelayMs must not be smaller than minDelayMs (maxDelayMs: " + maxDelayMs
+                    + ", minDelayMs: " + minDelayMs + ")");
+
             this.minDelayMs = minDelayMs;
             this.maxDelayMs = maxDelayMs;
         }

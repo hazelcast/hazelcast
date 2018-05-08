@@ -20,18 +20,26 @@ import com.google.common.io.Files;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.HazelcastInstanceFactory;
+import com.hazelcast.instance.Node;
+import com.hazelcast.instance.TestUtil;
 
 import java.io.File;
+import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.test.starter.HazelcastProxyFactory.proxyObjectForStarter;
+import static com.hazelcast.test.starter.HazelcastStarterUtils.debug;
 import static com.hazelcast.test.starter.HazelcastStarterUtils.rethrowGuardianException;
+import static com.hazelcast.test.starter.ReflectionUtils.getFieldValueReflectively;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.util.UuidUtil.newUnsecureUuidString;
 import static java.lang.Thread.currentThread;
 
 public class HazelcastStarter {
@@ -39,8 +47,11 @@ public class HazelcastStarter {
     /**
      * Caches downloaded files & classloader used to load their classes per version string.
      */
-    private static final ConcurrentMap<String, HazelcastVersionClassloaderFuture> LOADED_VERSIONS =
-            new ConcurrentHashMap<String, HazelcastVersionClassloaderFuture>();
+    private static final ConcurrentMap<String, HazelcastVersionClassloaderFuture> LOADED_VERSIONS
+            = new ConcurrentHashMap<String, HazelcastVersionClassloaderFuture>();
+
+    private static final ConcurrentMap<HazelcastInstance, HazelcastAPIDelegatingClassloader> CLASSLOADER_MAP
+            = new ConcurrentHashMap<HazelcastInstance, HazelcastAPIDelegatingClassloader>();
 
     /**
      * Starts a new open source {@link HazelcastInstance} of the given version.
@@ -81,28 +92,56 @@ public class HazelcastStarter {
      * @return a {@link HazelcastInstance} proxying the started Hazelcast instance.
      */
     public static HazelcastInstance newHazelcastInstance(String version, Config configTemplate, boolean enterprise) {
-        HazelcastAPIDelegatingClassloader versionClassLoader = getTargetVersionClassloader(version, enterprise,
-                configTemplate == null ? null : configTemplate.getClassLoader());
+        ClassLoader cfgClassLoader = configTemplate == null ? null : configTemplate.getClassLoader();
+        HazelcastAPIDelegatingClassloader versionClassLoader = getTargetVersionClassloader(version, enterprise, cfgClassLoader);
 
         ClassLoader contextClassLoader = currentThread().getContextClassLoader();
         currentThread().setContextClassLoader(null);
         try {
-            return newHazelcastMemberWithNetwork(configTemplate, versionClassLoader);
-        } catch (ClassNotFoundException e) {
-            throw rethrowGuardianException(e);
-        } catch (NoSuchMethodException e) {
-            throw rethrowGuardianException(e);
-        } catch (IllegalAccessException e) {
-            throw rethrowGuardianException(e);
-        } catch (InvocationTargetException e) {
-            throw rethrowGuardianException(e);
-        } catch (InstantiationException e) {
-            throw rethrowGuardianException(e);
+            HazelcastInstance hazelcastInstance = newHazelcastInstanceWithNetwork(versionClassLoader, configTemplate);
+            CLASSLOADER_MAP.put(hazelcastInstance, versionClassLoader);
+            return hazelcastInstance;
         } finally {
             if (contextClassLoader != null) {
                 currentThread().setContextClassLoader(contextClassLoader);
             }
         }
+    }
+
+    public static Node getNode(HazelcastInstance hz) {
+        HazelcastAPIDelegatingClassloader classloader = CLASSLOADER_MAP.get(hz);
+        if (classloader == null) {
+            throw new GuardianException("HazelcastInstance has not been started via HazelcastStarter!");
+        }
+        try {
+            Object node = getNode(hz, classloader);
+            return (Node) proxyObjectForStarter(HazelcastStarter.class.getClassLoader(), node);
+        } catch (Exception e) {
+            throw rethrowGuardianException(e);
+        }
+    }
+
+    private static Object getNode(HazelcastInstance hazelcastInstance, ClassLoader classLoader) throws Exception {
+        Object hazelcastInstanceImpl = getHazelcastInstanceImpl(hazelcastInstance, classLoader);
+        return getFieldValueReflectively(hazelcastInstanceImpl, "node");
+    }
+
+    private static Object getHazelcastInstanceImpl(HazelcastInstance hazelcastInstance, ClassLoader classloader)
+            throws Exception {
+        if (hazelcastInstance instanceof Proxy) {
+            InvocationHandler invocationHandler = Proxy.getInvocationHandler(hazelcastInstance);
+            Object delegate = getFieldValueReflectively(invocationHandler, "delegate");
+            Class<?> instanceProxyClass = classloader.loadClass("com.hazelcast.instance.HazelcastInstanceProxy");
+            Class<?> instanceImplClass = classloader.loadClass("com.hazelcast.instance.HazelcastInstanceImpl");
+            if (instanceProxyClass.isAssignableFrom(delegate.getClass())) {
+                Object instanceProxy = instanceProxyClass.cast(delegate);
+                return instanceImplClass.cast(getFieldValueReflectively(instanceProxy, "original"));
+            } else if (instanceImplClass.isAssignableFrom(delegate.getClass())) {
+                return instanceImplClass.cast(delegate);
+            }
+            return delegate;
+        }
+        return TestUtil.getHazelcastInstanceImpl(hazelcastInstance);
     }
 
     /**
@@ -147,24 +186,78 @@ public class HazelcastStarter {
         }
     }
 
-    private static HazelcastInstance newHazelcastMemberWithNetwork(Config configTemplate,
-                                                                   HazelcastAPIDelegatingClassloader classloader)
-            throws ClassNotFoundException, InstantiationException, IllegalAccessException,
-            NoSuchMethodException, InvocationTargetException {
-        Class<Hazelcast> hazelcastClass = (Class<Hazelcast>) classloader.loadClass("com.hazelcast.core.Hazelcast");
-        System.out.println(hazelcastClass + " loaded by " + hazelcastClass.getClassLoader());
-        Class<?> configClass = classloader.loadClass("com.hazelcast.config.Config");
-        Object config = getConfig(configTemplate, classloader, configClass);
-
-        Method newHazelcastInstanceMethod = hazelcastClass.getMethod("newHazelcastInstance", configClass);
-        Object delegate = newHazelcastInstanceMethod.invoke(null, config);
-
-        return (HazelcastInstance) proxyObjectForStarter(HazelcastStarter.class.getClassLoader(), delegate);
+    private static HazelcastInstance newHazelcastInstanceWithNetwork(HazelcastAPIDelegatingClassloader classloader,
+                                                                     Config configTemplate) {
+        try {
+            Object delegate = createInstanceViaInstanceFactory(classloader, configTemplate);
+            if (delegate == null) {
+                delegate = createInstanceViaHazelcast(classloader, configTemplate);
+            }
+            return (HazelcastInstance) proxyObjectForStarter(HazelcastStarter.class.getClassLoader(), delegate);
+        } catch (ClassNotFoundException e) {
+            throw rethrowGuardianException(e);
+        }
     }
 
-    public static Object getConfig(Object configTemplate, HazelcastAPIDelegatingClassloader classloader, Class<?> configClass)
-            throws InstantiationException, IllegalAccessException, NoSuchMethodException,
-            InvocationTargetException, ClassNotFoundException {
+    @SuppressWarnings("unchecked")
+    private static Object createInstanceViaInstanceFactory(HazelcastAPIDelegatingClassloader classloader, Config configTemplate) {
+        try {
+            Class<?> configClass = classloader.loadClass("com.hazelcast.config.Config");
+            Object config = getConfig(classloader, configClass, configTemplate);
+            String instanceName = configTemplate == null ? newUnsecureUuidString() : configTemplate.getInstanceName();
+
+            Class<?> nodeContextClass = classloader.loadClass("com.hazelcast.instance.NodeContext");
+            Class<?> firewallingNodeContextClass = classloader.loadClass("com.hazelcast.instance.FirewallingNodeContext");
+            Object nodeContext = proxyObjectForStarter(classloader, firewallingNodeContextClass.newInstance());
+
+            Class<HazelcastInstanceFactory> hazelcastInstanceFactoryClass = (Class<HazelcastInstanceFactory>)
+                    classloader.loadClass("com.hazelcast.instance.HazelcastInstanceFactory");
+            System.out.println(hazelcastInstanceFactoryClass + " loaded by " + hazelcastInstanceFactoryClass.getClassLoader());
+
+            Method newHazelcastInstanceMethod = hazelcastInstanceFactoryClass.getMethod("newHazelcastInstance", configClass,
+                    String.class, nodeContextClass);
+            return newHazelcastInstanceMethod.invoke(null, config, instanceName, nodeContext);
+        } catch (ClassNotFoundException e) {
+            debug("Could not create HazelcastInstance via HazelcastInstanceFactory: " + e.getMessage());
+        } catch (IllegalAccessException e) {
+            debug("Could not create HazelcastInstance via HazelcastInstanceFactory: " + e.getMessage());
+        } catch (NoSuchMethodException e) {
+            debug("Could not create HazelcastInstance via HazelcastInstanceFactory: " + e.getMessage());
+        } catch (InvocationTargetException e) {
+            debug("Could not create HazelcastInstance via HazelcastInstanceFactory: " + e.getMessage());
+        } catch (InstantiationException e) {
+            debug("Could not create HazelcastInstance via HazelcastInstanceFactory: " + e.getMessage());
+        }
+        return null;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Object createInstanceViaHazelcast(HazelcastAPIDelegatingClassloader classloader, Config configTemplate) {
+        try {
+            Class<?> configClass = classloader.loadClass("com.hazelcast.config.Config");
+            Object config = getConfig(classloader, configClass, configTemplate);
+
+            Class<Hazelcast> hazelcastClass = (Class<Hazelcast>) classloader.loadClass("com.hazelcast.core.Hazelcast");
+            System.out.println(hazelcastClass + " loaded by " + hazelcastClass.getClassLoader());
+
+            Method newHazelcastInstanceMethod = hazelcastClass.getMethod("newHazelcastInstance", configClass);
+            return newHazelcastInstanceMethod.invoke(null, config);
+        } catch (ClassNotFoundException e) {
+            throw rethrowGuardianException(e);
+        } catch (NoSuchMethodException e) {
+            throw rethrowGuardianException(e);
+        } catch (IllegalAccessException e) {
+            throw rethrowGuardianException(e);
+        } catch (InvocationTargetException e) {
+            throw rethrowGuardianException(e);
+        } catch (InstantiationException e) {
+            throw rethrowGuardianException(e);
+        }
+    }
+
+    public static Object getConfig(HazelcastAPIDelegatingClassloader classloader, Class<?> configClass, Object configTemplate)
+            throws InstantiationException, IllegalAccessException, NoSuchMethodException, InvocationTargetException,
+            ClassNotFoundException {
         Object config;
         if (configTemplate == null) {
             config = configClass.newInstance();

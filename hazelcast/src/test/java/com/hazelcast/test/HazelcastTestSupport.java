@@ -65,6 +65,7 @@ import org.junit.experimental.categories.Category;
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
@@ -235,8 +236,21 @@ public abstract class HazelcastTestSupport {
     // ########## implementation getter ##########
     // ###########################################
 
+    @SuppressWarnings("unchecked")
     public static Node getNode(HazelcastInstance hz) {
-        return TestUtil.getNode(hz);
+        if (isRunningCompatibilityTest() && BuildInfoProvider.getBuildInfo().isEnterprise()) {
+            try {
+                String className = "com.hazelcast.test.CompatibilityTestHazelcastInstanceFactory";
+                Class<? extends TestHazelcastInstanceFactory> compatibilityTestFactoryClass
+                        = (Class<? extends TestHazelcastInstanceFactory>) Class.forName(className);
+                Method getNodeMethod = compatibilityTestFactoryClass.getDeclaredMethod("getNode", HazelcastInstance.class);
+                return (Node) getNodeMethod.invoke(null, hz);
+            } catch (Exception e) {
+                throw rethrow(e);
+            }
+        } else {
+            return TestUtil.getNode(hz);
+        }
     }
 
     public static NodeEngineImpl getNodeEngineImpl(HazelcastInstance hz) {

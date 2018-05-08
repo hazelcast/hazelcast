@@ -18,6 +18,7 @@ package com.hazelcast.test.starter.test;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.Node;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.starter.HazelcastStarter;
@@ -26,6 +27,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(NightlyTest.class)
@@ -47,13 +49,25 @@ public class HazelcastStarterTest {
     }
 
     @Test
-    public void testMemberWithConfig() {
-        Config config = new Config();
-        config.setInstanceName("test-name");
+    public void testMemberWithConfig_viaHazelcastInstanceFactory() {
+        testMemberWithConfig("3.9");
+    }
 
-        HazelcastInstance alwaysRunningMember = HazelcastStarter.newHazelcastInstance("3.8", config, false);
+    @Test
+    public void testMemberWithConfig_viaHazelcast() {
+        testMemberWithConfig("3.8");
+    }
 
+    private void testMemberWithConfig(String version) {
+        Config config = new Config()
+                .setInstanceName("test-name");
+
+        HazelcastInstance alwaysRunningMember = HazelcastStarter.newHazelcastInstance(version, config, false);
         assertEquals(alwaysRunningMember.getName(), "test-name");
+
+        Node node = HazelcastStarter.getNode(alwaysRunningMember);
+        assertNotNull(node);
+
         alwaysRunningMember.shutdown();
     }
 }

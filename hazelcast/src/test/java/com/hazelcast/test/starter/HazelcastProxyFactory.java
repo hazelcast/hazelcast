@@ -86,6 +86,11 @@ public class HazelcastProxyFactory {
     private static final String CLASS_NAME_CLIENT_CONFIG = "com.hazelcast.client.config.ClientConfig";
     private static final String CLASS_NAME_ADDRESS = "com.hazelcast.nio.Address";
     private static final String CLASS_NAME_VERSION = "com.hazelcast.version.Version";
+    private static final String CLASS_NAME_FIREWALLING_NODE_CONTEXT = "com.hazelcast.instance.FirewallingNodeContext";
+    private static final String CLASS_NAME_FIREWALLING_CONNECTION_MANAGER = "com.hazelcast.nio.tcp.FirewallingConnectionManager";
+    private static final String CLASS_NAME_NODE = "com.hazelcast.instance.Node";
+    private static final String CLASS_NAME_DYNAMIC_CONFIG
+            = "com.hazelcast.internal.dynamicconfig.DynamicConfigurationAwareConfig";
 
     static {
         Set<String> notProxiedClasses = new HashSet<String>();
@@ -95,6 +100,10 @@ public class HazelcastProxyFactory {
         notProxiedClasses.add(CLASS_NAME_CLIENT_CONFIG);
         notProxiedClasses.add(CLASS_NAME_ADDRESS);
         notProxiedClasses.add(CLASS_NAME_VERSION);
+        notProxiedClasses.add(CLASS_NAME_FIREWALLING_NODE_CONTEXT);
+        notProxiedClasses.add(CLASS_NAME_FIREWALLING_CONNECTION_MANAGER);
+        notProxiedClasses.add(CLASS_NAME_NODE);
+        notProxiedClasses.add(CLASS_NAME_DYNAMIC_CONFIG);
         NO_PROXYING_WHITELIST = notProxiedClasses;
 
         Set<String> subclassProxiedClasses = new HashSet<String>();
@@ -294,6 +303,14 @@ public class HazelcastProxyFactory {
                             return new ConfigConstructor(input);
                         } else if (className.equals(CLASS_NAME_VERSION)) {
                             return new VersionConstructor(input);
+                        } else if (className.equals(CLASS_NAME_FIREWALLING_NODE_CONTEXT)) {
+                            return new FirewallingNodeContextConstructor(input);
+                        } else if (className.equals(CLASS_NAME_FIREWALLING_CONNECTION_MANAGER)) {
+                            return new FirewallingConnectionManagerConstructor(input);
+                        } else if (className.equals(CLASS_NAME_NODE)) {
+                            return new NodeConstructor(input);
+                        } else if (className.equals(CLASS_NAME_DYNAMIC_CONFIG)) {
+                            return new DynamicConfigurationAwareConfigConstructor(input);
                         } else if (input.isEnum()) {
                             return new EnumConstructor(input);
                         } else {
