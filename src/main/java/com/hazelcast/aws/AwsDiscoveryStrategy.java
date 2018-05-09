@@ -18,7 +18,6 @@ package com.hazelcast.aws;
 
 import com.hazelcast.config.AwsConfig;
 import com.hazelcast.config.InvalidConfigurationException;
-import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
