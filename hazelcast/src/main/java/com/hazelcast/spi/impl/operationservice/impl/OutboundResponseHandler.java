@@ -185,7 +185,7 @@ public final class OutboundResponseHandler implements OperationResponseHandler {
 
     private void writeResponsePrologueBytes(byte[] bytes, int typeId, long callId, boolean urgent) {
         // partition hash (which is always 0 in case of response)
-        writeIntB(bytes, 0, 0);
+        writeIntB(bytes, 0, (int)callId);
         // data-serializable type (this is always written with big endian)
         writeIntB(bytes, OFFSET_SERIALIZER_TYPE_ID, CONSTANT_TYPE_DATA_SERIALIZABLE);
         // identified or not

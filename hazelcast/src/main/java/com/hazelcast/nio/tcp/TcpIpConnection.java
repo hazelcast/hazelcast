@@ -77,15 +77,15 @@ public final class TcpIpConnection implements Connection {
         setChannels(channels);
     }
 
-    public void setChannels(Channel[] channels){
+    public void setChannels(Channel[] channels) {
         this.channels = channels;
 
-        for(Channel channel: channels) {
+        for (Channel channel : channels) {
             channel.attributeMap().put(TcpIpConnection.class, this);
         }
     }
 
-    public Channel[] channels(){
+    public Channel[] channels() {
         return channels;
     }
 
@@ -170,13 +170,13 @@ public final class TcpIpConnection implements Connection {
 
     @Override
     public boolean write(OutboundFrame frame) {
-        if(frame instanceof Packet){
-            Packet packet = (Packet)frame;
-            int index = HashUtil.hashToIndex(packet.getPartitionId(),channels.length);
-            if(channels[index].write(frame)){
+        if (frame instanceof Packet) {
+            Packet packet = (Packet) frame;
+            int index = HashUtil.hashToIndex(packet.getPartitionId(), channels.length);
+            if (channels[index].write(frame)) {
                 return true;
             }
-        }else{
+        } else {
             if (channels[0].write(frame)) {
                 return true;
             }
@@ -218,7 +218,7 @@ public final class TcpIpConnection implements Connection {
         logClose();
 
         try {
-            for(Channel channel:channels) {
+            for (Channel channel : channels) {
                 channel.close();
             }
         } catch (Exception e) {
