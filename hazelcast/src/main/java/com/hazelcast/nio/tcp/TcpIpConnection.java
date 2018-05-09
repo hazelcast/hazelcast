@@ -25,6 +25,8 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionType;
 import com.hazelcast.nio.IOService;
+import com.hazelcast.nio.Packet;
+import com.hazelcast.util.HashUtil;
 
 import java.io.EOFException;
 import java.net.InetAddress;
@@ -43,7 +45,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @SuppressWarnings("checkstyle:methodcount")
 public final class TcpIpConnection implements Connection {
 
-    private final Channel channel;
+    public volatile Channel[] channels;
 
     private final TcpIpConnectionManager connectionManager;
 
@@ -67,17 +69,28 @@ public final class TcpIpConnection implements Connection {
 
     public TcpIpConnection(TcpIpConnectionManager connectionManager,
                            int connectionId,
-                           Channel channel) {
+                           Channel[] channels) {
         this.connectionId = connectionId;
         this.connectionManager = connectionManager;
         this.ioService = connectionManager.getIoService();
         this.logger = ioService.getLoggingService().getLogger(TcpIpConnection.class);
-        this.channel = channel;
-        channel.attributeMap().put(TcpIpConnection.class, this);
+        setChannels(channels);
+    }
+
+    public void setChannels(Channel[] channels){
+        this.channels = channels;
+
+        for(Channel channel: channels) {
+            channel.attributeMap().put(TcpIpConnection.class, this);
+        }
+    }
+
+    public Channel[] channels(){
+        return channels;
     }
 
     public Channel getChannel() {
-        return channel;
+        return channels[0];
     }
 
     @Override
@@ -104,17 +117,17 @@ public final class TcpIpConnection implements Connection {
 
     @Override
     public InetAddress getInetAddress() {
-        return channel.socket().getInetAddress();
+        return channels[0].socket().getInetAddress();
     }
 
     @Override
     public int getPort() {
-        return channel.socket().getPort();
+        return channels[0].socket().getPort();
     }
 
     @Override
     public InetSocketAddress getRemoteSocketAddress() {
-        return (InetSocketAddress) channel.remoteSocketAddress();
+        return (InetSocketAddress) channels[0].remoteSocketAddress();
     }
 
     @Override
@@ -124,12 +137,12 @@ public final class TcpIpConnection implements Connection {
 
     @Override
     public long lastWriteTimeMillis() {
-        return channel.lastWriteTimeMillis();
+        return channels[0].lastWriteTimeMillis();
     }
 
     @Override
     public long lastReadTimeMillis() {
-        return channel.lastReadTimeMillis();
+        return channels[0].lastReadTimeMillis();
     }
 
     @Override
@@ -157,8 +170,16 @@ public final class TcpIpConnection implements Connection {
 
     @Override
     public boolean write(OutboundFrame frame) {
-        if (channel.write(frame)) {
-            return true;
+        if(frame instanceof Packet){
+            Packet packet = (Packet)frame;
+            int index = HashUtil.hashToIndex(packet.getPartitionId(),channels.length);
+            if(channels[index].write(frame)){
+                return true;
+            }
+        }else{
+            if (channels[0].write(frame)) {
+                return true;
+            }
         }
 
         if (logger.isFinestEnabled()) {
@@ -197,7 +218,9 @@ public final class TcpIpConnection implements Connection {
         logClose();
 
         try {
-            channel.close();
+            for(Channel channel:channels) {
+                channel.close();
+            }
         } catch (Exception e) {
             logger.warning(e);
         }
@@ -251,7 +274,7 @@ public final class TcpIpConnection implements Connection {
     @Override
     public String toString() {
         return "Connection[id=" + connectionId
-                + ", " + channel.localSocketAddress() + "->" + channel.remoteSocketAddress()
+                + ", " + channels[0].localSocketAddress() + "->" + channels[0].remoteSocketAddress()
                 + ", endpoint=" + endPoint
                 + ", alive=" + alive
                 + ", type=" + type

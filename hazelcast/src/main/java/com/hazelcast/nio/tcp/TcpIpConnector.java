@@ -35,6 +35,8 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.logging.Level;
 
+import static com.hazelcast.spi.properties.GroupProperty.TCP_CHANNELS_PER_CONNECTION;
+
 /**
  * The TcpIpConnector is responsible to make connections by connecting to a remote serverport. Once completed,
  * it will send the protocol and a bind-message.
@@ -51,10 +53,12 @@ public class TcpIpConnector {
 
     // accessed only in synchronized block
     private final LinkedList<Integer> outboundPorts = new LinkedList<Integer>();
+    private final int channelsPerConnections;
 
     public TcpIpConnector(TcpIpConnectionManager connectionManager) {
         this.connectionManager = connectionManager;
         this.ioService = connectionManager.getIoService();
+        this.channelsPerConnections = ioService.properties().getInteger(TCP_CHANNELS_PER_CONNECTION);
         this.logger = ioService.getLoggingService().getLogger(getClass());
         Collection<Integer> ports = ioService.getOutboundPorts();
         this.outboundPortCount = ports.size();
@@ -161,35 +165,39 @@ public class TcpIpConnector {
         }
 
         private void tryToConnect(InetSocketAddress socketAddress, int timeout) throws Exception {
-            SocketChannel socketChannel = SocketChannel.open();
-            ioService.configureSocket(socketChannel.socket());
-            if (ioService.isSocketBind()) {
-                bindSocket(socketChannel);
-            }
-
-            Level level = silent ? Level.FINEST : Level.INFO;
-            if (logger.isLoggable(level)) {
-                logger.log(level, "Connecting to " + socketAddress + ", timeout: " + timeout
-                        + ", bind-any: " + ioService.isSocketBindAny());
-            }
-
-            try {
-                socketChannel.configureBlocking(true);
-                connectSocketChannel(socketAddress, timeout, socketChannel);
-                if (logger.isFinestEnabled()) {
-                    logger.finest("Successfully connected to: " + address + " using socket " + socketChannel.socket());
+            Channel[] channels = new Channel[channelsPerConnections];
+            for (int k = 0; k < channelsPerConnections; k++) {
+                SocketChannel socketChannel = SocketChannel.open();
+                ioService.configureSocket(socketChannel.socket());
+                if (ioService.isSocketBind()) {
+                    bindSocket(socketChannel);
                 }
-                Channel channel = connectionManager.createChannel(socketChannel, true);
-                ioService.interceptSocket(socketChannel.socket(), false);
-                socketChannel.configureBlocking(false);
-                TcpIpConnection connection = connectionManager.newConnection(channel, address);
-                connectionManager.sendBindRequest(connection, address, true);
-            } catch (Exception e) {
-                closeSocket(socketChannel);
-                logger.log(level, "Could not connect to: " + socketAddress + ". Reason: " + e.getClass().getSimpleName()
-                        + "[" + e.getMessage() + "]");
-                throw e;
+
+                Level level = silent ? Level.FINEST : Level.INFO;
+                if (logger.isLoggable(level)) {
+                    logger.log(level, "Connecting to " + socketAddress + ", timeout: " + timeout
+                            + ", bind-any: " + ioService.isSocketBindAny());
+                }
+
+                try {
+                    socketChannel.configureBlocking(true);
+                    connectSocketChannel(socketAddress, timeout, socketChannel);
+                    if (logger.isFinestEnabled()) {
+                        logger.finest("Successfully connected to: " + address + " using socket " + socketChannel.socket());
+                    }
+                    Channel channel = connectionManager.createChannel(socketChannel, true);
+                    channels[k] = channel;
+                    ioService.interceptSocket(socketChannel.socket(), false);
+                    socketChannel.configureBlocking(false);
+                } catch (Exception e) {
+                    closeSocket(socketChannel);
+                    logger.log(level, "Could not connect to: " + socketAddress + ". Reason: " + e.getClass().getSimpleName()
+                            + "[" + e.getMessage() + "]");
+                    throw e;
+                }
             }
+
+            connectionManager.onChannelsConnected(channels, address);
         }
 
         private void connectSocketChannel(InetSocketAddress address, int timeout, SocketChannel socketChannel)

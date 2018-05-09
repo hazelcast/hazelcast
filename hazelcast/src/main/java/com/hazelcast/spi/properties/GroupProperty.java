@@ -75,6 +75,10 @@ public final class GroupProperty {
     public static final HazelcastProperty PARTITION_OPERATION_THREAD_COUNT
             = new HazelcastProperty("hazelcast.operation.thread.count", -1);
 
+    public static final HazelcastProperty TCP_CHANNELS_PER_CONNECTION
+            = new HazelcastProperty("tcp.channels.per.connection", 1);
+
+
     /**
      * The number of generic operation handler threads per member.
      * <p/>

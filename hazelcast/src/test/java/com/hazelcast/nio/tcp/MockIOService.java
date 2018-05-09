@@ -36,6 +36,7 @@ import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.function.Consumer;
 
 import java.io.IOException;
@@ -46,6 +47,7 @@ import java.net.SocketException;
 import java.nio.channels.ServerSocketChannel;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class MockIOService implements IOService {
@@ -70,6 +72,11 @@ public class MockIOService implements IOService {
         this.serializationService = new DefaultSerializationServiceBuilder()
                 .addDataSerializableFactory(TestDataFactory.FACTORY_ID, new TestDataFactory())
                 .build();
+    }
+
+    @Override
+    public HazelcastProperties properties() {
+        return new HazelcastProperties(new Properties());
     }
 
     @Override

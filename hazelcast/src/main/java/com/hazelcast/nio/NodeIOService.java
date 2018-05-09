@@ -37,6 +37,7 @@ import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.AddressUtil;
 
 import java.io.IOException;
@@ -61,6 +62,11 @@ public class NodeIOService implements IOService {
     @Override
     public String getHazelcastName() {
         return node.hazelcastInstance.getName();
+    }
+
+    @Override
+    public HazelcastProperties properties() {
+        return node.getProperties();
     }
 
     @Override

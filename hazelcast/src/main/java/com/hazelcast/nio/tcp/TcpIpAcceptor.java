@@ -37,6 +37,7 @@ import java.util.Iterator;
 import static com.hazelcast.internal.networking.nio.SelectorMode.SELECT_WITH_FIX;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static com.hazelcast.nio.IOUtil.closeResource;
+import static com.hazelcast.spi.properties.GroupProperty.TCP_CHANNELS_PER_CONNECTION;
 import static com.hazelcast.util.ThreadUtil.createThreadPoolName;
 import static java.lang.Math.max;
 import static java.lang.System.currentTimeMillis;
@@ -68,6 +69,7 @@ public class TcpIpAcceptor implements MetricsProvider {
     @Probe
     private final SwCounter selectorRecreateCount = newSwCounter();
     private final AcceptorIOThread acceptorThread;
+    private final int channelsPerConnections;
     // last time select returned
     private volatile long lastSelectTimeMs;
 
@@ -84,6 +86,7 @@ public class TcpIpAcceptor implements MetricsProvider {
         this.serverSocketChannel = serverSocketChannel;
         this.connectionManager = connectionManager;
         this.ioService = connectionManager.getIoService();
+        this.channelsPerConnections = connectionManager.getIoService().properties().getInteger(TCP_CHANNELS_PER_CONNECTION);
         this.logger = ioService.getLoggingService().getLogger(getClass());
         this.acceptorThread = new AcceptorIOThread();
     }
@@ -285,7 +288,7 @@ public class TcpIpAcceptor implements MetricsProvider {
             try {
                 ioService.configureSocket(channel.socket());
                 ioService.interceptSocket(channel.socket(), true);
-                connectionManager.newConnection(channel, null);
+                connectionManager.onChannelAccepted(channel);
             } catch (Exception e) {
                 exceptionCount.inc();
                 logger.warning(e.getClass().getName() + ": " + e.getMessage(), e);
