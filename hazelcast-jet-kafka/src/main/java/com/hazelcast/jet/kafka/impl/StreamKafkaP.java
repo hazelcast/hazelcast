@@ -202,7 +202,10 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor {
     @Override
     public void close(@Nullable Throwable error) {
         if (consumer != null) {
-            consumer.close();
+            try {
+                consumer.close();
+            } catch (InterruptException ignored) {
+            }
         }
     }
 
