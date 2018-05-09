@@ -65,7 +65,7 @@ final class PortRange {
                     String.format("Specified port (%s) outside of port range (%s-%s)", toPort, MIN_PORT, MAX_PORT));
         }
         if (fromPort > toPort) {
-            throw new IllegalArgumentException(String.format("Port %s is greater then %s", fromPort, toPort));
+            throw new IllegalArgumentException(String.format("Port %s is greater than %s", fromPort, toPort));
         }
     }
 

@@ -16,7 +16,6 @@
 
 package com.hazelcast.aws;
 
-import com.hazelcast.config.AwsConfig;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -91,6 +90,28 @@ public class AwsDiscoveryStrategyTest
             assertEquals(new Address(privateAddress, port), node.getPrivateAddress());
             assertEquals(new Address(publicAddress, port), node.getPublicAddress());
         }
+        assertFalse(iterator.hasNext());
+    }
+
+    @Test
+    public void discoverNodesOneAddressOnePort()
+            throws Exception {
+        // given
+        String privateAddress = "10.0.0.1";
+        String publicAddress = "156.24.63.1";
+        int port = 5701;
+        given(mockClient.getAddresses()).willReturn(Collections.singletonMap(privateAddress, publicAddress));
+        AwsDiscoveryStrategy awsDiscoveryStrategy = new AwsDiscoveryStrategy(
+                Collections.<String, Comparable>singletonMap("hz-port", port), mockClient);
+
+        // when
+        Iterable<DiscoveryNode> result = awsDiscoveryStrategy.discoverNodes();
+
+        // then
+        Iterator<DiscoveryNode> iterator = result.iterator();
+        DiscoveryNode node = iterator.next();
+        assertEquals(new Address(privateAddress, port), node.getPrivateAddress());
+        assertEquals(new Address(publicAddress, port), node.getPublicAddress());
         assertFalse(iterator.hasNext());
     }
 }

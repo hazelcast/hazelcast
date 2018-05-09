@@ -90,7 +90,7 @@ public class AwsDiscoveryStrategyFactoryTest extends HazelcastTestSupport {
         props.put("tag-key", "test-value");
         props.put("tag-value", "test-value");
         props.put("connection-timeout-seconds", 10);
-        props.put("hz-port", "1234");
+        props.put("hz-port", 1234);
         createStrategy(props);
     }
 

@@ -18,6 +18,7 @@ package com.hazelcast.aws;
 
 import com.hazelcast.config.AwsConfig;
 import com.hazelcast.config.InvalidConfigurationException;
+import com.hazelcast.config.properties.PropertyDefinition;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
@@ -62,7 +63,7 @@ public class AwsDiscoveryStrategy
 
     public AwsDiscoveryStrategy(Map<String, Comparable> properties) {
         super(LOGGER, properties);
-        this.portRange = new PortRange(getOrDefault(PORT.getDefinition(), DEFAULT_PORT_RANGE));
+        this.portRange = new PortRange(getPortRange());
         try {
             this.awsClient = new AWSClient(getAwsConfig());
         } catch (IllegalArgumentException e) {
@@ -75,8 +76,22 @@ public class AwsDiscoveryStrategy
      */
     AwsDiscoveryStrategy(Map<String, Comparable> properties, AWSClient client) {
         super(LOGGER, properties);
-        this.portRange = new PortRange(getOrDefault(PORT.getDefinition(), DEFAULT_PORT_RANGE));
+        this.portRange = new PortRange(getPortRange());
         this.awsClient = client;
+    }
+
+    /**
+     * Returns port range from properties or default value if the property does not exist.
+     * <p>
+     * Note that {@link AbstractDiscoveryStrategy#getOrDefault(PropertyDefinition, Comparable)} cannot be reused, since
+     * the "hz-port" property can be either {@code String} or {@code Integer}.
+     */
+    private String getPortRange() {
+        Object portRange = getOrNull(PORT.getDefinition());
+        if (portRange == null) {
+            return DEFAULT_PORT_RANGE;
+        }
+        return portRange.toString();
     }
 
     private AwsConfig getAwsConfig()
