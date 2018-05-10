@@ -190,7 +190,7 @@ public class Statistics {
             addStat(stats, prefix, "ownedEntryCount", nearCacheStats.getOwnedEntryCount());
             addStat(stats, prefix, "expirations", nearCacheStats.getExpirations());
             addStat(stats, prefix, "invalidations", nearCacheStats.getInvalidations());
-            addStat(stats, prefix, "receivedInvalidations", nearCacheStats.getReceivedInvalidations());
+            addStat(stats, prefix, "invalidationRequests", nearCacheStats.getInvalidationRequests());
             addStat(stats, prefix, "ownedEntryMemoryCost", nearCacheStats.getOwnedEntryMemoryCost());
             String persistenceFailure = nearCacheStats.getLastPersistenceFailure();
             if (persistenceFailure != null && !persistenceFailure.isEmpty()) {

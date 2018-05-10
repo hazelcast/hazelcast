@@ -592,7 +592,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
     }
 
     private void invalidateNearCache(Object key) {
-        nearCache.remove(key);
+        nearCache.invalidate(key);
     }
 
     public String addNearCacheInvalidationListener(EventHandler handler) {
@@ -766,7 +766,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
             if (key == null) {
                 nearCache.clear();
             } else {
-                nearCache.remove(serializeKeys ? key : toObject(key));
+                nearCache.invalidate(serializeKeys ? key : toObject(key));
             }
         }
 
@@ -774,7 +774,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         public void handle(Collection<Data> keys, Collection<String> sourceUuids,
                            Collection<UUID> partitionUuids, Collection<Long> sequences) {
             for (Data key : keys) {
-                nearCache.remove(serializeKeys ? key : toObject(key));
+                nearCache.invalidate(serializeKeys ? key : toObject(key));
             }
         }
     }

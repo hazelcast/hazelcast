@@ -139,7 +139,7 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
         assertEquals(nearCache.size(), managedNearCacheRecordStore.latestSize);
 
         for (int i = 0; i < 2 * DEFAULT_RECORD_COUNT; i++) {
-            nearCache.remove(i);
+            nearCache.invalidate(i);
             assertEquals((Integer) i, managedNearCacheRecordStore.latestKeyOnRemove);
             assertEquals(i < DEFAULT_RECORD_COUNT, managedNearCacheRecordStore.latestResultOnRemove);
         }
@@ -305,6 +305,11 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
             latestKeyOnRemove = key;
             latestResultOnRemove = result;
             return result;
+        }
+
+        @Override
+        public boolean invalidate(Integer key) {
+            return remove(key);
         }
 
         @Override

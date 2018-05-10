@@ -52,9 +52,9 @@ import static com.hazelcast.config.EvictionPolicy.LRU;
 import static com.hazelcast.config.EvictionPolicy.NONE;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheContent;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheEvictionsEventually;
+import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheInvalidationRequests;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheInvalidations;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheInvalidationsBetween;
-import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheReceivedInvalidations;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheReference;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheSize;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheSizeEventually;
@@ -1595,9 +1595,9 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
         }
         if (context.dataAdapter instanceof ReplicatedMapDataStructureAdapter) {
             // FIXME: there are two extra invalidations in the ReplicatedMap
-            assertNearCacheReceivedInvalidations(context, size + 2);
+            assertNearCacheInvalidationRequests(context, size + 2);
         } else {
-            assertNearCacheReceivedInvalidations(context, size);
+            assertNearCacheInvalidationRequests(context, size);
         }
     }
 
