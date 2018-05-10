@@ -17,7 +17,7 @@
 package com.hazelcast.client.proxy;
 
 import com.hazelcast.cardinality.CardinalityEstimator;
-import com.hazelcast.client.impl.ClientMessageDecoder;
+import com.hazelcast.client.impl.clientside.ClientMessageDecoder;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CardinalityEstimatorAddCodec;
 import com.hazelcast.client.impl.protocol.codec.CardinalityEstimatorEstimateCodec;

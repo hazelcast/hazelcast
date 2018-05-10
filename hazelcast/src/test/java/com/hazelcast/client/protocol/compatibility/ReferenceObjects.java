@@ -22,8 +22,8 @@ import com.hazelcast.cache.impl.CacheEventDataImpl;
 import com.hazelcast.cache.CacheEventType;
 import com.hazelcast.cache.impl.event.CachePartitionLostEvent;
 import com.hazelcast.cache.impl.event.CachePartitionLostListener;
-import com.hazelcast.client.AuthenticationException;
 import com.hazelcast.client.impl.MemberImpl;
+import com.hazelcast.client.impl.StubAuthenticationException;
 import com.hazelcast.client.impl.client.DistributedObjectInfo;
 import com.hazelcast.client.impl.protocol.exception.MaxMessageSizeExceeded;
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.EvictionConfigHolder;
@@ -805,7 +805,7 @@ public class ReferenceObjects {
 
     public static Throwable[] throwables_1_0 = {new CacheException(aString), new CacheLoaderException(
             aString), new CacheWriterException(aString), new EntryProcessorException(aString), new ArrayIndexOutOfBoundsException(
-            aString), new ArrayStoreException(aString), new AuthenticationException(aString), new CacheNotExistsException(
+            aString), new ArrayStoreException(aString), new StubAuthenticationException(aString), new CacheNotExistsException(
             aString), new CallerNotMemberException(aString), new CancellationException(aString), new ClassCastException(
             aString), new ClassNotFoundException(aString), new ConcurrentModificationException(
             aString), new ConfigMismatchException(aString), new ConfigurationException(

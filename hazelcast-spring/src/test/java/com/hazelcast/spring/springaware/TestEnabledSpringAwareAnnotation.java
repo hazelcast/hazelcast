@@ -17,7 +17,7 @@
 package com.hazelcast.spring.springaware;
 
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.impl.HazelcastClientProxy;
+import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;

@@ -23,7 +23,7 @@ import com.hazelcast.internal.management.JsonSerializable;
 import static com.hazelcast.util.JsonUtil.getString;
 
 /**
- * A Serializable DTO for {@link com.hazelcast.client.ClientEndpoint}.
+ * A Serializable DTO for {@link com.hazelcast.client.impl.ClientEndpoint}.
  */
 public class ClientEndPointDTO implements JsonSerializable {
 

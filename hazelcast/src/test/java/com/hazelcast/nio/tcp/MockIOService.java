@@ -16,7 +16,7 @@
 
 package com.hazelcast.nio.tcp;
 
-import com.hazelcast.client.ClientEngine;
+import com.hazelcast.client.impl.ClientEngine;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.instance.BuildInfoProvider;

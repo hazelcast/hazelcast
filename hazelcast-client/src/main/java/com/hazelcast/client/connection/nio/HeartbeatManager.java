@@ -17,7 +17,7 @@
 package com.hazelcast.client.connection.nio;
 
 import com.hazelcast.client.config.ClientIcmpPingConfig;
-import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientPingCodec;
 import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;

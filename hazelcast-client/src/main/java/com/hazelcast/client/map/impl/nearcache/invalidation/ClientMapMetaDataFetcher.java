@@ -17,7 +17,7 @@
 package com.hazelcast.client.map.impl.nearcache.invalidation;
 
 
-import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapFetchNearCacheInvalidationMetadataCodec.ResponseParameters;
 import com.hazelcast.client.spi.ClientClusterService;

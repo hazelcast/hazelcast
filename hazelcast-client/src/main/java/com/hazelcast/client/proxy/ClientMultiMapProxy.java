@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.proxy;
 
-import com.hazelcast.client.impl.ClientLockReferenceIdGenerator;
+import com.hazelcast.client.impl.clientside.ClientLockReferenceIdGenerator;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MultiMapAddEntryListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.MultiMapAddEntryListenerToKeyCodec;

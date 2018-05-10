@@ -17,7 +17,7 @@
 package com.hazelcast.client;
 
 import com.hazelcast.client.connection.nio.ClientConnectionManagerImpl;
-import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.DefaultOutOfMemoryHandler;
 
