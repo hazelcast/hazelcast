@@ -72,7 +72,7 @@ public class TransactionalMapDataStructureAdapter<K, V> implements DataStructure
     @Override
     public void set(K key, V value) {
         begin();
-        transactionalMap.put(key, value);
+        transactionalMap.set(key, value);
         commit();
     }
 
