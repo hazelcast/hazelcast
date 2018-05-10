@@ -170,7 +170,7 @@ public abstract class TransactionalMapProxySupport extends TransactionalDistribu
             return;
         }
 
-        nearCache.remove(nearCacheKey);
+        nearCache.invalidate(nearCacheKey);
     }
 
     private Object getCachedValue(Object nearCacheKey, boolean deserializeValue) {

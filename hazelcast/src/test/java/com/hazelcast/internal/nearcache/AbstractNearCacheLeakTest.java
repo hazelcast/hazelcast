@@ -23,7 +23,7 @@ import com.hazelcast.internal.adapter.TransactionalMapDataStructureAdapter;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Test;
 
-import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheReceivedInvalidations;
+import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheInvalidationRequests;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheSize;
 import static org.junit.Assert.assertTrue;
 
@@ -86,9 +86,9 @@ public abstract class AbstractNearCacheLeakTest<NK, NV> extends HazelcastTestSup
         }
         if (context.dataAdapter instanceof ReplicatedMapDataStructureAdapter) {
             // FIXME: there are two extra invalidations in the ReplicatedMap
-            assertNearCacheReceivedInvalidations(context, size + 2);
+            assertNearCacheInvalidationRequests(context, size + 2);
         } else {
-            assertNearCacheReceivedInvalidations(context, size);
+            assertNearCacheInvalidationRequests(context, size);
         }
     }
 

@@ -357,7 +357,7 @@ public final class NearCacheTestUtils extends HazelcastTestSupport {
                             minInvalidations <= invalidationCount && invalidationCount <= maxInvalidations);
                 }
             });
-            context.stats.resetInvalidations();
+            context.stats.resetInvalidationEvents();
         }
     }
 
@@ -376,27 +376,26 @@ public final class NearCacheTestUtils extends HazelcastTestSupport {
                             invalidations, context.stats.getInvalidations(), context.stats);
                 }
             });
-            context.stats.resetInvalidations();
         }
     }
 
     /**
-     * Asserts the number of received Near Cache invalidations.
+     * Asserts the number of Near Cache invalidation requests (triggered invalidation events and local invalidations).
      *
-     * @param context               the given {@link NearCacheTestContext} to retrieve the {@link NearCacheStats} from
-     * @param receivedInvalidations the given number of received Near Cache invalidations to wait for
+     * @param context              the given {@link NearCacheTestContext} to retrieve the {@link NearCacheStats} from
+     * @param invalidationRequests the given number of Near Cache invalidation requests to wait for
      */
-    public static void assertNearCacheReceivedInvalidations(final NearCacheTestContext<?, ?, ?, ?> context,
-                                                            final int receivedInvalidations) {
-        if (context.nearCacheConfig.isInvalidateOnChange() && receivedInvalidations > 0 && context.stats != null) {
+    public static void assertNearCacheInvalidationRequests(final NearCacheTestContext<?, ?, ?, ?> context,
+                                                           final int invalidationRequests) {
+        if (context.nearCacheConfig.isInvalidateOnChange() && invalidationRequests > 0 && context.stats != null) {
             assertTrueEventually(new AssertTask() {
                 @Override
                 public void run() {
                     assertEqualsFormat("Expected %d received Near Cache invalidations, but found %d (%s)",
-                            receivedInvalidations, context.stats.getReceivedInvalidations(), context.stats);
+                            invalidationRequests, context.stats.getInvalidationRequests(), context.stats);
                 }
             });
-            context.stats.resetInvalidations();
+            context.stats.resetInvalidationEvents();
         }
     }
 

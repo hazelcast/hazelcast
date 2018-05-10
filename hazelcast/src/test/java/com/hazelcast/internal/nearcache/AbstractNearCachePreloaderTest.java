@@ -40,7 +40,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 
 import static com.hazelcast.internal.nearcache.AbstractNearCachePreloaderTest.KeyType.INTEGER;
 import static com.hazelcast.internal.nearcache.AbstractNearCachePreloaderTest.KeyType.STRING;
-import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheReceivedInvalidations;
+import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheInvalidationRequests;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheRecord;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheSize;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheSizeEventually;
@@ -397,7 +397,7 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
             Object key = createKey(keyType, i);
             context.dataAdapter.put(key, "value-" + i);
         }
-        assertNearCacheReceivedInvalidations(context, size);
+        assertNearCacheInvalidationRequests(context, size);
     }
 
     private static void populateNearCache(NearCacheTestContext<Object, String, ?, ?> context, int keyCount, KeyType keyType) {
