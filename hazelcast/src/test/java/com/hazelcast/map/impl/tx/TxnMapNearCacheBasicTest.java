@@ -30,7 +30,6 @@ import com.hazelcast.internal.nearcache.NearCacheTestContext;
 import com.hazelcast.internal.nearcache.NearCacheTestContextBuilder;
 import com.hazelcast.internal.nearcache.NearCacheTestUtils;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -49,6 +48,7 @@ import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 import java.util.Collection;
 
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.createNearCacheConfig;
+import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getBaseConfig;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getMapNearCacheManager;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
@@ -100,14 +100,12 @@ public class TxnMapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, S
     }
 
     @Override
-    protected <K, V> NearCacheTestContext<K, V, Data, String> createContext(int size, boolean loaderEnabled) {
-        Config config = createConfig(false);
+    protected <K, V> NearCacheTestContext<K, V, Data, String> createContext(boolean loaderEnabled) {
+        Config config = getConfig(false);
 
         HazelcastInstance dataInstance = hazelcastFactory.newHazelcastInstance(config);
         TransactionalMapDataStructureAdapter<K, V> dataAdapter
                 = new TransactionalMapDataStructureAdapter<K, V>(dataInstance, DEFAULT_NEAR_CACHE_NAME);
-
-        populateDataAdapter(dataAdapter, size);
 
         NearCacheTestContextBuilder<K, V, Data, String> builder = createNearCacheContextBuilder();
         return builder
@@ -122,10 +120,13 @@ public class TxnMapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, S
         return builder.build();
     }
 
-    protected Config createConfig(boolean withNearCache) {
-        Config config = getConfig()
-                .setProperty(GroupProperty.PARTITION_COUNT.getName(), PARTITION_COUNT)
-                .setProperty(GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS.getName(), "1");
+    @Override
+    protected Config getConfig() {
+        return getBaseConfig();
+    }
+
+    protected Config getConfig(boolean withNearCache) {
+        Config config = getConfig();
 
         if (withNearCache) {
             config.getMapConfig(DEFAULT_NEAR_CACHE_NAME).setNearCacheConfig(nearCacheConfig);
@@ -134,7 +135,7 @@ public class TxnMapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, S
     }
 
     private <K, V> NearCacheTestContextBuilder<K, V, Data, String> createNearCacheContextBuilder() {
-        Config configWithNearCache = createConfig(true);
+        Config configWithNearCache = getConfig(true);
 
         HazelcastInstance nearCacheInstance = hazelcastFactory.newHazelcastInstance(configWithNearCache);
         nearCacheInstance.getMap(DEFAULT_NEAR_CACHE_NAME);

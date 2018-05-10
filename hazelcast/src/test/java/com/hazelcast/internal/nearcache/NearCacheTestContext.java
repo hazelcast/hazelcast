@@ -23,6 +23,7 @@ import com.hazelcast.internal.adapter.DataStructureAdapter;
 import com.hazelcast.internal.adapter.DataStructureLoader;
 import com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask;
 import com.hazelcast.monitor.NearCacheStats;
+import com.hazelcast.monitor.impl.NearCacheStatsImpl;
 import com.hazelcast.spi.serialization.SerializationService;
 
 import javax.cache.CacheManager;
@@ -74,7 +75,7 @@ public class NearCacheTestContext<K, V, NK, NV> {
     /**
      * The {@link NearCacheStats} of the configured Near Cache.
      */
-    public final NearCacheStats stats;
+    public final NearCacheStatsImpl stats;
     /**
      * The {@link NearCacheManager} which manages the configured Near Cache.
      */
@@ -124,7 +125,7 @@ public class NearCacheTestContext<K, V, NK, NV> {
         this.dataAdapter = dataAdapter;
 
         this.nearCache = nearCache;
-        this.stats = (nearCache == null) ? null : nearCache.getNearCacheStats();
+        this.stats = (nearCache == null) ? null : (NearCacheStatsImpl) nearCache.getNearCacheStats();
         this.nearCacheManager = nearCacheManager;
         this.cacheManager = cacheManager;
         this.memberCacheManager = memberCacheManager;
