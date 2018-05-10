@@ -29,8 +29,6 @@ import com.hazelcast.core.IQueue;
 import com.hazelcast.core.MapStoreAdapter;
 import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.core.TransactionalQueue;
-import com.hazelcast.instance.Node;
-import com.hazelcast.instance.TestUtil;
 import com.hazelcast.map.impl.operation.DefaultMapOperationProvider;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
@@ -41,6 +39,7 @@ import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.SampleTestObjects;
 import com.hazelcast.query.SampleTestObjects.Employee;
 import com.hazelcast.query.SqlPredicate;
+import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.ExpectedRuntimeException;
@@ -161,9 +160,9 @@ public class MapTransactionTest extends HazelcastTestSupport {
         });
 
 
-        Node node = TestUtil.getNode(instance1);
-        Data keyData = node.nodeEngine.toData(keyOwnedByInstance2);
-        LockService lockService = node.nodeEngine.getService(LockService.SERVICE_NAME);
+        NodeEngine nodeEngine = getNodeEngineImpl(instance1);
+        Data keyData = nodeEngine.toData(keyOwnedByInstance2);
+        LockService lockService = nodeEngine.getService(LockService.SERVICE_NAME);
         for (LockResource lockResource : lockService.getAllLocks()) {
             if (keyData.equals(lockResource.getKey())) {
                 assertEquals(0, lockResource.getLockCount());

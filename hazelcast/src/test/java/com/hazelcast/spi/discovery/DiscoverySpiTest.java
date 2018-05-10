@@ -35,7 +35,6 @@ import com.hazelcast.core.Member;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
-import com.hazelcast.instance.TestUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
@@ -351,8 +350,7 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
     public void testSPIAwareMemberGroupFactoryInvalidConfig() throws Exception {
         HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance();
         try {
-            MemberGroupFactory groupFactory
-                    = new SPIAwareMemberGroupFactory(TestUtil.getNode(hazelcastInstance).getDiscoveryService());
+            MemberGroupFactory groupFactory = new SPIAwareMemberGroupFactory(getNode(hazelcastInstance).getDiscoveryService());
             Collection<Member> members = createMembers();
             groupFactory.createMemberGroups(members);
         } finally {
@@ -366,7 +364,7 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
         Config config = getDiscoverySPIConfig(xmlFileName);
         // we create this instance in order to fully create Node
         HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance(config);
-        Node node = TestUtil.getNode(hazelcastInstance);
+        Node node = getNode(hazelcastInstance);
         assertNotNull(node);
 
         MemberGroupFactory groupFactory = new SPIAwareMemberGroupFactory(node.getDiscoveryService());
