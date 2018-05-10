@@ -630,8 +630,8 @@ public abstract class HazelcastTestSupport {
         if (h1 == null || h2 == null) {
             return;
         }
-        Node n1 = TestUtil.getNode(h1);
-        Node n2 = TestUtil.getNode(h2);
+        Node n1 = getNode(h1);
+        Node n2 = getNode(h2);
         suspectMember(n1, n2);
         suspectMember(n2, n1);
     }
@@ -672,7 +672,7 @@ public abstract class HazelcastTestSupport {
     }
 
     public static boolean isInstanceInSafeState(HazelcastInstance instance) {
-        Node node = TestUtil.getNode(instance);
+        Node node = getNode(instance);
         if (node == null) {
             return true;
         }

@@ -17,7 +17,6 @@
 package com.hazelcast.internal.cluster.impl;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.TestUtil;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.SimpleDiscoveryNode;
@@ -36,6 +35,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import static com.hazelcast.instance.TestUtil.getNode;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -47,7 +47,7 @@ public class DiscoveryJoinerTest {
     @Mock
     private DiscoveryService service = mock(DiscoveryService.class);
 
-    List<DiscoveryNode> discoveryNodes;
+    private List<DiscoveryNode> discoveryNodes;
     private TestHazelcastInstanceFactory factory;
     private HazelcastInstance hz;
 
@@ -70,16 +70,16 @@ public class DiscoveryJoinerTest {
     }
 
     @Test
-    public void test_DiscoveryJoiner_returns_public_address() throws Exception {
-        DiscoveryJoiner joiner = new DiscoveryJoiner(TestUtil.getNode(hz), service, true);
+    public void test_DiscoveryJoiner_returns_public_address() {
+        DiscoveryJoiner joiner = new DiscoveryJoiner(getNode(hz), service, true);
         doReturn(discoveryNodes).when(service).discoverNodes();
         Collection<Address> addresses = joiner.getPossibleAddresses();
         assertEquals("[[127.0.0.1]:50001, [127.0.0.1]:50002]", addresses.toString());
     }
 
     @Test
-    public void test_DiscoveryJoiner_returns_private_address() throws Exception {
-        DiscoveryJoiner joiner = new DiscoveryJoiner(TestUtil.getNode(hz), service, false);
+    public void test_DiscoveryJoiner_returns_private_address() {
+        DiscoveryJoiner joiner = new DiscoveryJoiner(getNode(hz), service, false);
         doReturn(discoveryNodes).when(service).discoverNodes();
         Collection<Address> addresses = joiner.getPossibleAddresses();
         assertEquals("[[127.0.0.2]:50001, [127.0.0.2]:50002]", addresses.toString());

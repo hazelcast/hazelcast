@@ -23,7 +23,6 @@ import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.Node;
-import com.hazelcast.instance.TestUtil;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -119,7 +118,7 @@ public class InternalCacheRecordStoreTest extends CacheTestSupport {
         HazelcastCacheManager hzCacheManager = (HazelcastCacheManager) cacheManager;
 
         HazelcastInstance instance1 = hzCacheManager.getHazelcastInstance();
-        Node node1 = TestUtil.getNode(instance1);
+        Node node1 = getNode(instance1);
         NodeEngineImpl nodeEngine1 = node1.getNodeEngine();
         InternalPartitionService partitionService1 = nodeEngine1.getPartitionService();
         int partitionCount = partitionService1.getPartitionCount();
@@ -139,7 +138,7 @@ public class InternalCacheRecordStoreTest extends CacheTestSupport {
         }
 
         HazelcastInstance instance2 = getHazelcastInstance();
-        Node node2 = TestUtil.getNode(instance2);
+        Node node2 = getNode(instance2);
 
         warmUpPartitions(instance1, instance2);
         waitAllForSafeState(instance1, instance2);

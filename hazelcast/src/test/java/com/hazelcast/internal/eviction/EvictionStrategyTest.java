@@ -22,7 +22,6 @@ import com.hazelcast.cache.impl.record.CacheObjectRecord;
 import com.hazelcast.cache.impl.record.CacheRecordHashMap;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.Node;
-import com.hazelcast.instance.TestUtil;
 import com.hazelcast.internal.eviction.impl.evaluator.EvictionPolicyEvaluator;
 import com.hazelcast.internal.eviction.impl.strategy.sampling.SampleableEvictableStore;
 import com.hazelcast.internal.eviction.impl.strategy.sampling.SamplingEvictionStrategy;
@@ -108,7 +107,7 @@ public class EvictionStrategyTest<K, V extends Evictable, S extends SampleableEv
         final int RECORD_COUNT = 100;
         final int EXPECTED_EVICTED_RECORD_VALUE = RECORD_COUNT / 2;
 
-        Node node = TestUtil.getNode(instance);
+        Node node = getNode(instance);
 
         SerializationService serializationService = node.getSerializationService();
         ICacheService cacheService = node.getNodeEngine().getService(ICacheService.SERVICE_NAME);
