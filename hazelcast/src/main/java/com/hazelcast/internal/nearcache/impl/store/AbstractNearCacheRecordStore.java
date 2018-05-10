@@ -334,6 +334,7 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
             record = removeRecord(key);
             if (record != null && record.getRecordState() == READ_PERMITTED) {
                 removed = true;
+                nearCacheStats.incrementInvalidations();
                 nearCacheStats.decrementOwnedEntryCount();
             }
             onRemove(key, record, removed);
@@ -348,9 +349,11 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
     public void clear() {
         checkAvailable();
 
+        int size = records.size();
         records.clear();
         nearCacheStats.setOwnedEntryCount(0);
         nearCacheStats.setOwnedEntryMemoryCost(0L);
+        nearCacheStats.incrementInvalidations(size);
     }
 
     @Override
