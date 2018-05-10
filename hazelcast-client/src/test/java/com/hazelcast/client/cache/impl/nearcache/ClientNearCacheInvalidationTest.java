@@ -445,6 +445,7 @@ public class ClientNearCacheInvalidationTest extends HazelcastTestSupport {
                 assertEquals(format("Expected %d received Near Cache invalidations, but found %d (%s)",
                         INITIAL_POPULATION_COUNT, invalidationCount, testContext.stats),
                         INITIAL_POPULATION_COUNT, invalidationCount);
+                testContext.stats.resetInvalidations();
                 invalidationListener.resetInvalidationCount();
             }
         });

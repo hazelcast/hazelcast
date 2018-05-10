@@ -29,7 +29,7 @@ import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.monitor.NearCacheStats;
+import com.hazelcast.monitor.impl.NearCacheStatsImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.UsernamePasswordCredentials;
@@ -175,7 +175,7 @@ public class Statistics {
 
             nearCacheNameWithPrefix.append('.');
 
-            NearCacheStats nearCacheStats = nearCache.getNearCacheStats();
+            NearCacheStatsImpl nearCacheStats = (NearCacheStatsImpl) nearCache.getNearCacheStats();
 
             String prefix = nearCacheNameWithPrefix.toString();
 
@@ -190,6 +190,7 @@ public class Statistics {
             addStat(stats, prefix, "ownedEntryCount", nearCacheStats.getOwnedEntryCount());
             addStat(stats, prefix, "expirations", nearCacheStats.getExpirations());
             addStat(stats, prefix, "invalidations", nearCacheStats.getInvalidations());
+            addStat(stats, prefix, "receivedInvalidations", nearCacheStats.getReceivedInvalidations());
             addStat(stats, prefix, "ownedEntryMemoryCost", nearCacheStats.getOwnedEntryMemoryCost());
             String persistenceFailure = nearCacheStats.getLastPersistenceFailure();
             if (persistenceFailure != null && !persistenceFailure.isEmpty()) {

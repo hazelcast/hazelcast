@@ -342,6 +342,8 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
         } catch (Throwable error) {
             onRemoveError(key, record, removed, error);
             throw rethrow(error);
+        } finally {
+            nearCacheStats.incrementReceivedInvalidations();
         }
     }
 
@@ -354,6 +356,7 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
         nearCacheStats.setOwnedEntryCount(0);
         nearCacheStats.setOwnedEntryMemoryCost(0L);
         nearCacheStats.incrementInvalidations(size);
+        nearCacheStats.incrementReceivedInvalidations();
     }
 
     @Override

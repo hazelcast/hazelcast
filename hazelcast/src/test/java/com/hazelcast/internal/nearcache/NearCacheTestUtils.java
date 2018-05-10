@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.nearcache;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionConfig.MaxSizePolicy;
 import com.hazelcast.config.EvictionPolicy;
@@ -49,6 +50,8 @@ import static com.hazelcast.config.InMemoryFormat.BINARY;
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
 import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.CACHE_ON_UPDATE;
 import static com.hazelcast.internal.nearcache.NearCacheRecord.READ_PERMITTED;
+import static com.hazelcast.spi.properties.GroupProperty.CACHE_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS;
+import static com.hazelcast.spi.properties.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS;
 import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -66,6 +69,12 @@ import static org.junit.Assume.assumeTrue;
 public final class NearCacheTestUtils extends HazelcastTestSupport {
 
     private NearCacheTestUtils() {
+    }
+
+    public static Config getBaseConfig() {
+        return smallInstanceConfig()
+                .setProperty(CACHE_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS.getName(), "1")
+                .setProperty(MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS.getName(), "1");
     }
 
     /**
@@ -365,6 +374,26 @@ public final class NearCacheTestUtils extends HazelcastTestSupport {
                 public void run() {
                     assertEqualsFormat("Expected %d Near Cache invalidations, but found %d (%s)",
                             invalidations, context.stats.getInvalidations(), context.stats);
+                }
+            });
+            context.stats.resetInvalidations();
+        }
+    }
+
+    /**
+     * Asserts the number of received Near Cache invalidations.
+     *
+     * @param context               the given {@link NearCacheTestContext} to retrieve the {@link NearCacheStats} from
+     * @param receivedInvalidations the given number of received Near Cache invalidations to wait for
+     */
+    public static void assertNearCacheReceivedInvalidations(final NearCacheTestContext<?, ?, ?, ?> context,
+                                                            final int receivedInvalidations) {
+        if (context.nearCacheConfig.isInvalidateOnChange() && receivedInvalidations > 0 && context.stats != null) {
+            assertTrueEventually(new AssertTask() {
+                @Override
+                public void run() {
+                    assertEqualsFormat("Expected %d received Near Cache invalidations, but found %d (%s)",
+                            receivedInvalidations, context.stats.getReceivedInvalidations(), context.stats);
                 }
             });
             context.stats.resetInvalidations();
