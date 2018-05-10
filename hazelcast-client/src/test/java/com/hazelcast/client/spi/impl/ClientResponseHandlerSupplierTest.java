@@ -17,7 +17,7 @@
 package com.hazelcast.client.spi.impl;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.spi.impl.ClientResponseHandlerSupplier.AsyncMultiThreadedResponseHandler;
 import com.hazelcast.client.spi.impl.ClientResponseHandlerSupplier.AsyncSingleThreadedResponseHandler;
 import com.hazelcast.client.spi.impl.ClientResponseHandlerSupplier.SyncResponseHandler;

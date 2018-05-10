@@ -18,7 +18,7 @@ package com.hazelcast.client.impl.protocol.task.cache;
 
 import com.hazelcast.cache.impl.CacheContext;
 import com.hazelcast.cache.impl.CacheService;
-import com.hazelcast.client.ClientEndpoint;
+import com.hazelcast.client.impl.ClientEndpoint;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheAddNearCacheInvalidationListenerCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;

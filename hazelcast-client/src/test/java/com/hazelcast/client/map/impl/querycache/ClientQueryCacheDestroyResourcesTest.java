@@ -17,7 +17,7 @@
 package com.hazelcast.client.map.impl.querycache;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.impl.HazelcastClientProxy;
+import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.client.spi.impl.listener.ClientEventRegistration;
 import com.hazelcast.client.spi.impl.listener.ClientRegistrationKey;
 import com.hazelcast.client.spi.impl.listener.SmartClientListenerService;

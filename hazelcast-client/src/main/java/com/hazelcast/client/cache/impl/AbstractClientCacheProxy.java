@@ -17,7 +17,7 @@
 package com.hazelcast.client.cache.impl;
 
 import com.hazelcast.cache.CacheStatistics;
-import com.hazelcast.client.impl.ClientMessageDecoder;
+import com.hazelcast.client.impl.clientside.ClientMessageDecoder;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheGetAllCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheGetCodec;

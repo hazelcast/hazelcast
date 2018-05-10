@@ -21,7 +21,7 @@ import com.hazelcast.aws.AwsProperties;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientAwsConfig;
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.impl.ClientLoggingService;
+import com.hazelcast.client.impl.clientside.ClientLoggingService;
 import com.hazelcast.client.spi.impl.AwsAddressProvider;
 import com.hazelcast.client.spi.properties.ClientProperty;
 import com.hazelcast.config.DiscoveryStrategyConfig;

@@ -16,9 +16,9 @@
 
 package com.hazelcast.client.listeners.leak;
 
-import com.hazelcast.client.ClientEndpoint;
-import com.hazelcast.client.impl.ClientTestUtil;
-import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.ClientEndpoint;
+import com.hazelcast.client.impl.clientside.ClientTestUtil;
+import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.spi.impl.listener.AbstractClientListenerService;
 import com.hazelcast.client.spi.impl.listener.ClientEventRegistration;
 import com.hazelcast.client.test.TestHazelcastFactory;

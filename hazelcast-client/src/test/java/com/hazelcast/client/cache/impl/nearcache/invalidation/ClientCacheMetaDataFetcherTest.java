@@ -20,7 +20,7 @@ import com.hazelcast.cache.impl.CacheEventHandler;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.client.cache.impl.HazelcastClientCachingProvider;
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.impl.HazelcastClientProxy;
+import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.test.TestHazelcastFactory;

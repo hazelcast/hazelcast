@@ -17,8 +17,8 @@
 package com.hazelcast.client.proxy;
 
 import com.hazelcast.aggregation.Aggregator;
-import com.hazelcast.client.impl.ClientLockReferenceIdGenerator;
-import com.hazelcast.client.impl.ClientMessageDecoder;
+import com.hazelcast.client.impl.clientside.ClientLockReferenceIdGenerator;
+import com.hazelcast.client.impl.clientside.ClientMessageDecoder;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapAddEntryListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.MapAddEntryListenerToKeyCodec;

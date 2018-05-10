@@ -121,11 +121,10 @@
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]client[\\/]proxy[\\/]ClientReplicatedMapProxy"/>
     <suppress checks="ClassFanOutComplexity" files="com[\\/]hazelcast[\\/]client[\\/]proxy[\\/]ClientReplicatedMapProxy"/>
     <suppress checks="MethodCount|ClassFanOutComplexity|ClassDataAbstractionCoupling|ExecutableStatementCount"
-              files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]HazelcastClientInstance"/>
-    <suppress checks="VisibilityModifier" files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]HazelcastClientProxy"/>
+              files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]clientside[\\/]HazelcastClientInstanceImpl"/>
+    <suppress checks="MethodCount|VisibilityModifier" files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]clientside[\\/]HazelcastClientProxy"/>
     <suppress checks="MethodCount|ClassDataAbstractionCoupling"
               files="com[\\/]hazelcast[\\/]client[\\/]proxy[\\/]ClientExecutorServiceProxy"/>
-    <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]HazelcastClientProxy"/>
     <suppress checks="CyclomaticComplexity|ClassDataAbstractionCoupling"
               files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]client[\\/]ClientPortableFactory"/>
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]client[\\/]config[\\/]ClientConfig"/>
@@ -143,7 +142,9 @@
     <suppress checks="Header|MethodCount|Length|ClassDataAbstractionCoupling|ClassFanOutComplexity|Whitespace|MethodParamPad"
               files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]protocol[\\/]DefaultMessageTaskFactoryProvider"/>
     <suppress checks="ExecutableStatementCount|MethodCount|Length|ClassDataAbstractionCoupling|ClassFanOutComplexity"
-              files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]protocol[\\/]ClientExceptionFactory.java"/>
+              files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]clientside[\\/]ClientExceptionFactory.java"/>
+    <suppress checks="ExecutableStatementCount|MethodCount|Length|ClassDataAbstractionCoupling|ClassFanOutComplexity"
+              files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]protocol[\\/]ClientExceptions.java"/>
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]protocol[\\/]ClientMessage"/>
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]protocol[\\/]util[\\/]MessageFlyweight"/>
 

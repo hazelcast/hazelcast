@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.impl.protocol.task.map;
 
-import com.hazelcast.client.ClientEndpoint;
+import com.hazelcast.client.impl.ClientEndpoint;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapAddNearCacheEntryListenerCodec;
 import com.hazelcast.instance.Node;
