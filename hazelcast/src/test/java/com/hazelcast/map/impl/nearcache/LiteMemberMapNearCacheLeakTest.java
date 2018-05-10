@@ -47,7 +47,6 @@ import java.util.Collection;
 
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.createNearCacheConfig;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getMapNearCacheManager;
-import static com.hazelcast.map.impl.nearcache.MapInvalidationListener.createInvalidationEventHandler;
 import static java.util.Arrays.asList;
 
 /**
@@ -135,7 +134,6 @@ public class LiteMemberMapNearCacheLeakTest extends AbstractNearCacheLeakTest<Da
                 .setNearCacheAdapter(new IMapDataStructureAdapter<K, V>(liteMemberMap))
                 .setNearCache(nearCache)
                 .setNearCacheManager(nearCacheManager)
-                .setInvalidationListener(createInvalidationEventHandler(liteMemberMap))
                 .setRepairingTask(repairingTask);
     }
 }

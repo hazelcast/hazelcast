@@ -44,7 +44,6 @@ import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.util.Collection;
 
-import static com.hazelcast.client.replicatedmap.nearcache.ClientReplicatedMapInvalidationListener.createInvalidationEventHandler;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.createNearCacheConfig;
 import static java.util.Arrays.asList;
 
@@ -122,7 +121,6 @@ public class ClientReplicatedMapNearCacheLeakTest extends AbstractNearCacheLeakT
                 .setNearCacheInstance(client)
                 .setNearCacheAdapter(new ReplicatedMapDataStructureAdapter<K, V>(clientMap))
                 .setNearCache(nearCache)
-                .setNearCacheManager(nearCacheManager)
-                .setInvalidationListener(createInvalidationEventHandler(clientMap));
+                .setNearCacheManager(nearCacheManager);
     }
 }

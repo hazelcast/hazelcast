@@ -46,7 +46,6 @@ import static com.hazelcast.config.NearCacheConfig.DEFAULT_MEMORY_FORMAT;
 import static com.hazelcast.config.NearCacheConfig.DEFAULT_SERIALIZE_KEYS;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.createNearCacheConfig;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getMapNearCacheManager;
-import static com.hazelcast.map.impl.nearcache.MapInvalidationListener.createInvalidationEventHandler;
 import static com.hazelcast.map.impl.nearcache.MapNearCacheBasicTest.addMapStoreConfig;
 
 /**
@@ -139,7 +138,6 @@ public class LiteMemberClientMapNearCacheBasicTest extends AbstractNearCacheBasi
                 .setNearCacheAdapter(new IMapDataStructureAdapter<K, V>(liteMemberMap))
                 .setNearCache(nearCache)
                 .setNearCacheManager(nearCacheManager)
-                .setLoader(mapStore)
-                .setInvalidationListener(createInvalidationEventHandler(liteMemberMap));
+                .setLoader(mapStore);
     }
 }

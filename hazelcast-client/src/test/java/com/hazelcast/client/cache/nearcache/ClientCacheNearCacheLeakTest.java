@@ -57,7 +57,6 @@ import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 import javax.cache.spi.CachingProvider;
 import java.util.Collection;
 
-import static com.hazelcast.client.cache.nearcache.ClientCacheInvalidationListener.createInvalidationEventHandler;
 import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE;
 import static com.hazelcast.config.EvictionPolicy.LRU;
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
@@ -177,7 +176,6 @@ public class ClientCacheNearCacheLeakTest extends AbstractNearCacheLeakTest<Data
                 .setNearCache(nearCache)
                 .setNearCacheManager(nearCacheManager)
                 .setCacheManager(cacheManager)
-                .setInvalidationListener(createInvalidationEventHandler(clientCache))
                 .setRepairingTask(repairingTask);
     }
 }

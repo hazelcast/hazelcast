@@ -52,7 +52,6 @@ import java.util.Collection;
 
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.createNearCacheConfig;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getMapNearCacheManager;
-import static com.hazelcast.map.impl.nearcache.MapInvalidationListener.createInvalidationEventHandler;
 import static java.util.Arrays.asList;
 
 /**
@@ -152,8 +151,7 @@ public class MapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, Stri
                 .setNearCache(nearCache)
                 .setNearCacheManager(nearCacheManager)
                 .setLoader(mapStore)
-                .setHasLocalData(true)
-                .setInvalidationListener(createInvalidationEventHandler(nearCacheMap));
+                .setHasLocalData(true);
     }
 
     public static void addMapStoreConfig(IMapMapStore mapStore, MapConfig mapConfig) {

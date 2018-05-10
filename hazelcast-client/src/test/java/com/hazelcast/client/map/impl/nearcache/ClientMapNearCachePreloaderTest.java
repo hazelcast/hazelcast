@@ -39,7 +39,6 @@ import org.junit.runner.RunWith;
 
 import java.io.File;
 
-import static com.hazelcast.client.map.impl.nearcache.ClientMapInvalidationListener.createInvalidationEventHandler;
 import static com.hazelcast.config.NearCacheConfig.DEFAULT_INVALIDATE_ON_CHANGE;
 import static com.hazelcast.config.NearCacheConfig.DEFAULT_MEMORY_FORMAT;
 import static com.hazelcast.config.NearCacheConfig.DEFAULT_SERIALIZE_KEYS;
@@ -126,7 +125,6 @@ public class ClientMapNearCachePreloaderTest extends AbstractNearCachePreloaderT
                 .setNearCacheInstance(client)
                 .setNearCacheAdapter(new IMapDataStructureAdapter<K, V>(clientMap))
                 .setNearCache(nearCache)
-                .setNearCacheManager(nearCacheManager)
-                .setInvalidationListener(createInvalidationEventHandler(clientMap));
+                .setNearCacheManager(nearCacheManager);
     }
 }
