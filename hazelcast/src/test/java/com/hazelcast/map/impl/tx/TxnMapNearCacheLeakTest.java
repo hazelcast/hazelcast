@@ -47,7 +47,6 @@ import java.util.Collection;
 
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.createNearCacheConfig;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getMapNearCacheManager;
-import static com.hazelcast.map.impl.nearcache.MapInvalidationListener.createInvalidationEventHandler;
 import static java.util.Arrays.asList;
 
 /**
@@ -128,7 +127,7 @@ public class TxnMapNearCacheLeakTest extends AbstractNearCacheLeakTest<Data, Str
         Config configWithNearCache = createConfig(true);
 
         HazelcastInstance nearCacheInstance = hazelcastFactory.newHazelcastInstance(configWithNearCache);
-        IMap<K, V> nearCacheMap = nearCacheInstance.getMap(DEFAULT_NEAR_CACHE_NAME);
+        nearCacheInstance.getMap(DEFAULT_NEAR_CACHE_NAME);
 
         NearCacheManager nearCacheManager = getMapNearCacheManager(nearCacheInstance);
         NearCache<Data, String> nearCache = nearCacheManager.getNearCache(DEFAULT_NEAR_CACHE_NAME);
@@ -140,7 +139,6 @@ public class TxnMapNearCacheLeakTest extends AbstractNearCacheLeakTest<Data, Str
                 .setNearCacheAdapter(new TransactionalMapDataStructureAdapter<K, V>(nearCacheInstance, DEFAULT_NEAR_CACHE_NAME))
                 .setNearCache(nearCache)
                 .setNearCacheManager(nearCacheManager)
-                .setInvalidationListener(createInvalidationEventHandler(nearCacheMap))
                 .setRepairingTask(repairingTask);
     }
 }

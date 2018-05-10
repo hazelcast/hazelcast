@@ -50,7 +50,6 @@ import org.junit.runner.RunWith;
 import javax.cache.configuration.FactoryBuilder;
 import javax.cache.spi.CachingProvider;
 
-import static com.hazelcast.client.cache.nearcache.ClientCacheInvalidationListener.createInvalidationEventHandler;
 import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE;
 import static com.hazelcast.config.EvictionPolicy.LRU;
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
@@ -162,7 +161,6 @@ public class ClientCacheNearCacheBasicTest extends AbstractNearCacheBasicTest<Da
                 .setNearCacheAdapter(new ICacheDataStructureAdapter<K, V>(clientCache))
                 .setNearCache(nearCache)
                 .setNearCacheManager(nearCacheManager)
-                .setCacheManager(cacheManager)
-                .setInvalidationListener(createInvalidationEventHandler(clientCache));
+                .setCacheManager(cacheManager);
     }
 }

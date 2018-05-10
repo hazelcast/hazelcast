@@ -96,10 +96,6 @@ public class NearCacheTestContext<K, V, NK, NV> {
      * The {@link DataStructureLoader} which loads entries into the data structure.
      */
     public final DataStructureLoader loader;
-    /**
-     * The {@link NearCacheInvalidationListener} which monitors invalidation events.
-     */
-    public final NearCacheInvalidationListener invalidationListener;
 
     /**
      * The {@link RepairingTask} from the Near Cache instance.
@@ -118,7 +114,6 @@ public class NearCacheTestContext<K, V, NK, NV> {
                          HazelcastServerCacheManager memberCacheManager,
                          boolean hasLocalData,
                          DataStructureLoader loader,
-                         NearCacheInvalidationListener invalidationListener,
                          RepairingTask repairingTask) {
         this.nearCacheConfig = nearCacheConfig;
         this.serializationService = serializationService;
@@ -136,7 +131,6 @@ public class NearCacheTestContext<K, V, NK, NV> {
 
         this.hasLocalData = hasLocalData;
         this.loader = loader;
-        this.invalidationListener = invalidationListener;
         this.repairingTask = repairingTask;
     }
 }

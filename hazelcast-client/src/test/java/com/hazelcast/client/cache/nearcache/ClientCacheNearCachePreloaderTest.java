@@ -48,7 +48,6 @@ import javax.cache.spi.CachingProvider;
 import java.io.File;
 
 import static com.hazelcast.cache.CacheUtil.getDistributedObjectName;
-import static com.hazelcast.client.cache.nearcache.ClientCacheInvalidationListener.createInvalidationEventHandler;
 import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE;
 import static com.hazelcast.config.EvictionPolicy.LRU;
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
@@ -167,7 +166,6 @@ public class ClientCacheNearCachePreloaderTest extends AbstractNearCachePreloade
                 .setNearCacheAdapter(new ICacheDataStructureAdapter<K, V>(clientCache))
                 .setNearCache(nearCache)
                 .setNearCacheManager(nearCacheManager)
-                .setCacheManager(cacheManager)
-                .setInvalidationListener(createInvalidationEventHandler(clientCache));
+                .setCacheManager(cacheManager);
     }
 }

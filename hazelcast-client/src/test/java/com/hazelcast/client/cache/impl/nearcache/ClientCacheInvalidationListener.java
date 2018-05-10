@@ -14,32 +14,29 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.cache.nearcache;
+package com.hazelcast.client.cache.impl.nearcache;
 
 import com.hazelcast.cache.ICache;
 import com.hazelcast.client.cache.impl.NearCachedClientCacheProxy;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheAddNearCacheInvalidationListenerCodec;
 import com.hazelcast.client.spi.EventHandler;
-import com.hazelcast.internal.nearcache.NearCacheInvalidationListener;
 import com.hazelcast.nio.serialization.Data;
 
 import java.util.Collection;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class ClientCacheInvalidationListener
+class ClientCacheInvalidationListener
         extends CacheAddNearCacheInvalidationListenerCodec.AbstractEventHandler
-        implements NearCacheInvalidationListener, EventHandler<ClientMessage> {
+        implements EventHandler<ClientMessage> {
 
     private final AtomicLong invalidationCount = new AtomicLong();
 
-    @Override
     public long getInvalidationCount() {
         return invalidationCount.get();
     }
 
-    @Override
     public void resetInvalidationCount() {
         invalidationCount.set(0);
     }
@@ -50,8 +47,8 @@ public class ClientCacheInvalidationListener
     }
 
     @Override
-    public void handle(String name, Collection<Data> keys, Collection<String> sourceUuids,
-                       Collection<UUID> partitionUuids, Collection<Long> sequences) {
+    public void handle(String name, Collection<Data> keys, Collection<String> sourceUuids, Collection<UUID> partitionUuids,
+                       Collection<Long> sequences) {
         invalidationCount.addAndGet(keys.size());
     }
 
@@ -63,10 +60,10 @@ public class ClientCacheInvalidationListener
     public void onListenerRegister() {
     }
 
-    public static NearCacheInvalidationListener createInvalidationEventHandler(ICache clientCache) {
-        EventHandler invalidationListener = new ClientCacheInvalidationListener();
+    static ClientCacheInvalidationListener createInvalidationEventHandler(ICache clientCache) {
+        ClientCacheInvalidationListener invalidationListener = new ClientCacheInvalidationListener();
         ((NearCachedClientCacheProxy) clientCache).addNearCacheInvalidationListener(invalidationListener);
 
-        return (NearCacheInvalidationListener) invalidationListener;
+        return invalidationListener;
     }
 }
