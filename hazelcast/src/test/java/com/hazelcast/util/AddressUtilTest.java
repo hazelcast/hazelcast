@@ -56,7 +56,7 @@ import static org.mockito.Mockito.when;
  * Unit tests for AddressUtil class.
  */
 @RunWith(PowerMockRunner.class)
-@PowerMockRunnerDelegate(HazelcastSerialClassRunner.class)
+//@PowerMockRunnerDelegate(HazelcastSerialClassRunner.class)
 @PrepareForTest({Inet6Address.class, AddressUtil.class, NetworkInterface.class})
 @Category(QuickTest.class)
 public class AddressUtilTest extends HazelcastTestSupport {
