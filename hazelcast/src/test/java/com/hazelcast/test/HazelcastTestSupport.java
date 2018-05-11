@@ -1510,6 +1510,10 @@ public abstract class HazelcastTestSupport {
         assumeFalse("Java 6 used", JAVA_VERSION.startsWith("1.6."));
     }
 
+    public static void assumeThatJDK8() {
+        assumeTrue("Java 8 should be used", JAVA_VERSION.startsWith("1.8."));
+    }
+
     public static void assumeThatNotZingJDK6() {
         assumeFalse("Zing JDK6 used", JAVA_VERSION.startsWith("1.6.") && JVM_NAME.startsWith("Zing"));
     }
