@@ -73,7 +73,6 @@ public class ClientInvocation implements Runnable {
     private final long retryPauseMillis;
     private final String objectName;
     private volatile ClientConnection sendConnection;
-    private boolean bypassHeartbeatCheck;
     private EventHandler handler;
     private volatile long invokeCount;
 
@@ -286,14 +285,6 @@ public class ClientInvocation implements Runnable {
 
     public void setEventHandler(EventHandler handler) {
         this.handler = handler;
-    }
-
-    public boolean shouldBypassHeartbeatCheck() {
-        return bypassHeartbeatCheck;
-    }
-
-    public void setBypassHeartbeatCheck(boolean bypassHeartbeatCheck) {
-        this.bypassHeartbeatCheck = bypassHeartbeatCheck;
     }
 
     public void setSendConnection(ClientConnection connection) {

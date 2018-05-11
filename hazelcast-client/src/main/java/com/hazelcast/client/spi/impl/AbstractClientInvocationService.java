@@ -114,7 +114,7 @@ public abstract class AbstractClientInvocationService implements ClientInvocatio
         registerInvocation(invocation);
 
         ClientMessage clientMessage = invocation.getClientMessage();
-        if (!isAllowedToSendRequest(connection, invocation) || !writeToConnection(connection, clientMessage)) {
+        if (!writeToConnection(connection, clientMessage)) {
             final long callId = clientMessage.getCorrelationId();
             ClientInvocation clientInvocation = deRegisterCallId(callId);
             if (clientInvocation != null) {
@@ -133,22 +133,6 @@ public abstract class AbstractClientInvocationService implements ClientInvocatio
     private boolean writeToConnection(ClientConnection connection, ClientMessage clientMessage) {
         clientMessage.addFlag(ClientMessage.BEGIN_AND_END_FLAGS);
         return connection.write(clientMessage);
-    }
-
-    private boolean isAllowedToSendRequest(ClientConnection connection, ClientInvocation invocation) {
-        if (!connection.isHeartBeating()) {
-            if (invocation.shouldBypassHeartbeatCheck()) {
-                // ping and removeAllListeners should be send even though heart is not beating
-                return true;
-            }
-
-            if (invocationLogger.isFinestEnabled()) {
-                invocationLogger.finest("Connection is not heart-beating, won't write client message -> "
-                        + invocation.getClientMessage());
-            }
-            return false;
-        }
-        return true;
     }
 
     private void registerInvocation(ClientInvocation clientInvocation) {
@@ -204,7 +188,7 @@ public abstract class AbstractClientInvocationService implements ClientInvocatio
                     continue;
                 }
 
-                if (connection.isHeartBeating()) {
+                if (connection.isAlive()) {
                     continue;
                 }
 
@@ -215,17 +199,7 @@ public abstract class AbstractClientInvocationService implements ClientInvocatio
         }
 
         private void notifyException(ClientInvocation invocation, ClientConnection connection) {
-            Exception ex;
-
-            // Connection may be closed(e.g. remote member shutdown) in which case the isAlive is set to false or the
-            // heartbeat failure occurs. The order of the following check matters. We need to first check for isAlive since
-            // the connection.isHeartBeating also checks for isAlive as well.
-            if (!connection.isAlive()) {
-                ex = new TargetDisconnectedException(connection.getCloseReason(), connection.getCloseCause());
-            } else {
-                ex = new TargetDisconnectedException("Heartbeat timed out to " + connection);
-            }
-
+            Exception ex = new TargetDisconnectedException(connection.getCloseReason(), connection.getCloseCause());
             invocation.notifyException(ex);
         }
     }

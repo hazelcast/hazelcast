@@ -37,7 +37,6 @@ import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
-import com.hazelcast.client.spi.impl.ConnectionHeartbeatListener;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.core.ExecutionCallback;
@@ -105,7 +104,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * Implementation of {@link ClientConnectionManager}.
  */
 @SuppressWarnings("checkstyle:classdataabstractioncoupling")
-public class ClientConnectionManagerImpl implements ClientConnectionManager, ConnectionHeartbeatListener {
+public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
     private static final int DEFAULT_SSL_THREAD_COUNT = 3;
     private static final int DEFAULT_CONNECTION_ATTEMPT_LIMIT_SYNC = 2;
@@ -295,7 +294,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
         startEventLoopGroup();
 
         heartbeat.start();
-        addConnectionHeartbeatListener(this);
         connectionStrategy.init(clientContext);
         connectionStrategy.start();
     }
@@ -639,11 +637,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
         connectionListeners.add(connectionListener);
     }
 
-    @Override
-    public void addConnectionHeartbeatListener(ConnectionHeartbeatListener connectionHeartbeatListener) {
-        heartbeat.addConnectionHeartbeatListener(connectionHeartbeatListener);
-    }
-
     private void authenticate(final Address target, final ClientConnection connection, final boolean asOwner,
                               final AuthenticationFuture future) {
         final ClientPrincipal principal = getPrincipal();
@@ -718,16 +711,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager, Con
         }
         connection.close(null, cause);
         connectionsInProgress.remove(target);
-    }
-
-    @Override
-    public void heartbeatResumed(Connection connection) {
-        connectionStrategy.onHeartbeatResumed((ClientConnection) connection);
-    }
-
-    @Override
-    public void heartbeatStopped(Connection connection) {
-        connectionStrategy.onHeartbeatStopped((ClientConnection) connection);
     }
 
     private class TimeoutAuthenticationTask implements Runnable {

@@ -19,11 +19,9 @@ package com.hazelcast.client.spi.impl.listener;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.EventHandler;
-import com.hazelcast.client.spi.impl.ConnectionHeartbeatListener;
 import com.hazelcast.client.spi.impl.ListenerMessageCodec;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.OperationTimeoutException;
-import com.hazelcast.nio.Connection;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.io.IOException;
@@ -32,7 +30,7 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.util.StringUtil.timeToString;
 
-public class SmartClientListenerService extends AbstractClientListenerService implements ConnectionHeartbeatListener {
+public class SmartClientListenerService extends AbstractClientListenerService  {
 
     public SmartClientListenerService(HazelcastClientInstanceImpl client,
                                       int eventThreadCount, int eventQueueCapacity) {
@@ -42,7 +40,6 @@ public class SmartClientListenerService extends AbstractClientListenerService im
     @Override
     public void start() {
         super.start();
-        clientConnectionManager.addConnectionHeartbeatListener(this);
         final ClientClusterService clientClusterService = client.getClientClusterService();
         registrationExecutor.scheduleWithFixedDelay(new Runnable() {
             @Override
@@ -63,27 +60,6 @@ public class SmartClientListenerService extends AbstractClientListenerService im
     public String registerListener(final ListenerMessageCodec codec, final EventHandler handler) {
         trySyncConnectToAllMembers();
         return super.registerListener(codec, handler);
-    }
-
-    @Override
-    public void heartbeatResumed(final Connection connection) {
-        //This method should not be called from registrationExecutor
-        assert (!Thread.currentThread().getName().contains("eventRegistration"));
-
-        registrationExecutor.submit(new Runnable() {
-            @Override
-            public void run() {
-                Collection<ClientRegistrationKey> registrationKeys = failedRegistrations.get(connection);
-                for (ClientRegistrationKey registrationKey : registrationKeys) {
-                    invokeFromInternalThread(registrationKey, connection);
-                }
-            }
-        });
-    }
-
-    @Override
-    public void heartbeatStopped(Connection connection) {
-        //no op
     }
 
     @Override
