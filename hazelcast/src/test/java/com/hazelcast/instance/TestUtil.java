@@ -30,8 +30,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import static com.hazelcast.nio.IOUtil.closeResource;
 import static com.hazelcast.test.HazelcastTestSupport.sleepMillis;
+import static com.hazelcast.util.EmptyStatement.ignore;
 
 @SuppressWarnings("WeakerAccess")
 public final class TestUtil {
@@ -184,8 +184,17 @@ public final class TestUtil {
         } catch (IOException e) {
             return false;
         } finally {
-            closeResource(ds);
-            closeResource(ss);
+            // ServerSocket is not Closeable in Java 6, so we cannot use IOUtil.closeResource() yet
+            if (ds != null) {
+                ds.close();
+            }
+            try {
+                if (ss != null) {
+                    ss.close();
+                }
+            } catch (IOException e) {
+                ignore(e);
+            }
         }
     }
 
