@@ -173,7 +173,8 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                 // createOutboundEdgeStreams() populates localConveyorMap and edgeSenderConveyorMap.
                 // Also populates instance fields: senderMap, receiverMap, tasklets.
                 List<OutboundEdgeStream> outboundStreams = createOutboundEdgeStreams(vertex, localProcessorIdx);
-                List<InboundEdgeStream> inboundStreams = createInboundEdgeStreams(vertex, localProcessorIdx);
+                List<InboundEdgeStream> inboundStreams =
+                        createInboundEdgeStreams(vertex, localProcessorIdx, globalProcessorIndex);
 
                 OutboundCollector snapshotCollector = new ConveyorCollector(ssConveyor, localProcessorIdx, null);
 
@@ -469,13 +470,14 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
         return service.getJetInstance().getConfig();
     }
 
-    private List<InboundEdgeStream> createInboundEdgeStreams(VertexDef srcVertex, int processorIdx) {
+    private List<InboundEdgeStream> createInboundEdgeStreams(VertexDef srcVertex, int localProcessorIdx,
+                                                             int globalProcessorIdx) {
         final List<InboundEdgeStream> inboundStreams = new ArrayList<>();
         for (EdgeDef inEdge : srcVertex.inboundEdges()) {
             // each tasklet has one input conveyor per edge
-            final ConcurrentConveyor<Object> conveyor = localConveyorMap.get(inEdge.edgeId())[processorIdx];
+            final ConcurrentConveyor<Object> conveyor = localConveyorMap.get(inEdge.edgeId())[localProcessorIdx];
             inboundStreams.add(newEdgeStream(inEdge, conveyor,
-                    "inputTo:" + inEdge.destVertex().name() + '#' + processorIdx));
+                    "inputTo:" + inEdge.destVertex().name() + '#' + globalProcessorIdx));
         }
         return inboundStreams;
     }

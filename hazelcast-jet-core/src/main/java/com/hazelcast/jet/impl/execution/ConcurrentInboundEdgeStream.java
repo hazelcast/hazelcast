@@ -74,6 +74,7 @@ public class ConcurrentInboundEdgeStream implements InboundEdgeStream {
         receivedBarriers = new BitSet(conveyor.queueCount());
         pendingSnapshotId = lastSnapshotId + 1;
         logger = Logger.getLogger(ConcurrentInboundEdgeStream.class.getName() + "." + debugName);
+        logger.finest("Coalescing " + conveyor.queueCount() + " input queues");
     }
 
     @Override
@@ -119,8 +120,8 @@ public class ConcurrentInboundEdgeStream implements InboundEdgeStream {
                 long wmTimestamp = ((Watermark) itemDetector.item).timestamp();
                 boolean forwarded = maybeEmitWm(watermarkCoalescer.observeWm(now, queueIndex, wmTimestamp), dest);
                 if (logger.isFinestEnabled()) {
-                    logger.finest("Received " + itemDetector.item + " from queue " + queueIndex + '/'
-                            + conveyor.queueCount() + (forwarded ? ", forwarded" : ", not forwarded"));
+                    logger.finest("Received " + itemDetector.item + " from queue " + queueIndex
+                            + (forwarded ? ", forwarded" : ", not forwarded"));
                 }
                 if (forwarded) {
                     return MADE_PROGRESS;
