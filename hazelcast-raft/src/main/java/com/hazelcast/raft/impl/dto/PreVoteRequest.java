@@ -4,7 +4,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.raft.impl.RaftDataSerializerHook;
-import com.hazelcast.raft.impl.RaftEndpoint;
+import com.hazelcast.raft.RaftMember;
 
 import java.io.IOException;
 
@@ -17,7 +17,7 @@ import java.io.IOException;
  */
 public class PreVoteRequest implements IdentifiedDataSerializable {
 
-    private RaftEndpoint candidate;
+    private RaftMember candidate;
     private int nextTerm;
     private int lastLogTerm;
     private long lastLogIndex;
@@ -25,14 +25,14 @@ public class PreVoteRequest implements IdentifiedDataSerializable {
     public PreVoteRequest() {
     }
 
-    public PreVoteRequest(RaftEndpoint candidate, int nextTerm, int lastLogTerm, long lastLogIndex) {
+    public PreVoteRequest(RaftMember candidate, int nextTerm, int lastLogTerm, long lastLogIndex) {
         this.nextTerm = nextTerm;
         this.candidate = candidate;
         this.lastLogTerm = lastLogTerm;
         this.lastLogIndex = lastLogIndex;
     }
 
-    public RaftEndpoint candidate() {
+    public RaftMember candidate() {
         return candidate;
     }
 

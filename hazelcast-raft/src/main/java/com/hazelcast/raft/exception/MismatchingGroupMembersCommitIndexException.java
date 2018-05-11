@@ -1,6 +1,6 @@
 package com.hazelcast.raft.exception;
 
-import com.hazelcast.raft.impl.RaftEndpoint;
+import com.hazelcast.raft.RaftMember;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -16,9 +16,9 @@ public class MismatchingGroupMembersCommitIndexException extends RaftException {
 
     private transient long commitIndex;
 
-    private transient Collection<RaftEndpoint> members;
+    private transient Collection<RaftMember> members;
 
-    public MismatchingGroupMembersCommitIndexException(long commitIndex, Collection<RaftEndpoint> members) {
+    public MismatchingGroupMembersCommitIndexException(long commitIndex, Collection<RaftMember> members) {
         super(null);
         this.commitIndex = commitIndex;
         this.members = members;
@@ -28,7 +28,7 @@ public class MismatchingGroupMembersCommitIndexException extends RaftException {
         return commitIndex;
     }
 
-    public Collection<RaftEndpoint> getMembers() {
+    public Collection<RaftMember> getMembers() {
         return members;
     }
 
@@ -36,7 +36,7 @@ public class MismatchingGroupMembersCommitIndexException extends RaftException {
         out.defaultWriteObject();
         out.writeLong(commitIndex);
         out.writeInt(members.size());
-        for (RaftEndpoint endpoint : members) {
+        for (RaftMember endpoint : members) {
             out.writeObject(endpoint);
         }
     }
@@ -45,9 +45,9 @@ public class MismatchingGroupMembersCommitIndexException extends RaftException {
         in.defaultReadObject();
         commitIndex = in.readLong();
         int count = in.readInt();
-        members = new HashSet<RaftEndpoint>(count);
+        members = new HashSet<RaftMember>(count);
         for (int i = 0; i < count; i++) {
-            members.add((RaftEndpoint) in.readObject());
+            members.add((RaftMember) in.readObject());
         }
     }
 }

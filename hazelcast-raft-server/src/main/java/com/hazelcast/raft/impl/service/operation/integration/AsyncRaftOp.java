@@ -3,11 +3,11 @@ package com.hazelcast.raft.impl.service.operation.integration;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.raft.impl.service.RaftServiceDataSerializerHook;
 import com.hazelcast.raft.RaftGroupId;
+import com.hazelcast.raft.impl.RaftSystemOperation;
 import com.hazelcast.raft.impl.service.RaftService;
+import com.hazelcast.raft.impl.service.RaftServiceDataSerializerHook;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 
 import java.io.IOException;
 
@@ -15,7 +15,7 @@ import java.io.IOException;
  * TODO: Javadoc Pending...
  *
  */
-abstract class AsyncRaftOp extends Operation implements IdentifiedDataSerializable, AllowedDuringPassiveState {
+abstract class AsyncRaftOp extends Operation implements IdentifiedDataSerializable, RaftSystemOperation {
 
     protected RaftGroupId groupId;
 
@@ -43,7 +43,7 @@ abstract class AsyncRaftOp extends Operation implements IdentifiedDataSerializab
 
     // Raft ops are executed on partition threads but not sent to partition owners.
     @Override
-    public boolean validatesTarget() {
+    public final boolean validatesTarget() {
         return false;
     }
 

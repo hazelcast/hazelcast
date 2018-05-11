@@ -1,6 +1,6 @@
 package com.hazelcast.raft.impl.state;
 
-import com.hazelcast.raft.impl.RaftEndpoint;
+import com.hazelcast.raft.RaftMember;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -16,7 +16,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import static com.hazelcast.raft.impl.RaftUtil.newRaftEndpoint;
+import static com.hazelcast.raft.impl.RaftUtil.newRaftMember;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 
@@ -25,24 +25,24 @@ import static org.junit.Assert.assertEquals;
 public class LeaderStateTest {
 
     private LeaderState state;
-    private Set<RaftEndpoint> remoteEndpoints;
+    private Set<RaftMember> remoteEndpoints;
     private int lastLogIndex;
 
     @Before
     public void setUp() throws Exception {
         lastLogIndex = 123;
-        remoteEndpoints = new HashSet<RaftEndpoint>(asList(
-                newRaftEndpoint(5001),
-                newRaftEndpoint(5002),
-                newRaftEndpoint(5003),
-                newRaftEndpoint(5004)));
+        remoteEndpoints = new HashSet<RaftMember>(asList(
+                newRaftMember(5001),
+                newRaftMember(5002),
+                newRaftMember(5003),
+                newRaftMember(5004)));
 
         state = new LeaderState(remoteEndpoints, lastLogIndex);
     }
 
     @Test
     public void test_initialState() throws Exception {
-        for (RaftEndpoint endpoint : remoteEndpoints) {
+        for (RaftMember endpoint : remoteEndpoints) {
             assertEquals(0, state.getMatchIndex(endpoint));
             assertEquals(lastLogIndex + 1, state.getNextIndex(endpoint));
         }
@@ -56,14 +56,14 @@ public class LeaderStateTest {
 
     @Test
     public void test_nextIndex() throws Exception {
-        Map<RaftEndpoint, Integer> indices = new HashMap<RaftEndpoint, Integer>();
-        for (RaftEndpoint endpoint : remoteEndpoints) {
+        Map<RaftMember, Integer> indices = new HashMap<RaftMember, Integer>();
+        for (RaftMember endpoint : remoteEndpoints) {
             int index = RandomPicker.getInt(100);
             state.setNextIndex(endpoint, index);
             indices.put(endpoint, index);
         }
 
-        for (RaftEndpoint endpoint : remoteEndpoints) {
+        for (RaftMember endpoint : remoteEndpoints) {
             int index = indices.get(endpoint);
             assertEquals(index, state.getNextIndex(endpoint));
         }
@@ -71,14 +71,14 @@ public class LeaderStateTest {
 
     @Test
     public void test_matchIndex() throws Exception {
-        Map<RaftEndpoint, Long> indices = new HashMap<RaftEndpoint, Long>();
-        for (RaftEndpoint endpoint : remoteEndpoints) {
+        Map<RaftMember, Long> indices = new HashMap<RaftMember, Long>();
+        for (RaftMember endpoint : remoteEndpoints) {
             long index = RandomPicker.getInt(100);
             state.setMatchIndex(endpoint, index);
             indices.put(endpoint, index);
         }
 
-        for (RaftEndpoint endpoint : remoteEndpoints) {
+        for (RaftMember endpoint : remoteEndpoints) {
             long index = indices.get(endpoint);
             assertEquals(index, state.getMatchIndex(endpoint));
         }

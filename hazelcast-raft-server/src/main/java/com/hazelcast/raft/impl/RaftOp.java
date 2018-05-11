@@ -1,8 +1,9 @@
 package com.hazelcast.raft.impl;
 
-import com.hazelcast.spi.Operation;
-
-import static com.hazelcast.util.Preconditions.checkTrue;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.raft.RaftGroupId;
+import com.hazelcast.spi.NodeEngine;
 
 /**
  * Base operation class for operations to be replicated to and executed on
@@ -16,47 +17,50 @@ import static com.hazelcast.util.Preconditions.checkTrue;
  * They should perform the same action and produce the same result always,
  * independent of where and when they are executed.
  * <p>
- * {@link #doRun(long)} method must be implemented by subclasses.
+ * {@link #run(RaftGroupId, long)} method must be implemented by subclasses.
  */
-public abstract class RaftOp extends Operation {
+public abstract class RaftOp implements DataSerializable {
 
-    private static final int NA_COMMIT_INDEX = 0;
-
-    private long commitIndex = NA_COMMIT_INDEX;
-
-    private Object response;
+    private transient NodeEngine nodeEngine;
 
     /**
      * Contains actual Raft operation logic. State change represented by this operation should be applied
      * and execution result should be returned to the caller.
      *
+     * @param groupId groupId of the specific Raft group
      * @param commitIndex commitIndex of the log entry containing this operation
      * @return result of the operation execution
      */
-    protected abstract Object doRun(long commitIndex) throws Exception;
+    public abstract Object run(RaftGroupId groupId, long commitIndex) throws Exception;
 
-    public final RaftOp setCommitIndex(long commitIndex) {
-        checkTrue(commitIndex > NA_COMMIT_INDEX, "Cannot set commit index:" + commitIndex);
-        checkTrue(this.commitIndex == NA_COMMIT_INDEX,
-                "cannot set commit index: " + commitIndex + " because it is already set to: " + this.commitIndex
-                        + " -> " + this);
-        this.commitIndex = commitIndex;
+    public NodeEngine getNodeEngine() {
+        return nodeEngine;
+    }
+
+    public RaftOp setNodeEngine(NodeEngine nodeEngine) {
+        this.nodeEngine = nodeEngine;
         return this;
     }
 
-    @Override
-    public final void run() throws Exception {
-        response = doRun(commitIndex);
+    public <T> T getService() {
+        return nodeEngine.getService(getServiceName());
+    }
+
+    protected ILogger getLogger() {
+        return getNodeEngine().getLogger(getClass());
+    }
+
+    protected abstract String getServiceName();
+
+    protected void toString(StringBuilder sb) {
     }
 
     @Override
-    public final boolean returnsResponse() {
-        return true;
+    public final String toString() {
+        StringBuilder sb = new StringBuilder(getClass().getName()).append('{');
+        sb.append("serviceName='").append(getServiceName()).append('\'');
+        toString(sb);
+        sb.append('}');
+        return sb.toString();
     }
-
-    @Override
-    public final Object getResponse() {
-        return response;
-    }
-
 }

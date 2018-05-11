@@ -8,7 +8,7 @@ import com.hazelcast.raft.impl.RaftRole;
  * to trigger pre-voting again if this node is still a follower
  * and a leader is not available after leader election timeout.
  */
-public class PreVoteTimeoutTask extends RaftNodeAwareTask implements Runnable {
+public class PreVoteTimeoutTask extends RaftNodeStatusAwareTask implements Runnable {
 
     public PreVoteTimeoutTask(RaftNodeImpl raftNode) {
         super(raftNode);

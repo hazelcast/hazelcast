@@ -1,13 +1,14 @@
 package com.hazelcast.raft.impl;
 
 import com.hazelcast.nio.Address;
-import com.hazelcast.config.raft.RaftConfig;
+import com.hazelcast.config.raft.RaftAlgorithmConfig;
+import com.hazelcast.raft.RaftMember;
 import com.hazelcast.raft.impl.log.LogEntry;
 import com.hazelcast.raft.impl.service.RaftDataService;
 import com.hazelcast.raft.impl.state.LeaderState;
 import com.hazelcast.raft.impl.state.RaftGroupMembers;
 import com.hazelcast.raft.impl.testing.LocalRaftGroup;
-import com.hazelcast.raft.impl.testing.TestRaftEndpoint;
+import com.hazelcast.raft.impl.testing.TestRaftMember;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.net.InetAddress;
@@ -32,10 +33,10 @@ public class RaftUtil {
         return readRaftState(node, task);
     }
 
-    public static <T extends RaftEndpoint> T getLeaderEndpoint(final RaftNodeImpl node) {
-        Callable<RaftEndpoint> task = new Callable<RaftEndpoint>() {
+    public static <T extends RaftMember> T getLeaderMember(final RaftNodeImpl node) {
+        Callable<RaftMember> task = new Callable<RaftMember>() {
             @Override
-            public RaftEndpoint call() {
+            public RaftMember call() {
                 return node.state().leader();
             }
         };
@@ -86,7 +87,7 @@ public class RaftUtil {
         return readRaftState(node, task);
     }
 
-    public static long getNextIndex(final RaftNodeImpl leader, final RaftEndpoint follower) {
+    public static long getNextIndex(final RaftNodeImpl leader, final RaftMember follower) {
         Callable<Long> task = new Callable<Long>() {
             @Override
             public Long call() {
@@ -98,7 +99,7 @@ public class RaftUtil {
         return readRaftState(leader, task);
     }
 
-    public static long getMatchIndex(final RaftNodeImpl leader, final RaftEndpoint follower) {
+    public static long getMatchIndex(final RaftNodeImpl leader, final RaftMember follower) {
         Callable<Long> task = new Callable<Long>() {
             @Override
             public Long call() {
@@ -144,7 +145,7 @@ public class RaftUtil {
     }
 
     public static void waitUntilLeaderElected(RaftNodeImpl node) {
-        while (getLeaderEndpoint(node) == null) {
+        while (getLeaderMember(node) == null) {
             sleepSeconds(1);
         }
     }
@@ -159,8 +160,8 @@ public class RaftUtil {
         }
     }
 
-    public static TestRaftEndpoint newRaftEndpoint(int port) {
-        return new TestRaftEndpoint(randomString(), port);
+    public static TestRaftMember newRaftMember(int port) {
+        return new TestRaftMember(randomString(), port);
     }
 
     public static Address newAddress(int port) {
@@ -180,7 +181,11 @@ public class RaftUtil {
         return count - majority(count);
     }
 
-    public static LocalRaftGroup newGroupWithService(int nodeCount, RaftConfig raftConfig) {
-        return new LocalRaftGroup(nodeCount, raftConfig, SERVICE_NAME, RaftDataService.class);
+    public static LocalRaftGroup newGroupWithService(int nodeCount, RaftAlgorithmConfig raftAlgorithmConfig) {
+        return newGroupWithService(nodeCount, raftAlgorithmConfig, false);
+    }
+
+    public static LocalRaftGroup newGroupWithService(int nodeCount, RaftAlgorithmConfig raftAlgorithmConfig, boolean appendNopEntryOnLeaderElection) {
+        return new LocalRaftGroup(nodeCount, raftAlgorithmConfig, SERVICE_NAME, RaftDataService.class, appendNopEntryOnLeaderElection);
     }
 }

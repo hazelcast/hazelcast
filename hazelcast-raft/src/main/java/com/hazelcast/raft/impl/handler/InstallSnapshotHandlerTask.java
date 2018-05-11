@@ -7,7 +7,7 @@ import com.hazelcast.raft.impl.dto.AppendSuccessResponse;
 import com.hazelcast.raft.impl.dto.InstallSnapshot;
 import com.hazelcast.raft.impl.log.SnapshotEntry;
 import com.hazelcast.raft.impl.state.RaftState;
-import com.hazelcast.raft.impl.task.RaftNodeAwareTask;
+import com.hazelcast.raft.impl.task.RaftNodeStatusAwareTask;
 
 /**
  * Handles {@link InstallSnapshot} request sent by leader. Responds with an {@link AppendSuccessResponse} if snapshot
@@ -20,7 +20,7 @@ import com.hazelcast.raft.impl.task.RaftNodeAwareTask;
  * @see AppendSuccessResponse
  * @see AppendFailureResponse
  */
-public class InstallSnapshotHandlerTask extends RaftNodeAwareTask implements Runnable {
+public class InstallSnapshotHandlerTask extends RaftNodeStatusAwareTask implements Runnable {
 
     private final InstallSnapshot req;
 
@@ -42,7 +42,7 @@ public class InstallSnapshotHandlerTask extends RaftNodeAwareTask implements Run
         // Reply false if term < currentTerm (§5.1)
         if (req.term() < state.term()) {
             logger.warning("Stale snapshot: " + req + " received in current term: " + state.term());
-            AppendFailureResponse resp = new AppendFailureResponse(raftNode.getLocalEndpoint(), state.term(), snapshot.index() + 1);
+            AppendFailureResponse resp = new AppendFailureResponse(raftNode.getLocalMember(), state.term(), snapshot.index() + 1);
             raftNode.send(resp, req.leader());
             return;
         }
@@ -63,7 +63,7 @@ public class InstallSnapshotHandlerTask extends RaftNodeAwareTask implements Run
         }
 
         if (raftNode.installSnapshot(snapshot)) {
-            raftNode.send(new AppendSuccessResponse(raftNode.getLocalEndpoint(), req.term(), snapshot.index()), req.leader());
+            raftNode.send(new AppendSuccessResponse(raftNode.getLocalMember(), req.term(), snapshot.index()), req.leader());
         }
     }
 }

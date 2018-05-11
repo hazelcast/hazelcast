@@ -3,16 +3,15 @@ package com.hazelcast.raft.impl.service;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.core.Member;
 import com.hazelcast.nio.Address;
 import com.hazelcast.raft.QueryPolicy;
-import com.hazelcast.config.raft.RaftConfig;
 import com.hazelcast.raft.RaftGroupId;
-import com.hazelcast.config.raft.RaftServiceConfig;
-import com.hazelcast.raft.impl.RaftEndpointImpl;
+import com.hazelcast.raft.impl.RaftMemberImpl;
 import com.hazelcast.raft.impl.RaftNodeImpl;
-import com.hazelcast.raft.impl.service.RaftGroupInfo.RaftGroupStatus;
+import com.hazelcast.raft.RaftGroup.RaftGroupStatus;
 import com.hazelcast.raft.impl.service.operation.metadata.CreateRaftGroupOp;
-import com.hazelcast.raft.impl.service.operation.metadata.GetActiveEndpointsOp;
+import com.hazelcast.raft.impl.service.operation.metadata.GetActiveRaftMembersOp;
 import com.hazelcast.raft.impl.service.operation.metadata.GetRaftGroupOp;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -26,24 +25,25 @@ import org.junit.runner.RunWith;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
-import static com.hazelcast.raft.impl.RaftUtil.getLeaderEndpoint;
+import static com.hazelcast.raft.impl.RaftUtil.getLeaderMember;
 import static com.hazelcast.raft.impl.RaftUtil.getSnapshotEntry;
 import static com.hazelcast.raft.impl.RaftUtil.waitUntilLeaderElected;
-import static com.hazelcast.raft.impl.service.RaftService.METADATA_GROUP_ID;
-import static com.hazelcast.raft.impl.service.RaftServiceUtil.getRaftNode;
-import static com.hazelcast.raft.impl.service.RaftServiceUtil.getRaftService;
+import static com.hazelcast.raft.impl.service.RaftMetadataManager.METADATA_GROUP_ID;
 import static com.hazelcast.test.SplitBrainTestSupport.blockCommunicationBetween;
 import static com.hazelcast.test.SplitBrainTestSupport.unblockCommunicationBetween;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
@@ -59,16 +59,18 @@ public class MetadataRaftClusterTest extends HazelcastRaftTestSupport {
     @Test
     public void when_clusterStartsWithNonCPNodes_then_metadataClusterIsInitialized() {
         int cpNodeCount = 3;
-        Address[] raftAddresses = createAddresses(cpNodeCount);
-        instances = newInstances(raftAddresses, cpNodeCount,2);
+        instances = newInstances(cpNodeCount, cpNodeCount, 2);
 
-        final List<Address> raftAddressesList = Arrays.asList(raftAddresses);
+        final List<Address> raftAddresses = new ArrayList<Address>();
+        for (int i = 0; i < cpNodeCount; i++) {
+            raftAddresses.add(getAddress(instances[i]));
+        }
 
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
                 for (HazelcastInstance instance : instances) {
-                    if (raftAddressesList.contains(getAddress(instance))) {
+                    if (raftAddresses.contains(getAddress(instance))) {
                         assertNotNull(getRaftNode(instance, METADATA_GROUP_ID));
                     }
                 }
@@ -79,7 +81,7 @@ public class MetadataRaftClusterTest extends HazelcastRaftTestSupport {
             @Override
             public void run() {
                 for (HazelcastInstance instance : instances) {
-                    if (!raftAddressesList.contains(getAddress(instance))) {
+                    if (!raftAddresses.contains(getAddress(instance))) {
                         assertNull(getRaftNode(instance, METADATA_GROUP_ID));
                     }
                 }
@@ -90,8 +92,7 @@ public class MetadataRaftClusterTest extends HazelcastRaftTestSupport {
     @Test
     public void when_raftGroupIsCreatedWithAllCPNodes_then_raftNodeIsCreatedOnAll()  {
         int nodeCount = 5;
-        Address[] raftAddresses = createAddresses(nodeCount);
-        instances = newInstances(raftAddresses);
+        instances = newInstances(nodeCount);
 
         final RaftGroupId groupId = createNewRaftGroup(instances[0], "id", nodeCount);
 
@@ -109,14 +110,25 @@ public class MetadataRaftClusterTest extends HazelcastRaftTestSupport {
     public void when_raftGroupIsCreatedWithSomeCPNodes_then_raftNodeIsCreatedOnOnlyThem() {
         final int nodeCount = 5;
         final int metadataGroupSize = 3;
-        final Address[] raftAddresses = createAddresses(nodeCount);
-        instances = newInstances(raftAddresses, metadataGroupSize, 0);
+        instances = newInstances(nodeCount, metadataGroupSize, 0);
+
+        final List<Member> raftMembers = new ArrayList<Member>();
+        for (int i = 0; i < nodeCount; i++) {
+            raftMembers.add(instances[i].getCluster().getLocalMember());
+        }
+
+        Collections.sort(raftMembers, new Comparator<Member>() {
+            @Override
+            public int compare(Member o1, Member o2) {
+                return o1.getUuid().compareTo(o2.getUuid());
+            }
+        });
 
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                for (Address address : Arrays.asList(raftAddresses).subList(0, metadataGroupSize)) {
-                    HazelcastInstance instance = factory.getInstance(address);
+                for (Member member : raftMembers.subList(0, metadataGroupSize)) {
+                    HazelcastInstance instance = factory.getInstance(member.getAddress());
                     assertNotNull(getRaftNode(instance, METADATA_GROUP_ID));
                 }
             }
@@ -125,8 +137,8 @@ public class MetadataRaftClusterTest extends HazelcastRaftTestSupport {
         assertTrueAllTheTime(new AssertTask() {
             @Override
             public void run() {
-                for (Address address : Arrays.asList(raftAddresses).subList(metadataGroupSize, raftAddresses.length)) {
-                    HazelcastInstance instance = factory.getInstance(address);
+                for (Member member : raftMembers.subList(metadataGroupSize, raftMembers.size())) {
+                    HazelcastInstance instance = factory.getInstance(member.getAddress());
                     assertNull(getRaftNode(instance, METADATA_GROUP_ID));
                 }
             }
@@ -147,8 +159,7 @@ public class MetadataRaftClusterTest extends HazelcastRaftTestSupport {
         int cpNodeCount = 5;
         int metadataGroupSize = 2;
         int nonCpNodeCount = 2;
-        Address[] raftAddresses = createAddresses(cpNodeCount);
-        instances = newInstances(raftAddresses, metadataGroupSize, nonCpNodeCount);
+        instances = newInstances(cpNodeCount, metadataGroupSize, nonCpNodeCount);
 
         final int newGroupCount = metadataGroupSize + 1;
 
@@ -174,8 +185,7 @@ public class MetadataRaftClusterTest extends HazelcastRaftTestSupport {
     @Test
     public void when_sizeOfRaftGroupIsLargerThanCPNodeCount_then_raftGroupCannotBeCreated() {
         int nodeCount = 3;
-        Address[] raftAddresses = createAddresses(nodeCount);
-        instances = newInstances(raftAddresses);
+        instances = newInstances(nodeCount);
 
         try {
             createNewRaftGroup(instances[0], "id", nodeCount + 1);
@@ -187,8 +197,7 @@ public class MetadataRaftClusterTest extends HazelcastRaftTestSupport {
     @Test
     public void when_raftGroupIsCreatedWithSameSizeMultipleTimes_then_itSucceeds() {
         int nodeCount = 3;
-        Address[] raftAddresses = createAddresses(nodeCount);
-        instances = newInstances(raftAddresses);
+        instances = newInstances(nodeCount);
         RaftGroupId groupId1 = createNewRaftGroup(instances[0], "id", nodeCount);
         RaftGroupId groupId2 = createNewRaftGroup(instances[1], "id", nodeCount);
         assertEquals(groupId1, groupId2);
@@ -197,8 +206,7 @@ public class MetadataRaftClusterTest extends HazelcastRaftTestSupport {
     @Test
     public void when_raftGroupIsCreatedWithDifferentSizeMultipleTimes_then_itFails() {
         int nodeCount = 3;
-        Address[] raftAddresses = createAddresses(nodeCount);
-        instances = newInstances(raftAddresses);
+        instances = newInstances(nodeCount);
 
         createNewRaftGroup(instances[0], "id", nodeCount);
         try {
@@ -212,8 +220,7 @@ public class MetadataRaftClusterTest extends HazelcastRaftTestSupport {
     public void when_raftGroupDestroyTriggered_then_raftGroupIsDestroyed() {
         int metadataGroupSize = 3;
         int cpNodeCount = 5;
-        Address[] raftAddresses = createAddresses(cpNodeCount);
-        instances = newInstances(raftAddresses, metadataGroupSize, 0);
+        instances = newInstances(cpNodeCount, metadataGroupSize, 0);
 
         final RaftGroupId groupId = createNewRaftGroup(instances[0], "id", cpNodeCount);
         destroyRaftGroup(instances[0], groupId);
@@ -227,7 +234,7 @@ public class MetadataRaftClusterTest extends HazelcastRaftTestSupport {
             }
         });
 
-        final RaftInvocationManager invocationService = getRaftInvocationService(instances[0]);
+        final RaftInvocationManager invocationService = getRaftInvocationManager(instances[0]);
 
         assertTrueEventually(new AssertTask() {
             @Override
@@ -235,8 +242,8 @@ public class MetadataRaftClusterTest extends HazelcastRaftTestSupport {
                 Future<RaftGroupInfo> f = invocationService.query(METADATA_GROUP_ID, new GetRaftGroupOp(groupId),
                         QueryPolicy.LEADER_LOCAL);
 
-                RaftGroupInfo groupInfo = f.get();
-                assertEquals(RaftGroupStatus.DESTROYED, groupInfo.status());
+                RaftGroupInfo group = f.get();
+                assertEquals(RaftGroupStatus.DESTROYED, group.status());
             }
         });
     }
@@ -245,8 +252,7 @@ public class MetadataRaftClusterTest extends HazelcastRaftTestSupport {
     public void when_raftGroupDestroyTriggeredMultipleTimes_then_destroyDoesNotFail() {
         int metadataGroupSize = 3;
         int cpNodeCount = 5;
-        Address[] raftAddresses = createAddresses(cpNodeCount);
-        instances = newInstances(raftAddresses, metadataGroupSize, 0);
+        instances = newInstances(cpNodeCount, metadataGroupSize, 0);
 
         RaftGroupId groupId = createNewRaftGroup(instances[0], "id", cpNodeCount);
         destroyRaftGroup(instances[0], groupId);
@@ -257,8 +263,7 @@ public class MetadataRaftClusterTest extends HazelcastRaftTestSupport {
     public void when_raftGroupIsDestroyed_then_itCanBeCreatedAgain() {
         int metadataGroupSize = 3;
         int cpNodeCount = 5;
-        Address[] raftAddresses = createAddresses(cpNodeCount);
-        instances = newInstances(raftAddresses, metadataGroupSize, 0);
+        instances = newInstances(cpNodeCount, metadataGroupSize, 0);
 
         final RaftGroupId groupId = createNewRaftGroup(instances[0], "id", cpNodeCount);
         destroyRaftGroup(instances[0], groupId);
@@ -276,29 +281,94 @@ public class MetadataRaftClusterTest extends HazelcastRaftTestSupport {
     }
 
     @Test
-    public void when_metadataClusterNodeFallsFarBehind_then_itInstallsSnapshot() {
-        int nodeCount = 3;
-        int commitCountToSnapshot = 5;
-        Address[] raftAddresses = createAddresses(nodeCount);
-        Config config = createConfig(raftAddresses, raftAddresses.length);
-        getRaftConfig(config).setCommitIndexAdvanceCountToSnapshot(commitCountToSnapshot);
+    public void when_nonMetadataRaftGroupIsAlive_then_itCanBeForceDestroyed() throws ExecutionException, InterruptedException {
+        instances = newInstances(3);
 
-        final HazelcastInstance[] instances = new HazelcastInstance[nodeCount];
-        for (int i = 0; i < nodeCount; i++) {
-            instances[i] = factory.newHazelcastInstance(raftAddresses[i], config);
-        }
+        waitAllForLeaderElection(instances, METADATA_GROUP_ID);
+
+        final RaftGroupId groupId = createNewRaftGroup(instances[0], "id", 3);
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 for (HazelcastInstance instance : instances) {
-                    RaftNodeImpl raftNode = getRaftNode(instance, METADATA_GROUP_ID);
-                    assertNotNull(raftNode);
+                    assertNotNull(getRaftService(instance).getRaftNode(groupId));
                 }
             }
         });
 
-        RaftEndpointImpl leaderEndpoint = getLeaderEndpoint(getRaftNode(instances[0], METADATA_GROUP_ID));
+        getRaftService(instances[0]).forceDestroyRaftGroup(groupId).get();
+
+        RaftGroupInfo groupInfo = getRaftInvocationManager(instances[0]).<RaftGroupInfo>query(METADATA_GROUP_ID, new GetRaftGroupOp(groupId), QueryPolicy.LEADER_LOCAL).get();
+        assertEquals(RaftGroupStatus.DESTROYED, groupInfo.status());
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                for (HazelcastInstance instance : instances) {
+                    assertNull(getRaftNode(instance, groupId));
+                }
+            }
+        });
+
+        RaftGroupId newGroupId = createNewRaftGroup(instances[0], "id", 3);
+        assertNotEquals(groupId, newGroupId);
+    }
+
+    @Test
+    public void when_nonMetadataRaftGroupLosesMajority_then_itCanBeForceDestroyed() throws ExecutionException, InterruptedException {
+        instances = newInstances(5);
+
+        waitAllForLeaderElection(instances, METADATA_GROUP_ID);
+
+        final RaftGroupId groupId = createNewRaftGroup(instances[0], "id", 3);
+
+        RaftGroupInfo groupInfo = getRaftInvocationManager(instances[0]).<RaftGroupInfo>query(METADATA_GROUP_ID, new GetRaftGroupOp(groupId), QueryPolicy.LEADER_LOCAL).get();
+        final RaftMemberImpl[] groupMembers = groupInfo.membersArray();
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                for (RaftMemberImpl member : groupMembers) {
+                    HazelcastInstance instance = factory.getInstance(member.getAddress());
+                    assertNotNull(getRaftNode(instance, groupId));
+                }
+            }
+        });
+
+        factory.getInstance(groupMembers[0].getAddress()).getLifecycleService().terminate();
+        factory.getInstance(groupMembers[1].getAddress()).getLifecycleService().terminate();
+
+        final HazelcastInstance runningInstance = factory.getInstance(groupMembers[2].getAddress());
+        getRaftService(runningInstance).forceDestroyRaftGroup(groupId).get();
+
+        groupInfo = getRaftInvocationManager(runningInstance).<RaftGroupInfo>query(METADATA_GROUP_ID, new GetRaftGroupOp(groupId), QueryPolicy.LEADER_LOCAL).get();
+        assertEquals(RaftGroupStatus.DESTROYED, groupInfo.status());
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertNull(getRaftNode(runningInstance, groupId));
+            }
+        });
+    }
+
+    @Test
+    public void when_metadataClusterNodeFallsFarBehind_then_itInstallsSnapshot() {
+        int nodeCount = 3;
+        int commitCountToSnapshot = 5;
+        Config config = createConfig(nodeCount, nodeCount);
+        config.getRaftConfig().getMetadataGroupConfig().setInitialRaftMember(true);
+        config.getRaftConfig().getRaftAlgorithmConfig().setCommitIndexAdvanceCountToSnapshot(commitCountToSnapshot);
+
+        final HazelcastInstance[] instances = new HazelcastInstance[nodeCount];
+        for (int i = 0; i < nodeCount; i++) {
+            instances[i] = factory.newHazelcastInstance(config);
+        }
+
+        waitAllForLeaderElection(instances, METADATA_GROUP_ID);
+        RaftMemberImpl leaderEndpoint = getLeaderMember(getRaftNode(instances[0], METADATA_GROUP_ID));
+
         final HazelcastInstance leader = factory.getInstance(leaderEndpoint.getAddress());
         HazelcastInstance follower = null;
         for (HazelcastInstance instance : instances) {
@@ -337,27 +407,26 @@ public class MetadataRaftClusterTest extends HazelcastRaftTestSupport {
         });
     }
 
-    private static RaftConfig getRaftConfig(Config config) {
-        RaftServiceConfig serviceConfig =
-                (RaftServiceConfig) config.getServicesConfig().getServiceConfig(RaftService.SERVICE_NAME).getConfigObject();
-        return serviceConfig.getRaftConfig();
-    }
-
     @Test
     public void when_raftGroupIsCreated_onNonMetadataMembers_thenLeaderShouldBeElected()
             throws ExecutionException, InterruptedException {
         int metadataGroupSize = 3;
         int otherRaftGroupSize = 2;
-        Address[] raftAddresses = createAddresses(metadataGroupSize + otherRaftGroupSize);
-        instances = newInstances(raftAddresses, metadataGroupSize, 0);
+        instances = newInstances(metadataGroupSize + otherRaftGroupSize, metadataGroupSize, 0);
 
         HazelcastInstance leaderInstance = getLeaderInstance(instances, METADATA_GROUP_ID);
-        RaftService raftService = getRaftService(leaderInstance);
-        Collection<RaftEndpointImpl> allEndpoints = raftService.getAllEndpoints();
-        RaftGroupInfo metadataGroup = raftService.getRaftGroupInfo(METADATA_GROUP_ID);
+        final RaftService raftService = getRaftService(leaderInstance);
+        Collection<RaftMemberImpl> allEndpoints = raftService.getMetadataManager().getActiveMembers();
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertNotNull(raftService.getRaftGroup(METADATA_GROUP_ID));
+            }
+        });
+        RaftGroupInfo metadataGroup = raftService.getRaftGroup(METADATA_GROUP_ID);
 
-        final Collection<RaftEndpointImpl> endpoints = new HashSet<RaftEndpointImpl>(otherRaftGroupSize);
-        for (RaftEndpointImpl endpoint : allEndpoints) {
+        final Collection<RaftMemberImpl> endpoints = new HashSet<RaftMemberImpl>(otherRaftGroupSize);
+        for (RaftMemberImpl endpoint : allEndpoints) {
             if (!metadataGroup.containsMember(endpoint)) {
                 endpoints.add(endpoint);
             }
@@ -370,7 +439,7 @@ public class MetadataRaftClusterTest extends HazelcastRaftTestSupport {
         final RaftGroupId groupId = f.get();
 
         for (final HazelcastInstance instance : instances) {
-            if (endpoints.contains(getRaftService(instance).getLocalEndpoint())) {
+            if (endpoints.contains(getRaftService(instance).getLocalMember())) {
                 assertTrueEventually(new AssertTask() {
                     @Override
                     public void run() {
@@ -387,8 +456,7 @@ public class MetadataRaftClusterTest extends HazelcastRaftTestSupport {
     public void when_shutdownLeader_thenNewLeaderElected() {
         int cpNodeCount = 5;
         int metadataGroupSize = cpNodeCount - 1;
-        Address[] raftAddresses = createAddresses(cpNodeCount);
-        instances = newInstances(raftAddresses, metadataGroupSize, 0);
+        instances = newInstances(cpNodeCount, metadataGroupSize, 0);
 
         HazelcastInstance leaderInstance = getLeaderInstance(instances, METADATA_GROUP_ID);
         leaderInstance.shutdown();
@@ -412,19 +480,18 @@ public class MetadataRaftClusterTest extends HazelcastRaftTestSupport {
         int cpNodeCount = 5;
         int metadataGroupSize = cpNodeCount - 1;
         int atomicLong1GroupSize = cpNodeCount - 2;
-        Address[] raftAddresses = createAddresses(cpNodeCount);
-        instances = newInstances(raftAddresses, metadataGroupSize, 0);
+        instances = newInstances(cpNodeCount, metadataGroupSize, 0);
 
         final RaftGroupId groupId1 = createNewRaftGroup(instances[0], "id1", atomicLong1GroupSize);
         final RaftGroupId groupId2 = createNewRaftGroup(instances[0], "id2", cpNodeCount);
 
-        RaftEndpointImpl endpoint = findCommonEndpoint(instances[0], METADATA_GROUP_ID, groupId1);
+        RaftMemberImpl endpoint = findCommonEndpoint(instances[0], METADATA_GROUP_ID, groupId1);
         assertNotNull(endpoint);
 
         RaftInvocationManager invocationService = null;
         for (HazelcastInstance instance : instances) {
             if (!getAddress(instance).equals(endpoint.getAddress())) {
-                invocationService = getRaftInvocationService(instance);
+                invocationService = getRaftInvocationManager(instance);
                 break;
             }
         }
@@ -432,10 +499,10 @@ public class MetadataRaftClusterTest extends HazelcastRaftTestSupport {
 
         factory.getInstance(endpoint.getAddress()).shutdown();
 
-        ICompletableFuture<List<RaftEndpointImpl>> f1 = invocationService.query(METADATA_GROUP_ID, new GetActiveEndpointsOp(),
+        ICompletableFuture<List<RaftMemberImpl>> f1 = invocationService.query(METADATA_GROUP_ID, new GetActiveRaftMembersOp(),
                 QueryPolicy.LEADER_LOCAL);
 
-        List<RaftEndpointImpl> activeEndpoints = f1.get();
+        List<RaftMemberImpl> activeEndpoints = f1.get();
         assertThat(activeEndpoints, not(hasItem(endpoint)));
 
         ICompletableFuture<RaftGroupInfo> f2 = invocationService.query(METADATA_GROUP_ID, new GetRaftGroupOp(METADATA_GROUP_ID),
@@ -458,6 +525,32 @@ public class MetadataRaftClusterTest extends HazelcastRaftTestSupport {
         assertEquals(cpNodeCount - 1, atomicLongGroup2.memberCount());
     }
 
+    @Test
+    public void when_nonReachableEndpointsExist_createRaftGroupPrefersReachableEndpoints()
+            throws ExecutionException, InterruptedException {
+        HazelcastInstance[] instances = newInstances(5);
+
+        RaftMemberImpl endpoint3 = getRaftService(instances[3]).getLocalMember();
+        RaftMemberImpl endpoint4 = getRaftService(instances[4]).getLocalMember();
+        instances[3].getLifecycleService().terminate();
+        instances[4].getLifecycleService().terminate();
+
+        RaftInvocationManager invocationManager = getRaftInvocationManager(instances[0]);
+        RaftGroupId g3 = invocationManager.createRaftGroup("g3", 3).get();
+        RaftGroupId g4 = invocationManager.createRaftGroup("g4", 4).get();
+
+        RaftNodeImpl leaderNode = waitAllForLeaderElection(Arrays.copyOf(instances, 3), METADATA_GROUP_ID);
+        HazelcastInstance leader = factory.getInstance(((RaftMemberImpl) leaderNode.getLocalMember()).getAddress());
+        RaftGroupInfo g3Group = getRaftGroupLocally(leader, g3);
+        assertThat(g3Group.memberImpls(), not(hasItem(endpoint3)));
+        assertThat(g3Group.memberImpls(), not(hasItem(endpoint4)));
+
+        RaftGroupInfo g4Group = getRaftGroupLocally(leader, g4);
+        boolean b3 = g4Group.containsMember(endpoint3);
+        boolean b4 = g4Group.containsMember(endpoint4);
+        assertTrue(b3 ^ b4);
+    }
+
     private RaftGroupId createNewRaftGroup(HazelcastInstance instance, String name, int nodeCount) {
         RaftInvocationManager invocationManager = getRaftService(instance).getInvocationManager();
         try {
@@ -476,9 +569,9 @@ public class MetadataRaftClusterTest extends HazelcastRaftTestSupport {
         }
     }
 
-    private RaftEndpointImpl findCommonEndpoint(HazelcastInstance instance, final RaftGroupId groupId1, final RaftGroupId groupId2)
+    private RaftMemberImpl findCommonEndpoint(HazelcastInstance instance, final RaftGroupId groupId1, final RaftGroupId groupId2)
             throws ExecutionException, InterruptedException {
-        RaftInvocationManager invocationService = getRaftInvocationService(instance);
+        RaftInvocationManager invocationService = getRaftInvocationManager(instance);
         ICompletableFuture<RaftGroupInfo> f1 = invocationService.query(METADATA_GROUP_ID, new GetRaftGroupOp(groupId1),
                 QueryPolicy.LEADER_LOCAL);
         ICompletableFuture<RaftGroupInfo> f2 = invocationService.query(METADATA_GROUP_ID, new GetRaftGroupOp(groupId2),
@@ -486,16 +579,16 @@ public class MetadataRaftClusterTest extends HazelcastRaftTestSupport {
         RaftGroupInfo group1 = f1.get();
         RaftGroupInfo group2 = f2.get();
 
-        Set<RaftEndpointImpl> members = new HashSet<RaftEndpointImpl>(group1.endpointImpls());
+        Set<RaftMemberImpl> members = new HashSet<RaftMemberImpl>(group1.memberImpls());
         members.retainAll(group2.members());
 
         return members.isEmpty() ? null : members.iterator().next();
     }
 
     @Override
-    protected Config createConfig(Address[] raftAddresses, int metadataGroupSize) {
-        Config config = super.createConfig(raftAddresses, metadataGroupSize);
-        getRaftConfig(config).setAppendNopEntryOnLeaderElection(true).setLeaderHeartbeatPeriodInMillis(1000);
+    protected Config createConfig(int groupSize, int metadataGroupSize) {
+        Config config = super.createConfig(groupSize, metadataGroupSize);
+        config.getRaftConfig().getRaftAlgorithmConfig().setLeaderHeartbeatPeriodInMillis(1000);
         return config;
     }
 

@@ -2,60 +2,56 @@ package com.hazelcast.raft.impl.service.proxy;
 
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.raft.QueryPolicy;
 import com.hazelcast.raft.RaftGroupId;
 import com.hazelcast.raft.exception.NotLeaderException;
-import com.hazelcast.raft.exception.RaftGroupTerminatedException;
+import com.hazelcast.raft.exception.RaftGroupDestroyedException;
+import com.hazelcast.raft.impl.RaftSystemOperation;
 import com.hazelcast.raft.impl.RaftNode;
+import com.hazelcast.raft.impl.RaftOp;
 import com.hazelcast.raft.impl.service.RaftService;
 import com.hazelcast.raft.impl.service.RaftServiceDataSerializerHook;
-import com.hazelcast.raft.impl.RaftOp;
-import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.exception.CallerNotMemberException;
-import com.hazelcast.spi.exception.TargetNotMemberException;
-import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 
 import java.io.IOException;
 
-public class RaftQueryOp extends Operation implements IdentifiedDataSerializable, AllowedDuringPassiveState, ExecutionCallback {
+public class RaftQueryOp extends Operation implements IdentifiedDataSerializable, RaftSystemOperation, ExecutionCallback {
 
-    private RaftGroupId raftGroupId;
+    private RaftGroupId groupId;
     private QueryPolicy queryPolicy;
-    private RaftOp raftOp;
+    private Object op;
 
     public RaftQueryOp() {
     }
 
-    public RaftQueryOp(RaftGroupId groupId, RaftOp raftOp) {
-        this.raftGroupId = groupId;
-        this.raftOp = raftOp;
+    public RaftQueryOp(RaftGroupId groupId, RaftOp raftOp, QueryPolicy queryPolicy) {
+        this.groupId = groupId;
+        this.op = raftOp;
+        this.queryPolicy = queryPolicy;
     }
 
     @Override
     public final void run() {
         RaftService service = getService();
-        RaftNode raftNode = service.getRaftNode(raftGroupId);
+        RaftNode raftNode = service.getRaftNode(groupId);
         if (raftNode == null) {
-            if (service.isDestroyed(raftGroupId)) {
-                sendResponse(new RaftGroupTerminatedException());
+            if (service.isRaftGroupDestroyed(groupId)) {
+                sendResponse(new RaftGroupDestroyedException());
             } else {
-                sendResponse(new NotLeaderException(raftGroupId, service.getLocalEndpoint(), null));
+                sendResponse(new NotLeaderException(groupId, service.getLocalMember(), null));
             }
             return;
         }
 
-        ICompletableFuture future = raftNode.query(raftOp, queryPolicy);
-        future.andThen(this);
-    }
+        if (op instanceof RaftNodeAware) {
+            ((RaftNodeAware) op).setRaftNode(raftNode);
+        }
 
-    public RaftQueryOp setQueryPolicy(QueryPolicy queryPolicy) {
-        this.queryPolicy = queryPolicy;
-        return this;
+        ICompletableFuture future = raftNode.query(op, queryPolicy);
+        future.andThen(this);
     }
 
     @Override
@@ -74,7 +70,7 @@ public class RaftQueryOp extends Operation implements IdentifiedDataSerializable
     }
 
     @Override
-    public boolean validatesTarget() {
+    public final boolean validatesTarget() {
         return false;
     }
 
@@ -96,33 +92,24 @@ public class RaftQueryOp extends Operation implements IdentifiedDataSerializable
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeObject(raftGroupId);
-        out.writeObject(raftOp);
+        out.writeObject(groupId);
+        out.writeObject(op);
         out.writeUTF(queryPolicy.toString());
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        raftGroupId = in.readObject();
-        raftOp = in.readObject();
+        groupId = in.readObject();
+        op = in.readObject();
         queryPolicy = QueryPolicy.valueOf(in.readUTF());
-    }
-
-    @Override
-    public ExceptionAction onInvocationException(Throwable throwable) {
-        if (throwable instanceof MemberLeftException
-                || throwable instanceof TargetNotMemberException
-                || throwable instanceof CallerNotMemberException) {
-            return ExceptionAction.THROW_EXCEPTION;
-        }
-        return super.onInvocationException(throwable);
     }
 
     @Override
     protected void toString(StringBuilder sb) {
         super.toString(sb);
-        sb.append(", groupId=").append(raftGroupId)
+        sb.append(", op=").append(op)
+          .append(", groupId=").append(groupId)
           .append(", policy=").append(queryPolicy);
     }
 }

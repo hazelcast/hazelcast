@@ -2,7 +2,7 @@ package com.hazelcast.raft.impl.service;
 
 import com.hazelcast.raft.RaftGroupId;
 import com.hazelcast.raft.SnapshotAwareService;
-import com.hazelcast.raft.impl.RaftRunnable;
+import com.hazelcast.raft.impl.testing.RaftRunnable;
 
 import static com.hazelcast.util.Preconditions.checkTrue;
 

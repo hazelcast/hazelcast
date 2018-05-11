@@ -4,7 +4,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.raft.impl.RaftDataSerializerHook;
-import com.hazelcast.raft.impl.RaftEndpoint;
+import com.hazelcast.raft.RaftMember;
 import com.hazelcast.raft.impl.log.LogEntry;
 
 import java.io.IOException;
@@ -20,7 +20,7 @@ import java.util.Arrays;
  */
 public class AppendRequest implements IdentifiedDataSerializable {
 
-    private RaftEndpoint leader;
+    private RaftMember leader;
     private int term;
     private int prevLogTerm;
     private long prevLogIndex;
@@ -30,7 +30,7 @@ public class AppendRequest implements IdentifiedDataSerializable {
     public AppendRequest() {
     }
 
-    public AppendRequest(RaftEndpoint leader, int term, int prevLogTerm, long prevLogIndex, long leaderCommitIndex,
+    public AppendRequest(RaftMember leader, int term, int prevLogTerm, long prevLogIndex, long leaderCommitIndex,
             LogEntry[] entries) {
         this.term = term;
         this.leader = leader;
@@ -40,7 +40,7 @@ public class AppendRequest implements IdentifiedDataSerializable {
         this.entries = entries;
     }
 
-    public RaftEndpoint leader() {
+    public RaftMember leader() {
         return leader;
     }
 

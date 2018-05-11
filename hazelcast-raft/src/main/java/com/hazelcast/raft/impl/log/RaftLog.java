@@ -153,7 +153,7 @@ public class RaftLog {
      * (entries whose indexes are smaller than the snapshot's index).
      *
      * @return truncated log entries after snapshot is installed
-     * @throws IllegalArgumentException if the snapshot's index is smaller than or equal to current snasphot index
+     * @throws IllegalArgumentException if the snapshot's index is smaller than or equal to current snapshot index
      */
     public List<LogEntry> setSnapshot(SnapshotEntry snapshot) {
         if (snapshot.index() <= snapshotIndex()) {

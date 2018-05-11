@@ -1,11 +1,8 @@
 package com.hazelcast.raft.impl.service;
 
-import com.hazelcast.config.Config;
-import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.nio.Address;
 import com.hazelcast.raft.RaftGroupId;
-import com.hazelcast.raft.exception.RaftGroupTerminatedException;
+import com.hazelcast.raft.exception.RaftGroupDestroyedException;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -27,10 +24,9 @@ public class RaftInvocationManagerTest extends HazelcastRaftTestSupport {
     @Test
     public void when_raftGroupIsCreated_then_raftOperationsAreExecuted() throws ExecutionException, InterruptedException {
         int nodeCount = 5;
-        Address[] raftAddresses = createAddresses(nodeCount);
-        instances = newInstances(raftAddresses);
+        instances = newInstances(nodeCount);
 
-        RaftInvocationManager invocationService = getRaftInvocationService(instances[0]);
+        RaftInvocationManager invocationService = getRaftInvocationManager(instances[0]);
         final RaftGroupId groupId = invocationService.createRaftGroup("test", nodeCount).get();
 
         for (int i = 0; i < 100; i++) {
@@ -41,10 +37,9 @@ public class RaftInvocationManagerTest extends HazelcastRaftTestSupport {
     @Test
     public void when_raftGroupIsCreated_then_raftOperationsAreExecutedOnNonCPNode() throws ExecutionException, InterruptedException {
         int cpNodeCount = 5;
-        Address[] raftAddresses = createAddresses(cpNodeCount);
-        instances = newInstances(raftAddresses, 3, 1);
+        instances = newInstances(cpNodeCount, 3, 1);
 
-        RaftInvocationManager invocationService = getRaftInvocationService(instances[instances.length - 1]);
+        RaftInvocationManager invocationService = getRaftInvocationManager(instances[instances.length - 1]);
         final RaftGroupId groupId = invocationService.createRaftGroup("test", cpNodeCount).get();
 
         for (int i = 0; i < 100; i++) {
@@ -55,10 +50,9 @@ public class RaftInvocationManagerTest extends HazelcastRaftTestSupport {
     @Test
     public void when_raftGroupIsDestroyed_then_operationsEventuallyFail() throws ExecutionException, InterruptedException {
         int nodeCount = 3;
-        Address[] raftAddresses = createAddresses(nodeCount);
-        instances = newInstances(raftAddresses);
+        instances = newInstances(nodeCount);
 
-        final RaftInvocationManager invocationService = getRaftInvocationService(instances[0]);
+        final RaftInvocationManager invocationService = getRaftInvocationManager(instances[0]);
         final RaftGroupId groupId = invocationService.createRaftGroup("test", nodeCount).get();
 
         invocationService.invoke(groupId, new RaftTestApplyOp("val")).get();
@@ -71,21 +65,10 @@ public class RaftInvocationManagerTest extends HazelcastRaftTestSupport {
                 try {
                     invocationService.invoke(groupId, new RaftTestApplyOp("val")).get();
                     fail();
-                } catch (RaftGroupTerminatedException ignored) {
+                } catch (ExecutionException e) {
+                    assertInstanceOf(RaftGroupDestroyedException.class, e.getCause());
                 }
             }
         });
-    }
-
-    @Override
-    protected Config createConfig(Address[] raftAddresses, int metadataGroupSize) {
-        Config config = super.createConfig(raftAddresses, metadataGroupSize);
-
-        ServiceConfig raftTestServiceConfig = new ServiceConfig().setEnabled(true)
-                .setName(RaftDataService.SERVICE_NAME)
-                .setClassName(RaftDataService.class.getName());
-        config.getServicesConfig().addServiceConfig(raftTestServiceConfig);
-
-        return config;
     }
 }

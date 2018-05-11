@@ -1,16 +1,16 @@
 package com.hazelcast.raft.impl.handler;
 
-import com.hazelcast.raft.impl.RaftEndpoint;
+import com.hazelcast.raft.RaftMember;
 import com.hazelcast.raft.impl.RaftNodeImpl;
-import com.hazelcast.raft.impl.task.RaftNodeAwareTask;
+import com.hazelcast.raft.impl.task.RaftNodeStatusAwareTask;
 
 /**
  * Base class for response handler tasks.
  * Subclasses must implement {@link #handleResponse()}.
  * <p>
- * If {@link #senderEndpoint()} is not a known endpoint, then response is ignored.
+ * If {@link #sender()} is not a known member, then response is ignored.
  */
-public abstract class AbstractResponseHandlerTask extends RaftNodeAwareTask {
+public abstract class AbstractResponseHandlerTask extends RaftNodeStatusAwareTask {
 
     public AbstractResponseHandlerTask(RaftNodeImpl raftNode) {
         super(raftNode);
@@ -18,8 +18,8 @@ public abstract class AbstractResponseHandlerTask extends RaftNodeAwareTask {
 
     @Override
     protected final void innerRun() {
-        RaftEndpoint sender = senderEndpoint();
-        if (!raftNode.state().isKnownEndpoint(sender)) {
+        RaftMember sender = sender();
+        if (!raftNode.state().isKnownMember(sender)) {
             logger.warning("Won't run, since " + sender + " is unknown to us");
             return;
         }
@@ -29,6 +29,6 @@ public abstract class AbstractResponseHandlerTask extends RaftNodeAwareTask {
 
     protected abstract void handleResponse();
 
-    protected abstract RaftEndpoint senderEndpoint();
+    protected abstract RaftMember sender();
 
 }

@@ -5,8 +5,12 @@ import com.hazelcast.raft.MembershipChangeType;
 import com.hazelcast.raft.exception.MemberAlreadyExistsException;
 import com.hazelcast.raft.exception.MemberDoesNotExistException;
 import com.hazelcast.raft.exception.MismatchingGroupMembersCommitIndexException;
-import com.hazelcast.raft.impl.RaftEndpoint;
+import com.hazelcast.raft.exception.NotLeaderException;
+import com.hazelcast.raft.exception.RaftGroupDestroyedException;
+import com.hazelcast.raft.RaftMember;
 import com.hazelcast.raft.impl.RaftNodeImpl;
+import com.hazelcast.raft.impl.RaftNodeStatus;
+import com.hazelcast.raft.impl.RaftRole;
 import com.hazelcast.raft.impl.command.ApplyRaftGroupMembersCmd;
 import com.hazelcast.raft.impl.state.RaftGroupMembers;
 import com.hazelcast.raft.impl.state.RaftState;
@@ -32,17 +36,17 @@ import java.util.LinkedHashSet;
 public class MembershipChangeTask implements Runnable {
     private final RaftNodeImpl raftNode;
     private final Long groupMembersCommitIndex;
-    private final RaftEndpoint member;
+    private final RaftMember member;
     private final MembershipChangeType changeType;
     private final SimpleCompletableFuture resultFuture;
     private final ILogger logger;
 
-    public MembershipChangeTask(RaftNodeImpl raftNode, SimpleCompletableFuture resultFuture, RaftEndpoint member,
+    public MembershipChangeTask(RaftNodeImpl raftNode, SimpleCompletableFuture resultFuture, RaftMember member,
                                 MembershipChangeType changeType) {
         this(raftNode, resultFuture, member, changeType, null);
     }
 
-    public MembershipChangeTask(RaftNodeImpl raftNode, SimpleCompletableFuture resultFuture, RaftEndpoint member,
+    public MembershipChangeTask(RaftNodeImpl raftNode, SimpleCompletableFuture resultFuture, RaftMember member,
                                 MembershipChangeType changeType, Long groupMembersCommitIndex) {
         if (changeType == null) {
             throw new IllegalArgumentException("Null membership change type");
@@ -57,14 +61,21 @@ public class MembershipChangeTask implements Runnable {
 
     @Override
     public void run() {
+        if (!verifyRaftNodeStatus()) {
+            return;
+        }
+
+        RaftState state = raftNode.state();
+        if (state.role() != RaftRole.LEADER) {
+            resultFuture.setResult(new NotLeaderException(raftNode.getGroupId(), raftNode.getLocalMember(), state.leader()));
+            return;
+        }
+
         if (!isValidGroupMemberCommitIndex()) {
             return;
         }
 
-        logger.info("Changing membership -> " + changeType + ": " + member);
-
-        RaftState state = raftNode.state();
-        Collection<RaftEndpoint> members = new LinkedHashSet<RaftEndpoint>(state.members());
+        Collection<RaftMember> members = new LinkedHashSet<RaftMember>(state.members());
         boolean memberExists = members.contains(member);
 
         switch (changeType) {
@@ -88,8 +99,25 @@ public class MembershipChangeTask implements Runnable {
                 resultFuture.setResult(new IllegalArgumentException("Unknown type: " + changeType));
                 return;
         }
-        logger.info("New members after " + changeType + " -> " + members);
-        new ReplicateTask(raftNode, new ApplyRaftGroupMembersCmd(members), resultFuture).run();
+
+        logger.info("New members after " + changeType + " " + member + " -> " + members);
+        new ReplicateTask(raftNode, new ApplyRaftGroupMembersCmd(members, member, changeType), resultFuture).run();
+    }
+
+    private boolean verifyRaftNodeStatus() {
+        if (raftNode.getStatus() == RaftNodeStatus.TERMINATED) {
+            resultFuture.setResult(new RaftGroupDestroyedException());
+            logger.severe("Cannot " + changeType + " " + member + " with expected members commit index: "
+                    + groupMembersCommitIndex + " since raft node is terminated.");
+            return false;
+        } else if (raftNode.getStatus() == RaftNodeStatus.STEPPED_DOWN) {
+            logger.severe("Cannot " + changeType + " " + member + " with expected members commit index: "
+                    + groupMembersCommitIndex + " since raft node is stepped down.");
+            resultFuture.setResult(new NotLeaderException(raftNode.getGroupId(), raftNode.getLocalMember(), null));
+            return false;
+        }
+
+        return true;
     }
 
     private boolean isValidGroupMemberCommitIndex() {

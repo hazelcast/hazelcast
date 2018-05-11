@@ -10,8 +10,8 @@ import com.hazelcast.raft.impl.log.LogEntry;
 import com.hazelcast.raft.impl.log.RaftLog;
 import com.hazelcast.raft.impl.command.ApplyRaftGroupMembersCmd;
 import com.hazelcast.raft.impl.state.RaftState;
-import com.hazelcast.raft.impl.task.RaftNodeAwareTask;
-import com.hazelcast.raft.command.TerminateRaftGroupCmd;
+import com.hazelcast.raft.impl.task.RaftNodeStatusAwareTask;
+import com.hazelcast.raft.command.DestroyRaftGroupCmd;
 
 import java.util.Arrays;
 import java.util.List;
@@ -30,7 +30,7 @@ import static java.util.Arrays.asList;
  * @see AppendSuccessResponse
  * @see AppendFailureResponse
  */
-public class AppendRequestHandlerTask extends RaftNodeAwareTask implements Runnable {
+public class AppendRequestHandlerTask extends RaftNodeStatusAwareTask implements Runnable {
     private final AppendRequest req;
 
     public AppendRequestHandlerTask(RaftNodeImpl raftNode, AppendRequest req) {
@@ -156,13 +156,13 @@ public class AppendRequestHandlerTask extends RaftNodeAwareTask implements Runna
         }
 
         raftNode.updateLastAppendEntriesTimestamp();
-        AppendSuccessResponse resp = new AppendSuccessResponse(raftNode.getLocalEndpoint(), state.term(), lastLogIndex);
+        AppendSuccessResponse resp = new AppendSuccessResponse(raftNode.getLocalMember(), state.term(), lastLogIndex);
         raftNode.send(resp, req.leader());
     }
 
     private void handleRaftGroupCmd(List<LogEntry> entries, boolean revert) {
         for (LogEntry entry : entries) {
-            if (entry.operation() instanceof TerminateRaftGroupCmd) {
+            if (entry.operation() instanceof DestroyRaftGroupCmd) {
                 RaftNodeStatus status = revert ? RaftNodeStatus.ACTIVE : RaftNodeStatus.TERMINATING;
                 raftNode.setStatus(status);
                 return;
@@ -181,6 +181,6 @@ public class AppendRequestHandlerTask extends RaftNodeAwareTask implements Runna
     }
 
     private AppendFailureResponse createFailureResponse(int term) {
-        return new AppendFailureResponse(raftNode.getLocalEndpoint(), term, req.prevLogIndex() + 1);
+        return new AppendFailureResponse(raftNode.getLocalMember(), term, req.prevLogIndex() + 1);
     }
 }

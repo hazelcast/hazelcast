@@ -33,6 +33,7 @@
         <module>hazelcast-client</module>
         <module>hazelcast-raft</module>
         <module>hazelcast-raft-server</module>
+        <module>hazelcast-raft-dataservices</module>
         <module>hazelcast-raft-client</module>
         <module>hazelcast-spring</module>
         <module>hazelcast-build-utils</module>

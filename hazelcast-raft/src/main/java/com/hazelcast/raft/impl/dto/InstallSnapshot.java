@@ -4,7 +4,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.raft.impl.RaftDataSerializerHook;
-import com.hazelcast.raft.impl.RaftEndpoint;
+import com.hazelcast.raft.RaftMember;
 import com.hazelcast.raft.impl.log.SnapshotEntry;
 
 import java.io.IOException;
@@ -19,7 +19,7 @@ import java.io.IOException;
  */
 public class InstallSnapshot implements IdentifiedDataSerializable {
 
-    private RaftEndpoint leader;
+    private RaftMember leader;
 
     private int term;
 
@@ -28,13 +28,13 @@ public class InstallSnapshot implements IdentifiedDataSerializable {
     public InstallSnapshot() {
     }
 
-    public InstallSnapshot(RaftEndpoint leader, int term, SnapshotEntry snapshot) {
+    public InstallSnapshot(RaftMember leader, int term, SnapshotEntry snapshot) {
         this.leader = leader;
         this.term = term;
         this.snapshot = snapshot;
     }
 
-    public RaftEndpoint leader() {
+    public RaftMember leader() {
         return leader;
     }
 

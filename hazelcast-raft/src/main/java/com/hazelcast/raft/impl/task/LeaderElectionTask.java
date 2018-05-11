@@ -1,6 +1,6 @@
 package com.hazelcast.raft.impl.task;
 
-import com.hazelcast.raft.impl.RaftEndpoint;
+import com.hazelcast.raft.RaftMember;
 import com.hazelcast.raft.impl.RaftNodeImpl;
 import com.hazelcast.raft.impl.dto.VoteRequest;
 import com.hazelcast.raft.impl.state.RaftState;
@@ -14,7 +14,7 @@ import com.hazelcast.raft.impl.state.RaftState;
  * Also a {@link LeaderElectionTimeoutTask} is scheduled with a {@link RaftNodeImpl#getLeaderElectionTimeoutInMillis()}
  * delay to trigger leader election if one is not elected yet.
  */
-public class LeaderElectionTask extends RaftNodeAwareTask implements Runnable {
+public class LeaderElectionTask extends RaftNodeStatusAwareTask implements Runnable {
 
     public LeaderElectionTask(RaftNodeImpl raftNode) {
         super(raftNode);
@@ -34,7 +34,7 @@ public class LeaderElectionTask extends RaftNodeAwareTask implements Runnable {
                 + ", last log term: " + request.lastLogTerm());
         raftNode.printMemberState();
 
-        for (RaftEndpoint endpoint : state.remoteMembers()) {
+        for (RaftMember endpoint : state.remoteMembers()) {
             raftNode.send(request, endpoint);
         }
 

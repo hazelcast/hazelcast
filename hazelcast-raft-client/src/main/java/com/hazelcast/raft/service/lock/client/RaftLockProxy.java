@@ -2,7 +2,6 @@ package com.hazelcast.raft.service.lock.client;
 
 import com.hazelcast.client.impl.ClientMessageDecoder;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
-import com.hazelcast.client.impl.HazelcastClientProxy;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
@@ -14,7 +13,10 @@ import com.hazelcast.core.ILock;
 import com.hazelcast.nio.Bits;
 import com.hazelcast.raft.RaftGroupId;
 import com.hazelcast.raft.impl.RaftGroupIdImpl;
+import com.hazelcast.raft.impl.session.SessionExpiredException;
 import com.hazelcast.raft.service.lock.RaftLockService;
+import com.hazelcast.raft.service.session.SessionAwareProxy;
+import com.hazelcast.raft.service.session.SessionManagerProvider;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.ThreadUtil;
 import com.hazelcast.util.UuidUtil;
@@ -25,19 +27,22 @@ import java.util.concurrent.locks.Condition;
 
 import static com.hazelcast.client.impl.protocol.util.ParameterUtil.calculateDataSize;
 import static com.hazelcast.raft.service.lock.client.LockMessageTaskFactoryProvider.CREATE_TYPE;
+import static com.hazelcast.raft.service.lock.client.LockMessageTaskFactoryProvider.DESTROY_TYPE;
 import static com.hazelcast.raft.service.lock.client.LockMessageTaskFactoryProvider.LOCK;
 import static com.hazelcast.raft.service.lock.client.LockMessageTaskFactoryProvider.LOCK_COUNT;
 import static com.hazelcast.raft.service.lock.client.LockMessageTaskFactoryProvider.TRY_LOCK;
 import static com.hazelcast.raft.service.lock.client.LockMessageTaskFactoryProvider.UNLOCK;
+import static com.hazelcast.raft.service.util.ClientAccessor.getClient;
 
 /**
  * TODO: Javadoc Pending...
  *
  */
-public class RaftLockProxy implements ILock {
+public class RaftLockProxy extends SessionAwareProxy implements ILock {
 
-    private static final ClientMessageDecoder INT_RESPONSE_DECODER = new IntResponseDecoder();
-    private static final ClientMessageDecoder BOOLEAN_RESPONSE_DECODER = new BooleanResponseDecoder();
+    static final ClientMessageDecoder INT_RESPONSE_DECODER = new IntResponseDecoder();
+    static final ClientMessageDecoder BOOLEAN_RESPONSE_DECODER = new BooleanResponseDecoder();
+    static final ClientMessageDecoder LONG_RESPONSE_DECODER = new LongResponseDecoder();
 
     public static ILock create(HazelcastInstance instance, String name) {
         int dataSize = ClientMessage.HEADER_SIZE + calculateDataSize(name);
@@ -68,36 +73,64 @@ public class RaftLockProxy implements ILock {
     private final String name;
 
     private RaftLockProxy(HazelcastInstance instance, RaftGroupId groupId, String name) {
-        client = getClient(instance);
+        super(SessionManagerProvider.get(getClient(instance)), groupId);
+        this.client = getClient(instance);
         this.groupId = groupId;
         this.name = name;
     }
 
-    private static HazelcastClientInstanceImpl getClient(HazelcastInstance instance) {
-        if (instance instanceof HazelcastClientProxy) {
-            return  ((HazelcastClientProxy) instance).client;
-        } else if (instance instanceof HazelcastClientInstanceImpl) {
-            return  (HazelcastClientInstanceImpl) instance;
-        } else {
-            throw new IllegalArgumentException("Unknown client instance! " + instance);
+    @Override
+    public void lock() {
+        UUID invUid = UuidUtil.newUnsecureUUID();
+        for (;;) {
+            long sessionId = acquireSession();
+            ClientMessage clientMessage = encodeRequest(LOCK, groupId, name, sessionId, ThreadUtil.getThreadId(), invUid);
+            ICompletableFuture<Object> future = invoke(client, LONG_RESPONSE_DECODER, name, clientMessage);
+            try {
+                join(future);
+                break;
+            } catch (SessionExpiredException e) {
+                invalidateSession(sessionId);
+            }
         }
     }
 
     @Override
-    public void lock() {
-        String uuid = client.getLocalEndpoint().getUuid();
+    public boolean tryLock() {
+        return tryLock(0, TimeUnit.MILLISECONDS);
+    }
+
+    @Override
+    public boolean tryLock(long time, TimeUnit unit) {
         UUID invUid = UuidUtil.newUnsecureUUID();
-        ClientMessage clientMessage = encodeRequest(groupId, name, uuid, ThreadUtil.getThreadId(), invUid, LOCK);
-        join(invoke(clientMessage, BOOLEAN_RESPONSE_DECODER));
+        long timeoutMs = Math.max(0, unit.toMillis(time));
+        for (;;) {
+            long sessionId = acquireSession();
+            ClientMessage clientMessage = encodeRequest(TRY_LOCK, groupId, name, sessionId, ThreadUtil.getThreadId(),
+                    invUid, timeoutMs);
+            ICompletableFuture<Long> future = invoke(client, LONG_RESPONSE_DECODER, name, clientMessage);
+            try {
+                return join(future) > 0L;
+            } catch (SessionExpiredException e) {
+                invalidateSession(sessionId);
+            }
+        }
     }
 
     @Override
     public void unlock() {
-        String uuid = client.getLocalEndpoint().getUuid();
+        final long sessionId = getSession();
+        if (sessionId < 0) {
+            throw new IllegalMonitorStateException();
+        }
         UUID invUid = UuidUtil.newUnsecureUUID();
-        ClientMessage clientMessage = encodeRequest(groupId, name, uuid, ThreadUtil.getThreadId(), invUid, UNLOCK);
-        join(invoke(clientMessage, BOOLEAN_RESPONSE_DECODER));
-
+        ClientMessage clientMessage = encodeRequest(UNLOCK, groupId, name, sessionId, ThreadUtil.getThreadId(), invUid);
+        ICompletableFuture<Object> future = invoke(client, BOOLEAN_RESPONSE_DECODER, name, clientMessage);
+        try {
+            join(future);
+        } finally {
+            releaseSession(sessionId);
+        }
     }
 
     @Override
@@ -107,29 +140,20 @@ public class RaftLockProxy implements ILock {
 
     @Override
     public boolean isLockedByCurrentThread() {
-        throw new UnsupportedOperationException();
+        long sessionId = getSession();
+        if (sessionId < 0) {
+            return false;
+        }
+        ClientMessage clientMessage = encodeRequest(LOCK_COUNT, groupId, name, sessionId, ThreadUtil.getThreadId());
+        ICompletableFuture<Integer> future = invoke(client, INT_RESPONSE_DECODER, name, clientMessage);
+        return join(future) > 0;
     }
 
     @Override
     public int getLockCount() {
-        String uuid = client.getLocalEndpoint().getUuid();
-        ClientMessage clientMessage = encodeRequest(groupId, name, uuid, LOCK_COUNT);
-        ICompletableFuture<Integer> future = invoke(clientMessage, INT_RESPONSE_DECODER);
+        ClientMessage clientMessage = encodeRequest(LOCK_COUNT, groupId, name, -1, -1);
+        ICompletableFuture<Integer> future = invoke(client, INT_RESPONSE_DECODER, name, clientMessage);
         return join(future);
-    }
-
-    @Override
-    public boolean tryLock() {
-        String uuid = client.getLocalEndpoint().getUuid();
-        UUID invUid = UuidUtil.newUnsecureUUID();
-        ClientMessage clientMessage = encodeRequest(groupId, name, uuid, ThreadUtil.getThreadId(), invUid, TRY_LOCK);
-        ICompletableFuture<Boolean> future = invoke(clientMessage, BOOLEAN_RESPONSE_DECODER);
-        return join(future);
-    }
-
-    @Override
-    public boolean tryLock(long time, TimeUnit unit) throws InterruptedException {
-        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -189,15 +213,21 @@ public class RaftLockProxy implements ILock {
 
     @Override
     public void destroy() {
-        throw new UnsupportedOperationException();
+        int dataSize = ClientMessage.HEADER_SIZE
+                + RaftGroupIdImpl.dataSize(groupId) + calculateDataSize(name);
+        ClientMessage clientMessage = prepareClientMessage(groupId, name, dataSize, DESTROY_TYPE);
+        clientMessage.updateFrameLength();
+
+        join(invoke(client, BOOLEAN_RESPONSE_DECODER, name, clientMessage));
     }
 
-    private <T> ICompletableFuture<T> invoke(ClientMessage clientMessage, ClientMessageDecoder decoder) {
-        ClientInvocationFuture future = new ClientInvocation(client, clientMessage, getName()).invoke();
+    static <T> ICompletableFuture<T> invoke(HazelcastClientInstanceImpl client, ClientMessageDecoder decoder, String name,
+                                            ClientMessage clientMessage) {
+        ClientInvocationFuture future = new ClientInvocation(client, clientMessage, name).invoke();
         return new ClientDelegatingFuture<T>(future, client.getSerializationService(), decoder);
     }
 
-    private static <T> T join(ICompletableFuture<T> future) {
+    static <T> T join(ICompletableFuture<T> future) {
         try {
             return future.get();
         } catch (Exception e) {
@@ -205,23 +235,41 @@ public class RaftLockProxy implements ILock {
         }
     }
 
-    private static ClientMessage encodeRequest(RaftGroupId groupId, String name, String uuid, long threadId, UUID invUid, int messageTypeId) {
+    static ClientMessage encodeRequest(int messageTypeId, RaftGroupId groupId, String name, long sessionId,
+            long threadId, UUID invUid) {
         int dataSize = ClientMessage.HEADER_SIZE
-                + RaftGroupIdImpl.dataSize(groupId) + calculateDataSize(name) + calculateDataSize(uuid) + Bits.LONG_SIZE_IN_BYTES * 3;
+                + RaftGroupIdImpl.dataSize(groupId) + calculateDataSize(name) + Bits.LONG_SIZE_IN_BYTES * 4;
         ClientMessage clientMessage = prepareClientMessage(groupId, name, dataSize, messageTypeId);
-        clientMessage.set(uuid);
-        clientMessage.set(threadId);
-        clientMessage.set(invUid.getLeastSignificantBits());
-        clientMessage.set(invUid.getMostSignificantBits());
+        setRequestParams(clientMessage, sessionId, threadId, invUid);
         clientMessage.updateFrameLength();
         return clientMessage;
     }
 
-    private static ClientMessage encodeRequest(RaftGroupId groupId, String name, String uuid, int messageTypeId) {
+    static ClientMessage encodeRequest(int messageTypeId, RaftGroupId groupId, String name, long sessionId,
+            long threadId, UUID invUid, long val) {
+
         int dataSize = ClientMessage.HEADER_SIZE
-                + RaftGroupIdImpl.dataSize(groupId) + calculateDataSize(name) + calculateDataSize(uuid);
+                + RaftGroupIdImpl.dataSize(groupId) + calculateDataSize(name) + Bits.LONG_SIZE_IN_BYTES * 5;
         ClientMessage clientMessage = prepareClientMessage(groupId, name, dataSize, messageTypeId);
-        clientMessage.set(uuid);
+        setRequestParams(clientMessage, sessionId, threadId, invUid);
+        clientMessage.set(val);
+        clientMessage.updateFrameLength();
+        return clientMessage;
+    }
+
+    private static void setRequestParams(ClientMessage clientMessage, long sessionId, long threadId, UUID invUid) {
+        clientMessage.set(sessionId);
+        clientMessage.set(threadId);
+        clientMessage.set(invUid.getLeastSignificantBits());
+        clientMessage.set(invUid.getMostSignificantBits());
+    }
+
+    static ClientMessage encodeRequest(int messageTypeId, RaftGroupId groupId, String name, long sessionId, long threadId) {
+        int dataSize = ClientMessage.HEADER_SIZE
+                + RaftGroupIdImpl.dataSize(groupId) + calculateDataSize(name) + Bits.LONG_SIZE_IN_BYTES * 2;
+        ClientMessage clientMessage = prepareClientMessage(groupId, name, dataSize, messageTypeId);
+        clientMessage.set(sessionId);
+        clientMessage.set(threadId);
         clientMessage.updateFrameLength();
         return clientMessage;
     }
@@ -237,6 +285,10 @@ public class RaftLockProxy implements ILock {
         return clientMessage;
     }
 
+    public RaftGroupId getGroupId() {
+        return groupId;
+    }
+
     private static class IntResponseDecoder implements ClientMessageDecoder {
         @Override
         public Integer decodeClientMessage(ClientMessage clientMessage) {
@@ -248,6 +300,13 @@ public class RaftLockProxy implements ILock {
         @Override
         public Boolean decodeClientMessage(ClientMessage clientMessage) {
             return clientMessage.getBoolean();
+        }
+    }
+
+    private static class LongResponseDecoder implements ClientMessageDecoder {
+        @Override
+        public Long decodeClientMessage(ClientMessage clientMessage) {
+            return clientMessage.getLong();
         }
     }
 }

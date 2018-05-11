@@ -16,163 +16,100 @@
 
 package com.hazelcast.config.raft;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+
+import static com.hazelcast.util.Preconditions.checkFalse;
 import static com.hazelcast.util.Preconditions.checkPositive;
+import static com.hazelcast.util.Preconditions.checkTrue;
 
 /**
- * Configuration for Raft groups.
+ * TODO: Javadoc Pending...
+ *
  */
 public class RaftConfig {
 
-    /**
-     * Default leader election timeout in millis. See {@link #leaderElectionTimeoutInMillis}.
-     */
-    public static final long DEFAULT_LEADER_ELECTION_TIMEOUT_IN_MILLIS = 2000;
+    private static final long DEFAULT_SESSION_TTL = 30;
+    private static final long DEFAULT_HEARTBEAT_INTERVAL = TimeUnit.SECONDS.toMillis(5);
 
-    /**
-     * Default leader heartbeat period in millis. See {@link #leaderHeartbeatPeriodInMillis}.
-     */
-    public static final long DEFAULT_LEADER_HEARTBEAT_PERIOD_IN_MILLIS = 5000;
+    private RaftMetadataGroupConfig metadataGroupConfig;
 
-    /**
-     * Default max append request entry count. See {@link #appendRequestMaxEntryCount}.
-     */
-    public static final int DEFAULT_APPEND_REQUEST_MAX_ENTRY_COUNT = 50;
+    private RaftAlgorithmConfig raftAlgorithmConfig = new RaftAlgorithmConfig();
 
-    /**
-     * Default commit index advance to initiate a snapshot. See {@link #commitIndexAdvanceCountToSnapshot}.
-     */
-    public static final int DEFAULT_COMMIT_INDEX_ADVANCE_COUNT_TO_SNAPSHOT = 1000;
+    private final Map<String, RaftGroupConfig> groupConfigs = new HashMap<String, RaftGroupConfig>();
 
-    /**
-     * Default max allowed uncommitted entry count. See {@link #uncommittedEntryCountToRejectNewAppends}.
-     */
-    public static final int DEFAULT_UNCOMMITTED_ENTRY_COUNT_TO_REJECT_NEW_APPENDS = 100;
+    private long sessionTimeToLiveSeconds = DEFAULT_SESSION_TTL;
 
-    /**
-     * Leader election timeout in milliseconds.
-     * If a candidate cannot win majority of the votes in time, a new election round is initiated.
-     */
-    private long leaderElectionTimeoutInMillis = DEFAULT_LEADER_ELECTION_TIMEOUT_IN_MILLIS;
-
-    /**
-     * Period for leader to send heartbeat messages to its followers.
-     */
-    private long leaderHeartbeatPeriodInMillis = DEFAULT_LEADER_HEARTBEAT_PERIOD_IN_MILLIS;
-
-    /**
-     * Max entry count that can be sent in a single batch of append entries request.
-     */
-    private int appendRequestMaxEntryCount = DEFAULT_APPEND_REQUEST_MAX_ENTRY_COUNT;
-
-    /**
-     * Number of commits to initiate a new snapshot after the last snapshot's index.
-     */
-    private int commitIndexAdvanceCountToSnapshot = DEFAULT_COMMIT_INDEX_ADVANCE_COUNT_TO_SNAPSHOT;
-
-    /**
-     * Max number of allowed uncommitted entries before rejecting new append requests
-     * with {@link com.hazelcast.raft.exception.CannotReplicateException}.
-     */
-    private int uncommittedEntryCountToRejectNewAppends = DEFAULT_UNCOMMITTED_ENTRY_COUNT_TO_REJECT_NEW_APPENDS;
-
-    /**
-     * When enabled, an append request fails if the target member (leader) leaves the cluster.
-     * At this point result of append request is indeterminate, it may have been replicated by the leader
-     * to some of the followers.
-     */
-    private boolean failOnIndeterminateOperationState;
-
-    /**
-     * Enabled appending a no-op entry to the log when a new leader is elected.
-     * <p>
-     * See <a href="https://groups.google.com/forum/#!msg/raft-dev/t4xj6dJTP6E/d2D9LrWRza8J">
-     * <i>Bug in single-server membership changes</i></a> post by Diego Ongaro for more info.
-     */
-    private boolean appendNopEntryOnLeaderElection;
+    private long sessionHeartbeatIntervalMillis = DEFAULT_HEARTBEAT_INTERVAL;
 
     public RaftConfig() {
     }
 
     public RaftConfig(RaftConfig config) {
-        this.leaderElectionTimeoutInMillis = config.leaderElectionTimeoutInMillis;
-        this.leaderHeartbeatPeriodInMillis = config.leaderHeartbeatPeriodInMillis;
-        this.appendRequestMaxEntryCount = config.appendRequestMaxEntryCount;
-        this.commitIndexAdvanceCountToSnapshot = config.commitIndexAdvanceCountToSnapshot;
-        this.uncommittedEntryCountToRejectNewAppends = config.uncommittedEntryCountToRejectNewAppends;
-        this.failOnIndeterminateOperationState = config.failOnIndeterminateOperationState;
-        this.appendNopEntryOnLeaderElection = config.appendNopEntryOnLeaderElection;
+        this.metadataGroupConfig = new RaftMetadataGroupConfig(config.metadataGroupConfig);
+        this.raftAlgorithmConfig = new RaftAlgorithmConfig(config.raftAlgorithmConfig);
+        for (RaftGroupConfig groupConfig : config.groupConfigs.values()) {
+            addGroupConfig(new RaftGroupConfig(groupConfig));
+        }
+        this.sessionTimeToLiveSeconds = config.sessionTimeToLiveSeconds;
+        this.sessionHeartbeatIntervalMillis = config.sessionHeartbeatIntervalMillis;
     }
 
-    public long getLeaderElectionTimeoutInMillis() {
-        return leaderElectionTimeoutInMillis;
+    public RaftAlgorithmConfig getRaftAlgorithmConfig() {
+        return raftAlgorithmConfig;
     }
 
-    public RaftConfig setLeaderElectionTimeoutInMillis(long leaderElectionTimeoutInMillis) {
-        checkPositive(leaderElectionTimeoutInMillis, "leader election timeout in millis: "
-                + leaderElectionTimeoutInMillis + " should be positive");
-        this.leaderElectionTimeoutInMillis = leaderElectionTimeoutInMillis;
+    public RaftConfig setRaftAlgorithmConfig(RaftAlgorithmConfig raftAlgorithmConfig) {
+        this.raftAlgorithmConfig = raftAlgorithmConfig;
         return this;
     }
 
-    public long getLeaderHeartbeatPeriodInMillis() {
-        return leaderHeartbeatPeriodInMillis;
+    public RaftMetadataGroupConfig getMetadataGroupConfig() {
+        return metadataGroupConfig;
     }
 
-    public RaftConfig setLeaderHeartbeatPeriodInMillis(long leaderHeartbeatPeriodInMillis) {
-        checkPositive(leaderHeartbeatPeriodInMillis, "leader heartbeat period in millis: "
-                + leaderHeartbeatPeriodInMillis + " should be positive");
-        this.leaderHeartbeatPeriodInMillis = leaderHeartbeatPeriodInMillis;
+    public RaftConfig setMetadataGroupConfig(RaftMetadataGroupConfig metadataGroupConfig) {
+        this.metadataGroupConfig = metadataGroupConfig;
         return this;
     }
 
-    public int getAppendRequestMaxEntryCount() {
-        return appendRequestMaxEntryCount;
+    public Map<String, RaftGroupConfig> getGroupConfigs() {
+        return groupConfigs;
     }
 
-    public RaftConfig setAppendRequestMaxEntryCount(int appendRequestMaxEntryCount) {
-        checkPositive(appendRequestMaxEntryCount, "append request max entry count: " + appendRequestMaxEntryCount
-                + " should be positive");
-        this.appendRequestMaxEntryCount = appendRequestMaxEntryCount;
+    public RaftGroupConfig getGroupConfig(String name) {
+        return groupConfigs.get(name);
+    }
+
+    public RaftConfig addGroupConfig(RaftGroupConfig groupConfig) {
+        checkFalse(groupConfigs.containsKey(groupConfig.getName()),
+                "Group config '" + groupConfig.getName() + "' already exists!");
+        groupConfigs.put(groupConfig.getName(), groupConfig);
         return this;
     }
 
-    public int getCommitIndexAdvanceCountToSnapshot() {
-        return commitIndexAdvanceCountToSnapshot;
+    public long getSessionTimeToLiveSeconds() {
+        return sessionTimeToLiveSeconds;
     }
 
-    public RaftConfig setCommitIndexAdvanceCountToSnapshot(int commitIndexAdvanceCountToSnapshot) {
-        checkPositive(commitIndexAdvanceCountToSnapshot, "commit index advance count to snapshot: "
-                + commitIndexAdvanceCountToSnapshot + " should be positive");
-        this.commitIndexAdvanceCountToSnapshot = commitIndexAdvanceCountToSnapshot;
+    public RaftConfig setSessionTimeToLiveSeconds(long sessionTimeToLiveSeconds) {
+        checkPositive(sessionTimeToLiveSeconds, "Session TTL should be greater than zero!");
+        checkTrue(TimeUnit.SECONDS.toMillis(sessionTimeToLiveSeconds) > sessionHeartbeatIntervalMillis,
+                "Session timeout should be greater than heartbeat interval!");
+        this.sessionTimeToLiveSeconds = sessionTimeToLiveSeconds;
         return this;
     }
 
-    public int getUncommittedEntryCountToRejectNewAppends() {
-        return uncommittedEntryCountToRejectNewAppends;
+    public long getSessionHeartbeatIntervalMillis() {
+        return sessionHeartbeatIntervalMillis;
     }
 
-    public RaftConfig setUncommittedEntryCountToRejectNewAppends(int uncommittedEntryCountToRejectNewAppends) {
-        checkPositive(uncommittedEntryCountToRejectNewAppends, "uncommitted entry count to reject new appends: "
-                + uncommittedEntryCountToRejectNewAppends + " should be positive");
-        this.uncommittedEntryCountToRejectNewAppends = uncommittedEntryCountToRejectNewAppends;
-        return this;
-    }
-
-    public boolean isFailOnIndeterminateOperationState() {
-        return failOnIndeterminateOperationState;
-    }
-
-    public RaftConfig setFailOnIndeterminateOperationState(boolean failOnIndeterminateOperationState) {
-        this.failOnIndeterminateOperationState = failOnIndeterminateOperationState;
-        return this;
-    }
-
-    public boolean isAppendNopEntryOnLeaderElection() {
-        return appendNopEntryOnLeaderElection;
-    }
-
-    public RaftConfig setAppendNopEntryOnLeaderElection(boolean appendNopEntryOnLeaderElection) {
-        this.appendNopEntryOnLeaderElection = appendNopEntryOnLeaderElection;
+    public RaftConfig setSessionHeartbeatIntervalMillis(long sessionHeartbeatIntervalMillis) {
+        checkPositive(sessionTimeToLiveSeconds, "Session heartbeat interval should be greater than zero!");
+        checkTrue(TimeUnit.SECONDS.toMillis(sessionTimeToLiveSeconds) > sessionHeartbeatIntervalMillis,
+                "Session TTL should be greater than heartbeat interval!");
+        this.sessionHeartbeatIntervalMillis = sessionHeartbeatIntervalMillis;
         return this;
     }
 }

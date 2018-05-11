@@ -22,6 +22,8 @@ package com.hazelcast.config.raft;
  */
 public class RaftGroupConfig {
 
+    public static final String DEFAULT_GROUP = "default";
+
     private String name;
 
     private int size;

@@ -1,12 +1,15 @@
 package com.hazelcast.raft.impl.state;
 
 import com.hazelcast.raft.RaftGroupId;
-import com.hazelcast.raft.impl.RaftEndpoint;
+import com.hazelcast.raft.RaftMember;
 import com.hazelcast.raft.impl.RaftRole;
 import com.hazelcast.raft.impl.dto.VoteRequest;
 import com.hazelcast.raft.impl.log.RaftLog;
 
 import java.util.Collection;
+import java.util.LinkedHashSet;
+
+import static java.util.Collections.unmodifiableSet;
 
 /**
  * {@code RaftState} is the mutable state maintained by Raft state machine on every node in the group.
@@ -16,7 +19,7 @@ public class RaftState {
     /**
      * Endpoint of this node
      */
-    private final RaftEndpoint localEndpoint;
+    private final RaftMember localEndpoint;
 
     /**
      * Group id
@@ -24,7 +27,12 @@ public class RaftState {
     private final RaftGroupId groupId;
 
     /**
-     * Latest committed group members
+     * Initial members of the group
+     */
+    private final Collection<RaftMember> initialMembers;
+
+    /**
+     * Latest committed group members.
      */
     private RaftGroupMembers committedGroupMembers;
 
@@ -46,7 +54,7 @@ public class RaftState {
     /**
      * Latest known leader endpoint (or null if not known).
      */
-    private volatile RaftEndpoint leader;
+    private volatile RaftMember leader;
 
     /**
      * Index of highest log entry known to be committed (initialized to 0, increases monotonically)
@@ -63,7 +71,7 @@ public class RaftState {
     /**
      * Endpoint that received vote in {@link #lastVoteTerm} (or null if none)
      */
-    private RaftEndpoint votedFor;
+    private RaftMember votedFor;
 
     /**
      * Term that granted vote for {@link #votedFor}
@@ -94,11 +102,10 @@ public class RaftState {
      */
     private CandidateState candidateState;
 
-    public RaftState(RaftGroupId groupId, RaftEndpoint localEndpoint, Collection<RaftEndpoint> endpoints) {
-        assert endpoints.contains(localEndpoint)
-                : "Members set must contain local member! Members: " + endpoints + ", Local member: " + localEndpoint;
+    public RaftState(RaftGroupId groupId, RaftMember localEndpoint, Collection<RaftMember> endpoints) {
         this.groupId = groupId;
         this.localEndpoint = localEndpoint;
+        this.initialMembers = unmodifiableSet(new LinkedHashSet<RaftMember>(endpoints));
         RaftGroupMembers groupMembers = new RaftGroupMembers(0, endpoints, localEndpoint);
         this.committedGroupMembers = groupMembers;
         this.lastGroupMembers = groupMembers;
@@ -112,17 +119,21 @@ public class RaftState {
         return groupId;
     }
 
+    public Collection<RaftMember> initialMembers() {
+        return initialMembers;
+    }
+
     /**
      * Returns all members in the last applied group members
      */
-    public Collection<RaftEndpoint> members() {
+    public Collection<RaftMember> members() {
         return lastGroupMembers.members();
     }
 
     /**
      * Returns remote members in the last applied group members
      */
-    public Collection<RaftEndpoint> remoteMembers() {
+    public Collection<RaftMember> remoteMembers() {
         return lastGroupMembers.remoteMembers();
     }
 
@@ -185,7 +196,7 @@ public class RaftState {
     /**
      * Returns the known leader
      */
-    public RaftEndpoint leader() {
+    public RaftMember leader() {
         return leader;
     }
 
@@ -201,14 +212,14 @@ public class RaftState {
      * Returns the endpoint this note voted for
      * @see #votedFor
      */
-    public RaftEndpoint votedFor() {
+    public RaftMember votedFor() {
         return votedFor;
     }
 
     /**
      * Updates the known leader
      */
-    public void leader(RaftEndpoint endpoint) {
+    public void leader(RaftMember endpoint) {
         leader = endpoint;
     }
 
@@ -270,7 +281,7 @@ public class RaftState {
     /**
      * Persist a vote for the endpoint in current term during leader election.
      */
-    public void persistVote(int term, RaftEndpoint endpoint) {
+    public void persistVote(int term, RaftMember endpoint) {
         this.lastVoteTerm = term;
         this.votedFor = endpoint;
     }
@@ -321,8 +332,8 @@ public class RaftState {
     /**
      * Returns true if the endpoint is a member of the last applied group, false otherwise.
      */
-    public boolean isKnownEndpoint(RaftEndpoint endpoint) {
-        return lastGroupMembers.isKnownEndpoint(endpoint);
+    public boolean isKnownMember(RaftMember endpoint) {
+        return lastGroupMembers.isKnownMember(endpoint);
     }
 
     /**
@@ -341,7 +352,7 @@ public class RaftState {
     }
 
     /**
-     * Initializes the last applied group members with the endpoints and logIndex.
+     * Initializes the last applied group members with the members and logIndex.
      * This method expects there's no uncommitted membership changes, committed members are the same as
      * the last applied members.
      *
@@ -349,29 +360,29 @@ public class RaftState {
      * those don't exist in latest applied members are removed.
      *
      * @param logIndex log index of membership change
-     * @param endpoints latest applied endpoints
+     * @param members latest applied members
      */
-    public void updateGroupMembers(long logIndex, Collection<RaftEndpoint> endpoints) {
+    public void updateGroupMembers(long logIndex, Collection<RaftMember> members) {
         assert committedGroupMembers == lastGroupMembers
-                : "Cannot update group members to: " + endpoints + " at log index: " + logIndex + " because last group members: "
+                : "Cannot update group members to: " + members + " at log index: " + logIndex + " because last group members: "
                 + lastGroupMembers + " is different than committed group members: " + committedGroupMembers;
         assert lastGroupMembers.index() < logIndex
-                : "Cannot update group members to: " + endpoints + " at log index: " + logIndex + " because last group members: "
+                : "Cannot update group members to: " + members + " at log index: " + logIndex + " because last group members: "
                 + lastGroupMembers + " has a bigger log index.";
 
-        RaftGroupMembers newGroupMembers = new RaftGroupMembers(logIndex, endpoints, localEndpoint);
+        RaftGroupMembers newGroupMembers = new RaftGroupMembers(logIndex, members, localEndpoint);
         committedGroupMembers = lastGroupMembers;
         lastGroupMembers = newGroupMembers;
 
         if (leaderState != null) {
-            for (RaftEndpoint endpoint : endpoints) {
-                if (!committedGroupMembers.isKnownEndpoint(endpoint)) {
+            for (RaftMember endpoint : members) {
+                if (!committedGroupMembers.isKnownMember(endpoint)) {
                     leaderState.add(endpoint, log.lastLogOrSnapshotIndex());
                 }
             }
 
-            for (RaftEndpoint endpoint : committedGroupMembers.remoteMembers()) {
-                if (!endpoints.contains(endpoint)) {
+            for (RaftMember endpoint : committedGroupMembers.remoteMembers()) {
+                if (!members.contains(endpoint)) {
                     leaderState.remove(endpoint);
                 }
             }
@@ -404,15 +415,15 @@ public class RaftState {
      * Restores group members from the snapshot. Both {@link #committedGroupMembers}
      * and {@link #lastGroupMembers} are overwritten and they become the same.
      */
-    public void restoreGroupMembers(long logIndex, Collection<RaftEndpoint> endpoints) {
+    public void restoreGroupMembers(long logIndex, Collection<RaftMember> members) {
         assert committedGroupMembers == lastGroupMembers
-                : "Cannot restore group members to: " + endpoints + " at log index: " + logIndex + " because last group members: "
+                : "Cannot restore group members to: " + members + " at log index: " + logIndex + " because last group members: "
                 + lastGroupMembers + " is different than committed group members: " + committedGroupMembers;
         assert lastGroupMembers.index() <= logIndex
-                : "Cannot restore group members to: " + endpoints + " at log index: " + logIndex + " because last group members: "
+                : "Cannot restore group members to: " + members + " at log index: " + logIndex + " because last group members: "
                 + lastGroupMembers + " has a bigger log index.";
 
-        RaftGroupMembers groupMembers = new RaftGroupMembers(logIndex, endpoints, localEndpoint);
+        RaftGroupMembers groupMembers = new RaftGroupMembers(logIndex, members, localEndpoint);
         this.committedGroupMembers = groupMembers;
         this.lastGroupMembers = groupMembers;
     }

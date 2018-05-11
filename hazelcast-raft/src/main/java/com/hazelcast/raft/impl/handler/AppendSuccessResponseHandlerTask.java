@@ -1,6 +1,6 @@
 package com.hazelcast.raft.impl.handler;
 
-import com.hazelcast.raft.impl.RaftEndpoint;
+import com.hazelcast.raft.RaftMember;
 import com.hazelcast.raft.impl.RaftNodeImpl;
 import com.hazelcast.raft.impl.RaftRole;
 import com.hazelcast.raft.impl.dto.AppendSuccessResponse;
@@ -73,7 +73,7 @@ public class AppendSuccessResponseHandlerTask extends AbstractResponseHandlerTas
     }
 
     private void updateFollowerIndices(RaftState state) {
-        RaftEndpoint follower = resp.follower();
+        RaftMember follower = resp.follower();
         LeaderState leaderState = state.leaderState();
         long matchIndex = leaderState.getMatchIndex(follower);
         long followerLastLogIndex = resp.lastLogIndex();
@@ -100,7 +100,7 @@ public class AppendSuccessResponseHandlerTask extends AbstractResponseHandlerTas
         int k;
 
         // if the leader is leaving, it should not count its vote for quorum...
-        if (raftNode.state().isKnownEndpoint(raftNode.getLocalEndpoint())) {
+        if (raftNode.state().isKnownMember(raftNode.getLocalMember())) {
             indices = new long[matchIndices.size() + 1];
             indices[0] = state.log().lastLogOrSnapshotIndex();
             k = 1;
@@ -130,7 +130,7 @@ public class AppendSuccessResponseHandlerTask extends AbstractResponseHandlerTas
     }
 
     @Override
-    protected RaftEndpoint senderEndpoint() {
+    protected RaftMember sender() {
         return resp.follower();
     }
 }

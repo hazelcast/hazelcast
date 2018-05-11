@@ -2,6 +2,7 @@ package com.hazelcast.raft.impl.service;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.raft.RaftGroupId;
 import com.hazelcast.raft.impl.RaftOp;
 
 import java.io.IOException;
@@ -18,7 +19,7 @@ public class RaftTestApplyOp extends RaftOp {
     }
 
     @Override
-    public Object doRun(long commitIndex) {
+    public Object run(RaftGroupId groupId, long commitIndex) {
         RaftDataService service = getService();
         return service.apply(commitIndex, val);
     }
@@ -29,19 +30,17 @@ public class RaftTestApplyOp extends RaftOp {
     }
 
     @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
-        super.writeInternal(out);
+    public void writeData(ObjectDataOutput out) throws IOException {
         out.writeObject(val);
     }
 
     @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
-        super.readInternal(in);
+    public void readData(ObjectDataInput in) throws IOException {
         val = in.readObject();
     }
 
     @Override
-    public String toString() {
-        return "RaftTestApplyOperation{" + "val=" + val + '}';
+    protected void toString(StringBuilder sb) {
+        sb.append(", val=").append(val);
     }
 }

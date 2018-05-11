@@ -40,7 +40,7 @@ public class RaftDataService implements SnapshotAwareService<Map<Long, Object>> 
     }
 
     @Override
-    public Map<Long, Object> takeSnapshot(RaftGroupId raftGroupId, long commitIndex) {
+    public Map<Long, Object> takeSnapshot(RaftGroupId groupId, long commitIndex) {
         Map<Long, Object> snapshot = new HashMap<Long, Object>();
         for (Entry<Long, Object> e : values.entrySet()) {
             assert e.getKey() <= commitIndex : "Key: " + e.getKey() + ", commit-index: " + commitIndex;
@@ -51,7 +51,7 @@ public class RaftDataService implements SnapshotAwareService<Map<Long, Object>> 
     }
 
     @Override
-    public void restoreSnapshot(RaftGroupId raftGroupId, long commitIndex, Map<Long, Object> snapshot) {
+    public void restoreSnapshot(RaftGroupId groupId, long commitIndex, Map<Long, Object> snapshot) {
         values.clear();
         values.putAll(snapshot);
     }

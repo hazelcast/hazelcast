@@ -30,7 +30,4 @@ public class RaftLockConfig extends AbstractRaftObjectConfig {
         super(name, raftGroupRef);
     }
 
-    public RaftLockConfig(String name, RaftGroupConfig raftGroupConfig) {
-        super(name, raftGroupConfig);
-    }
 }

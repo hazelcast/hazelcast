@@ -1,6 +1,6 @@
 package com.hazelcast.raft.impl.state;
 
-import com.hazelcast.raft.impl.RaftEndpoint;
+import com.hazelcast.raft.RaftMember;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -9,7 +9,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.raft.impl.RaftUtil.newRaftEndpoint;
+import static com.hazelcast.raft.impl.RaftUtil.newRaftMember;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -36,7 +36,7 @@ public class CandidateStateTest {
 
     @Test
     public void test_grantVote_withoutMajority() throws Exception {
-        RaftEndpoint endpoint = newRaftEndpoint(1000);
+        RaftMember endpoint = newRaftMember(1000);
 
         assertTrue(state.grantVote(endpoint));
         assertFalse(state.grantVote(endpoint));
@@ -48,7 +48,7 @@ public class CandidateStateTest {
     @Test
     public void test_grantVote_withMajority() throws Exception {
         for (int i = 0; i < majority; i++) {
-            RaftEndpoint endpoint = newRaftEndpoint(1000 + i);
+            RaftMember endpoint = newRaftMember(1000 + i);
             assertTrue(state.grantVote(endpoint));
 
         }

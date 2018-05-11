@@ -3,29 +3,34 @@ package com.hazelcast.raft.impl.service.operation.metadata;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.raft.impl.service.RaftGroupInfo;
+import com.hazelcast.raft.RaftGroupId;
+import com.hazelcast.raft.impl.RaftSystemOperation;
+import com.hazelcast.raft.RaftMember;
 import com.hazelcast.raft.impl.service.RaftService;
 import com.hazelcast.raft.impl.service.RaftServiceDataSerializerHook;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
 
-public class CreateRaftNodeOp extends Operation implements IdentifiedDataSerializable, AllowedDuringPassiveState {
+public class CreateRaftNodeOp extends Operation implements IdentifiedDataSerializable, RaftSystemOperation {
 
-    private RaftGroupInfo groupInfo;
+    private RaftGroupId groupId;
+    private Collection<RaftMember> initialMembers;
 
     public CreateRaftNodeOp() {
     }
 
-    public CreateRaftNodeOp(RaftGroupInfo groupInfo) {
-        this.groupInfo = groupInfo;
+    public CreateRaftNodeOp(RaftGroupId groupId, Collection<RaftMember> initialMembers) {
+        this.groupId = groupId;
+        this.initialMembers = initialMembers;
     }
 
     @Override
     public void run() {
         RaftService service = getService();
-        service.createRaftNode(groupInfo);
+        service.createRaftNode(groupId, initialMembers);
     }
 
     @Override
@@ -41,13 +46,23 @@ public class CreateRaftNodeOp extends Operation implements IdentifiedDataSeriali
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeObject(groupInfo);
+        out.writeObject(groupId);
+        out.writeInt(initialMembers.size());
+        for (RaftMember member : initialMembers) {
+            out.writeObject(member);
+        }
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        groupInfo = in.readObject();
+        groupId = in.readObject();
+        int count = in.readInt();
+        initialMembers = new ArrayList<RaftMember>(count);
+        for (int i = 0; i < count; i++) {
+            RaftMember member = in.readObject();
+            initialMembers.add(member);
+        }
     }
 
     @Override
@@ -58,5 +73,10 @@ public class CreateRaftNodeOp extends Operation implements IdentifiedDataSeriali
     @Override
     public int getId() {
         return RaftServiceDataSerializerHook.CREATE_RAFT_NODE_OP;
+    }
+
+    @Override
+    protected void toString(StringBuilder sb) {
+        sb.append(", groupId=").append(groupId).append(", initialMembers=").append(initialMembers);
     }
 }

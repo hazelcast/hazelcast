@@ -7,10 +7,10 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingServiceImpl;
 import com.hazelcast.raft.RaftGroupId;
 import com.hazelcast.raft.SnapshotAwareService;
-import com.hazelcast.raft.impl.RaftEndpoint;
+import com.hazelcast.raft.RaftMember;
 import com.hazelcast.raft.impl.RaftIntegration;
 import com.hazelcast.raft.impl.RaftNodeImpl;
-import com.hazelcast.raft.impl.RaftRunnable;
+import com.hazelcast.raft.impl.RaftNodeStatus;
 import com.hazelcast.raft.impl.RaftUtil;
 import com.hazelcast.raft.impl.dto.AppendFailureResponse;
 import com.hazelcast.raft.impl.dto.AppendRequest;
@@ -47,40 +47,43 @@ import static org.junit.Assert.assertThat;
  */
 public class LocalRaftIntegration implements RaftIntegration {
 
-    private final RaftEndpoint localEndpoint;
+    private final RaftMember localEndpoint;
     private final RaftGroupId raftGroupId;
     private final SnapshotAwareService service;
+    private final boolean appendNopEntryOnLeaderElection;
     private final ScheduledExecutorService scheduledExecutor = Executors.newSingleThreadScheduledExecutor();
-    private final ConcurrentMap<RaftEndpoint, RaftNodeImpl> nodes = new ConcurrentHashMap<RaftEndpoint, RaftNodeImpl>();
+    private final ConcurrentMap<RaftMember, RaftNodeImpl> nodes = new ConcurrentHashMap<RaftMember, RaftNodeImpl>();
     private final LoggingServiceImpl loggingService;
 
     private final Set<EndpointDropEntry> endpointDropRules = Collections.newSetFromMap(new ConcurrentHashMap<EndpointDropEntry, Boolean>());
     private final Set<Class> dropAllRules = Collections.newSetFromMap(new ConcurrentHashMap<Class, Boolean>());
 
-    LocalRaftIntegration(TestRaftEndpoint localEndpoint, RaftGroupId raftGroupId, SnapshotAwareService service) {
+    LocalRaftIntegration(TestRaftMember localEndpoint, RaftGroupId raftGroupId, SnapshotAwareService service,
+                         boolean appendNopEntryOnLeaderElection) {
         this.localEndpoint = localEndpoint;
         this.raftGroupId = raftGroupId;
         this.service = service;
+        this.appendNopEntryOnLeaderElection = appendNopEntryOnLeaderElection;
         this.loggingService = new LoggingServiceImpl("dev", "log4j2", BuildInfoProvider.getBuildInfo());
         loggingService.setThisMember(getThisMember(localEndpoint));
     }
 
-    private MemberImpl getThisMember(TestRaftEndpoint localEndpoint) {
+    private MemberImpl getThisMember(TestRaftMember localEndpoint) {
         return new MemberImpl(RaftUtil.newAddress(localEndpoint.getPort()), MemberVersion.of(Versions.CURRENT_CLUSTER_VERSION.toString()), true, localEndpoint.getUid());
     }
 
     public void discoverNode(RaftNodeImpl node) {
-        assertNotEquals(localEndpoint, node.getLocalEndpoint());
-        RaftNodeImpl old = nodes.putIfAbsent(node.getLocalEndpoint(), node);
+        assertNotEquals(localEndpoint, node.getLocalMember());
+        RaftNodeImpl old = nodes.putIfAbsent(node.getLocalMember(), node);
         assertThat(old, anyOf(nullValue(), sameInstance(node)));
     }
 
     public boolean removeNode(RaftNodeImpl node) {
-        assertNotEquals(localEndpoint, node.getLocalEndpoint());
-        return nodes.remove(node.getLocalEndpoint(), node);
+        assertNotEquals(localEndpoint, node.getLocalMember());
+        return nodes.remove(node.getLocalMember(), node);
     }
 
-    public RaftEndpoint getLocalEndpoint() {
+    public RaftMember getLocalEndpoint() {
         return localEndpoint;
     }
 
@@ -100,6 +103,11 @@ public class LocalRaftIntegration implements RaftIntegration {
     }
 
     @Override
+    public Object getAppendedEntryOnLeaderElection() {
+        return appendNopEntryOnLeaderElection ? new NopEntry() : null;
+    }
+
+    @Override
     public ILogger getLogger(String name) {
         return loggingService.getLogger(name);
     }
@@ -110,12 +118,12 @@ public class LocalRaftIntegration implements RaftIntegration {
     }
 
     @Override
-    public boolean isReachable(RaftEndpoint endpoint) {
+    public boolean isReachable(RaftMember endpoint) {
         return localEndpoint.equals(endpoint) || nodes.containsKey(endpoint);
     }
 
     @Override
-    public boolean send(PreVoteRequest request, RaftEndpoint target) {
+    public boolean send(PreVoteRequest request, RaftMember target) {
         assertNotEquals(localEndpoint, target);
         RaftNodeImpl node = nodes.get(target);
         if (node == null) {
@@ -130,7 +138,7 @@ public class LocalRaftIntegration implements RaftIntegration {
     }
 
     @Override
-    public boolean send(PreVoteResponse response, RaftEndpoint target) {
+    public boolean send(PreVoteResponse response, RaftMember target) {
         assertNotEquals(localEndpoint, target);
         RaftNodeImpl node = nodes.get(target);
         if (node == null) {
@@ -145,7 +153,7 @@ public class LocalRaftIntegration implements RaftIntegration {
     }
 
     @Override
-    public boolean send(VoteRequest request, RaftEndpoint target) {
+    public boolean send(VoteRequest request, RaftMember target) {
         assertNotEquals(localEndpoint, target);
         RaftNodeImpl node = nodes.get(target);
         if (node == null) {
@@ -160,7 +168,7 @@ public class LocalRaftIntegration implements RaftIntegration {
     }
 
     @Override
-    public boolean send(VoteResponse response, RaftEndpoint target) {
+    public boolean send(VoteResponse response, RaftMember target) {
         assertNotEquals(localEndpoint, target);
         RaftNodeImpl node = nodes.get(target);
         if (node == null) {
@@ -175,7 +183,7 @@ public class LocalRaftIntegration implements RaftIntegration {
     }
 
     @Override
-    public boolean send(AppendRequest request, RaftEndpoint target) {
+    public boolean send(AppendRequest request, RaftMember target) {
         assertNotEquals(localEndpoint, target);
         RaftNodeImpl node = nodes.get(target);
         if (node == null) {
@@ -190,7 +198,7 @@ public class LocalRaftIntegration implements RaftIntegration {
     }
 
     @Override
-    public boolean send(AppendSuccessResponse response, RaftEndpoint target) {
+    public boolean send(AppendSuccessResponse response, RaftMember target) {
         assertNotEquals(localEndpoint, target);
         RaftNodeImpl node = nodes.get(target);
         if (node == null) {
@@ -205,7 +213,7 @@ public class LocalRaftIntegration implements RaftIntegration {
     }
 
     @Override
-    public boolean send(AppendFailureResponse response, RaftEndpoint target) {
+    public boolean send(AppendFailureResponse response, RaftMember target) {
         assertNotEquals(localEndpoint, target);
         RaftNodeImpl node = nodes.get(target);
         if (node == null) {
@@ -220,7 +228,7 @@ public class LocalRaftIntegration implements RaftIntegration {
     }
 
     @Override
-    public boolean send(InstallSnapshot request, RaftEndpoint target) {
+    public boolean send(InstallSnapshot request, RaftMember target) {
         assertNotEquals(localEndpoint, target);
         RaftNodeImpl node = nodes.get(target);
         if (node == null) {
@@ -234,7 +242,7 @@ public class LocalRaftIntegration implements RaftIntegration {
         return true;
     }
 
-    private boolean shouldDrop(Object message, RaftEndpoint target) {
+    private boolean shouldDrop(Object message, RaftMember target) {
         return dropAllRules.contains(message.getClass())
                 || endpointDropRules.contains(new EndpointDropEntry(message.getClass(), target));
     }
@@ -268,15 +276,15 @@ public class LocalRaftIntegration implements RaftIntegration {
         runOperation(operation, commitIndex);
     }
 
-    void dropMessagesToEndpoint(RaftEndpoint endpoint, Class messageType) {
+    void dropMessagesToEndpoint(RaftMember endpoint, Class messageType) {
         endpointDropRules.add(new EndpointDropEntry(messageType, endpoint));
     }
 
-    void allowMessagesToEndpoint(RaftEndpoint endpoint, Class messageType) {
+    void allowMessagesToEndpoint(RaftMember endpoint, Class messageType) {
         endpointDropRules.remove(new EndpointDropEntry(messageType, endpoint));
     }
 
-    void allowAllMessagesToEndpoint(RaftEndpoint endpoint) {
+    void allowAllMessagesToEndpoint(RaftMember endpoint) {
         Iterator<EndpointDropEntry> iter = endpointDropRules.iterator();
         while (iter.hasNext()) {
             EndpointDropEntry entry = iter.next();
@@ -313,9 +321,9 @@ public class LocalRaftIntegration implements RaftIntegration {
 
     private static class EndpointDropEntry {
         final Class messageType;
-        final RaftEndpoint endpoint;
+        final RaftMember endpoint;
 
-        private EndpointDropEntry(Class messageType, RaftEndpoint endpoint) {
+        private EndpointDropEntry(Class messageType, RaftMember endpoint) {
             this.messageType = messageType;
             this.endpoint = endpoint;
         }
@@ -337,5 +345,9 @@ public class LocalRaftIntegration implements RaftIntegration {
             result = 31 * result + endpoint.hashCode();
             return result;
         }
+    }
+
+    @Override
+    public void onNodeStatusChange(RaftNodeStatus status) {
     }
 }

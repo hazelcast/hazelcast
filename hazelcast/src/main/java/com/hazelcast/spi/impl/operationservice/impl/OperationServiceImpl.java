@@ -488,6 +488,10 @@ public final class OperationServiceImpl implements InternalOperationService, Met
                 node.getEndpointManager());
     }
 
+    public Invocation.Context getInvocationContext() {
+        return invocationContext;
+    }
+
     /**
      * Shuts down invocation infrastructure.
      * New invocation requests will be rejected after shutdown and all pending invocations

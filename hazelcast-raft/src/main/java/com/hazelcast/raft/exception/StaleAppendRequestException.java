@@ -1,6 +1,6 @@
 package com.hazelcast.raft.exception;
 
-import com.hazelcast.raft.impl.RaftEndpoint;
+import com.hazelcast.raft.RaftMember;
 
 /**
  * A {@code RaftException} which is thrown when an appended but yet not committed entry is truncated
@@ -8,7 +8,7 @@ import com.hazelcast.raft.impl.RaftEndpoint;
  */
 public class StaleAppendRequestException extends RaftException {
 
-    public StaleAppendRequestException(RaftEndpoint leader) {
+    public StaleAppendRequestException(RaftMember leader) {
         super(leader);
     }
 }

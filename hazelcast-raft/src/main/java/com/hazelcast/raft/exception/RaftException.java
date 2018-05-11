@@ -1,7 +1,7 @@
 package com.hazelcast.raft.exception;
 
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.raft.impl.RaftEndpoint;
+import com.hazelcast.raft.RaftMember;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -15,13 +15,13 @@ import java.io.ObjectOutputStream;
  */
 public class RaftException extends HazelcastException {
 
-    private transient RaftEndpoint leader;
+    private transient RaftMember leader;
 
-    public RaftException(RaftEndpoint leader) {
+    public RaftException(RaftMember leader) {
         this.leader = leader;
     }
 
-    public RaftException(String message, RaftEndpoint leader) {
+    public RaftException(String message, RaftMember leader) {
         super(message);
         this.leader = leader;
     }
@@ -30,7 +30,7 @@ public class RaftException extends HazelcastException {
      * Returns the leader endpoint of related Raft group, if known/available
      * by the time this exception is thrown.
      */
-    public RaftEndpoint getLeader() {
+    public RaftMember getLeader() {
         return leader;
     }
 
@@ -49,7 +49,7 @@ public class RaftException extends HazelcastException {
         in.defaultReadObject();
 
         if (in.readBoolean()) {
-            leader = (RaftEndpoint) in.readObject();
+            leader = (RaftMember) in.readObject();
         }
     }
 }

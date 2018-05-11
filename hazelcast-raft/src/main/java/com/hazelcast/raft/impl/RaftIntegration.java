@@ -1,6 +1,7 @@
 package com.hazelcast.raft.impl;
 
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.raft.RaftMember;
 import com.hazelcast.raft.impl.dto.AppendFailureResponse;
 import com.hazelcast.raft.impl.dto.AppendRequest;
 import com.hazelcast.raft.impl.dto.AppendSuccessResponse;
@@ -41,7 +42,7 @@ public interface RaftIntegration {
      * @param endpoint endpoint
      * @return true if endpoint is reachable, false otherwise
      */
-    boolean isReachable(RaftEndpoint endpoint);
+    boolean isReachable(RaftMember endpoint);
 
     /**
      * Sends the {@link PreVoteRequest} to target endpoint to be handled by
@@ -49,7 +50,7 @@ public interface RaftIntegration {
      *
      * @return true if request is sent or scheduled to be sent to target, false otherwise
      */
-    boolean send(PreVoteRequest request, RaftEndpoint target);
+    boolean send(PreVoteRequest request, RaftMember target);
 
     /**
      * Sends the {@link PreVoteResponse} to target endpoint to be handled by
@@ -57,7 +58,7 @@ public interface RaftIntegration {
      *
      * @return true if response is sent or scheduled to be sent to target, false otherwise
      */
-    boolean send(PreVoteResponse response, RaftEndpoint target);
+    boolean send(PreVoteResponse response, RaftMember target);
 
     /**
      * Sends the {@link VoteRequest} to target endpoint to be handled by
@@ -65,7 +66,7 @@ public interface RaftIntegration {
      *
      * @return true if request is sent or scheduled to be sent to target, false otherwise
      */
-    boolean send(VoteRequest request, RaftEndpoint target);
+    boolean send(VoteRequest request, RaftMember target);
 
     /**
      * Sends the {@link VoteResponse} to target endpoint to be handled by
@@ -73,7 +74,7 @@ public interface RaftIntegration {
      *
      * @return true if response is sent or scheduled to be sent to target, false otherwise
      */
-    boolean send(VoteResponse response, RaftEndpoint target);
+    boolean send(VoteResponse response, RaftMember target);
 
     /**
      * Sends the {@link AppendRequest} to target endpoint to be handled by
@@ -81,7 +82,7 @@ public interface RaftIntegration {
      *
      * @return true if request is sent or scheduled to be sent to target, false otherwise
      */
-    boolean send(AppendRequest request, RaftEndpoint target);
+    boolean send(AppendRequest request, RaftMember target);
 
     /**
      * Sends the {@link AppendSuccessResponse} to target endpoint to be handled by
@@ -89,7 +90,7 @@ public interface RaftIntegration {
      *
      * @return true if response is sent or scheduled to be sent to target, false otherwise
      */
-    boolean send(AppendSuccessResponse response, RaftEndpoint target);
+    boolean send(AppendSuccessResponse response, RaftMember target);
 
     /**
      * Sends the {@link AppendFailureResponse} to target endpoint to be handled by
@@ -97,7 +98,7 @@ public interface RaftIntegration {
      *
      * @return true if response is sent or scheduled to be sent to target, false otherwise
      */
-    boolean send(AppendFailureResponse response, RaftEndpoint target);
+    boolean send(AppendFailureResponse response, RaftMember target);
 
     /**
      * Sends the {@link InstallSnapshot} to target endpoint to be handled by
@@ -105,7 +106,7 @@ public interface RaftIntegration {
      *
      * @return true if request is sent or scheduled to be sent to target, false otherwise
      */
-    boolean send(InstallSnapshot request, RaftEndpoint target);
+    boolean send(InstallSnapshot request, RaftMember target);
 
     /**
      * Executes the operation on underlying operation execution mechanism
@@ -154,4 +155,18 @@ public interface RaftIntegration {
      * @return a new future
      */
     SimpleCompletableFuture newCompletableFuture();
+
+    /**
+     * Returns the entry to be appended if the no-op entry append on leader election feature is enabled.
+     * <p>
+     * See <a href="https://groups.google.com/forum/#!msg/raft-dev/t4xj6dJTP6E/d2D9LrWRza8J">
+     * <i>Bug in single-server membership changes</i></a> post by Diego Ongaro for more info.
+     */
+    Object getAppendedEntryOnLeaderElection();
+
+    /**
+     * Called when RaftNode status changes.
+     * @param status new status
+     */
+    void onNodeStatusChange(RaftNodeStatus status);
 }

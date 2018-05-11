@@ -7,7 +7,7 @@ import com.hazelcast.raft.impl.RaftRole;
  * LeaderElectionTimeoutTask is scheduled by {@link LeaderElectionTask}
  * to trigger leader election again if one is not elected after leader election timeout.
  */
-public class LeaderElectionTimeoutTask extends RaftNodeAwareTask implements Runnable {
+public class LeaderElectionTimeoutTask extends RaftNodeStatusAwareTask implements Runnable {
 
     public LeaderElectionTimeoutTask(RaftNodeImpl raftNode) {
         super(raftNode);

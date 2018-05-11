@@ -25,10 +25,10 @@ public class CompleteDestroyRaftGroupsOp extends RaftOp implements IdentifiedDat
     }
 
     @Override
-    protected Object doRun(long commitIndex) {
+    public Object run(RaftGroupId groupId, long commitIndex) {
         RaftService service = getService();
         RaftMetadataManager metadataManager = service.getMetadataManager();
-        metadataManager.completeDestroy(groupIds);
+        metadataManager.completeDestroyRaftGroups(groupIds);
         return null;
     }
 
@@ -38,8 +38,7 @@ public class CompleteDestroyRaftGroupsOp extends RaftOp implements IdentifiedDat
     }
 
     @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
-        super.writeInternal(out);
+    public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(groupIds.size());
         for (RaftGroupId groupId : groupIds) {
             out.writeObject(groupId);
@@ -47,8 +46,7 @@ public class CompleteDestroyRaftGroupsOp extends RaftOp implements IdentifiedDat
     }
 
     @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
-        super.readInternal(in);
+    public void readData(ObjectDataInput in) throws IOException {
         int count = in.readInt();
         groupIds = new HashSet<RaftGroupId>();
         for (int i = 0; i < count; i++) {
@@ -67,4 +65,8 @@ public class CompleteDestroyRaftGroupsOp extends RaftOp implements IdentifiedDat
         return RaftServiceDataSerializerHook.COMPLETE_DESTROY_RAFT_GROUPS_OP;
     }
 
+    @Override
+    protected void toString(StringBuilder sb) {
+        sb.append(", groupIds=").append(groupIds);
+    }
 }

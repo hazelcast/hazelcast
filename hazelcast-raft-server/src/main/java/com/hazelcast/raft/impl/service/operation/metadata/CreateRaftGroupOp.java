@@ -3,9 +3,10 @@ package com.hazelcast.raft.impl.service.operation.metadata;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.raft.RaftGroupId;
 import com.hazelcast.raft.impl.service.RaftMetadataManager;
 import com.hazelcast.raft.impl.RaftOp;
-import com.hazelcast.raft.impl.RaftEndpointImpl;
+import com.hazelcast.raft.impl.RaftMemberImpl;
 import com.hazelcast.raft.impl.service.RaftService;
 import com.hazelcast.raft.impl.service.RaftServiceDataSerializerHook;
 
@@ -20,21 +21,21 @@ import java.util.Collection;
 public class CreateRaftGroupOp extends RaftOp implements IdentifiedDataSerializable {
 
     private String groupName;
-    private Collection<RaftEndpointImpl> endpoints;
+    private Collection<RaftMemberImpl> members;
 
     public CreateRaftGroupOp() {
     }
 
-    public CreateRaftGroupOp(String groupName, Collection<RaftEndpointImpl> endpoints) {
+    public CreateRaftGroupOp(String groupName, Collection<RaftMemberImpl> members) {
         this.groupName = groupName;
-        this.endpoints = endpoints;
+        this.members = members;
     }
 
     @Override
-    public Object doRun(long commitIndex) {
+    public Object run(RaftGroupId groupId, long commitIndex) {
         RaftService service = getService();
         RaftMetadataManager metadataManager = service.getMetadataManager();
-        return metadataManager.createRaftGroup(groupName, endpoints, commitIndex);
+        return metadataManager.createRaftGroup(groupName, members, commitIndex);
     }
 
     @Override
@@ -43,24 +44,22 @@ public class CreateRaftGroupOp extends RaftOp implements IdentifiedDataSerializa
     }
 
     @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
-        super.writeInternal(out);
+    public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(groupName);
-        out.writeInt(endpoints.size());
-        for (RaftEndpointImpl endpoint : endpoints) {
-            out.writeObject(endpoint);
+        out.writeInt(members.size());
+        for (RaftMemberImpl member : members) {
+            out.writeObject(member);
         }
     }
 
     @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
-        super.readInternal(in);
+    public void readData(ObjectDataInput in) throws IOException {
         groupName = in.readUTF();
         int len = in.readInt();
-        endpoints = new ArrayList<RaftEndpointImpl>(len);
+        members = new ArrayList<RaftMemberImpl>(len);
         for (int i = 0; i < len; i++) {
-            RaftEndpointImpl endpoint = in.readObject();
-            endpoints.add(endpoint);
+            RaftMemberImpl member = in.readObject();
+            members.add(member);
         }
     }
 
@@ -72,5 +71,11 @@ public class CreateRaftGroupOp extends RaftOp implements IdentifiedDataSerializa
     @Override
     public int getId() {
         return RaftServiceDataSerializerHook.CREATE_RAFT_GROUP_OP;
+    }
+
+    @Override
+    protected void toString(StringBuilder sb) {
+        sb.append(", groupName=").append(groupName);
+        sb.append(", members=").append(members);
     }
 }

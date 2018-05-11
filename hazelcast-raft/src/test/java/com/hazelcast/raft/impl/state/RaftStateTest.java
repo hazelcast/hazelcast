@@ -1,11 +1,11 @@
 package com.hazelcast.raft.impl.state;
 
 import com.hazelcast.raft.RaftGroupId;
-import com.hazelcast.raft.impl.RaftEndpoint;
+import com.hazelcast.raft.RaftMember;
 import com.hazelcast.raft.impl.RaftRole;
 import com.hazelcast.raft.impl.log.LogEntry;
 import com.hazelcast.raft.impl.log.RaftLog;
-import com.hazelcast.raft.impl.testing.TestRaftEndpoint;
+import com.hazelcast.raft.impl.testing.TestRaftMember;
 import com.hazelcast.raft.impl.testing.TestRaftGroupId;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -20,7 +20,7 @@ import java.util.Collection;
 import java.util.HashSet;
 
 import static com.hazelcast.raft.impl.RaftUtil.majority;
-import static com.hazelcast.raft.impl.RaftUtil.newRaftEndpoint;
+import static com.hazelcast.raft.impl.RaftUtil.newRaftMember;
 import static com.hazelcast.test.HazelcastTestSupport.randomName;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static java.util.Arrays.asList;
@@ -37,33 +37,32 @@ public class RaftStateTest {
     private RaftState state;
     private String name = randomName();
     private RaftGroupId groupId;
-    private TestRaftEndpoint localEndpoint;
-    private Collection<RaftEndpoint> endpoints;
+    private TestRaftMember localMember;
+    private Collection<RaftMember> members;
 
     @Before
     public void setup() {
         groupId = new TestRaftGroupId(name);
-        localEndpoint = newRaftEndpoint(5000);
-        endpoints = new HashSet<RaftEndpoint>(asList(
-                localEndpoint,
-                newRaftEndpoint(5001),
-                newRaftEndpoint(5002),
-                newRaftEndpoint(5003),
-                newRaftEndpoint(5004)));
+        localMember = newRaftMember(5000);
+        members = new HashSet<RaftMember>(asList(localMember,
+                newRaftMember(5001),
+                newRaftMember(5002),
+                newRaftMember(5003),
+                newRaftMember(5004)));
 
-        state = new RaftState(groupId, localEndpoint, endpoints);
+        state = new RaftState(groupId, localMember, members);
     }
 
     @Test
     public void test_initialState() {
         assertEquals(name, state.name());
         assertEquals(groupId, state.groupId());
-        assertEquals(endpoints.size(), state.memberCount());
+        assertEquals(members.size(), state.memberCount());
 
-        assertEquals(endpoints, state.members());
+        assertEquals(members, state.members());
 
-        Collection<RaftEndpoint> remoteMembers = new HashSet<RaftEndpoint>(endpoints);
-        remoteMembers.remove(localEndpoint);
+        Collection<RaftMember> remoteMembers = new HashSet<RaftMember>(members);
+        remoteMembers.remove(localMember);
         assertEquals(remoteMembers, state.remoteMembers());
 
         assertEquals(0, state.term());
@@ -91,8 +90,8 @@ public class RaftStateTest {
 
     @Test
     public void test_Leader() {
-        state.leader(localEndpoint);
-        assertEquals(localEndpoint, state.leader());
+        state.leader(localMember);
+        assertEquals(localMember, state.leader());
     }
 
     @Test
@@ -112,10 +111,10 @@ public class RaftStateTest {
     @Test
     public void persistVote() {
         int term = 13;
-        state.persistVote(term, localEndpoint);
+        state.persistVote(term, localMember);
 
         assertEquals(term, state.lastVoteTerm());
-        assertEquals(localEndpoint, state.votedFor());
+        assertEquals(localMember, state.votedFor());
     }
 
     @Test
@@ -155,7 +154,7 @@ public class RaftStateTest {
         assertEquals(RaftRole.CANDIDATE, state.role());
         assertNull(state.leaderState());
         assertEquals(term + 1, state.lastVoteTerm());
-        assertEquals(localEndpoint, state.votedFor());
+        assertEquals(localMember, state.votedFor());
 
         CandidateState candidateState = state.candidateState();
         assertNotNull(candidateState);
@@ -176,13 +175,13 @@ public class RaftStateTest {
         state.toLeader();
 
         assertEquals(RaftRole.LEADER, state.role());
-        assertEquals(localEndpoint, state.leader());
+        assertEquals(localMember, state.leader());
         assertNull(state.candidateState());
 
         LeaderState leaderState = state.leaderState();
         assertNotNull(leaderState);
 
-        for (RaftEndpoint endpoint : state.remoteMembers()) {
+        for (RaftMember endpoint : state.remoteMembers()) {
             assertEquals(0, leaderState.getMatchIndex(endpoint));
             assertEquals(lastLogIndex + 1, leaderState.getNextIndex(endpoint));
         }
@@ -196,13 +195,13 @@ public class RaftStateTest {
 
     @Test
     public void isKnownEndpoint() {
-        for (RaftEndpoint endpoint : endpoints) {
-            assertTrue(state.isKnownEndpoint(endpoint));
+        for (RaftMember endpoint : members) {
+            assertTrue(state.isKnownMember(endpoint));
         }
 
-        assertFalse(state.isKnownEndpoint(newRaftEndpoint(1234)));
-        assertFalse(state.isKnownEndpoint(new TestRaftEndpoint(randomString(), localEndpoint.getPort())));
-        assertFalse(state.isKnownEndpoint(new TestRaftEndpoint(localEndpoint.getUid(), 1234)));
+        assertFalse(state.isKnownMember(newRaftMember(1234)));
+        assertFalse(state.isKnownMember(new TestRaftMember(randomString(), localMember.getPort())));
+        assertFalse(state.isKnownMember(new TestRaftMember(localMember.getUid(), 1234)));
     }
 
     @Test
@@ -216,14 +215,14 @@ public class RaftStateTest {
     }
 
     private void test_majority(int count) {
-        endpoints = new HashSet<RaftEndpoint>();
-        endpoints.add(localEndpoint);
+        members = new HashSet<RaftMember>();
+        members.add(localMember);
 
         for (int i = 1; i < count; i++) {
-            endpoints.add(newRaftEndpoint(1000 + i));
+            members.add(newRaftMember(1000 + i));
         }
 
-        state = new RaftState(groupId, localEndpoint, endpoints);
+        state = new RaftState(groupId, localMember, members);
 
         assertEquals(majority(count), state.majority());
     }

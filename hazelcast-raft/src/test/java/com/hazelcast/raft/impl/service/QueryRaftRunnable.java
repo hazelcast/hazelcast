@@ -1,6 +1,6 @@
 package com.hazelcast.raft.impl.service;
 
-import com.hazelcast.raft.impl.RaftRunnable;
+import com.hazelcast.raft.impl.testing.RaftRunnable;
 
 public class QueryRaftRunnable implements RaftRunnable {
 

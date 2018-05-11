@@ -18,43 +18,33 @@ import java.io.IOException;
  */
 public class RestoreSnapshotOp extends RaftOp implements IdentifiedDataSerializable {
 
-    private RaftGroupId groupId;
-    private long commitIndex;
+    private String serviceName;
     private Object snapshot;
 
     public RestoreSnapshotOp() {
     }
 
-    public RestoreSnapshotOp(String serviceName, RaftGroupId groupId, long commitIndex, Object snapshot) {
-        this.groupId = groupId;
-        setServiceName(serviceName);
-        this.commitIndex = commitIndex;
+    public RestoreSnapshotOp(String serviceName, Object snapshot) {
+        this.serviceName = serviceName;
         this.snapshot = snapshot;
     }
 
     @Override
-    public Object doRun(long commitIndex) {
-        assert this.commitIndex == commitIndex :
-                " expected restore commit index: " + this.commitIndex + " given commit index: " + commitIndex;
-
+    public Object run(RaftGroupId groupId, long commitIndex) {
         SnapshotAwareService service = getService();
         service.restoreSnapshot(groupId, commitIndex, snapshot);
         return null;
     }
 
     @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
-        super.writeInternal(out);
-        out.writeObject(groupId);
-        out.writeLong(commitIndex);
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeUTF(serviceName);
         out.writeObject(snapshot);
     }
 
     @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
-        super.readInternal(in);
-        groupId = in.readObject();
-        commitIndex = in.readLong();
+    public void readData(ObjectDataInput in) throws IOException {
+        serviceName = in.readUTF();
         snapshot = in.readObject();
     }
 
@@ -69,8 +59,12 @@ public class RestoreSnapshotOp extends RaftOp implements IdentifiedDataSerializa
     }
 
     @Override
-    public String toString() {
-        return "RestoreSnapshotOp{" + "groupId='" + groupId + '\'' + ", commitIndex=" + commitIndex + ", snapshot="
-                + snapshot + '}';
+    protected String getServiceName() {
+        return serviceName;
+    }
+
+    @Override
+    protected void toString(StringBuilder sb) {
+        sb.append(", snapshot=").append(snapshot);
     }
 }

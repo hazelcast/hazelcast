@@ -3,7 +3,7 @@ package com.hazelcast.raft.impl.service;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.raft.impl.RaftEndpointImpl;
+import com.hazelcast.raft.impl.RaftMemberImpl;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -15,41 +15,32 @@ import java.util.Collection;
  */
 public final class MetadataSnapshot implements IdentifiedDataSerializable {
 
-    private final Collection<RaftEndpointImpl> endpoints = new ArrayList<RaftEndpointImpl>();
-    private final Collection<RaftEndpointImpl> removedEndpoints = new ArrayList<RaftEndpointImpl>();
+    private final Collection<RaftMemberImpl> members = new ArrayList<RaftMemberImpl>();
     private final Collection<RaftGroupInfo> raftGroups = new ArrayList<RaftGroupInfo>();
-    private LeavingRaftEndpointContext leavingRaftEndpointContext;
+    private MembershipChangeContext membershipChangeContext;
 
-    public void addRaftGroup(RaftGroupInfo groupInfo) {
-        raftGroups.add(groupInfo);
+    public void addRaftGroup(RaftGroupInfo group) {
+        raftGroups.add(group);
     }
 
-    public void addEndpoint(RaftEndpointImpl endpoint) {
-        endpoints.add(endpoint);
+    public void addMember(RaftMemberImpl member) {
+        members.add(member);
     }
 
-    public void addRemovedEndpoint(RaftEndpointImpl endpoint) {
-        removedEndpoints.add(endpoint);
-    }
-
-    public Collection<RaftEndpointImpl> getEndpoints() {
-        return endpoints;
-    }
-
-    public Collection<RaftEndpointImpl> getRemovedEndpoints() {
-        return removedEndpoints;
+    public Collection<RaftMemberImpl> getMembers() {
+        return members;
     }
 
     public Collection<RaftGroupInfo> getRaftGroups() {
         return raftGroups;
     }
 
-    public LeavingRaftEndpointContext getLeavingRaftEndpointContext() {
-        return leavingRaftEndpointContext;
+    public MembershipChangeContext getMembershipChangeContext() {
+        return membershipChangeContext;
     }
 
-    public void setLeavingRaftEndpointContext(LeavingRaftEndpointContext leavingRaftEndpointContext) {
-        this.leavingRaftEndpointContext = leavingRaftEndpointContext;
+    public void setMembershipChangeContext(MembershipChangeContext membershipChangeContext) {
+        this.membershipChangeContext = membershipChangeContext;
     }
 
     @Override
@@ -64,40 +55,30 @@ public final class MetadataSnapshot implements IdentifiedDataSerializable {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeInt(endpoints.size());
-        for (RaftEndpointImpl endpoint : endpoints) {
-            out.writeObject(endpoint);
+        out.writeInt(members.size());
+        for (RaftMemberImpl member : members) {
+            out.writeObject(member);
         }
         out.writeInt(raftGroups.size());
         for (RaftGroupInfo group : raftGroups) {
             out.writeObject(group);
         }
-        out.writeInt(removedEndpoints.size());
-        for (RaftEndpointImpl endpoint : removedEndpoints) {
-            out.writeObject(endpoint);
-        }
-        out.writeObject(leavingRaftEndpointContext);
+        out.writeObject(membershipChangeContext);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         int len = in.readInt();
         for (int i = 0; i < len; i++) {
-            RaftEndpointImpl endpoint = in.readObject();
-            endpoints.add(endpoint);
+            RaftMemberImpl member = in.readObject();
+            members.add(member);
         }
 
         len = in.readInt();
         for (int i = 0; i < len; i++) {
-            RaftGroupInfo groupInfo = in.readObject();
-            raftGroups.add(groupInfo);
+            RaftGroupInfo group = in.readObject();
+            raftGroups.add(group);
         }
-
-        len = in.readInt();
-        for (int i = 0; i < len; i++) {
-            RaftEndpointImpl endpoint = in.readObject();
-            removedEndpoints.add(endpoint);
-        }
-        leavingRaftEndpointContext = in.readObject();
+        membershipChangeContext = in.readObject();
     }
 }

@@ -4,7 +4,7 @@ import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.raft.command.TerminateRaftGroupCmd;
+import com.hazelcast.raft.command.DestroyRaftGroupCmd;
 import com.hazelcast.raft.impl.command.ApplyRaftGroupMembersCmd;
 import com.hazelcast.raft.impl.dto.AppendFailureResponse;
 import com.hazelcast.raft.impl.dto.AppendRequest;
@@ -15,7 +15,6 @@ import com.hazelcast.raft.impl.dto.PreVoteResponse;
 import com.hazelcast.raft.impl.dto.VoteRequest;
 import com.hazelcast.raft.impl.dto.VoteResponse;
 import com.hazelcast.raft.impl.log.LogEntry;
-import com.hazelcast.raft.impl.log.NopEntry;
 import com.hazelcast.raft.impl.log.SnapshotEntry;
 
 public final class RaftDataSerializerHook implements DataSerializerHook {
@@ -35,9 +34,8 @@ public final class RaftDataSerializerHook implements DataSerializerHook {
     public static final int LOG_ENTRY = 8;
     public static final int SNAPSHOT_ENTRY = 9;
     public static final int INSTALL_SNAPSHOT = 10;
-    public static final int TERMINATE_RAFT_GROUP_COMMAND = 11;
+    public static final int DESTROY_RAFT_GROUP_COMMAND = 11;
     public static final int APPLY_RAFT_GROUP_MEMBERS_COMMAND = 12;
-    public static final int NOP_ENTRY = 13;
 
     @Override
     public int getFactoryId() {
@@ -70,12 +68,10 @@ public final class RaftDataSerializerHook implements DataSerializerHook {
                         return new SnapshotEntry();
                     case INSTALL_SNAPSHOT:
                         return new InstallSnapshot();
-                    case TERMINATE_RAFT_GROUP_COMMAND:
-                        return new TerminateRaftGroupCmd();
+                    case DESTROY_RAFT_GROUP_COMMAND:
+                        return new DestroyRaftGroupCmd();
                     case APPLY_RAFT_GROUP_MEMBERS_COMMAND:
                         return new ApplyRaftGroupMembersCmd();
-                    case NOP_ENTRY:
-                        return new NopEntry();
 
                 }
                 throw new IllegalArgumentException("Undefined type: " + typeId);

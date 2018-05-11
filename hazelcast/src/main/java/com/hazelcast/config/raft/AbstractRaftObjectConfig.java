@@ -26,19 +26,12 @@ public abstract class AbstractRaftObjectConfig {
 
     private String raftGroupRef;
 
-    private RaftGroupConfig raftGroupConfig;
-
     public AbstractRaftObjectConfig() {
     }
 
     public AbstractRaftObjectConfig(String name, String raftGroupRef) {
         this.name = name;
         this.raftGroupRef = raftGroupRef;
-    }
-
-    public AbstractRaftObjectConfig(String name, RaftGroupConfig raftGroupConfig) {
-        this.name = name;
-        this.raftGroupConfig = raftGroupConfig;
     }
 
     public String getName() {
@@ -55,22 +48,7 @@ public abstract class AbstractRaftObjectConfig {
     }
 
     public AbstractRaftObjectConfig setRaftGroupRef(String raftGroupRef) {
-        if (raftGroupConfig != null) {
-            throw new IllegalArgumentException("Only one of 'raftGroupRef' or 'raftGroupConfig' can be defined!");
-        }
         this.raftGroupRef = raftGroupRef;
-        return this;
-    }
-
-    public RaftGroupConfig getRaftGroupConfig() {
-        return raftGroupConfig;
-    }
-
-    public AbstractRaftObjectConfig setRaftGroupConfig(RaftGroupConfig raftGroupConfig) {
-        if (raftGroupRef != null) {
-            throw new IllegalArgumentException("Only one of 'raftGroupRef' or 'raftGroupConfig' can be defined!");
-        }
-        this.raftGroupConfig = raftGroupConfig;
         return this;
     }
 }

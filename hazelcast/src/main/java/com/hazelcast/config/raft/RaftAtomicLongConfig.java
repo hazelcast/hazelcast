@@ -29,8 +29,4 @@ public class RaftAtomicLongConfig extends AbstractRaftObjectConfig {
     public RaftAtomicLongConfig(String name, String raftGroupRef) {
         super(name, raftGroupRef);
     }
-
-    public RaftAtomicLongConfig(String name, RaftGroupConfig raftGroupConfig) {
-        super(name, raftGroupConfig);
-    }
 }

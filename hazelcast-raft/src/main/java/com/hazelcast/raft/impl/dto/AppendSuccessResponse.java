@@ -4,7 +4,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.raft.impl.RaftDataSerializerHook;
-import com.hazelcast.raft.impl.RaftEndpoint;
+import com.hazelcast.raft.RaftMember;
 
 import java.io.IOException;
 
@@ -19,20 +19,20 @@ import java.io.IOException;
  */
 public class AppendSuccessResponse implements IdentifiedDataSerializable {
 
-    private RaftEndpoint follower;
+    private RaftMember follower;
     private int term;
     private long lastLogIndex;
 
     public AppendSuccessResponse() {
     }
 
-    public AppendSuccessResponse(RaftEndpoint follower, int term, long lastLogIndex) {
+    public AppendSuccessResponse(RaftMember follower, int term, long lastLogIndex) {
         this.follower = follower;
         this.term = term;
         this.lastLogIndex = lastLogIndex;
     }
 
-    public RaftEndpoint follower() {
+    public RaftMember follower() {
         return follower;
     }
 
