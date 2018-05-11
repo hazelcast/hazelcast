@@ -211,6 +211,8 @@ public class AddressUtilTest extends HazelcastTestSupport {
 
     @Test
     public void testFixScopeIdAndGetInetAddress_whenLinkLocalAddress() throws SocketException, UnknownHostException {
+        assumeThatJDK8();
+
         Inet6Address inet6Address = PowerMockito.mock(Inet6Address.class);
         when(inet6Address.isLinkLocalAddress()).thenReturn(true);
         when(inet6Address.getScopeId()).thenReturn(1);
@@ -220,6 +222,8 @@ public class AddressUtilTest extends HazelcastTestSupport {
 
     @Test
     public void testFixScopeIdAndGetInetAddress_whenLinkLocalAddress_withNoInterfaceBind() throws SocketException, UnknownHostException {
+        assumeThatJDK8();
+
         Inet6Address inet6Address = PowerMockito.mock(Inet6Address.class);
         when(inet6Address.isLinkLocalAddress()).thenReturn(true);
         when(inet6Address.getScopeId()).thenReturn(0);
@@ -230,6 +234,8 @@ public class AddressUtilTest extends HazelcastTestSupport {
 
     @Test
     public void testGetInetAddressFor() throws SocketException, UnknownHostException {
+        assumeThatJDK8();
+
         InetAddress expected = InetAddress.getByName("2001:db8:85a3:0:0:8a2e:370:7334");
         Inet6Address inet6Address = PowerMockito.mock(Inet6Address.class);
         byte[] address = "address".getBytes();
@@ -248,6 +254,8 @@ public class AddressUtilTest extends HazelcastTestSupport {
 
     @Test
     public void testGetPossibleInetAddressesFor_whenNotLocalAddress() {
+        assumeThatJDK8();
+
         Inet6Address inet6Address = PowerMockito.mock(Inet6Address.class);
         when(inet6Address.isSiteLocalAddress()).thenReturn(false);
         when(inet6Address.isLinkLocalAddress()).thenReturn(false);
@@ -258,6 +266,8 @@ public class AddressUtilTest extends HazelcastTestSupport {
 
     @Test
     public void testGetPossibleInetAddressesFor_whenLocalAddress() throws SocketException, UnknownHostException {
+        assumeThatJDK8();
+
         InetAddress expected = InetAddress.getByName("2001:db8:85a3:0:0:8a2e:370:7334");
         Inet6Address inet6Address = PowerMockito.mock(Inet6Address.class);
         Inet6Address possibleAddress = PowerMockito.mock(Inet6Address.class);
