@@ -274,7 +274,7 @@ public final class PhoneHome {
             version = getString(mcPhoneHomeInfoJson, "mcVersion");
             license = getString(mcPhoneHomeInfoJson, "mcLicense", null);
         } catch (Exception ignored) {
-            // FindBugs is not happy without this ignore call
+            // SpotBugs is not happy without this ignore call
             ignore(ignored);
             parameterCreator.addParam("mclicense", "MC_NOT_AVAILABLE");
             parameterCreator.addParam("mcver", "MC_NOT_AVAILABLE");
