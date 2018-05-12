@@ -318,6 +318,31 @@
             <build>
                 <plugins>
                     <plugin>
+                        <groupId>org.jacoco</groupId>
+                        <artifactId>jacoco-maven-plugin</artifactId>
+                        <version>${maven.jacoco.plugin.version}</version>
+                        <configuration>
+                            <skip>false</skip>
+                            <append>true</append>
+                            <propertyName>jacocoArgLine</propertyName>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>prepare-unit-tests</id>
+                                <goals>
+                                    <goal>prepare-agent</goal>
+                                </goals>
+                            </execution>
+                            <execution>
+                                <id>jacoco-site</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>report</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>
                         <version>${maven.surefire.plugin.version}</version>
@@ -343,6 +368,7 @@
                                         -Dhazelcast.test.multiple.jvm=true
                                         -Dlog4j.configurationFile=log4j2-info.xml
                                         ${extraVmArgs}
+                                        ${jacocoArgLine}
                                     </argLine>
                                     <includes>
                                         <include>**/**.java</include>
@@ -382,6 +408,7 @@
                                         -Dhazelcast.test.use.network=false
                                         -Dlog4j.configurationFile=log4j2-info.xml
                                         ${extraVmArgs}
+                                        ${jacocoArgLine}
                                     </argLine>
                                     <includes>
                                         <include>**/**.java</include>
