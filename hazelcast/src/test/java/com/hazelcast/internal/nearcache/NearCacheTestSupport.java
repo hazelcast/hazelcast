@@ -39,6 +39,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+@SuppressWarnings("WeakerAccess")
 public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
 
     protected SerializationService ss;
@@ -51,8 +52,7 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
         executionService = getNodeEngineImpl(instance).getExecutionService();
     }
 
-    protected abstract NearCache<Integer, String> createNearCache(String name,
-                                                                  NearCacheConfig nearCacheConfig,
+    protected abstract NearCache<Integer, String> createNearCache(String name, NearCacheConfig nearCacheConfig,
                                                                   ManagedNearCacheRecordStore nearCacheRecordStore);
 
     protected NearCache<Integer, String> createNearCache(String name, ManagedNearCacheRecordStore nearCacheRecordStore) {
@@ -224,7 +224,7 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
         // expiration will be called eventually
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertTrue(managedNearCacheRecordStore.doExpirationCalled);
             }
         });
