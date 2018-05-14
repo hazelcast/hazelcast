@@ -43,6 +43,7 @@ import java.util.zip.Deflater;
 import java.util.zip.Inflater;
 
 import static com.hazelcast.util.EmptyStatement.ignore;
+import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static java.lang.String.format;
 
 @PrivateApi
@@ -128,9 +129,9 @@ public final class IOUtil {
      * @param in     the {@link InputStream} to read from
      * @param buffer the buffer to fill
      * @return {@code true} if the buffer was filled completely,
-     *         {@code false} if there was no data in the {@link InputStream}
+     * {@code false} if there was no data in the {@link InputStream}
      * @throws EOFException if there was some, but not enough, data in the
-     *         {@link InputStream} to fill the buffer
+     *                      {@link InputStream} to fill the buffer
      */
     public static boolean readFullyOrNothing(InputStream in, byte[] buffer) throws IOException {
         int bytesRead = 0;
@@ -452,16 +453,39 @@ public final class IOUtil {
 
     public static InputStream getFileFromResourcesAsStream(String resourceFileName) {
         try {
-            InputStream resource = IOUtil.class.getClassLoader().getResourceAsStream(resourceFileName);
-            return resource;
+            return IOUtil.class.getClassLoader().getResourceAsStream(resourceFileName);
         } catch (Exception e) {
             throw new HazelcastException("Could not find resource file " + resourceFileName, e);
         }
     }
 
     /**
-     * Deep copies source to target and creates the target if necessary. Source can be a directory or a file and the target
-     * can be a directory or file. If the source is a directory, expects that the target is a directory (or that it doesn't exist)
+     * Simulates a Linux {@code touch} command, by setting the last modified time of given file.
+     *
+     * @param file the file to touch
+     */
+    public static void touch(File file) {
+        FileOutputStream fos = null;
+        try {
+            if (!file.exists()) {
+                fos = new FileOutputStream(file);
+            }
+            if (!file.setLastModified(System.currentTimeMillis())) {
+                throw new HazelcastException("Could not touch file " + file.getAbsolutePath());
+            }
+        } catch (IOException e) {
+            throw rethrow(e);
+        } finally {
+            closeResource(fos);
+        }
+    }
+
+    /**
+     * Deep copies source to target and creates the target if necessary.
+     * <p>
+     * The source can be a directory or a file and the target can be a directory or file.
+     * <p>
+     * If the source is a directory, it expects that the target is a directory (or that it doesn't exist)
      * and nests the copied source under the target directory.
      *
      * @param source the source
@@ -482,16 +506,17 @@ public final class IOUtil {
 
     /**
      * Deep copies source to target. If target doesn't exist, this will fail with {@link HazelcastException}.
-     * The source is only accessed here, but not managed. Its the responsibility of the caller to release any resources hold by
-     * the source.
+     * <p>
+     * The source is only accessed here, but not managed. It's the responsibility of the caller to release
+     * any resources hold by the source.
      *
      * @param source the source
      * @param target the destination
-     * @throws HazelcastException       if the target doesn't exist.
+     * @throws HazelcastException if the target doesn't exist
      */
     public static void copy(InputStream source, File target) {
         if (!target.exists()) {
-            throw new HazelcastException("The target file doesn't exist " + target);
+            throw new HazelcastException("The target file doesn't exist " + target.getAbsolutePath());
         }
 
         FileOutputStream out = null;
@@ -504,7 +529,7 @@ public final class IOUtil {
                 out.write(buff, 0, length);
             }
         } catch (Exception e) {
-            throw new HazelcastException("Error occurred while copying", e);
+            throw new HazelcastException("Error occurred while copying InputStream", e);
         } finally {
             closeResource(out);
         }
@@ -516,19 +541,19 @@ public final class IOUtil {
      *
      * @param source      the source file
      * @param target      the destination file or directory
-     * @param sourceCount The maximum number of bytes to be transferred. If negative transfers the entire source file.
+     * @param sourceCount the maximum number of bytes to be transferred (if negative transfers the entire source file)
      * @throws IllegalArgumentException if the source was not found or the source not a file
      * @throws HazelcastException       if there was any exception while creating directories or copying
      */
-    public static void copyFile(File source, File target, long sourceCount) {
+    static void copyFile(File source, File target, long sourceCount) {
         if (!source.exists()) {
-            throw new IllegalArgumentException("Source does not exist");
+            throw new IllegalArgumentException("Source does not exist " + source.getAbsolutePath());
         }
         if (!source.isFile()) {
-            throw new IllegalArgumentException("Source is not a file");
+            throw new IllegalArgumentException("Source is not a file " + source.getAbsolutePath());
         }
         if (!target.exists() && !target.mkdirs()) {
-            throw new HazelcastException("Could not create the target directory " + target);
+            throw new HazelcastException("Could not create the target directory " + target.getAbsolutePath());
         }
         final File destination = target.isDirectory() ? new File(target, source.getName()) : target;
         FileInputStream in = null;
@@ -541,7 +566,7 @@ public final class IOUtil {
             final long transferCount = sourceCount > 0 ? sourceCount : inChannel.size();
             inChannel.transferTo(0, transferCount, outChannel);
         } catch (Exception e) {
-            throw new HazelcastException("Error occurred while copying", e);
+            throw new HazelcastException("Error occurred while copying file", e);
         } finally {
             closeResource(in);
             closeResource(out);
@@ -550,8 +575,8 @@ public final class IOUtil {
 
     private static void copyDirectory(File source, File target) {
         if (target.exists() && !target.isDirectory()) {
-            throw new IllegalArgumentException("Cannot copy source directory since the target already exists "
-                    + "but it is not a directory");
+            throw new IllegalArgumentException("Cannot copy source directory since the target already exists,"
+                    + " but it is not a directory");
         }
         final File targetSubDir = new File(target, source.getName());
         if (!targetSubDir.exists() && !targetSubDir.mkdirs()) {
@@ -567,9 +592,14 @@ public final class IOUtil {
     }
 
     public static byte[] toByteArray(InputStream is) throws IOException {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        drainTo(is, baos);
-        return baos.toByteArray();
+        ByteArrayOutputStream os = null;
+        try {
+            os = new ByteArrayOutputStream();
+            drainTo(is, os);
+            return os.toByteArray();
+        } finally {
+            closeResource(os);
+        }
     }
 
     public static void drainTo(InputStream input, OutputStream output) throws IOException {
@@ -582,10 +612,10 @@ public final class IOUtil {
 
     /**
      * Creates a debug String for te given ByteBuffer. Useful when debugging IO.
-     *
+     * <p>
      * Do not remove even if this method isn't used.
      *
-     * @param name name of the ByteBuffer.
+     * @param name       name of the ByteBuffer.
      * @param byteBuffer the ByteBuffer
      * @return the debug String
      */

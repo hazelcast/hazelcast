@@ -367,7 +367,7 @@ public final class NearCacheTestUtils extends HazelcastTestSupport {
      * @param context       the given {@link NearCacheTestContext} to retrieve the {@link NearCacheStats} from
      * @param invalidations the given number of Near Cache invalidations to wait for
      */
-    public static void assertNearCacheInvalidations(final NearCacheTestContext<?, ?, ?, ?> context, final int invalidations) {
+    public static void assertNearCacheInvalidations(final NearCacheTestContext<?, ?, ?, ?> context, final long invalidations) {
         if (context.nearCacheConfig.isInvalidateOnChange() && invalidations > 0) {
             assertTrueEventually(new AssertTask() {
                 @Override
@@ -386,7 +386,7 @@ public final class NearCacheTestUtils extends HazelcastTestSupport {
      * @param invalidationRequests the given number of Near Cache invalidation requests to wait for
      */
     public static void assertNearCacheInvalidationRequests(final NearCacheTestContext<?, ?, ?, ?> context,
-                                                           final int invalidationRequests) {
+                                                           final long invalidationRequests) {
         if (context.nearCacheConfig.isInvalidateOnChange() && invalidationRequests > 0 && context.stats != null) {
             assertTrueEventually(new AssertTask() {
                 @Override
@@ -522,7 +522,7 @@ public final class NearCacheTestUtils extends HazelcastTestSupport {
     public static void assertThatMemoryCostsAreZero(NearCacheTestContext<?, ?, ?, ?> context) {
         // these asserts will work in all scenarios, since the default value should be 0 if no costs are calculated
         long ownedEntryMemoryCost = context.stats.getOwnedEntryMemoryCost();
-        assertEqualsFormat("Expected %d owned entry memory costs, but found %d (%s)", 0, ownedEntryMemoryCost, context.stats);
+        assertEqualsFormat("Expected %d owned entry memory costs, but found %d (%s)", 0L, ownedEntryMemoryCost, context.stats);
 
         boolean hasLocalMapStats = isMethodAvailable(context.nearCacheAdapter, DataStructureMethods.GET_LOCAL_MAP_STATS);
         if (hasLocalMapStats) {
@@ -531,7 +531,11 @@ public final class NearCacheTestUtils extends HazelcastTestSupport {
         }
     }
 
-    private static void assertEqualsFormat(String message, long expected, long actual, NearCacheStats stats) {
+    static void assertEqualsFormat(String message, long expected, long actual, NearCacheStats stats) {
+        assertEquals(format(message, expected, actual, stats), expected, actual);
+    }
+
+    static void assertEqualsFormat(String message, String expected, String actual, NearCacheStats stats) {
         assertEquals(format(message, expected, actual, stats), expected, actual);
     }
 }
