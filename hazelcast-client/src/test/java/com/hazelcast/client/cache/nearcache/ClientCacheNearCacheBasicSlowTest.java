@@ -17,13 +17,17 @@
 package com.hazelcast.client.cache.nearcache;
 
 import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.config.NearCacheConfig;
-import com.hazelcast.test.HazelcastParametersRunnerFactory;
+import com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Before;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.util.Collection;
 
@@ -31,37 +35,36 @@ import static com.hazelcast.internal.nearcache.NearCacheTestUtils.createNearCach
 import static java.util.Arrays.asList;
 
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
-@Category(SlowTest.class)
+@UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
+@Category({SlowTest.class, ParallelTest.class})
 public class ClientCacheNearCacheBasicSlowTest extends ClientCacheNearCacheBasicTest {
 
-    @Parameterized.Parameter
-    public InMemoryFormat inMemoryFormat;
-
-    @Parameterized.Parameter(value = 1)
-    public boolean serializeKeys;
-
-    @Parameterized.Parameter(value = 2)
-    public NearCacheConfig.LocalUpdatePolicy localUpdatePolicy;
-
-    @Parameterized.Parameters(name = "format:{0} serializeKeys:{1} localUpdatePolicy:{2}")
+    @Parameters(name = "format:{0} serializeKeys:{1} localUpdatePolicy:{2}")
     public static Collection<Object[]> parameters() {
         return asList(new Object[][]{
-                {InMemoryFormat.BINARY, true, NearCacheConfig.LocalUpdatePolicy.INVALIDATE},
-                {InMemoryFormat.BINARY, true, NearCacheConfig.LocalUpdatePolicy.CACHE_ON_UPDATE},
-                {InMemoryFormat.BINARY, false, NearCacheConfig.LocalUpdatePolicy.INVALIDATE},
-                {InMemoryFormat.BINARY, false, NearCacheConfig.LocalUpdatePolicy.CACHE_ON_UPDATE},
-                {InMemoryFormat.OBJECT, true, NearCacheConfig.LocalUpdatePolicy.INVALIDATE},
-                {InMemoryFormat.OBJECT, true, NearCacheConfig.LocalUpdatePolicy.CACHE_ON_UPDATE},
-                {InMemoryFormat.OBJECT, false, NearCacheConfig.LocalUpdatePolicy.INVALIDATE},
-                {InMemoryFormat.OBJECT, false, NearCacheConfig.LocalUpdatePolicy.CACHE_ON_UPDATE},
+                {InMemoryFormat.BINARY, true, LocalUpdatePolicy.INVALIDATE},
+                {InMemoryFormat.BINARY, true, LocalUpdatePolicy.CACHE_ON_UPDATE},
+                {InMemoryFormat.BINARY, false, LocalUpdatePolicy.INVALIDATE},
+                {InMemoryFormat.BINARY, false, LocalUpdatePolicy.CACHE_ON_UPDATE},
+                {InMemoryFormat.OBJECT, true, LocalUpdatePolicy.INVALIDATE},
+                {InMemoryFormat.OBJECT, true, LocalUpdatePolicy.CACHE_ON_UPDATE},
+                {InMemoryFormat.OBJECT, false, LocalUpdatePolicy.INVALIDATE},
+                {InMemoryFormat.OBJECT, false, LocalUpdatePolicy.CACHE_ON_UPDATE},
         });
     }
+
+    @Parameter
+    public InMemoryFormat inMemoryFormat;
+
+    @Parameter(value = 1)
+    public boolean serializeKeys;
+
+    @Parameter(value = 2)
+    public LocalUpdatePolicy localUpdatePolicy;
 
     @Before
     public void setUp() {
         nearCacheConfig = createNearCacheConfig(inMemoryFormat, serializeKeys)
                 .setLocalUpdatePolicy(localUpdatePolicy);
     }
-
 }

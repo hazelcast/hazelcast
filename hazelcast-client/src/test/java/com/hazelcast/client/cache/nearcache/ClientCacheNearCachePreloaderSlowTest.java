@@ -17,7 +17,7 @@
 package com.hazelcast.client.cache.nearcache;
 
 import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.test.HazelcastParametersRunnerFactory;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Before;
@@ -33,7 +33,7 @@ import java.util.Collection;
 import static java.util.Arrays.asList;
 
 @RunWith(Parameterized.class)
-@UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({SlowTest.class, ParallelTest.class})
 public class ClientCacheNearCachePreloaderSlowTest extends ClientCacheNearCachePreloaderTest {
 
