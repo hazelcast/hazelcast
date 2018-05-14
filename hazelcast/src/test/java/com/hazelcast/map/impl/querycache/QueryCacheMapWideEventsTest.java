@@ -57,7 +57,6 @@ public class QueryCacheMapWideEventsTest extends HazelcastTestSupport {
     private static final String PARTITION_COUNT = "1999";
     private static final int TEST_DURATION_SECONDS = 3;
 
-    private AtomicInteger eventLostCounter = new AtomicInteger();
     private TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
 
     @Test
@@ -71,13 +70,18 @@ public class QueryCacheMapWideEventsTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                no_event_lost_during_migrations(3, 5);
+                try {
+                    no_event_lost_during_migrations(3, 5);
+                } finally {
+                    factory.shutdownAll();
+                }
             }
         });
     }
 
     private void no_event_lost_during_migrations(int parallelNodeCount, int startNewNodeAfterSeconds) {
-        newQueryCacheOnNewNode();
+        final AtomicInteger eventLostCounter = new AtomicInteger();
+        newQueryCacheOnNewNode(eventLostCounter);
 
         List<Thread> threads = new ArrayList<Thread>();
         for (int i = 0; i < parallelNodeCount; i++) {
@@ -85,7 +89,7 @@ public class QueryCacheMapWideEventsTest extends HazelcastTestSupport {
             Thread doMapClear = new Thread() {
                 @Override
                 public void run() {
-                    IMap map = newQueryCacheOnNewNode();
+                    IMap map = newQueryCacheOnNewNode(eventLostCounter);
 
                     long endMillis = System.currentTimeMillis() + SECONDS.toMillis(TEST_DURATION_SECONDS);
                     while (System.currentTimeMillis() < endMillis) {
@@ -142,16 +146,15 @@ public class QueryCacheMapWideEventsTest extends HazelcastTestSupport {
         }
     }
 
-    private IMap newQueryCacheOnNewNode() {
+    private IMap newQueryCacheOnNewNode(final AtomicInteger eventLostCounter) {
         HazelcastInstance node = factory.newHazelcastInstance(newConfig());
         IMap map = node.getMap(MAP_NAME);
-        QueryCache queryCache = map.getQueryCache(QUERY_CACHE_NAME);
-        addEventLostListenerToQueryCache(queryCache);
+        addEventLostListenerToQueryCache(map, eventLostCounter);
         return map;
     }
 
-    private void addEventLostListenerToQueryCache(QueryCache queryCache) {
-        queryCache.addEntryListener(new EventLostListener() {
+    private void addEventLostListenerToQueryCache(IMap map, final AtomicInteger eventLostCounter) {
+        map.getQueryCache(QUERY_CACHE_NAME).addEntryListener(new EventLostListener() {
             @Override
             public void eventLost(EventLostEvent event) {
                 eventLostCounter.incrementAndGet();
