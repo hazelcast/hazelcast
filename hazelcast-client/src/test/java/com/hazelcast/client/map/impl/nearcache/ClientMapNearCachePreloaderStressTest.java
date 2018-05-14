@@ -26,7 +26,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.SlowTest;
+import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -41,7 +41,7 @@ import static java.util.concurrent.Executors.newFixedThreadPool;
 import static junit.framework.TestCase.assertNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category(SlowTest.class)
+@Category(NightlyTest.class)
 public class ClientMapNearCachePreloaderStressTest extends HazelcastTestSupport {
 
     private final TestHazelcastFactory factory = new TestHazelcastFactory();

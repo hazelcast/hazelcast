@@ -23,23 +23,23 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.adapter.DataStructureAdapter;
-import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
-import org.junit.Assume;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 
 import java.io.File;
+import java.nio.channels.OverlappingFileLockException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadPoolExecutor;
 
 import static com.hazelcast.internal.nearcache.AbstractNearCachePreloaderTest.KeyType.INTEGER;
 import static com.hazelcast.internal.nearcache.AbstractNearCachePreloaderTest.KeyType.STRING;
+import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertEqualsFormat;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheInvalidationRequests;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheRecord;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheSize;
@@ -48,14 +48,17 @@ import static com.hazelcast.internal.nearcache.NearCacheTestUtils.createNearCach
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getNearCacheKey;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getRecordFromNearCache;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getValueFromNearCache;
+import static com.hazelcast.nio.IOUtil.copy;
 import static com.hazelcast.nio.IOUtil.deleteQuietly;
 import static com.hazelcast.nio.IOUtil.getFileFromResources;
+import static com.hazelcast.nio.IOUtil.touch;
 import static java.lang.String.format;
 import static java.lang.Thread.currentThread;
 import static java.util.concurrent.Executors.newFixedThreadPool;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeTrue;
 
 /**
  * Contains the logic code for unified Near Cache preloader tests.
@@ -87,12 +90,12 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
 
     protected final String defaultNearCache = randomName();
 
-    private final File preloadDir10kInt = getFileFromResources("nearcache-10k-int");
-    private final File preloadDir10kString = getFileFromResources("nearcache-10k-string");
-    private final File preloadDirEmpty = getFileFromResources("nearcache-empty");
-    private final File preloadDirInvalidMagicBytes = getFileFromResources("nearcache-invalid-magicbytes");
-    private final File preloadDirInvalidFileFormat = getFileFromResources("nearcache-invalid-fileformat");
-    private final File preloadDirNegativeFileFormat = getFileFromResources("nearcache-negative-fileformat");
+    private final File preloadFile10kInt = getFileFromResources("nearcache-10k-int.store");
+    private final File preloadFile10kString = getFileFromResources("nearcache-10k-string.store");
+    private final File preloadFileEmpty = getFileFromResources("nearcache-empty.store");
+    private final File preloadFileInvalidMagicBytes = getFileFromResources("nearcache-invalid-magicbytes.store");
+    private final File preloadFileInvalidFileFormat = getFileFromResources("nearcache-invalid-fileformat.store");
+    private final File preloadFileNegativeFileFormat = getFileFromResources("nearcache-negative-fileformat.store");
 
     @After
     public void deleteFiles() {
@@ -257,40 +260,37 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
 
     @Test
     public void testPreloadNearCache_withIntegerKeys() {
-        assumeBigEndian();
-        preloadNearCache(preloadDir10kInt, 10000, INTEGER);
+        preloadNearCache(preloadFile10kInt, 10000, INTEGER);
     }
 
     @Test
     public void testPreloadNearCache_withStringKeys() {
-        assumeBigEndian();
-        preloadNearCache(preloadDir10kString, 10000, STRING);
+        preloadNearCache(preloadFile10kString, 10000, STRING);
     }
 
     @Test
     public void testPreloadNearCache_withEmptyFile() {
-        preloadNearCache(preloadDirEmpty, 0, INTEGER);
+        preloadNearCache(preloadFileEmpty, 0, INTEGER);
     }
 
     @Test
     public void testPreloadNearCache_withInvalidMagicBytes() {
-        preloadNearCache(preloadDirInvalidMagicBytes, 0, INTEGER);
+        preloadNearCache(preloadFileInvalidMagicBytes, 0, INTEGER);
     }
 
     @Test
     public void testPreloadNearCache_withInvalidFileFormat() {
-        preloadNearCache(preloadDirInvalidFileFormat, 0, INTEGER);
+        preloadNearCache(preloadFileInvalidFileFormat, 0, INTEGER);
     }
 
     @Test
     public void testPreloadNearCache_withNegativeFileFormat() {
-        preloadNearCache(preloadDirNegativeFileFormat, 0, INTEGER);
+        preloadNearCache(preloadFileNegativeFileFormat, 0, INTEGER);
     }
 
-    private void preloadNearCache(File preloaderDir, int keyCount, KeyType keyType) {
-        nearCacheConfig
-                .setName("defaultNearCache")
-                .getPreloaderConfig().setDirectory(preloaderDir.getAbsolutePath());
+    private void preloadNearCache(File preloaderFile, int keyCount, KeyType keyType) {
+        assumeBigEndian();
+        copyStoreFile(preloaderFile.getAbsoluteFile(), getStoreFile());
         NearCacheTestContext<Object, String, NK, NV> context = createContext(false);
 
         // populate the member side data structure, so we have the values to populate the client side Near Cache
@@ -419,41 +419,60 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
         }
     }
 
-    private static long getPersistenceCount(NearCacheTestContext context) {
-        return context.nearCache.getNearCacheStats().getPersistenceCount();
+    /**
+     * Copies the given Near Cache store file.
+     * <p>
+     * This is needed to run multiple implementations of this abstract test in parallel,
+     * when using the prepared Near Cache store files. Otherwise those tests run into
+     * a {@link OverlappingFileLockException}, because they use the same store file.
+     *
+     * @param sourceFile the source store file
+     * @param targetFile the target store file
+     */
+    private static void copyStoreFile(File sourceFile, File targetFile) {
+        // we have to touch the targetFile, otherwise copyFile creates it as directory
+        touch(targetFile);
+        copy(sourceFile, targetFile);
     }
 
     private static void waitForNearCachePersistence(final NearCacheTestContext context, final int persistenceCount) {
-        final long oldPersistenceCount = getPersistenceCount(context);
+        final long oldPersistenceCount = context.stats.getPersistenceCount();
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                long newPersistenceCount = getPersistenceCount(context);
-                assertTrue(format("We saw %d persistences before and were waiting for %d new persistences, but still got %d",
-                        oldPersistenceCount, persistenceCount, newPersistenceCount),
+                long newPersistenceCount = context.stats.getPersistenceCount();
+                assertTrue(format("We saw %d persistences before and were waiting for %d new persistences, but still got %d (%s)",
+                        oldPersistenceCount, persistenceCount, newPersistenceCount, context.stats),
                         newPersistenceCount > oldPersistenceCount + persistenceCount);
             }
         });
     }
 
     private static void assertLastNearCachePersistence(NearCacheTestContext context, File defaultStoreFile, int keyCount) {
-        NearCacheStats nearCacheStats = context.nearCache.getNearCacheStats();
-        assertEquals(keyCount, nearCacheStats.getLastPersistenceKeyCount());
+        assertEqualsFormat("Expected %d Near Cache keys to be stored, but was %d (%s)",
+                keyCount, context.stats.getLastPersistenceKeyCount(), context.stats);
         if (keyCount > 0) {
-            assertTrue(nearCacheStats.getLastPersistenceWrittenBytes() > 0);
-            assertTrue(defaultStoreFile.exists());
+            assertTrue(format("Expected the NearCache lastPersistenceWrittenBytes to be > 0 (%s)", context.stats),
+                    context.stats.getLastPersistenceWrittenBytes() > 0);
+            assertTrue(format("Expected the Near Cache store file %s to exist (%s)",
+                    defaultStoreFile.getAbsolutePath(), context.stats),
+                    defaultStoreFile.exists());
         } else {
-            assertEquals(0, nearCacheStats.getLastPersistenceWrittenBytes());
-            assertFalse(defaultStoreFile.exists());
+            assertEquals(format("Expected the NearCache lastPersistenceWrittenBytes to be 0 (%s)", context.stats),
+                    0, context.stats.getLastPersistenceWrittenBytes());
+            assertFalse(format("Expected the Near Cache store file %s not to exist (%s)",
+                    defaultStoreFile.getAbsolutePath(), context.stats),
+                    defaultStoreFile.exists());
         }
-        assertTrue(nearCacheStats.getLastPersistenceFailure().isEmpty());
+        assertTrue(format("Expected no Near Cache persistence failures (%s)", context.stats),
+                context.stats.getLastPersistenceFailure().isEmpty());
     }
 
     private static void assertNearCachePreloadDoneEventually(final NearCacheTestContext clientContext) {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                assertTrue(clientContext.nearCache.isPreloadDone());
+                assertTrue("Expected the Near Cache pre-loading to be eventually done", clientContext.nearCache.isPreloadDone());
             }
         });
     }
@@ -465,17 +484,21 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
             Object nearCacheKey = getNearCacheKey(context, key);
 
             String value = context.serializationService.toObject(getValueFromNearCache(context, nearCacheKey));
-            assertEquals("value-" + i, value);
+            assertEqualsFormat("Expected value %s in Near Cache, but found %s (%s)", "value-" + i, value, context.stats);
 
             assertNearCacheRecord(getRecordFromNearCache(context, nearCacheKey), i, inMemoryFormat);
         }
     }
 
-    // existing preloader test files in src/test/resources/nearcache-* are serialized in BIG_ENDIAN,
-    // therefore it only makes sense to test when serialization service byte order is not overridden to LITTLE_ENDIAN
-    private void assumeBigEndian() {
+    /**
+     * Ensures that the system is running in BIG_ENDIAN byte order.
+     * <p>
+     * The prepared test files in {@code src/test/resources/nearcache-*} are stored in BIG_ENDIAN order, so
+     * we have to skip related tests when the serialization service byte order is overridden to LITTLE_ENDIAN.
+     */
+    private static void assumeBigEndian() {
         String byteOrderOverride = System.getProperty(BYTE_ORDER_OVERRIDE_PROPERTY);
         boolean littleEndianOverride = byteOrderOverride != null && byteOrderOverride.equals(BYTE_ORDER_LITTLE_ENDIAN);
-        Assume.assumeTrue("Near cache preloader tests require BIG_ENDIAN byte order", !littleEndianOverride);
+        assumeTrue("Near Cache preloader tests using stored files require BIG_ENDIAN byte order", !littleEndianOverride);
     }
 }
