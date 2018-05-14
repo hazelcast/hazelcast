@@ -47,7 +47,7 @@ import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static java.lang.String.format;
 
 @PrivateApi
-@SuppressWarnings("checkstyle:methodcount")
+@SuppressWarnings({"WeakerAccess", "checkstyle:methodcount"})
 public final class IOUtil {
 
     public static final byte PRIMITIVE_TYPE_BOOLEAN = 1;
@@ -545,7 +545,7 @@ public final class IOUtil {
      * @throws IllegalArgumentException if the source was not found or the source not a file
      * @throws HazelcastException       if there was any exception while creating directories or copying
      */
-    static void copyFile(File source, File target, long sourceCount) {
+    public static void copyFile(File source, File target, long sourceCount) {
         if (!source.exists()) {
             throw new IllegalArgumentException("Source does not exist " + source.getAbsolutePath());
         }
