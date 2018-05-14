@@ -34,7 +34,6 @@ import com.hazelcast.internal.nearcache.NearCacheTestContext;
 import com.hazelcast.internal.nearcache.NearCacheTestContextBuilder;
 import com.hazelcast.internal.nearcache.NearCacheTestUtils;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -52,6 +51,8 @@ import static com.hazelcast.config.InMemoryFormat.BINARY;
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
 import static com.hazelcast.internal.adapter.DataStructureAdapter.DataStructureMethods.GET;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.createNearCacheConfig;
+import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
+import static com.hazelcast.spi.properties.GroupProperty.PARTITION_OPERATION_THREAD_COUNT;
 import static java.util.Arrays.asList;
 
 /**
@@ -141,8 +142,8 @@ public class ClientReplicatedMapNearCacheSerializationCountTest extends Abstract
     @Override
     protected <K, V> NearCacheTestContext<K, V, Data, String> createContext() {
         Config config = getConfig()
-                .setProperty(GroupProperty.PARTITION_COUNT.getName(), "1")
-                .setProperty(GroupProperty.PARTITION_OPERATION_THREAD_COUNT.getName(), "1");
+                .setProperty(PARTITION_COUNT.getName(), "1")
+                .setProperty(PARTITION_OPERATION_THREAD_COUNT.getName(), "1");
         config.getReplicatedMapConfig(DEFAULT_NEAR_CACHE_NAME)
                 .setInMemoryFormat(replicatedMapInMemoryFormat);
         prepareSerializationConfig(config.getSerializationConfig());
