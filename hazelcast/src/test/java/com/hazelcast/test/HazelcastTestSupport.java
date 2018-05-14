@@ -1235,7 +1235,7 @@ public abstract class HazelcastTestSupport {
         assertFalseEventually(task, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
     }
 
-    public static void assertTrueEventually(AssertTask task, long timeoutSeconds) {
+    public static void assertTrueEventually(String message, AssertTask task, long timeoutSeconds) {
         AssertionError error = null;
         // we are going to check five times a second
         int sleepMillis = 200;
@@ -1256,11 +1256,20 @@ public abstract class HazelcastTestSupport {
         if (error != null) {
             throw error;
         }
-        fail("assertTrueEventually() failed without AssertionError!");
+        fail("assertTrueEventually() failed without AssertionError! " + message);
+    }
+
+    public static void assertTrueEventually(AssertTask task, long timeoutSeconds) {
+        assertTrueEventually(null, task, timeoutSeconds);
+    }
+
+
+    public static void assertTrueEventually(String message, AssertTask task) {
+        assertTrueEventually(message, task, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
     }
 
     public static void assertTrueEventually(AssertTask task) {
-        assertTrueEventually(task, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
+        assertTrueEventually(null, task, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
     }
 
     public static void assertTrueDelayed5sec(AssertTask task) {
@@ -1433,6 +1442,7 @@ public abstract class HazelcastTestSupport {
     private interface Latch {
         boolean await(long timeout, TimeUnit unit)
                 throws InterruptedException;
+
         long getCount();
     }
 
