@@ -57,6 +57,7 @@ import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.jitter.JitterRule;
 import org.junit.After;
+import org.junit.AssumptionViolatedException;
 import org.junit.ComparisonFailure;
 import org.junit.Rule;
 import org.junit.experimental.categories.Category;
@@ -65,6 +66,7 @@ import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -1433,6 +1435,7 @@ public abstract class HazelcastTestSupport {
     private interface Latch {
         boolean await(long timeout, TimeUnit unit)
                 throws InterruptedException;
+
         long getCount();
     }
 
@@ -1506,6 +1509,10 @@ public abstract class HazelcastTestSupport {
         return new DefaultMapOperationProvider();
     }
 
+    // ######################################
+    // ########## test assumptions ##########
+    // ######################################
+
     public static void assumeThatNoJDK6() {
         assumeFalse("Java 6 used", JAVA_VERSION.startsWith("1.6."));
     }
@@ -1519,10 +1526,24 @@ public abstract class HazelcastTestSupport {
     }
 
     /**
-     * Throws {@link org.junit.AssumptionViolatedException} if two new Objects have the same hashCode (e.g. when running tests
+     * Throws {@link AssumptionViolatedException} if two new Objects have the same hashCode (e.g. when running tests
      * with static hashCode ({@code -XX:hashCode=2}).
      */
     public static void assumeDifferentHashCodes() {
         assumeTrue("Hash codes are equal for different objects", EXPECT_DIFFERENT_HASHCODES);
+    }
+
+    /**
+     * Throws {@link AssumptionViolatedException} if the given {@link InternalSerializationService} is not configured
+     * with the assumed {@link ByteOrder}.
+     *
+     * @param serializationService the {@link InternalSerializationService} to check
+     * @param assumedByteOrder     the assumed {@link ByteOrder}
+     */
+    public static void assumeConfiguredByteOrder(InternalSerializationService serializationService,
+                                                 ByteOrder assumedByteOrder) {
+        ByteOrder configuredByteOrder = serializationService.getByteOrder();
+        assumeTrue(format("Assumed configured byte order %s, but was %s", assumedByteOrder, configuredByteOrder),
+                configuredByteOrder.equals(assumedByteOrder));
     }
 }

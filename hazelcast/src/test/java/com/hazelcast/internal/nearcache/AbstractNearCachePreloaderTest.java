@@ -33,6 +33,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 
 import java.io.File;
+import java.nio.ByteOrder;
 import java.nio.channels.OverlappingFileLockException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -58,7 +59,6 @@ import static java.util.concurrent.Executors.newFixedThreadPool;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assume.assumeTrue;
 
 /**
  * Contains the logic code for unified Near Cache preloader tests.
@@ -84,9 +84,6 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
     protected static final int KEY_COUNT = 10023;
     protected static final int THREAD_COUNT = 10;
     protected static final int CREATE_AND_DESTROY_RUNS = 5000;
-
-    private static final String BYTE_ORDER_OVERRIDE_PROPERTY = "hazelcast.serialization.byteOrder";
-    private static final String BYTE_ORDER_LITTLE_ENDIAN = "LITTLE_ENDIAN";
 
     protected final String defaultNearCache = randomName();
 
@@ -289,9 +286,9 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
     }
 
     private void preloadNearCache(File preloaderFile, int keyCount, KeyType keyType) {
-        assumeBigEndian();
         copyStoreFile(preloaderFile.getAbsoluteFile(), getStoreFile());
         NearCacheTestContext<Object, String, NK, NV> context = createContext(false);
+        assumeConfiguredByteOrder(getSerializationService(context.dataInstance), ByteOrder.BIG_ENDIAN);
 
         // populate the member side data structure, so we have the values to populate the client side Near Cache
         populateDataAdapter(context, keyCount, keyType);
@@ -488,17 +485,5 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
 
             assertNearCacheRecord(getRecordFromNearCache(context, nearCacheKey), i, inMemoryFormat);
         }
-    }
-
-    /**
-     * Ensures that the system is running in BIG_ENDIAN byte order.
-     * <p>
-     * The prepared test files in {@code src/test/resources/nearcache-*} are stored in BIG_ENDIAN order, so
-     * we have to skip related tests when the serialization service byte order is overridden to LITTLE_ENDIAN.
-     */
-    private static void assumeBigEndian() {
-        String byteOrderOverride = System.getProperty(BYTE_ORDER_OVERRIDE_PROPERTY);
-        boolean littleEndianOverride = byteOrderOverride != null && byteOrderOverride.equals(BYTE_ORDER_LITTLE_ENDIAN);
-        assumeTrue("Near Cache preloader tests using stored files require BIG_ENDIAN byte order", !littleEndianOverride);
     }
 }

@@ -50,8 +50,8 @@ import java.util.Map;
 import static com.hazelcast.nio.serialization.compatibility.ReferenceObjects.IDENTIFIED_DATA_SERIALIZABLE_FACTORY_ID;
 import static com.hazelcast.nio.serialization.compatibility.ReferenceObjects.INNER_PORTABLE_CLASS_ID;
 import static com.hazelcast.nio.serialization.compatibility.ReferenceObjects.PORTABLE_FACTORY_ID;
+import static com.hazelcast.test.HazelcastTestSupport.assumeConfiguredByteOrder;
 import static junit.framework.TestCase.assertTrue;
-import static org.junit.Assume.assumeTrue;
 
 @RunWith(Parameterized.class)
 @UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
@@ -207,12 +207,5 @@ public class BinaryCompatibilityTest {
 
     private static String createFileName(byte version) {
         return version + ".serialization.compatibility.binary";
-    }
-
-    private static void assumeConfiguredByteOrder(InternalSerializationService serializationService,
-                                                 ByteOrder assumedByteOrder) {
-        ByteOrder configuredByteOrder = serializationService.getByteOrder();
-        assumeTrue(String.format("Configured byte order %s is not equal to assumed byte order %s",
-                configuredByteOrder, assumedByteOrder), configuredByteOrder == assumedByteOrder);
     }
 }
