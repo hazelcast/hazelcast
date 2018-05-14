@@ -752,8 +752,8 @@ public abstract class RingbufferAbstractTest extends HazelcastTestSupport {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void readManyAsync_whenMinCountLargerThanCapacity() {
-        ringbuffer.readManyAsync(0, RingbufferConfig.DEFAULT_CAPACITY + 1, RingbufferConfig.DEFAULT_CAPACITY + 1, null);
+    public void readManyAsync_whenMaxCountLargerThanCapacity() {
+        ringbuffer.readManyAsync(0, 1, RingbufferConfig.DEFAULT_CAPACITY + 1, null);
     }
 
     @Test(expected = IllegalArgumentException.class)

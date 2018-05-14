@@ -199,7 +199,7 @@ public class RingbufferProxy<E> extends AbstractDistributedObject<RingbufferServ
         checkSequence(startSequence);
         checkNotNegative(minCount, "minCount can't be smaller than 0");
         checkTrue(maxCount >= minCount, "maxCount should be equal or larger than minCount");
-        checkTrue(minCount <= config.getCapacity(), "the minCount should be smaller than or equal to the capacity");
+        checkTrue(maxCount <= config.getCapacity(), "the maxCount should be smaller than or equal to the capacity");
         checkTrue(maxCount <= MAX_BATCH_SIZE, "maxCount can't be larger than " + MAX_BATCH_SIZE);
 
         Operation op = new ReadManyOperation<E>(name, startSequence, minCount, maxCount, filter)
