@@ -220,7 +220,7 @@ public class ClientRingbufferProxy<E> extends ClientProxy implements Ringbuffer<
             return new CompletedFuture<ReadResultSet<E>>(getSerializationService(), e, userExecutor);
         }
 
-        checkTrue(minCount <= capacity, "the minCount should be smaller than or equal to the capacity");
+        checkTrue(maxCount <= capacity, "the maxCount should be smaller than or equal to the capacity");
         checkTrue(maxCount <= MAX_BATCH_SIZE, "maxCount can't be larger than " + MAX_BATCH_SIZE);
 
         ClientMessage request = RingbufferReadManyCodec.encodeRequest(
