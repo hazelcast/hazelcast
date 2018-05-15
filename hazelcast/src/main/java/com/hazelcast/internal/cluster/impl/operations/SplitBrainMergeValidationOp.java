@@ -27,6 +27,7 @@ import com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage.SplitBrainMerge
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
@@ -37,7 +38,9 @@ import static com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage.SplitBra
 /**
  * Validate whether clusters may merge to recover from a split brain, based on configuration & cluster version.
  */
-public class SplitBrainMergeValidationOp extends AbstractJoinOperation {
+// RU_COMPAT_39: Do not remove Versioned interface!
+// Version info is needed on 3.9 members while deserializing the operation.
+public class SplitBrainMergeValidationOp extends AbstractJoinOperation implements Versioned {
 
     private SplitBrainJoinMessage request;
     private SplitBrainJoinMessage response;
