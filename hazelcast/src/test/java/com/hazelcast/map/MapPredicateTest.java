@@ -29,13 +29,13 @@ import org.junit.runner.RunWith;
 
 import java.util.AbstractMap;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static java.util.Arrays.sort;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -110,26 +110,26 @@ public class MapPredicateTest extends HazelcastTestSupport {
         map.put("b", "2");
         map.put("c", "3");
         assertEquals(3, map.size());
-        {
-            final Object[] values = map.values().toArray();
-            Arrays.sort(values);
-            assertArrayEquals(new Object[]{"1", "2", "3"}, values);
-        }
-        {
-            final String[] values = map.values().toArray(new String[3]);
-            Arrays.sort(values);
-            assertArrayEquals(new String[]{"1", "2", "3"}, values);
-        }
-        {
-            final String[] values = map.values().toArray(new String[2]);
-            Arrays.sort(values);
-            assertArrayEquals(new String[]{"1", "2", "3"}, values);
-        }
-        {
-            final String[] values = map.values().toArray(new String[5]);
-            Arrays.sort(values, 0, 3);
-            assertArrayEquals(new String[]{"1", "2", "3", null, null}, values);
-        }
+
+        // toArray() without array
+        Object[] values = map.values().toArray();
+        sort(values);
+        assertArrayEquals(new Object[]{"1", "2", "3"}, values);
+
+        // toArray() with empty array (too small)
+        values = map.values().toArray(new String[0]);
+        sort(values);
+        assertArrayEquals(new String[]{"1", "2", "3"}, values);
+
+        // toArray() with correctly sized array
+        values = map.values().toArray(new String[3]);
+        sort(values);
+        assertArrayEquals(new String[]{"1", "2", "3"}, values);
+
+        // toArray() with too large array
+        values = map.values().toArray(new String[5]);
+        sort(values, 0, 3);
+        assertArrayEquals(new String[]{"1", "2", "3", null, null}, values);
     }
 
     @Test

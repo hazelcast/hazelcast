@@ -296,7 +296,7 @@ public class IntHashSetTest extends HazelcastTestSupport {
         final IntHashSet initial = new IntHashSet(100, -1);
         initial.add(1);
         initial.add(13);
-        final Object[] ary = initial.toArray(new Integer[2]);
+        final Object[] ary = initial.toArray(new Integer[0]);
         final Set<Object> fromArray = new HashSet<Object>(Arrays.asList(ary));
         assertEquals(new HashSet<Object>(initial), fromArray);
     }

@@ -129,6 +129,7 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
      */
     private static final int MAX_RETRIES = 100;
 
+
     final ILogger logger;
     final NodeEngineImpl nodeEngine;
 
@@ -348,7 +349,7 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
         if (registrations == null || registrations.isEmpty()) {
             return EMPTY_REGISTRATIONS;
         } else {
-            return registrations.toArray(new Registration[registrations.size()]);
+            return registrations.toArray(new Registration[0]);
         }
     }
 

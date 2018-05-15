@@ -758,7 +758,7 @@ public class ClientExceptionFactory {
             causeClassName = null;
         }
 
-        StackTraceElement[] combinedStackTraceArray = combinedStackTrace.toArray(new StackTraceElement[combinedStackTrace.size()]);
+        StackTraceElement[] combinedStackTraceArray = combinedStackTrace.toArray(new StackTraceElement[0]);
         return ErrorCodec.encode(errorCode, throwable.getClass().getName(), message, combinedStackTraceArray,
                 causeErrorCode, causeClassName);
     }

@@ -97,7 +97,7 @@ public class NestedPredicateVersionedPortablesTest extends HazelcastTestSupport 
 
         // THEN
         assertEquals(1, values.size());
-        assertEquals("body1", values.toArray(new NestedPredicateVersionedPortablesTest.Body[values.size()])[0].getName());
+        assertEquals("body1", values.toArray(new Body[0])[0].getName());
 
     }
 
@@ -112,7 +112,7 @@ public class NestedPredicateVersionedPortablesTest extends HazelcastTestSupport 
 
         // THEN
         assertEquals(1, values.size());
-        assertEquals("body2", values.toArray(new NestedPredicateVersionedPortablesTest.Body[values.size()])[0].getName());
+        assertEquals("body2", values.toArray(new Body[0])[0].getName());
     }
 
 

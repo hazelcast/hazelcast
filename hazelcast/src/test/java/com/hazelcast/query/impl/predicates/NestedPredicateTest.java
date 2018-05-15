@@ -74,7 +74,7 @@ public class NestedPredicateTest extends HazelcastTestSupport {
 
         // THEN
         assertEquals(1, values.size());
-        assertEquals("body1", values.toArray(new Body[values.size()])[0].getName());
+        assertEquals("body1", values.toArray(new Body[0])[0].getName());
     }
 
     @Test
@@ -88,7 +88,7 @@ public class NestedPredicateTest extends HazelcastTestSupport {
 
         // THEN
         assertEquals(1, values.size());
-        assertEquals("body1", values.toArray(new Body[values.size()])[0].getName());
+        assertEquals("body1", values.toArray(new Body[0])[0].getName());
     }
 
     @Test
@@ -104,7 +104,7 @@ public class NestedPredicateTest extends HazelcastTestSupport {
 
         // THEN
         assertEquals(1, values.size());
-        assertEquals("body2", values.toArray(new Body[values.size()])[0].getName());
+        assertEquals("body2", values.toArray(new Body[0])[0].getName());
     }
 
     @Test
@@ -118,7 +118,7 @@ public class NestedPredicateTest extends HazelcastTestSupport {
 
         // THEN
         assertEquals(1, values.size());
-        assertEquals("body2", values.toArray(new Body[values.size()])[0].getName());
+        assertEquals("body2", values.toArray(new Body[0])[0].getName());
     }
 
     private static class Body implements Serializable {

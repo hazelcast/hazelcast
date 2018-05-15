@@ -441,7 +441,7 @@ public class NodeEngineImpl implements NodeEngine {
                 postJoinOps.add(postJoinOperation);
             }
         }
-        return postJoinOps.isEmpty() ? null : postJoinOps.toArray(new Operation[postJoinOps.size()]);
+        return postJoinOps.isEmpty() ? null : postJoinOps.toArray(new Operation[0]);
     }
 
     public Operation[] getPreJoinOperations() {
@@ -459,7 +459,7 @@ public class NodeEngineImpl implements NodeEngine {
                 preJoinOps.add(preJoinOperation);
             }
         }
-        return preJoinOps.isEmpty() ? null : preJoinOps.toArray(new Operation[preJoinOps.size()]);
+        return preJoinOps.isEmpty() ? null : preJoinOps.toArray(new Operation[0]);
     }
 
     public void reset() {

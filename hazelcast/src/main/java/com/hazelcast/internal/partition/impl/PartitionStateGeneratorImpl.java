@@ -567,7 +567,7 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
             for (PartitionTable table : nodePartitionTables.values()) {
                 Set<Integer> partitions = table.getPartitions(index);
                 if (partitions.size() > avgCount) {
-                    Integer[] partitionArray = partitions.toArray(new Integer[partitions.size()]);
+                    Integer[] partitionArray = partitions.toArray(new Integer[0]);
                     while (partitions.size() > avgCount) {
                         int partitionId = partitionArray[partitions.size() - 1];
                         partitions.remove(partitionId);

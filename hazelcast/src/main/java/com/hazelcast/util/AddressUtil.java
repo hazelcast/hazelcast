@@ -447,7 +447,7 @@ public final class AddressUtil {
         if (ipString.size() != IPV6_LENGTH) {
             throw new InvalidAddressException(address);
         }
-        final String[] addressParts = ipString.toArray(new String[ipString.size()]);
+        final String[] addressParts = ipString.toArray(new String[0]);
         checkIfAddressPartsAreValid(addressParts, address);
         matcher.setAddress(addressParts);
     }
