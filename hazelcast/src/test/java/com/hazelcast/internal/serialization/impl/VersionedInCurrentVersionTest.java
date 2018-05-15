@@ -24,7 +24,6 @@ import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.starter.GuardianException;
 import com.hazelcast.test.starter.HazelcastVersionLocator;
-import com.hazelcast.test.starter.Utils;
 import com.hazelcast.util.StringUtil;
 import com.hazelcast.version.Version;
 import org.junit.Before;
@@ -52,6 +51,7 @@ import static com.hazelcast.internal.cluster.Versions.CURRENT_CLUSTER_VERSION;
 import static com.hazelcast.internal.cluster.Versions.PREVIOUS_CLUSTER_VERSION;
 import static com.hazelcast.test.ReflectionsHelper.REFLECTIONS;
 import static com.hazelcast.test.ReflectionsHelper.filterNonConcreteClasses;
+import static com.hazelcast.test.starter.HazelcastStarterUtils.rethrowGuardianException;
 import static com.hazelcast.util.EmptyStatement.ignore;
 import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeNoException;
@@ -157,7 +157,7 @@ public class VersionedInCurrentVersionTest {
                     getBuildInfo().isEnterprise());
         } catch (GuardianException e) {
             assumeNoException("The requested version could not be downloaded, most probably it has not been released yet", e);
-            throw Utils.rethrow(e);
+            throw rethrowGuardianException(e);
         }
     }
 }

@@ -28,8 +28,7 @@ public class DataAwareEntryEventConstructor extends AbstractStarterObjectConstru
     }
 
     @Override
-    Object createNew0(Object delegate)
-            throws Exception {
+    Object createNew0(Object delegate) throws Exception {
         // locate required classes on target class loader
         ClassLoader starterClassLoader = targetClass.getClassLoader();
         Class<?> dataClass = starterClassLoader.loadClass("com.hazelcast.nio.serialization.Data");
@@ -49,15 +48,17 @@ public class DataAwareEntryEventConstructor extends AbstractStarterObjectConstru
         Object dataMergingValue = getFieldValueReflectively(delegate, "dataMergingValue");
 
         Object[] args = new Object[]{
-                member, eventTypeId.intValue(), source,
-                dataKey, dataNewValue,
-                dataOldValue, dataMergingValue,
+                member,
+                eventTypeId,
+                source,
+                dataKey,
+                dataNewValue,
+                dataOldValue,
+                dataMergingValue,
                 serializationService,
         };
 
         Object[] proxiedArgs = proxyArgumentsIfNeeded(args, starterClassLoader);
-
         return constructor.newInstance(proxiedArgs);
     }
-
 }

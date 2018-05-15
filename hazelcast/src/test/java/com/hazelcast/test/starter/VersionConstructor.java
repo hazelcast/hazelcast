@@ -30,8 +30,7 @@ public class VersionConstructor extends AbstractStarterObjectConstructor {
     }
 
     @Override
-    Object createNew0(Object delegate)
-            throws Exception {
+    Object createNew0(Object delegate) throws Exception {
         ClassLoader starterClassLoader = targetClass.getClassLoader();
         Class<?> versionClass = starterClassLoader.loadClass("com.hazelcast.version.Version");
         Method versionOf = versionClass.getDeclaredMethod("of", Integer.TYPE, Integer.TYPE);

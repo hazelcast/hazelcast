@@ -21,9 +21,6 @@ import java.lang.reflect.Constructor;
 import static com.hazelcast.test.starter.HazelcastProxyFactory.proxyArgumentsIfNeeded;
 import static com.hazelcast.test.starter.ReflectionUtils.getFieldValueReflectively;
 
-/**
- *
- */
 public class MapEventConstructor extends AbstractStarterObjectConstructor {
 
     public MapEventConstructor(Class<?> targetClass) {
@@ -31,8 +28,7 @@ public class MapEventConstructor extends AbstractStarterObjectConstructor {
     }
 
     @Override
-    Object createNew0(Object delegate)
-            throws Exception {
+    Object createNew0(Object delegate) throws Exception {
         ClassLoader starterClassLoader = targetClass.getClassLoader();
         Class<?> memberClass = starterClassLoader.loadClass("com.hazelcast.core.Member");
         Constructor<?> constructor = targetClass.getConstructor(Object.class, memberClass, Integer.TYPE, Integer.TYPE);
@@ -43,7 +39,7 @@ public class MapEventConstructor extends AbstractStarterObjectConstructor {
         Integer eventTypeId = (Integer) entryEventType.getClass().getMethod("getType").invoke(entryEventType);
         Object numberOfKeysAffected = getFieldValueReflectively(delegate, "numberOfEntriesAffected");
 
-        Object[] args = new Object[]{source, member, eventTypeId.intValue(), numberOfKeysAffected};
+        Object[] args = new Object[]{source, member, eventTypeId, numberOfKeysAffected};
 
         Object[] proxiedArgs = proxyArgumentsIfNeeded(args, starterClassLoader);
 

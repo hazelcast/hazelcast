@@ -4,7 +4,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.NightlyTest;
+import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.test.starter.HazelcastStarter;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -15,11 +15,11 @@ import java.util.concurrent.ExecutionException;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(NightlyTest.class)
+@Category(SlowTest.class)
 public class HazelcastClientStarterTest {
 
     @Test
-    public void testClientLifecycle() throws InterruptedException {
+    public void testClientLifecycle() {
         HazelcastInstance member = HazelcastStarter.newHazelcastInstance("3.7");
 
         for (int i = 1; i < 6; i++) {
@@ -34,7 +34,7 @@ public class HazelcastClientStarterTest {
     }
 
     @Test
-    public void testClientMap() throws InterruptedException {
+    public void testClientMap() {
         HazelcastInstance memberInstance = HazelcastStarter.newHazelcastInstance("3.7");
         HazelcastInstance clientInstance = HazelcastClientStarter.newHazelcastClient("3.7.2", false);
 
@@ -50,7 +50,7 @@ public class HazelcastClientStarterTest {
     }
 
     @Test
-    public void testAdvancedClientMap() throws InterruptedException {
+    public void testAdvancedClientMap() {
         HazelcastInstance memberInstance = HazelcastStarter.newHazelcastInstance("3.7");
         HazelcastInstance clientInstance = HazelcastClientStarter.newHazelcastClient("3.7.2", false);
 

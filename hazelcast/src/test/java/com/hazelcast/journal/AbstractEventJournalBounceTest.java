@@ -34,7 +34,7 @@ import static com.hazelcast.spi.properties.GroupProperty.EVENT_THREAD_COUNT;
 import static com.hazelcast.spi.properties.GroupProperty.GENERIC_OPERATION_THREAD_COUNT;
 import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
 import static com.hazelcast.spi.properties.GroupProperty.PARTITION_OPERATION_THREAD_COUNT;
-import static com.hazelcast.test.starter.Utils.rethrow;
+import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static org.junit.Assert.assertEquals;
 
