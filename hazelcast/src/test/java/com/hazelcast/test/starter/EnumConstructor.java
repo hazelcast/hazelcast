@@ -28,14 +28,13 @@ public class EnumConstructor extends AbstractStarterObjectConstructor {
     }
 
     @Override
-    Object createNew0(Object delegate)
-            throws Exception {
+    Object createNew0(Object delegate) throws Exception {
         // obtain delegate as string
         Method nameMethod = delegate.getClass().getMethod("name");
         String delegateAsString = (String) nameMethod.invoke(delegate);
-        // construct new instance at target classloader via valueof
+        // construct new instance at target classloader via valueOf()
         Method valueOf = targetClass.getMethod("valueOf", String.class);
-        Object targetObject = valueOf.invoke(null, delegateAsString);
-        return targetObject;
+
+        return valueOf.invoke(null, delegateAsString);
     }
 }

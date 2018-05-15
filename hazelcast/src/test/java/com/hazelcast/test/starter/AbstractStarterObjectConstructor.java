@@ -17,7 +17,8 @@
 package com.hazelcast.test.starter;
 
 import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.util.ExceptionUtil;
+
+import static com.hazelcast.test.starter.HazelcastStarterUtils.transferThrowable;
 
 /**
  * Abstract superclass for {@code ConstructorFunction}s which, given a target {@code Class}, create an {@code Object} of
@@ -27,9 +28,9 @@ import com.hazelcast.util.ExceptionUtil;
  */
 public abstract class AbstractStarterObjectConstructor implements ConstructorFunction<Object, Object> {
 
-    protected final Class<?> targetClass;
+    final Class<?> targetClass;
 
-    public AbstractStarterObjectConstructor(Class<?> targetClass) {
+    AbstractStarterObjectConstructor(Class<?> targetClass) {
         this.targetClass = targetClass;
     }
 
@@ -38,10 +39,9 @@ public abstract class AbstractStarterObjectConstructor implements ConstructorFun
         try {
             return createNew0(arg);
         } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
+            throw new GuardianException(transferThrowable(e));
         }
     }
 
     abstract Object createNew0(Object delegate) throws Exception;
-
 }

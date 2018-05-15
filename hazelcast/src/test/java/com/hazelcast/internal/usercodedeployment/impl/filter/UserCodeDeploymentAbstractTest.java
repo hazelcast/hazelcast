@@ -31,7 +31,7 @@ import usercodedeployment.IncrementingEntryProcessor;
 import usercodedeployment.blacklisted.BlacklistedEP;
 import usercodedeployment.whitelisted.WhitelistedEP;
 
-import static com.hazelcast.test.starter.Utils.assertInstanceOfByClassName;
+import static com.hazelcast.test.starter.HazelcastStarterUtils.assertInstanceOfByClassName;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
