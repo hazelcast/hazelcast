@@ -53,6 +53,7 @@ import static com.hazelcast.nio.IOUtil.copy;
 import static com.hazelcast.nio.IOUtil.deleteQuietly;
 import static com.hazelcast.nio.IOUtil.getFileFromResources;
 import static com.hazelcast.nio.IOUtil.touch;
+import static com.hazelcast.test.TimeConstants.MINUTE;
 import static java.lang.String.format;
 import static java.lang.Thread.currentThread;
 import static java.util.concurrent.Executors.newFixedThreadPool;
@@ -77,13 +78,12 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
         STRING,
     }
 
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
-
-    protected static final int TEST_TIMEOUT = 10 * 60 * 1000;
     protected static final int KEY_COUNT = 10023;
     protected static final int THREAD_COUNT = 10;
     protected static final int CREATE_AND_DESTROY_RUNS = 5000;
+
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
 
     protected final String defaultNearCache = randomName();
 
@@ -150,13 +150,13 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
     protected abstract <K, V> DataStructureAdapter<K, V> getDataStructure(NearCacheTestContext<K, V, NK, NV> context,
                                                                           String name);
 
-    @Test(timeout = TEST_TIMEOUT)
+    @Test(timeout = 10 * MINUTE)
     @Category(SlowTest.class)
     public void testStoreAndLoad_withIntegerKeys() {
         storeAndLoad(2342, INTEGER);
     }
 
-    @Test(timeout = TEST_TIMEOUT)
+    @Test(timeout = 10 * MINUTE)
     @Category(SlowTest.class)
     public void testStoreAndLoad_withStringKeys() {
         storeAndLoad(4223, STRING);
@@ -186,7 +186,7 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
         assertNearCacheContent(clientContext, keyCount, keyType);
     }
 
-    @Test(timeout = TEST_TIMEOUT)
+    @Test(timeout = 10 * MINUTE)
     @Category(SlowTest.class)
     public void testCreateStoreFile_withInvalidDirectory() {
         String directory = "/dev/null/";
@@ -202,19 +202,19 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
         createContext(true);
     }
 
-    @Test(timeout = TEST_TIMEOUT)
+    @Test(timeout = 10 * MINUTE)
     @Category(SlowTest.class)
     public void testCreateStoreFile_withStringKey() {
         createStoreFile(KEY_COUNT, STRING);
     }
 
-    @Test(timeout = TEST_TIMEOUT)
+    @Test(timeout = 10 * MINUTE)
     @Category(SlowTest.class)
     public void testCreateStoreFile_withIntegerKey() {
         createStoreFile(KEY_COUNT, INTEGER);
     }
 
-    @Test(timeout = TEST_TIMEOUT)
+    @Test(timeout = 10 * MINUTE)
     @Category(SlowTest.class)
     public void testCreateStoreFile_withEmptyNearCache() {
         createStoreFile(0, INTEGER);
@@ -233,7 +233,7 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
         assertLastNearCachePersistence(context, getStoreFile(), keyCount);
     }
 
-    @Test(timeout = TEST_TIMEOUT)
+    @Test(timeout = 10 * MINUTE)
     @Category(SlowTest.class)
     public void testCreateStoreFile_whenTwoClientsWithSameStoreFile_thenThrowException() {
         nearCacheConfig.getPreloaderConfig()
@@ -255,32 +255,32 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
         createNearCacheContext();
     }
 
-    @Test
+    @Test(timeout = 10 * MINUTE)
     public void testPreloadNearCache_withIntegerKeys() {
         preloadNearCache(preloadFile10kInt, 10000, INTEGER);
     }
 
-    @Test
+    @Test(timeout = 10 * MINUTE)
     public void testPreloadNearCache_withStringKeys() {
         preloadNearCache(preloadFile10kString, 10000, STRING);
     }
 
-    @Test
+    @Test(timeout = 10 * MINUTE)
     public void testPreloadNearCache_withEmptyFile() {
         preloadNearCache(preloadFileEmpty, 0, INTEGER);
     }
 
-    @Test
+    @Test(timeout = 10 * MINUTE)
     public void testPreloadNearCache_withInvalidMagicBytes() {
         preloadNearCache(preloadFileInvalidMagicBytes, 0, INTEGER);
     }
 
-    @Test
+    @Test(timeout = 10 * MINUTE)
     public void testPreloadNearCache_withInvalidFileFormat() {
         preloadNearCache(preloadFileInvalidFileFormat, 0, INTEGER);
     }
 
-    @Test
+    @Test(timeout = 10 * MINUTE)
     public void testPreloadNearCache_withNegativeFileFormat() {
         preloadNearCache(preloadFileNegativeFileFormat, 0, INTEGER);
     }
@@ -302,7 +302,7 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
         assertNearCacheContent(clientContext, keyCount, keyType);
     }
 
-    @Test(timeout = TEST_TIMEOUT)
+    @Test(timeout = 10 * MINUTE)
     public void testPreloadNearCacheLock_withSharedConfig_concurrently() {
         nearCacheConfig.getPreloaderConfig().setDirectory("");
 
@@ -337,9 +337,10 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
         pool.shutdownNow();
     }
 
-    @Test(timeout = TEST_TIMEOUT)
+    @Test(timeout = 10 * MINUTE)
     public void testCreateAndDestroyDataStructure_withSameName() {
-        nearCacheConfig.setName("createDestroyNearCache");
+        String name = randomMapName("createDestroyNearCache");
+        nearCacheConfig.setName(name);
 
         NearCacheTestContext<Object, String, NK, NV> context = createContext(true);
         populateDataAdapter(context, KEY_COUNT, INTEGER);
@@ -347,13 +348,14 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
         DataStructureAdapter<Object, String> adapter = context.nearCacheAdapter;
         for (int i = 0; i < CREATE_AND_DESTROY_RUNS; i++) {
             adapter.destroy();
-            adapter = getDataStructure(context, "createDestroyNearCache");
+            adapter = getDataStructure(context, name);
         }
     }
 
-    @Test(timeout = TEST_TIMEOUT)
+    @Test(timeout = 10 * MINUTE)
     public void testCreateAndDestroyDataStructure_withDifferentNames() {
-        nearCacheConfig.setName("createDestroyNearCache-*");
+        String name = randomMapName("createDestroyNearCache");
+        nearCacheConfig.setName(name + "*");
 
         NearCacheTestContext<Object, String, NK, NV> context = createContext(true);
         populateDataAdapter(context, KEY_COUNT, INTEGER);
@@ -361,7 +363,7 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
         DataStructureAdapter<Object, String> adapter = context.nearCacheAdapter;
         for (int i = 0; i < CREATE_AND_DESTROY_RUNS; i++) {
             adapter.destroy();
-            adapter = getDataStructure(context, "createDestroyNearCache-" + i);
+            adapter = getDataStructure(context, name + i);
         }
     }
 
