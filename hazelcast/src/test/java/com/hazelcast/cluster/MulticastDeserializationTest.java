@@ -115,7 +115,9 @@ public class MulticastDeserializationTest {
             multicastSocket.send(packet);
             multicastSocket.leaveGroup(group);
         } finally {
-            IOUtil.closeResource(multicastSocket);
+            if (multicastSocket != null) {
+                multicastSocket.close();
+            }
         }
     }
 
