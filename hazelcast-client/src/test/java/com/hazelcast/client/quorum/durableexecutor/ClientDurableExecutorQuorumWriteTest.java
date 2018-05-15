@@ -48,8 +48,10 @@ public class ClientDurableExecutorQuorumWriteTest extends DurableExecutorQuorumW
 
     @AfterClass
     public static void tearDown() {
+        if (clients != null) {
+            clients.terminateAll();
+        }
         shutdownTestEnvironment();
-        clients.terminateAll();
     }
 
     @Override
