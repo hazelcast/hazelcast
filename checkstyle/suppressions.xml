@@ -5,9 +5,6 @@
         "http://www.puppycrawl.com/dtds/suppressions_1_1.dtd">
 <suppressions>
 
-    <!-- Connector modules declare classes in a package that already exists in Jet core -->
-    <suppress checks="JavadocPackage" files="hazelcast-jet-(kafka|hadoop)"/>
-
     <!-- impl packages are private API by contract, allow public members -->
     <suppress checks="VisibilityModifier" files="[\\/]impl[\\/]"/>
 
