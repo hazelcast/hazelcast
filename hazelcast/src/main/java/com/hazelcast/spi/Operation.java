@@ -104,11 +104,23 @@ public abstract class Operation implements DataSerializable {
         return this instanceof UrgentSystemOperation;
     }
 
-    // runs before wait-support
+    /**
+     * The beforeRun is called before either the {@link #run()} or the {@link #call()} method is called.
+     *
+     *  runs before wait-support
+     */
     public void beforeRun() throws Exception {
     }
 
-    // runs after wait-support, supposed to do actual operation
+    /**
+     * Runs the operation.
+     *
+     * Either the {@link #run()} or {@link #call()} method should be implemented; not both.
+     *
+     * Runs after wait-support, supposed to do actual operation
+     *
+     * @see #call()
+     */
     public void run() throws Exception {
     }
 
@@ -144,6 +156,7 @@ public abstract class Operation implements DataSerializable {
      *
      * @return the CallStatus.
      * @throws Exception if something failed while executing 'call'.
+     * @see #run()
      */
     public CallStatus call() throws Exception {
         if (this instanceof BlockingOperation) {
@@ -157,7 +170,12 @@ public abstract class Operation implements DataSerializable {
         return returnsResponse() ? DONE_RESPONSE : DONE_VOID;
     }
 
-    // runs after backups, before wait-notify
+    /**
+     * Is executed called after {@link #run()} or {@link #call()} method completes normally and the operation is not
+     * blocked, see {@link CallStatus#WAIT}.
+     *
+     * Runs after backups, before wait-notify.
+     */
     public void afterRun() throws Exception {
     }
 
