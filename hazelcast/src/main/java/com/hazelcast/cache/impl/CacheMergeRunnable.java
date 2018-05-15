@@ -35,6 +35,8 @@ import com.hazelcast.util.function.BiConsumer;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.cache.impl.AbstractCacheRecordStore.SOURCE_NOT_AVAILABLE;
 import static com.hazelcast.cache.impl.ICacheService.SERVICE_NAME;
@@ -44,6 +46,7 @@ import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntr
 class CacheMergeRunnable extends AbstractMergeRunnable<Data, Data, ICacheRecordStore, CacheMergeTypes> {
 
     private final CacheService cacheService;
+    private final ConcurrentMap<String, CacheConfig> configs;
 
     CacheMergeRunnable(Collection<ICacheRecordStore> mergingStores,
                        CacheSplitBrainHandlerService splitBrainHandlerService,
@@ -51,6 +54,16 @@ class CacheMergeRunnable extends AbstractMergeRunnable<Data, Data, ICacheRecordS
         super(CacheService.SERVICE_NAME, mergingStores, splitBrainHandlerService, nodeEngine);
 
         this.cacheService = nodeEngine.getService(SERVICE_NAME);
+        this.configs = new ConcurrentHashMap<String, CacheConfig>(cacheService.getConfigs());
+    }
+
+    @Override
+    protected void onRunStart() {
+        super.onRunStart();
+
+        for (CacheConfig cacheConfig : configs.values()) {
+            cacheService.putCacheConfigIfAbsent(cacheConfig);
+        }
     }
 
     @Override
