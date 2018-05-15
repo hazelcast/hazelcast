@@ -1,4 +1,4 @@
-This document lists the new features, enhancements, fixed issues and, removed or deprecated features for 3.10.x releases. Note that all the Hazelcast IMDG Open Source features and enhancements are also included in this Hazelcast IMDG Enterprise release notes. The numbers in the square brackets refer to the issues in Hazelcast's GitHub repositories.
+This document lists the new features, enhancements, fixed issues and, removed or deprecated features for 3.10.x releases. The numbers in the square brackets refer to the issues in Hazelcast's GitHub repositories.
 
 ==== 3.10.1 ====
 
