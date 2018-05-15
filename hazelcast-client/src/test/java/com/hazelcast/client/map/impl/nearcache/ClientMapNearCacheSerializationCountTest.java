@@ -163,7 +163,7 @@ public class ClientMapNearCacheSerializationCountTest extends AbstractNearCacheS
 
     @Override
     protected <K, V> NearCacheTestContext<K, V, Data, String> createContext() {
-        Config config = smallInstanceConfig()
+        Config config = getConfig()
                 // we don't want to have the invalidations from the initial population being sent during this test
                 .setProperty(MAP_INVALIDATION_MESSAGE_BATCH_SIZE.getName(), String.valueOf(Integer.MAX_VALUE))
                 .setProperty(MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS.getName(), String.valueOf(Integer.MAX_VALUE))
@@ -189,6 +189,11 @@ public class ClientMapNearCacheSerializationCountTest extends AbstractNearCacheS
     protected <K, V> NearCacheTestContext<K, V, Data, String> createNearCacheContext() {
         NearCacheTestContextBuilder<K, V, Data, String> contextBuilder = createNearCacheContextBuilder();
         return contextBuilder.build();
+    }
+
+    @Override
+    protected Config getConfig() {
+        return smallInstanceConfig();
     }
 
     protected ClientConfig getClientConfig() {

@@ -181,8 +181,13 @@ public class MapNearCacheSerializationCountTest extends AbstractNearCacheSeriali
         return builder.build();
     }
 
+    @Override
+    protected Config getConfig() {
+        return smallInstanceConfig();
+    }
+
     private Config getConfig(boolean withNearCache) {
-        Config config = smallInstanceConfig()
+        Config config = getConfig()
                 // we don't want to have the invalidations from the initial population being sent during this test
                 .setProperty(MAP_INVALIDATION_MESSAGE_BATCH_SIZE.getName(), String.valueOf(Integer.MAX_VALUE))
                 .setProperty(MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS.getName(), String.valueOf(Integer.MAX_VALUE))

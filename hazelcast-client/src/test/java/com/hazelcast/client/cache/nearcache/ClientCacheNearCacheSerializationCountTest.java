@@ -200,7 +200,7 @@ public class ClientCacheNearCacheSerializationCountTest extends AbstractNearCach
 
     @Override
     protected <K, V> NearCacheTestContext<K, V, Data, String> createContext() {
-        Config config = smallInstanceConfig()
+        Config config = getConfig()
                 // we don't want to have the invalidations from the initial population being sent during this test
                 .setProperty(CACHE_INVALIDATION_MESSAGE_BATCH_SIZE.getName(), String.valueOf(Integer.MAX_VALUE))
                 .setProperty(CACHE_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS.getName(), String.valueOf(Integer.MAX_VALUE))
@@ -226,6 +226,11 @@ public class ClientCacheNearCacheSerializationCountTest extends AbstractNearCach
     protected <K, V> NearCacheTestContext<K, V, Data, String> createNearCacheContext() {
         CacheConfig<K, V> cacheConfig = createCacheConfig(cacheInMemoryFormat);
         return createNearCacheContextBuilder(cacheConfig).build();
+    }
+
+    @Override
+    protected Config getConfig() {
+        return smallInstanceConfig();
     }
 
     protected ClientConfig getClientConfig() {
