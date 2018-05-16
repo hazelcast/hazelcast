@@ -22,6 +22,7 @@ import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.AddressUtil.AddressMatcher;
 import com.hazelcast.util.AddressUtil.InvalidAddressException;
 import com.hazelcast.util.AddressUtil.Ip4AddressMatcher;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -59,6 +60,7 @@ import static org.mockito.Mockito.when;
 @PowerMockRunnerDelegate(HazelcastSerialClassRunner.class)
 @PrepareForTest({Inet6Address.class, AddressUtil.class, NetworkInterface.class})
 @Category(QuickTest.class)
+@Ignore
 public class AddressUtilTest extends HazelcastTestSupport {
 
     @Test
