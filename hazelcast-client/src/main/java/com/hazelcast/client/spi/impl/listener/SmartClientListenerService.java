@@ -32,6 +32,7 @@ import com.hazelcast.core.Member;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
+import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.UuidUtil;
 
@@ -45,6 +46,7 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.util.StringUtil.timeToString;
@@ -144,17 +146,24 @@ public class SmartClientListenerService extends AbstractClientListenerService
         //This method should not be called from registrationExecutor
         assert (!Thread.currentThread().getName().contains("eventRegistration"));
 
-        Future<Boolean> future = registrationExecutor.submit(new Callable<Boolean>() {
-            @Override
-            public Boolean call() throws Exception {
-                return deregisterListenerInternal(userRegistrationId);
-            }
-        });
-
         try {
-            return future.get();
-        } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
+            Future<Boolean> future = registrationExecutor.submit(new Callable<Boolean>() {
+                @Override
+                public Boolean call() {
+                    return deregisterListenerInternal(userRegistrationId);
+                }
+            });
+
+            try {
+                return future.get();
+            } catch (Exception e) {
+                throw ExceptionUtil.rethrow(e);
+            }
+        } catch (RejectedExecutionException ignored) {
+            //RejectedExecutionException executor(hence the client) is already shutdown
+            //listeners are cleaned up by the server side. We can ignore the exception and return true safely
+            EmptyStatement.ignore(ignored);
+            return true;
         }
 
     }
