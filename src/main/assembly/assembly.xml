@@ -57,15 +57,23 @@
                 <exclude>**/.svn/**</exclude>
             </excludes>
         </fileSet>
+
         <fileSet>
-            <directory>hazelcast-documentation/target/</directory>
-            <outputDirectory>docs/manual</outputDirectory>
+            <directory>hazelcast-documentation/build/asciidoc/pdf</directory>
+            <outputDirectory>docs/manual/pdf</outputDirectory>
             <includes>
-                <include>pdf/hazelcast-documentation-${project.version}.pdf</include>
-                <include>html/**</include>
-                <include>html-single/**</include>
+                <include>**</include>
             </includes>
         </fileSet>
+
+        <fileSet>
+            <directory>hazelcast-documentation/build/asciidoc/html5</directory>
+            <outputDirectory>docs/manual/html-single</outputDirectory>
+            <includes>
+                <include>**</include>
+            </includes>
+        </fileSet>
+
         <fileSet>
             <directory>src/main/resources/</directory>
             <outputDirectory>/license/</outputDirectory>
