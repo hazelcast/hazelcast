@@ -708,7 +708,6 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
         }
 
         NearCacheStats stats = getNearCacheStats(map);
-        System.out.println("stats = " + stats);
         assertEquals(size, stats.getOwnedEntryCount());
         assertEquals(size, stats.getHits());
     }
@@ -1259,7 +1258,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
     }
 
     protected Config newConfig() {
-        return getConfig();
+        return smallInstanceConfig();
     }
 
     protected NearCacheConfig newNoInvalidationNearCacheConfig() {
