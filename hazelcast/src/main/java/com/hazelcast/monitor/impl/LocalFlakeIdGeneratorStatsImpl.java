@@ -16,15 +16,15 @@
 
 package com.hazelcast.monitor.impl;
 
-import static com.hazelcast.util.JsonUtil.getLong;
-import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
-
-import java.util.concurrent.atomic.AtomicLongFieldUpdater;
-
 import com.eclipsesource.json.JsonObject;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.monitor.LocalFlakeIdGeneratorStats;
 import com.hazelcast.util.Clock;
+
+import java.util.concurrent.atomic.AtomicLongFieldUpdater;
+
+import static com.hazelcast.util.JsonUtil.getLong;
+import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
 
 public class LocalFlakeIdGeneratorStatsImpl implements LocalFlakeIdGeneratorStats {
 

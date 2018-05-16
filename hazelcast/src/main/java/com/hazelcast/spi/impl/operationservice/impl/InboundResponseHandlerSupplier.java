@@ -23,7 +23,6 @@ import com.hazelcast.internal.util.concurrent.MPSCQueue;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.impl.PacketHandler;
 import com.hazelcast.spi.impl.operationexecutor.OperationHostileThread;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
@@ -31,6 +30,7 @@ import com.hazelcast.util.MutableInteger;
 import com.hazelcast.util.concurrent.BackoffIdleStrategy;
 import com.hazelcast.util.concurrent.BusySpinIdleStrategy;
 import com.hazelcast.util.concurrent.IdleStrategy;
+import com.hazelcast.util.function.Consumer;
 import com.hazelcast.util.function.Supplier;
 
 import java.util.concurrent.BlockingQueue;
@@ -46,7 +46,7 @@ import static java.util.concurrent.TimeUnit.MICROSECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 /**
- * A {@link Supplier} responsible for providing a {@link PacketHandler} that
+ * A {@link Supplier} responsible for providing a {@link Consumer} that
  * processes inbound responses.
  *
  * Depending on the {@link com.hazelcast.spi.properties.GroupProperty#RESPONSE_THREAD_COUNT}
@@ -54,9 +54,9 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
  * <ol>
  * <li>a 'sync' response handler that doesn't offload to a different thread and
  * processes the response on the calling (IO) thread.</li>
- * <li>a single threaded PacketHandler that offloads the response processing a
+ * <li>a single threaded Packet Consumer that offloads the response processing a
  * ResponseThread/li>
- * <li>a multi threaded PacketHandler that offloads the response processing
+ * <li>a multi threaded Packet Consumer that offloads the response processing
  * to a pool of ResponseThreads.</li>
  * </ol>
  * Having multiple threads processing responses improves performance and
@@ -64,13 +64,13 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
  *
  * In case of asynchronous response processing, the response is put in the
  * responseQueue of the ResponseThread. Then the ResponseThread takes it from
- * this responseQueue and calls a {@link PacketHandler} for the actual processing.
+ * this responseQueue and calls a {@link Consumer} for the actual processing.
  *
  * The reason that the IO thread doesn't immediately deal with the response is that
  * dealing with the response and especially notifying the invocation future can be
  * very expensive.
  */
-public class InboundResponseHandlerSupplier implements MetricsProvider, Supplier<PacketHandler> {
+public class InboundResponseHandlerSupplier implements MetricsProvider, Supplier<Consumer<Packet>> {
 
     public static final HazelcastProperty IDLE_STRATEGY
             = new HazelcastProperty("hazelcast.operation.responsequeue.idlestrategy", "block");
@@ -89,7 +89,7 @@ public class InboundResponseHandlerSupplier implements MetricsProvider, Supplier
 
     private final ResponseThread[] responseThreads;
     private final ILogger logger;
-    private final PacketHandler responseHandler;
+    private final Consumer<Packet> responseHandler;
     // these references are needed for metrics.
     private final InboundResponseHandler[] inboundResponseHandlers;
     private final NodeEngine nodeEngine;
@@ -195,7 +195,7 @@ public class InboundResponseHandlerSupplier implements MetricsProvider, Supplier
     }
 
     @Override
-    public PacketHandler get() {
+    public Consumer<Packet> get() {
         return responseHandler;
     }
 
@@ -226,7 +226,7 @@ public class InboundResponseHandlerSupplier implements MetricsProvider, Supplier
         }
     }
 
-    final class AsyncSingleThreadedResponseHandler implements PacketHandler {
+    final class AsyncSingleThreadedResponseHandler implements Consumer<Packet> {
         private final ResponseThread responseThread;
 
         private AsyncSingleThreadedResponseHandler() {
@@ -234,15 +234,15 @@ public class InboundResponseHandlerSupplier implements MetricsProvider, Supplier
         }
 
         @Override
-        public void handle(Packet packet) {
+        public void accept(Packet packet) {
             // there is only one thread, no need to do a mod.
             responseThread.responseQueue.add(packet);
         }
     }
 
-    final class AsyncMultithreadedResponseHandler implements PacketHandler {
+    final class AsyncMultithreadedResponseHandler implements Consumer<Packet> {
         @Override
-        public void handle(Packet packet) {
+        public void accept(Packet packet) {
             int threadIndex = hashToIndex(INT_HOLDER.get().getAndInc(), responseThreads.length);
             responseThreads[threadIndex].responseQueue.add(packet);
         }
@@ -280,7 +280,7 @@ public class InboundResponseHandlerSupplier implements MetricsProvider, Supplier
             while (!shutdown) {
                 Packet response = responseQueue.take();
                 try {
-                    inboundResponseHandler.handle(response);
+                    inboundResponseHandler.accept(response);
                 } catch (Throwable e) {
                     inspectOutOfMemoryError(e);
                     logger.severe("Failed to process response: " + response + " on:" + getName(), e);

@@ -26,9 +26,12 @@ import com.hazelcast.client.impl.ClientConnectionManagerFactory;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.HazelcastClientProxy;
 import com.hazelcast.client.spi.properties.ClientProperty;
+import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.client.util.AddressHelper;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.LifecycleEvent;
+import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -50,7 +53,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class ClientTxnOwnerDisconnectedTest {
+public class ClientTxnOwnerDisconnectedTest extends ClientTestSupport {
 
     @After
     public void after() {
@@ -66,7 +69,7 @@ public class ClientTxnOwnerDisconnectedTest {
 
     @Test(expected = TransactionException.class)
     public void testTransactionBeginShouldFail_onDisconnectedState() {
-        HazelcastInstance instance1 = Hazelcast.newHazelcastInstance();
+        HazelcastInstance instance = Hazelcast.newHazelcastInstance();
         ClientConfig clientConfig = new ClientConfig();
         final AtomicBoolean waitFlag = new AtomicBoolean();
         final CountDownLatch testFinished = new CountDownLatch(1);
@@ -97,13 +100,22 @@ public class ClientTxnOwnerDisconnectedTest {
             }
         });
 
-
         Hazelcast.newHazelcastInstance();
         final TransactionContext context = client.newTransactionContext();
 
+        final CountDownLatch clientDisconnected = new CountDownLatch(1);
+        client.getLifecycleService().addLifecycleListener(new LifecycleListener() {
+            @Override
+            public void stateChanged(LifecycleEvent event) {
+                clientDisconnected.countDown();
+            }
+        });
+
         //we are closing owner connection and making sure owner connection is not established ever again
         waitFlag.set(true);
-        instance1.shutdown();
+        instance.shutdown();
+
+        assertOpenEventually(clientDisconnected);
 
         try {
             context.beginTransaction();
@@ -115,7 +127,7 @@ public class ClientTxnOwnerDisconnectedTest {
 
     @Test(expected = TransactionException.class)
     public void testNewTransactionContextShouldFail_onDisconnectedState() {
-        HazelcastInstance instance1 = Hazelcast.newHazelcastInstance();
+        HazelcastInstance instance = Hazelcast.newHazelcastInstance();
         ClientConfig clientConfig = new ClientConfig();
         final AtomicBoolean waitFlag = new AtomicBoolean();
         final CountDownLatch testFinished = new CountDownLatch(1);
@@ -149,9 +161,19 @@ public class ClientTxnOwnerDisconnectedTest {
 
         Hazelcast.newHazelcastInstance();
 
+        final CountDownLatch clientDisconnected = new CountDownLatch(1);
+        client.getLifecycleService().addLifecycleListener(new LifecycleListener() {
+            @Override
+            public void stateChanged(LifecycleEvent event) {
+                clientDisconnected.countDown();
+            }
+        });
+
         //we are closing owner connection and making sure owner connection is not established ever again
         waitFlag.set(true);
-        instance1.shutdown();
+        instance.shutdown();
+
+        assertOpenEventually(clientDisconnected);
 
         try {
             client.newTransactionContext();
@@ -163,7 +185,7 @@ public class ClientTxnOwnerDisconnectedTest {
 
     @Test(expected = TransactionException.class)
     public void testXAShouldFail_onDisconnectedState() throws Throwable {
-        HazelcastInstance instance1 = Hazelcast.newHazelcastInstance();
+        HazelcastInstance instance = Hazelcast.newHazelcastInstance();
         ClientConfig clientConfig = new ClientConfig();
         final AtomicBoolean waitFlag = new AtomicBoolean();
         final CountDownLatch testFinished = new CountDownLatch(1);
@@ -205,9 +227,19 @@ public class ClientTxnOwnerDisconnectedTest {
         tm.begin();
         Transaction transaction = tm.getTransaction();
 
+        final CountDownLatch clientDisconnected = new CountDownLatch(1);
+        client.getLifecycleService().addLifecycleListener(new LifecycleListener() {
+            @Override
+            public void stateChanged(LifecycleEvent event) {
+                clientDisconnected.countDown();
+            }
+        });
+
         //we are closing owner connection and making sure owner connection is not established ever again
         waitFlag.set(true);
-        instance1.shutdown();
+        instance.shutdown();
+
+        assertOpenEventually(clientDisconnected);
 
         try {
             transaction.enlistResource(xaResource);

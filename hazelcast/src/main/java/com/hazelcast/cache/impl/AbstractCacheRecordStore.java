@@ -292,7 +292,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         }
 
         boolean evicted = evictionStrategy.evict(records, evictionPolicyEvaluator, evictionChecker, this);
-        if (isStatisticsEnabled() && evicted) {
+        if (isStatisticsEnabled() && evicted && primary) {
             statistics.increaseCacheEvictions(1);
         }
         return evicted;

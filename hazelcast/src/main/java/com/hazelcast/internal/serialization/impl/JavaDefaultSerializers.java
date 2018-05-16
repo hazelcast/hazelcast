@@ -18,6 +18,7 @@ package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.ClassLoaderUtil;
+import com.hazelcast.nio.ClassNameFilter;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
@@ -53,10 +54,12 @@ public final class JavaDefaultSerializers {
 
         private final boolean shared;
         private final boolean gzipEnabled;
+        private final ClassNameFilter classFilter;
 
-        public JavaSerializer(boolean shared, boolean gzipEnabled) {
+        public JavaSerializer(boolean shared, boolean gzipEnabled, ClassNameFilter classFilter) {
             this.shared = shared;
             this.gzipEnabled = gzipEnabled;
+            this.classFilter = classFilter;
         }
 
         @Override
@@ -74,7 +77,7 @@ public final class JavaDefaultSerializers {
 
         private Object read(InputStream in, ClassLoader classLoader) throws IOException {
             try {
-                ObjectInputStream objectInputStream = newObjectInputStream(classLoader, in);
+                ObjectInputStream objectInputStream = newObjectInputStream(classLoader, classFilter, in);
                 if (shared) {
                     return objectInputStream.readObject();
                 }
@@ -130,9 +133,11 @@ public final class JavaDefaultSerializers {
     public static final class ExternalizableSerializer extends SingletonSerializer<Externalizable> {
 
         private final boolean gzipEnabled;
+        private final ClassNameFilter classFilter;
 
-        public ExternalizableSerializer(boolean gzipEnabled) {
+        public ExternalizableSerializer(boolean gzipEnabled, ClassNameFilter classFilter) {
             this.gzipEnabled = gzipEnabled;
+            this.classFilter = classFilter;
         }
 
         @Override
@@ -167,7 +172,7 @@ public final class JavaDefaultSerializers {
 
         private Externalizable read(InputStream in, String className, ClassLoader classLoader) throws Exception {
             Externalizable ds = ClassLoaderUtil.newInstance(classLoader, className);
-            ObjectInputStream objectInputStream = newObjectInputStream(classLoader, in);
+            ObjectInputStream objectInputStream = newObjectInputStream(classLoader, classFilter, in);
             ds.readExternal(objectInputStream);
             return ds;
         }

@@ -17,34 +17,37 @@
 package com.hazelcast.client.cache;
 
 import com.hazelcast.cache.CacheContextTest;
+import com.hazelcast.client.HazelcastClientManager;
 import com.hazelcast.client.cache.impl.HazelcastClientCachingProvider;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import javax.cache.spi.CachingProvider;
-
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class ClientCacheContextTest extends CacheContextTest {
+
     private TestHazelcastFactory factory = new TestHazelcastFactory();
 
+    @Before
     @Override
-    protected CachingProvider initAndGetCachingProvider() {
+    public void setup() {
         hazelcastInstance1 = factory.newHazelcastInstance();
         hazelcastInstance2 = factory.newHazelcastInstance();
 
         driverInstance = factory.newHazelcastClient();
-        return HazelcastClientCachingProvider.createCachingProvider(driverInstance);
+        provider = HazelcastClientCachingProvider.createCachingProvider(driverInstance);
     }
 
     @After
     public void tearDown() {
+        HazelcastClientManager.shutdownAll();
         driverInstance.shutdown();
         hazelcastInstance1.shutdown();
         hazelcastInstance2.shutdown();
@@ -64,5 +67,4 @@ public class ClientCacheContextTest extends CacheContextTest {
     public void cacheEntryListenerCountIncreasedAfterRegisterAndDecreasedAfterTerminate() {
         cacheEntryListenerCountIncreasedAndDecreasedCorrectly(DecreaseType.TERMINATE);
     }
-
 }

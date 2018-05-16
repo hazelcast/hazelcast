@@ -22,7 +22,7 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.spi.impl.PacketHandler;
+import com.hazelcast.util.function.Consumer;
 
 import java.util.Collections;
 import java.util.Set;
@@ -36,13 +36,13 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * A {@link ConnectionManager} wrapper which adds firewalling capabilities.
  * All methods delegate to the original ConnectionManager.
  */
-public class FirewallingConnectionManager implements ConnectionManager, PacketHandler {
+public class FirewallingConnectionManager implements ConnectionManager, Consumer<Packet> {
 
     private final ConnectionManager delegate;
     private final Set<Address> blockedAddresses = Collections.newSetFromMap(new ConcurrentHashMap<Address, Boolean>());
     private final ScheduledExecutorService scheduledExecutor
             = Executors.newSingleThreadScheduledExecutor(new ThreadFactoryImpl("FirewallingConnectionManager"));
-    private final PacketHandler packetHandler;
+    private final Consumer<Packet> packetConsumer;
 
     private volatile PacketFilter packetFilter;
     private volatile PacketDelayProps delayProps = new PacketDelayProps(500, 5000);
@@ -50,7 +50,7 @@ public class FirewallingConnectionManager implements ConnectionManager, PacketHa
     public FirewallingConnectionManager(ConnectionManager delegate, Set<Address> initiallyBlockedAddresses) {
         this.delegate = delegate;
         this.blockedAddresses.addAll(initiallyBlockedAddresses);
-        packetHandler = delegate instanceof PacketHandler ? (PacketHandler) delegate : null;
+        packetConsumer = delegate instanceof Consumer ? (Consumer<Packet>) delegate : null;
     }
 
     @Override
@@ -216,11 +216,11 @@ public class FirewallingConnectionManager implements ConnectionManager, PacketHa
     }
 
     @Override
-    public void handle(Packet packet) throws Exception {
-        if (packetHandler == null) {
-            throw new UnsupportedOperationException(delegate + " is not instance of PacketHandler!");
+    public void accept(Packet packet) {
+        if (packetConsumer == null) {
+            throw new UnsupportedOperationException(delegate + " is not instance of Consumer!");
         }
-        packetHandler.handle(packet);
+        packetConsumer.accept(packet);
     }
 
     private class DelayedPacketTask implements Runnable {

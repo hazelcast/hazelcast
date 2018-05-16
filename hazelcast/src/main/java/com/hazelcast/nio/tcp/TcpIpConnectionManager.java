@@ -34,12 +34,12 @@ import com.hazelcast.nio.ConnectionListener;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.spi.impl.PacketHandler;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.executor.StripedRunnable;
+import com.hazelcast.util.function.Consumer;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
@@ -63,7 +63,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.ThreadUtil.createThreadPoolName;
 import static java.util.Collections.newSetFromMap;
 
-public class TcpIpConnectionManager implements ConnectionManager, PacketHandler {
+public class TcpIpConnectionManager implements ConnectionManager, Consumer<Packet> {
 
     private static final int RETRY_NUMBER = 5;
     private static final int DELAY_FACTOR = 100;
@@ -204,7 +204,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
     }
 
     @Override
-    public void handle(Packet packet) throws Exception {
+    public void accept(Packet packet)  {
         assert packet.getPacketType() == Packet.Type.BIND;
 
         BindMessage bind = ioService.getSerializationService().toObject(packet);

@@ -28,19 +28,20 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.LiveOperations;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.operationservice.PartitionTaskFactory;
 import com.hazelcast.spi.UrgentSystemOperation;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
 import com.hazelcast.spi.impl.operationexecutor.OperationHostileThread;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunnerFactory;
+import com.hazelcast.spi.impl.operationservice.PartitionTaskFactory;
 import com.hazelcast.spi.impl.operationservice.impl.operations.Backup;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 import com.hazelcast.util.concurrent.IdleStrategy;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import java.util.BitSet;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -180,7 +181,6 @@ public final class OperationExecutorImpl implements OperationExecutor, MetricsPr
 
         return threads;
     }
-
 
     static int getPartitionThreadId(int partitionId, int partitionThreadCount) {
         return partitionId % partitionThreadCount;
@@ -354,7 +354,7 @@ public final class OperationExecutorImpl implements OperationExecutor, MetricsPr
     }
 
     @Override
-    public void execute(PartitionTaskFactory taskFactory, int[] partitions) {
+    public void executeOnPartitions(PartitionTaskFactory taskFactory, BitSet partitions) {
         checkNotNull(taskFactory, "taskFactory can't be null");
         checkNotNull(partitions, "partitions can't be null");
 
@@ -372,7 +372,7 @@ public final class OperationExecutorImpl implements OperationExecutor, MetricsPr
     }
 
     @Override
-    public void handle(Packet packet) {
+    public void accept(Packet packet) {
         execute(packet, packet.getPartitionId(), packet.isUrgent());
     }
 

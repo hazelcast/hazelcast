@@ -22,8 +22,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.core.OperationTimeoutException;
-import com.hazelcast.instance.Node;
-import com.hazelcast.instance.TestUtil;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -116,10 +114,9 @@ public class OperationServiceImpl_timeoutTest extends HazelcastTestSupport {
         warmUpPartitions(instances);
 
         final HazelcastInstance hz = instances[memberCount - 1];
-        Node node = TestUtil.getNode(hz);
-        NodeEngine nodeEngine = node.nodeEngine;
+        NodeEngine nodeEngine = getNodeEngineImpl(hz);
         OperationService operationService = nodeEngine.getOperationService();
-        int partitionId = (int) (Math.random() * node.getPartitionService().getPartitionCount());
+        int partitionId = (int) (Math.random() * nodeEngine.getPartitionService().getPartitionCount());
 
         InternalCompletableFuture<Object> future = operationService
                 .invokeOnPartition(null, new TimedOutBackupAwareOperation(), partitionId);

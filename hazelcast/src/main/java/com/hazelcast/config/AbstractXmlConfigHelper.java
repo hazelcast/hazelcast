@@ -449,6 +449,8 @@ public abstract class AbstractXmlConfigHelper {
                 fillPortableFactories(child, serializationConfig);
             } else if ("serializers".equals(name)) {
                 fillSerializers(child, serializationConfig);
+            } else if ("java-serialization-filter".equals(name)) {
+                fillJavaSerializationFilter(child, serializationConfig);
             }
         }
         return serializationConfig;
@@ -505,6 +507,34 @@ public abstract class AbstractXmlConfigHelper {
                 serializationConfig.setGlobalSerializerConfig(globalSerializerConfig);
             }
         }
+    }
+
+    protected void fillJavaSerializationFilter(final Node node, SerializationConfig serializationConfig) {
+        JavaSerializationFilterConfig filterConfig = new JavaSerializationFilterConfig();
+        serializationConfig.setJavaSerializationFilterConfig(filterConfig);
+        for (Node child : childElements(node)) {
+            final String name = cleanNodeName(child);
+            if ("blacklist".equals(name)) {
+                ClassFilter list = parseClassFilterList(child);
+                filterConfig.setBlacklist(list);
+            } else if ("whitelist".equals(name)) {
+                ClassFilter list = parseClassFilterList(child);
+                filterConfig.setWhitelist(list);
+            }
+        }
+    }
+
+    private ClassFilter parseClassFilterList(Node node) {
+        ClassFilter list = new ClassFilter();
+        for (Node child : childElements(node)) {
+            final String name = cleanNodeName(child);
+            if ("class".equals(name)) {
+                list.addClasses(getTextContent(child));
+            } else if ("package".equals(name)) {
+                list.addPackages(getTextContent(child));
+            }
+        }
+        return list;
     }
 
     protected void fillNativeMemoryConfig(Node node, NativeMemoryConfig nativeMemoryConfig) {

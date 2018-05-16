@@ -296,7 +296,7 @@ public class ClientServiceTest extends ClientTestSupport {
         assertOpenEventually(clientListenerLatch);
     }
 
-    @Test(timeout = 120000)
+    @Test
     public void testClientListenerDisconnected() throws InterruptedException {
         Config config = new Config();
         config.setProperty(GroupProperty.IO_THREAD_COUNT.getName(), "1");
@@ -332,15 +332,15 @@ public class ClientServiceTest extends ClientTestSupport {
                 });
             }
 
-            assertOpenEventually(listenerLatch);
+            assertOpenEventually("Not all disconnected events arrived", listenerLatch);
 
-            assertTrueEventually(new AssertTask() {
+            assertTrueEventually("First server still have connected clients", new AssertTask() {
                 @Override
                 public void run() throws Exception {
                     assertEquals(0, hz.getClientService().getConnectedClients().size());
                 }
             });
-            assertTrueEventually(new AssertTask() {
+            assertTrueEventually("Second server still have connected clients", new AssertTask() {
                 @Override
                 public void run() throws Exception {
                     assertEquals(0, hz2.getClientService().getConnectedClients().size());

@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.management;
 
+import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonObject;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
@@ -39,12 +40,12 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
 import java.net.ServerSocket;
 
 import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
@@ -82,9 +83,10 @@ public class ManagementCenterServiceIntegrationTest extends HazelcastTestSupport
                 HttpResponse response = client.execute(request);
                 HttpEntity entity = response.getEntity();
                 String responseString = EntityUtils.toString(entity);
+                assertNotNull(responseString);
                 assertNotEquals("", responseString);
 
-                JsonObject object = JsonObject.readFrom(responseString);
+                JsonObject object = Json.parse(responseString).asObject();
                 TimedMemberState memberState = new TimedMemberState();
                 memberState.fromJson(object);
                 assertEquals(clusterName, memberState.getClusterName());
@@ -107,7 +109,7 @@ public class ManagementCenterServiceIntegrationTest extends HazelcastTestSupport
         });
     }
 
-    private int availablePort() throws IOException {
+    private int availablePort() {
         while (true) {
             int port = (int) (65536 * Math.random());
             try {

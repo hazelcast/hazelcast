@@ -31,8 +31,10 @@ public class ClientPNCounterQuorumWriteTest extends PNCounterQuorumWriteTest {
 
     @AfterClass
     public static void tearDown() {
+        if (clients != null) {
+            clients.terminateAll();
+        }
         shutdownTestEnvironment();
-        clients.terminateAll();
     }
 
     @Override

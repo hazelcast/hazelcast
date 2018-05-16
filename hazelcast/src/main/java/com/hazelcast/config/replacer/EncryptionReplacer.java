@@ -16,6 +16,28 @@
 
 package com.hazelcast.config.replacer;
 
+import com.hazelcast.nio.IOUtil;
+import com.hazelcast.util.Base64;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+
+import javax.xml.namespace.NamespaceContext;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathException;
+import javax.xml.xpath.XPathFactory;
+import java.io.ByteArrayOutputStream;
+import java.io.FileInputStream;
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.util.Enumeration;
+import java.util.Iterator;
+import java.util.Properties;
+
 import static com.hazelcast.config.AbstractXmlConfigHelper.childElements;
 import static com.hazelcast.config.AbstractXmlConfigHelper.cleanNodeName;
 import static com.hazelcast.nio.IOUtil.closeResource;
@@ -25,30 +47,6 @@ import static com.hazelcast.util.Preconditions.checkPositive;
 import static com.hazelcast.util.StringUtil.UTF8_CHARSET;
 import static com.hazelcast.util.StringUtil.trim;
 import static java.lang.String.format;
-
-import java.io.ByteArrayOutputStream;
-import java.io.FileInputStream;
-import java.net.NetworkInterface;
-import java.net.SocketException;
-import java.util.Enumeration;
-import java.util.Iterator;
-import java.util.Properties;
-
-import javax.xml.namespace.NamespaceContext;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathConstants;
-import javax.xml.xpath.XPathException;
-import javax.xml.xpath.XPathFactory;
-
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-
-import com.hazelcast.nio.IOUtil;
-import com.hazelcast.util.Base64;
 
 /**
  * This class is an <b>example</b> {@link com.hazelcast.config.replacer.spi.ConfigReplacer} implementation which decrypts

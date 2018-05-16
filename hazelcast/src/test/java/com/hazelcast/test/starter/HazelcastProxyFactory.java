@@ -103,10 +103,7 @@ public class HazelcastProxyFactory {
         subclassProxiedClasses.add(CLASS_NAME_LIFECYCLE_EVENT);
         SUBCLASS_PROXYING_WHITELIST = subclassProxiedClasses;
 
-        // RU_COMPAT_3_9 revise refactored interfaces mapping in 3.11 development cycle
         Map<String, String> refactoredInterfaces = new HashMap<String, String>();
-        refactoredInterfaces.put(CLASS_NAME_EVENT_JOURNAL_READER, CLASS_NAME_EVENT_JOURNAL_READER_39);
-        refactoredInterfaces.put(CLASS_NAME_EVENT_JOURNAL_READER_39, CLASS_NAME_EVENT_JOURNAL_READER);
         REFACTORED_INTERFACES = refactoredInterfaces;
     }
 

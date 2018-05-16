@@ -33,11 +33,11 @@ import com.hazelcast.spi.CanCancelOperations;
 import com.hazelcast.spi.LiveOperationsTracker;
 import com.hazelcast.spi.OperationControl;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.PacketHandler;
 import com.hazelcast.spi.impl.operationexecutor.OperationHostileThread;
 import com.hazelcast.spi.impl.servicemanager.ServiceManager;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.Clock;
+import com.hazelcast.util.function.Consumer;
 
 import java.util.Map.Entry;
 import java.util.Set;
@@ -70,7 +70,7 @@ import static java.util.logging.Level.INFO;
  * alive. Also if no operations are running, it will still send a period packet to each member. This is a different system than
  * the regular heartbeats, but it has similar characteristics. The reason the packet is always send is for debugging purposes.
  */
-public class InvocationMonitor implements PacketHandler, MetricsProvider {
+public class InvocationMonitor implements Consumer<Packet>, MetricsProvider {
 
     private static final int HEARTBEAT_CALL_TIMEOUT_RATIO = 4;
     private static final long MAX_DELAY_MILLIS = SECONDS.toMillis(10);
@@ -201,7 +201,7 @@ public class InvocationMonitor implements PacketHandler, MetricsProvider {
     }
 
     @Override
-    public void handle(Packet packet) {
+    public void accept(Packet packet) {
         scheduler.execute(new ProcessOperationControlTask(packet));
     }
 

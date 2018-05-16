@@ -16,8 +16,11 @@
 
 package com.hazelcast.internal.partition;
 
+import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.partition.impl.InternalMigrationListener;
+import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.service.TestMigrationAwareService;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
@@ -31,16 +34,19 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.instance.TestUtil.terminateInstance;
+import static com.hazelcast.internal.cluster.impl.AdvancedClusterStateTest.changeClusterStateEventually;
 import static com.hazelcast.internal.partition.impl.PartitionDataSerializerHook.FETCH_PARTITION_STATE;
 import static com.hazelcast.internal.partition.impl.PartitionDataSerializerHook.F_ID;
-import static com.hazelcast.internal.partition.impl.PartitionDataSerializerHook.MIGRATION_COMMIT;
 import static com.hazelcast.internal.partition.impl.PartitionDataSerializerHook.PARTITION_STATE_OP;
 import static com.hazelcast.internal.partition.impl.PartitionDataSerializerHook.PROMOTION_COMMIT;
+import static com.hazelcast.spi.impl.SpiDataSerializerHook.NORMAL_RESPONSE;
 import static com.hazelcast.test.PacketFiltersUtil.dropOperationsBetween;
 import static com.hazelcast.test.PacketFiltersUtil.rejectOperationsFrom;
 import static com.hazelcast.test.PacketFiltersUtil.resetPacketFiltersFrom;
@@ -216,16 +222,22 @@ public class MigrationInvocationsSafetyTest extends PartitionCorrectnessTestSupp
         fillData(master);
         assertSizeAndDataEventually();
 
-        // reject migration commits from master to prevent migrations complete when slave3 joins the cluster
-        rejectOperationsFrom(master, F_ID, singletonList(MIGRATION_COMMIT));
+        // prevent migrations before adding migration listeners when slave3 joins the cluster
+        changeClusterStateEventually(master, ClusterState.NO_MIGRATION);
 
         final HazelcastInstance slave3 = factory.newHazelcastInstance(config);
         assertClusterSizeEventually(4, slave1, slave2);
 
-        dropOperationsBetween(slave3, master, SpiDataSerializerHook.F_ID, singletonList(SpiDataSerializerHook.NORMAL_RESPONSE));
-        resetPacketFiltersFrom(master);
+        // set migration listener to drop migration commit response after a migration to slave3 is completed
+        setMigrationListenerToDropCommitResponse(master, slave3);
 
+        // enable migrations
+        changeClusterStateEventually(master, ClusterState.ACTIVE);
+
+        // wait for retry of migration commit
         sleepSeconds(10);
+
+        // reset filters to allow sending migration commit response
         resetPacketFiltersFrom(slave3);
 
         waitAllForSafeState(master, slave1, slave2, slave3);
@@ -248,6 +260,20 @@ public class MigrationInvocationsSafetyTest extends PartitionCorrectnessTestSupp
         assertNoDuplicateMigrations(slave3);
     }
 
+    private void setMigrationListenerToDropCommitResponse(final HazelcastInstance master, final HazelcastInstance destination) {
+        // intercept migration complete on destination and drop commit response
+        getPartitionServiceImpl(destination).setInternalMigrationListener(new InternalMigrationListener() {
+            final AtomicReference<MigrationInfo> committedMigrationInfoRef = new AtomicReference<MigrationInfo>();
+
+            @Override
+            public void onMigrationCommit(MigrationParticipant participant, MigrationInfo migrationInfo) {
+                if (participant == MigrationParticipant.DESTINATION && committedMigrationInfoRef.compareAndSet(null, migrationInfo)) {
+                    dropOperationsBetween(destination, master, SpiDataSerializerHook.F_ID, singletonList(NORMAL_RESPONSE));
+                }
+            }
+        });
+    }
+
     @Test
     public void migrationCommit_shouldRollback_whenTargetCrashes() throws Exception {
         Config config = getConfig(true, true)
@@ -265,16 +291,21 @@ public class MigrationInvocationsSafetyTest extends PartitionCorrectnessTestSupp
         fillData(master);
         assertSizeAndDataEventually();
 
-        // reject migration commits from master to prevent migrations complete when slave3 joins the cluster
-        rejectOperationsFrom(master, F_ID, singletonList(MIGRATION_COMMIT));
+        // prevent migrations before adding migration listeners when slave3 joins the cluster
+        changeClusterStateEventually(master, ClusterState.NO_MIGRATION);
 
         final HazelcastInstance slave3 = factory.newHazelcastInstance(config);
         assertClusterSizeEventually(4, slave1, slave2);
 
-        dropOperationsBetween(slave3, master, SpiDataSerializerHook.F_ID, singletonList(SpiDataSerializerHook.NORMAL_RESPONSE));
-        resetPacketFiltersFrom(master);
+        // set migration listener to drop migration commit response after a migration to slave3 is completed
+        setMigrationListenerToDropCommitResponse(master, slave3);
 
+        // enable migrations
+        changeClusterStateEventually(master, ClusterState.ACTIVE);
+
+        // wait for retry of migration commit
         sleepSeconds(10);
+
         terminateInstance(slave3);
 
         waitAllForSafeState(master, slave1, slave2);
@@ -319,12 +350,13 @@ public class MigrationInvocationsSafetyTest extends PartitionCorrectnessTestSupp
         terminateInstance(slave3);
         assertClusterSizeEventually(3, slave1, slave2);
 
-        dropOperationsBetween(slave1, master, SpiDataSerializerHook.F_ID, singletonList(SpiDataSerializerHook.NORMAL_RESPONSE));
-        dropOperationsBetween(slave2, master, SpiDataSerializerHook.F_ID, singletonList(SpiDataSerializerHook.NORMAL_RESPONSE));
+        // set migration listener to drop promotion commit response after a promotion is completed
+        setMigrationListenerToPromotionResponse(master, slave2);
+
+        // allow promotion commits
         resetPacketFiltersFrom(master);
 
         sleepSeconds(10);
-        resetPacketFiltersFrom(slave1);
         resetPacketFiltersFrom(slave2);
 
         waitAllForSafeState(master, slave1, slave2);
@@ -369,7 +401,10 @@ public class MigrationInvocationsSafetyTest extends PartitionCorrectnessTestSupp
         terminateInstance(slave3);
         assertClusterSizeEventually(3, slave1, slave2);
 
-        dropOperationsBetween(slave2, master, SpiDataSerializerHook.F_ID, singletonList(SpiDataSerializerHook.NORMAL_RESPONSE));
+        // set migration listener to drop promotion commit response after a promotion is completed
+        setMigrationListenerToPromotionResponse(master, slave2);
+
+        // allow promotion commits
         resetPacketFiltersFrom(master);
 
         sleepSeconds(10);
@@ -391,10 +426,25 @@ public class MigrationInvocationsSafetyTest extends PartitionCorrectnessTestSupp
         assertNoDuplicateMigrations(slave1);
     }
 
+    private void setMigrationListenerToPromotionResponse(final HazelcastInstance master, final HazelcastInstance destination) {
+        getPartitionServiceImpl(destination).setInternalMigrationListener(new InternalMigrationListener() {
+            @Override
+            public void onPromotionComplete(MigrationParticipant participant, Collection<MigrationInfo> migrationInfos, boolean success) {
+                if (participant == MigrationParticipant.DESTINATION) {
+                    dropOperationsBetween(destination, master, SpiDataSerializerHook.F_ID, singletonList(NORMAL_RESPONSE));
+                }
+            }
+        });
+    }
+
     private static void assertNoDuplicateMigrations(HazelcastInstance hz) {
         TestMigrationAwareService service = getNodeEngineImpl(hz).getService(TestMigrationAwareService.SERVICE_NAME);
         List<PartitionMigrationEvent> events = service.getBeforeEvents();
         Set<PartitionMigrationEvent> uniqueEvents = new HashSet<PartitionMigrationEvent>(events);
         assertEquals(uniqueEvents.size(), events.size());
+    }
+
+    private static InternalPartitionServiceImpl getPartitionServiceImpl(HazelcastInstance hz) {
+        return getNode(hz).partitionService;
     }
 }

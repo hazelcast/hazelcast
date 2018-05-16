@@ -20,7 +20,12 @@ import com.hazelcast.cache.CacheStatistics;
 import com.hazelcast.cache.CacheTestSupport;
 import com.hazelcast.cache.ICache;
 import com.hazelcast.config.CacheConfig;
+import com.hazelcast.config.CacheSimpleConfig;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.EvictionConfig;
+import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -57,6 +62,10 @@ public class CacheStatsTest extends CacheTestSupport {
     @Override
     protected HazelcastInstance getHazelcastInstance() {
         return factory.newHazelcastInstance(createConfig());
+    }
+
+    protected HazelcastInstance getHazelcastInstance(Config config) {
+        return factory.newHazelcastInstance(config);
     }
 
     @Test
@@ -484,6 +493,7 @@ public class CacheStatsTest extends CacheTestSupport {
         assertEquals(0, stats.getCacheMisses());
     }
 
+    @Test
     public void testMissPercentageStat() {
         ICache<Integer, String> cache = createCache();
         CacheStatistics stats = cache.getLocalCacheStatistics();
@@ -712,12 +722,43 @@ public class CacheStatsTest extends CacheTestSupport {
 
     @Test
     public void testEvictions() {
-        ICache<Integer, String> cache = createCache();
-        CacheStatistics stats = cache.getLocalCacheStatistics();
+        int partitionCount = 2;
+        int maxEntryCount = 2;
+        // with given parameters, the eviction checker expects 6 entries per partition to kick-in
+        // see EntryCountCacheEvictionChecker#calculateMaxPartitionSize for actual calculation
+        int calculatedMaxEntriesPerPartition = 6;
+        factory.terminateAll();
+        // configure members with 2 partitions, cache with eviction on max size 2
+        CacheSimpleConfig cacheConfig = new CacheSimpleConfig();
+        cacheConfig.setName("*")
+                   .setBackupCount(1)
+                   .setStatisticsEnabled(true)
+                   .setEvictionConfig(
+                           new EvictionConfig(maxEntryCount, EvictionConfig.MaxSizePolicy.ENTRY_COUNT, EvictionPolicy.LFU)
+                   );
 
-        // TODO Produce a case that triggers evictions and verify the eviction count
-        // At the moment, we are just verifying that this stats is supported
-        stats.getCacheEvictions();
+        Config config = new Config();
+        config.setProperty(GroupProperty.PARTITION_COUNT.getName(), Integer.toString(partitionCount));
+        config.addCacheConfig(cacheConfig);
+
+        HazelcastInstance hz1 = getHazelcastInstance(config);
+        HazelcastInstance hz2 = getHazelcastInstance(config);
+
+        ICache<String, String> cache1 = hz1.getCacheManager().getCache("cache1");
+        ICache<String, String> cache2 = hz2.getCacheManager().getCache("cache1");
+
+        // put 5 entries in a single partition
+        while (cache1.size() < calculatedMaxEntriesPerPartition) {
+            String key = generateKeyForPartition(hz1, 0);
+            cache1.put(key, randomString());
+        }
+        String key = generateKeyForPartition(hz1, 0);
+        // this put must trigger eviction
+        cache1.put(key, "foo");
+
+        // number of evictions on primary and backup must be 1
+        assertEquals(1, cache1.getLocalCacheStatistics().getCacheEvictions() +
+                cache2.getLocalCacheStatistics().getCacheEvictions());
     }
 
     @Test(expected = UnsupportedOperationException.class)

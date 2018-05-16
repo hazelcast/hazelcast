@@ -16,6 +16,7 @@
 
 package com.hazelcast.crdt;
 
+import com.hazelcast.cluster.impl.VectorClock;
 import com.hazelcast.config.CRDTReplicationConfig;
 import com.hazelcast.core.Member;
 import com.hazelcast.logging.ILogger;
@@ -26,7 +27,6 @@ import com.hazelcast.spi.MembershipServiceEvent;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
-import com.hazelcast.cluster.impl.VectorClock;
 
 import java.util.Collection;
 import java.util.Map;

@@ -17,8 +17,8 @@
 package com.hazelcast.map.impl.event;
 
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.BinaryInterface;
+import com.hazelcast.nio.serialization.DataSerializable;
 
 /**
  * General contract for map event data.

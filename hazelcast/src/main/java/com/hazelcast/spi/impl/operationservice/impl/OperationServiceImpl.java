@@ -41,18 +41,19 @@ import com.hazelcast.spi.LiveOperationsTracker;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationService;
-import com.hazelcast.spi.impl.operationservice.PartitionTaskFactory;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
 import com.hazelcast.spi.impl.operationexecutor.impl.OperationExecutorImpl;
 import com.hazelcast.spi.impl.operationexecutor.slowoperationdetector.SlowOperationDetector;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.operationservice.PartitionTaskFactory;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.util.executor.ExecutorType;
 import com.hazelcast.util.executor.ManagedExecutorService;
 
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -98,6 +99,11 @@ public final class OperationServiceImpl implements InternalOperationService, Met
     private static final int ASYNC_QUEUE_CAPACITY = 100000;
     private static final long TERMINATION_TIMEOUT_MILLIS = SECONDS.toMillis(10);
 
+    // contains the current executing asyncOperations. This information is needed for the operation-heartbeats.
+    // operations are added/removed using the {@link Offload} functionality.
+    @Probe
+    final Set<Operation> asyncOperations = newSetFromMap(new ConcurrentHashMap<Operation, Boolean>());
+
     final InvocationRegistry invocationRegistry;
     final OperationExecutor operationExecutor;
 
@@ -129,12 +135,6 @@ public final class OperationServiceImpl implements InternalOperationService, Met
     private final int invocationMaxRetryCount;
     private final long invocationRetryPauseMillis;
     private final boolean failOnIndeterminateOperationState;
-
-    // contains the current executing asyncOperations. This information is needed for the operation-ping.
-    // this is a temporary solution till we found a better async operation abstraction
-    @Probe
-    private final Set<Operation> asyncOperations
-            = newSetFromMap(new ConcurrentHashMap<Operation, Boolean>());
 
     public OperationServiceImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -262,8 +262,8 @@ public final class OperationServiceImpl implements InternalOperationService, Met
     }
 
     @Override
-    public void execute(PartitionTaskFactory taskFactory, int[] partitions) {
-        operationExecutor.execute(taskFactory, partitions);
+    public void executeOnPartitions(PartitionTaskFactory taskFactory, BitSet partitions) {
+        operationExecutor.executeOnPartitions(taskFactory, partitions);
     }
 
     @Override

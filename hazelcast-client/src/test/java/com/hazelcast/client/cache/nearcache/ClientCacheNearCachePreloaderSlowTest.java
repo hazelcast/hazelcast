@@ -17,32 +17,27 @@
 package com.hazelcast.client.cache.nearcache;
 
 import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.test.HazelcastParametersRunnerFactory;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Before;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.util.Collection;
 
 import static java.util.Arrays.asList;
 
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
-@Category(SlowTest.class)
+@UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
+@Category({SlowTest.class, ParallelTest.class})
 public class ClientCacheNearCachePreloaderSlowTest extends ClientCacheNearCachePreloaderTest {
 
-    @Parameterized.Parameter
-    public InMemoryFormat inMemoryFormat;
-
-    @Parameterized.Parameter(value = 1)
-    public boolean invalidationOnChange;
-
-    @Parameterized.Parameter(value = 2)
-    public boolean serializeKeys;
-
-    @Parameterized.Parameters(name = "format:{0} invalidationOnChange:{1} serializeKeys:{2}")
+    @Parameters(name = "format:{0} invalidationOnChange:{1} serializeKeys:{2}")
     public static Collection<Object[]> parameters() {
         return asList(new Object[][]{
                 {InMemoryFormat.BINARY, false, true},
@@ -56,6 +51,15 @@ public class ClientCacheNearCachePreloaderSlowTest extends ClientCacheNearCacheP
                 {InMemoryFormat.OBJECT, true, false},
         });
     }
+
+    @Parameter
+    public InMemoryFormat inMemoryFormat;
+
+    @Parameter(value = 1)
+    public boolean invalidationOnChange;
+
+    @Parameter(value = 2)
+    public boolean serializeKeys;
 
     @Before
     public void setUp() {

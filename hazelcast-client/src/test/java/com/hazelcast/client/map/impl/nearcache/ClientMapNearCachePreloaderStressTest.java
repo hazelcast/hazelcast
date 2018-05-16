@@ -18,6 +18,7 @@ package com.hazelcast.client.map.impl.nearcache;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.config.Config;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.NearCachePreloaderConfig;
 import com.hazelcast.core.DistributedObject;
@@ -25,21 +26,22 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.SlowTest;
+import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getBaseConfig;
+import static java.util.concurrent.Executors.newFixedThreadPool;
 import static junit.framework.TestCase.assertNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category(SlowTest.class)
+@Category(NightlyTest.class)
 public class ClientMapNearCachePreloaderStressTest extends HazelcastTestSupport {
 
     private final TestHazelcastFactory factory = new TestHazelcastFactory();
@@ -51,14 +53,17 @@ public class ClientMapNearCachePreloaderStressTest extends HazelcastTestSupport 
 
     @Test
     public void testDestroyAndCreateProxyWithNearCache() {
-        factory.newHazelcastInstance();
-        ClientConfig clientConfig = new ClientConfig();
-        clientConfig.addNearCacheConfig(getNearCacheConfig("test"));
+        Config config = getBaseConfig();
+
+        ClientConfig clientConfig = new ClientConfig()
+                .addNearCacheConfig(getNearCacheConfig("test"));
+
+        factory.newHazelcastInstance(config);
         final HazelcastInstance client = factory.newHazelcastClient(clientConfig);
 
         int createPutGetThreadCount = 2;
         int destroyThreadCount = 2;
-        ExecutorService pool = Executors.newFixedThreadPool(createPutGetThreadCount + destroyThreadCount);
+        ExecutorService pool = newFixedThreadPool(createPutGetThreadCount + destroyThreadCount);
 
         final AtomicBoolean isRunning = new AtomicBoolean(true);
         final AtomicReference<Exception> exception = new AtomicReference<Exception>();
@@ -100,13 +105,14 @@ public class ClientMapNearCachePreloaderStressTest extends HazelcastTestSupport 
         assertNull(exception.get());
     }
 
+    @SuppressWarnings("SameParameterValue")
     private NearCacheConfig getNearCacheConfig(String name) {
-        NearCacheConfig nearCacheConfig = new NearCacheConfig();
-        NearCachePreloaderConfig preloaderConfig = new NearCachePreloaderConfig();
-        preloaderConfig.setStoreIntervalSeconds(1);
-        preloaderConfig.setEnabled(true);
-        nearCacheConfig.setPreloaderConfig(preloaderConfig);
-        nearCacheConfig.setName(name);
-        return nearCacheConfig;
+        NearCachePreloaderConfig preloaderConfig = new NearCachePreloaderConfig()
+                .setStoreIntervalSeconds(1)
+                .setEnabled(true);
+
+        return new NearCacheConfig()
+                .setName(name)
+                .setPreloaderConfig(preloaderConfig);
     }
 }

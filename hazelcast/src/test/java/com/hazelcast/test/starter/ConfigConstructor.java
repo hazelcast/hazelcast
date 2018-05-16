@@ -18,7 +18,9 @@ package com.hazelcast.test.starter;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.nio.ClassLoaderUtil;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -30,6 +32,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.test.starter.HazelcastProxyFactory.isJDKClass;
+import static com.hazelcast.test.starter.ReflectionUtils.getFieldValueReflectively;
 import static java.lang.String.format;
 
 /**
@@ -69,7 +72,7 @@ public class ConfigConstructor extends AbstractStarterObjectConstructor {
     }
 
     private static Object cloneConfig(Object thisConfigObject, ClassLoader classloader)
-            throws ClassNotFoundException, IllegalAccessException, InstantiationException, InvocationTargetException {
+            throws Exception {
         if (thisConfigObject == null) {
             return null;
         }
@@ -80,7 +83,13 @@ public class ConfigConstructor extends AbstractStarterObjectConstructor {
         }
 
         Class<?> otherConfigClass = classloader.loadClass(thisConfigClass.getName());
-        Object otherConfigObject = otherConfigClass.newInstance();
+
+        if (isQuorumFunctionImplementation(thisConfigClass)) {
+            return cloneQuorumFunctionImplementation(thisConfigObject, otherConfigClass);
+        }
+
+        Object otherConfigObject = ClassLoaderUtil.newInstance(otherConfigClass.getClassLoader(),
+                otherConfigClass.getName());
 
         for (Method method : thisConfigClass.getMethods()) {
             if (!isGetter(method)) {
@@ -197,5 +206,44 @@ public class ConfigConstructor extends AbstractStarterObjectConstructor {
         }
 
         return copy;
+    }
+
+    // clones built-in QuorumFunction implementations
+    private static Object cloneQuorumFunctionImplementation(Object quorumFunction, Class<?> targetClass)
+            throws NoSuchMethodException, InvocationTargetException, IllegalAccessException,
+            InstantiationException {
+
+        if (targetClass.getName().equals("com.hazelcast.quorum.impl.ProbabilisticQuorumFunction")) {
+            int size = (Integer) getFieldValueReflectively(quorumFunction, "quorumSize");
+            double suspicionThreshold = (Double) getFieldValueReflectively(quorumFunction, "suspicionThreshold");
+            int maxSampleSize = (Integer) getFieldValueReflectively(quorumFunction, "maxSampleSize");
+            long minStdDeviationMillis = (Long) getFieldValueReflectively(quorumFunction, "minStdDeviationMillis");
+            long acceptableHeartbeatPauseMillis = (Long) getFieldValueReflectively(quorumFunction,
+                    "acceptableHeartbeatPauseMillis");
+            long heartbeatIntervalMillis = (Long) getFieldValueReflectively(quorumFunction, "heartbeatIntervalMillis");
+
+
+            Constructor<?> ctor = targetClass.getConstructor(Integer.TYPE, Long.TYPE,
+                    Long.TYPE, Integer.TYPE, Long.TYPE, Double.TYPE);
+
+            return ctor.newInstance(size, heartbeatIntervalMillis, acceptableHeartbeatPauseMillis,
+                    maxSampleSize, minStdDeviationMillis, suspicionThreshold);
+        } else if (targetClass.getName().equals("com.hazelcast.quorum.impl.RecentlyActiveQuorumFunction")) {
+            int size = (Integer) getFieldValueReflectively(quorumFunction, "quorumSize");
+            int heartbeatToleranceMillis = (Integer) getFieldValueReflectively(quorumFunction, "heartbeatToleranceMillis");
+
+            Constructor<?> ctor = targetClass.getConstructor(Integer.TYPE, Integer.TYPE);
+            return ctor.newInstance(size, heartbeatToleranceMillis);
+        } else {
+            LOGGER.info(format("Did not handle configured QuorumFunction implementation %s.",
+                    targetClass.getName()));
+            return null;
+        }
+    }
+
+    private static boolean isQuorumFunctionImplementation(Class<?> klass) throws ClassNotFoundException {
+        ClassLoader classLoader = klass.getClassLoader();
+        Class<?> quorumFunctionInterface = classLoader.loadClass("com.hazelcast.quorum.QuorumFunction");
+        return quorumFunctionInterface.isAssignableFrom(klass);
     }
 }

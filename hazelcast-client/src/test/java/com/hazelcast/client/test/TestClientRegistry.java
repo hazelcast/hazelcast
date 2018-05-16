@@ -36,7 +36,6 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeState;
-import com.hazelcast.instance.TestUtil;
 import com.hazelcast.internal.networking.OutboundFrame;
 import com.hazelcast.internal.networking.nio.NioEventLoopGroup;
 import com.hazelcast.logging.ILogger;
@@ -61,6 +60,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+
+import static com.hazelcast.test.HazelcastTestSupport.getNodeEngineImpl;
 
 class TestClientRegistry {
 
@@ -146,12 +147,11 @@ class TestClientRegistry {
                 if (instance == null) {
                     throw new IOException("Can not connected to " + address + ": instance does not exist");
                 }
-                Node node = TestUtil.getNode(instance);
                 Address localAddress = new Address(host, ports.incrementAndGet());
                 LockPair lockPair = getLockPair(address);
 
-                MockedClientConnection connection = new MockedClientConnection(client,
-                        connectionIdGen.incrementAndGet(), node.nodeEngine, address, localAddress, lockPair);
+                MockedClientConnection connection = new MockedClientConnection(client, connectionIdGen.incrementAndGet(),
+                        getNodeEngineImpl(instance), address, localAddress, lockPair);
                 LOGGER.info("Created connection to endpoint: " + address + ", connection: " + connection);
                 return connection;
             } catch (Exception e) {
@@ -259,9 +259,10 @@ class TestClientRegistry {
 
                 @Override
                 public void run() {
-                    ClientMessage newPacket = readFromPacket((ClientMessage) frame);
+                    ClientMessage clientMessage = readFromPacket((ClientMessage) frame);
                     lastWriteTime = System.currentTimeMillis();
-                    serverSideConnection.handleClientMessage(newPacket);
+                    clientMessage.setConnection(serverSideConnection);
+                    serverSideConnection.handleClientMessage(clientMessage);
                 }
             });
             return true;
@@ -387,6 +388,7 @@ class TestClientRegistry {
             if (isAlive()) {
                 lastWriteTimeMillis = System.currentTimeMillis();
                 ClientMessage newPacket = readFromPacket(packet);
+                newPacket.setConnection(responseConnection);
                 responseConnection.handleClientMessage(newPacket);
                 return true;
             }
@@ -395,7 +397,7 @@ class TestClientRegistry {
 
         void handleClientMessage(ClientMessage newPacket) {
             lastReadTimeMillis = System.currentTimeMillis();
-            remoteNodeEngine.getNode().clientEngine.handle(newPacket, this);
+            remoteNodeEngine.getNode().clientEngine.accept(newPacket);
         }
 
         @Override

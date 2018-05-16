@@ -14,23 +14,19 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.spi.impl;
-
-import com.hazelcast.nio.Connection;
+package com.hazelcast.nio;
 
 /**
- * A listener for the {@link com.hazelcast.client.connection.ClientConnectionManager} to listen to connection heartbeats.
+ * Allows to intercept class resolution during deserialization based on classname. It's used as a validation mechanism in
+ * Look-ahead ObjectInputStream.
  */
-public interface ConnectionHeartbeatListener {
+public interface ClassNameFilter {
 
     /**
-     * This event will be fired when the heartbeat is resumed for a connection to a member.
+     * Called from {@link java.io.ObjectInputStream#resolveClass}. When the deserialization should not be allowed the method
+     * throws a {@link RuntimeException}.
+     *
+     * @param className name of class to be deserialized
      */
-    void heartbeatResumed(Connection connection);
-
-    /**
-     * This event will be fired when no heartbeat response is received for
-     * {@link com.hazelcast.client.spi.properties.ClientProperty#HEARTBEAT_TIMEOUT} milliseconds from the member.
-     */
-    void heartbeatStopped(Connection connection);
+    void filter(String className);
 }

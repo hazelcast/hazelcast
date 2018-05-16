@@ -29,9 +29,10 @@ import com.hazelcast.instance.NodeExtension;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.operations.MembersUpdateOp;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.ConnectionListener;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.tcp.FirewallingConnectionManager;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.PostJoinAwareService;
@@ -760,13 +761,20 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
 
         assertClusterSizeEventually(3, hz1, hz2, hz3);
 
-        Address target = getAddress(hz2);
+        final Address target = getAddress(hz2);
         hz2.getLifecycleService().terminate();
 
         assertClusterSizeEventually(2, hz1, hz3);
 
         assertNull(getConnectionManager(hz1).getConnection(target));
-        assertNull(getConnectionManager(hz3).getConnection(target));
+
+        final ConnectionManager cm3 = getConnectionManager(hz3);
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertNull(cm3.getConnection(target));
+            }
+        });
     }
 
     @Test
@@ -781,24 +789,19 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
 
         assertClusterSizeEventually(3, hz1, hz2, hz3);
 
-        Address target = getAddress(hz2);
+        final Address target = getAddress(hz3);
 
-        FirewallingConnectionManager cm2 = getFireWallingConnectionManager(hz2);
-        cm2.blockNewConnection(getAddress(hz1));
-        cm2.blockNewConnection(getAddress(hz3));
+        ConnectionRemovedListener connListener1 = new ConnectionRemovedListener(target);
+        getConnectionManager(hz1).addConnectionListener(connListener1);
 
-        FirewallingConnectionManager cm3 = getFireWallingConnectionManager(hz3);
-        cm3.blockNewConnection(getAddress((hz2)));
+        ConnectionRemovedListener connListener2 = new ConnectionRemovedListener(target);
+        getConnectionManager(hz2).addConnectionListener(connListener2);
 
-        dropOperationsBetween(hz2, hz1, F_ID, singletonList(HEARTBEAT));
-        assertClusterSizeEventually(2, hz1, hz3);
+        dropOperationsBetween(hz3, hz1, F_ID, singletonList(HEARTBEAT));
+        assertClusterSizeEventually(2, hz1, hz2);
 
-        assertNull(getConnectionManager(hz1).getConnection(target));
-        assertNull(getConnectionManager(hz3).getConnection(target));
-    }
-
-    private static FirewallingConnectionManager getFireWallingConnectionManager(HazelcastInstance hz) {
-        return (FirewallingConnectionManager) getConnectionManager(hz);
+        connListener1.assertConnectionRemoved();
+        connListener2.assertConnectionRemoved();
     }
 
     private Config getConfigWithService(Object service, String serviceName) {
@@ -969,6 +972,30 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         @Override
         protected void readInternal(ObjectDataInput in) throws IOException {
             throw new RuntimeException("This operation always fails during deserialization");
+        }
+    }
+
+    private static class ConnectionRemovedListener implements ConnectionListener {
+        private final Address endpoint;
+        private final CountDownLatch latch = new CountDownLatch(1);
+
+        ConnectionRemovedListener(Address endpoint) {
+            this.endpoint = endpoint;
+        }
+
+        @Override
+        public void connectionAdded(Connection connection) {
+        }
+
+        @Override
+        public void connectionRemoved(Connection connection) {
+            if (endpoint.equals(connection.getEndPoint())) {
+                latch.countDown();
+            }
+        }
+
+        void assertConnectionRemoved() {
+            assertOpenEventually(latch);
         }
     }
 }

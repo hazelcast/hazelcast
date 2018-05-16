@@ -23,6 +23,7 @@ import com.hazelcast.client.impl.protocol.util.SafeBuffer;
 import com.hazelcast.client.impl.protocol.util.UnsafeBuffer;
 import com.hazelcast.internal.networking.OutboundFrame;
 import com.hazelcast.nio.Bits;
+import com.hazelcast.nio.Connection;
 
 import java.nio.ByteBuffer;
 
@@ -109,8 +110,17 @@ public class ClientMessage
     private transient boolean isRetryable;
     private transient boolean acquiresResource;
     private transient String operationName;
+    private Connection connection;
 
     protected ClientMessage() {
+    }
+
+    public Connection getConnection() {
+        return connection;
+    }
+
+    public void setConnection(Connection connection) {
+        this.connection = connection;
     }
 
     protected void wrapForEncode(ClientProtocolBuffer buffer, int offset) {
@@ -392,7 +402,8 @@ public class ClientMessage
     public String toString() {
         int len = index();
         final StringBuilder sb = new StringBuilder("ClientMessage{");
-        sb.append("length=").append(len);
+        sb.append("connection=").append(connection);
+        sb.append(", length=").append(len);
         if (len >= HEADER_SIZE) {
             sb.append(", correlationId=").append(getCorrelationId());
             sb.append(", operation=").append(operationName);

@@ -73,6 +73,7 @@ import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.transaction.TransactionManagerService;
 import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
+import com.hazelcast.util.function.Consumer;
 import com.hazelcast.version.MemberVersion;
 import com.hazelcast.wan.WanReplicationService;
 
@@ -113,7 +114,7 @@ public class NodeEngineImpl implements NodeEngine {
     private final ClusterWideConfigurationService configurationService;
     private final TransactionManagerServiceImpl transactionManagerService;
     private final WanReplicationService wanReplicationService;
-    private final PacketHandler packetDispatcher;
+    private final Consumer<Packet> packetDispatcher;
     private final QuorumServiceImpl quorumService;
     private final Diagnostics diagnostics;
     private final SplitBrainMergePolicyProvider splitBrainMergePolicyProvider;
@@ -147,8 +148,8 @@ public class NodeEngineImpl implements NodeEngine {
                     operationService.getInboundResponseHandlerSupplier().get(),
                     operationService.getInvocationMonitor(),
                     eventService,
-                    new ConnectionManagerPacketHandler(),
-                    new JetPacketHandler());
+                    new ConnectionManagerPacketConsumer(),
+                    new JetPacketConsumer());
             this.quorumService = new QuorumServiceImpl(this);
             this.diagnostics = newDiagnostics();
             this.splitBrainMergePolicyProvider = new SplitBrainMergePolicyProvider(this);
@@ -213,7 +214,7 @@ public class NodeEngineImpl implements NodeEngine {
         node.getNodeExtension().registerPlugins(diagnostics);
     }
 
-    public PacketHandler getPacketDispatcher() {
+    public Consumer<Packet> getPacketDispatcher() {
         return packetDispatcher;
     }
 
@@ -501,31 +502,31 @@ public class NodeEngineImpl implements NodeEngine {
         }
     }
 
-    private class ConnectionManagerPacketHandler implements PacketHandler {
+    private class ConnectionManagerPacketConsumer implements Consumer<Packet> {
 
         @Override
-        public void handle(Packet packet) throws Exception {
+        public void accept(Packet packet)  {
             // ConnectionManager is only available after the NodeEngineImpl is available
-            PacketHandler packetHandler = (PacketHandler) node.getConnectionManager();
-            packetHandler.handle(packet);
+            Consumer<Packet> packetConsumer = (Consumer<Packet>) node.getConnectionManager();
+            packetConsumer.accept(packet);
         }
     }
 
-    private class JetPacketHandler implements PacketHandler {
+    private class JetPacketConsumer implements Consumer<Packet> {
 
-        private volatile PacketHandler handler;
+        private volatile Consumer<Packet> packetConsumer;
 
         @Override
-        public void handle(Packet packet) throws Exception {
+        public void accept(Packet packet)  {
             // currently service registration is done after the creation of the packet dispatcher,
-            // hence we need to lazily initialize the JetPacketHandler
-            if (handler == null) {
-                handler = serviceManager.getService(JET_SERVICE_NAME);
-                if (handler == null) {
+            // hence we need to lazily initialize the JetPacketConsumer
+            if (packetConsumer == null) {
+                packetConsumer = serviceManager.getService(JET_SERVICE_NAME);
+                if (packetConsumer == null) {
                     throw new UnsupportedOperationException("Jet is not registered on this node");
                 }
             }
-            handler.handle(packet);
+            packetConsumer.accept(packet);
         }
     }
 }

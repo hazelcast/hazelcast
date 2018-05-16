@@ -18,6 +18,7 @@ package com.hazelcast.client.cache;
 
 import com.hazelcast.cache.CachingProviderTest;
 import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.HazelcastClientManager;
 import com.hazelcast.client.cache.impl.HazelcastClientCachingProvider;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.XmlClientConfigBuilder;
@@ -116,6 +117,7 @@ public class ClientCachingProviderTest extends CachingProviderTest {
                 iter.remove();
             }
         }
+        HazelcastClientManager.shutdownAll();
     }
 
 }

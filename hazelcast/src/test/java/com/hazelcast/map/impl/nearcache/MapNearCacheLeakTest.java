@@ -29,7 +29,6 @@ import com.hazelcast.internal.nearcache.NearCacheTestContext;
 import com.hazelcast.internal.nearcache.NearCacheTestContextBuilder;
 import com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -46,8 +45,8 @@ import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 import java.util.Collection;
 
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.createNearCacheConfig;
+import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getBaseConfig;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getMapNearCacheManager;
-import static com.hazelcast.map.impl.nearcache.MapInvalidationListener.createInvalidationEventHandler;
 import static java.util.Arrays.asList;
 
 /**
@@ -89,8 +88,8 @@ public class MapNearCacheLeakTest extends AbstractNearCacheLeakTest<Data, String
     }
 
     @Override
-    protected <K, V> NearCacheTestContext<K, V, Data, String> createContext(int size) {
-        Config config = createConfig(false);
+    protected <K, V> NearCacheTestContext<K, V, Data, String> createContext() {
+        Config config = getConfig(false);
 
         HazelcastInstance dataInstance = hazelcastFactory.newHazelcastInstance(config);
         IMap<K, V> dataMap = dataInstance.getMap(DEFAULT_NEAR_CACHE_NAME);
@@ -98,7 +97,6 @@ public class MapNearCacheLeakTest extends AbstractNearCacheLeakTest<Data, String
 
         // wait until the initial load is done
         dataAdapter.waitUntilLoaded();
-        populateDataAdapter(dataAdapter, size);
 
         NearCacheTestContextBuilder<K, V, Data, String> builder = createNearCacheContextBuilder();
         return builder
@@ -107,9 +105,13 @@ public class MapNearCacheLeakTest extends AbstractNearCacheLeakTest<Data, String
                 .build();
     }
 
-    protected Config createConfig(boolean withNearCache) {
-        Config config = getConfig()
-                .setProperty(GroupProperty.PARTITION_COUNT.getName(), PARTITION_COUNT);
+    @Override
+    protected Config getConfig() {
+        return getBaseConfig();
+    }
+
+    protected Config getConfig(boolean withNearCache) {
+        Config config = getConfig();
 
         MapConfig mapConfig = config.getMapConfig(DEFAULT_NEAR_CACHE_NAME);
         if (withNearCache) {
@@ -120,7 +122,7 @@ public class MapNearCacheLeakTest extends AbstractNearCacheLeakTest<Data, String
     }
 
     private <K, V> NearCacheTestContextBuilder<K, V, Data, String> createNearCacheContextBuilder() {
-        Config configWithNearCache = createConfig(true);
+        Config configWithNearCache = getConfig(true);
 
         HazelcastInstance nearCacheInstance = hazelcastFactory.newHazelcastInstance(configWithNearCache);
         IMap<K, V> nearCacheMap = nearCacheInstance.getMap(DEFAULT_NEAR_CACHE_NAME);
@@ -136,7 +138,6 @@ public class MapNearCacheLeakTest extends AbstractNearCacheLeakTest<Data, String
                 .setNearCache(nearCache)
                 .setNearCacheManager(nearCacheManager)
                 .setHasLocalData(true)
-                .setInvalidationListener(createInvalidationEventHandler(nearCacheMap))
                 .setRepairingTask(repairingTask);
     }
 }

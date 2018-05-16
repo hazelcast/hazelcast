@@ -38,7 +38,6 @@ import com.hazelcast.internal.nearcache.NearCacheTestContext;
 import com.hazelcast.internal.nearcache.NearCacheTestContextBuilder;
 import com.hazelcast.internal.nearcache.NearCacheTestUtils;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -50,7 +49,6 @@ import org.junit.runner.RunWith;
 import javax.cache.configuration.FactoryBuilder;
 import javax.cache.spi.CachingProvider;
 
-import static com.hazelcast.client.cache.nearcache.ClientCacheInvalidationListener.createInvalidationEventHandler;
 import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE;
 import static com.hazelcast.config.EvictionPolicy.LRU;
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
@@ -58,6 +56,7 @@ import static com.hazelcast.config.NearCacheConfig.DEFAULT_LOCAL_UPDATE_POLICY;
 import static com.hazelcast.config.NearCacheConfig.DEFAULT_MEMORY_FORMAT;
 import static com.hazelcast.config.NearCacheConfig.DEFAULT_SERIALIZE_KEYS;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.createNearCacheConfig;
+import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getBaseConfig;
 
 /**
  * Basic Near Cache tests for {@link ICache} on Hazelcast clients.
@@ -85,17 +84,15 @@ public class ClientCacheNearCacheBasicTest extends AbstractNearCacheBasicTest<Da
     }
 
     @Override
-    protected <K, V> NearCacheTestContext<K, V, Data, String> createContext(int size, boolean loaderEnabled) {
-        Config config = createConfig();
-        CacheConfig<K, V> cacheConfig = createCacheConfig(nearCacheConfig, loaderEnabled);
+    protected <K, V> NearCacheTestContext<K, V, Data, String> createContext(boolean loaderEnabled) {
+        Config config = getConfig();
+        CacheConfig<K, V> cacheConfig = getCacheConfig(nearCacheConfig, loaderEnabled);
 
         HazelcastInstance member = hazelcastFactory.newHazelcastInstance(config);
         CachingProvider memberProvider = HazelcastServerCachingProvider.createCachingProvider(member);
         HazelcastServerCacheManager memberCacheManager = (HazelcastServerCacheManager) memberProvider.getCacheManager();
         ICache<K, V> memberCache = memberCacheManager.createCache(DEFAULT_NEAR_CACHE_NAME, cacheConfig);
         ICacheDataStructureAdapter<K, V> dataAdapter = new ICacheDataStructureAdapter<K, V>(memberCache);
-
-        populateDataAdapter(dataAdapter, size);
 
         NearCacheTestContextBuilder<K, V, Data, String> builder = createNearCacheContextBuilder(cacheConfig);
         return builder
@@ -107,24 +104,23 @@ public class ClientCacheNearCacheBasicTest extends AbstractNearCacheBasicTest<Da
 
     @Override
     protected <K, V> NearCacheTestContext<K, V, Data, String> createNearCacheContext() {
-        CacheConfig<K, V> cacheConfig = createCacheConfig(nearCacheConfig, false);
+        CacheConfig<K, V> cacheConfig = getCacheConfig(nearCacheConfig, false);
         NearCacheTestContextBuilder<K, V, Data, String> builder = createNearCacheContextBuilder(cacheConfig);
         return builder.build();
     }
 
-    protected Config createConfig() {
-        return getConfig()
-                .setProperty(GroupProperty.PARTITION_COUNT.getName(), PARTITION_COUNT)
-                .setProperty(GroupProperty.CACHE_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS.getName(), "1");
+    @Override
+    protected Config getConfig() {
+        return getBaseConfig();
     }
 
-    protected ClientConfig createClientConfig() {
+    protected ClientConfig getClientConfig() {
         return new ClientConfig()
                 .addNearCacheConfig(nearCacheConfig);
     }
 
     @SuppressWarnings("unchecked")
-    private <K, V> CacheConfig<K, V> createCacheConfig(NearCacheConfig nearCacheConfig, boolean loaderEnabled) {
+    private <K, V> CacheConfig<K, V> getCacheConfig(NearCacheConfig nearCacheConfig, boolean loaderEnabled) {
         CacheConfig<K, V> cacheConfig = new CacheConfig<K, V>()
                 .setName(DEFAULT_NEAR_CACHE_NAME)
                 .setInMemoryFormat(nearCacheConfig.getInMemoryFormat());
@@ -146,7 +142,7 @@ public class ClientCacheNearCacheBasicTest extends AbstractNearCacheBasicTest<Da
     }
 
     private <K, V> NearCacheTestContextBuilder<K, V, Data, String> createNearCacheContextBuilder(CacheConfig<K, V> cacheConfig) {
-        ClientConfig clientConfig = createClientConfig();
+        ClientConfig clientConfig = getClientConfig();
 
         HazelcastClientProxy client = (HazelcastClientProxy) hazelcastFactory.newHazelcastClient(clientConfig);
         CachingProvider provider = HazelcastClientCachingProvider.createCachingProvider(client);
@@ -162,7 +158,6 @@ public class ClientCacheNearCacheBasicTest extends AbstractNearCacheBasicTest<Da
                 .setNearCacheAdapter(new ICacheDataStructureAdapter<K, V>(clientCache))
                 .setNearCache(nearCache)
                 .setNearCacheManager(nearCacheManager)
-                .setCacheManager(cacheManager)
-                .setInvalidationListener(createInvalidationEventHandler(clientCache));
+                .setCacheManager(cacheManager);
     }
 }

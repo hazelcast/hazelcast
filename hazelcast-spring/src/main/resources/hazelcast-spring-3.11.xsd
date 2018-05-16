@@ -1753,6 +1753,46 @@
         </xs:complexType>
     </xs:element>
 
+    <xs:element name="java-serialization-filter">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="blacklist" type="filter-list" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Blacklist used for deserialization class filtering.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element name="whitelist" type="filter-list" minOccurs="0" maxOccurs="1">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Blacklist used for deserialization class filtering.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:complexType name="filter-list">
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="class" type="xs:string" minOccurs="0" maxOccurs="unbounded">
+                <xs:annotation>
+                    <xs:documentation>
+                        Name of a class to be included in the list.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="package" type="xs:string" minOccurs="0" maxOccurs="unbounded">
+                <xs:annotation>
+                    <xs:documentation>
+                        Name of a package to be included in the list.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:choice>
+    </xs:complexType>
+
     <xs:complexType name="serialization-factory">
         <xs:attributeGroup ref="class-or-bean-name"/>
         <xs:attribute name="factory-id" type="xs:string" use="required"/>
@@ -2926,6 +2966,7 @@
             <xs:element ref="data-serializable-factories" minOccurs="0" maxOccurs="1"/>
             <xs:element ref="portable-factories" minOccurs="0" maxOccurs="1"/>
             <xs:element ref="serializers" minOccurs="0" maxOccurs="1"/>
+            <xs:element ref="java-serialization-filter" minOccurs="0" maxOccurs="1"/>
         </xs:sequence>
         <xs:attribute name="use-native-byte-order" use="optional" type="xs:string" default="false"/>
         <xs:attribute name="byte-order" use="optional" default="BIG_ENDIAN">

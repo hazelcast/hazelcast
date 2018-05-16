@@ -560,7 +560,7 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
         if (key == null) {
             return;
         }
-        nearCache.remove(key);
+        nearCache.invalidate(key);
     }
 
     private Object tryPublishReserved(Object key, Object value, long reservationId) {

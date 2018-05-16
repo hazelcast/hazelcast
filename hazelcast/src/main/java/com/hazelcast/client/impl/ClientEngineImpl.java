@@ -216,8 +216,9 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
     }
 
     @Override
-    public void handle(ClientMessage clientMessage, Connection connection) {
+    public void accept(ClientMessage clientMessage) {
         int partitionId = clientMessage.getPartitionId();
+        Connection connection = clientMessage.getConnection();
         MessageTask messageTask = messageTaskFactory.create(clientMessage, connection);
         InternalOperationService operationService = nodeEngine.getOperationService();
         if (partitionId < 0) {
@@ -377,7 +378,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
         node.getConnectionManager().addConnectionListener(connectionListener);
 
         ClientHeartbeatMonitor heartbeatMonitor = new ClientHeartbeatMonitor(
-                endpointManager, this, nodeEngine.getExecutionService(), node.getProperties());
+                endpointManager, getLogger(ClientHeartbeatMonitor.class), nodeEngine.getExecutionService(), node.getProperties());
         heartbeatMonitor.start();
     }
 

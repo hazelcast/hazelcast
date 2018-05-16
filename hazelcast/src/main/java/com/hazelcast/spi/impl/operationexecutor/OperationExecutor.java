@@ -16,12 +16,15 @@
 
 package com.hazelcast.spi.impl.operationexecutor;
 
+import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.LiveOperationsTracker;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.operationservice.PartitionTaskFactory;
-import com.hazelcast.spi.impl.PacketHandler;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationexecutor.impl.OperationExecutorImpl;
+import com.hazelcast.spi.impl.operationservice.PartitionTaskFactory;
+import com.hazelcast.util.function.Consumer;
+
+import java.util.BitSet;
 
 /**
  * The OperationExecutor is responsible for scheduling work (packets/operations)
@@ -36,7 +39,7 @@ import com.hazelcast.spi.impl.operationexecutor.impl.OperationExecutorImpl;
  * The actual processing of a operation-packet, Operation, or a
  * PartitionSpecificRunnable is forwarded to the {@link OperationRunner}.
  */
-public interface OperationExecutor extends PacketHandler, LiveOperationsTracker {
+public interface OperationExecutor extends Consumer<Packet>, LiveOperationsTracker {
 
     // Will be replaced by metrics
     @Deprecated
@@ -101,14 +104,26 @@ public interface OperationExecutor extends PacketHandler, LiveOperationsTracker 
     /**
      * Executes a task from the taskFactory for each of the given partitions.
      *
-     * For more detail see
-     * {@link com.hazelcast.spi.impl.operationservice.InternalOperationService#execute(PartitionTaskFactory, int[])}
+     * The reason this method exists is to prevent a bubble of operations/tasks
+     * to be created on the work-queue if the regular {@link #execute(Operation)}
+     * would be called in a loop.
+     *
+     * The consequence of this bubble is that no other operations can interleave
+     * and this can lead to very bad latency for the other operations.
+     *
+     * This method can be used to create Operations and Runnable's to be executed
+     * on a partition thread.
+     *
+     * No check is done if the partition is actually local or not!
      *
      * @param taskFactory the {@link PartitionTaskFactory} responsible for creating
      *                    tasks.
-     * @param partitions the partitions to execute tasks on.
+     * @param partitions  the partitions to execute tasks on. This BitSet should not
+     *                    modified after this method is called. For each of the
+     *                    partitions there is a bit indicating if a task should be
+     *                    executed on the partition.
      */
-    void execute(PartitionTaskFactory taskFactory, int[] partitions);
+    void executeOnPartitions(PartitionTaskFactory taskFactory, BitSet partitions);
 
     /**
      * Executes the given {@link PartitionSpecificRunnable} at some point in the
@@ -133,7 +148,7 @@ public interface OperationExecutor extends PacketHandler, LiveOperationsTracker 
      * @param op the {@link Operation} to run.
      * @throws java.lang.NullPointerException if op is null.
      * @throws IllegalThreadStateException    if the operation is not allowed
-     * to be run on the calling thread.
+     *                                        to be run on the calling thread.
      */
     void run(Operation op);
 

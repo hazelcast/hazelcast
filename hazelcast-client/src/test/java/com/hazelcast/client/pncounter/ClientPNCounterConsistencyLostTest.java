@@ -6,7 +6,7 @@ import com.hazelcast.config.CRDTReplicationConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.ConsistencyLostException;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.crdt.pncounter.BasePNCounterConsistencyLostTest;
+import com.hazelcast.crdt.pncounter.AbstractPNCounterConsistencyLostTest;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.properties.GroupProperty;
@@ -25,7 +25,7 @@ import static org.junit.Assert.assertEquals;
  */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class ClientPNCounterConsistencyLostTest extends BasePNCounterConsistencyLostTest {
+public class ClientPNCounterConsistencyLostTest extends AbstractPNCounterConsistencyLostTest {
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 

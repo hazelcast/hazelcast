@@ -16,8 +16,8 @@
 
 package com.hazelcast.crdt.pncounter.operations;
 
-import com.hazelcast.crdt.CRDTDataSerializerHook;
 import com.hazelcast.cluster.impl.VectorClock;
+import com.hazelcast.crdt.CRDTDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.ReadonlyOperation;

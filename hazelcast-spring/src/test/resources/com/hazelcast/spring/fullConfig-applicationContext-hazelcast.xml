@@ -551,6 +551,17 @@
                     <hz:serializer type-class="com.hazelcast.spring.serialization.DummySerializableObject2"
                                    implementation="dummySerializer"/>
                 </hz:serializers>
+                <hz:java-serialization-filter>
+                    <hz:blacklist>
+                        <hz:class>com.acme.app.BeanComparator</hz:class>
+                    </hz:blacklist>
+                    <hz:whitelist>
+                        <hz:class>java.lang.String</hz:class>
+                        <hz:class>example.Foo</hz:class>
+                        <hz:package>com.acme.app</hz:package>
+                        <hz:package>com.acme.app.subpkg</hz:package>
+                    </hz:whitelist>
+                </hz:java-serialization-filter>
             </hz:serialization>
 
             <hz:native-memory enabled="false" allocator-type="POOLED" metadata-space-percentage="10.2"

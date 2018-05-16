@@ -23,7 +23,7 @@ import static com.hazelcast.util.ThreadUtil.createThreadName;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 class IOBalancerThread extends Thread {
-    private static final String THREAD_NAME_PREFIX = "IOBalancerThread";
+    private static final String THREAD_NAME_PREFIX = "IO.BalancerThread";
 
     private final IOBalancer ioBalancer;
     private final ILogger log;

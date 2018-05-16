@@ -16,9 +16,9 @@
 
 package com.hazelcast.config.replacer;
 
-import java.util.Properties;
-
 import com.hazelcast.config.replacer.spi.ConfigReplacer;
+
+import java.util.Properties;
 
 /**
  * ConfigReplacer for replacing property names with property values for properties provided in {@link #init(Properties)} method.

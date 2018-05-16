@@ -21,7 +21,9 @@ import com.hazelcast.internal.management.dto.SlowOperationDTO;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
+import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
 
+import java.util.BitSet;
 import java.util.List;
 
 /**
@@ -85,9 +87,8 @@ public interface InternalOperationService extends OperationService {
     /**
      * Should be called when the asynchronous operation has completed.
      *
-     * @see #onStartAsyncOperation(Operation)
-     *
      * @param op
+     * @see #onStartAsyncOperation(Operation)
      */
     void onCompletionAsyncOperation(Operation op);
 
@@ -126,22 +127,15 @@ public interface InternalOperationService extends OperationService {
      * Executes for each of the partitions, a task created by the
      * taskFactory.
      *
-     * The reason this method exists is to prevent a bubble of operations/tasks
-     * to be created on the work-queue if the regular {@link #execute(Operation)}
-     * would be called in a loop.
-     *
-     * The consequence of this bubble is that no other operations can interleave
-     * and this can lead to very bad latency for the other operations.
-     *
-     * This method can be used to create Operations and Runnable's to be executed
-     * on a partition thread.
+     * For more info see the
+     * {@link OperationExecutor#executeOnPartitions(PartitionTaskFactory, BitSet)}
      *
      * @param taskFactory the PartitionTaskFactory used to create
-     *                         operations.
-     * @param partitions the partitions to execute an operation on.
+     *                    operations.
+     * @param partitions  the partitions to execute an operation on.
      * @throws NullPointerException if taskFactory or partitions is null.
      */
-    void execute(PartitionTaskFactory taskFactory, int[] partitions);
+    void executeOnPartitions(PartitionTaskFactory taskFactory, BitSet partitions);
 
     /**
      * Returns information about long running operations.

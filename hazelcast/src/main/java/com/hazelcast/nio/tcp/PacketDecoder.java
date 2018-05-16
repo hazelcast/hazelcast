@@ -20,7 +20,7 @@ import com.hazelcast.internal.networking.ChannelInboundHandler;
 import com.hazelcast.internal.networking.nio.ChannelInboundHandlerWithCounters;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.PacketIOHelper;
-import com.hazelcast.spi.impl.PacketHandler;
+import com.hazelcast.util.function.Consumer;
 
 import java.nio.ByteBuffer;
 
@@ -29,20 +29,21 @@ import static com.hazelcast.nio.Packet.FLAG_URGENT;
 /**
  * The {@link ChannelInboundHandler} for member to member communication.
  *
- * It reads as many packets from the src ByteBuffer as possible, and each of the Packets is send to the {@link PacketHandler}.
+ * It reads as many packets from the src ByteBuffer as possible, and each of the
+ * Packets is send to the dst {@link Consumer}.
  *
- * @see PacketHandler
+ * @see Consumer
  * @see PacketEncoder
  */
 public class PacketDecoder extends ChannelInboundHandlerWithCounters {
 
     protected final TcpIpConnection connection;
-    private final PacketHandler handler;
+    private final Consumer<Packet> dst;
     private final PacketIOHelper packetReader = new PacketIOHelper();
 
-    public PacketDecoder(TcpIpConnection connection, PacketHandler handler) {
+    public PacketDecoder(TcpIpConnection connection, Consumer<Packet> dst) {
         this.connection = connection;
-        this.handler = handler;
+        this.dst = dst;
     }
 
     @Override
@@ -56,7 +57,7 @@ public class PacketDecoder extends ChannelInboundHandlerWithCounters {
         }
     }
 
-    protected void onPacketComplete(Packet packet) throws Exception {
+    protected void onPacketComplete(Packet packet) {
         if (packet.isFlagRaised(FLAG_URGENT)) {
             priorityPacketsRead.inc();
         } else {
@@ -65,6 +66,6 @@ public class PacketDecoder extends ChannelInboundHandlerWithCounters {
 
         packet.setConn(connection);
 
-        handler.handle(packet);
+        dst.accept(packet);
     }
 }

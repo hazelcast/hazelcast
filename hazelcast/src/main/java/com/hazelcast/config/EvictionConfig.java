@@ -22,8 +22,8 @@ import com.hazelcast.internal.eviction.EvictionPolicyType;
 import com.hazelcast.internal.eviction.EvictionStrategyType;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.BinaryInterface;
+import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.io.IOException;
 import java.io.Serializable;
