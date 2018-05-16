@@ -2,7 +2,11 @@ This document lists the new features, enhancements, fixed issues and, removed or
 
 ==== 3.10.1 ====
 
-1. Fixes:
+1. Enhancements
+
+- Protection for untrusted deserialization has been added using blacklisting and whitelisting the class/package names. Please see the Untrusted Deserialization Protection section in Hazelcast IMDG Reference Manual.
+
+2. Fixes:
 
 - The method `readManyAsync()` throws different exceptions when there is no quorum: The client fails with `QuorumException`, and member fails with `ExecutionException`. [#13065]
 - It is expected to get `HazelcastSerializationException` from the method `future.get()`, however, it hangs when the response is not serializable. [#12956]
