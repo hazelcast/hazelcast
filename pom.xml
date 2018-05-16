@@ -357,7 +357,7 @@
                                     <redirectTestOutputToFile>true</redirectTestOutputToFile>
                                     <useFile>false</useFile>
                                     <!-- 1C means 1 process per cpu core -->
-                                    <forkCount>0.5C</forkCount>
+                                    <forkCount>8</forkCount>
                                     <reuseForks>true</reuseForks>
                                     <argLine>
                                         -Xms512m -Xmx2G -XX:MaxPermSize=1024M -ea
