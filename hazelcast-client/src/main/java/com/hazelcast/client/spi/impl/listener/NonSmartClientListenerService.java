@@ -25,6 +25,7 @@ import com.hazelcast.client.spi.impl.ListenerMessageCodec;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
+import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.UuidUtil;
 
@@ -37,6 +38,7 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
 
 public class NonSmartClientListenerService extends AbstractClientListenerService implements ConnectionListener {
 
@@ -99,37 +101,49 @@ public class NonSmartClientListenerService extends AbstractClientListenerService
         //This method should not be called from registrationExecutor
         assert (!Thread.currentThread().getName().contains("eventRegistration"));
 
-        Future<Boolean> future = registrationExecutor.submit(new Callable<Boolean>() {
-            @Override
-            public Boolean call() throws Exception {
-                ClientRegistrationKey key = new ClientRegistrationKey(userRegistrationId);
-
-                if (!userRegistrations.remove(key)) {
-                    return false;
-                }
-
-                ClientEventRegistration registration = activeRegistrations.get(key);
-                if (registration == null) {
-                    return true;
-                }
-
-                ClientMessage request = registration.getCodec().encodeRemoveRequest(registration.getServerRegistrationId());
-                try {
-                    Future future = new ClientInvocation(client, request, null).invoke();
-                    future.get();
-                    removeEventHandler(registration.getCallId());
-                    activeRegistrations.remove(key);
-                } catch (Exception e) {
-                    throw new HazelcastException("Listener with ID " + userRegistrationId + " could not be removed", e);
-                }
-                return true;
-            }
-        });
         try {
-            return future.get();
-        } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
+            Future<Boolean> future = registrationExecutor.submit(new Callable<Boolean>() {
+                @Override
+                public Boolean call() throws Exception {
+                    return deregisterListenerInternal(userRegistrationId);
+                }
+            });
+            try {
+                return future.get();
+            } catch (Exception e) {
+                throw ExceptionUtil.rethrow(e);
+            }
+        } catch (RejectedExecutionException ignored) {
+            //RejectedExecutionException executor(hence the client) is already shutdown
+            //listeners are cleaned up by the server side. We can ignore the exception and return true safely
+            EmptyStatement.ignore(ignored);
+            return true;
         }
+
+    }
+
+    private Boolean deregisterListenerInternal(String userRegistrationId) {
+        ClientRegistrationKey key = new ClientRegistrationKey(userRegistrationId);
+
+        if (!userRegistrations.remove(key)) {
+            return false;
+        }
+
+        ClientEventRegistration registration = activeRegistrations.get(key);
+        if (registration == null) {
+            return true;
+        }
+
+        ClientMessage request = registration.getCodec().encodeRemoveRequest(registration.getServerRegistrationId());
+        try {
+            Future future = new ClientInvocation(client, request, null).invoke();
+            future.get();
+            removeEventHandler(registration.getCallId());
+            activeRegistrations.remove(key);
+        } catch (Exception e) {
+            throw new HazelcastException("Listener with ID " + userRegistrationId + " could not be removed", e);
+        }
+        return true;
     }
 
     @Override
