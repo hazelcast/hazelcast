@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.nearcache;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
@@ -28,7 +29,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
-import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -40,75 +41,84 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.hazelcast.config.InMemoryFormat.OBJECT;
+import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getBaseConfig;
+import static com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask.MAX_TOLERATED_MISS_COUNT;
 import static com.hazelcast.spi.properties.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS;
 import static java.lang.Integer.parseInt;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 /**
- * A test to ensure no lost invalidations on the Near Cache.
+ * Tests that the Near Cache doesn't lose invalidations.
  * <p>
  * Issue: https://github.com/hazelcast/hazelcast/issues/4671
  * <p>
- * Thansk Lukas Blunschi for this test (https://github.com/lukasblu).
+ * Thanks Lukas Blunschi for the original test (https://github.com/lukasblu).
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
-public class NearCacheStaleReadTest extends HazelcastTestSupport {
+@Category({SlowTest.class, ParallelTest.class})
+public class MapNearCacheStaleReadTest extends HazelcastTestSupport {
 
     private static final int NUM_GETTERS = 7;
     private static final int MAX_RUNTIME = 30;
     private static final String KEY = "key123";
-    private static final String MAP_NAME = "testMap" + NearCacheStaleReadTest.class.getSimpleName();
-    private static final ILogger LOGGER = Logger.getLogger(NearCacheStaleReadTest.class);
 
-    private IMap<String, String> map;
-    private AtomicInteger valuePut;
-    private AtomicBoolean stop;
-    private AtomicInteger assertionViolationCount;
-    private AtomicBoolean failed;
+    private static final ILogger LOGGER = Logger.getLogger(MapNearCacheStaleReadTest.class);
+
+    private AtomicInteger valuePut = new AtomicInteger(0);
+    private AtomicBoolean stop = new AtomicBoolean(false);
+    private AtomicInteger assertionViolationCount = new AtomicInteger(0);
+    private AtomicBoolean failed = new AtomicBoolean(false);
+
     private HazelcastInstance hzInstance;
+    private IMap<String, String> map;
 
     @Before
-    public void setUp() throws Exception {
-        stop = new AtomicBoolean(false);
-        failed = new AtomicBoolean(false);
-        valuePut = new AtomicInteger(0);
-        assertionViolationCount = new AtomicInteger(0);
-
-        // create hazelcast config
-        Config config = getConfig();
-        config.setProperty("hazelcast.invalidation.max.tolerated.miss.count", "0");
-        config.setProperty(MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS.getName(), "2");
-        // configure Near Cache
-        NearCacheConfig nearCacheConfig = getNearCacheConfig();
-        // enable Near Cache
-        MapConfig mapConfig = config.getMapConfig(MAP_NAME);
-        mapConfig.setNearCacheConfig(nearCacheConfig);
-
+    public void setUp() {
+        String mapName = randomMapName();
         TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory();
-        hzInstance = factory.newHazelcastInstance(config);
 
-        map = hzInstance.getMap(MAP_NAME);
+        Config config = getConfig(mapName)
+                .setProperty(MAX_TOLERATED_MISS_COUNT.getName(), "0")
+                .setProperty(MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS.getName(), "2");
+
+        hzInstance = factory.newHazelcastInstance(config);
+        map = hzInstance.getMap(mapName);
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         hzInstance.shutdown();
     }
 
     @Test
-    public void testNoLostInvalidationsEventually() throws Exception {
+    public void testNoLostInvalidationsEventually() {
         testNoLostInvalidations(false);
     }
 
     @Test
-    public void testNoLostInvalidationsStrict() throws Exception {
+    public void testNoLostInvalidationsStrict() {
         testNoLostInvalidations(true);
     }
 
-    private void testNoLostInvalidations(boolean strict) throws Exception {
+    protected Config getConfig(String mapName) {
+        NearCacheConfig nearCacheConfig = getNearCacheConfig(mapName);
+
+        MapConfig mapConfig = new MapConfig(mapName)
+                .setNearCacheConfig(nearCacheConfig);
+
+        return getBaseConfig()
+                .addMapConfig(mapConfig);
+    }
+
+    protected NearCacheConfig getNearCacheConfig(String mapName) {
+        return new NearCacheConfig(mapName)
+                .setInMemoryFormat(InMemoryFormat.OBJECT)
+                .setInvalidateOnChange(true)
+                .setCacheLocalEntries(true);
+    }
+
+    private void testNoLostInvalidations(boolean strict) {
         // run test
         runTestInternal();
 
@@ -139,10 +149,10 @@ public class NearCacheStaleReadTest extends HazelcastTestSupport {
             }
         }
 
-        // stop hazelcast
+        // stop instance
         hzInstance.getLifecycleService().terminate();
 
-        // fail after stopping hazelcast instance
+        // fail after stopping instance
         if (msg != null) {
             LOGGER.warning(msg);
             fail(msg);
@@ -156,15 +166,7 @@ public class NearCacheStaleReadTest extends HazelcastTestSupport {
         }
     }
 
-    protected NearCacheConfig getNearCacheConfig() {
-        NearCacheConfig nearCacheConfig = new NearCacheConfig();
-        // this enables caching of local entries
-        nearCacheConfig.setCacheLocalEntries(true);
-        nearCacheConfig.setInMemoryFormat(OBJECT);
-        return nearCacheConfig;
-    }
-
-    private void runTestInternal() throws Exception {
+    private void runTestInternal() {
         // start 1 putter thread (put0)
         Thread threadPut = new Thread(new PutRunnable(), "put0");
         threadPut.start();
@@ -191,9 +193,9 @@ public class NearCacheStaleReadTest extends HazelcastTestSupport {
             LOGGER.info("Problem did not occur within " + MAX_RUNTIME + "s.");
         }
         stop.set(true);
-        threadPut.join();
+        assertJoinable(threadPut);
         for (Thread thread : threads) {
-            thread.join();
+            assertJoinable(thread);
         }
     }
 
