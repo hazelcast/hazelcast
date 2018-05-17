@@ -16,8 +16,8 @@
 
 package com.hazelcast.map.impl.nearcache.invalidation;
 
+import com.hazelcast.internal.nearcache.impl.invalidation.BatchInvalidator;
 import com.hazelcast.internal.nearcache.impl.invalidation.Invalidator;
-import com.hazelcast.internal.nearcache.impl.invalidation.NonStopInvalidator;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -30,10 +30,10 @@ import static com.hazelcast.internal.nearcache.impl.invalidation.InvalidationUti
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class NonStopInvalidatorTest extends AbstractInvalidatorTest {
+public class BatchInvalidatorTest extends AbstractInvalidatorTest {
 
     @Override
     Invalidator createInvalidator(NodeEngineImpl nodeEngine) {
-        return new NonStopInvalidator(MapService.SERVICE_NAME, TRUE_FILTER, nodeEngine);
+        return new BatchInvalidator(MapService.SERVICE_NAME, 100, 10, TRUE_FILTER, nodeEngine);
     }
 }
