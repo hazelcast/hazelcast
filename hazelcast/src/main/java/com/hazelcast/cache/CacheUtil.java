@@ -44,16 +44,16 @@ public final class CacheUtil {
     public static String getPrefix(URI uri, ClassLoader classLoader) {
         if (uri == null && classLoader == null) {
             return null;
-        } else {
-            StringBuilder sb = new StringBuilder();
-            if (uri != null) {
-                sb.append(uri.toASCIIString()).append('/');
-            }
-            if (classLoader != null) {
-                sb.append(classLoader.toString()).append('/');
-            }
-            return sb.toString();
         }
+        StringBuilder sb = new StringBuilder();
+        if (uri != null) {
+            sb.append(uri.toASCIIString()).append('/');
+        }
+        if (classLoader != null) {
+            sb.append(classLoader.toString()).append('/');
+        }
+        return sb.toString();
+
     }
 
     /**
