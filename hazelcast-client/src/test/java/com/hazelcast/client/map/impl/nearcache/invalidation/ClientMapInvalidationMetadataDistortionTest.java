@@ -17,10 +17,9 @@
 package com.hazelcast.client.map.impl.nearcache.invalidation;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
-import com.hazelcast.client.impl.HazelcastClientProxy;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.NearCacheConfig;
@@ -34,7 +33,6 @@ import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.map.impl.nearcache.NearCacheTestSupport;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
@@ -46,78 +44,52 @@ import org.junit.runner.RunWith;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask.MAX_TOLERATED_MISS_COUNT;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
+import static com.hazelcast.spi.properties.GroupProperty.CACHE_INVALIDATION_MESSAGE_BATCH_ENABLED;
+import static com.hazelcast.spi.properties.GroupProperty.CACHE_INVALIDATION_MESSAGE_BATCH_SIZE;
+import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
 import static com.hazelcast.util.RandomPicker.getInt;
 import static java.lang.Integer.MAX_VALUE;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(NightlyTest.class)
-public class InvalidationMetadataDistortionTest extends NearCacheTestSupport {
+public class ClientMapInvalidationMetadataDistortionTest extends NearCacheTestSupport {
+
+    private static final int MAP_SIZE = 100000;
+    private static final String MAP_NAME = "ClientMapInvalidationMetadataDistortionTest";
 
     private final TestHazelcastFactory factory = new TestHazelcastFactory();
+    private final AtomicBoolean stopTest = new AtomicBoolean();
 
     @After
     public void tearDown() throws Exception {
         factory.shutdownAll();
     }
 
-    protected Config createConfig() {
-        Config config = getConfig();
-        config.setProperty(GroupProperty.PARTITION_COUNT.getName(), "271");
-        config.setProperty(GroupProperty.CACHE_INVALIDATION_MESSAGE_BATCH_ENABLED.getName(), "true");
-        config.setProperty(GroupProperty.CACHE_INVALIDATION_MESSAGE_BATCH_SIZE.getName(), "10");
-        return config;
-    }
-
-    protected MapConfig createMapConfig(String mapName) {
-        MapConfig mapConfig = new MapConfig(mapName);
-        mapConfig.setBackupCount(0);
-        return mapConfig;
-    }
-
-    protected NearCacheConfig createNearCacheConfig(String mapName) {
-        NearCacheConfig nearCacheConfig = newNearCacheConfig();
-        nearCacheConfig.setInvalidateOnChange(true);
-        nearCacheConfig.setName(mapName);
-        nearCacheConfig.getEvictionConfig()
-                .setSize(Integer.MAX_VALUE)
-                .setEvictionPolicy(EvictionPolicy.NONE);
-        return nearCacheConfig;
-    }
-
-    protected ClientConfig createClientConfig() {
-        ClientConfig clientConfig = new ClientConfig();
-        clientConfig.setProperty("hazelcast.invalidation.max.tolerated.miss.count", "0");
-        return clientConfig;
-    }
-
     @Test
-    public void lostInvalidation() throws Exception {
-        final String mapName = "origin-map";
-        final int mapSize = 100000;
-        final AtomicBoolean stopTest = new AtomicBoolean();
-
-        // members are created.
-        final Config config = createConfig().addMapConfig(createMapConfig(mapName));
+    public void lostInvalidation() {
+        // members are created
+        Config config = createConfig().addMapConfig(createMapConfig(MAP_NAME));
         final HazelcastInstance member = factory.newHazelcastInstance(config);
         factory.newHazelcastInstance(config);
 
-        // map is populated form member.
-        final IMap<Integer, Integer> memberMap = member.getMap(mapName);
-        for (int i = 0; i < mapSize; i++) {
+        // map is populated form member
+        final IMap<Integer, Integer> memberMap = member.getMap(MAP_NAME);
+        for (int i = 0; i < MAP_SIZE; i++) {
             memberMap.put(i, i);
         }
 
-        // a new client comes.
-        ClientConfig clientConfig = createClientConfig().addNearCacheConfig(createNearCacheConfig(mapName));
-        final HazelcastInstance client = factory.newHazelcastClient(clientConfig);
-        final IMap<Integer, Integer> clientMap = client.getMap(mapName);
+        // a new client comes
+        ClientConfig clientConfig = createClientConfig().addNearCacheConfig(createNearCacheConfig(MAP_NAME));
+        HazelcastInstance client = factory.newHazelcastClient(clientConfig);
+        final IMap<Integer, Integer> clientMap = client.getMap(MAP_NAME);
 
         Thread populateNearCache = new Thread(new Runnable() {
             public void run() {
                 while (!stopTest.get()) {
-                    for (int i = 0; i < mapSize; i++) {
+                    for (int i = 0; i < MAP_SIZE; i++) {
                         clientMap.get(i);
                     }
                 }
@@ -128,7 +100,7 @@ public class InvalidationMetadataDistortionTest extends NearCacheTestSupport {
             @Override
             public void run() {
                 while (!stopTest.get()) {
-                    distortRandomPartitionSequence(mapName, member);
+                    distortRandomPartitionSequence(MAP_NAME, member);
                     sleepSeconds(1);
                 }
             }
@@ -144,12 +116,11 @@ public class InvalidationMetadataDistortionTest extends NearCacheTestSupport {
             }
         });
 
-
         Thread put = new Thread(new Runnable() {
             public void run() {
                 // change some data
                 while (!stopTest.get()) {
-                    int key = getInt(mapSize);
+                    int key = getInt(MAP_SIZE);
                     int value = getInt(Integer.MAX_VALUE);
                     memberMap.put(key, value);
                     sleepAtLeastMillis(100);
@@ -167,16 +138,12 @@ public class InvalidationMetadataDistortionTest extends NearCacheTestSupport {
 
         // stop threads
         stopTest.set(true);
-        distortUuid.join();
-        distortSequence.join();
-        populateNearCache.join();
-        put.join();
-
+        assertJoinable(distortUuid, distortSequence, populateNearCache, put);
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
-                for (int i = 0; i < mapSize; i++) {
+            public void run() {
+                for (int i = 0; i < MAP_SIZE; i++) {
                     Integer valueSeenFromMember = memberMap.get(i);
                     Integer valueSeenFromClient = clientMap.get(i);
 
@@ -184,6 +151,34 @@ public class InvalidationMetadataDistortionTest extends NearCacheTestSupport {
                 }
             }
         });
+    }
+
+    private Config createConfig() {
+        return smallInstanceConfig()
+                .setProperty(PARTITION_COUNT.getName(), "271")
+                .setProperty(CACHE_INVALIDATION_MESSAGE_BATCH_ENABLED.getName(), "true")
+                .setProperty(CACHE_INVALIDATION_MESSAGE_BATCH_SIZE.getName(), "10");
+    }
+
+    private MapConfig createMapConfig(String mapName) {
+        return new MapConfig(mapName)
+                .setBackupCount(0);
+    }
+
+    private NearCacheConfig createNearCacheConfig(String mapName) {
+        EvictionConfig evictionConfig = new EvictionConfig()
+                .setSize(Integer.MAX_VALUE)
+                .setEvictionPolicy(EvictionPolicy.NONE);
+
+        return newNearCacheConfig()
+                .setName(mapName)
+                .setInvalidateOnChange(true)
+                .setEvictionConfig(evictionConfig);
+    }
+
+    private ClientConfig createClientConfig() {
+        return new ClientConfig()
+                .setProperty(MAX_TOLERATED_MISS_COUNT.getName(), "0");
     }
 
     private void distortRandomPartitionSequence(String mapName, HazelcastInstance member) {
@@ -209,10 +204,5 @@ public class InvalidationMetadataDistortionTest extends NearCacheTestSupport {
         MetaDataGenerator metaDataGenerator = invalidator.getMetaDataGenerator();
 
         metaDataGenerator.setUuid(partitionId, UuidUtil.newUnsecureUUID());
-    }
-
-    protected HazelcastClientInstanceImpl getHazelcastClientInstanceImpl(HazelcastInstance client) {
-        HazelcastClientProxy clientProxy = (HazelcastClientProxy) client;
-        return clientProxy.client;
     }
 }
