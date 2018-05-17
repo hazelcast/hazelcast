@@ -115,4 +115,13 @@ public class ListenerTests extends ClientTestSupport {
         executorService.shutdown();
 
     }
+
+    @Test
+    public void testRemoveListenerOnClosedClient() {
+        factory.newHazelcastInstance();
+        HazelcastInstance client = factory.newHazelcastClient();
+        IMap<Object, Object> map = client.getMap("test");
+        client.shutdown();
+        assertTrue(map.removeEntryListener("test"));
+    }
 }
