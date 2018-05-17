@@ -111,12 +111,17 @@ public abstract class AbstractMergeRunnable<K, V, Store, MergingItem extends Mer
 
     @Override
     public final void run() {
+        onRunStart();
         int mergedCount = 0;
 
         mergedCount += mergeWithSplitBrainMergePolicy();
         mergedCount += mergeWithLegacyMergePolicy();
 
         waitMergeEnd(mergedCount);
+    }
+
+    protected void onRunStart() {
+        // Implementers can override this method.
     }
 
     private int mergeWithSplitBrainMergePolicy() {
