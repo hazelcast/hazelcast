@@ -17,7 +17,6 @@
 package com.hazelcast.map.impl.nearcache.invalidation;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
@@ -36,6 +35,7 @@ import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -45,6 +45,7 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.config.InMemoryFormat.BINARY;
+import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getBaseConfig;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.util.MapUtil.createHashMap;
 import static java.lang.String.format;
@@ -52,12 +53,18 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class MapInvalidationMetaDataMigrationTest extends HazelcastTestSupport {
+public class MemberMapInvalidationMetaDataMigrationTest extends HazelcastTestSupport {
 
     private static final int MAP_SIZE = 10000;
     private static final String MAP_NAME = "MapInvalidationMetaDataMigrationTest";
 
     private TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory();
+    private Config config;
+
+    @Before
+    public void setUp() {
+        config = getConfig(MAP_NAME);
+    }
 
     @After
     public void tearDown() {
@@ -66,8 +73,6 @@ public class MapInvalidationMetaDataMigrationTest extends HazelcastTestSupport {
 
     @Test
     public void sequences_migrated_whenNewlyJoinedNodesShutdown() {
-        Config config = newConfig();
-
         HazelcastInstance instance1 = factory.newHazelcastInstance(config);
         IMap<Object, Object> map = instance1.getMap(MAP_NAME);
         for (int i = 0; i < MAP_SIZE; i++) {
@@ -94,8 +99,6 @@ public class MapInvalidationMetaDataMigrationTest extends HazelcastTestSupport {
 
     @Test
     public void sequences_migrated_whenSourceNodeShutdown() {
-        Config config = newConfig();
-
         HazelcastInstance instance1 = factory.newHazelcastInstance(config);
         IMap<Object, Object> map = instance1.getMap(MAP_NAME);
         for (int i = 0; i < MAP_SIZE; i++) {
@@ -127,8 +130,6 @@ public class MapInvalidationMetaDataMigrationTest extends HazelcastTestSupport {
 
     @Test
     public void sequences_migrated_whenOneNodeContinuouslyStartsAndStops() {
-        final Config config = newConfig();
-
         HazelcastInstance instance1 = factory.newHazelcastInstance(config);
         IMap<Object, Object> map = instance1.getMap(MAP_NAME);
         for (int i = 0; i < MAP_SIZE; i++) {
@@ -168,8 +169,6 @@ public class MapInvalidationMetaDataMigrationTest extends HazelcastTestSupport {
 
     @Test
     public void uuids_migrated_whenNewlyJoinedNodesShutdown() {
-        Config config = newConfig();
-
         HazelcastInstance instance1 = factory.newHazelcastInstance(config);
         IMap<Object, Object> map = instance1.getMap(MAP_NAME);
         for (int i = 0; i < MAP_SIZE; i++) {
@@ -194,8 +193,6 @@ public class MapInvalidationMetaDataMigrationTest extends HazelcastTestSupport {
 
     @Test
     public void uuids_migrated_whenSourceNodeShutdown() {
-        Config config = newConfig();
-
         final HazelcastInstance instance1 = factory.newHazelcastInstance(config);
         IMap<Object, Object> map = instance1.getMap(MAP_NAME);
         for (int i = 0; i < MAP_SIZE; i++) {
@@ -219,34 +216,38 @@ public class MapInvalidationMetaDataMigrationTest extends HazelcastTestSupport {
         assertEqualsPartitionUUIDs(source, merged);
     }
 
-    private void assertInvalidationCountEventually(final String mapName, final int expectedInvalidationCount, final HazelcastInstance instance) {
+    private void assertInvalidationCountEventually(final String mapName, final int expectedInvalidationCount,
+                                                   final HazelcastInstance instance) {
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 long invalidationCount = calculateNumberOfInvalidationsSoFar(mapName, instance);
                 assertEquals(expectedInvalidationCount, invalidationCount);
             }
         });
     }
 
-    protected InMemoryFormat getNearCacheInMemoryFormat() {
-        return BINARY;
+    protected Config getConfig(String mapName) {
+        MapConfig mapConfig = getMapConfig(mapName);
+
+        return getBaseConfig()
+                .addMapConfig(mapConfig);
     }
 
-    private Config newConfig() {
-        NearCacheConfig nearCacheConfig = new NearCacheConfig()
-                .setName(MAP_NAME)
-                .setInMemoryFormat(getNearCacheInMemoryFormat())
-                .setInvalidateOnChange(true)
-                .setCacheLocalEntries(true);
+    protected MapConfig getMapConfig(String mapName) {
+        NearCacheConfig nearCacheConfig = getNearCacheConfig(mapName);
 
-        MapConfig mapConfig = new MapConfig(MAP_NAME)
+        return new MapConfig(mapName)
                 .setNearCacheConfig(nearCacheConfig)
                 .setBackupCount(0)
                 .setAsyncBackupCount(0);
+    }
 
-        return getConfig()
-                .addMapConfig(mapConfig);
+    protected NearCacheConfig getNearCacheConfig(String mapName) {
+        return new NearCacheConfig(mapName)
+                    .setInMemoryFormat(BINARY)
+                    .setInvalidateOnChange(true)
+                    .setCacheLocalEntries(true);
     }
 
     private static long calculateNumberOfInvalidationsSoFar(String mapName, HazelcastInstance instance) {
