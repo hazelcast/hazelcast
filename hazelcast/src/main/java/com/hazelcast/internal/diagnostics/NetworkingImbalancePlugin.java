@@ -30,10 +30,12 @@ import static com.hazelcast.internal.diagnostics.Diagnostics.PREFIX;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
- * The {@link NetworkingImbalancePlugin} is an experimental plugin meant for detecting imbalance in the IO system.
+ * The {@link NetworkingImbalancePlugin} is an experimental plugin meant for
+ * detecting imbalance in the IO system.
  * <p>
- * This  plugin will probably mostly be used for internal purposes to get a better understanding of imbalances.
- * Normally imbalances are taken care of by the IOBalancer; but we need to make sure it makes the right choice.
+ * This  plugin will probably mostly be used for internal purposes to get a
+ * better understanding of imbalances. Normally imbalances are taken care of
+ * by the IOBalancer; but we need to make sure it makes the right choice.
  * <p>
  * This plugin can be used on server and client side.
  */
