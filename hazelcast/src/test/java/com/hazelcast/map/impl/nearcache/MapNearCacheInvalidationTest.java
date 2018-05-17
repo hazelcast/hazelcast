@@ -17,14 +17,12 @@
 package com.hazelcast.map.impl.nearcache;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.map.impl.proxy.NearCachedMapProxyImpl;
-import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -39,22 +37,25 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
+import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getBaseConfig;
 import static com.hazelcast.spi.properties.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_ENABLED;
 import static com.hazelcast.spi.properties.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS;
 import static com.hazelcast.spi.properties.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_SIZE;
+import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
 import static java.lang.String.valueOf;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class NearCacheBatchInvalidationTest extends HazelcastTestSupport {
+public class MapNearCacheInvalidationTest extends HazelcastTestSupport {
+
+    private final String mapName = randomMapName();
 
     @Test
-    public void testBatchInvalidationRemovesEntries() throws Exception {
-        String mapName = randomMapName();
-        Config config = newConfig(mapName);
-        config.setProperty(GroupProperty.PARTITION_COUNT.getName(), "1");
-        configureBatching(config, true, 12, 1);
+    public void testBatchInvalidationRemovesEntries() {
+        Config config = getConfig(mapName)
+                .setProperty(PARTITION_COUNT.getName(), "1");
+        configureBatching(config, 12, 1);
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
         HazelcastInstance node1 = factory.newHazelcastInstance(config);
@@ -87,7 +88,7 @@ public class NearCacheBatchInvalidationTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 NearCache nearCache1 = ((NearCachedMapProxyImpl) map1).getNearCache();
                 NearCache nearCache2 = ((NearCachedMapProxyImpl) map2).getNearCache();
                 assertEquals(0, nearCache1.size() + nearCache2.size());
@@ -96,10 +97,9 @@ public class NearCacheBatchInvalidationTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testHigherBatchSize_shouldNotCauseAnyInvalidation_onRemoteNode() throws Exception {
-        String mapName = randomMapName();
-        Config config = newConfig(mapName);
-        configureBatching(config, true, Integer.MAX_VALUE, Integer.MAX_VALUE);
+    public void testHigherBatchSize_shouldNotCauseAnyInvalidation_onRemoteNode() {
+        Config config = getConfig(mapName);
+        configureBatching(config, Integer.MAX_VALUE, Integer.MAX_VALUE);
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
         HazelcastInstance node1 = factory.newHazelcastInstance(config);
@@ -138,17 +138,16 @@ public class NearCacheBatchInvalidationTest extends HazelcastTestSupport {
         NearCache nearCache1 = ((NearCachedMapProxyImpl) map1).getNearCache();
         NearCache nearCache2 = ((NearCachedMapProxyImpl) map2).getNearCache();
 
-        // Near Cache on one node should be invalidated wholly, other node should not receive any event.
-        // Due to the higher batch-size to sent invalidation.
+        // Near Cache on one node should be invalidated completely, other node should not receive any event
+        // (due to the higher invalidation batch-size)
         assertEquals(size, nearCache1.size() + nearCache2.size());
     }
 
     @Test
-    public void testMapClear_shouldClearNearCaches_onOwnerAndBackupNodes() throws Exception {
-        String mapName = randomMapName();
-        Config config = newConfig(mapName);
-        config.setProperty(GroupProperty.PARTITION_COUNT.getName(), "1");
-        configureBatching(config, true, 5, 5);
+    public void testMapClear_shouldClearNearCaches_onOwnerAndBackupNodes() {
+        Config config = getConfig(mapName)
+                .setProperty(PARTITION_COUNT.getName(), "1");
+        configureBatching(config, 5, 5);
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
         HazelcastInstance node1 = factory.newHazelcastInstance(config);
@@ -178,7 +177,7 @@ public class NearCacheBatchInvalidationTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 NearCache nearCache1 = ((NearCachedMapProxyImpl) map1).getNearCache();
                 NearCache nearCache2 = ((NearCachedMapProxyImpl) map2).getNearCache();
                 assertEquals(0, nearCache1.size() + nearCache2.size());
@@ -187,11 +186,10 @@ public class NearCacheBatchInvalidationTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testMapEvictAll_shouldClearNearCaches_onOwnerAndBackupNodes() throws Exception {
-        String mapName = randomMapName();
-        Config config = newConfig(mapName);
-        config.setProperty(GroupProperty.PARTITION_COUNT.getName(), "1");
-        configureBatching(config, true, 5, 5);
+    public void testMapEvictAll_shouldClearNearCaches_onOwnerAndBackupNodes() {
+        Config config = getConfig(mapName)
+                .setProperty(PARTITION_COUNT.getName(), "1");
+        configureBatching(config, 5, 5);
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
         HazelcastInstance node1 = factory.newHazelcastInstance(config);
@@ -221,7 +219,7 @@ public class NearCacheBatchInvalidationTest extends HazelcastTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 NearCache nearCache1 = ((NearCachedMapProxyImpl) map1).getNearCache();
                 NearCache nearCache2 = ((NearCachedMapProxyImpl) map2).getNearCache();
                 assertEquals(0, nearCache1.size() + nearCache2.size());
@@ -229,26 +227,29 @@ public class NearCacheBatchInvalidationTest extends HazelcastTestSupport {
         });
     }
 
-    protected Config newConfig(String mapName) {
-        NearCacheConfig nearCacheConfig = new NearCacheConfig();
-        nearCacheConfig.setInMemoryFormat(getNearCacheInMemoryFormat());
-        nearCacheConfig.setName(mapName);
-        nearCacheConfig.setInvalidateOnChange(true);
-        nearCacheConfig.setCacheLocalEntries(true);
+    protected Config getConfig(String mapName) {
+        MapConfig mapConfig = getMapConfig(mapName);
 
-        MapConfig mapConfig = new MapConfig(mapName);
-        mapConfig.setNearCacheConfig(nearCacheConfig);
-
-        Config config = getConfig();
-        return config.addMapConfig(mapConfig);
+        return getBaseConfig()
+                .addMapConfig(mapConfig);
     }
 
-    protected InMemoryFormat getNearCacheInMemoryFormat() {
-        return OBJECT;
+    protected MapConfig getMapConfig(String mapName) {
+        NearCacheConfig nearCacheConfig = getNearCacheConfig(mapName);
+
+        return new MapConfig(mapName)
+                .setNearCacheConfig(nearCacheConfig);
     }
 
-    protected void configureBatching(Config config, boolean enableBatching, int batchSize, int period) {
-        config.setProperty(MAP_INVALIDATION_MESSAGE_BATCH_ENABLED.getName(), valueOf(enableBatching));
+    protected NearCacheConfig getNearCacheConfig(String mapName) {
+        return new NearCacheConfig(mapName)
+                .setInMemoryFormat(OBJECT)
+                .setInvalidateOnChange(true)
+                .setCacheLocalEntries(true);
+    }
+
+    private static void configureBatching(Config config, int batchSize, int period) {
+        config.setProperty(MAP_INVALIDATION_MESSAGE_BATCH_ENABLED.getName(), "true");
         config.setProperty(MAP_INVALIDATION_MESSAGE_BATCH_SIZE.getName(), valueOf(batchSize));
         config.setProperty(MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS.getName(), valueOf(period));
     }
