@@ -63,6 +63,9 @@ import static com.hazelcast.util.MapUtil.createHashMap;
 
 public class PostJoinMapOperation extends Operation implements IdentifiedDataSerializable, Versioned, TargetAware {
 
+    // used on sending side to determine member version of target
+    private static final transient ThreadLocal<Address> TARGET = new ThreadLocal<Address>();
+
     // RU_COMPAT_3_9
     // When cluster version is 3.9, 3.9 members:
     //    Always write index info
@@ -77,8 +80,6 @@ public class PostJoinMapOperation extends Operation implements IdentifiedDataSer
     private List<MapIndexInfo> indexInfoList = new LinkedList<MapIndexInfo>();
     private List<InterceptorInfo> interceptorInfoList = new LinkedList<InterceptorInfo>();
     private List<AccumulatorInfo> infoList;
-    // used on sending side to determine member version of target
-    private transient Address target;
 
     @Override
     public String getServiceName() {
@@ -322,7 +323,7 @@ public class PostJoinMapOperation extends Operation implements IdentifiedDataSer
 
     @Override
     public void setTarget(Address address) {
-        this.target = address;
+        TARGET.set(address);
     }
 
     private boolean mustWriteIndexInfos(Version clusterVersion) {
@@ -336,7 +337,7 @@ public class PostJoinMapOperation extends Operation implements IdentifiedDataSer
         // an input coming from 3.10 EE (as it will have version 3.9) --> do not send when target member is 3.9
         // --> when target member is 3.10, do send index info so it behaves like 3.9-only cluster
         ClusterService clusterService = getNodeEngine().getClusterService();
-        Member targetMember = clusterService.getMember(target);
+        Member targetMember = clusterService.getMember(TARGET.get());
         return targetMember.getVersion().asVersion().isEqualTo(V3_10) && clusterVersion.isEqualTo(V3_9);
     }
 }

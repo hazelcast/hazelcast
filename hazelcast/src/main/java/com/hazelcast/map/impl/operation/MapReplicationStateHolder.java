@@ -67,6 +67,8 @@ import static com.hazelcast.util.MapUtil.createHashMap;
 // keep this `protected`, extended in another context.
 public class MapReplicationStateHolder implements IdentifiedDataSerializable, Versioned, TargetAware {
 
+    private static final transient ThreadLocal<Address> TARGET = new ThreadLocal<Address>();
+
     // RU_COMPAT_3_9
     // When cluster version is 3.9, 3.9 EE members:
     //    Never write index info
@@ -95,8 +97,6 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
     // on order of execution, so it was possible that the post-join operations were executed after some map-replication
     // operations, which meant that the index did not include some data.
     protected transient List<MapIndexInfo> mapIndexInfos;
-
-    private transient Address target;
 
     private MapReplicationOperation operation;
 
@@ -339,7 +339,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
 
     @Override
     public void setTarget(Address address) {
-        this.target = address;
+        TARGET.set(address);
     }
 
     private boolean mustWriteIndexInfos(Version clusterVersion) {
@@ -350,7 +350,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
         }
 
         ClusterService clusterService = operation.getNodeEngine().getClusterService();
-        Member targetMember = clusterService.getMember(target);
+        Member targetMember = clusterService.getMember(TARGET.get());
         // When cluster version is 3.9, only write mapIndexInfo if target member is 3.9 EE. Reasoning:
         // 3.9 EE expects to read mapIndexInfos when object data input comes with 3.9+ version. This is
         // the case when the object stream originates from a versioned 3.10 member.

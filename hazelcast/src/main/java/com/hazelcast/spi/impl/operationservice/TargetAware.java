@@ -29,6 +29,10 @@ import com.hazelcast.nio.Address;
  * When a {@code TargetAware} operation is explicitly sent to a remote target
  * or executed locally, {@link #setTarget(Address)} should be explicitly called
  * before the operation is sent or executed.
+ * <p>
+ * Threading considerations: `setTarget` is invoked in the same thread that later
+ * serializes the operation to bytes. However, do consider that retries may be
+ * executed in a thread other than the original invocation.
  */
 public interface TargetAware {
 
