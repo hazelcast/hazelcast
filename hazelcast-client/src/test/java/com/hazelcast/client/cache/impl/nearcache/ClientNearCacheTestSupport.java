@@ -33,6 +33,8 @@ import javax.cache.integration.CacheLoaderException;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getBaseConfig;
+
 public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
 
     protected static final String DEFAULT_CACHE_NAME = "ClientCache";
@@ -52,7 +54,7 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
     }
 
     protected Config createConfig() {
-        return new Config();
+        return getBaseConfig();
     }
 
     protected ClientConfig createClientConfig() {

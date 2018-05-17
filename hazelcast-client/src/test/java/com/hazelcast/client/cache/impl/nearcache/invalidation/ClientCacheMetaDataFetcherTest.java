@@ -24,6 +24,7 @@ import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.CacheConfig;
+import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataContainer;
@@ -57,15 +58,15 @@ import static org.junit.Assert.assertEquals;
 @Category({QuickTest.class, ParallelTest.class})
 public class ClientCacheMetaDataFetcherTest extends HazelcastTestSupport {
 
-    TestHazelcastFactory factory = new TestHazelcastFactory();
+    private TestHazelcastFactory factory = new TestHazelcastFactory();
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         factory.shutdownAll();
     }
 
     @Test
-    public void fetches_sequence_and_uuid() throws Exception {
+    public void fetches_sequence_and_uuid() {
         String cacheName = "test";
         int partition = 1;
         long givenSequence = getInt(1, MAX_VALUE);
@@ -86,6 +87,7 @@ public class ClientCacheMetaDataFetcherTest extends HazelcastTestSupport {
         assertEquals(givenUuid, foundUuid);
     }
 
+    @SuppressWarnings("unchecked")
     private RepairingTask getRepairingTask(String cacheName, int partition, long givenSequence, UUID givenUuid) {
         HazelcastInstance member = factory.newHazelcastInstance();
         distortRandomPartitionSequence(getPrefixedName(cacheName), partition, givenSequence, member);
@@ -117,11 +119,12 @@ public class ClientCacheMetaDataFetcherTest extends HazelcastTestSupport {
     }
 
     private CacheConfig newCacheConfig() {
-        CacheConfig cacheConfig = new CacheConfig();
-        cacheConfig.getEvictionConfig()
+        EvictionConfig evictionConfig = new EvictionConfig()
                 .setMaximumSizePolicy(ENTRY_COUNT)
                 .setSize(MAX_VALUE);
-        return cacheConfig;
+
+        return new CacheConfig()
+                .setEvictionConfig(evictionConfig);
     }
 
     private String getPrefixedName(String cacheName) {

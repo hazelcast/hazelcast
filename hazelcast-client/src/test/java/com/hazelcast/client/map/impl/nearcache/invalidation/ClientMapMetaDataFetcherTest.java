@@ -20,6 +20,7 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.config.Config;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
@@ -46,6 +47,7 @@ import org.junit.runner.RunWith;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
 
+import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getBaseConfig;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.util.RandomPicker.getInt;
 import static org.junit.Assert.assertEquals;
@@ -54,15 +56,15 @@ import static org.junit.Assert.assertEquals;
 @Category({QuickTest.class, ParallelTest.class})
 public class ClientMapMetaDataFetcherTest extends HazelcastTestSupport {
 
-    TestHazelcastFactory factory = new TestHazelcastFactory();
+    private TestHazelcastFactory factory = new TestHazelcastFactory();
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         factory.shutdownAll();
     }
 
     @Test
-    public void fetches_sequence_and_uuid() throws Exception {
+    public void fetches_sequence_and_uuid() {
         String mapName = "test";
         int partition = 1;
         long givenSequence = getInt(1, Integer.MAX_VALUE);
@@ -83,7 +85,8 @@ public class ClientMapMetaDataFetcherTest extends HazelcastTestSupport {
     }
 
     private RepairingTask getRepairingTask(String mapName, int partition, long givenSequence, UUID givenUuid) {
-        HazelcastInstance member = factory.newHazelcastInstance();
+        Config config = getBaseConfig();
+        HazelcastInstance member = factory.newHazelcastInstance(config);
         distortRandomPartitionSequence(mapName, partition, givenSequence, member);
         distortRandomPartitionUuid(partition, givenUuid, member);
 
