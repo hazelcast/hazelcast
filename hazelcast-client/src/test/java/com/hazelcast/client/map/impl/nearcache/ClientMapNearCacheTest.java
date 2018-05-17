@@ -56,6 +56,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getBaseConfig;
 import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -1258,7 +1259,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
     }
 
     protected Config newConfig() {
-        return smallInstanceConfig();
+        return getBaseConfig();
     }
 
     protected NearCacheConfig newNoInvalidationNearCacheConfig() {
