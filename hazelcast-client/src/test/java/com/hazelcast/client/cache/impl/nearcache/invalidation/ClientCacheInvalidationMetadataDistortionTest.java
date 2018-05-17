@@ -22,17 +22,16 @@ import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.client.cache.impl.HazelcastClientCachingProvider;
 import com.hazelcast.client.cache.impl.nearcache.ClientNearCacheTestSupport;
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.HazelcastClientProxy;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataGenerator;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
@@ -49,63 +48,33 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.ENTRY_COUNT;
 import static com.hazelcast.config.InMemoryFormat.BINARY;
+import static com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask.MAX_TOLERATED_MISS_COUNT;
+import static com.hazelcast.spi.properties.GroupProperty.CACHE_INVALIDATION_MESSAGE_BATCH_ENABLED;
+import static com.hazelcast.spi.properties.GroupProperty.CACHE_INVALIDATION_MESSAGE_BATCH_SIZE;
+import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
 import static com.hazelcast.util.RandomPicker.getInt;
 import static java.lang.Integer.MAX_VALUE;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(NightlyTest.class)
-public class InvalidationMetadataDistortionTest extends ClientNearCacheTestSupport {
+public class ClientCacheInvalidationMetadataDistortionTest extends ClientNearCacheTestSupport {
 
-    @Override
-    protected Config createConfig() {
-        Config config = super.createConfig();
-        config.setProperty(GroupProperty.PARTITION_COUNT.getName(), "271");
-        config.setProperty(GroupProperty.CACHE_INVALIDATION_MESSAGE_BATCH_ENABLED.getName(), "true");
-        config.setProperty(GroupProperty.CACHE_INVALIDATION_MESSAGE_BATCH_SIZE.getName(), "10");
-        return config;
-    }
+    private static final int CACHE_SIZE = 100000;
 
-    protected ClientConfig createClientConfig() {
-        ClientConfig clientConfig = new ClientConfig();
-        clientConfig.setProperty("hazelcast.invalidation.max.tolerated.miss.count", "0");
-        return clientConfig;
-    }
-
-    @Override
-    protected CacheConfig createCacheConfig(InMemoryFormat inMemoryFormat) {
-        CacheConfig cacheConfig = super.createCacheConfig(inMemoryFormat);
-        cacheConfig.getEvictionConfig()
-                .setMaximumSizePolicy(ENTRY_COUNT)
-                .setSize(MAX_VALUE);
-        return cacheConfig;
-    }
-
-
-    @Override
-    protected NearCacheConfig createNearCacheConfig(InMemoryFormat inMemoryFormat) {
-        NearCacheConfig nearCacheConfig = super.createNearCacheConfig(inMemoryFormat);
-        nearCacheConfig.setInvalidateOnChange(true)
-                .getEvictionConfig()
-                .setMaximumSizePolicy(ENTRY_COUNT)
-                .setSize(MAX_VALUE);
-        return nearCacheConfig;
-    }
+    private final AtomicBoolean stopTest = new AtomicBoolean();
 
     @Test
-    public void ensure_nearCachedClient_and_member_data_sync_eventually() throws Exception {
-        final int cacheSize = 100000;
-        final AtomicBoolean stopTest = new AtomicBoolean();
-
+    public void ensure_nearCachedClient_and_member_data_sync_eventually() {
         final Config config = createConfig();
         final HazelcastInstance member = hazelcastFactory.newHazelcastInstance(config);
 
         CachingProvider provider = HazelcastServerCachingProvider.createCachingProvider(serverInstance);
         CacheManager serverCacheManager = provider.getCacheManager();
 
-        // populated from member.
+        // populated from member
         final Cache<Integer, Integer> memberCache = serverCacheManager.createCache(DEFAULT_CACHE_NAME, createCacheConfig(BINARY));
-        for (int i = 0; i < cacheSize; i++) {
+        for (int i = 0; i < CACHE_SIZE; i++) {
             memberCache.put(i, i);
         }
 
@@ -120,7 +89,7 @@ public class InvalidationMetadataDistortionTest extends ClientNearCacheTestSuppo
         Thread populateNearCache = new Thread(new Runnable() {
             public void run() {
                 while (!stopTest.get()) {
-                    for (int i = 0; i < cacheSize; i++) {
+                    for (int i = 0; i < CACHE_SIZE; i++) {
                         clientCache.get(i);
                     }
                 }
@@ -147,12 +116,11 @@ public class InvalidationMetadataDistortionTest extends ClientNearCacheTestSuppo
             }
         });
 
-
         Thread put = new Thread(new Runnable() {
             public void run() {
                 // change some data
                 while (!stopTest.get()) {
-                    int key = getInt(cacheSize);
+                    int key = getInt(CACHE_SIZE);
                     int value = getInt(Integer.MAX_VALUE);
                     memberCache.put(key, value);
                     sleepAtLeastMillis(100);
@@ -170,16 +138,12 @@ public class InvalidationMetadataDistortionTest extends ClientNearCacheTestSuppo
 
         // stop threads
         stopTest.set(true);
-        distortUuid.join();
-        distortSequence.join();
-        populateNearCache.join();
-        put.join();
-
+        assertJoinable(distortUuid, distortSequence, populateNearCache, put);
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
-                for (int i = 0; i < cacheSize; i++) {
+            public void run() {
+                for (int i = 0; i < CACHE_SIZE; i++) {
                     Integer valueSeenFromMember = memberCache.get(i);
                     Integer valueSeenFromClient = clientCache.get(i);
 
@@ -187,6 +151,43 @@ public class InvalidationMetadataDistortionTest extends ClientNearCacheTestSuppo
                 }
             }
         });
+    }
+
+    @Override
+    protected Config createConfig() {
+        return super.createConfig()
+                .setProperty(PARTITION_COUNT.getName(), "271")
+                .setProperty(CACHE_INVALIDATION_MESSAGE_BATCH_ENABLED.getName(), "true")
+                .setProperty(CACHE_INVALIDATION_MESSAGE_BATCH_SIZE.getName(), "10");
+    }
+
+    @Override
+    protected ClientConfig createClientConfig() {
+        return new ClientConfig()
+                .setProperty(MAX_TOLERATED_MISS_COUNT.getName(), "0");
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    protected CacheConfig<Integer, Integer> createCacheConfig(InMemoryFormat inMemoryFormat) {
+        EvictionConfig evictionConfig = new EvictionConfig()
+                .setMaximumSizePolicy(ENTRY_COUNT)
+                .setSize(MAX_VALUE);
+
+        CacheConfig<Integer, Integer> cacheConfig = super.createCacheConfig(inMemoryFormat);
+        cacheConfig.setEvictionConfig(evictionConfig);
+        return cacheConfig;
+    }
+
+    @Override
+    protected NearCacheConfig createNearCacheConfig(InMemoryFormat inMemoryFormat) {
+        EvictionConfig evictionConfig = new EvictionConfig()
+                .setMaximumSizePolicy(ENTRY_COUNT)
+                .setSize(MAX_VALUE);
+
+        return super.createNearCacheConfig(inMemoryFormat)
+                .setInvalidateOnChange(true)
+                .setEvictionConfig(evictionConfig);
     }
 
     private void distortRandomPartitionSequence(String mapName, HazelcastInstance member) {
@@ -212,10 +213,5 @@ public class InvalidationMetadataDistortionTest extends ClientNearCacheTestSuppo
         UUID uuid = UuidUtil.newUnsecureUUID();
         int randomPartition = getInt(partitionCount);
         metaDataGenerator.setUuid(randomPartition, uuid);
-    }
-
-    protected HazelcastClientInstanceImpl getHazelcastClientInstanceImpl(HazelcastInstance client) {
-        HazelcastClientProxy clientProxy = (HazelcastClientProxy) client;
-        return clientProxy.client;
     }
 }
