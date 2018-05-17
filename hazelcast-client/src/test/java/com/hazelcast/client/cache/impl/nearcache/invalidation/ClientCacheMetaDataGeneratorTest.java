@@ -27,6 +27,7 @@ import com.hazelcast.client.impl.HazelcastClientProxy;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataGenerator;
@@ -41,40 +42,39 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import javax.cache.Cache;
 import javax.cache.CacheManager;
 import javax.cache.spi.CachingProvider;
 
 import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.ENTRY_COUNT;
+import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getBaseConfig;
 import static java.lang.Integer.MAX_VALUE;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class CacheMetaDataGeneratorTest extends HazelcastTestSupport {
+@SuppressWarnings("WeakerAccess")
+public class ClientCacheMetaDataGeneratorTest extends HazelcastTestSupport {
 
-    private static final String CACHE_NAME = "test";
+    private static final String CACHE_NAME = "CacheMetaDataGeneratorTest";
     private static final String PREFIXED_CACHE_NAME = "/hz/" + CACHE_NAME;
 
     private final TestHazelcastFactory factory = new TestHazelcastFactory();
-    private final ClientConfig clientConfig = newClientConfig();
-    private final CacheConfig cacheConfig = newCacheConfig();
 
-    private Cache clientCache;
-    private Cache serverCache;
+    private ClientConfig clientConfig;
+    private CacheConfig<Integer, Integer> cacheConfig;
+
+    private ICache<Integer, Integer> serverCache;
     private HazelcastInstance server;
 
     @Before
-    public void setUp() throws Exception {
-        NearCacheConfig nearCacheConfig = newNearCacheConfig();
-        nearCacheConfig.setInvalidateOnChange(true);
-        clientConfig.addNearCacheConfig(nearCacheConfig);
+    public void setUp() {
+        NearCacheConfig nearCacheConfig = getNearCacheConfig();
 
-        cacheConfig.getEvictionConfig()
-                .setMaximumSizePolicy(ENTRY_COUNT)
-                .setSize(MAX_VALUE);
-        cacheConfig.setName(CACHE_NAME);
+        clientConfig = getClientConfig()
+                .addNearCacheConfig(nearCacheConfig);
+
+        cacheConfig = getCacheConfig(CACHE_NAME);
 
         Config config = getConfig();
         server = factory.newHazelcastInstance(config);
@@ -82,7 +82,7 @@ public class CacheMetaDataGeneratorTest extends HazelcastTestSupport {
         CachingProvider provider = HazelcastServerCachingProvider.createCachingProvider(server);
         CacheManager serverCacheManager = provider.getCacheManager();
 
-        serverCache = serverCacheManager.createCache(CACHE_NAME, cacheConfig);
+        serverCache = (ICache<Integer, Integer>) serverCacheManager.createCache(CACHE_NAME, cacheConfig);
     }
 
     @After
@@ -91,51 +91,63 @@ public class CacheMetaDataGeneratorTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void destroying_cache_removes_related_metadata_when_near_cache_exists() throws Exception {
-        clientCache = createCacheFromNewClient();
+    public void destroying_cache_removes_related_metadata_when_near_cache_exists() {
+        ICache<Integer, Integer> clientCache = createCacheFromNewClient();
 
         serverCache.put(1, 1);
 
         assertNotNull(getMetaDataGenerator(server).getSequenceGenerators().get(PREFIXED_CACHE_NAME));
 
-        ((ICache) clientCache).destroy();
+        clientCache.destroy();
 
         assertNull(getMetaDataGenerator(server).getSequenceGenerators().get(PREFIXED_CACHE_NAME));
     }
 
     @Test
-    public void destroying_cache_removes_related_metadata_when_near_cache_not_exists() throws Exception {
+    public void destroying_cache_removes_related_metadata_when_near_cache_not_exists() {
         serverCache.put(1, 1);
 
         assertNull(getMetaDataGenerator(server).getSequenceGenerators().get(PREFIXED_CACHE_NAME));
 
-        ((ICache) serverCache).destroy();
+        serverCache.destroy();
 
         assertNull(getMetaDataGenerator(server).getSequenceGenerators().get(PREFIXED_CACHE_NAME));
     }
 
-    private Cache createCacheFromNewClient() {
+    @Override
+    protected Config getConfig() {
+        return getBaseConfig();
+    }
+
+    protected ClientConfig getClientConfig() {
+        return new ClientConfig();
+    }
+
+    protected CacheConfig<Integer, Integer> getCacheConfig(String cacheName) {
+        EvictionConfig evictionConfig = new EvictionConfig()
+                .setMaximumSizePolicy(ENTRY_COUNT)
+                .setSize(MAX_VALUE);
+
+        return new CacheConfig<Integer, Integer>()
+                .setName(cacheName)
+                .setEvictionConfig(evictionConfig);
+    }
+
+    protected NearCacheConfig getNearCacheConfig() {
+        return new NearCacheConfig(CACHE_NAME)
+                .setInvalidateOnChange(true);
+    }
+
+    private ICache<Integer, Integer> createCacheFromNewClient() {
         HazelcastClientProxy client = (HazelcastClientProxy) factory.newHazelcastClient(clientConfig);
         CachingProvider clientCachingProvider = HazelcastClientCachingProvider.createCachingProvider(client);
 
         CacheManager cacheManager = clientCachingProvider.getCacheManager();
-        Cache cache = cacheManager.createCache(CACHE_NAME, cacheConfig);
+        ICache<Integer, Integer> cache = (ICache<Integer, Integer>) cacheManager.createCache(CACHE_NAME, cacheConfig);
 
-        assert cache instanceof NearCachedClientCacheProxy;
+        assertInstanceOf(NearCachedClientCacheProxy.class, cache);
 
         return cache;
-    }
-
-    protected ClientConfig newClientConfig() {
-        return new ClientConfig();
-    }
-
-    protected CacheConfig newCacheConfig() {
-        return new CacheConfig();
-    }
-
-    protected NearCacheConfig newNearCacheConfig() {
-        return new NearCacheConfig(CACHE_NAME);
     }
 
     private static MetaDataGenerator getMetaDataGenerator(HazelcastInstance member) {
