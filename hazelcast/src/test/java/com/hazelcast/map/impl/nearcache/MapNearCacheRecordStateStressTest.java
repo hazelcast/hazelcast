@@ -17,15 +17,14 @@
 package com.hazelcast.map.impl.nearcache;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.internal.nearcache.NearCacheRecord;
 import com.hazelcast.internal.nearcache.NearCacheRecordStore;
 import com.hazelcast.internal.nearcache.impl.DefaultNearCache;
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.impl.proxy.NearCachedMapProxyImpl;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -42,14 +41,15 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.internal.nearcache.NearCacheRecord.READ_PERMITTED;
+import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getBaseConfig;
 import static com.hazelcast.util.RandomPicker.getInt;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(NightlyTest.class)
-public class MemberMapRecordStateStressTest extends HazelcastTestSupport {
+public class MapNearCacheRecordStateStressTest extends HazelcastTestSupport {
 
-    private static final String MAP_NAME = "test";
     private static final int KEY_SPACE = 100;
     private static final int TEST_RUN_SECONDS = 60;
     private static final int GET_ALL_THREAD_COUNT = 3;
@@ -59,13 +59,31 @@ public class MemberMapRecordStateStressTest extends HazelcastTestSupport {
     private static final int CLEAR_THREAD_COUNT = 2;
     private static final int REMOVE_THREAD_COUNT = 2;
 
-    private TestHazelcastInstanceFactory factory;
-    private AtomicBoolean stop;
+    private final TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory();
+    private final AtomicBoolean stop = new AtomicBoolean();
+
+    private IMap<Integer, Integer> memberMap;
+    private IMap<Integer, Integer> nearCachedMap;
 
     @Before
     public void setUp() {
-        factory = new TestHazelcastInstanceFactory();
-        stop = new AtomicBoolean();
+        String mapName = randomMapName();
+
+        Config config = getBaseConfig();
+
+        MapConfig mapConfig = new MapConfig(mapName)
+                .setNearCacheConfig(newNearCacheConfig(mapName));
+
+        Config configWithNearCache = getBaseConfig()
+                .addMapConfig(mapConfig);
+
+        HazelcastInstance member = factory.newHazelcastInstance(config);
+        factory.newHazelcastInstance(config);
+
+        HazelcastInstance nearCachedMember = factory.newHazelcastInstance(configWithNearCache);
+
+        memberMap = member.getMap(mapName);
+        nearCachedMap = nearCachedMember.getMap(mapName);
     }
 
     @After
@@ -75,51 +93,34 @@ public class MemberMapRecordStateStressTest extends HazelcastTestSupport {
 
     @Test
     public void allRecordsAreInReadableStateInTheEnd() throws Exception {
-        HazelcastInstance member1 = factory.newHazelcastInstance();
-        HazelcastInstance member2 = factory.newHazelcastInstance();
-
-        Config config = new Config();
-        config.getMapConfig(MAP_NAME).setNearCacheConfig(newNearCacheConfig());
-        HazelcastInstance nearCachedMember = factory.newHazelcastInstance(config);
-
-        IMap<Integer, Integer> memberMap = member1.getMap(MAP_NAME);
         // initial population of IMap from member
         for (int i = 0; i < KEY_SPACE; i++) {
             memberMap.put(i, i);
         }
 
         List<Thread> threads = new ArrayList<Thread>();
-
         // member
         for (int i = 0; i < PUT_THREAD_COUNT; i++) {
             Put put = new Put(memberMap);
             threads.add(put);
         }
-
-        // nearCachedMap
-        IMap<Integer, Integer> nearCachedMap = nearCachedMember.getMap(MAP_NAME);
-
-        // member
+        // member with Near Cache
         for (int i = 0; i < PUT_LOCAL_THREAD_COUNT; i++) {
             Put put = new Put(nearCachedMap);
             threads.add(put);
         }
-
         for (int i = 0; i < GET_ALL_THREAD_COUNT; i++) {
             GetAll getAll = new GetAll(nearCachedMap);
             threads.add(getAll);
         }
-
         for (int i = 0; i < GET_THREAD_COUNT; i++) {
             Get get = new Get(nearCachedMap);
             threads.add(get);
         }
-
         for (int i = 0; i < REMOVE_THREAD_COUNT; i++) {
             Remove remove = new Remove(nearCachedMap);
             threads.add(remove);
         }
-
         for (int i = 0; i < CLEAR_THREAD_COUNT; i++) {
             Clear clear = new Clear(nearCachedMap);
             threads.add(clear);
@@ -139,28 +140,38 @@ public class MemberMapRecordStateStressTest extends HazelcastTestSupport {
             thread.join();
         }
 
-        assertFinalRecordStateIsReadPermitted(nearCachedMap, getSerializationService(member1));
+        assertFinalRecordStateIsReadPermitted(nearCachedMap);
     }
 
-    private NearCacheConfig newNearCacheConfig() {
-        return new NearCacheConfig()
-                .setName(MAP_NAME)
+    private NearCacheConfig newNearCacheConfig(String mapName) {
+        return new NearCacheConfig(mapName)
+                .setSerializeKeys(false)
                 .setInvalidateOnChange(true);
     }
 
-    private static void assertFinalRecordStateIsReadPermitted(IMap memberMap, InternalSerializationService serializationService) {
+    private static void assertFinalRecordStateIsReadPermitted(IMap memberMap) {
         NearCachedMapProxyImpl proxy = (NearCachedMapProxyImpl) memberMap;
         DefaultNearCache nearCache = (DefaultNearCache) proxy.getNearCache().unwrap(DefaultNearCache.class);
+        assertNearCacheRecordStates(nearCache, KEY_SPACE);
+    }
+
+    @SuppressWarnings("unchecked")
+    public static void assertNearCacheRecordStates(DefaultNearCache nearCache, int keySpace) {
         NearCacheRecordStore nearCacheRecordStore = nearCache.getNearCacheRecordStore();
+        if (nearCacheRecordStore.size() == 0) {
+            return;
+        }
 
-        for (int i = 0; i < KEY_SPACE; i++) {
-            Data key = serializationService.toData(i);
-            NearCacheRecord record = nearCacheRecordStore.getRecord(key);
-
+        boolean recordFound = false;
+        for (int i = 0; i < keySpace; i++) {
+            NearCacheRecord record = nearCacheRecordStore.getRecord(i);
             if (record != null) {
                 assertEquals(record.toString(), READ_PERMITTED, record.getRecordState());
+                recordFound = true;
             }
         }
+        // this is a fail-safe check, to be sure that we used the correct in-memory format for the key
+        assertTrue("We should have found at least one NearCacheRecord", recordFound);
     }
 
     private class Put extends Thread {
