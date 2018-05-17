@@ -366,7 +366,7 @@ public class TypeConverterTest {
         Comparable actual = TypeConverters.DATE_CONVERTER.convert(millis);
 
         assertThat(actual, allOf(
-                is(instanceOf(Short.class)),
+                is(instanceOf(Date.class)),
                 is(equalTo((Comparable) expected))
         ));
     }
@@ -389,10 +389,10 @@ public class TypeConverterTest {
         Byte expected = 0x42;
         Long value = Long.valueOf(expected);
 
-        Comparable actual = TypeConverters.SHORT_CONVERTER.convert(value);
+        Comparable actual = TypeConverters.BYTE_CONVERTER.convert(value);
 
         assertThat(actual, allOf(
-                is(instanceOf(Short.class)),
+                is(instanceOf(Byte.class)),
                 is(equalTo((Comparable) expected))
         ));
     }
