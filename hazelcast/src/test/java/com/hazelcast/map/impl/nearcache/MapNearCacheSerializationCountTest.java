@@ -52,6 +52,7 @@ import static com.hazelcast.config.InMemoryFormat.OBJECT;
 import static com.hazelcast.internal.adapter.DataStructureAdapter.DataStructureMethods.GET;
 import static com.hazelcast.internal.adapter.DataStructureAdapter.DataStructureMethods.GET_ALL;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.createNearCacheConfig;
+import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getBaseConfig;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getMapNearCacheManager;
 import static com.hazelcast.spi.properties.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS;
 import static com.hazelcast.spi.properties.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_SIZE;
@@ -183,7 +184,7 @@ public class MapNearCacheSerializationCountTest extends AbstractNearCacheSeriali
 
     @Override
     protected Config getConfig() {
-        return smallInstanceConfig();
+        return getBaseConfig();
     }
 
     private Config getConfig(boolean withNearCache) {
