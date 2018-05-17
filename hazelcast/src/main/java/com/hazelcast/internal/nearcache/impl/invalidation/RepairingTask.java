@@ -39,30 +39,34 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
- * This task runs on Near Cache side and only one instance is created per data-structure type like IMap and ICache.
+ * This task runs on Near Cache side and only one instance is created per
+ * data-structure type like IMap and ICache.
+ * <p>
  * Repairing responsibilities of this task are:
  * <ul>
  * <li>
- * To scan {@link RepairingHandler}s to see if any Near Cache needs to be invalidated
- * according to missed invalidation counts. Controlled via {@link RepairingTask#MAX_TOLERATED_MISS_COUNT}
+ * To scan {@link RepairingHandler}s to see if any Near Cache needs to be
+ * invalidated according to missed invalidation counts (controlled via
+ * {@link RepairingTask#MAX_TOLERATED_MISS_COUNT}).
  * </li>
  * <li>
- * To send periodic generic-operations to cluster members in order to fetch latest partition sequences and UUIDs.
- * Controlled via {@link RepairingTask#MIN_RECONCILIATION_INTERVAL_SECONDS}
+ * To send periodic generic-operations to cluster members in order to fetch
+ * latest partition sequences and UUIDs (controlled via
+ * {@link RepairingTask#MIN_RECONCILIATION_INTERVAL_SECONDS}).
  * </li>
  * </ul>
  */
 public final class RepairingTask implements Runnable {
 
-    static final HazelcastProperty MAX_TOLERATED_MISS_COUNT
+    public static final HazelcastProperty MAX_TOLERATED_MISS_COUNT
             = new HazelcastProperty("hazelcast.invalidation.max.tolerated.miss.count", 10);
-    static final HazelcastProperty RECONCILIATION_INTERVAL_SECONDS
+    public static final HazelcastProperty RECONCILIATION_INTERVAL_SECONDS
             = new HazelcastProperty("hazelcast.invalidation.reconciliation.interval.seconds", 60, SECONDS);
     // only used for testing
-    static final HazelcastProperty MIN_RECONCILIATION_INTERVAL_SECONDS
+    public static final HazelcastProperty MIN_RECONCILIATION_INTERVAL_SECONDS
             = new HazelcastProperty("hazelcast.invalidation.min.reconciliation.interval.seconds", 30, SECONDS);
 
-    static final long RESCHEDULE_FAILED_INITIALIZATION_AFTER_MILLIS = 500;
+    private static final long RESCHEDULE_FAILED_INITIALIZATION_AFTER_MILLIS = 500;
 
     final int maxToleratedMissCount;
     final long reconciliationIntervalNanos;
@@ -125,7 +129,8 @@ public final class RepairingTask implements Runnable {
     }
 
     /**
-     * Marks relevant data as stale if missed invalidation event count is above the max tolerated miss count.
+     * Marks relevant data as stale if missed invalidation event count is above
+     * the max tolerated miss count.
      */
     private void fixSequenceGaps() {
         for (RepairingHandler handler : handlers.values()) {
@@ -136,7 +141,8 @@ public final class RepairingTask implements Runnable {
     }
 
     /**
-     * Periodically sends generic operations to cluster members to get latest invalidation metadata.
+     * Periodically sends generic operations to cluster members to get latest
+     * invalidation metadata.
      */
     private void runAntiEntropyIfNeeded() {
         if (reconciliationIntervalNanos == 0) {
@@ -164,7 +170,7 @@ public final class RepairingTask implements Runnable {
 
         private final NearCache<K, V> nearCache;
 
-        public HandlerConstructor(NearCache nearCache) {
+        HandlerConstructor(NearCache<K, V> nearCache) {
             this.nearCache = nearCache;
         }
 
@@ -182,7 +188,7 @@ public final class RepairingTask implements Runnable {
     }
 
     public <K, V> RepairingHandler registerAndGetHandler(String dataStructureName, NearCache<K, V> nearCache) {
-        RepairingHandler handler = getOrPutIfAbsent(handlers, dataStructureName, new HandlerConstructor(nearCache));
+        RepairingHandler handler = getOrPutIfAbsent(handlers, dataStructureName, new HandlerConstructor<K, V>(nearCache));
 
         if (running.compareAndSet(false, true)) {
             scheduleNextRun();
@@ -198,7 +204,8 @@ public final class RepairingTask implements Runnable {
 
     /**
      * Synchronously makes initial population of partition UUIDs & sequences.
-     * This initialization is done for every data structure with Near Cache.
+     * <p>
+     * This initialization is done for every data structure with a Near Cache.
      */
     private void initRepairingHandler(RepairingHandler handler) {
         logger.finest("Initializing repairing handler");
@@ -218,7 +225,9 @@ public final class RepairingTask implements Runnable {
 
     /**
      * Asynchronously makes initial population of partition UUIDs & sequences.
-     * This is the fallback operation when {@link #initRepairingHandler} is failed.
+     * <p>
+     * This is the fallback operation when {@link #initRepairingHandler}
+     * failed.
      */
     private void initRepairingHandlerAsync(final RepairingHandler handler) {
         scheduler.schedule(new Runnable() {
@@ -259,7 +268,9 @@ public final class RepairingTask implements Runnable {
     }
 
     /**
-     * Calculates number of missed invalidations and checks if repair is needed for the supplied handler.
+     * Calculates the number of missed invalidations and checks if repair is
+     * needed for the supplied handler.
+     * <p>
      * Every handler represents a single Near Cache.
      */
     private boolean isAboveMaxToleratedMissCount(RepairingHandler handler) {
@@ -272,8 +283,8 @@ public final class RepairingTask implements Runnable {
 
             if (missCount > maxToleratedMissCount) {
                 if (logger.isFinestEnabled()) {
-                    logger.finest(format("%s:[map=%s,missCount=%d,maxToleratedMissCount=%d]",
-                            "Above tolerated miss count", handler.getName(), missCount, maxToleratedMissCount));
+                    logger.finest(format("Above tolerated miss count:[map=%s,missCount=%d,maxToleratedMissCount=%d]",
+                            handler.getName(), missCount, maxToleratedMissCount));
                 }
                 return true;
             }
@@ -293,12 +304,12 @@ public final class RepairingTask implements Runnable {
         }
     }
 
-    // used in tests.
+    // used in tests
     public MetaDataFetcher getMetaDataFetcher() {
         return metaDataFetcher;
     }
 
-    // used in tests.
+    // used in tests
     public ConcurrentMap<String, RepairingHandler> getHandlers() {
         return handlers;
     }
