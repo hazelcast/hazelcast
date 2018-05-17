@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.nearcache.invalidation;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
@@ -34,62 +35,79 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getBaseConfig;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class MapMetaDataGeneratorTest extends HazelcastTestSupport {
+public class MemberMapMetaDataGeneratorTest extends HazelcastTestSupport {
+
+    private static final String MAP_NAME = "MemberMapMetaDataGeneratorTest";
 
     @Test
-    public void destroying_map_removes_related_metadata_when_near_cache_exists() throws Exception {
-        final String mapName = "test";
+    public void destroying_map_removes_related_metadata_when_near_cache_exists() {
+        MapConfig mapConfig = getMapConfig(MAP_NAME);
 
-        Config config = getConfig();
-        NearCacheConfig nearCacheConfig = new NearCacheConfig();
-        config.getMapConfig(mapName).setNearCacheConfig(nearCacheConfig);
+        Config config = getConfig()
+                .addMapConfig(mapConfig);
+
         HazelcastInstance member = createHazelcastInstance(config);
 
-        IMap map = member.getMap(mapName);
+        IMap<Integer, Integer> map = member.getMap(MAP_NAME);
         map.put(1, 1);
 
         final MetaDataGenerator metaDataGenerator = getMetaDataGenerator(member);
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
-                assertNotNull(metaDataGenerator.getSequenceGenerators().get(mapName));
+            public void run() {
+                assertNotNull(metaDataGenerator.getSequenceGenerators().get(MAP_NAME));
             }
         });
 
         map.destroy();
 
-        assertNull(metaDataGenerator.getSequenceGenerators().get(mapName));
+        assertNull(metaDataGenerator.getSequenceGenerators().get(MAP_NAME));
     }
 
     @Test
-    public void destroying_map_removes_related_metadata_when_near_cache_not_exists() throws Exception {
-        final String mapName = "test";
-        final HazelcastInstance member = createHazelcastInstance(getConfig());
+    public void destroying_map_removes_related_metadata_when_near_cache_not_exists() {
+        Config config = getConfig();
+        HazelcastInstance member = createHazelcastInstance(config);
 
-        IMap map = member.getMap(mapName);
+        IMap<Integer, Integer> map = member.getMap(MAP_NAME);
         map.put(1, 1);
 
         final MetaDataGenerator metaDataGenerator = getMetaDataGenerator(member);
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
-                assertNull(metaDataGenerator.getSequenceGenerators().get(mapName));
+            public void run() {
+                assertNull(metaDataGenerator.getSequenceGenerators().get(MAP_NAME));
             }
         });
 
-
         map.destroy();
 
-        assertNull(metaDataGenerator.getSequenceGenerators().get(mapName));
+        assertNull(metaDataGenerator.getSequenceGenerators().get(MAP_NAME));
     }
 
-    protected static MetaDataGenerator getMetaDataGenerator(HazelcastInstance member) {
+    protected Config getConfig() {
+        return getBaseConfig();
+    }
+
+    protected MapConfig getMapConfig(String mapName) {
+        NearCacheConfig nearCacheConfig = getNearCacheConfig(mapName);
+
+        return new MapConfig(mapName)
+                .setNearCacheConfig(nearCacheConfig);
+    }
+
+    protected NearCacheConfig getNearCacheConfig(String mapName) {
+        return new NearCacheConfig(mapName);
+    }
+
+    private static MetaDataGenerator getMetaDataGenerator(HazelcastInstance member) {
         MapService mapService = getNodeEngineImpl(member).getService(SERVICE_NAME);
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         MapNearCacheManager mapNearCacheManager = mapServiceContext.getMapNearCacheManager();
