@@ -340,6 +340,7 @@ public abstract class NioPipeline implements MigratablePipeline, Closeable, Runn
             try {
                 assert owner == null;
                 owner = newOwner;
+                ownerId = newOwner.id;
 
                 // we don't need to wakeup since the io thread will see the delayed tasks.
                 restoreTasks(owner, delayedTaskStack.getAndSet(null), false);
