@@ -17,7 +17,7 @@
 package com.hazelcast.cluster.impl;
 
 import com.hazelcast.cluster.Joiner;
-import com.hazelcast.config.AwsConfig;
+import com.hazelcast.aws.AwsConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.instance.DefaultNodeContext;
@@ -37,6 +37,7 @@ import java.io.IOException;
 import java.nio.channels.ServerSocketChannel;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static com.hazelcast.cluster.impl.TcpIpJoinerOverAWS.fromDeprecatedAwsConfig;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -50,7 +51,7 @@ public class TcpIpJoinerOverAWSTest extends HazelcastTestSupport {
         JoinConfig join = config.getNetworkConfig().getJoin();
         join.getMulticastConfig().setEnabled(false);
 
-        AwsConfig awsConfig = join.getAwsConfig();
+        AwsConfig awsConfig = fromDeprecatedAwsConfig(join.getAwsConfig());
         awsConfig.setEnabled(true)
                 .setAccessKey(randomString())
                 .setSecretKey(randomString());

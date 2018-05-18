@@ -16,7 +16,6 @@
 
 package com.hazelcast.aws;
 
-import com.hazelcast.config.AwsConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.config.properties.PropertyDefinition;
 import com.hazelcast.config.properties.PropertyTypeConverter;
@@ -81,6 +80,11 @@ public enum AwsProperties {
      * Its default value is 5.
      */
     CONNECTION_TIMEOUT_SECONDS("connection-timeout-seconds", INTEGER, true),
+
+    /**
+     * Number of retries while connecting to AWS Services. Its default value is 10.
+     */
+    CONNECTION_RETRIES("connection-retries", INTEGER, true),
 
     /**
      * The discovery mechanism will discover only IP addresses. You can define the port or the port range on which Hazelcast is

@@ -18,7 +18,7 @@ package com.hazelcast.aws.security;
 
 import com.hazelcast.aws.impl.Constants;
 import com.hazelcast.aws.utility.AwsURLEncoder;
-import com.hazelcast.config.AwsConfig;
+import com.hazelcast.aws.AwsConfig;
 import com.hazelcast.util.QuickMath;
 
 import javax.crypto.Mac;

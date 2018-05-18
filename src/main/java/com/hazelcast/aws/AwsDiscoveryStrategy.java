@@ -16,7 +16,6 @@
 
 package com.hazelcast.aws;
 
-import com.hazelcast.config.AwsConfig;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.properties.PropertyDefinition;
 import com.hazelcast.logging.ILogger;
@@ -35,6 +34,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static com.hazelcast.aws.AwsProperties.ACCESS_KEY;
+import static com.hazelcast.aws.AwsProperties.CONNECTION_RETRIES;
 import static com.hazelcast.aws.AwsProperties.CONNECTION_TIMEOUT_SECONDS;
 import static com.hazelcast.aws.AwsProperties.HOST_HEADER;
 import static com.hazelcast.aws.AwsProperties.IAM_ROLE;
@@ -55,6 +55,7 @@ public class AwsDiscoveryStrategy
         extends AbstractDiscoveryStrategy {
     private static final ILogger LOGGER = Logger.getLogger(AwsDiscoveryStrategy.class);
     private static final String DEFAULT_PORT_RANGE = "5701-5708";
+    private static final Integer DEFAULT_CONNECTION_RETRIES = 10;
 
     private final AWSClient awsClient;
     private final PortRange portRange;
@@ -112,6 +113,9 @@ public class AwsDiscoveryStrategy
 
         final Integer timeout = getOrDefault(CONNECTION_TIMEOUT_SECONDS.getDefinition(), 10);
         config.setConnectionTimeoutSeconds(timeout);
+
+        final Integer connectionRetries = getOrDefault(CONNECTION_RETRIES.getDefinition(), DEFAULT_CONNECTION_RETRIES);
+        config.setConnectionRetries(connectionRetries);
 
         final String region = getOrNull(REGION);
         if (region != null) {

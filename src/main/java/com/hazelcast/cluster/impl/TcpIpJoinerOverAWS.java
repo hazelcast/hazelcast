@@ -17,13 +17,19 @@
 package com.hazelcast.cluster.impl;
 
 import com.hazelcast.aws.AWSClient;
-import com.hazelcast.config.AwsConfig;
+import com.hazelcast.aws.AwsConfig;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.Collection;
 
+/**
+ * Joiner used for the deprecated AwsConfig.
+ *
+ * @deprecated Use {@link AwsDiscoveryStrategy} instead of AwsConfig.
+ */
+@Deprecated
 public class TcpIpJoinerOverAWS extends TcpIpJoiner {
 
     private final AWSClient aws;
@@ -33,7 +39,7 @@ public class TcpIpJoinerOverAWS extends TcpIpJoiner {
         super(node);
         logger = node.getLogger(getClass());
 
-        AwsConfig awsConfig = node.getConfig().getNetworkConfig().getJoin().getAwsConfig();
+        AwsConfig awsConfig = fromDeprecatedAwsConfig(node.getConfig().getNetworkConfig().getJoin().getAwsConfig());
         aws = new AWSClient(awsConfig);
     }
 
@@ -61,12 +67,27 @@ public class TcpIpJoinerOverAWS extends TcpIpJoiner {
 
     @Override
     protected int getConnTimeoutSeconds() {
-        AwsConfig awsConfig = node.getConfig().getNetworkConfig().getJoin().getAwsConfig();
+        AwsConfig awsConfig = fromDeprecatedAwsConfig(node.getConfig().getNetworkConfig().getJoin().getAwsConfig());
         return awsConfig.getConnectionTimeoutSeconds();
     }
 
     @Override
     public String getType() {
         return "aws";
+    }
+
+    static AwsConfig fromDeprecatedAwsConfig(com.hazelcast.config.AwsConfig awsConfig) {
+        return new AwsConfig()
+                .setEnabled(awsConfig.isEnabled())
+                .setAccessKey(awsConfig.getAccessKey())
+                .setSecretKey(awsConfig.getSecretKey())
+                .setRegion(awsConfig.getRegion())
+                .setSecurityGroupName(awsConfig.getSecurityGroupName())
+                .setTagKey(awsConfig.getTagKey())
+                .setTagValue(awsConfig.getTagValue())
+                .setHostHeader(awsConfig.getHostHeader())
+                .setIamRole(awsConfig.getIamRole())
+                .setConnectionTimeoutSeconds(awsConfig.getConnectionTimeoutSeconds());
+
     }
 }

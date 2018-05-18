@@ -18,7 +18,7 @@ package com.hazelcast.aws.impl;
 
 import com.hazelcast.aws.exception.AwsConnectionException;
 import com.hazelcast.aws.utility.Environment;
-import com.hazelcast.config.AwsConfig;
+import com.hazelcast.aws.AwsConfig;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;

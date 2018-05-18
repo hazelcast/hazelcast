@@ -22,8 +22,10 @@ import com.hazelcast.aws.utility.CloudyUtility;
 import com.hazelcast.aws.utility.Environment;
 import com.hazelcast.aws.utility.MetadataUtil;
 import com.hazelcast.com.eclipsesource.json.JsonObject;
-import com.hazelcast.config.AwsConfig;
+import com.hazelcast.aws.AwsConfig;
 import com.hazelcast.config.InvalidConfigurationException;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -53,6 +55,8 @@ import static com.hazelcast.nio.IOUtil.closeResource;
  * for AWS API details.
  */
 public class DescribeInstances {
+    private static final ILogger logger = Logger.getLogger(DescribeInstances.class);
+
     /**
      * URI to fetch container credentials (when IAM role is enabled)
      *
@@ -229,7 +233,7 @@ public class DescribeInstances {
         InputStream stream = null;
         attributes.put("X-Amz-Signature", signature);
         try {
-            stream = callService(endpoint);
+            stream = callServiceWithRetries(endpoint);
             response = CloudyUtility.unmarshalTheResponse(stream);
             return response;
         } finally {
@@ -237,8 +241,25 @@ public class DescribeInstances {
         }
     }
 
+    private InputStream callServiceWithRetries(String endpoint) throws Exception {
+        int retryCount = 0;
+        while (true) {
+            try {
+                return callService(endpoint);
+            } catch (Exception e) {
+                retryCount++;
+                if (retryCount >= awsConfig.getConnectionRetries()) {
+                    throw e;
+                }
+                logger.warning(
+                        String.format("Couldn't connect to AWS endpoint \"%s\", %s retrying...", endpoint, retryCount));
+            }
+        }
+    }
+
     // visible for testing
-    InputStream callService(String endpoint) throws Exception {
+    InputStream callService(String endpoint)
+            throws Exception {
         String query = getRequestSigner().getCanonicalizedQueryString(attributes);
         URL url = new URL("https", endpoint, -1, "/?" + query);
 
