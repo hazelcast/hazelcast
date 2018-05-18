@@ -66,7 +66,7 @@ import static java.util.Collections.newSetFromMap;
 public class TcpIpConnectionManager implements ConnectionManager, Consumer<Packet> {
 
     private static final int RETRY_NUMBER = 5;
-    private static final int DELAY_FACTOR = 100;
+    private static final long DELAY_FACTOR = 100L;
     private static final int SCHEDULER_POOL_SIZE = 4;
 
     final LoggingService loggingService;

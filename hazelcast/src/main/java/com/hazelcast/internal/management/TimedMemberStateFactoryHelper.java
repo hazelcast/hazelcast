@@ -122,12 +122,12 @@ final class TimedMemberStateFactoryHelper {
         map.put("memory.nonHeapMemoryMax", nonHeapMemory.getMax());
         map.put("memory.nonHeapMemoryUsed", nonHeapMemory.getUsed());
         map.put("runtime.totalLoadedClassCount", clMxBean.getTotalLoadedClassCount());
-        map.put("runtime.loadedClassCount", Integer.valueOf(clMxBean.getLoadedClassCount()).longValue());
+        map.put("runtime.loadedClassCount", (long) clMxBean.getLoadedClassCount());
         map.put("runtime.unloadedClassCount", clMxBean.getUnloadedClassCount());
         map.put("runtime.totalStartedThreadCount", threadMxBean.getTotalStartedThreadCount());
-        map.put("runtime.threadCount", Integer.valueOf(threadMxBean.getThreadCount()).longValue());
-        map.put("runtime.peakThreadCount", Integer.valueOf(threadMxBean.getPeakThreadCount()).longValue());
-        map.put("runtime.daemonThreadCount", Integer.valueOf(threadMxBean.getDaemonThreadCount()).longValue());
+        map.put("runtime.threadCount", (long) threadMxBean.getThreadCount());
+        map.put("runtime.peakThreadCount", (long) threadMxBean.getPeakThreadCount());
+        map.put("runtime.daemonThreadCount", (long) threadMxBean.getDaemonThreadCount());
 
         OperatingSystemMXBean osMxBean = ManagementFactory.getOperatingSystemMXBean();
         map.put("osMemory.freePhysicalMemory", get(osMxBean, "getFreePhysicalMemorySize", 0L));
