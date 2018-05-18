@@ -77,6 +77,7 @@ import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.executor.ExecutorType;
 
 import javax.security.auth.login.LoginException;
+import java.net.InetSocketAddress;
 import java.util.Collection;
 import java.util.EnumMap;
 import java.util.HashMap;
@@ -313,8 +314,12 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
     public void bind(final ClientEndpoint endpoint) {
         final Connection conn = endpoint.getConnection();
         if (conn instanceof TcpIpConnection) {
-            Address address = new Address(conn.getRemoteSocketAddress());
-            ((TcpIpConnection) conn).setEndPoint(address);
+            InetSocketAddress socketAddress = conn.getRemoteSocketAddress();
+            //socket address can be null if connection closed before bind
+            if (socketAddress != null) {
+                Address address = new Address(socketAddress);
+                ((TcpIpConnection) conn).setEndPoint(address);
+            }
         }
         ClientEvent event = new ClientEvent(endpoint.getUuid(),
                 ClientEventType.CONNECTED,
