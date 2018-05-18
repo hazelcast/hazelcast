@@ -49,7 +49,7 @@ public class HyperLogLogImplTest {
     @Parameters(name = "precision:{0}, errorRange:{1}")
     public static Collection<Object[]> parameters() {
         return asList(new Object[][]{
-                {11, 6.5f},
+                {11, 7.0f},
                 {12, 5.5f},
                 {13, 3.5f},
                 {14, 3.0f},
