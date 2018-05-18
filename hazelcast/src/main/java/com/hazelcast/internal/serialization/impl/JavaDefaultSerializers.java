@@ -44,6 +44,7 @@ import static com.hazelcast.internal.serialization.impl.SerializationConstants.J
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_ENUM;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_EXTERNALIZABLE;
 import static com.hazelcast.internal.serialization.impl.SerializationConstants.JAVA_DEFAULT_TYPE_SERIALIZABLE;
+import static com.hazelcast.nio.IOUtil.closeResource;
 import static com.hazelcast.nio.IOUtil.newObjectInputStream;
 import static java.lang.Math.max;
 
@@ -76,14 +77,17 @@ public final class JavaDefaultSerializers {
         }
 
         private Object read(InputStream in, ClassLoader classLoader) throws IOException {
+            ObjectInputStream objectInputStream = null;
             try {
-                ObjectInputStream objectInputStream = newObjectInputStream(classLoader, classFilter, in);
+                objectInputStream = newObjectInputStream(classLoader, classFilter, in);
                 if (shared) {
                     return objectInputStream.readObject();
                 }
                 return objectInputStream.readUnshared();
             } catch (ClassNotFoundException e) {
                 throw new HazelcastSerializationException(e);
+            } finally {
+                closeResource(objectInputStream);
             }
         }
 
