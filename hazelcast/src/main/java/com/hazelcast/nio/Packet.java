@@ -217,12 +217,8 @@ public final class Packet extends HeapData implements OutboundFrame {
         return isFlagRaised(FLAG_URGENT);
     }
 
-    /**
-     * Returns an estimation of the packet, including its payload, in bytes.
-     *
-     * @return the size of the packet.
-     */
-    public int packetSize() {
+    @Override
+    public int getFrameLength() {
         return (payload != null ? totalSize() : 0) + HEADER_SIZE;
     }
 

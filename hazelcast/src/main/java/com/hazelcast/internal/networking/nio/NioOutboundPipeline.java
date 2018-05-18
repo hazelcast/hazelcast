@@ -25,7 +25,6 @@ import com.hazelcast.internal.networking.OutboundFrame;
 import com.hazelcast.internal.networking.nio.iobalancer.IOBalancer;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Packet;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -119,9 +118,7 @@ public final class NioOutboundPipeline extends NioPipeline {
     private long bytesPending(Queue<OutboundFrame> writeQueue) {
         long bytesPending = 0;
         for (OutboundFrame frame : writeQueue) {
-            if (frame instanceof Packet) {
-                bytesPending += ((Packet) frame).packetSize();
-            }
+            bytesPending += frame.getFrameLength();
         }
         return bytesPending;
     }
