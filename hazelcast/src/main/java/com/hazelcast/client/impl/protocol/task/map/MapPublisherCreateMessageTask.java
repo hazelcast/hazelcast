@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.impl.protocol.task.map;
 
-import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ContinuousQueryPublisherCreateCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
@@ -69,7 +68,6 @@ public class MapPublisherCreateMessageTask
 
     private void createInvocations(Collection<MemberImpl> members, List<Future> futures) {
         final InternalOperationService operationService = nodeEngine.getOperationService();
-        final ClientEndpoint endpoint = getEndpoint();
         for (MemberImpl member : members) {
             Predicate predicate = serializationService.toObject(parameters.predicate);
             AccumulatorInfo accumulatorInfo =

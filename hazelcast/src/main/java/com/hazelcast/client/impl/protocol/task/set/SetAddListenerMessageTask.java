@@ -47,7 +47,6 @@ public class SetAddListenerMessageTask
 
     @Override
     protected Object call() {
-        ClientEndpoint endpoint = getEndpoint();
         Data partitionKey = serializationService.toData(parameters.name);
         ItemListener listener = createItemListener(endpoint, partitionKey);
         EventService eventService = clientEngine.getEventService();
