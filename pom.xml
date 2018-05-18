@@ -103,6 +103,7 @@
         <h2.version>1.3.160</h2.version>
         <atomikos.version>3.9.3</atomikos.version>
         <extraVmArgs/>
+        <vmHeapSettings>-Xms512m -Xmx2G -XX:MaxPermSize=1024M</vmHeapSettings>
     </properties>
     <licenses>
         <license>
@@ -247,7 +248,7 @@
                     <parallel>methods</parallel -->
                     <!-- JaCoCo will use the argLine set here. Test profiles override it. -->
                     <argLine>
-                        -Xms128m -Xmx2G -XX:MaxPermSize=1024M
+                        ${vmHeapSettings}
                         -Dhazelcast.phone.home.enabled=false
                         -Dhazelcast.mancenter.enabled=false
                         -Dhazelcast.test.use.network=false
@@ -284,7 +285,7 @@
                 <configuration combine.self="override">
                     <redirectTestOutputToFile>true</redirectTestOutputToFile>
                     <argLine>
-                        -Xms128m -Xmx1G -XX:MaxPermSize=128M
+                        ${vmHeapSettings}
                         -Dhazelcast.phone.home.enabled=false
                         -Dhazelcast.mancenter.enabled=false
                         -Dhazelcast.logging.type=none
@@ -360,7 +361,8 @@
                                     <forkCount>0.5C</forkCount>
                                     <reuseForks>true</reuseForks>
                                     <argLine>
-                                        -Xms512m -Xmx2G -XX:MaxPermSize=1024M -ea
+                                        ${vmHeapSettings}
+                                        -ea
                                         -Dhazelcast.phone.home.enabled=false
                                         -Dhazelcast.mancenter.enabled=false
                                         -Dhazelcast.logging.type=none
@@ -401,7 +403,7 @@
                                     <redirectTestOutputToFile>true</redirectTestOutputToFile>
                                     <useFile>false</useFile>
                                     <argLine>
-                                        -Xms512m -Xmx2G -XX:MaxPermSize=1024M
+                                        ${vmHeapSettings}
                                         -Dhazelcast.phone.home.enabled=false
                                         -Dhazelcast.mancenter.enabled=false
                                         -Dhazelcast.logging.type=none
@@ -441,6 +443,9 @@
 
         <profile>
             <id>LOCAL</id>
+            <properties>
+                <vmHeapSettings>-Xms128m -Xmx1G -XX:MaxPermSize=128M</vmHeapSettings>
+            </properties>
             <build>
                 <plugins>
                     <plugin>
@@ -451,7 +456,7 @@
                             <redirectTestOutputToFile>true</redirectTestOutputToFile>
                             <useFile>false</useFile>
                             <argLine>
-                                -Xms128m -Xmx1G -XX:MaxPermSize=128M
+                                ${vmHeapSettings}
                                 -Dhazelcast.phone.home.enabled=false
                                 -Dhazelcast.mancenter.enabled=false
                                 -Dhazelcast.test.use.network=false
@@ -488,7 +493,7 @@
                             <redirectTestOutputToFile>true</redirectTestOutputToFile>
                             <useFile>false</useFile>
                             <argLine>
-                                -Xms128m -Xmx1G -XX:MaxPermSize=128M
+                                ${vmHeapSettings}
                                 -Dhazelcast.phone.home.enabled=false
                                 -Dhazelcast.mancenter.enabled=false
                                 -Dhazelcast.test.use.network=false
@@ -517,6 +522,9 @@
 
         <profile>
             <id>test-coverage-Local</id>
+            <properties>
+                <vmHeapSettings>-Xms128m -Xmx1G -XX:MaxPermSize=128M</vmHeapSettings>
+            </properties>
             <build>
                 <plugins>
                     <plugin>
@@ -548,7 +556,7 @@
                             <useFile>false</useFile>
                             <testFailureIgnore>true</testFailureIgnore>
                             <argLine>
-                                -Xms128m -Xmx1G -XX:MaxPermSize=128M
+                                ${vmHeapSettings}
                                 -Dhazelcast.phone.home.enabled=false
                                 -Dhazelcast.mancenter.enabled=false
                                 -Dhazelcast.logging.type=none
@@ -585,7 +593,7 @@
             <id>test-coverage</id>
             <properties>
                 <argLine>
-                    -Xms512m -Xmx2G -XX:MaxPermSize=1024M
+                    ${vmHeapSettings}
                     -Dhazelcast.phone.home.enabled=false
                     -Dhazelcast.mancenter.enabled=false
                     -Dhazelcast.logging.type=none
@@ -662,7 +670,7 @@
                         <configuration combine.self="override">
                             <redirectTestOutputToFile>true</redirectTestOutputToFile>
                             <argLine>
-                                -Xms128m -Xmx1G -XX:MaxPermSize=128M
+                                ${vmHeapSettings}
                                 -Dhazelcast.phone.home.enabled=false
                                 -Dhazelcast.mancenter.enabled=false
                                 -Dhazelcast.logging.type=none
@@ -700,140 +708,6 @@
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>sonar-maven-plugin</artifactId>
                         <version>${maven.sonar.plugin.version}</version>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-
-        <profile>
-            <id>test-coverage-nightly</id>
-            <properties>
-                <coverage.reports.dir>${basedir}/target/coverage-reports</coverage.reports.dir>
-                <sonar.jacoco.reportPath>${coverage.reports.dir}/jacoco.exec</sonar.jacoco.reportPath>
-                <sonar.jacoco.itReportPath>${coverage.reports.dir}/jacoco-it.exec</sonar.jacoco.itReportPath>
-            </properties>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.jacoco</groupId>
-                        <artifactId>jacoco-maven-plugin</artifactId>
-                        <version>${maven.jacoco.plugin.version}</version>
-                        <configuration>
-                            <append>true</append>
-                        </configuration>
-                        <executions>
-                            <execution>
-                                <id>pre-unit-test</id>
-                                <goals>
-                                    <goal>prepare-agent</goal>
-                                </goals>
-                            </execution>
-                            <execution>
-                                <id>post-unit-test</id>
-                                <phase>test</phase>
-                                <goals>
-                                    <goal>report</goal>
-                                </goals>
-                            </execution>
-                            <execution>
-                                <id>pre-integration-test</id>
-                                <phase>pre-integration-test</phase>
-                                <goals>
-                                    <goal>prepare-agent</goal>
-                                </goals>
-                                <configuration>
-                                    <destFile>${sonar.jacoco.itReportPath}</destFile>
-                                    <propertyName>failsafe.argLine</propertyName>
-                                </configuration>
-                            </execution>
-                            <execution>
-                                <id>post-integration-test</id>
-                                <phase>post-integration-test</phase>
-                                <goals>
-                                    <goal>report</goal>
-                                </goals>
-                                <configuration>
-                                    <dataFile>${sonar.jacoco.itReportPath}</dataFile>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-surefire-plugin</artifactId>
-                        <version>${maven.surefire.plugin.version}</version>
-                        <configuration combine.self="override">
-                            <redirectTestOutputToFile>true</redirectTestOutputToFile>
-                            <useFile>false</useFile>
-                            <testFailureIgnore>true</testFailureIgnore>
-                            <argLine>
-                                -Xms128m -Xmx1G -XX:MaxPermSize=128M
-                                -Dhazelcast.phone.home.enabled=false
-                                -Dhazelcast.mancenter.enabled=false
-                                -Dhazelcast.logging.type=none
-                                -Dhazelcast.test.use.network=false
-                                -Dlog4j.skipJansi=true
-                                ${extraVmArgs}
-                            </argLine>
-
-                            <includes>
-                                <include>**/ExecutorConfigTest*.java</include>
-                                <include>**/TopicTest*.java</include>
-                                <include>**/LockTest*.java</include>
-                                <exclude>**/mapreduce/**.java</exclude>
-                            </includes>
-
-                            <groups>
-                                com.hazelcast.test.annotation.QuickTest,
-                                com.hazelcast.test.annotation.SlowTest
-                            </groups>
-                            <excludedGroups>
-                                com.hazelcast.test.annotation.NightlyTest
-                            </excludedGroups>
-                        </configuration>
-                    </plugin>
-
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-failsafe-plugin</artifactId>
-                        <version>${maven.failsafe.plugin.version}</version>
-                        <configuration combine.self="override">
-                            <redirectTestOutputToFile>true</redirectTestOutputToFile>
-                            <argLine>
-                                ${jacoco.agent.argLine}
-                                -Xms128m -Xmx1G -XX:MaxPermSize=128M
-                                -Dhazelcast.phone.home.enabled=false
-                                -Dhazelcast.mancenter.enabled=false
-                                -Dhazelcast.logging.type=none
-                                -Dhazelcast.test.use.network=true
-                                ${extraVmArgs}
-                            </argLine>
-                            <includes>
-                                <include>**/AtomicLongTest*.java</include>
-                                <include>**/AtomicReferenceTest*.java</include>
-                            </includes>
-                            <groups>
-                                com.hazelcast.test.annotation.QuickTest,
-                                com.hazelcast.test.annotation.SlowTest,
-                                com.hazelcast.test.annotation.NightlyTest
-                            </groups>
-
-                        </configuration>
-                        <executions>
-                            <execution>
-                                <goals>
-                                    <goal>integration-test</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                        <dependencies>
-                            <dependency>
-                                <groupId>com.github.jerrinot.maven-surefire</groupId>
-                                <artifactId>maven-surefire-common</artifactId>
-                                <version>${maven.surefire.plugin.version}-buffered</version>
-                            </dependency>
-                        </dependencies>
                     </plugin>
                 </plugins>
             </build>
@@ -1031,7 +905,7 @@
                             <redirectTestOutputToFile>true</redirectTestOutputToFile>
                             <useFile>false</useFile>
                             <argLine>
-                                -Xms512m -Xmx2G -XX:MaxPermSize=1024M
+                                ${vmHeapSettings}
                                 -Dhazelcast.phone.home.enabled=false
                                 -Dhazelcast.mancenter.enabled=false
                                 -Dhazelcast.logging.type=none
@@ -1067,7 +941,7 @@
                         <configuration combine.self="override">
                             <redirectTestOutputToFile>true</redirectTestOutputToFile>
                             <argLine>
-                                -Xms128m -Xmx1G -XX:MaxPermSize=128M
+                                ${vmHeapSettings}
                                 -Dhazelcast.phone.home.enabled=false
                                 -Dhazelcast.mancenter.enabled=false
                                 -Dhazelcast.logging.type=none
@@ -1107,7 +981,7 @@
                             <useFile>false</useFile>
                             <parallel>none</parallel>
                             <argLine>
-                                -Xms512m -Xmx2G -XX:MaxPermSize=1024M
+                                ${vmHeapSettings}
                                 -Dhazelcast.phone.home.enabled=false
                                 -Dhazelcast.mancenter.enabled=false
                                 -Dhazelcast.logging.type=none
@@ -1144,7 +1018,7 @@
                         <configuration combine.self="override">
                             <redirectTestOutputToFile>true</redirectTestOutputToFile>
                             <argLine>
-                                -Xms128m -Xmx1G -XX:MaxPermSize=128M
+                                ${vmHeapSettings}
                                 -Dhazelcast.phone.home.enabled=false
                                 -Dhazelcast.mancenter.enabled=false
                                 -Dhazelcast.logging.type=none
@@ -1187,7 +1061,7 @@
                             <redirectTestOutputToFile>true</redirectTestOutputToFile>
                             <useFile>false</useFile>
                             <argLine>
-                                -Xms512m -Xmx2G
+                                ${vmHeapSettings}
                                 -Dhazelcast.phone.home.enabled=false
                                 -Dhazelcast.mancenter.enabled=false
                                 -Dhazelcast.test.use.network=false
@@ -1223,6 +1097,9 @@
             <!-- same as default build (excludes Nightly & Slow tests), outputs serialized objects to a blob -->
             <!-- for compatibility testing -->
             <id>generate-compatibility-samples</id>
+            <properties>
+                <vmHeapSettings>-Xms128m -Xmx1G -XX:MaxPermSize=128M</vmHeapSettings>
+            </properties>
             <build>
                 <plugins>
                     <plugin>
@@ -1239,7 +1116,7 @@
                             <redirectTestOutputToFile>true</redirectTestOutputToFile>
                             <runOrder>failedfirst</runOrder>
                             <argLine>
-                                -Xms128m -Xmx1G -XX:MaxPermSize=128M
+                                ${vmHeapSettings}
                                 -Dhazelcast.phone.home.enabled=false
                                 -Dhazelcast.mancenter.enabled=false
                                 -Dhazelcast.test.use.network=false
