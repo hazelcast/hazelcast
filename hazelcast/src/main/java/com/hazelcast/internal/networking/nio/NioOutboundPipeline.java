@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.networking.nio;
 
+import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.networking.ChannelErrorHandler;
 import com.hazelcast.internal.networking.ChannelInitializer;
@@ -121,6 +122,8 @@ public final class NioOutboundPipeline extends NioPipeline {
         for (OutboundFrame frame : writeQueue) {
             if (frame instanceof Packet) {
                 bytesPending += ((Packet) frame).packetSize();
+            } else if (frame instanceof ClientMessage) {
+                bytesPending += ((ClientMessage) frame).getFrameLength();
             }
         }
         return bytesPending;
