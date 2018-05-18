@@ -38,11 +38,10 @@ import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.impl.PacketHandler;
 
-import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.SocketException;
+import java.nio.ByteBuffer;
 import java.nio.channels.ServerSocketChannel;
 import java.util.Collection;
 import java.util.Collections;
@@ -57,9 +56,11 @@ public class MockIOService implements IOService {
     public final ConcurrentHashMap<Long, DummyPayload> payloads = new ConcurrentHashMap<Long, DummyPayload>();
     private final ChannelFactory channelFactory;
     public volatile PacketHandler packetHandler;
+    private final ILogger logger;
 
     public MockIOService(int port, ChannelFactory channelFactory) throws Exception {
         loggingService = new LoggingServiceImpl("somegroup", "log4j2", BuildInfoProvider.getBuildInfo());
+        logger = loggingService.getLogger(MockIOService.class);
         serverSocketChannel = ServerSocketChannel.open();
         ServerSocket serverSocket = serverSocketChannel.socket();
         serverSocket.setReuseAddress(true);
@@ -94,6 +95,7 @@ public class MockIOService implements IOService {
 
     @Override
     public void onFatalError(Exception e) {
+        logger.severe("Fatal error", e);
     }
 
     @Override
@@ -133,14 +135,17 @@ public class MockIOService implements IOService {
 
     @Override
     public void removeEndpoint(Address endpoint) {
+        logger.info("Removing endpoint: " + endpoint);
     }
 
     @Override
     public void onSuccessfulConnection(Address address) {
+        logger.info("Successful connection: " + address);
     }
 
     @Override
     public void onFailedConnection(Address address) {
+        logger.info("Failed connection: " + address);
     }
 
     @Override
@@ -186,11 +191,11 @@ public class MockIOService implements IOService {
     }
 
     @Override
-    public void configureSocket(Socket socket) throws SocketException {
+    public void configureSocket(Socket socket) {
     }
 
     @Override
-    public void interceptSocket(Socket socket, boolean onAccept) throws IOException {
+    public void interceptSocket(Socket socket, boolean onAccept) {
     }
 
     @Override
@@ -230,6 +235,7 @@ public class MockIOService implements IOService {
 
     @Override
     public void onDisconnect(Address endpoint, Throwable cause) {
+        logger.warning("Disconnected address: " + endpoint, cause);
     }
 
     @Override
@@ -239,7 +245,7 @@ public class MockIOService implements IOService {
                 try {
                     runnable.run();
                 } catch (Throwable t) {
-                    loggingService.getLogger(MockIOService.class).severe(t);
+                    logger.severe(t);
                 }
             }
         }.start();
@@ -353,11 +359,10 @@ public class MockIOService implements IOService {
     @Override
     public ChannelInboundHandler createInboundHandler(final TcpIpConnection connection) {
         return new PacketDecoder(connection, new PacketHandler() {
-            private ILogger logger = loggingService.getLogger("MockIOService");
-
             @Override
             public void handle(Packet packet) {
                 try {
+                    logger.info("Handling inbound packet " + packet + " on connection " + connection);
                     if (packet.getPacketType() == Packet.Type.BIND) {
                         connection.getConnectionManager().handle(packet);
                     } else {
@@ -375,7 +380,21 @@ public class MockIOService implements IOService {
 
     @Override
     public ChannelOutboundHandler createOutboundHandler(TcpIpConnection connection) {
-        return new PacketEncoder();
+        return new NoisyPacketEncoder(logger);
+    }
+
+    private static class NoisyPacketEncoder extends PacketEncoder {
+        private final ILogger logger;
+
+        NoisyPacketEncoder(ILogger logger) {
+            this.logger = logger;
+        }
+
+        @Override
+        public boolean onWrite(Packet packet, ByteBuffer dst) {
+            logger.info("Writing outbound packet " + packet);
+            return super.onWrite(packet, dst);
+        }
     }
 
 }
