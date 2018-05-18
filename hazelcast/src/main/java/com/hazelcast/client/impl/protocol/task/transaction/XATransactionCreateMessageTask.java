@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.impl.protocol.task.transaction;
 
-import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.XATransactionCreateCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
@@ -38,7 +37,6 @@ public class XATransactionCreateMessageTask
 
     @Override
     protected Object call() throws Exception {
-        ClientEndpoint endpoint = getEndpoint();
         XAService xaService = getService(getServiceName());
         String ownerUuid = endpoint.getUuid();
         TransactionContext context = xaService.newXATransactionContext(parameters.xid, ownerUuid, (int) parameters.timeout, true);

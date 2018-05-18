@@ -54,7 +54,6 @@ public class CacheAddEntryListenerMessageTask
 
     @Override
     protected Object call() {
-        ClientEndpoint endpoint = getEndpoint();
         final CacheService service = getService(CacheService.SERVICE_NAME);
         CacheEntryListener cacheEntryListener = new CacheEntryListener(endpoint, this);
 

@@ -48,7 +48,6 @@ public class MapAddListenerMessageTask
 
     @Override
     protected Object call() throws Exception {
-        ClientEndpoint endpoint = getEndpoint();
         return registerListener(endpoint, this);
     }
 
