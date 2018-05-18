@@ -184,6 +184,16 @@ public class TcpIpConnector {
                 socketChannel.configureBlocking(false);
                 TcpIpConnection connection = connectionManager.newConnection(channel, address);
                 connectionManager.sendBindRequest(connection, address, true);
+            } catch (NullPointerException e) {
+                // Helper piece of code, which will allow to identify rare NPEs in TLS connections
+                // https://github.com/hazelcast/hazelcast-enterprise/issues/2104
+                //TODO remove this catch block once the TLS NPE problem is successfully resolved
+                closeSocket(socketChannel);
+                logger.log(level, "Could not connect to: " + socketAddress + ". Reason: " + e.getClass().getSimpleName()
+                        + "[" + e.getMessage() + "]");
+                logger.log(Level.INFO,
+                        "Add this stacktrace to https://github.com/hazelcast/hazelcast-enterprise/issues/2104 please!", e);
+                throw e;
             } catch (Exception e) {
                 closeSocket(socketChannel);
                 logger.log(level, "Could not connect to: " + socketAddress + ". Reason: " + e.getClass().getSimpleName()
