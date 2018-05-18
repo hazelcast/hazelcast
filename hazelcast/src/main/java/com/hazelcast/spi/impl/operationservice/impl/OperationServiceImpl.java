@@ -342,6 +342,11 @@ public final class OperationServiceImpl implements InternalOperationService, Met
     }
 
     @Override
+    public void flush() throws InterruptedException {
+        operationExecutor.flush();
+    }
+
+    @Override
     public void onStartAsyncOperation(Operation op) {
         asyncOperations.add(op);
     }

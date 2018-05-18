@@ -204,4 +204,18 @@ public interface OperationExecutor extends Consumer<Packet>, LiveOperationsTrack
      * Shuts down this OperationExecutor. Any pending tasks are discarded.
      */
     void shutdown();
+
+    /**
+     * Flushes the operations scheduled on this operation executor.
+     * <p>
+     * The calling thread is blocked until all the operations submitted to this
+     * operation executor are completed.
+     * <p>
+     * WARNING: This method has a high impact on the performance because it
+     * produces major stalls in the underlying thread pools. Use it for testing
+     * and debugging purposes only.
+     *
+     * @throws InterruptedException if the flush was interrupted.
+     */
+    void flush() throws InterruptedException;
 }

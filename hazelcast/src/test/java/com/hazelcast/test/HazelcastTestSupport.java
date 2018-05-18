@@ -634,6 +634,18 @@ public abstract class HazelcastTestSupport {
         }
         Node n1 = getNode(h1);
         Node n2 = getNode(h2);
+
+        try {
+            // We have to flush the operations here because only after the
+            // flushing we may be sure that there are no heartbeats left in the
+            // queues which may invalidate the suspicions.
+
+            n1.getNodeEngine().getOperationService().flush();
+            n2.getNodeEngine().getOperationService().flush();
+        } catch (InterruptedException e) {
+            throw new RuntimeException("Flush was interrupted", e);
+        }
+
         suspectMember(n1, n2);
         suspectMember(n2, n1);
     }
