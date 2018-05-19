@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
 public final class MetadataUtil {
@@ -52,9 +53,10 @@ public final class MetadataUtil {
     }
 
     /**
-     * This is a helper method that simply performs the HTTP request to retrieve metadata, from a given URI.
-     * (It allows us to cleanly separate the network calls out of our main code logic, so we can mock in our UT.)
-     * @param uri the full URI where a `GET` request will retrieve the metadata information, represented as JSON.
+     * Performs the HTTP request to retrieve AWS Instance Metadata from the given URI.
+     *
+     * @param uri              the full URI where a `GET` request will retrieve the metadata information, represented as JSON.
+     * @param timeoutInSeconds timeout for the AWS service call
      * @return The content of the HTTP response, as a String. NOTE: This is NEVER null.
      */
     public static String retrieveMetadataFromURI(String uri, int timeoutInSeconds) {
@@ -92,4 +94,20 @@ public final class MetadataUtil {
         }
     }
 
+    /**
+     * Performs the HTTP request to retrieve AWS Instance Metadata from the given URI.
+     *
+     * @param uri              the full URI where a `GET` request will retrieve the metadata information, represented as JSON.
+     * @param timeoutInSeconds timeout for the AWS service call
+     * @param retries          number of retries in case the AWS request fails
+     * @return The content of the HTTP response, as a String. NOTE: This is NEVER null.
+     */
+    public static String retrieveMetadataFromURI(final String uri, final int timeoutInSeconds, int retries) {
+        return RetryUtils.retry(new Callable<String>() {
+            @Override
+            public String call() {
+                return retrieveMetadataFromURI(uri, timeoutInSeconds);
+            }
+        }, retries);
+    }
 }
