@@ -44,10 +44,11 @@ public class CloudyUtilityTest extends HazelcastTestSupport {
 
     @Before
     public void setup() {
-        awsConfig = new AwsConfig();
-        awsConfig.setAccessKey("some-access-key");
-        awsConfig.setSecretKey("some-secret-key");
-        awsConfig.setSecurityGroupName("hazelcast");
+        awsConfig = AwsConfig.builder()
+                .setAccessKey("some-access-key")
+                .setSecretKey("some-secret-key")
+                .setSecurityGroupName("hazelcast")
+                .build();
     }
 
     @Test
@@ -58,9 +59,10 @@ public class CloudyUtilityTest extends HazelcastTestSupport {
     @Test
     public void testUnmarshalling() throws IOException {
         InputStream is = new ByteArrayInputStream(xml.getBytes());
-        AwsConfig awsConfig1 = new AwsConfig();
-        awsConfig1.setAccessKey("some-access-key");
-        awsConfig1.setSecretKey("some-secret-key");
+        AwsConfig awsConfig1 = AwsConfig.builder()
+                .setAccessKey("some-access-key")
+                .setSecretKey("some-secret-key")
+                .build();
 
         Map<String, String> result = CloudyUtility.unmarshalTheResponse(is);
         assertEquals(2, result.size());
@@ -78,10 +80,11 @@ public class CloudyUtilityTest extends HazelcastTestSupport {
                 + "  \"Expiration\" : \"2015-09-07T03:19:56Z\"\n}";
         StringReader sr = new StringReader(s);
         BufferedReader br = new BufferedReader(sr);
-        AwsConfig awsConfig1 = new AwsConfig();
-        awsConfig1.setAccessKey("some-access-key");
-        awsConfig1.setSecretKey("some-secret-key");
-        awsConfig1.setSecurityGroupName("hazelcast");
+        AwsConfig awsConfig1 = AwsConfig.builder()
+                .setAccessKey("some-access-key")
+                .setSecretKey("some-secret-key")
+                .setSecurityGroupName("hazelcast")
+                .build();
         DescribeInstances describeInstances = new DescribeInstances(awsConfig, "");
 
         Map map = describeInstances.parseIamRole(br);

@@ -37,27 +37,30 @@ public class AwsClientTest {
 
     @Test
     public void testAwsClient_getEndPoint() {
-        AwsConfig awsConfig = new AwsConfig();
-        awsConfig.setIamRole("test");
+        AwsConfig awsConfig = AwsConfig.builder()
+                .setIamRole("test")
+                .build();
         AWSClient awsClient = new AWSClient(awsConfig);
         assertEquals("ec2.us-east-1.amazonaws.com", awsClient.getEndpoint());
     }
 
     @Test
     public void testAwsClient_withDifferentHostHeader() {
-        AwsConfig awsConfig = new AwsConfig();
-        awsConfig.setIamRole("test");
-        awsConfig.setHostHeader("ec2.amazonaws.com.cn");
-        awsConfig.setRegion("cn-north-1");
+        AwsConfig awsConfig = AwsConfig.builder()
+                .setIamRole("test")
+                .setHostHeader("ec2.amazonaws.com.cn")
+                .setRegion("cn-north-1")
+                .build();
         AWSClient awsClient = new AWSClient(awsConfig);
         assertEquals("ec2.cn-north-1.amazonaws.com.cn", awsClient.getEndpoint());
     }
 
     @Test(expected = InvalidConfigurationException.class)
     public void testAwsClient_withInvalidHostHeader() {
-        AwsConfig awsConfig = new AwsConfig();
-        awsConfig.setIamRole("test");
-        awsConfig.setHostHeader("ec3.amazonaws.com.cn");
+        AwsConfig awsConfig = AwsConfig.builder()
+                .setIamRole("test")
+                .setHostHeader("ec3.amazonaws.com.cn")
+                .build();
         new AWSClient(awsConfig);
     }
 }

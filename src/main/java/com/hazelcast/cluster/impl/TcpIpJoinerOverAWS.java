@@ -77,8 +77,7 @@ public class TcpIpJoinerOverAWS extends TcpIpJoiner {
     }
 
     static AwsConfig fromDeprecatedAwsConfig(com.hazelcast.config.AwsConfig awsConfig) {
-        return new AwsConfig()
-                .setEnabled(awsConfig.isEnabled())
+        return AwsConfig.builder()
                 .setAccessKey(awsConfig.getAccessKey())
                 .setSecretKey(awsConfig.getSecretKey())
                 .setRegion(awsConfig.getRegion())
@@ -87,7 +86,8 @@ public class TcpIpJoinerOverAWS extends TcpIpJoiner {
                 .setTagValue(awsConfig.getTagValue())
                 .setHostHeader(awsConfig.getHostHeader())
                 .setIamRole(awsConfig.getIamRole())
-                .setConnectionTimeoutSeconds(awsConfig.getConnectionTimeoutSeconds());
+                .setConnectionTimeoutSeconds(awsConfig.getConnectionTimeoutSeconds())
+                .build();
 
     }
 }

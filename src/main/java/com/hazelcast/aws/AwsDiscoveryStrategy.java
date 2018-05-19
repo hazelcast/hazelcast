@@ -56,17 +56,20 @@ public class AwsDiscoveryStrategy
     private static final ILogger LOGGER = Logger.getLogger(AwsDiscoveryStrategy.class);
     private static final String DEFAULT_PORT_RANGE = "5701-5708";
     private static final Integer DEFAULT_CONNECTION_RETRIES = 10;
+    public static final int DEFAULT_CONNECTION_TIMEOUT_SECONDS = 10;
+    public static final String DEFAULT_REGION = "us-east-1";
+    public static final String DEFAULT_HOST_HEADER = "ec2.amazonaws.com";
 
+    private final AwsConfig awsConfig;
     private final AWSClient awsClient;
-    private final PortRange portRange;
 
     private final Map<String, Object> memberMetadata = new HashMap<String, Object>();
 
     public AwsDiscoveryStrategy(Map<String, Comparable> properties) {
         super(LOGGER, properties);
-        this.portRange = new PortRange(getPortRange());
+        this.awsConfig = getAwsConfig();
         try {
-            this.awsClient = new AWSClient(getAwsConfig());
+            this.awsClient = new AWSClient(awsConfig);
         } catch (IllegalArgumentException e) {
             throw new InvalidConfigurationException("AWS configuration is not valid", e);
         }
@@ -77,8 +80,29 @@ public class AwsDiscoveryStrategy
      */
     AwsDiscoveryStrategy(Map<String, Comparable> properties, AWSClient client) {
         super(LOGGER, properties);
-        this.portRange = new PortRange(getPortRange());
+        this.awsConfig = getAwsConfig();
         this.awsClient = client;
+    }
+
+    private AwsConfig getAwsConfig()
+            throws IllegalArgumentException {
+        final AwsConfig config = AwsConfig.builder()
+                .setAccessKey(getOrNull(ACCESS_KEY))
+                .setSecretKey(getOrNull(SECRET_KEY))
+                .setRegion(getOrDefault(REGION.getDefinition(), DEFAULT_REGION))
+                .setIamRole(getOrNull(IAM_ROLE))
+                .setHostHeader(getOrDefault(HOST_HEADER.getDefinition(), DEFAULT_HOST_HEADER))
+                .setSecurityGroupName(getOrNull(SECURITY_GROUP_NAME))
+                .setTagKey(getOrNull(TAG_KEY))
+                .setTagValue(getOrNull(TAG_VALUE))
+                .setConnectionTimeoutSeconds(
+                        getOrDefault(CONNECTION_TIMEOUT_SECONDS.getDefinition(), DEFAULT_CONNECTION_TIMEOUT_SECONDS))
+                .setConnectionRetries(getOrDefault(CONNECTION_RETRIES.getDefinition(), DEFAULT_CONNECTION_RETRIES))
+                .setHzPort(new PortRange(getPortRange()))
+                .build();
+
+        reviewConfiguration(config);
+        return config;
     }
 
     /**
@@ -95,45 +119,9 @@ public class AwsDiscoveryStrategy
         return portRange.toString();
     }
 
-    private AwsConfig getAwsConfig()
-            throws IllegalArgumentException {
-        final AwsConfig config = new AwsConfig().setEnabled(true).setSecurityGroupName(getOrNull(SECURITY_GROUP_NAME))
-                                                .setTagKey(getOrNull(TAG_KEY)).setTagValue(getOrNull(TAG_VALUE))
-                                                .setIamRole(getOrNull(IAM_ROLE));
-
-        String property = getOrNull(ACCESS_KEY);
-        if (property != null) {
-            config.setAccessKey(property);
-        }
-
-        property = getOrNull(SECRET_KEY);
-        if (property != null) {
-            config.setSecretKey(property);
-        }
-
-        final Integer timeout = getOrDefault(CONNECTION_TIMEOUT_SECONDS.getDefinition(), 10);
-        config.setConnectionTimeoutSeconds(timeout);
-
-        final Integer connectionRetries = getOrDefault(CONNECTION_RETRIES.getDefinition(), DEFAULT_CONNECTION_RETRIES);
-        config.setConnectionRetries(connectionRetries);
-
-        final String region = getOrNull(REGION);
-        if (region != null) {
-            config.setRegion(region);
-        }
-
-        final String hostHeader = getOrNull(HOST_HEADER);
-        if (hostHeader != null) {
-            config.setHostHeader(hostHeader);
-        }
-
-        reviewConfiguration(config);
-        return config;
-    }
-
     private void reviewConfiguration(AwsConfig config) {
-        if (StringUtil.isNullOrEmptyAfterTrim(config.getSecretKey()) || StringUtil
-                .isNullOrEmptyAfterTrim(config.getAccessKey())) {
+        if (StringUtil.isNullOrEmptyAfterTrim(config.getSecretKey()) || StringUtil.isNullOrEmptyAfterTrim(
+                config.getAccessKey())) {
 
             if (!StringUtil.isNullOrEmptyAfterTrim(config.getIamRole())) {
                 getLogger().info("Describe instances will be queried with iam-role, "
@@ -176,7 +164,9 @@ public class AwsDiscoveryStrategy
 
             final ArrayList<DiscoveryNode> nodes = new ArrayList<DiscoveryNode>(privatePublicIpAddressPairs.size());
             for (Map.Entry<String, String> entry : privatePublicIpAddressPairs.entrySet()) {
-                for (int port = portRange.getFromPort(); port <= portRange.getToPort(); port++) {
+                for (int port = awsConfig.getHzPort()
+                        .getFromPort(); port <= awsConfig.getHzPort()
+                        .getToPort(); port++) {
                     nodes.add(new SimpleDiscoveryNode(new Address(entry.getKey(), port), new Address(entry.getValue(), port)));
                 }
             }

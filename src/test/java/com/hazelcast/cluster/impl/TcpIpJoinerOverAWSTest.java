@@ -52,9 +52,8 @@ public class TcpIpJoinerOverAWSTest extends HazelcastTestSupport {
         join.getMulticastConfig().setEnabled(false);
 
         AwsConfig awsConfig = fromDeprecatedAwsConfig(join.getAwsConfig());
-        awsConfig.setEnabled(true)
-                .setAccessKey(randomString())
-                .setSecretKey(randomString());
+        awsConfig.setAccessKey(randomString());
+        awsConfig.setSecretKey(randomString());
 
         HazelcastInstanceImpl instance = Mockito.mock(HazelcastInstanceImpl.class);
 
