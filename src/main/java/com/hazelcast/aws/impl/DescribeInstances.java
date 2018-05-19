@@ -25,8 +25,6 @@ import com.hazelcast.aws.utility.MetadataUtil;
 import com.hazelcast.aws.utility.RetryUtils;
 import com.hazelcast.com.eclipsesource.json.JsonObject;
 import com.hazelcast.config.InvalidConfigurationException;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -57,8 +55,6 @@ import static com.hazelcast.nio.IOUtil.closeResource;
  * for AWS API details.
  */
 public class DescribeInstances {
-    private static final ILogger logger = Logger.getLogger(DescribeInstances.class);
-
     /**
      * URI to fetch container credentials (when IAM role is enabled)
      *

@@ -56,9 +56,9 @@ public class AwsDiscoveryStrategy
     private static final ILogger LOGGER = Logger.getLogger(AwsDiscoveryStrategy.class);
     private static final String DEFAULT_PORT_RANGE = "5701-5708";
     private static final Integer DEFAULT_CONNECTION_RETRIES = 10;
-    public static final int DEFAULT_CONNECTION_TIMEOUT_SECONDS = 10;
-    public static final String DEFAULT_REGION = "us-east-1";
-    public static final String DEFAULT_HOST_HEADER = "ec2.amazonaws.com";
+    private static final int DEFAULT_CONNECTION_TIMEOUT_SECONDS = 10;
+    private static final String DEFAULT_REGION = "us-east-1";
+    private static final String DEFAULT_HOST_HEADER = "ec2.amazonaws.com";
 
     private final AwsConfig awsConfig;
     private final AWSClient awsClient;
