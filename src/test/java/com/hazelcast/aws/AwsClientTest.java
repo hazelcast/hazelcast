@@ -37,7 +37,7 @@ public class AwsClientTest {
 
     @Test
     public void testAwsClient_getEndPoint() {
-        AwsConfig awsConfig = AwsConfig.builder()
+        AwsConfig awsConfig = predefinedAwsConfigBuilder()
                 .setIamRole("test")
                 .build();
         AWSClient awsClient = new AWSClient(awsConfig);
@@ -46,7 +46,7 @@ public class AwsClientTest {
 
     @Test
     public void testAwsClient_withDifferentHostHeader() {
-        AwsConfig awsConfig = AwsConfig.builder()
+        AwsConfig awsConfig = predefinedAwsConfigBuilder()
                 .setIamRole("test")
                 .setHostHeader("ec2.amazonaws.com.cn")
                 .setRegion("cn-north-1")
@@ -57,10 +57,17 @@ public class AwsClientTest {
 
     @Test(expected = InvalidConfigurationException.class)
     public void testAwsClient_withInvalidHostHeader() {
-        AwsConfig awsConfig = AwsConfig.builder()
+        AwsConfig awsConfig = predefinedAwsConfigBuilder()
                 .setIamRole("test")
                 .setHostHeader("ec3.amazonaws.com.cn")
                 .build();
         new AWSClient(awsConfig);
+    }
+
+    private static AwsConfig.Builder predefinedAwsConfigBuilder() {
+        return AwsConfig.builder()
+                .setHostHeader("ec2.amazonaws.com")
+                .setRegion("us-east-1")
+                .setConnectionTimeoutSeconds(5);
     }
 }
