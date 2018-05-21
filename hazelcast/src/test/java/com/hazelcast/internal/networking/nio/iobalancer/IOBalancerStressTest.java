@@ -160,7 +160,7 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
         StringBuilder sb = new StringBuilder();
         sb.append("in owners\n");
         for (NioThread in : threadingModel.getInputThreads()) {
-            sb.append(in).append(": ").append(in.getEventCount()).append("\n");
+            sb.append(in).append(": ").append(in.eventCount()).append("\n");
 
             for (TcpIpConnection connection : connectionManager.getActiveConnections()) {
                 NioInboundPipeline socketReader = ((NioChannel) connection.getChannel()).inboundPipeline();
@@ -171,7 +171,7 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
         }
         sb.append("out owners\n");
         for (NioThread in : threadingModel.getOutputThreads()) {
-            sb.append(in).append(": ").append(in.getEventCount()).append("\n");
+            sb.append(in).append(": ").append(in.eventCount()).append("\n");
 
             for (TcpIpConnection connection : connectionManager.getActiveConnections()) {
                 NioOutboundPipeline socketWriter = ((NioChannel) connection.getChannel()).outboundPipeline();

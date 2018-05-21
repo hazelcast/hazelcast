@@ -43,7 +43,7 @@ import static com.hazelcast.util.EmptyStatement.ignore;
 import static java.lang.Math.max;
 import static java.lang.System.currentTimeMillis;
 
-public class NioThread extends Thread implements OperationHostileThread {
+public final class NioThread extends Thread implements OperationHostileThread {
 
     // WARNING: This value has significant effect on idle CPU usage!
     private static final int SELECT_WAIT_TIME_MILLIS = 5000;
@@ -131,6 +131,10 @@ public class NioThread extends Thread implements OperationHostileThread {
         this.idleStrategy = idleStrategy;
     }
 
+    void setSelectorWorkaroundTest(boolean selectorWorkaroundTest) {
+        this.selectorWorkaroundTest = selectorWorkaroundTest;
+    }
+
     public long bytesTransceived() {
         return bytesTransceived;
     }
@@ -143,10 +147,16 @@ public class NioThread extends Thread implements OperationHostileThread {
         return priorityFramesTransceived;
     }
 
-    public long handleCount() {
+    /**
+     * The number of pipeline process calls that have been made.
+     */
+    public long processCount() {
         return processCount;
     }
 
+    /**
+     * Number of NIO events that have been processed.
+     */
     public long eventCount() {
         return eventCount.get();
     }
@@ -160,17 +170,8 @@ public class NioThread extends Thread implements OperationHostileThread {
      *
      * @return the Selector
      */
-    public final Selector getSelector() {
+    public Selector getSelector() {
         return selector;
-    }
-
-    /**
-     * Returns the total number of selection-key events that have been processed by this thread.
-     *
-     * @return total number of selection-key events.
-     */
-    public long getEventCount() {
-        return eventCount.get();
     }
 
     /**
@@ -189,7 +190,7 @@ public class NioThread extends Thread implements OperationHostileThread {
      * @param task the task to add
      * @throws NullPointerException if task is null
      */
-    public final void addTask(Runnable task) {
+    public void addTask(Runnable task) {
         taskQueue.add(task);
     }
 
@@ -208,14 +209,14 @@ public class NioThread extends Thread implements OperationHostileThread {
     }
 
     @Override
-    public final void run() {
+    public void run() {
         // This outer loop is a bit complex but it takes care of a lot of stuff:
         // * it calls runSelectNowLoop or runSelectLoop based on selectNow enabled or not.
         // * handles backoff and retrying in case if io exception is thrown
         // * it takes care of other exception handling.
         //
-        // The idea about this approach is that the runSelectNowLoop and runSelectLoop are as clean as possible and don't contain
-        // any logic that isn't happening on the happy-path.
+        // The idea about this approach is that the runSelectNowLoop and runSelectLoop are
+        // as clean as possible and don't contain any logic that isn't happening on the happy-path.
         try {
             for (; ; ) {
                 try {
@@ -379,7 +380,7 @@ public class NioThread extends Thread implements OperationHostileThread {
         }
     }
 
-    public final void shutdown() {
+    public void shutdown() {
         stop = true;
         taskQueue.clear();
         interrupt();
@@ -419,9 +420,5 @@ public class NioThread extends Thread implements OperationHostileThread {
     @Override
     public String toString() {
         return getName();
-    }
-
-    void setSelectorWorkaroundTest(boolean selectorWorkaroundTest) {
-        this.selectorWorkaroundTest = selectorWorkaroundTest;
     }
 }

@@ -105,7 +105,7 @@ public abstract class NioThreadAbstractTest extends HazelcastTestSupport {
                 verify(handler).process();
             }
         });
-        assertEquals(1, thread.getEventCount());
+        assertEquals(1, thread.eventCount());
         assertStillRunning();
     }
 
