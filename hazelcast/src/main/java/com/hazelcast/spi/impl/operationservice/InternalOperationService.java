@@ -145,4 +145,18 @@ public interface InternalOperationService extends OperationService {
     List<SlowOperationDTO> getSlowOperationDTOs();
 
     <V> void asyncInvokeOnPartition(String serviceName, Operation op, int partitionId, ExecutionCallback<V> callback);
+
+    /**
+     * Flushes the operations scheduled on this operation service.
+     * <p>
+     * The calling thread is blocked until all the operations submitted to this
+     * operation service are completed.
+     * <p>
+     * WARNING: This method has a high impact on the performance because it
+     * produces major stalls in the underlying thread pool. Use it for testing
+     * and debugging purposes only.
+     *
+     * @throws InterruptedException if the flush was interrupted.
+     */
+    void flush() throws InterruptedException;
 }

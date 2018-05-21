@@ -43,7 +43,9 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.BitSet;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.spi.impl.operationservice.impl.InboundResponseHandlerSupplier.getIdleStrategy;
@@ -544,6 +546,43 @@ public final class OperationExecutorImpl implements OperationExecutor, MetricsPr
                 Thread.currentThread().interrupt();
             }
         }
+    }
+
+    @Override
+    public void flush() throws InterruptedException {
+        // Basically, what we do here is just blocking all the threads by
+        // submitting a blocking barrier task on them. When all the threads are
+        // blocked, we may safely assume that all the tasks, submitted before
+        // the barriers, are completed.
+
+        final CountDownLatch latch = new CountDownLatch(genericThreads.length + partitionThreads.length);
+        final AtomicReference<InterruptedException> seenInterruptedException = new AtomicReference<InterruptedException>(null);
+        Runnable barrier = new Runnable() {
+            @Override
+            public void run() {
+                latch.countDown();
+                try {
+                    latch.await();
+                } catch (InterruptedException e) {
+                    seenInterruptedException.set(e);
+                }
+            }
+        };
+
+        for (int i = 0; i < genericThreads.length; ++i) {
+            genericQueue.add(barrier, false);
+            genericQueue.add(barrier, true);
+        }
+        for (PartitionOperationThread partitionThread : partitionThreads) {
+            partitionThread.queue.add(barrier, false);
+            partitionThread.queue.add(barrier, true);
+        }
+
+        if (seenInterruptedException.get() != null) {
+            throw seenInterruptedException.get();
+        }
+
+        latch.await();
     }
 
     @Override
