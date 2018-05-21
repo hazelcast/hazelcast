@@ -58,12 +58,12 @@ abstract class MethodProbe implements ProbeFunction {
         method.setAccessible(true);
     }
 
-    void register(MetricsRegistryImpl metricsRegistry, Object source, String namePrefix) {
-        String name = getName(namePrefix);
+    void register(MetricsRegistryImpl metricsRegistry, Object source, String namePrefix, String nameSuffix) {
+        String name = getName(namePrefix, nameSuffix);
         metricsRegistry.registerInternal(source, name, probe.level(), this);
     }
 
-    private String getName(String namePrefix) {
+    private String getName(String namePrefix, String nameSuffix) {
         String name;
         if (probe.name().equals("")) {
             name = getterIntoProperty(method.getName());
@@ -71,7 +71,7 @@ abstract class MethodProbe implements ProbeFunction {
             name = probe.name();
         }
 
-        return namePrefix + "." + name;
+        return namePrefix + name + nameSuffix;
     }
 
     static <S> MethodProbe createMethodProbe(Method method, Probe probe) {

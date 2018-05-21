@@ -47,13 +47,13 @@ final class SourceMetadata {
         }
     }
 
-    void register(MetricsRegistryImpl metricsRegistry, Object source, String namePrefix) {
+    void register(MetricsRegistryImpl metricsRegistry, Object source, String namePrefix, String nameSuffix) {
         for (FieldProbe field : fields) {
-            field.register(metricsRegistry, source, namePrefix);
+            field.register(metricsRegistry, source, namePrefix, nameSuffix);
         }
 
         for (MethodProbe method : methods) {
-            method.register(metricsRegistry, source, namePrefix);
+            method.register(metricsRegistry, source, namePrefix, nameSuffix);
         }
     }
 

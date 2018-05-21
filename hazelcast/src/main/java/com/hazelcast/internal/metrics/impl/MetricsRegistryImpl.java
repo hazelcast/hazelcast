@@ -141,11 +141,17 @@ public class MetricsRegistryImpl implements MetricsRegistry {
 
     @Override
     public <S> void scanAndRegister(S source, String namePrefix) {
+        scanAndRegister(source, namePrefix + '.', "");
+    }
+
+    @Override
+    public <S> void scanAndRegister(S source, String namePrefix, String nameSuffix) {
         checkNotNull(source, "source can't be null");
         checkNotNull(namePrefix, "namePrefix can't be null");
+        checkNotNull(nameSuffix, "nameSuffix can't be null");
 
         SourceMetadata metadata = loadSourceMetadata(source.getClass());
-        metadata.register(this, source, namePrefix);
+        metadata.register(this, source, namePrefix, nameSuffix);
     }
 
     @Override

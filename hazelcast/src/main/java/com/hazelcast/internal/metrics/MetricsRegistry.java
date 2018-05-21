@@ -75,8 +75,8 @@ public interface MetricsRegistry {
      * implementation, e.g. a new OperationService implementation, that doesn't
      * provide the operation.count probe.
      *
-     * Multiple calls with the same name, return different Gauge instances; so
-     * the Gauge instance is not cached. This is done to prevent memory leaks.
+     * Multiple calls with the same name return different Gauge instances; so the Gauge instance is not cached. This is
+     * done to prevent memory leaks.
      *
      * @param name the name of the metric.
      * @return the created LongGauge.
@@ -105,15 +105,14 @@ public interface MetricsRegistry {
     Set<String> getNames();
 
     /**
-     * Scans the source object for any fields/methods that have been annotated
-     * with {@link Probe} annotation, and registering these fields/methods as
-     * probes instances.
+     * Scans the source object for any fields/methods that have been annotated with {@link Probe} annotation, and
+     * registers these fields/methods as probes instances.
      * <p>
-     * If a probe is called 'queueSize' and the namePrefix is 'operations',
-     * then the name of the probe-instance is 'operations.queueSize'.
+     * If a probe is called 'queueSize' and the namePrefix is 'operations', then the name of the probe instance
+     * is 'operations.queueSize'.
      * <p>
-     * If probes with the same name already exist, then the probes are replaced.
-     * <p>
+     * If a probe with the same name already exists, then the probe is replaced.
+     *
      * If an object has no @Gauge annotations, the call is ignored.
      *
      * @param source     the object to scan.
@@ -123,6 +122,28 @@ public interface MetricsRegistry {
      * on a field/method of unsupported type.
      */
     <S> void scanAndRegister(S source, String namePrefix);
+
+    /**
+     * Scans the source object for any fields/methods that have been annotated
+     * with {@link Probe} annotation, and registers these fields/methods as
+     * probes instances.
+     * <p>
+     * If a probe is called 'queueSize' and the namePrefix is '[operations.'
+     * and nameSuffix is ']', then the name of the probe instance is
+     * '[operations.queueSize]'.
+     * <p>
+     * If a probe with the same name already exists, then the probe is replaced.
+     * <p>
+     * If an object has no @Gauge annotations, the call is ignored.
+     *
+     * @param source     the object to scan.
+     * @param namePrefix the name prefix.
+     * @param nameSuffix the name suffix.
+     * @throws NullPointerException     if namePrefix or source is null.
+     * @throws IllegalArgumentException if the source contains Gauge annotation
+     * on a field/method of unsupported type.
+     */
+    <S> void scanAndRegister(S source, String namePrefix, String nameSuffix);
 
     /**
      * Registers a probe.
