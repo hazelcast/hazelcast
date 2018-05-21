@@ -637,9 +637,9 @@ public class MigrationManager {
                 }
 
                 migrationQueue.add(new ProcessShutdownRequestsTask());
-                partitionService.syncPartitionRuntimeState();
             } finally {
                 partitionServiceLock.unlock();
+                partitionService.syncPartitionRuntimeState();
             }
         }
 
@@ -682,6 +682,7 @@ public class MigrationManager {
                 }
             }
             if (!partitions.isEmpty()) {
+                logger.warning("Assigning new owners for " + partitions.size() + " LOST partitions!");
                 Address[][] state = partitionStateManager.repartition(shutdownRequestedAddresses, partitions);
                 for (int partitionId : partitions) {
                     InternalPartitionImpl partition = partitionStateManager.getPartitionImpl(partitionId);
@@ -690,8 +691,6 @@ public class MigrationManager {
                     assignLostPartitionOwner(partition, replicas[0]);
                     partition.setReplicaAddresses(replicas);
                 }
-                logger.warning("Assigning new owners for " + partitions.size() + " LOST partitions!");
-                partitionService.syncPartitionRuntimeState();
             }
         }
 
@@ -1052,16 +1051,14 @@ public class MigrationManager {
                 int delta = PARTITION_STATE_VERSION_INCREMENT_DELTA_ON_MIGRATION_FAILURE;
                 partitionService.getPartitionStateManager().incrementVersion(delta);
                 node.getNodeExtension().onPartitionStateChange();
-                if (partitionService.syncPartitionRuntimeState()) {
-                    evictCompletedMigrations(migrationInfo);
-                }
                 triggerRepartitioningAfterMigrationFailure();
             } finally {
                 partitionServiceLock.unlock();
             }
-
+            if (partitionService.syncPartitionRuntimeState()) {
+                evictCompletedMigrations(migrationInfo);
+            }
             partitionService.getPartitionEventManager().sendMigrationEvent(migrationInfo, MigrationEvent.MigrationStatus.FAILED);
-
         }
 
         /** Waits for some time and rerun the {@link ControlTask}. */
@@ -1119,11 +1116,11 @@ public class MigrationManager {
                 addCompletedMigration(migrationInfo);
                 scheduleActiveMigrationFinalization(migrationInfo);
                 node.getNodeExtension().onPartitionStateChange();
-                if (partitionService.syncPartitionRuntimeState()) {
-                    evictCompletedMigrations(migrationInfo);
-                }
             } finally {
                 partitionServiceLock.unlock();
+            }
+            if (partitionService.syncPartitionRuntimeState()) {
+                evictCompletedMigrations(migrationInfo);
             }
             PartitionEventManager partitionEventManager = partitionService.getPartitionEventManager();
             partitionEventManager.sendMigrationEvent(migrationInfo,  MigrationEvent.MigrationStatus.COMPLETED);
