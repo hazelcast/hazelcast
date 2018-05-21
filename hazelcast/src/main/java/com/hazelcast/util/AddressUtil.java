@@ -88,23 +88,22 @@ public final class AddressUtil {
         final int index = pattern.indexOf('*');
         if (index == -1) {
             return name.equals(pattern);
-        } else {
-            String[] names = name.split("\\.");
-            String[] patterns = pattern.split("\\.");
-            if (patterns.length > names.length) {
+        }
+        String[] names = name.split("\\.");
+        String[] patterns = pattern.split("\\.");
+        if (patterns.length > names.length) {
+            return false;
+        }
+        int nameIndexDiff = names.length - patterns.length;
+        for (int i = patterns.length - 1; i > -1; i--) {
+            if ("*".equals(patterns[i])) {
+                continue;
+            }
+            if (!patterns[i].equals(names[i + nameIndexDiff])) {
                 return false;
             }
-            int nameIndexDiff = names.length - patterns.length;
-            for (int i = patterns.length - 1; i > -1; i--) {
-                if ("*".equals(patterns[i])) {
-                    continue;
-                }
-                if (!patterns[i].equals(names[i + nameIndexDiff])) {
-                    return false;
-                }
-            }
-            return true;
         }
+        return true;
     }
 
     public static AddressHolder getAddressHolder(String address) {
