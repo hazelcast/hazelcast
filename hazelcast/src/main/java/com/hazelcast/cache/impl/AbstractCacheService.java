@@ -793,7 +793,10 @@ public abstract class AbstractCacheService implements ICacheService, PreJoinAwar
         } else {
             // RU_COMPAT_3_9
             OperationService operationService = nodeEngine.getOperationService();
-            CacheCreateConfigOperation op = new CacheCreateConfigOperation(cacheConfig, true, false);
+            // 3.9 members must receive a CacheConfig object instead of a PreJoinCacheConfig
+            // to ensure the PreJoinCacheConfig object is not leaked to AbstractCacheService#configs
+            // otherwise it may be returned to clients causing compatibility issues
+            CacheCreateConfigOperation op = new CacheCreateConfigOperation(cacheConfig.asCacheConfig(), true, false);
             return operationService.invokeOnTarget(CacheService.SERVICE_NAME, op, nodeEngine.getThisAddress());
         }
     }
