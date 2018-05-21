@@ -54,6 +54,8 @@ public class PartitionedCluster {
     public static Config createClusterConfig(Config config) {
         config.setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "9999");
         config.setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "9999");
+        config.setProperty(GroupProperty.MAX_NO_HEARTBEAT_SECONDS.getName(), "10");
+        config.setProperty(GroupProperty.HEARTBEAT_INTERVAL_SECONDS.getName(), "1");
         config.getGroupConfig().setName(generateRandomString(10));
         config.addQuorumConfig(createSuccessfulSplitTestQuorum());
         return config;
@@ -92,7 +94,7 @@ public class PartitionedCluster {
 
         splitCluster();
 
-        assertOpenEventually(splitLatch, 30);
+        assertOpenEventually(splitLatch, 60);
         assertClusterSizeEventually(3, instance[0], instance[1], instance[2]);
         assertClusterSizeEventually(2, instance[3], instance[4]);
 
