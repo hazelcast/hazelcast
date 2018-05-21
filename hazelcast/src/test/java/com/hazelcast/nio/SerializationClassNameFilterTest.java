@@ -33,51 +33,39 @@ public class SerializationClassNameFilterTest {
 
     /**
      * <pre>
-     * Given: Neither whitelist nor blacklist is configured.
-     * When: {@link SerializationClassNameFilter#filter(String)} is called.
-     * Then: no exception is thrown
+     * Given: Default configuration is used.
+     * When: {@link SerializationClassNameFilter#filter(String)} is called for a java.lang class
+     * Then: no exception is thrown as the java prefix is in the default whitelist
      * </pre>
      */
     @Test
-    public void testNoList() {
+    public void testDefaultPass() {
         JavaSerializationFilterConfig config = new JavaSerializationFilterConfig();
         new SerializationClassNameFilter(config).filter("java.lang.Object");
     }
 
     /**
      * <pre>
-     * Given: Default blacklist is used.
-     * When: {@link SerializationClassNameFilter#filter(String)} is called for a class name which is included in the default blacklist.
+     * Given: Default configuration is used
+     * When: {@link SerializationClassNameFilter#filter(String)} is called for a class name which doesn't fit the default whitelist.
      * Then: {@link SecurityException} is thrown
      * </pre>
      */
     @Test(expected = SecurityException.class)
-    public void testDefaultBlacklist() throws ClassNotFoundException {
+    public void testDefaultFail() {
         new SerializationClassNameFilter(new JavaSerializationFilterConfig()).filter("bsh.XThis");
     }
 
     /**
      * <pre>
-     * Given: Default blacklist is used.
-     * When: {@link SerializationClassNameFilter#filter(String)} is called for a class in package which is included in the default blacklist.
-     * Then: {@link SecurityException} is thrown
-     * </pre>
-     */
-    @Test(expected = SecurityException.class)
-    public void testPackageDefaultBlacklisted() throws ClassNotFoundException {
-        new SerializationClassNameFilter(new JavaSerializationFilterConfig()).filter("org.apache.commons.collections.functors.Test");
-    }
-
-    /**
-     * <pre>
-     * Given: Whitelist is set.
+     * Given: Default is disabled and explicit whitelist is used.
      * When: {@link SerializationClassNameFilter#filter(String)} is called for a whitelisted class.
      * Then: no exception is thrown
      * </pre>
      */
     @Test
-    public void testClassInWhitelist() throws ClassNotFoundException {
-        JavaSerializationFilterConfig config = new JavaSerializationFilterConfig();
+    public void testClassInWhitelist() {
+        JavaSerializationFilterConfig config = new JavaSerializationFilterConfig().setDefaultsDisabled(true);
         config.getWhitelist().addClasses("java.lang.Test1", "java.lang.Test2", "java.lang.Test3");
         new SerializationClassNameFilter(config).filter("java.lang.Test2");
     }
@@ -90,7 +78,7 @@ public class SerializationClassNameFilterTest {
      * </pre>
      */
     @Test
-    public void testPackageInWhitelist() throws ClassNotFoundException {
+    public void testPackageInWhitelist() {
         JavaSerializationFilterConfig config = new JavaSerializationFilterConfig();
         config.getWhitelist().addPackages("com.whitelisted");
         new SerializationClassNameFilter(config).filter("com.whitelisted.Test2");
@@ -98,30 +86,45 @@ public class SerializationClassNameFilterTest {
 
     /**
      * <pre>
-     * Given: Whitelist is set.
+     * Given: Whitelist is set and defaults are disabled.
      * When: {@link SerializationClassNameFilter#filter(String)} is called for a not whitelisted class.
      * Then: {@link SecurityException} is thrown
      * </pre>
      */
     @Test(expected = SecurityException.class)
-    public void testClassNotInWhitelist() throws ClassNotFoundException {
-        JavaSerializationFilterConfig config = new JavaSerializationFilterConfig();
+    public void testClassNotInWhitelist() {
+        JavaSerializationFilterConfig config = new JavaSerializationFilterConfig().setDefaultsDisabled(true);
         config.getWhitelist().addClasses("java.lang.Test1", "java.lang.Test2", "java.lang.Test3");
         new SerializationClassNameFilter(config).filter("java.lang.Test4");
     }
 
     /**
      * <pre>
-     * Given: Blacklist and Whitelist are set.
-     * When: {@link SerializationClassNameFilter#filter(String)} is called for a class which is whitelisted and blacklisted together.
+     * Given: Blacklist is used and defaults are enabled.
+     * When: {@link SerializationClassNameFilter#filter(String)} is called for a class which is fits default whitelist
+     *        but it's also blacklisted.
      * Then: {@link SecurityException} is thrown
      * </pre>
      */
     @Test(expected = SecurityException.class)
-    public void testWhitelistedAndBlacklisted() throws ClassNotFoundException {
+    public void testBlacklistedWithDefaultWhitelist() {
         JavaSerializationFilterConfig config = new JavaSerializationFilterConfig();
-        config.getWhitelist().addClasses("java.lang.Test1", "java.lang.Test2", "java.lang.Test3");
         config.getBlacklist().addClasses("java.lang.Test3", "java.lang.Test2", "java.lang.Test1");
         new SerializationClassNameFilter(config).filter("java.lang.Test1");
+    }
+    
+    /**
+     * <pre>
+     * Given: Blacklist with prefix is used which overlaps default whitelist.
+     * When: {@link SerializationClassNameFilter#filter(String)} is called for a class which fits default whitelist
+     *        but it's also blacklisted.
+     * Then: {@link SecurityException} is thrown
+     * </pre>
+     */
+    @Test(expected = SecurityException.class)
+    public void testBlacklistPrefix() {
+        JavaSerializationFilterConfig config = new JavaSerializationFilterConfig();
+        config.getBlacklist().addPrefixes("com.hazelcast.test");
+        new SerializationClassNameFilter(config).filter("com.hazelcast.test.Test1");
     }
 }

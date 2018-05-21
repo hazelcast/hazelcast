@@ -639,7 +639,7 @@
                         class-name="com.hazelcast.examples.SerializerFactory"/>
         </serializers>
         <check-class-def-errors>false</check-class-def-errors>
-        <java-serialization-filter>
+        <java-serialization-filter defaults-disabled="true">
             <blacklist>
                 <class>com.acme.app.BeanComparator</class>
             </blacklist>
@@ -648,6 +648,9 @@
                 <class>example.Foo</class>
                 <package>com.acme.app</package>
                 <package>com.acme.app.subpkg</package>
+                <prefix>java</prefix>
+                <prefix>com.</prefix>
+                <prefix>[</prefix>
             </whitelist>
         </java-serialization-filter>
     </serialization>
