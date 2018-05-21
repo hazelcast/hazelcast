@@ -44,6 +44,8 @@ import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.test.annotation.QuickTest;
 
+import example.serialization.TestDeserialized;
+
 /**
  * Tests if deserialization blacklisting works for MutlicastService.
  */
@@ -58,6 +60,7 @@ public class MulticastDeserializationTest {
     @Before
     @After
     public void killAllHazelcastInstances() throws IOException {
+        TestDeserialized.IS_DESERIALIZED = false;
         HazelcastInstanceFactory.terminateAll();
     }
 
@@ -72,6 +75,7 @@ public class MulticastDeserializationTest {
     public void test() throws Exception {
         Config config = new Config();
         JavaSerializationFilterConfig javaSerializationFilterConfig = new JavaSerializationFilterConfig();
+        javaSerializationFilterConfig.setDefaultsDisabled(true);
         javaSerializationFilterConfig.getBlacklist().addClasses(TestDeserialized.class.getName());
         config.getSerializationConfig().setJavaSerializationFilterConfig(javaSerializationFilterConfig);
         NetworkConfig networkConfig = config.getNetworkConfig();
@@ -118,18 +122,6 @@ public class MulticastDeserializationTest {
             if (multicastSocket != null) {
                 multicastSocket.close();
             }
-        }
-    }
-
-    public static class TestDeserialized implements Serializable {
-        private static final long serialVersionUID = 1L;
-        public static volatile boolean IS_DESERIALIZED = false;
-
-        private void writeObject(java.io.ObjectOutputStream out) throws IOException {
-        }
-
-        private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
-            IS_DESERIALIZED = true;
         }
     }
 }

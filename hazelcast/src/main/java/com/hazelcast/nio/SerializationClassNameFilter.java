@@ -31,26 +31,41 @@ import com.hazelcast.util.Preconditions;
 public final class SerializationClassNameFilter implements ClassNameFilter {
 
     private static final String DESERIALIZATION_ERROR = "Resolving class %s is not allowed.";
+    private static final ClassFilter DEFAULT_WHITELIST;
 
     private final ClassFilter blacklist;
     private final ClassFilter whitelist;
+    private final boolean useDefaultWhitelist;
 
     public SerializationClassNameFilter(JavaSerializationFilterConfig config) {
         Preconditions.checkNotNull(config, "JavaSerializationFilterConfig has to be provided");
         blacklist = config.getBlacklist();
         whitelist = config.getWhitelist();
+        useDefaultWhitelist = !config.isDefaultsDisabled();
     }
 
     /**
-     * Throws {@link SecurityException} if the given class name appears on the blacklist or does not appear on a non-empty
-     * whitelist.
+     * Throws {@link SecurityException} if the given class name appears on the blacklist or does not appear a whitelist.
      *
      * @param className class name to check
      * @throws SecurityException if the classname is not allowed for deserialization
      */
     public void filter(String className) throws SecurityException {
-        if (blacklist.isListed(className) || (!whitelist.isEmpty() && !whitelist.isListed(className))) {
+        if (blacklist.isListed(className)) {
             throw new SecurityException(format(DESERIALIZATION_ERROR, className));
         }
+        // if whitelisting is enabled (either explicit or as a default whitelist), force the whitelist check
+        if (useDefaultWhitelist || !whitelist.isEmpty()) {
+            if (whitelist.isListed(className)
+                    || (useDefaultWhitelist && DEFAULT_WHITELIST.isListed(className))) {
+                return;
+            }
+            throw new SecurityException(format(DESERIALIZATION_ERROR, className));
+        }
+    }
+
+    static {
+        DEFAULT_WHITELIST = new ClassFilter();
+        DEFAULT_WHITELIST.addPrefixes("com.hazelcast.", "java", "[");
     }
 }

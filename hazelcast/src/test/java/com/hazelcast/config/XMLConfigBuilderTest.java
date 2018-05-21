@@ -2389,12 +2389,15 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     public void testJavaSerializationFilter() {
         String xml = HAZELCAST_START_TAG
                 + "  <serialization>\n"
-                + "      <java-serialization-filter>\n"
+                + "      <java-serialization-filter defaults-disabled='true'>\n"
                 + "          <whitelist>\n"
                 + "              <class>java.lang.String</class>\n"
                 + "              <class>example.Foo</class>\n"
                 + "              <package>com.acme.app</package>\n"
                 + "              <package>com.acme.app.subpkg</package>\n"
+                + "              <prefix>java</prefix>\n"
+                + "              <prefix>com.hazelcast.</prefix>\n"
+                + "              <prefix>[</prefix>\n"
                 + "          </whitelist>\n"
                 + "          <blacklist>\n"
                 + "              <class>com.acme.app.BeanComparator</class>\n"
@@ -2414,6 +2417,8 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         assertTrue(whiteList.getClasses().contains("example.Foo"));
         assertTrue(whiteList.getPackages().contains("com.acme.app"));
         assertTrue(whiteList.getPackages().contains("com.acme.app.subpkg"));
+        assertTrue(whiteList.getPrefixes().contains("java"));
+        assertTrue(whiteList.getPrefixes().contains("["));
         assertTrue(blackList.getClasses().contains("com.acme.app.BeanComparator"));
     }
 

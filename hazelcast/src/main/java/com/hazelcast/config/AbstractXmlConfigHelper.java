@@ -512,6 +512,9 @@ public abstract class AbstractXmlConfigHelper {
     protected void fillJavaSerializationFilter(final Node node, SerializationConfig serializationConfig) {
         JavaSerializationFilterConfig filterConfig = new JavaSerializationFilterConfig();
         serializationConfig.setJavaSerializationFilterConfig(filterConfig);
+        Node defaultsDisabledNode = node.getAttributes().getNamedItem("defaults-disabled");
+        boolean defaultsDisabled = defaultsDisabledNode != null && getBooleanValue(getTextContent(defaultsDisabledNode));
+        filterConfig.setDefaultsDisabled(defaultsDisabled);
         for (Node child : childElements(node)) {
             final String name = cleanNodeName(child);
             if ("blacklist".equals(name)) {
@@ -532,6 +535,8 @@ public abstract class AbstractXmlConfigHelper {
                 list.addClasses(getTextContent(child));
             } else if ("package".equals(name)) {
                 list.addPackages(getTextContent(child));
+            } else if ("prefix".equals(name)) {
+                list.addPrefixes(getTextContent(child));
             }
         }
         return list;

@@ -361,9 +361,10 @@ public class ConfigXmlGeneratorTest {
                 .setTypeClassName("TypeClass");
 
         JavaSerializationFilterConfig filterConfig = new JavaSerializationFilterConfig();
-        filterConfig.getBlacklist().addClasses("example.Class1", "acme.Test").addPackages("org.infinitban");
-        filterConfig.getWhitelist().addClasses("WhiteOne", "WhiteTwo").addPackages("com.hazelcast", "test.package");
-                
+        filterConfig.getBlacklist().addClasses("example.Class1", "acme.Test").addPackages("org.infinitban")
+            .addPrefixes("dangerous.", "bang");
+        filterConfig.getWhitelist().addClasses("WhiteOne", "WhiteTwo").addPackages("com.hazelcast", "test.package")
+            .addPrefixes("java");
 
         SerializationConfig expectedConfig = new SerializationConfig()
                 .setAllowUnsafe(true)

@@ -403,7 +403,7 @@ public class ConfigXmlGenerator {
         gen.node("check-class-def-errors", c.isCheckClassDefErrors());
         JavaSerializationFilterConfig javaSerializationFilterConfig = c.getJavaSerializationFilterConfig();
         if (javaSerializationFilterConfig != null) {
-            gen.open("java-serialization-filter");
+            gen.open("java-serialization-filter", "defaults-disabled", javaSerializationFilterConfig.isDefaultsDisabled());
             appendFilterList(gen, "blacklist", javaSerializationFilterConfig.getBlacklist());
             appendFilterList(gen, "whitelist", javaSerializationFilterConfig.getWhitelist());
             gen.close();
@@ -1415,6 +1415,9 @@ public class ConfigXmlGenerator {
         }
         for (String packageName : classFilterList.getPackages()) {
             gen.node("package", packageName);
+        }
+        for (String prefix : classFilterList.getPrefixes()) {
+            gen.node("prefix", prefix);
         }
         gen.close();
     }

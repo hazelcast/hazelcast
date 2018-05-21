@@ -1809,7 +1809,7 @@
                         class-name="com.hazelcast.examples.SerializerFactory"/>
         </serializers>
         <check-class-def-errors>true</check-class-def-errors>
-        <java-serialization-filter>
+        <java-serialization-filter defaults-disabled="true">
             <blacklist>
                 <class>com.acme.app.BeanComparator</class>
             </blacklist>
@@ -1818,6 +1818,8 @@
                 <class>example.Foo</class>
                 <package>com.acme.app</package>
                 <package>com.acme.app.subpkg</package>
+                <prefix>com.hazelcast.</prefix>
+                <prefix>java</prefix>
             </whitelist>
         </java-serialization-filter>
     </serialization>

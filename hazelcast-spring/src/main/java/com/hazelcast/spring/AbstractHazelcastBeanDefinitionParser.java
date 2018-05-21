@@ -527,6 +527,9 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
                     filterConfigBuilder.addPropertyValue("whitelist", createFilterListBean(child));
                 }
             }
+            Node defaultsDisabledAttr = node.getAttributes().getNamedItem("defaults-disabled");
+            boolean defaultsDisabled = getBooleanValue(getTextContent(defaultsDisabledAttr));
+            filterConfigBuilder.addPropertyValue("defaultsDisabled", defaultsDisabled);
             serializationConfigBuilder.addPropertyValue("javaSerializationFilterConfig",
                     filterConfigBuilder.getBeanDefinition());
         }
@@ -535,16 +538,20 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
             BeanDefinitionBuilder filterListBuilder = createBeanBuilder(ClassFilter.class);
             ManagedSet<String> classes = new ManagedSet<String>();
             ManagedSet<String> packages = new ManagedSet<String>();
+            ManagedSet<String> prefixes = new ManagedSet<String>();
             for (Node child : childElements(node)) {
                 String name = cleanNodeName(child);
                 if ("class".equals(name)) {
                     classes.add(getTextContent(child));
                 } else if ("package".equals(name)) {
                     packages.add(getTextContent(child));
+                } else if ("prefix".equals(name)) {
+                    prefixes.add(getTextContent(child));
                 }
             }
             filterListBuilder.addPropertyValue("classes", classes);
             filterListBuilder.addPropertyValue("packages", packages);
+            filterListBuilder.addPropertyValue("prefixes", prefixes);
             return filterListBuilder.getBeanDefinition();
         }
     }
