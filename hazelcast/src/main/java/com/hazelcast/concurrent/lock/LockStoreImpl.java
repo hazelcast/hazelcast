@@ -389,13 +389,11 @@ public final class LockStoreImpl implements IdentifiedDataSerializable, LockStor
         backupCount = in.readInt();
         asyncBackupCount = in.readInt();
         int len = in.readInt();
-        if (len > 0) {
-            for (int i = 0; i < len; i++) {
-                LockResourceImpl lock = new LockResourceImpl();
-                lock.readData(in);
-                lock.setLockStore(this);
-                locks.put(lock.getKey(), lock);
-            }
+        for (int i = 0; i < len; i++) {
+            LockResourceImpl lock = new LockResourceImpl();
+            lock.readData(in);
+            lock.setLockStore(this);
+            locks.put(lock.getKey(), lock);
         }
     }
 

@@ -85,10 +85,9 @@ public class ClientEndpointManagerImpl implements ClientEndpointManager {
         final Connection conn = endpoint.getConnection();
         if (endpoints.putIfAbsent(conn, endpoint) != null) {
             return false;
-        } else {
-            totalRegistrations.inc();
-            return true;
         }
+        totalRegistrations.inc();
+        return true;
     }
 
     @Override

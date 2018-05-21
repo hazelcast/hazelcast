@@ -219,9 +219,8 @@ final class LockResourceImpl implements IdentifiedDataSerializable, LockResource
         WaitersInfo condition = this.waiters.get(conditionId);
         if (condition == null) {
             return;
-        } else {
-            waiters = condition.getWaiters();
         }
+        waiters = condition.getWaiters();
         if (waiters == null) {
             return;
         }

@@ -72,7 +72,7 @@ public enum CacheEventType {
 
     private int type;
 
-    private CacheEventType(final int type) {
+    CacheEventType(final int type) {
         this.type = type;
     }
 

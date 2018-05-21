@@ -63,14 +63,12 @@ public final class QueueUtil {
      */
     public static int drainQueue(Queue<?> queue, int elementsToDrain) {
         int drained = 0;
-        boolean drainMore = true;
-        for (int i = 0; i < elementsToDrain && drainMore; i++) {
+        for (int i = 0; i < elementsToDrain; i++) {
             Object polled = queue.poll();
-            if (polled != null) {
-                drained++;
-            } else {
-                drainMore = false;
+            if (polled == null) {
+                break;
             }
+            drained++;
         }
 
         return drained;

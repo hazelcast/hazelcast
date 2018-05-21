@@ -748,23 +748,20 @@ public class Node {
             //TODO: Auto-Upgrade Multicast+AWS configuration!
             logger.info("Activating Discovery SPI Joiner");
             return new DiscoveryJoiner(this, discoveryService, properties.getBoolean(DISCOVERY_SPI_PUBLIC_IP_ENABLED));
-        } else {
-            if (join.getMulticastConfig().isEnabled() && multicastService != null) {
-                logger.info("Creating MulticastJoiner");
-                return new MulticastJoiner(this);
-            } else if (join.getTcpIpConfig().isEnabled()) {
-                logger.info("Creating TcpIpJoiner");
-                return new TcpIpJoiner(this);
-            } else if (join.getAwsConfig().isEnabled()) {
-                Class clazz;
-                try {
-                    logger.info("Creating AWSJoiner");
-                    clazz = Class.forName("com.hazelcast.cluster.impl.TcpIpJoinerOverAWS");
-                    Constructor constructor = clazz.getConstructor(Node.class);
-                    return (Joiner) constructor.newInstance(this);
-                } catch (Exception e) {
-                    throw rethrow(e);
-                }
+        } else if (join.getMulticastConfig().isEnabled() && multicastService != null) {
+            logger.info("Creating MulticastJoiner");
+            return new MulticastJoiner(this);
+        } else if (join.getTcpIpConfig().isEnabled()) {
+            logger.info("Creating TcpIpJoiner");
+            return new TcpIpJoiner(this);
+        } else if (join.getAwsConfig().isEnabled()) {
+            try {
+                logger.info("Creating AWSJoiner");
+                Class clazz = Class.forName("com.hazelcast.cluster.impl.TcpIpJoinerOverAWS");
+                Constructor constructor = clazz.getConstructor(Node.class);
+                return (Joiner) constructor.newInstance(this);
+            } catch (Exception e) {
+                throw rethrow(e);
             }
         }
         return null;

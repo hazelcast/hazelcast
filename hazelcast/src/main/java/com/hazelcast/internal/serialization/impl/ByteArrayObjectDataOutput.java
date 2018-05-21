@@ -66,9 +66,8 @@ class ByteArrayObjectDataOutput extends VersionedObjectDataOutput implements Buf
     public void write(byte[] b, int off, int len) {
         if (b == null) {
             throw new NullPointerException();
-        } else {
-            ArrayUtils.boundsCheck(b.length, off, len);
         }
+        ArrayUtils.boundsCheck(b.length, off, len);
         if (len == 0) {
             return;
         }
