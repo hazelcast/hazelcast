@@ -335,7 +335,7 @@ public final class StringUtil {
         }
         List<String> list = new ArrayList<String>(Arrays.asList(arr1));
         list.retainAll(Arrays.asList(arr2));
-        return list.toArray(new String[list.size()]);
+        return list.toArray(new String[0]);
     }
 
     /**
@@ -351,7 +351,7 @@ public final class StringUtil {
         }
         List<String> list = new ArrayList<String>(Arrays.asList(arr1));
         list.removeAll(Arrays.asList(arr2));
-        return list.toArray(new String[list.size()]);
+        return list.toArray(new String[0]);
     }
 
     /**

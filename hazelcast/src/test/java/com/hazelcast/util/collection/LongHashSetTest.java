@@ -295,7 +295,7 @@ public class LongHashSetTest {
         final LongHashSet initial = new LongHashSet(100, -1);
         initial.add(1);
         initial.add(13);
-        final Object[] ary = initial.toArray(new Long[2]);
+        final Object[] ary = initial.toArray(new Long[0]);
         final Set<Object> fromArray = new HashSet<Object>(Arrays.asList(ary));
         assertEquals(new HashSet<Object>(initial), fromArray);
     }

@@ -94,7 +94,7 @@ public class FutureUtilTest extends HazelcastTestSupport {
         Collection<Integer> result = returnWithDeadline(futures, 10, TimeUnit.SECONDS, logAllExceptions(Level.WARNING));
         assertEquals(2, result.size());
 
-        Integer[] array = result.toArray(new Integer[result.size()]);
+        Integer[] array = result.toArray(new Integer[0]);
         assertEquals(1, (int) array[0]);
         assertEquals(2, (int) array[1]);
     }
@@ -112,7 +112,7 @@ public class FutureUtilTest extends HazelcastTestSupport {
         Collection<Integer> result = returnWithDeadline(futures, 10, TimeUnit.SECONDS, logAllExceptions(Level.WARNING));
         assertEquals(2, result.size());
 
-        Integer[] array = result.toArray(new Integer[result.size()]);
+        Integer[] array = result.toArray(new Integer[0]);
         assertEquals(1, (int) array[0]);
         assertEquals(2, (int) array[1]);
     }

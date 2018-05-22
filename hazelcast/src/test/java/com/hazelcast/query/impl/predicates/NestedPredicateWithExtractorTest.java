@@ -95,7 +95,7 @@ public class NestedPredicateWithExtractorTest extends HazelcastTestSupport {
 
         // THEN
         assertEquals(1, values.size());
-        assertEquals("body1", values.toArray(new Body[values.size()])[0].getName());
+        assertEquals("body1", values.toArray(new Body[0])[0].getName());
         assertEquals(2 + 1, bodyExtractorExecutions);
         assertEquals(0, limbExtractorExecutions);
     }
@@ -111,7 +111,7 @@ public class NestedPredicateWithExtractorTest extends HazelcastTestSupport {
 
         // THEN
         assertEquals(1, values.size());
-        assertEquals("body1", values.toArray(new Body[values.size()])[0].getName());
+        assertEquals("body1", values.toArray(new Body[0])[0].getName());
         assertEquals(2 + 1, bodyExtractorExecutions);
         assertEquals(0, limbExtractorExecutions);
     }
@@ -129,7 +129,7 @@ public class NestedPredicateWithExtractorTest extends HazelcastTestSupport {
 
         // THEN
         assertEquals(1, values.size());
-        assertEquals("body2", values.toArray(new Body[values.size()])[0].getName());
+        assertEquals("body2", values.toArray(new Body[0])[0].getName());
         assertEquals(0, bodyExtractorExecutions);
         assertEquals(2 + 1, limbExtractorExecutions);
     }
@@ -191,7 +191,7 @@ public class NestedPredicateWithExtractorTest extends HazelcastTestSupport {
 
         // THEN
         assertEquals(1, values.size());
-        assertEquals("body2", values.toArray(new Body[values.size()])[0].getName());
+        assertEquals("body2", values.toArray(new Body[0])[0].getName());
         assertEquals(0, bodyExtractorExecutions);
         assertEquals(2 + 1, limbExtractorExecutions);
     }

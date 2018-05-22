@@ -119,7 +119,7 @@ public class QueryIndexTest extends HazelcastTestSupport {
         for (Value configObject : values) {
             typeNames.add(configObject.getType().getTypeName());
         }
-        String[] array = typeNames.toArray(new String[typeNames.size()]);
+        String[] array = typeNames.toArray(new String[0]);
         Arrays.sort(array);
         assertArrayEquals(typeNames.toString(), new String[]{"type6", "type8"}, array);
     }
@@ -141,7 +141,7 @@ public class QueryIndexTest extends HazelcastTestSupport {
         for (Value configObject : values) {
             typeNames.add(configObject.getType().getTypeName());
         }
-        assertArrayEquals(typeNames.toString(), new String[]{"type1"}, typeNames.toArray(new String[typeNames.size()]));
+        assertArrayEquals(typeNames.toString(), new String[]{"type1"}, typeNames.toArray(new String[0]));
     }
 
     @Test(timeout = 1000 * 60)
