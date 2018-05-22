@@ -27,9 +27,11 @@ import com.hazelcast.client.spi.ClientPartitionService;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.listener.AbstractClientListenerService;
 import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
+import com.hazelcast.spi.impl.sequence.CallIdFactory;
+import com.hazelcast.spi.impl.sequence.CallIdSequence;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
 import java.io.IOException;
@@ -38,8 +40,11 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import static com.hazelcast.client.spi.properties.ClientProperty.BACKPRESSURE_BACKOFF_TIMEOUT_MILLIS;
 import static com.hazelcast.client.spi.properties.ClientProperty.INVOCATION_RETRY_PAUSE_MILLIS;
 import static com.hazelcast.client.spi.properties.ClientProperty.INVOCATION_TIMEOUT_SECONDS;
+import static com.hazelcast.client.spi.properties.ClientProperty.MAX_CONCURRENT_INVOCATIONS;
+import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 public abstract class AbstractClientInvocationService implements ClientInvocationService {
@@ -54,7 +59,7 @@ public abstract class AbstractClientInvocationService implements ClientInvocatio
     final ILogger invocationLogger;
     private AbstractClientListenerService clientListenerService;
 
-    @Probe(name = "pendingCalls", level = ProbeLevel.MANDATORY)
+    @Probe(name = "pendingCalls", level = MANDATORY)
     private ConcurrentMap<Long, ClientInvocation> invocations = new ConcurrentHashMap<Long, ClientInvocation>();
 
     private ClientResponseHandlerSupplier responseHandlerSupplier;
@@ -62,6 +67,7 @@ public abstract class AbstractClientInvocationService implements ClientInvocatio
     private volatile boolean isShutdown;
     private final long invocationTimeoutMillis;
     private final long invocationRetryPauseMillis;
+    private final CallIdSequence callIdSequence;
 
     public AbstractClientInvocationService(HazelcastClientInstanceImpl client) {
         this.client = client;
@@ -69,6 +75,14 @@ public abstract class AbstractClientInvocationService implements ClientInvocatio
         this.invocationTimeoutMillis = initInvocationTimeoutMillis();
         this.invocationRetryPauseMillis = initInvocationRetryPauseMillis();
         this.responseHandlerSupplier = new ClientResponseHandlerSupplier(this);
+
+        HazelcastProperties properties = client.getProperties();
+        int maxAllowedConcurrentInvocations = properties.getInteger(MAX_CONCURRENT_INVOCATIONS);
+        long backofftimeoutMs = properties.getLong(BACKPRESSURE_BACKOFF_TIMEOUT_MILLIS);
+        boolean isBackPressureEnabled = maxAllowedConcurrentInvocations != Integer.MAX_VALUE;
+        callIdSequence = CallIdFactory
+                .newCallIdSequence(isBackPressureEnabled, maxAllowedConcurrentInvocations, backofftimeoutMs);
+
         client.getMetricsRegistry().scanAndRegister(this, "invocations");
     }
 
@@ -80,6 +94,28 @@ public abstract class AbstractClientInvocationService implements ClientInvocatio
     private long initInvocationTimeoutMillis() {
         long waitTime = client.getProperties().getMillis(INVOCATION_TIMEOUT_SECONDS);
         return waitTime > 0 ? waitTime : Integer.parseInt(INVOCATION_TIMEOUT_SECONDS.getDefaultValue());
+    }
+
+    @Probe(level = MANDATORY)
+    private long startedInvocations() {
+        return callIdSequence.getLastCallId();
+    }
+
+    @Probe(level = MANDATORY)
+    private long maxCurrentInvocations() {
+        return callIdSequence.getMaxConcurrentInvocations();
+    }
+
+    public long getInvocationTimeoutMillis() {
+        return invocationTimeoutMillis;
+    }
+
+    public long getInvocationRetryPauseMillis() {
+        return invocationRetryPauseMillis;
+    }
+
+    CallIdSequence getCallIdSequence() {
+        return callIdSequence;
     }
 
     public void start() {
@@ -165,14 +201,6 @@ public abstract class AbstractClientInvocationService implements ClientInvocatio
             iterator.remove();
             invocation.notifyException(new HazelcastClientNotActiveException("Client is shutting down"));
         }
-    }
-
-    public long getInvocationTimeoutMillis() {
-        return invocationTimeoutMillis;
-    }
-
-    public long getInvocationRetryPauseMillis() {
-        return invocationRetryPauseMillis;
     }
 
     private class CleanResourcesTask implements Runnable {
