@@ -99,7 +99,6 @@ import static com.hazelcast.spi.properties.GroupProperty.DISCOVERY_SPI_ENABLED;
 import static com.hazelcast.spi.properties.GroupProperty.DISCOVERY_SPI_PUBLIC_IP_ENABLED;
 import static com.hazelcast.spi.properties.GroupProperty.GRACEFUL_SHUTDOWN_MAX_WAIT;
 import static com.hazelcast.spi.properties.GroupProperty.LOGGING_TYPE;
-import static com.hazelcast.spi.properties.GroupProperty.MAX_JOIN_SECONDS;
 import static com.hazelcast.spi.properties.GroupProperty.SHUTDOWNHOOK_ENABLED;
 import static com.hazelcast.spi.properties.GroupProperty.SHUTDOWNHOOK_POLICY;
 import static com.hazelcast.util.EmptyStatement.ignore;
@@ -730,8 +729,7 @@ public class Node {
         }
 
         if (!clusterService.isJoined()) {
-            long maxJoinTimeMillis = properties.getMillis(MAX_JOIN_SECONDS);
-            logger.severe("Could not join cluster in " + maxJoinTimeMillis + " ms. Shutting down now!");
+            logger.severe("Could not join cluster. Shutting down now!");
             shutdownNodeByFiringEvents(Node.this, true);
         }
     }
