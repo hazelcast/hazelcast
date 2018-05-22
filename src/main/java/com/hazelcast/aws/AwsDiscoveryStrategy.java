@@ -44,7 +44,6 @@ import static com.hazelcast.aws.AwsProperties.SECRET_KEY;
 import static com.hazelcast.aws.AwsProperties.SECURITY_GROUP_NAME;
 import static com.hazelcast.aws.AwsProperties.TAG_KEY;
 import static com.hazelcast.aws.AwsProperties.TAG_VALUE;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
 
 /**
  * AWS implementation of {@link DiscoveryStrategy}.
