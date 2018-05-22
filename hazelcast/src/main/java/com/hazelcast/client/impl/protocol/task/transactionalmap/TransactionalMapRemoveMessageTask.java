@@ -38,7 +38,7 @@ public class TransactionalMapRemoveMessageTask
 
     @Override
     protected Object innerCall() throws Exception {
-        final TransactionContext context = getEndpoint().getTransactionContext(parameters.txnId);
+        final TransactionContext context = endpoint.getTransactionContext(parameters.txnId);
         final TransactionalMap map = context.getMap(parameters.name);
         Object oldValue = map.remove(parameters.key);
         return serializationService.toData(oldValue);

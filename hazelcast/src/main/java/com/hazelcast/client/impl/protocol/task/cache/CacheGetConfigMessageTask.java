@@ -95,7 +95,7 @@ public class CacheGetConfigMessageTask
 
     private Data serializeCacheConfig(Object response) {
         Data responseData = null;
-        if (BuildInfo.UNKNOWN_HAZELCAST_VERSION == getClientVersion()) {
+        if (BuildInfo.UNKNOWN_HAZELCAST_VERSION == endpoint.getClientVersion()) {
             boolean compatibilityEnabled = nodeEngine.getProperties().getBoolean(GroupProperty.COMPATIBILITY_3_6_CLIENT_ENABLED);
             if (compatibilityEnabled) {
                 responseData = nodeEngine.toData(response == null ? null : new LegacyCacheConfig((CacheConfig) response));

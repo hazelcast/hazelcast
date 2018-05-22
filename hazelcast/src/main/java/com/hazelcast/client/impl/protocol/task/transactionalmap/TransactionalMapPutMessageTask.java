@@ -39,7 +39,7 @@ public class TransactionalMapPutMessageTask
 
     @Override
     protected Object innerCall() throws Exception {
-        final TransactionContext context = getEndpoint().getTransactionContext(parameters.txnId);
+        final TransactionContext context = endpoint.getTransactionContext(parameters.txnId);
         final TransactionalMap map = context.getMap(parameters.name);
         Object response = map.put(parameters.key, parameters.value, parameters.ttl, TimeUnit.MILLISECONDS);
         return serializationService.toData(response);

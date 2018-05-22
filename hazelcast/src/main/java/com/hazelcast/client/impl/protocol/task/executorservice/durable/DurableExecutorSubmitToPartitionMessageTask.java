@@ -46,7 +46,7 @@ public class DurableExecutorSubmitToPartitionMessageTask
         SecurityContext securityContext = clientEngine.getSecurityContext();
         Data callableData = parameters.callable;
         if (securityContext != null) {
-            Subject subject = getEndpoint().getSubject();
+            Subject subject = endpoint.getSubject();
             Callable callable = serializationService.toObject(parameters.callable);
             callable = securityContext.createSecureCallable(subject, callable);
             callableData = serializationService.toData(callable);

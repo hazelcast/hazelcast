@@ -40,7 +40,6 @@ public class Pre38CacheAddInvalidationListenerTask
 
     @Override
     protected Object call() {
-        ClientEndpoint endpoint = getEndpoint();
         CacheService cacheService = getService(CacheService.SERVICE_NAME);
         CacheContext cacheContext = cacheService.getOrCreateCacheContext(parameters.name);
         String uuid = nodeEngine.getLocalMember().getUuid();
