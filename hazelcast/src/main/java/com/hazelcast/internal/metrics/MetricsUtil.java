@@ -16,6 +16,8 @@
 
 package com.hazelcast.internal.metrics;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import javax.annotation.Nonnull;
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.ArrayList;
@@ -66,6 +68,7 @@ public final class MetricsUtil {
         return sb.toString();
     }
 
+    @SuppressFBWarnings(value = "ES_COMPARING_PARAMETER_STRING_WITH_EQ", justification = "it's intentional")
     public static boolean containsSpecialCharacters(String namePart) {
         // escapeMetricNamePart method returns input object of no escaping is needed,
         // we assume that.
