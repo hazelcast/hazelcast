@@ -23,20 +23,22 @@ import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.IListJet;
 import com.hazelcast.jet.IMapJet;
 import com.hazelcast.jet.JetCacheManager;
+import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.stream.impl.IListDecorator;
 import com.hazelcast.jet.stream.impl.IMapDecorator;
 
 import javax.annotation.Nonnull;
+import java.util.function.Supplier;
 
 abstract class AbstractJetInstance implements JetInstance {
     private final HazelcastInstance hazelcastInstance;
     private final JetCacheManagerImpl cacheManager;
-    private final JobRepository jobRepository;
+    private final Supplier<JobRepository> jobRepository;
 
     AbstractJetInstance(HazelcastInstance hazelcastInstance) {
         this.hazelcastInstance = hazelcastInstance;
         this.cacheManager = new JetCacheManagerImpl(this);
-        this.jobRepository = new JobRepository(this, null);
+        this.jobRepository = Util.memoizeConcurrent(() -> new JobRepository(this, null));
     }
 
     @Nonnull @Override
@@ -75,7 +77,7 @@ abstract class AbstractJetInstance implements JetInstance {
     }
 
     protected long uploadResourcesAndAssignId(JobConfig config) {
-        return jobRepository.uploadJobResources(config);
+        return jobRepository.get().uploadJobResources(config);
     }
 
 }
