@@ -40,7 +40,6 @@ public class CacheAddNearCacheInvalidationListenerTask
 
     @Override
     protected Object call() {
-        ClientEndpoint endpoint = getEndpoint();
         CacheService cacheService = getService(CacheService.SERVICE_NAME);
         CacheContext cacheContext = cacheService.getOrCreateCacheContext(parameters.name);
         NearCacheInvalidationListener listener

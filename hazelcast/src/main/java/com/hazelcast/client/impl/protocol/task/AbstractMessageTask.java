@@ -19,6 +19,7 @@ package com.hazelcast.client.impl.protocol.task;
 import com.hazelcast.client.AuthenticationException;
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.ClientEndpointManager;
+import com.hazelcast.client.impl.ClientEndpointImpl;
 import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.client.impl.client.SecureRequest;
 import com.hazelcast.client.impl.protocol.ClientExceptionFactory;
@@ -50,15 +51,14 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
             Arrays.asList(Error.class, MemberLeftException.class);
 
     protected final ClientMessage clientMessage;
-
     protected final Connection connection;
     protected final ClientEndpoint endpoint;
     protected final NodeEngineImpl nodeEngine;
     protected final InternalSerializationService serializationService;
     protected final ILogger logger;
-    protected final ClientEndpointManager endpointManager;
     protected final ClientEngineImpl clientEngine;
     protected P parameters;
+    final ClientEndpointManager endpointManager;
     private final Node node;
 
     protected AbstractMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
@@ -70,7 +70,7 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
         this.connection = connection;
         this.clientEngine = node.clientEngine;
         this.endpointManager = clientEngine.getEndpointManager();
-        this.endpoint = getEndpoint();
+        this.endpoint = initEndpoint();
     }
 
     @SuppressWarnings("unchecked")
@@ -78,12 +78,12 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
         return (S) node.nodeEngine.getService(serviceName);
     }
 
-    protected ClientEndpoint getEndpoint() {
-        return endpointManager.getEndpoint(connection);
-    }
-
-    protected int getClientVersion() {
-        return getEndpoint().getClientVersion();
+    private ClientEndpoint initEndpoint() {
+        ClientEndpoint endpoint = endpointManager.getEndpoint(connection);
+        if (endpoint != null) {
+            return endpoint;
+        }
+        return new ClientEndpointImpl(clientEngine, nodeEngine, connection);
     }
 
     protected abstract P decodeClientMessage(ClientMessage clientMessage);
@@ -96,30 +96,23 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
     }
 
     @Override
-    public void run() {
+    public final void run() {
         try {
-            if (isAuthenticationMessage()) {
-                initializeAndProcessMessage();
-            } else {
-                ClientEndpoint endpoint = getEndpoint();
-                if (endpoint == null) {
-                    handleMissingEndpoint();
-                } else if (!endpoint.isAuthenticated()) {
-                    handleAuthenticationFailure();
-                } else {
-                    initializeAndProcessMessage();
-                }
-            }
+            doRun();
         } catch (Throwable e) {
             handleProcessingFailure(e);
         }
     }
 
-    protected boolean isAuthenticationMessage() {
-        return false;
+    protected void doRun() throws Throwable {
+        if (!endpoint.isAuthenticated()) {
+            handleAuthenticationFailure();
+        } else {
+            initializeAndProcessMessage();
+        }
     }
 
-    private void initializeAndProcessMessage() throws Throwable {
+    void initializeAndProcessMessage() throws Throwable {
         if (!node.getNodeExtension().isStartCompleted()) {
             throw new HazelcastInstanceNotActiveException("Hazelcast instance is not ready yet!");
         }
@@ -142,16 +135,6 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
         }
         sendClientMessage(exception);
         connection.close("Authentication failed. " + exception.getMessage(), null);
-    }
-
-    private void handleMissingEndpoint() {
-        if (connection.isAlive()) {
-            logger.severe("Dropping: " + parameters + " -> no endpoint found for live connection.");
-        } else {
-            if (logger.isFinestEnabled()) {
-                logger.finest("Dropping: " + parameters + " -> no endpoint found for dead connection.");
-            }
-        }
     }
 
     private void logProcessingFailure(Throwable throwable) {

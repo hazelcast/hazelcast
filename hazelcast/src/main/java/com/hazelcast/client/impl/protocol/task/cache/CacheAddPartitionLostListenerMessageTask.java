@@ -22,7 +22,6 @@ import com.hazelcast.cache.impl.event.CachePartitionLostEvent;
 import com.hazelcast.cache.impl.event.CachePartitionLostEventFilter;
 import com.hazelcast.cache.impl.event.CachePartitionLostListener;
 import com.hazelcast.cache.impl.event.InternalCachePartitionLostListenerAdapter;
-import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheAddPartitionLostListenerCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
@@ -44,8 +43,6 @@ public class CacheAddPartitionLostListenerMessageTask
 
     @Override
     protected Object call() {
-        final ClientEndpoint endpoint = getEndpoint();
-
         CachePartitionLostListener listener = new CachePartitionLostListener() {
             @Override
             public void partitionLost(CachePartitionLostEvent event) {
