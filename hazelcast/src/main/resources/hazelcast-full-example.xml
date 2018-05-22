@@ -16,12 +16,17 @@
   -->
 
 <!--
-This is a full example hazelcast.xml that includes all the configuration elements and attributes of Hazelcast.
-To use this, rename it to hazelcast.xml and place it in the directory where you start Hazelcast.
-Please see the schema to learn how to configure Hazelcast at 
-https://hazelcast.com/schema/config/hazelcast-config-3.11.xsd or the Reference Manual at
-https://hazelcast.org/documentation/.
+  This is a full example hazelcast.xml that includes all the
+  configuration elements and attributes of a Hazelcast member.
+
+  To use this, rename it to hazelcast.xml and place it in
+  the directory where you start your Hazelcast member.
+
+  To learn how to configure Hazelcast, please see the schema at
+  https://hazelcast.com/schema/config/hazelcast-config-3.11.xsd
+  or the Reference Manual at https://hazelcast.org/documentation/
 -->
+
 <!--suppress XmlDefaultAttributeValue -->
 <hazelcast xmlns="http://www.hazelcast.com/schema/config"
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -2013,13 +2018,9 @@ https://hazelcast.org/documentation/.
     <quorum name="quorumRuleWithThreeMembers" enabled="true">
         <quorum-size>3</quorum-size>
         <quorum-type>READ_WRITE</quorum-type>
-        <quorum-function-class-name>
-            com.your-package.AbsPresMyQuorum
-        </quorum-function-class-name>
+        <quorum-function-class-name>com.your-package.AbsPresMyQuorum</quorum-function-class-name>
         <quorum-listeners>
-            <quorum-listener>
-                com.your-package.ThreeMemberQuorumListener
-            </quorum-listener>
+            <quorum-listener>com.your-package.ThreeMemberQuorumListener</quorum-listener>
         </quorum-listeners>
     </quorum>
     <!--
