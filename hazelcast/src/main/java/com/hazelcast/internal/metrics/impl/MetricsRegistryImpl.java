@@ -141,6 +141,7 @@ public class MetricsRegistryImpl implements MetricsRegistry {
 
     @Override
     public <S> void scanAndRegister(S source, String namePrefix) {
+        checkNotNull(namePrefix, "namePrefix can't be null");
         scanAndRegister(source, namePrefix + '.', "");
     }
 
