@@ -173,7 +173,8 @@ public class AwsDiscoveryStrategy
 
             return nodes;
         } catch (Exception e) {
-            throw rethrow(e);
+            LOGGER.warning("Cannot discover nodes, returning empty list", e);
+            return Collections.emptyList();
         }
     }
 
