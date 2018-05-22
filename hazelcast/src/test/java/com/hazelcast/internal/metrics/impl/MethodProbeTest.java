@@ -86,7 +86,7 @@ public class MethodProbeTest extends HazelcastTestSupport {
         MethodProbe methodProbe = createMethodProbe(method, probe);
 
         MetricsRegistryImpl metricsRegistry = new MetricsRegistryImpl(mock(ILogger.class), ProbeLevel.DEBUG);
-        methodProbe.register(metricsRegistry, source, "prefix.", "");
+        methodProbe.register(metricsRegistry, source, "prefix");
 
         Set<String> names = metricsRegistry.getNames();
         assertEquals(1, names.size());

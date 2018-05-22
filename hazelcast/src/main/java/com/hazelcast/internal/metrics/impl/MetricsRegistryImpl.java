@@ -22,6 +22,7 @@ import com.hazelcast.internal.metrics.DoubleProbeFunction;
 import com.hazelcast.internal.metrics.LongProbeFunction;
 import com.hazelcast.internal.metrics.MetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.metrics.ProbeBuilder;
 import com.hazelcast.internal.metrics.ProbeFunction;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.renderers.ProbeRenderer;
@@ -60,7 +61,7 @@ public class MetricsRegistryImpl implements MetricsRegistry {
     };
 
     final ILogger logger;
-    final ProbeLevel minimumLevel;
+    private final ProbeLevel minimumLevel;
 
     private final ScheduledExecutorService scheduledExecutorService;
     private final ConcurrentMap<String, ProbeInstance> probeInstances = new ConcurrentHashMap<String, ProbeInstance>();
@@ -128,7 +129,7 @@ public class MetricsRegistryImpl implements MetricsRegistry {
      * @param clazz the Class to be analyzed.
      * @return the loaded SourceMetadata.
      */
-    private SourceMetadata loadSourceMetadata(Class<?> clazz) {
+    SourceMetadata loadSourceMetadata(Class<?> clazz) {
         SourceMetadata metadata = metadataMap.get(clazz);
         if (metadata == null) {
             metadata = new SourceMetadata(clazz);
@@ -141,18 +142,11 @@ public class MetricsRegistryImpl implements MetricsRegistry {
 
     @Override
     public <S> void scanAndRegister(S source, String namePrefix) {
-        checkNotNull(namePrefix, "namePrefix can't be null");
-        scanAndRegister(source, namePrefix + '.', "");
-    }
-
-    @Override
-    public <S> void scanAndRegister(S source, String namePrefix, String nameSuffix) {
         checkNotNull(source, "source can't be null");
         checkNotNull(namePrefix, "namePrefix can't be null");
-        checkNotNull(nameSuffix, "nameSuffix can't be null");
 
         SourceMetadata metadata = loadSourceMetadata(source.getClass());
-        metadata.register(this, source, namePrefix, nameSuffix);
+        metadata.register(this, source, namePrefix);
     }
 
     @Override
@@ -358,9 +352,14 @@ public class MetricsRegistryImpl implements MetricsRegistry {
             this.probeInstances = null;
         }
 
-        public SortedProbeInstances(long mod, List<ProbeInstance> probeInstances) {
+        SortedProbeInstances(long mod, List<ProbeInstance> probeInstances) {
             this.mod = mod;
             this.probeInstances = probeInstances;
         }
+    }
+
+    @Override
+    public ProbeBuilder newProbeBuilder() {
+        return new ProbeBuilderImpl(this);
     }
 }

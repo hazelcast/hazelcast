@@ -20,6 +20,7 @@ import com.hazelcast.internal.metrics.DoubleProbeFunction;
 import com.hazelcast.internal.metrics.LongProbeFunction;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeFunction;
+import com.hazelcast.internal.metrics.ProbeUnit;
 import com.hazelcast.internal.util.counters.Counter;
 
 import java.lang.reflect.Method;
@@ -58,20 +59,22 @@ abstract class MethodProbe implements ProbeFunction {
         method.setAccessible(true);
     }
 
-    void register(MetricsRegistryImpl metricsRegistry, Object source, String namePrefix, String nameSuffix) {
-        String name = getName(namePrefix, nameSuffix);
+    void register(MetricsRegistryImpl metricsRegistry, Object source, String namePrefix) {
+        String name = namePrefix + '.' + getProbeOrMethodName();
         metricsRegistry.registerInternal(source, name, probe.level(), this);
     }
 
-    private String getName(String namePrefix, String nameSuffix) {
-        String name;
-        if (probe.name().equals("")) {
-            name = getterIntoProperty(method.getName());
-        } else {
-            name = probe.name();
+    void register(ProbeBuilderImpl builder, Object source) {
+        if (probe.unit() != ProbeUnit.UNSPECIFIED) {
+            builder = (ProbeBuilderImpl) builder.withTag("unit", probe.unit().name());
         }
+        builder.register(source, getProbeOrMethodName(), probe.level(), this);
+    }
 
-        return namePrefix + name + nameSuffix;
+    private String getProbeOrMethodName() {
+        return probe.name().length() != 0
+                ? probe.name()
+                : getterIntoProperty(method.getName());
     }
 
     static <S> MethodProbe createMethodProbe(Method method, Probe probe) {

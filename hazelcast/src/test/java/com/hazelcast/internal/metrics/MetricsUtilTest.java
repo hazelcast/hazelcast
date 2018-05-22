@@ -25,8 +25,8 @@ import org.junit.runner.RunWith;
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.Map.Entry;
 
-import static com.hazelcast.internal.metrics.MetricsUtil.escapeMetricKeyPart;
-import static com.hazelcast.internal.metrics.MetricsUtil.parseMetricKey;
+import static com.hazelcast.internal.metrics.MetricsUtil.escapeMetricNamePart;
+import static com.hazelcast.internal.metrics.MetricsUtil.parseMetricName;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
@@ -41,69 +41,69 @@ public class MetricsUtilTest {
 
     @Test
     public void test_escapeMetricKeyPart() {
-        assertSame("", escapeMetricKeyPart(""));
-        assertSame("aaa", escapeMetricKeyPart("aaa"));
-        assertEquals("\\=", escapeMetricKeyPart("="));
-        assertEquals("\\,", escapeMetricKeyPart(","));
-        assertEquals("\\\\", escapeMetricKeyPart("\\"));
-        assertEquals("a\\=b", escapeMetricKeyPart("a=b"));
-        assertEquals("\\=b", escapeMetricKeyPart("=b"));
-        assertEquals("a\\=", escapeMetricKeyPart("a="));
+        assertSame("", escapeMetricNamePart(""));
+        assertSame("aaa", escapeMetricNamePart("aaa"));
+        assertEquals("\\=", escapeMetricNamePart("="));
+        assertEquals("\\,", escapeMetricNamePart(","));
+        assertEquals("\\\\", escapeMetricNamePart("\\"));
+        assertEquals("a\\=b", escapeMetricNamePart("a=b"));
+        assertEquals("\\=b", escapeMetricNamePart("=b"));
+        assertEquals("a\\=", escapeMetricNamePart("a="));
     }
 
     @Test
     public void test_parseMetricKey() {
         // empty list
-        assertEquals(emptyList(), parseMetricKey("[]"));
+        assertEquals(emptyList(), parseMetricName("[]"));
         // normal single tag
-        assertEquals(singletonList(entry("tag", "value")), parseMetricKey("[tag=value]"));
+        assertEquals(singletonList(entry("tag", "value")), parseMetricName("[tag=value]"));
         // normal multiple tags
         assertEquals(asList(entry("tag1", "value1"), entry("tag2", "value2")),
-                parseMetricKey("[tag1=value1,tag2=value2]"));
+                parseMetricName("[tag1=value1,tag2=value2]"));
         // empty value
-        assertEquals(singletonList(entry("tag=", "value,")), parseMetricKey("[tag\\==value\\,]"));
+        assertEquals(singletonList(entry("tag=", "value,")), parseMetricName("[tag\\==value\\,]"));
     }
 
     @Test
     public void test_parseMetricKey_fail_keyNotEnclosed() {
         exception.expectMessage("key not enclosed in []");
-        parseMetricKey("tag=value");
+        parseMetricName("tag=value");
     }
 
     @Test
     public void test_parseMetricKey_fail_emptyTagName() {
         exception.expectMessage("empty tag name");
-        parseMetricKey("[=value]");
+        parseMetricName("[=value]");
     }
 
     @Test
     public void test_parseMetricKey_fail_equalsSignAfterValue() {
         exception.expectMessage("equals sign not after tag");
-        parseMetricKey("[tag=value=]");
+        parseMetricName("[tag=value=]");
     }
 
     @Test
     public void test_parseMetricKey_fail_commaInTag1() {
         exception.expectMessage("comma in tag");
-        parseMetricKey("[,]");
+        parseMetricName("[,]");
     }
 
     @Test
     public void test_parseMetricKey_fail_backslashAtTheEnd1() {
         exception.expectMessage("backslash at the end");
-        parseMetricKey("[\\]");
+        parseMetricName("[\\]");
     }
 
     @Test
     public void test_parseMetricKey_fail_backslashAtTheEnd2() {
         exception.expectMessage("backslash at the end");
-        parseMetricKey("[tag=value\\]");
+        parseMetricName("[tag=value\\]");
     }
 
     @Test
     public void test_parseMetricKey_fail_unfinishedTagAtTheEnd() {
         exception.expectMessage("unfinished tag at the end");
-        parseMetricKey("[tag=value,tag2]");
+        parseMetricName("[tag=value,tag2]");
     }
 
     private Entry<String, String> entry(String key, String value) {

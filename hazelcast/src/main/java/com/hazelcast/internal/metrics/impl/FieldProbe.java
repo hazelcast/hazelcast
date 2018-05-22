@@ -20,6 +20,7 @@ import com.hazelcast.internal.metrics.DoubleProbeFunction;
 import com.hazelcast.internal.metrics.LongProbeFunction;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeFunction;
+import com.hazelcast.internal.metrics.ProbeUnit;
 import com.hazelcast.internal.util.counters.Counter;
 
 import java.lang.reflect.Field;
@@ -55,18 +56,20 @@ abstract class FieldProbe implements ProbeFunction {
         field.setAccessible(true);
     }
 
-    void register(MetricsRegistryImpl metricsRegistry, Object source, String namePrefix, String nameSuffix) {
-        String name = getName(namePrefix, nameSuffix);
+    void register(MetricsRegistryImpl metricsRegistry, Object source, String namePrefix) {
+        String name = namePrefix + '.' + getProbeOrFieldName();
         metricsRegistry.registerInternal(source, name, probe.level(), this);
     }
 
-    private String getName(String namePrefix, String nameSuffix) {
-        String name = field.getName();
-        if (!probe.name().equals("")) {
-            name = probe.name();
+    void register(ProbeBuilderImpl builder, Object source) {
+        if (probe.unit() != ProbeUnit.UNSPECIFIED) {
+            builder = (ProbeBuilderImpl) builder.withTag("unit", probe.unit().name());
         }
+        builder.register(source, getProbeOrFieldName(), probe.level(), this);
+    }
 
-        return namePrefix + name + nameSuffix;
+    private String getProbeOrFieldName() {
+        return probe.name().length() != 0 ? probe.name() : field.getName();
     }
 
     static <S> FieldProbe createFieldProbe(Field field, Probe probe) {

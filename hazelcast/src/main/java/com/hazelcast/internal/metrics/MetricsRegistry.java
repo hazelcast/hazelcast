@@ -22,39 +22,39 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
- * The MetricsRegistry is responsible for recording all kinds of Hazelcast/JVM
- * specific information to help out with issues like performance or stability
- * problems.
- * <p>
- * Each HazelcastInstance has its own MetricsRegistry instance.
+ * The MetricsRegistry is a registry of various Hazelcast/JVM internal
+ * information to help out with debugging, performance or stability issues.
+ * Each HazelcastInstance has one local MetricsRegistry instance.
  * <p>
  * A MetricsRegistry can contain many {@link Probe} instances. A probe is
- * registered under a certain name, and can be read by creating a {@link Gauge},
- * see {@link #newLongGauge(String)}.
+ * registered under a name, and can be read by creating a {@link Gauge}, see
+ * {@link #newLongGauge(String)}.
  * <p>
- * This name can be any string, e.g.:
- * <ol>
- * <li>proxy.count</li>
- * <li>operation.completed.count</li>
- * <li>operation.partition[14].count</li>
- * </ol>
- * For the time being there the MetricsRegistry doesn't require any syntax for
- * the name content; so any String is fine.
+ * The name has this form:<pre>
+ *     [tag1=foo,tag2=bar,...]
+ * </pre>
+ * Special characters in values must be escaped, use {@link ProbeBuilder} to
+ * register metrics with properly escaped values.
+ * <p>
+ * The metrics registry doesn't interpret the name in any way, it is treated as
+ * is. For example, {@code [tag1=foo,tag2=bar]} and {@code [tag2=bar,tag1=foo]}
+ * will be treated as two different metrics even though they have same tags and
+ * values. Clients making use of the metrics can use the tags. For backwards
+ * compatibility, the name does not have to be enclosed in {@code []}.
  *
- * <h3>Duplicate Registrations</h3>
- * The MetricsRegistry is lenient regarding duplicate registrations of probes.
- * So if there is an existing probe for a given name and a new probe with the
- * same name is registered, the old probe is overwritten. The reason to be
- * lenient is that the MetricRegistry should not throw exception. Of course
- * there will be a log warning.
+ * <h3>Duplicate Registrations</h3> The MetricsRegistry is lenient regarding
+ * duplicate registrations of probes. So if there is an existing probe for a
+ * given name and a new probe with the same name is registered, the old probe
+ * is overwritten. The reason to be lenient is that the MetricRegistry should
+ * not throw exception. Of course, there will be a log warning.
  *
- * <h3>Performance</h3>
- * The MetricRegistry is designed for low overhead probes. So once a probe is
- * registered, there is no overhead for the provider of the probe data. The
- * provider could have for example a volatile long field and increment this
- * using a lazy-set. As long as the MetricRegistry can frequently read out this
- * field, the MetricRegistry is perfectly happy with such low overhead probes.
- * So it is up to the provider of the probe how much overhead is required.
+ * <h3>Performance</h3> The MetricRegistry is designed for low overhead probes.
+ * So once a probe is registered, there is no overhead for the provider of the
+ * probe data. The provider could have for example a volatile long field and
+ * increment this using a lazy-set. As long as the MetricRegistry can
+ * frequently read out this field, the MetricRegistry is perfectly happy with
+ * such low overhead probes. So it is up to the provider of the probe how much
+ * overhead is required.
  */
 public interface MetricsRegistry {
 
@@ -75,8 +75,8 @@ public interface MetricsRegistry {
      * implementation, e.g. a new OperationService implementation, that doesn't
      * provide the operation.count probe.
      *
-     * Multiple calls with the same name return different Gauge instances; so the Gauge instance is not cached. This is
-     * done to prevent memory leaks.
+     * Multiple calls with the same name return different Gauge instances; so
+     * the Gauge instance is not cached. This is done to prevent memory leaks.
      *
      * @param name the name of the metric.
      * @return the created LongGauge.
@@ -105,45 +105,24 @@ public interface MetricsRegistry {
     Set<String> getNames();
 
     /**
-     * Scans the source object for any fields/methods that have been annotated with {@link Probe} annotation, and
-     * registers these fields/methods as probes instances.
-     * <p>
-     * If a probe is called 'queueSize' and the namePrefix is 'operations', then the name of the probe instance
-     * is 'operations.queueSize'.
-     * <p>
-     * If a probe with the same name already exists, then the probe is replaced.
-     *
-     * If an object has no @Gauge annotations, the call is ignored.
-     *
-     * @param source     the object to scan.
-     * @param namePrefix the name prefix.
-     * @throws NullPointerException     if namePrefix or source is null.
-     * @throws IllegalArgumentException if the source contains Gauge annotation
-     * on a field/method of unsupported type.
-     */
-    <S> void scanAndRegister(S source, String namePrefix);
-
-    /**
      * Scans the source object for any fields/methods that have been annotated
      * with {@link Probe} annotation, and registers these fields/methods as
-     * probes instances.
+     * probe instances.
      * <p>
-     * If a probe is called 'queueSize' and the namePrefix is '[operations.'
-     * and nameSuffix is ']', then the name of the probe instance is
-     * '[operations.queueSize]'.
+     * If a probe is called 'queueSize' and the namePrefix is 'operations',
+     * then the name of the probe instance is 'operations.queueSize'.
      * <p>
      * If a probe with the same name already exists, then the probe is replaced.
      * <p>
-     * If an object has no @Gauge annotations, the call is ignored.
+     * If an object has no @Probe annotations, the call is ignored.
      *
      * @param source     the object to scan.
      * @param namePrefix the name prefix.
-     * @param nameSuffix the name suffix.
      * @throws NullPointerException     if namePrefix or source is null.
-     * @throws IllegalArgumentException if the source contains Gauge annotation
-     * on a field/method of unsupported type.
+     * @throws IllegalArgumentException if the source contains a Probe
+     *      annotation on a field/method of unsupported type.
      */
-    <S> void scanAndRegister(S source, String namePrefix, String nameSuffix);
+    <S> void scanAndRegister(S source, String namePrefix);
 
     /**
      * Registers a probe.
@@ -217,4 +196,9 @@ public interface MetricsRegistry {
      * @param objects the array of objects to check.
      */
     void discardMetrics(Object... objects);
+
+    /**
+     * Creates a new {@link ProbeBuilder}.
+     */
+    ProbeBuilder newProbeBuilder();
 }

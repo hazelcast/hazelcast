@@ -21,6 +21,7 @@ import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 /**
  * A utility to escape and parse metric key in tagged format:<pre>
@@ -40,23 +41,23 @@ public final class MetricsUtil {
      * ({@code "\"}) with another backslash.
      */
     @Nonnull
-    public static String escapeMetricKeyPart(@Nonnull String s) {
+    public static String escapeMetricNamePart(@Nonnull String namePart) {
         int i = 0;
-        int l = s.length();
+        int l = namePart.length();
         while (i < l) {
-            char ch = s.charAt(i);
+            char ch = namePart.charAt(i);
             if (ch == ',' || ch == '=' || ch == '\\') {
                 break;
             }
             i++;
         }
         if (i == l) {
-            return s;
+            return namePart;
         }
-        StringBuilder sb = new StringBuilder(s.length() + 3);
-        sb.append(s, 0, i);
+        StringBuilder sb = new StringBuilder(namePart.length() + 3);
+        sb.append(namePart, 0, i);
         while (i < l) {
-            char ch = s.charAt(i++);
+            char ch = namePart.charAt(i++);
             if (ch == ',' || ch == '=' || ch == '\\') {
                 sb.append('\\');
             }
@@ -65,44 +66,41 @@ public final class MetricsUtil {
         return sb.toString();
     }
 
+    public static boolean containsSpecialCharacters(String namePart) {
+        // escapeMetricNamePart method returns input object of no escaping is needed,
+        // we assume that.
+        //noinspection StringEquality
+        return escapeMetricNamePart(namePart) == namePart;
+    }
+
     /**
-     * Parses metric key in tagged format into a list of tag-value tuples.
+     * Parses metric name in tagged format into a list of tag-value tuples.
      * Correctly handles the escaped values.
      *
-     * @throws IllegalArgumentException if the metricKey format is invalid
-     * (invalid escape, missing square bracket, empty tag name...)
+     * @throws IllegalArgumentException if the metricName format is invalid
+     * (missing square bracket, invalid escape, empty tag name...)
      */
     @Nonnull
-    public static List<Map.Entry<String, String>> parseMetricKey(@Nonnull String metricKey) {
-        assert metricKey.charAt(0) == '[' && metricKey.charAt(metricKey.length() - 1) == ']' :
-                "key not enclosed in []: " + metricKey;
+    public static List<Map.Entry<String, String>> parseMetricName(@Nonnull String metricName) {
+        if (metricName.charAt(0) != '[' || metricName.charAt(metricName.length() - 1) != ']') {
+            throw new IllegalArgumentException("key not enclosed in []: " + metricName);
+        }
 
         StringBuilder sb = new StringBuilder();
         List<Map.Entry<String, String>> result = new ArrayList<Map.Entry<String, String>>();
-        int l = metricKey.length() - 1;
+        int l = metricName.length() - 1;
         String tag = null;
         boolean inTag = true;
         for (int i = 1; i < l; i++) {
-            char ch = metricKey.charAt(i);
+            char ch = metricName.charAt(i);
             switch (ch) {
                 case '=':
-                    if (!inTag) {
-                        throw new IllegalArgumentException("equals sign not after tag: " + metricKey);
-                    }
-                    tag = sb.toString();
-                    if (tag.length() == 0) {
-                        throw new IllegalArgumentException("empty tag name: " + metricKey);
-                    }
-                    sb.setLength(0);
+                    tag = handleEqualsSign(metricName, sb, inTag);
                     inTag = false;
                     continue;
 
                 case ',':
-                    if (inTag) {
-                        throw new IllegalArgumentException("comma in tag: " + metricKey);
-                    }
-                    result.add(new SimpleImmutableEntry<String, String>(tag, sb.toString()));
-                    sb.setLength(0);
+                    handleComma(metricName, sb, result, tag, inTag);
                     inTag = true;
                     tag = null;
                     continue;
@@ -110,10 +108,10 @@ public final class MetricsUtil {
                 default:
                     if (ch == '\\') {
                         // the next character will be treated literally
-                        ch = metricKey.charAt(++i);
+                        ch = metricName.charAt(++i);
                     }
                     if (i == l) {
-                        throw new IllegalArgumentException("backslash at the end: " + metricKey);
+                        throw new IllegalArgumentException("backslash at the end: " + metricName);
                     }
                     sb.append(ch);
             }
@@ -122,8 +120,30 @@ public final class MetricsUtil {
         if (tag != null) {
             result.add(new SimpleImmutableEntry<String, String>(tag, sb.toString()));
         } else if (sb.length() > 0) {
-            throw new IllegalArgumentException("unfinished tag at the end: " + metricKey);
+            throw new IllegalArgumentException("unfinished tag at the end: " + metricName);
         }
         return result;
+    }
+
+    private static void handleComma(@Nonnull String metricKey, StringBuilder sb, List<Entry<String, String>> result,
+                                    String tag, boolean inTag) {
+        if (inTag) {
+            throw new IllegalArgumentException("comma in tag: " + metricKey);
+        }
+        result.add(new SimpleImmutableEntry<String, String>(tag, sb.toString()));
+        sb.setLength(0);
+    }
+
+    private static String handleEqualsSign(@Nonnull String metricKey, StringBuilder sb, boolean inTag) {
+        String tag;
+        if (!inTag) {
+            throw new IllegalArgumentException("equals sign not after tag: " + metricKey);
+        }
+        tag = sb.toString();
+        if (tag.length() == 0) {
+            throw new IllegalArgumentException("empty tag name: " + metricKey);
+        }
+        sb.setLength(0);
+        return tag;
     }
 }
