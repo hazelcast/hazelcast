@@ -121,7 +121,7 @@ public abstract class NioThreadAbstractTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                verify(handler).onFailure(isA(CancelledKeyException.class));
+                verify(handler).onError(isA(CancelledKeyException.class));
             }
         });
         assertStillRunning();
@@ -141,7 +141,7 @@ public abstract class NioThreadAbstractTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                verify(handler).onFailure(isA(ExpectedRuntimeException.class));
+                verify(handler).onError(isA(ExpectedRuntimeException.class));
             }
         });
         assertStillRunning();
