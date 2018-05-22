@@ -96,7 +96,7 @@ public class ClientInvocation implements Runnable {
         this.startTimeMillis = System.currentTimeMillis();
         this.retryPauseMillis = invocationService.getInvocationRetryPauseMillis();
         this.logger = invocationService.invocationLogger;
-        this.callIdSequence = client.getCallIdSequence();
+        this.callIdSequence = invocationService.getCallIdSequence();
         this.clientInvocationFuture = new ClientInvocationFuture(this, executionService,
                 clientMessage, logger, callIdSequence);
     }
