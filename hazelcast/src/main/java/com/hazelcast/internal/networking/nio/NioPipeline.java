@@ -107,7 +107,7 @@ public abstract class NioPipeline implements MigratablePipeline, Closeable, Runn
                 try {
                     getSelectionKey();
                 } catch (Throwable t) {
-                    onFailure(t);
+                    onError(t);
                 }
             }
         });
@@ -230,7 +230,7 @@ public abstract class NioPipeline implements MigratablePipeline, Closeable, Runn
             try {
                 process();
             } catch (Throwable t) {
-                onFailure(t);
+                onError(t);
             }
         } else {
             // the pipeline is executed on the wrong IOThread, so send the
@@ -247,16 +247,16 @@ public abstract class NioPipeline implements MigratablePipeline, Closeable, Runn
      * The idiom to use a handler is:
      * <code>
      * try{
-     * handler.handle();
+     *     handler.handle();
      * } catch(Throwable t) {
-     * handler.onFailure(t);
+     *    handler.onError(t);
      * }
      * </code>
      *
-     * @param e
+     * @param cause
      */
-    public void onFailure(Throwable e) {
-        if (e instanceof InterruptedException) {
+    public void onError(Throwable cause) {
+        if (cause instanceof InterruptedException) {
             currentThread().interrupt();
         }
 
@@ -264,7 +264,7 @@ public abstract class NioPipeline implements MigratablePipeline, Closeable, Runn
             selectionKey.cancel();
         }
 
-        errorHandler.onError(channel, e);
+        errorHandler.onError(channel, cause);
     }
 
     /**
@@ -302,7 +302,7 @@ public abstract class NioPipeline implements MigratablePipeline, Closeable, Runn
             try {
                 startMigration(newOwner);
             } catch (Throwable t) {
-                onFailure(t);
+                onError(t);
             }
         }
 
@@ -355,7 +355,7 @@ public abstract class NioPipeline implements MigratablePipeline, Closeable, Runn
                 selectionKey = getSelectionKey();
                 registerOp(initialOps);
             } catch (Throwable t) {
-                onFailure(t);
+                onError(t);
             }
         }
     }
