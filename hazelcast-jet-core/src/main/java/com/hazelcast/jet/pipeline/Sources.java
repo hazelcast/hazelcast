@@ -22,8 +22,10 @@ import com.hazelcast.jet.Util;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.WatermarkGenerationParams;
 import com.hazelcast.jet.function.DistributedBiFunction;
+import com.hazelcast.jet.function.DistributedConsumer;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedPredicate;
+import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.impl.pipeline.transform.BatchSourceTransform;
 import com.hazelcast.jet.impl.pipeline.transform.StreamSourceTransform;
 import com.hazelcast.map.journal.EventJournalMapEvent;
@@ -32,6 +34,11 @@ import com.hazelcast.projection.Projections;
 import com.hazelcast.query.Predicate;
 
 import javax.annotation.Nonnull;
+import javax.jms.Connection;
+import javax.jms.ConnectionFactory;
+import javax.jms.Message;
+import javax.jms.MessageConsumer;
+import javax.jms.Session;
 import java.io.File;
 import java.nio.charset.Charset;
 import java.util.Map;
@@ -51,6 +58,8 @@ import static com.hazelcast.jet.core.processor.SourceProcessors.readRemoteListP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.readRemoteMapP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.streamCacheP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.streamFilesP;
+import static com.hazelcast.jet.core.processor.SourceProcessors.streamJmsQueueP;
+import static com.hazelcast.jet.core.processor.SourceProcessors.streamJmsTopicP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.streamMapP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.streamRemoteCacheP;
 import static com.hazelcast.jet.core.processor.SourceProcessors.streamRemoteMapP;
@@ -841,5 +850,136 @@ public final class Sources {
     @Nonnull
     public static StreamSource<String> fileWatcher(@Nonnull String watchedDirectory) {
         return fileWatcher(watchedDirectory, UTF_8, GLOB_WILDCARD);
+    }
+
+    /**
+     * Returns a source which connects to a JMS provider and consumes messages
+     * from the JMS queue using given message consumer. The source emits output
+     * objects created by given {@code projectionFn}.
+     * <p>
+     * The source creates a single connection for each member using the given
+     * {@code connectionSupplier} and then creates a session and consumer for
+     * each {@link com.hazelcast.jet.core.Processor processor} using the given
+     * {@code sessionFn} and {@code consumerFn}.
+     * <p>
+     * One may create a consumer for a topic instead of a queue in {@code
+     * consumerFn}. In that case each processor consumes the same messages and
+     * there will be duplicates. {@link #jmsTopic jmsTopic(...)} should be used
+     * instead.
+     * <p>
+     * After consuming each message, {@code flushFn} is called to commit the
+     * session.
+     * <p>
+     * The source does not save any state to snapshot. The source starts
+     * emitting items where it left from.
+     * <p>
+     * IO failures are generally handled by JMS provider and do not cause the
+     * processor to fail. Most of the providers offer a configuration parameter
+     * to enable auto-reconnection, refer to provider documentation for details.
+     * <p>
+     * Default local parallelism for this processor is 4 (or less if less CPUs
+     * are available).
+     *
+     * @param connectionSupplier supplier to obtain connection to the JMS provider
+     * @param sessionFn          function to create session from the JMS connection
+     * @param consumerFn         function to create consumer from the JMS session
+     * @param flushFn            function to commit the session for transacted sessions
+     * @param projectionFn       function to create output objects from the JMS message
+     *                           If the projection returns a {@code null} for a message,
+     *                           that message will be filtered out.
+     */
+    @Nonnull
+    public static <T> StreamSource<T> jmsQueue(
+            @Nonnull DistributedSupplier<Connection> connectionSupplier,
+            @Nonnull DistributedFunction<Connection, Session> sessionFn,
+            @Nonnull DistributedFunction<Session, MessageConsumer> consumerFn,
+            @Nonnull DistributedConsumer<Session> flushFn,
+            @Nonnull DistributedFunction<Message, T> projectionFn
+    ) {
+        return streamFromProcessor("jmsQueueSource",
+                streamJmsQueueP(connectionSupplier, sessionFn, consumerFn, flushFn, projectionFn));
+    }
+
+    /**
+     * Convenience for {@link #jmsQueue(DistributedSupplier,
+     * DistributedFunction, DistributedFunction, DistributedConsumer,
+     * DistributedFunction)}. This version creates a connection without any
+     * authentication parameters and uses non-transacted sessions with {@code
+     * Session.AUTO_ACKNOWLEDGE} mode. JMS {@link Message} objects are emitted
+     * to downstream.
+     *
+     * @param factorySupplier supplier to obtain JMS connection factory
+     * @param name            the name of the queue
+     */
+    @Nonnull
+    public static StreamSource<Message> jmsQueue(
+            @Nonnull DistributedSupplier<ConnectionFactory> factorySupplier,
+            @Nonnull String name
+    ) {
+        return streamFromProcessor("jmsQueueSource(" + name + ")", streamJmsQueueP(factorySupplier, name));
+    }
+
+    /**
+     * Returns a source which connects to a JMS provider and consumes messages
+     * from the JMS topic using given message consumer. The source emits output
+     * objects created by given {@code projectionFn}.
+     * <p>
+     * Topic is a non-distributed source, if messages are consumed by multiple
+     * consumers, all of them will get the same messages. Therefore the source
+     * operates on a single member and with local parallelism of 1. Setting
+     * local parallelism to a value other than 1 causes {@code
+     * IllegalArgumentException}.
+     * <p>
+     * After consuming each message, {@code flushFn} is called to commit the
+     * session.
+     * <p>
+     * The source does not save any state to snapshot. Behavior of job restart
+     * changes according to the consumer. If it is a durable consumer and a
+     * unique client identifier is set for the connection then JMS provider
+     * persists items during restart and the source starts where it left from.
+     * If the consumer is non-durable then source emits the items published
+     * after the restart.
+     * <p>
+     * IO failures are generally handled by JMS provider and do not cause the
+     * processor to fail. Most of the providers offer a configuration parameter
+     * to enable auto-reconnection, refer to provider documentation for details.
+     *
+     * @param connectionSupplier supplier to obtain connection to the JMS provider
+     * @param sessionFn          function to create session from the JMS connection
+     * @param consumerFn         function to create consumer from the JMS session
+     * @param flushFn            function to commit the session for transacted sessions
+     * @param projectionFn       function to create output objects from the JMS message
+     *                           If the projection returns a {@code null} for a message,
+     *                           that message will be filtered out.
+     */
+    @Nonnull
+    public static <T> StreamSource<T> jmsTopic(
+            @Nonnull DistributedSupplier<Connection> connectionSupplier,
+            @Nonnull DistributedFunction<Connection, Session> sessionFn,
+            @Nonnull DistributedFunction<Session, MessageConsumer> consumerFn,
+            @Nonnull DistributedConsumer<Session> flushFn,
+            @Nonnull DistributedFunction<Message, T> projectionFn
+    ) {
+        return streamFromProcessor("jmsTopicSource",
+                streamJmsTopicP(connectionSupplier, sessionFn, consumerFn, flushFn, projectionFn));
+    }
+
+    /**
+     * Convenience for {@link #jmsTopic(DistributedSupplier,
+     * DistributedFunction, DistributedFunction, DistributedConsumer,
+     * DistributedFunction)}. This version creates a connection without any
+     * authentication parameters and uses non-transacted sessions with {@code
+     * Session.AUTO_ACKNOWLEDGE} mode. JMS {@link Message} objects are emitted
+     * to downstream.
+     *
+     * @param factorySupplier supplier to obtain JMS connection factory
+     * @param name            the name of the topic
+     */
+    @Nonnull
+    public static StreamSource<Message> jmsTopic(
+            @Nonnull DistributedSupplier<ConnectionFactory> factorySupplier,
+            @Nonnull String name
+    ) {
+        return streamFromProcessor("jmsTopicSource(" + name + ")", streamJmsTopicP(factorySupplier, name));
     }
 }

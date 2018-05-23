@@ -18,24 +18,32 @@ package com.hazelcast.jet.core.processor;
 
 import com.hazelcast.cache.journal.EventJournalCacheEvent;
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.jet.pipeline.JournalInitialPosition;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.WatermarkGenerationParams;
 import com.hazelcast.jet.function.DistributedBiFunction;
+import com.hazelcast.jet.function.DistributedConsumer;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedPredicate;
+import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.impl.connector.ReadFilesP;
 import com.hazelcast.jet.impl.connector.ReadIListP;
 import com.hazelcast.jet.impl.connector.ReadWithPartitionIteratorP;
 import com.hazelcast.jet.impl.connector.StreamEventJournalP;
 import com.hazelcast.jet.impl.connector.StreamFilesP;
+import com.hazelcast.jet.impl.connector.StreamJmsP;
 import com.hazelcast.jet.impl.connector.StreamSocketP;
+import com.hazelcast.jet.pipeline.JournalInitialPosition;
 import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.map.journal.EventJournalMapEvent;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.Predicate;
 
 import javax.annotation.Nonnull;
+import javax.jms.Connection;
+import javax.jms.ConnectionFactory;
+import javax.jms.Message;
+import javax.jms.MessageConsumer;
+import javax.jms.Session;
 import java.nio.charset.Charset;
 import java.util.Map.Entry;
 
@@ -319,6 +327,7 @@ public final class SourceProcessors {
      * Returns a supplier of processors for
      * {@link Sources#fileWatcher(String, Charset, String)}.
      */
+    @Nonnull
     public static ProcessorMetaSupplier streamFilesP(
             @Nonnull String watchedDirectory,
             @Nonnull Charset charset,
@@ -326,6 +335,67 @@ public final class SourceProcessors {
             @Nonnull DistributedBiFunction<String, String, ?> mapOutputFn
     ) {
         return StreamFilesP.metaSupplier(watchedDirectory, charset.name(), glob, mapOutputFn);
+    }
+
+    /**
+     * Returns a supplier of processors for
+     * {@link Sources#jmsQueue(DistributedSupplier, DistributedFunction,
+     * DistributedFunction, DistributedConsumer, DistributedFunction)}.
+     */
+    @Nonnull
+    public static <T> ProcessorMetaSupplier streamJmsQueueP(
+            @Nonnull DistributedSupplier<Connection> connectionSupplier,
+            @Nonnull DistributedFunction<Connection, Session> sessionFn,
+            @Nonnull DistributedFunction<Session, MessageConsumer> consumerFn,
+            @Nonnull DistributedConsumer<Session> flushFn,
+            @Nonnull DistributedFunction<Message, T> projectionFn
+    ) {
+        return ProcessorMetaSupplier.of(
+                StreamJmsP.supplier(connectionSupplier, sessionFn, consumerFn, flushFn, projectionFn),
+                StreamJmsP.PREFERRED_LOCAL_PARALLELISM);
+    }
+
+    /**
+     * Returns a supplier of processors for
+     * {@link Sources#jmsQueue(DistributedSupplier, String)}.
+     */
+    @Nonnull
+    public static ProcessorMetaSupplier streamJmsQueueP(
+            @Nonnull DistributedSupplier<ConnectionFactory> factorySupplier,
+            @Nonnull String name
+    ) {
+        return ProcessorMetaSupplier.of(
+                StreamJmsP.supplier(factorySupplier, name, true),
+                StreamJmsP.PREFERRED_LOCAL_PARALLELISM);
+    }
+
+    /**
+     * Returns a supplier of processors for
+     * {@link Sources#jmsTopic(DistributedSupplier, DistributedFunction,
+     * DistributedFunction, DistributedConsumer, DistributedFunction)}.
+     */
+    @Nonnull
+    public static <T> ProcessorMetaSupplier streamJmsTopicP(
+            @Nonnull DistributedSupplier<Connection> connectionSupplier,
+            @Nonnull DistributedFunction<Connection, Session> sessionFn,
+            @Nonnull DistributedFunction<Session, MessageConsumer> consumerFn,
+            @Nonnull DistributedConsumer<Session> flushFn,
+            @Nonnull DistributedFunction<Message, T> projectionFn
+    ) {
+        return ProcessorMetaSupplier.forceTotalParallelismOne(
+                StreamJmsP.supplier(connectionSupplier, sessionFn, consumerFn, flushFn, projectionFn));
+    }
+
+    /**
+     * Returns a supplier of processors for
+     * {@link Sources#jmsTopic(DistributedSupplier, String)}.
+     */
+    @Nonnull
+    public static ProcessorMetaSupplier streamJmsTopicP(
+            @Nonnull DistributedSupplier<ConnectionFactory> factorySupplier,
+            @Nonnull String name
+    ) {
+        return ProcessorMetaSupplier.forceTotalParallelismOne(StreamJmsP.supplier(factorySupplier, name, false));
     }
 
     private static <I, O> Projection<I, O> toProjection(DistributedFunction<I, O> projectionFn) {

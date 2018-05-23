@@ -29,10 +29,16 @@ import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.impl.connector.HazelcastWriters;
 import com.hazelcast.jet.impl.connector.WriteBufferedP;
 import com.hazelcast.jet.impl.connector.WriteFileP;
+import com.hazelcast.jet.impl.connector.WriteJmsP;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.map.EntryProcessor;
 
 import javax.annotation.Nonnull;
+import javax.jms.Connection;
+import javax.jms.ConnectionFactory;
+import javax.jms.Message;
+import javax.jms.MessageProducer;
+import javax.jms.Session;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
@@ -302,5 +308,65 @@ public final class SinkProcessors {
             @Nonnull DistributedConsumer<? super W> destroyFn
     ) {
         return WriteBufferedP.supplier(createFn, onReceiveFn, flushFn, destroyFn);
+    }
+
+    /**
+     * Returns a supplier of processors for {@link
+     * Sinks#jmsQueue(DistributedSupplier, DistributedFunction,
+     * DistributedBiFunction, DistributedBiConsumer, DistributedConsumer,
+     * String)}.
+     */
+    @Nonnull
+    public static <T> ProcessorMetaSupplier writeJmsQueueP(
+            @Nonnull DistributedSupplier<Connection> connectionSupplier,
+            @Nonnull DistributedFunction<Connection, Session> sessionF,
+            @Nonnull DistributedBiFunction<Session, T, Message> messageFn,
+            @Nonnull DistributedBiConsumer<MessageProducer, Message> sendFn,
+            @Nonnull DistributedConsumer<Session> flushFn,
+            @Nonnull String name
+    ) {
+        return WriteJmsP.supplier(connectionSupplier, sessionF, messageFn, sendFn, flushFn, name, false);
+    }
+
+    /**
+     * Returns a supplier of processors for {@link
+     * Sinks#jmsQueue(DistributedSupplier, String)}.
+     */
+    @Nonnull
+    public static ProcessorMetaSupplier writeJmsQueueP(
+            @Nonnull DistributedSupplier<ConnectionFactory> factorySupplier,
+            @Nonnull String name
+    ) {
+        return WriteJmsP.supplier(factorySupplier, name, false);
+    }
+
+    /**
+     * Returns a supplier of processors for {@link
+     * Sinks#jmsTopic(DistributedSupplier, DistributedFunction,
+     * DistributedBiFunction, DistributedBiConsumer, DistributedConsumer,
+     * String)}.
+     */
+    @Nonnull
+    public static <T> ProcessorMetaSupplier writeJmsTopicP(
+            @Nonnull DistributedSupplier<Connection> connectionSupplier,
+            @Nonnull DistributedFunction<Connection, Session> sessionF,
+            @Nonnull DistributedBiFunction<Session, T, Message> messageFn,
+            @Nonnull DistributedBiConsumer<MessageProducer, Message> sendFn,
+            @Nonnull DistributedConsumer<Session> flushFn,
+            @Nonnull String name
+    ) {
+        return WriteJmsP.supplier(connectionSupplier, sessionF, messageFn, sendFn, flushFn, name, true);
+    }
+
+    /**
+     * Returns a supplier of processors for {@link
+     * Sinks#jmsTopic(DistributedSupplier, String)}.
+     */
+    @Nonnull
+    public static ProcessorMetaSupplier writeJmsTopicP(
+            @Nonnull DistributedSupplier<ConnectionFactory> factorySupplier,
+            @Nonnull String name
+    ) {
+        return WriteJmsP.supplier(factorySupplier, name, true);
     }
 }

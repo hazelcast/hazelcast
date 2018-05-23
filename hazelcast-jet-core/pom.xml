@@ -98,6 +98,14 @@
             <optional>true</optional>
         </dependency>
 
+        <dependency>
+            <groupId>javax.jms</groupId>
+            <artifactId>javax.jms-api</artifactId>
+            <version>${jms.api.version}</version>
+            <scope>provided</scope>
+            <optional>true</optional>
+        </dependency>
+
         <!--TEST DEPENDENCIES-->
         <dependency>
             <groupId>com.hazelcast</groupId>
@@ -105,6 +113,18 @@
             <scope>test</scope>
             <version>${hazelcast.version}</version>
             <classifier>tests</classifier>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.activemq</groupId>
+            <artifactId>activemq-all</artifactId>
+            <version>5.15.3</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.activemq.tooling</groupId>
+            <artifactId>activemq-junit</artifactId>
+            <version>5.15.3</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>nl.jqno.equalsverifier</groupId>
