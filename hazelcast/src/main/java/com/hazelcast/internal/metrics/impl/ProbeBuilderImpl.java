@@ -41,7 +41,7 @@ public class ProbeBuilderImpl implements ProbeBuilder {
     }
 
     @Override
-    public ProbeBuilder withTag(String tag, String value) {
+    public ProbeBuilderImpl withTag(String tag, String value) {
         assert containsSpecialCharacters(tag) : "tag contains special characters";
         return new ProbeBuilderImpl(
                 metricsRegistry, keyPrefix
@@ -49,8 +49,7 @@ public class ProbeBuilderImpl implements ProbeBuilder {
                         + tag + '=' + escapeMetricNamePart(value));
     }
 
-    @Override
-    public String metricName() {
+    private String metricName() {
         return keyPrefix + ']';
     }
 

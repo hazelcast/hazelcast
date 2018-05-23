@@ -64,8 +64,8 @@ abstract class MethodProbe implements ProbeFunction {
     }
 
     void register(ProbeBuilderImpl builder, Object source) {
-        ((ProbeBuilderImpl) builder
-                .withTag("unit", probe.unit().name().toLowerCase()))
+        builder
+                .withTag("unit", probe.unit().name().toLowerCase())
                 .register(source, getProbeOrMethodName(), probe.level(), this);
     }
 

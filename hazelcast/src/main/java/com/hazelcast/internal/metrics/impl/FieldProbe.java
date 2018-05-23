@@ -61,8 +61,8 @@ abstract class FieldProbe implements ProbeFunction {
     }
 
     void register(ProbeBuilderImpl builder, Object source) {
-        ((ProbeBuilderImpl) builder
-                .withTag("unit", probe.unit().name().toLowerCase()))
+        builder
+                .withTag("unit", probe.unit().name().toLowerCase())
                 .register(source, getProbeOrFieldName(), probe.level(), this);
     }
 

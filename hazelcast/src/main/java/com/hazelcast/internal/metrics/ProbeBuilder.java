@@ -27,11 +27,6 @@ public interface ProbeBuilder {
     ProbeBuilder withTag(String tag, String value);
 
     /**
-     * Builds the String name for manually registering probes.
-     */
-    String metricName();
-
-    /**
      * Registers a single probe.
      * <p>
      * If a probe for the given name exists, it will be overwritten silently.
