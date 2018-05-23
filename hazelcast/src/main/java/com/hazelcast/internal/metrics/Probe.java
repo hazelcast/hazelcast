@@ -20,6 +20,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.INFO;
+import static com.hazelcast.internal.metrics.ProbeUnit.COUNT;
 import static java.lang.annotation.ElementType.FIELD;
 import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
@@ -79,4 +80,9 @@ public @interface Probe {
      * @return the ProbeLevel.
      */
     ProbeLevel level() default INFO;
+
+    /**
+     * Measurement unit of a Probe. Not used on member, becomes a part of the key.
+     */
+    ProbeUnit unit() default COUNT;
 }

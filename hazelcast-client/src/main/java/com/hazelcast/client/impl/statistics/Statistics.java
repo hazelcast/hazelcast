@@ -44,8 +44,8 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * This class is the main entry point for collecting and sending the client
- * statistics to the cluster. If the client statistics feature is enabled
- * it will be scheduled for periodic statistics collection and send.
+ * statistics to the cluster. If the client statistics feature is enabled,
+ * it will be scheduled for periodic statistics collection and sent.
  */
 public class Statistics {
     /**
@@ -56,7 +56,7 @@ public class Statistics {
     public static final HazelcastProperty ENABLED = new HazelcastProperty("hazelcast.client.statistics.enabled", false);
 
     /**
-     * The period in seconds the statistics runs.
+     * The period in seconds the statistics run.
      */
     public static final HazelcastProperty PERIOD_SECONDS = new HazelcastProperty("hazelcast.client.statistics.period.seconds", 3,
             SECONDS);
