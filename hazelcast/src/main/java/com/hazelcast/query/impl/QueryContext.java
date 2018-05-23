@@ -20,7 +20,7 @@ package com.hazelcast.query.impl;
  * Provides the context for queries execution.
  */
 public class QueryContext {
-    private final Indexes indexes;
+    protected Indexes indexes;
 
     /**
      * Creates a new query context with the given available indexes.
@@ -28,6 +28,21 @@ public class QueryContext {
      * @param indexes the indexes available for the query context.
      */
     public QueryContext(Indexes indexes) {
+        this.indexes = indexes;
+    }
+
+    /**
+     * Creates a new query context unattached to any indexes.
+     */
+    QueryContext() {
+    }
+
+    /**
+     * Attaches this index context to the given indexes.
+     *
+     * @param indexes the indexes to attach to.
+     */
+    void attachTo(Indexes indexes) {
         this.indexes = indexes;
     }
 
@@ -46,4 +61,12 @@ public class QueryContext {
             return indexes.getIndex(attributeName);
         }
     }
+
+    /**
+     * Applies the collected per-query stats, if any.
+     */
+    void applyPerQueryStats() {
+        // do nothing
+    }
+
 }

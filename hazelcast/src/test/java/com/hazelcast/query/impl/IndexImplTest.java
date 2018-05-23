@@ -18,6 +18,7 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.config.MapAttributeConfig;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.monitor.impl.InternalIndexStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -47,7 +48,8 @@ public class IndexImplTest {
     public void setUp() {
         InternalSerializationService mockSerializationService = mock(InternalSerializationService.class);
         Extractors mockExtractors = new Extractors(Collections.<MapAttributeConfig>emptyList(), null);
-        index = new IndexImpl(ATTRIBUTE_NAME, false, mockSerializationService, mockExtractors, IndexCopyBehavior.COPY_ON_READ);
+        index = new IndexImpl(ATTRIBUTE_NAME, false, mockSerializationService, mockExtractors, IndexCopyBehavior.COPY_ON_READ,
+                InternalIndexStats.EMPTY);
     }
 
     @Test

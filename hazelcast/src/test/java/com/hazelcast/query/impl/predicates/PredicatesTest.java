@@ -20,6 +20,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.monitor.impl.InternalIndexStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.IndexAwarePredicate;
@@ -312,7 +313,7 @@ public class PredicatesTest extends HazelcastTestSupport {
 
     @Test
     public void testNotEqualsPredicateDoesNotUseIndex() {
-        Index dummyIndex = new IndexImpl("foo", false, ss, Extractors.empty(), COPY_ON_READ);
+        Index dummyIndex = new IndexImpl("foo", false, ss, Extractors.empty(), COPY_ON_READ, InternalIndexStats.EMPTY);
         QueryContext mockQueryContext = mock(QueryContext.class);
         when(mockQueryContext.getIndex(anyString())).thenReturn(dummyIndex);
 

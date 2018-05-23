@@ -18,6 +18,7 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.core.TypeConverter;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.monitor.impl.InternalIndexStats;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -26,43 +27,46 @@ import com.hazelcast.query.QueryException;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.query.impl.predicates.PredicateDataSerializerHook;
 
-import java.io.IOException;
 import java.util.Collections;
 import java.util.Set;
 
 import static com.hazelcast.query.impl.TypeConverters.NULL_CONVERTER;
 import static com.hazelcast.util.SetUtil.createHashSet;
 
-public class IndexImpl implements Index {
+public class IndexImpl implements InternalIndex {
 
     public static final NullObject NULL = new NullObject();
 
     protected final InternalSerializationService ss;
     protected final IndexStore indexStore;
-    private final IndexCopyBehavior copyQueryResultOn;
-
-    private volatile TypeConverter converter;
 
     private final String attributeName;
     private final boolean ordered;
     private final Extractors extractors;
+    private final IndexCopyBehavior copyBehavior;
+    protected final InternalIndexStats stats;
+
+    private volatile TypeConverter converter;
 
     public IndexImpl(String attributeName, boolean ordered, InternalSerializationService ss, Extractors extractors,
-                     IndexCopyBehavior copyQueryResultOn) {
+                     IndexCopyBehavior copyBehavior, InternalIndexStats stats) {
         this.attributeName = attributeName;
         this.ordered = ordered;
         this.ss = ss;
-        this.copyQueryResultOn = copyQueryResultOn;
-        this.indexStore = createIndexStore(ordered);
+        this.copyBehavior = copyBehavior;
+        this.indexStore = createIndexStore(ordered, stats);
         this.extractors = extractors;
+        this.stats = stats;
     }
 
-    public IndexStore createIndexStore(boolean ordered) {
-        return ordered ? new SortedIndexStore(copyQueryResultOn) : new UnsortedIndexStore(copyQueryResultOn);
+    protected IndexStore createIndexStore(boolean ordered, InternalIndexStats stats) {
+        return ordered ? new SortedIndexStore(copyBehavior) : new UnsortedIndexStore(copyBehavior);
     }
 
     @Override
     public void saveEntryIndex(QueryableEntry entry, Object oldRecordValue) throws QueryException {
+        long timestamp = stats.makeTimestamp();
+
         /*
          * At first, check if converter is not initialized, initialize it before saving an entry index
          * Because, if entity index is saved before,
@@ -77,16 +81,20 @@ public class IndexImpl implements Index {
         Object newAttributeValue = extractAttributeValue(entry.getKeyData(), entry.getTargetObject(false));
         if (oldRecordValue == null) {
             indexStore.newIndex(newAttributeValue, entry);
+            stats.onEntryInserted(timestamp, newAttributeValue);
         } else {
             Object oldAttributeValue = extractAttributeValue(entry.getKeyData(), oldRecordValue);
             indexStore.updateIndex(oldAttributeValue, newAttributeValue, entry);
+            stats.onEntryUpdated(timestamp, oldAttributeValue, newAttributeValue);
         }
     }
 
     @Override
     public void removeEntryIndex(Data key, Object value) {
+        long timestamp = stats.makeTimestamp();
         Object attributeValue = extractAttributeValue(key, value);
         indexStore.removeIndex(attributeValue, key);
+        stats.onEntryRemoved(timestamp, attributeValue);
     }
 
     private Object extractAttributeValue(Data key, Object value) {
@@ -98,39 +106,63 @@ public class IndexImpl implements Index {
         if (values.length == 1) {
             return getRecords(values[0]);
         } else {
+            long timestamp = stats.makeTimestamp();
+
             if (converter != null) {
                 Set<Comparable> convertedValues = createHashSet(values.length);
                 for (Comparable value : values) {
                     convertedValues.add(convert(value));
                 }
-                return indexStore.getRecords(convertedValues);
+                Set<QueryableEntry> result = indexStore.getRecords(convertedValues);
+                stats.onIndexHit(timestamp, result.size());
+                return result;
             }
-            return Collections.EMPTY_SET;
+
+            stats.onIndexHit(timestamp, 0);
+            return Collections.emptySet();
         }
     }
 
     @Override
     public Set<QueryableEntry> getRecords(Comparable attributeValue) {
+        long timestamp = stats.makeTimestamp();
+
         if (converter == null) {
+            stats.onIndexHit(timestamp, 0);
             return new SingleResultSet(null);
         }
-        return indexStore.getRecords(convert(attributeValue));
+
+        Set<QueryableEntry> result = indexStore.getRecords(convert(attributeValue));
+        stats.onIndexHit(timestamp, result.size());
+        return result;
     }
 
     @Override
     public Set<QueryableEntry> getSubRecords(ComparisonType comparisonType, Comparable searchedAttributeValue) {
+        long timestamp = stats.makeTimestamp();
+
         if (converter == null) {
-            return Collections.EMPTY_SET;
+            stats.onIndexHit(timestamp, 0);
+            return Collections.emptySet();
         }
-        return indexStore.getSubRecords(comparisonType, convert(searchedAttributeValue));
+
+        Set<QueryableEntry> result = indexStore.getSubRecords(comparisonType, convert(searchedAttributeValue));
+        stats.onIndexHit(timestamp, result.size());
+        return result;
     }
 
     @Override
     public Set<QueryableEntry> getSubRecordsBetween(Comparable fromAttributeValue, Comparable toAttributeValue) {
+        long timestamp = stats.makeTimestamp();
+
         if (converter == null) {
-            return Collections.EMPTY_SET;
+            stats.onIndexHit(timestamp, 0);
+            return Collections.emptySet();
         }
-        return indexStore.getSubRecordsBetween(convert(fromAttributeValue), convert(toAttributeValue));
+
+        Set<QueryableEntry> result = indexStore.getSubRecordsBetween(convert(fromAttributeValue), convert(toAttributeValue));
+        stats.onIndexHit(timestamp, result.size());
+        return result;
     }
 
     /**
@@ -156,11 +188,12 @@ public class IndexImpl implements Index {
     public void clear() {
         indexStore.clear();
         converter = null;
+        stats.onEntriesCleared();
     }
 
     @Override
     public void destroy() {
-        // NOOP
+        stats.onEntriesCleared();
     }
 
     @Override
@@ -171,6 +204,11 @@ public class IndexImpl implements Index {
     @Override
     public boolean isOrdered() {
         return ordered;
+    }
+
+    @Override
+    public InternalIndexStats getIndexStats() {
+        return stats;
     }
 
     public static final class NullObject implements Comparable, IdentifiedDataSerializable {
@@ -199,12 +237,12 @@ public class IndexImpl implements Index {
         }
 
         @Override
-        public void writeData(ObjectDataOutput out) throws IOException {
+        public void writeData(ObjectDataOutput out) {
 
         }
 
         @Override
-        public void readData(ObjectDataInput in) throws IOException {
+        public void readData(ObjectDataInput in) {
 
         }
 

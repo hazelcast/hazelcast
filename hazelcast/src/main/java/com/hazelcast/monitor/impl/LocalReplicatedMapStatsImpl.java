@@ -16,11 +16,14 @@
 
 package com.hazelcast.monitor.impl;
 
-import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.monitor.LocalIndexStats;
 import com.hazelcast.monitor.LocalReplicatedMapStats;
 import com.hazelcast.util.Clock;
 
+import java.util.Collections;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
 import static com.hazelcast.util.ConcurrencyUtil.setMax;
@@ -307,6 +310,24 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats {
     @Override
     public NearCacheStatsImpl getNearCacheStats() {
         throw new UnsupportedOperationException("Replicated map has no Near Cache!");
+    }
+
+    @Override
+    public long getQueryCount() {
+        // there is no query support for replicated maps
+        return 0;
+    }
+
+    @Override
+    public long getIndexedQueryCount() {
+        // there is no query support for replicated maps
+        return 0;
+    }
+
+    @Override
+    public Map<String, LocalIndexStats> getIndexStats() {
+        // there is no query support for replicated maps
+        return Collections.emptyMap();
     }
 
     @Override

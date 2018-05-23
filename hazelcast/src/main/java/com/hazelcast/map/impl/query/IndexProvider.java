@@ -17,13 +17,34 @@
 package com.hazelcast.map.impl.query;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.query.impl.Index;
+import com.hazelcast.monitor.impl.InternalIndexStats;
 import com.hazelcast.query.impl.IndexCopyBehavior;
+import com.hazelcast.query.impl.InternalIndex;
 import com.hazelcast.query.impl.getters.Extractors;
 
+/**
+ * Provides storage-specific indexes to {@link com.hazelcast.query.impl.Indexes
+ * Indexes}.
+ */
 public interface IndexProvider {
 
-    Index createIndex(String attributeName, boolean ordered, Extractors extractors,
-                      InternalSerializationService ss, IndexCopyBehavior copyBehavior);
+    /**
+     * Creates a new index for the given attribute name.
+     *
+     * @param attributeName the attribute name to create the index for.
+     * @param ordered       {@code true} to create an ordered index supporting
+     *                      fast range queries, {@code false} to create an
+     *                      unordered index supporting fast point queries only.
+     * @param extractors    the extractors to extract values of the given
+     *                      attribute.
+     * @param ss            the serialization service to perform the
+     *                      deserialization of entries while extracting values
+     *                      from them.
+     * @param copyBehavior  the desired index copy behaviour.
+     * @param stats         the index stats instance to report the statistics to.
+     * @return the created index instance.
+     */
+    InternalIndex createIndex(String attributeName, boolean ordered, Extractors extractors, InternalSerializationService ss,
+                              IndexCopyBehavior copyBehavior, InternalIndexStats stats);
 
 }

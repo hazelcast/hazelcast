@@ -135,9 +135,7 @@ public class MapContainer {
         ClassLoader classloader = mapServiceContext.getNodeEngine().getConfigClassLoader();
         this.extractors = new Extractors(mapConfig.getMapAttributeConfigs(), classloader);
         if (shouldUseGlobalIndex(mapConfig)) {
-            this.globalIndexes = new Indexes((InternalSerializationService) serializationService,
-                    mapServiceContext.getIndexProvider(mapConfig), extractors,
-                    true, mapServiceContext.getIndexCopyBehavior());
+            this.globalIndexes = Indexes.createGlobalIndexes(this);
         } else {
             this.globalIndexes = null;
         }

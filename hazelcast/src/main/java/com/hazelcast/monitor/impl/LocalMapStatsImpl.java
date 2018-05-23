@@ -16,18 +16,26 @@
 
 package com.hazelcast.monitor.impl;
 
-import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.internal.json.JsonObject.Member;
 import com.hazelcast.internal.json.JsonValue;
+import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.monitor.LocalIndexStats;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.util.Clock;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
 import static com.hazelcast.util.ConcurrencyUtil.setMax;
 import static com.hazelcast.util.JsonUtil.getInt;
 import static com.hazelcast.util.JsonUtil.getLong;
+import static com.hazelcast.util.JsonUtil.getObject;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
@@ -66,6 +74,10 @@ public class LocalMapStatsImpl implements LocalMapStats {
     private static final AtomicLongFieldUpdater<LocalMapStatsImpl> MAX_REMOVE_LATENCY =
             newUpdater(LocalMapStatsImpl.class, "maxRemoveLatency");
 
+    private final ConcurrentMap<String, LocalIndexStatsImpl> mutableIndexStats = new ConcurrentHashMap<String, LocalIndexStatsImpl>();
+    private final Map<String, LocalIndexStats> indexStats = Collections.<String, LocalIndexStats>unmodifiableMap(
+            mutableIndexStats);
+
     // These fields are only accessed through the updaters
     @Probe
     private volatile long lastAccessTime;
@@ -89,7 +101,6 @@ public class LocalMapStatsImpl implements LocalMapStats {
     private volatile long maxGetLatency;
     private volatile long maxPutLatency;
     private volatile long maxRemoveLatency;
-
     @Probe
     private volatile long creationTime;
     @Probe
@@ -111,8 +122,11 @@ public class LocalMapStatsImpl implements LocalMapStats {
     private volatile long dirtyEntryCount;
     @Probe
     private volatile int backupCount;
-
     private volatile NearCacheStats nearCacheStats;
+    @Probe
+    private volatile long queryCount;
+    @Probe
+    private volatile long indexedQueryCount;
 
     public LocalMapStatsImpl() {
         creationTime = Clock.currentTimeMillis();
@@ -214,23 +228,8 @@ public class LocalMapStatsImpl implements LocalMapStats {
     }
 
     @Override
-    public long total() {
-        return putCount + getCount + removeCount + numberOfOtherOperations;
-    }
-
-    @Override
     public long getPutOperationCount() {
         return putCount;
-    }
-
-    public void incrementPutLatencyNanos(long latencyNanos) {
-        incrementPutLatencyNanos(1, latencyNanos);
-    }
-
-    public void incrementPutLatencyNanos(long delta, long latencyNanos) {
-        PUT_COUNT.addAndGet(this, delta);
-        TOTAL_PUT_LATENCIES.addAndGet(this, latencyNanos);
-        setMax(this, MAX_PUT_LATENCY, latencyNanos);
     }
 
     @Override
@@ -238,25 +237,9 @@ public class LocalMapStatsImpl implements LocalMapStats {
         return getCount;
     }
 
-    public void incrementGetLatencyNanos(long latencyNanos) {
-        incrementGetLatencyNanos(1, latencyNanos);
-    }
-
-    public void incrementGetLatencyNanos(long delta, long latencyNanos) {
-        GET_COUNT.addAndGet(this, delta);
-        TOTAL_GET_LATENCIES.addAndGet(this, latencyNanos);
-        setMax(this, MAX_GET_LATENCY, latencyNanos);
-    }
-
     @Override
     public long getRemoveOperationCount() {
         return removeCount;
-    }
-
-    public void incrementRemoveLatencyNanos(long latencyNanos) {
-        REMOVE_COUNT.incrementAndGet(this);
-        TOTAL_REMOVE_LATENCIES.addAndGet(this, latencyNanos);
-        setMax(this, MAX_REMOVE_LATENCY, latencyNanos);
     }
 
     @Probe
@@ -296,21 +279,18 @@ public class LocalMapStatsImpl implements LocalMapStats {
     }
 
     @Override
-    public long getOtherOperationCount() {
-        return numberOfOtherOperations;
-    }
-
-    public void incrementOtherOperations() {
-        NUMBER_OF_OTHER_OPERATIONS.incrementAndGet(this);
-    }
-
-    @Override
     public long getEventOperationCount() {
         return numberOfEvents;
     }
 
-    public void incrementReceivedEvents() {
-        NUMBER_OF_EVENTS.incrementAndGet(this);
+    @Override
+    public long getOtherOperationCount() {
+        return numberOfOtherOperations;
+    }
+
+    @Override
+    public long total() {
+        return putCount + getCount + removeCount + numberOfOtherOperations;
     }
 
     @Override
@@ -329,6 +309,100 @@ public class LocalMapStatsImpl implements LocalMapStats {
 
     public void setNearCacheStats(NearCacheStats nearCacheStats) {
         this.nearCacheStats = nearCacheStats;
+    }
+
+    @Override
+    public long getQueryCount() {
+        return queryCount;
+    }
+
+    /**
+     * Sets the query count of this stats to the given query count value.
+     *
+     * @param queryCount the query count value to set.
+     */
+    public void setQueryCount(long queryCount) {
+        this.queryCount = queryCount;
+    }
+
+    @Override
+    public long getIndexedQueryCount() {
+        return indexedQueryCount;
+    }
+
+    /**
+     * Sets the indexed query count of this stats to the given indexed query
+     * count value.
+     *
+     * @param indexedQueryCount the indexed query count value to set.
+     */
+    public void setIndexedQueryCount(long indexedQueryCount) {
+        this.indexedQueryCount = indexedQueryCount;
+    }
+
+    @Override
+    public Map<String, LocalIndexStats> getIndexStats() {
+        return indexStats;
+    }
+
+    /**
+     * Sets the per-index stats of this map stats to the given per-index stats.
+     *
+     * @param indexStats the per-index stats to set.
+     */
+    public void setIndexStats(Map<String, LocalIndexStatsImpl> indexStats) {
+        this.mutableIndexStats.clear();
+        if (indexStats != null) {
+            this.mutableIndexStats.putAll(indexStats);
+        }
+    }
+
+    public void incrementPutLatencyNanos(long latencyNanos) {
+        incrementPutLatencyNanos(1, latencyNanos);
+    }
+
+    public void incrementPutLatencyNanos(long delta, long latencyNanos) {
+        PUT_COUNT.addAndGet(this, delta);
+        TOTAL_PUT_LATENCIES.addAndGet(this, latencyNanos);
+        setMax(this, MAX_PUT_LATENCY, latencyNanos);
+    }
+
+    public void incrementGetLatencyNanos(long latencyNanos) {
+        incrementGetLatencyNanos(1, latencyNanos);
+    }
+
+    public void incrementGetLatencyNanos(long delta, long latencyNanos) {
+        GET_COUNT.addAndGet(this, delta);
+        TOTAL_GET_LATENCIES.addAndGet(this, latencyNanos);
+        setMax(this, MAX_GET_LATENCY, latencyNanos);
+    }
+
+    public void incrementRemoveLatencyNanos(long latencyNanos) {
+        REMOVE_COUNT.incrementAndGet(this);
+        TOTAL_REMOVE_LATENCIES.addAndGet(this, latencyNanos);
+        setMax(this, MAX_REMOVE_LATENCY, latencyNanos);
+    }
+
+    public void incrementOtherOperations() {
+        NUMBER_OF_OTHER_OPERATIONS.incrementAndGet(this);
+    }
+
+    public void incrementReceivedEvents() {
+        NUMBER_OF_EVENTS.incrementAndGet(this);
+    }
+
+    public void updateIndexStats(Map<String, OnDemandIndexStats> freshIndexStats) {
+        for (Map.Entry<String, OnDemandIndexStats> freshIndexEntry : freshIndexStats.entrySet()) {
+            String indexName = freshIndexEntry.getKey();
+            LocalIndexStatsImpl indexStats = mutableIndexStats.get(indexName);
+            if (indexStats == null) {
+                indexStats = new LocalIndexStatsImpl();
+                indexStats.setAllFrom(freshIndexEntry.getValue());
+                mutableIndexStats.putIfAbsent(indexName, indexStats);
+            } else {
+                indexStats.setAllFrom(freshIndexEntry.getValue());
+            }
+        }
     }
 
     @Override
@@ -363,6 +437,18 @@ public class LocalMapStatsImpl implements LocalMapStats {
         if (nearCacheStats != null) {
             root.add("nearCacheStats", nearCacheStats.toJson());
         }
+
+        root.add("queryCount", queryCount);
+        root.add("indexedQueryCount", indexedQueryCount);
+        Map<String, LocalIndexStats> localIndexStats = indexStats;
+        if (!localIndexStats.isEmpty()) {
+            JsonObject indexes = new JsonObject();
+            for (Map.Entry<String, LocalIndexStats> indexEntry : localIndexStats.entrySet()) {
+                indexes.add(indexEntry.getKey(), indexEntry.getValue().toJson());
+            }
+            root.add("indexStats", indexes);
+        }
+
         return root;
     }
 
@@ -399,6 +485,21 @@ public class LocalMapStatsImpl implements LocalMapStats {
             nearCacheStats = new NearCacheStatsImpl();
             nearCacheStats.fromJson(jsonNearCacheStats.asObject());
         }
+
+        queryCount = getLong(json, "queryCount", -1L);
+        indexedQueryCount = getLong(json, "indexedQueryCount", -1L);
+        JsonObject indexes = getObject(json, "indexStats", null);
+        if (indexes != null && !indexes.isEmpty()) {
+            Map<String, LocalIndexStatsImpl> localIndexStats = new HashMap<String, LocalIndexStatsImpl>();
+            for (Member member : indexes) {
+                LocalIndexStatsImpl indexStats = new LocalIndexStatsImpl();
+                indexStats.fromJson(member.getValue().asObject());
+                localIndexStats.put(member.getName(), indexStats);
+            }
+            setIndexStats(localIndexStats);
+        } else {
+            setIndexStats(null);
+        }
     }
 
     @Override
@@ -428,6 +529,9 @@ public class LocalMapStatsImpl implements LocalMapStats {
                 + ", dirtyEntryCount=" + dirtyEntryCount
                 + ", heapCost=" + heapCost
                 + ", nearCacheStats=" + (nearCacheStats != null ? nearCacheStats : "")
+                + ", queryCount=" + queryCount
+                + ", indexedQueryCount=" + indexedQueryCount
+                + ", indexStats=" + indexStats
                 + '}';
     }
 }
