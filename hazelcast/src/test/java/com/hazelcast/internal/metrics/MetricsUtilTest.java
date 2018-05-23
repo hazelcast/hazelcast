@@ -60,7 +60,7 @@ public class MetricsUtilTest {
         // normal multiple tags
         assertEquals(asList(entry("tag1", "value1"), entry("tag2", "value2")),
                 parseMetricName("[tag1=value1,tag2=value2]"));
-        // empty value
+        // tag with escaped characters
         assertEquals(singletonList(entry("tag=", "value,")), parseMetricName("[tag\\==value\\,]"));
     }
 

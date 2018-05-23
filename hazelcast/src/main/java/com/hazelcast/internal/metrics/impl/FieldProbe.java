@@ -20,7 +20,6 @@ import com.hazelcast.internal.metrics.DoubleProbeFunction;
 import com.hazelcast.internal.metrics.LongProbeFunction;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeFunction;
-import com.hazelcast.internal.metrics.ProbeUnit;
 import com.hazelcast.internal.util.counters.Counter;
 
 import java.lang.reflect.Field;
@@ -62,10 +61,9 @@ abstract class FieldProbe implements ProbeFunction {
     }
 
     void register(ProbeBuilderImpl builder, Object source) {
-        if (probe.unit() != ProbeUnit.UNSPECIFIED) {
-            builder = (ProbeBuilderImpl) builder.withTag("unit", probe.unit().name());
-        }
-        builder.register(source, getProbeOrFieldName(), probe.level(), this);
+        ((ProbeBuilderImpl) builder
+                .withTag("unit", probe.unit().name().toLowerCase()))
+                .register(source, getProbeOrFieldName(), probe.level(), this);
     }
 
     private String getProbeOrFieldName() {
