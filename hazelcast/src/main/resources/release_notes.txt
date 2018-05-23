@@ -1,5 +1,18 @@
 This document lists the new features, enhancements, fixed issues and, removed or deprecated features for 3.10.x releases. The numbers in the square brackets refer to the issues in Hazelcast's GitHub repositories.
 
+==== 3.10.2 ====
+
+1. Enhancements
+
+- Added utility methods to drain a queue. [#13108]
+
+2. Fixes
+
+- If the inner predicate of the paging predicate returns an empty result set, the paging predicate returns null as the indexed query result: this is interpreted as an absence of the indexed result by the query engine and the execution falls back to the full scan. [#13159]
+- While doing a rolling upgrade with a mixed 3.9 - 3.10 cluster running on 3.9 cluster version, cache configurations must be converted to `CacheConfig` before dispatched to 3.9 members. Otherwise, a `PreJoinCacheConfig` could be stored on a 3.9 member's cache configurations registry (`AbstractCacheService.configs`) and from there it may leak to a client getting the cache configuration causing deserialization errors on the client side. [#13137]
+- `NullPointerException` is thrown when accessing endpoints on the message task using `AbstractMessageTask.getClientVersion`. [#13119]
+- `NullPointerException` is thrown during the authentication, if the connection is closed right before `bind`. [#13118]
+
 ==== 3.10.1 ====
 
 1. Enhancements
