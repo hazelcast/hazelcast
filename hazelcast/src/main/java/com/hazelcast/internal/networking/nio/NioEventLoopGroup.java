@@ -31,9 +31,11 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.IOException;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
+import static com.hazelcast.internal.networking.AbstractChannel.CLOSE_EXECUTOR;
 import static com.hazelcast.internal.networking.nio.SelectorMode.SELECT;
 import static com.hazelcast.internal.networking.nio.SelectorMode.SELECT_NOW_STRING;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
@@ -89,6 +91,7 @@ public final class NioEventLoopGroup implements EventLoopGroup {
     private final SelectorMode selectorMode;
     private final BackoffIdleStrategy idleStrategy;
     private final boolean selectorWorkaroundTest;
+    private final ExecutorService executor;
     private volatile IOBalancer ioBalancer;
     private volatile NioThread[] inputThreads;
     private volatile NioThread[] outputThreads;
@@ -106,6 +109,7 @@ public final class NioEventLoopGroup implements EventLoopGroup {
         this.selectorMode = ctx.selectorMode;
         this.selectorWorkaroundTest = ctx.selectorWorkaroundTest;
         this.idleStrategy = ctx.idleStrategy;
+        this.executor = ctx.executor;
     }
 
     @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "used only for testing")
@@ -187,6 +191,10 @@ public final class NioEventLoopGroup implements EventLoopGroup {
         inputThreads = null;
         shutdown(outputThreads);
         outputThreads = null;
+
+        if (executor != CLOSE_EXECUTOR) {
+            executor.shutdown();
+        }
     }
 
     private void shutdown(NioThread[] threads) {
@@ -213,7 +221,7 @@ public final class NioEventLoopGroup implements EventLoopGroup {
 
         channels.add(nioChannel);
 
-        nioChannel.init(inboundPipeline, outboundPipeline);
+        nioChannel.init(inboundPipeline, outboundPipeline, executor);
 
         ioBalancer.channelAdded(inboundPipeline, outboundPipeline);
 
@@ -322,12 +330,18 @@ public final class NioEventLoopGroup implements EventLoopGroup {
         private SelectorMode selectorMode = SelectorMode.getConfiguredValue();
         private boolean selectorWorkaroundTest = Boolean.getBoolean("hazelcast.io.selector.workaround.test");
         private ChannelInitializer channelInitializer;
+        private ExecutorService executor = CLOSE_EXECUTOR;
 
         public Context() {
             String selectorModeString = SelectorMode.getConfiguredString();
             if (selectorModeString.startsWith(SELECT_NOW_STRING + ",")) {
                 idleStrategy = createBackoffIdleStrategy(selectorModeString);
             }
+        }
+
+        public Context executor(ExecutorService executor) {
+            this.executor = executor;
+            return this;
         }
 
         public Context selectorWorkaroundTest(boolean selectorWorkaroundTest) {
