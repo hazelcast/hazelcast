@@ -19,14 +19,14 @@
 This is a full example hazelcast.xml that includes all the configuration elements and attributes of Hazelcast.
 To use this, rename it to hazelcast.xml and place it in the directory where you start Hazelcast.
 Please see the schema to learn how to configure Hazelcast at 
-https://hazelcast.com/schema/config/hazelcast-config-3.10.xsd or the Reference Manual at
+https://hazelcast.com/schema/config/hazelcast-config-3.11.xsd or the Reference Manual at
 https://hazelcast.org/documentation/.
 -->
 <!--suppress XmlDefaultAttributeValue -->
 <hazelcast xmlns="http://www.hazelcast.com/schema/config"
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
            xsi:schemaLocation="http://www.hazelcast.com/schema/config
-           http://www.hazelcast.com/schema/config/hazelcast-config-3.10.xsd">
+           http://www.hazelcast.com/schema/config/hazelcast-config-3.11.xsd">
 
     <!--
         You can use the <import> element to load different Hazelcast declarative configuration files you prepared.
