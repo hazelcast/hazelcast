@@ -16,49 +16,51 @@
 
 package com.hazelcast.jet.pipeline;
 
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
+import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.core.JetTestSupport;
 import java.util.List;
-import org.junit.After;
-import org.junit.Before;
+import org.apache.log4j.AppenderSkeleton;
+import org.apache.log4j.Logger;
+import org.apache.log4j.spi.LoggingEvent;
+import org.junit.Assert;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
 
-import static junit.framework.TestCase.assertTrue;
+import static org.mockito.Mockito.atMost;
+import static org.mockito.Mockito.verify;
 
-public class LoggerSinkTest extends PipelineTestSupport {
+@RunWith(MockitoJUnitRunner.class)
+public class LoggerSinkTest extends JetTestSupport {
 
-    private final ByteArrayOutputStream outContent = new ByteArrayOutputStream();
-    private final ByteArrayOutputStream errContent = new ByteArrayOutputStream();
-
-    @Before
-    public void setUpStreams() {
-        System.setOut(new PrintStream(outContent));
-        System.setErr(new PrintStream(errContent));
-    }
-
-    @After
-    public void restoreStreams() {
-        System.setOut(System.out);
-        System.setErr(System.err);
-    }
+    @Mock AppenderSkeleton appender;
+    @Captor ArgumentCaptor<LoggingEvent> logCaptor;
 
     @Test
     public void loggerSink() {
         // Given
-        List<Integer> input = sequence(10);
-        addToSrcList(input);
+        JetInstance jet = createJetMember();
+        String srcName = randomName();
+        Logger.getRootLogger().addAppender(appender);
+        jet.getList(srcName).add(0);
+        Pipeline p = Pipeline.create();
 
         // When
         p.drawFrom(Sources.<Integer>list(srcName))
          .map(i -> i + "-shouldBeSeenOnTheSystemOutput")
          .drainTo(Sinks.logger());
-        execute();
+        jet.newJob(p).join();
+        verify(appender, atMost(1000)).doAppend(logCaptor.capture());
 
         // Then
-        input.stream()
-             .map(i -> i + "-shouldBeSeenOnTheSystemOutput")
-             .forEach(s -> assertTrue("Output should contains -> " + s, outContent.toString().contains(s)));
+        List<LoggingEvent> allValues = logCaptor.getAllValues();
+        boolean match = allValues
+                .stream()
+                .map(LoggingEvent::getRenderedMessage)
+                .anyMatch(message -> message.contains("0-shouldBeSeenOnTheSystemOutput"));
+        Assert.assertTrue(match);
     }
-
-
 }
