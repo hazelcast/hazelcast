@@ -22,11 +22,11 @@ import static java.lang.System.identityHashCode;
 /**
  * A stripe of locks to synchronize on a source object.
  *
- * We don't want to lock an 'source' objects because we don't own them to prevent running into unnecessary lock contention
+ * We don't want to lock on 'source' objects because we don't own them, to prevent running into unnecessary lock contention
  * issues.
  *
  * We rely on the identity hashcode of the object and not on the {@link Object#hashCode()} method to prevent running into
- * faulty or thread unsafe implementations.
+ * faulty or thread-unsafe implementations.
  */
 class LockStripe {
 
@@ -42,6 +42,6 @@ class LockStripe {
 
     Object getLock(Object source) {
         int hash = identityHashCode(source);
-        return hashToIndex(hash, stripe.length);
+        return stripe[hashToIndex(hash, stripe.length)];
     }
 }

@@ -59,19 +59,20 @@ abstract class MethodProbe implements ProbeFunction {
     }
 
     void register(MetricsRegistryImpl metricsRegistry, Object source, String namePrefix) {
-        String name = getName(namePrefix);
+        String name = namePrefix + '.' + getProbeOrMethodName();
         metricsRegistry.registerInternal(source, name, probe.level(), this);
     }
 
-    private String getName(String namePrefix) {
-        String name;
-        if (probe.name().equals("")) {
-            name = getterIntoProperty(method.getName());
-        } else {
-            name = probe.name();
-        }
+    void register(ProbeBuilderImpl builder, Object source) {
+        builder
+                .withTag("unit", probe.unit().name().toLowerCase())
+                .register(source, getProbeOrMethodName(), probe.level(), this);
+    }
 
-        return namePrefix + "." + name;
+    private String getProbeOrMethodName() {
+        return probe.name().length() != 0
+                ? probe.name()
+                : getterIntoProperty(method.getName());
     }
 
     static <S> MethodProbe createMethodProbe(Method method, Probe probe) {

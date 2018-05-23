@@ -57,7 +57,7 @@ final class SourceMetadata {
         }
     }
 
-    void scanFields(Class<?> clazz) {
+    private void scanFields(Class<?> clazz) {
         for (Field field : clazz.getDeclaredFields()) {
             Probe probe = field.getAnnotation(Probe.class);
 
@@ -70,7 +70,7 @@ final class SourceMetadata {
         }
     }
 
-    void scanMethods(Class<?> clazz) {
+    private void scanMethods(Class<?> clazz) {
         for (Method method : clazz.getDeclaredMethods()) {
             Probe probe = method.getAnnotation(Probe.class);
 
@@ -81,5 +81,19 @@ final class SourceMetadata {
             MethodProbe methodProbe = createMethodProbe(method, probe);
             methods.add(methodProbe);
         }
+    }
+
+    /**
+     * Don't modify the returned list!
+     */
+    public List<FieldProbe> fields() {
+        return fields;
+    }
+
+    /**
+     * Don't modify the returned list!
+     */
+    public List<MethodProbe> methods() {
+        return methods;
     }
 }

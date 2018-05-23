@@ -56,17 +56,18 @@ abstract class FieldProbe implements ProbeFunction {
     }
 
     void register(MetricsRegistryImpl metricsRegistry, Object source, String namePrefix) {
-        String name = getName(namePrefix);
+        String name = namePrefix + '.' + getProbeOrFieldName();
         metricsRegistry.registerInternal(source, name, probe.level(), this);
     }
 
-    private String getName(String namePrefix) {
-        String name = field.getName();
-        if (!probe.name().equals("")) {
-            name = probe.name();
-        }
+    void register(ProbeBuilderImpl builder, Object source) {
+        builder
+                .withTag("unit", probe.unit().name().toLowerCase())
+                .register(source, getProbeOrFieldName(), probe.level(), this);
+    }
 
-        return namePrefix + "." + name;
+    private String getProbeOrFieldName() {
+        return probe.name().length() != 0 ? probe.name() : field.getName();
     }
 
     static <S> FieldProbe createFieldProbe(Field field, Probe probe) {
