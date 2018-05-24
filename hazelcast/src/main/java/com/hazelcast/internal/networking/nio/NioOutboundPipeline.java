@@ -323,8 +323,13 @@ public final class NioOutboundPipeline extends NioPipeline {
         priorityWriteQueue.clear();
 
         CloseTask closeTask = new CloseTask();
-        addTaskAndWakeup(closeTask);
-        closeTask.awaitCompletion();
+        if (owner == NioThread.currentThread()) {
+            // needed to prevent running into a tmp self deadlock
+            closeTask.run();
+        } else {
+            addTaskAndWakeup(closeTask);
+            closeTask.awaitCompletion();
+        }
     }
 
     @Override
