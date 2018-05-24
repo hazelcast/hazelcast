@@ -24,6 +24,8 @@ public class EventJournalMapEventAdapter<K, V> implements EventJournalEventAdapt
         switch (e.getType()) {
             case ADDED:
                 return EventType.ADDED;
+            case LOADED:
+                return EventType.LOADED;
             case REMOVED:
                 return EventType.REMOVED;
             case UPDATED:

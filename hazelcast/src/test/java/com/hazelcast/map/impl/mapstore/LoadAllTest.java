@@ -22,6 +22,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapStore;
 import com.hazelcast.map.listener.EntryAddedListener;
+import com.hazelcast.map.listener.EntryLoadedListener;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -177,14 +178,17 @@ public class LoadAllTest extends AbstractMapStoreTest {
         final HazelcastInstance node = createHazelcastInstance(config);
         final IMap<Integer, Integer> map = node.getMap(mapName);
         final CountDownLatch eventCounter = new CountDownLatch(itemCount);
+        final CountDownLatch loadedCounter = new CountDownLatch(itemCount);
         populateMap(map, itemCount);
         map.evictAll();
 
         addListener(map, eventCounter);
+        addLoadedListener(map, loadedCounter);
 
         map.loadAll(true);
 
         assertOpenEventually(eventCounter);
+        assertOpenEventually(loadedCounter);
         assertEquals(itemCount, map.size());
     }
 
@@ -239,6 +243,15 @@ public class LoadAllTest extends AbstractMapStoreTest {
         map.addEntryListener(new EntryAddedListener<Object, Object>() {
             @Override
             public void entryAdded(EntryEvent<Object, Object> event) {
+                counter.countDown();
+            }
+        }, true);
+    }
+
+    private static void addLoadedListener(IMap map, final CountDownLatch counter) {
+        map.addEntryListener(new EntryLoadedListener<Object, Object>() {
+            @Override
+            public void entryLoaded(EntryEvent<Object, Object> event) {
                 counter.countDown();
             }
         }, true);
