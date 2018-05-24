@@ -27,7 +27,13 @@ import java.util.concurrent.Callable;
  * Static utility class to retry operations related to connecting to AWS Services.
  */
 public final class RetryUtils {
+    static final long INITIAL_BACKOFF_MS = 1500L;
+    static final long MAX_BACKOFF_MS = 5 * 60 * 1000L;
+    static final double BACKOFF_MULTIPLIER = 1.5;
+
     private static final ILogger LOGGER = Logger.getLogger(RetryUtils.class);
+
+    private static final long MS_IN_SECOND = 1000L;
 
     private RetryUtils() {
     }
@@ -49,8 +55,31 @@ public final class RetryUtils {
                 if (retryCount > retries) {
                     throw ExceptionUtil.rethrow(e);
                 }
-                LOGGER.warning(String.format("Couldn't connect to the AWS service, %s retrying...", retryCount));
+                long waitIntervalMs = backoffIntervalForRetry(retryCount);
+                LOGGER.warning(String.format("Couldn't connect to the AWS service, [%s] retrying in %s seconds...", retryCount,
+                        waitIntervalMs / MS_IN_SECOND));
+                sleep(waitIntervalMs);
             }
+        }
+    }
+
+    private static long backoffIntervalForRetry(int retryCount) {
+        long result = INITIAL_BACKOFF_MS;
+        for (int i = 1; i < retryCount; i++) {
+            result *= BACKOFF_MULTIPLIER;
+            if (result > MAX_BACKOFF_MS) {
+                return MAX_BACKOFF_MS;
+            }
+        }
+        return result;
+    }
+
+    private static void sleep(long millis) {
+        try {
+            Thread.sleep(millis);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new HazelcastException(e);
         }
     }
 }

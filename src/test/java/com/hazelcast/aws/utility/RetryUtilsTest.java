@@ -26,7 +26,10 @@ import org.junit.runner.RunWith;
 
 import java.util.concurrent.Callable;
 
+import static com.hazelcast.aws.utility.RetryUtils.BACKOFF_MULTIPLIER;
+import static com.hazelcast.aws.utility.RetryUtils.INITIAL_BACKOFF_MS;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -35,7 +38,7 @@ import static org.mockito.Mockito.verify;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class RetryUtilsTest {
-    private static final Integer RETRIES = 3;
+    private static final Integer RETRIES = 1;
     private static final String RESULT = "result string";
 
     private Callable<String> callable = mock(Callable.class);
@@ -58,23 +61,21 @@ public class RetryUtilsTest {
     public void retryRetriesSuccessful()
             throws Exception {
         // given
-        given(callable.call()).willThrow(new RuntimeException()).willThrow(new RuntimeException())
-                              .willThrow(new RuntimeException()).willReturn(RESULT);
+        given(callable.call()).willThrow(new RuntimeException()).willReturn(RESULT);
 
         // when
         String result = RetryUtils.retry(callable, RETRIES);
 
         // then
         assertEquals(RESULT, result);
-        verify(callable, times(4)).call();
+        verify(callable, times(2)).call();
     }
 
     @Test(expected = RuntimeException.class)
     public void retryRetriesFailed()
             throws Exception {
         // given
-        given(callable.call()).willThrow(new RuntimeException()).willThrow(new RuntimeException())
-                              .willThrow(new RuntimeException()).willThrow(new RuntimeException()).willReturn(RESULT);
+        given(callable.call()).willThrow(new RuntimeException()).willThrow(new RuntimeException()).willReturn(RESULT);
 
         // when
         RetryUtils.retry(callable, RETRIES);
@@ -87,14 +88,29 @@ public class RetryUtilsTest {
     public void retryRetriesFailedUncheckedException()
             throws Exception {
         // given
-        given(callable.call()).willThrow(new Exception()).willThrow(new Exception()).willThrow(new Exception())
-                              .willThrow(new Exception()).willReturn(RESULT);
+        given(callable.call()).willThrow(new Exception()).willThrow(new Exception()).willReturn(RESULT);
 
         // when
         RetryUtils.retry(callable, RETRIES);
 
         // then
         // throws exception
+    }
+
+    @Test
+    public void retryRetriesWaitExponentialBackoff()
+            throws Exception {
+        // given
+        double twoBackoffIntervalsMs = INITIAL_BACKOFF_MS + (BACKOFF_MULTIPLIER * INITIAL_BACKOFF_MS);
+        given(callable.call()).willThrow(new RuntimeException()).willThrow(new RuntimeException()).willReturn(RESULT);
+
+        // when
+        long startTimeMs = System.currentTimeMillis();
+        RetryUtils.retry(callable, 5);
+        long endTimeMs = System.currentTimeMillis();
+
+        // then
+        assertTrue(twoBackoffIntervalsMs < (endTimeMs - startTimeMs));
     }
 
 }
