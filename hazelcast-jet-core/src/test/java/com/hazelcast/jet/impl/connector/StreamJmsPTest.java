@@ -80,6 +80,7 @@ public class StreamJmsPTest extends JetTestSupport {
         String topicName = randomString();
         sendMessage(topicName, false);
         initializeProcessor(topicName, false);
+        sleepSeconds(1);
         String message2 = sendMessage(topicName, false);
 
         Queue<Object> queue = outbox.queue(0);

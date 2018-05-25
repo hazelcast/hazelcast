@@ -17,11 +17,10 @@
 package com.hazelcast.jet.pipeline;
 
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
-import com.hazelcast.jet.core.ProcessorSupplier;
+import com.hazelcast.jet.core.processor.SourceProcessors;
 import com.hazelcast.jet.function.DistributedConsumer;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedSupplier;
-import com.hazelcast.jet.impl.connector.StreamJmsP;
 import com.hazelcast.jet.impl.pipeline.transform.StreamSourceTransform;
 
 import javax.annotation.Nonnull;
@@ -244,9 +243,10 @@ public final class JmsSourceBuilder<T> {
         DistributedFunction<ConnectionFactory, Connection> connectionFnLocal = connectionFn;
         DistributedSupplier<ConnectionFactory> factorySupplierLocal = factorySupplier;
         DistributedSupplier<Connection> connectionSupplier = () -> connectionFnLocal.apply(factorySupplierLocal.get());
-        ProcessorSupplier supplier = StreamJmsP.supplier(connectionSupplier, sessionFn, consumerFn, flushFn, projectionFn);
-        ProcessorMetaSupplier metaSupplier =
-                isTopic ? ProcessorMetaSupplier.forceTotalParallelismOne(supplier) : ProcessorMetaSupplier.of(supplier);
+
+        ProcessorMetaSupplier metaSupplier = isTopic ?
+                SourceProcessors.streamJmsTopicP(connectionSupplier, sessionFn, consumerFn, flushFn, projectionFn)
+                : SourceProcessors.streamJmsQueueP(connectionSupplier, sessionFn, consumerFn, flushFn, projectionFn);
 
         return new StreamSourceTransform<>(sourceName(), w -> metaSupplier, false);
     }
