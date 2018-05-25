@@ -43,7 +43,7 @@ import java.util.EventListener;
  * @see EntryRemovedListener
  * @see EntryMergedListener
  * @see EntryUpdatedListener
- *
+ * @see EntryLoadedListener
  * @since 3.5
  */
 public interface MapListener extends EventListener {

@@ -43,6 +43,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
 
+import static com.hazelcast.core.EntryEventType.ADDED;
+import static com.hazelcast.core.EntryEventType.LOADED;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.map.impl.event.AbstractFilteringStrategy.FILTER_DOES_NOT_MATCH;
 import static com.hazelcast.util.CollectionUtil.isEmpty;
@@ -159,6 +161,21 @@ public class MapEventPublisherImpl implements MapEventPublisher {
         publishEvent(registrations, caller, mapName, eventType, dataKey, oldValue, value, mergingValue);
     }
 
+    @Override
+    public void publishLoadedOrAdded(Address caller, String mapName, Data dataKey, Object dataOldValue, Object dataValue) {
+        Collection<EventRegistration> registrations = getRegistrations(mapName);
+        for (EventRegistration registration : registrations) {
+            EventFilter filter = registration.getFilter();
+            if (filter instanceof EventListenerFilter) {
+                if (filter.eval(ADDED.getType()) && !filter.eval(LOADED.getType())) {
+                    publishEvent(caller, mapName, ADDED, dataKey, dataOldValue, dataValue);
+                } else {
+                    publishEvent(caller, mapName, LOADED, dataKey, dataOldValue, dataValue);
+                }
+            }
+        }
+    }
+
     /**
      * Publish the event to the specified listener {@code registrations} if the event passes the
      * filters specified by the {@link FilteringStrategy}.
@@ -179,7 +196,6 @@ public class MapEventPublisherImpl implements MapEventPublisher {
     private void publishEvent(Collection<EventRegistration> registrations, Address caller, String mapName,
                               EntryEventType eventType, Data dataKey, Object oldValue, Object newValue,
                               Object mergingValue) {
-
         EntryEventDataCache eventDataCache = filteringStrategy.getEntryEventDataCache();
 
         int orderKey = pickOrderKey(dataKey);
