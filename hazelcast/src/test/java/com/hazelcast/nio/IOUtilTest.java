@@ -20,11 +20,14 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
 
 import java.io.ByteArrayInputStream;
@@ -34,33 +37,43 @@ import java.io.DataInputStream;
 import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.ServerSocket;
 import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
 
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.createObjectDataInputStream;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.createObjectDataOutputStream;
+import static com.hazelcast.nio.IOUtil.close;
 import static com.hazelcast.nio.IOUtil.closeResource;
+import static com.hazelcast.nio.IOUtil.compactOrClear;
 import static com.hazelcast.nio.IOUtil.compress;
 import static com.hazelcast.nio.IOUtil.copy;
 import static com.hazelcast.nio.IOUtil.copyFile;
+import static com.hazelcast.nio.IOUtil.copyToHeapBuffer;
 import static com.hazelcast.nio.IOUtil.decompress;
 import static com.hazelcast.nio.IOUtil.delete;
 import static com.hazelcast.nio.IOUtil.deleteQuietly;
 import static com.hazelcast.nio.IOUtil.getFileFromResources;
+import static com.hazelcast.nio.IOUtil.getPath;
 import static com.hazelcast.nio.IOUtil.newInputStream;
 import static com.hazelcast.nio.IOUtil.newOutputStream;
+import static com.hazelcast.nio.IOUtil.readAttributeValue;
 import static com.hazelcast.nio.IOUtil.readByteArray;
 import static com.hazelcast.nio.IOUtil.readFully;
 import static com.hazelcast.nio.IOUtil.readFullyOrNothing;
 import static com.hazelcast.nio.IOUtil.readObject;
+import static com.hazelcast.nio.IOUtil.rename;
 import static com.hazelcast.nio.IOUtil.toFileName;
 import static com.hazelcast.nio.IOUtil.writeByteArray;
 import static com.hazelcast.nio.IOUtil.writeObject;
+import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static java.lang.String.format;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -68,21 +81,34 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class IOUtilTest extends HazelcastTestSupport {
 
+    private static final int SIZE = 3;
     private static final byte[] NON_EMPTY_BYTE_ARRAY = new byte[100];
     private static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
-    private static final int SIZE = 3;
+    private static final byte[] STREAM_INPUT = {1, 2, 3, 4};
 
-    private static final InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
+    @Rule
+    public TestName testName = new TestName();
+
+    private final InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
+    private final List<File> files = new ArrayList<File>();
+
+    @After
+    public void tearDown() {
+        for (File file : files) {
+            deleteQuietly(file);
+        }
+    }
 
     @Test
     public void testConstructor() {
@@ -111,7 +137,7 @@ public class IOUtilTest extends HazelcastTestSupport {
         assertNull(output);
     }
 
-    private static byte[] writeAndReadByteArray(byte[] bytes) throws Exception {
+    private byte[] writeAndReadByteArray(byte[] bytes) throws Exception {
         ByteArrayOutputStream bout = new ByteArrayOutputStream();
         ObjectDataOutput out = createObjectDataOutputStream(bout, serializationService);
         writeByteArray(out, bytes);
@@ -125,7 +151,6 @@ public class IOUtilTest extends HazelcastTestSupport {
     @Test
     public void testWriteAndReadObject() throws Exception {
         String expected = "test input";
-
         String actual = (String) writeAndReadObject(expected);
 
         assertNotNull(actual);
@@ -135,14 +160,13 @@ public class IOUtilTest extends HazelcastTestSupport {
     @Test
     public void testWriteAndReadObject_withData() throws Exception {
         Data expected = serializationService.toData("test input");
-
         Data actual = (Data) writeAndReadObject(expected);
 
         assertNotNull(actual);
         assertEquals(expected, actual);
     }
 
-    private static Object writeAndReadObject(Object input) throws Exception {
+    private Object writeAndReadObject(Object input) throws Exception {
         ByteArrayOutputStream bout = new ByteArrayOutputStream();
         ObjectDataOutput out = createObjectDataOutputStream(bout, serializationService);
         writeObject(out, input);
@@ -153,18 +177,16 @@ public class IOUtilTest extends HazelcastTestSupport {
         return readObject(in);
     }
 
-    private final byte[] streamInput = {1, 2, 3, 4};
-
     @Test
     public void testReadFullyOrNothing() throws Exception {
-        InputStream in = new ByteArrayInputStream(streamInput);
+        InputStream in = new ByteArrayInputStream(STREAM_INPUT);
         byte[] buffer = new byte[4];
 
         boolean result = readFullyOrNothing(in, buffer);
 
         assertTrue(result);
         for (int i = 0; i < buffer.length; i++) {
-            assertEquals(buffer[i], streamInput[i]);
+            assertEquals(buffer[i], STREAM_INPUT[i]);
         }
     }
 
@@ -180,7 +202,7 @@ public class IOUtilTest extends HazelcastTestSupport {
 
     @Test(expected = EOFException.class)
     public void testReadFullyOrNothing_whenThereIsNotEnoughData_thenThrowException() throws Exception {
-        InputStream in = new ByteArrayInputStream(streamInput);
+        InputStream in = new ByteArrayInputStream(STREAM_INPUT);
         byte[] buffer = new byte[8];
 
         readFullyOrNothing(in, buffer);
@@ -188,13 +210,13 @@ public class IOUtilTest extends HazelcastTestSupport {
 
     @Test
     public void testReadFully() throws Exception {
-        InputStream in = new ByteArrayInputStream(streamInput);
+        InputStream in = new ByteArrayInputStream(STREAM_INPUT);
         byte[] buffer = new byte[4];
 
         readFully(in, buffer);
 
         for (int i = 0; i < buffer.length; i++) {
-            assertEquals(buffer[i], streamInput[i]);
+            assertEquals(buffer[i], STREAM_INPUT[i]);
         }
     }
 
@@ -208,7 +230,7 @@ public class IOUtilTest extends HazelcastTestSupport {
 
     @Test(expected = EOFException.class)
     public void testReadFully_whenThereIsNotEnoughData_thenThrowException() throws Exception {
-        InputStream in = new ByteArrayInputStream(streamInput);
+        InputStream in = new ByteArrayInputStream(STREAM_INPUT);
         byte[] buffer = new byte[8];
 
         readFully(in, buffer);
@@ -349,7 +371,7 @@ public class IOUtilTest extends HazelcastTestSupport {
 
     @Test
     public void testCompressAndDecompress_withSingleByte() throws Exception {
-        byte[] input = new byte[] {111};
+        byte[] input = new byte[]{111};
 
         byte[] compressed = compress(input);
         byte[] decompressed = decompress(compressed);
@@ -384,14 +406,150 @@ public class IOUtilTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testCopy_withRecursiveDirectory() {
+        File parentDir = newFile("parent");
+        assertFalse("parentDir should not exist yet", parentDir.exists());
+        assertTrue("parentDir should have been created", parentDir.mkdir());
+
+        File childDir = newFile(parentDir, "child");
+        assertFalse("childDir should not exist yet", childDir.exists());
+        assertTrue("childDir folder should have been created", childDir.mkdir());
+
+        File parentFile = newFile(parentDir, "parentFile");
+        writeTo(parentFile, "parentContent");
+
+        File childFile = newFile(childDir, "childFile");
+        writeTo(childFile, "childContent");
+
+        File target = newFile("target");
+        assertFalse("target should not exist yet", target.exists());
+
+        copy(parentDir, target);
+
+        assertTrue("target should exist now", target.exists());
+        assertEqualFiles(parentDir, new File(target, parentDir.getName()));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testCopy_failsWhenSourceNotExist() {
+        copy(newFile("nonExistent"), newFile("target"));
+    }
+
+    @Test(expected = HazelcastException.class)
+    public void testCopy_failsWhenSourceCannotBeListed() {
+        File source = mock(File.class);
+        when(source.exists()).thenReturn(true);
+        when(source.isDirectory()).thenReturn(true);
+        when(source.listFiles()).thenReturn(null);
+        when(source.getName()).thenReturn("dummy");
+
+        File target = newFile("dest");
+        assertFalse("Target folder should not exist yet", target.exists());
+        assertTrue("Target folder should have been created", target.mkdir());
+
+        copy(source, target);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testCopy_failsWhenSourceIsDirAndTargetIsFile() throws Exception {
+        File source = newFile("dir1");
+        assertFalse("Source folder should not exist yet", source.exists());
+        assertTrue("Source folder should have been created", source.mkdir());
+
+        File target = newFile("file1");
+        assertFalse("Target file should not exist yet", target.exists());
+        assertTrue("Target file should have been created successfully", target.createNewFile());
+
+        copy(source, target);
+        fail("Expected a IllegalArgumentException thrown by copy()");
+    }
+
+    @Test
+    public void testCopy_withInputStream() throws Exception {
+        InputStream inputStream = null;
+        try {
+            File source = createFile("source");
+            File target = createFile("target");
+
+            writeTo(source, "test content");
+            inputStream = new FileInputStream(source);
+
+            copy(inputStream, target);
+
+            assertTrue("source and target should have the same content", isEqualsContents(source, target));
+        } finally {
+            closeResource(inputStream);
+        }
+    }
+
+    @Test(expected = HazelcastException.class)
+    public void testCopy_withInputStream_failsWhenTargetNotExist() {
+        InputStream source = mock(InputStream.class);
+        File target = mock(File.class);
+        when(target.exists()).thenReturn(false);
+
+        copy(source, target);
+    }
+
+    @Test(expected = HazelcastException.class)
+    public void testCopy_withInputStream_failsWhenSourceCannotBeRead() throws Exception {
+        InputStream source = mock(InputStream.class);
+        when(source.read(any(byte[].class))).thenThrow(new IOException("expected"));
+        File target = createFile("target");
+
+        copy(source, target);
+    }
+
+    @Test(expected = HazelcastException.class)
+    public void testCopyFile_failsWhenTargetDoesntExistAndCannotBeCreated() throws Exception {
+        File source = newFile("newFile");
+        assertFalse("Source file should not exist yet", source.exists());
+        assertTrue("Source file should have been created successfully", source.createNewFile());
+
+        File target = mock(File.class);
+        when(target.exists()).thenReturn(false);
+        when(target.mkdirs()).thenReturn(false);
+
+        copyFile(source, target, -1);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testCopyFile_failsWhenSourceDoesntExist() {
+        File source = newFile("nonExistent");
+        File target = newFile("target");
+
+        copyFile(source, target, -1);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testCopyFile_failsWhenSourceIsNotAFile() {
+        File source = newFile("source");
+        assertFalse("Source folder should not exist yet", source.exists());
+        assertTrue("Source folder should have been created", source.mkdir());
+
+        File target = newFile("target");
+
+        copyFile(source, target, -1);
+    }
+
+    @Test
+    public void testDelete() {
+        File file = createFile("file");
+
+        delete(file);
+
+        assertFalse("file should be deleted", file.exists());
+    }
+
+    @Test
     public void testDelete_shouldDoNothingWithNonExistentFile() {
-        File file = new File("notFound");
+        File file = newFile("notFound");
 
         delete(file);
     }
 
     @Test
-    public void testDelete_shouldDeleteDirectoryRecursively() throws Exception {
+    public void testDelete_shouldDeleteDirectoryRecursively() {
         File parentDir = createDirectory("parent");
         File file1 = createFile(parentDir, "file1");
         File file2 = createFile(parentDir, "file2");
@@ -401,129 +559,12 @@ public class IOUtilTest extends HazelcastTestSupport {
 
         delete(parentDir);
 
-        assertFalse(parentDir.exists());
-        assertFalse(file1.exists());
-        assertFalse(file2.exists());
-        assertFalse(childDir.exists());
-        assertFalse(childFile1.exists());
-        assertFalse(childFile2.exists());
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testCopyFailsWhenSourceDoesntExist() {
-        copy(new File("nonExistant"), new File("target"));
-    }
-
-    @Test
-    public void testCopyFileFailsWhenTargetDoesntExistAndCannotBeCreated() throws IOException {
-        final File target = mock(File.class);
-        when(target.exists()).thenReturn(false);
-        when(target.mkdirs()).thenReturn(false);
-        final File source = new File("source");
-        assertTrue(!source.exists());
-        source.createNewFile();
-
-        try {
-            copyFile(source, target, -1);
-            fail();
-        } catch (HazelcastException expected) {
-            ignore(expected);
-        }
-
-        delete(source);
-    }
-
-    @Test
-    public void testCopyFailsWhenSourceCannotBeListed() {
-        final File source = mock(File.class);
-        when(source.exists()).thenReturn(true);
-        when(source.isDirectory()).thenReturn(true);
-        when(source.listFiles()).thenReturn(null);
-        when(source.getName()).thenReturn("dummy");
-
-        final File dest = new File("dest");
-        assertTrue(!dest.exists());
-        dest.mkdir();
-
-        try {
-            copy(source, dest);
-            fail();
-        } catch (HazelcastException expected) {
-            ignore(expected);
-        }
-
-        delete(dest);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testCopyFileFailsWhenSourceDoesntExist() {
-        copyFile(new File("nonExistant"), new File("target"), -1);
-    }
-
-    @Test
-    public void testCopyFileFailsWhenSourceIsNotAFile() {
-        final File source = new File("source");
-        assertTrue(!source.exists());
-        source.mkdirs();
-        try {
-            copyFile(source, new File("target"), -1);
-            fail();
-        } catch (IllegalArgumentException expected) {
-            ignore(expected);
-        }
-        delete(source);
-    }
-
-    @Test
-    public void testCopyFailsWhenSourceIsDirAndTargetIsFile() throws IOException {
-        final File source = new File("dir1");
-        final File target = new File("file1");
-        assertTrue(!source.exists() && !target.exists());
-        source.mkdir();
-        target.createNewFile();
-        try {
-            copy(source, target);
-            fail();
-        } catch (IllegalArgumentException expected) {
-            ignore(expected);
-        }
-        delete(source);
-        delete(target);
-    }
-
-    @Test
-    public void testCopyRecursiveDirectory() {
-        final File dir = new File("dir");
-        final File subdir = new File(dir, "subdir");
-        final File f1 = new File(dir, "f1");
-        final File f2 = new File(subdir, "f2");
-        assertTrue(!dir.exists());
-        assertTrue(!subdir.exists());
-
-        dir.mkdir();
-        subdir.mkdir();
-        writeTo(f1, "testContent");
-        writeTo(f2, "otherContent");
-
-        final File copy = new File("copy");
-        assertTrue(!copy.exists());
-
-        copy(dir, copy);
-        assertTrue(copy.exists());
-        assertEqualFiles(dir, new File(copy, "dir"));
-
-        delete(dir);
-        delete(subdir);
-        delete(copy);
-    }
-
-    @Test
-    public void testDelete_shouldDeleteSingleFile() throws Exception {
-        File file = createFile("singleFile");
-
-        delete(file);
-
-        assertFalse(file.exists());
+        assertFalse("parentDir should be deleted", parentDir.exists());
+        assertFalse("file1 should be deleted", file1.exists());
+        assertFalse("file2 should be deleted", file2.exists());
+        assertFalse("childDir should be deleted", childDir.exists());
+        assertFalse("childFile1 should be deleted", childFile1.exists());
+        assertFalse("childFile2 should be deleted", childFile2.exists());
     }
 
     @Test(expected = HazelcastException.class)
@@ -536,12 +577,38 @@ public class IOUtilTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testDeleteQuietly_shouldDeleteSingleFile() throws Exception {
-        File file = createFile("singleFile");
+    public void testDeleteQuietly() {
+        File file = createFile("file");
 
         deleteQuietly(file);
 
-        assertFalse(file.exists());
+        assertFalse("file should be deleted", file.exists());
+    }
+
+    @Test
+    public void testDeleteQuietly_shouldDoNothingWithNonExistentFile() {
+        File file = newFile("notFound");
+
+        deleteQuietly(file);
+    }
+
+    @Test
+    public void testDeleteQuietly_shouldDeleteDirectoryRecursively() {
+        File parentDir = createDirectory("parent");
+        File file1 = createFile(parentDir, "file1");
+        File file2 = createFile(parentDir, "file2");
+        File childDir = createDirectory(parentDir, "child");
+        File childFile1 = createFile(childDir, "childFile1");
+        File childFile2 = createFile(childDir, "childFile2");
+
+        deleteQuietly(parentDir);
+
+        assertFalse("parentDir should be deleted", parentDir.exists());
+        assertFalse("file1 should be deleted", file1.exists());
+        assertFalse("file2 should be deleted", file2.exists());
+        assertFalse("childDir should be deleted", childDir.exists());
+        assertFalse("childFile1 should be deleted", childFile1.exists());
+        assertFalse("childFile2 should be deleted", childFile2.exists());
     }
 
     @Test
@@ -551,46 +618,6 @@ public class IOUtilTest extends HazelcastTestSupport {
         when(file.delete()).thenReturn(false);
 
         deleteQuietly(file);
-    }
-
-    private static File createDirectory(String dirName) {
-        File dir = new File(dirName);
-        return createDirectory(dir);
-    }
-
-    private static File createDirectory(File parent, String dirName) {
-        File dir = new File(parent, dirName);
-        return createDirectory(dir);
-    }
-
-    private static File createDirectory(File dir) {
-        if (dir.isDirectory()) {
-            return dir;
-        }
-        if (!dir.mkdirs() || !dir.exists()) {
-            fail("Could not create directory " + dir.getAbsolutePath());
-        }
-        return dir;
-    }
-
-    private static File createFile(String fileName) throws IOException {
-        File file = new File(fileName);
-        return createFile(file);
-    }
-
-    private static File createFile(File parent, String fileName) throws IOException {
-        File file = new File(parent, fileName);
-        return createFile(file);
-    }
-
-    private static File createFile(File file) throws IOException {
-        if (file.isFile()) {
-            return file;
-        }
-        if (!file.createNewFile() || !file.exists()) {
-            fail("Could not create file " + file.getAbsolutePath());
-        }
-        return file;
     }
 
     @Test
@@ -623,45 +650,291 @@ public class IOUtilTest extends HazelcastTestSupport {
         getFileFromResources("doesNotExist");
     }
 
-    private static void writeTo(File f1, String testContent) {
-        FileWriter w = null;
+    @Test
+    public void testCompactOrClearByteBuffer() {
+        ByteBuffer buffer = ByteBuffer.wrap(new byte[SIZE]);
+        buffer.put((byte) 0xFF);
+        buffer.put((byte) 0xFF);
+        buffer.flip();
+        buffer.position(1);
+        compactOrClear(buffer);
+        assertEquals("Buffer position invalid", 1, buffer.position());
+
+        buffer.put((byte) 0xFF);
+        buffer.put((byte) 0xFF);
+        compactOrClear(buffer);
+        assertEquals("Buffer position invalid", 0, buffer.position());
+    }
+
+    @Test
+    public void testCopyToHeapBuffer_whenSourceIsNull() {
+        ByteBuffer dst = ByteBuffer.wrap(new byte[SIZE]);
+
+        assertEquals(0, copyToHeapBuffer(null, dst));
+    }
+
+    @Test
+    public void testReadAttributeValue_whenTypeBoolean() throws Exception {
+        final boolean expected = true;
+        ObjectDataInput input = mock(ObjectDataInput.class);
+        when(input.readByte()).thenReturn(IOUtil.PRIMITIVE_TYPE_BOOLEAN);
+        when(input.readBoolean()).thenReturn(expected);
+
+        Object actual = readAttributeValue(input);
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    public void testReadAttributeValue_whenTypeByte() throws Exception {
+        final byte expected = (byte) 0xFF;
+        ObjectDataInput input = mock(ObjectDataInput.class);
+        when(input.readByte()).thenReturn(IOUtil.PRIMITIVE_TYPE_BYTE).thenReturn(expected);
+
+        Object actual = readAttributeValue(input);
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    public void testReadAttributeValue_whenTypeShort() throws Exception {
+        final short expected = 42;
+        ObjectDataInput input = mock(ObjectDataInput.class);
+        when(input.readByte()).thenReturn(IOUtil.PRIMITIVE_TYPE_SHORT);
+        when(input.readShort()).thenReturn(expected);
+
+        Object actual = readAttributeValue(input);
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    public void testReadAttributeValue_whenTypeInteger() throws Exception {
+        final int expected = 42;
+        ObjectDataInput input = mock(ObjectDataInput.class);
+        when(input.readByte()).thenReturn(IOUtil.PRIMITIVE_TYPE_INTEGER);
+        when(input.readInt()).thenReturn(expected);
+
+        Object actual = readAttributeValue(input);
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    public void testReadAttributeValue_whenTypeLong() throws Exception {
+        final long expected = 42L;
+        ObjectDataInput input = mock(ObjectDataInput.class);
+        when(input.readByte()).thenReturn(IOUtil.PRIMITIVE_TYPE_LONG);
+        when(input.readLong()).thenReturn(expected);
+
+        Object actual = readAttributeValue(input);
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    public void testReadAttributeValue_whenTypeFloat() throws Exception {
+        final float expected = 0.42f;
+        ObjectDataInput input = mock(ObjectDataInput.class);
+        when(input.readByte()).thenReturn(IOUtil.PRIMITIVE_TYPE_FLOAT);
+        when(input.readFloat()).thenReturn(expected);
+
+        Object actual = readAttributeValue(input);
+        assertEquals(Float.floatToIntBits(expected), Float.floatToIntBits((Float) actual));
+    }
+
+    @Test
+    public void testReadAttributeValue_whenTypeDouble() throws Exception {
+        final double expected = 42.42f;
+        ObjectDataInput input = mock(ObjectDataInput.class);
+        when(input.readByte()).thenReturn(IOUtil.PRIMITIVE_TYPE_DOUBLE);
+        when(input.readDouble()).thenReturn(expected);
+
+        Object actual = readAttributeValue(input);
+        assertEquals(Double.doubleToLongBits(expected), Double.doubleToLongBits((Double) actual));
+    }
+
+    @Test
+    public void testReadAttributeValue_whenTypeUTF() throws Exception {
+        final String expected = "UTF";
+        ObjectDataInput input = mock(ObjectDataInput.class);
+        when(input.readByte()).thenReturn(IOUtil.PRIMITIVE_TYPE_UTF);
+        when(input.readUTF()).thenReturn(expected);
+
+        Object actual = readAttributeValue(input);
+        assertEquals(expected, actual);
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testReadAttributeValue_whenInvalidType() throws Exception {
+        ObjectDataInput input = mock(ObjectDataInput.class);
+        when(input.readByte()).thenReturn((byte) 0xFF);
+        readAttributeValue(input);
+    }
+
+    @Test
+    public void testCloseServerSocket_whenServerSocketThrows() throws Exception {
+        ServerSocket serverSocket = mock(ServerSocket.class);
+        doThrow(new IOException()).when(serverSocket).close();
         try {
-            w = new FileWriter(f1);
-            w.write(testContent);
+            close(serverSocket);
+        } catch (Exception ex) {
+            fail("IOUtils should silently close server socket when exception thrown");
+        }
+    }
+
+    @Test(expected = HazelcastException.class)
+    public void testRename_whenFileNowNotExist() {
+        File toBe = mock(File.class);
+
+        File now = mock(File.class);
+        when(now.renameTo(toBe)).thenReturn(false);
+        when(now.exists()).thenReturn(false);
+
+        rename(now, toBe);
+    }
+
+    @Test(expected = HazelcastException.class)
+    public void testRename_whenFileToBeNotExist() {
+        File toBe = mock(File.class);
+        when(toBe.exists()).thenReturn(false);
+
+        File now = mock(File.class);
+        when(now.renameTo(toBe)).thenReturn(false);
+        when(now.exists()).thenReturn(true);
+
+        rename(now, toBe);
+    }
+
+    @Test(expected = HazelcastException.class)
+    public void testRename_whenFileToBeNotDeleted() {
+        File toBe = mock(File.class);
+        when(toBe.exists()).thenReturn(true);
+        when(toBe.delete()).thenReturn(false);
+
+        File now = mock(File.class);
+        when(now.renameTo(toBe)).thenReturn(false);
+        when(now.exists()).thenReturn(true);
+
+        rename(now, toBe);
+    }
+
+    @Test
+    public void testGetPath_shouldFormat() {
+        String root = "root";
+        String parent = "parent";
+        String child = "child";
+        String expected = format("%s%s%s%s%s", root, File.separator, parent, File.separator, child);
+        String actual = getPath(root, parent, child);
+        assertEquals(expected, actual);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testGetPath_whenPathsInvalid() {
+        getPath();
+    }
+
+    private File newFile(String filename) {
+        File file = new File(getFilename(filename));
+        files.add(file);
+        return file;
+    }
+
+    private File newFile(File parent, String filename) {
+        File file = new File(parent, getFilename(filename));
+        files.add(file);
+        return file;
+    }
+
+    private String getFilename(String filename) {
+        String name = "IOUtilTest-" + testName.getMethodName() + "-" + filename;
+        if (name.length() > 255) {
+            return name.substring(0, 255);
+        }
+        return name;
+    }
+
+    private File createFile(String fileName) {
+        return createFile(newFile(fileName));
+    }
+
+    private File createFile(File parent, String fileName) {
+        return createFile(newFile(parent, fileName));
+    }
+
+    private File createFile(File file) {
+        files.add(file);
+        if (file.isFile()) {
+            return file;
+        }
+        try {
+            if (!file.createNewFile() || !file.exists()) {
+                fail("Could not create file " + file.getAbsolutePath());
+            }
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            fail("Could not create file " + file.getAbsolutePath() + ": " + e.getMessage());
+        }
+        return file;
+    }
+
+    @SuppressWarnings("SameParameterValue")
+    private File createDirectory(String dirName) {
+        return createDirectory(newFile(dirName));
+    }
+
+    @SuppressWarnings("SameParameterValue")
+    private File createDirectory(File parent, String dirName) {
+        return createDirectory(newFile(parent, dirName));
+    }
+
+    private File createDirectory(File dir) {
+        files.add(dir);
+        if (dir.isDirectory()) {
+            return dir;
+        }
+        if (!dir.mkdirs() || !dir.exists()) {
+            fail("Could not create directory " + dir.getAbsolutePath());
+        }
+        return dir;
+    }
+
+    private static void writeTo(File file, String content) {
+        FileWriter writer = null;
+        try {
+            writer = new FileWriter(file);
+            writer.write(content);
+        } catch (IOException e) {
+            throw rethrow(e);
         } finally {
-            closeResource(w);
+            closeResource(writer);
         }
     }
 
     private static void assertEqualFiles(File f1, File f2) {
-        if (f1.exists()) {
-            assertTrue(f2.exists());
-        }
-        assertTrue(f1.getName().equals(f2.getName()));
+        assertEquals("f1 and f2 should have the same name", f1.getName(), f2.getName());
+        assertEquals("f1 and f2 should both exist or not exist", f1.exists(), f2.exists());
         if (f1.isFile()) {
-            assertTrue(f2.isFile());
-            if (!equalContents(f1, f2)) {
-                fail();
-            }
+            assertTrue("f1 is a file, but f2 is not", f2.isFile());
+            assertTrue("f1 and f2 should have the same content", isEqualsContents(f1, f2));
             return;
         }
-        final File[] f1Files = f1.listFiles();
-        assertTrue(f1Files.length == f2.listFiles().length);
-        for (File f : f1Files) {
-            assertEqualFiles(f, new File(f2, f.getName()));
+        assertEquals(f1.isDirectory(), f2.isDirectory());
+        File[] f1Files = f1.listFiles();
+        File[] f2Files = f2.listFiles();
+        assertNotNull("f1.listFiles() should not return null ", f1Files);
+        assertNotNull("f2.listFiles() should not return null ", f2Files);
+        assertEquals(f1Files.length, f2Files.length);
+        for (File f1File : f1Files) {
+            assertEqualFiles(f1File, new File(f2, f1File.getName()));
+        }
+        for (File f2File : f2Files) {
+            assertEqualFiles(f2File, new File(f1, f2File.getName()));
         }
     }
 
-    // note: use only for small files (e.g. up to a couple of hundred KBs). See below.
-    private static boolean equalContents(File f1, File f2) {
+    // Note: use only for small files (e.g. up to a couple of hundred KBs). See below.
+    private static boolean isEqualsContents(File f1, File f2) {
         InputStream is1 = null;
         InputStream is2 = null;
         try {
             is1 = new FileInputStream(f1);
             is2 = new FileInputStream(f2);
-            // compare byte-by-byte since InputStream.read(byte[]) possibly doesn't return the requested number of bytes
+            // compare byte-by-byte since InputStream.read() possibly doesn't return the requested number of bytes
             // this is why this method should be used for smallFiles
             int data;
             while ((data = is1.read()) != -1) {
@@ -669,13 +942,7 @@ public class IOUtilTest extends HazelcastTestSupport {
                     return false;
                 }
             }
-            if (is2.read() != -1) {
-                return false;
-            }
-
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-            return false;
+            return is2.read() == -1;
         } catch (IOException e) {
             e.printStackTrace();
             return false;
@@ -683,6 +950,5 @@ public class IOUtilTest extends HazelcastTestSupport {
             closeResource(is1);
             closeResource(is2);
         }
-        return true;
     }
 }
