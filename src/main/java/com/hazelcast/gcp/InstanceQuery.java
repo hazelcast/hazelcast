@@ -31,6 +31,16 @@ import java.util.ArrayList;
 
 public class InstanceQuery {
   public static void main(String[] args) throws IOException, GeneralSecurityException {
+    // passing in arguments for the projectid and zone
+    // Project ID for this request.
+    String project = "hazelcast-33";
+    if(args[0]!=null)
+      project = args[0];
+    // The name of the zone for this request.
+    String zone = "us-east1-b";
+    if(args[1]!=null)
+      zone = args[1];
+
     // Authentication is provided by the 'gcloud' tool when running locally
     // and by built-in service accounts when running on GAE, GCE, or GKE.
     GoogleCredential credential = GoogleCredential.getApplicationDefault();
@@ -51,10 +61,6 @@ public class InstanceQuery {
     Compute computeService = new Compute.Builder(httpTransport, jsonFactory, credential)
             .setApplicationName("Google Cloud Platform Sample")
             .build();
-    // Project ID for this request.
-    String project = "hazelcast-33";
-    // The name of the zone for this request.
-    String zone = "us-east1-b";
 
     Compute.Instances.List request = computeService.instances().list(project, zone);
     InstanceList response;
