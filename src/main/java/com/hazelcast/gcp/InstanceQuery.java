@@ -34,12 +34,12 @@ public class InstanceQuery {
     // passing in arguments for the projectid and zone
     // Project ID for this request.
     String project = "hazelcast-33";
-    if(args[0]!=null)
-      project = args[0];
     // The name of the zone for this request.
     String zone = "us-east1-b";
-    if(args[1]!=null)
-      zone = args[1];
+    if(args.length==2){
+        project = args[0];
+        zone = args[1];
+    }
 
     // Authentication is provided by the 'gcloud' tool when running locally
     // and by built-in service accounts when running on GAE, GCE, or GKE.
