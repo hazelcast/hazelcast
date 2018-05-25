@@ -252,6 +252,7 @@
                         -Dhazelcast.phone.home.enabled=false
                         -Dhazelcast.mancenter.enabled=false
                         -Dhazelcast.test.use.network=false
+                        -Dlog4j.skipJansi=true
                         ${extraVmArgs}
                     </argLine>
                     <includes>
@@ -290,6 +291,7 @@
                         -Dhazelcast.mancenter.enabled=false
                         -Dhazelcast.logging.type=none
                         -Dhazelcast.test.use.network=true
+                        -Dlog4j.skipJansi=true
                         ${extraVmArgs}
                     </argLine>
                     <useManifestOnlyJar>false</useManifestOnlyJar>
@@ -344,6 +346,7 @@
                                         -Dhazelcast.test.use.network=false
                                         -Dhazelcast.test.multiple.jvm=true
                                         -Dlog4j.configurationFile=log4j2-info.xml
+                                        -Dlog4j.skipJansi=true
                                         ${extraVmArgs}
                                     </argLine>
                                     <includes>
@@ -383,6 +386,7 @@
                                         -Dhazelcast.logging.type=none
                                         -Dhazelcast.test.use.network=false
                                         -Dlog4j.configurationFile=log4j2-info.xml
+                                        -Dlog4j.skipJansi=true
                                         ${extraVmArgs}
                                     </argLine>
                                     <includes>
@@ -433,6 +437,7 @@
                                 -Dhazelcast.phone.home.enabled=false
                                 -Dhazelcast.mancenter.enabled=false
                                 -Dhazelcast.test.use.network=false
+                                -Dlog4j.skipJansi=true
                                 ${extraVmArgs}
                             </argLine>
                             <includes>
@@ -470,6 +475,7 @@
                                 -Dhazelcast.phone.home.enabled=false
                                 -Dhazelcast.mancenter.enabled=false
                                 -Dhazelcast.test.use.network=false
+                                -Dlog4j.skipJansi=true
                                 ${extraVmArgs}
                             </argLine>
                             <useManifestOnlyJar>false</useManifestOnlyJar>
@@ -571,9 +577,9 @@
                     -Dhazelcast.mancenter.enabled=false
                     -Dhazelcast.logging.type=none
                     -Dhazelcast.test.use.network=false
-                    -Dlog4j.skipJansi=true
                     -Dhazelcast.operation.call.timeout.millis=120000
                     -Dhazelcast.graceful.shutdown.max.wait=240
+                    -Dlog4j.skipJansi=true
                     ${extraVmArgs}
                 </argLine>
             </properties>
@@ -648,6 +654,7 @@
                                 -Dhazelcast.mancenter.enabled=false
                                 -Dhazelcast.logging.type=none
                                 -Dhazelcast.test.use.network=true
+                                -Dlog4j.skipJansi=true
                                 ${extraVmArgs}
                             </argLine>
                             <groups>
@@ -919,6 +926,7 @@
                                 -Dhazelcast.mancenter.enabled=false
                                 -Dhazelcast.logging.type=none
                                 -Dhazelcast.test.use.network=true
+                                -Dlog4j.skipJansi=true
                                 ${extraVmArgs}
                             </argLine>
                             <useManifestOnlyJar>false</useManifestOnlyJar>
@@ -996,6 +1004,7 @@
                                 -Dhazelcast.mancenter.enabled=false
                                 -Dhazelcast.logging.type=none
                                 -Dhazelcast.test.use.network=true
+                                -Dlog4j.skipJansi=true
                                 ${extraVmArgs}
                             </argLine>
                             <useManifestOnlyJar>false</useManifestOnlyJar>
@@ -1038,6 +1047,7 @@
                                 -Dhazelcast.phone.home.enabled=false
                                 -Dhazelcast.mancenter.enabled=false
                                 -Dhazelcast.test.use.network=false
+                                -Dlog4j.skipJansi=true
                                 ${extraVmArgs}
                             </argLine>
                             <includes>
@@ -1094,6 +1104,7 @@
                                 -Dhazelcast.mancenter.enabled=false
                                 -Dhazelcast.test.use.network=false
                                 -Dhazelcast.test.sample.serialized.objects=${target.dir}/serialized-objects-${project.version}-
+                                -Dlog4j.skipJansi=true
                                 ${extraVmArgs}
                             </argLine>
                             <includes>
