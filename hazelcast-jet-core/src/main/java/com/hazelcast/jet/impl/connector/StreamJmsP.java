@@ -133,13 +133,11 @@ public class StreamJmsP<T> extends AbstractProcessor {
 
     @Override
     public void close(@Nullable Throwable error) {
-        closeIfNotNull(consumer);
-        closeIfNotNull(session);
-    }
-
-    private static void closeIfNotNull(AutoCloseable closeable) {
-        if (closeable != null) {
-            uncheckRun(closeable::close);
+        if (consumer != null) {
+            uncheckRun(() -> consumer.close());
+        }
+        if (session != null) {
+            uncheckRun(() -> session.close());
         }
     }
 
@@ -175,7 +173,9 @@ public class StreamJmsP<T> extends AbstractProcessor {
 
         @Override
         public void close(@Nullable Throwable error) {
-            closeIfNotNull(connection);
+            if (connection != null) {
+                uncheckRun(() -> connection.close());
+            }
         }
 
         @Nonnull
