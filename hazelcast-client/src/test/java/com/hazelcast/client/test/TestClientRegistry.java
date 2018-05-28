@@ -17,8 +17,6 @@
 package com.hazelcast.client.test;
 
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.config.ClientAwsConfig;
-import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.connection.AddressProvider;
 import com.hazelcast.client.connection.AddressTranslator;
 import com.hazelcast.client.connection.ClientConnectionManager;
@@ -27,10 +25,6 @@ import com.hazelcast.client.connection.nio.ClientConnectionManagerImpl;
 import com.hazelcast.client.impl.ClientConnectionManagerFactory;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.spi.impl.AwsAddressTranslator;
-import com.hazelcast.client.spi.impl.DefaultAddressTranslator;
-import com.hazelcast.client.spi.impl.discovery.DiscoveryAddressTranslator;
-import com.hazelcast.client.spi.properties.ClientProperty;
 import com.hazelcast.client.test.TwoWayBlockableExecutor.LockPair;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
@@ -43,7 +37,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ConnectionType;
-import com.hazelcast.spi.discovery.integration.DiscoveryService;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.mocknetwork.MockConnection;
@@ -87,24 +80,9 @@ class TestClientRegistry {
         }
 
         @Override
-        public ClientConnectionManager createConnectionManager(ClientConfig config, HazelcastClientInstanceImpl client,
-                                                               DiscoveryService discoveryService,
+        public ClientConnectionManager createConnectionManager(HazelcastClientInstanceImpl client,
+                                                               AddressTranslator addressTranslator,
                                                                Collection<AddressProvider> addressProviders) {
-            final ClientAwsConfig awsConfig = config.getNetworkConfig().getAwsConfig();
-            AddressTranslator addressTranslator;
-            if (awsConfig != null && awsConfig.isEnabled()) {
-                try {
-                    addressTranslator = new AwsAddressTranslator(awsConfig, client.getLoggingService());
-                } catch (NoClassDefFoundError e) {
-                    LOGGER.warning("hazelcast-aws.jar might be missing!");
-                    throw e;
-                }
-            } else if (discoveryService != null) {
-                addressTranslator = new DiscoveryAddressTranslator(discoveryService,
-                        client.getProperties().getBoolean(ClientProperty.DISCOVERY_SPI_PUBLIC_IP_ENABLED));
-            } else {
-                addressTranslator = new DefaultAddressTranslator();
-            }
             return new MockClientConnectionManager(client, addressTranslator, addressProviders, host, ports);
         }
     }
