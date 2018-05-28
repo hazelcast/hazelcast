@@ -42,6 +42,7 @@ import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -281,6 +282,23 @@ public class PagingPredicateTest extends HazelcastTestSupport {
                 assertEquals(0, map.keySet(predicate).size());
             }
         }
+    }
+
+    @Test
+    public void testEmptyIndexResultIsNotCausingFullScan() {
+        map.addIndex("this", false);
+        for (int i = 0; i < size; ++i) {
+            map.set(i, i);
+        }
+
+        int resultSize = map.entrySet(new PagingPredicate(Predicates.equal("this", size), pageSize) {
+            @Override
+            public boolean apply(Map.Entry mapEntry) {
+                fail("full scan is not expected");
+                return false;
+            }
+        }).size();
+        assertEquals(0, resultSize);
     }
 
     static class TestComparator implements Comparator<Map.Entry<Integer, Integer>>, Serializable {

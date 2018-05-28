@@ -175,8 +175,7 @@ public class ClientICMPManager implements ConnectionListener {
                 logger.warning(reason);
 
                 if (!icmpFailureDetector.isAlive(connection)) {
-                    connection.onHeartbeatFailed();
-                    heartbeatManager.fireHeartbeatStopped(connection);
+                    heartbeatManager.onHeartbeatStopped(connection, "ICMP ping time out");
                 }
             } catch (Throwable ignored) {
                 ignore(ignored);

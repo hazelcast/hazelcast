@@ -19,9 +19,10 @@ package com.hazelcast.core;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.instance.Node;
-import com.hazelcast.instance.TestUtil;
 import com.hazelcast.spi.InitializingObject;
+import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -193,17 +194,17 @@ public class DistributedObjectTest extends HazelcastTestSupport {
         }
 
         for (int i = 0; i < nodeCount; i++) {
-            Node node = TestUtil.getNode(instances[i]);
-            ProxyServiceImpl proxyService = (ProxyServiceImpl) node.nodeEngine.getProxyService();
+            NodeEngine nodeEngine = getNodeEngineImpl(instances[i]);
+            OperationService operationService = nodeEngine.getOperationService();
+            ProxyServiceImpl proxyService = (ProxyServiceImpl) nodeEngine.getProxyService();
             Operation postJoinOperation = proxyService.getPostJoinOperation();
 
             for (int j = 0; j < nodeCount; j++) {
                 if (i == j) {
                     continue;
                 }
-
-                Node node2 = TestUtil.getNode(instances[j]);
-                node.nodeEngine.getOperationService().send(postJoinOperation, node2.address);
+                Node node2 = getNode(instances[j]);
+                operationService.send(postJoinOperation, node2.address);
             }
         }
 

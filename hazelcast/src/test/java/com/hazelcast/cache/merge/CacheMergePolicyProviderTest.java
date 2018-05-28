@@ -47,7 +47,7 @@ public class CacheMergePolicyProviderTest extends HazelcastTestSupport {
 
     @Before
     public void setup() {
-        CacheService service = getNode(createHazelcastInstance()).getNodeEngine().getService(CacheService.SERVICE_NAME);
+        CacheService service = getNodeEngineImpl(createHazelcastInstance()).getService(CacheService.SERVICE_NAME);
         mergePolicyProvider = service.getMergePolicyProvider();
     }
 

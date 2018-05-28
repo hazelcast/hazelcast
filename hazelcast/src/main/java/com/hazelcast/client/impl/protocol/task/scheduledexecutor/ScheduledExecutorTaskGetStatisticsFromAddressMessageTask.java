@@ -65,7 +65,7 @@ public class ScheduledExecutorTaskGetStatisticsFromAddressMessageTask
         ScheduledTaskStatistics stats = (ScheduledTaskStatistics) response;
         return ScheduledExecutorGetStatsFromAddressCodec.encodeResponse(stats.getLastIdleTime(TimeUnit.NANOSECONDS),
                 stats.getTotalIdleTime(TimeUnit.NANOSECONDS), stats.getTotalRuns(),
-                stats.getTotalRunTime(TimeUnit.NANOSECONDS));
+                stats.getTotalRunTime(TimeUnit.NANOSECONDS), stats.getLastRunDuration(TimeUnit.NANOSECONDS));
     }
 
     @Override

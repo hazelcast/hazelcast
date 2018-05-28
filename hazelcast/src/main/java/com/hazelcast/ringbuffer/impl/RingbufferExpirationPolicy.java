@@ -16,6 +16,8 @@
 
 package com.hazelcast.ringbuffer.impl;
 
+import java.util.Arrays;
+
 import static com.hazelcast.util.Clock.currentTimeMillis;
 
 /**
@@ -101,5 +103,12 @@ final class RingbufferExpirationPolicy {
      */
     long getTtlMs() {
         return ttlMs;
+    }
+
+    /**
+     * Resets the expiration policy for all items.
+     */
+    public void clear() {
+        Arrays.fill(ringExpirationMs, 0);
     }
 }

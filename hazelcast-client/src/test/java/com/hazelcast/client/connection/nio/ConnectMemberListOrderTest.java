@@ -21,6 +21,7 @@ import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.spi.properties.ClientProperty;
 import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
@@ -67,17 +68,17 @@ public class ConnectMemberListOrderTest extends ClientTestSupport {
         HazelcastInstance instance = factory.newHazelcastInstance();
         ClientConfig config = new ClientConfig();
         config.setProperty(ClientProperty.SHUFFLE_MEMBER_LIST.getName(), shuffleMemberList);
-        HazelcastInstance client = factory.newHazelcastClient(config);
-
-        final CountDownLatch connectedBack = new CountDownLatch(1);
-        client.getLifecycleService().addLifecycleListener(new LifecycleListener() {
+        final CountDownLatch connectedBack = new CountDownLatch(2);
+        config.addListenerConfig(new ListenerConfig(new LifecycleListener() {
             @Override
             public void stateChanged(LifecycleEvent event) {
                 if (LifecycleEvent.LifecycleState.CLIENT_CONNECTED.equals(event.getState())) {
                     connectedBack.countDown();
                 }
             }
-        });
+        }));
+
+        HazelcastInstance client = factory.newHazelcastClient(config);
 
         factory.newHazelcastInstance();
         factory.newHazelcastInstance();
@@ -94,7 +95,8 @@ public class ConnectMemberListOrderTest extends ClientTestSupport {
         assertEquals(3, possibleMemberAddresses.size());
 
         //make sure previous owner is not first one to tried in next owner connection selection
-        assertNotEquals(lastConnectedMemberAddress, possibleMemberAddresses.iterator().next());
+        assertNotEquals("possibleMemberAddresses : " + possibleMemberAddresses + ", lastConnectedMemberAddress "
+                + lastConnectedMemberAddress, possibleMemberAddresses.iterator().next(), lastConnectedMemberAddress);
     }
 
     private Collection<Address> getPossibleMemberAddresses(HazelcastInstance client) {

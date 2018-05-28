@@ -56,6 +56,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getBaseConfig;
 import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -607,7 +608,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
         int randomKey = random.nextInt(mapSize);
         clientMap.submitToKey(randomKey, new IncrementEntryProcessor(), callback);
 
-        assertOpenEventually(latch, 3);
+        assertOpenEventually(latch);
         assertTrueEventually(new AssertTask() {
             public void run() {
                 assertThatOwnedEntryCountEquals(clientMap, mapSize - 1);
@@ -708,7 +709,6 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
         }
 
         NearCacheStats stats = getNearCacheStats(map);
-        System.out.println("stats = " + stats);
         assertEquals(size, stats.getOwnedEntryCount());
         assertEquals(size, stats.getHits());
     }
@@ -1259,7 +1259,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
     }
 
     protected Config newConfig() {
-        return getConfig();
+        return getBaseConfig();
     }
 
     protected NearCacheConfig newNoInvalidationNearCacheConfig() {

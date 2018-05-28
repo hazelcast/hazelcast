@@ -39,6 +39,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+@SuppressWarnings("WeakerAccess")
 public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
 
     protected SerializationService ss;
@@ -51,8 +52,7 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
         executionService = getNodeEngineImpl(instance).getExecutionService();
     }
 
-    protected abstract NearCache<Integer, String> createNearCache(String name,
-                                                                  NearCacheConfig nearCacheConfig,
+    protected abstract NearCache<Integer, String> createNearCache(String name, NearCacheConfig nearCacheConfig,
                                                                   ManagedNearCacheRecordStore nearCacheRecordStore);
 
     protected NearCache<Integer, String> createNearCache(String name, ManagedNearCacheRecordStore nearCacheRecordStore) {
@@ -139,7 +139,7 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
         assertEquals(nearCache.size(), managedNearCacheRecordStore.latestSize);
 
         for (int i = 0; i < 2 * DEFAULT_RECORD_COUNT; i++) {
-            nearCache.remove(i);
+            nearCache.invalidate(i);
             assertEquals((Integer) i, managedNearCacheRecordStore.latestKeyOnRemove);
             assertEquals(i < DEFAULT_RECORD_COUNT, managedNearCacheRecordStore.latestResultOnRemove);
         }
@@ -224,7 +224,7 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
         // expiration will be called eventually
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertTrue(managedNearCacheRecordStore.doExpirationCalled);
             }
         });
@@ -305,6 +305,11 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
             latestKeyOnRemove = key;
             latestResultOnRemove = result;
             return result;
+        }
+
+        @Override
+        public boolean invalidate(Integer key) {
+            return remove(key);
         }
 
         @Override

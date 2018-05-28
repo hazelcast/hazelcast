@@ -53,7 +53,6 @@ class DefaultWriteBehindProcessor extends AbstractWriteBehindProcessor<DelayedEn
 
     private static final int RETRY_STORE_AFTER_WAIT_SECONDS = 1;
 
-
     private final List<StoreListener> storeListeners;
 
     DefaultWriteBehindProcessor(MapStoreContext mapStoreContext) {
@@ -142,7 +141,7 @@ class DefaultWriteBehindProcessor extends AbstractWriteBehindProcessor<DelayedEn
         if (size == 1 || !writeCoalescing) {
             return processEntriesOneByOne(delayedEntries, operationType);
         }
-        final DelayedEntry[] delayedEntriesArray = delayedEntries.toArray(new DelayedEntry[delayedEntries.size()]);
+        final DelayedEntry[] delayedEntriesArray = delayedEntries.toArray(new DelayedEntry[0]);
         final Map<Object, DelayedEntry> batchMap = prepareBatchMap(delayedEntriesArray);
 
         // if all batch is on same key, call single store.

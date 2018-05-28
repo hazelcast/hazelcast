@@ -19,6 +19,7 @@ package com.hazelcast.client.map.impl.nearcache;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.HazelcastClientProxy;
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.internal.adapter.DataStructureAdapter;
@@ -39,13 +40,14 @@ import org.junit.runner.RunWith;
 
 import java.io.File;
 
-import static com.hazelcast.client.map.impl.nearcache.ClientMapInvalidationListener.createInvalidationEventHandler;
 import static com.hazelcast.config.NearCacheConfig.DEFAULT_INVALIDATE_ON_CHANGE;
 import static com.hazelcast.config.NearCacheConfig.DEFAULT_MEMORY_FORMAT;
 import static com.hazelcast.config.NearCacheConfig.DEFAULT_SERIALIZE_KEYS;
+import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getBaseConfig;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
+@SuppressWarnings("WeakerAccess")
 public class ClientMapNearCachePreloaderTest extends AbstractNearCachePreloaderTest<Data, String> {
 
     protected final File storeFile = new File("nearCache-" + defaultNearCache + ".store").getAbsoluteFile();
@@ -55,8 +57,8 @@ public class ClientMapNearCachePreloaderTest extends AbstractNearCachePreloaderT
 
     @Before
     public void setUp() {
-        nearCacheConfig = getNearCacheConfig(DEFAULT_MEMORY_FORMAT, DEFAULT_SERIALIZE_KEYS,
-                DEFAULT_INVALIDATE_ON_CHANGE, KEY_COUNT, storeFile.getParent());
+        nearCacheConfig = getNearCacheConfig(DEFAULT_MEMORY_FORMAT, DEFAULT_SERIALIZE_KEYS, DEFAULT_INVALIDATE_ON_CHANGE,
+                KEY_COUNT, storeFile.getParent());
     }
 
     @After
@@ -81,13 +83,12 @@ public class ClientMapNearCachePreloaderTest extends AbstractNearCachePreloaderT
     }
 
     @Override
-    protected <K, V> NearCacheTestContext<K, V, Data, String> createContext(boolean createNearCacheInstance, int keyCount,
-                                                                            KeyType keyType) {
-        HazelcastInstance member = hazelcastFactory.newHazelcastInstance(getConfig());
+    protected <K, V> NearCacheTestContext<K, V, Data, String> createContext(boolean createNearCacheInstance) {
+        Config config = getConfig();
+
+        HazelcastInstance member = hazelcastFactory.newHazelcastInstance(config);
         IMap<K, V> memberMap = member.getMap(nearCacheConfig.getName());
         IMapDataStructureAdapter<K, V> dataAdapter = new IMapDataStructureAdapter<K, V>(memberMap);
-
-        populateDataAdapter(dataAdapter, keyCount, keyType);
 
         if (createNearCacheInstance) {
             NearCacheTestContextBuilder<K, V, Data, String> contextBuilder = createNearCacheContextBuilder();
@@ -108,6 +109,11 @@ public class ClientMapNearCachePreloaderTest extends AbstractNearCachePreloaderT
         return contextBuilder.build();
     }
 
+    @Override
+    protected Config getConfig() {
+        return getBaseConfig();
+    }
+
     protected ClientConfig getClientConfig() {
         return new ClientConfig();
     }
@@ -126,7 +132,6 @@ public class ClientMapNearCachePreloaderTest extends AbstractNearCachePreloaderT
                 .setNearCacheInstance(client)
                 .setNearCacheAdapter(new IMapDataStructureAdapter<K, V>(clientMap))
                 .setNearCache(nearCache)
-                .setNearCacheManager(nearCacheManager)
-                .setInvalidationListener(createInvalidationEventHandler(clientMap));
+                .setNearCacheManager(nearCacheManager);
     }
 }

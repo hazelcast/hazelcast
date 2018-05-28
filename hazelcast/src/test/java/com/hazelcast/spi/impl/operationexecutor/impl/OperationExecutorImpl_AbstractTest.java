@@ -29,7 +29,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.UrgentSystemOperation;
-import com.hazelcast.spi.impl.PacketHandler;
 import com.hazelcast.spi.impl.operationexecutor.OperationHostileThread;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunnerFactory;
@@ -37,6 +36,7 @@ import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.util.function.Consumer;
 import org.junit.After;
 import org.junit.Before;
 import org.mockito.Mockito;
@@ -45,9 +45,6 @@ import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 
-import static com.hazelcast.spi.properties.GroupProperty.GENERIC_OPERATION_THREAD_COUNT;
-import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
-import static com.hazelcast.spi.properties.GroupProperty.PARTITION_OPERATION_THREAD_COUNT;
 import static java.util.Collections.synchronizedList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -68,7 +65,7 @@ public abstract class OperationExecutorImpl_AbstractTest extends HazelcastTestSu
     DefaultNodeExtension nodeExtension;
     OperationRunnerFactory handlerFactory;
     InternalSerializationService serializationService;
-    PacketHandler responsePacketHandler;
+    Consumer<Packet> responsePacketConsumer;
     OperationExecutorImpl executor;
     Config config;
 
@@ -84,7 +81,7 @@ public abstract class OperationExecutorImpl_AbstractTest extends HazelcastTestSu
         nodeExtension = new DefaultNodeExtension(node);
         handlerFactory = new DummyOperationRunnerFactory();
 
-        responsePacketHandler = new DummyResponsePacketHandler();
+        responsePacketConsumer = new DummyResponsePacketConsumer();
     }
 
     protected OperationExecutorImpl initExecutor() {
@@ -105,13 +102,13 @@ public abstract class OperationExecutorImpl_AbstractTest extends HazelcastTestSu
         });
     }
 
-    class DummyResponsePacketHandler implements PacketHandler {
+    class DummyResponsePacketConsumer implements Consumer<Packet> {
 
         List<Packet> packets = synchronizedList(new LinkedList<Packet>());
         List<Response> responses = synchronizedList(new LinkedList<Response>());
 
         @Override
-        public void handle(Packet packet) throws Exception {
+        public void accept(Packet packet) {
             packets.add(packet);
             Response response = serializationService.toObject(packet);
             responses.add(response);

@@ -22,7 +22,6 @@ import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.internal.journal.EventJournalReader;
 import com.hazelcast.projection.Projections;
 import com.hazelcast.ringbuffer.ReadResultSet;
-import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.bounce.BounceMemberRule;
 import com.hazelcast.test.jitter.JitterRule;
 import org.junit.Before;
@@ -35,8 +34,7 @@ import static com.hazelcast.spi.properties.GroupProperty.EVENT_THREAD_COUNT;
 import static com.hazelcast.spi.properties.GroupProperty.GENERIC_OPERATION_THREAD_COUNT;
 import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
 import static com.hazelcast.spi.properties.GroupProperty.PARTITION_OPERATION_THREAD_COUNT;
-import static com.hazelcast.test.HazelcastTestSupport.warmUpPartitions;
-import static com.hazelcast.test.starter.Utils.rethrow;
+import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static org.junit.Assert.assertEquals;
 

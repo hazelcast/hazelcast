@@ -29,6 +29,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 
 import static com.hazelcast.test.JenkinsDetector.isOnJenkins;
+import static com.hazelcast.test.starter.HazelcastStarterUtils.rethrowGuardianException;
 import static java.io.File.separator;
 import static java.lang.String.format;
 import static org.apache.http.HttpStatus.SC_OK;
@@ -116,8 +117,8 @@ public class HazelcastVersionLocator {
         try {
             CloseableHttpResponse response = client.execute(request);
             if (response.getStatusLine().getStatusCode() != SC_OK) {
-                throw new GuardianException("Cannot download file from " + url + ", http response code: "
-                        + response.getStatusLine().getStatusCode());
+                throw new GuardianException("Cannot download file from " + url
+                        + ", http response code: " + response.getStatusLine().getStatusCode());
             }
             HttpEntity entity = response.getEntity();
             FileOutputStream fos = new FileOutputStream(targetFile);
@@ -126,7 +127,7 @@ public class HazelcastVersionLocator {
             targetFile.deleteOnExit();
             return targetFile;
         } catch (IOException e) {
-            throw Utils.rethrow(e);
+            throw rethrowGuardianException(e);
         } finally {
             try {
                 client.close();

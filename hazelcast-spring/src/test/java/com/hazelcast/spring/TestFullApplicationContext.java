@@ -23,6 +23,7 @@ import com.hazelcast.config.CRDTReplicationConfig;
 import com.hazelcast.config.CacheDeserializedValues;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
+import com.hazelcast.config.ClassFilter;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.CountDownLatchConfig;
 import com.hazelcast.config.DiscoveryConfig;
@@ -40,6 +41,7 @@ import com.hazelcast.config.HotRestartPersistenceConfig;
 import com.hazelcast.config.IcmpFailureDetectorConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.ItemListenerConfig;
+import com.hazelcast.config.JavaSerializationFilterConfig;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.LockConfig;
@@ -1280,5 +1282,31 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         int portCount = instance.getConfig().getNetworkConfig().getPortCount();
 
         assertEquals(42, portCount);
+    }
+
+    @Test
+    public void testJavaSerializationFilterConfig() {
+        JavaSerializationFilterConfig filterConfig = config.getSerializationConfig().getJavaSerializationFilterConfig();
+        assertNotNull(filterConfig);
+        assertTrue(filterConfig.isDefaultsDisabled());
+
+        ClassFilter blacklist = filterConfig.getBlacklist();
+        assertNotNull(blacklist);
+        assertEquals(1, blacklist.getClasses().size());
+        assertTrue(blacklist.getClasses().contains("com.acme.app.BeanComparator"));
+        assertEquals(0, blacklist.getPackages().size());
+        Set<String> prefixes = blacklist.getPrefixes();
+        assertTrue(prefixes.contains("a.dangerous.package."));
+        assertTrue(prefixes.contains("justaprefix"));
+        assertEquals(2, prefixes.size());
+
+        ClassFilter whitelist = filterConfig.getWhitelist();
+        assertNotNull(whitelist);
+        assertEquals(2, whitelist.getClasses().size());
+        assertTrue(whitelist.getClasses().contains("java.lang.String"));
+        assertTrue(whitelist.getClasses().contains("example.Foo"));
+        assertEquals(2, whitelist.getPackages().size());
+        assertTrue(whitelist.getPackages().contains("com.acme.app"));
+        assertTrue(whitelist.getPackages().contains("com.acme.app.subpkg"));
     }
 }

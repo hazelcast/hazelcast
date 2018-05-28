@@ -1367,8 +1367,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                     msc.setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.valueOf(
                             upperCaseInternal(getTextContent(maxSizePolicy))));
                 }
-                int size = sizeParser(value);
-                msc.setSize(size);
+                msc.setSize(getIntegerValue("max-size", value));
             } else if ("eviction-percentage".equals(nodeName)) {
                 mapConfig.setEvictionPercentage(getIntegerValue("eviction-percentage", value
                 ));
@@ -1829,29 +1828,6 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             predicateConfig.setSql(textContent);
         }
         queryCacheConfig.setPredicateConfig(predicateConfig);
-    }
-
-    private int sizeParser(String value) {
-        int size;
-        if (value.length() < 2) {
-            size = parseInt(value);
-        } else {
-            char last = value.charAt(value.length() - 1);
-            int type = 0;
-            if (last == 'g' || last == 'G') {
-                type = 1;
-            } else if (last == 'm' || last == 'M') {
-                type = 2;
-            }
-            if (type == 0) {
-                size = parseInt(value);
-            } else if (type == 1) {
-                size = parseInt(value.substring(0, value.length() - 1)) * THOUSAND_FACTOR;
-            } else {
-                size = parseInt(value.substring(0, value.length() - 1));
-            }
-        }
-        return size;
     }
 
     private MapStoreConfig createMapStoreConfig(Node node) {

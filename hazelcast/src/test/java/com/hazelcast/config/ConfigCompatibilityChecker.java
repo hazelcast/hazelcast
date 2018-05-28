@@ -1058,7 +1058,8 @@ class ConfigCompatibilityChecker {
                     && nullSafeEqual(c1.getByteOrder(), c2.getByteOrder())
                     && nullSafeEqual(c1.isEnableCompression(), c2.isEnableCompression())
                     && nullSafeEqual(c1.isEnableSharedObject(), c2.isEnableSharedObject())
-                    && nullSafeEqual(c1.isAllowUnsafe(), c2.isAllowUnsafe());
+                    && nullSafeEqual(c1.isAllowUnsafe(), c2.isAllowUnsafe())
+                    && nullSafeEqual(c1.getJavaSerializationFilterConfig(), c2.getJavaSerializationFilterConfig());
         }
 
         private static boolean isCompatible(GlobalSerializerConfig c1, GlobalSerializerConfig c2) {

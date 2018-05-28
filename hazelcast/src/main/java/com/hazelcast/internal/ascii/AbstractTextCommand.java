@@ -30,6 +30,11 @@ public abstract class AbstractTextCommand implements TextCommand {
     }
 
     @Override
+    public int getFrameLength() {
+        return 0;
+    }
+
+    @Override
     public TextCommandConstants.TextCommandType getType() {
         return type;
     }

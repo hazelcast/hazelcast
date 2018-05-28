@@ -103,7 +103,7 @@ public abstract class AbstractHazelcastCacheManager
 
         this.properties = properties == null ? new Properties() : new Properties(properties);
 
-        this.cacheNamePrefix = cacheNamePrefix();
+        this.cacheNamePrefix = getCacheNamePrefix();
 
         this.lifecycleListenerRegistrationId = registerLifecycleListener();
     }
@@ -374,7 +374,7 @@ public abstract class AbstractHazelcastCacheManager
      *
      * @return the calculated cache prefix.
      */
-    protected String cacheNamePrefix() {
+    protected String getCacheNamePrefix() {
         String cacheNamePrefix = getPrefix(
                 isDefaultURI ? null : uri,
                 isDefaultClassLoader ? null : getClassLoader());

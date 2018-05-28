@@ -31,7 +31,7 @@ import com.hazelcast.spi.ServiceNamespace;
 import com.hazelcast.spi.ServiceNamespaceAware;
 import com.hazelcast.spi.TaskScheduler;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.PartitionSpecificRunnable;
+import com.hazelcast.spi.impl.operationservice.PartitionTaskFactory;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
@@ -41,6 +41,7 @@ import com.hazelcast.util.scheduler.ScheduledEntry;
 import com.hazelcast.util.scheduler.ScheduledEntryProcessor;
 
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
@@ -431,19 +432,29 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
     private class AntiEntropyTask implements Runnable {
         @Override
         public void run() {
-            if (!node.nodeEngine.isRunning() || !node.getNodeExtension().isStartCompleted()
+            if (!node.isRunning() || !node.getNodeExtension().isStartCompleted()
                     || !partitionService.isMigrationAllowed()) {
                 return;
             }
+            nodeEngine.getOperationService().executeOnPartitions(new PartitionAntiEntropyTaskFactory(), getLocalPartitions());
+        }
 
-            for (InternalPartition partition : partitionStateManager.getPartitions()) {
-                if (!partition.isLocal()) {
-                    continue;
+        private BitSet getLocalPartitions() {
+            BitSet localPartitions = new BitSet(partitionService.getPartitionCount());
+
+            for (InternalPartition partition : partitionService.getInternalPartitions()) {
+                if (partition.isLocal()) {
+                    localPartitions.set(partition.getPartitionId());
                 }
-
-                PartitionSpecificRunnable r = new PartitionPrimaryReplicaAntiEntropyTask(nodeEngine, partition.getPartitionId());
-                nodeEngine.getOperationService().execute(r);
             }
+            return localPartitions;
+        }
+    }
+
+    private class PartitionAntiEntropyTaskFactory implements PartitionTaskFactory<Runnable> {
+        @Override
+        public Runnable create(int partitionId) {
+            return new PartitionPrimaryReplicaAntiEntropyTask(nodeEngine, partitionId);
         }
     }
 }

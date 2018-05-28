@@ -157,6 +157,13 @@ public abstract class Invocation implements OperationResponseHandler {
     Address invTarget;
     MemberImpl targetMember;
     /**
+     * The connection endpoint which operation is sent through to the {@link #invTarget}.
+     * It can be null if invocation is local or there's no established connection to the target yet.
+     * <p>
+     * Used mainly for logging/diagnosing the invocation.
+     */
+    Connection connection;
+    /**
      * Member list version read before operation is invoked on target. This version is used while notifying
      * invocation during a member left event.
      */
@@ -173,8 +180,13 @@ public abstract class Invocation implements OperationResponseHandler {
      */
     private final Runnable taskDoneCallback;
 
-    Invocation(Context context, Operation op, Runnable taskDoneCallback, int tryCount, long tryPauseMillis,
-               long callTimeoutMillis, boolean deserialize) {
+    Invocation(Context context,
+               Operation op,
+               Runnable taskDoneCallback,
+               int tryCount,
+               long tryPauseMillis,
+               long callTimeoutMillis,
+               boolean deserialize) {
         this.context = context;
         this.op = op;
         this.taskDoneCallback = taskDoneCallback;
@@ -576,8 +588,10 @@ public abstract class Invocation implements OperationResponseHandler {
     }
 
     private void doInvokeRemote() {
-        if (!context.outboundOperationHandler.send(op, invTarget)) {
-            notifyError(new RetryableIOException("Packet not sent to -> " + invTarget));
+        Connection connection = context.connectionManager.getOrConnect(invTarget);
+        this.connection = connection;
+        if (!context.outboundOperationHandler.send(op, connection)) {
+            notifyError(new RetryableIOException("Packet not sent to -> " + invTarget + " over " + connection));
         }
     }
 
@@ -692,14 +706,6 @@ public abstract class Invocation implements OperationResponseHandler {
 
     @Override
     public String toString() {
-        String connectionStr = null;
-        Address invTarget = this.invTarget;
-        if (invTarget != null) {
-            ConnectionManager connectionManager = context.connectionManager;
-            Connection connection = connectionManager.getConnection(invTarget);
-            connectionStr = connection == null ? null : connection.toString();
-        }
-
         return "Invocation{"
                 + "op=" + op
                 + ", tryCount=" + tryCount
@@ -714,7 +720,7 @@ public abstract class Invocation implements OperationResponseHandler {
                 + ", pendingResponse={" + pendingResponse + '}'
                 + ", backupsAcksExpected=" + backupsAcksExpected
                 + ", backupsAcksReceived=" + backupsAcksReceived
-                + ", connection=" + connectionStr
+                + ", connection=" + connection
                 + '}';
     }
 

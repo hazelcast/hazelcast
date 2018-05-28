@@ -28,9 +28,10 @@ import static com.hazelcast.internal.diagnostics.Diagnostics.PREFIX;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
- * A Diagnostics plugin that checks the quality of member/member heartbeats.
+ * A diagnostics plugin that checks the quality of member/member heartbeats.
  * <p>
- * Normally heartbeats are sent at a fixed frequency, but if there is a deviation in this frequency, it could indicate problems.
+ * Normally, heartbeats are sent at a fixed frequency, but if there is a
+ * deviation in this frequency, it could indicate problems.
  */
 public class MemberHeartbeatPlugin extends DiagnosticsPlugin {
 
@@ -41,9 +42,11 @@ public class MemberHeartbeatPlugin extends DiagnosticsPlugin {
      * <p>
      * This plugin will only output if there is the max deviation is exceeded.
      * <p>
-     * Setting the value high will lead to not seeing smaller deviations. E.g if this plugin runs every minute, then
-     * it will not see a lot of small deviations. The default of 10 seconds is ok since it will not generate too much
-     * overhead and noise and in most cases it is the big outliers we are interested in.
+     * Setting the value high will lead to not seeing smaller deviations. E.g
+     * if this plugin runs every minute, then it will not see a lot of small
+     * deviations. The default of 10 seconds is ok since it will not generate
+     * too much overhead and noise and in most cases it is the big outliers
+     * we are interested in.
      * <p>
      * If set to 0, the plugin is disabled.
      */
@@ -51,9 +54,11 @@ public class MemberHeartbeatPlugin extends DiagnosticsPlugin {
             PREFIX + ".member-heartbeat.period.seconds", 10, SECONDS);
 
     /**
-     * The maximum allowed deviation. E.g. if the interval of member/member heartbeats is 5 seconds, a 100% deviation
-     * will be fine with heartbeats arriving up to 5 seconds after they are expected. So a heartbeat arriving at 9 seconds
-     * will not be rendered, but a heartbeat received at 11 seconds, will be rendered.
+     * The maximum allowed deviation. E.g. if the interval of member/member
+     * heartbeats is 5 seconds, a 100% deviation will be fine with heartbeats
+     * arriving up to 5 seconds after they are expected. So a heartbeat arriving
+     * at 9 seconds will not be rendered, but a heartbeat received at 11 seconds,
+     * will be rendered.
      */
     public static final HazelcastProperty MAX_DEVIATION_PERCENTAGE
             = new HazelcastProperty(PREFIX + ".member-heartbeat.max-deviation-percentage", 100);

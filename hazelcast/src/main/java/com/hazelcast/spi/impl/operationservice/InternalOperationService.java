@@ -21,7 +21,9 @@ import com.hazelcast.internal.management.dto.SlowOperationDTO;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
+import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
 
+import java.util.BitSet;
 import java.util.List;
 
 /**
@@ -74,6 +76,23 @@ public interface InternalOperationService extends OperationService {
     int getGenericThreadCount();
 
     /**
+     * Should be called when an asynchronous operations not running on a operation thread is running.
+     *
+     * Primary purpose is to provide heartbeats
+     *
+     * @param op
+     */
+    void onStartAsyncOperation(Operation op);
+
+    /**
+     * Should be called when the asynchronous operation has completed.
+     *
+     * @param op
+     * @see #onStartAsyncOperation(Operation)
+     */
+    void onCompletionAsyncOperation(Operation op);
+
+    /**
      * Checks if this call is timed out. A timed out call is not going to be
      * executed.
      *
@@ -103,6 +122,20 @@ public interface InternalOperationService extends OperationService {
      * @param task the task to execute
      */
     void execute(PartitionSpecificRunnable task);
+
+    /**
+     * Executes for each of the partitions, a task created by the
+     * taskFactory.
+     *
+     * For more info see the
+     * {@link OperationExecutor#executeOnPartitions(PartitionTaskFactory, BitSet)}
+     *
+     * @param taskFactory the PartitionTaskFactory used to create
+     *                    operations.
+     * @param partitions  the partitions to execute an operation on.
+     * @throws NullPointerException if taskFactory or partitions is null.
+     */
+    void executeOnPartitions(PartitionTaskFactory taskFactory, BitSet partitions);
 
     /**
      * Returns information about long running operations.

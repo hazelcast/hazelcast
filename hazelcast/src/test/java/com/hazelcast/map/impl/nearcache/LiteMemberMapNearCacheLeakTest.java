@@ -29,7 +29,6 @@ import com.hazelcast.internal.nearcache.NearCacheTestContext;
 import com.hazelcast.internal.nearcache.NearCacheTestContextBuilder;
 import com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -46,8 +45,8 @@ import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 import java.util.Collection;
 
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.createNearCacheConfig;
+import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getBaseConfig;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getMapNearCacheManager;
-import static com.hazelcast.map.impl.nearcache.MapInvalidationListener.createInvalidationEventHandler;
 import static java.util.Arrays.asList;
 
 /**
@@ -88,8 +87,8 @@ public class LiteMemberMapNearCacheLeakTest extends AbstractNearCacheLeakTest<Da
     }
 
     @Override
-    protected <K, V> NearCacheTestContext<K, V, Data, String> createContext(int size) {
-        Config config = createConfig(false);
+    protected <K, V> NearCacheTestContext<K, V, Data, String> createContext() {
+        Config config = getConfig(false);
 
         HazelcastInstance member = hazelcastFactory.newHazelcastInstance(config);
         IMap<K, V> memberMap = member.getMap(DEFAULT_NEAR_CACHE_NAME);
@@ -97,7 +96,6 @@ public class LiteMemberMapNearCacheLeakTest extends AbstractNearCacheLeakTest<Da
 
         // wait until the initial load is done
         dataAdapter.waitUntilLoaded();
-        populateDataAdapter(dataAdapter, size);
 
         NearCacheTestContextBuilder<K, V, Data, String> builder = createNearCacheContextBuilder();
         return builder
@@ -106,9 +104,13 @@ public class LiteMemberMapNearCacheLeakTest extends AbstractNearCacheLeakTest<Da
                 .build();
     }
 
-    protected Config createConfig(boolean liteMember) {
+    @Override
+    protected Config getConfig() {
+        return getBaseConfig();
+    }
+
+    protected Config getConfig(boolean liteMember) {
         Config config = getConfig()
-                .setProperty(GroupProperty.PARTITION_COUNT.getName(), PARTITION_COUNT)
                 .setLiteMember(liteMember);
 
         MapConfig mapConfig = config.getMapConfig(DEFAULT_NEAR_CACHE_NAME);
@@ -120,7 +122,7 @@ public class LiteMemberMapNearCacheLeakTest extends AbstractNearCacheLeakTest<Da
     }
 
     private <K, V> NearCacheTestContextBuilder<K, V, Data, String> createNearCacheContextBuilder() {
-        Config configWithNearCache = createConfig(true);
+        Config configWithNearCache = getConfig(true);
 
         HazelcastInstance liteMember = hazelcastFactory.newHazelcastInstance(configWithNearCache);
         IMap<K, V> liteMemberMap = liteMember.getMap(DEFAULT_NEAR_CACHE_NAME);
@@ -135,7 +137,6 @@ public class LiteMemberMapNearCacheLeakTest extends AbstractNearCacheLeakTest<Da
                 .setNearCacheAdapter(new IMapDataStructureAdapter<K, V>(liteMemberMap))
                 .setNearCache(nearCache)
                 .setNearCacheManager(nearCacheManager)
-                .setInvalidationListener(createInvalidationEventHandler(liteMemberMap))
                 .setRepairingTask(repairingTask);
     }
 }

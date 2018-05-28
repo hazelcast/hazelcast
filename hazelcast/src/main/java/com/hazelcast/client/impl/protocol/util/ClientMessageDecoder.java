@@ -20,6 +20,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.internal.networking.nio.ChannelInboundHandlerWithCounters;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.util.collection.Long2ObjectHashMap;
+import com.hazelcast.util.function.Consumer;
 
 import java.nio.ByteBuffer;
 
@@ -34,12 +35,12 @@ public class ClientMessageDecoder extends ChannelInboundHandlerWithCounters {
 
     private final Long2ObjectHashMap<BufferBuilder> builderBySessionIdMap = new Long2ObjectHashMap<BufferBuilder>();
 
-    private final ClientMessageHandler messageHandler;
+    private final Consumer<ClientMessage> messageConsumer;
     private final Connection connection;
     private ClientMessage message = ClientMessage.create();
 
-    public ClientMessageDecoder(Connection connection, ClientMessageHandler messageHandler) {
-        this.messageHandler = messageHandler;
+    public ClientMessageDecoder(Connection connection, Consumer<ClientMessage> messageConsumer) {
+        this.messageConsumer = messageConsumer;
         this.connection = connection;
     }
 
@@ -93,7 +94,7 @@ public class ClientMessageDecoder extends ChannelInboundHandlerWithCounters {
 
     private void handleMessage(ClientMessage message) {
         message.index(message.getDataOffset());
-        messageHandler.handle(message, connection);
+        message.setConnection(connection);
+        messageConsumer.accept(message);
     }
-
 }

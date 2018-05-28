@@ -32,16 +32,19 @@ import com.hazelcast.nio.tcp.TcpIpConnectionManager;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
@@ -50,6 +53,9 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(NightlyTest.class)
 public class IOBalancerStressTest extends HazelcastTestSupport {
+
+    @Rule
+    public final OverridePropertyRule overridePropertyRule = OverridePropertyRule.set("hazelcast.io.load", "0");
 
     @Before
     @After
@@ -108,44 +114,44 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
         return pipelinesPerOwner;
     }
 
-    private void add(Map<NioThread, Set<MigratablePipeline>> pipelinesPerOwner, MigratablePipeline owner) {
-        Set<MigratablePipeline> pipelines = pipelinesPerOwner.get(owner.owner());
+    private void add(Map<NioThread, Set<MigratablePipeline>> pipelinesPerOwner, MigratablePipeline pipeline) {
+        NioThread pipelineOwner = pipeline.owner();
+        Set<MigratablePipeline> pipelines = pipelinesPerOwner.get(pipelineOwner);
         if (pipelines == null) {
             pipelines = new HashSet<MigratablePipeline>();
-            pipelinesPerOwner.put(owner.owner(), pipelines);
+            pipelinesPerOwner.put(pipelineOwner, pipelines);
         }
-        pipelines.add(owner);
+        pipelines.add(pipeline);
     }
 
     /**
      * A owner is balanced if:
      * <ul>
      * <li>it has 1 active handler (so a high event count)</li>
-     * <li>potentially 1 dead handler (duplicate connection), so event count should be low</li>
+     * <li>potentially several dead handlers (duplicate connection), on which event counts should be low</li>
      * </ul>
      */
     private void assertBalanced(NioThread owner, Set<MigratablePipeline> pipelines) {
         assertTrue("no pipelines were found for owner:" + owner, pipelines.size() > 0);
-        assertTrue("too many pipelines were found for owner:" + owner, pipelines.size() <= 2);
 
-        Iterator<MigratablePipeline> iterator = pipelines.iterator();
-        MigratablePipeline activePipeline = iterator.next();
-        if (pipelines.size() == 2) {
-            MigratablePipeline deadPipeline = iterator.next();
-            if (activePipeline.load() < deadPipeline.load()) {
-                MigratablePipeline tmp = deadPipeline;
-                deadPipeline = activePipeline;
-                activePipeline = tmp;
+        MigratablePipeline[] pipelinesArr = pipelines.toArray(new MigratablePipeline[0]);
+        Arrays.sort(pipelinesArr, new PipelineLoadComparator());
+
+        MigratablePipeline activePipeline = pipelinesArr[pipelinesArr.length - 1];
+        assertTrue("at least 1000 events should have been received by the active pipeline but was:"
+                + activePipeline.load(), activePipeline.load() > 1000);
+
+        if (pipelinesArr.length > 1) {
+            // owning thread has some dead pipelines
+            for (int i = 0; i < pipelinesArr.length - 1; i++) {
+                MigratablePipeline deadPipeline = pipelinesArr[i];
+
+                // the maximum number of events seen on a dead connection is 3.
+                // we assert that there are less than 10 just to be on the safe side
+                assertTrue("a dead pipeline at most 10 event should have been received, number of events received:"
+                        + deadPipeline.load(), deadPipeline.load() < 10);
             }
-
-            // the maximum number of events seen on the dead connection is 3. 10 should be save to assume the
-            // connection is dead.
-            assertTrue("at most 10 event should have been received, number of events received:"
-                    + deadPipeline.load(), deadPipeline.load() < 10);
         }
-
-        assertTrue("activeHandlerEvent count should be at least 1000, but was:" + activePipeline.load(),
-                activePipeline.load() > 1000);
     }
 
     private String debug(TcpIpConnectionManager connectionManager) {
@@ -176,5 +182,14 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
         }
 
         return sb.toString();
+    }
+
+    private static class PipelineLoadComparator implements Comparator<MigratablePipeline> {
+        @Override
+        public int compare(MigratablePipeline pipeline1, MigratablePipeline pipeline2) {
+            final long l1 = pipeline1.load();
+            final long l2 = pipeline2.load();
+            return (l1 < l2) ? -1 : ((l1 == l2) ? 0 : 1);
+        }
     }
 }

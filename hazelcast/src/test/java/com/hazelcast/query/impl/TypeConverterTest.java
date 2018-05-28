@@ -19,6 +19,7 @@ package com.hazelcast.query.impl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.hamcrest.CoreMatchers;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -27,6 +28,9 @@ import org.junit.runner.RunWith;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -340,5 +344,56 @@ public class TypeConverterTest {
         thrown.expect(IllegalArgumentException.class);
 
         TypeConverters.CHAR_CONVERTER.convert(value);
+    }
+
+    @Test
+    public void testSQLDateConverter_whenNumberPassed() throws ParseException {
+        SimpleDateFormat formatter = new SimpleDateFormat("dd-MMM-yyyy");
+        Date date = formatter.parse("12-December-2012");
+
+        Long millis = date.getTime();
+        java.sql.Date expected = new java.sql.Date(millis);
+        Comparable actual = TypeConverters.SQL_DATE_CONVERTER.convert(millis);
+
+        assertThat(actual, instanceOf(java.sql.Date.class));
+        assertThat(actual, CoreMatchers.<Comparable>is(expected));
+    }
+
+    @Test
+    public void testDateConverter_whenNumberPassed() {
+        Date expected = new Date(42);
+        Long millis = expected.getTime();
+        Comparable actual = TypeConverters.DATE_CONVERTER.convert(millis);
+
+        assertThat(actual, allOf(
+                is(instanceOf(Date.class)),
+                is(equalTo((Comparable) expected))
+        ));
+    }
+
+    @Test
+    public void testShortConverter_whenNumberPassed() {
+        Short expected = 42;
+        Long value = Long.valueOf(expected);
+
+        Comparable actual = TypeConverters.SHORT_CONVERTER.convert(value);
+
+        assertThat(actual, allOf(
+                is(instanceOf(Short.class)),
+                is(equalTo((Comparable) expected))
+        ));
+    }
+
+    @Test
+    public void testByteConverter_whenNumberPassed() {
+        Byte expected = 0x42;
+        Long value = Long.valueOf(expected);
+
+        Comparable actual = TypeConverters.BYTE_CONVERTER.convert(value);
+
+        assertThat(actual, allOf(
+                is(instanceOf(Byte.class)),
+                is(equalTo((Comparable) expected))
+        ));
     }
 }

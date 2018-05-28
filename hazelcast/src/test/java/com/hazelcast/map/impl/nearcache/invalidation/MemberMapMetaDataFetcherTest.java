@@ -43,6 +43,7 @@ import org.junit.runner.RunWith;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
 
+import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getBaseConfig;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.util.RandomPicker.getInt;
 import static org.junit.Assert.assertEquals;
@@ -51,7 +52,7 @@ import static org.junit.Assert.assertEquals;
 @Category({QuickTest.class, ParallelTest.class})
 public class MemberMapMetaDataFetcherTest extends HazelcastTestSupport {
 
-    TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory();
+    private TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory();
 
     @After
     public void tearDown() throws Exception {
@@ -59,7 +60,7 @@ public class MemberMapMetaDataFetcherTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void fetches_sequence_and_uuid() throws Exception {
+    public void fetches_sequence_and_uuid() {
         String mapName = "test";
         int partition = 1;
         long givenSequence = getInt(1, Integer.MAX_VALUE);
@@ -80,8 +81,9 @@ public class MemberMapMetaDataFetcherTest extends HazelcastTestSupport {
     }
 
     private RepairingTask getRepairingTask(String mapName, int partition, long givenSequence, UUID givenUuid) {
-        Config config = new Config();
+        Config config = getBaseConfig();
         config.getMapConfig(mapName).setNearCacheConfig(new NearCacheConfig());
+
         HazelcastInstance member = factory.newHazelcastInstance(config);
         MapService mapService = getNodeEngineImpl(member).getService(MapService.SERVICE_NAME);
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();

@@ -21,7 +21,12 @@ import com.hazelcast.config.JobTrackerConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.QuorumConfig;
 import com.hazelcast.config.WanReplicationConfig;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.lang.reflect.Method;
 import java.util.HashSet;
@@ -31,6 +36,8 @@ import static com.hazelcast.internal.dynamicconfig.ClusterWideConfigurationServi
 import static java.lang.String.format;
 import static org.junit.Assert.assertTrue;
 
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class DynamicConfigVersionTest {
 
     // config classes not supported by dynamic data structure config
@@ -59,6 +66,5 @@ public class DynamicConfigVersionTest {
                 assertTrue(format("Config class %s does not have a minimum Version set", klass.getName()), isMappedToVersion);
             }
         }
-
     }
 }

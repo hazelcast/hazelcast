@@ -22,9 +22,11 @@ import com.hazelcast.cache.impl.PreJoinCacheConfig;
 import com.hazelcast.cache.impl.merge.policy.CacheMergePolicyProvider;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheCreateConfigCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
+import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.LegacyCacheConfig;
+import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
@@ -42,14 +44,15 @@ import static com.hazelcast.internal.config.MergePolicyValidator.checkMergePolic
  * @see ICacheService#createCacheConfigOnAllMembers(PreJoinCacheConfig)
  */
 public class CacheCreateConfigMessageTask
-        extends AbstractCallableMessageTask<CacheCreateConfigCodec.RequestParameters> {
+        extends AbstractMessageTask<CacheCreateConfigCodec.RequestParameters>
+        implements ExecutionCallback {
 
     public CacheCreateConfigMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected Object call() throws Exception {
+    protected void processMessage() {
         CacheConfig cacheConfig = extractCacheConfigFromMessage();
         CacheService cacheService = getService(CacheService.SERVICE_NAME);
 
@@ -61,13 +64,15 @@ public class CacheCreateConfigMessageTask
             checkMergePolicySupportsInMemoryFormat(cacheConfig.getName(), mergePolicy, cacheConfig.getInMemoryFormat(),
                     nodeEngine.getClusterService().getClusterVersion(), true, logger);
 
-            cacheService.createCacheConfigOnAllMembers(PreJoinCacheConfig.of(cacheConfig));
+            ICompletableFuture future = cacheService.createCacheConfigOnAllMembersAsync(PreJoinCacheConfig.of(cacheConfig));
+            future.andThen(this);
+        } else {
+            sendResponse(null);
         }
-        return null;
     }
 
     private CacheConfig extractCacheConfigFromMessage() {
-        int clientVersion = getClientVersion();
+        int clientVersion = endpoint.getClientVersion();
         if (BuildInfo.UNKNOWN_HAZELCAST_VERSION == clientVersion) {
             boolean compatibilityEnabled = nodeEngine.getProperties().getBoolean(GroupProperty.COMPATIBILITY_3_6_CLIENT_ENABLED);
             if (compatibilityEnabled) {
@@ -118,9 +123,19 @@ public class CacheCreateConfigMessageTask
         return null;
     }
 
+    @Override
+    public void onResponse(Object response) {
+        sendResponse(response);
+    }
+
+    @Override
+    public void onFailure(Throwable t) {
+        handleProcessingFailure(t);
+    }
+
     private Data serializeCacheConfig(Object response) {
         Data responseData = null;
-        if (BuildInfo.UNKNOWN_HAZELCAST_VERSION == getClientVersion()) {
+        if (BuildInfo.UNKNOWN_HAZELCAST_VERSION == endpoint.getClientVersion()) {
             boolean compatibilityEnabled = nodeEngine.getProperties().getBoolean(GroupProperty.COMPATIBILITY_3_6_CLIENT_ENABLED);
             if (compatibilityEnabled) {
                 responseData = nodeEngine.toData(response == null ? null : new LegacyCacheConfig((CacheConfig) response));

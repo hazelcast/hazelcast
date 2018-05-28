@@ -27,14 +27,13 @@ public class AddressConstructor extends AbstractStarterObjectConstructor {
     }
 
     @Override
-    Object createNew0(Object delegate)
-            throws Exception {
+    Object createNew0(Object delegate) throws Exception {
         // obtain reference to constructor Address(String host, int port)
         Constructor<?> constructor = targetClass.getDeclaredConstructor(String.class, Integer.TYPE);
 
         Object host = getFieldValueReflectively(delegate, "host");
         Integer port = (Integer) getFieldValueReflectively(delegate, "port");
-        Object[] args = new Object[]{host, port.intValue()};
+        Object[] args = new Object[]{host, port};
 
         return constructor.newInstance(args);
     }

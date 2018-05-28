@@ -41,8 +41,6 @@ import java.util.List;
 
 import static com.hazelcast.collection.impl.CollectionTestUtil.getBackupList;
 import static java.util.Arrays.asList;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -59,8 +57,7 @@ import static org.junit.Assert.fail;
 @Category({QuickTest.class, ParallelTest.class})
 public class ListSplitBrainTest extends SplitBrainTestSupport {
 
-    private static final int INITIAL_COUNT = 10;
-    private static final int NEW_ITEMS = 15;
+    private static final int ITEM_COUNT = 25;
 
     @Parameters(name = "mergePolicy:{0}")
     public static Collection<Object> parameters() {
@@ -68,7 +65,9 @@ public class ListSplitBrainTest extends SplitBrainTestSupport {
                 DiscardMergePolicy.class,
                 PassThroughMergePolicy.class,
                 PutIfAbsentMergePolicy.class,
-                MergeIntegerValuesMergePolicy.class,
+                RemoveValuesMergePolicy.class,
+                ReturnPiCollectionMergePolicy.class,
+                MergeCollectionOfIntegerValuesMergePolicy.class,
         });
     }
 
@@ -102,24 +101,6 @@ public class ListSplitBrainTest extends SplitBrainTestSupport {
         return config;
     }
 
-    protected void onBeforeSplitBrainCreated(HazelcastInstance[] instances) {
-        IList<Object> list = instances[0].getList(listNameA);
-        for (int i = 0; i < INITIAL_COUNT; i++) {
-            list.add("item" + i);
-        }
-
-        waitAllForSafeState(instances);
-
-        int partitionId = ((AbstractCollectionProxyImpl) list).getPartitionId();
-        HazelcastInstance backupInstance = getFirstBackupInstance(instances, partitionId);
-        List<Object> backupList = getBackupList(backupInstance, listNameA);
-
-        assertEquals("backupList should contain " + INITIAL_COUNT + " items", INITIAL_COUNT, backupList.size());
-        for (int i = 0; i < INITIAL_COUNT; i++) {
-            assertTrue("backupList should contain item" + i + " " + toString(backupList), backupList.contains("item" + i));
-        }
-    }
-
     @Override
     protected void onAfterSplitBrainCreated(HazelcastInstance[] firstBrain, HazelcastInstance[] secondBrain) {
         mergeLifecycleListener = new MergeLifecycleListener(secondBrain.length);
@@ -131,9 +112,6 @@ public class ListSplitBrainTest extends SplitBrainTestSupport {
         listA2 = secondBrain[0].getList(listNameA);
 
         listB2 = secondBrain[0].getList(listNameB);
-        for (int i = 0; i < INITIAL_COUNT; i++) {
-            listB2.add("item" + i);
-        }
 
         if (mergePolicyClass == DiscardMergePolicy.class) {
             afterSplitDiscardMergePolicy();
@@ -141,7 +119,11 @@ public class ListSplitBrainTest extends SplitBrainTestSupport {
             afterSplitPassThroughMergePolicy();
         } else if (mergePolicyClass == PutIfAbsentMergePolicy.class) {
             afterSplitPutIfAbsentMergePolicy();
-        } else if (mergePolicyClass == MergeIntegerValuesMergePolicy.class) {
+        } else if (mergePolicyClass == RemoveValuesMergePolicy.class) {
+            afterSplitRemoveValuesMergePolicy();
+        } else if (mergePolicyClass == ReturnPiCollectionMergePolicy.class) {
+            afterSplitReturnPiCollectionMergePolicy();
+        } else if (mergePolicyClass == MergeCollectionOfIntegerValuesMergePolicy.class) {
             afterSplitCustomMergePolicy();
         } else {
             fail();
@@ -165,7 +147,11 @@ public class ListSplitBrainTest extends SplitBrainTestSupport {
             afterMergePassThroughMergePolicy();
         } else if (mergePolicyClass == PutIfAbsentMergePolicy.class) {
             afterMergePutIfAbsentMergePolicy();
-        } else if (mergePolicyClass == MergeIntegerValuesMergePolicy.class) {
+        } else if (mergePolicyClass == RemoveValuesMergePolicy.class) {
+            afterMergeRemoveValuesMergePolicy();
+        } else if (mergePolicyClass == ReturnPiCollectionMergePolicy.class) {
+            afterMergeReturnPiCollectionMergePolicy();
+        } else if (mergePolicyClass == MergeCollectionOfIntegerValuesMergePolicy.class) {
             afterMergeCustomMergePolicy();
         } else {
             fail();
@@ -173,105 +159,122 @@ public class ListSplitBrainTest extends SplitBrainTestSupport {
     }
 
     private void afterSplitDiscardMergePolicy() {
-        // we should have these items in the merged listA, since they are added in both clusters
-        for (int i = INITIAL_COUNT; i < INITIAL_COUNT + NEW_ITEMS; i++) {
+        for (int i = 0; i < ITEM_COUNT; i++) {
             listA1.add("item" + i);
-            listA2.add("item" + i);
-        }
-
-        // we should not have these items in the merged lists, since they are in the smaller cluster only
-        for (int i = 0; i < NEW_ITEMS; i++) {
             listA2.add("lostItem" + i);
+
             listB2.add("lostItem" + i);
         }
     }
 
     private void afterMergeDiscardMergePolicy() {
-        assertListContent(listA1, false);
-        assertListContent(listA2, false);
-        assertListContent(backupList, false);
+        assertListContent(listA1);
+        assertListContent(listA2);
+        assertListContent(backupList);
 
-        assertTrue(listB1.isEmpty());
-        assertTrue(listB2.isEmpty());
+        assertListContent(listB1, 0);
+        assertListContent(listB2, 0);
     }
 
     private void afterSplitPassThroughMergePolicy() {
-        for (int i = INITIAL_COUNT; i < INITIAL_COUNT + NEW_ITEMS; i++) {
-            listA1.add("item" + i);
-        }
-
-        // we should not lose the additional items from listA2 or the new listB2
-        for (int i = INITIAL_COUNT; i < INITIAL_COUNT + NEW_ITEMS * 2; i++) {
+        for (int i = 0; i < ITEM_COUNT; i++) {
+            listA1.add("lostItem" + i);
             listA2.add("item" + i);
+
             listB2.add("item" + i);
         }
     }
 
     private void afterMergePassThroughMergePolicy() {
-        assertListContent(listA1, true);
-        assertListContent(listA2, true);
-        assertListContent(backupList, true);
+        assertListContent(listA1);
+        assertListContent(listA2);
+        assertListContent(backupList);
 
-        assertListContent(listB1, true);
-        assertListContent(listB2, true);
+        assertListContent(listB1);
+        assertListContent(listB2);
     }
 
     private void afterSplitPutIfAbsentMergePolicy() {
-        for (int i = INITIAL_COUNT; i < INITIAL_COUNT + NEW_ITEMS; i++) {
+        for (int i = 0; i < ITEM_COUNT; i++) {
             listA1.add("item" + i);
-        }
+            listA2.add("lostItem" + i);
 
-        // we should not lose the additional items from listA2 or the new listB2
-        for (int i = INITIAL_COUNT; i < INITIAL_COUNT + NEW_ITEMS * 2; i++) {
-            listA2.add("item" + i);
             listB2.add("item" + i);
         }
     }
 
     private void afterMergePutIfAbsentMergePolicy() {
-        assertListContent(listA1, true);
-        assertListContent(listA2, true);
-        assertListContent(backupList, true);
+        assertListContent(listA1);
+        assertListContent(listA2);
+        assertListContent(backupList);
 
-        assertListContent(listB1, true);
-        assertListContent(listB2, true);
+        assertListContent(listB1);
+        assertListContent(listB2);
+    }
+
+    private void afterSplitRemoveValuesMergePolicy() {
+        for (int i = 0; i < ITEM_COUNT; i++) {
+            listA1.add("lostItem" + i);
+            listA2.add("lostItem" + i);
+
+            listB2.add("lostItem" + i);
+        }
+    }
+
+    private void afterMergeRemoveValuesMergePolicy() {
+        assertListContent(listA1, 0);
+        assertListContent(listA2, 0);
+        assertListContent(backupList, 0);
+
+        assertListContent(listB1, 0);
+        assertListContent(listB2, 0);
+    }
+
+    private void afterSplitReturnPiCollectionMergePolicy() {
+        for (int i = 0; i < ITEM_COUNT; i++) {
+            listA1.add("lostItem" + i);
+            listA2.add("lostItem" + i);
+
+            listB2.add("lostItem" + i);
+        }
+    }
+
+    private void afterMergeReturnPiCollectionMergePolicy() {
+        assertPiCollection(listA1);
+        assertPiCollection(listA2);
+        assertPiCollection(backupList);
+
+        assertPiCollection(listB1);
+        assertPiCollection(listB2);
     }
 
     private void afterSplitCustomMergePolicy() {
-        for (int i = 0; i < NEW_ITEMS; i++) {
+        for (int i = 0; i < ITEM_COUNT; i++) {
             listA2.add(i);
             listA2.add("lostItem" + i);
         }
     }
 
     private void afterMergeCustomMergePolicy() {
-        int expectedSize = INITIAL_COUNT + NEW_ITEMS;
-        assertEquals("listA1 should contain " + expectedSize + " items", expectedSize, listA1.size());
-        assertEquals("listA2 should contain " + expectedSize + " items", expectedSize, listA2.size());
-        assertEquals("backupList should contain " + expectedSize + " items " + backupList, expectedSize, backupList.size());
-
-        for (int i = 0; i < INITIAL_COUNT; i++) {
-            assertTrue("listA1 should contain 'item" + i + "' " + toString(listA1), listA1.contains("item" + i));
-            assertTrue("listA2 should contain 'item" + i + "' " + toString(listA2), listA2.contains("item" + i));
-            assertTrue("backupList should contain 'item" + i + "' " + backupList, backupList.contains("item" + i));
-        }
-        for (int i = 0; i < NEW_ITEMS; i++) {
-            assertTrue("listA1 should contain '" + i + "'", listA1.contains(i));
-            assertTrue("listA2 should contain '" + i + "'", listA2.contains(i));
-            assertTrue("backupList should contain '" + i + "'", backupList.contains(i));
-
-            assertFalse("listA1 should not contain 'lostItem" + i + "'", listA1.contains("lostItem" + i));
-            assertFalse("list2A should not contain 'lostItem" + i + "'", listA2.contains("lostItem" + i));
-            assertFalse("backupList should not contain 'lostItem" + i + "'", backupList.contains("lostItem" + i));
-        }
+        assertListContent(listA1, ITEM_COUNT);
+        assertListContent(listA2, ITEM_COUNT);
+        assertListContent(backupList, ITEM_COUNT);
     }
 
-    private static void assertListContent(List<Object> list, boolean hasMergedItems) {
-        int expectedSize = INITIAL_COUNT + NEW_ITEMS * (hasMergedItems ? 2 : 1);
-        assertEquals("list should contain " + expectedSize + " items " + toString(list), expectedSize, list.size());
+    private static void assertListContent(List<Object> list) {
+        assertListContent(list, ITEM_COUNT, "item");
+    }
 
-        for (int i = 0; i < INITIAL_COUNT + NEW_ITEMS * (hasMergedItems ? 2 : 1); i++) {
-            assertTrue("list should contain item" + i + " " + toString(list), list.contains("item" + i));
+    private static void assertListContent(List<Object> list, int expectedSize) {
+        assertListContent(list, expectedSize, null);
+    }
+
+    private static void assertListContent(List<Object> list, int expectedSize, String prefix) {
+        assertEqualsStringFormat("list " + toString(list) + " should contain %d items, but was %d ", expectedSize, list.size());
+
+        for (int i = 0; i < expectedSize; i++) {
+            Object expectedValue = prefix == null ? i : prefix + i;
+            assertTrue("list " + toString(list) + " should contain " + expectedValue, list.contains(expectedValue));
         }
     }
 }

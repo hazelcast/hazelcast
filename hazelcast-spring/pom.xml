@@ -25,12 +25,12 @@
     <parent>
         <groupId>com.hazelcast</groupId>
         <artifactId>hazelcast-root</artifactId>
-        <version>3.10-SNAPSHOT</version>
+        <version>3.11-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
     <properties>
-        <!-- needed for checkstyle/findbugs -->
+        <!-- needed for CheckStyle -->
         <main.basedir>${project.parent.basedir}</main.basedir>
 
         <org.springframework.version>4.3.0.RELEASE</org.springframework.version>

@@ -112,7 +112,7 @@ public class ConfigXmlGenerator {
                 .append("xmlns=\"http://www.hazelcast.com/schema/config\"\n")
                 .append("xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n")
                 .append("xsi:schemaLocation=\"http://www.hazelcast.com/schema/config ")
-                .append("http://www.hazelcast.com/schema/config/hazelcast-config-3.10.xsd\">");
+                .append("http://www.hazelcast.com/schema/config/hazelcast-config-3.11.xsd\">");
         gen.open("group")
                 .node("name", config.getGroupConfig().getName())
                 .node("password", getOrMaskValue(config.getGroupConfig().getPassword()))
@@ -401,8 +401,15 @@ public class ConfigXmlGenerator {
             }
             gen.close();
         }
-        gen.node("check-class-def-errors", c.isCheckClassDefErrors())
-                .close();
+        gen.node("check-class-def-errors", c.isCheckClassDefErrors());
+        JavaSerializationFilterConfig javaSerializationFilterConfig = c.getJavaSerializationFilterConfig();
+        if (javaSerializationFilterConfig != null) {
+            gen.open("java-serialization-filter", "defaults-disabled", javaSerializationFilterConfig.isDefaultsDisabled());
+            appendFilterList(gen, "blacklist", javaSerializationFilterConfig.getBlacklist());
+            appendFilterList(gen, "whitelist", javaSerializationFilterConfig.getWhitelist());
+            gen.close();
+        }
+        gen.close();
     }
 
     private void tenantControlXmlGenerator(XmlGenerator gen, Config config) {
@@ -1406,6 +1413,23 @@ public class ConfigXmlGenerator {
             String className = value instanceof String ? (String) value : value.getClass().getName();
             gen.node(elementName, className, "factory-id", factory.getKey().toString());
         }
+    }
+
+    private static void appendFilterList(XmlGenerator gen, String listName, ClassFilter classFilterList) {
+        if (classFilterList.isEmpty()) {
+            return;
+        }
+        gen.open(listName);
+        for (String className : classFilterList.getClasses()) {
+            gen.node("class", className);
+        }
+        for (String packageName : classFilterList.getPackages()) {
+            gen.node("package", packageName);
+        }
+        for (String prefix : classFilterList.getPrefixes()) {
+            gen.node("prefix", prefix);
+        }
+        gen.close();
     }
 
     private static final class XmlGenerator {

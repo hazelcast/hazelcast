@@ -21,9 +21,6 @@ import java.lang.reflect.Constructor;
 import static com.hazelcast.test.starter.HazelcastProxyFactory.proxyArgumentsIfNeeded;
 import static com.hazelcast.test.starter.ReflectionUtils.getFieldValueReflectively;
 
-/**
- *
- */
 public class LifecycleEventConstructor extends AbstractStarterObjectConstructor {
 
     public LifecycleEventConstructor(Class<?> targetClass) {
@@ -31,8 +28,7 @@ public class LifecycleEventConstructor extends AbstractStarterObjectConstructor 
     }
 
     @Override
-    Object createNew0(Object delegate)
-            throws Exception {
+    Object createNew0(Object delegate) throws Exception {
         ClassLoader starterClassLoader = targetClass.getClassLoader();
         Class<?> stateClass = starterClassLoader.loadClass("com.hazelcast.core.LifecycleEvent$LifecycleState");
         Constructor<?> constructor = targetClass.getDeclaredConstructor(stateClass);

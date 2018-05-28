@@ -333,29 +333,11 @@ public class NioThread extends Thread implements OperationHostileThread {
             if (task == null) {
                 break;
             }
-            executeTask(task);
+            task.run();
+            completedTaskCount.inc();
             tasksProcessed = true;
         }
         return tasksProcessed;
-    }
-
-    private void executeTask(Runnable task) {
-        completedTaskCount.inc();
-
-        NioThread target = getTargetIOThread(task);
-        if (target == this) {
-            task.run();
-        } else {
-            target.addTaskAndWakeup(task);
-        }
-    }
-
-    private NioThread getTargetIOThread(Runnable task) {
-        if (task instanceof MigratablePipeline) {
-            return ((MigratablePipeline) task).owner();
-        } else {
-            return this;
-        }
     }
 
     private void handleSelectionKeys() {
@@ -364,7 +346,6 @@ public class NioThread extends Thread implements OperationHostileThread {
         while (it.hasNext()) {
             SelectionKey sk = it.next();
             it.remove();
-
             handleSelectionKey(sk);
         }
     }
@@ -382,7 +363,7 @@ public class NioThread extends Thread implements OperationHostileThread {
             eventCount.inc();
             pipeline.process();
         } catch (Throwable t) {
-            pipeline.onFailure(t);
+            pipeline.onError(t);
         }
     }
 

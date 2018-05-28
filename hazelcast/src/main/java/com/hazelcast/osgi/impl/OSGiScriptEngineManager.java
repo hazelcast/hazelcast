@@ -19,6 +19,7 @@ package com.hazelcast.osgi.impl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.ClassLoaderUtil;
+import com.hazelcast.nio.IOUtil;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 
@@ -309,16 +310,20 @@ public class OSGiScriptEngineManager extends ScriptEngineManager {
             }
             while (urls.hasMoreElements()) {
                 URL u = (URL) urls.nextElement();
-                BufferedReader reader = new BufferedReader(
-                        new InputStreamReader(u.openStream(), "UTF-8"));
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    line = line.trim();
-                    if (!line.startsWith("#") && line.length() > 0) {
-                        factoryCandidates.add(line);
+                BufferedReader reader = null;
+                try {
+                    reader = new BufferedReader(
+                            new InputStreamReader(u.openStream(), "UTF-8"));
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        line = line.trim();
+                        if (!line.startsWith("#") && line.length() > 0) {
+                            factoryCandidates.add(line);
+                        }
                     }
+                } finally {
+                    IOUtil.closeResource(reader);
                 }
-                reader.close();
             }
         }
 

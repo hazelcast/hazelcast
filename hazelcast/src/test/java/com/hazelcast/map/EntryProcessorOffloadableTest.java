@@ -47,6 +47,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -54,7 +55,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.config.InMemoryFormat.BINARY;
@@ -952,13 +952,13 @@ public class EntryProcessorOffloadableTest extends HazelcastTestSupport {
     @Test
     public void testHeartBeatsComingWhenEntryPropcessorOffloaded() throws Exception {
         final String key = generateKeyOwnedBy(instances[1]);
-        SimpleValue givenValue = new SimpleValue(1);
+        TimestampedSimpleValue givenValue = new TimestampedSimpleValue(1);
 
         final IMap<Object, Object> map = instances[0].getMap(MAP_NAME);
         map.put(key, givenValue);
 
         final Address instance1Address = instances[1].getCluster().getLocalMember().getAddress();
-        final AtomicInteger heartBeatsCounter = new AtomicInteger(0);
+        final List<Long> heartBeatTimestamps = new LinkedList<Long>();
         Thread hbMonitorThread = new Thread() {
             public void run() {
                 NodeEngine nodeEngine = HazelcastTestSupport.getNodeEngineImpl(instances[0]);
@@ -971,28 +971,37 @@ public class EntryProcessorOffloadableTest extends HazelcastTestSupport {
                         long newlastbeat = timestamp.get();
                         if (lastbeat != newlastbeat) {
                             lastbeat = newlastbeat;
-                            heartBeatsCounter.incrementAndGet();
+                            heartBeatTimestamps.add(newlastbeat);
                         }
                     }
                     HazelcastTestSupport.sleepMillis(100);
                 }
             }
         };
+
         final int secondsToRun = 8;
-        final int expectedHeartBeats = secondsToRun / HEARTBEATS_INTERVAL_SEC;
         try {
             hbMonitorThread.start();
             map.executeOnKey(key, new TimeConsumingOffloadableTask(secondsToRun));
         } finally {
             hbMonitorThread.interrupt();
         }
-        int hbCount = heartBeatsCounter.get();
-        assertTrue("At least " + expectedHeartBeats + " heartBeats expected, " + hbCount + " came.",
-                hbCount >= expectedHeartBeats);
+
+        int heartBeatCount = 0;
+        TimestampedSimpleValue updatedValue = (TimestampedSimpleValue) map.get(key);
+        for (long heartBeatTimestamp : heartBeatTimestamps) {
+            if (heartBeatTimestamp > updatedValue.processStart
+                    && heartBeatTimestamp < updatedValue.processEnd) {
+                heartBeatCount++;
+            }
+        }
+
+        assertTrue("Heartbeats should be received while offloadable entry processor is running", heartBeatCount > 0);
     }
 
-    private static class TimeConsumingOffloadableTask implements EntryProcessor<String, SimpleValue>, Offloadable,
-            EntryBackupProcessor<String, SimpleValue>, Serializable {
+    private static class TimeConsumingOffloadableTask implements EntryProcessor<String, TimestampedSimpleValue>, Offloadable,
+                                                                 EntryBackupProcessor<String, TimestampedSimpleValue>,
+                                                                 Serializable {
 
         private final int secondsToWork;
 
@@ -1001,24 +1010,28 @@ public class EntryProcessorOffloadableTest extends HazelcastTestSupport {
         }
 
         @Override
-        public Object process(final Map.Entry<String, SimpleValue> entry) {
-            final SimpleValue value = entry.getValue();
+        public Object process(final Map.Entry<String, TimestampedSimpleValue> entry) {
+            final TimestampedSimpleValue value = entry.getValue();
+            value.processStart = System.currentTimeMillis();
             long endTime = TimeUnit.SECONDS.toMillis(secondsToWork) + System.currentTimeMillis() + 500L;
             do {
                 HazelcastTestSupport.sleepMillis(200);
                 value.i++;
                 entry.setValue(value);
             } while (System.currentTimeMillis() < endTime);
+            value.i = 1;
+            entry.setValue(value);
+            value.processEnd = System.currentTimeMillis();
             return null;
         }
 
         @Override
-        public EntryBackupProcessor<String, SimpleValue> getBackupProcessor() {
+        public EntryBackupProcessor<String, TimestampedSimpleValue> getBackupProcessor() {
             return this;
         }
 
         @Override
-        public void processBackup(Map.Entry<String, SimpleValue> entry) {
+        public void processBackup(Map.Entry<String, TimestampedSimpleValue> entry) {
             process(entry);
         }
 
@@ -1031,7 +1044,7 @@ public class EntryProcessorOffloadableTest extends HazelcastTestSupport {
 
     private static class SimpleValue implements Serializable {
 
-        public int i;
+        int i;
 
         SimpleValue() {
         }
@@ -1064,5 +1077,17 @@ public class EntryProcessorOffloadableTest extends HazelcastTestSupport {
         }
     }
 
+    private static class TimestampedSimpleValue extends SimpleValue {
+        private long processStart;
+        private long processEnd;
+
+        public TimestampedSimpleValue() {
+            super();
+        }
+
+        public TimestampedSimpleValue(int i) {
+            super(i);
+        }
+    }
 
 }

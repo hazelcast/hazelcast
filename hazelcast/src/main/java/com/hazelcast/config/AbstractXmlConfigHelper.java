@@ -180,7 +180,7 @@ public abstract class AbstractXmlConfigHelper {
 
         // schema validation
         SchemaFactory schemaFactory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
-        Schema schema = schemaFactory.newSchema(schemas.toArray(new Source[schemas.size()]));
+        Schema schema = schemaFactory.newSchema(schemas.toArray(new Source[0]));
         Validator validator = schema.newValidator();
         try {
             SAXSource source = new SAXSource(new InputSource(is));
@@ -449,6 +449,8 @@ public abstract class AbstractXmlConfigHelper {
                 fillPortableFactories(child, serializationConfig);
             } else if ("serializers".equals(name)) {
                 fillSerializers(child, serializationConfig);
+            } else if ("java-serialization-filter".equals(name)) {
+                fillJavaSerializationFilter(child, serializationConfig);
             }
         }
         return serializationConfig;
@@ -520,6 +522,39 @@ public abstract class AbstractXmlConfigHelper {
     }
 
     @SuppressFBWarnings("DM_BOXED_PRIMITIVE_FOR_PARSING")
+    protected void fillJavaSerializationFilter(final Node node, SerializationConfig serializationConfig) {
+        JavaSerializationFilterConfig filterConfig = new JavaSerializationFilterConfig();
+        serializationConfig.setJavaSerializationFilterConfig(filterConfig);
+        Node defaultsDisabledNode = node.getAttributes().getNamedItem("defaults-disabled");
+        boolean defaultsDisabled = defaultsDisabledNode != null && getBooleanValue(getTextContent(defaultsDisabledNode));
+        filterConfig.setDefaultsDisabled(defaultsDisabled);
+        for (Node child : childElements(node)) {
+            final String name = cleanNodeName(child);
+            if ("blacklist".equals(name)) {
+                ClassFilter list = parseClassFilterList(child);
+                filterConfig.setBlacklist(list);
+            } else if ("whitelist".equals(name)) {
+                ClassFilter list = parseClassFilterList(child);
+                filterConfig.setWhitelist(list);
+            }
+        }
+    }
+
+    private ClassFilter parseClassFilterList(Node node) {
+        ClassFilter list = new ClassFilter();
+        for (Node child : childElements(node)) {
+            final String name = cleanNodeName(child);
+            if ("class".equals(name)) {
+                list.addClasses(getTextContent(child));
+            } else if ("package".equals(name)) {
+                list.addPackages(getTextContent(child));
+            } else if ("prefix".equals(name)) {
+                list.addPrefixes(getTextContent(child));
+            }
+        }
+        return list;
+    }
+
     protected void fillNativeMemoryConfig(Node node, NativeMemoryConfig nativeMemoryConfig) {
         final NamedNodeMap atts = node.getAttributes();
         final Node enabledNode = atts.getNamedItem("enabled");

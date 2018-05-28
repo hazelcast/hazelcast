@@ -18,7 +18,6 @@ package com.hazelcast.client.impl;
 
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.ClientEndpointManager;
-import com.hazelcast.client.ClientEngine;
 import com.hazelcast.core.ClientType;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
@@ -40,18 +39,16 @@ public class ClientHeartbeatMonitor implements Runnable {
     private static final int DEFAULT_CLIENT_HEARTBEAT_TIMEOUT_SECONDS = 60;
 
     private final ClientEndpointManager clientEndpointManager;
-    private final ClientEngine clientEngine;
     private final long heartbeatTimeoutSeconds;
     private final ExecutionService executionService;
     private final ILogger logger;
 
     public ClientHeartbeatMonitor(ClientEndpointManager clientEndpointManager,
-                                  ClientEngine clientEngine,
+                                  ILogger logger,
                                   ExecutionService executionService,
                                   HazelcastProperties hazelcastProperties) {
         this.clientEndpointManager = clientEndpointManager;
-        this.clientEngine = clientEngine;
-        this.logger = clientEngine.getLogger(ClientHeartbeatMonitor.class);
+        this.logger = logger;
         this.executionService = executionService;
         this.heartbeatTimeoutSeconds = getHeartbeatTimeout(hazelcastProperties);
     }
@@ -74,9 +71,8 @@ public class ClientHeartbeatMonitor implements Runnable {
     public void run() {
         cleanupEndpointsWithDeadConnections();
 
-        String memberUuid = clientEngine.getThisUuid();
         for (ClientEndpoint clientEndpoint : clientEndpointManager.getEndpoints()) {
-            monitor(memberUuid, clientEndpoint);
+            monitor(clientEndpoint);
         }
     }
 
@@ -97,8 +93,10 @@ public class ClientHeartbeatMonitor implements Runnable {
 
     }
 
-    private void monitor(String memberUuid, ClientEndpoint clientEndpoint) {
-        if (clientEndpoint.isFirstConnection() && ClientType.CPP.equals(clientEndpoint.getClientType())) {
+    private void monitor(ClientEndpoint clientEndpoint) {
+        // C++ client sends heartbeat over its non-owner connections
+        // For other client types, disregard non-owner connections for heartbeat monitoring purposes
+        if (clientEndpoint.isOwnerConnection() == ClientType.CPP.equals(clientEndpoint.getClientType())) {
             return;
         }
 
@@ -107,12 +105,10 @@ public class ClientHeartbeatMonitor implements Runnable {
         long timeoutInMillis = SECONDS.toMillis(heartbeatTimeoutSeconds);
         long currentTimeMillis = Clock.currentTimeMillis();
         if (lastTimePacketReceived + timeoutInMillis < currentTimeMillis) {
-            if (memberUuid.equals(clientEngine.getOwnerUuid(clientEndpoint.getUuid()))) {
-                String message = "Client heartbeat is timed out, closing connection to " + connection
-                        + ". Now: " + timeToString(currentTimeMillis)
-                        + ". LastTimePacketReceived: " + timeToString(lastTimePacketReceived);
-                connection.close(message, null);
-            }
+            String message = "Client heartbeat is timed out, closing connection to " + connection
+                    + ". Now: " + timeToString(currentTimeMillis)
+                    + ". LastTimePacketReceived: " + timeToString(lastTimePacketReceived);
+            connection.close(message, null);
         }
     }
 }

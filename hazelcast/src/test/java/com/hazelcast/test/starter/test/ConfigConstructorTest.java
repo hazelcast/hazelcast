@@ -46,13 +46,13 @@ public class ConfigConstructorTest extends HazelcastTestSupport {
                 .addListenerConfig(new ListenerConfig("com.hazelcast.test.MyListenerConfig"))
                 .setProperties(buildPropertiesWithDefaults());
 
-        ConfigConstructor configConstructor = new ConfigConstructor(Config.class);
-        Config clonedConfig = (Config) configConstructor.createNew(config);
+        ConfigConstructor constructor = new ConfigConstructor(Config.class);
+        Config clonedConfig = (Config) constructor.createNew(config);
 
-        assertEquals(clonedConfig.getInstanceName(), config.getInstanceName());
-        assertEquals(clonedConfig.getMapConfigs().size(), config.getMapConfigs().size());
-        assertEquals(clonedConfig.getListConfigs().size(), config.getListConfigs().size());
-        assertEquals(clonedConfig.getListenerConfigs().size(), config.getListenerConfigs().size());
+        assertEquals(config.getInstanceName(), clonedConfig.getInstanceName());
+        assertEquals(config.getMapConfigs().size(), clonedConfig.getMapConfigs().size());
+        assertEquals(config.getListConfigs().size(), clonedConfig.getListConfigs().size());
+        assertEquals(config.getListenerConfigs().size(), clonedConfig.getListenerConfigs().size());
         assertPropertiesEquals(config.getProperties(), clonedConfig.getProperties());
     }
 

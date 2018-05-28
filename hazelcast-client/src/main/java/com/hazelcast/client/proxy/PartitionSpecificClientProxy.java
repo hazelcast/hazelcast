@@ -25,7 +25,6 @@ import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 import com.hazelcast.client.util.ClientDelegatingFuture;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 
-
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 
 /**

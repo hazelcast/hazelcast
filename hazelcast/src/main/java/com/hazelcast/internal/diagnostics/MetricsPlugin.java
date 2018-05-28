@@ -27,15 +27,17 @@ import static com.hazelcast.internal.diagnostics.Diagnostics.PREFIX;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
- * A {@link DiagnosticsPlugin} that displays the content of the {@link MetricsRegistry}.
+ * A {@link DiagnosticsPlugin} that displays the content of the
+ * {@link MetricsRegistry}.
  */
 public class MetricsPlugin extends DiagnosticsPlugin {
 
     /**
      * The period in seconds the {@link MetricsPlugin} runs.
      * <p>
-     * The MetricsPlugin periodically writing the content of the MetricsRegistry to the logfile. For debugging purposes
-     * make sure the {@link Diagnostics#METRICS_LEVEL} is set to debug.
+     * The MetricsPlugin periodically writes the contents of the MetricsRegistry
+     * to the logfile. For debugging purposes make sure the
+     * {@link Diagnostics#METRICS_LEVEL} is set to debug.
      * <p>
      * This plugin is very cheap to use.
      * <p>

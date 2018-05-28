@@ -19,6 +19,7 @@ package com.hazelcast.replicatedmap.impl;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.ListenerConfig;
+import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.EntryListener;
@@ -388,8 +389,9 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
         antiEntropyTask.triggerAntiEntropy();
     }
 
-    public MergePolicyProvider getMergePolicyProvider() {
-        return mergePolicyProvider;
+    public Object getMergePolicy(String name) {
+        MergePolicyConfig mergePolicyConfig = getReplicatedMapConfig(name).getMergePolicyConfig();
+        return mergePolicyProvider.getMergePolicy(mergePolicyConfig.getPolicy());
     }
 
     private class AntiEntropyTask implements Runnable {

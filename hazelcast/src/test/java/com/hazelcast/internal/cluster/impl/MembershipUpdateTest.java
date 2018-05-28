@@ -29,6 +29,8 @@ import com.hazelcast.instance.NodeExtension;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.operations.MembersUpdateOp;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.ConnectionListener;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.spi.Operation;
@@ -64,6 +66,7 @@ import java.util.concurrent.locks.LockSupport;
 import static com.hazelcast.instance.HazelcastInstanceFactory.newHazelcastInstance;
 import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.FINALIZE_JOIN;
 import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.F_ID;
+import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.HEARTBEAT;
 import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.MEMBER_INFO_UPDATE;
 import static com.hazelcast.spi.properties.GroupProperty.MEMBER_LIST_PUBLISH_INTERVAL_SECONDS;
 import static com.hazelcast.test.PacketFiltersUtil.delayOperationsFrom;
@@ -79,6 +82,7 @@ import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -749,6 +753,57 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         assertClusterSize(1, hz1);
     }
 
+    @Test
+    public void connectionsToTerminatedMember_shouldBeClosed() {
+        HazelcastInstance hz1 = factory.newHazelcastInstance();
+        HazelcastInstance hz2 = factory.newHazelcastInstance();
+        HazelcastInstance hz3 = factory.newHazelcastInstance();
+
+        assertClusterSizeEventually(3, hz1, hz2, hz3);
+
+        final Address target = getAddress(hz2);
+        hz2.getLifecycleService().terminate();
+
+        assertClusterSizeEventually(2, hz1, hz3);
+
+        assertNull(getConnectionManager(hz1).getConnection(target));
+
+        final ConnectionManager cm3 = getConnectionManager(hz3);
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertNull(cm3.getConnection(target));
+            }
+        });
+    }
+
+    @Test
+    public void connectionsToRemovedMember_shouldBeClosed() {
+        Config config = new Config()
+            .setProperty(GroupProperty.MAX_NO_HEARTBEAT_SECONDS.getName(), "10")
+            .setProperty(GroupProperty.HEARTBEAT_INTERVAL_SECONDS.getName(), "1");
+
+        HazelcastInstance hz1 = factory.newHazelcastInstance(config);
+        HazelcastInstance hz2 = factory.newHazelcastInstance(config);
+        HazelcastInstance hz3 = factory.newHazelcastInstance(config);
+
+        assertClusterSizeEventually(3, hz1, hz2, hz3);
+
+        final Address target = getAddress(hz3);
+
+        ConnectionRemovedListener connListener1 = new ConnectionRemovedListener(target);
+        getConnectionManager(hz1).addConnectionListener(connListener1);
+
+        ConnectionRemovedListener connListener2 = new ConnectionRemovedListener(target);
+        getConnectionManager(hz2).addConnectionListener(connListener2);
+
+        dropOperationsBetween(hz3, hz1, F_ID, singletonList(HEARTBEAT));
+        assertClusterSizeEventually(2, hz1, hz2);
+
+        connListener1.assertConnectionRemoved();
+        connListener2.assertConnectionRemoved();
+    }
+
     private Config getConfigWithService(Object service, String serviceName) {
         final Config config = new Config();
         ServiceConfig serviceConfig = new ServiceConfig().setEnabled(true)
@@ -917,6 +972,30 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         @Override
         protected void readInternal(ObjectDataInput in) throws IOException {
             throw new RuntimeException("This operation always fails during deserialization");
+        }
+    }
+
+    private static class ConnectionRemovedListener implements ConnectionListener {
+        private final Address endpoint;
+        private final CountDownLatch latch = new CountDownLatch(1);
+
+        ConnectionRemovedListener(Address endpoint) {
+            this.endpoint = endpoint;
+        }
+
+        @Override
+        public void connectionAdded(Connection connection) {
+        }
+
+        @Override
+        public void connectionRemoved(Connection connection) {
+            if (endpoint.equals(connection.getEndPoint())) {
+                latch.countDown();
+            }
+        }
+
+        void assertConnectionRemoved() {
+            assertOpenEventually(latch);
         }
     }
 }

@@ -18,8 +18,8 @@ package com.hazelcast.query;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.BinaryInterface;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.predicates.PredicateDataSerializerHook;
@@ -182,7 +182,7 @@ public class PagingPredicate<K, V> implements IndexAwarePredicate<K, V>, Identif
 
         Set<QueryableEntry<K, V>> set = ((IndexAwarePredicate<K, V>) predicate).filter(queryContext);
         if (set == null || set.isEmpty()) {
-            return null;
+            return set;
         }
         List<QueryableEntry<K, V>> resultList = new ArrayList<QueryableEntry<K, V>>();
         Map.Entry<Integer, Map.Entry> nearestAnchorEntry = getNearestAnchorEntry();

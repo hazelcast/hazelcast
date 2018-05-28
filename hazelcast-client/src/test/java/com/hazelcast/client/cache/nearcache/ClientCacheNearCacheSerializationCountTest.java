@@ -40,7 +40,6 @@ import com.hazelcast.internal.nearcache.NearCacheTestContext;
 import com.hazelcast.internal.nearcache.NearCacheTestContextBuilder;
 import com.hazelcast.internal.nearcache.NearCacheTestUtils;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -66,6 +65,10 @@ import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.INVALIDATE;
 import static com.hazelcast.internal.adapter.DataStructureAdapter.DataStructureMethods.GET;
 import static com.hazelcast.internal.adapter.DataStructureAdapter.DataStructureMethods.GET_ALL;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.createNearCacheConfig;
+import static com.hazelcast.spi.properties.GroupProperty.CACHE_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS;
+import static com.hazelcast.spi.properties.GroupProperty.CACHE_INVALIDATION_MESSAGE_BATCH_SIZE;
+import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
+import static com.hazelcast.spi.properties.GroupProperty.PARTITION_OPERATION_THREAD_COUNT;
 import static java.util.Arrays.asList;
 
 /**
@@ -198,8 +201,11 @@ public class ClientCacheNearCacheSerializationCountTest extends AbstractNearCach
     @Override
     protected <K, V> NearCacheTestContext<K, V, Data, String> createContext() {
         Config config = getConfig()
-                .setProperty(GroupProperty.PARTITION_COUNT.getName(), "1")
-                .setProperty(GroupProperty.PARTITION_OPERATION_THREAD_COUNT.getName(), "1");
+                // we don't want to have the invalidations from the initial population being sent during this test
+                .setProperty(CACHE_INVALIDATION_MESSAGE_BATCH_SIZE.getName(), String.valueOf(Integer.MAX_VALUE))
+                .setProperty(CACHE_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS.getName(), String.valueOf(Integer.MAX_VALUE))
+                .setProperty(PARTITION_COUNT.getName(), "1")
+                .setProperty(PARTITION_OPERATION_THREAD_COUNT.getName(), "1");
         prepareSerializationConfig(config.getSerializationConfig());
 
         HazelcastInstance member = hazelcastFactory.newHazelcastInstance(config);
@@ -220,6 +226,11 @@ public class ClientCacheNearCacheSerializationCountTest extends AbstractNearCach
     protected <K, V> NearCacheTestContext<K, V, Data, String> createNearCacheContext() {
         CacheConfig<K, V> cacheConfig = createCacheConfig(cacheInMemoryFormat);
         return createNearCacheContextBuilder(cacheConfig).build();
+    }
+
+    @Override
+    protected Config getConfig() {
+        return smallInstanceConfig();
     }
 
     protected ClientConfig getClientConfig() {

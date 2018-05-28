@@ -27,6 +27,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 
@@ -91,6 +92,11 @@ public class ByteArrayObjectDataOutputTest {
     @Test(expected = IndexOutOfBoundsException.class)
     public void testWriteForBOffLen_OffLenHigherThenSize() {
         out.write(TEST_DATA, 0, -3);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testWrite_whenBufferIsNull() {
+        out.write(null, 0, 0);
     }
 
     @Test
@@ -287,6 +293,15 @@ public class ByteArrayObjectDataOutputTest {
         short actual = Bits.readShortL(out.buffer, 2);
 
         assertEquals(actual, expected);
+    }
+
+    @Test
+    public void testWriteShortForPositionVAndByteOrder() throws IOException {
+        short expected = 42;
+        out.pos = 2;
+        out.writeShort(42, LITTLE_ENDIAN);
+        short actual = Bits.readShortL(out.buffer, 2);
+        assertEquals(expected, actual);
     }
 
     @Test

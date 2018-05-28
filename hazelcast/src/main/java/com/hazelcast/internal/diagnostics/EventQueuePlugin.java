@@ -45,7 +45,8 @@ import static java.lang.String.format;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
- * The EventQueuePlugin checks the event queue and samples the event types if the size is above a certain threshold.
+ * The EventQueuePlugin checks the event queue and samples the event types if
+ * the size is above a certain threshold.
  * <p>
  * This is very useful to figure out why the event queue is running full.
  */
@@ -54,8 +55,8 @@ public class EventQueuePlugin extends DiagnosticsPlugin {
     /**
      * The period in seconds this plugin runs.
      * <p>
-     * With the EventQueuePlugin one can see what is going on inside the event queue.
-     * It makes use of sampling to give some impression of the content.
+     * With the EventQueuePlugin one can see what is going on inside the event
+     * queue. It makes use of sampling to give some impression of the content.
      * <p>
      * If set to 0, the plugin is disabled.
      */
@@ -69,8 +70,9 @@ public class EventQueuePlugin extends DiagnosticsPlugin {
             = new HazelcastProperty(PREFIX + ".event.queue.threshold", 1000);
 
     /**
-     * The number of samples to take from the event queue. Increasing the number of samples gives
-     * more accuracy of the content, but it will come at greater price.
+     * The number of samples to take from the event queue. Increasing the number
+     * of samples gives more accuracy of the content, but it will come at greater
+     * price.
      */
     public static final HazelcastProperty SAMPLES
             = new HazelcastProperty(PREFIX + ".event.queue.samples", 100);

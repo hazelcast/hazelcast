@@ -25,6 +25,7 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.HazelcastClientProxy;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.CacheConfig;
+import com.hazelcast.config.Config;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.adapter.DataStructureAdapter;
@@ -48,17 +49,18 @@ import javax.cache.spi.CachingProvider;
 import java.io.File;
 
 import static com.hazelcast.cache.CacheUtil.getDistributedObjectName;
-import static com.hazelcast.client.cache.nearcache.ClientCacheInvalidationListener.createInvalidationEventHandler;
 import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE;
 import static com.hazelcast.config.EvictionPolicy.LRU;
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.config.NearCacheConfig.DEFAULT_INVALIDATE_ON_CHANGE;
 import static com.hazelcast.config.NearCacheConfig.DEFAULT_MEMORY_FORMAT;
 import static com.hazelcast.config.NearCacheConfig.DEFAULT_SERIALIZE_KEYS;
+import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getBaseConfig;
 import static com.hazelcast.nio.IOUtil.toFileName;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
+@SuppressWarnings("WeakerAccess")
 public class ClientCacheNearCachePreloaderTest extends AbstractNearCachePreloaderTest<Data, String> {
 
     protected final String cacheFileName = toFileName(getDistributedObjectName(defaultNearCache));
@@ -69,8 +71,8 @@ public class ClientCacheNearCachePreloaderTest extends AbstractNearCachePreloade
 
     @Before
     public void setUp() {
-        nearCacheConfig = getNearCacheConfig(DEFAULT_MEMORY_FORMAT, DEFAULT_SERIALIZE_KEYS,
-                DEFAULT_INVALIDATE_ON_CHANGE, KEY_COUNT, storeFile.getParent());
+        nearCacheConfig = getNearCacheConfig(DEFAULT_MEMORY_FORMAT, DEFAULT_SERIALIZE_KEYS, DEFAULT_INVALIDATE_ON_CHANGE,
+                KEY_COUNT, storeFile.getParent());
     }
 
     @After
@@ -91,24 +93,23 @@ public class ClientCacheNearCachePreloaderTest extends AbstractNearCachePreloade
     @Override
     @SuppressWarnings("unchecked")
     protected <K, V> DataStructureAdapter<K, V> getDataStructure(NearCacheTestContext<K, V, Data, String> context, String name) {
-        CacheConfig<K, V> cacheConfig = createCacheConfig(nearCacheConfig);
+        CacheConfig<K, V> cacheConfig = getCacheConfig(nearCacheConfig);
 
         Cache<K, V> memberCache = context.cacheManager.createCache(name, cacheConfig.setName(name));
         return new ICacheDataStructureAdapter<K, V>((ICache<K, V>) memberCache.unwrap(ICache.class));
     }
 
     @Override
-    protected <K, V> NearCacheTestContext<K, V, Data, String> createContext(boolean createNearCacheInstance, int keyCount,
-                                                                            KeyType keyType) {
-        CacheConfig<K, V> cacheConfig = createCacheConfig(nearCacheConfig);
+    protected <K, V> NearCacheTestContext<K, V, Data, String> createContext(boolean createNearCacheInstance) {
+        Config config = getConfig();
 
-        HazelcastInstance member = hazelcastFactory.newHazelcastInstance(getConfig());
+        CacheConfig<K, V> cacheConfig = getCacheConfig(nearCacheConfig);
+
+        HazelcastInstance member = hazelcastFactory.newHazelcastInstance(config);
         CachingProvider memberProvider = HazelcastServerCachingProvider.createCachingProvider(member);
         HazelcastServerCacheManager memberCacheManager = (HazelcastServerCacheManager) memberProvider.getCacheManager();
         ICache<K, V> memberCache = memberCacheManager.createCache(nearCacheConfig.getName(), cacheConfig);
         ICacheDataStructureAdapter<K, V> dataAdapter = new ICacheDataStructureAdapter<K, V>(memberCache);
-
-        populateDataAdapter(dataAdapter, keyCount, keyType);
 
         if (createNearCacheInstance) {
             return createNearCacheContextBuilder(cacheConfig)
@@ -125,15 +126,20 @@ public class ClientCacheNearCachePreloaderTest extends AbstractNearCachePreloade
 
     @Override
     protected <K, V> NearCacheTestContext<K, V, Data, String> createNearCacheContext() {
-        CacheConfig<K, V> cacheConfig = createCacheConfig(nearCacheConfig);
+        CacheConfig<K, V> cacheConfig = getCacheConfig(nearCacheConfig);
         return createNearCacheContextBuilder(cacheConfig).build();
+    }
+
+    @Override
+    protected Config getConfig() {
+        return getBaseConfig();
     }
 
     protected ClientConfig getClientConfig() {
         return new ClientConfig();
     }
 
-    private <K, V> CacheConfig<K, V> createCacheConfig(NearCacheConfig nearCacheConfig) {
+    private <K, V> CacheConfig<K, V> getCacheConfig(NearCacheConfig nearCacheConfig) {
         CacheConfig<K, V> cacheConfig = new CacheConfig<K, V>()
                 .setName(nearCacheConfig.getName())
                 .setInMemoryFormat(nearCacheConfig.getInMemoryFormat());
@@ -167,7 +173,6 @@ public class ClientCacheNearCachePreloaderTest extends AbstractNearCachePreloade
                 .setNearCacheAdapter(new ICacheDataStructureAdapter<K, V>(clientCache))
                 .setNearCache(nearCache)
                 .setNearCacheManager(nearCacheManager)
-                .setCacheManager(cacheManager)
-                .setInvalidationListener(createInvalidationEventHandler(clientCache));
+                .setCacheManager(cacheManager);
     }
 }

@@ -15,9 +15,36 @@
   ~ limitations under the License.
   -->
 
-<hazelcast-client xsi:schemaLocation="http://www.hazelcast.com/schema/client-config hazelcast-client-config-3.10.xsd"
-                  xmlns="http://www.hazelcast.com/schema/client-config"
-                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<!--
+  This is a full example hazelcast-client.xml that includes all the
+  configuration elements and attributes of a Hazelcast client.
+
+  To use this, rename it to hazelcast-client.xml and place it in
+  the directory where you start your Hazelcast client.
+
+  To learn how to configure Hazelcast, please see the schema at
+  https://hazelcast.com/schema/client-config/hazelcast-client-config-3.11.xsd
+  or the Reference Manual at https://hazelcast.org/documentation/
+-->
+
+<!--suppress XmlDefaultAttributeValue -->
+<hazelcast-client xmlns="http://www.hazelcast.com/schema/client-config"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://www.hazelcast.com/schema/client-config
+                  http://www.hazelcast.com/schema/config/hazelcast-client-config-3.11.xsd">
+
+    <config-replacers fail-if-value-missing="false">
+        <replacer class-name="com.hazelcast.config.replacer.EncryptionReplacer">
+            <properties>
+                <property name="passwordFile">password.txt</property>
+                <property name="passwordUserProperties">false</property>
+                <property name="cipherAlgorithm">DES</property>
+                <property name="keyLengthBits">64</property>
+                <property name="secretKeyAlgorithm">DES</property>
+                <property name="secretKeyFactoryAlgorithm">PBKDF2WithHmacSHA1</property>
+            </properties>
+        </replacer>
+    </config-replacers>
 
     <group>
         <name>dev</name>
@@ -121,6 +148,17 @@
                         class-name="com.hazelcast.examples.SerializerFactory"/>
         </serializers>
         <check-class-def-errors>true</check-class-def-errors>
+        <java-serialization-filter>
+            <blacklist>
+                <class>com.acme.app.BeanComparator</class>
+            </blacklist>
+            <whitelist>
+                <class>java.lang.String</class>
+                <class>example.Foo</class>
+                <package>com.acme.app</package>
+                <package>com.acme.app.subpkg</package>
+            </whitelist>
+        </java-serialization-filter>
     </serialization>
 
     <native-memory enabled="false" allocator-type="POOLED">

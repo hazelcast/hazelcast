@@ -41,9 +41,11 @@ import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.ringbuffer.StaleSequenceException;
 import com.hazelcast.ringbuffer.impl.client.PortableReadResultSet;
+import com.hazelcast.util.executor.CompletedFuture;
 
 import java.util.Collection;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.ringbuffer.impl.RingbufferProxy.MAX_BATCH_SIZE;
@@ -208,7 +210,17 @@ public class ClientRingbufferProxy<E> extends ClientProxy implements Ringbuffer<
         checkSequence(startSequence);
         checkNotNegative(minCount, "minCount can't be smaller than 0");
         checkTrue(maxCount >= minCount, "maxCount should be equal or larger than minCount");
-        checkTrue(minCount <= capacity(), "the minCount should be smaller than or equal to the capacity");
+
+        try {
+            capacity();
+        } catch (Throwable e) {
+            //in case of exception return the exception via future to behave consistently to member
+            e = new ExecutionException(e);
+            ExecutorService userExecutor = getContext().getExecutionService().getUserExecutor();
+            return new CompletedFuture<ReadResultSet<E>>(getSerializationService(), e, userExecutor);
+        }
+
+        checkTrue(maxCount <= capacity, "the maxCount should be smaller than or equal to the capacity");
         checkTrue(maxCount <= MAX_BATCH_SIZE, "maxCount can't be larger than " + MAX_BATCH_SIZE);
 
         ClientMessage request = RingbufferReadManyCodec.encodeRequest(

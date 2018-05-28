@@ -65,7 +65,7 @@ class LazyCollection<K, V> implements Collection<V> {
         while (iterator.hasNext()) {
             result.add(iterator.next());
         }
-        return result.toArray(new Object[result.size()]);
+        return result.toArray(new Object[0]);
     }
 
     @Override

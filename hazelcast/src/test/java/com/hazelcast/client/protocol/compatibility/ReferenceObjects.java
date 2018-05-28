@@ -57,6 +57,7 @@ import com.hazelcast.internal.cluster.impl.ConfigMismatchException;
 import com.hazelcast.internal.eviction.EvictableEntryView;
 import com.hazelcast.internal.eviction.EvictionPolicyComparator;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.BigEndianSerializationServieBuilder;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.map.QueryResultSizeExceededException;
@@ -684,10 +685,6 @@ public class ReferenceObjects {
     public static List<Map.Entry<Integer, UUID>> aPartitionUuidList = Collections.<Map.Entry<Integer, UUID>>singletonList(
             new AbstractMap.SimpleEntry<Integer, UUID>(anInt, aUUID));
 
-    private static final DefaultSerializationServiceBuilder defaultSerializationServiceBuilder = new DefaultSerializationServiceBuilder();
-    public static final SerializationService serializationService = defaultSerializationServiceBuilder
-            .setVersion(InternalSerializationService.VERSION_1).build();
-
     public static RingbufferStoreConfigHolder ringbufferStore;
     public static QueueStoreConfigHolder queueStoreConfig;
 
@@ -711,9 +708,10 @@ public class ReferenceObjects {
         props = new Properties();
         props.setProperty("a", "b");
 
-        DefaultSerializationServiceBuilder defaultSerializationServiceBuilder = new DefaultSerializationServiceBuilder();
+        BigEndianSerializationServieBuilder defaultSerializationServiceBuilder = new BigEndianSerializationServieBuilder();
         SerializationService serializationService = defaultSerializationServiceBuilder
                 .setVersion(InternalSerializationService.VERSION_1).build();
+
         listenerConfigs = new ArrayList<ListenerConfigHolder>();
         ListenerConfigHolder holder1 = new ListenerConfigHolder(TYPE_LISTENER_CONFIG, "listener.By.ClassName");
         //noinspection RedundantCast

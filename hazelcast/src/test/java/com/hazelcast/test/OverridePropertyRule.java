@@ -61,22 +61,17 @@ public final class OverridePropertyRule implements TestRule {
         return new Statement() {
             @Override
             public void evaluate() throws Throwable {
-                String oldValue = System.getProperty(propertyName);
-                setOrClearProperty(propertyName, value);
+                String oldValue = setOrClearProperty(value);
                 try {
                     base.evaluate();
                 } finally {
-                    setOrClearProperty(propertyName, oldValue);
+                    setOrClearProperty(oldValue);
                 }
             }
         };
     }
 
-    private static void setOrClearProperty(String propertyName, String value) {
-        if (value == null) {
-            System.clearProperty(propertyName);
-        } else {
-            System.setProperty(propertyName, value);
-        }
+    public String setOrClearProperty(String value) {
+        return value == null ? System.clearProperty(propertyName) : System.setProperty(propertyName, value);
     }
 }

@@ -16,8 +16,8 @@
 
 package com.hazelcast.cache.impl.event;
 
-import com.hazelcast.cache.impl.CacheEventListener;
 import com.hazelcast.cache.CacheEventType;
+import com.hazelcast.cache.impl.CacheEventListener;
 import com.hazelcast.cache.impl.CachePartitionEventData;
 import com.hazelcast.spi.annotation.PrivateApi;
 

@@ -75,14 +75,14 @@ public abstract class AbstractMergeRunnable<K, V, Store, MergingItem extends Mer
     private final ClusterService clusterService;
     private final OperationService operationService;
     private final IPartitionService partitionService;
-    private final BaseSplitBrainHandlerService splitBrainHandlerService;
+    private final AbstractSplitBrainHandlerService<Store> splitBrainHandlerService;
     private final InternalSerializationService serializationService;
 
     private Map<String, Collection<Store>> mergingStoresByName;
 
     protected AbstractMergeRunnable(String serviceName,
                                     Collection<Store> mergingStores,
-                                    BaseSplitBrainHandlerService splitBrainHandlerService,
+                                    AbstractSplitBrainHandlerService<Store> splitBrainHandlerService,
                                     NodeEngine nodeEngine) {
         this.mergingStoresByName = groupStoresByName(mergingStores);
         this.serviceName = serviceName;
@@ -111,12 +111,17 @@ public abstract class AbstractMergeRunnable<K, V, Store, MergingItem extends Mer
 
     @Override
     public final void run() {
+        onRunStart();
         int mergedCount = 0;
 
         mergedCount += mergeWithSplitBrainMergePolicy();
         mergedCount += mergeWithLegacyMergePolicy();
 
         waitMergeEnd(mergedCount);
+    }
+
+    protected void onRunStart() {
+        // Implementers can override this method.
     }
 
     private int mergeWithSplitBrainMergePolicy() {
@@ -154,22 +159,25 @@ public abstract class AbstractMergeRunnable<K, V, Store, MergingItem extends Mer
      * Check if data structure can use {@link SplitBrainMergePolicy}
      */
     private boolean canMerge(String dataStructureName) {
-        Version v310 = V3_10;
         Version currentVersion = clusterService.getClusterVersion();
         if (currentVersion.isGreaterOrEqual(V3_10)) {
             return true;
         }
         // RU_COMPAT_3_9
-        String msg = "Cannot merge '%s' with merge policy '%s'."
-                + " Cluster version should be %s or later but found %s";
-        logger.info(format(msg, dataStructureName, getMergePolicy(dataStructureName), v310, currentVersion));
+        String msg = "Cannot merge '%s' with merge policy '%s'. Cluster version should be %s or later but found %s";
+        logger.info(format(msg, dataStructureName, getMergePolicy(dataStructureName), V3_10, currentVersion));
         return false;
     }
 
     private MergingItemBiConsumer newConsumer(String dataStructureName) {
+        SplitBrainMergePolicy<V, MergingItem> policy = getSplitBrainMergePolicy(dataStructureName);
         int batchSize = getBatchSize(dataStructureName);
-        SplitBrainMergePolicy policy = ((SplitBrainMergePolicy) getMergePolicy(dataStructureName));
         return new MergingItemBiConsumer(dataStructureName, policy, batchSize);
+    }
+
+    @SuppressWarnings("unchecked")
+    private SplitBrainMergePolicy<V, MergingItem> getSplitBrainMergePolicy(String dataStructureName) {
+        return ((SplitBrainMergePolicy<V, MergingItem>) getMergePolicy(dataStructureName));
     }
 
     private int mergeWithLegacyMergePolicy() {

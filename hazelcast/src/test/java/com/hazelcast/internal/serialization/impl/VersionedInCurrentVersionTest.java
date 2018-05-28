@@ -22,6 +22,7 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.starter.GuardianException;
 import com.hazelcast.test.starter.HazelcastVersionLocator;
 import com.hazelcast.util.StringUtil;
 import com.hazelcast.version.Version;
@@ -40,7 +41,6 @@ import org.reflections.scanners.SubTypesScanner;
 import org.reflections.util.ConfigurationBuilder;
 
 import java.io.File;
-import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -51,14 +51,19 @@ import static com.hazelcast.internal.cluster.Versions.CURRENT_CLUSTER_VERSION;
 import static com.hazelcast.internal.cluster.Versions.PREVIOUS_CLUSTER_VERSION;
 import static com.hazelcast.test.ReflectionsHelper.REFLECTIONS;
 import static com.hazelcast.test.ReflectionsHelper.filterNonConcreteClasses;
+import static com.hazelcast.test.starter.HazelcastStarterUtils.rethrowGuardianException;
+import static com.hazelcast.util.EmptyStatement.ignore;
 import static org.junit.Assert.fail;
+import static org.junit.Assume.assumeNoException;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
-// test for a common compatibility issue: when a (Identified)DataSerializable class first
-// becomes Versioned, it might miss checking input stream for UNKNOWN version (which is
-// the version of an incoming stream from a previous-version member) instead of using
-// in.getVersion.isUnknownOrLessThan(CURRENT)
+/**
+ * Tests a common compatibility issue: when a (Identified)DataSerializable class first
+ * becomes Versioned, it might miss checking input stream for UNKNOWN version (which is
+ * the version of an incoming stream from a previous-version member) instead of using
+ * in.getVersion.isUnknownOrLessThan(CURRENT).
+ */
 @RunWith(PowerMockRunner.class)
 @PowerMockIgnore({"javax.net.ssl.*", "javax.security.*"})
 @PrepareForTest(Version.class)
@@ -68,18 +73,18 @@ public class VersionedInCurrentVersionTest {
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
-    private Set<Class<? extends Versioned>> versionedSincePreviousVersion;
     private Set<Class<? extends Versioned>> versionedInCurrentVersion;
 
     @Before
-    public void setup() throws IOException {
-        versionedSincePreviousVersion = versionedClassesInPreviousVersion();
-
-        Set<Class<? extends DataSerializable>> dsClasses = REFLECTIONS.getSubTypesOf(DataSerializable.class);
+    public void setup() throws Exception {
         Set<Class<? extends Versioned>> versionedClasses = REFLECTIONS.getSubTypesOf(Versioned.class);
+        Set<Class<? extends DataSerializable>> dsClasses = REFLECTIONS.getSubTypesOf(DataSerializable.class);
+        Set<Class<? extends Versioned>> versionedSincePreviousVersion = versionedClassesInPreviousVersion();
+
         filterNonConcreteClasses(versionedClasses);
         versionedClasses.removeAll(versionedSincePreviousVersion);
         versionedClasses.retainAll(dsClasses);
+
         versionedInCurrentVersion = versionedClasses;
     }
 
@@ -98,14 +103,14 @@ public class VersionedInCurrentVersionTest {
             when(mockInput.getVersion()).thenReturn(spy);
             try {
                 dataSerializable.readData(mockInput);
-            }
-            catch (Throwable t) {
+            } catch (Throwable t) {
+                ignore(t);
             } finally {
                 try {
                     Mockito.verify(spy).isLessThan(CURRENT_CLUSTER_VERSION);
                     failures.add(versionedClass);
                 } catch (Throwable t) {
-                    // expected when Version.isLessThan was not invoked
+                    // expected when Version.isLessThan() was not invoked
                 }
             }
         }
@@ -113,29 +118,23 @@ public class VersionedInCurrentVersionTest {
             StringBuilder failMessageBuilder = new StringBuilder();
             for (Class<? extends Versioned> failedClass : failures) {
                 failMessageBuilder.append(StringUtil.LINE_SEPARATOR)
-                                  .append(failedClass.getName())
-                                  .append(" invoked in.getVersion().isLessThan(CURRENT_CLUSTER_VERSION) while reading data");
+                        .append(failedClass.getName())
+                        .append(" invoked in.getVersion().isLessThan(CURRENT_CLUSTER_VERSION) while reading data");
             }
             fail(failMessageBuilder.toString());
         }
     }
 
     private <T extends Versioned> T createInstance(Class<T> klass) {
-        T instance = null;
         try {
-            instance = ClassLoaderUtil.newInstance(klass, null, klass.getName());
+            return ClassLoaderUtil.newInstance(klass, null, klass.getName());
         } catch (Exception e) {
+            return null;
         }
-        return instance;
     }
 
-    private Set<Class<? extends Versioned>> versionedClassesInPreviousVersion()
-            throws IOException {
-        File previousVersionFolder = temporaryFolder.newFolder();
-        File[] previousVersionArtifacts = HazelcastVersionLocator.locateVersion(
-                PREVIOUS_CLUSTER_VERSION.toString(),
-                previousVersionFolder,
-                getBuildInfo().isEnterprise());
+    private Set<Class<? extends Versioned>> versionedClassesInPreviousVersion() throws Exception {
+        File[] previousVersionArtifacts = getPreviousVersionArtifacts();
 
         URL[] artifactURLs = new URL[previousVersionArtifacts.length];
         for (int i = 0; i < previousVersionArtifacts.length; i++) {
@@ -147,5 +146,18 @@ public class VersionedInCurrentVersionTest {
         );
 
         return previousVersionReflections.getSubTypesOf(Versioned.class);
+    }
+
+    private File[] getPreviousVersionArtifacts() throws Exception {
+        File previousVersionFolder = temporaryFolder.newFolder();
+        try {
+            return HazelcastVersionLocator.locateVersion(
+                    PREVIOUS_CLUSTER_VERSION.toString(),
+                    previousVersionFolder,
+                    getBuildInfo().isEnterprise());
+        } catch (GuardianException e) {
+            assumeNoException("The requested version could not be downloaded, most probably it has not been released yet", e);
+            throw rethrowGuardianException(e);
+        }
     }
 }

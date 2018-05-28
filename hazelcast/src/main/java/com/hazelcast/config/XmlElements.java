@@ -20,6 +20,7 @@ enum XmlElements {
     HAZELCAST("hazelcast", false),
     INSTANCE_NAME("instance-name", false),
     IMPORT("import", true),
+    CONFIG_REPLACERS("config-replacers", false),
     GROUP("group", false),
     LICENSE_KEY("license-key", false),
     MANAGEMENT_CENTER("management-center", false),

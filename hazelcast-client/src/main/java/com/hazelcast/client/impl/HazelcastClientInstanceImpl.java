@@ -67,7 +67,6 @@ import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
-import com.hazelcast.flakeidgen.impl.FlakeIdGeneratorService;
 import com.hazelcast.concurrent.idgen.IdGeneratorService;
 import com.hazelcast.concurrent.lock.LockServiceImpl;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
@@ -79,7 +78,6 @@ import com.hazelcast.core.ClientService;
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectListener;
-import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.core.IAtomicReference;
@@ -102,6 +100,8 @@ import com.hazelcast.crdt.pncounter.PNCounterService;
 import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.durableexecutor.impl.DistributedDurableExecutorService;
 import com.hazelcast.executor.impl.DistributedExecutorService;
+import com.hazelcast.flakeidgen.FlakeIdGenerator;
+import com.hazelcast.flakeidgen.impl.FlakeIdGeneratorService;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.diagnostics.BuildInfoPlugin;
 import com.hazelcast.internal.diagnostics.ConfigPropertiesPlugin;
@@ -143,8 +143,6 @@ import com.hazelcast.spi.discovery.integration.DiscoveryService;
 import com.hazelcast.spi.discovery.integration.DiscoveryServiceProvider;
 import com.hazelcast.spi.discovery.integration.DiscoveryServiceSettings;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
-import com.hazelcast.spi.impl.sequence.CallIdFactory;
-import com.hazelcast.spi.impl.sequence.CallIdSequence;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.serialization.SerializationService;
@@ -168,8 +166,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.hazelcast.client.spi.properties.ClientProperty.BACKPRESSURE_BACKOFF_TIMEOUT_MILLIS;
-import static com.hazelcast.client.spi.properties.ClientProperty.MAX_CONCURRENT_INVOCATIONS;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static java.lang.System.currentTimeMillis;
@@ -206,7 +202,6 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     private final ClientICacheManager hazelcastCacheManager;
     private final ClientLockReferenceIdGenerator lockReferenceIdGenerator;
     private final ClientExceptionFactory clientExceptionFactory;
-    private final CallIdSequence callIdSequence;
     private final ClientUserCodeDeploymentService userCodeDeploymentService;
 
     public HazelcastClientInstanceImpl(ClientConfig config,
@@ -247,11 +242,6 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
                 .createConnectionManager(config, this, discoveryService, addressProviders);
         clusterService = new ClientClusterServiceImpl(this);
 
-        int maxAllowedConcurrentInvocations = properties.getInteger(MAX_CONCURRENT_INVOCATIONS);
-        long backofftimeoutMs = properties.getLong(BACKPRESSURE_BACKOFF_TIMEOUT_MILLIS);
-        boolean isBackPressureEnabled = maxAllowedConcurrentInvocations != Integer.MAX_VALUE;
-        callIdSequence = CallIdFactory
-                .newCallIdSequence(isBackPressureEnabled, maxAllowedConcurrentInvocations, backofftimeoutMs);
 
         invocationService = initInvocationService();
         listenerService = initListenerService();
@@ -763,10 +753,6 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
     public ClientExtension getClientExtension() {
         return clientExtension;
-    }
-
-    public CallIdSequence getCallIdSequence() {
-        return callIdSequence;
     }
 
     public Credentials getCredentials() {

@@ -16,6 +16,11 @@
 
 package com.hazelcast.map.impl.querycache;
 
+import com.hazelcast.config.Config;
+import com.hazelcast.config.EntryListenerConfig;
+import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.PredicateConfig;
+import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.IMap;
@@ -202,6 +207,25 @@ public class QueryCacheListenerTest extends AbstractQueryCacheTestSupport {
         sleepAtLeastSeconds(5);
 
         assertOpenEventually(numberOfCaughtEvents);
+    }
+
+    @Test
+    public void listenerShouldBeRegistered_whenConfiguredProgrammatically() {
+        CountDownLatch completionLatch = new CountDownLatch(100);
+        MapConfig mapConfig = new MapConfig(mapName);
+        QueryCacheConfig queryCacheConfig = new QueryCacheConfig(cacheName)
+                .setPredicateConfig(new PredicateConfig(TRUE_PREDICATE))
+                .addEntryListenerConfig(
+                    new EntryListenerConfig(new QueryCacheAdditionListener(completionLatch), true, true));
+        mapConfig.addQueryCacheConfig(queryCacheConfig);
+        Config config = new Config();
+        config.addMapConfig(mapConfig);
+
+        IMap<Integer, Employee> map = getIMap(config);
+        // trigger creation of the query cache
+        map.getQueryCache(cacheName);
+        populateMap(map, 100);
+        assertOpenEventually(completionLatch, 30);
     }
 
     private void assertQueryCacheSizeEventually(final int expected, final QueryCache cache) {

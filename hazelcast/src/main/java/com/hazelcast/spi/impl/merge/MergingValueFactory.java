@@ -28,9 +28,11 @@ import com.hazelcast.multimap.impl.MultiMapMergeContainer;
 import com.hazelcast.multimap.impl.MultiMapRecord;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecord;
+import com.hazelcast.ringbuffer.impl.Ringbuffer;
 import com.hazelcast.scheduledexecutor.impl.ScheduledTaskDescriptor;
 import com.hazelcast.spi.merge.MergingEntry;
 import com.hazelcast.spi.merge.MergingValue;
+import com.hazelcast.spi.merge.RingbufferMergeData;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.AtomicLongMergeTypes;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.AtomicReferenceMergeTypes;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.CacheMergeTypes;
@@ -44,6 +46,10 @@ import com.hazelcast.spi.merge.SplitBrainMergeTypes.RingbufferMergeTypes;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.ScheduledExecutorMergeTypes;
 import com.hazelcast.spi.serialization.SerializationService;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Queue;
+
 /**
  * Provides static factory methods to create {@link MergingValue} and {@link MergingEntry} instances.
  *
@@ -54,14 +60,23 @@ public final class MergingValueFactory {
     private MergingValueFactory() {
     }
 
-    public static CollectionMergeTypes createMergingValue(SerializationService serializationService, CollectionItem item) {
+    public static CollectionMergeTypes createMergingValue(SerializationService serializationService,
+                                                          Collection<CollectionItem> items) {
+        Collection<Object> values = new ArrayList<Object>(items.size());
+        for (CollectionItem item : items) {
+            values.add(item.getValue());
+        }
         return new CollectionMergingValueImpl(serializationService)
-                .setValue(item.getValue());
+                .setValue(values);
     }
 
-    public static QueueMergeTypes createMergingValue(SerializationService serializationService, QueueItem item) {
+    public static QueueMergeTypes createMergingValue(SerializationService serializationService, Queue<QueueItem> items) {
+        Collection<Object> values = new ArrayList<Object>(items.size());
+        for (QueueItem item : items) {
+            values.add(item.getData());
+        }
         return new QueueMergingValueImpl(serializationService)
-                .setValue(item.getData());
+                .setValue(values);
     }
 
     public static AtomicLongMergeTypes createMergingValue(SerializationService serializationService, Long value) {
@@ -155,10 +170,15 @@ public final class MergingValueFactory {
     }
 
     public static MultiMapMergeTypes createMergingEntry(SerializationService serializationService,
-                                                        MultiMapMergeContainer container, MultiMapRecord record) {
+                                                        MultiMapMergeContainer container) {
+        Collection<Object> values = new ArrayList<Object>(container.getRecords().size());
+        for (MultiMapRecord record : container.getRecords()) {
+            values.add(record.getObject());
+        }
+
         return new MultiMapMergingEntryImpl(serializationService)
                 .setKey(container.getKey())
-                .setValue(record.getObject())
+                .setValues(values)
                 .setCreationTime(container.getCreationTime())
                 .setLastAccessTime(container.getLastAccessTime())
                 .setLastUpdateTime(container.getLastUpdateTime())
@@ -166,20 +186,25 @@ public final class MergingValueFactory {
     }
 
     public static MultiMapMergeTypes createMergingEntry(SerializationService serializationService, MultiMapContainer container,
-                                                        Data key, MultiMapRecord record, int hits) {
+                                                        Data dataKey, Collection<MultiMapRecord> records, long hits) {
+        Collection<Object> values = new ArrayList<Object>(records.size());
+        for (MultiMapRecord record : records) {
+            values.add(record.getObject());
+        }
+
         return new MultiMapMergingEntryImpl(serializationService)
-                .setKey(key)
-                .setValue(record.getObject())
+                .setKey(dataKey)
+                .setValues(values)
                 .setCreationTime(container.getCreationTime())
                 .setLastAccessTime(container.getLastAccessTime())
                 .setLastUpdateTime(container.getLastUpdateTime())
                 .setHits(hits);
     }
 
-    public static RingbufferMergeTypes createMergingEntry(SerializationService serializationService, Long key, Object value) {
-        return new RingbufferMergingEntryImpl(serializationService)
-                .setKey(key)
-                .setValue(value);
+    public static RingbufferMergeTypes createMergingValue(SerializationService serializationService, Ringbuffer<Object> items) {
+        RingbufferMergeData mergingData = new RingbufferMergeData(items);
+        return new RingbufferMergingValueImpl(serializationService)
+                .setValues(mergingData);
     }
 
     public static CardinalityEstimatorMergeTypes createMergingEntry(SerializationService serializationService,

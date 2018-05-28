@@ -17,13 +17,12 @@
 package com.hazelcast.client.impl.protocol.util;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.util.ClientMessageDecoder;
-import com.hazelcast.client.impl.protocol.util.ClientMessageHandler;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.function.Consumer;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -40,18 +39,18 @@ import static org.mockito.Mockito.verify;
 @Category({QuickTest.class, ParallelTest.class})
 public class ClientMessageDecoderTest {
 
-    private ClientMessageHandler messageHandler;
+    private Consumer<ClientMessage> messageConsumer;
     private Connection connection;
     private SwCounter counter;
     private ClientMessageDecoder decoder;
 
     @Before
     public void setup() {
-        messageHandler = mock(ClientMessageHandler.class);
+        messageConsumer = mock(Consumer.class);
         connection = mock(Connection.class);
         counter = SwCounter.newSwCounter();
         connection = mock(Connection.class);
-        decoder = new ClientMessageDecoder(connection, messageHandler);
+        decoder = new ClientMessageDecoder(connection, messageConsumer);
         decoder.setNormalPacketsRead(counter);
     }
 
@@ -69,6 +68,6 @@ public class ClientMessageDecoderTest {
 
         decoder.onRead(bb);
 
-        verify(messageHandler).handle(any(ClientMessage.class), eq(connection));
+        verify(messageConsumer).accept(any(ClientMessage.class));
     }
 }

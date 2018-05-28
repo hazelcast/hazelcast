@@ -41,4 +41,10 @@ public class OperationTest {
         Operation op = new DummyOperation();
         op.sendResponse("foo");
     }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void shouldThrowException_whenReplicaIndexInvalid() {
+        Operation op = new DummyOperation();
+        op.setReplicaIndex(-1);
+    }
 }

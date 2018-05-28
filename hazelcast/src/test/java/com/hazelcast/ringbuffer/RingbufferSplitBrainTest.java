@@ -19,12 +19,16 @@ package com.hazelcast.ringbuffer;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MergePolicyConfig;
+import com.hazelcast.config.RingbufferStoreConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.ringbuffer.impl.RingbufferProxy;
+import com.hazelcast.core.RingbufferStore;
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.spi.merge.DiscardMergePolicy;
 import com.hazelcast.spi.merge.PassThroughMergePolicy;
 import com.hazelcast.spi.merge.PutIfAbsentMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
+import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.SplitBrainTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -36,21 +40,24 @@ import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.config.InMemoryFormat.BINARY;
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
 import static com.hazelcast.ringbuffer.RingbufferTestUtil.getBackupRingbuffer;
 import static java.util.Arrays.asList;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
- * Tests different split-brain scenarios for {@link com.hazelcast.ringbuffer.Ringbuffer}.
+ * Tests different split-brain scenarios for {@link Ringbuffer}.
  * <p>
  * The {@link DiscardMergePolicy}, {@link PassThroughMergePolicy} and {@link PutIfAbsentMergePolicy} are also
  * tested with a data structure, which is only created in the smaller cluster.
@@ -62,8 +69,19 @@ import static org.junit.Assert.fail;
 @Category({QuickTest.class, ParallelTest.class})
 public class RingbufferSplitBrainTest extends SplitBrainTestSupport {
 
-    private static final int INITIAL_COUNT = 10;
-    private static final int NEW_ITEMS = 15;
+    private static final int ITEM_COUNT = 25;
+
+    private SplitBrainRingbufferStore ringbufferStoreA = new SplitBrainRingbufferStore();
+
+    @Parameter
+    public InMemoryFormat inMemoryFormat;
+    @Parameter(value = 1)
+    public Class<? extends SplitBrainMergePolicy> mergePolicyClass;
+
+    private String ringbufferNameA = randomMapName("ringbufferA-");
+    private String ringbufferNameB = randomMapName("ringbufferB-");
+    private InternalSerializationService serializationService;
+    private SplitBrainRingbufferStore ringbufferStoreB = new SplitBrainRingbufferStore();
 
     @Parameters(name = "format:{0}, mergePolicy:{1}")
     public static Collection<Object[]> parameters() {
@@ -72,25 +90,56 @@ public class RingbufferSplitBrainTest extends SplitBrainTestSupport {
                 {BINARY, PassThroughMergePolicy.class},
                 {BINARY, PutIfAbsentMergePolicy.class},
 
-                {BINARY, MergeIntegerValuesMergePolicy.class},
-                {OBJECT, MergeIntegerValuesMergePolicy.class},
+                {BINARY, RingbufferMergeIntegerValuesMergePolicy.class},
+                {OBJECT, RingbufferMergeIntegerValuesMergePolicy.class},
+
+                {BINARY, RingbufferRemoveValuesMergePolicy.class},
+                {OBJECT, RingbufferRemoveValuesMergePolicy.class},
         });
     }
-
-    @Parameter
-    public InMemoryFormat inMemoryFormat;
-
-    @Parameter(value = 1)
-    public Class<? extends SplitBrainMergePolicy> mergePolicyClass;
-
-    private String ringbufferNameA = randomMapName("ringbufferA-");
-    private String ringbufferNameB = randomMapName("ringbufferB-");
     private Ringbuffer<Object> ringbufferA1;
     private Ringbuffer<Object> ringbufferA2;
     private Ringbuffer<Object> ringbufferB1;
     private Ringbuffer<Object> ringbufferB2;
     private Collection<Object> backupRingbuffer;
     private MergeLifecycleListener mergeLifecycleListener;
+
+    private static void assertRingbufferContent(Collection<Object> ringbuffer) {
+        assertRingbufferContent(ringbuffer, ITEM_COUNT, "item");
+    }
+
+    private static Collection<Object> getRingbufferContent(Ringbuffer<Object> ringbuffer) {
+        List<Object> list = new LinkedList<Object>();
+        try {
+            for (long sequence = ringbuffer.headSequence(); sequence <= ringbuffer.tailSequence(); sequence++) {
+                list.add(ringbuffer.readOne(sequence));
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+        return list;
+    }
+
+    private static void assertRingbufferContent(Collection<Object> ringbuffer, int expectedSize) {
+        assertRingbufferContent(ringbuffer, expectedSize, null);
+    }
+
+    private static void assertRingbufferContent(Ringbuffer<Object> ringbuffer) {
+        assertRingbufferContent(getRingbufferContent(ringbuffer));
+    }
+
+    private static void assertRingbufferContent(Ringbuffer<Object> ringbuffer, int expectedSize) {
+        assertRingbufferContent(getRingbufferContent(ringbuffer), expectedSize);
+    }
+
+    private static void assertRingbufferContent(Collection<Object> ringbuffer, int expectedSize, String prefix) {
+        assertEqualsStringFormat("ringbuffer " + toString(ringbuffer) + " should contain %d items, but was %d ", expectedSize, ringbuffer.size());
+
+        for (int i = 0; i < expectedSize; i++) {
+            Object expectedValue = prefix == null ? i : prefix + i;
+            assertTrue("ringbuffer " + toString(ringbuffer) + " should contain " + expectedValue, ringbuffer.contains(expectedValue));
+        }
+    }
 
     @Override
     protected Config config() {
@@ -100,38 +149,27 @@ public class RingbufferSplitBrainTest extends SplitBrainTestSupport {
 
         Config config = super.config();
         config.getRingbufferConfig(ringbufferNameA)
-                .setInMemoryFormat(inMemoryFormat)
-                .setMergePolicyConfig(mergePolicyConfig)
-                .setBackupCount(1)
-                .setAsyncBackupCount(0)
-                .setTimeToLiveSeconds(0);
+              .setInMemoryFormat(inMemoryFormat)
+              .setMergePolicyConfig(mergePolicyConfig)
+              .setRingbufferStoreConfig(new RingbufferStoreConfig()
+                      .setStoreImplementation(ringbufferStoreA))
+              .setBackupCount(1)
+              .setAsyncBackupCount(0)
+              .setTimeToLiveSeconds(0);
         config.getRingbufferConfig(ringbufferNameB)
-                .setInMemoryFormat(inMemoryFormat)
-                .setMergePolicyConfig(mergePolicyConfig)
-                .setBackupCount(1)
-                .setAsyncBackupCount(0)
-                .setTimeToLiveSeconds(0);
+              .setInMemoryFormat(inMemoryFormat)
+              .setMergePolicyConfig(mergePolicyConfig)
+              .setRingbufferStoreConfig(new RingbufferStoreConfig()
+                      .setStoreImplementation(ringbufferStoreB))
+              .setBackupCount(1)
+              .setAsyncBackupCount(0)
+              .setTimeToLiveSeconds(0);
         return config;
     }
 
     @Override
-    protected void onBeforeSplitBrainCreated(HazelcastInstance[] instances) {
-        Ringbuffer<Object> ringbuffer = instances[0].getRingbuffer(ringbufferNameA);
-        for (int i = 0; i < INITIAL_COUNT; i++) {
-            ringbuffer.add("item" + i);
-        }
-
-        waitAllForSafeState(instances);
-
-        int partitionId = ((RingbufferProxy) ringbuffer).getPartitionId();
-        HazelcastInstance backupInstance = getFirstBackupInstance(instances, partitionId);
-        Collection<Object> backupRingbuffer = getBackupRingbuffer(backupInstance, partitionId, ringbufferNameA);
-
-        assertEquals("backupRingbuffer should contain " + INITIAL_COUNT + " items", INITIAL_COUNT, backupRingbuffer.size());
-        for (int i = 0; i < INITIAL_COUNT; i++) {
-            assertTrue("backupRingbuffer should contain item" + i + " " + backupRingbuffer,
-                    backupRingbuffer.contains("item" + i));
-        }
+    protected void onBeforeSplitBrainCreated(HazelcastInstance[] instances) throws Exception {
+        this.serializationService = getSerializationService(instances[0]);
     }
 
     @Override
@@ -145,9 +183,10 @@ public class RingbufferSplitBrainTest extends SplitBrainTestSupport {
         ringbufferA2 = secondBrain[0].getRingbuffer(ringbufferNameA);
 
         ringbufferB2 = secondBrain[0].getRingbuffer(ringbufferNameB);
-        for (int i = 0; i < INITIAL_COUNT; i++) {
-            ringbufferB2.add("item" + i);
-        }
+
+        ringbufferA1.size();
+        ringbufferA2.size();
+        ringbufferB2.size();
 
         if (mergePolicyClass == DiscardMergePolicy.class) {
             afterSplitDiscardMergePolicy();
@@ -155,7 +194,9 @@ public class RingbufferSplitBrainTest extends SplitBrainTestSupport {
             afterSplitPassThroughMergePolicy();
         } else if (mergePolicyClass == PutIfAbsentMergePolicy.class) {
             afterSplitPutIfAbsentMergePolicy();
-        } else if (mergePolicyClass == MergeIntegerValuesMergePolicy.class) {
+        } else if (mergePolicyClass == RingbufferRemoveValuesMergePolicy.class) {
+            afterSplitRemoveValuesMergePolicy();
+        } else if (mergePolicyClass == RingbufferMergeIntegerValuesMergePolicy.class) {
             afterSplitCustomMergePolicy();
         } else {
             fail();
@@ -167,6 +208,10 @@ public class RingbufferSplitBrainTest extends SplitBrainTestSupport {
         // wait until merge completes
         mergeLifecycleListener.await();
 
+        // we manually purge the unwanted items from the QueueStore, to test if the expected items are correctly stored
+        ringbufferStoreA.purge(serializationService, "lostItem");
+        ringbufferStoreB.purge(serializationService, "lostItem");
+
         backupRingbuffer = getBackupRingbuffer(instances, ringbufferA1);
 
         ringbufferB1 = instances[0].getRingbuffer(ringbufferNameB);
@@ -177,7 +222,9 @@ public class RingbufferSplitBrainTest extends SplitBrainTestSupport {
             afterMergePassThroughMergePolicy();
         } else if (mergePolicyClass == PutIfAbsentMergePolicy.class) {
             afterMergePutIfAbsentMergePolicy();
-        } else if (mergePolicyClass == MergeIntegerValuesMergePolicy.class) {
+        } else if (mergePolicyClass == RingbufferRemoveValuesMergePolicy.class) {
+            afterMergeRemoveValuesMergePolicy();
+        } else if (mergePolicyClass == RingbufferMergeIntegerValuesMergePolicy.class) {
             afterMergeCustomMergePolicy();
         } else {
             fail();
@@ -185,128 +232,224 @@ public class RingbufferSplitBrainTest extends SplitBrainTestSupport {
     }
 
     private void afterSplitDiscardMergePolicy() {
-        // we should have these items in the merged ringbufferA, since they are added in both clusters
-        for (int i = INITIAL_COUNT; i < INITIAL_COUNT + NEW_ITEMS; i++) {
+        for (int i = 0; i < ITEM_COUNT; i++) {
             ringbufferA1.add("item" + i);
-            ringbufferA2.add("item" + i);
-        }
-
-        // we should not have these items in the merged ringbuffers, since they are in the smaller cluster only
-        for (int i = 0; i < NEW_ITEMS; i++) {
             ringbufferA2.add("lostItem" + i);
+
             ringbufferB2.add("lostItem" + i);
         }
     }
 
     private void afterMergeDiscardMergePolicy() {
-        assertRingbufferContent(ringbufferA1, false);
-        assertRingbufferContent(ringbufferA2, false);
-        assertRingbufferContent(backupRingbuffer, false);
+        assertRingbufferContent(ringbufferA1);
+        assertRingbufferContent(ringbufferA2);
+        assertRingbufferContent(backupRingbuffer);
+        assertRingbufferStoreContent(ringbufferStoreA);
 
-        assertEquals(0, ringbufferB1.size());
-        assertEquals(0, ringbufferB2.size());
+        assertRingbufferContent(ringbufferB1, 0);
+        assertRingbufferContent(ringbufferB2, 0);
+        assertRingbufferStoreContent(ringbufferStoreB, 0);
     }
 
     private void afterSplitPassThroughMergePolicy() {
-        for (int i = INITIAL_COUNT; i < INITIAL_COUNT + NEW_ITEMS; i++) {
-            ringbufferA1.add("item" + i);
-        }
-
-        // we should not lose the additional items from ringbufferA2 or the new ringbufferB2
-        for (int i = INITIAL_COUNT; i < INITIAL_COUNT + NEW_ITEMS * 2; i++) {
+        for (int i = 0; i < ITEM_COUNT; i++) {
+            ringbufferA1.add("lostItem" + i);
             ringbufferA2.add("item" + i);
+
             ringbufferB2.add("item" + i);
         }
     }
 
     private void afterMergePassThroughMergePolicy() {
-        assertRingbufferContent(ringbufferA1, true);
-        assertRingbufferContent(ringbufferA2, true);
-        assertRingbufferContent(backupRingbuffer, true);
+        assertRingbufferContent(ringbufferA1);
+        assertRingbufferContent(ringbufferA2);
+        assertRingbufferContent(backupRingbuffer);
+        assertRingbufferStoreContent(ringbufferStoreA);
 
-        assertRingbufferContent(ringbufferB1, true);
-        assertRingbufferContent(ringbufferB2, true);
+        assertRingbufferContent(ringbufferB1);
+        assertRingbufferContent(ringbufferB2);
+        assertRingbufferStoreContent(ringbufferStoreB);
     }
 
     private void afterSplitPutIfAbsentMergePolicy() {
-        for (int i = INITIAL_COUNT; i < INITIAL_COUNT + NEW_ITEMS; i++) {
+        for (int i = 0; i < ITEM_COUNT; i++) {
             ringbufferA1.add("item" + i);
-        }
+            ringbufferA2.add("lostItem" + i);
 
-        // we should not lose the additional items from ringbufferA2 or the new ringbufferB2
-        for (int i = INITIAL_COUNT; i < INITIAL_COUNT + NEW_ITEMS * 2; i++) {
-            ringbufferA2.add("item" + i);
             ringbufferB2.add("item" + i);
         }
     }
 
-    private void afterMergePutIfAbsentMergePolicy() {
-        assertRingbufferContent(ringbufferA1, true);
-        assertRingbufferContent(ringbufferA2, true);
-        assertRingbufferContent(backupRingbuffer, true);
+    private void assertRingbufferStoreContent(SplitBrainRingbufferStore ringbufferStore) {
+        assertRingbufferStoreContent(ringbufferStore, ITEM_COUNT, "item");
+    }
 
-        assertRingbufferContent(ringbufferB1, true);
-        assertRingbufferContent(ringbufferB2, true);
+    private void assertRingbufferStoreContent(SplitBrainRingbufferStore ringbufferStore, int expectedSize) {
+        assertRingbufferStoreContent(ringbufferStore, expectedSize, null);
+    }
+
+    private void afterMergePutIfAbsentMergePolicy() {
+        assertRingbufferContent(ringbufferA1);
+        assertRingbufferContent(ringbufferA2);
+        assertRingbufferContent(backupRingbuffer);
+        assertRingbufferStoreContent(ringbufferStoreA);
+
+        assertRingbufferContent(ringbufferB1);
+        assertRingbufferContent(ringbufferB2);
+        assertRingbufferStoreContent(ringbufferStoreB);
+    }
+
+    private void afterSplitRemoveValuesMergePolicy() {
+        for (int i = 0; i < ITEM_COUNT; i++) {
+            ringbufferA1.add("lostItem" + i);
+            ringbufferA2.add("lostItem" + i);
+
+            ringbufferB2.add("lostItem" + i);
+        }
+    }
+
+    private void afterMergeRemoveValuesMergePolicy() {
+        assertRingbufferContent(ringbufferA1, 0);
+        assertRingbufferContent(ringbufferA2, 0);
+        assertRingbufferContent(backupRingbuffer, 0);
+        assertRingbufferStoreContent(ringbufferStoreA, 0);
+
+        assertRingbufferContent(ringbufferB1, 0);
+        assertRingbufferContent(ringbufferB2, 0);
+        assertRingbufferStoreContent(ringbufferStoreB, 0);
     }
 
     private void afterSplitCustomMergePolicy() {
-        for (int i = 0; i < NEW_ITEMS; i++) {
+        for (int i = 0; i < ITEM_COUNT; i++) {
             ringbufferA2.add(i);
             ringbufferA2.add("lostItem" + i);
         }
+        // we clear the QueueStore, so we can check that the custom created items are correctly stored
+        ringbufferStoreA.store.clear();
     }
 
     private void afterMergeCustomMergePolicy() {
-        Collection<Object> ringbufferContent1 = getRingbufferContent(ringbufferA1);
-        Collection<Object> ringbufferContent2 = getRingbufferContent(ringbufferA2);
-
-        int expected = INITIAL_COUNT + NEW_ITEMS;
-        assertEquals("ringbufferA1 should contain " + expected + " items " + ringbufferContent1, expected, ringbufferA1.size());
-        assertEquals("ringbufferA2 should contain " + expected + " items " + ringbufferContent2, expected, ringbufferA2.size());
-        assertEquals("backupRingbuffer should contain " + expected + " items " + backupRingbuffer,
-                expected, backupRingbuffer.size());
-
-        for (int i = 0; i < INITIAL_COUNT; i++) {
-            assertTrue("ringbufferA1 should contain 'item" + i + "' " + ringbufferContent1,
-                    ringbufferContent1.contains("item" + i));
-            assertTrue("ringbufferA2 should contain 'item" + i + "' " + ringbufferContent2,
-                    ringbufferContent2.contains("item" + i));
-            assertTrue("backupRingbuffer should contain 'item" + i + "' " + backupRingbuffer,
-                    backupRingbuffer.contains("item" + i));
-        }
-        for (int i = 0; i < NEW_ITEMS; i++) {
-            assertTrue("ringbufferA1 should contain '" + i + "' " + ringbufferContent1, ringbufferContent1.contains(i));
-            assertTrue("ringbufferA2 should contain '" + i + "' " + ringbufferContent2, ringbufferContent2.contains(i));
-            assertTrue("backupRingbuffer should contain '" + i + "' " + backupRingbuffer, backupRingbuffer.contains(i));
-
-            assertFalse("ringbufferA1 should not contain 'lostItem" + i + "'", ringbufferContent1.contains("lostItem" + i));
-            assertFalse("ringbufferA2 should not contain 'lostItem" + i + "'", ringbufferContent2.contains("lostItem" + i));
-            assertFalse("backupRingbuffer should not contain 'lostItem" + i + "'", backupRingbuffer.contains("lostItem" + i));
-        }
+        assertRingbufferContent(ringbufferA1, ITEM_COUNT);
+        assertRingbufferContent(ringbufferA2, ITEM_COUNT);
+        assertRingbufferContent(backupRingbuffer, ITEM_COUNT);
+        assertRingbufferStoreContent(ringbufferStoreA, ITEM_COUNT);
     }
 
-    private static void assertRingbufferContent(Ringbuffer<Object> ringbuffer, boolean hasMergedItems) {
-        assertRingbufferContent(getRingbufferContent(ringbuffer), hasMergedItems);
-    }
+    private void assertRingbufferStoreContent(SplitBrainRingbufferStore ringbufferStore, int expectedSize, String prefix) {
+        assertEqualsStringFormat("ringbufferStore " + ringbufferStore + " should contain %d items, but was %d",
+                expectedSize, ringbufferStore.size());
 
-    private static void assertRingbufferContent(Collection<Object> ringbuffer, boolean hasMergedItems) {
-        int expected = INITIAL_COUNT + NEW_ITEMS * (hasMergedItems ? 2 : 1);
-        assertEquals("ringbuffer should contain " + expected + " items " + ringbuffer, expected, ringbuffer.size());
-
-        for (int i = 0; i < INITIAL_COUNT + NEW_ITEMS * (hasMergedItems ? 2 : 1); i++) {
-            assertTrue("ringbuffer should contain item" + i + " " + ringbuffer, ringbuffer.contains("item" + i));
-        }
-    }
-
-    private static Collection<Object> getRingbufferContent(Ringbuffer<Object> ringbuffer) {
-        List<Object> list = new LinkedList<Object>();
-        try {
-            for (long sequence = ringbuffer.headSequence(); sequence <= ringbuffer.tailSequence(); sequence++) {
-                list.add(ringbuffer.readOne(sequence));
+        for (int i = 0; i < expectedSize; i++) {
+            Object expectedValue = prefix == null ? i : prefix + i;
+            if (inMemoryFormat == BINARY) {
+                expectedValue = serializationService.toData(expectedValue).toByteArray();
             }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
+            assertTrue("ringbufferStore " + ringbufferStore + " should contain " + expectedValue,
+                    ringbufferStore.contains(expectedValue));
         }
-        return list;
+    }
+
+    /**
+     * A {@link RingbufferStore} implementation for split-brain tests.
+     *
+     * <b>Note</b>: The {@link RingbufferStore} uses the sequence ID of the ringbuffer item.
+     * This ID is not reliable during a split-brain situation, since there can be duplicates in each sub-cluster.
+     * Also the order is not guaranteed to be the same between the sub-clusters.
+     * So after the split-brain healing we cannot make a strict test on the stored items.
+     * The split-brain healing also doesn't try to delete any old items, but adds newly created items to the store.
+     */
+    private static class SplitBrainRingbufferStore implements RingbufferStore<Object> {
+
+        private final ConcurrentMap<Long, Collection<Object>> store = new ConcurrentHashMap<Long, Collection<Object>>();
+
+        public SplitBrainRingbufferStore() {
+        }
+
+        @Override
+        public void store(long sequence, Object data) {
+            Collection<Object> collection = getCollection(sequence);
+            collection.add(data);
+        }
+
+        @Override
+        public void storeAll(long firstItemSequence, Object[] items) {
+            for (Object item : items) {
+                Collection<Object> collection = getCollection(firstItemSequence++);
+                collection.add(item);
+            }
+        }
+
+        @Override
+        public Object load(long sequence) {
+            return null;
+        }
+
+        @Override
+        public long getLargestSequence() {
+            long maxSeq = -1;
+            for (Long seq : store.keySet()) {
+                maxSeq = Math.max(seq, maxSeq);
+            }
+            return maxSeq;
+        }
+
+        @SuppressWarnings("SameParameterValue")
+        void purge(SerializationService serializationService, String prefix) {
+            Iterator<Collection<Object>> iterator = store.values().iterator();
+            while (iterator.hasNext()) {
+                Collection<Object> collection = iterator.next();
+                Iterator<Object> collectionIterator = collection.iterator();
+                while (collectionIterator.hasNext()) {
+                    Object value = collectionIterator.next();
+                    if (value instanceof byte[]) {
+                        // binary in-memory format and store format
+                        value = serializationService.toObject(new HeapData((byte[]) value));
+                    }
+                    if (value instanceof String) {
+                        if (((String) value).startsWith(prefix)) {
+                            collectionIterator.remove();
+                        }
+                    }
+                }
+                if (collection.isEmpty()) {
+                    iterator.remove();
+                }
+            }
+        }
+
+        int size() {
+            return store.size();
+        }
+
+        boolean contains(Object expectedValue) {
+            for (Collection<Object> collection : store.values()) {
+                if (expectedValue instanceof byte[]) {
+                    // binary in-memory format and store format
+                    for (Object storedItem : collection) {
+                        if (Arrays.equals((byte[]) storedItem, (byte[]) expectedValue)) {
+                            return true;
+                        }
+                    }
+
+                } else {
+                    if (collection.contains(expectedValue)) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        private Collection<Object> getCollection(Long key) {
+            Collection<Object> collection = store.get(key);
+            if (collection == null) {
+                collection = new ConcurrentLinkedQueue<Object>();
+                Collection<Object> candidate = store.putIfAbsent(key, collection);
+                if (candidate != null) {
+                    return candidate;
+                }
+            }
+            return collection;
+        }
     }
 }

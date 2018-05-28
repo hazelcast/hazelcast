@@ -19,7 +19,6 @@ package com.hazelcast.journal;
 import com.hazelcast.internal.journal.EventJournalReader;
 import com.hazelcast.spi.ObjectNamespace;
 
-import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;

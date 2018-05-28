@@ -23,6 +23,7 @@ import com.hazelcast.client.impl.protocol.codec.ErrorCodec;
 import com.hazelcast.client.impl.protocol.exception.MaxMessageSizeExceeded;
 import com.hazelcast.config.ConfigurationException;
 import com.hazelcast.config.InvalidConfigurationException;
+import com.hazelcast.core.ConsistencyLostException;
 import com.hazelcast.core.DuplicateInstanceNameException;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
@@ -31,7 +32,6 @@ import com.hazelcast.core.IndeterminateOperationStateException;
 import com.hazelcast.core.LocalMemberResetException;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.core.OperationTimeoutException;
-import com.hazelcast.core.ConsistencyLostException;
 import com.hazelcast.crdt.MutationDisallowedException;
 import com.hazelcast.crdt.TargetNotReplicaException;
 import com.hazelcast.durableexecutor.StaleTaskIdException;
@@ -758,7 +758,7 @@ public class ClientExceptionFactory {
             causeClassName = null;
         }
 
-        StackTraceElement[] combinedStackTraceArray = combinedStackTrace.toArray(new StackTraceElement[combinedStackTrace.size()]);
+        StackTraceElement[] combinedStackTraceArray = combinedStackTrace.toArray(new StackTraceElement[0]);
         return ErrorCodec.encode(errorCode, throwable.getClass().getName(), message, combinedStackTraceArray,
                 causeErrorCode, causeClassName);
     }

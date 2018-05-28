@@ -19,7 +19,6 @@ package com.hazelcast.client.protocol;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCodec;
 import com.hazelcast.client.impl.protocol.util.ClientMessageDecoder;
-import com.hazelcast.client.impl.protocol.util.ClientMessageHandler;
 import com.hazelcast.client.impl.protocol.util.ClientMessageSplitter;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.util.counters.SwCounter;
@@ -27,6 +26,7 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.function.Consumer;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -56,9 +56,9 @@ public class ClientMessageSplitAndBuildTest {
         List<ClientMessage> subFrames = ClientMessageSplitter.getSubFrames(FRAME_SIZE, expectedClientMessage);
         ClientMessageDecoder decoder = new ClientMessageDecoder(
                 mock(Connection.class),
-                new ClientMessageHandler() {
+                new Consumer<ClientMessage>() {
                     @Override
-                    public void handle(ClientMessage message, Connection connection) {
+                    public void accept(ClientMessage message) {
                         message.addFlag(ClientMessage.BEGIN_AND_END_FLAGS);
                         assertEquals(expectedClientMessage, message);
                     }
@@ -105,9 +105,9 @@ public class ClientMessageSplitAndBuildTest {
 
         ClientMessageDecoder decoder = new ClientMessageDecoder(
                 mock(Connection.class),
-                new ClientMessageHandler() {
+                new Consumer<ClientMessage>() {
                     @Override
-                    public void handle(ClientMessage message, Connection connection) {
+                    public void accept(ClientMessage message) {
                         int correlationId = (int) message.getCorrelationId();
                         message.addFlag(ClientMessage.BEGIN_AND_END_FLAGS);
                         assertEquals(expectedClientMessages.get(correlationId), message);
@@ -140,9 +140,9 @@ public class ClientMessageSplitAndBuildTest {
                 expectedClientMessage.getFrameLength() + 1, expectedClientMessage);
         ClientMessageDecoder decoder = new ClientMessageDecoder(
                 mock(Connection.class),
-                new ClientMessageHandler() {
+                new Consumer<ClientMessage>() {
                     @Override
-                    public void handle(ClientMessage message, Connection connection) {
+                    public void accept(ClientMessage message) {
                         message.addFlag(ClientMessage.BEGIN_AND_END_FLAGS);
                         assertEquals(expectedClientMessage, message);
                     }

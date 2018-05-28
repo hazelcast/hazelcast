@@ -16,12 +16,15 @@
 
 package com.hazelcast.spi.merge;
 
+import com.hazelcast.spi.annotation.Beta;
+
 /**
  * Represents a read-only view of a data structure value for the merging process after a split-brain.
  *
  * @param <V> the type of the value
  * @since 3.10
  */
+@Beta
 public interface MergingValue<V> {
 
     /**
@@ -34,7 +37,8 @@ public interface MergingValue<V> {
     /**
      * Returns the deserialized merging value.
      *
+     * @param <DV> the type of the deserialized value
      * @return the deserialized merging value
      */
-    Object getDeserializedValue();
+    <DV> DV getDeserializedValue();
 }

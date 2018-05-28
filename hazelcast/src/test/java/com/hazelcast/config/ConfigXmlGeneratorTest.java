@@ -360,6 +360,12 @@ public class ConfigXmlGeneratorTest {
                 .setClassName("SerializerClass")
                 .setTypeClassName("TypeClass");
 
+        JavaSerializationFilterConfig filterConfig = new JavaSerializationFilterConfig();
+        filterConfig.getBlacklist().addClasses("example.Class1", "acme.Test").addPackages("org.infinitban")
+            .addPrefixes("dangerous.", "bang");
+        filterConfig.getWhitelist().addClasses("WhiteOne", "WhiteTwo").addPackages("com.hazelcast", "test.package")
+            .addPrefixes("java");
+
         SerializationConfig expectedConfig = new SerializationConfig()
                 .setAllowUnsafe(true)
                 .setPortableVersion(2)
@@ -369,6 +375,7 @@ public class ConfigXmlGeneratorTest {
                 .setEnableCompression(true)
                 .setEnableSharedObject(true)
                 .setGlobalSerializerConfig(globalSerializerConfig)
+                .setJavaSerializationFilterConfig(filterConfig)
                 .addDataSerializableFactoryClass(10, "SerializableFactory")
                 .addPortableFactoryClass(10, "PortableFactory")
                 .addSerializerConfig(serializerConfig);
@@ -388,6 +395,7 @@ public class ConfigXmlGeneratorTest {
         assertEquals(expectedConfig.getDataSerializableFactoryClasses(), actualConfig.getDataSerializableFactoryClasses());
         assertEquals(expectedConfig.getPortableFactoryClasses(), actualConfig.getPortableFactoryClasses());
         assertEquals(expectedConfig.getSerializerConfigs(), actualConfig.getSerializerConfigs());
+        assertEquals(expectedConfig.getJavaSerializationFilterConfig(), actualConfig.getJavaSerializationFilterConfig());
     }
 
     @Test

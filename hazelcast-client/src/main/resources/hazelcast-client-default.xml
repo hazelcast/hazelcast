@@ -15,8 +15,20 @@
   ~ limitations under the License.
   -->
 
-<hazelcast-client xsi:schemaLocation="http://www.hazelcast.com/schema/client-config hazelcast-client-config-3.10.xsd"
-           xmlns="http://www.hazelcast.com/schema/client-config"
-           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<!--
+  The default Hazelcast client configuration.
+
+  This XML file is used when no hazelcast-client.xml is present.
+
+  To learn how to configure Hazelcast, please see the schema at
+  https://hazelcast.com/schema/client-config/hazelcast-client-config-3.11.xsd
+  or the Reference Manual at https://hazelcast.org/documentation/
+-->
+
+<!--suppress XmlDefaultAttributeValue -->
+<hazelcast-client xmlns="http://www.hazelcast.com/schema/client-config"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://www.hazelcast.com/schema/client-config
+                  http://www.hazelcast.com/schema/config/hazelcast-client-config-3.11.xsd">
 
 </hazelcast-client>

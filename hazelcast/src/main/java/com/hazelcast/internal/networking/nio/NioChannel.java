@@ -71,7 +71,7 @@ public class NioChannel extends AbstractChannel {
 
     @Override
     public void flush() {
-        outboundPipeline.flush();
+        outboundPipeline.wakeup();
     }
 
     @Override

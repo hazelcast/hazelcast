@@ -77,6 +77,7 @@ import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.executor.ExecutorType;
 
 import javax.security.auth.login.LoginException;
+import java.net.InetSocketAddress;
 import java.util.Collection;
 import java.util.EnumMap;
 import java.util.HashMap;
@@ -216,8 +217,9 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
     }
 
     @Override
-    public void handle(ClientMessage clientMessage, Connection connection) {
+    public void accept(ClientMessage clientMessage) {
         int partitionId = clientMessage.getPartitionId();
+        Connection connection = clientMessage.getConnection();
         MessageTask messageTask = messageTaskFactory.create(clientMessage, connection);
         InternalOperationService operationService = nodeEngine.getOperationService();
         if (partitionId < 0) {
@@ -312,8 +314,12 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
     public void bind(final ClientEndpoint endpoint) {
         final Connection conn = endpoint.getConnection();
         if (conn instanceof TcpIpConnection) {
-            Address address = new Address(conn.getRemoteSocketAddress());
-            ((TcpIpConnection) conn).setEndPoint(address);
+            InetSocketAddress socketAddress = conn.getRemoteSocketAddress();
+            //socket address can be null if connection closed before bind
+            if (socketAddress != null) {
+                Address address = new Address(socketAddress);
+                ((TcpIpConnection) conn).setEndPoint(address);
+            }
         }
         ClientEvent event = new ClientEvent(endpoint.getUuid(),
                 ClientEventType.CONNECTED,
@@ -377,7 +383,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
         node.getConnectionManager().addConnectionListener(connectionListener);
 
         ClientHeartbeatMonitor heartbeatMonitor = new ClientHeartbeatMonitor(
-                endpointManager, this, nodeEngine.getExecutionService(), node.getProperties());
+                endpointManager, getLogger(ClientHeartbeatMonitor.class), nodeEngine.getExecutionService(), node.getProperties());
         heartbeatMonitor.start();
     }
 
@@ -467,7 +473,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
                     endpoint.getClientType());
             sendClientEvent(event);
 
-            if (!endpoint.isFirstConnection()) {
+            if (!endpoint.isOwnerConnection()) {
                 logger.finest("connectionRemoved: Not the owner conn:" + connection + " for endpoint " + endpoint);
                 return;
             }

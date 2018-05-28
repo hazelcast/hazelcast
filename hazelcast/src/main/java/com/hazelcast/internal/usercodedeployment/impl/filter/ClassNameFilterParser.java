@@ -43,7 +43,7 @@ public final class ClassNameFilterParser {
         String whitelistedPrefixes = config.getWhitelistedPrefixes();
         Set<String> whitelistSet = parsePrefixes(whitelistedPrefixes);
         if (!whitelistSet.isEmpty()) {
-            ClassWhitelistFilter whitelistFilter = new ClassWhitelistFilter(whitelistSet.toArray(new String[]{}));
+            ClassWhitelistFilter whitelistFilter = new ClassWhitelistFilter(whitelistSet.toArray(new String[0]));
             classFilter = new AndFilter<String>(classFilter, whitelistFilter);
         }
         return classFilter;

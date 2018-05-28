@@ -17,6 +17,7 @@
 
 package com.hazelcast.util.collection;
 
+import com.google.common.collect.Lists;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -31,6 +32,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Random;
 import java.util.Set;
+import java.util.List;
 
 import static org.hamcrest.Matchers.contains;
 import static org.junit.Assert.assertEquals;
@@ -293,9 +295,53 @@ public class LongHashSetTest {
         final LongHashSet initial = new LongHashSet(100, -1);
         initial.add(1);
         initial.add(13);
-        final Object[] ary = initial.toArray(new Long[2]);
+        final Object[] ary = initial.toArray(new Long[0]);
         final Set<Object> fromArray = new HashSet<Object>(Arrays.asList(ary));
         assertEquals(new HashSet<Object>(initial), fromArray);
+    }
+
+    @Test
+    public void testLongArrayConstructor() {
+        long[] items = {42L, 43L};
+        long missingValue = -1L;
+        final LongHashSet hashSet = new LongHashSet(items, missingValue);
+
+        set.add(42L);
+        set.add(43L);
+
+        assertEquals(set, hashSet);
+    }
+
+    @Test
+    public void testRemove_whenValuePassedAsObject() {
+        final LongHashSet initial = new LongHashSet(100, -1);
+        initial.add(42);
+        initial.remove(Long.valueOf(42));
+        assertFalse(initial.contains(Long.valueOf(42)));
+        assertTrue(initial.isEmpty());
+    }
+
+    @Test
+    public void testAddAll_whenCollectionGiven() {
+        Long[] items = {43L, 44L};
+        final List<Long> expected = Lists.asList(42L, items);
+        final LongHashSet actual = new LongHashSet(100, -1);
+
+        actual.addAll(expected);
+        assertEquals(expected.size(), actual.size());
+        assertTrue(actual.containsAll(expected));
+    }
+
+    @Test
+    public void testRemoveAll_whenCollectionGiven() {
+        Long[] items = {43L, 44L};
+        final List<Long> toBeRemoved = Lists.asList(42L, items);
+        final LongHashSet actual = new LongHashSet(100, -1);
+        actual.addAll(toBeRemoved);
+        assertEquals(toBeRemoved.size(), actual.size());
+
+        actual.removeAll(toBeRemoved);
+        assertTrue(actual.isEmpty());
     }
 
     private void assertIteratorHasElements() {

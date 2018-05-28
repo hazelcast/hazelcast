@@ -40,10 +40,11 @@ public class MockConnection implements Connection {
     protected final Address localEndpoint;
     protected final NodeEngineImpl remoteNodeEngine;
 
-    private final Address remoteEndpoint;
     volatile MockConnection localConnection;
 
-    private volatile AtomicBoolean alive = new AtomicBoolean(true);
+    private final AtomicBoolean alive = new AtomicBoolean(true);
+
+    private final Address remoteEndpoint;
 
     public MockConnection(Address localEndpoint, Address remoteEndpoint, NodeEngineImpl remoteNodeEngine) {
         this.localEndpoint = localEndpoint;
@@ -73,7 +74,7 @@ public class MockConnection implements Connection {
         Packet packet = (Packet) frame;
         Packet newPacket = readFromPacket(packet);
         try {
-            remoteNodeEngine.getPacketDispatcher().handle(newPacket);
+            remoteNodeEngine.getPacketDispatcher().accept(newPacket);
         } catch (Exception e) {
             throw rethrow(e);
         }
@@ -125,7 +126,6 @@ public class MockConnection implements Connection {
             ConnectionManager connectionManager = remoteNodeEngine.getNode().connectionManager;
             connectionManager.onConnectionClose(this);
         }
-
     }
 
     @Override

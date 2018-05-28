@@ -36,6 +36,7 @@ import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.ExecutorConfig;
+import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.HotRestartConfig;
 import com.hazelcast.config.HotRestartPersistenceConfig;
@@ -83,7 +84,6 @@ import com.hazelcast.config.QueueStoreConfig;
 import com.hazelcast.config.QuorumConfig;
 import com.hazelcast.config.QuorumConfigBuilder;
 import com.hazelcast.config.QuorumListenerConfig;
-import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.RecentlyActiveQuorumConfigBuilder;
 import com.hazelcast.config.ReliableTopicConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
@@ -1232,9 +1232,6 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     cacheConfigBuilder.addPropertyValue("partitionLostListenerConfigs", listeners);
                 } else if ("quorum-ref".equals(cleanNodeName(childNode))) {
                     cacheConfigBuilder.addPropertyValue("quorumName", getTextContent(childNode));
-                } else if ("partition-lost-listeners".equals(cleanNodeName(childNode))) {
-                    ManagedList listeners = parseListeners(childNode, CachePartitionLostListenerConfig.class);
-                    cacheConfigBuilder.addPropertyValue("partitionLostListenerConfigs", listeners);
                 } else if ("merge-policy".equals(cleanNodeName(childNode))) {
                     cacheConfigBuilder.addPropertyValue("mergePolicy", getTextContent(childNode));
                 } else if ("hot-restart".equals(cleanNodeName(childNode))) {

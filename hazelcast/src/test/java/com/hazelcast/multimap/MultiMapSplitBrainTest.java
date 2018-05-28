@@ -55,7 +55,8 @@ import static org.junit.Assert.fail;
  * <p>
  * Most merge policies are tested with {@link MultiMapConfig#isBinary()} as {@code true} only, since they don't check the value.
  * <p>
- * The {@link MergeIntegerValuesMergePolicy} is tested with both in-memory formats, since it's using the value to merge.
+ * The {@link MergeCollectionOfIntegerValuesMergePolicy} is tested with both in-memory formats,
+ * since it's using the value to merge.
  * <p>
  * The {@link DiscardMergePolicy}, {@link PassThroughMergePolicy} and {@link PutIfAbsentMergePolicy} are also
  * tested with a data structure, which is only created in the smaller cluster.
@@ -65,26 +66,29 @@ import static org.junit.Assert.fail;
 @Category({QuickTest.class, ParallelTest.class})
 public class MultiMapSplitBrainTest extends SplitBrainTestSupport {
 
-    @Parameters(name = "isBinary:{0}, mergePolicy:{1}")
+    @Parameters(name = "mergePolicy:{0}, isBinary:{1}")
     public static Collection<Object[]> parameters() {
         return asList(new Object[][]{
-                {true, DiscardMergePolicy.class},
-                {true, HigherHitsMergePolicy.class},
-                {true, LatestAccessMergePolicy.class},
-                {true, LatestUpdateMergePolicy.class},
-                {true, PassThroughMergePolicy.class},
-                {true, PutIfAbsentMergePolicy.class},
+                {DiscardMergePolicy.class, true},
+                {HigherHitsMergePolicy.class, true},
+                {LatestAccessMergePolicy.class, true},
+                {LatestUpdateMergePolicy.class, true},
+                {PassThroughMergePolicy.class, true},
+                {PutIfAbsentMergePolicy.class, true},
+                {RemoveValuesMergePolicy.class, true},
 
-                {true, MergeIntegerValuesMergePolicy.class},
-                {false, MergeIntegerValuesMergePolicy.class},
+                {ReturnPiCollectionMergePolicy.class, true},
+                {ReturnPiCollectionMergePolicy.class, false},
+                {MergeCollectionOfIntegerValuesMergePolicy.class, true},
+                {MergeCollectionOfIntegerValuesMergePolicy.class, false},
         });
     }
 
     @Parameter
-    public boolean isBinary;
+    public Class<? extends SplitBrainMergePolicy> mergePolicyClass;
 
     @Parameter(value = 1)
-    public Class<? extends SplitBrainMergePolicy> mergePolicyClass;
+    public boolean isBinary;
 
     private String multiMapNameA = randomMapName("multiMapA-");
     private String multiMapNameB = randomMapName("multiMapB-");
@@ -149,7 +153,11 @@ public class MultiMapSplitBrainTest extends SplitBrainTestSupport {
             afterSplitPassThroughMergePolicy();
         } else if (mergePolicyClass == PutIfAbsentMergePolicy.class) {
             afterSplitPutIfAbsentMergePolicy();
-        } else if (mergePolicyClass == MergeIntegerValuesMergePolicy.class) {
+        } else if (mergePolicyClass == RemoveValuesMergePolicy.class) {
+            afterSplitRemoveValuesMergePolicy();
+        } else if (mergePolicyClass == ReturnPiCollectionMergePolicy.class) {
+            afterSplitReturnPiCollectionMergePolicy();
+        } else if (mergePolicyClass == MergeCollectionOfIntegerValuesMergePolicy.class) {
             afterSplitCustomMergePolicy();
         } else {
             fail();
@@ -178,7 +186,11 @@ public class MultiMapSplitBrainTest extends SplitBrainTestSupport {
             afterMergePassThroughMergePolicy();
         } else if (mergePolicyClass == PutIfAbsentMergePolicy.class) {
             afterMergePutIfAbsentMergePolicy();
-        } else if (mergePolicyClass == MergeIntegerValuesMergePolicy.class) {
+        } else if (mergePolicyClass == RemoveValuesMergePolicy.class) {
+            afterMergeRemoveValuesMergePolicy();
+        } else if (mergePolicyClass == ReturnPiCollectionMergePolicy.class) {
+            afterMergeReturnPiCollectionMergePolicy();
+        } else if (mergePolicyClass == MergeCollectionOfIntegerValuesMergePolicy.class) {
             afterMergeCustomMergePolicy();
         } else {
             fail();
@@ -201,10 +213,15 @@ public class MultiMapSplitBrainTest extends SplitBrainTestSupport {
     private void afterMergeDiscardMergePolicy() {
         assertMultiMapsA("key1", "value1", "value2");
         assertMultiMapsA("key2");
+        assertMultiMapsSizeA(2);
 
         assertMultiMapsB("key");
+        assertMultiMapsSizeB(0);
     }
 
+    /**
+     * The hits are measured per MultiMapValue, so we can test it with multiple keys on the same map.
+     */
     private void afterSplitHigherHitsMergePolicy() {
         multiMapA1.put("key1", "higherHitsValue1");
         multiMapA1.put("key2", "value2");
@@ -222,69 +239,52 @@ public class MultiMapSplitBrainTest extends SplitBrainTestSupport {
     }
 
     private void afterMergeHigherHitsMergePolicy() {
-        assertMultiMapsA("key1", "value1", "higherHitsValue1");
-        assertMultiMapsA("key2", "value2", "higherHitsValue2");
-
-        assertEquals(4, multiMapA1.size());
-        assertEquals(4, multiMapA2.size());
-        assertEquals(2, backupMultiMapA.size());
+        assertMultiMapsA("key1", "higherHitsValue1");
+        assertMultiMapsA("key2", "higherHitsValue2");
+        assertMultiMapsSizeA(2);
     }
 
+    /**
+     * The lastAccessTime is measured per MultiMapContainer, so we cannot test it with multiple keys on the same map.
+     */
     private void afterSplitLatestAccessMergePolicy() {
-        multiMapA1.put("key1", "value1");
-        // access to record
-        multiMapA1.get("key1");
+        multiMapA1.put("key", "value");
 
         // prevent updating at the same time
         sleepAtLeastMillis(100);
 
-        multiMapA2.put("key1", "LatestAccessedValue1");
-        // access to record
-        multiMapA2.get("key1");
+        multiMapA2.put("key", "LatestAccessedValue");
 
-        multiMapA2.put("key2", "value2");
-        // access to record
-        multiMapA2.get("key2");
-
-        // prevent updating at the same time
-        sleepAtLeastMillis(100);
-
-        multiMapA1.put("key2", "LatestAccessedValue2");
-        // access to record
-        multiMapA1.get("key2");
+        multiMapB2.put("key", "LatestAccessedValue");
     }
 
     private void afterMergeLatestAccessMergePolicy() {
-        assertMultiMapsA("key1", "value1", "LatestAccessedValue1");
-        assertMultiMapsA("key2", "value2", "LatestAccessedValue2");
+        assertMultiMapsA("key", "LatestAccessedValue");
+        assertMultiMapsSizeA(1);
 
-        assertEquals(4, multiMapA1.size());
-        assertEquals(4, multiMapA2.size());
-        assertEquals(2, backupMultiMapA.size());
+        assertMultiMapsB("key", "LatestAccessedValue");
+        assertMultiMapsSizeB(1);
     }
 
+    /**
+     * The lastUpdateTime is measured per MultiMapContainer, so we cannot test it with multiple keys on the same map.
+     */
     private void afterSplitLatestUpdateMergePolicy() {
-        multiMapA1.put("key1", "value1");
+        multiMapA1.put("key", "value");
 
         // prevent updating at the same time
         sleepAtLeastMillis(100);
 
-        multiMapA2.put("key1", "LatestUpdatedValue1");
-        multiMapA2.put("key2", "value2");
-
-        // prevent updating at the same time
-        sleepAtLeastMillis(100);
-
-        multiMapA1.put("key2", "LatestUpdatedValue2");
+        multiMapA2.put("key", "LatestUpdatedValue");
+        multiMapB2.put("key", "LatestUpdatedValue");
     }
 
     private void afterMergeLatestUpdateMergePolicy() {
-        assertMultiMapsA("key1", "value1", "LatestUpdatedValue1");
-        assertMultiMapsA("key2", "value2", "LatestUpdatedValue2");
+        assertMultiMapsA("key", "LatestUpdatedValue");
+        assertMultiMapsSizeA(1);
 
-        assertEquals(4, multiMapA1.size());
-        assertEquals(4, multiMapA2.size());
-        assertEquals(2, backupMultiMapA.size());
+        assertMultiMapsB("key", "LatestUpdatedValue");
+        assertMultiMapsSizeB(1);
     }
 
     private void afterSplitPassThroughMergePolicy() {
@@ -308,18 +308,12 @@ public class MultiMapSplitBrainTest extends SplitBrainTestSupport {
         assertFalse("Expected lockedKey to be unlocked", multiMapA1.isLocked("lockedKey"));
 
         assertMultiMapsA("lockedKey", "lockedValue");
-        assertMultiMapsA("key1", "value1", "value2", "PassThroughValue1a", "PassThroughValue1b");
+        assertMultiMapsA("key1", "PassThroughValue1a", "PassThroughValue1b");
         assertMultiMapsA("key2", "PassThroughValue2a", "PassThroughValue2b");
-
-        assertEquals(7, multiMapA1.size());
-        assertEquals(7, multiMapA2.size());
-        assertEquals(3, backupMultiMapA.size());
+        assertMultiMapsSizeA(5);
 
         assertMultiMapsB("key", "PassThroughValue");
-
-        assertEquals(1, multiMapB1.size());
-        assertEquals(1, multiMapB2.size());
-        assertEquals(1, backupMultiMapB.size());
+        assertMultiMapsSizeB(1);
     }
 
     private void afterSplitPutIfAbsentMergePolicy() {
@@ -334,56 +328,109 @@ public class MultiMapSplitBrainTest extends SplitBrainTestSupport {
     }
 
     private void afterMergePutIfAbsentMergePolicy() {
-        assertMultiMapsA("key1", "value", "PutIfAbsentValue1a", "PutIfAbsentValue1b");
+        assertMultiMapsA("key1", "PutIfAbsentValue1a", "PutIfAbsentValue1b");
         assertMultiMapsA("key2", "PutIfAbsentValue2a", "PutIfAbsentValue2b");
-
-        assertEquals(5, multiMapA1.size());
-        assertEquals(5, multiMapA2.size());
-        assertEquals(2, backupMultiMapA.size());
+        assertMultiMapsSizeA(4);
 
         assertMultiMapsB("key", "PutIfAbsentValue");
+        assertMultiMapsSizeB(1);
+    }
 
-        assertEquals(1, multiMapB1.size());
-        assertEquals(1, multiMapB2.size());
-        assertEquals(1, backupMultiMapB.size());
+    private void afterSplitRemoveValuesMergePolicy() {
+        multiMapA1.put("key1", "discardedValue1a");
+        multiMapA1.put("key1", "discardedValue1b");
+
+        multiMapA2.put("key1", "discardedValue2");
+        multiMapA2.put("key2", "discardedValue2a");
+        multiMapA2.put("key2", "discardedValue2b");
+
+        multiMapB2.put("key", "discardedValue");
+    }
+
+    private void afterMergeRemoveValuesMergePolicy() {
+        assertMultiMapsA("key1");
+        assertMultiMapsA("key2");
+        assertMultiMapsSizeA(0);
+
+        assertMultiMapsB("key");
+        assertMultiMapsSizeB(0);
+    }
+
+    private void afterSplitReturnPiCollectionMergePolicy() {
+        multiMapA1.put("key1", "discardedValue1a");
+        multiMapA1.put("key1", "discardedValue1b");
+
+        multiMapA2.put("key1", "discardedValue2");
+        multiMapA2.put("key2", "discardedValue2a");
+        multiMapA2.put("key2", "discardedValue2b");
+
+        multiMapB2.put("key", "discardedValue");
+    }
+
+    private void afterMergeReturnPiCollectionMergePolicy() {
+        assertPiSet(multiMapA1.get("key1"));
+        assertPiSet(multiMapA2.get("key1"));
+        assertPiSet(backupMultiMapA.get("key1"));
+
+        assertPiSet(multiMapA1.get("key2"));
+        assertPiSet(multiMapA2.get("key2"));
+        assertPiSet(backupMultiMapA.get("key2"));
+
+        assertPiSet(multiMapB1.get("key"));
+        assertPiSet(multiMapB2.get("key"));
     }
 
     private void afterSplitCustomMergePolicy() {
-        multiMapA1.put("key", 1);
-        multiMapA2.put("key", "value");
+        // for key1 just the Integer values survive
+        multiMapA1.put("key1", "value1");
+        multiMapA1.put("key1", 23);
+        multiMapA2.put("key1", "value2");
+        multiMapA2.put("key1", 42);
+
+        // key2 is completely removed
+        multiMapA1.put("key2", "value1");
+        multiMapA2.put("key2", "value2");
+
+        // key3 survives, since there is no mergingValue for it
+        multiMapA1.put("key3", "value");
+
+        multiMapB2.put("key1", 42);
+        multiMapB2.put("key2", "value");
     }
 
     private void afterMergeCustomMergePolicy() {
-        assertMultiMapsA("key", 1);
+        assertMultiMapsA("key1", 23, 42);
+        assertMultiMapsA("key2");
+        assertMultiMapsA("key3", "value");
+        assertMultiMapsSizeA(3);
 
-        assertEquals(1, multiMapA1.size());
-        assertEquals(1, multiMapA2.size());
-        assertEquals(1, backupMultiMapA.size());
+        assertMultiMapsB("key1", 42);
+        assertMultiMapsB("key2");
+        assertMultiMapsSizeB(1);
     }
 
-    private void assertMultiMapsA(String key, Object... objects) {
-        assertMultiMaps(multiMapA1, multiMapA2, backupMultiMapA, key, objects);
+    private void assertMultiMapsA(String key, Object... expectedValues) {
+        assertMultiMaps(multiMapA1, multiMapA2, backupMultiMapA, key, expectedValues);
     }
 
-    @SuppressWarnings("SameParameterValue")
-    private void assertMultiMapsB(String key, Object... objects) {
-        assertMultiMaps(multiMapB1, multiMapB2, backupMultiMapB, key, objects);
+    private void assertMultiMapsB(String key, Object... expectedValues) {
+        assertMultiMaps(multiMapB1, multiMapB2, backupMultiMapB, key, expectedValues);
     }
 
     private static void assertMultiMaps(MultiMap<Object, Object> multiMap1, MultiMap<Object, Object> multiMap2,
-                                        Map<Object, Collection<Object>> backupMultiMap, String key, Object... objects) {
+                                        Map<Object, Collection<Object>> backupMultiMap, String key, Object... expectedValues) {
         Collection<Object> collection1 = multiMap1.get(key);
         Collection<Object> collection2 = multiMap2.get(key);
         Collection<Object> backupCollection = backupMultiMap.get(key);
-        if (objects.length > 0) {
-            Collection<Object> expected = asList(objects);
+        if (expectedValues.length > 0) {
+            Collection<Object> expected = asList(expectedValues);
             assertContainsAll(collection1, expected);
             assertContainsAll(collection2, expected);
             assertContainsAll(backupCollection, expected);
 
-            assertEquals(objects.length, multiMap1.valueCount(key));
-            assertEquals(objects.length, multiMap2.valueCount(key));
-            assertEquals(objects.length, backupCollection.size());
+            assertEquals(expectedValues.length, multiMap1.valueCount(key));
+            assertEquals(expectedValues.length, multiMap2.valueCount(key));
+            assertEquals(expectedValues.length, backupCollection.size());
         } else {
             assertTrue("multiMap1 should be empty for " + key + ", but was " + collection1, collection1.isEmpty());
             assertTrue("multiMap2 should be empty for " + key + ", but was " + collection2, collection2.isEmpty());
@@ -392,5 +439,24 @@ public class MultiMapSplitBrainTest extends SplitBrainTestSupport {
             assertEquals(0, multiMap1.valueCount(key));
             assertEquals(0, multiMap2.valueCount(key));
         }
+    }
+
+    private void assertMultiMapsSizeA(int expectedSize) {
+        assertMultiMapsSize(multiMapA1, multiMapA2, backupMultiMapA, expectedSize);
+    }
+
+    private void assertMultiMapsSizeB(int expectedSize) {
+        assertMultiMapsSize(multiMapB1, multiMapB2, backupMultiMapB, expectedSize);
+    }
+
+    private static void assertMultiMapsSize(MultiMap<?, ?> multiMap1, MultiMap<?, ?> multiMap2,
+                                            Map<?, ? extends Collection<?>> backupMultiMap, int expectedSize) {
+        assertEqualsStringFormat("multiMap1 should have size %d, but was %d", expectedSize, multiMap1.size());
+        assertEqualsStringFormat("multiMap2 should have size %d, but was %d", expectedSize, multiMap2.size());
+        int actualBackupSize = 0;
+        for (Collection<?> values : backupMultiMap.values()) {
+            actualBackupSize += values.size();
+        }
+        assertEqualsStringFormat("backupMultiMap should have size %d, but was %d", expectedSize, actualBackupSize);
     }
 }

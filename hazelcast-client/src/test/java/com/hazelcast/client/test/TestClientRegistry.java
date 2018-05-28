@@ -36,7 +36,6 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeState;
-import com.hazelcast.instance.TestUtil;
 import com.hazelcast.internal.networking.OutboundFrame;
 import com.hazelcast.internal.networking.nio.NioEventLoopGroup;
 import com.hazelcast.logging.ILogger;
@@ -48,9 +47,7 @@ import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.mocknetwork.MockConnection;
 import com.hazelcast.test.mocknetwork.TestNodeRegistry;
-import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.util.ExceptionUtil;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -62,8 +59,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import static com.hazelcast.test.HazelcastTestSupport.getNodeEngineImpl;
+import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
+import static com.hazelcast.util.ExceptionUtil.rethrow;
+
 class TestClientRegistry {
 
+    private static final AtomicInteger CLIENT_PORTS = new AtomicInteger(40000);
     private static final ILogger LOGGER = Logger.getLogger(HazelcastClient.class);
 
     private final TestNodeRegistry nodeRegistry;
@@ -72,8 +74,8 @@ class TestClientRegistry {
         this.nodeRegistry = nodeRegistry;
     }
 
-    ClientConnectionManagerFactory createClientServiceFactory(String host, AtomicInteger ports) {
-        return new MockClientConnectionManagerFactory(host, ports);
+    ClientConnectionManagerFactory createClientServiceFactory() {
+        return new MockClientConnectionManagerFactory("127.0.0.1", CLIENT_PORTS);
     }
 
     private class MockClientConnectionManagerFactory implements ClientConnectionManagerFactory {
@@ -110,10 +112,12 @@ class TestClientRegistry {
     }
 
     class MockClientConnectionManager extends ClientConnectionManagerImpl {
+
+        private final ConcurrentHashMap<Address, LockPair> addressBlockMap = new ConcurrentHashMap<Address, LockPair>();
+
+        private final HazelcastClientInstanceImpl client;
         private final String host;
         private final AtomicInteger ports;
-        private final HazelcastClientInstanceImpl client;
-        private final ConcurrentHashMap<Address, LockPair> addressBlockMap = new ConcurrentHashMap<Address, LockPair>();
 
         MockClientConnectionManager(HazelcastClientInstanceImpl client, AddressTranslator addressTranslator,
                                     Collection<AddressProvider> addressProviders, String host, AtomicInteger ports) {
@@ -146,27 +150,25 @@ class TestClientRegistry {
                 if (instance == null) {
                     throw new IOException("Can not connected to " + address + ": instance does not exist");
                 }
-                Node node = TestUtil.getNode(instance);
                 Address localAddress = new Address(host, ports.incrementAndGet());
                 LockPair lockPair = getLockPair(address);
 
-                MockedClientConnection connection = new MockedClientConnection(client,
-                        connectionIdGen.incrementAndGet(), node.nodeEngine, address, localAddress, lockPair);
+                MockedClientConnection connection = new MockedClientConnection(client, connectionIdGen.incrementAndGet(),
+                        getNodeEngineImpl(instance), address, localAddress, lockPair);
                 LOGGER.info("Created connection to endpoint: " + address + ", connection: " + connection);
                 return connection;
             } catch (Exception e) {
-                throw ExceptionUtil.rethrow(e, IOException.class);
+                throw rethrow(e, IOException.class);
             }
         }
 
         private LockPair getLockPair(Address address) {
-            return ConcurrencyUtil.getOrPutIfAbsent(addressBlockMap, address,
-                    new ConstructorFunction<Address, LockPair>() {
-                        @Override
-                        public LockPair createNew(Address arg) {
-                            return new LockPair(new ReentrantReadWriteLock(), new ReentrantReadWriteLock());
-                        }
-                    });
+            return getOrPutIfAbsent(addressBlockMap, address, new ConstructorFunction<Address, LockPair>() {
+                @Override
+                public LockPair createNew(Address arg) {
+                    return new LockPair(new ReentrantReadWriteLock(), new ReentrantReadWriteLock());
+                }
+            });
         }
 
         /**
@@ -207,26 +209,25 @@ class TestClientRegistry {
     }
 
     private class MockedClientConnection extends ClientConnection {
-        private volatile long lastReadTime;
-        private volatile long lastWriteTime;
+
         private final NodeEngineImpl serverNodeEngine;
         private final Address remoteAddress;
         private final Address localAddress;
-        private final MockedNodeConnection serverSideConnection;
         private final TwoWayBlockableExecutor executor;
+        private final MockedNodeConnection serverSideConnection;
 
-        MockedClientConnection(HazelcastClientInstanceImpl client,
-                               int connectionId, NodeEngineImpl serverNodeEngine,
-                               Address address, Address localAddress,
-                               LockPair lockPair) throws IOException {
+        private volatile long lastReadTime;
+        private volatile long lastWriteTime;
 
+        MockedClientConnection(HazelcastClientInstanceImpl client, int connectionId, NodeEngineImpl serverNodeEngine,
+                               Address address, Address localAddress, LockPair lockPair) {
             super(client, connectionId);
             this.serverNodeEngine = serverNodeEngine;
             this.remoteAddress = address;
             this.localAddress = localAddress;
             this.executor = new TwoWayBlockableExecutor(lockPair);
-            this.serverSideConnection = new MockedNodeConnection(connectionId, remoteAddress,
-                    localAddress, serverNodeEngine, this);
+            this.serverSideConnection = new MockedNodeConnection(connectionId, remoteAddress, localAddress, serverNodeEngine,
+                    this);
         }
 
         @Override
@@ -259,9 +260,10 @@ class TestClientRegistry {
 
                 @Override
                 public void run() {
-                    ClientMessage newPacket = readFromPacket((ClientMessage) frame);
+                    ClientMessage clientMessage = readFromPacket((ClientMessage) frame);
                     lastWriteTime = System.currentTimeMillis();
-                    serverSideConnection.handleClientMessage(newPacket);
+                    clientMessage.setConnection(serverSideConnection);
+                    serverSideConnection.handleClientMessage(clientMessage);
                 }
             });
             return true;
@@ -317,7 +319,7 @@ class TestClientRegistry {
         }
 
         @Override
-        protected void innerClose() throws IOException {
+        protected void innerClose() {
             executor.executeOutgoing((new Runnable() {
                 @Override
                 public void run() {
@@ -360,11 +362,13 @@ class TestClientRegistry {
 
     private class MockedNodeConnection extends MockConnection {
 
+        private final AtomicBoolean alive = new AtomicBoolean(true);
+
         private final MockedClientConnection responseConnection;
         private final int connectionId;
+
         private volatile long lastReadTimeMillis;
         private volatile long lastWriteTimeMillis;
-        private volatile AtomicBoolean alive = new AtomicBoolean(true);
 
         MockedNodeConnection(int connectionId, Address localEndpoint, Address remoteEndpoint, NodeEngineImpl nodeEngine,
                              MockedClientConnection responseConnection) {
@@ -387,6 +391,7 @@ class TestClientRegistry {
             if (isAlive()) {
                 lastWriteTimeMillis = System.currentTimeMillis();
                 ClientMessage newPacket = readFromPacket(packet);
+                newPacket.setConnection(responseConnection);
                 responseConnection.handleClientMessage(newPacket);
                 return true;
             }
@@ -395,7 +400,7 @@ class TestClientRegistry {
 
         void handleClientMessage(ClientMessage newPacket) {
             lastReadTimeMillis = System.currentTimeMillis();
-            remoteNodeEngine.getNode().clientEngine.handle(newPacket, this);
+            remoteNodeEngine.getNode().clientEngine.accept(newPacket);
         }
 
         @Override

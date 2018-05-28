@@ -16,21 +16,30 @@
 
 package com.hazelcast.client.config;
 
+import com.hazelcast.config.ConfigurationException;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.InvalidConfigurationException;
+import com.hazelcast.config.XmlConfigImportVariableReplacementTest.IdentityReplacer;
+import com.hazelcast.config.XmlConfigImportVariableReplacementTest.TestReplacer;
+import com.hazelcast.config.replacer.EncryptionReplacer;
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.Properties;
 
+import static com.hazelcast.client.config.XmlClientConfigBuilderTest.HAZELCAST_CLIENT_END_TAG;
 import static com.hazelcast.client.config.XmlClientConfigBuilderTest.HAZELCAST_CLIENT_START_TAG;
 import static com.hazelcast.client.config.XmlClientConfigBuilderTest.buildConfig;
 import static com.hazelcast.nio.IOUtil.closeResource;
@@ -43,13 +52,16 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelTest.class})
 public class XmlClientConfigImportVariableReplacementTest extends HazelcastTestSupport {
 
+    @Rule
+    public TemporaryFolder tempFolder = new TemporaryFolder();
+
     @Test(expected = InvalidConfigurationException.class)
     public void testImportElementOnlyAppersInTopLevel() throws Exception {
         String xml = HAZELCAST_CLIENT_START_TAG
                 + "   <network>\n"
                 + "        <import resource=\"\"/>\n"
                 + "   </network>\n"
-                + "</hazelcast-client>";
+                + HAZELCAST_CLIENT_END_TAG;
 
         buildConfig(xml);
     }
@@ -59,7 +71,7 @@ public class XmlClientConfigImportVariableReplacementTest extends HazelcastTestS
         String xml = HAZELCAST_CLIENT_START_TAG
                 + "   <hazelcast-client>"
                 + "   </hazelcast-client>"
-                + "</hazelcast-client>";
+                + HAZELCAST_CLIENT_END_TAG;
 
         buildConfig(xml);
     }
@@ -68,7 +80,7 @@ public class XmlClientConfigImportVariableReplacementTest extends HazelcastTestS
     public void readVariables() {
         String xml = HAZELCAST_CLIENT_START_TAG
                 + "<executor-pool-size>${executor.pool.size}</executor-pool-size>"
-                + "</hazelcast-client>";
+                + HAZELCAST_CLIENT_END_TAG;
 
         ClientConfig config = buildConfig(xml, "executor.pool.size", "40");
         assertEquals(40, config.getExecutorPoolSize());
@@ -93,12 +105,12 @@ public class XmlClientConfigImportVariableReplacementTest extends HazelcastTestS
                 + "      </properties>"
                 + "    </socket-interceptor>"
                 + "  </network>"
-                + "</hazelcast-client>";
+                + HAZELCAST_CLIENT_END_TAG;
         writeStringToStreamAndClose(os, networkConfig);
 
         String xml = HAZELCAST_CLIENT_START_TAG
                 + "    <import resource=\"${config.location}\"/>\n"
-                + "</hazelcast-client>";
+                + HAZELCAST_CLIENT_END_TAG;
 
         ClientConfig config = buildConfig(xml, "config.location", file.getAbsolutePath());
         assertFalse(config.getNetworkConfig().isSmartRouting());
@@ -117,12 +129,12 @@ public class XmlClientConfigImportVariableReplacementTest extends HazelcastTestS
                 + "      <address>${ip.address}</address>"
                 + "    </cluster-members>"
                 + "  </network>"
-                + "</hazelcast-client>";
+                + HAZELCAST_CLIENT_END_TAG;
         writeStringToStreamAndClose(os, networkConfig);
 
         String xml = HAZELCAST_CLIENT_START_TAG +
                 "    <import resource=\"${config.location}\"/>\n" +
-                "</hazelcast-client>";
+                HAZELCAST_CLIENT_END_TAG;
 
         Properties properties = new Properties();
         properties.setProperty("config.location", file.getAbsolutePath());
@@ -139,10 +151,10 @@ public class XmlClientConfigImportVariableReplacementTest extends HazelcastTestS
         FileOutputStream os2 = new FileOutputStream(config2);
         String config1Xml = HAZELCAST_CLIENT_START_TAG
                 + "    <import resource=\"file:///" + config2.getAbsolutePath() + "\"/>\n"
-                + "</hazelcast-client>";
+                + HAZELCAST_CLIENT_END_TAG;
         String config2Xml = HAZELCAST_CLIENT_START_TAG
                 + "    <import resource=\"file:///" + config1.getAbsolutePath() + "\"/>\n"
-                + "</hazelcast-client>";
+                + HAZELCAST_CLIENT_END_TAG;
         writeStringToStreamAndClose(os1, config1Xml);
         writeStringToStreamAndClose(os2, config2Xml);
 
@@ -159,13 +171,13 @@ public class XmlClientConfigImportVariableReplacementTest extends HazelcastTestS
         FileOutputStream os3 = new FileOutputStream(config2);
         String config1Xml = HAZELCAST_CLIENT_START_TAG
                 + "    <import resource=\"file:///" + config2.getAbsolutePath() + "\"/>\n"
-                + "</hazelcast-client>";
+                + HAZELCAST_CLIENT_END_TAG;
         String config2Xml = HAZELCAST_CLIENT_START_TAG
                 + "    <import resource=\"file:///" + config3.getAbsolutePath() + "\"/>\n"
-                + "</hazelcast-client>";
+                + HAZELCAST_CLIENT_END_TAG;
         String config3Xml = HAZELCAST_CLIENT_START_TAG
                 + "    <import resource=\"file:///" + config1.getAbsolutePath() + "\"/>\n"
-                + "</hazelcast-client>";
+                + HAZELCAST_CLIENT_END_TAG;
         writeStringToStreamAndClose(os1, config1Xml);
         writeStringToStreamAndClose(os2, config2Xml);
         writeStringToStreamAndClose(os3, config3Xml);
@@ -178,7 +190,7 @@ public class XmlClientConfigImportVariableReplacementTest extends HazelcastTestS
         FileOutputStream os = new FileOutputStream(config);
         String configXml = HAZELCAST_CLIENT_START_TAG
                 + "    <import resource=\"file:///" + config.getAbsolutePath() + "\"/>\n"
-                + "</hazelcast-client>";
+                + HAZELCAST_CLIENT_END_TAG;
         writeStringToStreamAndClose(os, "");
         buildConfig(configXml);
     }
@@ -187,7 +199,7 @@ public class XmlClientConfigImportVariableReplacementTest extends HazelcastTestS
     public void testImportEmptyResourceThrowsException() throws Exception {
         String xml = HAZELCAST_CLIENT_START_TAG
                 + "    <import resource=\"\"/>\n"
-                + "</hazelcast-client>";
+                + HAZELCAST_CLIENT_END_TAG;
 
         buildConfig(xml);
     }
@@ -196,16 +208,102 @@ public class XmlClientConfigImportVariableReplacementTest extends HazelcastTestS
     public void testImportNotExistingResourceThrowsException() throws Exception {
         String xml = HAZELCAST_CLIENT_START_TAG
                 + "    <import resource=\"notexisting.xml\"/>\n"
-                + "</hazelcast-client>";
+                + HAZELCAST_CLIENT_END_TAG;
 
         buildConfig(xml);
+    }
+
+    @Test
+    public void testReplacers() throws Exception {
+        File passwordFile = tempFolder.newFile(getClass().getSimpleName() + ".pwd");
+        PrintWriter out = new PrintWriter(passwordFile);
+        try {
+            out.print("This is a password");
+        } finally {
+            IOUtil.closeResource(out);
+        }
+        String xml = HAZELCAST_CLIENT_START_TAG
+                + "    <config-replacers>\n"
+                + "        <replacer class-name='" + EncryptionReplacer.class.getName() + "'>\n"
+                + "            <properties>\n"
+                + "                <property name='passwordFile'>" + passwordFile.getAbsolutePath() + "</property>\n"
+                + "                <property name='passwordUserProperties'>false</property>\n"
+                + "                <property name='keyLengthBits'>64</property>\n"
+                + "                <property name='saltLengthBytes'>8</property>\n"
+                + "                <property name='cipherAlgorithm'>DES</property>\n"
+                + "                <property name='secretKeyFactoryAlgorithm'>PBKDF2WithHmacSHA1</property>\n"
+                + "                <property name='secretKeyAlgorithm'>DES</property>\n"
+                + "            </properties>\n"
+                + "        </replacer>\n"
+                + "        <replacer class-name='" + IdentityReplacer.class.getName() + "'/>\n"
+                + "    </config-replacers>\n"
+                + "    <group>\n"
+                + "        <name>${java.version} $ID{dev}</name>\n"
+                + "        <password>$ENC{7JX2r/8qVVw=:10000:Jk4IPtor5n/vCb+H8lYS6tPZOlCZMtZv}</password>\n"
+                + "    </group>\n"
+                + HAZELCAST_CLIENT_END_TAG;
+        GroupConfig groupConfig = buildConfig(xml, System.getProperties()).getGroupConfig();
+        assertEquals(System.getProperty("java.version")+ " dev", groupConfig.getName());
+        assertEquals("My very secret secret", groupConfig.getPassword());
+    }
+
+    @Test(expected = ConfigurationException.class)
+    public void testMissingReplacement() throws Exception {
+        String xml = HAZELCAST_CLIENT_START_TAG
+                + "    <config-replacers>\n"
+                + "        <replacer class-name='" + EncryptionReplacer.class.getName() + "'/>\n"
+                + "    </config-replacers>\n"
+                + "    <group>\n"
+                + "        <name>$ENC{7JX2r/8qVVw=:10000:Jk4IPtor5n/vCb+H8lYS6tPZOlCZMtZv}</name>\n"
+                + "    </group>\n"
+                + HAZELCAST_CLIENT_END_TAG;
+        buildConfig(xml, System.getProperties());
+    }
+
+    @Test
+    public void testReplacerProperties() throws Exception {
+        String xml = HAZELCAST_CLIENT_START_TAG
+                + "    <config-replacers fail-if-value-missing='false'>\n"
+                + "        <replacer class-name='" + TestReplacer.class.getName() + "'>\n"
+                + "            <properties>\n"
+                + "                <property name='p1'>a property</property>\n"
+                + "                <property name='p2'/>\n"
+                + "                <property name='p3'>another property</property>\n"
+                + "                <property name='p4'>&lt;test/&gt;</property>\n"
+                + "            </properties>\n"
+                + "        </replacer>\n"
+                + "    </config-replacers>\n"
+                + "    <group>\n"
+                + "        <name>$T{p1} $T{p2} $T{p3} $T{p4} $T{p5}</name>\n"
+                + "    </group>\n"
+                + HAZELCAST_CLIENT_END_TAG;
+        GroupConfig groupConfig = buildConfig(xml, System.getProperties()).getGroupConfig();
+        assertEquals("a property  another property <test/> $T{p5}", groupConfig.getName());
+    }
+
+
+    /**
+     * Given: No replacer is used in the configuration file<br>
+     * When: A property variable is used within the file<br>
+     * Then: The configuration parsing doesn't fail and the variable string remains unchanged (i.e. backward compatible
+     * behavior, as if {@code fail-if-value-missing} attribute is {@code false}).
+     */
+    @Test
+    public void testNoConfigReplacersMissingProperties() throws Exception {
+        String xml = HAZELCAST_CLIENT_START_TAG
+                + "    <group>\n"
+                + "        <name>${noSuchPropertyAvailable}</name>\n"
+                + "    </group>\n"
+                + HAZELCAST_CLIENT_END_TAG;
+        GroupConfig groupConfig = buildConfig(xml, System.getProperties()).getGroupConfig();
+        assertEquals("${noSuchPropertyAvailable}", groupConfig.getName());
     }
 
     @Test
     public void testImportGroupConfigFromClassPath() throws Exception {
         String xml = HAZELCAST_CLIENT_START_TAG
                 + "    <import resource=\"classpath:hazelcast-client-c1.xml\"/>\n"
-                + "</hazelcast-client>";
+                + HAZELCAST_CLIENT_END_TAG;
 
         ClientConfig config = buildConfig(xml);
         GroupConfig groupConfig = config.getGroupConfig();

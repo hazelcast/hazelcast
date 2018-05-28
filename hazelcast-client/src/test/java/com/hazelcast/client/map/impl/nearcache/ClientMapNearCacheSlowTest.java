@@ -17,34 +17,37 @@
 package com.hazelcast.client.map.impl.nearcache;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.test.HazelcastParametersRunnerFactory;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
+import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getBaseConfig;
 import static com.hazelcast.spi.properties.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_ENABLED;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 import static java.util.Arrays.asList;
 
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category(SlowTest.class)
-@SuppressWarnings("WeakerAccess")
 public class ClientMapNearCacheSlowTest extends ClientMapNearCacheTest {
 
-    @Parameterized.Parameter
-    public boolean batchInvalidationEnabled;
-
-    @Parameterized.Parameters(name = "batchInvalidationEnabled:{0}")
+    @Parameters(name = "batchInvalidationEnabled:{0}")
     public static Iterable<Object[]> parameters() {
         return asList(new Object[]{TRUE}, new Object[]{FALSE});
     }
 
+    @Parameter
+    public boolean batchInvalidationEnabled;
+
     @Override
     protected Config newConfig() {
-        return getConfig()
+        return getBaseConfig()
                 .setProperty(MAP_INVALIDATION_MESSAGE_BATCH_ENABLED.getName(), String.valueOf(batchInvalidationEnabled));
     }
 }

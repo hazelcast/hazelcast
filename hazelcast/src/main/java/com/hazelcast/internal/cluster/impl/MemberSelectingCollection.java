@@ -35,7 +35,6 @@ import java.util.NoSuchElementException;
  */
 public final class MemberSelectingCollection<M extends Member> implements Collection<M> {
 
-
     private final Collection<M> members;
 
     private final MemberSelector selector;
@@ -86,8 +85,7 @@ public final class MemberSelectingCollection<M extends Member> implements Collec
                 result.add(member);
             }
         }
-
-        return result.toArray(new Object[result.size()]);
+        return result.toArray(new Object[0]);
     }
 
     @Override

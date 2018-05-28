@@ -4,7 +4,7 @@ import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.ConsistencyLostException;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.crdt.pncounter.BasePNCounterNoDataMemberTest;
+import com.hazelcast.crdt.pncounter.AbstractPNCounterNoDataMemberTest;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -19,7 +19,7 @@ import org.junit.runner.RunWith;
  */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class ClientPNCounterNoDataMemberTest extends BasePNCounterNoDataMemberTest {
+public class ClientPNCounterNoDataMemberTest extends AbstractPNCounterNoDataMemberTest {
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 

@@ -52,7 +52,7 @@ public abstract class MappingPhase<KeyIn, ValueIn, KeyOut, ValueOut> {
 
     public MappingPhase(Collection<? extends KeyIn> keys, KeyPredicate<? super KeyIn> predicate) {
         this.predicate = predicate;
-        this.keys = keys != null ? keys.toArray(new Object[keys.size()]) : null;
+        this.keys = keys != null ? keys.toArray(new Object[0]) : null;
     }
 
     public void cancel() {
@@ -112,7 +112,7 @@ public abstract class MappingPhase<KeyIn, ValueIn, KeyOut, ValueOut> {
         for (int i = 0; i < cache.length; i++) {
             List<Object> keys = mapping[i];
             if (keys != null) {
-                cache[i] = keys.toArray(new Object[keys.size()]);
+                cache[i] = keys.toArray(new Object[0]);
             }
         }
         return cache;

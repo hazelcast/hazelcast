@@ -24,12 +24,12 @@ import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.core.ClientType;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.BuildInfoProvider;
-import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Gauge;
+import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.monitor.NearCacheStats;
+import com.hazelcast.monitor.impl.NearCacheStatsImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.UsernamePasswordCredentials;
@@ -44,8 +44,8 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * This class is the main entry point for collecting and sending the client
- * statistics to the cluster. If the client statistics feature is enabled
- * it will be scheduled for periodic statistics collection and send.
+ * statistics to the cluster. If the client statistics feature is enabled,
+ * it will be scheduled for periodic statistics collection and sent.
  */
 public class Statistics {
     /**
@@ -56,7 +56,7 @@ public class Statistics {
     public static final HazelcastProperty ENABLED = new HazelcastProperty("hazelcast.client.statistics.enabled", false);
 
     /**
-     * The period in seconds the statistics runs.
+     * The period in seconds the statistics run.
      */
     public static final HazelcastProperty PERIOD_SECONDS = new HazelcastProperty("hazelcast.client.statistics.period.seconds", 3,
             SECONDS);
@@ -175,7 +175,7 @@ public class Statistics {
 
             nearCacheNameWithPrefix.append('.');
 
-            NearCacheStats nearCacheStats = nearCache.getNearCacheStats();
+            NearCacheStatsImpl nearCacheStats = (NearCacheStatsImpl) nearCache.getNearCacheStats();
 
             String prefix = nearCacheNameWithPrefix.toString();
 
@@ -189,6 +189,8 @@ public class Statistics {
             addStat(stats, prefix, "misses", nearCacheStats.getMisses());
             addStat(stats, prefix, "ownedEntryCount", nearCacheStats.getOwnedEntryCount());
             addStat(stats, prefix, "expirations", nearCacheStats.getExpirations());
+            addStat(stats, prefix, "invalidations", nearCacheStats.getInvalidations());
+            addStat(stats, prefix, "invalidationRequests", nearCacheStats.getInvalidationRequests());
             addStat(stats, prefix, "ownedEntryMemoryCost", nearCacheStats.getOwnedEntryMemoryCost());
             String persistenceFailure = nearCacheStats.getLastPersistenceFailure();
             if (persistenceFailure != null && !persistenceFailure.isEmpty()) {

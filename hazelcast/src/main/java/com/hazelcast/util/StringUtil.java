@@ -263,10 +263,10 @@ public final class StringUtil {
      * Example: 'getFoo' is converted into 'foo'
      *
      * It's written defensively, when output is not a getter then it
-     * return the original name.
+     * returns the original name.
      *
-     * It converters name starting with the get- prefix only. When a getter
-     * starts with is- prefix (=boolean) then it does not convert it.
+     * It only converts names starting with a get- prefix. When a getter
+     * starts with an is- prefix (=boolean) then it does not convert it.
      *
      * @param getterName
      * @return property matching the given getter
@@ -335,7 +335,7 @@ public final class StringUtil {
         }
         List<String> list = new ArrayList<String>(Arrays.asList(arr1));
         list.retainAll(Arrays.asList(arr2));
-        return list.toArray(new String[list.size()]);
+        return list.toArray(new String[0]);
     }
 
     /**
@@ -351,7 +351,7 @@ public final class StringUtil {
         }
         List<String> list = new ArrayList<String>(Arrays.asList(arr1));
         list.removeAll(Arrays.asList(arr2));
-        return list.toArray(new String[list.size()]);
+        return list.toArray(new String[0]);
     }
 
     /**

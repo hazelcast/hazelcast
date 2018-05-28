@@ -325,7 +325,8 @@ public abstract class HashSlotArrayBase implements HashSlotArray {
     }
 
     protected final void assertValid() {
-        assert baseAddress >= HEADER_SIZE : "This instance doesn't point to a valid hashtable";
+        assert baseAddress >= HEADER_SIZE : "This instance doesn't point to a valid hashtable. Base address = "
+                + baseAddress;
     }
 
     protected final MemoryAllocator malloc() {

@@ -53,7 +53,7 @@ public abstract class CacheTestSupport extends HazelcastTestSupport {
 
     @After
     public final void tearDown() {
-        if (cacheManager != null) {
+        if (cacheManager != null && !cacheManager.isClosed()) {
             Iterable<String> cacheNames = cacheManager.getCacheNames();
             for (String name : cacheNames) {
                 cacheManager.destroyCache(name);
@@ -130,11 +130,12 @@ public abstract class CacheTestSupport extends HazelcastTestSupport {
     }
 
     private int getPartitionCount() {
-        Node node = getNode(getHazelcastInstance());
-        if (node != null) {
+        try {
+            Node node = getNode(getHazelcastInstance());
             return node.getProperties().getInteger(GroupProperty.PARTITION_COUNT);
+        } catch (IllegalArgumentException e) {
+            return parseInt(GroupProperty.PARTITION_COUNT.getDefaultValue());
         }
-        return parseInt(GroupProperty.PARTITION_COUNT.getDefaultValue());
     }
 
     protected void assertThatNoCacheEvictionHappened(ICache cache) {

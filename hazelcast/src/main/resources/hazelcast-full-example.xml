@@ -16,17 +16,22 @@
   -->
 
 <!--
-This is a full example hazelcast.xml that includes all the configuration elements and attributes of Hazelcast.
-To use this, rename it to hazelcast.xml and place it in the directory where you start Hazelcast.
-Please see the schema to learn how to configure Hazelcast at 
-https://hazelcast.com/schema/config/hazelcast-config-3.10.xsd or the Reference Manual at
-https://hazelcast.org/documentation/.
+  This is a full example hazelcast.xml that includes all the
+  configuration elements and attributes of a Hazelcast member.
+
+  To use this, rename it to hazelcast.xml and place it in
+  the directory where you start your Hazelcast member.
+
+  To learn how to configure Hazelcast, please see the schema at
+  https://hazelcast.com/schema/config/hazelcast-config-3.11.xsd
+  or the Reference Manual at https://hazelcast.org/documentation/
 -->
+
 <!--suppress XmlDefaultAttributeValue -->
 <hazelcast xmlns="http://www.hazelcast.com/schema/config"
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
            xsi:schemaLocation="http://www.hazelcast.com/schema/config
-           http://www.hazelcast.com/schema/config/hazelcast-config-3.10.xsd">
+           http://www.hazelcast.com/schema/config/hazelcast-config-3.11.xsd">
 
     <!--
         You can use the <import> element to load different Hazelcast declarative configuration files you prepared.
@@ -47,6 +52,32 @@ https://hazelcast.org/documentation/.
 
     -->
     <import resource="your-configuration-XML-file"/>
+
+    <!--
+        The <config-replacers> allow to use variables (placeholders) within the configuration file and use an external
+        class to retrieve correct values (replacements).
+
+        It can be used for masking sensitive strings such as passwords for instance.
+
+        Format of a variable is:
+        $ PREFIX { STRING_TO_BE_REPLACED }      e.g. $ENC{nnPgTqJCcCQ=:23000:B4y/nlp6M0t3q6YiKImW+w==}
+
+        The PREFIX value depends on the replacer implementation (e.g. "ENC" is used for the EncryptionReplacer)
+        The STRING_TO_BE_REPLACED is the value which is provided to replacer implementation.
+    -->
+    <config-replacers fail-if-value-missing="false">
+        <replacer class-name="com.hazelcast.config.replacer.EncryptionReplacer">
+            <properties>
+                <property name="passwordFile">password.txt</property>
+                <property name="passwordUserProperties">false</property>
+                <property name="cipherAlgorithm">DES</property>
+                <property name="keyLengthBits">64</property>
+                <property name="secretKeyAlgorithm">DES</property>
+                <property name="secretKeyFactoryAlgorithm">PBKDF2WithHmacSHA1</property>
+            </properties>
+        </replacer>
+    </config-replacers>
+
     <!--
         Specifies the name and password for a cluster group you create.
         Cluster groups allow you to create separate sub-clusters within your Hazelcast cluster to
@@ -83,7 +114,7 @@ https://hazelcast.org/documentation/.
         at most 2 members in your cluster. To use it for more members, you need to have either a Management Center,
         Hazelcast Enterprise or Hazelcast Enterprise HD license.
     -->
-    <management-center enabled="true" update-interval="2">http://localhost:8080/mancenter</management-center>
+    <management-center enabled="true" update-interval="2">http://localhost:8080/hazelcast-mancenter</management-center>
     <!--
         The <properties> element lets you add properties to some of the Hazelcast elements used to configure some of
         the Hazelcast modules.
@@ -1758,6 +1789,8 @@ https://hazelcast.org/documentation/.
         * <check-class-def-errors>:
             If set to true, serialization system will check the class definitions error at the start of serialization process
             and throw a Serialization Exception with the error definition.
+        * <java-serialization-filter>:
+            Allows to configure blacklisting and whitelisting for deserialized classes when Java serialization is used.
     -->
     <serialization>
         <portable-version>0</portable-version>
@@ -1776,6 +1809,19 @@ https://hazelcast.org/documentation/.
                         class-name="com.hazelcast.examples.SerializerFactory"/>
         </serializers>
         <check-class-def-errors>true</check-class-def-errors>
+        <java-serialization-filter defaults-disabled="true">
+            <blacklist>
+                <class>com.acme.app.BeanComparator</class>
+            </blacklist>
+            <whitelist>
+                <class>java.lang.String</class>
+                <class>example.Foo</class>
+                <package>com.acme.app</package>
+                <package>com.acme.app.subpkg</package>
+                <prefix>com.hazelcast.</prefix>
+                <prefix>java</prefix>
+            </whitelist>
+        </java-serialization-filter>
     </serialization>
     <!--
         ===== HAZELCAST HIGH-DENSITY MEMORY STORE CONFIGURATION =====
@@ -1974,13 +2020,9 @@ https://hazelcast.org/documentation/.
     <quorum name="quorumRuleWithThreeMembers" enabled="true">
         <quorum-size>3</quorum-size>
         <quorum-type>READ_WRITE</quorum-type>
-        <quorum-function-class-name>
-            com.your-package.AbsPresMyQuorum
-        </quorum-function-class-name>
+        <quorum-function-class-name>com.your-package.AbsPresMyQuorum</quorum-function-class-name>
         <quorum-listeners>
-            <quorum-listener>
-                com.your-package.ThreeMemberQuorumListener
-            </quorum-listener>
+            <quorum-listener>com.your-package.ThreeMemberQuorumListener</quorum-listener>
         </quorum-listeners>
     </quorum>
     <!--

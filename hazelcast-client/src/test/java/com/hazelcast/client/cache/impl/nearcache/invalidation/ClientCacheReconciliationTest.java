@@ -25,10 +25,10 @@ import com.hazelcast.client.impl.HazelcastClientProxy;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.monitor.NearCacheStats;
-import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -44,41 +44,51 @@ import javax.cache.CacheManager;
 import javax.cache.spi.CachingProvider;
 
 import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.ENTRY_COUNT;
+import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getBaseConfig;
+import static com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask.MAX_TOLERATED_MISS_COUNT;
+import static com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask.MIN_RECONCILIATION_INTERVAL_SECONDS;
+import static com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask.RECONCILIATION_INTERVAL_SECONDS;
 import static com.hazelcast.map.impl.nearcache.invalidation.MemberMapReconciliationTest.assertStats;
+import static com.hazelcast.spi.properties.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS;
+import static com.hazelcast.spi.properties.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_SIZE;
 import static java.lang.Integer.MAX_VALUE;
-import static java.lang.String.valueOf;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class ClientCacheReconciliationTest extends HazelcastTestSupport {
 
-    private static final String CACHE_NAME = "test";
-    private static final int RECONCILIATION_INTERVAL_SECONDS = 3;
+    private static final String CACHE_NAME = "ClientCacheReconciliationTest";
+    private static final int RECONCILIATION_INTERVAL_SECS = 3;
 
     private final TestHazelcastFactory factory = new TestHazelcastFactory();
-    private final ClientConfig clientConfig = new ClientConfig();
-    private final CacheConfig cacheConfig = new CacheConfig();
 
-    private Cache serverCache;
-    private Cache clientCache;
+    private CacheConfig<Integer, Integer> cacheConfig;
+    private ClientConfig clientConfig;
+
+    private Cache<Integer, Integer> serverCache;
+    private Cache<Integer, Integer> clientCache;
 
     @Before
-    public void setUp() throws Exception {
-        NearCacheConfig nearCacheConfig = new NearCacheConfig(CACHE_NAME);
-        nearCacheConfig.setInvalidateOnChange(true);
-
-        clientConfig.setProperty("hazelcast.invalidation.max.tolerated.miss.count", "0");
-        clientConfig.setProperty("hazelcast.invalidation.reconciliation.interval.seconds", valueOf(RECONCILIATION_INTERVAL_SECONDS));
-        clientConfig.setProperty("hazelcast.invalidation.min.reconciliation.interval.seconds", valueOf(RECONCILIATION_INTERVAL_SECONDS));
-        clientConfig.addNearCacheConfig(nearCacheConfig);
-
-        cacheConfig.getEvictionConfig()
+    public void setUp() {
+        EvictionConfig evictionConfig = new EvictionConfig()
                 .setMaximumSizePolicy(ENTRY_COUNT)
                 .setSize(MAX_VALUE);
 
-        Config config = new Config();
-        config.setProperty(GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS.getName(), valueOf(Integer.MAX_VALUE));
-        config.setProperty(GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_SIZE.getName(), valueOf(Integer.MAX_VALUE));
+        cacheConfig = new CacheConfig<Integer, Integer>()
+                .setEvictionConfig(evictionConfig);
+
+        NearCacheConfig nearCacheConfig = new NearCacheConfig(CACHE_NAME)
+                .setInvalidateOnChange(true);
+
+        clientConfig = new ClientConfig()
+                .setProperty(MAX_TOLERATED_MISS_COUNT.getName(), "0")
+                .setProperty(RECONCILIATION_INTERVAL_SECONDS.getName(), String.valueOf(RECONCILIATION_INTERVAL_SECS))
+                .setProperty(MIN_RECONCILIATION_INTERVAL_SECONDS.getName(), String.valueOf(RECONCILIATION_INTERVAL_SECS))
+                .addNearCacheConfig(nearCacheConfig);
+
+        Config config = getBaseConfig()
+                .setProperty(MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS.getName(), String.valueOf(Integer.MAX_VALUE))
+                .setProperty(MAP_INVALIDATION_MESSAGE_BATCH_SIZE.getName(), String.valueOf(Integer.MAX_VALUE));
 
         HazelcastInstance server = factory.newHazelcastInstance(config);
 
@@ -91,24 +101,12 @@ public class ClientCacheReconciliationTest extends HazelcastTestSupport {
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         factory.shutdownAll();
     }
 
-    private Cache createCacheFromNewClient() {
-        HazelcastClientProxy client = (HazelcastClientProxy) factory.newHazelcastClient(clientConfig);
-        CachingProvider clientCachingProvider = HazelcastClientCachingProvider.createCachingProvider(client);
-
-        CacheManager cacheManager = clientCachingProvider.getCacheManager();
-        Cache cache = cacheManager.createCache(CACHE_NAME, cacheConfig);
-
-        assert cache instanceof NearCachedClientCacheProxy;
-
-        return cache;
-    }
-
     @Test
-    public void test_reconciliation_does_not_cause_premature_removal() throws Exception {
+    public void test_reconciliation_does_not_cause_premature_removal() {
         int total = 100;
         for (int i = 0; i < total; i++) {
             serverCache.put(i, i);
@@ -118,7 +116,7 @@ public class ClientCacheReconciliationTest extends HazelcastTestSupport {
             clientCache.get(i);
         }
 
-        Cache cacheFromNewClient = createCacheFromNewClient();
+        Cache<Integer, Integer> cacheFromNewClient = createCacheFromNewClient();
         for (int i = 0; i < total; i++) {
             cacheFromNewClient.get(i);
         }
@@ -126,12 +124,24 @@ public class ClientCacheReconciliationTest extends HazelcastTestSupport {
         NearCacheStats nearCacheStats = ((ICache) cacheFromNewClient).getLocalCacheStatistics().getNearCacheStatistics();
         assertStats(nearCacheStats, total, 0, total);
 
-        sleepSeconds(2 * RECONCILIATION_INTERVAL_SECONDS);
+        sleepSeconds(2 * RECONCILIATION_INTERVAL_SECS);
 
         for (int i = 0; i < total; i++) {
             cacheFromNewClient.get(i);
         }
 
         assertStats(nearCacheStats, total, total, total);
+    }
+
+    private Cache<Integer, Integer> createCacheFromNewClient() {
+        HazelcastClientProxy client = (HazelcastClientProxy) factory.newHazelcastClient(clientConfig);
+        CachingProvider clientCachingProvider = HazelcastClientCachingProvider.createCachingProvider(client);
+
+        CacheManager cacheManager = clientCachingProvider.getCacheManager();
+        Cache<Integer, Integer> cache = cacheManager.createCache(CACHE_NAME, cacheConfig);
+
+        assertInstanceOf(NearCachedClientCacheProxy.class, cache);
+
+        return cache;
     }
 }

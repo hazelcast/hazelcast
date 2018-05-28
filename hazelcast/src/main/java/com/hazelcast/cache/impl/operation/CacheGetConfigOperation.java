@@ -16,24 +16,31 @@
 
 package com.hazelcast.cache.impl.operation;
 
+import com.hazelcast.cache.impl.AbstractCacheService;
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.impl.ICacheService;
+import com.hazelcast.cache.impl.PreJoinCacheConfig;
 import com.hazelcast.config.CacheConfig;
+import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.ReadonlyOperation;
+import com.hazelcast.spi.impl.AbstractNamedOperation;
 
 import java.io.IOException;
 
 /**
- * Cache GetConfig Operation.
- * <p>Gets the already created cache configuration from the related partition.</p>
+ * Gets a cache configuration or creates one, if a matching cache config is found in this member's config.
+ *
  * @see CacheCreateConfigOperation
+ * @see AddCacheConfigOperation
  */
-public class CacheGetConfigOperation
-        extends PartitionWideCacheOperation
-        implements ReadonlyOperation {
+public class CacheGetConfigOperation extends AbstractNamedOperation implements IdentifiedDataSerializable, ReadonlyOperation {
 
+    private transient volatile Object response;
+    private transient ICompletableFuture createOnAllMembersFuture;
     private String simpleName;
 
     public CacheGetConfigOperation() {
@@ -47,7 +54,7 @@ public class CacheGetConfigOperation
     @Override
     public void run()
             throws Exception {
-        final ICacheService service = getService();
+        AbstractCacheService service = getService();
         CacheConfig cacheConfig = service.getCacheConfig(name);
         if (cacheConfig == null) {
             cacheConfig = service.findCacheConfig(simpleName);
@@ -56,10 +63,27 @@ public class CacheGetConfigOperation
                 CacheConfig existingCacheConfig = service.putCacheConfigIfAbsent(cacheConfig);
                 if (existingCacheConfig != null) {
                     cacheConfig = existingCacheConfig;
+                } else {
+                    // a new cache config was added on the local member, all members should become aware of it
+                    createOnAllMembersFuture = service.createCacheConfigOnAllMembersAsync(PreJoinCacheConfig.of(cacheConfig));
                 }
             }
         }
         response = cacheConfig;
+        if (createOnAllMembersFuture != null) {
+            createOnAllMembersFuture.andThen(new ExecutionCallback() {
+
+                @Override
+                public void onResponse(Object asyncResponse) {
+                    CacheGetConfigOperation.this.sendResponse(response);
+                }
+
+                @Override
+                public void onFailure(Throwable t) {
+                    CacheGetConfigOperation.this.sendResponse(t);
+                }
+            });
+        }
     }
 
     @Override
@@ -77,7 +101,27 @@ public class CacheGetConfigOperation
     }
 
     @Override
+    public boolean returnsResponse() {
+        return createOnAllMembersFuture == null;
+    }
+
+    @Override
     public int getId() {
         return CacheDataSerializerHook.GET_CONFIG;
+    }
+
+    @Override
+    public int getFactoryId() {
+        return CacheDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public String getServiceName() {
+        return ICacheService.SERVICE_NAME;
+    }
+
+    @Override
+    public Object getResponse() {
+        return response;
     }
 }

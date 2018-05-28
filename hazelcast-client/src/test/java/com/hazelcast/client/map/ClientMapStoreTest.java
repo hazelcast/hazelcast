@@ -370,7 +370,7 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
         String mapNameWithStoreAndSize = "MapStoreMaxSize*";
 
         String xml = "<hazelcast xsi:schemaLocation=\"http://www.hazelcast.com/schema/config\n" +
-                "                             http://www.hazelcast.com/schema/config/hazelcast-config-3.10.xsd\"\n" +
+                "                             http://www.hazelcast.com/schema/config/hazelcast-config-3.11.xsd\"\n" +
                 "                             xmlns=\"http://www.hazelcast.com/schema/config\"\n" +
                 "                             xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n" +
                 "\n" +

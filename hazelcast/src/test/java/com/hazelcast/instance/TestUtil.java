@@ -31,73 +31,129 @@ import java.util.Collection;
 import java.util.List;
 
 import static com.hazelcast.test.HazelcastTestSupport.sleepMillis;
+import static com.hazelcast.util.EmptyStatement.ignore;
 
+@SuppressWarnings("WeakerAccess")
 public final class TestUtil {
 
-    static final private SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
+    private static final SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
 
     private TestUtil() {
     }
 
+    /**
+     * Serializes the given object with a default {@link SerializationService}.
+     *
+     * @param obj the object to serialize
+     * @return the serialized {@link Data} instance
+     */
     public static Data toData(Object obj) {
         return serializationService.toData(obj);
     }
 
+    /**
+     * Deserializes the given {@link Data} instance with a default {@link SerializationService}.
+     *
+     * @param data the {@link Data} instance to deserialize
+     * @return the deserialized object
+     */
     public static Object toObject(Data data) {
         return serializationService.toObject(data);
     }
 
+    /**
+     * Retrieves the {@link Node} from a given Hazelcast instance.
+     *
+     * @param hz the Hazelcast instance to retrieve the Node from
+     * @return the {@link Node} from the given Hazelcast instance
+     */
     public static Node getNode(HazelcastInstance hz) {
-        HazelcastInstanceImpl impl = getHazelcastInstanceImpl(hz);
-        return impl != null ? impl.node : null;
+        HazelcastInstanceImpl hazelcastInstanceImpl = getHazelcastInstanceImpl(hz);
+        return hazelcastInstanceImpl.node;
     }
 
+    /**
+     * Retrieves the {@link HazelcastInstanceImpl} from a given Hazelcast instance.
+     *
+     * @param hz the Hazelcast instance to retrieve the implementation from
+     * @return the {@link HazelcastInstanceImpl} of the given Hazelcast instance
+     * @throws IllegalArgumentException if the {@link HazelcastInstanceImpl} could not be retrieved,
+     *                                  e.g. when called with a Hazelcast client instance
+     */
     public static HazelcastInstanceImpl getHazelcastInstanceImpl(HazelcastInstance hz) {
-        HazelcastInstanceImpl impl = null;
         if (hz instanceof HazelcastInstanceProxy) {
-            impl = ((HazelcastInstanceProxy) hz).original;
+            HazelcastInstanceProxy proxy = (HazelcastInstanceProxy) hz;
+            if (proxy.original != null) {
+                return proxy.original;
+            }
         } else if (hz instanceof HazelcastInstanceImpl) {
-            impl = (HazelcastInstanceImpl) hz;
+            return (HazelcastInstanceImpl) hz;
         }
-        return impl;
+        throw new IllegalArgumentException("Cannot retrieve HazelcastInstanceImpl from " + hz.getClass().getSimpleName());
     }
 
+    /**
+     * Terminates the given Hazelcast instance.
+     *
+     * @param hz the instance to terminate
+     */
     public static void terminateInstance(HazelcastInstance hz) {
         hz.getLifecycleService().terminate();
     }
 
+    /**
+     * Assigns the partition owners of the given Hazelcast instances.
+     *
+     * @param instances the given Hazelcast instances
+     */
     public static void warmUpPartitions(HazelcastInstance... instances) {
         for (HazelcastInstance instance : instances) {
-            if (instance == null) {
-                continue;
-            }
-            final PartitionService ps = instance.getPartitionService();
-            for (Partition partition : ps.getPartitions()) {
-                while (partition.getOwner() == null) {
-                    sleepMillis(10);
-                }
-            }
+            warmupPartitions(instance);
         }
     }
 
+    /**
+     * Assigns the partition owners of the given Hazelcast instances.
+     *
+     * @param instances the given Hazelcast instances
+     */
     public static void warmUpPartitions(Collection<HazelcastInstance> instances) {
         for (HazelcastInstance instance : instances) {
-            if (instance == null) {
-                continue;
-            }
-            final PartitionService ps = instance.getPartitionService();
-            for (Partition partition : ps.getPartitions()) {
-                while (partition.getOwner() == null) {
-                    sleepMillis(10);
-                }
+            warmupPartitions(instance);
+        }
+    }
+
+    private static void warmupPartitions(HazelcastInstance instance) {
+        if (instance == null) {
+            return;
+        }
+        PartitionService ps = instance.getPartitionService();
+        for (Partition partition : ps.getPartitions()) {
+            while (partition.getOwner() == null) {
+                sleepMillis(10);
             }
         }
     }
 
-    public static Integer getAvailablePort(int basePort) {
+    /**
+     * Returns the next available port (starting from a base port).
+     *
+     * @param basePort the starting port
+     * @return the next available port
+     * @see #isPortAvailable(int)
+     */
+    public static int getAvailablePort(int basePort) {
         return getAvailablePorts(basePort, 1).get(0);
     }
 
+    /**
+     * Returns a list of available ports (starting from a base port).
+     *
+     * @param basePort  the starting port
+     * @param portCount the number of ports to search
+     * @return a list of available ports
+     * @see #isPortAvailable(int)
+     */
     public static List<Integer> getAvailablePorts(int basePort, int portCount) {
         List<Integer> availablePorts = new ArrayList<Integer>();
         int port = basePort;
@@ -110,7 +166,12 @@ public final class TestUtil {
         return availablePorts;
     }
 
-    // Checks the DatagramSocket as well to check if the port is available in UDP and TCP.
+    /**
+     * Checks the DatagramSocket as well if the port is available in UDP and TCP.
+     *
+     * @param port the port to check
+     * @return {@code true} if the port is available in UDP and TCP, {@code false} otherwise
+     */
     public static boolean isPortAvailable(int port) {
         ServerSocket ss = null;
         DatagramSocket ds = null;
@@ -121,33 +182,34 @@ public final class TestUtil {
             ds.setReuseAddress(true);
             return true;
         } catch (IOException e) {
-
+            return false;
         } finally {
+            // ServerSocket is not Closeable in Java 6, so we cannot use IOUtil.closeResource() yet
             if (ds != null) {
                 ds.close();
             }
-            if (ss != null) {
-                try {
+            try {
+                if (ss != null) {
                     ss.close();
-                } catch (IOException e) {
-
                 }
+            } catch (IOException e) {
+                ignore(e);
             }
         }
-
-        return false;
     }
 
     /**
-     * Sets or removes (in case value==null) a system property. It's only a helper method, which avoids
-     * {@link NullPointerException} thrown from {@link System#setProperty(String, String)} method, when the value is
-     * <code>null</code>.
+     * Sets or removes a system property.
+     * <p>
+     * When the value is {@code null}, the system property will be removed.
+     * <p>
+     * Avoids a {@link NullPointerException} when calling {@link System#setProperty(String, String)} with a {@code null} value.
      *
      * @param key   property name
      * @param value property value
-     * @return the previous string value of the system property
+     * @return the previous string value of the system property, or {@code null} if it did not have one
      */
-    public static String setSystemProperty(final String key, final String value) {
+    public static String setSystemProperty(String key, String value) {
         return value == null ? System.clearProperty(key) : System.setProperty(key, value);
     }
 }

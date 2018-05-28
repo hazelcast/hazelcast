@@ -16,9 +16,9 @@
 
 package com.hazelcast.test.starter;
 
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
+import com.hazelcast.nio.ClassLoaderUtil;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -30,23 +30,21 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.test.starter.HazelcastProxyFactory.isJDKClass;
-import static java.lang.String.format;
+import static com.hazelcast.test.starter.HazelcastStarterUtils.debug;
+import static com.hazelcast.test.starter.ReflectionUtils.getFieldValueReflectively;
 
 /**
- * Clone the configuration from {@code mainConfig} to a new configuration object loaded in the
+ * Clones the configuration from {@code mainConfig} to a new configuration object loaded in the
  * target {@code classloader}. The returned configuration has its classloader set to the target classloader.
  */
 public class ConfigConstructor extends AbstractStarterObjectConstructor {
-
-    private static final ILogger LOGGER = Logger.getLogger(ConfigConstructor.class);
 
     public ConfigConstructor(Class<?> targetClass) {
         super(targetClass);
     }
 
     @Override
-    Object createNew0(Object delegate)
-            throws Exception {
+    Object createNew0(Object delegate) throws Exception {
         ClassLoader classloader = targetClass.getClassLoader();
         Object otherConfig = cloneConfig(delegate, classloader);
 
@@ -62,14 +60,10 @@ public class ConfigConstructor extends AbstractStarterObjectConstructor {
         if (method.getParameterTypes().length != 0) {
             return false;
         }
-        if (void.class.equals(method.getReturnType())) {
-            return false;
-        }
-        return true;
+        return !void.class.equals(method.getReturnType());
     }
 
-    private static Object cloneConfig(Object thisConfigObject, ClassLoader classloader)
-            throws ClassNotFoundException, IllegalAccessException, InstantiationException, InvocationTargetException {
+    private static Object cloneConfig(Object thisConfigObject, ClassLoader classloader) throws Exception {
         if (thisConfigObject == null) {
             return null;
         }
@@ -80,25 +74,28 @@ public class ConfigConstructor extends AbstractStarterObjectConstructor {
         }
 
         Class<?> otherConfigClass = classloader.loadClass(thisConfigClass.getName());
-        Object otherConfigObject = otherConfigClass.newInstance();
 
+        if (isQuorumFunctionImplementation(thisConfigClass)) {
+            return cloneQuorumFunctionImplementation(thisConfigObject, otherConfigClass);
+        }
+
+        Object otherConfigObject = ClassLoaderUtil.newInstance(otherConfigClass.getClassLoader(), otherConfigClass.getName());
         for (Method method : thisConfigClass.getMethods()) {
             if (!isGetter(method)) {
                 continue;
             }
             Class returnType = method.getReturnType();
-            Method setter;
             Class<?> otherReturnType;
             try {
                 otherReturnType = getOtherReturnType(classloader, returnType);
             } catch (ClassNotFoundException e) {
                 // new configuration option, return type was not found in target classloader
-                LOGGER.info(format("Configuration option %s is not available in target classloader: ", method.getName(),
-                        e.getMessage()));
+                debug("Configuration option %s is not available in target classloader: %s", method.getName(), e.getMessage());
                 continue;
             }
-            if ((setter = getSetter(otherConfigClass, otherReturnType, createSetterName(method))) != null) {
 
+            Method setter = getSetter(otherConfigClass, otherReturnType, createSetterName(method));
+            if (setter != null) {
                 if (Properties.class.isAssignableFrom(returnType)) {
                     Properties original = (Properties) method.invoke(thisConfigObject, null);
                     updateConfig(setter, otherConfigObject, copy(original));
@@ -129,21 +126,18 @@ public class ConfigConstructor extends AbstractStarterObjectConstructor {
                     Object thisSubConfigObject = method.invoke(thisConfigObject, null);
                     updateConfig(setter, otherConfigObject, thisSubConfigObject);
                 } else if (returnType.getName().startsWith("com.hazelcast.memory.MemorySize")) {
-                    //ignore
+                    // ignore
                 } else if (returnType.getName().startsWith("com.hazelcast")) {
                     Object thisSubConfigObject = method.invoke(thisConfigObject, null);
                     Object otherSubConfig = cloneConfig(thisSubConfigObject, classloader);
                     updateConfig(setter, otherConfigObject, otherSubConfig);
-                } else {
-                    //
                 }
             }
         }
         return otherConfigObject;
     }
 
-    private static Class<?> getOtherReturnType(ClassLoader classloader, Class returnType)
-            throws ClassNotFoundException {
+    private static Class<?> getOtherReturnType(ClassLoader classloader, Class returnType) throws ClassNotFoundException {
         String returnTypeName = returnType.getName();
         if (returnTypeName.startsWith("com.hazelcast")) {
             return classloader.loadClass(returnTypeName);
@@ -151,22 +145,23 @@ public class ConfigConstructor extends AbstractStarterObjectConstructor {
         return returnType;
     }
 
-    private static Method getSetter(Class otherConfigClass, Class returnType, String setterName) {
+    private static Method getSetter(Class<?> otherConfigClass, Class returnType, String setterName) {
         try {
             return otherConfigClass.getMethod(setterName, returnType);
         } catch (NoSuchMethodException e) {
+            return null;
         }
-        return null;
     }
 
     private static void updateConfig(Method setterMethod, Object otherConfigObject, Object value) {
         try {
             setterMethod.invoke(otherConfigObject, value);
         } catch (IllegalAccessException e) {
+            debug("Could not update config via %s: %s", setterMethod.getName(), e.getMessage());
         } catch (InvocationTargetException e) {
+            debug("Could not update config via %s: %s", setterMethod.getName(), e.getMessage());
         } catch (IllegalArgumentException e) {
-            System.out.println(setterMethod);
-            System.out.println(e);
+            debug("Could not update config via %s: %s", setterMethod.getName(), e.getMessage());
         }
     }
 
@@ -195,7 +190,44 @@ public class ConfigConstructor extends AbstractStarterObjectConstructor {
         for (String name : original.stringPropertyNames()) {
             copy.setProperty(name, original.getProperty(name));
         }
-
         return copy;
+    }
+
+    // clones built-in QuorumFunction implementations
+    private static Object cloneQuorumFunctionImplementation(Object quorumFunction, Class<?> targetClass)
+            throws NoSuchMethodException, InvocationTargetException, IllegalAccessException,
+            InstantiationException {
+
+        if (targetClass.getName().equals("com.hazelcast.quorum.impl.ProbabilisticQuorumFunction")) {
+            int size = (Integer) getFieldValueReflectively(quorumFunction, "quorumSize");
+            double suspicionThreshold = (Double) getFieldValueReflectively(quorumFunction, "suspicionThreshold");
+            int maxSampleSize = (Integer) getFieldValueReflectively(quorumFunction, "maxSampleSize");
+            long minStdDeviationMillis = (Long) getFieldValueReflectively(quorumFunction, "minStdDeviationMillis");
+            long acceptableHeartbeatPauseMillis = (Long) getFieldValueReflectively(quorumFunction,
+                    "acceptableHeartbeatPauseMillis");
+            long heartbeatIntervalMillis = (Long) getFieldValueReflectively(quorumFunction, "heartbeatIntervalMillis");
+
+
+            Constructor<?> ctor = targetClass.getConstructor(Integer.TYPE, Long.TYPE,
+                    Long.TYPE, Integer.TYPE, Long.TYPE, Double.TYPE);
+
+            return ctor.newInstance(size, heartbeatIntervalMillis, acceptableHeartbeatPauseMillis,
+                    maxSampleSize, minStdDeviationMillis, suspicionThreshold);
+        } else if (targetClass.getName().equals("com.hazelcast.quorum.impl.RecentlyActiveQuorumFunction")) {
+            int size = (Integer) getFieldValueReflectively(quorumFunction, "quorumSize");
+            int heartbeatToleranceMillis = (Integer) getFieldValueReflectively(quorumFunction, "heartbeatToleranceMillis");
+
+            Constructor<?> ctor = targetClass.getConstructor(Integer.TYPE, Integer.TYPE);
+            return ctor.newInstance(size, heartbeatToleranceMillis);
+        } else {
+            debug("Did not handle configured QuorumFunction implementation %s", targetClass.getName());
+            return null;
+        }
+    }
+
+    private static boolean isQuorumFunctionImplementation(Class<?> klass) throws ClassNotFoundException {
+        ClassLoader classLoader = klass.getClassLoader();
+        Class<?> quorumFunctionInterface = classLoader.loadClass("com.hazelcast.quorum.QuorumFunction");
+        return quorumFunctionInterface.isAssignableFrom(klass);
     }
 }

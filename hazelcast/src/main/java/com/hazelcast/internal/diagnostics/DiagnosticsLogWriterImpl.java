@@ -32,7 +32,8 @@ import static java.util.Calendar.SECOND;
 import static java.util.Calendar.YEAR;
 
 /**
- * A writer like structure dedicated for the {@link DiagnosticsPlugin} rendering.
+ * A writer like structure dedicated for the {@link DiagnosticsPlugin}
+ * rendering.
  */
 public class DiagnosticsLogWriterImpl implements DiagnosticsLogWriter {
 

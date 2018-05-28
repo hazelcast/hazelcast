@@ -140,6 +140,8 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport, 
 
     MergePolicyProvider getMergePolicyProvider();
 
+    Object getMergePolicy(String name);
+
     MapEventPublisher getMapEventPublisher();
 
     MapEventJournal getEventJournal();
