@@ -34,6 +34,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -277,7 +278,16 @@ class MockConnectionManager implements ConnectionManager {
         if (retries < RETRY_NUMBER && ioService.isActive()) {
             getOrConnect(target, true);
             // TODO: Caution: may break the order guarantee of the packets sent from the same thread!
-            scheduler.schedule(sendTask, (retries + 1) * DELAY_FACTOR, TimeUnit.MILLISECONDS);
+            try {
+                scheduler.schedule(sendTask, (retries + 1) * DELAY_FACTOR, TimeUnit.MILLISECONDS);
+            } catch (RejectedExecutionException e) {
+                if (live) {
+                    throw e;
+                }
+                if (logger.isFinestEnabled()) {
+                    logger.finest("Packet send task is rejected. Packet cannot be sent to " + target);
+                }
+            }
             return true;
         }
         return false;
