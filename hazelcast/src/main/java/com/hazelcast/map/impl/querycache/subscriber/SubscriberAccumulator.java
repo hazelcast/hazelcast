@@ -56,29 +56,15 @@ public class SubscriberAccumulator extends BasicAccumulator<QueryCacheEventData>
         this.sequenceProvider = createSequencerProvider();
     }
 
-    public ConcurrentMap<Integer, Long> getBrokenSequences() {
+    ConcurrentMap<Integer, Long> getBrokenSequences() {
         return brokenSequences;
     }
 
     @Override
     public void accumulate(QueryCacheEventData event) {
-        if (logger.isFinestEnabled()) {
-            logger.finest("Received event=" + event);
+        if (isApplicable(event)) {
+            addQueryCache(event);
         }
-
-        if (!isApplicable(event)) {
-            if (logger.isFinestEnabled()) {
-                logger.finest("Event was not inserted to queryCache=" + event);
-            }
-
-            return;
-        }
-
-        if (logger.isFinestEnabled()) {
-            logger.finest("Event was added to queryCache=" + event);
-        }
-
-        addQueryCache(event);
     }
 
     /**
@@ -133,17 +119,29 @@ public class SubscriberAccumulator extends BasicAccumulator<QueryCacheEventData>
     }
 
     private void handleUnexpectedEvent(QueryCacheEventData event) {
-        addEventSequenceToBrokenSequences(event);
-        publishEventLost(context, info.getMapName(), info.getCacheId(), event.getPartitionId());
-    }
+        // first add sequence of this unexpected event to broken-sequences
+        int partitionId = event.getPartitionId();
+        long sequence = event.getSequence();
+        Long prev = brokenSequences.putIfAbsent(partitionId, sequence);
 
-    private void addEventSequenceToBrokenSequences(QueryCacheEventData event) {
-        Long prev = brokenSequences.putIfAbsent(event.getPartitionId(), event.getSequence());
+        // when prev != null, this means we already notified before
+        if (prev != null) {
+            return;
+        }
 
-        if (prev == null && logger.isFinestEnabled()) {
-            logger.finest(format("Added unexpected event sequence to broken sequences "
-                            + "[partitionId=%d, expected-sequence=%d, broken-sequences-size=%d]",
-                    event.getPartitionId(), event.getSequence(), brokenSequences.size()));
+        // notify users' EventLostListener
+        InternalQueryCache queryCache = getQueryCache();
+        if (queryCache != null) {
+            if (logger.isWarningEnabled()) {
+                long currentSequence = sequenceProvider.getSequence(partitionId);
+                logger.warning(format("Event lost detected for queryCache=`%s`: "
+                                + "partitionId=%d, expectedSequence=%d, "
+                                + "foundSequence=%d, cacheSize=%d",
+                        queryCache.getCacheId(), partitionId,
+                        currentSequence + 1L, sequence, queryCache.size()));
+            }
+
+            publishEventLost(context, info.getMapName(), info.getCacheId(), event.getPartitionId());
         }
     }
 
@@ -154,20 +152,7 @@ public class SubscriberAccumulator extends BasicAccumulator<QueryCacheEventData>
         long foundSequence = event.getSequence();
         long expectedSequence = currentSequence + 1L;
 
-        boolean isNextSequence = foundSequence == expectedSequence;
-
-        if (!isNextSequence) {
-            if (logger.isWarningEnabled()) {
-                InternalQueryCache queryCache = getQueryCache();
-                if (queryCache != null) {
-                    logger.warning(format("Event lost detected for partitionId=%d, expectedSequence=%d "
-                                    + "but foundSequence=%d, cacheSize=%d",
-                            partitionId, expectedSequence, foundSequence, queryCache.size()));
-                }
-            }
-        }
-
-        return isNextSequence;
+        return foundSequence == expectedSequence;
     }
 
     private InternalQueryCache getQueryCache() {
