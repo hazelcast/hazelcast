@@ -83,6 +83,8 @@ public enum AwsProperties {
 
     /**
      * Number of retries while connecting to AWS Services. Its default value is 10.
+     * <p>
+     * Hazelcast AWS plugin uses two AWS services: Describe Instances and EC2 Instance Metadata.
      */
     CONNECTION_RETRIES("connection-retries", INTEGER, true),
 
