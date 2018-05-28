@@ -29,7 +29,8 @@ public enum EntryEventType {
     CLEAR_ALL(TypeId.CLEAR_ALL),
     MERGED(TypeId.MERGED),
     EXPIRED(TypeId.EXPIRED),
-    INVALIDATION(TypeId.INVALIDATION);
+    INVALIDATION(TypeId.INVALIDATION),
+    LOADED(TypeId.LOADED);
 
     private int typeId;
 
@@ -68,6 +69,8 @@ public enum EntryEventType {
                 return EXPIRED;
             case TypeId.INVALIDATION:
                 return INVALIDATION;
+            case TypeId.LOADED:
+                return LOADED;
             default:
                 return null;
         }
@@ -89,6 +92,7 @@ public enum EntryEventType {
         private static final int MERGED = 1 << 6;
         private static final int EXPIRED = 1 << 7;
         private static final int INVALIDATION = 1 << 8;
+        private static final int LOADED = 1 << 9;
     }
     //CHECKSTYLE:ON
 }

@@ -77,6 +77,15 @@ public interface MapEventJournal extends EventJournal<InternalEventJournalMapEve
     void writeAddEvent(EventJournalConfig journalConfig, ObjectNamespace namespace, int partitionId,
                        Data key, Object value);
 
+
+    /**
+     * Like writeAddEvent but called upon a load from a map-loader.
+     *
+     * @see #writeAddEvent(EventJournalConfig, ObjectNamespace, int, Data, Object)
+     */
+    void writeLoadEvent(EventJournalConfig journalConfig, ObjectNamespace namespace, int partitionId,
+                        Data key, Object value);
+
     /**
      * Writes an {@link com.hazelcast.core.EntryEventType#REMOVED} to the event journal.
      * If there is no event journal configured for this map, the method will do nothing.

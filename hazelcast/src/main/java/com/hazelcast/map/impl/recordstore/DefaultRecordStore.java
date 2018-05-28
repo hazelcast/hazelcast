@@ -19,7 +19,9 @@ package com.hazelcast.map.impl.recordstore;
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NativeMemoryConfig;
+import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryView;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.EntryViews;
 import com.hazelcast.map.impl.MapContainer;
@@ -41,6 +43,7 @@ import com.hazelcast.map.impl.querycache.publisher.PublisherRegistry;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.Records;
 import com.hazelcast.map.merge.MapMergePolicy;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.spi.NodeEngine;
@@ -376,16 +379,18 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     @Override
-    public Record loadRecordOrNull(Data key, boolean backup) {
+    public Record loadRecordOrNull(Data key, boolean backup, Address callerAddress) {
         Record record = null;
         Object value = mapDataStore.load(key);
         if (value != null) {
             record = createRecord(value, DEFAULT_TTL, getNow());
             storage.put(key, record);
-            eventJournal.writeAddEvent(mapContainer.getEventJournalConfig(), mapContainer.getObjectNamespace(), partitionId,
-                    key, record.getValue());
+            eventJournal.writeAddEvent(mapContainer.getEventJournalConfig(),
+                    mapContainer.getObjectNamespace(), partitionId, key, record.getValue());
             if (!backup) {
                 saveIndex(record, null);
+                mapEventPublisher.publishEvent(callerAddress, name, EntryEventType.LOADED,
+                        key, null, value, null);
             }
             evictEntries(key);
         }
@@ -570,13 +575,13 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     @Override
-    public Object get(Data key, boolean backup) {
+    public Object get(Data key, boolean backup, Address callerAddress) {
         checkIfLoaded();
         long now = getNow();
 
         Record record = getRecordOrNull(key, now, backup);
         if (record == null) {
-            record = loadRecordOrNull(key, backup);
+            record = loadRecordOrNull(key, backup, callerAddress);
         } else {
             accessRecord(record, now);
         }
@@ -601,7 +606,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     @Override
-    public MapEntries getAll(Set<Data> keys) {
+    public MapEntries getAll(Set<Data> keys, Address callerAddress) {
         checkIfLoaded();
         long now = getNow();
 
@@ -618,13 +623,13 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             }
         }
 
-        Map loadedEntries = loadEntries(keys);
+        Map loadedEntries = loadEntries(keys, callerAddress);
         addMapEntrySet(loadedEntries, mapEntries);
 
         return mapEntries;
     }
 
-    protected Map<Data, Object> loadEntries(Set<Data> keys) {
+    protected Map<Data, Object> loadEntries(Set<Data> keys, Address callerAddress) {
         Map loadedEntries = mapDataStore.loadAll(keys);
         if (loadedEntries == null || loadedEntries.isEmpty()) {
             return Collections.emptyMap();
@@ -643,7 +648,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
             resultMap.put(key, value);
 
-            putFromLoad(key, value);
+            putFromLoad(key, value, callerAddress);
 
         }
 
@@ -680,13 +685,13 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     @Override
-    public boolean containsKey(Data key) {
+    public boolean containsKey(Data key, Address callerAddress) {
         checkIfLoaded();
         long now = getNow();
 
         Record record = getRecordOrNull(key, now, false);
         if (record == null) {
-            record = loadRecordOrNull(key, false);
+            record = loadRecordOrNull(key, false, callerAddress);
         }
         boolean contains = record != null;
         if (contains) {
@@ -927,16 +932,16 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     @Override
-    public Object putFromLoad(Data key, Object value) {
-        return putFromLoadInternal(key, value, DEFAULT_TTL, false);
+    public Object putFromLoad(Data key, Object value, Address callerAddress) {
+        return putFromLoadInternal(key, value, DEFAULT_TTL, false, callerAddress);
     }
 
     @Override
     public Object putFromLoadBackup(Data key, Object value) {
-        return putFromLoadInternal(key, value, DEFAULT_TTL, true);
+        return putFromLoadInternal(key, value, DEFAULT_TTL, true, null);
     }
 
-    private Object putFromLoadInternal(Data key, Object value, long ttl, boolean backup) {
+    private Object putFromLoadInternal(Data key, Object value, long ttl, boolean backup, Address callerAddress) {
         if (!isKeyAndValueLoadable(key, value)) {
             return null;
         }
@@ -955,18 +960,33 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             value = mapServiceContext.interceptPut(name, null, value);
             record = createRecord(value, ttl, now);
             storage.put(key, record);
-            eventJournal.writeAddEvent(mapContainer.getEventJournalConfig(), mapContainer.getObjectNamespace(), partitionId,
-                    record.getKey(), record.getValue());
+
+            if (is311OrLater()) {
+                eventJournal.writeLoadEvent(mapContainer.getEventJournalConfig(),
+                        mapContainer.getObjectNamespace(), partitionId, record.getKey(), record.getValue());
+                mapEventPublisher.publishLoadedOrAddedEvent(callerAddress, name, key, null, value);
+            } else {
+                eventJournal.writeAddEvent(mapContainer.getEventJournalConfig(),
+                        mapContainer.getObjectNamespace(), partitionId, record.getKey(), record.getValue());
+                mapEventPublisher.publishEvent(callerAddress, name, EntryEventType.ADDED, key, null, value);
+            }
         } else {
             oldValue = record.getValue();
             value = mapServiceContext.interceptPut(name, oldValue, value);
             updateRecord(key, record, value, now, true);
             setTTLAndUpdateExpiryTime(ttl, record, mapContainer.getMapConfig(), false);
+
+            mapEventPublisher.publishEvent(callerAddress, name, EntryEventType.UPDATED, key, oldValue, value);
         }
         if (!backup) {
             saveIndex(record, oldValue);
         }
         return oldValue;
+    }
+
+    private boolean is311OrLater() {
+        return mapServiceContext.getNodeEngine().getClusterService()
+                .getClusterVersion().isGreaterOrEqual(Versions.V3_11);
     }
 
     protected boolean isKeyAndValueLoadable(Data key, Object value) {
@@ -994,7 +1014,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     @Override
-    public Object putIfAbsent(Data key, Object value, long ttl) {
+    public Object putIfAbsent(Data key, Object value, long ttl, Address callerAddress) {
         checkIfLoaded();
         long now = getNow();
         markRecordStoreExpirable(ttl);
@@ -1006,8 +1026,15 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             if (oldValue != null) {
                 record = createRecord(oldValue, DEFAULT_TTL, now);
                 storage.put(key, record);
-                eventJournal.writeAddEvent(mapContainer.getEventJournalConfig(), mapContainer.getObjectNamespace(), partitionId,
-                        record.getKey(), record.getValue());
+
+                if (is311OrLater()) {
+                    eventJournal.writeLoadEvent(mapContainer.getEventJournalConfig(), mapContainer.getObjectNamespace(), partitionId,
+                            record.getKey(), record.getValue());
+                    mapEventPublisher.publishEvent(callerAddress, name, EntryEventType.LOADED, key, null, oldValue);
+                } else {
+                    eventJournal.writeAddEvent(mapContainer.getEventJournalConfig(), mapContainer.getObjectNamespace(), partitionId,
+                            record.getKey(), record.getValue());
+                }
             }
         } else {
             accessRecord(record, now);

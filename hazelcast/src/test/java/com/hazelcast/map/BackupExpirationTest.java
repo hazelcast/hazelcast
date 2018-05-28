@@ -165,7 +165,7 @@ public class BackupExpirationTest extends HazelcastTestSupport {
             Data dataKey = ss.toData(1);
             recordStore.put(dataKey, "value", 100);
             sleepSeconds(1);
-            recordStore.get(dataKey, false);
+            recordStore.get(dataKey, false, null);
 
             InvalidationQueue expiredKeys = recordStore.getExpiredKeys();
             return expiredKeys.size();

@@ -154,7 +154,7 @@ public final class EntryOperator {
             return this;
         }
 
-        oldValue = recordStore.get(dataKey, backup);
+        oldValue = recordStore.get(dataKey, backup, callerAddress);
         // predicated entry processors can only be applied to existing entries
         // so if we have a predicate and somehow(due to expiration or split-brain healing)
         // we found value null, we should skip that entry.

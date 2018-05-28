@@ -97,6 +97,8 @@ public interface MapEventPublisher {
     void publishEvent(Address caller, String mapName, EntryEventType eventType,
                       Data dataKey, Object dataOldValue, Object dataValue, Object dataMergingValue);
 
+    void publishLoadedOrAddedEvent(Address caller, String mapName, Data dataKey, Object dataOldValue, Object dataValue);
+
     void publishMapPartitionLostEvent(Address caller, String mapName, int partitionId);
 
     /**
