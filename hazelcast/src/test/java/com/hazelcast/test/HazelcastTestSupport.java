@@ -1534,6 +1534,10 @@ public abstract class HazelcastTestSupport {
         assumeFalse("Zing JDK6 used", JAVA_VERSION.startsWith("1.6.") && JVM_NAME.startsWith("Zing"));
     }
 
+    public static void assumeThatNoWindowsOS() {
+        assumeFalse(System.getProperty("os.name").toLowerCase().contains("windows"));
+    }
+
     /**
      * Throws {@link AssumptionViolatedException} if two new Objects have the same hashCode (e.g. when running tests
      * with static hashCode ({@code -XX:hashCode=2}).
