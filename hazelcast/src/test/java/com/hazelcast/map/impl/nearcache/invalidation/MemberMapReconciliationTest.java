@@ -22,8 +22,13 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.core.Partition;
+import com.hazelcast.internal.nearcache.impl.DefaultNearCache;
+import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataContainer;
+import com.hazelcast.internal.nearcache.impl.invalidation.StaleReadDetector;
 import com.hazelcast.map.impl.proxy.NearCachedMapProxyImpl;
 import com.hazelcast.monitor.NearCacheStats;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -40,12 +45,15 @@ import java.util.Collection;
 
 import static com.hazelcast.config.InMemoryFormat.BINARY;
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
+import static com.hazelcast.internal.nearcache.impl.invalidation.StaleReadDetector.ALWAYS_FRESH;
 import static com.hazelcast.spi.properties.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS;
 import static com.hazelcast.spi.properties.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_SIZE;
 import static java.lang.String.format;
 import static java.lang.String.valueOf;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
 
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
@@ -57,6 +65,7 @@ public class MemberMapReconciliationTest extends HazelcastTestSupport {
 
     @Parameterized.Parameter(1)
     public InMemoryFormat nearCacheInMemoryFormat;
+    private HazelcastInstance server;
 
     @Parameterized.Parameters(name = "mapInMemoryFormat:{0} nearCacheInMemoryFormat:{1}")
     public static Collection<Object[]> parameters() {
@@ -97,7 +106,7 @@ public class MemberMapReconciliationTest extends HazelcastTestSupport {
 
         mapConfig.setNearCacheConfig(nearCacheConfig);
 
-        HazelcastInstance server = factory.newHazelcastInstance(config);
+        server = factory.newHazelcastInstance(config);
         serverMap = server.getMap(MAP_NAME);
 
         nearCachedServerMap = nearCachedMapFromNewServer();
@@ -112,7 +121,7 @@ public class MemberMapReconciliationTest extends HazelcastTestSupport {
         HazelcastInstance server = factory.newHazelcastInstance(config);
         IMap map = server.getMap(MAP_NAME);
 
-        assert map instanceof NearCachedMapProxyImpl;
+        assertInstanceOf(NearCachedMapProxyImpl.class, map);
 
         return map;
     }
@@ -128,10 +137,11 @@ public class MemberMapReconciliationTest extends HazelcastTestSupport {
             nearCachedServerMap.get(i);
         }
 
-        IMap<Integer, Integer> nearCachedMapFromNewServer = nearCachedMapFromNewServer();
+        final IMap<Integer, Integer> nearCachedMapFromNewServer = nearCachedMapFromNewServer();
 
         warmUpPartitions(factory.getAllHazelcastInstances());
         waitAllForSafeState(factory.getAllHazelcastInstances());
+        waitForNearCacheInvalidationMetadata(nearCachedMapFromNewServer, server);
 
         for (int i = 0; i < total; i++) {
             nearCachedMapFromNewServer.get(i);
@@ -148,6 +158,34 @@ public class MemberMapReconciliationTest extends HazelcastTestSupport {
         }
 
         assertStats(nearCacheStats, total, total, total);
+    }
+
+    private static void waitForNearCacheInvalidationMetadata(final IMap<Integer, Integer> nearCachedMapFromNewServer,
+                                                             final HazelcastInstance server) {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                final DefaultNearCache nearCache = getNearCache((NearCachedMapProxyImpl) nearCachedMapFromNewServer);
+
+                StaleReadDetector staleReadDetector = nearCache.getNearCacheRecordStore().getStaleReadDetector();
+
+                // we first assert that the stale detector is not the initial one, since the metadata that the records are
+                // initialized with on putting records into the record store is queried from the stale detector
+                assertNotSame(ALWAYS_FRESH, staleReadDetector);
+
+                // wait until all partition's metadata is filled properly, since creating records from on initial metadata
+                // may lead to stale reads if the metadata gets updated between record creation and stale read check
+                for (Partition partition : server.getPartitionService().getPartitions()) {
+                    MetaDataContainer metaDataContainer = staleReadDetector.getMetaDataContainer(partition.getPartitionId());
+
+                    assertNotNull(metaDataContainer.getUuid());
+                }
+            }
+        });
+    }
+
+    private static DefaultNearCache getNearCache(NearCachedMapProxyImpl nearCachedMapFromNewServer) {
+        return (DefaultNearCache) nearCachedMapFromNewServer.getNearCache().unwrap(DefaultNearCache.class);
     }
 
     public static void assertStats(NearCacheStats nearCacheStats, int ownedEntryCount, int expectedHits, int expectedMisses) {
