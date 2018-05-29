@@ -17,7 +17,6 @@
 package com.hazelcast.internal.nearcache.impl.invalidation;
 
 import com.hazelcast.internal.nearcache.NearCache;
-import com.hazelcast.internal.nearcache.impl.DefaultNearCache;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.TaskScheduler;
 import com.hazelcast.spi.properties.HazelcastProperties;
@@ -29,13 +28,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static com.hazelcast.util.Preconditions.checkNotNegative;
 import static java.lang.String.format;
 import static java.lang.System.nanoTime;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -65,8 +62,6 @@ public final class RepairingTask implements Runnable {
     // only used for testing
     public static final HazelcastProperty MIN_RECONCILIATION_INTERVAL_SECONDS
             = new HazelcastProperty("hazelcast.invalidation.min.reconciliation.interval.seconds", 30, SECONDS);
-
-    private static final long RESCHEDULE_FAILED_INITIALIZATION_AFTER_MILLIS = 500;
 
     final int maxToleratedMissCount;
     final long reconciliationIntervalNanos;
@@ -176,23 +171,22 @@ public final class RepairingTask implements Runnable {
 
         @Override
         public RepairingHandler createNew(String dataStructureName) {
-            RepairingHandler handler = new RepairingHandler(logger, localUuid, dataStructureName,
-                    nearCache, serializationService, partitionService);
-            StaleReadDetector staleReadDetector = new StaleReadDetectorImpl(handler, partitionService);
-            nearCache.unwrap(DefaultNearCache.class).getNearCacheRecordStore().setStaleReadDetector(staleReadDetector);
-
-            initRepairingHandler(handler);
-
-            return handler;
+            return new RepairingHandler(logger, localUuid, dataStructureName,
+                    nearCache, serializationService, partitionService, metaDataFetcher, scheduler,
+                    reconciliationIntervalNanos);
         }
     }
 
     public <K, V> RepairingHandler registerAndGetHandler(String dataStructureName, NearCache<K, V> nearCache) {
-        RepairingHandler handler = getOrPutIfAbsent(handlers, dataStructureName, new HandlerConstructor<K, V>(nearCache));
-
-        if (running.compareAndSet(false, true)) {
-            scheduleNextRun();
-            lastAntiEntropyRunNanos = nanoTime();
+        RepairingHandler handler;
+        try {
+            handler = getOrPutIfAbsent(handlers, dataStructureName, new HandlerConstructor<K, V>(nearCache));
+            handler.init();
+        } finally {
+            if (running.compareAndSet(false, true)) {
+                scheduleNextRun();
+                lastAntiEntropyRunNanos = nanoTime();
+            }
         }
 
         return handler;
@@ -200,71 +194,6 @@ public final class RepairingTask implements Runnable {
 
     public void deregisterHandler(String dataStructureName) {
         handlers.remove(dataStructureName);
-    }
-
-    /**
-     * Synchronously makes initial population of partition UUIDs & sequences.
-     * <p>
-     * This initialization is done for every data structure with a Near Cache.
-     */
-    private void initRepairingHandler(RepairingHandler handler) {
-        logger.finest("Initializing repairing handler");
-
-        boolean initialized = false;
-        try {
-            metaDataFetcher.init(handler);
-            initialized = true;
-        } catch (Exception e) {
-            logger.warning(e);
-        } finally {
-            if (!initialized) {
-                initRepairingHandlerAsync(handler);
-            }
-        }
-    }
-
-    /**
-     * Asynchronously makes initial population of partition UUIDs & sequences.
-     * <p>
-     * This is the fallback operation when {@link #initRepairingHandler}
-     * failed.
-     */
-    private void initRepairingHandlerAsync(final RepairingHandler handler) {
-        scheduler.schedule(new Runnable() {
-            private final AtomicInteger round = new AtomicInteger();
-
-            @Override
-            public void run() {
-                int roundNumber = round.incrementAndGet();
-                boolean initialized = false;
-                try {
-                    initRepairingHandler(handler);
-                    initialized = true;
-                } catch (Exception e) {
-                    if (logger.isFinestEnabled()) {
-                        logger.finest(e);
-                    }
-                } finally {
-                    if (!initialized) {
-                        long totalDelaySoFarNanos = totalDelaySoFarNanos(roundNumber);
-                        if (reconciliationIntervalNanos > totalDelaySoFarNanos) {
-                            long delay = roundNumber * RESCHEDULE_FAILED_INITIALIZATION_AFTER_MILLIS;
-                            scheduler.schedule(this, delay, MILLISECONDS);
-                        }
-                        // else don't reschedule this task again and fallback to anti-entropy (see #runAntiEntropyIfNeeded)
-                        // if we haven't managed to initialize repairing handler so far.
-                    }
-                }
-            }
-        }, RESCHEDULE_FAILED_INITIALIZATION_AFTER_MILLIS, MILLISECONDS);
-    }
-
-    private static long totalDelaySoFarNanos(int roundNumber) {
-        long totalDelayMillis = 0;
-        for (int i = 1; i < roundNumber; i++) {
-            totalDelayMillis += roundNumber * RESCHEDULE_FAILED_INITIALIZATION_AFTER_MILLIS;
-        }
-        return MILLISECONDS.toNanos(totalDelayMillis);
     }
 
     /**
