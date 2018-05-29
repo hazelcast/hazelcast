@@ -33,7 +33,7 @@ import static com.hazelcast.internal.nearcache.impl.invalidation.InvalidationUti
 public class NonStopInvalidatorTest extends AbstractInvalidatorTest {
 
     @Override
-    Invalidator createInvalidator(NodeEngineImpl nodeEngine) {
+    public Invalidator createInvalidator(NodeEngineImpl nodeEngine) {
         return new NonStopInvalidator(MapService.SERVICE_NAME, TRUE_FILTER, nodeEngine);
     }
 }

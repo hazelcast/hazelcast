@@ -33,7 +33,7 @@ import static com.hazelcast.internal.nearcache.impl.invalidation.InvalidationUti
 public class BatchInvalidatorTest extends AbstractInvalidatorTest {
 
     @Override
-    Invalidator createInvalidator(NodeEngineImpl nodeEngine) {
+    public Invalidator createInvalidator(NodeEngineImpl nodeEngine) {
         return new BatchInvalidator(MapService.SERVICE_NAME, 100, 10, TRUE_FILTER, nodeEngine);
     }
 }

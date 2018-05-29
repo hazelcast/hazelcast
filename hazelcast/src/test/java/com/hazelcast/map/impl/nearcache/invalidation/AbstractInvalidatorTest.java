@@ -28,7 +28,7 @@ import org.junit.Test;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getBaseConfig;
 import static org.mockito.Mockito.mock;
 
-abstract class AbstractInvalidatorTest extends HazelcastTestSupport {
+public abstract class AbstractInvalidatorTest extends HazelcastTestSupport {
 
     private Invalidator invalidator;
     private Data key;
@@ -42,7 +42,7 @@ abstract class AbstractInvalidatorTest extends HazelcastTestSupport {
         key = mock(Data.class);
     }
 
-    abstract Invalidator createInvalidator(NodeEngineImpl nodeEngine);
+    public abstract Invalidator createInvalidator(NodeEngineImpl nodeEngine);
 
     @Test(expected = NullPointerException.class)
     public void testInvalidate_withInvalidKey() {
