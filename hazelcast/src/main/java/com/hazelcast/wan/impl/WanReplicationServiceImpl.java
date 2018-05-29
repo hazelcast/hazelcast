@@ -157,17 +157,19 @@ public class WanReplicationServiceImpl implements WanReplicationService {
 
     @Override
     public WanEventCounter getReceivedEventCounter(String serviceName) {
-        return receivedWanEventCounters.getWanEventCounter(serviceName);
+        return receivedWanEventCounters.getWanEventCounter("", "", serviceName);
     }
 
     @Override
-    public WanEventCounter getSentEventCounter(String serviceName) {
-        return sentWanEventCounters.getWanEventCounter(serviceName);
+    public WanEventCounter getSentEventCounter(String wanReplicationName,
+                                               String targetGroupName,
+                                               String serviceName) {
+        return sentWanEventCounters.getWanEventCounter(wanReplicationName, targetGroupName, serviceName);
     }
 
     @Override
-    public void removeWanEventCounters(String serviceName, String dataStructureName) {
-        receivedWanEventCounters.removeCounter(serviceName, dataStructureName);
-        sentWanEventCounters.removeCounter(serviceName, dataStructureName);
+    public void removeWanEventCounters(String serviceName, String objectName) {
+        receivedWanEventCounters.removeCounter(serviceName, objectName);
+        sentWanEventCounters.removeCounter(serviceName, objectName);
     }
 }

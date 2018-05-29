@@ -54,7 +54,7 @@ public interface WanReplicationService extends CoreService, StatisticsAwareServi
     /**
      * Pauses wan replication to target group for the called node
      *
-     * @param name name of WAN replication configuration
+     * @param name            name of WAN replication configuration
      * @param targetGroupName name of wan target cluster config
      */
     void pause(String name, String targetGroupName);
@@ -62,7 +62,7 @@ public interface WanReplicationService extends CoreService, StatisticsAwareServi
     /**
      * Resumes wan replication to target group for the called node.
      *
-     * @param name name of WAN replication configuration
+     * @param name            name of WAN replication configuration
      * @param targetGroupName name of wan target cluster config
      */
     void resume(String name, String targetGroupName);
@@ -115,16 +115,30 @@ public interface WanReplicationService extends CoreService, StatisticsAwareServi
 
     /**
      * Returns a counter of received and processed WAN replication events.
+     *
+     * @param serviceName the name of the service for the WAN events
+     * @return the WAN event counter
      */
     WanEventCounter getReceivedEventCounter(String serviceName);
 
     /**
      * Returns a counter of sent and processed WAN replication events.
+     *
+     * @param wanReplicationName the name of the wan replication config
+     * @param targetGroupName    the target cluster group name
+     * @param serviceName        the name of the service for the WAN events
+     * @return the WAN event counter
      */
-    WanEventCounter getSentEventCounter(String serviceName);
+    WanEventCounter getSentEventCounter(String wanReplicationName,
+                                        String targetGroupName,
+                                        String serviceName);
 
     /**
-     * Removes the WAN event counters for the given {@code dataStructureName}.
+     * Removes all WAN event counters for the given {@code serviceName} and
+     * {@code dataStructureName}.
+     *
+     * @param serviceName       the name of the service for the WAN events
+     * @param dataStructureName the distributed object name
      */
     void removeWanEventCounters(String serviceName, String dataStructureName);
 }
