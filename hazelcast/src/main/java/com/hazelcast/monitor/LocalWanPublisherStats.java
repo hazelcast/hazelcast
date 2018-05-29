@@ -53,11 +53,22 @@ public interface LocalWanPublisherStats extends JsonSerializable {
     int getOutboundQueueSize();
 
     /**
-     * Returns if the wan replication on this member is paused
+     * Returns {@code true} if the WAN replication on this hazelcast instance
+     * is paused.
      *
-     * @return true the wan replication on this member is paused
+     * @return {@code true} if the WAN replication on this member is paused
+     * @see com.hazelcast.wan.WanReplicationService#pause(String, String)
      */
     boolean isPaused();
+
+    /**
+     * Returns {@code true} if the WAN replication on this hazelcast instance
+     * is stopped.
+     *
+     * @return {@code true} if the WAN replication on this member is stopped
+     * @see com.hazelcast.wan.WanReplicationService#stop(String, String)
+     */
+    boolean isStopped();
 
     /**
      * Returns the counter for the successfully transfered map WAN events.

@@ -38,6 +38,7 @@ public class LocalWanPublisherStatsImpl implements LocalWanPublisherStats {
 
     private volatile boolean connected;
     private volatile boolean paused;
+    private volatile boolean stopped;
     private volatile int outboundQueueSize;
     private volatile long totalPublishLatency;
     private volatile long totalPublishedEventCount;
@@ -69,6 +70,15 @@ public class LocalWanPublisherStatsImpl implements LocalWanPublisherStats {
 
     public void setPaused(boolean paused) {
         this.paused = paused;
+    }
+
+    @Override
+    public boolean isStopped() {
+        return stopped;
+    }
+
+    public void setStopped(boolean stopped) {
+        this.stopped = stopped;
     }
 
     @Override
@@ -112,6 +122,7 @@ public class LocalWanPublisherStatsImpl implements LocalWanPublisherStats {
         root.add("totalPublishedEventCount", totalPublishedEventCount);
         root.add("outboundQueueSize", outboundQueueSize);
         root.add("paused", paused);
+        root.add("stopped", stopped);
         return root;
     }
 
@@ -122,6 +133,7 @@ public class LocalWanPublisherStatsImpl implements LocalWanPublisherStats {
         totalPublishedEventCount = getLong(json, "totalPublishedEventCount", -1);
         outboundQueueSize = getInt(json, "outboundQueueSize", -1);
         paused = getBoolean(json, "paused");
+        stopped = getBoolean(json, "stopped");
     }
 
     @Override
