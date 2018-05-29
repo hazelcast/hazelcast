@@ -46,6 +46,7 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.ENTRY_COUNT;
 import static com.hazelcast.config.EvictionPolicy.LRU;
@@ -838,6 +839,9 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
                 case EXECUTE_ON_ENTRIES:
                 case EXECUTE_ON_ENTRIES_WITH_PREDICATE:
                     break;
+                case SET_TTL:
+                    adapter.setTTL(i, 1, TimeUnit.DAYS);
+                    break;
                 default:
                     throw new IllegalArgumentException("Unexpected method: " + method);
             }
@@ -1513,6 +1517,23 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
         assertEquals("newValue", context.nearCacheAdapter.get(1));
 
         assertNearCacheStats(context, size, expectedHits, expectedMisses);
+    }
+
+    @Test
+    public void whenSetTTLIsCalled_thenAnotherNearCacheContextShouldBeInvalidated() {
+        nearCacheConfig.setInvalidateOnChange(true);
+        NearCacheTestContext<Integer, String, NK, NV> firstContext = createContext();
+        NearCacheTestContext<Integer, String, NK, NV> secondContext = createNearCacheContext();
+
+        populateDataAdapter(firstContext, DEFAULT_RECORD_COUNT);
+
+        populateNearCache(secondContext);
+
+        for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
+            firstContext.nearCacheAdapter.setTTL(i, 0, TimeUnit.DAYS);
+        }
+
+        assertNearCacheSizeEventually(secondContext, 0);
     }
 
     @Test

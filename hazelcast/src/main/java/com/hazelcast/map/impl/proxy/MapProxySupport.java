@@ -592,6 +592,13 @@ abstract class MapProxySupport<K, V>
         }
     }
 
+    protected void setTTLInternal(Object key, long ttl, TimeUnit timeUnit) {
+        long ttlInMillis = timeUnit.toMillis(ttl);
+        Data keyData = serializationService.toData(key);
+        MapOperation operation = operationProvider.createSetTTLOperation(name, keyData, ttlInMillis);
+        invokeOperation(keyData, operation);
+    }
+
     protected InternalCompletableFuture<Data> removeAsyncInternal(Object key) {
         Data keyData = toDataWithStrategy(key);
         int partitionId = partitionService.getPartitionId(keyData);

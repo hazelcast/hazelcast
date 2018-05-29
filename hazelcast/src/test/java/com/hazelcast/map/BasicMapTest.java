@@ -18,6 +18,7 @@ package com.hazelcast.map;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
@@ -81,6 +82,14 @@ public class BasicMapTest extends HazelcastTestSupport {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(INSTANCE_COUNT);
         Config config = getConfig();
         instances = factory.newInstances(config);
+    }
+
+    protected Config getConfig() {
+        Config cfg = super.getConfig();
+        MapConfig mapConfig = new MapConfig("mapWithTTL*");
+        mapConfig.setTimeToLiveSeconds(1);
+        cfg.addMapConfig(mapConfig);
+        return cfg;
     }
 
     HazelcastInstance getInstance() {
@@ -1183,6 +1192,39 @@ public class BasicMapTest extends HazelcastTestSupport {
                 assertNull(map.get("key"));
             }
         }, 30);
+    }
+
+    @Test
+    public void testAlterTTLOfAnEternalKey() {
+        final IMap<String, String> map = getInstance().getMap("testSetTTL");
+
+        map.put("key", "value");
+        map.setTTL("key", 1, TimeUnit.SECONDS);
+
+        sleepAtLeastMillis(1000);
+
+        assertNull(map.get("key"));
+    }
+
+    @Test
+    public void testExtendTTLOfAKeyBeforeItExpires() {
+        final IMap<String, String> map = getInstance().getMap("testSetTTLExtend");
+        map.put("key", "value", 1, TimeUnit.SECONDS);
+        //Make the entry eternal
+        map.setTTL("key", 0, TimeUnit.DAYS);
+
+        sleepAtLeastMillis(1200);
+
+        assertEquals("value", map.get("key"));
+    }
+
+    @Test
+    public void testSetTTLConfiguresMapPolicyIfTTLIsNegative() {
+        final IMap<String, String> map = getInstance().getMap("mapWithTTL");
+        map.put("tempKey", "tempValue", 10, TimeUnit.SECONDS);
+        map.setTTL("tempKey", -1, TimeUnit.SECONDS);
+        sleepAtLeastMillis(1000);
+        assertNull(map.get("tempKey"));
     }
 
     @Test

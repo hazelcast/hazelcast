@@ -105,12 +105,12 @@ public final class ExpirationTimeSetter {
      * @param operationTTLMillis user provided TTL during operation call like put with TTL
      * @param record             record to be updated
      * @param mapConfig          map config object
-     * @param entryCreated       give {@code true} if this is the first creation of entry,
+     * @param consultMapConfig   give {@code true} if this update should consult map ttl configuration,
      *                           otherwise give {@code false} to indicate update
      */
     public static void setTTLAndUpdateExpiryTime(long operationTTLMillis, Record record, MapConfig mapConfig,
-                                                 boolean entryCreated) {
-        long ttlMillis = pickTTLMillis(operationTTLMillis, record.getTtl(), mapConfig, entryCreated);
+                                                 boolean consultMapConfig) {
+        long ttlMillis = pickTTLMillis(operationTTLMillis, record.getTtl(), mapConfig, consultMapConfig);
         record.setTtl(ttlMillis);
 
         long maxIdleMillis = calculateMaxIdleMillis(mapConfig);
@@ -123,19 +123,19 @@ public final class ExpirationTimeSetter {
      * @param existingTTLMillis  existing TTL on record
      * @param operationTTLMillis user provided TTL during operation call like put with TTL
      * @param mapConfig          used to get configured TTL
-     * @param entryCreated       give {@code true} if this is the first creation of entry,
-     *                           otherwise give {@code false} to indicate update
+     * @param consultMapConfig   give {@code true} if this update should consult map ttl configuration,
+     *                           otherwise give {@code false}
      * @return TTL value in millis to set to record
      */
     private static long pickTTLMillis(long operationTTLMillis, long existingTTLMillis, MapConfig mapConfig,
-                                      boolean entryCreated) {
+                                      boolean consultMapConfig) {
         // if user set operationTTLMillis when calling operation, use it
         if (operationTTLMillis > 0) {
             return checkedTime(operationTTLMillis);
         }
 
         // if this is the first creation of entry, try to get TTL from mapConfig
-        if (entryCreated && operationTTLMillis < 0 && mapConfig.getTimeToLiveSeconds() > 0) {
+        if (consultMapConfig && operationTTLMillis < 0 && mapConfig.getTimeToLiveSeconds() > 0) {
             return checkedTime(SECONDS.toMillis(mapConfig.getTimeToLiveSeconds()));
         }
 
