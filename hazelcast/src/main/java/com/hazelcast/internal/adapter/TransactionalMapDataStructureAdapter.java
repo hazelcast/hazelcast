@@ -141,6 +141,12 @@ public class TransactionalMapDataStructureAdapter<K, V> implements DataStructure
     }
 
     @Override
+    @MethodNotAvailable
+    public void setTTL(K key, long duration, TimeUnit timeUnit) {
+        throw new MethodNotAvailableException();
+    }
+
+    @Override
     public V replace(K key, V newValue) {
         begin();
         V oldValue = transactionalMap.replace(key, newValue);

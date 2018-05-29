@@ -113,6 +113,12 @@ public class ICacheDataStructureAdapter<K, V> implements DataStructureAdapter<K,
     }
 
     @Override
+    @MethodNotAvailable
+    public void setTTL(K key, long duration, TimeUnit timeUnit) {
+        throw new MethodNotAvailableException();
+    }
+
+    @Override
     public V replace(K key, V newValue) {
         return cache.getAndReplace(key, newValue);
     }

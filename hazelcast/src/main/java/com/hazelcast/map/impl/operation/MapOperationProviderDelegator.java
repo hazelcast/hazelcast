@@ -173,6 +173,11 @@ abstract class MapOperationProviderDelegator implements MapOperationProvider {
     }
 
     @Override
+    public MapOperation createSetTTLOperation(String name, Data key, long ttl) {
+        return getDelegate().createSetTTLOperation(name, key, ttl);
+    }
+
+    @Override
     public MapOperation createLegacyMergeOperation(String name, EntryView<Data, Data> mergingEntry,
                                                    MapMergePolicy policy, boolean disableWanReplicationEvent) {
         return getDelegate().createLegacyMergeOperation(name, mergingEntry, policy, disableWanReplicationEvent);

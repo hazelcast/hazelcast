@@ -26,6 +26,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.ManagedContext;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.journal.EventJournalInitialSubscriberState;
 import com.hazelcast.internal.journal.EventJournalReader;
 import com.hazelcast.map.EntryProcessor;
@@ -345,6 +346,13 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
             result.put(key, value);
         }
         return result;
+    }
+
+    @Override
+    public void setTTL(K key, long ttl, TimeUnit timeunit) {
+        checkNotNull(key);
+        checkNotNull(timeunit);
+        setTTLInternal(key, ttl, timeunit);
     }
 
     @Override

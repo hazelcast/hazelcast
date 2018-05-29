@@ -64,6 +64,8 @@ public interface DataStructureAdapter<K, V> {
 
     ICompletableFuture<Boolean> putIfAbsentAsync(K key, V value);
 
+    void setTTL(K key, long duration, TimeUnit timeUnit);
+
     V replace(K key, V newValue);
 
     boolean replace(K key, V oldValue, V newValue);
@@ -163,7 +165,8 @@ public interface DataStructureAdapter<K, V> {
         CLEAR("clear"),
         CLOSE("close"),
         DESTROY("destroy"),
-        GET_LOCAL_MAP_STATS("getLocalMapStats");
+        GET_LOCAL_MAP_STATS("getLocalMapStats"),
+        SET_TTL("setTTL", Object.class, long.class, TimeUnit.class);
 
         private final String methodName;
         private final Class<?>[] parameterTypes;
