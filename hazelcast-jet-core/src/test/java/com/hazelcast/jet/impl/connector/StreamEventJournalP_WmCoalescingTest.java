@@ -27,13 +27,14 @@ import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.map.journal.EventJournalMapEvent;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
 import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.locks.LockSupport;
 import java.util.stream.IntStream;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
 
 import static com.hazelcast.jet.core.WatermarkEmissionPolicy.noThrottling;
 import static com.hazelcast.jet.core.WatermarkGenerationParams.wmGenParams;
@@ -126,7 +127,7 @@ public class StreamEventJournalP_WmCoalescingTest extends JetTestSupport {
         // Insert to map in parallel to verifyProcessor.
         Thread updatingThread = new Thread(() -> uncheckRun(() -> {
             // We will start after a delay so that the source will first become idle and then recover.
-            Thread.sleep(2000);
+            Thread.sleep(4000);
             for (int i = 0; i < 16; i++) {
                 map.put(partitionKeys[0], 10);
                 Thread.sleep(250);
@@ -136,7 +137,7 @@ public class StreamEventJournalP_WmCoalescingTest extends JetTestSupport {
 
         TestSupport.verifyProcessor(createSupplier(asList(0, 1), 1000))
                    .disableProgressAssertion()
-                   .disableRunUntilCompleted(3000)
+                   .disableRunUntilCompleted(8000)
                    .disableSnapshots()
                    .outputChecker((e, a) -> {
                        a.removeAll(singletonList(10));
