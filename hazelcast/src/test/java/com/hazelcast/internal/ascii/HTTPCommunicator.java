@@ -224,6 +224,25 @@ public class HTTPCommunicator {
         return doPost(url, wanRepName, targetGroupName).response;
     }
 
+    public String syncMapOverWAN(String wanRepName,
+                                 String targetGroupName,
+                                 String mapName,
+                                 long fromTimestamp,
+                                 long toTimestamp) throws IOException {
+        String url = address + "mancenter/wan/sync/map";
+        return doPost(url, wanRepName, targetGroupName, mapName, String.valueOf(fromTimestamp), String.valueOf(toTimestamp))
+                .response;
+    }
+
+    public String syncMapsOverWAN(String wanRepName,
+                                  String targetGroupName,
+                                  long fromTimestamp,
+                                  long toTimestamp) throws IOException {
+        String url = address + "mancenter/wan/sync/allmaps";
+        return doPost(url, wanRepName, targetGroupName, String.valueOf(fromTimestamp), String.valueOf(toTimestamp))
+                .response;
+    }
+
     public String wanClearQueues(String wanRepName, String targetGroupName) throws IOException {
         String url = address + "mancenter/wan/clearWanQueues";
         return doPost(url, wanRepName, targetGroupName).response;
