@@ -69,14 +69,12 @@ public final class OperatingSystemMetricSet {
         );
     }
 
-    // This method doesn't depend on the OperatingSystemMXBean so it can be tested. Due to not knowing
-    // the exact OperatingSystemMXBean class it is very difficult to get this class tested.
     static void registerMethod(MetricsRegistry metricsRegistry, Object osBean, String methodName, String name) {
         registerMethod(metricsRegistry, osBean, methodName, name, 1);
     }
 
-    private static void registerMethod(MetricsRegistry metricsRegistry, Object osBean, String methodName,
-            String name, final long multiplier) {
+    private static void registerMethod(MetricsRegistry metricsRegistry, Object osBean, String methodName, String name,
+                                       final long multiplier) {
         final Method method = getMethod(osBean, methodName);
 
         if (method == null) {
@@ -84,21 +82,19 @@ public final class OperatingSystemMetricSet {
         }
 
         if (long.class.equals(method.getReturnType())) {
-            metricsRegistry.register(osBean, name, MANDATORY,
-                    new LongProbeFunction() {
-                        @Override
-                        public long get(Object bean) throws Exception {
-                            return (Long) method.invoke(bean, EMPTY_ARGS) * multiplier;
-                        }
-                    });
+            metricsRegistry.register(osBean, name, MANDATORY, new LongProbeFunction() {
+                @Override
+                public long get(Object bean) throws Exception {
+                    return (Long) method.invoke(bean, EMPTY_ARGS) * multiplier;
+                }
+            });
         } else {
-            metricsRegistry.register(osBean, name, MANDATORY,
-                    new DoubleProbeFunction() {
-                        @Override
-                        public double get(Object bean) throws Exception {
-                            return (Double) method.invoke(bean, EMPTY_ARGS) * multiplier;
-                        }
-                    });
+            metricsRegistry.register(osBean, name, MANDATORY, new DoubleProbeFunction() {
+                @Override
+                public double get(Object bean) throws Exception {
+                    return (Double) method.invoke(bean, EMPTY_ARGS) * multiplier;
+                }
+            });
         }
     }
 
