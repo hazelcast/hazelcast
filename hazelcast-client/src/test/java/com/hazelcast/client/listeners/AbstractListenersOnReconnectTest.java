@@ -48,6 +48,7 @@ import java.util.Collections;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -444,6 +445,8 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
             }
         });
 
+        validateRegistrationsOnMembers(factory);
+
         HazelcastClientInstanceImpl clientInstanceImpl = getHazelcastClientInstanceImpl(client);
         HazelcastInstance server = getOwnerServer(factory, clientInstanceImpl);
         server.getLifecycleService().terminate();
@@ -483,7 +486,11 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
                     EventServiceSegment serviceSegment = eventService.getSegment(getServiceName(), false);
                     Member member = instance.getCluster().getLocalMember();
                     assertNotNull(member.toString(), serviceSegment);
-                    assertEquals(member.toString(), 1, serviceSegment.getRegistrationIdMap().size());
+                    ConcurrentMap registrationIdMap = serviceSegment.getRegistrationIdMap();
+                    assertEquals(member.toString() + " Current registrations:" + registrationIdMap, 1,
+                            registrationIdMap.size());
+                    System.out.println("Current registrations at member " + member.toString() + ": "
+                            + registrationIdMap);
                 }
             }
         });
