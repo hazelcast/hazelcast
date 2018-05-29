@@ -273,8 +273,8 @@ public class ConfigXmlGeneratorTest {
                 .setClusterDataRecoveryPolicy(HotRestartClusterDataRecoveryPolicy.FULL_RECOVERY_ONLY)
                 .setValidationTimeoutSeconds(100)
                 .setDataLoadTimeoutSeconds(130)
-                .setBaseDir(new File("/nonexisting-base"))
-                .setBackupDir(new File("/nonexisting-backup"))
+                .setBaseDir(new File("nonExisting-base").getAbsoluteFile())
+                .setBackupDir(new File("nonExisting-backup").getAbsoluteFile())
                 .setParallelism(5);
 
         HotRestartPersistenceConfig actualConfig = getNewConfigViaXMLGenerator(cfg).getHotRestartPersistenceConfig();
