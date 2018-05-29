@@ -183,9 +183,6 @@ public final class XmlJetConfigBuilder extends AbstractConfigBuilder {
                 case "cooperative-thread-count":
                     instanceConfig.setCooperativeThreadCount(intValue(node));
                     break;
-                case "temp-dir":
-                    instanceConfig.setTempDir(stringValue(node));
-                    break;
                 case "flow-control-period":
                     instanceConfig.setFlowControlPeriodMs(intValue(node));
                     break;

@@ -40,7 +40,7 @@
             <hz:map name="map" backup-count="3">
             </hz:map>
         </hz:config>
-        <jet:instance-config backup-count="4" cooperative-thread-Count="2" flow-control-period-ms="200" temp-dir="springTempDir"/>
+        <jet:instance-config backup-count="4" cooperative-thread-Count="2" flow-control-period-ms="200"/>
         <jet:default-edge-config queue-size="8" packet-size-limit="3" receive-window-multiplier="5"/>
         <jet:properties>
             <hz:property name="foo">bar</hz:property>

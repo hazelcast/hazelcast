@@ -20,7 +20,6 @@
                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <instance>
         <!-- replace with system property -->
-        <temp-dir>${working.directory}</temp-dir>
         <cooperative-thread-count>${thread.count}</cooperative-thread-count>
         <flow-control-period>${flow.control.period}</flow-control-period>
         <backup-count>${backup.count}</backup-count>

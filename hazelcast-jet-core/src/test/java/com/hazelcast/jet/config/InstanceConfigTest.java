@@ -61,26 +61,6 @@ public class InstanceConfigTest {
     }
 
     @Test
-    public void when_noTmpDirSet_thenReturnsDefaultUserDir() {
-        // When
-        InstanceConfig instanceConfig = new InstanceConfig();
-
-        // Then
-        assertEquals(System.getProperty("java.io.tmpdir"), instanceConfig.getTempDir());
-    }
-
-    @Test
-    public void when_tmpDirSet_thenReturnsTmpDir() {
-        // When
-        InstanceConfig instanceConfig = new InstanceConfig();
-        String tempDir = "/path/to/tmpdir";
-        instanceConfig.setTempDir(tempDir);
-
-        // Then
-        assertEquals(tempDir, instanceConfig.getTempDir());
-    }
-
-    @Test
     public void when_setThreadCount_thenReturnsThreadCount() {
         // When
         InstanceConfig instanceConfig = new InstanceConfig();

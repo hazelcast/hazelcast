@@ -20,7 +20,6 @@
                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <instance>
         <cooperative-thread-count>55</cooperative-thread-count>
-        <temp-dir>/var/tmp</temp-dir>
         <flow-control-period>50</flow-control-period>
         <backup-count>2</backup-count>
     </instance>

@@ -130,7 +130,6 @@ public class XmlConfigTest {
         // Given
         Properties properties = new Properties();
         properties.put(XmlJetConfigLocator.HAZELCAST_JET_CONFIG_PROPERTY, "classpath:hazelcast-jet-with-variables.xml");
-        properties.put("working.directory", "/var/tmp");
         properties.put("thread.count", String.valueOf(55));
         properties.put("flow.control.period", "50");
         properties.put("backup.count", "2");
@@ -179,7 +178,6 @@ public class XmlConfigTest {
 
     private static void assertConfig(JetConfig jetConfig) {
         assertEquals("cooperativeThreadCount", 55, jetConfig.getInstanceConfig().getCooperativeThreadCount());
-        assertEquals("tempDir", "/var/tmp", jetConfig.getInstanceConfig().getTempDir());
         assertEquals("backupCount", 2, jetConfig.getInstanceConfig().getBackupCount());
         assertEquals("flowControlMs", 50, jetConfig.getInstanceConfig().getFlowControlPeriodMs());
 

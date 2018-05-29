@@ -23,8 +23,6 @@
        <cooperative-thread-count>8</cooperative-thread-count>
         <!-- period between flow control packets in milliseconds -->
        <flow-control-period>100</flow-control-period>
-        <!-- directory for temporary files -->
-       <temp-dir>/var/tmp/jet</temp-dir>
         <!-- number of backup copies to configure for Hazelcast IMaps used internally in a Jet job -->
        <backup-count>1</backup-count>
     </instance>
