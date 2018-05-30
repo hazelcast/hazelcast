@@ -16,9 +16,9 @@
 
 package com.hazelcast.aws.impl;
 
+import com.hazelcast.aws.AwsConfig;
 import com.hazelcast.aws.exception.AwsConnectionException;
 import com.hazelcast.aws.utility.Environment;
-import com.hazelcast.config.AwsConfig;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -62,9 +62,12 @@ public class DescribeInstancesTest {
 
         final String uri = INSTANCE_METADATA_URI + IAM_SECURITY_CREDENTIALS_URI;
 
-        DescribeInstances descriptor = spy(new DescribeInstances(new AwsConfig()));
-        doReturn("").when(descriptor).retrieveRoleFromURI(uri);
-        doReturn(mockedEnv).when(descriptor).getEnvironment();
+        DescribeInstances descriptor = spy(new DescribeInstances(predefinedAwsConfigBuilder()
+                .build()));
+        doReturn("").when(descriptor)
+                .retrieveRoleFromURI(uri);
+        doReturn(mockedEnv).when(descriptor)
+                .getEnvironment();
         descriptor.fillKeysFromIamRoles();
     }
 
@@ -95,8 +98,9 @@ public class DescribeInstancesTest {
 
 
         // test when <iam-role>DEFAULT</iam-role>
-        AwsConfig awsConfig = new AwsConfig();
-        awsConfig.setIamRole("DEFAULT");
+        AwsConfig awsConfig = predefinedAwsConfigBuilder()
+                .setIamRole("DEFAULT")
+                .build();
 
         DescribeInstances descriptor = spy(new DescribeInstances(awsConfig));
         doReturn(defaultIamRoleName).when(descriptor).retrieveRoleFromURI(uri);
@@ -108,8 +112,9 @@ public class DescribeInstancesTest {
         assertEquals("Could not parse secret key from IAM role", secretAccessKey, awsConfig.getSecretKey());
 
         // test when <iam-role></iam-role>
-        awsConfig = new AwsConfig();
-        awsConfig.setIamRole("");
+        awsConfig = predefinedAwsConfigBuilder()
+                .setIamRole("")
+                .build();
 
         descriptor = spy(new DescribeInstances(awsConfig));
         doReturn(defaultIamRoleName).when(descriptor).retrieveRoleFromURI(uri);
@@ -120,7 +125,8 @@ public class DescribeInstancesTest {
         assertEquals("Could not parse secret key from IAM role", secretAccessKey, awsConfig.getSecretKey());
 
         // test when no <iam-role></iam-role> defined, BUT default IAM role has been assigned
-        awsConfig = new AwsConfig();
+        awsConfig = predefinedAwsConfigBuilder()
+                .build();
 
         descriptor = spy(new DescribeInstances(awsConfig));
         doReturn(defaultIamRoleName).when(descriptor).retrieveRoleFromURI(uri);
@@ -132,12 +138,13 @@ public class DescribeInstancesTest {
 
     }
 
-
     @Test
-    public void test_whenAccessKeyExistsInConfig() throws IOException {
-        AwsConfig awsConfig = new AwsConfig();
-        awsConfig.setAccessKey("accesskey");
-        awsConfig.setSecretKey("secretkey");
+    public void test_whenAccessKeyExistsInConfig()
+            throws IOException {
+        AwsConfig awsConfig = predefinedAwsConfigBuilder()
+                .setAccessKey("accesskey")
+                .setSecretKey("secretkey")
+                .build();
         new DescribeInstances(awsConfig, "endpoint");
     }
 
@@ -162,9 +169,9 @@ public class DescribeInstancesTest {
                         "          \"Expiration\" : \"2016-10-04T18:19:39Z\"\n" +
                         "        }\n";
 
-
-        AwsConfig awsConfig = new AwsConfig();
-        awsConfig.setIamRole(someRole);
+        AwsConfig awsConfig = predefinedAwsConfigBuilder()
+                .setIamRole(someRole)
+                .build();
 
         DescribeInstances descriptor = spy(new DescribeInstances(awsConfig));
         doReturn(someDummyIamRole).when(descriptor).retrieveRoleFromURI(uri);
@@ -200,7 +207,8 @@ public class DescribeInstancesTest {
         Environment mockedEnv = mock(Environment.class);
         when(mockedEnv.getEnvVar(Constants.ECS_CREDENTIALS_ENV_VAR_NAME)).thenReturn(ecsEnvVarCredsUri);
 
-        AwsConfig awsConfig = new AwsConfig();
+        AwsConfig awsConfig = predefinedAwsConfigBuilder()
+                .build();
 
         // test when default role is null
         DescribeInstances descriptor = spy(new DescribeInstances(awsConfig));
@@ -218,9 +226,11 @@ public class DescribeInstancesTest {
     @Test
     public void test_DescribeInstances_SecurityGroup()
             throws Exception {
-        AwsConfig awsConfig = new AwsConfig();
-        awsConfig.setEnabled(true).setAccessKey(System.getenv("AWS_ACCESS_KEY_ID"))
-                .setSecretKey(System.getenv("AWS_SECRET_ACCESS_KEY")).setSecurityGroupName("launch-wizard-147");
+        AwsConfig awsConfig = predefinedAwsConfigBuilder()
+                .setAccessKey(System.getenv("AWS_ACCESS_KEY_ID"))
+                .setSecretKey(System.getenv("AWS_SECRET_ACCESS_KEY"))
+                .setSecurityGroupName("launch-wizard-147")
+                .build();
 
         getInstancesAndVerify(awsConfig);
     }
@@ -228,9 +238,12 @@ public class DescribeInstancesTest {
     @Test
     public void test_DescribeInstances_when_Tag_and_Value_Set()
             throws Exception {
-        AwsConfig awsConfig = new AwsConfig();
-        awsConfig.setEnabled(true).setAccessKey(System.getenv("AWS_ACCESS_KEY_ID"))
-                .setSecretKey(System.getenv("AWS_SECRET_ACCESS_KEY")).setTagKey("aws-test-tag").setTagValue("aws-tag-value-1");
+        AwsConfig awsConfig = predefinedAwsConfigBuilder()
+                .setAccessKey(System.getenv("AWS_ACCESS_KEY_ID"))
+                .setSecretKey(System.getenv("AWS_SECRET_ACCESS_KEY"))
+                .setTagKey("aws-test-tag")
+                .setTagValue("aws-tag-value-1")
+                .build();
 
         getInstancesAndVerify(awsConfig);
     }
@@ -238,9 +251,11 @@ public class DescribeInstancesTest {
     @Test
     public void test_DescribeInstances_when_Only_TagKey_Set()
             throws Exception {
-        AwsConfig awsConfig = new AwsConfig();
-        awsConfig.setEnabled(true).setAccessKey(System.getenv("AWS_ACCESS_KEY_ID"))
-                .setSecretKey(System.getenv("AWS_SECRET_ACCESS_KEY")).setTagKey("aws-test-tag");
+        AwsConfig awsConfig = predefinedAwsConfigBuilder()
+                .setAccessKey(System.getenv("AWS_ACCESS_KEY_ID"))
+                .setSecretKey(System.getenv("AWS_SECRET_ACCESS_KEY"))
+                .setTagKey("aws-test-tag")
+                .build();
 
         getInstancesAndVerify(awsConfig);
     }
@@ -248,18 +263,22 @@ public class DescribeInstancesTest {
     @Test
     public void test_DescribeInstances_when_Only_TagValue_Set()
             throws Exception {
-        AwsConfig awsConfig = new AwsConfig();
-        awsConfig.setEnabled(true).setAccessKey(System.getenv("AWS_ACCESS_KEY_ID"))
-                .setSecretKey(System.getenv("AWS_SECRET_ACCESS_KEY")).setTagValue("aws-tag-value-1");
+        AwsConfig awsConfig = predefinedAwsConfigBuilder()
+                .setAccessKey(System.getenv("AWS_ACCESS_KEY_ID"))
+                .setSecretKey(System.getenv("AWS_SECRET_ACCESS_KEY"))
+                .setTagValue("aws-tag-value-1")
+                .build();
 
         getInstancesAndVerify(awsConfig);
     }
 
     @Test(timeout = TIMEOUT_FACTOR * CALL_SERVICE_TIMEOUT, expected = SocketTimeoutException.class)
-    public void test_CallService_Timeout() throws Exception {
+    public void test_CallService_Timeout()
+            throws Exception {
         final String nonRoutable = "10.255.255.254";
-        AwsConfig awsConfig = new AwsConfig();
-        awsConfig.setConnectionTimeoutSeconds((int) TimeUnit.MILLISECONDS.toSeconds(CALL_SERVICE_TIMEOUT));
+        AwsConfig awsConfig = predefinedAwsConfigBuilder()
+                .setConnectionTimeoutSeconds((int) TimeUnit.MILLISECONDS.toSeconds(CALL_SERVICE_TIMEOUT))
+                .build();
         DescribeInstances describeInstances = new DescribeInstances(awsConfig);
         describeInstances.callService(nonRoutable);
     }
@@ -272,7 +291,8 @@ public class DescribeInstancesTest {
         HttpURLConnection httpConnection = mock(HttpURLConnection.class);
         given(httpConnection.getResponseCode()).willReturn(httpResponseCode);
 
-        AwsConfig awsConfig = new AwsConfig();
+        AwsConfig awsConfig = predefinedAwsConfigBuilder()
+                .build();
         DescribeInstances describeInstances = new DescribeInstances(awsConfig);
 
         // when
@@ -292,7 +312,8 @@ public class DescribeInstancesTest {
         given(httpConnection.getResponseCode()).willReturn(httpResponseCode);
         given(httpConnection.getErrorStream()).willReturn(toInputStream(errorMessage));
 
-        AwsConfig awsConfig = new AwsConfig();
+        AwsConfig awsConfig = predefinedAwsConfigBuilder()
+                .build();
         DescribeInstances describeInstances = new DescribeInstances(awsConfig);
 
         // when & then
@@ -322,15 +343,15 @@ public class DescribeInstancesTest {
         given(httpConnection.getResponseCode()).willReturn(httpResponseCode);
         given(httpConnection.getErrorStream()).willReturn(null);
 
-        AwsConfig awsConfig = new AwsConfig();
+        AwsConfig awsConfig = predefinedAwsConfigBuilder()
+                .build();
         DescribeInstances describeInstances = new DescribeInstances(awsConfig);
 
         // when & then
         try {
             describeInstances.checkNoAwsErrors(httpConnection);
             fail("AwsConnectionFailed exception was not thrown");
-        }
-        catch (AwsConnectionException e) {
+        } catch (AwsConnectionException e) {
             assertEquals(httpResponseCode, e.getHttpReponseCode());
             assertEquals("", e.getErrorMessage());
             assertThat(e.getMessage(), containsString(Integer.toString(httpResponseCode)));
@@ -340,8 +361,9 @@ public class DescribeInstancesTest {
     @Test(timeout = TIMEOUT_FACTOR * CALL_SERVICE_TIMEOUT, expected = InvalidConfigurationException.class)
     public void test_RetrieveMetaData_Timeout() {
         final String nonRoutable = "http://10.255.255.254";
-        AwsConfig awsConfig = new AwsConfig();
-        awsConfig.setConnectionTimeoutSeconds((int) TimeUnit.MILLISECONDS.toSeconds(CALL_SERVICE_TIMEOUT));
+        AwsConfig awsConfig = predefinedAwsConfigBuilder()
+                .setConnectionTimeoutSeconds((int) TimeUnit.MILLISECONDS.toSeconds(CALL_SERVICE_TIMEOUT))
+                .build();
 
         DescribeInstances describeInstances = new DescribeInstances(awsConfig);
         describeInstances.retrieveRoleFromURI(nonRoutable);
@@ -356,5 +378,12 @@ public class DescribeInstancesTest {
         String expectedPrivateIp = System.getenv("HZ_TEST_AWS_INSTANCE_PRIVATE_IP");
         Assert.assertNotNull(expectedPrivateIp);
         Assert.assertNotNull(result.get(expectedPrivateIp));
+    }
+
+    private static AwsConfig.Builder predefinedAwsConfigBuilder() {
+        return AwsConfig.builder()
+                .setHostHeader("ec2.amazonaws.com")
+                .setRegion("us-east-1")
+                .setConnectionTimeoutSeconds(5);
     }
 }

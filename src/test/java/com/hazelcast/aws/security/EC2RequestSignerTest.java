@@ -17,7 +17,7 @@
 package com.hazelcast.aws.security;
 
 import com.hazelcast.aws.impl.DescribeInstances;
-import com.hazelcast.config.AwsConfig;
+import com.hazelcast.aws.AwsConfig;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -47,11 +47,11 @@ public class EC2RequestSignerTest {
     @Test
     public void deriveSigningKeyTest() throws Exception {
         // this is from http://docs.aws.amazon.com/general/latest/gr/signature-v4-examples.html
-        AwsConfig awsConfig = new AwsConfig();
-        awsConfig.setRegion(TEST_REGION).
+        AwsConfig awsConfig = AwsConfig.builder()
+        .setRegion(TEST_REGION).
                 setHostHeader(TEST_HOST).
                 setAccessKey(TEST_ACCESS_KEY).
-                setSecretKey(TEST_SECRET_KEY);
+                setSecretKey(TEST_SECRET_KEY).build();
 
         DescribeInstances di = new DescribeInstances(awsConfig, TEST_HOST);
         // Override the attributes map. We need to change values. Not pretty, but
@@ -78,11 +78,11 @@ public class EC2RequestSignerTest {
 
     @Test
     public void testSigning() throws NoSuchFieldException, IllegalAccessException, IOException {
-        AwsConfig awsConfig = new AwsConfig();
-        awsConfig.setRegion(TEST_REGION).
+        AwsConfig awsConfig = AwsConfig.builder()
+        .setRegion(TEST_REGION).
                 setHostHeader(TEST_HOST).
                 setAccessKey(TEST_ACCESS_KEY).
-                setSecretKey(TEST_SECRET_KEY);
+                setSecretKey(TEST_SECRET_KEY).build();
 
         DescribeInstances di = new DescribeInstances(awsConfig, TEST_HOST);
         di.getRequestSigner();

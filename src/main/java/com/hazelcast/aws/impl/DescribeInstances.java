@@ -16,13 +16,14 @@
 
 package com.hazelcast.aws.impl;
 
+import com.hazelcast.aws.AwsConfig;
 import com.hazelcast.aws.exception.AwsConnectionException;
 import com.hazelcast.aws.security.EC2RequestSigner;
 import com.hazelcast.aws.utility.CloudyUtility;
 import com.hazelcast.aws.utility.Environment;
 import com.hazelcast.aws.utility.MetadataUtil;
+import com.hazelcast.aws.utility.RetryUtils;
 import com.hazelcast.com.eclipsesource.json.JsonObject;
-import com.hazelcast.config.AwsConfig;
 import com.hazelcast.config.InvalidConfigurationException;
 
 import java.io.BufferedReader;
@@ -36,6 +37,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.TimeZone;
+import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -102,7 +104,7 @@ public class DescribeInstances {
     private void fillKeysFromIamRole() {
         try {
             String query = IAM_SECURITY_CREDENTIALS_URI.concat(awsConfig.getIamRole());
-            String uri =  INSTANCE_METADATA_URI.concat(query);
+            String uri = INSTANCE_METADATA_URI.concat(query);
             String json = retrieveRoleFromURI(uri);
             parseAndStoreRoleCreds(json);
         } catch (Exception io) {
@@ -138,7 +140,8 @@ public class DescribeInstances {
      * @return The content of the HTTP response, as a String. NOTE: This is NEVER null.
      */
     String retrieveRoleFromURI(String uri) {
-        return MetadataUtil.retrieveMetadataFromURI(uri, awsConfig.getConnectionTimeoutSeconds());
+        return MetadataUtil.retrieveMetadataFromURI(uri, awsConfig.getConnectionTimeoutSeconds(),
+                awsConfig.getConnectionRetries());
     }
 
     /**
@@ -229,7 +232,7 @@ public class DescribeInstances {
         InputStream stream = null;
         attributes.put("X-Amz-Signature", signature);
         try {
-            stream = callService(endpoint);
+            stream = callServiceWithRetries(endpoint);
             response = CloudyUtility.unmarshalTheResponse(stream);
             return response;
         } finally {
@@ -237,8 +240,20 @@ public class DescribeInstances {
         }
     }
 
+    private InputStream callServiceWithRetries(final String endpoint)
+            throws Exception {
+        return RetryUtils.retry(new Callable<InputStream>() {
+            @Override
+            public InputStream call()
+                    throws Exception {
+                return callService(endpoint);
+            }
+        }, awsConfig.getConnectionRetries());
+    }
+
     // visible for testing
-    InputStream callService(String endpoint) throws Exception {
+    InputStream callService(String endpoint)
+            throws Exception {
         String query = getRequestSigner().getCanonicalizedQueryString(attributes);
         URL url = new URL("https", endpoint, -1, "/?" + query);
 
