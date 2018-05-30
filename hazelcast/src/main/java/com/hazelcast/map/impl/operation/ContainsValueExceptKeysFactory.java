@@ -30,7 +30,7 @@ import java.util.Set;
 /**
  * Operation factory for {@link ContainsValueExceptKeysOperation}.
  *
- * @since 3.10
+ * @since 3.11
  */
 public class ContainsValueExceptKeysFactory extends AbstractMapOperationFactory {
     private String name;
