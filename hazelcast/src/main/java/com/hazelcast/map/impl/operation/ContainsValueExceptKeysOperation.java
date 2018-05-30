@@ -34,7 +34,7 @@ import java.util.Set;
 /**
  * Checks if a value is in the map. Ignores the keys which are deleted.
  *
- * @since 3.10
+ * @since 3.11
  */
 public class ContainsValueExceptKeysOperation extends MapOperation implements PartitionAwareOperation, ReadonlyOperation {
 
