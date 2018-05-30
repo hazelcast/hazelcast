@@ -64,6 +64,10 @@ public interface CacheOperationProvider {
                                                  List<CacheMergeTypes>[] mergingEntries,
                                                  SplitBrainMergePolicy<Data, CacheMergeTypes> policy);
 
+    Operation createSetExpiryPolicyOperation(List<Data> keys, ExpiryPolicy expiryPolicy, int completionId);
+
+    Operation createSetExpiryPolicyOperation(List<Data> keys, ExpiryPolicy expiryPolicy);
+
     OperationFactory createGetAllOperationFactory(Set<Data> keySet, ExpiryPolicy policy);
 
     OperationFactory createLoadAllOperationFactory(Set<Data> keySet, boolean replaceExistingValues);
@@ -73,4 +77,5 @@ public interface CacheOperationProvider {
     OperationFactory createRemoveAllOperationFactory(Set<Data> keySet, Integer completionId);
 
     OperationFactory createSizeOperationFactory();
+
 }

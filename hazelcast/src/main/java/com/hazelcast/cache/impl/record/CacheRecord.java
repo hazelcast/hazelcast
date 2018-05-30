@@ -19,6 +19,8 @@ package com.hazelcast.cache.impl.record;
 import com.hazelcast.internal.eviction.Evictable;
 import com.hazelcast.internal.eviction.Expirable;
 
+import javax.cache.expiry.ExpiryPolicy;
+
 /**
  * <p>
  * An expirable and evictable data object which represents a cache entry.
@@ -71,5 +73,18 @@ public interface CacheRecord<V> extends Expirable, Evictable<V> {
      * Resets the access hit count of this {@link Evictable} to <code>0</code>.
      */
     void resetAccessHit();
+
+    /**
+     * Sets the expiry policy for this record.
+     * @param expiryPolicy
+     */
+    void setExpiryPolicy(ExpiryPolicy expiryPolicy);
+
+    /**
+     * Gets the expiryPolicy associated with this record.
+     *
+     * @return
+     */
+    ExpiryPolicy getExpiryPolicy();
 
 }

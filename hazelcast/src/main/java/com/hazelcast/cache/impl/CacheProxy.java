@@ -48,6 +48,7 @@ import javax.cache.processor.EntryProcessor;
 import javax.cache.processor.EntryProcessorException;
 import javax.cache.processor.EntryProcessorResult;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
@@ -349,6 +350,11 @@ public class CacheProxy<K, V> extends AbstractCacheProxy<K, V>
     public Iterator<Entry<K, V>> iterator(int fetchSize, int partitionId, boolean prefetchValues) {
         ensureOpen();
         return new CachePartitionIterator<K, V>(this, fetchSize, partitionId, prefetchValues);
+    }
+
+    @Override
+    public void setExpiryPolicy(K key, ExpiryPolicy expiryPolicy) {
+        setExpiryPolicy(Collections.singleton(key), expiryPolicy);
     }
 
     @Override

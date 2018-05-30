@@ -316,6 +316,12 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 return new com.hazelcast.client.impl.protocol.task.cache.CachePutAllMessageTask(clientMessage, node, connection);
             }
         };
+        factories[com.hazelcast.client.impl.protocol.codec.CacheSetExpiryPolicyCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+            @Override
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new com.hazelcast.client.impl.protocol.task.cache.CacheSetExpiryPolicyMessageTask(clientMessage, node, connection);
+            }
+        };
         factories[com.hazelcast.client.impl.protocol.codec.CacheLoadAllCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
                 return new com.hazelcast.client.impl.protocol.task.cache.CacheLoadAllMessageTask(clientMessage, node, connection);

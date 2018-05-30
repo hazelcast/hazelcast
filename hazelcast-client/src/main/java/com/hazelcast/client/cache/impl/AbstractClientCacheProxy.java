@@ -22,6 +22,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheGetAllCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheGetCodec;
 import com.hazelcast.client.impl.protocol.codec.CachePutAllCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheSetExpiryPolicyCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheSizeCodec;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.ClientPartitionService;
@@ -278,6 +279,22 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
         putAllInternal(map, expiryPolicy, null, new List[partitionCount], startNanos);
     }
 
+    @Override
+    public void setExpiryPolicy(Set<K> keys, ExpiryPolicy policy) {
+        ensureOpen();
+        checkNotNull(keys);
+        checkNotNull(policy);
+        if (keys.isEmpty()) {
+            return;
+        }
+        try {
+            List<Data>[] keysByPartition = groupKeysToPartitions(keys);
+            setExpiryPolicyAndWaitForCompletion(keysByPartition, policy);
+        } catch (Exception e) {
+            throw rethrow(e);
+        }
+    }
+
     protected void putAllInternal(Map<? extends K, ? extends V> map, ExpiryPolicy expiryPolicy, Map<Object, Data> keyMap,
                                   List<Map.Entry<Data, Data>>[] entriesPerPartition, long startNanos) {
         try {
@@ -314,6 +331,24 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
         }
     }
 
+    private List<Data>[] groupKeysToPartitions(Set<K> keys) {
+        List<Data>[] keysByPartition = new List[partitionCount];
+        ClientPartitionService partitionService = getContext().getPartitionService();
+        for (K key: keys) {
+            Data keyData = getSerializationService().toData(key);
+
+            int partitionId = partitionService.getPartitionId(keyData);
+
+            List<Data> partition = keysByPartition[partitionId];
+            if (partition == null) {
+                partition = new ArrayList<Data>();
+                keysByPartition[partitionId] = partition;
+            }
+            partition.add(keyData);
+        }
+        return keysByPartition;
+    }
+
     private static final class FutureEntriesTuple {
 
         private final Future future;
@@ -344,6 +379,22 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
         }
 
         waitResponseFromAllPartitionsForPutAll(futureEntriesTuples, startNanos);
+    }
+
+    private void setExpiryPolicyAndWaitForCompletion(List<Data>[] keysByPartition, ExpiryPolicy expiryPolicy) {
+        List<Future> futures = new ArrayList<Future>(keysByPartition.length);
+
+        Data expiryPolicyData = toData(expiryPolicy);
+        for (int partitionId = 0; partitionId < keysByPartition.length; partitionId++) {
+            List<Data> keys = keysByPartition[partitionId];
+            if (keys != null) {
+                int completionId = nextCompletionId();
+                ClientMessage request = CacheSetExpiryPolicyCodec.encodeRequest(nameWithPrefix, keys, expiryPolicyData, completionId);
+                futures.add(invoke(request, partitionId, completionId));
+            }
+        }
+
+        waitResponseFromAllPartitionsForSetTTL(futures);
     }
 
     private void waitResponseFromAllPartitionsForPutAll(List<FutureEntriesTuple> futureEntriesTuples, long startNanos) {
@@ -386,6 +437,23 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
              *        In this test exception is thrown at `CacheWriter` and caller side expects this exception.
              * So as a result, we only throw the first exception and others are suppressed by only logging.
              */
+            throw rethrow(error);
+        }
+    }
+
+    private void waitResponseFromAllPartitionsForSetTTL(List<Future> futures) {
+        Throwable error = null;
+        for (Future future: futures) {
+            try {
+                future.get();
+            } catch (Throwable t) {
+                logger.finest("Error occured during batch setTTL operation!", t);
+                if (error == null) {
+                    error = t;
+                }
+            }
+        }
+        if (error != null) {
             throw rethrow(error);
         }
     }

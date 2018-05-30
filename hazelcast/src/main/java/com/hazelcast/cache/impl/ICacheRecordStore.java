@@ -28,6 +28,7 @@ import com.hazelcast.spi.merge.SplitBrainMergeTypes.CacheMergeTypes;
 
 import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.processor.EntryProcessor;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 
@@ -269,6 +270,16 @@ public interface ICacheRecordStore {
      * <tt>null</tt> if there was no mapping for the key.
      */
     Object getAndReplace(Data key, Object value, ExpiryPolicy expiryPolicy, String caller, int completionId);
+
+
+    /**
+     * Sets expiry policy for the records with given keys if and only if there is a
+     * value currently mapped by the key
+     *
+     * @param keys          keys for the entries
+     * @param expiryPolicy  custom expiry policy or null to use configured default value
+     */
+    void setExpiryPolicy(Collection<Data> keys, ExpiryPolicy expiryPolicy, int completionId);
 
     /**
      * Determines if this store contains an entry for the specified key.

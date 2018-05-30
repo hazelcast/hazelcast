@@ -114,6 +114,37 @@ import java.util.Set;
 public interface ICache<K, V>
         extends javax.cache.Cache<K, V>, PrefixedDistributedObject {
 
+
+    /**
+     * Associates the specified key with the given {@link javax.cache.expiry.ExpiryPolicy}.
+     * {@code expiryPolicy} takes precedence for this particular {@code key} against any cache wide expiry policy.
+     * If {@code key} does not exist or is already expired, this call has no effect.
+     *
+     * Note: This operation does not change current time-to-live duration of the entry. The new expiry policy is used
+     * to calculate time-to-live duration only after the expiry policy is triggered after custom expiry policy is set.
+     *
+     * @param   key The key that is associated with the specified expiry policy.
+     * @param   expiryPolicy custom expiry policy for this operation
+     * @throws  NullPointerException if {@code keys} or {@code expiryPolicy} is null.
+     * @since 3.11
+     */
+    void setExpiryPolicy(K key, ExpiryPolicy expiryPolicy);
+
+    /**
+     * Associates the specified key with the given {@link javax.cache.expiry.ExpiryPolicy}.
+     * {@code expiryPolicy} takes precedence for these particular {@code keys} against any cache wide expiry policy.
+     * If some keys in {@code keys} do not exist or are already expired, this call has no effect for those.
+     *
+     * Note: This operation does not change current time-to-live duration of the entry. The new expiry policy is used
+     * to calculate time-to-live duration only after the expiry policy is triggered after custom expiry policy is set.
+     *
+     * @param   keys The keys that are associated with the specified expiry policy.
+     * @param   expiryPolicy custom expiry policy for this operation
+     * @throws  NullPointerException if {@code keys} or {@code expiryPolicy} is null.
+     * @since 3.11
+     */
+    void setExpiryPolicy(Set<K> keys, ExpiryPolicy expiryPolicy);
+
     /**
      * Asynchronously retrieves the mapped value of the given key using a custom
      * {@link javax.cache.expiry.ExpiryPolicy}. If no mapping exists <tt>null</tt> is returned.
