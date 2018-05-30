@@ -174,9 +174,9 @@ public abstract class AbstractClientListenerService implements ClientListenerSer
         eventHandlerMap.put(callId, handler);
     }
 
-    public void handleClientMessage(ClientMessage clientMessage, Connection connection) {
+    public void handleClientMessage(ClientMessage clientMessage) {
         try {
-            eventExecutor.execute(new ClientEventProcessor(clientMessage, (ClientConnection) connection));
+            eventExecutor.execute(new ClientEventProcessor(clientMessage));
         } catch (RejectedExecutionException e) {
             logger.warning("Event clientMessage could not be handled", e);
         }
@@ -351,28 +351,21 @@ public abstract class AbstractClientListenerService implements ClientListenerSer
 
     private final class ClientEventProcessor implements StripedRunnable {
         final ClientMessage clientMessage;
-        final ClientConnection connection;
 
-        private ClientEventProcessor(ClientMessage clientMessage, ClientConnection connection) {
+        private ClientEventProcessor(ClientMessage clientMessage) {
             this.clientMessage = clientMessage;
-            this.connection = connection;
         }
 
         @Override
         public void run() {
-            try {
-                long correlationId = clientMessage.getCorrelationId();
-                final EventHandler eventHandler = eventHandlerMap.get(correlationId);
-                if (eventHandler == null) {
-                    logger.warning("No eventHandler for callId: " + correlationId + ", event: " + clientMessage
-                            + ", connection: " + connection);
-                    return;
-                }
-
-                eventHandler.handle(clientMessage);
-            } finally {
-                connection.decrementPendingPacketCount();
+            long correlationId = clientMessage.getCorrelationId();
+            final EventHandler eventHandler = eventHandlerMap.get(correlationId);
+            if (eventHandler == null) {
+                logger.warning("No eventHandler for callId: " + correlationId + ", event: " + clientMessage);
+                return;
             }
+
+            eventHandler.handle(clientMessage);
         }
 
         @Override
