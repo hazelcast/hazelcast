@@ -18,7 +18,7 @@ package com.hazelcast.jet.pipeline;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.core.Offloadable;
-import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.processor.SinkProcessors;
 import com.hazelcast.jet.function.DistributedBiConsumer;
@@ -589,9 +589,10 @@ public final class Sinks {
      * These are the callback functions you can provide to implement the sink's
      * behavior:
      * <ol><li>
-     *     {@code createFn} creates the writer. Gets the local Jet instance as
-     *     argument. It will be called once for each worker thread. This
-     *     component is required.
+     *     {@code createFn} creates the writer. Gets the processor context as
+     *     argument which can be used to obtain local Jet instance, global
+     *     processor index etc. It will be called once for each worker thread.
+     *     This component is required.
      * </li><li>
      *     {@code onReceiveFn} gets notified of each item the sink receives and
      *     (typically) passes it to the writer. This component is required.
@@ -609,7 +610,7 @@ public final class Sinks {
      */
     @Nonnull
     public static <W, T> SinkBuilder<W, T> builder(
-            @Nonnull DistributedFunction<? super JetInstance, ? extends W> createFn
+            @Nonnull DistributedFunction<Processor.Context, ? extends W> createFn
     ) {
         return new SinkBuilder<>(createFn);
     }
