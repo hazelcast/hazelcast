@@ -99,7 +99,7 @@ final class DiagnosticsLogFile {
         return new File(diagnostics.directory, format(fileName, index));
     }
 
-    private void renderStaticPlugins() throws IOException {
+    private void renderStaticPlugins() {
         for (DiagnosticsPlugin plugin : diagnostics.staticTasks.get()) {
             renderPlugin(plugin);
         }
