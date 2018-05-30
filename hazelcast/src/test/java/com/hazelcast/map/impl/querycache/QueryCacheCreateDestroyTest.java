@@ -101,6 +101,23 @@ public class QueryCacheCreateDestroyTest extends HazelcastTestSupport {
         assertEquals(1000, queryCacheSize);
     }
 
+    @Test
+    public void tryRecover_fails_after_destroy() {
+        final String mapName = "someMap";
+        final String queryCacheName = "testCache";
+
+        HazelcastInstance server = factory.newHazelcastInstance(newConfigWithQueryCache(mapName, queryCacheName));
+        server.getMap(mapName);
+
+        IMap map = server.getMap(mapName);
+        QueryCache queryCache = map.getQueryCache(queryCacheName);
+
+        queryCache.destroy();
+
+        assertFalse(queryCache.tryRecover());
+    }
+
+
     private static Config newConfigWithQueryCache(String mapName, String queryCacheName) {
         QueryCacheConfig queryCacheConfig = new QueryCacheConfig(queryCacheName);
         queryCacheConfig.getPredicateConfig().setImplementation(new TruePredicate());

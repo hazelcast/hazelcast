@@ -50,7 +50,7 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class QueryCacheMapWideEventsTest extends HazelcastTestSupport {
+public class QueryCacheNoEventLossTest extends HazelcastTestSupport {
 
     private static final String MAP_NAME = "mapName";
     private static final String QUERY_CACHE_NAME = "cacheName";
