@@ -128,7 +128,7 @@ public class LongStreamTest extends AbstractStreamTest {
     }
 
     @Test
-    public void count() throws Exception {
+    public void count() {
         long result = stream.count();
 
         assertEquals(COUNT, result);
@@ -275,7 +275,7 @@ public class LongStreamTest extends AbstractStreamTest {
 
     @Test
     public void mapToObj() {
-        IList<Long> list = stream.mapToObj(m -> (Long) m).collect(DistributedCollectors.toIList(randomString()));
+        IList<Long> list = stream.mapToObj(m -> m).collect(DistributedCollectors.toIList(randomString()));
 
         Object[] array = list.toArray();
         Arrays.sort(array);
@@ -356,7 +356,7 @@ public class LongStreamTest extends AbstractStreamTest {
     }
 
     @Test
-    public void sorted() throws Exception {
+    public void sorted() {
         long[] array = stream.sorted().toArray();
 
         for (int i = 0; i < array.length; i++) {

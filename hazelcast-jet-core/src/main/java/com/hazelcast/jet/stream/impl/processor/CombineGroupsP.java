@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.stream.impl.processor;
 
-import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.Traverser;
+import com.hazelcast.jet.core.AbstractProcessor;
 
 import javax.annotation.Nonnull;
 import java.util.HashMap;
@@ -44,7 +44,7 @@ public class CombineGroupsP<K, V, A, R> extends AbstractProcessor {
     }
 
     @Override
-    protected boolean tryProcess(int ordinal, @Nonnull Object item) throws Exception {
+    protected boolean tryProcess(int ordinal, @Nonnull Object item) {
         Map.Entry<K, A> entry = (Map.Entry) item;
         A value = groups.computeIfAbsent(entry.getKey(), k -> collector.supplier().get());
         collector.combiner().apply(value, entry.getValue());

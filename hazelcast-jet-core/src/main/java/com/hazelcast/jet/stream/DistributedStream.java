@@ -147,8 +147,6 @@ public interface DistributedStream<T> extends Stream<T> {
         return fromSource(decorator.getInstance(), Sources.list(list.getName()), true);
     }
 
-    ;
-
     /**
      * {@code Serializable} variant of
      * {@link Stream#filter(Predicate) java.util.stream.Stream#filter(Predicate)}.

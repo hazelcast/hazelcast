@@ -33,13 +33,13 @@ public abstract class AsyncOperation extends AbstractJobOperation {
 
 
     @Override
-    public void beforeRun() throws Exception {
+    public void beforeRun() {
         JetService service = getService();
         service.getLiveOperationRegistry().register(this);
     }
 
     @Override
-    public final void run() throws Exception {
+    public final void run() {
         try {
             doRun();
         } catch (Exception e) {

@@ -73,7 +73,7 @@ public abstract class AbstractDeploymentTest extends HazelcastTestSupport {
      */
     @Test
     @Category(IgnoredForCoverage.class)
-    public void testStream() throws Throwable {
+    public void testStream() {
         createCluster();
 
         IMapJet<Integer, Integer> map = getJetInstance().getMap(randomString());

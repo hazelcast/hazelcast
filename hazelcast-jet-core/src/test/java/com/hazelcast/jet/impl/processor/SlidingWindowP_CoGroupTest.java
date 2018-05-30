@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.impl.processor;
 
-import com.hazelcast.jet.aggregate.AggregateOperations;
 import com.hazelcast.jet.core.TimestampKind;
 import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.core.test.TestSupport;
@@ -31,8 +30,10 @@ import org.junit.runner.RunWith;
 import java.util.Map.Entry;
 
 import static com.hazelcast.jet.Util.entry;
+import static com.hazelcast.jet.aggregate.AggregateOperations.aggregateOperation2;
+import static com.hazelcast.jet.aggregate.AggregateOperations.toList;
 import static com.hazelcast.jet.core.SlidingWindowPolicy.tumblingWinPolicy;
-import static com.hazelcast.jet.datamodel.TwoBags.twoBags;
+import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.function.DistributedFunctions.entryKey;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
@@ -43,13 +44,14 @@ import static java.util.Collections.singletonList;
 public class SlidingWindowP_CoGroupTest {
 
     @Test
+    @SuppressWarnings("unchecked")
     public void test() {
         DistributedSupplier supplier = Processors.aggregateToSlidingWindowP(
                 asList(entryKey(), entryKey()),
                 asList(t -> 1L, t -> 1L),
                 TimestampKind.FRAME,
                 tumblingWinPolicy(1),
-                AggregateOperations.toTwoBags(),
+                aggregateOperation2(toList(), toList()),
                 TimestampedEntry::new);
 
         Entry<String, String> entry1 = entry("k1", "a");
@@ -63,9 +65,9 @@ public class SlidingWindowP_CoGroupTest {
                            asList(entry3, entry4, entry5)
                    ))
                    .expectOutput(asList(
-                           new TimestampedEntry<>(1, "k1", twoBags(singletonList(entry1), asList(entry3, entry5))),
-                           new TimestampedEntry<>(1, "k2", twoBags(singletonList(entry2), emptyList())),
-                           new TimestampedEntry<>(1, "k3", twoBags(emptyList(), singletonList(entry4)))
+                           new TimestampedEntry<>(1, "k1", tuple2(singletonList(entry1), asList(entry3, entry5))),
+                           new TimestampedEntry<>(1, "k2", tuple2(singletonList(entry2), emptyList())),
+                           new TimestampedEntry<>(1, "k3", tuple2(emptyList(), singletonList(entry4)))
                    ));
     }
 }

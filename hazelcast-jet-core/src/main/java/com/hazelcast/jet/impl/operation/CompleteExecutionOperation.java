@@ -46,7 +46,7 @@ public class CompleteExecutionOperation extends Operation implements IdentifiedD
     }
 
     @Override
-    public void run() throws Exception {
+    public void run() {
         ILogger logger = getLogger();
         JetService service = getService();
 

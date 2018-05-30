@@ -32,7 +32,7 @@ public class GetJobIdsOperation extends Operation implements IdentifiedDataSeria
     }
 
     @Override
-    public void run() throws Exception {
+    public void run() {
         JetService service = getService();
         JobCoordinationService coordinationService = service.getJobCoordinationService();
         response = coordinationService.getAllJobIds();

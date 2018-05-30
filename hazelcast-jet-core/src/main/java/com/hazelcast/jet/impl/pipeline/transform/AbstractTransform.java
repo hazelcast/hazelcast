@@ -84,6 +84,6 @@ public abstract class AbstractTransform implements Transform {
 
     public enum Optimization {
         NETWORK_TRAFFIC,
-        MEMORY;
+        MEMORY
     }
 }

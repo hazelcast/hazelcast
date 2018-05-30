@@ -34,12 +34,12 @@ public class AccumulateP<IN, OUT> extends AbstractProcessor {
     }
 
     @Override
-    protected void init(@Nonnull Context context) throws Exception {
+    protected void init(@Nonnull Context context) {
         result = identity;
     }
 
     @Override
-    protected boolean tryProcess(int ordinal, @Nonnull Object item) throws Exception {
+    protected boolean tryProcess(int ordinal, @Nonnull Object item) {
         result = accumulator.apply(result, (IN) item);
         return true;
     }

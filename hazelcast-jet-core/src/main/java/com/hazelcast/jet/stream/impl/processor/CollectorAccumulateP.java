@@ -36,12 +36,12 @@ public class CollectorAccumulateP<IN, OUT> extends AbstractProcessor {
     }
 
     @Override
-    protected void init(@Nonnull Context context) throws Exception {
+    protected void init(@Nonnull Context context) {
         result = supplier.get();
     }
 
     @Override
-    protected boolean tryProcess(int ordinal, @Nonnull Object item) throws Exception {
+    protected boolean tryProcess(int ordinal, @Nonnull Object item) {
         accumulator.accept(result, (IN) item);
         return true;
     }

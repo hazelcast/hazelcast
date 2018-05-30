@@ -36,7 +36,7 @@ public class IsWithinLimitTest {
      * the compressed acked seq, it will overflow and erroneously report within limit.
      */
     @Test
-    public void when_aheadMoreThanMaxInt_then_overflowsAndReportsWithinWindow() throws Exception {
+    public void when_aheadMoreThanMaxInt_then_overflowsAndReportsWithinWindow() {
         assertFalse(isWithinLimit(0, Integer.MIN_VALUE + 1));
         assertTrue(isWithinLimit(0, Integer.MIN_VALUE));
         assertFalse(isWithinLimit(Integer.MAX_VALUE * COMPRESSED_SEQ_UNIT, 0));
@@ -44,25 +44,25 @@ public class IsWithinLimitTest {
     }
 
     @Test
-    public void when_one_andZero_then_justOutsideWindow() throws Exception {
+    public void when_one_andZero_then_justOutsideWindow() {
         assertTrue(isWithinLimit(0, 0));
         assertFalse(isWithinLimit(COMPRESSED_SEQ_UNIT, 0));
     }
 
     @Test
-    public void when_maxInt_andMaxInt_then_withinWindow() throws Exception {
+    public void when_maxInt_andMaxInt_then_withinWindow() {
         assertTrue(isWithinLimit(Integer.MAX_VALUE * COMPRESSED_SEQ_UNIT, Integer.MAX_VALUE));
     }
 
     @Test
-    public void when_minInt_andMaxInt_then_justOutsideWindow() throws Exception {
+    public void when_minInt_andMaxInt_then_justOutsideWindow() {
         final long fullSeq = (long) Integer.MIN_VALUE * COMPRESSED_SEQ_UNIT;
         assertTrue(isWithinLimit(fullSeq - 1, Integer.MAX_VALUE));
         assertFalse(isWithinLimit(fullSeq, Integer.MAX_VALUE));
     }
 
     @Test
-    public void when_minIntPlusOne_andMinInt_then_justOutsideWindow() throws Exception {
+    public void when_minIntPlusOne_andMinInt_then_justOutsideWindow() {
         final long minIntPlusOne_compressed = Integer.MIN_VALUE + 1;
         final long fullSeq = minIntPlusOne_compressed * COMPRESSED_SEQ_UNIT;
         assertTrue(isWithinLimit(fullSeq - 1, Integer.MIN_VALUE));

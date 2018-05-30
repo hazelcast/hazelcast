@@ -24,9 +24,9 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.jet.function.DistributedPredicate;
 import com.hazelcast.jet.IListJet;
 import com.hazelcast.jet.IMapJet;
+import com.hazelcast.jet.function.DistributedPredicate;
 import com.hazelcast.map.journal.EventJournalMapEvent;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -37,9 +37,9 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.stream.Stream;
 
-import static com.hazelcast.jet.pipeline.JournalInitialPosition.START_FROM_OLDEST;
 import static com.hazelcast.jet.Util.mapPutEvents;
 import static com.hazelcast.jet.function.DistributedFunctions.entryValue;
+import static com.hazelcast.jet.pipeline.JournalInitialPosition.START_FROM_OLDEST;
 import static com.hazelcast.query.impl.predicates.PredicateTestUtils.entry;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
@@ -86,7 +86,7 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
 
     public void testMapJournal(IMap<String, Integer> map, StreamSource<Entry<String, Integer>> source) {
         // Given a pre-populated source map...
-        List<Integer> input = sequence(ITEM_COUNT);
+        List<Integer> input = sequence(itemCount);
         int[] key = {0};
         input.forEach(i -> map.put(String.valueOf(key[0]++), Integer.MIN_VALUE + i));
 
@@ -97,20 +97,20 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
         jet().newJob(p);
 
         // Then eventually we get all the map values in the sink.
-        assertSizeEventually(ITEM_COUNT, sinkList);
+        assertSizeEventually(itemCount, sinkList);
 
         // When we update all the map items...
         key[0] = 0;
         input.forEach(i -> map.put(String.valueOf(key[0]++), i));
 
         // Then eventually we get all the updated values in the sink.
-        assertSizeEventually(2 * ITEM_COUNT, sinkList);
+        assertSizeEventually(2 * itemCount, sinkList);
 
         // When we delete all map items...
         input.forEach(i -> map.remove(String.valueOf(key[0]++)));
 
         // Then we won't get any more events in the sink.
-        assertTrueAllTheTime(() -> assertEquals(2 * ITEM_COUNT, sinkList.size()), 2);
+        assertTrueAllTheTime(() -> assertEquals(2 * itemCount, sinkList.size()), 2);
 
         // The values we got are exactly all the original values
         // and all the updated values.
@@ -127,7 +127,7 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
                 (EventJournalMapEvent<Integer, Entry<Integer, String>> entry) -> entry.getNewValue().getValue(),
                 START_FROM_OLDEST);
         IMapJet<Integer, Entry<Integer, String>> sourceMap = jet().getMap(mapName);
-        range(0, ITEM_COUNT).forEach(i -> sourceMap.put(i, entry(i, i % 2 == 0 ? null : String.valueOf(i))));
+        range(0, itemCount).forEach(i -> sourceMap.put(i, entry(i, i % 2 == 0 ? null : String.valueOf(i))));
 
         // when
         p.drawFrom(source)
@@ -136,7 +136,7 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
 
         // then
         assertTrueEventually(() -> assertEquals(
-                range(0, ITEM_COUNT)
+                range(0, itemCount)
                         .filter(i -> i % 2 != 0)
                         .mapToObj(String::valueOf)
                         .sorted()
@@ -236,7 +236,7 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
 
     public void testMapJournal_withPredicateAndProjection(IMap<String, Integer> srcMap, StreamSource<Integer> source) {
         // Given a pre-populated source map...
-        List<Integer> input = sequence(ITEM_COUNT);
+        List<Integer> input = sequence(itemCount);
         int[] key = {0};
         input.forEach(i -> srcMap.put(String.valueOf(key[0]++), Integer.MIN_VALUE + i));
 
@@ -246,14 +246,14 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
         jet().newJob(p);
 
         // Then eventually we get all the map values in the sink.
-        assertSizeEventually(ITEM_COUNT / 2, sinkList);
+        assertSizeEventually(itemCount / 2, sinkList);
 
         // When we update all the map items...
         key[0] = 0;
         input.forEach(i -> srcMap.put(String.valueOf(key[0]++), i));
 
         // Then eventually we get all the updated values in the sink.
-        assertSizeEventually(ITEM_COUNT, sinkList);
+        assertSizeEventually(itemCount, sinkList);
 
         // The values we got are exactly all the original values
         // and all the updated values.
@@ -286,7 +286,7 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
 
     public void testCacheJournal(Cache<String, Integer> cache, StreamSource<Entry<String, Integer>> source) {
         // Given a pre-populated source cache...
-        List<Integer> input = sequence(ITEM_COUNT);
+        List<Integer> input = sequence(itemCount);
         int[] key = {0};
         input.forEach(i -> cache.put(String.valueOf(key[0]++), Integer.MIN_VALUE + i));
 
@@ -297,20 +297,20 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
         jet().newJob(p);
 
         // Then eventually we get all the cache values in the sink.
-        assertSizeEventually(ITEM_COUNT, sinkList);
+        assertSizeEventually(itemCount, sinkList);
 
         // When we update all the cache items...
         key[0] = 0;
         input.forEach(i -> cache.put(String.valueOf(key[0]++), i));
 
         // Then eventually we get all the updated values in the sink.
-        assertSizeEventually(2 * ITEM_COUNT, sinkList);
+        assertSizeEventually(2 * itemCount, sinkList);
 
         // When we delete all cache items...
         input.forEach(i -> cache.remove(String.valueOf(key[0]++)));
 
         // Then we won't get any more events in the sink.
-        assertTrueAllTheTime(() -> assertEquals(2 * ITEM_COUNT, sinkList.size()), 2);
+        assertTrueAllTheTime(() -> assertEquals(2 * itemCount, sinkList.size()), 2);
 
         // The values we got are exactly all the original values
         // and all the updated values.
@@ -345,7 +345,7 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
             Cache<String, Integer> srcCache, StreamSource<Integer> source
     ) {
         // Given a pre-populated source map...
-        List<Integer> input = sequence(ITEM_COUNT);
+        List<Integer> input = sequence(itemCount);
         int[] key = {0};
         input.forEach(i -> srcCache.put(String.valueOf(key[0]++), Integer.MIN_VALUE + i));
 
@@ -355,14 +355,14 @@ public class Sources_withEventJournalTest extends PipelineTestSupport {
         jet().newJob(p);
 
         // Then eventually we get all the map values in the sink.
-        assertSizeEventually(ITEM_COUNT / 2, sinkList);
+        assertSizeEventually(itemCount / 2, sinkList);
 
         // When we update all the map items...
         key[0] = 0;
         input.forEach(i -> srcCache.put(String.valueOf(key[0]++), i));
 
         // Then eventually we get all the updated values in the sink.
-        assertSizeEventually(ITEM_COUNT, sinkList);
+        assertSizeEventually(itemCount, sinkList);
 
         // The values we got are exactly all the original values
         // and all the updated values.

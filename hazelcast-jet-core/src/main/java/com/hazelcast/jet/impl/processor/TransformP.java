@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.impl.processor;
 
-import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.Traverser;
+import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.function.DistributedFunction;
 
 import javax.annotation.Nonnull;
@@ -40,6 +40,7 @@ public class TransformP<T, R> extends AbstractProcessor {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     protected boolean tryProcess(int ordinal, @Nonnull Object item) {
         return flatMapper.tryProcess((T) item);
     }

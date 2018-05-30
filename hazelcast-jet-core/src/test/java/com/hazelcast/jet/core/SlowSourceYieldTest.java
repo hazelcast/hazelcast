@@ -20,12 +20,13 @@ import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.JetTestInstanceFactory;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import java.util.stream.IntStream;
-import javax.annotation.Nonnull;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
+import javax.annotation.Nonnull;
+import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.Traversers.traverseStream;
 import static com.hazelcast.jet.core.Edge.between;
@@ -67,7 +68,7 @@ public class SlowSourceYieldTest {
         private int yieldedAt;
 
         @Override
-        protected void init(@Nonnull Context context) throws Exception {
+        protected void init(@Nonnull Context context) {
             // this should take about 5 seconds to emit
             traverser = traverseStream(IntStream.range(0, 5000)
                                                 .peek(i -> uncheckRun(() -> Thread.sleep(1)))

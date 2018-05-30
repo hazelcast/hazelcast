@@ -260,7 +260,7 @@ public class CancellationTest extends JetTestSupport {
     }
 
     @Test
-    public void when_shutdown_then_jobFuturesCanceled() throws Exception {
+    public void when_shutdown_then_jobFuturesCanceled() {
         JetInstance jet = newInstance();
         DAG dag = new DAG();
         dag.newVertex("blocking", BlockingProcessor::new).localParallelism(1);

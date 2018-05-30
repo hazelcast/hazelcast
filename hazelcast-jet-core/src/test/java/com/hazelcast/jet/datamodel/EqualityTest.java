@@ -26,13 +26,6 @@ import org.junit.runner.RunWith;
 public class EqualityTest {
 
     @Test
-    public void testEqualsAndHashCode_whenBagsByTag() {
-        EqualsVerifier.forClass(BagsByTag.class)
-                      .suppress(Warning.STRICT_INHERITANCE)
-                      .verify();
-    }
-
-    @Test
     public void testEqualsAndHashCode_whenItemsByTag() {
         EqualsVerifier.forClass(ItemsByTag.class)
                       .suppress(Warning.STRICT_INHERITANCE)
@@ -42,11 +35,6 @@ public class EqualityTest {
     @Test
     public void testEqualsAndHashCode_whenTag() {
         EqualsVerifier.forClass(Tag.class).verify();
-    }
-
-    @Test
-    public void testEqualsAndHashCode_whenThreeBags() {
-        EqualsVerifier.forClass(ThreeBags.class).verify();
     }
 
     @Test
@@ -71,11 +59,6 @@ public class EqualityTest {
         EqualsVerifier.forClass(Tuple3.class)
                       .suppress(Warning.NONFINAL_FIELDS)
                       .verify();
-    }
-
-    @Test
-    public void testEqualsAndHashCode_whenTwoBags() {
-        EqualsVerifier.forClass(TwoBags.class).verify();
     }
 
     @Test

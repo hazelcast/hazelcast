@@ -59,7 +59,7 @@ public class ExplodeSnapshotP extends AbstractProcessor {
     }
 
     @Override
-    protected boolean tryProcess0(@Nonnull Object item) throws Exception {
+    protected boolean tryProcess0(@Nonnull Object item) {
         return flatMapper.tryProcess(((Entry<Integer, byte[]>) item).getValue());
     }
 }

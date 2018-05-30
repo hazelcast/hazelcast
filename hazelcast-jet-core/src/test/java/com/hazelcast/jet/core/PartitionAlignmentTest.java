@@ -97,7 +97,7 @@ public class PartitionAlignmentTest extends JetTestSupport {
         private final Map<Integer, int[]> counts = new HashMap<>();
 
         @Override
-        protected boolean tryProcess(int ordinal, @Nonnull Object item) throws Exception {
+        protected boolean tryProcess(int ordinal, @Nonnull Object item) {
             counts.computeIfAbsent((Integer) item, x -> new int[2])[ordinal]++;
             return true;
         }

@@ -115,7 +115,7 @@ public class DoubleStreamTest extends AbstractStreamTest {
     }
 
     @Test
-    public void count() throws Exception {
+    public void count() {
         long result = stream.count();
 
         assertEquals(COUNT, result);
@@ -262,7 +262,7 @@ public class DoubleStreamTest extends AbstractStreamTest {
 
     @Test
     public void mapToObj() {
-        IList<Double> list = stream.mapToObj(m -> (Double) m).collect(DistributedCollectors.toIList(randomString()));
+        IList<Double> list = stream.mapToObj(m -> m).collect(DistributedCollectors.toIList(randomString()));
 
         Object[] array = list.toArray();
         Arrays.sort(array);
@@ -343,7 +343,7 @@ public class DoubleStreamTest extends AbstractStreamTest {
     }
 
     @Test
-    public void sorted() throws Exception {
+    public void sorted() {
         double[] array = stream.sorted().toArray();
 
         for (int i = 0; i < array.length; i++) {

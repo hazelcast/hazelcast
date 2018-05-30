@@ -47,7 +47,7 @@ public class ReceiverTaskletSendLimitTest {
     }
 
     @Test
-    public void when_noData_then_rwinRemainsUnchanged() throws Exception {
+    public void when_noData_then_rwinRemainsUnchanged() {
         double expectedSeq = INITIAL_RECEIVE_WINDOW_COMPRESSED;
         for (int i = 0; i < 10; i++) {
             assertEquals((long) expectedSeq, tasklet.updateAndGetSendSeqLimitCompressed(START + i * ACK_PERIOD));
@@ -56,7 +56,7 @@ public class ReceiverTaskletSendLimitTest {
     }
 
     @Test
-    public void when_steadyFlow_then_steadyRwin() throws Exception {
+    public void when_steadyFlow_then_steadyRwin() {
         // Given
         final int ackedSeqsPerIterCompressed = 1000;
         final long ackedSeqsPerIter = ackedSeqsPerIterCompressed << COMPRESSED_SEQ_UNIT_LOG2;
@@ -76,7 +76,7 @@ public class ReceiverTaskletSendLimitTest {
     }
 
     @Test
-    public void when_hiccupInReceiver_then_rwinDropsToZero() throws Exception {
+    public void when_hiccupInReceiver_then_rwinDropsToZero() {
         // Given
         final int ackedSeqsPerIterCompressed = 1000;
         final long ackedSeqsPerIter = ackedSeqsPerIterCompressed << COMPRESSED_SEQ_UNIT_LOG2;
@@ -104,7 +104,7 @@ public class ReceiverTaskletSendLimitTest {
     }
 
     @Test
-    public void when_recoverFromHiccup_then_rwinRecoversQuickly() throws Exception {
+    public void when_recoverFromHiccup_then_rwinRecoversQuickly() {
         // Given
         final int ackedSeqsPerIterCompressed = 1000;
         final long ackedSeqsPerIter = ackedSeqsPerIterCompressed << COMPRESSED_SEQ_UNIT_LOG2;

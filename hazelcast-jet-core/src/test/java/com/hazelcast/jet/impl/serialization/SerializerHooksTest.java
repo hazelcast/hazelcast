@@ -46,7 +46,7 @@ public class SerializerHooksTest {
     public Object instance;
 
     @Parameters
-    public static Collection<Object> data() throws Exception {
+    public static Collection<Object> data() {
         return Arrays.asList(
                 new Object[]{new String[]{"a", "b", "c"}},
                 new SimpleImmutableEntry<>("key", "value"),
@@ -55,7 +55,7 @@ public class SerializerHooksTest {
     }
 
     @Test
-    public void testSerializerHooks() throws Exception {
+    public void testSerializerHooks() {
         SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
 
         Data serialized = serializationService.toData(instance);

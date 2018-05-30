@@ -37,29 +37,29 @@ public class ArrayDequeInboxTest {
     private ArrayDequeInbox inbox = new ArrayDequeInbox(new ProgressTracker());
 
     @Before
-    public void before() throws Exception {
+    public void before() {
         inbox.queue().add(ITEM);
     }
 
     @Test
-    public void when_pollNonEmpty_then_getItem() throws Exception {
+    public void when_pollNonEmpty_then_getItem() {
         assertEquals(ITEM, inbox.poll());
     }
 
     @Test
-    public void when_pollEmpty_then_getNull() throws Exception {
+    public void when_pollEmpty_then_getNull() {
         inbox.queue().clear();
         assertNull(inbox.poll());
     }
 
     @Test
-    public void when_removeNonEmpty_then_removeItem() throws Exception {
+    public void when_removeNonEmpty_then_removeItem() {
         inbox.remove();
         assertTrue(inbox.isEmpty());
     }
 
     @Test(expected = NoSuchElementException.class)
-    public void when_removeEmpty_then_getException() throws Exception {
+    public void when_removeEmpty_then_getException() {
         inbox.queue().clear();
         inbox.remove();
     }

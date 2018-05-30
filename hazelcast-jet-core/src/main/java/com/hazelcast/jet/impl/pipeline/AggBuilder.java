@@ -37,7 +37,7 @@ import static com.hazelcast.jet.impl.pipeline.JetEventFunctionAdapter.adaptAggre
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 
-public class AggBuilder<T0> {
+public class AggBuilder {
     @Nullable
     private final WindowDefinition wDef;
     @Nonnull
@@ -45,18 +45,13 @@ public class AggBuilder<T0> {
     @Nonnull
     private final List<GeneralStage> upstreamStages = new ArrayList<>();
 
-    public AggBuilder(
+    public <T0> AggBuilder(
             @Nonnull GeneralStage<T0> stage0,
             @Nullable WindowDefinition wDef
     ) {
         this.wDef = wDef;
         this.pipelineImpl = ((AbstractStage) stage0).pipelineImpl;
         add(stage0);
-    }
-
-    @Nonnull
-    public Tag<T0> tag0() {
-        return Tag.tag0();
     }
 
     @Nonnull

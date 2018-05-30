@@ -23,9 +23,12 @@ import com.hazelcast.jet.function.DistributedBiFunction;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.impl.pipeline.transform.GroupTransform;
 import com.hazelcast.jet.pipeline.BatchStage;
+import com.hazelcast.jet.pipeline.ContextFactory;
 import com.hazelcast.jet.pipeline.StageWithGrouping;
 
 import javax.annotation.Nonnull;
+
+import java.util.HashSet;
 
 import static com.hazelcast.jet.impl.pipeline.ComputeStageImplBase.DONT_ADAPT;
 import static java.util.Arrays.asList;
@@ -34,16 +37,23 @@ import static java.util.Collections.singletonList;
 public class StageWithGroupingImpl<T, K> extends StageWithGroupingBase<T, K> implements StageWithGrouping<T, K> {
 
     StageWithGroupingImpl(
-            @Nonnull ComputeStageImplBase<T> computeStage,
+            @Nonnull BatchStageImpl<T> computeStage,
             @Nonnull DistributedFunction<? super T, ? extends K> keyFn
     ) {
         super(computeStage, keyFn);
     }
 
+    @Nonnull @Override
+    public BatchStage<T> distinct() {
+        DistributedFunction<? super T, ? extends K> keyFn = keyFn();
+        return batchStage().filterUsingContext(ContextFactory.withCreateFn(jet -> new HashSet<>()),
+                (ctx, item) -> ctx.add(keyFn.apply(item)));
+    }
+
     @Nonnull
     public <A, R, OUT> BatchStage<OUT> aggregate(
-            @Nonnull AggregateOperation1<? super T, A, R> aggrOp,
-            @Nonnull DistributedBiFunction<? super K, ? super R, OUT> mapToOutputFn
+            @Nonnull AggregateOperation1<? super T, A, ? extends R> aggrOp,
+            @Nonnull DistributedBiFunction<? super K, ? super R, ? extends OUT> mapToOutputFn
     ) {
         return computeStage.attach(new GroupTransform<>(
                         singletonList(computeStage.transform),
@@ -56,8 +66,8 @@ public class StageWithGroupingImpl<T, K> extends StageWithGroupingBase<T, K> imp
     @Nonnull
     public <T1, A, R, OUT> BatchStage<OUT> aggregate2(
             @Nonnull StageWithGrouping<T1, ? extends K> stage1,
-            @Nonnull AggregateOperation2<? super T, ? super T1, A, R> aggrOp,
-            @Nonnull DistributedBiFunction<? super K, ? super R, OUT> mapToOutputFn
+            @Nonnull AggregateOperation2<? super T, ? super T1, A, ? extends R> aggrOp,
+            @Nonnull DistributedBiFunction<? super K, ? super R, ? extends OUT> mapToOutputFn
     ) {
         return computeStage.attach(
                 new GroupTransform<>(
@@ -73,7 +83,7 @@ public class StageWithGroupingImpl<T, K> extends StageWithGroupingBase<T, K> imp
             @Nonnull StageWithGrouping<T1, ? extends K> stage1,
             @Nonnull StageWithGrouping<T2, ? extends K> stage2,
             @Nonnull AggregateOperation3<? super T, ? super T1, ? super T2, A, R> aggrOp,
-            @Nonnull DistributedBiFunction<? super K, ? super R, OUT> mapToOutputFn
+            @Nonnull DistributedBiFunction<? super K, ? super R, ? extends OUT> mapToOutputFn
     ) {
         return computeStage.attach(
                 new GroupTransform<>(
@@ -82,5 +92,10 @@ public class StageWithGroupingImpl<T, K> extends StageWithGroupingBase<T, K> imp
                         aggrOp,
                         mapToOutputFn),
                 DONT_ADAPT);
+    }
+
+    @SuppressWarnings("unchecked")
+    private BatchStage<T> batchStage() {
+        return (BatchStage<T>) computeStage;
     }
 }

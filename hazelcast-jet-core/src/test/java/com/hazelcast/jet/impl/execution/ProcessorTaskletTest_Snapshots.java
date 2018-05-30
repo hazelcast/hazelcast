@@ -24,7 +24,6 @@ import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.impl.execution.init.Contexts.ProcCtx;
 import com.hazelcast.jet.impl.util.ProgressState;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.util.UuidUtil;
 import org.junit.Before;
@@ -210,7 +209,7 @@ public class ProcessorTaskletTest_Snapshots {
     }
 
     private Object deserializeEntryValue(Entry e) {
-        return context.getSerializationService().toObject((Data) e.getValue());
+        return context.getSerializationService().toObject(e.getValue());
     }
 
     private static void callUntil(Tasklet tasklet, ProgressState expectedState) {

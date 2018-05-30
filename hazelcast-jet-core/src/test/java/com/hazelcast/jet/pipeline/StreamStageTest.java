@@ -23,240 +23,196 @@ import com.hazelcast.jet.datamodel.ItemsByTag;
 import com.hazelcast.jet.datamodel.Tag;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.datamodel.Tuple3;
+import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.function.DistributedPredicate;
 import org.junit.Test;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
-import static com.hazelcast.jet.Traversers.traverseIterable;
-import static com.hazelcast.jet.Util.mapEventNewValue;
-import static com.hazelcast.jet.Util.mapPutEvents;
+import static com.hazelcast.jet.Traversers.traverseStream;
 import static com.hazelcast.jet.datamodel.ItemsByTag.itemsByTag;
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.datamodel.Tuple3.tuple3;
-import static com.hazelcast.jet.function.DistributedFunctions.entryKey;
-import static com.hazelcast.jet.function.DistributedFunctions.entryValue;
 import static com.hazelcast.jet.function.DistributedFunctions.wholeItem;
 import static com.hazelcast.jet.impl.pipeline.AbstractStage.transformOf;
 import static com.hazelcast.jet.pipeline.ContextFactories.replicatedMapContext;
 import static com.hazelcast.jet.pipeline.JoinClause.joinMapEntries;
-import static com.hazelcast.jet.pipeline.JournalInitialPosition.START_FROM_OLDEST;
-import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 
-public class StreamStageTest extends PipelineTestSupport {
+public class StreamStageTest extends PipelineStreamTestSupport {
 
     @Test
     public void setName() {
         //Given
-        String mapName = JOURNALED_MAP_PREFIX + randomMapName();
         String stageName = randomName();
 
         //When
-        StreamStage<Entry<Long, String>> streamStage = p
-                .drawFrom(Sources.<Long, String>mapJournal(mapName, START_FROM_OLDEST))
-                .setName(stageName);
+        mapJournalSrcStage.setName(stageName);
 
         //Then
-        assertEquals(stageName, streamStage.name());
+        assertEquals(stageName, mapJournalSrcStage.name());
     }
 
     @Test
     public void setLocalParallelism() {
         //Given
-        String mapName = JOURNALED_MAP_PREFIX + randomMapName();
         int localParallelism = 10;
 
         //When
-        StreamStage<Entry<Long, String>> streamStage = p
-                .drawFrom(Sources.<Long, String>mapJournal(mapName, START_FROM_OLDEST))
-                .setLocalParallelism(localParallelism);
+        mapJournalSrcStage.setLocalParallelism(localParallelism);
 
         //Then
-        assertEquals(localParallelism, transformOf(streamStage).localParallelism());
-    }
-
-    @Test
-    public void peekWithToStringFunctionIsTransparent() {
-        // Given
-        String mapName = JOURNALED_MAP_PREFIX + randomMapName();
-        IMap<Long, String> map = jet().getMap(mapName);
-        map.put(0L, "foo");
-        map.put(1L, "bar");
-        map.put(2L, "baz");
-
-        // When
-        p.drawFrom(Sources.<Long, String>mapJournal(mapName, START_FROM_OLDEST))
-         .filter(e -> e.getValue().startsWith("f"))
-         .map(entryValue())
-         .peek(Object::toString)
-         .drainTo(sink);
-        jet().newJob(p);
-
-        // Then
-        List<String> expected = map.values().stream()
-                                   .filter(e -> e.startsWith("f"))
-                                   .collect(toList());
-        assertTrueEventually(() -> assertEquals(toBag(expected), sinkToBag()));
+        assertEquals(localParallelism, transformOf(mapJournalSrcStage).localParallelism());
     }
 
     @Test
     public void map() {
         // Given
-        String mapName = JOURNALED_MAP_PREFIX + randomMapName();
-        IMap<Long, String> map = jet().getMap(mapName);
-        map.put(0L, "foo");
-        map.put(1L, "bar");
-        map.put(2L, "baz");
+        List<Integer> input = sequence(itemCount);
+        addToSrcMapJournal(input);
+        DistributedFunction<Integer, String> mapFn = item -> item + "-x";
 
         // When
-        p.drawFrom(Sources.<Long, String>mapJournal(mapName, START_FROM_OLDEST))
-         .map(e -> e.getValue() + "-x")
-         .drainTo(sink);
-        jet().newJob(p);
+        StreamStage<String> mapped = mapJournalSrcStage.map(mapFn);
 
         // Then
-        List<String> expected = map.values().stream()
-                                   .map(e -> e + "-x")
-                                   .collect(toList());
-        assertTrueEventually(() -> assertEquals(toBag(expected), sinkToBag()));
+        mapped.drainTo(sink);
+        jet().newJob(p);
+        Map<String, Integer> expected = toBag(input.stream().map(mapFn).collect(toList()));
+        assertTrueEventually(() -> assertEquals(expected, sinkToBag()));
     }
 
     @Test
     public void mapUsingContext() {
         // Given
-        String mapName = JOURNALED_MAP_PREFIX + randomMapName();
-        IMap<Long, String> map = jet().getMap(mapName);
-        map.put(0L, "foo");
-        map.put(1L, "bar");
-        map.put(2L, "baz");
-        String transformMapName = randomMapName();
-        ReplicatedMap<Long, String> transformMap = jet().getHazelcastInstance().getReplicatedMap(transformMapName);
-        List<String> expected = map.keySet().stream()
-                                   .peek(i -> transformMap.put(i, String.valueOf(i)))
-                                   .map(String::valueOf)
-                                   .collect(toList());
+        List<Integer> input = sequence(itemCount);
+        addToSrcMapJournal(input);
+        Function<Integer, String> mapFn = i -> i + "-x";
+        String enrichingMapName = randomMapName();
+        ReplicatedMap<Integer, String> enrichingMap = jet().getHazelcastInstance().getReplicatedMap(enrichingMapName);
+        input.forEach(i -> enrichingMap.put(i, mapFn.apply(i)));
 
         // When
-        p.drawFrom(Sources.<Long, String>mapJournal(mapName, START_FROM_OLDEST))
-         .map(entryKey())
-         .mapUsingContext(
-                 ContextFactories.<Long, String>replicatedMapContext(transformMapName),
-                 ReplicatedMap::get)
-         .drainTo(sink);
-        jet().newJob(p);
+        StreamStage<String> mapped = mapJournalSrcStage
+                .mapUsingContext(
+                        ContextFactories.<Long, String>replicatedMapContext(enrichingMapName),
+                        ReplicatedMap::get);
 
         // Then
-        assertTrueEventually(() -> assertEquals(toBag(expected), sinkToBag()));
+        mapped.drainTo(sink);
+        jet().newJob(p);
+        Map<String, Integer> expected = toBag(input.stream().map(mapFn).collect(toList()));
+        assertTrueEventually(() -> assertEquals(expected, sinkToBag()));
     }
 
 
     @Test
     public void filter() {
         // Given
-        String mapName = JOURNALED_MAP_PREFIX + randomMapName();
-        IMap<Long, String> map = jet().getMap(mapName);
-        map.put(0L, "foo");
-        map.put(1L, "bar");
-        map.put(2L, "baz");
+        List<Integer> input = sequence(itemCount);
+        addToSrcMapJournal(input);
+        DistributedPredicate<Integer> filterFn = i -> i % 2 == 1;
 
         // When
-        p.drawFrom(Sources.<Long, String>mapJournal(mapName, START_FROM_OLDEST))
-         .filter(e -> e.getValue().startsWith("f"))
-         .map(entryValue())
-         .drainTo(sink);
-        jet().newJob(p);
+        StreamStage<Integer> filtered = mapJournalSrcStage.filter(filterFn);
 
         // Then
-        List<String> expected = map.values().stream()
-                                   .filter(e -> e.startsWith("f"))
-                                   .collect(toList());
-        assertTrueEventually(() -> assertEquals(toBag(expected), sinkToBag()));
+        filtered.drainTo(sink);
+        jet().newJob(p);
+        Map<Integer, Integer> expected = toBag(input.stream().filter(filterFn).collect(toList()));
+        assertTrueEventually(() -> assertEquals(expected, sinkToBag()));
     }
 
     @Test
-    public void filterWithContext() {
+    public void filterUsingContext() {
         // Given
-        String mapName = JOURNALED_MAP_PREFIX + randomMapName();
-        IMap<Long, String> map = jet().getMap(mapName);
-        map.put(0L, "foo");
-        map.put(1L, "bar");
-        map.put(2L, "baz");
+        List<Integer> input = sequence(itemCount);
+        addToSrcMapJournal(input);
+        Predicate<Integer> filterFn = i -> i % 2 == 1;
+
         String filteringMapName = randomMapName();
-        ReplicatedMap<Long, Long> filteringMap = jet().getHazelcastInstance().getReplicatedMap(filteringMapName);
-        filteringMap.put(1L, 1L);
-        filteringMap.put(2L, 2L);
+        ReplicatedMap<Integer, Integer> filteringMap = jet().getHazelcastInstance().getReplicatedMap(filteringMapName);
+        input.stream().filter(filterFn).forEach(item -> filteringMap.put(item, item));
 
         // When
-        p.drawFrom(Sources.<Long, String>mapJournal(mapName, START_FROM_OLDEST))
-         .map(entryKey())
-         .filterUsingContext(
-                 replicatedMapContext(filteringMapName),
-                 ReplicatedMap::containsKey)
-         .drainTo(sink);
-        jet().newJob(p);
+        StreamStage<Integer> filtered = mapJournalSrcStage.filterUsingContext(
+                replicatedMapContext(filteringMapName),
+                ReplicatedMap::containsKey);
 
         // Then
-        List<Long> expected = map.keySet().stream()
-                                 .filter(filteringMap::containsKey)
-                                 .collect(toList());
-        assertTrueEventually(() -> assertEquals(toBag(expected), sinkToBag()));
+        filtered.drainTo(sink);
+        jet().newJob(p);
+        Map<Integer, Integer> expected = toBag(input.stream().filter(filterFn).collect(toList()));
+        assertTrueEventually(() -> assertEquals(expected, sinkToBag()));
     }
 
     @Test
     public void flatMap() {
         // Given
-        String mapName = JOURNALED_MAP_PREFIX + randomMapName();
-        IMap<Long, String> map = jet().getMap(mapName);
-        map.put(0L, "foo");
+        List<Integer> input = sequence(itemCount);
+        addToSrcMapJournal(input);
+        DistributedFunction<Integer, Stream<String>> flatMapFn = o -> Stream.of(o + "A", o + "B");
 
         // When
-        p.drawFrom(Sources.<Long, String>mapJournal(mapName, START_FROM_OLDEST))
-         .map(entryValue())
-         .flatMap(o -> traverseIterable(asList(o + "A", o + "B")))
-         .drainTo(sink);
-        jet().newJob(p);
+        StreamStage<String> flatMapped = mapJournalSrcStage.flatMap(o -> traverseStream(flatMapFn.apply(o)));
 
         // Then
-        List<String> expected = map.values().stream()
-                                   .flatMap(o -> Stream.of(o + "A", o + "B"))
-                                   .collect(toList());
-        assertTrueEventually(() -> assertEquals(toBag(expected), sinkToBag()));
+        flatMapped.drainTo(sink);
+        jet().newJob(p);
+        Map<String, Integer> expected = toBag(input.stream().flatMap(flatMapFn).collect(toList()));
+        assertTrueEventually(() -> assertEquals(expected, sinkToBag()));
     }
 
     @Test
     public void flatMapUsingContext() {
         // Given
-        String mapName = JOURNALED_MAP_PREFIX + randomMapName();
-        IMap<Long, String> map = jet().getMap(mapName);
-        map.put(0L, "foo");
+        List<Integer> input = sequence(itemCount);
+        addToSrcMapJournal(input);
+        DistributedFunction<Integer, Stream<String>> flatMapFn = o -> Stream.of(o + "A", o + "B");
 
         // When
-        p.drawFrom(Sources.<Long, String>mapJournal(mapName, START_FROM_OLDEST))
-         .map(entryValue())
-         .flatMapUsingContext(
-                 ContextFactory.withCreateFn(procCtx -> asList("A", "B")),
-                 (ctx, o) -> traverseIterable(asList(o + ctx.get(0), o + ctx.get(1))))
-         .drainTo(sink);
-        jet().newJob(p);
+        StreamStage<String> flatMapped = mapJournalSrcStage.flatMapUsingContext(
+                ContextFactory.withCreateFn(procCtx -> flatMapFn),
+                (ctx, o) -> traverseStream(ctx.apply(o)));
 
         // Then
-        List<String> expected = map.values().stream()
-                                   .flatMap(o -> Stream.of(o + "A", o + "B"))
-                                   .collect(toList());
-        assertTrueEventually(() -> assertEquals(toBag(expected), sinkToBag()));
+        flatMapped.drainTo(sink);
+        jet().newJob(p);
+        Map<String, Integer> expected = toBag(input.stream().flatMap(flatMapFn).collect(toList()));
+        assertTrueEventually(() -> assertEquals(expected, sinkToBag()));
     }
 
+    @Test
+    public void merge() {
+        // Given
+        String src2Name = journaledMapName();
+        StreamStage<Integer> srcStage2 = drawEventJournalValues(src2Name);
+        List<Integer> input = sequence(itemCount);
+        addToSrcMapJournal(input);
+        putToMap(jet().getMap(src2Name), input);
+
+        // When
+        StreamStage<Integer> merged = mapJournalSrcStage.merge(srcStage2);
+
+        // Then
+        merged.drainTo(sink);
+        jet().newJob(p);
+        input.addAll(input);
+        Map<Integer, Integer> expected = toBag(input);
+        assertTrueEventually(() -> assertEquals(expected, sinkToBag()));
+    }
 
     @Test
-    public void hashJoinTwo() {
+    public void hashJoin() {
         // Given
-        List<Integer> input = sequence(ITEM_COUNT);
-        String mapName = JOURNALED_MAP_PREFIX + randomMapName();
-        IMap<String, Integer> map = jet().getMap(mapName);
-        putToMap(map, input);
+        List<Integer> input = sequence(itemCount);
+        addToSrcMapJournal(input);
 
         String enrichingName = randomMapName();
         IMap<Integer, String> enriching = jet().getMap(enrichingName);
@@ -264,29 +220,25 @@ public class StreamStageTest extends PipelineTestSupport {
         BatchStage<Entry<Integer, String>> enrichingStage = p.drawFrom(Sources.map(enrichingName));
 
         // When
-        p.drawFrom(Sources.<Integer, String, Integer>mapJournal(mapName, mapPutEvents(), mapEventNewValue(),
-                START_FROM_OLDEST))
-         .hashJoin(enrichingStage,
-                 joinMapEntries(wholeItem()),
-                 Tuple2::tuple2
-         )
-         .drainTo(sink);
-        jet().newJob(p);
+        StreamStage<Tuple2<Integer, String>> hashJoined = mapJournalSrcStage.hashJoin(
+                enrichingStage,
+                joinMapEntries(wholeItem()),
+                Tuple2::tuple2
+        );
 
         // Then
-        List<Tuple2<Integer, String>> expected = input.stream()
-                                                      .map(i -> tuple2(i, i + "A"))
-                                                      .collect(toList());
-        assertTrueEventually(() -> assertEquals(toBag(expected), sinkToBag()));
+        hashJoined.drainTo(sink);
+        jet().newJob(p);
+        Map<Tuple2<Integer, String>, Integer> expected = toBag(
+                input.stream().map(i -> tuple2(i, i + "A")).collect(toList()));
+        assertTrueEventually(() -> assertEquals(expected, sinkToBag()));
     }
 
     @Test
-    public void hashJoinThree() {
+    public void hashJoin2() {
         // Given
-        List<Integer> input = sequence(ITEM_COUNT);
-        String mapName = JOURNALED_MAP_PREFIX + randomMapName();
-        IMap<String, Integer> map = jet().getMap(mapName);
-        putToMap(map, input);
+        List<Integer> input = sequence(itemCount);
+        addToSrcMapJournal(input);
 
         String enriching1Name = randomMapName();
         String enriching2Name = randomMapName();
@@ -298,31 +250,26 @@ public class StreamStageTest extends PipelineTestSupport {
         input.forEach(i -> enriching2.put(i, i + "B"));
 
         // When
-        p
-                .drawFrom(Sources.<Integer, String, Integer>mapJournal(mapName, mapPutEvents(), mapEventNewValue(),
-                        START_FROM_OLDEST))
-                .hashJoin2(
-                        enrichingStage1, joinMapEntries(wholeItem()),
-                        enrichingStage2, joinMapEntries(wholeItem()),
-                        Tuple3::tuple3
-                ).drainTo(sink);
-        jet().newJob(p);
+        StreamStage<Tuple3<Integer, String, String>> hashJoined = mapJournalSrcStage.hashJoin2(
+                enrichingStage1, joinMapEntries(wholeItem()),
+                enrichingStage2, joinMapEntries(wholeItem()),
+                Tuple3::tuple3
+        );
 
         // Then
-        List<Tuple3<Integer, String, String>> expected = input.stream()
-                                                              .map(i -> tuple3(i, i + "A", i + "B"))
-                                                              .collect(toList());
-        assertTrueEventually(() -> assertEquals(toBag(expected), sinkToBag()));
+        hashJoined.drainTo(sink);
+        jet().newJob(p);
+        Map<Tuple3<Integer, String, String>, Integer> expected = toBag(input
+                .stream().map(i -> tuple3(i, i + "A", i + "B")).collect(toList()));
+        assertTrueEventually(() -> assertEquals(expected, sinkToBag()));
     }
 
 
     @Test
     public void hashJoinBuilder() {
         // Given
-        List<Integer> input = sequence(ITEM_COUNT);
-        String mapName = JOURNALED_MAP_PREFIX + randomMapName();
-        IMap<String, Integer> map = jet().getMap(mapName);
-        putToMap(map, input);
+        List<Integer> input = sequence(itemCount);
+        addToSrcMapJournal(input);
 
         String enriching1Name = randomMapName();
         String enriching2Name = randomMapName();
@@ -330,70 +277,76 @@ public class StreamStageTest extends PipelineTestSupport {
         BatchStage<Entry<Integer, String>> enrichingStage2 = p.drawFrom(Sources.map(enriching2Name));
         IMap<Integer, String> enriching1 = jet().getMap(enriching1Name);
         IMap<Integer, String> enriching2 = jet().getMap(enriching2Name);
-        input.forEach(i -> enriching1.put(i, i + "A"));
-        input.forEach(i -> enriching2.put(i, i + "B"));
+        input.forEach(i -> {
+            enriching1.put(i, i + "A");
+            enriching2.put(i, i + "B");
+        });
 
         // When
-        StreamHashJoinBuilder<Integer> b = p
-                .drawFrom(Sources.<Integer, String, Integer>mapJournal(mapName, mapPutEvents(), mapEventNewValue(),
-                        START_FROM_OLDEST))
-                .hashJoinBuilder();
-
+        StreamHashJoinBuilder<Integer> b = mapJournalSrcStage.hashJoinBuilder();
         Tag<String> tagA = b.add(enrichingStage1, joinMapEntries(wholeItem()));
         Tag<String> tagB = b.add(enrichingStage2, joinMapEntries(wholeItem()));
         GeneralStage<Tuple2<Integer, ItemsByTag>> joined = b.build((t1, t2) -> tuple2(t1, t2));
-        joined.drainTo(sink);
-        jet().newJob(p);
 
         // Then
-        List<Tuple2<Integer, ItemsByTag>> expected = input
+        joined.drainTo(sink);
+        jet().newJob(p);
+        Map<Tuple2<Integer, ItemsByTag>, Integer> expected = toBag(input
                 .stream()
                 .map(i -> tuple2(i, itemsByTag(tagA, i + "A", tagB, i + "B")))
-                .collect(toList());
-        assertTrueEventually(() -> assertEquals(toBag(expected), sinkToBag()));
+                .collect(toList()));
+        assertTrueEventually(() -> assertEquals(expected, sinkToBag()));
     }
 
     @Test
     public void customTransform() {
         // Given
-        List<Integer> input = sequence(ITEM_COUNT);
-        String mapName = JOURNALED_MAP_PREFIX + randomMapName();
-        IMap<String, Integer> map = jet().getMap(mapName);
-        putToMap(map, input);
+        List<Integer> input = sequence(itemCount);
+        addToSrcMapJournal(input);
+        DistributedFunction<Integer, String> mapFn = o -> Integer.toString(o) + "-x";
 
         // When
-        StreamStage<String> custom = p
-                .drawFrom(Sources.<Integer, String, Integer>mapJournal(mapName, mapPutEvents(), mapEventNewValue(),
-                        START_FROM_OLDEST))
-                .customTransform("map", Processors.<Integer, String>mapP(o -> Integer.toString(o)));
-        custom.drainTo(sink);
-        jet().newJob(p);
+        StreamStage<String> custom = mapJournalSrcStage.customTransform("map", Processors.mapP(mapFn));
 
         // Then
-        List<String> expected = input.stream()
-                                     .map(String::valueOf)
-                                     .collect(toList());
-        assertTrueEventually(() -> assertEquals(toBag(expected), sinkToBag()));
+        custom.drainTo(sink);
+        jet().newJob(p);
+        Map<String, Integer> expected = toBag(input
+                .stream().map(mapFn).collect(toList()));
+        assertTrueEventually(() -> assertEquals(expected, sinkToBag()));
     }
 
     @Test
     public void peek_when_addedTimestamp_then_unwrapsJetEvent() {
         // Given
-        List<Integer> input = sequence(ITEM_COUNT);
-        String mapName = JOURNALED_MAP_PREFIX + randomMapName();
-        IMap<String, Integer> map = jet().getMap(mapName);
-        putToMap(map, input);
+        List<Integer> input = sequence(itemCount);
+        addToSrcMapJournal(input);
 
         // When
-        StreamStage<Integer> custom = p
-                .drawFrom(Sources.<Integer, String, Integer>mapJournal(mapName, mapPutEvents(), mapEventNewValue(),
-                        START_FROM_OLDEST))
-                .addTimestamps()
-                .peek((Integer i) -> true, (Integer i) -> String.valueOf(i));
-        custom.drainTo(sink);
+        StreamStage<Integer> peeked = mapJournalSrcStage.addTimestamps().peek();
+
+        // Then
+        peeked.drainTo(sink);
+        jet().newJob(p);
+        assertTrueEventually(() -> assertEquals(toBag(input), sinkToBag()), 10);
+    }
+
+    @Test
+    public void peekWithToStringFunctionIsTransparent() {
+        // Given
+        List<Integer> input = sequence(itemCount);
+        addToSrcMapJournal(input);
+        DistributedPredicate<Integer> filterFn = i -> i % 2 == 1;
+
+        // When
+        mapJournalSrcStage
+         .filter(filterFn)
+         .peek(Object::toString)
+         .drainTo(sink);
         jet().newJob(p);
 
         // Then
-        assertTrueEventually(() -> assertEquals(toBag(input), sinkToBag()), 10);
+        Map<Integer, Integer> expected = toBag(input.stream().filter(filterFn).collect(toList()));
+        assertTrueEventually(() -> assertEquals(expected, sinkToBag()));
     }
 }

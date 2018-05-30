@@ -25,8 +25,7 @@ import java.io.Serializable;
  * <p>
  * Tags are also used by hash-join and co-group builder objects. The same
  * tag supplied to the builder is used to retrieve the data from the
- * heterogeneous maps ({@link ItemsByTag}, {@link BagsByTag}) that appear in
- * the output.
+ * heterogeneous maps ({@link ItemsByTag}) that appear in the output.
  *
  * @param <T> the type of the data associated with the tag
  */

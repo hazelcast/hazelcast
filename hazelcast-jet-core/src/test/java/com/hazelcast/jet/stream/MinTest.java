@@ -25,7 +25,7 @@ import static org.junit.Assert.assertEquals;
 public class MinTest extends AbstractStreamTest {
 
     @Test
-    public void sourceMap() throws Exception {
+    public void sourceMap() {
         int result = streamMap()
                 .map(Entry::getValue)
                 .min(Integer::compareTo)
@@ -35,7 +35,7 @@ public class MinTest extends AbstractStreamTest {
     }
 
     @Test
-    public void sourceCache() throws Exception {
+    public void sourceCache() {
         int result = streamCache()
                 .map(Entry::getValue)
                 .min(Integer::compareTo)
@@ -45,7 +45,7 @@ public class MinTest extends AbstractStreamTest {
     }
 
     @Test
-    public void sourceList() throws Exception {
+    public void sourceList() {
         long result = streamList()
                 .min(Integer::compareTo)
                 .get();

@@ -10,10 +10,7 @@ com.hazelcast.jet.datamodel.DataModelSerializerHooks$TimestampedItemHook
 com.hazelcast.jet.datamodel.DataModelSerializerHooks$WindowResultHook
 com.hazelcast.jet.datamodel.DataModelSerializerHooks$Tuple2Hook
 com.hazelcast.jet.datamodel.DataModelSerializerHooks$Tuple3Hook
-com.hazelcast.jet.datamodel.DataModelSerializerHooks$TwoBagsHook
-com.hazelcast.jet.datamodel.DataModelSerializerHooks$ThreeBagsHook
 com.hazelcast.jet.datamodel.DataModelSerializerHooks$TagHook
-com.hazelcast.jet.datamodel.DataModelSerializerHooks$BagsByTagHook
 com.hazelcast.jet.datamodel.DataModelSerializerHooks$ItemsByTagHook
 com.hazelcast.jet.impl.execution.ExecutionSerializerHooks$SnapshotBarrierHook
 com.hazelcast.jet.impl.execution.ExecutionSerializerHooks$BroadcastEntryHook

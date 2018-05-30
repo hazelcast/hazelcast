@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.stream.impl.processor;
 
-import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.Traverser;
+import com.hazelcast.jet.core.AbstractProcessor;
 
 import javax.annotation.Nonnull;
 import java.util.HashMap;
@@ -52,7 +52,8 @@ public class MergeP<T, K, V> extends AbstractProcessor {
     }
 
     @Override
-    protected boolean tryProcess(int ordinal, @Nonnull Object item) throws Exception {
+    @SuppressWarnings("unchecked")
+    protected boolean tryProcess(int ordinal, @Nonnull Object item) {
         Map.Entry<K, V> entry;
         if (keyMapper == null || valueMapper == null) {
             entry = (Map.Entry<K, V>) item;

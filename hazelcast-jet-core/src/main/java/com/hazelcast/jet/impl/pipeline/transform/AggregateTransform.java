@@ -49,8 +49,8 @@ public class AggregateTransform<A, R> extends AbstractTransform {
 
     @Override
     public void addToDag(Planner p) {
-        // We don't use single-stage if optimizing for memory usage, because single-stage
-        // setup doesn't save memory when we have just one global key.
+        // We don't use single-stage even when optimizing for memory because the
+        // single-stage setup doesn't save memory with just one global key.
         if (aggrOp.combineFn() == null) {
             addToDagSingleStage(p);
         } else {

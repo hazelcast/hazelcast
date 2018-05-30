@@ -34,7 +34,7 @@ public class CancelJobOperation extends AbstractJobOperation {
     }
 
     @Override
-    public void run() throws Exception {
+    public void run() {
         JetService service = getService();
         JobCoordinationService coordinationService = service.getJobCoordinationService();
         coordinationService.cancelJob(jobId());

@@ -133,7 +133,7 @@ public class IntStreamTest extends AbstractStreamTest {
     }
 
     @Test
-    public void count() throws Exception {
+    public void count() {
         long result = stream.count();
 
         assertEquals(COUNT, result);
@@ -361,7 +361,7 @@ public class IntStreamTest extends AbstractStreamTest {
     }
 
     @Test
-    public void sorted() throws Exception {
+    public void sorted() {
         int[] array = stream.sorted().toArray();
 
         for (int i = 0; i < array.length; i++) {

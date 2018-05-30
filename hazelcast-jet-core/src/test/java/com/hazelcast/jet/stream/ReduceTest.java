@@ -25,7 +25,7 @@ import static org.junit.Assert.assertEquals;
 public class ReduceTest extends AbstractStreamTest {
 
     @Test
-    public void withIdentity_sourceMap() throws Exception {
+    public void withIdentity_sourceMap() {
         int result = streamMap()
                 .map(Entry::getValue)
                 .reduce(0, (left, right) -> left + right);
@@ -34,7 +34,7 @@ public class ReduceTest extends AbstractStreamTest {
     }
 
     @Test
-    public void withIdentity_sourceCache() throws Exception {
+    public void withIdentity_sourceCache() {
         int result = streamCache()
                 .map(Entry::getValue)
                 .reduce(0, (left, right) -> left + right);
@@ -43,7 +43,7 @@ public class ReduceTest extends AbstractStreamTest {
     }
 
     @Test
-    public void withoutIdentity_sourceMap() throws Exception {
+    public void withoutIdentity_sourceMap() {
         int result = streamMap()
                 .map(Entry::getValue)
                 .reduce((left, right) -> left + right).get();
@@ -52,7 +52,7 @@ public class ReduceTest extends AbstractStreamTest {
     }
 
     @Test
-    public void withoutIdentity_sourceCache() throws Exception {
+    public void withoutIdentity_sourceCache() {
         int result = streamCache()
                 .map(Entry::getValue)
                 .reduce((left, right) -> left + right).get();

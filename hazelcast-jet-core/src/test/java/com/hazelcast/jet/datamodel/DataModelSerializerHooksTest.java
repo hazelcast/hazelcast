@@ -21,9 +21,6 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelTest;
-import java.io.Serializable;
-import java.util.Collection;
-import java.util.Map;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -31,16 +28,17 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 
-import static com.hazelcast.jet.datamodel.BagsByTag.bagsByTag;
+import java.io.Serializable;
+import java.util.Collection;
+import java.util.Map;
+
 import static com.hazelcast.jet.datamodel.ItemsByTag.itemsByTag;
 import static com.hazelcast.jet.datamodel.Tag.tag;
 import static com.hazelcast.jet.datamodel.Tag.tag0;
 import static com.hazelcast.jet.datamodel.Tag.tag1;
 import static com.hazelcast.jet.datamodel.Tag.tag2;
-import static com.hazelcast.jet.datamodel.ThreeBags.threeBags;
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.datamodel.Tuple3.tuple3;
-import static com.hazelcast.jet.datamodel.TwoBags.twoBags;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -55,14 +53,12 @@ public class DataModelSerializerHooksTest {
     public Object instance;
 
     @Parameters
-    public static Collection<Object> data() throws Exception {
+    public static Collection<Object> data() {
         return asList(
                 new TimestampedEntry<>(1, "key", "value"),
                 new WindowResult<>(1, 2, "key", "value"),
                 tuple2("value-0", "value-1"),
                 tuple3("value-0", "value-1", "value-2"),
-                twoBags(asList("v1", "v2"), asList("v3", "v4")),
-                threeBags(asList("v1", "v2"), asList("v3", "v4"), asList("v5", "v6")),
                 tag0(),
                 tag1(),
                 tag2(),
@@ -72,14 +68,12 @@ public class DataModelSerializerHooksTest {
                 tag(3),
                 itemsByTag(tag0(), "val0",
                         tag1(), "val1",
-                        tag2(), null),
-                bagsByTag(tag0(), asList("bagv0", "bagv1"),
-                        tag1(), asList("bagv2", "bagv3"))
+                        tag2(), null)
         );
     }
 
     @Test
-    public void testSerializerHook() throws Exception {
+    public void testSerializerHook() {
         if (!(instance instanceof Map.Entry || instance instanceof Tag)) {
             assertFalse(instance.getClass() + " implements java.io.Serializable", instance instanceof Serializable);
         }

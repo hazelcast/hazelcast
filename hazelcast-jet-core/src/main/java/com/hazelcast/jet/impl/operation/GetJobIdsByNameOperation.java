@@ -41,7 +41,7 @@ public class GetJobIdsByNameOperation extends Operation implements IdentifiedDat
     }
 
     @Override
-    public void run() throws Exception {
+    public void run() {
         JetService service = getService();
         JobCoordinationService coordinationService = service.getJobCoordinationService();
         response = coordinationService.getJobIds(name);

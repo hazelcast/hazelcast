@@ -275,7 +275,7 @@ public class TaskletExecutionServiceTest extends JetTestSupport {
     }
 
     @Test
-    public void when_twoNonBlockingTasklets_then_differentWorker() throws Exception {
+    public void when_twoNonBlockingTasklets_then_differentWorker() {
         // Given
         TaskletAssertingThreadLocal t1 = new TaskletAssertingThreadLocal();
         TaskletAssertingThreadLocal t2 = new TaskletAssertingThreadLocal();

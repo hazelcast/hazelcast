@@ -46,6 +46,17 @@ public interface StreamStage<T> extends GeneralStage<T> {
     @Nonnull
     StageWithWindow<T> window(WindowDefinition wDef);
 
+    /**
+     * Attaches a stage that emits all the items from this stage as well as all
+     * the items from the supplied stage. The other stage's type parameter must
+     * be assignment-compatible with this stage's type parameter.
+     *
+     * @param other the other stage whose data to merge into this one
+     * @return the newly attached stage
+     */
+    @Nonnull
+    StreamStage<T> merge(@Nonnull StreamStage<? extends T> other);
+
     @Nonnull @Override
     <K> StreamStageWithGrouping<T, K> groupingKey(@Nonnull DistributedFunction<? super T, ? extends K> keyFn);
 
@@ -84,7 +95,7 @@ public interface StreamStage<T> extends GeneralStage<T> {
     );
 
     @Nonnull @Override
-    <K1, T1_IN, T1, K2, T2_IN, T2, R> StreamStage<R> hashJoin2(
+    <K1, K2, T1_IN, T2_IN, T1, T2, R> StreamStage<R> hashJoin2(
             @Nonnull BatchStage<T1_IN> stage1,
             @Nonnull JoinClause<K1, ? super T, ? super T1_IN, ? extends T1> joinClause1,
             @Nonnull BatchStage<T2_IN> stage2,

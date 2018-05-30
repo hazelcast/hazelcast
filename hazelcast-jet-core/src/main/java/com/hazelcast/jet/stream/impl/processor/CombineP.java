@@ -31,7 +31,7 @@ public class CombineP<T> extends AbstractProcessor {
     }
 
     @Override
-    protected boolean tryProcess(int ordinal, @Nonnull Object item) throws Exception {
+    protected boolean tryProcess(int ordinal, @Nonnull Object item) {
         if (result != null) {
             result = combiner.apply(result, (T) item);
         } else {

@@ -28,7 +28,7 @@ import static com.hazelcast.jet.datamodel.Tag.tag;
 import static com.hazelcast.jet.function.DistributedFunction.identity;
 
 /**
- * Offers a step-by-step fluent API to create a composite of multiple
+ * Offers a step-by-step API to create a composite of multiple
  * aggregate operations. To obtain it, call {@link
  * AggregateOperations#allOfBuilder()}.
  *
@@ -36,8 +36,8 @@ import static com.hazelcast.jet.function.DistributedFunction.identity;
  */
 public final class AllOfAggregationBuilder<T> {
 
-    private List<Tag> tags = new ArrayList<>();
-    private List<AggregateOperation1> operations = new ArrayList<>();
+    private final List<Tag> tags = new ArrayList<>();
+    private final List<AggregateOperation1> operations = new ArrayList<>();
 
     AllOfAggregationBuilder() { }
 

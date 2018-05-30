@@ -33,20 +33,22 @@ import org.junit.runners.Parameterized.Parameters;
 import java.util.Arrays;
 import java.util.function.Supplier;
 
+import static java.lang.Math.max;
+
 @RunWith(Parameterized.class)
 @Category(ParallelTest.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@SuppressWarnings("checkstyle:declarationorder")
 public abstract class TestInClusterSupport extends JetTestSupport {
 
-    public static final String JOURNALED_MAP_PREFIX = "journaledMap.";
-    public static final String JOURNALED_CACHE_PREFIX = "journaledCache.";
-
+    protected static final String JOURNALED_MAP_PREFIX = "journaledMap.";
+    protected static final String JOURNALED_CACHE_PREFIX = "journaledCache.";
     private static final int MEMBER_COUNT = 2;
 
     private static JetTestInstanceFactory factory = new JetTestInstanceFactory();
     private static JetInstance[] allJetInstances;
 
-    private static JetInstance member;
+    protected static JetInstance member;
     private static JetInstance client;
 
     private static final TestMode MEMBER_TEST_MODE = new TestMode("member", () -> member);
@@ -64,8 +66,12 @@ public abstract class TestInClusterSupport extends JetTestSupport {
     public static void setupCluster() {
         int parallelism = Runtime.getRuntime().availableProcessors() / MEMBER_COUNT / 2;
         JetConfig config = new JetConfig();
-        config.getInstanceConfig().setCooperativeThreadCount(parallelism <= 2 ? 2 : parallelism);
+        config.getInstanceConfig().setCooperativeThreadCount(max(2, parallelism));
         Config hzConfig = config.getHazelcastConfig();
+        // Set partition count to match the parallelism of IMap sources.
+        // Their preferred local parallelism is 2, therefore partition count
+        // should be 2 * MEMBER_COUNT.
+        hzConfig.getProperties().setProperty("hazelcast.partition.count", "" + 2 * MEMBER_COUNT);
         hzConfig.addCacheConfig(new CacheSimpleConfig().setName("*"));
         hzConfig.getMapEventJournalConfig(JOURNALED_MAP_PREFIX + '*').setEnabled(true);
         hzConfig.getCacheEventJournalConfig(JOURNALED_CACHE_PREFIX + '*').setEnabled(true);

@@ -233,7 +233,7 @@ public class RoutingPolicyTest extends JetTestSupport {
         private final List<Object> list = new ArrayList<>();
 
         @Override
-        protected boolean tryProcess(int ordinal, @Nonnull Object item) throws Exception {
+        protected boolean tryProcess(int ordinal, @Nonnull Object item) {
             list.add(item);
             return true;
         }

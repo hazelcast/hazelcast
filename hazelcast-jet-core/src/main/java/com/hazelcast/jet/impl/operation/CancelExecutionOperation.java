@@ -47,7 +47,7 @@ public class CancelExecutionOperation extends AbstractJobOperation {
     }
 
     @Override
-    public void run() throws Exception {
+    public void run() {
         JetService service = getService();
         JobExecutionService executionService = service.getJobExecutionService();
         Address callerAddress = getCallerAddress();

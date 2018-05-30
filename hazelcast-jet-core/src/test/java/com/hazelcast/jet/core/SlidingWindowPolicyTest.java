@@ -35,7 +35,7 @@ public class SlidingWindowPolicyTest {
     }
 
     @Test
-    public void when_noOffset() throws Exception {
+    public void when_noOffset() {
         definition = new SlidingWindowPolicy(4, 0, 10);
         assertFrameTs(-5, -8, -4);
         assertFrameTs(-4, -4, 0);
@@ -54,7 +54,7 @@ public class SlidingWindowPolicyTest {
     }
 
     @Test
-    public void when_offset1() throws Exception {
+    public void when_offset1() {
         definition = new SlidingWindowPolicy(4, 1, 10);
 
         assertFrameTs(-4, -7, -3);
@@ -74,7 +74,7 @@ public class SlidingWindowPolicyTest {
     }
 
     @Test
-    public void when_offset2() throws Exception {
+    public void when_offset2() {
         definition = new SlidingWindowPolicy(4, 2, 10);
 
         assertFrameTs(-4, -6, -2);

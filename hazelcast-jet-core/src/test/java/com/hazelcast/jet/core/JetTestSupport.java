@@ -36,6 +36,7 @@ import org.junit.Assume;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -114,7 +115,7 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
         return System.getProperty("os.name").toLowerCase().contains("windows");
     }
 
-    protected static void appendToFile(File file, String... lines) throws Exception {
+    protected static void appendToFile(File file, String... lines) throws IOException {
         try (PrintWriter writer = new PrintWriter(new FileOutputStream(file, true))) {
             for (String payload : lines) {
                 writer.write(payload + '\n');

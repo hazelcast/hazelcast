@@ -34,7 +34,7 @@ import static org.junit.Assert.assertTrue;
 public class ResourceConfigTest {
 
     @Test
-    public void testAddClass_with_Class() throws Exception {
+    public void testAddClass_with_Class() {
         JobConfig config = new JobConfig();
         config.addClass(this.getClass());
         ResourceConfig resourceConfig = config.getResourceConfigs().iterator().next();

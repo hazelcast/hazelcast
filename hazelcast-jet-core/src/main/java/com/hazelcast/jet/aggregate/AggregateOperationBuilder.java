@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.aggregate;
 
+import com.hazelcast.jet.datamodel.Tag;
 import com.hazelcast.jet.function.DistributedBiConsumer;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedSupplier;
@@ -23,7 +24,6 @@ import com.hazelcast.jet.impl.aggregate.AggregateOperation1Impl;
 import com.hazelcast.jet.impl.aggregate.AggregateOperation2Impl;
 import com.hazelcast.jet.impl.aggregate.AggregateOperation3Impl;
 import com.hazelcast.jet.impl.aggregate.AggregateOperationImpl;
-import com.hazelcast.jet.datamodel.Tag;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -83,6 +83,16 @@ public final class AggregateOperationBuilder<A> {
     }
 
     /**
+     * Selects the variable-arity variant for this aggregate operation builder.
+     *
+     * @return a new builder object for variable-arity aggregate operations which has
+     *         the {@code createFn} of the current builder
+     */
+    public VarArity<A> varArity() {
+        return new VarArity<>(createFn);
+    }
+
+    /**
      * Registers the supplied {@code accumulate} primitive for the stream tagged
      * with the supplied tag. Also selects the variable-arity variant of the
      * aggregate operation.
@@ -90,7 +100,8 @@ public final class AggregateOperationBuilder<A> {
      * @param tag the tag of the associated input stream
      * @param accumulateFn the {@code accumulate} primitive
      * @param <T> the expected type of input item
-     * @return a new builder object for variable-arity aggregate operations
+     * @return a new builder object for variable-arity aggregate operations which has
+     *         the {@code createFn} of the current builder
      */
     @Nonnull
     public <T> VarArity<A> andAccumulate(
@@ -340,12 +351,16 @@ public final class AggregateOperationBuilder<A> {
         private DistributedBiConsumer<? super A, ? super A> combineFn;
         private DistributedBiConsumer<? super A, ? super A> deductFn;
 
+        VarArity(@Nonnull DistributedSupplier<A> createFn) {
+            this.createFn = createFn;
+        }
+
         <T> VarArity(
                 @Nonnull DistributedSupplier<A> createFn,
                 @Nonnull Tag<T> tag,
                 @Nonnull DistributedBiConsumer<? super A, T> accumulateFn
         ) {
-            this.createFn = createFn;
+            this(createFn);
             accumulateFnsByTag.put(tag.index(), accumulateFn);
         }
 
@@ -411,16 +426,16 @@ public final class AggregateOperationBuilder<A> {
         private DistributedBiConsumer<? super A, ?>[] packAccumulateFns() {
             int size = accumulateFnsByTag.size();
             @SuppressWarnings("unchecked")
-            DistributedBiConsumer<? super A, ?>[] accFs = new DistributedBiConsumer[size];
+            DistributedBiConsumer<? super A, ?>[] accFns = new DistributedBiConsumer[size];
             for (int i = 0; i < size; i++) {
-                accFs[i] = accumulateFnsByTag.get(i);
-                if (accFs[i] == null) {
+                accFns[i] = accumulateFnsByTag.get(i);
+                if (accFns[i] == null) {
                     throw new IllegalStateException("Registered tags' indices are "
                             + accumulateFnsByTag.keySet().stream().sorted().collect(toList())
                             + " but should be " + range(0, size).boxed().collect(toList()));
                 }
             }
-            return accFs;
+            return accFns;
         }
     }
 }

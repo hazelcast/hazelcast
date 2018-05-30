@@ -42,14 +42,14 @@ public class CoreSerializerHooksTest {
     public Object instance;
 
     @Parameters
-    public static Collection<Object> data() throws Exception {
+    public static Collection<Object> data() {
         return Arrays.asList(
                 new Watermark(13L)
         );
     }
 
     @Test
-    public void testSerializerHook() throws Exception {
+    public void testSerializerHook() {
         SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
 
         Data serialized = serializationService.toData(instance);

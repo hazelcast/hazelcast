@@ -18,13 +18,13 @@ package com.hazelcast.jet.pipeline;
 
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.ReplicatedMap;
-import com.hazelcast.jet.accumulator.LongAccumulator;
-import com.hazelcast.jet.aggregate.AggregateOperation;
 import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.datamodel.ItemsByTag;
 import com.hazelcast.jet.datamodel.Tag;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.datamodel.Tuple3;
+import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.function.DistributedPredicate;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Before;
 import org.junit.Test;
@@ -51,10 +51,13 @@ import static com.hazelcast.jet.pipeline.ContextFactories.replicatedMapContext;
 import static com.hazelcast.jet.pipeline.JoinClause.joinMapEntries;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class BatchStageTest extends PipelineTestSupport {
+
+    private BatchStage<Integer> srcStage;
 
     @Before
     public void before() {
@@ -104,58 +107,56 @@ public class BatchStageTest extends PipelineTestSupport {
     @Test
     public void map() {
         // Given
-        List<Integer> input = sequence(ITEM_COUNT);
-        putToSrcMap(input);
+        List<Integer> input = sequence(itemCount);
+        putToBatchSrcMap(input);
 
         // When
         BatchStage<String> mapped = srcStage.map(Object::toString);
-        mapped.drainTo(sink);
-        execute();
 
         // Then
-        List<String> expected = input.stream()
-                                     .map(String::valueOf)
-                                     .collect(toList());
+        mapped.drainTo(sink);
+        execute();
+        List<String> expected = input.stream().map(String::valueOf).collect(toList());
         assertEquals(toBag(expected), sinkToBag());
     }
 
     @Test
     public void mapUsingContext() {
         // Given
-        List<Integer> input = sequence(ITEM_COUNT);
-        putToSrcMap(input);
+        List<Integer> input = sequence(itemCount);
+        DistributedFunction<Integer, String> mapFn = i -> i + "-x";
+        putToBatchSrcMap(input);
         String transformMapName = randomMapName();
         ReplicatedMap<Integer, String> transformMap = jet().getHazelcastInstance().getReplicatedMap(transformMapName);
-        List<String> expected = input.stream()
-                                     .peek(i -> transformMap.put(i, String.valueOf(i)))
-                                     .map(String::valueOf)
-                                     .collect(toList());
+        input.forEach(i -> transformMap.put(i, mapFn.apply(i)));
 
         // When
         BatchStage<String> mapped = srcStage.mapUsingContext(
                 ContextFactories.<Integer, String>replicatedMapContext(transformMapName),
                 ReplicatedMap::get);
-        mapped.drainTo(sink);
-        execute();
 
         // Then
+        mapped.drainTo(sink);
+        execute();
+        List<String> expected = input.stream().map(mapFn).collect(toList());
         assertEquals(toBag(expected), sinkToBag());
     }
 
     @Test
     public void filter() {
         // Given
-        List<Integer> input = sequence(ITEM_COUNT);
-        putToSrcMap(input);
+        List<Integer> input = sequence(itemCount);
+        putToBatchSrcMap(input);
+        DistributedPredicate<Integer> filterFn = i -> i % 2 == 1;
 
         // When
-        BatchStage<Integer> filtered = srcStage.filter(i -> i % 2 == 1);
-        filtered.drainTo(sink);
-        execute();
+        BatchStage<Integer> filtered = srcStage.filter(filterFn);
 
         // Then
+        filtered.drainTo(sink);
+        execute();
         List<Integer> expected = input.stream()
-                                      .filter(i -> i % 2 == 1)
+                                      .filter(filterFn)
                                       .collect(toList());
         assertEquals(toBag(expected), sinkToBag());
     }
@@ -163,87 +164,120 @@ public class BatchStageTest extends PipelineTestSupport {
     @Test
     public void filterUsingReplicatedMapContext() {
         // Given
-        List<Integer> input = sequence(ITEM_COUNT);
-        putToSrcMap(input);
+        List<Integer> input = sequence(itemCount);
+        putToBatchSrcMap(input);
         String filteringMapName = randomMapName();
         ReplicatedMap<Integer, Integer> filteringMap = jet().getHazelcastInstance().getReplicatedMap(filteringMapName);
         filteringMap.put(1, 1);
         filteringMap.put(3, 3);
-        List<Integer> expected = input.stream()
-                                      .filter(filteringMap::containsKey)
-                                      .collect(toList());
 
         // When
         BatchStage<Integer> mapped = srcStage.filterUsingContext(
                 replicatedMapContext(filteringMapName),
                 ReplicatedMap::containsKey);
-        mapped.drainTo(sink);
-        execute();
 
         // Then
+        mapped.drainTo(sink);
+        execute();
+        List<Integer> expected = input.stream()
+                                      .filter(filteringMap::containsKey)
+                                      .collect(toList());
         assertEquals(toBag(expected), sinkToBag());
     }
 
     @Test
     public void filterUsingIMapContext() {
         // Given
-        List<Integer> input = sequence(ITEM_COUNT);
-        putToSrcMap(input);
+        List<Integer> input = sequence(itemCount);
+        putToBatchSrcMap(input);
         String filteringMapName = randomMapName();
         Map<Integer, Integer> filteringMap = jet().getMap(filteringMapName);
         filteringMap.put(1, 1);
         filteringMap.put(3, 3);
-        List<Integer> expected = input.stream()
-                                      .filter(filteringMap::containsKey)
-                                      .collect(toList());
 
         // When
         BatchStage<Integer> mapped = srcStage.filterUsingContext(
                 iMapContext(filteringMapName),
                 IMap::containsKey);
-        mapped.drainTo(sink);
-        execute();
 
         // Then
+        mapped.drainTo(sink);
+        execute();
+        List<Integer> expected = input.stream().filter(filteringMap::containsKey).collect(toList());
         assertEquals(toBag(expected), sinkToBag());
     }
 
     @Test
     public void flatMap() {
         // Given
-        List<Integer> input = sequence(ITEM_COUNT);
-        putToSrcMap(input);
+        List<Integer> input = sequence(itemCount);
+        putToBatchSrcMap(input);
 
         // When
         BatchStage<String> flatMapped = srcStage.flatMap(o -> traverseIterable(asList(o + "A", o + "B")));
-        flatMapped.drainTo(sink);
-        execute();
 
         // Then
-        List<String> expected = input.stream()
-                                     .flatMap(o -> Stream.of(o + "A", o + "B"))
-                                     .collect(toList());
+        flatMapped.drainTo(sink);
+        execute();
+        List<String> expected = input.stream().flatMap(o -> Stream.of(o + "A", o + "B")).collect(toList());
         assertEquals(toBag(expected), sinkToBag());
     }
 
     @Test
     public void flatMapUsingContext() {
         // Given
-        List<Integer> input = sequence(ITEM_COUNT);
-        putToSrcMap(input);
+        List<Integer> input = sequence(itemCount);
+        putToBatchSrcMap(input);
 
         // When
         BatchStage<String> flatMapped = srcStage.flatMapUsingContext(
                 ContextFactory.withCreateFn(procCtx -> asList("A", "B")),
                 (ctx, o) -> traverseIterable(asList(o + ctx.get(0), o + ctx.get(1))));
-        flatMapped.drainTo(sink);
-        execute();
 
         // Then
-        List<String> expected = input.stream()
-                                     .flatMap(o -> Stream.of(o + "A", o + "B"))
-                                     .collect(toList());
+        flatMapped.drainTo(sink);
+        execute();
+        List<String> expected = input.stream().flatMap(o -> Stream.of(o + "A", o + "B")).collect(toList());
         assertEquals(toBag(expected), sinkToBag());
+    }
+
+    @Test
+    public void merge() {
+        // Given
+        String src1Name = HazelcastTestSupport.randomName();
+        BatchStage<Integer> srcStage1 = p.drawFrom(mapValuesSource(src1Name));
+        List<Integer> input = sequence(itemCount);
+        putToBatchSrcMap(input);
+        putToMap(jet().getMap(src1Name), input);
+
+        // When
+        BatchStage<Integer> merged = srcStage.merge(srcStage1);
+
+        // Then
+        merged.drainTo(sink);
+        execute();
+        input.addAll(input);
+        assertEquals(toBag(input), sinkToBag());
+    }
+
+    @Test
+    public void distinct() {
+        // Given
+        DistributedFunction<Integer, Integer> keyFn = i -> i / 2;
+        List<Integer> input = IntStream.range(0, 2 * itemCount).boxed().collect(toList());
+        Collections.shuffle(input);
+        putToBatchSrcMap(input);
+
+        // When
+        BatchStage<Integer> distinct = srcStage.groupingKey(keyFn).distinct();
+
+        // Then
+        distinct.drainTo(sink);
+        execute();
+        Map<Integer, Integer> sinkBag = sinkToBag();
+        sinkBag.values().forEach(count -> assertEquals(1, (long) count));
+        assertEquals(sinkBag.keySet().stream().map(keyFn).collect(toSet()),
+                IntStream.range(0, itemCount).boxed().collect(toSet()));
     }
 
     @Test
@@ -252,14 +286,14 @@ public class BatchStageTest extends PipelineTestSupport {
         List<Integer> input = IntStream.range(1, 100).boxed()
                                        .flatMap(i -> Collections.nCopies(i, i).stream())
                                        .collect(toList());
-        putToSrcMap(input);
+        putToBatchSrcMap(input);
 
         // When
         BatchStage<Entry<Integer, Long>> grouped = srcStage.groupingKey(wholeItem()).aggregate(counting());
-        grouped.drainTo(sink);
-        execute();
 
         // Then
+        grouped.drainTo(sink);
+        execute();
         List<Entry<Integer, Long>> expected = IntStream.range(1, 100)
                                                        .mapToObj(i -> entry(i, (long) i))
                                                        .collect(toList());
@@ -272,14 +306,14 @@ public class BatchStageTest extends PipelineTestSupport {
         List<Integer> input = IntStream.range(1, 100).boxed()
                                        .flatMap(i -> Collections.nCopies(i, i).stream())
                                        .collect(toList());
-        putToSrcMap(input);
+        putToBatchSrcMap(input);
 
         // When
         BatchStage<Long> grouped = srcStage.groupingKey(wholeItem()).aggregate(counting(), (k, v) -> v);
-        grouped.drainTo(sink);
-        execute();
 
         // Then
+        grouped.drainTo(sink);
+        execute();
         List<Long> expected = LongStream.range(1, 100).boxed().collect(Collectors.toList());
         assertEquals(toBag(expected), sinkToBag());
     }
@@ -287,8 +321,8 @@ public class BatchStageTest extends PipelineTestSupport {
     @Test
     public void hashJoinTwo() {
         // Given
-        List<Integer> input = sequence(ITEM_COUNT);
-        putToSrcMap(input);
+        List<Integer> input = sequence(itemCount);
+        putToBatchSrcMap(input);
         String enrichingName = HazelcastTestSupport.randomName();
         IMap<Integer, String> enriching = jet().getMap(enrichingName);
         input.forEach(i -> enriching.put(i, i + "A"));
@@ -299,10 +333,10 @@ public class BatchStageTest extends PipelineTestSupport {
                 enrichingStage,
                 joinMapEntries(wholeItem()),
                 (t1, t2) -> tuple2(t1, t2));
-        joined.drainTo(sink);
-        execute();
 
         // Then
+        joined.drainTo(sink);
+        execute();
         List<Tuple2<Integer, String>> expected = input.stream()
                                                       .map(i -> tuple2(i, i + "A"))
                                                       .collect(toList());
@@ -312,8 +346,8 @@ public class BatchStageTest extends PipelineTestSupport {
     @Test
     public void hashJoinThree() {
         // Given
-        List<Integer> input = sequence(ITEM_COUNT);
-        putToSrcMap(input);
+        List<Integer> input = sequence(itemCount);
+        putToBatchSrcMap(input);
         String enriching1Name = HazelcastTestSupport.randomName();
         String enriching2Name = HazelcastTestSupport.randomName();
         BatchStage<Entry<Integer, String>> enrichingStage1 = p.drawFrom(Sources.map(enriching1Name));
@@ -329,10 +363,10 @@ public class BatchStageTest extends PipelineTestSupport {
                 enrichingStage2, joinMapEntries(wholeItem()),
                 (t1, t2, t3) -> tuple3(t1, t2, t3)
         );
-        joined.drainTo(sink);
-        execute();
 
         // Then
+        joined.drainTo(sink);
+        execute();
         List<Tuple3<Integer, String, String>> expected = input.stream()
                                                               .map(i -> tuple3(i, i + "A", i + "B"))
                                                               .collect(toList());
@@ -342,8 +376,8 @@ public class BatchStageTest extends PipelineTestSupport {
     @Test
     public void hashJoinBuilder() {
         // Given
-        List<Integer> input = sequence(ITEM_COUNT);
-        putToSrcMap(input);
+        List<Integer> input = sequence(itemCount);
+        putToBatchSrcMap(input);
         String enriching1Name = HazelcastTestSupport.randomName();
         String enriching2Name = HazelcastTestSupport.randomName();
         BatchStage<Entry<Integer, String>> enrichingStage1 = p.drawFrom(Sources.map(enriching1Name));
@@ -358,10 +392,10 @@ public class BatchStageTest extends PipelineTestSupport {
         Tag<String> tagA = b.add(enrichingStage1, joinMapEntries(wholeItem()));
         Tag<String> tagB = b.add(enrichingStage2, joinMapEntries(wholeItem()));
         GeneralStage<Tuple2<Integer, ItemsByTag>> joined = b.build((t1, t2) -> tuple2(t1, t2));
-        joined.drainTo(sink);
-        execute();
 
         // Then
+        joined.drainTo(sink);
+        execute();
         List<Tuple2<Integer, ItemsByTag>> expected = input
                 .stream()
                 .map(i -> tuple2(i, itemsByTag(tagA, i + "A", tagB, i + "B")))
@@ -370,189 +404,17 @@ public class BatchStageTest extends PipelineTestSupport {
     }
 
     @Test
-    public void coGroupTwo() {
-        //Given
-        String src1Name = HazelcastTestSupport.randomName();
-        BatchStage<Integer> srcStage1 = p.drawFrom(mapValuesSource(src1Name));
-        List<Integer> input = IntStream.range(1, 100).boxed()
-                                       .flatMap(i -> Collections.nCopies(i, i).stream())
-                                       .collect(toList());
-        putToSrcMap(input);
-        putToMap(jet().getMap(src1Name), input);
-
-        // When
-        StageWithGrouping<Integer, Integer> stage0 = srcStage.groupingKey(wholeItem());
-        StageWithGrouping<Integer, Integer> stage1 = srcStage1.groupingKey(wholeItem());
-        BatchStage<Entry<Integer, Long>> coGrouped = stage0.aggregate2(stage1,
-                AggregateOperation
-                        .withCreate(LongAccumulator::new)
-                        .andAccumulate0((count, item) -> count.addAllowingOverflow(1))
-                        .andAccumulate1((count, item) -> count.addAllowingOverflow(10))
-                        .andCombine(LongAccumulator::addAllowingOverflow)
-                        .andFinish(LongAccumulator::get));
-        coGrouped.drainTo(sink);
-        execute();
-
-        // Then
-        List<Entry<Integer, Long>> expected = IntStream.range(1, 100)
-                                                       .mapToObj(i -> entry(i, 11L * i))
-                                                       .collect(toList());
-        assertEquals(toBag(expected), sinkToBag());
-    }
-
-    @Test
-    public void coGroupTwo_withOutputFn() {
-        //Given
-        String src1Name = HazelcastTestSupport.randomName();
-        BatchStage<Integer> srcStage1 = p.drawFrom(mapValuesSource(src1Name));
-        List<Integer> input = IntStream.range(1, 100).boxed()
-                                       .flatMap(i -> Collections.nCopies(i, i).stream())
-                                       .collect(toList());
-        putToSrcMap(input);
-        putToMap(jet().getMap(src1Name), input);
-
-        // When
-        StageWithGrouping<Integer, Integer> stage0 = srcStage.groupingKey(wholeItem());
-        StageWithGrouping<Integer, Integer> stage1 = srcStage1.groupingKey(wholeItem());
-        BatchStage<Long> coGrouped = stage0.aggregate2(stage1,
-                AggregateOperation
-                        .withCreate(LongAccumulator::new)
-                        .andAccumulate0((count, item) -> count.add(1))
-                        .andAccumulate1((count, item) -> count.add(10))
-                        .andCombine(LongAccumulator::add)
-                        .andFinish(LongAccumulator::get), (k, v) -> v);
-        coGrouped.drainTo(sink);
-        execute();
-
-        // Then
-        List<Long> expected = IntStream.range(1, 100)
-                                                       .mapToObj(i -> 11L * i)
-                                                       .collect(toList());
-        assertEquals(toBag(expected), sinkToBag());
-    }
-
-    @Test
-    public void coGroupThree() {
-        //Given
-        List<Integer> input = IntStream.range(1, 100).boxed()
-                                       .flatMap(i -> Collections.nCopies(i, i).stream())
-                                       .collect(toList());
-        putToSrcMap(input);
-        String src1Name = HazelcastTestSupport.randomName();
-        String src2Name = HazelcastTestSupport.randomName();
-        BatchStage<Integer> src1 = p.drawFrom(mapValuesSource(src1Name));
-        BatchStage<Integer> src2 = p.drawFrom(mapValuesSource(src2Name));
-        putToMap(jet().getMap(src1Name), input);
-        putToMap(jet().getMap(src2Name), input);
-
-        // When
-        StageWithGrouping<Integer, Integer> stage0 = srcStage.groupingKey(wholeItem());
-        StageWithGrouping<Integer, Integer> stage1 = src1.groupingKey(wholeItem());
-        StageWithGrouping<Integer, Integer> stage2 = src2.groupingKey(wholeItem());
-        BatchStage<Entry<Integer, Long>> coGrouped = stage0.aggregate3(stage1, stage2,
-                AggregateOperation
-                        .withCreate(LongAccumulator::new)
-                        .andAccumulate0((count, item) -> count.add(1))
-                        .andAccumulate1((count, item) -> count.add(10))
-                        .andAccumulate2((count, item) -> count.add(100))
-                        .andCombine(LongAccumulator::addAllowingOverflow)
-                        .andFinish(LongAccumulator::get));
-        coGrouped.drainTo(sink);
-        execute();
-
-        // Then
-        List<Entry<Integer, Long>> expected = IntStream.range(1, 100)
-                                                       .mapToObj(i -> entry(i, 111L * i))
-                                                       .collect(toList());
-        assertEquals(toBag(expected), sinkToBag());
-    }
-
-    @Test
-    public void coGroupThree_withOutputFn() {
-        //Given
-        List<Integer> input = IntStream.range(1, 100).boxed()
-                                       .flatMap(i -> Collections.nCopies(i, i).stream())
-                                       .collect(toList());
-        putToSrcMap(input);
-        String src1Name = HazelcastTestSupport.randomName();
-        String src2Name = HazelcastTestSupport.randomName();
-        BatchStage<Integer> src1 = p.drawFrom(mapValuesSource(src1Name));
-        BatchStage<Integer> src2 = p.drawFrom(mapValuesSource(src2Name));
-        putToMap(jet().getMap(src1Name), input);
-        putToMap(jet().getMap(src2Name), input);
-
-        // When
-        StageWithGrouping<Integer, Integer> stage0 = srcStage.groupingKey(wholeItem());
-        StageWithGrouping<Integer, Integer> stage1 = src1.groupingKey(wholeItem());
-        StageWithGrouping<Integer, Integer> stage2 = src2.groupingKey(wholeItem());
-        BatchStage<Long> coGrouped = stage0.aggregate3(stage1, stage2,
-                AggregateOperation
-                        .withCreate(LongAccumulator::new)
-                        .andAccumulate0((count, item) -> count.add(1))
-                        .andAccumulate1((count, item) -> count.add(10))
-                        .andAccumulate2((count, item) -> count.add(100))
-                        .andCombine(LongAccumulator::addAllowingOverflow)
-                        .andFinish(LongAccumulator::get), (k, v) -> v);
-        coGrouped.drainTo(sink);
-        execute();
-
-        // Then
-        List<Long> expected = IntStream.range(1, 100)
-                                                       .mapToObj(i ->111L * i)
-                                                       .collect(toList());
-        assertEquals(toBag(expected), sinkToBag());
-    }
-
-    @Test
-    public void coGroupBuilder() {
-        //Given
-        List<Integer> input = IntStream.range(1, 100).boxed()
-                                       .flatMap(i -> Collections.nCopies(i, i).stream())
-                                       .collect(toList());
-        putToSrcMap(input);
-        String src1Name = HazelcastTestSupport.randomName();
-        String src2Name = HazelcastTestSupport.randomName();
-        BatchStage<Integer> src1 = p.drawFrom(mapValuesSource(src1Name));
-        BatchStage<Integer> src2 = p.drawFrom(mapValuesSource(src2Name));
-        putToMap(jet().getMap(src1Name), input);
-        putToMap(jet().getMap(src2Name), input);
-
-        // When
-        StageWithGrouping<Integer, Integer> stage0 = srcStage.groupingKey(wholeItem());
-        StageWithGrouping<Integer, Integer> stage1 = src1.groupingKey(wholeItem());
-        StageWithGrouping<Integer, Integer> stage2 = src2.groupingKey(wholeItem());
-        GroupAggregateBuilder<Integer, Integer> b = stage0.aggregateBuilder();
-        Tag<Integer> tag0 = b.tag0();
-        Tag<Integer> tag1 = b.add(stage1);
-        Tag<Integer> tag2 = b.add(stage2);
-        BatchStage<Entry<Integer, Long>> coGrouped = b.build(AggregateOperation
-                .withCreate(LongAccumulator::new)
-                .andAccumulate(tag0, (count, item) -> count.addAllowingOverflow(1))
-                .andAccumulate(tag1, (count, item) -> count.addAllowingOverflow(10))
-                .andAccumulate(tag2, (count, item) -> count.addAllowingOverflow(100))
-                .andCombine(LongAccumulator::addAllowingOverflow)
-                .andFinish(LongAccumulator::get));
-        coGrouped.drainTo(sink);
-        execute();
-
-        // Then
-        List<Entry<Integer, Long>> expected = IntStream.range(1, 100)
-                                                       .mapToObj(i -> entry(i, 111L * i))
-                                                       .collect(toList());
-        assertEquals(toBag(expected), sinkToBag());
-    }
-
-    @Test
     public void peekIsTransparent() {
         // Given
         List<Integer> input = sequence(50);
-        putToSrcMap(input);
+        putToBatchSrcMap(input);
 
         // When
-        srcStage.peek().drainTo(sink);
-        execute();
+        BatchStage<Integer> peeked = srcStage.peek();
 
         // Then
+        peeked.drainTo(sink);
+        execute();
         assertEquals(toBag(input), sinkToBag());
     }
 
@@ -560,28 +422,29 @@ public class BatchStageTest extends PipelineTestSupport {
     public void peekWithToStringFunctionIsTransparent() {
         // Given
         List<Integer> input = sequence(50);
-        putToSrcMap(input);
+        putToBatchSrcMap(input);
 
         // When
-        srcStage.peek(Object::toString).drainTo(sink);
-        execute();
+        BatchStage<Integer> peeked = srcStage.peek(Object::toString);
 
         // Then
+        peeked.drainTo(sink);
+        execute();
         assertEquals(toBag(input), sinkToBag());
     }
 
     @Test
     public void customTransform() {
         // Given
-        List<Integer> input = sequence(ITEM_COUNT);
-        putToSrcMap(input);
+        List<Integer> input = sequence(itemCount);
+        putToBatchSrcMap(input);
 
         // When
         BatchStage<Object> custom = srcStage.customTransform("map", Processors.mapP(Object::toString));
-        custom.drainTo(sink);
-        execute();
 
         // Then
+        custom.drainTo(sink);
+        execute();
         List<String> expected = input.stream()
                                      .map(String::valueOf)
                                      .collect(toList());

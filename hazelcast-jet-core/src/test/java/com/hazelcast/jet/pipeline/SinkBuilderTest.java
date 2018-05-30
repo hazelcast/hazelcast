@@ -19,12 +19,12 @@ package com.hazelcast.jet.pipeline;
 import org.junit.Test;
 
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.file.Files;
@@ -44,32 +44,28 @@ public class SinkBuilderTest extends PipelineTestSupport {
     @Test
     public void fileSink() {
         // Given
-        List<Integer> input = sequence(ITEM_COUNT);
+        List<Integer> input = sequence(itemCount);
         addToSrcList(input);
         String listName = randomName();
+        BatchStage<Integer> stage = p.drawFrom(Sources.list(srcName));
 
         // When
-        p.drawFrom(Sources.<Integer>list(srcName))
-         .drainTo(buildRandomFileSink(listName));
+        stage.drainTo(buildRandomFileSink(listName));
 
+        //Then
         execute();
-
-        //then
-        assertTrueEventually(() -> {
-            List<String> paths = new ArrayList<>(jet().<String>getList(listName));
-            long count = paths.stream().map(Paths::get)
-                              .flatMap(path -> uncheckCall(() -> Files.list(path)))
-                              .flatMap(path -> uncheckCall(() -> Files.readAllLines(path).stream()))
-                              .count();
-            assertEquals(ITEM_COUNT, count);
-        });
+        List<String> paths = new ArrayList<>(jet().getList(listName));
+        long count = paths.stream().map(Paths::get)
+                          .flatMap(path -> uncheckCall(() -> Files.list(path)))
+                          .flatMap(path -> uncheckCall(() -> Files.readAllLines(path).stream()))
+                          .count();
+        assertEquals(itemCount, count);
     }
-
 
     @Test
     public void socketSink() throws IOException {
         // Given
-        List<Integer> input = sequence(ITEM_COUNT);
+        List<Integer> input = sequence(itemCount);
         addToSrcList(input);
 
         AtomicInteger counter = new AtomicInteger();
@@ -78,7 +74,9 @@ public class SinkBuilderTest extends PipelineTestSupport {
                 while (!serverSocket.isClosed()) {
                     Socket socket = serverSocket.accept();
                     spawn(() -> uncheckRun(() -> {
-                        try (BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
+                        try (BufferedReader reader =
+                                     new BufferedReader(new InputStreamReader(socket.getInputStream()))
+                        ) {
                             while (reader.readLine() != null) {
                                 counter.incrementAndGet();
                             }
@@ -88,19 +86,25 @@ public class SinkBuilderTest extends PipelineTestSupport {
                     }));
                 }
             }));
-
-            p.drawFrom(Sources.<Integer>list(srcName))
-             .drainTo(buildSocketSink(serverSocket.getLocalPort()));
+            BatchStage<Integer> stage = p.drawFrom(Sources.list(srcName));
 
             // When
-            execute();
+            int portNumber = serverSocket.getLocalPort();
+            Sink<Integer> sink = Sinks.<PrintWriter, Integer>builder(jet -> uncheckCall(() ->
+                    getSocketWriter(portNumber)))
+                    .onReceiveFn(PrintWriter::println)
+                    .flushFn(s -> uncheckRun(s::flush))
+                    .destroyFn(s -> uncheckRun(s::close))
+                    .build();
+            stage.drainTo(sink);
 
             //Then
-            assertTrueEventually(() -> assertEquals(ITEM_COUNT, counter.get()));
+            execute();
+            assertTrueEventually(() -> assertEquals(itemCount, counter.get()));
         }
     }
 
-    private Sink<Integer> buildRandomFileSink(String listName) {
+    private static Sink<Integer> buildRandomFileSink(String listName) {
         return Sinks.<File, Integer>builder(context ->
                 uncheckCall(() -> {
                     File directory = createTempDirectory();
@@ -109,22 +113,13 @@ public class SinkBuilderTest extends PipelineTestSupport {
                     context.jetInstance().getList(listName).add(directory.toPath().toString());
                     return file;
                 }))
-                .onReceiveFn((sink, item) -> uncheckRun(() -> {
-                    appendToFile(sink, item.toString());
-                })).build();
-    }
-
-    private Sink<Integer> buildSocketSink(int localPort) {
-        return Sinks.<BufferedWriter, Integer>builder(context -> uncheckCall(() -> getSocketWriter(localPort)))
-                .onReceiveFn((s, item) -> uncheckRun(() -> s.append((char) item.intValue()).append('\n')))
-                .flushFn(s -> uncheckRun(s::flush))
-                .destroyFn(s -> uncheckRun(s::close))
+                .onReceiveFn((sink, item) -> uncheckRun(() -> appendToFile(sink, item.toString())))
                 .build();
     }
 
-    private static BufferedWriter getSocketWriter(int localPort) throws IOException {
+    private static PrintWriter getSocketWriter(int localPort) throws IOException {
         OutputStream outputStream = new Socket("localhost", localPort).getOutputStream();
         OutputStreamWriter outputStreamWriter = new OutputStreamWriter(outputStream, UTF_8);
-        return new BufferedWriter(outputStreamWriter);
+        return new PrintWriter(outputStreamWriter);
     }
 }

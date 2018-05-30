@@ -42,7 +42,7 @@ public class StartExecutionOperation extends AsyncOperation {
     }
 
     @Override
-    protected void doRun() throws Exception {
+    protected void doRun() {
         ExecutionContext execCtx = getExecutionCtx();
         Address coordinator = getCallerAddress();
         getLogger().info("Start execution of "

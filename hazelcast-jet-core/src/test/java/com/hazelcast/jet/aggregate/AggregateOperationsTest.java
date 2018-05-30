@@ -32,7 +32,6 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -54,7 +53,9 @@ import static com.hazelcast.jet.aggregate.AggregateOperations.linearTrend;
 import static com.hazelcast.jet.aggregate.AggregateOperations.mapping;
 import static com.hazelcast.jet.aggregate.AggregateOperations.maxBy;
 import static com.hazelcast.jet.aggregate.AggregateOperations.minBy;
+import static com.hazelcast.jet.aggregate.AggregateOperations.pickAny;
 import static com.hazelcast.jet.aggregate.AggregateOperations.reducing;
+import static com.hazelcast.jet.aggregate.AggregateOperations.sorting;
 import static com.hazelcast.jet.aggregate.AggregateOperations.summingDouble;
 import static com.hazelcast.jet.aggregate.AggregateOperations.summingLong;
 import static com.hazelcast.jet.aggregate.AggregateOperations.toList;
@@ -82,6 +83,11 @@ public class AggregateOperationsTest {
 
     @Rule
     public ExpectedException exception = ExpectedException.none();
+
+    @Test
+    public void when_pickAny() {
+        validateOpWithoutDeduct(pickAny(), MutableReference::get, 1, 2, 1, 1, 1);
+    }
 
     @Test
     public void when_counting() {
@@ -464,9 +470,9 @@ public class AggregateOperationsTest {
                 identity(),
                 entryA,
                 entryA,
-                asMap("a", Arrays.asList(entryA)),
-                asMap("a", Arrays.asList(entryA, entryA)),
-                asMap("a", Arrays.asList(entryA, entryA))
+                asMap("a", singletonList(entryA)),
+                asMap("a", asList(entryA, entryA)),
+                asMap("a", asList(entryA, entryA))
         );
     }
 
@@ -499,6 +505,19 @@ public class AggregateOperationsTest {
                 asMap("b", longAcc(1)),
                 asMap("a", longAcc(1), "b", longAcc(1)),
                 asMap("a", 1L, "b", 1L)
+        );
+    }
+
+    @Test
+    public void when_sorting() {
+        validateOpWithoutDeduct(
+                sorting(naturalOrder()),
+                identity(),
+                2,
+                1,
+                singletonList(2),
+                asList(2, 1),
+                asList(1, 2)
         );
     }
 
@@ -561,8 +580,8 @@ public class AggregateOperationsTest {
     }
 
     private static <T, A, X, R> void validateOpWithoutDeduct(
-            AggregateOperation1<T, A, R> op,
-            Function<A, X> getAccValFn,
+            AggregateOperation1<? super T, A, ? extends R> op,
+            Function<? super A, ? extends X> getAccValFn,
             T item1,
             T item2,
             X expectAcced,
@@ -603,6 +622,7 @@ public class AggregateOperationsTest {
         assertEquals("accumulated", expectCombined, getAccValFn.apply(acc1));
     }
 
+    @SuppressWarnings("unchecked")
     private static <K, V> Map<K, V> asMap(Object... entries) {
         Map<K, V> map = new HashMap<>();
         for (int i = 0; i < entries.length; i += 2) {

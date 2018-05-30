@@ -29,13 +29,14 @@ import com.hazelcast.map.AbstractEntryProcessor;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
 import java.io.IOException;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
 
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
@@ -101,9 +102,9 @@ public class SinksTest extends PipelineTestSupport {
     public void whenDrainToMultipleStagesToSingleSink_thenAllItemsShouldBeOnSink() {
         // Given
         String secondSourceName = randomName();
-        List<Integer> input = sequence(ITEM_COUNT);
+        List<Integer> input = sequence(itemCount);
         addToSrcList(input);
-        addToList(jet().getList(secondSourceName), input);
+        jet().getList(secondSourceName).addAll(input);
 
         // When
         BatchStage<Entry<Object, Object>> firstSource = p.drawFrom(Sources.list(srcName));
@@ -112,14 +113,14 @@ public class SinksTest extends PipelineTestSupport {
         execute();
 
         // Then
-        assertEquals(ITEM_COUNT * 2, sinkList.size());
+        assertEquals(itemCount * 2, sinkList.size());
     }
 
     @Test
     public void cache() {
         // Given
-        List<Integer> input = sequence(ITEM_COUNT);
-        putToSrcCache(input);
+        List<Integer> input = sequence(itemCount);
+        putToBatchSrcCache(input);
 
         // When
         p.drawFrom(Sources.cache(srcName))
@@ -139,8 +140,8 @@ public class SinksTest extends PipelineTestSupport {
     @Test
     public void remoteCache() {
         // Given
-        List<Integer> input = sequence(ITEM_COUNT);
-        putToSrcCache(input);
+        List<Integer> input = sequence(itemCount);
+        putToBatchSrcCache(input);
 
         // When
         p.drawFrom(Sources.cache(srcName))
@@ -159,8 +160,8 @@ public class SinksTest extends PipelineTestSupport {
     @Test
     public void map() {
         // Given
-        List<Integer> input = sequence(ITEM_COUNT);
-        putToSrcMap(input);
+        List<Integer> input = sequence(itemCount);
+        putToBatchSrcMap(input);
 
         // When
         p.drawFrom(Sources.map(srcName))
@@ -180,7 +181,7 @@ public class SinksTest extends PipelineTestSupport {
     @Test
     public void remoteMap() {
         // Given
-        List<Integer> input = sequence(ITEM_COUNT);
+        List<Integer> input = sequence(itemCount);
         putToMap(remoteHz.getMap(srcName), input);
 
         // When
@@ -200,8 +201,8 @@ public class SinksTest extends PipelineTestSupport {
     @Test
     public void mapWithMerging() {
         // Given
-        List<Integer> input = sequence(ITEM_COUNT);
-        putToSrcMap(input);
+        List<Integer> input = sequence(itemCount);
+        putToBatchSrcMap(input);
 
         // When
         p.drawFrom(Sources.<String, Integer>map(srcName))
@@ -223,8 +224,8 @@ public class SinksTest extends PipelineTestSupport {
     @Test
     public void mapWithMerging_when_functionReturnsNull_then_keyIsRemoved() {
         // Given
-        List<Integer> input = sequence(ITEM_COUNT);
-        putToSrcMap(input);
+        List<Integer> input = sequence(itemCount);
+        putToBatchSrcMap(input);
 
         // When
         p.drawFrom(Sources.<String, Integer>map(srcName))
@@ -255,7 +256,7 @@ public class SinksTest extends PipelineTestSupport {
     @Test
     public void mapWithMerging_when_sameKeyMerged_then_returnSum() {
         // Given
-        List<Integer> input = sequence(ITEM_COUNT);
+        List<Integer> input = sequence(itemCount);
         jet().getList(srcName).addAll(input);
 
         // When
@@ -268,14 +269,14 @@ public class SinksTest extends PipelineTestSupport {
         // Then
         IMapJet<Object, Object> actual = jet().getMap(srcName);
         assertEquals(1, actual.size());
-        assertEquals(((ITEM_COUNT - 1) * ITEM_COUNT) / 2, actual.get("listSum"));
+        assertEquals(((itemCount - 1) * itemCount) / 2, actual.get("listSum"));
     }
 
 
     @Test
     public void remoteMapWithMerging() {
         // Given
-        List<Integer> input = sequence(ITEM_COUNT);
+        List<Integer> input = sequence(itemCount);
         putToMap(remoteHz.getMap(srcName), input);
 
         // When
@@ -298,7 +299,7 @@ public class SinksTest extends PipelineTestSupport {
     @Test
     public void remoteMapWithMerging_when_functionReturnsNull_then_keyIsRemoved() {
         // Given
-        List<Integer> input = sequence(ITEM_COUNT);
+        List<Integer> input = sequence(itemCount);
         putToMap(remoteHz.getMap(srcName), input);
 
         // When
@@ -316,8 +317,8 @@ public class SinksTest extends PipelineTestSupport {
     @Test
     public void mapWithUpdating() {
         // Given
-        List<Integer> input = sequence(ITEM_COUNT);
-        putToSrcMap(input);
+        List<Integer> input = sequence(itemCount);
+        putToBatchSrcMap(input);
 
         // When
         p.drawFrom(Sources.<String, Integer>map(srcName))
@@ -338,8 +339,8 @@ public class SinksTest extends PipelineTestSupport {
     @Test
     public void mapWithUpdating_when_functionReturnsNull_then_keyIsRemoved() {
         // Given
-        List<Integer> input = sequence(ITEM_COUNT);
-        putToSrcMap(input);
+        List<Integer> input = sequence(itemCount);
+        putToBatchSrcMap(input);
 
         // When
         p.drawFrom(Sources.<String, Integer>map(srcName))
@@ -356,7 +357,7 @@ public class SinksTest extends PipelineTestSupport {
     public void mapWithUpdating_when_itemDataSerializable_then_exceptionShouldNotThrown() {
         // Given
         IMapJet<Object, Object> sourceMap = jet().getMap(srcName);
-        List<Integer> input = sequence(ITEM_COUNT);
+        List<Integer> input = sequence(itemCount);
         input.forEach(i -> sourceMap.put(String.valueOf(i), new DataSerializableObject(i)));
 
         // When
@@ -396,7 +397,7 @@ public class SinksTest extends PipelineTestSupport {
     @Test
     public void remoteMapWithUpdating() {
         // Given
-        List<Integer> input = sequence(ITEM_COUNT);
+        List<Integer> input = sequence(itemCount);
         putToMap(remoteHz.getMap(srcName), input);
 
         // When
@@ -418,7 +419,7 @@ public class SinksTest extends PipelineTestSupport {
     @Test
     public void remoteMapWithUpdating_when_functionReturnsNull_then_keyIsRemoved() {
         // Given
-        List<Integer> input = sequence(ITEM_COUNT);
+        List<Integer> input = sequence(itemCount);
         putToMap(remoteHz.getMap(srcName), input);
 
         // When
@@ -436,7 +437,7 @@ public class SinksTest extends PipelineTestSupport {
     public void remoteMapWithUpdating_when_itemDataSerializable_then_exceptionShouldNotThrown() {
         // Given
         IMap<Object, Object> sourceMap = remoteHz.getMap(srcName);
-        List<Integer> input = sequence(ITEM_COUNT);
+        List<Integer> input = sequence(itemCount);
         input.forEach(i -> sourceMap.put(String.valueOf(i), new DataSerializableObject(i)));
 
         // When
@@ -460,8 +461,8 @@ public class SinksTest extends PipelineTestSupport {
     @Test
     public void mapWithEntryProcessor() {
         // Given
-        List<Integer> input = sequence(ITEM_COUNT);
-        putToSrcMap(input);
+        List<Integer> input = sequence(itemCount);
+        putToBatchSrcMap(input);
 
         // When
         p.drawFrom(Sources.<String, Integer>map(srcName))
@@ -480,7 +481,7 @@ public class SinksTest extends PipelineTestSupport {
     @Test
     public void remoteMapWithEntryProcessor() {
         // Given
-        List<Integer> input = sequence(ITEM_COUNT);
+        List<Integer> input = sequence(itemCount);
         putToMap(remoteHz.getMap(srcName), input);
 
         // When
@@ -540,7 +541,7 @@ public class SinksTest extends PipelineTestSupport {
         execute();
 
         // Then
-        assertEquals(ITEM_COUNT, sinkList.size());
+        assertEquals(itemCount, sinkList.size());
     }
 
     @Test
@@ -554,7 +555,7 @@ public class SinksTest extends PipelineTestSupport {
         execute();
 
         // Then
-        assertEquals(ITEM_COUNT, remoteHz.getList(sinkName).size());
+        assertEquals(itemCount, remoteHz.getList(sinkName).size());
     }
 
     @Test
@@ -569,8 +570,8 @@ public class SinksTest extends PipelineTestSupport {
         // nothing to assert here
     }
 
-    private static void populateList(List<Object> list) {
-        list.addAll(range(0, ITEM_COUNT).boxed().collect(toList()));
+    private void populateList(List<Object> list) {
+        list.addAll(range(0, itemCount).boxed().collect(toList()));
     }
 
     private static class IncrementEntryProcessor<K> extends AbstractEntryProcessor<K, Integer> {

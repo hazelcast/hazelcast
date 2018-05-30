@@ -75,7 +75,7 @@ public class BackpressureTest extends JetTestSupport {
     }
 
     @Test
-    public void testBackpressure() throws Exception {
+    public void testBackpressure() {
         DAG dag = new DAG();
 
         final int member1Port = jet1.getCluster().getLocalMember().getAddress().getPort();

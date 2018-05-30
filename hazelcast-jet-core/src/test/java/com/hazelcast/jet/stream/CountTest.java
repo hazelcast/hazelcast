@@ -23,21 +23,21 @@ import static org.junit.Assert.assertEquals;
 public class CountTest extends AbstractStreamTest {
 
     @Test
-    public void testCount_whenSourceMap() throws Exception {
+    public void testCount_whenSourceMap() {
         long result = streamMap().count();
 
         assertEquals(COUNT, result);
     }
 
     @Test
-    public void testCount_whenSourceCache() throws Exception {
+    public void testCount_whenSourceCache() {
         long result = streamCache().count();
 
         assertEquals(COUNT, result);
     }
 
     @Test
-    public void testCount_whenSourceList() throws Exception {
+    public void testCount_whenSourceList() {
         long result = streamList().count();
 
         assertEquals(COUNT, result);

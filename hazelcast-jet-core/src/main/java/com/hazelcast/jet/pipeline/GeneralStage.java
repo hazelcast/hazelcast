@@ -205,7 +205,7 @@ public interface GeneralStage<T> extends Stage {
      * @return the newly attached stage
      */
     @Nonnull
-    <K1, T1_IN, T1, K2, T2_IN, T2, R> GeneralStage<R> hashJoin2(
+    <K1, K2, T1_IN, T2_IN, T1, T2, R> GeneralStage<R> hashJoin2(
             @Nonnull BatchStage<T1_IN> stage1,
             @Nonnull JoinClause<K1, ? super T, ? super T1_IN, ? extends T1> joinClause1,
             @Nonnull BatchStage<T2_IN> stage2,
@@ -286,7 +286,7 @@ public interface GeneralStage<T> extends Stage {
      * @throws IllegalArgumentException if this stage already has timestamps
      */
     @Nonnull
-    StreamStage<T> addTimestamps(DistributedToLongFunction<? super T> timestampFn, long allowedLag);
+    StreamStage<T> addTimestamps(@Nonnull DistributedToLongFunction<? super T> timestampFn, long allowedLag);
 
     /**
      * Attaches to this stage a sink stage, one that accepts data but doesn't
@@ -368,11 +368,11 @@ public interface GeneralStage<T> extends Stage {
     }
 
     /**
-     * Attaches to this stage a stage with a custom transform based on the
-     * provided supplier of Core API {@link Processor}s. To be compatible with
-     * the rest of the pipeline, the processor must expect a single inbound
-     * edge and arbitrarily many outbound edges, and it must push the same data
-     * to all outbound edges.
+     * Attaches a stage with a custom transform based on the provided supplier
+     * of Core API {@link Processor}s. To be compatible with the rest of the
+     * pipeline, the processor must expect a single inbound edge and
+     * arbitrarily many outbound edges, and it must push the same data to all
+     * outbound edges.
      * <p>
      * Note that the returned stage's type parameter is inferred from the call
      * site and not propagated from the processor that will produce the result,

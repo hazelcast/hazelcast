@@ -46,7 +46,7 @@ public class ExecutionSerializerHooksTest {
     public Object instance;
 
     @Parameters
-    public static Collection<Object> data() throws Exception {
+    public static Collection<Object> data() {
         return Arrays.asList(
                 new SnapshotBarrier(17L),
                 new BroadcastEntry<>("key", "value"),
@@ -55,7 +55,7 @@ public class ExecutionSerializerHooksTest {
     }
 
     @Test
-    public void testSerializerHooks() throws Exception {
+    public void testSerializerHooks() {
         if (!(instance instanceof Map.Entry)) {
             assertFalse("Type implements java.io.Serializable", instance instanceof Serializable);
         }

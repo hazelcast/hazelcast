@@ -46,7 +46,7 @@ public class AccumulatorSerializerHooksTest {
     public Object instance;
 
     @Parameters
-    public static Collection<Object> data() throws Exception {
+    public static Collection<Object> data() {
         return Arrays.asList(
                 new LongAccumulator(2),
                 new DoubleAccumulator(3),
@@ -59,7 +59,7 @@ public class AccumulatorSerializerHooksTest {
     }
 
     @Test
-    public void testSerializerHook() throws Exception {
+    public void testSerializerHook() {
         assertFalse("Type implements java.io.Serializable", instance instanceof Serializable);
         SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
         Data serialized = serializationService.toData(instance);

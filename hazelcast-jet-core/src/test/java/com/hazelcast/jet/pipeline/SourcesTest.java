@@ -21,10 +21,10 @@ import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.jet.IMapJet;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.function.DistributedFunction;
-import com.hazelcast.jet.IMapJet;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -74,8 +74,8 @@ public class SourcesTest extends PipelineTestSupport {
     @Test
     public void fromProcessor() {
         // Given
-        List<Integer> input = sequence(ITEM_COUNT);
-        putToSrcMap(input);
+        List<Integer> input = sequence(itemCount);
+        putToBatchSrcMap(input);
 
         // When
         p.<Integer>drawFrom(Sources.batchFromProcessor("test",
@@ -91,8 +91,8 @@ public class SourcesTest extends PipelineTestSupport {
     @Test
     public void map() {
         // Given
-        List<Integer> input = sequence(ITEM_COUNT);
-        putToSrcMap(input);
+        List<Integer> input = sequence(itemCount);
+        putToBatchSrcMap(input);
 
         // When
         p.drawFrom(Sources.map(srcName))
@@ -109,8 +109,8 @@ public class SourcesTest extends PipelineTestSupport {
     @Test
     public void mapWithFilterAndProjection() {
         // Given
-        List<Integer> input = sequence(ITEM_COUNT);
-        putToSrcMap(input);
+        List<Integer> input = sequence(itemCount);
+        putToBatchSrcMap(input);
 
         // When
         p.drawFrom(Sources.map(srcName, truePredicate(), singleAttribute("value")))
@@ -124,8 +124,8 @@ public class SourcesTest extends PipelineTestSupport {
     @Test
     public void mapWithFilterAndProjectionFn() {
         // Given
-        List<Integer> input = sequence(ITEM_COUNT);
-        putToSrcMap(input);
+        List<Integer> input = sequence(itemCount);
+        putToBatchSrcMap(input);
 
         // When
         p.drawFrom(Sources.map(
@@ -143,7 +143,7 @@ public class SourcesTest extends PipelineTestSupport {
         // given
         String mapName = randomName();
         IMapJet<Integer, Entry<Integer, String>> sourceMap = jet().getMap(mapName);
-        range(0, ITEM_COUNT).forEach(i -> sourceMap.put(i, entry(i, i % 2 == 0 ? null : String.valueOf(i))));
+        range(0, itemCount).forEach(i -> sourceMap.put(i, entry(i, i % 2 == 0 ? null : String.valueOf(i))));
         BatchSource<String> source = Sources.map(mapName, truePredicate(), singleAttribute("value"));
 
         // when
@@ -153,7 +153,7 @@ public class SourcesTest extends PipelineTestSupport {
 
         // then
         assertTrueEventually(() -> assertEquals(
-                range(0, ITEM_COUNT)
+                range(0, itemCount)
                         .filter(i -> i % 2 != 0)
                         .mapToObj(String::valueOf)
                         .sorted()
@@ -168,7 +168,7 @@ public class SourcesTest extends PipelineTestSupport {
     @Test
     public void remoteMap() {
         // Given
-        List<Integer> input = sequence(ITEM_COUNT);
+        List<Integer> input = sequence(itemCount);
         putToMap(remoteHz.getMap(srcName), input);
 
         // When
@@ -186,7 +186,7 @@ public class SourcesTest extends PipelineTestSupport {
     @Test
     public void remoteMapWithFilterAndProjection() {
         // Given
-        List<Integer> input = sequence(ITEM_COUNT);
+        List<Integer> input = sequence(itemCount);
         putToMap(remoteHz.getMap(srcName), input);
 
         // When
@@ -201,7 +201,7 @@ public class SourcesTest extends PipelineTestSupport {
     @Test
     public void remoteMapWithFilterAndProjectionFn() {
         // Given
-        List<Integer> input = sequence(ITEM_COUNT);
+        List<Integer> input = sequence(itemCount);
         putToMap(remoteHz.getMap(srcName), input);
 
         // When
@@ -219,8 +219,8 @@ public class SourcesTest extends PipelineTestSupport {
     @Test
     public void cache() {
         // Given
-        List<Integer> input = sequence(ITEM_COUNT);
-        putToSrcCache(input);
+        List<Integer> input = sequence(itemCount);
+        putToBatchSrcCache(input);
 
         // When
         p.drawFrom(Sources.cache(srcName))
@@ -238,7 +238,7 @@ public class SourcesTest extends PipelineTestSupport {
     @Test
     public void remoteCache() {
         // Given
-        List<Integer> input = sequence(ITEM_COUNT);
+        List<Integer> input = sequence(itemCount);
         putToCache(remoteHz.getCacheManager().getCache(srcName), input);
 
         // When
@@ -257,7 +257,7 @@ public class SourcesTest extends PipelineTestSupport {
     @Test
     public void list() {
         // Given
-        List<Integer> input = sequence(ITEM_COUNT);
+        List<Integer> input = sequence(itemCount);
         addToSrcList(input);
 
         // When
@@ -272,8 +272,8 @@ public class SourcesTest extends PipelineTestSupport {
     @Test
     public void remoteList() {
         // Given
-        List<Integer> input = sequence(ITEM_COUNT);
-        addToList(remoteHz.getList(srcName), input);
+        List<Integer> input = sequence(itemCount);
+        remoteHz.getList(srcName).addAll(input);
 
         // When
         p.drawFrom(Sources.remoteList(srcName, clientConfig))

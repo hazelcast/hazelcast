@@ -44,7 +44,7 @@ public class SnapshotOperation extends AsyncOperation {
     }
 
     @Override
-    protected void doRun() throws Exception {
+    protected void doRun() {
         JetService service = getService();
         ExecutionContext ctx = service.getJobExecutionService().assertExecutionContext(
                 getCallerAddress(), jobId(), executionId, this

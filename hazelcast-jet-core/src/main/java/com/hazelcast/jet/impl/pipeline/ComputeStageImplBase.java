@@ -36,6 +36,7 @@ import com.hazelcast.jet.impl.pipeline.transform.FlatMapUsingContextTransform;
 import com.hazelcast.jet.impl.pipeline.transform.HashJoinTransform;
 import com.hazelcast.jet.impl.pipeline.transform.MapTransform;
 import com.hazelcast.jet.impl.pipeline.transform.MapUsingContextTransform;
+import com.hazelcast.jet.impl.pipeline.transform.MergeTransform;
 import com.hazelcast.jet.impl.pipeline.transform.PeekTransform;
 import com.hazelcast.jet.impl.pipeline.transform.ProcessorTransform;
 import com.hazelcast.jet.impl.pipeline.transform.SinkTransform;
@@ -44,6 +45,7 @@ import com.hazelcast.jet.impl.pipeline.transform.TimestampTransform;
 import com.hazelcast.jet.impl.pipeline.transform.Transform;
 import com.hazelcast.jet.pipeline.BatchStage;
 import com.hazelcast.jet.pipeline.ContextFactory;
+import com.hazelcast.jet.pipeline.GeneralStage;
 import com.hazelcast.jet.pipeline.JoinClause;
 import com.hazelcast.jet.pipeline.Sink;
 import com.hazelcast.jet.pipeline.SinkStage;
@@ -157,6 +159,11 @@ public abstract class ComputeStageImplBase<T> extends AbstractStage {
     }
 
     @Nonnull
+    <RET> RET attachMerge(@Nonnull GeneralStage<? extends T> other) {
+        return attach(new MergeTransform<>(transform, ((AbstractStage) other).transform), fnAdapter);
+    }
+
+    @Nonnull
     @SuppressWarnings("unchecked")
     <K1, T1_IN, T1, R, RET> RET attachHashJoin(
             @Nonnull BatchStage<T1_IN> stage1,
@@ -189,6 +196,7 @@ public abstract class ComputeStageImplBase<T> extends AbstractStage {
     }
 
     @Nonnull
+    @SuppressWarnings("unchecked")
     <RET> RET attachPeek(
             @Nonnull DistributedPredicate<? super T> shouldLogFn,
             @Nonnull DistributedFunction<? super T, ? extends CharSequence> toStringFn

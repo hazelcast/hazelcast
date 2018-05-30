@@ -40,7 +40,7 @@ public class HashJoinCollectP<K, E, V> extends AbstractProcessor {
 
     @Override
     @SuppressWarnings("unchecked")
-    protected boolean tryProcess0(@Nonnull Object item) throws Exception {
+    protected boolean tryProcess0(@Nonnull Object item) {
         E e = (E) item;
         K key = keyFn.apply(e);
         V value = projectFn.apply(e);
