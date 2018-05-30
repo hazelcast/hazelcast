@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl.querycache;
+package com.hazelcast.map.impl.querycache.subscriber;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
@@ -26,7 +26,8 @@ import com.hazelcast.map.EventLostEvent;
 import com.hazelcast.map.QueryCache;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.querycache.subscriber.TestSubscriberContext;
+import com.hazelcast.map.impl.querycache.QueryCacheContext;
+import com.hazelcast.map.impl.querycache.accumulator.Accumulator;
 import com.hazelcast.map.listener.EventLostListener;
 import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.spi.properties.GroupProperty;
@@ -40,8 +41,13 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Collections;
+import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+
 import static com.hazelcast.map.impl.querycache.AbstractQueryCacheTestSupport.getMap;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -51,7 +57,7 @@ public class QueryCacheRecoveryUponEventLossTest extends HazelcastTestSupport {
     public void testForceConsistency() {
         TestHazelcastInstanceFactory instanceFactory = createHazelcastInstanceFactory(3);
 
-        String mapName = randomString();
+        final String mapName = randomString();
         String queryCacheName = randomString();
 
         Config config = new Config();
@@ -65,7 +71,7 @@ public class QueryCacheRecoveryUponEventLossTest extends HazelcastTestSupport {
         mapConfig.addQueryCacheConfig(queryCacheConfig);
         mapConfig.setBackupCount(0);
 
-        HazelcastInstance node = instanceFactory.newHazelcastInstance(config);
+        final HazelcastInstance node = instanceFactory.newHazelcastInstance(config);
         HazelcastInstance node2 = instanceFactory.newHazelcastInstance(config);
         setTestSequencer(node, 9);
         setTestSequencer(node2, 9);
@@ -73,30 +79,44 @@ public class QueryCacheRecoveryUponEventLossTest extends HazelcastTestSupport {
         IMap<Integer, Integer> map = getMap(node, mapName);
         node2.getMap(mapName);
 
-        //set test sequencer to subscribers.
-        int count = 30;
-
+        final CountDownLatch waitEventLossNotification = new CountDownLatch(1);
         final QueryCache queryCache = map.getQueryCache(queryCacheName, new SqlPredicate("this > 20"), true);
         queryCache.addEntryListener(new EventLostListener() {
             @Override
             public void eventLost(EventLostEvent event) {
                 queryCache.tryRecover();
 
+                waitEventLossNotification.countDown();
             }
         }, false);
 
+        int count = 30;
         for (int i = 0; i < count; i++) {
             map.put(i, i);
         }
 
-        AssertTask task = new AssertTask() {
+        assertOpenEventually(waitEventLossNotification);
+
+        assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 assertEquals(9, queryCache.size());
             }
-        };
+        });
 
-        assertTrueEventually(task);
+        // re-put entries and check if broken-sequences holder map will be empty
+        for (int i = 0; i < count; i++) {
+            map.put(i, i);
+        }
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                Map brokenSequences = getBrokenSequences(node, mapName, queryCache);
+                assertTrue("After recovery, there should be no broken sequences left",
+                        brokenSequences.isEmpty());
+            }
+        });
     }
 
     private void setTestSequencer(HazelcastInstance instance, int eventCount) {
@@ -105,5 +125,29 @@ public class QueryCacheRecoveryUponEventLossTest extends HazelcastTestSupport {
         MapServiceContext mapServiceContext = service.getMapServiceContext();
         QueryCacheContext queryCacheContext = mapServiceContext.getQueryCacheContext();
         queryCacheContext.setSubscriberContext(new TestSubscriberContext(queryCacheContext, eventCount, true));
+    }
+
+    private Map getBrokenSequences(HazelcastInstance instance, String mapName, QueryCache queryCache) {
+        Node node = getNode(instance);
+        MapService service = node.getNodeEngine().getService(MapService.SERVICE_NAME);
+        MapServiceContext mapServiceContext = service.getMapServiceContext();
+        QueryCacheContext context = mapServiceContext.getQueryCacheContext();
+
+        SubscriberContext subscriberContext = context.getSubscriberContext();
+        MapSubscriberRegistry mapSubscriberRegistry = subscriberContext.getMapSubscriberRegistry();
+
+        SubscriberRegistry subscriberRegistry = mapSubscriberRegistry.getOrNull(mapName);
+        if (subscriberRegistry == null) {
+            return Collections.emptyMap();
+        }
+
+        String cacheId = ((InternalQueryCache) queryCache).getCacheId();
+        Accumulator accumulator = subscriberRegistry.getOrNull(cacheId);
+        if (accumulator == null) {
+            return Collections.emptyMap();
+        }
+
+        SubscriberAccumulator subscriberAccumulator = (SubscriberAccumulator) accumulator;
+        return subscriberAccumulator.getBrokenSequences();
     }
 }
