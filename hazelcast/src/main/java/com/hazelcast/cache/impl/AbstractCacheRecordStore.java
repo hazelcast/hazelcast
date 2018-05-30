@@ -340,8 +340,14 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         return duration.getAdjustedTime(now);
     }
 
-    protected ExpiryPolicy getExpiryPolicy(ExpiryPolicy expiryPolicy) {
-        return expiryPolicy != null ? expiryPolicy : defaultExpiryPolicy;
+    protected ExpiryPolicy getExpiryPolicy(R record, ExpiryPolicy expiryPolicy) {
+        if (expiryPolicy != null) {
+            return expiryPolicy;
+        } else if (record != null && record.getExpiryPolicy() != null) {
+            return record.getExpiryPolicy();
+        } else {
+            return defaultExpiryPolicy;
+        }
     }
 
     protected boolean processExpiredEntry(Data key, R record, long now) {
@@ -399,7 +405,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     public R accessRecord(Data key, R record, ExpiryPolicy expiryPolicy, long now) {
-        onRecordAccess(key, record, getExpiryPolicy(expiryPolicy), now);
+        onRecordAccess(key, record, getExpiryPolicy(record, expiryPolicy), now);
         return record;
     }
 
@@ -603,7 +609,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
     protected R createRecordWithExpiry(Data key, Object value, ExpiryPolicy expiryPolicy,
                                        long now, boolean disableWriteThrough, int completionId, String origin) {
-        expiryPolicy = getExpiryPolicy(expiryPolicy);
+        expiryPolicy = getExpiryPolicy(null, expiryPolicy);
         Duration expiryDuration;
         try {
             expiryDuration = expiryPolicy.getExpiryForCreation();
@@ -728,7 +734,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     @SuppressWarnings("checkstyle:parameternumber")
     protected boolean updateRecordWithExpiry(Data key, Object value, R record, ExpiryPolicy expiryPolicy, long now,
                                              boolean disableWriteThrough, int completionId, String source, String origin) {
-        expiryPolicy = getExpiryPolicy(expiryPolicy);
+        expiryPolicy = getExpiryPolicy(record, expiryPolicy);
         long expiryTime = CacheRecord.TIME_NOT_AVAILABLE;
         try {
             Duration expiryDuration = expiryPolicy.getExpiryForUpdate();
@@ -952,11 +958,11 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
     @Override
     public Object get(Data key, ExpiryPolicy expiryPolicy) {
-        expiryPolicy = getExpiryPolicy(expiryPolicy);
         long start = isStatisticsEnabled() ? System.nanoTime() : 0;
         long now = Clock.currentTimeMillis();
         Object value = null;
         R record = records.get(key);
+        expiryPolicy = getExpiryPolicy(record, expiryPolicy);
         boolean isExpired = processExpiredEntry(key, record, now);
         try {
             if (recordNotExistOrExpired(record, isExpired)) {
@@ -1011,13 +1017,13 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
     protected Object put(Data key, Object value, ExpiryPolicy expiryPolicy, String source,
                          boolean getValue, boolean disableWriteThrough, int completionId) {
-        expiryPolicy = getExpiryPolicy(expiryPolicy);
         long now = Clock.currentTimeMillis();
         long start = isStatisticsEnabled() ? System.nanoTime() : 0;
         boolean isOnNewPut = false;
         boolean isSaveSucceed;
         Object oldValue = null;
         R record = records.get(key);
+        expiryPolicy = getExpiryPolicy(record, expiryPolicy);
         boolean isExpired = processExpiredEntry(key, record, now, source);
         try {
             // Check that new entry is not already expired, in which case it should
@@ -1073,11 +1079,11 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
     protected boolean putIfAbsent(Data key, Object value, ExpiryPolicy expiryPolicy, String source,
                                   boolean disableWriteThrough, int completionId) {
-        expiryPolicy = getExpiryPolicy(expiryPolicy);
         long now = Clock.currentTimeMillis();
         long start = isStatisticsEnabled() ? System.nanoTime() : 0;
         boolean saved = false;
         R record = records.get(key);
+        expiryPolicy = getExpiryPolicy(record, expiryPolicy);
         boolean isExpired = processExpiredEntry(key, record, now, source);
         boolean cacheMiss = recordNotExistOrExpired(record, isExpired);
         try {
@@ -1126,11 +1132,11 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
     @Override
     public boolean replace(Data key, Object value, ExpiryPolicy expiryPolicy, String source, int completionId) {
-        expiryPolicy = getExpiryPolicy(expiryPolicy);
         long now = Clock.currentTimeMillis();
         long start = isStatisticsEnabled() ? System.nanoTime() : 0;
         boolean replaced = false;
         R record = records.get(key);
+        expiryPolicy = getExpiryPolicy(record, expiryPolicy);
         boolean isExpired = record != null && record.isExpiredAt(now);
         try {
             if (recordNotExistOrExpired(record, isExpired)) {
@@ -1160,12 +1166,12 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     @Override
     public boolean replace(Data key, Object oldValue, Object newValue, ExpiryPolicy expiryPolicy,
                            String source, int completionId) {
-        expiryPolicy = getExpiryPolicy(expiryPolicy);
         long now = Clock.currentTimeMillis();
         long start = isStatisticsEnabled() ? System.nanoTime() : 0;
         boolean isHit = false;
         boolean replaced = false;
         R record = records.get(key);
+        expiryPolicy = getExpiryPolicy(record, expiryPolicy);
         boolean isExpired = record != null && record.isExpiredAt(now);
         try {
             if (record != null && !isExpired) {
@@ -1195,11 +1201,11 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
     @Override
     public Object getAndReplace(Data key, Object value, ExpiryPolicy expiryPolicy, String source, int completionId) {
-        expiryPolicy = getExpiryPolicy(expiryPolicy);
         long now = Clock.currentTimeMillis();
         long start = isStatisticsEnabled() ? System.nanoTime() : 0;
         boolean replaced = false;
         R record = records.get(key);
+        expiryPolicy = getExpiryPolicy(record, expiryPolicy);
         boolean isExpired = record != null && record.isExpiredAt(now);
         try {
             Object obj = toValue(record);
@@ -1226,6 +1232,16 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         } catch (Throwable error) {
             onReplaceError(key, null, value, expiryPolicy, source, false, record, isExpired, replaced, error);
             throw ExceptionUtil.rethrow(error);
+        }
+    }
+
+    @Override
+    public void setExpiryPolicy(Collection<Data> keys, ExpiryPolicy expiryPolicy, int completionId) {
+        for (Data key: keys) {
+            CacheRecord record = getRecord(key);
+            if (record != null) {
+                record.setExpiryPolicy(expiryPolicy);
+            }
         }
     }
 
@@ -1361,7 +1377,6 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
     @Override
     public MapEntries getAll(Set<Data> keySet, ExpiryPolicy expiryPolicy) {
-        expiryPolicy = getExpiryPolicy(expiryPolicy);
         MapEntries result = new MapEntries(keySet.size());
         for (Data key : keySet) {
             Object value = get(key, expiryPolicy);

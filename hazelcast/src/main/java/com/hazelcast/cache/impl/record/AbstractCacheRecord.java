@@ -22,6 +22,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import javax.cache.expiry.ExpiryPolicy;
 import java.io.IOException;
 
 /**
@@ -37,6 +38,7 @@ public abstract class AbstractCacheRecord<V> implements CacheRecord<V>, Identifi
     protected volatile long expirationTime = TIME_NOT_AVAILABLE;
     protected volatile long accessTime = TIME_NOT_AVAILABLE;
     protected volatile int accessHit;
+    protected volatile ExpiryPolicy expiryPolicy;
 
     protected AbstractCacheRecord() {
     }
@@ -86,6 +88,16 @@ public abstract class AbstractCacheRecord<V> implements CacheRecord<V>, Identifi
     }
 
     @Override
+    public void setExpiryPolicy(ExpiryPolicy expiryPolicy) {
+        this.expiryPolicy = expiryPolicy;
+    }
+
+    @Override
+    public ExpiryPolicy getExpiryPolicy() {
+        return expiryPolicy;
+    }
+
+    @Override
     @SuppressFBWarnings(value = "VO_VOLATILE_INCREMENT",
             justification = "CacheRecord can be accessed by only its own partition thread.")
     public void incrementAccessHit() {
@@ -108,6 +120,7 @@ public abstract class AbstractCacheRecord<V> implements CacheRecord<V>, Identifi
         out.writeLong(expirationTime);
         out.writeLong(accessTime);
         out.writeInt(accessHit);
+        out.writeObject(expiryPolicy);
     }
 
     @Override
@@ -116,6 +129,7 @@ public abstract class AbstractCacheRecord<V> implements CacheRecord<V>, Identifi
         expirationTime = in.readLong();
         accessTime = in.readLong();
         accessHit = in.readInt();
+        expiryPolicy = in.readObject();
     }
 
     @Override

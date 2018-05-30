@@ -229,6 +229,42 @@ abstract class AbstractCacheProxy<K, V>
         }
     }
 
+    @Override
+    public void setExpiryPolicy(Set<K> keys, ExpiryPolicy expiryPolicy) {
+        ensureOpen();
+        validateNotNull(keys);
+        validateNotNull(expiryPolicy);
+
+        try {
+            int partitionCount = partitionService.getPartitionCount();
+            List<Data>[] keysPerPartition = groupDataToPartitions(keys, partitionCount);
+            setTTLAllPartitionsAndWaitForCompletion(keysPerPartition, expiryPolicy);
+        } catch (Exception e) {
+            rethrow(e);
+        }
+    }
+
+    private List<Data>[] groupDataToPartitions(Collection<? extends K> keys, int partitionCount) {
+        List<Data>[] keysPerPartition = new ArrayList[partitionCount];
+
+        for (K key: keys) {
+            validateNotNull(key);
+
+            Data dataKey = serializationService.toData(key);
+
+            int partitionId = partitionService.getPartitionId(dataKey);
+
+            List<Data> partition = keysPerPartition[partitionId];
+            if (partition == null) {
+                partition = new ArrayList<Data>();
+                keysPerPartition[partitionId] = partition;
+            }
+            partition.add(dataKey);
+        }
+
+        return keysPerPartition;
+    }
+
     @SuppressWarnings("unchecked")
     private List<Map.Entry<Data, Data>>[] groupDataToPartitions(Map<? extends K, ? extends V> map, int partitionCount) {
         List<Map.Entry<Data, Data>>[] entriesPerPartition = new List[partitionCount];
@@ -293,6 +329,32 @@ abstract class AbstractCacheProxy<K, V>
              *        In this test exception is thrown at `CacheWriter` and caller side expects this exception.
              * So as a result, we only throw the first exception and others are suppressed by only logging.
              */
+            throw rethrow(error);
+        }
+    }
+
+    private void setTTLAllPartitionsAndWaitForCompletion(List<Data>[] keysPerPartition, ExpiryPolicy expiryPolicy) {
+        List<Future> futures = new ArrayList<Future>(keysPerPartition.length);
+        for (int partitionId = 0; partitionId < keysPerPartition.length; partitionId++) {
+            List<Data> keys = keysPerPartition[partitionId];
+            if (keys != null) {
+                Operation operation = operationProvider.createSetExpiryPolicyOperation(keys, expiryPolicy);
+                futures.add(invoke(operation, partitionId, true));
+            }
+        }
+
+        Throwable error = null;
+        for (Future future: futures) {
+            try {
+                future.get();
+            } catch (Throwable t) {
+                logger.finest("Error occured while batch operation!", t);
+                if (error == null) {
+                    error = t;
+                }
+            }
+        }
+        if (error != null) {
             throw rethrow(error);
         }
     }
