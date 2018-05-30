@@ -41,7 +41,6 @@ import com.hazelcast.spi.impl.PacketHandler;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.nio.ByteBuffer;
 import java.nio.channels.ServerSocketChannel;
 import java.util.Collection;
 import java.util.Collections;
@@ -362,7 +361,6 @@ public class MockIOService implements IOService {
             @Override
             public void handle(Packet packet) {
                 try {
-                    logger.info("Handling inbound packet " + packet + " on connection " + connection);
                     if (packet.getPacketType() == Packet.Type.BIND) {
                         connection.getConnectionManager().handle(packet);
                     } else {
@@ -380,21 +378,7 @@ public class MockIOService implements IOService {
 
     @Override
     public ChannelOutboundHandler createOutboundHandler(TcpIpConnection connection) {
-        return new NoisyPacketEncoder(logger);
-    }
-
-    private static class NoisyPacketEncoder extends PacketEncoder {
-        private final ILogger logger;
-
-        NoisyPacketEncoder(ILogger logger) {
-            this.logger = logger;
-        }
-
-        @Override
-        public boolean onWrite(Packet packet, ByteBuffer dst) {
-            logger.info("Writing outbound packet " + packet);
-            return super.onWrite(packet, dst);
-        }
+        return new PacketEncoder();
     }
 
 }
