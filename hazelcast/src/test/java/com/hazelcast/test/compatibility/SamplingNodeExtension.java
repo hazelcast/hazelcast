@@ -228,4 +228,8 @@ public class SamplingNodeExtension implements NodeExtension {
     @Override
     public void registerPlugins(Diagnostics diagnostics) {
     }
+
+    @Override
+    public void sendPhoneHome() {
+    }
 }

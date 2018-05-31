@@ -84,6 +84,7 @@ import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.util.ByteArrayProcessor;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.PhoneHome;
 import com.hazelcast.util.Preconditions;
 import com.hazelcast.util.UuidUtil;
 import com.hazelcast.util.function.Supplier;
@@ -107,6 +108,7 @@ public class DefaultNodeExtension implements NodeExtension {
     protected final ILogger logger;
     protected final ILogger systemLogger;
     protected final List<ClusterVersionListener> clusterVersionListeners = new CopyOnWriteArrayList<ClusterVersionListener>();
+    private final PhoneHome phoneHome;
 
     private final MemoryStats memoryStats = new DefaultMemoryStats();
 
@@ -115,6 +117,7 @@ public class DefaultNodeExtension implements NodeExtension {
         this.logger = node.getLogger(NodeExtension.class);
         this.systemLogger = node.getLogger("com.hazelcast.system");
         checkSecurityAllowed();
+        this.phoneHome = new PhoneHome(node);
     }
 
     private void checkSecurityAllowed() {
@@ -285,6 +288,9 @@ public class DefaultNodeExtension implements NodeExtension {
     @Override
     public void shutdown() {
         logger.info("Destroying node NodeExtension.");
+        if (phoneHome != null) {
+            phoneHome.shutdown();
+        }
     }
 
     @Override
@@ -436,5 +442,10 @@ public class DefaultNodeExtension implements NodeExtension {
     @Override
     public ManagementCenterConnectionFactory getManagementCenterConnectionFactory() {
         return null;
+    }
+
+    @Override
+    public void sendPhoneHome() {
+        phoneHome.check(node);
     }
 }
