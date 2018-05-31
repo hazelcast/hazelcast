@@ -147,8 +147,6 @@ public class Node {
 
     private final NodeShutdownHookThread shutdownHookThread;
 
-    private final PhoneHome phoneHome = new PhoneHome();
-
     private final InternalSerializationService serializationService;
 
     private final ClassLoader configClassLoader;
@@ -411,7 +409,7 @@ public class Node {
             logger.warning("ManagementCenterService could not be constructed!", e);
         }
         nodeExtension.afterStart();
-        phoneHome.check(this, getBuildInfo().getVersion(), buildInfo.isEnterprise());
+        nodeExtension.sendPhoneHome();
         healthMonitor.start();
     }
 
@@ -497,7 +495,7 @@ public class Node {
         if (nodeExtension != null) {
             nodeExtension.beforeShutdown();
         }
-        phoneHome.shutdown();
+
         if (managementCenterService != null) {
             managementCenterService.shutdown();
         }

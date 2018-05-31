@@ -19,6 +19,7 @@ package com.hazelcast.util;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ManagementCenterConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.Node;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -51,20 +52,21 @@ public class PhoneHomeTest extends HazelcastTestSupport {
     public void testPhoneHomeParameters() {
         HazelcastInstance hz = createHazelcastInstance();
         Node node = getNode(hz);
-        PhoneHome phoneHome = new PhoneHome();
+        PhoneHome phoneHome = new PhoneHome(node);
 
         sleepAtLeastMillis(1);
-        Map<String, String> parameters = phoneHome.phoneHome(node, "test_version", false);
+        Map<String, String> parameters = phoneHome.phoneHome(node);
         RuntimeMXBean runtimeMxBean = ManagementFactory.getRuntimeMXBean();
         OperatingSystemMXBean osMxBean = ManagementFactory.getOperatingSystemMXBean();
-        assertEquals(parameters.get("version"), "test_version");
+        assertEquals(parameters.get("version"), BuildInfoProvider.getBuildInfo().getVersion());
         assertEquals(parameters.get("m"), node.getLocalMember().getUuid());
-        assertEquals(parameters.get("e"), "false");
-        assertEquals(parameters.get("l"), "");
+        assertEquals(parameters.get("e"), null);
+        assertEquals(parameters.get("oem"), null);
+        assertEquals(parameters.get("l"), null);
+        assertEquals(parameters.get("hdgb"), null);
         assertEquals(parameters.get("p"), "source");
         assertEquals(parameters.get("crsz"), "A");
         assertEquals(parameters.get("cssz"), "A");
-        assertEquals(parameters.get("hdgb"), "0");
         assertEquals(parameters.get("ccpp"), "0");
         assertEquals(parameters.get("cdn"), "0");
         assertEquals(parameters.get("cjv"), "0");
@@ -94,10 +96,10 @@ public class PhoneHomeTest extends HazelcastTestSupport {
 
         HazelcastInstance hz = createHazelcastInstance(config);
         Node node = getNode(hz);
-        PhoneHome phoneHome = new PhoneHome();
+        PhoneHome phoneHome = new PhoneHome(node);
 
         sleepAtLeastMillis(1);
-        Map<String, String> parameters = phoneHome.phoneHome(node, "test_version", false);
+        Map<String, String> parameters = phoneHome.phoneHome(node);
         assertEquals(parameters.get("mcver"), "MC_NOT_AVAILABLE");
         assertEquals(parameters.get("mclicense"), "MC_NOT_AVAILABLE");
     }
@@ -111,8 +113,8 @@ public class PhoneHomeTest extends HazelcastTestSupport {
         HazelcastInstance hz = createHazelcastInstance(config);
         Node node = getNode(hz);
 
-        PhoneHome phoneHome = new PhoneHome();
-        phoneHome.check(node, "test_version", false);
+        PhoneHome phoneHome = new PhoneHome(node);
+        phoneHome.check(node);
         assertNull(phoneHome.phoneHomeFuture);
     }
 
@@ -124,8 +126,8 @@ public class PhoneHomeTest extends HazelcastTestSupport {
         HazelcastInstance hz = createHazelcastInstance(config);
         Node node = getNode(hz);
 
-        PhoneHome phoneHome = new PhoneHome();
-        phoneHome.check(node, "test_version", false);
+        PhoneHome phoneHome = new PhoneHome(node);
+        phoneHome.check(node);
         assertNull(phoneHome.phoneHomeFuture);
     }
 
@@ -139,8 +141,8 @@ public class PhoneHomeTest extends HazelcastTestSupport {
         HazelcastInstance hz = createHazelcastInstance(config);
         Node node = getNode(hz);
 
-        PhoneHome phoneHome = new PhoneHome();
-        phoneHome.check(node, "test_version", false);
+        PhoneHome phoneHome = new PhoneHome(node);
+        phoneHome.check(node);
         assertNotNull(phoneHome.phoneHomeFuture);
         assertFalse(phoneHome.phoneHomeFuture.isDone());
         assertFalse(phoneHome.phoneHomeFuture.isCancelled());

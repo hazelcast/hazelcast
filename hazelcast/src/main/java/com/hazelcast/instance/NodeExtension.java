@@ -273,4 +273,9 @@ public interface NodeExtension {
      * @param diagnostics the diagnostics on which plugins should be registered
      */
     void registerPlugins(Diagnostics diagnostics);
+
+    /**
+     * Send PhoneHome ping from OS or EE instance to PhoneHome application
+     */
+    void sendPhoneHome();
 }

@@ -17,8 +17,9 @@
 package com.hazelcast.util;
 
 import com.hazelcast.config.ManagementCenterConfig;
-import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.core.ClientType;
+import com.hazelcast.instance.BuildInfo;
+import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.JetBuildInfo;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
@@ -26,7 +27,6 @@ import com.hazelcast.internal.management.ManagementCenterConnectionFactory;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.spi.properties.GroupProperty;
 
 import java.io.BufferedInputStream;
@@ -48,7 +48,6 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.nio.IOUtil.closeResource;
 import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
@@ -58,7 +57,7 @@ import static java.lang.System.getenv;
 /**
  * Pings phone home server with cluster info daily.
  */
-public final class PhoneHome {
+public class PhoneHome {
 
     private static final int TIMEOUT = 1000;
 
@@ -77,12 +76,18 @@ public final class PhoneHome {
     private static final String FALSE = "false";
 
     volatile ScheduledFuture<?> phoneHomeFuture;
+    ILogger logger;
+    private final BuildInfo buildInfo = BuildInfoProvider.getBuildInfo();
 
     public PhoneHome() {
     }
 
+    public PhoneHome(Node hazelcastNode) {
+        logger = hazelcastNode.getLogger(PhoneHome.class);
+    }
+
     @SuppressWarnings("deprecation")
-    public void check(final Node hazelcastNode, final String version, final boolean isEnterprise) {
+    public void check(final Node hazelcastNode) {
         ILogger logger = hazelcastNode.getLogger(PhoneHome.class);
         if (!hazelcastNode.getProperties().getBoolean(GroupProperty.VERSION_CHECK_ENABLED)) {
             logger.warning(GroupProperty.VERSION_CHECK_ENABLED.getName() + " property is deprecated. Please use "
@@ -96,11 +101,12 @@ public final class PhoneHome {
             return;
         }
         try {
-            phoneHomeFuture = hazelcastNode.nodeEngine.getExecutionService().scheduleWithRepetition("PhoneHome", new Runnable() {
-                public void run() {
-                    phoneHome(hazelcastNode, version, isEnterprise);
-                }
-            }, 0, 1, TimeUnit.DAYS);
+            phoneHomeFuture = hazelcastNode.nodeEngine.getExecutionService()
+                    .scheduleWithRepetition("PhoneHome", new Runnable() {
+                        public void run() {
+                            phoneHome(hazelcastNode);
+                        }
+                    }, 0, 1, TimeUnit.DAYS);
         } catch (RejectedExecutionException e) {
             logger.warning("Could not schedule phone home task! Most probably Hazelcast failed to start.");
         }
@@ -138,7 +144,48 @@ public final class PhoneHome {
         return letter;
     }
 
-    public Map<String, String> phoneHome(Node hazelcastNode, String version, boolean isEnterprise) {
+    public Map<String, String> phoneHome(Node hazelcastNode) {
+        PhoneHomeParameterCreator parameterCreator = createParameters(hazelcastNode);
+
+        String urlStr = BASE_PHONE_HOME_URL + parameterCreator.build();
+        fetchWebService(urlStr);
+
+        return parameterCreator.getParameters();
+    }
+
+    public PhoneHomeParameterCreator createParameters(Node hazelcastNode) {
+        ClusterServiceImpl clusterService = hazelcastNode.getClusterService();
+        int clusterSize = clusterService.getMembers().size();
+        Long clusterUpTime = clusterService.getClusterClock().getClusterUpTime();
+        RuntimeMXBean runtimeMxBean = ManagementFactory.getRuntimeMXBean();
+        JetBuildInfo jetBuildInfo = hazelcastNode.getBuildInfo().getJetBuildInfo();
+
+        PhoneHomeParameterCreator parameterCreator = new PhoneHomeParameterCreator()
+                .addParam("version", buildInfo.getVersion())
+                .addParam("m", hazelcastNode.getThisUuid())
+                .addParam("p", getDownloadId())
+                .addParam("c", clusterService.getClusterId())
+                .addParam("crsz", convertToLetter(clusterSize))
+                .addParam("cssz", convertToLetter(hazelcastNode.clientEngine.getClientEndpointCount()))
+                .addParam("cuptm", Long.toString(clusterUpTime))
+                .addParam("nuptm", Long.toString(runtimeMxBean.getUptime()))
+                .addParam("jvmn", runtimeMxBean.getVmName())
+                .addParam("jvmv", System.getProperty("java.version"))
+                .addParam("jetv", jetBuildInfo == null ? "" : jetBuildInfo.getVersion());
+        addClientInfo(hazelcastNode, parameterCreator);
+        addOSInfo(parameterCreator);
+        boolean isManagementCenterConfigEnabled = hazelcastNode.config.getManagementCenterConfig().isEnabled();
+        if (isManagementCenterConfigEnabled) {
+            addManCenterInfo(hazelcastNode, clusterSize, parameterCreator);
+        } else {
+            parameterCreator.addParam("mclicense", "MC_NOT_CONFIGURED");
+            parameterCreator.addParam("mcver", "MC_NOT_CONFIGURED");
+        }
+
+        return parameterCreator;
+    }
+
+    public String getDownloadId() {
         String downloadId = "source";
         InputStream is = null;
         try {
@@ -153,49 +200,7 @@ public final class PhoneHome {
         } finally {
             closeResource(is);
         }
-
-        // calculate native memory usage from native memory config
-        NativeMemoryConfig memoryConfig = hazelcastNode.getConfig().getNativeMemoryConfig();
-        ClusterServiceImpl clusterService = hazelcastNode.getClusterService();
-        long totalNativeMemorySize = clusterService.getSize(DATA_MEMBER_SELECTOR) * memoryConfig.getSize().bytes();
-        String nativeMemoryParameter = (isEnterprise) ? Long.toString(MemoryUnit.BYTES.toGigaBytes(totalNativeMemorySize)) : "0";
-
-        int clusterSize = clusterService.getMembers().size();
-        Long clusterUpTime = clusterService.getClusterClock().getClusterUpTime();
-        RuntimeMXBean runtimeMxBean = ManagementFactory.getRuntimeMXBean();
-        String licenseKey = hazelcastNode.getConfig().getLicenseKey();
-        JetBuildInfo jetBuildInfo = hazelcastNode.getBuildInfo().getJetBuildInfo();
-
-        PhoneHomeParameterCreator parameterCreator = new PhoneHomeParameterCreator()
-                .addParam("version", version)
-                .addParam("m", hazelcastNode.getThisUuid())
-                .addParam("e", Boolean.toString(isEnterprise))
-                .addParam("l", licenseKey == null ? "" : MD5Util.toMD5String(licenseKey))
-                .addParam("p", downloadId)
-                .addParam("c", clusterService.getClusterId())
-                .addParam("crsz", convertToLetter(clusterSize))
-                .addParam("cssz", convertToLetter(hazelcastNode.clientEngine.getClientEndpointCount()))
-                .addParam("hdgb", nativeMemoryParameter)
-                .addParam("cuptm", Long.toString(clusterUpTime))
-                .addParam("nuptm", Long.toString(runtimeMxBean.getUptime()))
-                .addParam("jvmn", runtimeMxBean.getVmName())
-                .addParam("jvmv", System.getProperty("java.version"))
-                .addParam("jetv", jetBuildInfo == null ? "" : jetBuildInfo.getVersion());
-        addClientInfo(hazelcastNode, parameterCreator);
-        addOSInfo(parameterCreator);
-
-        boolean isManagementCenterConfigEnabled = hazelcastNode.config.getManagementCenterConfig().isEnabled();
-        if (isManagementCenterConfigEnabled) {
-            addManCenterInfo(hazelcastNode, clusterSize, parameterCreator);
-        } else {
-            parameterCreator.addParam("mclicense", "MC_NOT_CONFIGURED");
-            parameterCreator.addParam("mcver", "MC_NOT_CONFIGURED");
-        }
-
-        String urlStr = BASE_PHONE_HOME_URL + parameterCreator.build();
-        fetchWebService(urlStr);
-
-        return parameterCreator.getParameters();
+        return downloadId;
     }
 
     private void fetchWebService(String urlStr) {
@@ -305,13 +310,16 @@ public final class PhoneHome {
         }
     }
 
-    private static class PhoneHomeParameterCreator {
+    /**
+     * Util class for parameters of OS and EE PhoneHome pings.
+     */
+    public static class PhoneHomeParameterCreator {
 
         private final StringBuilder builder;
         private final Map<String, String> parameters = new HashMap<String, String>();
         private boolean hasParameterBefore;
 
-        PhoneHomeParameterCreator() {
+        public PhoneHomeParameterCreator() {
             builder = new StringBuilder();
             builder.append("?");
         }
@@ -320,7 +328,7 @@ public final class PhoneHome {
             return parameters;
         }
 
-        PhoneHomeParameterCreator addParam(String key, String value) {
+        public PhoneHomeParameterCreator addParam(String key, String value) {
             if (hasParameterBefore) {
                 builder.append("&");
             } else {
