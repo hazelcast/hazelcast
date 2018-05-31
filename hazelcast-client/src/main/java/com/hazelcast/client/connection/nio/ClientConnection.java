@@ -37,7 +37,6 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.channels.CancelledKeyException;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.util.StringUtil.timeToStringFriendly;
@@ -51,8 +50,6 @@ public class ClientConnection implements Connection {
     @Probe
     private final int connectionId;
     private final ILogger logger;
-
-    private final AtomicInteger pendingPacketCount = new AtomicInteger(0);
     private final Channel channel;
     private final ClientConnectionManagerImpl connectionManager;
     private final LifecycleService lifecycleService;
@@ -89,18 +86,6 @@ public class ClientConnection implements Connection {
         this.connectionId = connectionId;
         this.channel = null;
         this.logger = client.getLoggingService().getLogger(ClientConnection.class);
-    }
-
-    public void incrementPendingPacketCount() {
-        pendingPacketCount.incrementAndGet();
-    }
-
-    public void decrementPendingPacketCount() {
-        pendingPacketCount.decrementAndGet();
-    }
-
-    public int getPendingPacketCount() {
-        return pendingPacketCount.get();
     }
 
     @Override
@@ -243,10 +228,9 @@ public class ClientConnection implements Connection {
     }
 
     public void handleClientMessage(ClientMessage message) {
-        incrementPendingPacketCount();
         if (message.isFlagSet(ClientMessage.LISTENER_EVENT_FLAG)) {
             AbstractClientListenerService listenerService = (AbstractClientListenerService) client.getListenerService();
-            listenerService.handleClientMessage(message, this);
+            listenerService.handleClientMessage(message);
         } else {
             responseHandler.handle(message);
         }
