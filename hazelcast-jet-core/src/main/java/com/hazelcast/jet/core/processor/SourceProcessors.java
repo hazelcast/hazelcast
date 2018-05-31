@@ -40,7 +40,6 @@ import com.hazelcast.query.Predicate;
 
 import javax.annotation.Nonnull;
 import javax.jms.Connection;
-import javax.jms.ConnectionFactory;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.Session;
@@ -338,9 +337,7 @@ public final class SourceProcessors {
     }
 
     /**
-     * Returns a supplier of processors for
-     * {@link Sources#jmsQueue(DistributedSupplier, DistributedFunction,
-     * DistributedFunction, DistributedConsumer, DistributedFunction)}.
+     * Returns a supplier of processors for {@link Sources#jmsQueueBuilder}.
      */
     @Nonnull
     public static <T> ProcessorMetaSupplier streamJmsQueueP(
@@ -356,23 +353,7 @@ public final class SourceProcessors {
     }
 
     /**
-     * Returns a supplier of processors for
-     * {@link Sources#jmsQueue(DistributedSupplier, String)}.
-     */
-    @Nonnull
-    public static ProcessorMetaSupplier streamJmsQueueP(
-            @Nonnull DistributedSupplier<ConnectionFactory> factorySupplier,
-            @Nonnull String name
-    ) {
-        return ProcessorMetaSupplier.of(
-                StreamJmsP.supplier(factorySupplier, name, true),
-                StreamJmsP.PREFERRED_LOCAL_PARALLELISM);
-    }
-
-    /**
-     * Returns a supplier of processors for
-     * {@link Sources#jmsTopic(DistributedSupplier, DistributedFunction,
-     * DistributedFunction, DistributedConsumer, DistributedFunction)}.
+     * Returns a supplier of processors for {@link Sources#jmsTopicBuilder}.
      */
     @Nonnull
     public static <T> ProcessorMetaSupplier streamJmsTopicP(
@@ -384,18 +365,6 @@ public final class SourceProcessors {
     ) {
         return ProcessorMetaSupplier.forceTotalParallelismOne(
                 StreamJmsP.supplier(connectionSupplier, sessionFn, consumerFn, flushFn, projectionFn));
-    }
-
-    /**
-     * Returns a supplier of processors for
-     * {@link Sources#jmsTopic(DistributedSupplier, String)}.
-     */
-    @Nonnull
-    public static ProcessorMetaSupplier streamJmsTopicP(
-            @Nonnull DistributedSupplier<ConnectionFactory> factorySupplier,
-            @Nonnull String name
-    ) {
-        return ProcessorMetaSupplier.forceTotalParallelismOne(StreamJmsP.supplier(factorySupplier, name, false));
     }
 
     private static <I, O> Projection<I, O> toProjection(DistributedFunction<I, O> projectionFn) {

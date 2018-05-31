@@ -24,8 +24,6 @@ import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
-import com.hazelcast.jet.pipeline.JmsSinkBuilder;
-import com.hazelcast.jet.pipeline.JmsSourceBuilder;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sink;
 import com.hazelcast.jet.pipeline.Sinks;
@@ -149,7 +147,7 @@ public class JmsIntegrationTest extends JetTestSupport {
 
     @Test
     public void sourceQueue_withBuilder() {
-        StreamSource<String> source = JmsSourceBuilder.<String>builder(() -> broker.createConnectionFactory())
+        StreamSource<String> source = Sources.<String>jmsQueueBuilder(() -> broker.createConnectionFactory())
                 .destinationName(destinationName)
                 .projectionFn(TEXT_MESSAGE_FN)
                 .build();
@@ -168,9 +166,8 @@ public class JmsIntegrationTest extends JetTestSupport {
 
     @Test
     public void sourceTopic_withBuilder() {
-        StreamSource<String> source = JmsSourceBuilder.<String>builder(() -> broker.createConnectionFactory())
+        StreamSource<String> source = Sources.<String>jmsTopicBuilder(() -> broker.createConnectionFactory())
                 .destinationName(destinationName)
-                .topic()
                 .projectionFn(TEXT_MESSAGE_FN)
                 .build();
 
@@ -191,7 +188,7 @@ public class JmsIntegrationTest extends JetTestSupport {
     public void sinkQueue_withBuilder() throws JMSException {
         populateList();
 
-        Sink<String> sink = JmsSinkBuilder.<String>builder(() -> broker.createConnectionFactory())
+        Sink<String> sink = Sinks.<String>jmsQueueBuilder(() -> broker.createConnectionFactory())
                 .destinationName(destinationName)
                 .build();
 
@@ -210,9 +207,8 @@ public class JmsIntegrationTest extends JetTestSupport {
     public void sinkTopic_withBuilder() throws JMSException {
         populateList();
 
-        Sink<String> sink = JmsSinkBuilder.<String>builder(() -> broker.createConnectionFactory())
+        Sink<String> sink = Sinks.<String>jmsTopicBuilder(() -> broker.createConnectionFactory())
                 .destinationName(destinationName)
-                .topic()
                 .build();
 
         Pipeline pipeline = Pipeline.create();

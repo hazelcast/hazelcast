@@ -35,7 +35,6 @@ import com.hazelcast.map.EntryProcessor;
 
 import javax.annotation.Nonnull;
 import javax.jms.Connection;
-import javax.jms.ConnectionFactory;
 import javax.jms.Message;
 import javax.jms.MessageProducer;
 import javax.jms.Session;
@@ -311,10 +310,7 @@ public final class SinkProcessors {
     }
 
     /**
-     * Returns a supplier of processors for {@link
-     * Sinks#jmsQueue(DistributedSupplier, DistributedFunction,
-     * DistributedBiFunction, DistributedBiConsumer, DistributedConsumer,
-     * String)}.
+     * Returns a supplier of processors for {@link Sinks#jmsQueueBuilder}.
      */
     @Nonnull
     public static <T> ProcessorMetaSupplier writeJmsQueueP(
@@ -329,22 +325,7 @@ public final class SinkProcessors {
     }
 
     /**
-     * Returns a supplier of processors for {@link
-     * Sinks#jmsQueue(DistributedSupplier, String)}.
-     */
-    @Nonnull
-    public static ProcessorMetaSupplier writeJmsQueueP(
-            @Nonnull DistributedSupplier<ConnectionFactory> factorySupplier,
-            @Nonnull String name
-    ) {
-        return WriteJmsP.supplier(factorySupplier, name, false);
-    }
-
-    /**
-     * Returns a supplier of processors for {@link
-     * Sinks#jmsTopic(DistributedSupplier, DistributedFunction,
-     * DistributedBiFunction, DistributedBiConsumer, DistributedConsumer,
-     * String)}.
+     * Returns a supplier of processors for {@link Sinks#jmsTopicBuilder}.
      */
     @Nonnull
     public static <T> ProcessorMetaSupplier writeJmsTopicP(
@@ -356,17 +337,5 @@ public final class SinkProcessors {
             @Nonnull String name
     ) {
         return WriteJmsP.supplier(connectionSupplier, sessionF, messageFn, sendFn, flushFn, name, true);
-    }
-
-    /**
-     * Returns a supplier of processors for {@link
-     * Sinks#jmsTopic(DistributedSupplier, String)}.
-     */
-    @Nonnull
-    public static ProcessorMetaSupplier writeJmsTopicP(
-            @Nonnull DistributedSupplier<ConnectionFactory> factorySupplier,
-            @Nonnull String name
-    ) {
-        return WriteJmsP.supplier(factorySupplier, name, true);
     }
 }

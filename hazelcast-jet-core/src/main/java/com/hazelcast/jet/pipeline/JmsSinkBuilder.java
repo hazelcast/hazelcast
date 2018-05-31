@@ -37,13 +37,14 @@ import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
- * See {@link JmsSinkBuilder#builder(DistributedSupplier)}
+ * See {@link Sinks#jmsQueueBuilder} or {@link Sinks#jmsTopicBuilder}.
  *
  * @param <T> type of the items the sink accepts
  */
 public final class JmsSinkBuilder<T> {
 
     private final DistributedSupplier<ConnectionFactory> factorySupplier;
+    private final boolean isTopic;
 
     private DistributedFunction<ConnectionFactory, Connection> connectionFn;
     private DistributedFunction<Connection, Session> sessionFn;
@@ -56,57 +57,13 @@ public final class JmsSinkBuilder<T> {
     private boolean transacted;
     private int acknowledgeMode = Session.AUTO_ACKNOWLEDGE;
     private String destinationName;
-    private boolean isTopic;
 
     /**
-     * Use {@link JmsSinkBuilder#builder(DistributedSupplier)}.
+     * Use {@link Sinks#jmsQueueBuilder} or {@link Sinks#jmsTopicBuilder}.
      */
-    private JmsSinkBuilder(@Nonnull DistributedSupplier<ConnectionFactory> factorySupplier) {
+    JmsSinkBuilder(@Nonnull DistributedSupplier<ConnectionFactory> factorySupplier, boolean isTopic) {
         this.factorySupplier = factorySupplier;
-    }
-
-    /**
-     * Returns a builder object that offers a step-by-step fluent API to build
-     * a custom JMS {@link StreamSource} for the Pipeline API.
-     * <p>
-     * These are the callback functions you can provide to implement the sink's
-     * behavior:
-     * <ol><li>
-     *     {@code factorySupplier} creates the connection factory. This
-     *     component is required.
-     * </li><li>
-     *     {@code destinationName} sets the name of the destination. This
-     *     component is required.
-     * </li><li>
-     *     {@code connectionFn} creates the connection. This component is
-     *     optional; if not provided, the builder creates a function which uses
-     *     {@code ConnectionFactory#createConnection(username, password)} to
-     *     create the connection. See {@link #connectionParams(String, String)}.
-     * </li><li>
-     *     {@code sessionFn} creates the session. This component is optional;
-     *     if not provided, the builder creates a function which uses {@code
-     *     Connection#createSession(boolean transacted, int acknowledgeMode)}
-     *     to create the session. See {@link #sessionParams(boolean, int)}.
-     * </li><li>
-     *     {@code messageFn} creates the message from the item. This component is
-     *     optional; if not provided, the builder creates a function that wraps {@code
-     *     item.toString()} into a {@link javax.jms.TextMessage}.
-     * </li><li>
-     *     {@code sendFn} sends the message via message producer. This component
-     *     is optional; if not provided, the builder creates a function which sends
-     *     the message using {@code MessageProducer#send(Message message)}.
-     * </li><li>
-     *     {@code flushFn} flushes the session. This component is optional; if
-     *     not provided, the builder creates a no-op consumer.
-     * </li><li>
-     *     {@code topic} sets that the destination is a topic. This call is
-     *     optional; if not called, the builder treats the destination as a queue.
-     * </li></ol>
-     *
-     * @param <T> type of the items the source emits
-     */
-    public static <T> JmsSinkBuilder<T> builder(@Nonnull DistributedSupplier<ConnectionFactory> factorySupplier) {
-        return new JmsSinkBuilder<>(factorySupplier);
+        this.isTopic = isTopic;
     }
 
     /**
@@ -170,19 +127,11 @@ public final class JmsSinkBuilder<T> {
     }
 
     /**
-     * Sets that the destination is a topic. If not called, the destination
-     * will be treated as a queue.
-     */
-    public JmsSinkBuilder<T> topic() {
-        this.isTopic = true;
-        return this;
-    }
-
-    /**
      * Sets the function which creates the message from the item.
      * <p>
      * If not provided, the builder creates a function which wraps {@code
-     * item.toString()} into a {@link javax.jms.TextMessage}.
+     * item.toString()} into a {@link javax.jms.TextMessage}, unless the item
+     * is already an instance of {@code javax.jms.Message}.
      */
     public JmsSinkBuilder<T> messageFn(DistributedBiFunction<Session, T, Message> messageFn) {
         this.messageFn = messageFn;
@@ -228,7 +177,8 @@ public final class JmsSinkBuilder<T> {
             sessionFn = connection -> uncheckCall(() -> connection.createSession(transactedLocal, acknowledgeModeLocal));
         }
         if (messageFn == null) {
-            messageFn = (session, item) -> uncheckCall(() -> session.createTextMessage(item.toString()));
+            messageFn = (session, item) -> uncheckCall(() ->
+                    item instanceof Message ? (Message) item : session.createTextMessage(item.toString()));
         }
         if (sendFn == null) {
             sendFn = (producer, message) -> uncheckRun(() -> producer.send(message));
@@ -245,8 +195,6 @@ public final class JmsSinkBuilder<T> {
     }
 
     private String sinkName() {
-        return String.format("jms%s(%s)", isTopic ? "Topic" : "Queue", destinationName);
+        return String.format("jms%sSink(%s)", isTopic ? "Topic" : "Queue", destinationName);
     }
-
-
 }

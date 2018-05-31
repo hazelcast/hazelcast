@@ -27,16 +27,12 @@ import com.hazelcast.jet.function.DistributedSupplier;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.jms.Connection;
-import javax.jms.ConnectionFactory;
-import javax.jms.Destination;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.Session;
 import java.util.Collection;
 import java.util.stream.Collectors;
 
-import static com.hazelcast.jet.function.DistributedFunctions.noopConsumer;
-import static com.hazelcast.jet.function.DistributedFunctions.wholeItem;
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static java.util.stream.IntStream.range;
@@ -91,29 +87,6 @@ public class StreamJmsP<T> extends AbstractProcessor {
             @Nonnull DistributedFunction<Message, T> projectionFn
     ) {
         return new Supplier<>(connectionSupplier, sessionFn, consumerFn, flushFn, projectionFn);
-    }
-
-    /**
-     * Private API. Use {@link
-     * com.hazelcast.jet.core.processor.SourceProcessors#streamJmsQueueP} or
-     * {@link com.hazelcast.jet.core.processor.SourceProcessors#streamJmsTopicP}
-     * instead.
-     */
-    @Nonnull
-    public static ProcessorSupplier supplier(
-            @Nonnull DistributedSupplier<ConnectionFactory> factorySupplier,
-            @Nonnull String name,
-            boolean isQueue
-    ) {
-        return supplier(
-                () -> uncheckCall(() -> factorySupplier.get().createConnection()),
-                connection -> uncheckCall(() -> connection.createSession(false, Session.AUTO_ACKNOWLEDGE)),
-                session -> uncheckCall(() -> {
-                    Destination destination = isQueue ? session.createQueue(name) : session.createTopic(name);
-                    return session.createConsumer(destination);
-                }),
-                noopConsumer(), wholeItem()
-        );
     }
 
     @Override

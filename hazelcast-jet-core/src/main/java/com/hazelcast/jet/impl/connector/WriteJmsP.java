@@ -26,7 +26,6 @@ import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedSupplier;
 
 import javax.jms.Connection;
-import javax.jms.ConnectionFactory;
 import javax.jms.Destination;
 import javax.jms.Message;
 import javax.jms.MessageProducer;
@@ -35,7 +34,6 @@ import java.util.Collection;
 import java.util.stream.Stream;
 
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeBufferedP;
-import static com.hazelcast.jet.function.DistributedFunctions.noopConsumer;
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static java.util.stream.Collectors.toList;
@@ -70,23 +68,6 @@ public final class WriteJmsP {
         return ProcessorMetaSupplier.of(
                 new Supplier<>(connectionSupplier, sessionF, messageFn, sendFn, flushFn, name, isTopic),
                 PREFERRED_LOCAL_PARALLELISM);
-    }
-
-    /**
-     * Private API. Use {@link
-     * com.hazelcast.jet.core.processor.SinkProcessors#writeJmsQueueP} or
-     * {@link com.hazelcast.jet.core.processor.SinkProcessors#writeJmsTopicP}
-     * instead
-     */
-    public static ProcessorMetaSupplier supplier(DistributedSupplier<ConnectionFactory> factorySupplier,
-                                                 String name, boolean isTopic) {
-        return supplier(
-                () -> uncheckCall(() -> factorySupplier.get().createConnection()),
-                connection -> uncheckCall(() -> connection.createSession(false, Session.AUTO_ACKNOWLEDGE)),
-                (session, item) -> uncheckCall(() -> session.createTextMessage(item.toString())),
-                (producer, message) -> uncheckRun(() -> producer.send(message)),
-                noopConsumer(), name, isTopic
-        );
     }
 
     private static final class Supplier<T> implements ProcessorSupplier {

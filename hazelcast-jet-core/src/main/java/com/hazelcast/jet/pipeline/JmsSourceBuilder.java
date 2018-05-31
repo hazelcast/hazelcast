@@ -36,13 +36,14 @@ import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
- * See {@link JmsSourceBuilder#builder(DistributedSupplier)}.
+ * See {@link Sources#jmsQueueBuilder} of {@link Sources#jmsTopicBuilder}.
  *
  * @param <T> type of the items the source emits
  */
 public final class JmsSourceBuilder<T> {
 
     private final DistributedSupplier<ConnectionFactory> factorySupplier;
+    private final boolean isTopic;
 
     private DistributedFunction<ConnectionFactory, Connection> connectionFn;
     private DistributedFunction<Connection, Session> sessionFn;
@@ -55,53 +56,13 @@ public final class JmsSourceBuilder<T> {
     private boolean transacted;
     private int acknowledgeMode = Session.AUTO_ACKNOWLEDGE;
     private String destinationName;
-    private boolean isTopic;
 
     /**
-     * Use {@link JmsSourceBuilder#builder(DistributedSupplier)}.
+     * Use {@link Sources#jmsQueueBuilder} of {@link Sources#jmsTopicBuilder}.
      */
-    private JmsSourceBuilder(DistributedSupplier<ConnectionFactory> factorySupplier) {
+    JmsSourceBuilder(DistributedSupplier<ConnectionFactory> factorySupplier, boolean isTopic) {
         this.factorySupplier = factorySupplier;
-    }
-
-    /**
-     * Returns a builder object that offers a step-by-step fluent API to build
-     * a custom JMS {@link StreamSource} for the Pipeline API.
-     * <p>
-     * These are the callback functions you can provide to implement the
-     * sources's behavior:
-     * <ol><li>
-     *     {@code factorySupplier} creates the connection factory. This
-     *     component is required.
-     * </li><li>
-     *     {@code connectionFn} creates the connection. This component is
-     *     optional; if not provided, the builder creates a function which uses
-     *     {@code ConnectionFactory#createConnection(username, password)} to
-     *     create the connection. See {@link #connectionParams(String, String)}.
-     * </li><li>
-     *     {@code sessionFn} creates the session. This component is optional;
-     *     if not provided, the builder creates a function which uses {@code
-     *     Connection#createSession(boolean transacted, int acknowledgeMode)}
-     *     to create the session. See {@link #sessionParams(boolean, int)}.
-     * </li><li>
-     *     {@code consumerFn} creates the message consumer. This component is
-     *     optional; if not provided, the builder creates a function which uses
-     *     {@code Session#createConsumer(Destination destination)} to create the
-     *     consumer. Either {@code consumerFn} or {@code destinationName} should
-     *     be set. See {@link #destinationName(String)} and {@link #topic()}.
-     * </li><li>
-     *     {@code projectionFn} creates the output object from a {@code Message}.
-     *     This component is optional; if not provided, identity function is
-     *     used instead.
-     * </li><li>
-     *     {@code flushFn} flushes the session. This component is optional; if
-     *     not provided builder creates a no-op consumer.
-     * </li></ol>
-     *
-     * @param <T> type of the items the source emits
-     */
-    public static <T> JmsSourceBuilder<T> builder(@Nonnull DistributedSupplier<ConnectionFactory> factorySupplier) {
-        return new JmsSourceBuilder<>(factorySupplier);
+        this.isTopic = isTopic;
     }
 
     /**
@@ -166,22 +127,12 @@ public final class JmsSourceBuilder<T> {
     }
 
     /**
-     * Sets that the destination is a topic. If not called, the destination is
-     * treated as a queue. If {@code consumerFn} is provided this parameter is
-     * ignored.
-     */
-    public JmsSourceBuilder<T> topic() {
-        this.isTopic = true;
-        return this;
-    }
-
-    /**
      * Sets the function which creates the message consumer from session.
      * <p>
      * If not provided, the builder creates a function which uses {@code
      * Session#createConsumer(Destination destination)} to create the consumer.
      * Either {@code consumerFn} or {@code destinationName} should be set. See
-     * {@link #destinationName(String)} and {@link #topic()}.
+     * {@link #destinationName(String)}.
      */
     public JmsSourceBuilder<T> consumerFn(@Nonnull DistributedFunction<Session, MessageConsumer> consumerFn) {
         this.consumerFn = consumerFn;
@@ -252,10 +203,7 @@ public final class JmsSourceBuilder<T> {
     }
 
     private String sourceName() {
-        if (isTopic) {
-            return destinationName == null ? "jmsTopic" : "jmsTopic(" + destinationName + ")";
-        }
-        return destinationName == null ? "jmsQueue" : "jmsQueue(" + destinationName + ")";
+        return (isTopic ? "jmsTopicSource(" : "jmsQueueSource(")
+                + (destinationName == null ? "?" : destinationName) + ")";
     }
-
 }
