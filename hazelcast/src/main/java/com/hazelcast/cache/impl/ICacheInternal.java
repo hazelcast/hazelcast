@@ -65,4 +65,10 @@ public interface ICacheInternal<K, V> extends ICache<K, V> {
      * @param cacheManager client or server {@link HazelcastCacheManager}
      */
     void setCacheManager(HazelcastCacheManager cacheManager);
+
+    /**
+     * Reset cache manager of this cache proxy to {@code null}. Whenever a Cache is not managed any more
+     * (for example after {@code Cache.close()} has been called), its {@code CacheManager} should be reset.
+     */
+    void resetCacheManager();
 }
