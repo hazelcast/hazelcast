@@ -30,14 +30,12 @@ import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -56,7 +54,9 @@ import java.util.concurrent.Executors;
 
 import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.ENTRY_COUNT;
 import static java.util.Collections.singletonList;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assume.assumeFalse;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -68,19 +68,14 @@ public class CacheCreationTest extends HazelcastTestSupport {
     @Rule
     public ExpectedException thrown = ExpectedException.none();
 
-    @BeforeClass
-    public static void jsrSetup() {
+    @Before
+    public void jsrSetup() {
         JsrTestUtil.setup();
-    }
-
-    @AfterClass
-    public static void jsrTeardown() {
-        JsrTestUtil.cleanup();
     }
 
     @After
     public void teardown() {
-        HazelcastInstanceFactory.shutdownAll();
+        JsrTestUtil.cleanup();
     }
 
     @Test
@@ -166,13 +161,45 @@ public class CacheCreationTest extends HazelcastTestSupport {
         assumeFalse("test_createSetupRef is only applicable for Hazelcast members",
                 ClassLoaderUtil.isClassAvailable(null, "com.hazelcast.client.HazelcastClient"));
         HazelcastInstance hz = Hazelcast.newHazelcastInstance();
-        try {
-            DistributedObject setupRef = HazelcastTestSupport.getNodeEngineImpl(hz).getProxyService()
-                    .getDistributedObject(CacheService.SERVICE_NAME, "setupRef");
-            assertNotNull(setupRef);
-        } finally {
-            Hazelcast.shutdownAll();
-        }
+        DistributedObject setupRef = HazelcastTestSupport.getNodeEngineImpl(hz).getProxyService()
+                .getDistributedObject(CacheService.SERVICE_NAME, "setupRef");
+        assertNotNull(setupRef);
+    }
+
+    @Test
+    public void getExistingCache_onNewCacheManager_afterManagerClosed() {
+        CachingProvider provider = Caching.getCachingProvider();
+        CacheManager manager = provider.getCacheManager();
+        String cacheName = randomName();
+        Cache cache = manager.createCache(cacheName, new CacheConfig());
+        assertEquals(manager, cache.getCacheManager());
+
+        manager.close();
+
+        // cache is no longer managed
+        assertNull(cache.getCacheManager());
+
+        manager = provider.getCacheManager();
+        cache = manager.getCache(cacheName);
+        assertEquals(manager, cache.getCacheManager());
+    }
+
+    @Test
+    public void getExistingCache_afterCacheClosed() {
+        CachingProvider provider = Caching.getCachingProvider();
+        CacheManager manager = provider.getCacheManager();
+        String cacheName = randomName();
+        Cache cache = manager.createCache(cacheName, new CacheConfig());
+        assertEquals(manager, cache.getCacheManager());
+
+        cache.close();
+
+        // cache is no longer managed
+        assertNull(cache.getCacheManager());
+
+        cache = manager.getCache(cacheName);
+        // cache is now managed
+        assertEquals(manager, cache.getCacheManager());
     }
 
     protected CachingProvider createCachingProvider(Config hzConfig) {
