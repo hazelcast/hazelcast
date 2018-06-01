@@ -40,6 +40,7 @@ import static com.hazelcast.jet.function.DistributedFunctions.noopConsumer;
 public final class SinkBuilder<W, T> {
 
     private final DistributedFunction<Processor.Context, ? extends W> createFn;
+    private final String name;
     private DistributedBiConsumer<? super W, ? super T> onReceiveFn;
     private DistributedConsumer<? super W> flushFn = noopConsumer();
     private DistributedConsumer<? super W> destroyFn = noopConsumer();
@@ -48,7 +49,8 @@ public final class SinkBuilder<W, T> {
     /**
      * Use {@link Sinks#builder(DistributedFunction)}.
      */
-    SinkBuilder(@Nonnull DistributedFunction<Processor.Context, ? extends W> createFn) {
+    SinkBuilder(@Nonnull String name, DistributedFunction<Processor.Context, ? extends W> createFn) {
+        this.name = name;
         this.createFn = createFn;
     }
 
@@ -121,6 +123,6 @@ public final class SinkBuilder<W, T> {
         Preconditions.checkNotNull(onReceiveFn, "onReceiveFn must be set");
 
         DistributedSupplier<Processor> supplier = SinkProcessors.writeBufferedP(createFn, onReceiveFn, flushFn, destroyFn);
-        return new SinkImpl<>("custom-sink", ProcessorMetaSupplier.of(supplier, preferredLocalParallelism));
+        return new SinkImpl<>(name, ProcessorMetaSupplier.of(supplier, preferredLocalParallelism));
     }
 }

@@ -90,7 +90,7 @@ public class SinkBuilderTest extends PipelineTestSupport {
 
             // When
             int portNumber = serverSocket.getLocalPort();
-            Sink<Integer> sink = Sinks.<PrintWriter, Integer>builder(jet -> uncheckCall(() ->
+            Sink<Integer> sink = Sinks.<PrintWriter, Integer>builder("socket-sink", jet -> uncheckCall(() ->
                     getSocketWriter(portNumber)))
                     .onReceiveFn(PrintWriter::println)
                     .flushFn(s -> uncheckRun(s::flush))
@@ -105,7 +105,7 @@ public class SinkBuilderTest extends PipelineTestSupport {
     }
 
     private static Sink<Integer> buildRandomFileSink(String listName) {
-        return Sinks.<File, Integer>builder(context ->
+        return Sinks.<File, Integer>builder("file-sink", context ->
                 uncheckCall(() -> {
                     File directory = createTempDirectory();
                     File file = new File(directory, randomName());

@@ -601,9 +601,10 @@ public final class Sinks {
      */
     @Nonnull
     public static <W, T> SinkBuilder<W, T> builder(
+            @Nonnull String name,
             @Nonnull DistributedFunction<Processor.Context, ? extends W> createFn
     ) {
-        return new SinkBuilder<>(createFn);
+        return new SinkBuilder<>(name, createFn);
     }
 
     /**
