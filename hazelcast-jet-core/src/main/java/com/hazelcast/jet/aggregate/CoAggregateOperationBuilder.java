@@ -20,7 +20,6 @@ import com.hazelcast.jet.datamodel.ItemsByTag;
 import com.hazelcast.jet.datamodel.Tag;
 import com.hazelcast.jet.function.DistributedBiConsumer;
 import com.hazelcast.jet.function.DistributedFunction;
-import com.hazelcast.jet.pipeline.StageWithWindow;
 import com.hazelcast.util.Preconditions;
 
 import javax.annotation.Nonnull;
@@ -39,17 +38,9 @@ import static java.util.stream.IntStream.range;
 
 /**
  * Offers a step-by-step API to create an aggregate operation that
- * accepts multiple inputs. You must supply this kind of operation to a
- * co-aggregating pipeline stage. Most typically you'll need this builder
- * if you're using the {@link StageWithWindow#aggregateBuilder()}. For
- * two-way or three-way co-aggregation you can use {@link
- * AggregateOperations#aggregateOperation2} and {@link AggregateOperations#aggregateOperation3}.
- * <p>
- * To obtain this builder, call {@link AggregateOperations#coAggregateOperationBuilder()}.
- * This builder is suitable only if you'll use independent aggregate
- * operations on each input and expect to receive a separate result for
- * each of them. You can combine the individual results in the final
- * step by providing a {@code finishFn}.
+ * accepts multiple inputs. To obtain it, call {@link
+ * AggregateOperations#coAggregateOperationBuilder()}. and refer to that
+ * method's Javadoc for further details.
  */
 public class CoAggregateOperationBuilder {
 
@@ -61,8 +52,8 @@ public class CoAggregateOperationBuilder {
      * Registers the given aggregate operation with the tag corresponding to an
      * input to the co-aggregating operation being built. If you are preparing
      * an operation to pass to an {@linkplain
-     * StageWithWindow#aggregateBuilder() aggregate builder}, you must use the
-     * tags you obtained from it.
+     * com.hazelcast.jet.pipeline.StageWithWindow#aggregateBuilder() aggregate
+     * builder}, you must use the tags you obtained from it.
      * <p>
      * Returns the tag you'll use to retrieve the results of aggregating this
      * input.

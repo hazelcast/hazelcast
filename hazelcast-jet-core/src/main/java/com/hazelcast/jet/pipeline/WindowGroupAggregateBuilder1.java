@@ -28,11 +28,8 @@ import javax.annotation.Nonnull;
  * Offers a step-by-step API to build a pipeline stage that performs a
  * windowed co-grouping and aggregation of the data from several input
  * stages. To obtain it, call {@link StageWithGroupingAndWindow#aggregateBuilder()}
- * on one of the stages to co-aggregate, then add the other stages by
- * calling {@link #add add(stage)} on the builder. Collect all the tags
- * returned from {@code add()} and use them when building the aggregate
- * operation. Retrieve the tag of the first stage (from which you obtained
- * the builder) by calling {@link #tag0()}.
+ * on one of the stages to co-aggregate and refer to that method's Javadoc
+ * for further details.
  * <p>
  * This object is mainly intended to build a co-aggregation of four or more
  * contributing stages. For up to three stages, prefer the direct {@code
