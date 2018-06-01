@@ -132,6 +132,10 @@ abstract class AbstractCacheProxyBase<K, V>
 
     @Override
     public void close() {
+        close0(false);
+    }
+
+    private void close0(boolean destroy) {
         if (!isClosed.compareAndSet(false, true)) {
             return;
         }
@@ -149,6 +153,11 @@ abstract class AbstractCacheProxyBase<K, V>
         loadAllTasks.clear();
 
         closeListeners();
+        if (!destroy) {
+            // when cache is being destroyed, the CacheManager is still required for cleanup and reset in postDestroy
+            // when cache is being closed, the CacheManager is reset now
+            resetCacheManager();
+        }
         if (caughtException != null) {
             throw new CacheException("Problem while waiting for loadAll tasks to complete", caughtException);
         }
@@ -156,7 +165,7 @@ abstract class AbstractCacheProxyBase<K, V>
 
     @Override
     protected boolean preDestroy() {
-        close();
+        close0(true);
         if (!isDestroyed.compareAndSet(false, true)) {
             return false;
         }
