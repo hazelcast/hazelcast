@@ -24,6 +24,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IList;
 import com.hazelcast.core.IMap;
 import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.Job;
 import com.hazelcast.jet.TestInClusterSupport;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.nio.Address;
@@ -43,16 +44,16 @@ import static java.util.stream.Collectors.toList;
 
 public abstract class PipelineTestSupport extends TestInClusterSupport {
 
-    int itemCount = 1_000;
-    final String srcName = journaledMapName();
-    final String sinkName = randomName();
+    protected int itemCount = 1_000;
+    protected final String srcName = journaledMapName();
+    protected final String sinkName = randomName();
 
-    Pipeline p;
-    Sink<Object> sink;
+    protected Pipeline p;
+    protected Sink<Object> sink;
 
-    IMap<String, Integer> srcMap;
-    IList<Object> srcList;
-    IList<Object> sinkList;
+    protected IMap<String, Integer> srcMap;
+    protected IList<Object> srcList;
+    protected IList<Object> sinkList;
 
     private ICache<String, Integer> srcCache;
 
@@ -66,12 +67,16 @@ public abstract class PipelineTestSupport extends TestInClusterSupport {
         sinkList = jet().getList(sinkName);
     }
 
-    JetInstance jet() {
+    protected JetInstance jet() {
         return testMode.getJet();
     }
 
     void execute() {
         jet().newJob(p).join();
+    }
+
+    protected Job start() {
+        return jet().newJob(p);
     }
 
     static String journaledMapName() {
