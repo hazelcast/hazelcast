@@ -21,14 +21,12 @@ import com.hazelcast.jet.aggregate.AggregateOperation2;
 import com.hazelcast.jet.aggregate.AggregateOperation3;
 import com.hazelcast.jet.function.DistributedBiFunction;
 import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.impl.pipeline.transform.DistinctTransform;
 import com.hazelcast.jet.impl.pipeline.transform.GroupTransform;
 import com.hazelcast.jet.pipeline.BatchStage;
-import com.hazelcast.jet.pipeline.ContextFactory;
 import com.hazelcast.jet.pipeline.StageWithGrouping;
 
 import javax.annotation.Nonnull;
-
-import java.util.HashSet;
 
 import static com.hazelcast.jet.impl.pipeline.ComputeStageImplBase.DONT_ADAPT;
 import static java.util.Arrays.asList;
@@ -45,9 +43,7 @@ public class StageWithGroupingImpl<T, K> extends StageWithGroupingBase<T, K> imp
 
     @Nonnull @Override
     public BatchStage<T> distinct() {
-        DistributedFunction<? super T, ? extends K> keyFn = keyFn();
-        return batchStage().filterUsingContext(ContextFactory.withCreateFn(jet -> new HashSet<>()),
-                (ctx, item) -> ctx.add(keyFn.apply(item)));
+        return computeStage.attach(new DistinctTransform<>(computeStage.transform, keyFn()), DONT_ADAPT);
     }
 
     @Nonnull
