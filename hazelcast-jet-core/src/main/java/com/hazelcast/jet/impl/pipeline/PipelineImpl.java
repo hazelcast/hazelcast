@@ -34,17 +34,23 @@ import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.impl.pipeline.ComputeStageImplBase.ADAPT_TO_JET_EVENT;
 import static com.hazelcast.jet.impl.pipeline.ComputeStageImplBase.DONT_ADAPT;
+import static com.hazelcast.jet.impl.pipeline.Planner.uniqueName;
+import static com.hazelcast.jet.impl.util.Util.escapeGraphviz;
 import static java.util.stream.Collectors.toList;
 
 public class PipelineImpl implements Pipeline {
 
-    private final Map<Transform, List<Transform>> adjacencyMap = new HashMap<>();
+    private final Map<Transform, List<Transform>> adjacencyMap = new LinkedHashMap<>();
 
     @Nonnull @Override
     @SuppressWarnings("unchecked")
@@ -98,8 +104,35 @@ public class PipelineImpl implements Pipeline {
         return "Pipeline " + adjacencyMap;
     }
 
+    @Nonnull @Override
+    public String toDotString() {
+        Map<Transform, List<Transform>> adjMap = this.adjacencyMap();
+        Map<Transform, String> transformNames = new HashMap<>();
+        Set<String> knownNames = new HashSet<>();
+        final StringBuilder builder = new StringBuilder(256);
+        builder.append("digraph Pipeline {\n");
+        for (Entry<Transform, List<Transform>> entry : adjMap.entrySet()) {
+            Transform src = entry.getKey();
+            String srcName = transformNames.computeIfAbsent(
+                    src, t -> uniqueName(knownNames, t.name(), "")
+            );
+            for (Transform dest : entry.getValue()) {
+                String destName = transformNames.computeIfAbsent(
+                        dest, t -> uniqueName(knownNames, t.name(), "")
+                );
+                builder.append("\t")
+                       .append("\"").append(escapeGraphviz(srcName)).append("\"")
+                       .append(" -> ")
+                       .append("\"").append(escapeGraphviz(destName)).append("\"")
+                       .append(";\n");
+            }
+        }
+        builder.append("}");
+        return builder.toString();
+    }
+
     Map<Transform, List<Transform>> adjacencyMap() {
-        Map<Transform, List<Transform>> safeCopy = new HashMap<>();
+        Map<Transform, List<Transform>> safeCopy = new LinkedHashMap<>();
         adjacencyMap.forEach((k, v) -> safeCopy.put(k, new ArrayList<>(v)));
         return safeCopy;
     }

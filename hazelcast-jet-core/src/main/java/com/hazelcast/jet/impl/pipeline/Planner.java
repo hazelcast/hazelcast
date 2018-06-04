@@ -143,17 +143,31 @@ public class Planner {
     }
 
     /**
-     * Makes the proposed name unique in the DAG by adding optional "-N"
+     * Makes the proposed name unique in the DAG by adding an optional "-N"
      * between the name and the suffix.
      *
      * @return unique name to be used for the vertex
      */
+    @Nonnull
     public String uniqueVertexName(@Nonnull String proposedName, @Nonnull String proposedNameSuffix) {
+        return uniqueName(vertexNames, proposedName, proposedNameSuffix);
+    }
+
+    /**
+     * Returns a unique name for a proposed name given a set of previously known names
+     * by adding an optional "-N" between the name and the suffix.
+     *
+     * @return unique name to be used
+     */
+    @Nonnull
+    static String uniqueName(
+            @Nonnull Set<String> knownNames, @Nonnull String proposedName, @Nonnull String proposedNameSuffix
+    ) {
         for (int index = 1; ; index++) {
             String candidate = proposedName
                     + (index == 1 ? "" : "-" + index)
                     + proposedNameSuffix;
-            if (vertexNames.add(candidate)) {
+            if (knownNames.add(candidate)) {
                 return candidate;
             }
         }

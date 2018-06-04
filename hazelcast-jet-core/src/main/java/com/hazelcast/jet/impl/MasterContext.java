@@ -78,7 +78,6 @@ import static com.hazelcast.jet.impl.execution.init.ExecutionPlanBuilder.createE
 import static com.hazelcast.jet.impl.util.ExceptionUtil.isTopologicalFailure;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
-import static com.hazelcast.jet.impl.util.Util.getJetInstance;
 import static com.hazelcast.jet.impl.util.Util.idToString;
 import static com.hazelcast.jet.impl.util.Util.jobAndExecutionId;
 import static java.util.Collections.emptyList;
@@ -201,10 +200,9 @@ public class MasterContext {
         MembersView membersView = getMembersView();
         ClassLoader previousCL = swapContextClassLoader(coordinationService.getClassLoader(jobId));
         try {
-            int defaultLocalParallelism = getJetInstance(nodeEngine).getConfig().getInstanceConfig()
-                                                                    .getCooperativeThreadCount();
             logger.info("Start executing " + jobIdString() + ", status " + jobStatus()
-                    + "\n" + dag.toString(defaultLocalParallelism));
+                    + ", execution graph in DOT format:\n" + dag.toDotString()
+                    + "\nHINT: You can use graphviz or http://viz-js.com to visualize the printed graph.");
             logger.fine("Building execution plan for " + jobIdString());
             executionPlanMap = createExecutionPlans(nodeEngine, membersView, dag, getJobConfig(), lastSnapshotId);
         } catch (Exception e) {

@@ -72,6 +72,7 @@ public interface Pipeline {
      *
      * @param <T> the type of data being drained to the sink
      */
+    @Nonnull
     <T> SinkStage drainTo(@Nonnull Sink<T> sink, GeneralStage<?>... stagesToDrain);
 
     /**
@@ -88,4 +89,10 @@ public interface Pipeline {
     static Pipeline create() {
         return new PipelineImpl();
     }
+
+    /**
+     * Returns a DOT format (graphviz) representation of the DAG
+     */
+    @Nonnull
+    String toDotString();
 }
