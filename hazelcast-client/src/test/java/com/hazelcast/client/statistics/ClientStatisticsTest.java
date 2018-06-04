@@ -212,25 +212,27 @@ public class ClientStatisticsTest extends ClientTestSupport {
     @Test
     public void testStatisticsTwoClients() {
         HazelcastInstance hazelcastInstance = hazelcastFactory.newHazelcastInstance();
-        HazelcastClientInstanceImpl client1 = createHazelcastClient();
-        HazelcastClientInstanceImpl client2 = createHazelcastClient();
-        ClientEngineImpl clientEngine = getClientEngineImpl(hazelcastInstance);
+        final HazelcastClientInstanceImpl client1 = createHazelcastClient();
+        final HazelcastClientInstanceImpl client2 = createHazelcastClient();
+        final ClientEngineImpl clientEngine = getClientEngineImpl(hazelcastInstance);
 
-        // wait enough time for statistics collection
-        sleepSeconds(STATS_PERIOD_SECONDS + 1);
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                Map<String, String> clientStatistics = clientEngine.getClientStatistics();
+                assertNotNull(clientStatistics);
+                assertEquals(2, clientStatistics.size());
+                List<String> expectedUUIDs = new ArrayList<String>(2);
+                expectedUUIDs.add(client1.getClientClusterService().getLocalClient().getUuid());
+                expectedUUIDs.add(client2.getClientClusterService().getLocalClient().getUuid());
+                for (Map.Entry<String, String> clientEntry : clientStatistics.entrySet()) {
+                    assertTrue(expectedUUIDs.contains(clientEntry.getKey()));
+                    String stats = clientEntry.getValue();
+                    assertNotNull(stats);
+                }
+            }
+        });
 
-        Map<String, String> clientStatistics = clientEngine.getClientStatistics();
-        assertNotNull(clientStatistics);
-        assertEquals(2, clientStatistics.size());
-        List<String> expectedUUIDs = new ArrayList<String>(2);
-        expectedUUIDs.add(client1.getClientClusterService().getLocalClient().getUuid());
-        expectedUUIDs.add(client2.getClientClusterService().getLocalClient().getUuid());
-        for (Map.Entry<String, String> clientEntry : clientStatistics.entrySet()) {
-            assertTrue(expectedUUIDs.contains(clientEntry.getKey()));
-            String stats = clientEntry.getValue();
-            assertNotNull(stats);
-            expectedUUIDs.remove(clientEntry.getKey());
-        }
     }
 
     @Test
