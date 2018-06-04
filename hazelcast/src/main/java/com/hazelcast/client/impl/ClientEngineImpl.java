@@ -51,7 +51,6 @@ import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.CoreService;
 import com.hazelcast.spi.EventPublishingService;
-import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.ManagedService;
@@ -320,18 +319,6 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
                 ((TcpIpConnection) conn).setEndPoint(address);
             }
         }
-        ClientEvent event = new ClientEvent(endpoint.getUuid(),
-                ClientEventType.CONNECTED,
-                endpoint.getSocketAddress(),
-                endpoint.getClientType());
-        sendClientEvent(event);
-    }
-
-    private void sendClientEvent(ClientEvent event) {
-        final EventService eventService = nodeEngine.getEventService();
-        final Collection<EventRegistration> regs = eventService.getRegistrations(SERVICE_NAME, SERVICE_NAME);
-        String uuid = event.getUuid();
-        eventService.publishEvent(SERVICE_NAME, regs, event, uuid.hashCode());
     }
 
     @Override
@@ -466,11 +453,6 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PreJoinAware
             }
 
             endpointManager.removeEndpoint(endpoint);
-            ClientEvent event = new ClientEvent(endpoint.getUuid(),
-                    ClientEventType.DISCONNECTED,
-                    endpoint.getSocketAddress(),
-                    endpoint.getClientType());
-            sendClientEvent(event);
 
             if (!endpoint.isOwnerConnection()) {
                 logger.finest("connectionRemoved: Not the owner conn:" + connection + " for endpoint " + endpoint);
