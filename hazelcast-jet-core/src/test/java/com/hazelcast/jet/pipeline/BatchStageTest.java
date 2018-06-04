@@ -33,14 +33,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 import static com.hazelcast.jet.Traversers.traverseIterable;
-import static com.hazelcast.jet.Util.entry;
-import static com.hazelcast.jet.aggregate.AggregateOperations.counting;
 import static com.hazelcast.jet.datamodel.ItemsByTag.itemsByTag;
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.datamodel.Tuple3.tuple3;
@@ -51,7 +47,6 @@ import static com.hazelcast.jet.pipeline.ContextFactories.replicatedMapContext;
 import static com.hazelcast.jet.pipeline.JoinClause.joinMapEntries;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toSet;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -263,6 +258,26 @@ public class BatchStageTest extends PipelineTestSupport {
     @Test
     public void distinct() {
         // Given
+        List<Integer> input = IntStream.range(0, 2 * itemCount)
+                                       .map(i -> i % itemCount)
+                                       .boxed().collect(toList());
+        Collections.shuffle(input);
+        putToBatchSrcMap(input);
+
+        // When
+        BatchStage<Integer> distinct = srcStage.distinct();
+
+        // Then
+        distinct.drainTo(sink);
+        execute();
+        assertEquals(
+                toBag(IntStream.range(0, itemCount).boxed().collect(toList())),
+                sinkToBag());
+    }
+
+    @Test
+    public void distinctByKey() {
+        // Given
         DistributedFunction<Integer, Integer> keyFn = i -> i / 2;
         List<Integer> input = IntStream.range(0, 2 * itemCount).boxed().collect(toList());
         Collections.shuffle(input);
@@ -275,47 +290,9 @@ public class BatchStageTest extends PipelineTestSupport {
         distinct.drainTo(sink);
         execute();
         Map<Integer, Integer> sinkBag = sinkToBag();
-        sinkBag.values().forEach(count -> assertEquals(1, (long) count));
-        assertEquals(sinkBag.keySet().stream().map(keyFn).collect(toSet()),
-                IntStream.range(0, itemCount).boxed().collect(toSet()));
-    }
-
-    @Test
-    public void groupBy() {
-        //Given
-        List<Integer> input = IntStream.range(1, 100).boxed()
-                                       .flatMap(i -> Collections.nCopies(i, i).stream())
-                                       .collect(toList());
-        putToBatchSrcMap(input);
-
-        // When
-        BatchStage<Entry<Integer, Long>> grouped = srcStage.groupingKey(wholeItem()).aggregate(counting());
-
-        // Then
-        grouped.drainTo(sink);
-        execute();
-        List<Entry<Integer, Long>> expected = IntStream.range(1, 100)
-                                                       .mapToObj(i -> entry(i, (long) i))
-                                                       .collect(toList());
-        assertEquals(toBag(expected), sinkToBag());
-    }
-
-    @Test
-    public void groupBy_withOutputFn() {
-        //Given
-        List<Integer> input = IntStream.range(1, 100).boxed()
-                                       .flatMap(i -> Collections.nCopies(i, i).stream())
-                                       .collect(toList());
-        putToBatchSrcMap(input);
-
-        // When
-        BatchStage<Long> grouped = srcStage.groupingKey(wholeItem()).aggregate(counting(), (k, v) -> v);
-
-        // Then
-        grouped.drainTo(sink);
-        execute();
-        List<Long> expected = LongStream.range(1, 100).boxed().collect(Collectors.toList());
-        assertEquals(toBag(expected), sinkToBag());
+        assertEquals(
+                toBag(input.stream().map(keyFn).distinct().collect(toList())),
+                toBag(sinkBag.keySet().stream().map(keyFn).collect(toList())));
     }
 
     @Test
