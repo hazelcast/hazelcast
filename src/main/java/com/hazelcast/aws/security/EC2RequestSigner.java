@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
 
 package com.hazelcast.aws.security;
 
+import com.hazelcast.aws.AwsConfig;
 import com.hazelcast.aws.impl.Constants;
 import com.hazelcast.aws.utility.AwsURLEncoder;
-import com.hazelcast.aws.AwsConfig;
 import com.hazelcast.util.QuickMath;
 
 import javax.crypto.Mac;
@@ -81,20 +81,14 @@ public class EC2RequestSigner {
 
     /* Task 1 */
     private String getCanonicalizedRequest() {
-        return Constants.GET + NEW_LINE
-                + '/' + NEW_LINE
-                + getCanonicalizedQueryString(this.attributes) + NEW_LINE
-                + getCanonicalHeaders() + NEW_LINE
-                + getSignedHeaders() + NEW_LINE
-                + sha256Hashhex("");
+        return Constants.GET + NEW_LINE + '/' + NEW_LINE + getCanonicalizedQueryString(this.attributes) + NEW_LINE
+                + getCanonicalHeaders() + NEW_LINE + getSignedHeaders() + NEW_LINE + sha256Hashhex("");
     }
 
     /* Task 2 */
     private String createStringToSign(String canonicalRequest) {
-        return Constants.SIGNATURE_METHOD_V4 + NEW_LINE
-                + timestamp + NEW_LINE
-                + getCredentialScope() + NEW_LINE
-                + sha256Hashhex(canonicalRequest);
+        return Constants.SIGNATURE_METHOD_V4 + NEW_LINE + timestamp + NEW_LINE + getCredentialScope() + NEW_LINE + sha256Hashhex(
+                canonicalRequest);
     }
 
     /* Task 3 */
@@ -199,7 +193,7 @@ public class EC2RequestSigner {
     }
 
     public String createFormattedCredential() {
-        return config.getAccessKey() + '/' + timestamp.substring(0, LAST_INDEX) + '/'
-                + config.getRegion() + '/' + "ec2/aws4_request";
+        return config.getAccessKey() + '/' + timestamp.substring(0, LAST_INDEX) + '/' + config.getRegion() + '/'
+                + "ec2/aws4_request";
     }
 }

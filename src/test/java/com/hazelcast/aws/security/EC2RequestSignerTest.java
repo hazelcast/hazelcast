@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 
 package com.hazelcast.aws.security;
 
-import com.hazelcast.aws.impl.DescribeInstances;
 import com.hazelcast.aws.AwsConfig;
+import com.hazelcast.aws.impl.DescribeInstances;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -45,13 +45,13 @@ public class EC2RequestSignerTest {
     private final static String TEST_SIGNATURE_EXPECTED = "79f7a4d346ee69ca22ba5f9bc3dd1efc13ac7509936afc5ec21cac37de071eef";
 
     @Test
-    public void deriveSigningKeyTest() throws Exception {
+    public void deriveSigningKeyTest()
+            throws Exception {
         // this is from http://docs.aws.amazon.com/general/latest/gr/signature-v4-examples.html
-        AwsConfig awsConfig = AwsConfig.builder()
-        .setRegion(TEST_REGION).
+        AwsConfig awsConfig = AwsConfig.builder().setRegion(TEST_REGION).
                 setHostHeader(TEST_HOST).
-                setAccessKey(TEST_ACCESS_KEY).
-                setSecretKey(TEST_SECRET_KEY).build();
+                                               setAccessKey(TEST_ACCESS_KEY).
+                                               setSecretKey(TEST_SECRET_KEY).build();
 
         DescribeInstances di = new DescribeInstances(awsConfig, TEST_HOST);
         // Override the attributes map. We need to change values. Not pretty, but
@@ -77,12 +77,12 @@ public class EC2RequestSignerTest {
     }
 
     @Test
-    public void testSigning() throws NoSuchFieldException, IllegalAccessException, IOException {
-        AwsConfig awsConfig = AwsConfig.builder()
-        .setRegion(TEST_REGION).
+    public void testSigning()
+            throws NoSuchFieldException, IllegalAccessException, IOException {
+        AwsConfig awsConfig = AwsConfig.builder().setRegion(TEST_REGION).
                 setHostHeader(TEST_HOST).
-                setAccessKey(TEST_ACCESS_KEY).
-                setSecretKey(TEST_SECRET_KEY).build();
+                                               setAccessKey(TEST_ACCESS_KEY).
+                                               setSecretKey(TEST_SECRET_KEY).build();
 
         DescribeInstances di = new DescribeInstances(awsConfig, TEST_HOST);
         di.getRequestSigner();

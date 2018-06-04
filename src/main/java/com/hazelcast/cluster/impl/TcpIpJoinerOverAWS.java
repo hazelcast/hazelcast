@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,8 @@ import java.util.Collection;
  * @deprecated Use {@link AwsDiscoveryStrategy} instead of AwsConfig.
  */
 @Deprecated
-public class TcpIpJoinerOverAWS extends TcpIpJoiner {
+public class TcpIpJoinerOverAWS
+        extends TcpIpJoiner {
 
     private final AWSClient aws;
     private final ILogger logger;
@@ -41,6 +42,15 @@ public class TcpIpJoinerOverAWS extends TcpIpJoiner {
 
         AwsConfig awsConfig = fromDeprecatedAwsConfig(node.getConfig().getNetworkConfig().getJoin().getAwsConfig());
         aws = new AWSClient(awsConfig);
+    }
+
+    static AwsConfig fromDeprecatedAwsConfig(com.hazelcast.config.AwsConfig awsConfig) {
+        return AwsConfig.builder().setAccessKey(awsConfig.getAccessKey()).setSecretKey(awsConfig.getSecretKey())
+                        .setRegion(awsConfig.getRegion()).setSecurityGroupName(awsConfig.getSecurityGroupName())
+                        .setTagKey(awsConfig.getTagKey()).setTagValue(awsConfig.getTagValue())
+                        .setHostHeader(awsConfig.getHostHeader()).setIamRole(awsConfig.getIamRole())
+                        .setConnectionTimeoutSeconds(awsConfig.getConnectionTimeoutSeconds()).build();
+
     }
 
     @Override
@@ -74,20 +84,5 @@ public class TcpIpJoinerOverAWS extends TcpIpJoiner {
     @Override
     public String getType() {
         return "aws";
-    }
-
-    static AwsConfig fromDeprecatedAwsConfig(com.hazelcast.config.AwsConfig awsConfig) {
-        return AwsConfig.builder()
-                .setAccessKey(awsConfig.getAccessKey())
-                .setSecretKey(awsConfig.getSecretKey())
-                .setRegion(awsConfig.getRegion())
-                .setSecurityGroupName(awsConfig.getSecurityGroupName())
-                .setTagKey(awsConfig.getTagKey())
-                .setTagValue(awsConfig.getTagValue())
-                .setHostHeader(awsConfig.getHostHeader())
-                .setIamRole(awsConfig.getIamRole())
-                .setConnectionTimeoutSeconds(awsConfig.getConnectionTimeoutSeconds())
-                .build();
-
     }
 }

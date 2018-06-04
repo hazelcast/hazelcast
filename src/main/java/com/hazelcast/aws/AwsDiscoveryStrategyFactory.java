@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,15 +29,15 @@ import java.util.Map;
 /**
  * Factory class which returns {@link AwsDiscoveryStrategy} to Discovery SPI
  */
-public class AwsDiscoveryStrategyFactory implements DiscoveryStrategyFactory {
+public class AwsDiscoveryStrategyFactory
+        implements DiscoveryStrategyFactory {
     @Override
     public Class<? extends DiscoveryStrategy> getDiscoveryStrategyType() {
         return AwsDiscoveryStrategy.class;
     }
 
     @Override
-    public DiscoveryStrategy newDiscoveryStrategy(DiscoveryNode discoveryNode,
-                                                  ILogger logger,
+    public DiscoveryStrategy newDiscoveryStrategy(DiscoveryNode discoveryNode, ILogger logger,
                                                   Map<String, Comparable> properties) {
         return new AwsDiscoveryStrategy(properties);
     }
