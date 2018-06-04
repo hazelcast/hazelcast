@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,12 +32,10 @@ public class Filter {
     private int index = 1;
 
     /**
-     *
      * Add a new filter with the given name and value to the query.
      *
-     * @param name Filter name
+     * @param name  Filter name
      * @param value Filter value
-     *
      */
     public void addFilter(String name, String value) {
         filters.put("Filter." + index + ".Name", name);

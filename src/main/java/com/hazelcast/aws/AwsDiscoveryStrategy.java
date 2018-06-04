@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -85,20 +85,16 @@ public class AwsDiscoveryStrategy
 
     private AwsConfig getAwsConfig()
             throws IllegalArgumentException {
-        final AwsConfig config = AwsConfig.builder()
-                .setAccessKey(getOrNull(ACCESS_KEY))
-                .setSecretKey(getOrNull(SECRET_KEY))
-                .setRegion(getOrDefault(REGION.getDefinition(), DEFAULT_REGION))
-                .setIamRole(getOrNull(IAM_ROLE))
-                .setHostHeader(getOrDefault(HOST_HEADER.getDefinition(), DEFAULT_HOST_HEADER))
-                .setSecurityGroupName(getOrNull(SECURITY_GROUP_NAME))
-                .setTagKey(getOrNull(TAG_KEY))
-                .setTagValue(getOrNull(TAG_VALUE))
-                .setConnectionTimeoutSeconds(
+        final AwsConfig config = AwsConfig.builder().setAccessKey(getOrNull(ACCESS_KEY)).setSecretKey(getOrNull(SECRET_KEY))
+                                          .setRegion(getOrDefault(REGION.getDefinition(), DEFAULT_REGION))
+                                          .setIamRole(getOrNull(IAM_ROLE))
+                                          .setHostHeader(getOrDefault(HOST_HEADER.getDefinition(), DEFAULT_HOST_HEADER))
+                                          .setSecurityGroupName(getOrNull(SECURITY_GROUP_NAME)).setTagKey(getOrNull(TAG_KEY))
+                                          .setTagValue(getOrNull(TAG_VALUE)).setConnectionTimeoutSeconds(
                         getOrDefault(CONNECTION_TIMEOUT_SECONDS.getDefinition(), DEFAULT_CONNECTION_TIMEOUT_SECONDS))
-                .setConnectionRetries(getOrDefault(CONNECTION_RETRIES.getDefinition(), DEFAULT_CONNECTION_RETRIES))
-                .setHzPort(new PortRange(getPortRange()))
-                .build();
+                                          .setConnectionRetries(
+                                                  getOrDefault(CONNECTION_RETRIES.getDefinition(), DEFAULT_CONNECTION_RETRIES))
+                                          .setHzPort(new PortRange(getPortRange())).build();
 
         reviewConfiguration(config);
         return config;
@@ -119,8 +115,8 @@ public class AwsDiscoveryStrategy
     }
 
     private void reviewConfiguration(AwsConfig config) {
-        if (StringUtil.isNullOrEmptyAfterTrim(config.getSecretKey()) || StringUtil.isNullOrEmptyAfterTrim(
-                config.getAccessKey())) {
+        if (StringUtil.isNullOrEmptyAfterTrim(config.getSecretKey()) || StringUtil
+                .isNullOrEmptyAfterTrim(config.getAccessKey())) {
 
             if (!StringUtil.isNullOrEmptyAfterTrim(config.getIamRole())) {
                 getLogger().info("Describe instances will be queried with iam-role, "
@@ -163,9 +159,7 @@ public class AwsDiscoveryStrategy
 
             final ArrayList<DiscoveryNode> nodes = new ArrayList<DiscoveryNode>(privatePublicIpAddressPairs.size());
             for (Map.Entry<String, String> entry : privatePublicIpAddressPairs.entrySet()) {
-                for (int port = awsConfig.getHzPort()
-                        .getFromPort(); port <= awsConfig.getHzPort()
-                        .getToPort(); port++) {
+                for (int port = awsConfig.getHzPort().getFromPort(); port <= awsConfig.getHzPort().getToPort(); port++) {
                     nodes.add(new SimpleDiscoveryNode(new Address(entry.getKey(), port), new Address(entry.getValue(), port)));
                 }
             }

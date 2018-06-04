@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,10 @@ import static org.junit.Assert.assertEquals;
 @Category({QuickTest.class, ParallelTest.class})
 public class AwsClientTest {
 
+    private static AwsConfig.Builder predefinedAwsConfigBuilder() {
+        return AwsConfig.builder().setHostHeader("ec2.amazonaws.com").setRegion("us-east-1").setConnectionTimeoutSeconds(5);
+    }
+
     @Test(expected = IllegalArgumentException.class)
     public void testAwsClient_whenNoAwsConfig() {
         new AWSClient(null);
@@ -37,37 +41,22 @@ public class AwsClientTest {
 
     @Test
     public void testAwsClient_getEndPoint() {
-        AwsConfig awsConfig = predefinedAwsConfigBuilder()
-                .setIamRole("test")
-                .build();
+        AwsConfig awsConfig = predefinedAwsConfigBuilder().setIamRole("test").build();
         AWSClient awsClient = new AWSClient(awsConfig);
         assertEquals("ec2.us-east-1.amazonaws.com", awsClient.getEndpoint());
     }
 
     @Test
     public void testAwsClient_withDifferentHostHeader() {
-        AwsConfig awsConfig = predefinedAwsConfigBuilder()
-                .setIamRole("test")
-                .setHostHeader("ec2.amazonaws.com.cn")
-                .setRegion("cn-north-1")
-                .build();
+        AwsConfig awsConfig = predefinedAwsConfigBuilder().setIamRole("test").setHostHeader("ec2.amazonaws.com.cn")
+                                                          .setRegion("cn-north-1").build();
         AWSClient awsClient = new AWSClient(awsConfig);
         assertEquals("ec2.cn-north-1.amazonaws.com.cn", awsClient.getEndpoint());
     }
 
     @Test(expected = InvalidConfigurationException.class)
     public void testAwsClient_withInvalidHostHeader() {
-        AwsConfig awsConfig = predefinedAwsConfigBuilder()
-                .setIamRole("test")
-                .setHostHeader("ec3.amazonaws.com.cn")
-                .build();
+        AwsConfig awsConfig = predefinedAwsConfigBuilder().setIamRole("test").setHostHeader("ec3.amazonaws.com.cn").build();
         new AWSClient(awsConfig);
-    }
-
-    private static AwsConfig.Builder predefinedAwsConfigBuilder() {
-        return AwsConfig.builder()
-                .setHostHeader("ec2.amazonaws.com")
-                .setRegion("us-east-1")
-                .setConnectionTimeoutSeconds(5);
     }
 }

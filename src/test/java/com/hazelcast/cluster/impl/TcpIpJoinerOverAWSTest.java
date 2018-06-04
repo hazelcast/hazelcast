@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,7 +42,8 @@ import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class TcpIpJoinerOverAWSTest extends HazelcastTestSupport {
+public class TcpIpJoinerOverAWSTest
+        extends HazelcastTestSupport {
 
     @Test
     public void testJoinerCreation() {
@@ -51,9 +52,7 @@ public class TcpIpJoinerOverAWSTest extends HazelcastTestSupport {
         join.getMulticastConfig().setEnabled(false);
 
         AwsConfig awsConfig = join.getAwsConfig();
-        awsConfig.setEnabled(true)
-                .setAccessKey(randomString())
-                .setSecretKey(randomString());
+        awsConfig.setEnabled(true).setAccessKey(randomString()).setSecretKey(randomString());
 
         HazelcastInstanceImpl instance = Mockito.mock(HazelcastInstanceImpl.class);
 

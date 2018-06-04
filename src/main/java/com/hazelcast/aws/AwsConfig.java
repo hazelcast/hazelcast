@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,10 +21,7 @@ package com.hazelcast.aws;
  * {@link AwsProperties}.
  */
 public final class AwsConfig {
-    private String accessKey;
-    private String secretKey;
     private final String region;
-    private String iamRole;
     private final String hostHeader;
     private final String securityGroupName;
     private final String tagKey;
@@ -32,6 +29,9 @@ public final class AwsConfig {
     private final int connectionTimeoutSeconds;
     private final int connectionRetries;
     private final PortRange hzPort;
+    private String accessKey;
+    private String secretKey;
+    private String iamRole;
 
     @SuppressWarnings("checkstyle:parameternumber")
     // Constructor has a lot of parameters, but it's private.
@@ -49,6 +49,92 @@ public final class AwsConfig {
         this.connectionTimeoutSeconds = connectionTimeoutSeconds;
         this.connectionRetries = connectionRetries;
         this.hzPort = hzPort;
+    }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public String getAccessKey() {
+        return accessKey;
+    }
+
+    /**
+     * Sets {@code accessKey}.
+     *
+     * @deprecated It violates the immutability of {@link AwsConfig}.
+     */
+    @Deprecated
+    public void setAccessKey(String accessKey) {
+        this.accessKey = accessKey;
+    }
+
+    public String getSecretKey() {
+        return secretKey;
+    }
+
+    /**
+     * Sets {@code secretKey}.
+     *
+     * @deprecated It violates the immutability of {@link AwsConfig}.
+     */
+    @Deprecated
+    public void setSecretKey(String secretKey) {
+        this.secretKey = secretKey;
+    }
+
+    public String getRegion() {
+        return region;
+    }
+
+    public String getIamRole() {
+        return iamRole;
+    }
+
+    /**
+     * Sets {@code iamRole}.
+     *
+     * @deprecated It violates the immutability of {@link AwsConfig}.
+     */
+    @Deprecated
+    public void setIamRole(String iamRole) {
+        this.iamRole = iamRole;
+    }
+
+    public String getHostHeader() {
+        return hostHeader;
+    }
+
+    public String getSecurityGroupName() {
+        return securityGroupName;
+    }
+
+    public String getTagKey() {
+        return tagKey;
+    }
+
+    public String getTagValue() {
+        return tagValue;
+    }
+
+    public int getConnectionTimeoutSeconds() {
+        return connectionTimeoutSeconds;
+    }
+
+    public int getConnectionRetries() {
+        return connectionRetries;
+    }
+
+    public PortRange getHzPort() {
+        return hzPort;
+    }
+
+    @Override
+    public String toString() {
+        return "AwsConfig{" + "accessKey='***', secretKey='***', region='" + region + '\'' + ", iamRole='" + iamRole + '\''
+                + ", hostHeader='" + hostHeader + '\'' + ", securityGroupName='" + securityGroupName + '\'' + ", tagKey='"
+                + tagKey + '\'' + ", tagValue='" + tagValue + '\'' + ", connectionTimeoutSeconds=" + connectionTimeoutSeconds
+                + ", connectionRetries=" + connectionRetries + ", hzPort=" + hzPort + '}';
     }
 
     public static class Builder {
@@ -123,88 +209,5 @@ public final class AwsConfig {
             return new AwsConfig(accessKey, secretKey, region, iamRole, hostHeader, securityGroupName, tagKey, tagValue,
                     connectionTimeoutSeconds, connectionRetries, hzPort);
         }
-    }
-
-    public String getAccessKey() {
-        return accessKey;
-    }
-
-    public String getSecretKey() {
-        return secretKey;
-    }
-
-    public String getRegion() {
-        return region;
-    }
-
-    public String getIamRole() {
-        return iamRole;
-    }
-
-    public String getHostHeader() {
-        return hostHeader;
-    }
-
-    public String getSecurityGroupName() {
-        return securityGroupName;
-    }
-
-    public String getTagKey() {
-        return tagKey;
-    }
-
-    public String getTagValue() {
-        return tagValue;
-    }
-
-    public int getConnectionTimeoutSeconds() {
-        return connectionTimeoutSeconds;
-    }
-
-    public int getConnectionRetries() {
-        return connectionRetries;
-    }
-
-    public PortRange getHzPort() {
-        return hzPort;
-    }
-
-    /** Sets {@code accessKey}.
-     *
-     * @deprecated It violates the immutability of {@link AwsConfig}.
-     */
-    @Deprecated
-    public void setAccessKey(String accessKey) {
-        this.accessKey = accessKey;
-    }
-
-    /** Sets {@code secretKey}.
-     *
-     * @deprecated It violates the immutability of {@link AwsConfig}.
-     */
-    @Deprecated
-    public void setSecretKey(String secretKey) {
-        this.secretKey = secretKey;
-    }
-
-    /** Sets {@code iamRole}.
-     *
-     * @deprecated It violates the immutability of {@link AwsConfig}.
-     */
-    @Deprecated
-    public void setIamRole(String iamRole) {
-        this.iamRole = iamRole;
-    }
-
-    @Override
-    public String toString() {
-        return "AwsConfig{" + "accessKey='***', secretKey='***', region='" + region + '\'' + ", iamRole='" + iamRole + '\''
-                + ", hostHeader='" + hostHeader + '\'' + ", securityGroupName='" + securityGroupName + '\'' + ", tagKey='"
-                + tagKey + '\'' + ", tagValue='" + tagValue + '\'' + ", connectionTimeoutSeconds=" + connectionTimeoutSeconds
-                + ", connectionRetries=" + connectionRetries + ", hzPort=" + hzPort + '}';
-    }
-
-    public static Builder builder() {
-        return new Builder();
     }
 }

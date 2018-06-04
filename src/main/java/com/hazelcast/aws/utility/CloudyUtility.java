@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,7 +51,7 @@ public final class CloudyUtility {
      * the {@code awsConfig}.
      * If there is an exception while unmarshalling the response, returns an empty map.
      *
-     * @param stream    the response XML stream
+     * @param stream the response XML stream
      * @return map from private to public IP or empty map in case of exceptions
      */
     public static Map<String, String> unmarshalTheResponse(InputStream stream) {
@@ -87,6 +87,35 @@ public final class CloudyUtility {
 
         NodeHolder(Node node) {
             this.node = node;
+        }
+
+        private static String getInstanceName(NodeHolder nodeHolder) {
+            NodeHolder tagSetHolder = nodeHolder.getFirstSubNode("tagset");
+            if (tagSetHolder.getNode() == null) {
+                return null;
+            }
+            for (NodeHolder itemHolder : tagSetHolder.getSubNodes(NODE_ITEM)) {
+                Node keyNode = itemHolder.getFirstSubNode(NODE_KEY).getNode();
+                if (keyNode == null || keyNode.getFirstChild() == null) {
+                    continue;
+                }
+                String nodeValue = keyNode.getFirstChild().getNodeValue();
+                if (!"Name".equals(nodeValue)) {
+                    continue;
+                }
+
+                Node valueNode = itemHolder.getFirstSubNode(NODE_VALUE).getNode();
+                if (valueNode == null || valueNode.getFirstChild() == null) {
+                    continue;
+                }
+                return valueNode.getFirstChild().getNodeValue();
+            }
+            return null;
+        }
+
+        private static String getIp(String name, NodeHolder nodeHolder) {
+            Node child = nodeHolder.getFirstSubNode(name).getNode();
+            return (child == null ? null : child.getFirstChild().getNodeValue());
         }
 
         Node getNode() {
@@ -144,35 +173,6 @@ public final class CloudyUtility {
 
             }
             return privatePublicPairs;
-        }
-
-        private static String getInstanceName(NodeHolder nodeHolder) {
-            NodeHolder tagSetHolder = nodeHolder.getFirstSubNode("tagset");
-            if (tagSetHolder.getNode() == null) {
-                return null;
-            }
-            for (NodeHolder itemHolder : tagSetHolder.getSubNodes(NODE_ITEM)) {
-                Node keyNode = itemHolder.getFirstSubNode(NODE_KEY).getNode();
-                if (keyNode == null || keyNode.getFirstChild() == null) {
-                    continue;
-                }
-                String nodeValue = keyNode.getFirstChild().getNodeValue();
-                if (!"Name".equals(nodeValue)) {
-                    continue;
-                }
-
-                Node valueNode = itemHolder.getFirstSubNode(NODE_VALUE).getNode();
-                if (valueNode == null || valueNode.getFirstChild() == null) {
-                    continue;
-                }
-                return valueNode.getFirstChild().getNodeValue();
-            }
-            return null;
-        }
-
-        private static String getIp(String name, NodeHolder nodeHolder) {
-            Node child = nodeHolder.getFirstSubNode(name).getNode();
-            return (child == null ? null : child.getFirstChild().getNodeValue());
         }
     }
 }

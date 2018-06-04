@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,12 +46,14 @@ public class AWSClient {
         }
     }
 
-    public Collection<String> getPrivateIpAddresses() throws Exception {
+    public Collection<String> getPrivateIpAddresses()
+            throws Exception {
         Map<String, String> result = new DescribeInstances(awsConfig, endpoint).execute();
         return result.keySet();
     }
 
-    public Map<String, String> getAddresses() throws Exception {
+    public Map<String, String> getAddresses()
+            throws Exception {
         return new DescribeInstances(awsConfig, endpoint).execute();
     }
 
@@ -60,11 +62,11 @@ public class AWSClient {
         return retrieveMetadataFromURI(uri, awsConfig.getConnectionTimeoutSeconds(), awsConfig.getConnectionRetries());
     }
 
-    public void setEndpoint(String s) {
-        this.endpoint = s;
-    }
-
     public String getEndpoint() {
         return this.endpoint;
+    }
+
+    public void setEndpoint(String s) {
+        this.endpoint = s;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2018, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,7 +57,7 @@ import static com.hazelcast.nio.IOUtil.closeResource;
 public class DescribeInstances {
     /**
      * URI to fetch container credentials (when IAM role is enabled)
-     *
+     * <p>
      * see http://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-iam-roles.html
      */
     public static final String IAM_TASK_ROLE_ENDPOINT = "http://169.254.170.2";
@@ -71,7 +71,8 @@ public class DescribeInstances {
     private String endpoint;
     private Map<String, String> attributes = new HashMap<String, String>();
 
-    public DescribeInstances(AwsConfig awsConfig, String endpoint) throws IOException {
+    public DescribeInstances(AwsConfig awsConfig, String endpoint)
+            throws IOException {
         this.awsConfig = awsConfig;
         this.endpoint = endpoint;
     }
@@ -81,9 +82,30 @@ public class DescribeInstances {
         this.awsConfig = awsConfig;
     }
 
-    void fillKeysFromIamRoles() throws IOException {
-        if (isEmpty(awsConfig.getIamRole())
-                || "DEFAULT".equals(awsConfig.getIamRole())) {
+    /**
+     * AWS response codes for client and server errors are specified here:
+     * {@see http://docs.aws.amazon.com/AWSEC2/latest/APIReference/errors-overview.html}.
+     */
+    private static boolean isAwsError(int responseCode) {
+        return responseCode >= MIN_HTTP_CODE_FOR_AWS_ERROR && responseCode < MAX_HTTP_CODE_FOR_AWS_ERROR;
+    }
+
+    private static String extractErrorMessage(HttpURLConnection httpConnection) {
+        InputStream errorStream = httpConnection.getErrorStream();
+        if (errorStream == null) {
+            return "";
+        }
+        return readFrom(errorStream);
+    }
+
+    private static String readFrom(InputStream stream) {
+        Scanner scanner = new Scanner(stream, UTF8_ENCODING).useDelimiter("\\A");
+        return scanner.hasNext() ? scanner.next() : "";
+    }
+
+    void fillKeysFromIamRoles()
+            throws IOException {
+        if (isEmpty(awsConfig.getIamRole()) || "DEFAULT".equals(awsConfig.getIamRole())) {
             String defaultIAMRole = getDefaultIamRole();
             awsConfig.setIamRole(defaultIAMRole);
         }
@@ -96,7 +118,8 @@ public class DescribeInstances {
 
     }
 
-    private String getDefaultIamRole() throws IOException {
+    private String getDefaultIamRole()
+            throws IOException {
         String uri = INSTANCE_METADATA_URI.concat(IAM_SECURITY_CREDENTIALS_URI);
         return retrieveRoleFromURI(uri);
     }
@@ -108,18 +131,19 @@ public class DescribeInstances {
             String json = retrieveRoleFromURI(uri);
             parseAndStoreRoleCreds(json);
         } catch (Exception io) {
-            throw new InvalidConfigurationException("Unable to retrieve credentials from IAM Role: "
-                    + awsConfig.getIamRole(), io);
+            throw new InvalidConfigurationException("Unable to retrieve credentials from IAM Role: " + awsConfig.getIamRole(),
+                    io);
         }
     }
 
-    private void fillKeysFromIamTaskRole(Environment env) throws IOException {
+    private void fillKeysFromIamTaskRole(Environment env)
+            throws IOException {
         // before giving up, attempt to discover whether we're running in an ECS Container,
         // in which case, AWS_CONTAINER_CREDENTIALS_RELATIVE_URI will exist as an env var.
         String uri = env.getEnvVar(Constants.ECS_CREDENTIALS_ENV_VAR_NAME);
         if (uri == null) {
             throw new IllegalArgumentException("Could not acquire credentials! "
-              + "Did not find declared AWS access key or IAM Role, and could not discover IAM Task Role or default role.");
+                    + "Did not find declared AWS access key or IAM Role, and could not discover IAM Task Role or default role.");
         }
         uri = IAM_TASK_ROLE_ENDPOINT + uri;
 
@@ -128,20 +152,22 @@ public class DescribeInstances {
             json = retrieveRoleFromURI(uri);
             parseAndStoreRoleCreds(json);
         } catch (Exception io) {
-            throw new InvalidConfigurationException("Unable to retrieve credentials from IAM Task Role. "
-              + "URI: " + uri + ". \n HTTP Response content: " + json, io);
+            throw new InvalidConfigurationException(
+                    "Unable to retrieve credentials from IAM Task Role. " + "URI: " + uri + ". \n HTTP Response content: " + json,
+                    io);
         }
     }
 
     /**
      * This is a helper method that simply performs the HTTP request to retrieve the role, from a given URI.
      * (It allows us to cleanly separate the network calls out of our main code logic, so we can mock in our UT.)
+     *
      * @param uri the full URI where a `GET` request will retrieve the role information, represented as JSON.
      * @return The content of the HTTP response, as a String. NOTE: This is NEVER null.
      */
     String retrieveRoleFromURI(String uri) {
-        return MetadataUtil.retrieveMetadataFromURI(uri, awsConfig.getConnectionTimeoutSeconds(),
-                awsConfig.getConnectionRetries());
+        return MetadataUtil
+                .retrieveMetadataFromURI(uri, awsConfig.getConnectionTimeoutSeconds(), awsConfig.getConnectionRetries());
     }
 
     /**
@@ -165,7 +191,8 @@ public class DescribeInstances {
      * `com.hazelcast.com.eclipsesource.json.JsonObject`, this method should be deprecated.
      */
     @Deprecated
-    public Map<String, String> parseIamRole(BufferedReader reader) throws IOException {
+    public Map<String, String> parseIamRole(BufferedReader reader)
+            throws IOException {
         Map<String, String> map = new HashMap<String, String>();
         Pattern keyPattern = Pattern.compile("\"(.*?)\" : ");
         Pattern valuePattern = Pattern.compile(" : \"(.*?)\",");
@@ -221,9 +248,9 @@ public class DescribeInstances {
      * @return map from private to public IP or empty map in case of failed response unmarshalling
      * @throws Exception if there is an exception invoking the service
      */
-    public Map<String, String> execute() throws Exception {
-        if (isNotEmpty(awsConfig.getIamRole())
-                || isEmpty(awsConfig.getAccessKey())) {
+    public Map<String, String> execute()
+            throws Exception {
+        if (isNotEmpty(awsConfig.getIamRole()) || isEmpty(awsConfig.getAccessKey())) {
             fillKeysFromIamRoles();
         }
 
@@ -276,27 +303,6 @@ public class DescribeInstances {
             String errorMessage = extractErrorMessage(httpConnection);
             throw new AwsConnectionException(responseCode, errorMessage);
         }
-    }
-
-    /**
-     * AWS response codes for client and server errors are specified here:
-     * {@see http://docs.aws.amazon.com/AWSEC2/latest/APIReference/errors-overview.html}.
-     */
-    private static boolean isAwsError(int responseCode) {
-        return responseCode >= MIN_HTTP_CODE_FOR_AWS_ERROR && responseCode < MAX_HTTP_CODE_FOR_AWS_ERROR;
-    }
-
-    private static String extractErrorMessage(HttpURLConnection httpConnection) {
-        InputStream errorStream = httpConnection.getErrorStream();
-        if (errorStream == null) {
-            return "";
-        }
-        return readFrom(errorStream);
-    }
-
-    private static String readFrom(InputStream stream) {
-        Scanner scanner = new Scanner(stream, UTF8_ENCODING).useDelimiter("\\A");
-        return scanner.hasNext() ? scanner.next() : "";
     }
 
     public EC2RequestSigner getRequestSigner() {
