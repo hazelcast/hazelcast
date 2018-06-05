@@ -17,15 +17,20 @@
 package com.hazelcast.internal.nearcache.impl.invalidation;
 
 import com.hazelcast.internal.nearcache.NearCache;
+import com.hazelcast.internal.nearcache.impl.DefaultNearCache;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.TaskScheduler;
 import com.hazelcast.spi.serialization.SerializationService;
 
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.lang.String.format;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
  * Handler used on Near Cache side. Observes local and remote invalidations and registers relevant
@@ -41,7 +46,10 @@ import static java.lang.String.format;
  */
 public final class RepairingHandler {
 
+    private static final long RESCHEDULE_FAILED_INITIALIZATION_AFTER_MILLIS = 500;
+
     private final int partitionCount;
+    private final long reconciliationIntervalNanos;
     private final boolean serializeKeys;
     private final ILogger logger;
     private final String localUuid;
@@ -50,9 +58,13 @@ public final class RepairingHandler {
     private final SerializationService serializationService;
     private final MinimalPartitionService partitionService;
     private final MetaDataContainer[] metaDataContainers;
+    private final MetaDataFetcher metaDataFetcher;
+    private final TaskScheduler scheduler;
+    private final AtomicBoolean initialized = new AtomicBoolean(false);
 
     public RepairingHandler(ILogger logger, String localUuid, String name, NearCache nearCache,
-                            SerializationService serializationService, MinimalPartitionService partitionService) {
+                            SerializationService serializationService, MinimalPartitionService partitionService,
+                            MetaDataFetcher metaDataFetcher, TaskScheduler scheduler, long reconciliationIntervalNanos) {
         this.logger = logger;
         this.localUuid = localUuid;
         this.name = name;
@@ -61,6 +73,9 @@ public final class RepairingHandler {
         this.serializationService = serializationService;
         this.partitionService = partitionService;
         this.partitionCount = partitionService.getPartitionCount();
+        this.metaDataFetcher = metaDataFetcher;
+        this.scheduler = scheduler;
+        this.reconciliationIntervalNanos = reconciliationIntervalNanos;
         this.metaDataContainers = createMetadataContainers(partitionCount);
     }
 
@@ -74,6 +89,83 @@ public final class RepairingHandler {
 
     public MetaDataContainer getMetaDataContainer(int partition) {
         return metaDataContainers[partition];
+    }
+
+    public void init() {
+        if (!initialized.compareAndSet(false, true)) {
+            return;
+        }
+
+        StaleReadDetector staleReadDetector = new StaleReadDetectorImpl(this, partitionService);
+        DefaultNearCache defaultNearCache = (DefaultNearCache) nearCache.unwrap(DefaultNearCache.class);
+        defaultNearCache.getNearCacheRecordStore().setStaleReadDetector(staleReadDetector);
+
+        initRepairingHandler();
+    }
+
+    /**
+     * Synchronously makes initial population of partition UUIDs & sequences.
+     * <p>
+     * This initialization is done for every data structure with a Near Cache.
+     */
+    private void initRepairingHandler() {
+        logger.finest("Initializing repairing handler");
+
+        boolean initialized = false;
+        try {
+            metaDataFetcher.init(this);
+            initialized = true;
+        } catch (Exception e) {
+            logger.warning(e);
+        } finally {
+            if (!initialized) {
+                initRepairingHandlerAsync();
+            }
+        }
+    }
+
+    /**
+     * Asynchronously makes initial population of partition UUIDs & sequences.
+     * <p>
+     * This is the fallback operation when {@link #initRepairingHandler}
+     * failed.
+     */
+    private void initRepairingHandlerAsync() {
+        scheduler.schedule(new Runnable() {
+            private final AtomicInteger round = new AtomicInteger();
+
+            @Override
+            public void run() {
+                int roundNumber = round.incrementAndGet();
+                boolean initialized = false;
+                try {
+                    initRepairingHandler();
+                    initialized = true;
+                } catch (Exception e) {
+                    if (logger.isFinestEnabled()) {
+                        logger.finest(e);
+                    }
+                } finally {
+                    if (!initialized) {
+                        long totalDelaySoFarNanos = totalDelaySoFarNanos(roundNumber);
+                        if (reconciliationIntervalNanos > totalDelaySoFarNanos) {
+                            long delay = roundNumber * RESCHEDULE_FAILED_INITIALIZATION_AFTER_MILLIS;
+                            scheduler.schedule(this, delay, MILLISECONDS);
+                        }
+                        // else don't reschedule this task again and fallback to anti-entropy (see #runAntiEntropyIfNeeded)
+                        // if we haven't managed to initialize repairing handler so far.
+                    }
+                }
+            }
+        }, RESCHEDULE_FAILED_INITIALIZATION_AFTER_MILLIS, MILLISECONDS);
+    }
+
+    private static long totalDelaySoFarNanos(int roundNumber) {
+        long totalDelayMillis = 0;
+        for (int i = 1; i < roundNumber; i++) {
+            totalDelayMillis += roundNumber * RESCHEDULE_FAILED_INITIALIZATION_AFTER_MILLIS;
+        }
+        return MILLISECONDS.toNanos(totalDelayMillis);
     }
 
     /**
@@ -136,7 +228,8 @@ public final class RepairingHandler {
             if (lastKnownStaleSequence >= lastReceivedSequence) {
                 break;
             }
-        } while (!metaData.casStaleSequence(lastKnownStaleSequence, lastReceivedSequence));
+        }
+        while (!metaData.casStaleSequence(lastKnownStaleSequence, lastReceivedSequence));
 
         if (logger.isFinestEnabled()) {
             logger.finest(format("%s:[map=%s,partition=%d,lowerSequencesStaleThan=%d,lastReceivedSequence=%d]",

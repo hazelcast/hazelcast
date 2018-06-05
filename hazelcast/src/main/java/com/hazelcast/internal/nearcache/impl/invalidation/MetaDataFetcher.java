@@ -28,10 +28,13 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- * Runs on Near Cache side, an instance of this task is responsible for fetching of all Near Caches' remote metadata like last
- * sequence numbers and partition UUIDs. To see usage of this metadata visit: {@link MetaDataGenerator}.
+ * Runs on Near Cache side, an instance of this task is responsible for
+ * fetching of all Near Caches' remote metadata like last sequence
+ * numbers and partition UUIDs. To see usage of this metadata visit:
+ * {@link MetaDataGenerator}.
  *
- * This class is abstract to provide different implementations on client and member sides.
+ * This class is abstract to provide different implementations on client
+ * and member sides.
  */
 public abstract class MetaDataFetcher {
 
