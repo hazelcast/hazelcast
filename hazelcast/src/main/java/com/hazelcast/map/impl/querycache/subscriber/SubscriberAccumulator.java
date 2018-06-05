@@ -29,6 +29,7 @@ import com.hazelcast.map.impl.querycache.event.sequence.SubscriberSequencerProvi
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import static com.hazelcast.map.impl.querycache.publisher.AccumulatorSweeper.END_SEQUENCE;
 import static com.hazelcast.map.impl.querycache.subscriber.EventPublisherHelper.publishEventLost;
 import static java.lang.String.format;
 
@@ -104,7 +105,7 @@ public class SubscriberAccumulator extends BasicAccumulator<QueryCacheEventData>
         int partitionId = event.getPartitionId();
         long sequence = event.getSequence();
 
-        if (sequence == -1L) {
+        if (sequence == END_SEQUENCE) {
             brokenSequences.remove(partitionId);
         } else {
             Long expected = brokenSequences.get(partitionId);
@@ -180,6 +181,6 @@ public class SubscriberAccumulator extends BasicAccumulator<QueryCacheEventData>
     }
 
     private boolean isEndEvent(QueryCacheEventData event) {
-        return event.getSequence() == -1L;
+        return event.getSequence() == END_SEQUENCE;
     }
 }
