@@ -344,7 +344,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         if (expiryPolicy != null) {
             return expiryPolicy;
         } else if (record != null && record.getExpiryPolicy() != null) {
-            return record.getExpiryPolicy();
+            return (ExpiryPolicy) toValue(record.getExpiryPolicy());
         } else {
             return defaultExpiryPolicy;
         }
@@ -692,6 +692,42 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         } catch (Throwable error) {
             onUpdateRecordError(key, record, value, dataValue, dataOldValue, error);
             throw ExceptionUtil.rethrow(error);
+        }
+    }
+
+    protected void updateExpiryPolicyOfRecord(CacheRecord record, Object expiryPolicy) {
+        Object inMemoryExpiryPolicy;
+        switch (cacheConfig.getInMemoryFormat()) {
+            case OBJECT:
+                if (expiryPolicy instanceof Data) {
+                    inMemoryExpiryPolicy = dataToValue((Data) expiryPolicy);
+                } else {
+                    inMemoryExpiryPolicy = expiryPolicy;
+                }
+                break;
+            case BINARY:
+            case NATIVE:
+                inMemoryExpiryPolicy = toData(expiryPolicy);
+                break;
+            default:
+                throw new IllegalArgumentException("Invalid storage format: " + cacheConfig.getInMemoryFormat());
+        }
+        record.setExpiryPolicy(inMemoryExpiryPolicy);
+    }
+
+    protected Object extractExpiryPolicyOfRecord(CacheRecord record) {
+        Object policyData = record.getExpiryPolicy();
+        if (policyData == null) {
+            return null;
+        }
+        switch (cacheConfig.getInMemoryFormat()) {
+            case NATIVE:
+            case BINARY:
+                return policyData;
+            case OBJECT:
+                return toValue(policyData);
+            default:
+                throw new IllegalArgumentException("Invalid storage format: " + cacheConfig.getInMemoryFormat());
         }
     }
 
@@ -1236,13 +1272,22 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     @Override
-    public void setExpiryPolicy(Collection<Data> keys, ExpiryPolicy expiryPolicy, int completionId) {
-        for (Data key: keys) {
+    public void setExpiryPolicy(Collection<Data> keys, Object expiryPolicy, int completionId) {
+        for (Data key : keys) {
             CacheRecord record = getRecord(key);
             if (record != null) {
-                record.setExpiryPolicy(expiryPolicy);
+                updateExpiryPolicyOfRecord(record, expiryPolicy);
             }
         }
+    }
+
+    @Override
+    public Object getExpiryPolicy(Data key) {
+        CacheRecord record = getRecord(key);
+        if (record != null) {
+            return extractExpiryPolicyOfRecord(record);
+        }
+        return null;
     }
 
     protected void onRemove(Data key, Object value, String source, boolean getValue, R record, boolean removed) {

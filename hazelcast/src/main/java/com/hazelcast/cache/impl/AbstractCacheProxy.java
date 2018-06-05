@@ -238,7 +238,7 @@ abstract class AbstractCacheProxy<K, V>
         try {
             int partitionCount = partitionService.getPartitionCount();
             List<Data>[] keysPerPartition = groupDataToPartitions(keys, partitionCount);
-            setTTLAllPartitionsAndWaitForCompletion(keysPerPartition, expiryPolicy);
+            setTTLAllPartitionsAndWaitForCompletion(keysPerPartition, serializationService.toData(expiryPolicy));
         } catch (Exception e) {
             rethrow(e);
         }
@@ -333,7 +333,7 @@ abstract class AbstractCacheProxy<K, V>
         }
     }
 
-    private void setTTLAllPartitionsAndWaitForCompletion(List<Data>[] keysPerPartition, ExpiryPolicy expiryPolicy) {
+    private void setTTLAllPartitionsAndWaitForCompletion(List<Data>[] keysPerPartition, Data expiryPolicy) {
         List<Future> futures = new ArrayList<Future>(keysPerPartition.length);
         for (int partitionId = 0; partitionId < keysPerPartition.length; partitionId++) {
             List<Data> keys = keysPerPartition[partitionId];

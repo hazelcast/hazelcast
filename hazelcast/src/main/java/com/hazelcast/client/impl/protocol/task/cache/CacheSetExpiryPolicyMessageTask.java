@@ -35,9 +35,8 @@ public class CacheSetExpiryPolicyMessageTask extends AbstractCacheMessageTask<Ca
 
     @Override
     protected Operation prepareOperation() {
-        ExpiryPolicy expiryPolicy = serializationService.toObject(parameters.expiryPolicy);
         return getOperationProvider(parameters.name)
-                .createSetExpiryPolicyOperation(parameters.keys, expiryPolicy, parameters.completionId);
+                .createSetExpiryPolicyOperation(parameters.keys, parameters.expiryPolicy, parameters.completionId);
     }
 
     @Override

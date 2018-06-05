@@ -20,6 +20,7 @@ import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.version.Version;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.cache.expiry.ExpiryPolicy;
@@ -34,11 +35,13 @@ import java.io.IOException;
  */
 public abstract class AbstractCacheRecord<V> implements CacheRecord<V>, IdentifiedDataSerializable {
 
+    private static final Version EXPIRY_POLICY_VERSION = Version.of("3.11");
+
     protected long creationTime = TIME_NOT_AVAILABLE;
     protected volatile long expirationTime = TIME_NOT_AVAILABLE;
     protected volatile long accessTime = TIME_NOT_AVAILABLE;
     protected volatile int accessHit;
-    protected volatile ExpiryPolicy expiryPolicy;
+    protected volatile Object expiryPolicy;
 
     protected AbstractCacheRecord() {
     }
@@ -88,12 +91,12 @@ public abstract class AbstractCacheRecord<V> implements CacheRecord<V>, Identifi
     }
 
     @Override
-    public void setExpiryPolicy(ExpiryPolicy expiryPolicy) {
+    public void setExpiryPolicy(Object expiryPolicy) {
         this.expiryPolicy = expiryPolicy;
     }
 
     @Override
-    public ExpiryPolicy getExpiryPolicy() {
+    public Object getExpiryPolicy() {
         return expiryPolicy;
     }
 
@@ -120,7 +123,9 @@ public abstract class AbstractCacheRecord<V> implements CacheRecord<V>, Identifi
         out.writeLong(expirationTime);
         out.writeLong(accessTime);
         out.writeInt(accessHit);
-        out.writeObject(expiryPolicy);
+        if (out.getVersion().isGreaterOrEqual(EXPIRY_POLICY_VERSION)) {
+            out.writeObject(expiryPolicy);
+        }
     }
 
     @Override
@@ -129,7 +134,9 @@ public abstract class AbstractCacheRecord<V> implements CacheRecord<V>, Identifi
         expirationTime = in.readLong();
         accessTime = in.readLong();
         accessHit = in.readInt();
-        expiryPolicy = in.readObject();
+        if (in.getVersion().isGreaterOrEqual(EXPIRY_POLICY_VERSION)) {
+            expiryPolicy = in.readObject();
+        }
     }
 
     @Override

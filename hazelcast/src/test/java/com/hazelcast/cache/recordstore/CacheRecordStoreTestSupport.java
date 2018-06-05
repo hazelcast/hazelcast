@@ -33,6 +33,12 @@ import com.hazelcast.test.TestHazelcastInstanceFactory;
 import org.junit.After;
 import org.junit.Before;
 
+import javax.cache.expiry.Duration;
+import javax.cache.expiry.ExpiryPolicy;
+import javax.cache.expiry.TouchedExpiryPolicy;
+
+import java.util.Collections;
+
 import static org.junit.Assert.assertTrue;
 
 public abstract class CacheRecordStoreTestSupport
@@ -110,6 +116,35 @@ public abstract class CacheRecordStoreTestSupport
         } else {
             throw new IllegalArgumentException("Unsupported in-memory format: " + inMemoryFormat);
         }
+    }
+
+    protected void putAndSetExpiryPolicyFromRecordStore(ICacheRecordStore cacheRecordStore, InMemoryFormat inMemoryFormat) {
+        SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
+        ExpiryPolicy expiryPolicy = TouchedExpiryPolicy.factoryOf(Duration.ETERNAL).create();
+        Data policyData = serializationService.toData(expiryPolicy);
+
+        for (int i = 0; i < CACHE_RECORD_COUNT; i++) {
+            Data keyData = serializationService.toData(i);
+
+            cacheRecordStore.put(keyData, "value-" + i, null, null, -1);
+            cacheRecordStore.setExpiryPolicy(Collections.singleton(keyData), policyData, -1);
+        }
+
+        if (inMemoryFormat == InMemoryFormat.BINARY || inMemoryFormat == InMemoryFormat.NATIVE) {
+            for (int i = 0; i < CACHE_RECORD_COUNT; i++) {
+                assertTrue(Data.class.isAssignableFrom(
+                        cacheRecordStore.getExpiryPolicy(serializationService.toData(i)).getClass()));
+            }
+        } else if (inMemoryFormat == InMemoryFormat.OBJECT) {
+            for (int i = 0; i < CACHE_RECORD_COUNT; i++) {
+                assertTrue(ExpiryPolicy.class.isAssignableFrom(
+                        cacheRecordStore.getExpiryPolicy(serializationService.toData(i)).getClass()));
+            }
+        } else {
+            throw new IllegalArgumentException("Unsupported in-memory format: " + inMemoryFormat);
+        }
+
+
     }
 
 }

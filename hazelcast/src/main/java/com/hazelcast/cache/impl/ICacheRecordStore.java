@@ -279,7 +279,9 @@ public interface ICacheRecordStore {
      * @param keys          keys for the entries
      * @param expiryPolicy  custom expiry policy or null to use configured default value
      */
-    void setExpiryPolicy(Collection<Data> keys, ExpiryPolicy expiryPolicy, int completionId);
+    void setExpiryPolicy(Collection<Data> keys, Object expiryPolicy, int completionId);
+
+    Object getExpiryPolicy(Data key);
 
     /**
      * Determines if this store contains an entry for the specified key.
