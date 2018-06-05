@@ -34,7 +34,6 @@ import static org.junit.Assert.assertNull;
 
 /**
  * Convenience for accessing and asserting backup records.
- *
  */
 public final class TestBackupUtils {
     private static final int DEFAULT_REPLICA_INDEX = 1;
@@ -49,8 +48,8 @@ public final class TestBackupUtils {
      *
      * @param cluster all instances in the cluster
      * @param mapName map to access
-     * @param <K> type of keys
-     * @param <V> type of values
+     * @param <K>     type of keys
+     * @param <V>     type of values
      * @return accessor for a given map and first backup replica
      */
     public static <K, V> BackupAccessor<K, V> newMapAccessor(HazelcastInstance[] cluster, String mapName) {
@@ -61,11 +60,11 @@ public final class TestBackupUtils {
      * Create a new instance of {@link BackupAccessor} for a given map.
      * It allows to access an arbitrary replica index as long as it's greater or equals 1
      *
-     * @param cluster all instances in the cluster
-     * @param mapName map to access
+     * @param cluster      all instances in the cluster
+     * @param mapName      map to access
      * @param replicaIndex replica index to access
-     * @param <K> type of keys
-     * @param <V> type of values
+     * @param <K>          type of keys
+     * @param <V>          type of values
      * @return accessor for a given map and replica index
      */
     public static <K, V> BackupAccessor<K, V> newMapAccessor(HazelcastInstance[] cluster, String mapName, int replicaIndex) {
@@ -76,10 +75,10 @@ public final class TestBackupUtils {
      * Create a new instance of {@link BackupAccessor} for a given cache.
      * It access a first backup replica.
      *
-     * @param cluster all instances in the cluster
+     * @param cluster   all instances in the cluster
      * @param cacheName cache to access
-     * @param <K> type of keys
-     * @param <V> type of values
+     * @param <K>       type of keys
+     * @param <V>       type of values
      * @return accessor for a given cache and first backup replica
      */
     public static <K, V> BackupAccessor<K, V> newCacheAccessor(HazelcastInstance[] cluster, String cacheName) {
@@ -90,11 +89,11 @@ public final class TestBackupUtils {
      * Create a new instance of {@link BackupAccessor} for a given cache.
      * It allows to access an arbitrary replica index as long as it's greater or equals 1
      *
-     * @param cluster all instances in the cluster
-     * @param cacheName cache to access
+     * @param cluster      all instances in the cluster
+     * @param cacheName    cache to access
      * @param replicaIndex replica index to access
-     * @param <K> type of keys
-     * @param <V> type of values
+     * @param <K>          type of keys
+     * @param <V>          type of values
      * @return accessor for a given cache and replica index
      */
     public static <K, V> BackupAccessor<K, V> newCacheAccessor(HazelcastInstance[] cluster, String cacheName, int replicaIndex) {
@@ -137,7 +136,7 @@ public final class TestBackupUtils {
     // ##### PRIVATE STUFF BELLOW, NO NEED TO TOUCH IT IN REGULAR TESTS #####
     // ######################################################################
 
-    private static class CacheBackupAccessor<K, V> extends BackupAccessorSupport<K, V> implements BackupAccessor<K ,V> {
+    private static class CacheBackupAccessor<K, V> extends BackupAccessorSupport<K, V> implements BackupAccessor<K, V> {
         private final String cacheName;
         private final int replicaIndex;
 
@@ -305,7 +304,7 @@ public final class TestBackupUtils {
                         return null;
                     }
                     Data keyData = serializationService.toData(key);
-                    Object o = recordStore.get(keyData, true);
+                    Object o = recordStore.get(keyData, true, null);
                     if (o == null) {
                         return null;
                     }
