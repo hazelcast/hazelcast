@@ -120,6 +120,9 @@ public final class HazelcastClientCacheManager extends AbstractHazelcastCacheMan
 
     @Override
     protected <K, V> CacheConfig<K, V> findCacheConfig(String cacheName, String simpleCacheName) {
+        if (simpleCacheName == null) {
+            return null;
+        }
         CacheConfig<K, V> config = clientCacheProxyFactory.getCacheConfig(cacheName);
         if (config == null) {
             // if cache config not found, try to find it from partition
