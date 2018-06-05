@@ -29,7 +29,6 @@ import com.hazelcast.spi.ServiceNamespaceAware;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
 import com.hazelcast.spi.impl.MutatingOperation;
 
-import javax.cache.expiry.ExpiryPolicy;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -43,20 +42,20 @@ public class CacheSetExpiryPolicyOperation extends AbstractNamedOperation
     private transient int partitionId;
 
     private List<Data> keys;
-    private ExpiryPolicy expiryPolicy;
+    private Data expiryPolicy;
     private int completionId;
 
     public CacheSetExpiryPolicyOperation() {
 
     }
 
-    public CacheSetExpiryPolicyOperation(String name, List<Data> keys, ExpiryPolicy expiryPolicy) {
+    public CacheSetExpiryPolicyOperation(String name, List<Data> keys, Data expiryPolicy) {
         super(name);
         this.keys = keys;
         this.expiryPolicy = expiryPolicy;
     }
 
-    public CacheSetExpiryPolicyOperation(String name, List<Data> keys, ExpiryPolicy expiryPolicy, int completionId) {
+    public CacheSetExpiryPolicyOperation(String name, List<Data> keys, Data expiryPolicy, int completionId) {
         this(name, keys, expiryPolicy);
         this.completionId = completionId;
     }
@@ -114,7 +113,7 @@ public class CacheSetExpiryPolicyOperation extends AbstractNamedOperation
             out.writeData(key);
         }
         out.writeInt(completionId);
-        out.writeObject(expiryPolicy);
+        out.writeData(expiryPolicy);
     }
 
     @Override
@@ -126,6 +125,6 @@ public class CacheSetExpiryPolicyOperation extends AbstractNamedOperation
             keys.add(in.readData());
         }
         completionId = in.readInt();
-        expiryPolicy = in.readObject();
+        expiryPolicy = in.readData();
     }
 }

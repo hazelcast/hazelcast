@@ -135,12 +135,12 @@ public class DefaultOperationProvider implements CacheOperationProvider {
     }
 
     @Override
-    public Operation createSetExpiryPolicyOperation(List<Data> keys, ExpiryPolicy expiryPolicy, int completionId) {
+    public Operation createSetExpiryPolicyOperation(List<Data> keys, Data expiryPolicy, int completionId) {
         return new CacheSetExpiryPolicyOperation(nameWithPrefix, keys, expiryPolicy, completionId);
     }
 
     @Override
-    public Operation createSetExpiryPolicyOperation(List<Data> keys, ExpiryPolicy expiryPolicy) {
+    public Operation createSetExpiryPolicyOperation(List<Data> keys, Data expiryPolicy) {
         return new CacheSetExpiryPolicyOperation(nameWithPrefix, keys, expiryPolicy);
     }
 

@@ -41,4 +41,16 @@ public class CacheRecordStoreTest
         putAndGetFromCacheRecordStore(cacheRecordStore, InMemoryFormat.OBJECT);
     }
 
+    @Test
+    public void putObjectAndGetObjectExpiryPolicyFromCacheRecordStore() {
+        ICacheRecordStore cacheRecordStore = createCacheRecordStore(InMemoryFormat.OBJECT);
+        putAndSetExpiryPolicyFromRecordStore(cacheRecordStore, InMemoryFormat.OBJECT);
+    }
+
+    @Test
+    public void putObjectAndGetDataExpiryPolicyFromCacheRecordStore() {
+        ICacheRecordStore cacheRecordStore = createCacheRecordStore(InMemoryFormat.BINARY);
+        putAndSetExpiryPolicyFromRecordStore(cacheRecordStore, InMemoryFormat.BINARY);
+    }
+
 }
