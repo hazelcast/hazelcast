@@ -35,8 +35,10 @@ import javax.jms.Destination;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
+import javax.jms.QueueBrowser;
 import javax.jms.Session;
 import javax.jms.TextMessage;
+import java.util.Enumeration;
 import java.util.Queue;
 
 import static com.hazelcast.jet.function.DistributedFunctions.noopConsumer;
@@ -65,6 +67,8 @@ public class StreamJmsPTest extends JetTestSupport {
         initializeProcessor(queueName, true);
         String message1 = sendMessage(queueName, true);
         String message2 = sendMessage(queueName, true);
+
+        assertTrueEventually(() -> assertEquals(2, queueSize(queueName)));
 
         Queue<Object> queue = outbox.queue(0);
 
@@ -121,6 +125,24 @@ public class StreamJmsPTest extends JetTestSupport {
         session.close();
         connection.close();
         return message;
+    }
+
+    private int queueSize(String queueName) throws Exception {
+        ActiveMQConnectionFactory connectionFactory = broker.createConnectionFactory();
+        Connection connection = connectionFactory.createConnection();
+        connection.start();
+
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        QueueBrowser browser = session.createBrowser(session.createQueue(queueName));
+        Enumeration enumeration = browser.getEnumeration();
+        int size = 0;
+        while (enumeration.hasMoreElements()) {
+            enumeration.nextElement();
+            size++;
+        }
+        session.close();
+        connection.close();
+        return size;
     }
 
 }
