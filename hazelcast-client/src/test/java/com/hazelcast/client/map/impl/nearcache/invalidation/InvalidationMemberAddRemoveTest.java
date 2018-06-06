@@ -20,12 +20,12 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.proxy.NearCachedClientMapProxy;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.map.impl.nearcache.NearCacheTestSupport;
-import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
@@ -37,18 +37,23 @@ import org.junit.runner.RunWith;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask.MAX_TOLERATED_MISS_COUNT;
+import static com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask.RECONCILIATION_INTERVAL_SECONDS;
+import static com.hazelcast.spi.properties.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_ENABLED;
+import static com.hazelcast.spi.properties.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_SIZE;
+import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
 import static com.hazelcast.util.RandomPicker.getInt;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({NightlyTest.class})
+@Category(NightlyTest.class)
 public class InvalidationMemberAddRemoveTest extends NearCacheTestSupport {
 
-    private static final int NEAR_CACHE_POPULATOR_THREAD_COUNT = 3;
     private static final int TEST_RUN_SECONDS = 30;
-    private static final int INVALIDATION_BATCH_SIZE = 10000;
-    private static final int KEY_COUNT = 100000;
-    private static final int RECONCILIATION_INTERVAL_SECONDS = 30;
+    private static final int KEY_COUNT = 1000;
+    private static final int INVALIDATION_BATCH_SIZE = 100;
+    private static final int RECONCILIATION_INTERVAL_SECS = 30;
+    private static final int NEAR_CACHE_POPULATE_THREAD_COUNT = 5;
 
     private final TestHazelcastFactory factory = new TestHazelcastFactory();
 
@@ -58,12 +63,13 @@ public class InvalidationMemberAddRemoveTest extends NearCacheTestSupport {
     }
 
     @Test
-    public void ensure_nearCachedClient_and_member_data_sync_eventually() throws Exception {
-        final String mapName = "default";
+    public void ensure_nearCachedClient_and_member_data_sync_eventually() {
+        final String mapName = "ClientMapInvalidationMemberAddRemoveTest";
         final AtomicBoolean stopTest = new AtomicBoolean();
 
         // members are created
         final Config config = createConfig();
+
         HazelcastInstance member = factory.newHazelcastInstance(config);
         factory.newHazelcastInstance(config);
 
@@ -94,7 +100,7 @@ public class InvalidationMemberAddRemoveTest extends NearCacheTestSupport {
         threads.add(shadowMember);
 
         // populates client Near Cache
-        for (int i = 0; i < NEAR_CACHE_POPULATOR_THREAD_COUNT; i++) {
+        for (int i = 0; i < NEAR_CACHE_POPULATE_THREAD_COUNT; i++) {
             Thread populateClientNearCache = new Thread(new Runnable() {
                 public void run() {
                     while (!stopTest.get()) {
@@ -137,21 +143,20 @@ public class InvalidationMemberAddRemoveTest extends NearCacheTestSupport {
         }
         // stress system some seconds
         sleepSeconds(TEST_RUN_SECONDS);
-        //stop threads
+        // stop threads
         stopTest.set(true);
         for (Thread thread : threads) {
-            thread.join();
+            assertJoinable(thread);
         }
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 for (int i = 0; i < KEY_COUNT; i++) {
                     Integer valueSeenFromMember = memberMap.get(i);
                     Integer valueSeenFromClient = clientMap.get(i);
 
                     int nearCacheSize = ((NearCachedClientMapProxy) clientMap).getNearCache().size();
-
                     assertEquals("Stale value found. (nearCacheSize=" + nearCacheSize + ")",
                             valueSeenFromMember, valueSeenFromClient);
                 }
@@ -160,27 +165,26 @@ public class InvalidationMemberAddRemoveTest extends NearCacheTestSupport {
     }
 
     protected Config createConfig() {
-        Config config = getConfig();
-        config.setProperty(GroupProperty.PARTITION_COUNT.getName(), "271");
-        config.setProperty(GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_ENABLED.getName(), "true");
-        config.setProperty(GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_SIZE.getName(), Integer.toString(INVALIDATION_BATCH_SIZE));
-        return config;
-    }
-
-    protected NearCacheConfig createNearCacheConfig(String mapName) {
-        NearCacheConfig nearCacheConfig = newNearCacheConfig();
-        nearCacheConfig.setInvalidateOnChange(true);
-        nearCacheConfig.setName(mapName);
-        nearCacheConfig.getEvictionConfig()
-                .setSize(Integer.MAX_VALUE)
-                .setEvictionPolicy(EvictionPolicy.NONE);
-        return nearCacheConfig;
+        return smallInstanceConfig()
+                .setProperty(PARTITION_COUNT.getName(), "271")
+                .setProperty(MAP_INVALIDATION_MESSAGE_BATCH_ENABLED.getName(), "true")
+                .setProperty(MAP_INVALIDATION_MESSAGE_BATCH_SIZE.getName(), String.valueOf(INVALIDATION_BATCH_SIZE));
     }
 
     protected ClientConfig createClientConfig() {
-        ClientConfig clientConfig = new ClientConfig();
-        clientConfig.setProperty("hazelcast.invalidation.max.tolerated.miss.count", "0");
-        clientConfig.setProperty("hazelcast.invalidation.reconciliation.interval.seconds", Integer.toString(RECONCILIATION_INTERVAL_SECONDS));
-        return clientConfig;
+        return new ClientConfig()
+                .setProperty(MAX_TOLERATED_MISS_COUNT.getName(), "0")
+                .setProperty(RECONCILIATION_INTERVAL_SECONDS.getName(), String.valueOf(RECONCILIATION_INTERVAL_SECS));
+    }
+
+    protected NearCacheConfig createNearCacheConfig(String mapName) {
+        EvictionConfig evictionConfig = new EvictionConfig()
+                .setSize(Integer.MAX_VALUE)
+                .setEvictionPolicy(EvictionPolicy.NONE);
+
+        return newNearCacheConfig()
+                .setName(mapName)
+                .setInvalidateOnChange(true)
+                .setEvictionConfig(evictionConfig);
     }
 }

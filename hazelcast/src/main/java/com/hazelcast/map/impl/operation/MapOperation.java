@@ -127,13 +127,17 @@ public abstract class MapOperation extends AbstractNamedOperation implements Ide
      * This method helps to add clearing Near Cache event only from one-partition which matches partitionId of the map name.
      */
     protected final void invalidateAllKeysInNearCaches() {
-        if (!mapContainer.hasInvalidationListener()
-                || getPartitionId() != getNodeEngine().getPartitionService().getPartitionId(name)) {
-            return;
-        }
+        if (mapContainer.hasInvalidationListener()) {
 
-        Invalidator invalidator = getNearCacheInvalidator();
-        invalidator.invalidateAllKeys(name, getCallerUuid());
+            int partitionId = getPartitionId();
+            Invalidator invalidator = getNearCacheInvalidator();
+
+            if (partitionId == getNodeEngine().getPartitionService().getPartitionId(name)) {
+                invalidator.invalidateAllKeys(name, getCallerUuid());
+            }
+
+            invalidator.resetPartitionMetaData(name, getPartitionId());
+        }
     }
 
     private Invalidator getNearCacheInvalidator() {
