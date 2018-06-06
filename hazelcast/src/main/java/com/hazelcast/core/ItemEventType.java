@@ -17,10 +17,17 @@
 package com.hazelcast.core;
 
 /**
- * Type of item event.
+ * Type of item events.
  */
 public enum ItemEventType {
+    /**
+     * Fired when an item is added.
+     */
     ADDED(1),
+
+    /**
+     * Fired when an item is removed.
+     */
     REMOVED(2);
 
     private int type;

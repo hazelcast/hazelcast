@@ -21,15 +21,54 @@ package com.hazelcast.core;
  */
 public enum EntryEventType {
 
+    /**
+     * Fired if an entry is added.
+     */
     ADDED(TypeId.ADDED),
+
+    /**
+     * Fired if an entry is removed.
+     */
     REMOVED(TypeId.REMOVED),
+
+    /**
+     * Fired if an entry is updated.
+     */
     UPDATED(TypeId.UPDATED),
+
+    /**
+     * Fired if an entry is evicted.
+     */
     EVICTED(TypeId.EVICTED),
+
+    /**
+     * Fired if all entries are evicted.
+     */
     EVICT_ALL(TypeId.EVICT_ALL),
+
+    /**
+     * Fired if all entries are cleared.
+     */
     CLEAR_ALL(TypeId.CLEAR_ALL),
+
+    /**
+     * Fired if an entry is merged after a network partition.
+     */
     MERGED(TypeId.MERGED),
+
+    /**
+     * Fired if an entry is expired.
+     */
     EXPIRED(TypeId.EXPIRED),
+
+    /**
+     * Fired if an entry is invalidated.
+     */
     INVALIDATION(TypeId.INVALIDATION),
+
+    /**
+     * Fired if an entry is loaded.
+     */
     LOADED(TypeId.LOADED);
 
     private int typeId;
@@ -39,14 +78,15 @@ public enum EntryEventType {
     }
 
     /**
-     * @return the event type ID.
+     * @return the event type ID
      */
     public int getType() {
         return typeId;
     }
 
     /**
-     * @return the matching EntryEventType for the supplied {@code typeId} or null if there is no match.
+     * @return the matching EntryEventType for the supplied {@code typeId}
+     * or {@code null} if there is no match
      */
     @SuppressWarnings("checkstyle:returncount")
     public static EntryEventType getByType(final int typeId) {

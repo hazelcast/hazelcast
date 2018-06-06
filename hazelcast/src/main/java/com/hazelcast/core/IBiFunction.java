@@ -16,6 +16,15 @@
 
 package com.hazelcast.core;
 
+/**
+ * Represents a function that accepts two arguments and produces a result.
+ * <p>
+ * This class is called IBiFunction instead of BiFunction to prevent clashes with the one in Java 8.
+ *
+ * @param <T> an argument
+ * @param <U> another argument
+ * @param <R> a result
+ */
 public interface IBiFunction<T, U, R> {
 
     /**

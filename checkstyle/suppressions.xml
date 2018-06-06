@@ -76,7 +76,6 @@
     <suppress checks="ClassDataAbstractionCoupling" files="com[\\/]hazelcast[\\/]cache[\\/]impl[\\/]DefaultOperationProvider"/>
 
     <!-- Core -->
-    <suppress checks="Javadoc(Method|Type|Variable)" files="com[\\/]hazelcast[\\/]core[\\/]"/>
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]core[\\/]HazelcastInstance"/>
     <suppress checks="MethodCount|FileLength" files="com[\\/]hazelcast[\\/]core[\\/]IMap"/>
 

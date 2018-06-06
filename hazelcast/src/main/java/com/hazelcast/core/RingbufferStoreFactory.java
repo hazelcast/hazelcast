@@ -18,6 +18,11 @@ package com.hazelcast.core;
 
 import java.util.Properties;
 
+/**
+ * Creates a new {@link RingbufferStore}.
+ *
+ * @param <T> type of the ringbuffer items
+ */
 public interface RingbufferStoreFactory<T> {
 
     RingbufferStore<T> newRingbufferStore(String name, Properties properties);

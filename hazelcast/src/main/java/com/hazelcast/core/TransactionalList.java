@@ -20,27 +20,33 @@ import com.hazelcast.transaction.TransactionalObject;
 
 /**
  * Transactional implementation of {@link IList}.
+ * <p>
+ * Supports Quorum {@link com.hazelcast.config.QuorumConfig} since 3.10 in
+ * cluster versions 3.10 and higher.
  *
- * Supports Quorum {@link com.hazelcast.config.QuorumConfig} since 3.10 in cluster versions 3.10 and higher.
+ * @param <E> the type of elements maintained by this list
  */
 public interface TransactionalList<E> extends TransactionalObject {
 
     /**
      * Adds a new item to the transactional list.
+     *
      * @param e the new item added to the transactional list
-     * @return true if the item is added successfully, false otherwise
+     * @return {@code true} if the item is added successfully
      */
     boolean add(E e);
 
     /**
-     * Remove item from the transactional list
+     * Removes an item from the transactional list.
+     *
      * @param e item to remove the transactional list
-     * @return true if the item is removed successfully, false otherwise
+     * @return {@code true} if the item is removed successfully
      */
     boolean remove(E e);
 
     /**
-     * Returns the size of the list
+     * Returns the size of the list.
+     *
      * @return the size of the list
      */
     int size();
