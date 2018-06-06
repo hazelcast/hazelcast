@@ -28,6 +28,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 
 import javax.cache.Cache;
 import javax.cache.CacheManager;
+import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.spi.CachingProvider;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
@@ -97,6 +98,7 @@ public abstract class AbstractCacheEvictionPolicyComparatorTest extends Hazelcas
             assertTrue(e2.getCreationTime() > 0);
             assertEquals(CacheRecord.TIME_NOT_AVAILABLE, e2.getLastAccessTime());
             assertEquals(0, e2.getAccessHit());
+            assertEquals(e1.getExpiryPolicy(), e2.getExpiryPolicy());
 
             callCounter.incrementAndGet();
 

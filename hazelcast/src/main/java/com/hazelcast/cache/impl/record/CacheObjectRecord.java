@@ -20,14 +20,16 @@ import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
+import javax.cache.expiry.ExpiryPolicy;
 import java.io.IOException;
 
 /**
  * Implementation of {@link com.hazelcast.cache.impl.record.CacheRecord} which has an internal object format.
  */
-public class CacheObjectRecord extends AbstractCacheRecord<Object> {
+public class CacheObjectRecord extends AbstractCacheRecord<Object, ExpiryPolicy> {
 
     protected Object value;
+    protected ExpiryPolicy expiryPolicy;
 
     public CacheObjectRecord() {
     }
@@ -48,15 +50,31 @@ public class CacheObjectRecord extends AbstractCacheRecord<Object> {
     }
 
     @Override
+    public void setExpiryPolicy(ExpiryPolicy expiryPolicy) {
+        this.expiryPolicy = expiryPolicy;
+    }
+
+    @Override
+    public ExpiryPolicy getExpiryPolicy() {
+        return expiryPolicy;
+    }
+
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         super.writeData(out);
         out.writeObject(value);
+        if (out.getVersion().isGreaterOrEqual(EXPIRY_POLICY_VERSION)) {
+            out.writeObject(expiryPolicy);
+        }
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         super.readData(in);
         value = in.readObject();
+        if (in.getVersion().isGreaterOrEqual(EXPIRY_POLICY_VERSION)) {
+            expiryPolicy = in.readObject();
+        }
     }
 
     @Override

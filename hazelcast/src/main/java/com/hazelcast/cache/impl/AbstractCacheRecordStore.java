@@ -340,7 +340,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         return duration.getAdjustedTime(now);
     }
 
-    protected ExpiryPolicy getExpiryPolicy(R record, ExpiryPolicy expiryPolicy) {
+    protected ExpiryPolicy getExpiryPolicy(CacheRecord record, ExpiryPolicy expiryPolicy) {
         if (expiryPolicy != null) {
             return expiryPolicy;
         } else if (record != null && record.getExpiryPolicy() != null) {
@@ -628,6 +628,11 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
                                        Data oldDataValue, Throwable error) {
     }
 
+    protected void updateRecord(Data key, CacheRecord record, long expiryTime, long now, int completionId, String origin) {
+        record.setExpirationTime(expiryTime);
+        invalidateEntry(key, origin);
+    }
+
     @SuppressWarnings("checkstyle:parameternumber")
     protected void updateRecord(Data key, R record, Object value, long expiryTime, long now,
                                 boolean disableWriteThrough, int completionId, String source, String origin) {
@@ -782,6 +787,21 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         }
         return updateRecordWithExpiry(key, value, record, expiryTime, now,
                 disableWriteThrough, completionId, source, origin);
+    }
+
+    protected void updateRecordWithExpiry(Data key, CacheRecord record, ExpiryPolicy expiryPolicy, long now, int completionId,
+                                             String source) {
+        expiryPolicy = getExpiryPolicy(record, expiryPolicy);
+        long expiryTime = CacheRecord.TIME_NOT_AVAILABLE;
+        try {
+            Duration expiryDuration = expiryPolicy.getExpiryForUpdate();
+            if (expiryDuration != null) {
+                expiryTime = getAdjustedExpireTime(expiryDuration, now);
+            }
+        } catch (Exception e) {
+            ignore(e);
+        }
+        updateRecord(key, record, expiryTime, now, completionId, source);
     }
 
     protected void onDeleteRecord(Data key, R record, Data dataValue, boolean deleted) {
@@ -1272,11 +1292,19 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     @Override
-    public void setExpiryPolicy(Collection<Data> keys, Object expiryPolicy, int completionId) {
+    public void setExpiryPolicy(Collection<Data> keys, Object expiryPolicy, String source, int completionId) {
+        ExpiryPolicy expiryPolicyInstance = null;
+        if (expiryPolicy instanceof Data) {
+            expiryPolicyInstance = (ExpiryPolicy) toValue(expiryPolicy);
+        }
+        if (!(expiryPolicyInstance instanceof ExpiryPolicy)) {
+            throw new IllegalArgumentException("Expiry policy is not type of expiry policy");
+        }
         for (Data key : keys) {
             CacheRecord record = getRecord(key);
             if (record != null) {
                 updateExpiryPolicyOfRecord(record, expiryPolicy);
+                updateRecordWithExpiry(key, record, expiryPolicyInstance, System.currentTimeMillis(), completionId, source);
             }
         }
     }

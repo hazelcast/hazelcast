@@ -99,7 +99,8 @@ class CacheMergeRunnable extends AbstractMergeRunnable<Data, Data, ICacheRecordS
                     record.getCreationTime(),
                     record.getExpirationTime(),
                     record.getLastAccessTime(),
-                    record.getAccessHit());
+                    record.getAccessHit(),
+                    toData(record.getExpiryPolicy()));
 
             consumer.accept(partitionId, new CacheLegacyMergeOperation(name, key, entryView, mergePolicy));
         }

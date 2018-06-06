@@ -18,6 +18,8 @@ package com.hazelcast.cache;
 
 import com.hazelcast.internal.eviction.EvictionPolicyComparator;
 
+import javax.cache.expiry.ExpiryPolicy;
+
 /**
  * Cache specific {@link EvictionPolicyComparator} for comparing
  * {@link CacheEntryView}s to be evicted.

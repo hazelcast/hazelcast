@@ -33,15 +33,14 @@ import java.io.IOException;
  *
  * @param <V> the type of the value stored by this {@link AbstractCacheRecord}
  */
-public abstract class AbstractCacheRecord<V> implements CacheRecord<V>, IdentifiedDataSerializable {
+public abstract class AbstractCacheRecord<V, E> implements CacheRecord<V, E>, IdentifiedDataSerializable {
 
-    private static final Version EXPIRY_POLICY_VERSION = Version.of("3.11");
+    protected static final Version EXPIRY_POLICY_VERSION = Version.of("3.11");
 
     protected long creationTime = TIME_NOT_AVAILABLE;
     protected volatile long expirationTime = TIME_NOT_AVAILABLE;
     protected volatile long accessTime = TIME_NOT_AVAILABLE;
     protected volatile int accessHit;
-    protected volatile Object expiryPolicy;
 
     protected AbstractCacheRecord() {
     }
@@ -91,16 +90,6 @@ public abstract class AbstractCacheRecord<V> implements CacheRecord<V>, Identifi
     }
 
     @Override
-    public void setExpiryPolicy(Object expiryPolicy) {
-        this.expiryPolicy = expiryPolicy;
-    }
-
-    @Override
-    public Object getExpiryPolicy() {
-        return expiryPolicy;
-    }
-
-    @Override
     @SuppressFBWarnings(value = "VO_VOLATILE_INCREMENT",
             justification = "CacheRecord can be accessed by only its own partition thread.")
     public void incrementAccessHit() {
@@ -123,9 +112,6 @@ public abstract class AbstractCacheRecord<V> implements CacheRecord<V>, Identifi
         out.writeLong(expirationTime);
         out.writeLong(accessTime);
         out.writeInt(accessHit);
-        if (out.getVersion().isGreaterOrEqual(EXPIRY_POLICY_VERSION)) {
-            out.writeObject(expiryPolicy);
-        }
     }
 
     @Override
@@ -134,9 +120,6 @@ public abstract class AbstractCacheRecord<V> implements CacheRecord<V>, Identifi
         expirationTime = in.readLong();
         accessTime = in.readLong();
         accessHit = in.readInt();
-        if (in.getVersion().isGreaterOrEqual(EXPIRY_POLICY_VERSION)) {
-            expiryPolicy = in.readObject();
-        }
     }
 
     @Override

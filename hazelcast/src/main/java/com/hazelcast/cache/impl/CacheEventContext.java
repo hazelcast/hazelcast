@@ -37,6 +37,7 @@ public class CacheEventContext {
     private String origin;
     private int orderKey;
     private int completionId;
+    private Data expiryPolicy;
 
     public CacheEventContext() { }
 
@@ -126,6 +127,15 @@ public class CacheEventContext {
 
     public CacheEventContext setAccessHit(long accessHit) {
         this.accessHit = accessHit;
+        return this;
+    }
+
+    public Data getExpiryPolicy() {
+        return expiryPolicy;
+    }
+
+    public CacheEventContext setExpiryPolicy(Data expiryPolicy) {
+        this.expiryPolicy = expiryPolicy;
         return this;
     }
 

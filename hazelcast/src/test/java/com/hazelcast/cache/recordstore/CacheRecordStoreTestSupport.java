@@ -127,7 +127,7 @@ public abstract class CacheRecordStoreTestSupport
             Data keyData = serializationService.toData(i);
 
             cacheRecordStore.put(keyData, "value-" + i, null, null, -1);
-            cacheRecordStore.setExpiryPolicy(Collections.singleton(keyData), policyData, -1);
+            cacheRecordStore.setExpiryPolicy(Collections.singleton(keyData), policyData, null, -1);
         }
 
         if (inMemoryFormat == InMemoryFormat.BINARY || inMemoryFormat == InMemoryFormat.NATIVE) {

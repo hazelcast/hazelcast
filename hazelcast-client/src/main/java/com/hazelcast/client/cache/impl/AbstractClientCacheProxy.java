@@ -280,7 +280,7 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
     }
 
     @Override
-    public void setExpiryPolicy(Set<K> keys, ExpiryPolicy policy) {
+    public void setExpiryPolicy(Set<? extends K> keys, ExpiryPolicy policy) {
         ensureOpen();
         checkNotNull(keys);
         checkNotNull(policy);
@@ -331,7 +331,7 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
         }
     }
 
-    private List<Data>[] groupKeysToPartitions(Set<K> keys) {
+    private List<Data>[] groupKeysToPartitions(Set<? extends K> keys) {
         List<Data>[] keysByPartition = new List[partitionCount];
         ClientPartitionService partitionService = getContext().getPartitionService();
         for (K key: keys) {

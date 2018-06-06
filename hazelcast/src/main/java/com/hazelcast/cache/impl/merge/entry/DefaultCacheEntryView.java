@@ -22,6 +22,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.version.Version;
 
 import java.io.IOException;
 
@@ -37,18 +38,21 @@ public class DefaultCacheEntryView
     private long expirationTime;
     private long lastAccessTime;
     private long accessHit;
+    private Data expiryPolicy;
 
     public DefaultCacheEntryView() {
     }
 
     public DefaultCacheEntryView(Data key, Data value, long creationTime,
-                                 long expirationTime, long lastAccessTime, long accessHit) {
+                                 long expirationTime, long lastAccessTime, long accessHit,
+                                 Data expiryPolicy) {
         this.key = key;
         this.value = value;
         this.creationTime = creationTime;
         this.expirationTime = expirationTime;
         this.lastAccessTime = lastAccessTime;
         this.accessHit = accessHit;
+        this.expiryPolicy = expiryPolicy;
     }
 
     @Override
@@ -82,6 +86,11 @@ public class DefaultCacheEntryView
     }
 
     @Override
+    public Data getExpiryPolicy() {
+        return expiryPolicy;
+    }
+
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeLong(creationTime);
         out.writeLong(expirationTime);
@@ -89,6 +98,9 @@ public class DefaultCacheEntryView
         out.writeLong(accessHit);
         out.writeData(key);
         out.writeData(value);
+        if (out.getVersion().isGreaterOrEqual(Version.of("3.11"))) {
+            out.writeData(expiryPolicy);
+        }
     }
 
     @Override
@@ -99,6 +111,9 @@ public class DefaultCacheEntryView
         accessHit = in.readLong();
         key = in.readData();
         value = in.readData();
+        if (in.getVersion().isGreaterOrEqual(Version.of("3.11"))) {
+            expiryPolicy = in.readData();
+        }
     }
 
     @Override

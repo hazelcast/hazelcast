@@ -230,7 +230,7 @@ abstract class AbstractCacheProxy<K, V>
     }
 
     @Override
-    public void setExpiryPolicy(Set<K> keys, ExpiryPolicy expiryPolicy) {
+    public void setExpiryPolicy(Set<? extends K> keys, ExpiryPolicy expiryPolicy) {
         ensureOpen();
         validateNotNull(keys);
         validateNotNull(expiryPolicy);
