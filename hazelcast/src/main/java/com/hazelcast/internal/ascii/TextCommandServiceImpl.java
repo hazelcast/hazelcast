@@ -79,14 +79,14 @@ import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.ThreadUtil.createThreadName;
 import static java.lang.Thread.currentThread;
 
+@SuppressWarnings({"checkstyle:methodcount", "checkstyle:classdataabstractioncoupling"})
 public class TextCommandServiceImpl implements TextCommandService {
 
     private static final int TEXT_COMMAND_PROCESSOR_SIZE = 100;
     private static final int MILLIS_TO_SECONDS = 1000;
     private static final long WAIT_TIME = 1000;
-    private final Node node;
+
     private final TextCommandProcessor[] textCommandProcessors = new TextCommandProcessor[TEXT_COMMAND_PROCESSOR_SIZE];
-    private final HazelcastInstance hazelcast;
     private final AtomicLong sets = new AtomicLong();
     private final AtomicLong touches = new AtomicLong();
     private final AtomicLong getHits = new AtomicLong();
@@ -98,12 +98,17 @@ public class TextCommandServiceImpl implements TextCommandService {
     private final AtomicLong decrementHits = new AtomicLong();
     private final AtomicLong decrementMisses = new AtomicLong();
     private final long startTime = Clock.currentTimeMillis();
+
+    private final Node node;
+    private final HazelcastInstance hazelcast;
     private final ILogger logger;
+
     private volatile ResponseThreadRunnable responseThreadRunnable;
     private volatile boolean running = true;
 
     private final Object mutex = new Object();
 
+    @SuppressWarnings("checkstyle:executablestatementcount")
     public TextCommandServiceImpl(Node node) {
         this.node = node;
         this.hazelcast = node.hazelcastInstance;

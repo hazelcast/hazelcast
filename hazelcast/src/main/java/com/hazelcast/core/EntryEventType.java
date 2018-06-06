@@ -81,8 +81,9 @@ public enum EntryEventType {
      *
      * @see com.hazelcast.map.impl.MapListenerFlagOperator
      */
-    //CHECKSTYLE:OFF
+    @SuppressWarnings("checkstyle:magicnumber")
     private static class TypeId {
+
         private static final int ADDED = 1;
         private static final int REMOVED = 1 << 1;
         private static final int UPDATED = 1 << 2;
@@ -94,5 +95,4 @@ public enum EntryEventType {
         private static final int INVALIDATION = 1 << 8;
         private static final int LOADED = 1 << 9;
     }
-    //CHECKSTYLE:ON
 }

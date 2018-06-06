@@ -67,6 +67,7 @@ import static com.hazelcast.util.UuidUtil.newUnsecureUuidString;
 import static java.lang.Boolean.TRUE;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
+@SuppressWarnings("checkstyle:methodcount")
 public class TransactionImpl implements Transaction {
 
     private static final Address[] EMPTY_ADDRESSES = new Address[0];
@@ -259,11 +260,7 @@ public class TransactionImpl implements Transaction {
             return false;
         }
 
-        if (transactionLog.size() <= 1) {
-            return false;
-        }
-
-        return true;
+        return transactionLog.size() > 1;
     }
 
     @Override
@@ -334,7 +331,7 @@ public class TransactionImpl implements Transaction {
         }
     }
 
-    private void replicateTxnLog() throws InterruptedException, ExecutionException, java.util.concurrent.TimeoutException {
+    private void replicateTxnLog() {
         if (skipBackupLogReplication()) {
             return;
         }

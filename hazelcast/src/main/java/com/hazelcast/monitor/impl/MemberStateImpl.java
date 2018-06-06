@@ -334,8 +334,8 @@ public class MemberStateImpl implements MemberState {
         root.add(key, jsonObject);
     }
 
-    //CHECKSTYLE:OFF
     @Override
+    @SuppressWarnings("checkstyle:methodlength")
     public void fromJson(JsonObject json) {
         address = getString(json, "address");
         for (JsonObject.Member next : getObject(json, "mapStats")) {
@@ -442,7 +442,6 @@ public class MemberStateImpl implements MemberState {
         }
     }
 
-    //CHECKSTYLE:ON
     @Override
     public String toString() {
         return "MemberStateImpl{"

@@ -30,6 +30,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * This interface describes a common record store for replicated maps and their actual records
  */
+@SuppressWarnings("checkstyle:methodcount")
 public interface ReplicatedRecordStore {
 
     String getName();

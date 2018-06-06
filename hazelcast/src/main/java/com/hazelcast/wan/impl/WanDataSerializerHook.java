@@ -54,7 +54,6 @@ public class WanDataSerializerHook implements DataSerializerHook {
         return F_ID;
     }
 
-    //CHECKSTYLE:OFF
     @Override
     public DataSerializableFactory createFactory() {
         return new DataSerializableFactory() {
@@ -67,10 +66,10 @@ public class WanDataSerializerHook implements DataSerializerHook {
                         return new MapReplicationUpdate();
                     case MAP_REPLICATION_REMOVE:
                         return new MapReplicationRemove();
+                    default:
+                        throw new IllegalArgumentException("Unknown type-id: " + typeId);
                 }
-                throw new IllegalArgumentException("Unknown type-id: " + typeId);
             }
         };
     }
-    //CHECKSTYLE:ON
 }

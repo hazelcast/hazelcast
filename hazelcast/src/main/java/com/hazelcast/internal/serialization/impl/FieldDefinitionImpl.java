@@ -71,9 +71,8 @@ public class FieldDefinitionImpl implements FieldDefinition {
         return version;
     }
 
-    //CHECKSTYLE:OFF
-    //Generated equals method has too high NPath Complexity
     @Override
+    @SuppressWarnings("checkstyle:npathcomplexity")
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -83,7 +82,6 @@ public class FieldDefinitionImpl implements FieldDefinition {
         }
 
         FieldDefinitionImpl that = (FieldDefinitionImpl) o;
-
         if (index != that.index) {
             return false;
         }
@@ -101,7 +99,7 @@ public class FieldDefinitionImpl implements FieldDefinition {
         }
         return type == that.type;
     }
-    //CHECKSTYLE:ON
+
     @Override
     public int hashCode() {
         int result = index;

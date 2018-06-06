@@ -18,14 +18,16 @@ package com.hazelcast.util;
 
 /**
  * Mutable long which can be used for counting purposes.
- * <p/>
+ * <p>
  * This class is not thread-safe.
  */
 public class MutableLong {
 
-    //CHECKSTYLE:OFF
+    /**
+     * Mutable long value of this instance.
+     */
+    @SuppressWarnings("checkstyle:visibilitymodifier")
     public long value;
-    //CHECKSTYLE:ON
 
     public static MutableLong valueOf(long value) {
         MutableLong instance = new MutableLong();
