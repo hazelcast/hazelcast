@@ -17,7 +17,6 @@
 package com.hazelcast.client.cache.impl.nearcache.invalidation;
 
 import com.hazelcast.cache.impl.CacheEventHandler;
-import com.hazelcast.cache.impl.CacheProxy;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.client.cache.impl.HazelcastClientCachingProvider;
@@ -39,8 +38,6 @@ import com.hazelcast.internal.nearcache.impl.DefaultNearCache;
 import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataContainer;
 import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataGenerator;
 import com.hazelcast.internal.nearcache.impl.invalidation.StaleReadDetector;
-import com.hazelcast.internal.partition.InternalPartitionService;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.annotation.NightlyTest;
@@ -57,11 +54,11 @@ import javax.cache.CacheManager;
 import javax.cache.spi.CachingProvider;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.ENTRY_COUNT;
 import static com.hazelcast.config.InMemoryFormat.BINARY;
-import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.CACHE_ON_UPDATE;
 import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.INVALIDATE;
 import static com.hazelcast.internal.nearcache.impl.invalidation.InvalidationUtils.NO_SEQUENCE;
 import static com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask.MAX_TOLERATED_MISS_COUNT;
@@ -84,11 +81,14 @@ public class ClientCacheInvalidationMemberAddRemoveTest extends ClientNearCacheT
     private static final int RECONCILIATION_INTERVAL_SECS = 30;
     private static final int NEAR_CACHE_POPULATE_THREAD_COUNT = 5;
 
+    private HazelcastInstance secondNode;
+
     @Parameters(name = "localUpdatePolicy:{0}")
     public static Collection<Object[]> parameters() {
         return asList(new Object[][]{
                 {INVALIDATE},
-                {CACHE_ON_UPDATE},
+                // TODO: "https://github.com/hazelcast/hazelcast/issues/12548"
+                // {CACHE_ON_UPDATE}
         });
     }
 
@@ -100,7 +100,7 @@ public class ClientCacheInvalidationMemberAddRemoveTest extends ClientNearCacheT
         final AtomicBoolean stopTest = new AtomicBoolean();
 
         final Config config = createConfig();
-        hazelcastFactory.newHazelcastInstance(config);
+        secondNode = hazelcastFactory.newHazelcastInstance(config);
 
         CachingProvider provider = HazelcastServerCachingProvider.createCachingProvider(serverInstance);
         final CacheManager serverCacheManager = provider.getCacheManager();
@@ -193,10 +193,6 @@ public class ClientCacheInvalidationMemberAddRemoveTest extends ClientNearCacheT
                 for (int i = 0; i < KEY_COUNT; i++) {
                     Integer valueSeenFromMember = memberCache.get(i);
                     Integer valueSeenFromClient = clientCache.get(i);
-                    if (valueSeenFromMember != null && valueSeenFromClient == null) {
-                        System.err.println("found");
-                        valueSeenFromClient = clientCache.get(i);
-                    }
 
                     String msg = createFailureMessage(i);
                     assertEquals(msg, valueSeenFromMember, valueSeenFromClient);
@@ -205,26 +201,32 @@ public class ClientCacheInvalidationMemberAddRemoveTest extends ClientNearCacheT
 
             @SuppressWarnings("unchecked")
             private String createFailureMessage(int i) {
-                InternalPartitionService partitionService = getPartitionService(serverInstance);
-                Data keyData = getSerializationService(serverInstance).toData(i);
-                int partitionId = partitionService.getPartitionId(keyData);
+                int partitionId = getPartitionService(serverInstance).getPartitionId(i);
 
                 NearCacheRecordStore nearCacheRecordStore = getNearCacheRecordStore();
-                NearCacheRecord record = nearCacheRecordStore.getRecord(keyData);
+                NearCacheRecord record = nearCacheRecordStore.getRecord(i);
                 long recordSequence = record == null ? NO_SEQUENCE : record.getInvalidationSequence();
 
-                MetaDataGenerator metaDataGenerator = getMetaDataGenerator();
-                long memberSequence = metaDataGenerator.currentSequence("/hz/" + DEFAULT_CACHE_NAME, partitionId);
+                // member-1
+                MetaDataGenerator metaDataGenerator1 = getMetaDataGenerator(serverInstance);
+                long memberSequence1 = metaDataGenerator1.currentSequence("/hz/" + DEFAULT_CACHE_NAME, partitionId);
+                UUID memberUuid1 = metaDataGenerator1.getUuidOrNull(partitionId);
+
+                // member-2
+                MetaDataGenerator metaDataGenerator2 = getMetaDataGenerator(secondNode);
+                long memberSequence2 = metaDataGenerator2.currentSequence("/hz/" + DEFAULT_CACHE_NAME, partitionId);
+                UUID memberUuid2 = metaDataGenerator2.getUuidOrNull(partitionId);
 
                 StaleReadDetector staleReadDetector = nearCacheRecordStore.getStaleReadDetector();
                 MetaDataContainer metaDataContainer = staleReadDetector.getMetaDataContainer(partitionId);
-                return String.format("partition=%d, onRecordSequence=%d, latestSequence=%d, staleSequence=%d, memberSequence=%d",
-                        partitionService.getPartitionId(keyData), recordSequence, metaDataContainer.getSequence(),
-                        metaDataContainer.getStaleSequence(), memberSequence);
+                return String.format("On client: [uuid=%s, partition=%d, onRecordSequence=%d, latestSequence=%d, staleSequence=%d]," +
+                                "%nOn members: [memberUuid1=%s, memberSequence1=%d, memberUuid2=%s, memberSequence2=%d]",
+                        metaDataContainer.getUuid(), partitionId, recordSequence, metaDataContainer.getSequence(),
+                        metaDataContainer.getStaleSequence(), memberUuid1, memberSequence1, memberUuid2, memberSequence2);
             }
 
-            private MetaDataGenerator getMetaDataGenerator() {
-                CacheService service = (CacheService) ((CacheProxy) memberCache).getService();
+            private MetaDataGenerator getMetaDataGenerator(HazelcastInstance node) {
+                CacheService service = getNodeEngineImpl(node).getService(CacheService.SERVICE_NAME);
                 CacheEventHandler cacheEventHandler = service.getCacheEventHandler();
                 return cacheEventHandler.getMetaDataGenerator();
             }

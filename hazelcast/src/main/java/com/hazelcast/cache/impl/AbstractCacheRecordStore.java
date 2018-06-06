@@ -427,14 +427,6 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         invalidateEntry(key, SOURCE_NOT_AVAILABLE);
     }
 
-    protected void invalidateAllEntries() {
-        invalidateAllEntries(SOURCE_NOT_AVAILABLE);
-    }
-
-    protected void invalidateAllEntries(String source) {
-        invalidateEntry(null, source);
-    }
-
     protected void updateGetAndPutStat(boolean isPutSucceed, boolean getValue, boolean oldValueNull, long start) {
         if (isStatisticsEnabled()) {
             if (isPutSucceed) {
