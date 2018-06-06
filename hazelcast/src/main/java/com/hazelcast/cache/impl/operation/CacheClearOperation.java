@@ -71,12 +71,15 @@ public class CacheClearOperation
     public void afterRun() throws Exception {
         super.afterRun();
 
+        CacheService cacheService = getService();
+        int partitionId = getPartitionId();
+
         IPartitionService partitionService = getNodeEngine().getPartitionService();
-        if (partitionService.getPartitionId(name) == getPartitionId()) {
-            CacheService cacheService = getService();
+        if (partitionService.getPartitionId(name) == partitionId) {
             cacheService.sendInvalidationEvent(name, null, SOURCE_NOT_AVAILABLE);
         }
 
+        cacheService.getCacheEventHandler().resetPartitionMetaData(name, partitionId);
     }
 
     @Override
