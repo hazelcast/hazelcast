@@ -878,8 +878,6 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
         ICache<Integer, String> cache = createCache(cacheConfig);
         cache.put(1, "value");
         cache.setExpiryPolicy(1, TouchedExpiryPolicy.factoryOf(modifiedDuration).create());
-        //touch the entry for the new policy to take effect
-        cache.get(1);
 
         sleepAtLeastMillis(UPDATED_TTL + 1);
 
@@ -895,8 +893,6 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
         ICache<Integer, String> cache = createCache();
         cache.put(1, "value");
         cache.setExpiryPolicy(1, TouchedExpiryPolicy.factoryOf(modifiedDuration).create());
-        //touch the entry for the new policy to take effect
-        cache.get(1);
 
         sleepAtLeastMillis(TTL + 1);
 
@@ -910,8 +906,6 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
         cache.put(1, "value");
         Duration expiryDuration = new Duration(TimeUnit.MILLISECONDS, TTL);
         cache.setExpiryPolicy(1, TouchedExpiryPolicy.factoryOf(expiryDuration).create());
-        //touch the entry for the new policy to take effect
-        cache.get(1);
 
         cache.setExpiryPolicy(1, TouchedExpiryPolicy.factoryOf(Duration.ETERNAL).create());
         cache.get(1);

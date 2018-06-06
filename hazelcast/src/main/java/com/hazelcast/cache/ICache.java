@@ -143,7 +143,7 @@ public interface ICache<K, V>
      * @throws  NullPointerException if {@code keys} or {@code expiryPolicy} is null.
      * @since 3.11
      */
-    void setExpiryPolicy(Set<K> keys, ExpiryPolicy expiryPolicy);
+    void setExpiryPolicy(Set<? extends K> keys, ExpiryPolicy expiryPolicy);
 
     /**
      * Asynchronously retrieves the mapped value of the given key using a custom

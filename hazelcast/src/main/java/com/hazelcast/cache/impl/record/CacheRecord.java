@@ -29,7 +29,7 @@ import javax.cache.expiry.ExpiryPolicy;
  *
  * @param <V> the type of the value stored by this {@link CacheRecord}
  */
-public interface CacheRecord<V> extends Expirable, Evictable<V> {
+public interface CacheRecord<V, E> extends Expirable, Evictable<V> {
 
     /**
      * Represents invalid (not set) time for creation time, expiration time, access time, etc...
@@ -78,13 +78,13 @@ public interface CacheRecord<V> extends Expirable, Evictable<V> {
      * Sets the expiry policy for this record.
      * @param expiryPolicy
      */
-    void setExpiryPolicy(Object expiryPolicy);
+    void setExpiryPolicy(E expiryPolicy);
 
     /**
      * Gets the expiryPolicy associated with this record.
      *
      * @return
      */
-    Object getExpiryPolicy();
+    E getExpiryPolicy();
 
 }

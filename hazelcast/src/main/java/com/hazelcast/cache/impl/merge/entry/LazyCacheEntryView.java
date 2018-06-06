@@ -28,6 +28,7 @@ public class LazyCacheEntryView<K, V>
 
     private Object key;
     private Object value;
+    private Object expiryPolicy;
     private long creationTime;
     private long expirationTime;
     private long lastAccessTime;
@@ -35,13 +36,13 @@ public class LazyCacheEntryView<K, V>
     private SerializationService serializationService;
 
     public LazyCacheEntryView(Object key, Object value, long creationTime,
-                              long expirationTime, long lastAccessTime, long accessHit) {
+                              long expirationTime, long lastAccessTime, long accessHit, Object expiryPolicy) {
         // `null` `serializationService` means, use raw type without any conversion
-        this(key, value, creationTime, expirationTime, lastAccessTime, accessHit, null);
+        this(key, value, creationTime, expirationTime, lastAccessTime, accessHit, expiryPolicy, null);
     }
 
     public LazyCacheEntryView(Object key, Object value, long creationTime,
-                              long expirationTime, long lastAccessTime, long accessHit,
+                              long expirationTime, long lastAccessTime, long accessHit, Object expiryPolicy,
                               SerializationService serializationService) {
         this.key = key;
         this.value = value;
@@ -49,6 +50,7 @@ public class LazyCacheEntryView<K, V>
         this.expirationTime = expirationTime;
         this.lastAccessTime = lastAccessTime;
         this.accessHit = accessHit;
+        this.expiryPolicy = expiryPolicy;
         this.serializationService = serializationService;
     }
 
@@ -68,6 +70,14 @@ public class LazyCacheEntryView<K, V>
             value = serializationService.toObject(value);
         }
         return (V) value;
+    }
+
+    @Override
+    public Object getExpiryPolicy() {
+        if (serializationService != null) {
+            expiryPolicy = serializationService.toObject(expiryPolicy);
+        }
+        return expiryPolicy;
     }
 
     @Override

@@ -132,6 +132,7 @@ public class GetCacheEntryRequest implements ConsoleRequest {
         private long creationTime;
         private long lastAccessTime;
         private long accessHit;
+        private Object expiryPolicy;
 
         public CacheBrowserEntryView() {
         }
@@ -144,6 +145,7 @@ public class GetCacheEntryRequest implements ConsoleRequest {
             this.creationTime = record.getCreationTime();
             this.lastAccessTime = record.getLastAccessTime();
             this.accessHit = record.getAccessHit();
+            this.expiryPolicy = record.getExpiryPolicy();
         }
 
         @Override
@@ -174,6 +176,11 @@ public class GetCacheEntryRequest implements ConsoleRequest {
         @Override
         public long getAccessHit() {
             return accessHit;
+        }
+
+        @Override
+        public Object getExpiryPolicy() {
+            return expiryPolicy;
         }
 
         @Override

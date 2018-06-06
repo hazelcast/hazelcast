@@ -60,4 +60,11 @@ public interface CacheEntryView<K, V> extends EvictableEntryView<K, V> {
      * @return the count of how many time this cache entry has been accessed
      */
     long getAccessHit();
+
+    /**
+     * Gets the expiry policy associated with this entry if any
+     *
+     * @return expiry policy associated with this entry or {@code null}
+     */
+    Object getExpiryPolicy();
 }

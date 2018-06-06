@@ -148,6 +148,11 @@ public class CacheRecordHashMap
         }
 
         @Override
+        public Object getExpiryPolicy() {
+            return serializationService.toObject(value.getExpiryPolicy());
+        }
+
+        @Override
         public long getCreationTime() {
             return value.getCreationTime();
         }

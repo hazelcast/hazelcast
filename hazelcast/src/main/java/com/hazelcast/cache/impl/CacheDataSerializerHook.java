@@ -62,6 +62,7 @@ import com.hazelcast.cache.impl.operation.CacheRemoveBackupOperation;
 import com.hazelcast.cache.impl.operation.CacheRemoveOperation;
 import com.hazelcast.cache.impl.operation.CacheReplaceOperation;
 import com.hazelcast.cache.impl.operation.CacheReplicationOperation;
+import com.hazelcast.cache.impl.operation.CacheSetExpiryPolicyBackupOperation;
 import com.hazelcast.cache.impl.operation.CacheSetExpiryPolicyOperation;
 import com.hazelcast.cache.impl.operation.CacheSizeOperation;
 import com.hazelcast.cache.impl.operation.CacheSizeOperationFactory;
@@ -160,8 +161,9 @@ public final class CacheDataSerializerHook
     public static final int MERGE = 65;
     public static final int ADD_CACHE_CONFIG_OPERATION = 66;
     public static final int SET_EXPIRY_POLICY = 67;
+    public static final int SET_EXPIRY_POLICY_BACKUP = 68;
 
-    private static final int LEN = SET_EXPIRY_POLICY + 1;
+    private static final int LEN = SET_EXPIRY_POLICY_BACKUP + 1;
 
     public int getFactoryId() {
         return F_ID;
@@ -508,6 +510,12 @@ public final class CacheDataSerializerHook
             @Override
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new CacheSetExpiryPolicyOperation();
+            }
+        };
+        constructors[SET_EXPIRY_POLICY_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            @Override
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CacheSetExpiryPolicyBackupOperation();
             }
         };
 

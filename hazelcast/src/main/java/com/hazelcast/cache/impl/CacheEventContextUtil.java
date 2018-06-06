@@ -89,10 +89,18 @@ public final class CacheEventContextUtil {
 
     public static CacheEventContext createCacheUpdatedEvent(Data dataKey, Data dataValue, Data dataOldValue,
                                                             long creationTime, long expirationTime,
-                                                            long lastAccessTime, long accessHit) {
+                                                            long lastAccessTime, long accessHit,
+                                                            String origin, int completionId, Data expiryPolicy) {
+        return createCacheUpdatedEvent(dataKey, dataValue, dataOldValue, creationTime, expirationTime, lastAccessTime,
+                accessHit, origin, completionId).setExpiryPolicy(expiryPolicy);
+    }
+
+    public static CacheEventContext createCacheUpdatedEvent(Data dataKey, Data dataValue, Data dataOldValue,
+                                                            long creationTime, long expirationTime,
+                                                            long lastAccessTime, long accessHit, Data expiryPolicy) {
         return createCacheUpdatedEvent(dataKey, dataValue, dataOldValue,
                                        creationTime, expirationTime, lastAccessTime, accessHit,
-                                       null, MutableOperation.IGNORE_COMPLETION);
+                                       null, MutableOperation.IGNORE_COMPLETION, expiryPolicy);
     }
 
     public static CacheEventContext createCacheRemovedEvent(Data dataKey, Data dataValue,

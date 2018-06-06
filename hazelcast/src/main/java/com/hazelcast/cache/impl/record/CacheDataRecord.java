@@ -26,9 +26,10 @@ import java.io.IOException;
 /**
  * Implementation of {@link com.hazelcast.cache.impl.record.CacheRecord} where value has an internal serialized format.
  */
-public class CacheDataRecord extends AbstractCacheRecord<Data> {
+public class CacheDataRecord extends AbstractCacheRecord<Data, Data> {
 
     private Data value;
+    private Data expiryPolicy;
 
     // Deserialization constructor
     public CacheDataRecord() {
@@ -50,15 +51,31 @@ public class CacheDataRecord extends AbstractCacheRecord<Data> {
     }
 
     @Override
+    public void setExpiryPolicy(Data expiryPolicy) {
+        this.expiryPolicy = expiryPolicy;
+    }
+
+    @Override
+    public Data getExpiryPolicy() {
+        return expiryPolicy;
+    }
+
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         super.writeData(out);
         out.writeData(value);
+        if (out.getVersion().isGreaterOrEqual(EXPIRY_POLICY_VERSION)) {
+            out.writeData(expiryPolicy);
+        }
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         super.readData(in);
         value = in.readData();
+        if (in.getVersion().isGreaterOrEqual(EXPIRY_POLICY_VERSION)) {
+            expiryPolicy = in.readData();
+        }
     }
 
     @Override
