@@ -20,27 +20,33 @@ import com.hazelcast.transaction.TransactionalObject;
 
 /**
  * Transactional implementation of {@link ISet}.
+ * <p>
+ * Supports Quorum {@link com.hazelcast.config.QuorumConfig} since 3.10 in
+ * cluster versions 3.10 and higher.
  *
- * Supports Quorum {@link com.hazelcast.config.QuorumConfig} since 3.10 in cluster versions 3.10 and higher.
+ * @param <E> the type of elements maintained by this set
  */
 public interface TransactionalSet<E> extends TransactionalObject {
 
     /**
      * Add new item to transactional set.
+     *
      * @param e item added to transactional set
-     * @return true if item is added successfully
+     * @return {@code true} if item is added successfully
      */
     boolean add(E e);
 
     /**
      * Remove item from transactional set.
+     *
      * @param e item removed from transactional set
-     * @return true if item is remove successfully
+     * @return {@code true} if item is remove successfully
      */
     boolean remove(E e);
 
     /**
      * Returns the size of the set.
+     *
      * @return the size of the set
      */
     int size();

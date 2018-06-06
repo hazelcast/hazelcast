@@ -22,11 +22,12 @@ import java.util.Collection;
 
 /**
  * Transactional implementation of {@link BaseMultiMap}.
+ * <p>
+ * Supports Quorum {@link com.hazelcast.config.QuorumConfig} since 3.10 in
+ * cluster versions 3.10 and higher.
  *
- * Supports Quorum {@link com.hazelcast.config.QuorumConfig} since 3.10 in cluster versions 3.10 and higher.
- *
- * @param <K> key
- * @param <V> value
+ * @param <K> type of the multimap key
+ * @param <V> type of the multimap value
  * @see BaseMultiMap
  * @see MultiMap
  */
