@@ -1199,6 +1199,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
                 "      <wan-publisher group-name=\"ankara\">\n" +
                 "         <class-name>com.hazelcast.wan.custom.WanPublisher</class-name>\n" +
                 "         <queue-full-behavior>THROW_EXCEPTION_ONLY_IF_REPLICATION_ACTIVE</queue-full-behavior>\n" +
+                "         <initial-publisher-state>STOPPED</initial-publisher-state>\n" +
                 "      </wan-publisher>\n" +
                 "      <wan-consumer>\n" +
                 "         <class-name>com.hazelcast.wan.custom.WanConsumer</class-name>\n" +
@@ -1219,6 +1220,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         assertEquals("istanbul", publisherConfig1.getGroupName());
         assertEquals("com.hazelcast.wan.custom.WanPublisher", publisherConfig1.getClassName());
         assertEquals(WANQueueFullBehavior.THROW_EXCEPTION, publisherConfig1.getQueueFullBehavior());
+        assertEquals(WanPublisherState.REPLICATING, publisherConfig1.getInitialPublisherState());
         assertEquals(21, publisherConfig1.getQueueCapacity());
         Map<String, Comparable> pubProperties = publisherConfig1.getProperties();
         assertEquals("prop.publisher", pubProperties.get("custom.prop.publisher"));
@@ -1231,6 +1233,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         WanPublisherConfig publisherConfig2 = publisherConfigs.get(1);
         assertEquals("ankara", publisherConfig2.getGroupName());
         assertEquals(WANQueueFullBehavior.THROW_EXCEPTION_ONLY_IF_REPLICATION_ACTIVE, publisherConfig2.getQueueFullBehavior());
+        assertEquals(WanPublisherState.STOPPED, publisherConfig2.getInitialPublisherState());
 
         WanConsumerConfig consumerConfig = wanConfig.getWanConsumerConfig();
         assertEquals("com.hazelcast.wan.custom.WanConsumer", consumerConfig.getClassName());

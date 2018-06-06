@@ -73,6 +73,7 @@ import com.hazelcast.config.WANQueueFullBehavior;
 import com.hazelcast.config.WanAcknowledgeType;
 import com.hazelcast.config.WanConsumerConfig;
 import com.hazelcast.config.WanPublisherConfig;
+import com.hazelcast.config.WanPublisherState;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.core.EntryListener;
@@ -771,6 +772,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals("tokyo", publisherConfig.getGroupName());
         assertEquals("com.hazelcast.enterprise.wan.replication.WanBatchReplication", publisherConfig.getClassName());
         assertEquals(WANQueueFullBehavior.THROW_EXCEPTION, publisherConfig.getQueueFullBehavior());
+        assertEquals(WanPublisherState.STOPPED, publisherConfig.getInitialPublisherState());
         assertEquals(1000, publisherConfig.getQueueCapacity());
         Map<String, Comparable> publisherProps = publisherConfig.getProperties();
         assertEquals("50", publisherProps.get("batch.size"));

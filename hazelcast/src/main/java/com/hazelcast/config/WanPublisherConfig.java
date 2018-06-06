@@ -16,24 +16,29 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
- * Configuration object for WAN publishers. A single publisher defines how WAN events are sent to a specific endpoint.
- * The endpoint can be a different cluster defined by static IP's or discovered using a cloud discovery mechanism.
+ * Configuration object for WAN publishers. A single publisher defines how
+ * WAN events are sent to a specific endpoint.
+ * The endpoint can be a different cluster defined by static IP's or
+ * discovered using a cloud discovery mechanism.
  *
  * @see DiscoveryConfig
  * @see AwsConfig
  */
-public class WanPublisherConfig implements IdentifiedDataSerializable {
+public class WanPublisherConfig implements IdentifiedDataSerializable, Versioned {
 
     private static final int DEFAULT_QUEUE_CAPACITY = 10000;
     private static final WANQueueFullBehavior DEFAULT_QUEUE_FULL_BEHAVIOR = WANQueueFullBehavior.DISCARD_AFTER_MUTATION;
@@ -41,6 +46,7 @@ public class WanPublisherConfig implements IdentifiedDataSerializable {
     private String groupName = "dev";
     private int queueCapacity = DEFAULT_QUEUE_CAPACITY;
     private WANQueueFullBehavior queueFullBehavior = DEFAULT_QUEUE_FULL_BEHAVIOR;
+    private WanPublisherState initialPublisherState = WanPublisherState.REPLICATING;
     private Map<String, Comparable> properties = new HashMap<String, Comparable>();
     private String className;
     private Object implementation;
@@ -70,8 +76,9 @@ public class WanPublisherConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * Get the capacity of the queue for WAN replication events. IMap, ICache, normal and backup events count against
-     * the queue capacity separately. When the queue capacity is reached, backup events are dropped while normal
+     * Get the capacity of the queue for WAN replication events. IMap, ICache,
+     * normal and backup events count against the queue capacity separately.
+     * When the queue capacity is reached, backup events are dropped while normal
      * replication events behave as determined by the {@link #getQueueFullBehavior()}.
      * The default queue size for replication queues is {@value #DEFAULT_QUEUE_CAPACITY}.
      *
@@ -82,8 +89,9 @@ public class WanPublisherConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * Set the capacity of the queue for WAN replication events. IMap, ICache, normal and backup events count against
-     * the queue capacity separately. When the queue capacity is reached, backup events are dropped while normal
+     * Set the capacity of the queue for WAN replication events. IMap, ICache,
+     * normal and backup events count against the queue capacity separately.
+     * When the queue capacity is reached, backup events are dropped while normal
      * replication events behave as determined by the {@link #getQueueFullBehavior()}.
      * The default queue size for replication queues is {@value #DEFAULT_QUEUE_CAPACITY}.
      *
@@ -95,12 +103,40 @@ public class WanPublisherConfig implements IdentifiedDataSerializable {
         return this;
     }
 
+    /**
+     * Returns the configured behaviour of the WAN publisher when the WAN queues are full.
+     */
     public WANQueueFullBehavior getQueueFullBehavior() {
         return queueFullBehavior;
     }
 
+    /**
+     * Sets the configured behaviour of the WAN publisher when the WAN queues are full.
+     *
+     * @param queueFullBehavior the full queue publisher behaviour
+     * @return this configuration
+     */
     public WanPublisherConfig setQueueFullBehavior(WANQueueFullBehavior queueFullBehavior) {
         this.queueFullBehavior = queueFullBehavior;
+        return this;
+    }
+
+    /**
+     * Returns the initial WAN publisher state.
+     */
+    public WanPublisherState getInitialPublisherState() {
+        return initialPublisherState;
+    }
+
+    /**
+     * Sets the initial publisher state.
+     *
+     * @param initialPublisherState the state
+     * @return this configuration
+     */
+    public WanPublisherConfig setInitialPublisherState(WanPublisherState initialPublisherState) {
+        checkNotNull(initialPublisherState, "Initial WAN publisher state must not be null");
+        this.initialPublisherState = initialPublisherState;
         return this;
     }
 
@@ -220,18 +256,26 @@ public class WanPublisherConfig implements IdentifiedDataSerializable {
         }
         out.writeUTF(className);
         out.writeObject(implementation);
+
+        if (out.getVersion().isGreaterOrEqual(Versions.V3_9)) {
+            out.writeByte(initialPublisherState.getId());
+        }
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         groupName = in.readUTF();
         queueCapacity = in.readInt();
-        queueFullBehavior =  WANQueueFullBehavior.getByType(in.readInt());
+        queueFullBehavior = WANQueueFullBehavior.getByType(in.readInt());
         int size = in.readInt();
         for (int i = 0; i < size; i++) {
             properties.put(in.readUTF(), (Comparable) in.readObject());
         }
         className = in.readUTF();
         implementation = in.readObject();
+
+        if (in.getVersion().isGreaterOrEqual(Versions.V3_9)) {
+            initialPublisherState = WanPublisherState.getByType(in.readByte());
+        }
     }
 }

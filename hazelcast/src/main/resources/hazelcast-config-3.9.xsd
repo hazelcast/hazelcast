@@ -2072,6 +2072,24 @@
             </xs:element>
             <xs:element name="queue-capacity" type="xs:integer" default="10000" minOccurs="0" maxOccurs="1"/>
             <xs:element name="queue-full-behavior" type="wan-queue-full-behavior" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="initial-publisher-state" type="initial-publisher-state" minOccurs="0" maxOccurs="1"
+                        default="REPLICATING">
+                <xs:annotation>
+                    <xs:documentation>
+                        Defines the initial state in which a WAN publisher is started.
+                        - REPLICATING (default):
+                        State where both enqueuing new events is allowed, enqueued events are replicated to the target cluster
+                        and WAN sync is enabled.
+                        - PAUSED:
+                        State where new events are enqueued but they are dequeued. Some events which have been dequeued before
+                        the state was switched may still be replicated to the target cluster but further events will not be
+                        replicated. WAN sync is enabled.
+                        - STOPPED:
+                        State where neither new events are enqueued nor dequeued. As with the PAUSED state, some events might
+                        still be replicated after the publisher has switched to this state. WAN sync is enabled.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:element name="aws" type="aws" minOccurs="0" maxOccurs="1"/>
             <xs:element name="discovery-strategies" type="discovery-strategies" minOccurs="0" maxOccurs="1"/>
             <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
@@ -3274,6 +3292,14 @@
             <xs:enumeration value="DISCARD_AFTER_MUTATION"/>
             <xs:enumeration value="THROW_EXCEPTION"/>
             <xs:enumeration value="THROW_EXCEPTION_ONLY_IF_REPLICATION_ACTIVE"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="initial-publisher-state">
+        <xs:restriction base="non-space-string">
+            <xs:enumeration value="REPLICATING"/>
+            <xs:enumeration value="PAUSED"/>
+            <xs:enumeration value="STOPPED"/>
         </xs:restriction>
     </xs:simpleType>
 </xs:schema>

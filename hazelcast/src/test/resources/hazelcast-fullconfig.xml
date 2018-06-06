@@ -60,6 +60,7 @@
             <class-name>com.hazelcast.enterprise.wan.replication.WanBatchReplication</class-name>
             <queue-capacity>1000</queue-capacity>
             <queue-full-behavior>THROW_EXCEPTION</queue-full-behavior>
+            <initial-publisher-state>REPLICATING</initial-publisher-state>
             <properties>
                 <property name="batch.size">50</property>
                 <property name="batch.max.delay.millis">3000</property>
@@ -74,6 +75,7 @@
         <wan-publisher group-name="istanbul">
             <class-name>com.hazelcast.wan.custom.WanPublisher</class-name>
             <queue-full-behavior>DISCARD_AFTER_MUTATION</queue-full-behavior>
+            <initial-publisher-state>STOPPED</initial-publisher-state>
             <queue-capacity>10000</queue-capacity>
             <aws enabled="false" connection-timeout-seconds="10">
                 <access-key>sample-access-key</access-key>

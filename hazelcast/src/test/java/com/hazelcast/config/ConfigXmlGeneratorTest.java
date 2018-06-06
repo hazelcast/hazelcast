@@ -275,6 +275,7 @@ public class ConfigXmlGeneratorTest {
                 .setGroupName("dummyGroup")
                 .setClassName("dummyClass")
                 .setAwsConfig(getDummyAwsConfig())
+                .setInitialPublisherState(WanPublisherState.STOPPED)
                 .setDiscoveryConfig(getDummyDiscoveryConfig());
         wanConfig.setWanPublisherConfigs(Collections.singletonList(publisherConfig));
 
