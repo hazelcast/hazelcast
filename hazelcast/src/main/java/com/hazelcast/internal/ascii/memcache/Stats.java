@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.ascii.memcache;
 
+@SuppressWarnings("checkstyle:methodcount")
 public class Stats {
-
 
     private int waitingRequests;
     private int threads;

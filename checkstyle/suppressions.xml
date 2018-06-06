@@ -184,7 +184,6 @@
 
     <!-- Transaction -->
     <suppress checks="Javadoc(Method|Type)" files="com[\\/]hazelcast[\\/]transaction[\\/]"/>
-    <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]transaction[\\/]impl[\\/]TransactionImpl"/>
 
     <!-- Security -->
     <suppress checks="Javadoc(Method|Type|Variable)" files="com[\\/]hazelcast[\\/]security[\\/]"/>
@@ -207,37 +206,8 @@
     <!-- Partition -->
     <suppress checks="Javadoc(Method|Type|Variable)" files="com[\\/]hazelcast[\\/]partition[\\/]"/>
 
-    <!-- Topic -->
-    <suppress checks="VisibilityModifier" files="com[\\/]hazelcast[\\/]topic[\\/]impl[\\/]TopicEvent"/>
-
-    <!-- ASCII -->
-    <suppress checks="MethodCount|ExecutableStatement|ClassDataAbstractionCoupling"
-              files="com[\\/]hazelcast[\\/]internal[\\/]ascii[\\/]TextCommandServiceImpl"/>
-    <suppress checks="ClassDataAbstractionCoupling" files="com[\\/]hazelcast[\\/]internal[\\/]ascii[\\/]TextCommandServiceImpl"/>
-    <suppress checks="MagicNumber" files="com[\\/]hazelcast[\\/]internal[\\/]ascii[\\/]memcache[\\/]MemcacheCommandProcessor"/>
-    <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]internal[\\/]ascii[\\/]memcache[\\/]Stats"/>
-
-    <!-- Executor -->
-    <suppress checks="ClassFanOutComplexity|MethodCount"
-              files="com[\\/]hazelcast[\\/]executor[\\/]impl[\\/]ExecutorServiceProxy"/>
-    <suppress checks="NPathComplexity"
-              files="com[\\/]hazelcast[\\/]config[\\/]DurableExecutorConfig"/>
-    <suppress checks="NPathComplexity"
-              files="com[\\/]hazelcast[\\/]config[\\/]ExecutorConfig"/>
-    <suppress checks="NPathComplexity"
-              files="com[\\/]hazelcast[\\/]config[\\/]ScheduledExecutorConfig"/>
-
     <!-- Multimap -->
     <suppress checks="Javadoc(Method|Type)" files="com[\\/]hazelcast[\\/]multimap[\\/]"/>
-    <suppress checks="MethodCount|CyclomaticComplexity|ClassFanOutComplexity"
-              files="com[\\/]hazelcast[\\/]multimap[\\/]impl[\\/]MultiMapService"/>
-
-    <!-- ReplicatedMap -->
-    <suppress checks="ClassDataAbstractionCoupling" files="com[\\/]hazelcast[\\/]client[\\/]proxy[\\/]ClientReplicatedMapProxy"/>
-    <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]monitor[\\/]impl[\\/]LocalReplicatedMapStatsImpl"/>
-    <suppress checks="ClassFanOutComplexity" files="com[\\/]hazelcast[\\/]replicatedmap[\\/]impl[\\/]ReplicatedMapService"/>
-    <suppress checks="MethodCount"
-              files="com[\\/]hazelcast[\\/]replicatedmap[\\/]impl[\\/]record[\\/]ReplicatedRecordStore"/>
 
     <!-- Aggregations -->
     <suppress checks="ClassDataAbstractionCoupling" files="com[\\/]hazelcast[\\/]mapreduce[\\/]aggregation[\\/]Aggregations"/>
@@ -280,12 +250,6 @@
               files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]ArrayListStreamSerializer"/>
     <suppress checks="IllegalType"
               files="com[\\/]hazelcast[\\/]internal[\\/]serialization[\\/]impl[\\/]LinkedListStreamSerializer"/>
-
-    <!-- JMX -->
-    <suppress checks="CyclomaticComplexity" files="com[\\/]hazelcast[\\/]internal[\\/]jmx[\\/]ManagementService"/>
-    <!-- IMap interface has a lot of methods -->
-    <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]internal[\\/]jmx[\\/]MapMBean"/>
-    <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]internal[\\/]jmx[\\/]ReplicatedMapMBean"/>
 
     <!-- Spring -->
     <suppress checks="FileLength" files="com[\\/]hazelcast[\\/]spring[\\/]HazelcastConfigBeanDefinitionParser"/>

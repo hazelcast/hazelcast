@@ -18,15 +18,18 @@ package com.hazelcast.util;
 
 /**
  * Mutable integer which can be used for counting purposes.
- * <p/>
+ * <p>
  * This class is not thread-safe.
  */
 public class MutableInteger {
 
-    //CHECKSTYLE:OFF
+    /**
+     * Mutable integer value of this instance.
+     */
+    @SuppressWarnings("checkstyle:visibilitymodifier")
     public int value;
 
-    public int getAndInc(){
+    public int getAndInc() {
         return value++;
     }
 }
