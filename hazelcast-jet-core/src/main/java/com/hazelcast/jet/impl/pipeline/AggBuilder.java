@@ -31,7 +31,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.hazelcast.jet.datamodel.Tag.tag;
-import static com.hazelcast.jet.impl.pipeline.ComputeStageImplBase.DONT_ADAPT;
+import static com.hazelcast.jet.impl.pipeline.ComputeStageImplBase.DO_NOT_ADAPT;
 import static com.hazelcast.jet.impl.pipeline.ComputeStageImplBase.ensureJetEvents;
 import static com.hazelcast.jet.impl.pipeline.JetEventFunctionAdapter.adaptAggregateOperation;
 import static java.util.Objects.requireNonNull;
@@ -83,7 +83,7 @@ public class AggBuilder {
         } else {
             transform = new AggregateTransform<>(upstreamTransforms, adaptedAggrOp);
         }
-        OUT_STAGE attached = createOutStageFn.get(transform, DONT_ADAPT, pipelineImpl);
+        OUT_STAGE attached = createOutStageFn.get(transform, DO_NOT_ADAPT, pipelineImpl);
         pipelineImpl.connect(upstreamTransforms, transform);
         return attached;
     }

@@ -16,19 +16,23 @@
 
 package com.hazelcast.jet.impl.pipeline;
 
+import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.aggregate.AggregateOperation2;
 import com.hazelcast.jet.aggregate.AggregateOperation3;
 import com.hazelcast.jet.function.DistributedBiFunction;
+import com.hazelcast.jet.function.DistributedBiPredicate;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.impl.pipeline.transform.DistinctTransform;
 import com.hazelcast.jet.impl.pipeline.transform.GroupTransform;
 import com.hazelcast.jet.pipeline.BatchStage;
+import com.hazelcast.jet.pipeline.ContextFactory;
 import com.hazelcast.jet.pipeline.StageWithGrouping;
 
 import javax.annotation.Nonnull;
 
-import static com.hazelcast.jet.impl.pipeline.ComputeStageImplBase.DONT_ADAPT;
+import static com.hazelcast.jet.impl.pipeline.ComputeStageImplBase.DO_NOT_ADAPT;
+import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 
@@ -43,7 +47,34 @@ public class StageWithGroupingImpl<T, K> extends StageWithGroupingBase<T, K> imp
 
     @Nonnull @Override
     public BatchStage<T> distinct() {
-        return computeStage.attach(new DistinctTransform<>(computeStage.transform, keyFn()), DONT_ADAPT);
+        return computeStage.attach(new DistinctTransform<>(computeStage.transform, keyFn()), DO_NOT_ADAPT);
+    }
+
+    @Nonnull @Override
+    public <C, R> BatchStage<R> mapUsingContext(
+            @Nonnull ContextFactory<C> contextFactory,
+            @Nonnull DistributedBiFunction<? super C, ? super T, ? extends R> mapFn
+    ) {
+        checkSerializable(mapFn, "mapFn");
+        return computeStage.attachMapUsingKeyedContext(contextFactory, keyFn(), mapFn);
+    }
+
+    @Nonnull @Override
+    public <C> BatchStage<T> filterUsingContext(
+            @Nonnull ContextFactory<C> contextFactory,
+            @Nonnull DistributedBiPredicate<? super C, ? super T> filterFn
+    ) {
+        checkSerializable(filterFn, "filterFn");
+        return computeStage.attachFilterUsingKeyedContext(contextFactory, keyFn(), filterFn);
+    }
+
+    @Nonnull @Override
+    public <C, R> BatchStage<R> flatMapUsingContext(
+            @Nonnull ContextFactory<C> contextFactory,
+            @Nonnull DistributedBiFunction<? super C, ? super T, ? extends Traverser<? extends R>> flatMapFn
+    ) {
+        checkSerializable(flatMapFn, "flatMapFn");
+        return computeStage.attachFlatMapUsingKeyedContext(contextFactory, keyFn(), flatMapFn);
     }
 
     @Nonnull
@@ -56,7 +87,7 @@ public class StageWithGroupingImpl<T, K> extends StageWithGroupingBase<T, K> imp
                         singletonList(keyFn()),
                         aggrOp,
                         mapToOutputFn),
-                DONT_ADAPT);
+                DO_NOT_ADAPT);
     }
 
     @Nonnull
@@ -71,7 +102,7 @@ public class StageWithGroupingImpl<T, K> extends StageWithGroupingBase<T, K> imp
                         asList(keyFn(), stage1.keyFn()),
                         aggrOp,
                         mapToOutputFn
-                ), DONT_ADAPT);
+                ), DO_NOT_ADAPT);
     }
 
     @Nonnull
@@ -87,7 +118,7 @@ public class StageWithGroupingImpl<T, K> extends StageWithGroupingBase<T, K> imp
                         asList(keyFn(), stage1.keyFn(), stage2.keyFn()),
                         aggrOp,
                         mapToOutputFn),
-                DONT_ADAPT);
+                DO_NOT_ADAPT);
     }
 
     @SuppressWarnings("unchecked")

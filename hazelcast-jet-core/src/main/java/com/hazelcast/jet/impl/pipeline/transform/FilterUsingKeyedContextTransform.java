@@ -16,34 +16,37 @@
 
 package com.hazelcast.jet.impl.pipeline.transform;
 
-import com.hazelcast.jet.Traverser;
-import com.hazelcast.jet.function.DistributedBiFunction;
+import com.hazelcast.jet.function.DistributedBiPredicate;
+import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.impl.pipeline.Planner;
 import com.hazelcast.jet.impl.pipeline.Planner.PlannerVertex;
 import com.hazelcast.jet.pipeline.ContextFactory;
 
 import javax.annotation.Nonnull;
 
-import static com.hazelcast.jet.core.processor.Processors.flatMapUsingContextP;
+import static com.hazelcast.jet.core.processor.Processors.filterUsingKeyedContextP;
 
-public class FlatMapUsingContextTransform<C, T, R> extends AbstractTransform {
+public class FilterUsingKeyedContextTransform<C, T, K> extends AbstractTransform {
     private final ContextFactory<C> contextFactory;
-    private final DistributedBiFunction<? super C, ? super T, ? extends Traverser<? extends R>> flatMapFn;
+    private final DistributedFunction<? super T, ? extends K> keyFn;
+    private final DistributedBiPredicate<? super C, ? super T> filterFn;
 
-    public FlatMapUsingContextTransform(
+    public FilterUsingKeyedContextTransform(
             @Nonnull Transform upstream,
             @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull DistributedBiFunction<? super C, ? super T, ? extends Traverser<? extends R>> flatMapFn
+            @Nonnull DistributedFunction<? super T, ? extends K> keyFn,
+            @Nonnull DistributedBiPredicate<? super C, ? super T> filterFn
     ) {
-        super("flat-map", upstream);
+        super("keyed-map", upstream);
         this.contextFactory = contextFactory;
-        this.flatMapFn = flatMapFn;
+        this.keyFn = keyFn;
+        this.filterFn = filterFn;
     }
 
     @Override
     public void addToDag(Planner p) {
         PlannerVertex pv = p.addVertex(this, p.uniqueVertexName(name(), ""), localParallelism(),
-                flatMapUsingContextP(contextFactory, flatMapFn));
-        p.addEdges(this, pv.v);
+                filterUsingKeyedContextP(contextFactory, keyFn, filterFn));
+        p.addEdges(this, pv.v, edge -> edge.partitioned(keyFn).distributed());
     }
 }

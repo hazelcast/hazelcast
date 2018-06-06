@@ -174,7 +174,7 @@ public interface AggregateOperation<A, R> extends Serializable {
      * to determine whether the accumulator is now "empty" (i.e., equal to a
      * fresh instance), which signals that the current window contains no more
      * items with the associated grouping key and the entry must be removed
-     * from the resuts.
+     * from the results.
      */
     @Nullable
     DistributedBiConsumer<? super A, ? super A> deductFn();
@@ -212,7 +212,9 @@ public interface AggregateOperation<A, R> extends Serializable {
      * Returns a copy of this aggregate operation, but with the {@code
      * accumulate} primitive replaced with one that expects to find
      * accumulator objects in the input and will combine them all into
-     * a single accumulator of the same type.
+     * a single accumulator of the same type. It's used for the second
+     * aggregation stage in two-stage aggregation when accumulators from 1st
+     * stage are found on the input.
      *
      * @param getAccFn the function that extracts the accumulator from the stream item
      * @param <T> the type of stream item

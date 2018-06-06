@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.pipeline;
 
+import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Util;
 import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.aggregate.AggregateOperation2;
@@ -23,6 +24,7 @@ import com.hazelcast.jet.aggregate.AggregateOperation3;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.datamodel.Tuple3;
 import com.hazelcast.jet.function.DistributedBiFunction;
+import com.hazelcast.jet.function.DistributedBiPredicate;
 
 import javax.annotation.Nonnull;
 import java.util.Map.Entry;
@@ -52,6 +54,39 @@ public interface StageWithGrouping<T, K> extends GeneralStageWithGrouping<T, K> 
      */
     @Nonnull
     BatchStage<T> distinct();
+
+    @Nonnull @Override
+    <C, R> BatchStage<R> mapUsingContext(
+            @Nonnull ContextFactory<C> contextFactory,
+            @Nonnull DistributedBiFunction<? super C, ? super T, ? extends R> mapFn
+    );
+
+    @Nonnull @Override
+    <C> BatchStage<T> filterUsingContext(
+            @Nonnull ContextFactory<C> contextFactory,
+            @Nonnull DistributedBiPredicate<? super C, ? super T> filterFn
+    );
+
+    @Nonnull @Override
+    <C, R> BatchStage<R> flatMapUsingContext(
+            @Nonnull ContextFactory<C> contextFactory,
+            @Nonnull DistributedBiFunction<? super C, ? super T, ? extends Traverser<? extends R>> flatMapFn
+    );
+
+    @Nonnull @Override
+    default <R> BatchStage<Entry<K, R>> aggregateRolling(
+            @Nonnull AggregateOperation1<? super T, ?, ? extends R> aggrOp
+    ) {
+        return (BatchStage<Entry<K, R>>) (BatchStage) GeneralStageWithGrouping.super.aggregateRolling(aggrOp);
+    }
+
+    @Nonnull @Override
+    default <R, OUT> BatchStage<OUT> aggregateRolling(
+            @Nonnull AggregateOperation1<? super T, ?, ? extends R> aggrOp,
+            @Nonnull DistributedBiFunction<K, R, OUT> mapToOutputFn
+    ) {
+        return (BatchStage<OUT>) GeneralStageWithGrouping.super.aggregateRolling(aggrOp, mapToOutputFn);
+    }
 
     /**
      * Attaches a stage that performs the given group-and-aggregate operation.

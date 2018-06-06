@@ -41,7 +41,6 @@ import static com.hazelcast.jet.datamodel.Tag.tag;
 import static com.hazelcast.jet.impl.pipeline.ComputeStageImplBase.ADAPT_TO_JET_EVENT;
 import static com.hazelcast.jet.impl.pipeline.ComputeStageImplBase.ensureJetEvents;
 import static com.hazelcast.jet.impl.pipeline.JetEventFunctionAdapter.adaptAggregateOperation;
-import static com.hazelcast.jet.impl.pipeline.JetEventFunctionAdapter.adaptKeyFn;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -115,7 +114,7 @@ public class GrAggBuilder<K> {
         // Avoided Stream API here due to static typing issues
         List<DistributedFunction<?, ? extends K>> adaptedKeyFns = new ArrayList<>();
         for (DistributedFunction keyFn : keyFns) {
-            adaptedKeyFns.add(adaptKeyFn(keyFn));
+            adaptedKeyFns.add(fnAdapter.adaptKeyFn(keyFn));
         }
 
         Transform transform = new WindowGroupTransform<K, A, R, JetEvent<OUT>>(

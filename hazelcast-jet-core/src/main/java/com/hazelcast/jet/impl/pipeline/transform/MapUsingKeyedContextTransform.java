@@ -16,34 +16,37 @@
 
 package com.hazelcast.jet.impl.pipeline.transform;
 
-import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.function.DistributedBiFunction;
+import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.impl.pipeline.Planner;
 import com.hazelcast.jet.impl.pipeline.Planner.PlannerVertex;
 import com.hazelcast.jet.pipeline.ContextFactory;
 
 import javax.annotation.Nonnull;
 
-import static com.hazelcast.jet.core.processor.Processors.flatMapUsingContextP;
+import static com.hazelcast.jet.core.processor.Processors.mapUsingKeyedContextP;
 
-public class FlatMapUsingContextTransform<C, T, R> extends AbstractTransform {
+public class MapUsingKeyedContextTransform<C, T, K, R> extends AbstractTransform {
     private final ContextFactory<C> contextFactory;
-    private final DistributedBiFunction<? super C, ? super T, ? extends Traverser<? extends R>> flatMapFn;
+    private final DistributedFunction<? super T, ? extends K> keyFn;
+    private final DistributedBiFunction<? super C, ? super T, ? extends R> mapFn;
 
-    public FlatMapUsingContextTransform(
+    public MapUsingKeyedContextTransform(
             @Nonnull Transform upstream,
             @Nonnull ContextFactory<C> contextFactory,
-            @Nonnull DistributedBiFunction<? super C, ? super T, ? extends Traverser<? extends R>> flatMapFn
+            @Nonnull DistributedFunction<? super T, ? extends K> keyFn,
+            @Nonnull DistributedBiFunction<? super C, ? super T, ? extends R> mapFn
     ) {
-        super("flat-map", upstream);
+        super("keyed-map", upstream);
         this.contextFactory = contextFactory;
-        this.flatMapFn = flatMapFn;
+        this.keyFn = keyFn;
+        this.mapFn = mapFn;
     }
 
     @Override
     public void addToDag(Planner p) {
         PlannerVertex pv = p.addVertex(this, p.uniqueVertexName(name(), ""), localParallelism(),
-                flatMapUsingContextP(contextFactory, flatMapFn));
-        p.addEdges(this, pv.v);
+                mapUsingKeyedContextP(contextFactory, keyFn, mapFn));
+        p.addEdges(this, pv.v, edge -> edge.partitioned(keyFn).distributed());
     }
 }

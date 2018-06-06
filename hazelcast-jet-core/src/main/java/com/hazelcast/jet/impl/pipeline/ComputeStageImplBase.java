@@ -31,11 +31,14 @@ import com.hazelcast.jet.function.DistributedTriFunction;
 import com.hazelcast.jet.impl.pipeline.transform.AbstractTransform;
 import com.hazelcast.jet.impl.pipeline.transform.FilterTransform;
 import com.hazelcast.jet.impl.pipeline.transform.FilterUsingContextTransform;
+import com.hazelcast.jet.impl.pipeline.transform.FilterUsingKeyedContextTransform;
 import com.hazelcast.jet.impl.pipeline.transform.FlatMapTransform;
 import com.hazelcast.jet.impl.pipeline.transform.FlatMapUsingContextTransform;
+import com.hazelcast.jet.impl.pipeline.transform.FlatMapUsingKeyedContextTransform;
 import com.hazelcast.jet.impl.pipeline.transform.HashJoinTransform;
 import com.hazelcast.jet.impl.pipeline.transform.MapTransform;
 import com.hazelcast.jet.impl.pipeline.transform.MapUsingContextTransform;
+import com.hazelcast.jet.impl.pipeline.transform.MapUsingKeyedContextTransform;
 import com.hazelcast.jet.impl.pipeline.transform.MergeTransform;
 import com.hazelcast.jet.impl.pipeline.transform.PeekTransform;
 import com.hazelcast.jet.impl.pipeline.transform.ProcessorTransform;
@@ -63,7 +66,7 @@ import static java.util.Collections.singletonList;
 
 public abstract class ComputeStageImplBase<T> extends AbstractStage {
 
-    static final FunctionAdapter DONT_ADAPT = new FunctionAdapter();
+    static final FunctionAdapter DO_NOT_ADAPT = new FunctionAdapter();
     static final JetEventFunctionAdapter ADAPT_TO_JET_EVENT = new JetEventFunctionAdapter();
 
     private static final WatermarkEmissionPolicy THROWING_EMIT_POLICY = (currentWm, lastEmittedWm) -> {
@@ -127,6 +130,17 @@ public abstract class ComputeStageImplBase<T> extends AbstractStage {
     }
 
     @Nonnull
+    <C, K, R, RET> RET attachMapUsingKeyedContext(
+            ContextFactory<C> contextFactory,
+            DistributedFunction<? super T, ? extends K> keyFn,
+            DistributedBiFunction<? super C, ? super T, ? extends R> mapFn
+    ) {
+        return (RET) attach(new MapUsingKeyedContextTransform(this.transform, contextFactory,
+                fnAdapter.adaptKeyFn(keyFn),
+                fnAdapter.adaptMapUsingContextFn(mapFn)), fnAdapter);
+    }
+
+    @Nonnull
     @SuppressWarnings("unchecked")
     <RET> RET attachFilter(@Nonnull DistributedPredicate<T> filterFn) {
         return (RET) attach(new FilterTransform(transform, fnAdapter.adaptFilterFn(filterFn)), fnAdapter);
@@ -143,6 +157,17 @@ public abstract class ComputeStageImplBase<T> extends AbstractStage {
     }
 
     @Nonnull
+    <C, K, RET> RET attachFilterUsingKeyedContext(
+            ContextFactory<C> contextFactory,
+            DistributedFunction<? super T, ? extends K> keyFn,
+            @Nonnull DistributedBiPredicate<? super C, ? super T> filterFn
+    ) {
+        return (RET) attach(new FilterUsingKeyedContextTransform(this.transform, contextFactory,
+                fnAdapter.adaptKeyFn(keyFn),
+                fnAdapter.adaptFilterUsingContextFn(filterFn)), fnAdapter);
+    }
+
+    @Nonnull
     <R, RET> RET attachFlatMap(
             @Nonnull DistributedFunction<? super T, ? extends Traverser<? extends R>> flatMapFn
     ) {
@@ -155,6 +180,17 @@ public abstract class ComputeStageImplBase<T> extends AbstractStage {
             @Nonnull DistributedBiFunction<? super C, ? super T, ? extends Traverser<? extends R>> flatMapFn
     ) {
         return attach(new FlatMapUsingContextTransform<>(transform, contextFactory,
+                fnAdapter.adaptFlatMapUsingContextFn(flatMapFn)), fnAdapter);
+    }
+
+    @Nonnull
+    <C, K, R, RET> RET attachFlatMapUsingKeyedContext(
+            ContextFactory<C> contextFactory,
+            DistributedFunction<? super T, ? extends K> keyFn,
+            @Nonnull DistributedBiFunction<? super C, ? super T, ? extends Traverser<? extends R>> flatMapFn
+    ) {
+        return (RET) attach(new FlatMapUsingKeyedContextTransform(this.transform, contextFactory,
+                fnAdapter.adaptKeyFn(keyFn),
                 fnAdapter.adaptFlatMapUsingContextFn(flatMapFn)), fnAdapter);
     }
 

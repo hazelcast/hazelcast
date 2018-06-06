@@ -17,6 +17,8 @@
 package com.hazelcast.jet.pipeline;
 
 import com.hazelcast.jet.Traverser;
+import com.hazelcast.jet.aggregate.AggregateOperation;
+import com.hazelcast.jet.aggregate.AggregateOperation1;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.function.DistributedBiFunction;
 import com.hazelcast.jet.function.DistributedBiPredicate;
@@ -92,12 +94,21 @@ public interface GeneralStage<T> extends Stage {
      * <p>
      * If the mapping result is {@code null}, it emits nothing. Therefore this
      * stage can be used to implement filtering semantics as well.
-     * <p>
-     * <strong>NOTE:</strong> any state you maintain in the context object does
-     * not automatically become a part of a fault-tolerant snapshot. If Jet must
-     * restore from a snapshot, your state will either be lost (if it was just
-     * local state) or not rewound to the checkpoint (if it was stored in some
-     * durable storage).
+     *
+     * <h3>Note on state saving</h3>
+     * Any state you maintain in the context object does not automatically
+     * become a part of a fault-tolerant snapshot. If Jet must restore from a
+     * snapshot, your state will either be lost (if it was just local state) or
+     * not rewound to the checkpoint (if it was stored in some durable
+     * storage).
+     *
+     * <h3>Note on item retention in {@linkplain GeneralStage#addTimestamps
+     * jobs with timestamps}</h3>
+     *
+     * The context should not be used to accumulate stream items and emit the
+     * result later. For example to run an async operation for the item and
+     * return the result later with next item. This can cause that the
+     * watermark to overtake the items and render the items late.
      *
      * @param <C> type of context object
      * @param <R> the result type of the mapping function
@@ -117,12 +128,13 @@ public interface GeneralStage<T> extends Stage {
      * to the output or to discard it. The predicate function receives another
      * parameter, the context object which Jet will create using the supplied
      * {@code contextFactory}.
-     * <p>
-     * <strong>NOTE:</strong> any state you maintain in the context object does
-     * not automatically become a part of a fault-tolerant snapshot. If Jet must
-     * restore from a snapshot, your state will either be lost (if it was just
-     * local state) or not rewound to the checkpoint (if it was stored in some
-     * durable storage).
+     *
+     * <h3>Note on state saving</h3>
+     * Any state you maintain in the context object does not automatically
+     * become a part of a fault-tolerant snapshot. If Jet must restore from a
+     * snapshot, your state will either be lost (if it was just local state) or
+     * not rewound to the checkpoint (if it was stored in some durable
+     * storage).
      *
      * @param <C> type of context object
      * @param contextFactory the context factory
@@ -142,12 +154,21 @@ public interface GeneralStage<T> extends Stage {
      * must be <em>null-terminated</em>. The mapping function receives another
      * parameter, the context object which Jet will create using the supplied
      * {@code contextFactory}.
-     * <p>
-     * <strong>NOTE:</strong> any state you maintain in the context object does
-     * not automatically become a part of a fault-tolerant snapshot. If Jet must
-     * restore from a snapshot, your state will either be lost (if it was just
-     * local state) or not rewound to the checkpoint (if it was stored in some
-     * durable storage).
+     *
+     * <h3>Note on state saving</h3>
+     * Any state you maintain in the context object does not automatically
+     * become a part of a fault-tolerant snapshot. If Jet must restore from a
+     * snapshot, your state will either be lost (if it was just local state) or
+     * not rewound to the checkpoint (if it was stored in some durable
+     * storage).
+     *
+     * <h3>Note on item retention in {@linkplain GeneralStage#addTimestamps
+     * jobs with timestamps}</h3>
+     *
+     * The context should not be used to accumulate stream items and emit the
+     * result later. For example to run an async operation for the item and
+     * return the result later with next item. This can cause that the
+     * watermark to overtake the items and render the items late.
      *
      * @param <C> type of context object
      * @param <R> the type of items in the result's traversers
@@ -161,6 +182,45 @@ public interface GeneralStage<T> extends Stage {
             @Nonnull ContextFactory<C> contextFactory,
             @Nonnull DistributedBiFunction<? super C, ? super T, ? extends Traverser<? extends R>> flatMapFn
     );
+
+    /**
+     * Attaches a rolling aggregation stage. Every input item will be
+     * accumulated using the given {@code aggrOp} and a finished result will be
+     * emitted.
+     * <p>
+     * For example, if the input is {@code {2, 7, 8, -5}} and the aggregate
+     * operation is <em>summing</em>, the output will be {@code {2, 9, 17,
+     * 12}}. The number of input and output items is equal.
+     * <p>
+     * The accumulator is saved to state snapshot; after a restart, the
+     * computation is resumed.
+     * <p>
+     * <strong>NOTE:</strong> Take caution when using ever-growing accumulators
+     * in streaming jobs such as {@code toList()}: they will grow for the
+     * lifetime of the job, even after restart.
+     *
+     * <h3>Limitation on aggregate operations</h3>
+     * The used aggregate operation must not return the accumulator in its
+     * {@linkplain AggregateOperation#finishFn() finish function}. An aggregate
+     * operation is normally allowed to do so, but unlike other stages, this
+     * stage continues to accumulate to the accumulator after finishing
+     * function was called. This stage throws an exception if the finish
+     * function returns the same instance for any accumulator at runtime.
+     * <p>
+     * For example, {@link
+     * com.hazelcast.jet.aggregate.AggregateOperations#summingLong
+     * summingLong()} is OK because its result is an immutable {@code Long}.
+     * {@link com.hazelcast.jet.aggregate.AggregateOperations#toSet() toSet()}
+     * is not because its result is the same {@code Set} instance to which it
+     * accumulates.
+     *
+     * @param aggrOp the aggregate operation to do the aggregation
+     * @param <R> result type of the aggregate operation
+     *
+     * @return the newly attached stage
+     */
+    @Nonnull
+    <R> GeneralStage<R> aggregateRolling(@Nonnull AggregateOperation1<? super T, ?, ? extends R> aggrOp);
 
     /**
      * Attaches to both this and the supplied stage a hash-joining stage and
@@ -193,7 +253,7 @@ public interface GeneralStage<T> extends Stage {
      * @param stage1        the first stage to join
      * @param joinClause1   specifies how to join with {@code stage1}
      * @param stage2        the second stage to join
-     * @param joinClause2   specifices how to join with {@code stage2}
+     * @param joinClause2   specifies how to join with {@code stage2}
      * @param mapToOutputFn function to map the joined items to the output value
      * @param <K1>          the type of key for {@code stage1}
      * @param <T1_IN>       the type of {@code stage1} items
@@ -224,7 +284,7 @@ public interface GeneralStage<T> extends Stage {
     GeneralHashJoinBuilder<T> hashJoinBuilder();
 
     /**
-     * Specifes the function that will extract the grouping key from the items
+     * Specifies the function that will extract the grouping key from the items
      * in the associated pipeline stage, as first step in the construction of a
      * group-and-aggregate stage.
      *

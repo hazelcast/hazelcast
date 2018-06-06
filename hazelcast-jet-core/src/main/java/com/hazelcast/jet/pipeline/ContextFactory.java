@@ -26,24 +26,17 @@ import java.io.Serializable;
 import static com.hazelcast.jet.function.DistributedFunctions.noopConsumer;
 
 /**
- * A holder of functions needed to create and destroy a context object that
- * can be used in the Pipeline API to give the transforming functions (map,
- * filter, flatMap) access to some resource that would be too expensive to
- * acquire-release on each function call. It also provides access to the
- * local {@code JetInstance}. Among others, this gives you the ability to
- * interact with IMDG data structures such as {@code IMap} and {@code
- * ReplicatedMap} during the transformation.
+ * A holder of functions needed to create and destroy a context object.
  * <p>
  * You can use the context factory from these Pipeline API methods:
  * <ul>
  *     <li>{@link GeneralStage#mapUsingContext}
  *     <li>{@link GeneralStage#filterUsingContext}
  *     <li>{@link GeneralStage#flatMapUsingContext}
+ *     <li>{@link GeneralStageWithGrouping#mapUsingContext}
+ *     <li>{@link GeneralStageWithGrouping#filterUsingContext}
+ *     <li>{@link GeneralStageWithGrouping#flatMapUsingContext}
  * </ul>
- * To get a context factory, choose one of the predefined factories in
- * {@link ContextFactories} or create your own using the builder you get
- * by calling {@link #withCreateFn}. The factory instances must be
- * immutable.
  *
  * @param <C> the user-defined context object type
  */
@@ -72,7 +65,8 @@ public final class ContextFactory<C> implements Serializable {
     /**
      * Creates a new {@link ContextFactory} with the given create-function.
      *
-     * @param createContextFn the function to create new context object, given a JetInstance
+     * @param createContextFn the function to create new context object, given
+     *                        a JetInstance
      * @param <C> the user-defined context object type
      * @return a new factory instance
      */
@@ -84,11 +78,13 @@ public final class ContextFactory<C> implements Serializable {
     }
 
     /**
-     * Returns a copy of this {@link ContextFactory} with the destory-function
+     * Returns a copy of this {@link ContextFactory} with the destroy-function
      * replaced with the given function.
+     * <p>
+     * The destroy function is called at the end of the job to destroy all
+     * created context objects.
      *
-     * @param destroyFn the function to destroy user-defined context. It will be called
-     *                  when the job finishes
+     * @param destroyFn the function to destroy user-defined context
      * @return a copy of this factory with the supplied destroy-function
      */
     @Nonnull
@@ -97,15 +93,15 @@ public final class ContextFactory<C> implements Serializable {
     }
 
     /**
-     * Returns a copy of this {@link ContextFactory} with the <em>isCooperative</em>
-     * flag set to {@code false}. The context factory is cooperative by default.
-     * Call this method if any of the calls to the methods in the context may block
-     * or otherwise take long to complete.
-     * <p>
-     * The contract of <em>cooperative multithreading</em> is described {@link
-     * com.hazelcast.jet.core.Processor#isCooperative() here}.
+     * Returns a copy of this {@link ContextFactory} with the
+     * <em>isCooperative</em> flag set to {@code false}. The context factory is
+     * cooperative by default. Call this method if your transform function
+     * doesn't follow the {@linkplain
+     * com.hazelcast.jet.core.Processor#isCooperative() cooperative processor
+     * contract}.
      *
-     * @return a copy of this factory with the {@code isCooperative} flag set to {@code false}.
+     * @return a copy of this factory with the {@code isCooperative} flag set
+     * to {@code false}.
      */
     @Nonnull
     public ContextFactory<C> nonCooperative() {
@@ -113,11 +109,16 @@ public final class ContextFactory<C> implements Serializable {
     }
 
     /**
-     * Returns a copy of this {@link ContextFactory} with the <em>shareLocally</em>
-     * flag set to {@code true}. By default the context object is not shared so each
-     * parallel processor gets its own instance. If you enable sharing, the context
-     * object will be used from multiple threads &mdash; make sure that it is
-     * <em>thread-safe</em>.
+     * Returns a copy of this {@link ContextFactory} with the
+     * <em>shareLocally</em> flag set. If the pipeline doesn't have grouping,
+     * there will be:
+     * <ul>
+     *     <li>one context object per local processor, if flag is disabled
+     *     <li>one context object per member, if flag is enabled. Make
+     *     sure the context object is <em>thread-safe</em> in this case.
+     * </ul>
+     * If the pipeline has grouping, the context object is never shared and
+     * this flag is ignored.
      *
      * @return a copy of this factory with the {@code isSharedLocally} flag set.
      */

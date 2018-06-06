@@ -80,6 +80,9 @@ public interface BatchStage<T> extends GeneralStage<T> {
             @Nonnull DistributedBiFunction<? super C, ? super T, ? extends Traverser<? extends R>> flatMapFn
     );
 
+    @Nonnull @Override
+    <R> BatchStage<R> aggregateRolling(@Nonnull AggregateOperation1<? super T, ?, ? extends R> aggrOp);
+
     /**
      * Attaches a stage that emits just the items that are distinct according
      * to their definition of equality ({@code equals} and {@code hashCode}).

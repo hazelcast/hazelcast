@@ -32,9 +32,8 @@ import java.util.stream.Stream;
 import static java.util.stream.Collectors.toList;
 
 /**
- * Processor which, for each received item, emits all the items from the
- * traverser returned by the given item-to-traverser function, using a context
- * object.
+ * Backing processor for {@link
+ * com.hazelcast.jet.pipeline.GeneralStage#mapUsingContext}.
  *
  * @param <C> context object type
  * @param <T> received item type

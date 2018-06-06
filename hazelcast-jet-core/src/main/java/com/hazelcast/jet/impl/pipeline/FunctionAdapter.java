@@ -50,6 +50,12 @@ public class FunctionAdapter {
 
     @Nonnull
     @SuppressWarnings("unchecked")
+    DistributedFunction<?, ?> adaptKeyFn(@Nonnull DistributedFunction<?, ?> keyFn) {
+        return keyFn;
+    }
+
+    @Nonnull
+    @SuppressWarnings("unchecked")
     DistributedFunction<?, ?> adaptMapFn(@Nonnull DistributedFunction mapFn) {
         return mapFn;
     }
@@ -189,6 +195,11 @@ public class FunctionAdapter {
 
 class JetEventFunctionAdapter extends FunctionAdapter {
     @Nonnull @Override
+    DistributedFunction adaptKeyFn(@Nonnull DistributedFunction keyFn) {
+        return e -> keyFn.apply(((JetEvent) e).payload());
+    }
+
+    @Nonnull @Override
     @SuppressWarnings("unchecked")
     DistributedFunction adaptMapFn(@Nonnull DistributedFunction mapFn) {
         return e -> {
@@ -326,14 +337,6 @@ class JetEventFunctionAdapter extends FunctionAdapter {
                 .<JetEvent<T0>>withAccumulateFn0(adaptAccumulateFn(aggrOp.accumulateFn0()))
                 .<JetEvent<T1>>withAccumulateFn1(adaptAccumulateFn(aggrOp.accumulateFn1()))
                 .withAccumulateFn2(adaptAccumulateFn(aggrOp.accumulateFn2()));
-    }
-
-    @Nonnull
-    @SuppressWarnings("unchecked")
-    static <T, K> DistributedFunction<? super JetEvent<T>, ? extends K> adaptKeyFn(
-            @Nonnull DistributedFunction<? super T, ? extends K> keyFn
-    ) {
-        return e -> keyFn.apply(e.payload());
     }
 
     @Nonnull

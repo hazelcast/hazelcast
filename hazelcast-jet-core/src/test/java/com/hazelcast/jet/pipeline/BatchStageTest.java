@@ -18,6 +18,7 @@ package com.hazelcast.jet.pipeline;
 
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.ReplicatedMap;
+import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.datamodel.ItemsByTag;
 import com.hazelcast.jet.datamodel.Tag;
@@ -34,9 +35,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.IntStream;
+import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 import static com.hazelcast.jet.Traversers.traverseIterable;
+import static com.hazelcast.jet.Util.entry;
+import static com.hazelcast.jet.aggregate.AggregateOperations.counting;
 import static com.hazelcast.jet.datamodel.ItemsByTag.itemsByTag;
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.datamodel.Tuple3.tuple3;
@@ -138,6 +142,37 @@ public class BatchStageTest extends PipelineTestSupport {
     }
 
     @Test
+    public void mapUsingKeyedContext() {
+        // Given
+        final int modulo = 4;
+        List<Integer> input = sequence(itemCount);
+        putToBatchSrcMap(input);
+
+        // When
+        BatchStage<String> mapped = srcStage
+                .groupingKey(i -> i % modulo)
+                .mapUsingContext(
+                        ContextFactory.withCreateFn(jet -> new char[] {12345}),
+                        (ctx, item) -> {
+                            // We don't mutate the context, as in this test items come in unordered.
+                            // We initialize it on first item and then assert we get the same context
+                            char expectedCtx = (char) ('a' + item % modulo);
+                            if (ctx[0] == 12345) {
+                                ctx[0] = expectedCtx;
+                            } else {
+                                assertEquals(expectedCtx, ctx[0]);
+                            }
+                            return item + "-" + ctx[0];
+                        });
+
+        // Then
+        mapped.drainTo(sink);
+        execute();
+        List<String> expected = input.stream().map(i -> i + "-" + (char) ('a' + i % 4)).collect(toList());
+        assertEquals(toBag(expected), sinkToBag());
+    }
+
+    @Test
     public void filter() {
         // Given
         List<Integer> input = sequence(itemCount);
@@ -203,6 +238,36 @@ public class BatchStageTest extends PipelineTestSupport {
     }
 
     @Test
+    public void filterUsingKeyedContext() {
+        // Given
+        final int modulo = 4;
+        List<Integer> input = sequence(itemCount);
+        putToBatchSrcMap(input);
+
+        // When
+        BatchStage<Integer> mapped = srcStage
+                .groupingKey(i -> i % modulo)
+                // filtering even numbers in an odd way
+                .filterUsingContext(
+                        ContextFactory.withCreateFn(jet -> new int[] {-1}),
+                        (ctx, item) -> {
+                            int expectedCtx = item % 2;
+                            if (ctx[0] == -1) {
+                                ctx[0] = expectedCtx;
+                            } else {
+                                assertEquals(expectedCtx, ctx[0]);
+                            }
+                            return ctx[0] == 1;
+                        });
+
+        // Then
+        mapped.drainTo(sink);
+        execute();
+        List<Integer> expected = input.stream().filter(i -> i % 2 == 1).collect(toList());
+        assertEquals(toBag(expected), sinkToBag());
+    }
+
+    @Test
     public void flatMap() {
         // Given
         List<Integer> input = sequence(itemCount);
@@ -233,6 +298,77 @@ public class BatchStageTest extends PipelineTestSupport {
         flatMapped.drainTo(sink);
         execute();
         List<String> expected = input.stream().flatMap(o -> Stream.of(o + "A", o + "B")).collect(toList());
+        assertEquals(toBag(expected), sinkToBag());
+    }
+
+    @Test
+    public void flatMapUsingKeyedContext() {
+        // Given
+        final int modulo = 4;
+        List<Integer> input = sequence(itemCount);
+        putToBatchSrcMap(input);
+
+        // When
+        BatchStage<Integer> mapped = srcStage
+                .groupingKey(i -> i % modulo)
+                // duplicating even numbers in an odd way, keeping odd numbers intact
+                .flatMapUsingContext(
+                        ContextFactory.withCreateFn(jet -> new int[] {-1}),
+                        (ctx, item) -> {
+                            int expectedCtx = item % 2;
+                            if (ctx[0] == -1) {
+                                ctx[0] = expectedCtx;
+                            } else {
+                                assertEquals(expectedCtx, ctx[0]);
+                            }
+                            return ctx[0] == 1 ? Traverser.over(item, item) : Traverser.over(item);
+                        });
+
+        // Then
+        mapped.drainTo(sink);
+        execute();
+        List<Integer> expected = input.stream()
+                                      .flatMap(i -> i % 2 == 0 ? Stream.of(i) : Stream.of(i, i))
+                                      .collect(toList());
+        assertEquals(toBag(expected), sinkToBag());
+    }
+
+    @Test
+    public void aggregateRolling_keyed() {
+        // Given
+        List<Integer> input = sequence(itemCount);
+        putToBatchSrcMap(input);
+
+        // When
+        BatchStage<Entry<Integer, Long>> mapped = srcStage
+                .groupingKey(i -> i % 2)
+                .aggregateRolling(counting());
+
+        // Then
+        mapped.drainTo(sink);
+        execute();
+        assertEquals(0, itemCount % 2);
+        List<Entry<Integer, Long>> expected = LongStream.range(1, itemCount / 2 + 1)
+                                                        .boxed()
+                                                        .flatMap(i -> Stream.of(entry(0, i), entry(1, i)))
+                                                        .collect(toList());
+        assertEquals(toBag(expected), sinkToBag());
+    }
+
+    @Test
+    public void aggregateRolling_global() {
+        // Given
+        List<Integer> input = sequence(itemCount);
+        putToBatchSrcMap(input);
+
+        // When
+        BatchStage<Long> mapped = srcStage
+                .aggregateRolling(counting());
+
+        // Then
+        mapped.drainTo(sink);
+        execute();
+        List<Long> expected = LongStream.range(1, itemCount + 1).boxed().collect(toList());
         assertEquals(toBag(expected), sinkToBag());
     }
 

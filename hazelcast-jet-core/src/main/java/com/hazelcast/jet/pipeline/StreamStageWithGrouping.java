@@ -16,7 +16,13 @@
 
 package com.hazelcast.jet.pipeline;
 
+import com.hazelcast.jet.Traverser;
+import com.hazelcast.jet.aggregate.AggregateOperation1;
+import com.hazelcast.jet.function.DistributedBiFunction;
+import com.hazelcast.jet.function.DistributedBiPredicate;
+
 import javax.annotation.Nonnull;
+import java.util.Map.Entry;
 
 /**
  * Represents an intermediate step while constructing a windowed
@@ -33,4 +39,39 @@ public interface StreamStageWithGrouping<T, K> extends GeneralStageWithGrouping<
      */
     @Nonnull
     StageWithGroupingAndWindow<T, K> window(@Nonnull WindowDefinition wDef);
+
+    @Nonnull @Override
+    <C, R> StreamStage<R> mapUsingContext(
+            @Nonnull ContextFactory<C> contextFactory,
+            @Nonnull DistributedBiFunction<? super C, ? super T, ? extends R> mapFn
+    );
+
+    @Nonnull @Override
+    <C> StreamStage<T> filterUsingContext(
+            @Nonnull ContextFactory<C> contextFactory,
+            @Nonnull DistributedBiPredicate<? super C, ? super T> filterFn
+    );
+
+    @Nonnull @Override
+    <C, R> StreamStage<R> flatMapUsingContext(
+            @Nonnull ContextFactory<C> contextFactory,
+            @Nonnull DistributedBiFunction<? super C, ? super T, ? extends Traverser<? extends R>> flatMapFn
+    );
+
+    @Nonnull @Override
+    default <R> StreamStage<Entry<K, R>> aggregateRolling(
+            @Nonnull AggregateOperation1<? super T, ?, ? extends R> aggrOp
+    ) {
+        return (StreamStage<Entry<K, R>>) (StreamStage) GeneralStageWithGrouping.super.aggregateRolling(aggrOp);
+    }
+
+    @Nonnull @Override
+    default <R, OUT> StreamStage<OUT> aggregateRolling(
+            @Nonnull AggregateOperation1<? super T, ?, ? extends R> aggrOp,
+            @Nonnull DistributedBiFunction<K, R, OUT> mapToOutputFn
+    ) {
+        return (StreamStage<OUT>) GeneralStageWithGrouping.super.aggregateRolling(aggrOp, mapToOutputFn);
+    }
+
+
 }

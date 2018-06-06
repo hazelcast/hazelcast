@@ -197,10 +197,7 @@ public class TaskletExecutionService {
                     if (result.isMadeProgress()) {
                         idleCount = 0;
                     } else {
-                        if (idleCount < Integer.MAX_VALUE) {
-                            idleCount++;
-                        }
-                        IDLER_NON_COOPERATIVE.idle(idleCount);
+                        IDLER_NON_COOPERATIVE.idle(++idleCount);
                     }
                 } while (!result.isDone()
                         && !tracker.executionTracker.executionCompletedExceptionally()
@@ -275,10 +272,7 @@ public class TaskletExecutionService {
                     idleCount = 0;
                 } else {
                     thread.setContextClassLoader(clBackup);
-                    if (idleCount < Integer.MAX_VALUE) {
-                        idleCount++;
-                    }
-                    IDLER_COOPERATIVE.idle(idleCount);
+                    IDLER_COOPERATIVE.idle(++idleCount);
                 }
             }
             // Best-effort attempt to release all tasklets. A tasklet can still be added

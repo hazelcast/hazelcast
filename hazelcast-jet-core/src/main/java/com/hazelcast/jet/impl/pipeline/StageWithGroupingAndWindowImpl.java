@@ -36,7 +36,6 @@ import static com.hazelcast.jet.impl.pipeline.ComputeStageImplBase.ensureJetEven
 import static com.hazelcast.jet.impl.pipeline.JetEventFunctionAdapter.adaptAggregateOperation1;
 import static com.hazelcast.jet.impl.pipeline.JetEventFunctionAdapter.adaptAggregateOperation2;
 import static com.hazelcast.jet.impl.pipeline.JetEventFunctionAdapter.adaptAggregateOperation3;
-import static com.hazelcast.jet.impl.pipeline.JetEventFunctionAdapter.adaptKeyFn;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 
@@ -79,7 +78,7 @@ public class StageWithGroupingAndWindowImpl<T, K>
         return computeStage.attach(new WindowGroupTransform<K, A, R, JetEvent<OUT>>(
                         singletonList(computeStage.transform),
                         wDef,
-                        singletonList(adaptKeyFn(keyFn())),
+                        singletonList(fnAdapter.adaptKeyFn(keyFn())),
                         adaptAggregateOperation1(aggrOp),
                         fnAdapter.adaptKeyedWindowResultFn(mapToOutputFn)
                 ),
@@ -100,8 +99,8 @@ public class StageWithGroupingAndWindowImpl<T, K>
         return computeStage.attach(new WindowGroupTransform<K, A, R, JetEvent<OUT>>(
                 asList(computeStage.transform, stageImpl1.transform),
                 wDef,
-                asList(adaptKeyFn(keyFn()),
-                       adaptKeyFn(stage1.keyFn())),
+                asList(fnAdapter.adaptKeyFn(keyFn()),
+                       fnAdapter.adaptKeyFn(stage1.keyFn())),
                 adaptAggregateOperation2(aggrOp),
                 fnAdapter.adaptKeyedWindowResultFn(mapToOutputFn)
         ), fnAdapter);
@@ -125,9 +124,9 @@ public class StageWithGroupingAndWindowImpl<T, K>
                 new WindowGroupTransform<K, A, R, JetEvent<OUT>>(
                         asList(computeStage.transform, stageImpl1.transform, stageImpl2.transform),
                         wDef,
-                        asList(adaptKeyFn(keyFn()),
-                               adaptKeyFn(stage1.keyFn()),
-                               adaptKeyFn(stage2.keyFn())),
+                        asList(fnAdapter.adaptKeyFn(keyFn()),
+                               fnAdapter.adaptKeyFn(stage1.keyFn()),
+                               fnAdapter.adaptKeyFn(stage2.keyFn())),
                         adaptAggregateOperation3(aggrOp),
                         fnAdapter.adaptKeyedWindowResultFn(mapToOutputFn)
                 ), fnAdapter);

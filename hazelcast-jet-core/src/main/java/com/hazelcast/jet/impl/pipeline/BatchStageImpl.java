@@ -37,13 +37,14 @@ import com.hazelcast.jet.pipeline.StageWithGrouping;
 
 import javax.annotation.Nonnull;
 
+import static com.hazelcast.jet.function.DistributedFunctions.constantKey;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 
 public class BatchStageImpl<T> extends ComputeStageImplBase<T> implements BatchStage<T> {
 
     BatchStageImpl(@Nonnull Transform transform, @Nonnull PipelineImpl pipeline) {
-        super(transform, DONT_ADAPT, pipeline, true);
+        super(transform, DO_NOT_ADAPT, pipeline, true);
     }
 
     /**
@@ -101,6 +102,11 @@ public class BatchStageImpl<T> extends ComputeStageImplBase<T> implements BatchS
     }
 
     @Nonnull @Override
+    public <R> BatchStage<R> aggregateRolling(@Nonnull AggregateOperation1<? super T, ?, ? extends R> aggrOp) {
+        return groupingKey(constantKey()).aggregateRolling(aggrOp, (k, v) -> v);
+    }
+
+    @Nonnull @Override
     public BatchStage<T> merge(@Nonnull BatchStage<? extends T> other) {
         return attachMerge(other);
     }
@@ -136,7 +142,7 @@ public class BatchStageImpl<T> extends ComputeStageImplBase<T> implements BatchS
             @Nonnull BatchStage<T1> stage1,
             @Nonnull AggregateOperation2<? super T, ? super T1, A, ? extends R> aggrOp
     ) {
-        return attach(new AggregateTransform<>(asList(transform, transformOf(stage1)), aggrOp), DONT_ADAPT);
+        return attach(new AggregateTransform<>(asList(transform, transformOf(stage1)), aggrOp), DO_NOT_ADAPT);
     }
 
     @Nonnull @Override
@@ -147,7 +153,7 @@ public class BatchStageImpl<T> extends ComputeStageImplBase<T> implements BatchS
     ) {
         return attach(new AggregateTransform<>(
                 asList(transform, transformOf(stage1), transformOf(stage2)), aggrOp),
-                DONT_ADAPT);
+                DO_NOT_ADAPT);
     }
 
     @Nonnull @Override

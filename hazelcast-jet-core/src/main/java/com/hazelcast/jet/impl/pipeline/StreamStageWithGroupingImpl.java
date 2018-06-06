@@ -16,9 +16,14 @@
 
 package com.hazelcast.jet.impl.pipeline;
 
+import com.hazelcast.jet.Traverser;
+import com.hazelcast.jet.function.DistributedBiFunction;
+import com.hazelcast.jet.function.DistributedBiPredicate;
+import com.hazelcast.jet.function.DistributedFunction;
+import com.hazelcast.jet.pipeline.ContextFactory;
+import com.hazelcast.jet.pipeline.StreamStage;
 import com.hazelcast.jet.pipeline.StreamStageWithGrouping;
 import com.hazelcast.jet.pipeline.WindowDefinition;
-import com.hazelcast.jet.function.DistributedFunction;
 
 import javax.annotation.Nonnull;
 
@@ -35,5 +40,29 @@ public class StreamStageWithGroupingImpl<T, K>
     @Nonnull @Override
     public StageWithGroupingAndWindowImpl<T, K> window(@Nonnull WindowDefinition wDef) {
         return new StageWithGroupingAndWindowImpl<>((StreamStageImpl<T>) computeStage, keyFn(), wDef);
+    }
+
+    @Nonnull @Override
+    public <C, R> StreamStage<R> mapUsingContext(
+            @Nonnull ContextFactory<C> contextFactory,
+            @Nonnull DistributedBiFunction<? super C, ? super T, ? extends R> mapFn
+    ) {
+        return computeStage.attachMapUsingKeyedContext(contextFactory, keyFn(), mapFn);
+    }
+
+    @Nonnull @Override
+    public <C> StreamStage<T> filterUsingContext(
+            @Nonnull ContextFactory<C> contextFactory,
+            @Nonnull DistributedBiPredicate<? super C, ? super T> filterFn
+    ) {
+        return computeStage.attachFilterUsingKeyedContext(contextFactory, keyFn(), filterFn);
+    }
+
+    @Nonnull @Override
+    public <C, R> StreamStage<R> flatMapUsingContext(
+            @Nonnull ContextFactory<C> contextFactory,
+            @Nonnull DistributedBiFunction<? super C, ? super T, ? extends Traverser<? extends R>> flatMapFn
+    ) {
+        return computeStage.attachFlatMapUsingKeyedContext(contextFactory, keyFn(), flatMapFn);
     }
 }
