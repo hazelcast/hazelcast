@@ -61,8 +61,8 @@ public class ProcessorTaskletTest_Watermarks {
     public void setUp() {
         this.processor = new ProcessorWithWatermarks();
         this.context = new ProcCtx(
-                null, new DefaultSerializationServiceBuilder().build(), null, null, 0,
-                EXACTLY_ONCE, 1, 1, 0, 1
+                null, new DefaultSerializationServiceBuilder().build(), null, null,
+                0, 0, EXACTLY_ONCE, 1, 0, 1
         );
         this.instreams = new ArrayList<>();
         this.outstreams = new ArrayList<>();

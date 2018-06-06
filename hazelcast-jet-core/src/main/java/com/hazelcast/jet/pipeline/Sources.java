@@ -735,17 +735,19 @@ public final class Sources {
 
     /**
      * A source that emits lines from files in a directory (but not its
-     * subdirectories. The files must not change while being read; if they do,
-     * the behavior is unspecified.
+     * subdirectories).
      * <p>
-     * To be useful, the source should be configured to read data local to each
-     * member. For example, if the pathname resolves to a shared network
-     * filesystem visible by multiple members, they will emit duplicate data.
+     * If {@code sharedFileSystem} is {@code true}, Jet will assume all members
+     * see the same files. They will split the work so that each member will
+     * read a part of the files. If {@code sharedFileSystem} is {@code false},
+     * each member will read all files in the directory, assuming the are
+     * local.
      * <p>
      * The source does not save any state to snapshot. If the job is restarted,
      * it will re-emit all entries.
      * <p>
-     * Any {@code IOException} will cause the job to fail.
+     * Any {@code IOException} will cause the job to fail. The files must not
+     * change while being read; if they do, the behavior is unspecified.
      * <p>
      * The default local parallelism for this processor is 2 (or 1 if just 1
      * CPU is available).
@@ -757,26 +759,32 @@ public final class Sources {
      *             Use {@code "*"} for all files.
      * @param mapOutputFn function to create output items. Parameters are
      *                    {@code fileName} and {@code line}.
+     * @param sharedFileSystem {@code true} if files are in a shared storage
+     *                         visible to all members, {@code false} otherwise
      */
     @Nonnull
     public static <R> BatchSource<R> files(
             @Nonnull String directory,
             @Nonnull Charset charset,
             @Nonnull String glob,
-            @Nonnull DistributedBiFunction<String, String, ? extends R> mapOutputFn
+            @Nonnull DistributedBiFunction<String, String, ? extends R> mapOutputFn,
+            boolean sharedFileSystem
     ) {
         return batchFromProcessor("filesSource(" + new File(directory, glob) + ')',
-                readFilesP(directory, charset, glob, mapOutputFn));
+                readFilesP(directory, charset, glob, mapOutputFn, sharedFileSystem));
     }
 
     /**
-     * Convenience for {@link #files(String, Charset, String, DistributedBiFunction)
-     * the full version of readFiles} which uses UTF-8 encoding, matches all
-     * the files in the directory and emits lines of text in the files.
+     * Shortcut for <pre>{@code
+     *   files(directory, UTF_8, GLOB_WILDCARD, (file, line) -> line, false)
+     * }</pre>
+     *
+     * See the {@linkplain #files(String, Charset, String,
+     * DistributedBiFunction, boolean) full method}.
      */
     @Nonnull
     public static BatchSource<String> files(@Nonnull String directory) {
-        return files(directory, UTF_8, GLOB_WILDCARD, (file, line) -> line);
+        return files(directory, UTF_8, GLOB_WILDCARD, (file, line) -> line, false);
     }
 
     /**

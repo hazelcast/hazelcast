@@ -270,6 +270,14 @@ public interface Processor {
 
         /**
          * Returns the index of the processor among all the processors created for
+         * this vertex on a single node: it's a unique node-wide index.
+         * <p>
+         * The value is in the range {@code [0...localParallelism-1]}.
+         */
+        int localProcessorIndex();
+
+        /**
+         * Returns the index of the processor among all the processors created for
          * this vertex on all nodes: it's a unique cluster-wide index.
          * <p>
          * The value is in the range {@code [0...totalParallelism-1]}.

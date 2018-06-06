@@ -158,10 +158,10 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                         nodeEngine.getSerializationService(),
                         nodeEngine.getLogger(loggerName),
                         vertex.name(),
+                        localProcessorIdx,
                         globalProcessorIndex,
                         jobConfig.getProcessingGuarantee(),
                         vertex.localParallelism(),
-                        memberCount * vertex.localParallelism(),
                         memberIndex,
                         memberCount
                 );

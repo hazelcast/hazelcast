@@ -44,12 +44,14 @@ import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.Session;
 import java.nio.charset.Charset;
+import java.nio.file.Files;
 import java.util.Map.Entry;
 
 import static com.hazelcast.jet.Util.cacheEventToEntry;
 import static com.hazelcast.jet.Util.cachePutEvents;
 import static com.hazelcast.jet.Util.mapEventToEntry;
 import static com.hazelcast.jet.Util.mapPutEvents;
+import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 
 /**
  * Static utility class with factories of source processors (the DAG
@@ -310,16 +312,20 @@ public final class SourceProcessors {
 
     /**
      * Returns a supplier of processors for
-     * {@link Sources#files(String, Charset, String, DistributedBiFunction)}.
+     * {@link Sources#files(String, Charset, String, DistributedBiFunction, boolean)}.
      */
     @Nonnull
-    public static ProcessorMetaSupplier readFilesP(
+    public static <R> ProcessorMetaSupplier readFilesP(
             @Nonnull String directory,
             @Nonnull Charset charset,
             @Nonnull String glob,
-            @Nonnull DistributedBiFunction<String, String, ?> mapOutputFn
+            @Nonnull DistributedBiFunction<String, String, R> mapOutputFn,
+            boolean sharedFileSystem
     ) {
-        return ReadFilesP.metaSupplier(directory, charset.name(), glob, mapOutputFn);
+        String charsetName = charset.name();
+        return ReadFilesP.metaSupplier(directory, glob,
+                path -> uncheckCall(() -> Files.lines(path, Charset.forName(charsetName))),
+                mapOutputFn, sharedFileSystem);
     }
 
     /**

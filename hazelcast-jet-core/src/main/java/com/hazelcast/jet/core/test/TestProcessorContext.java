@@ -28,6 +28,7 @@ import javax.annotation.Nonnull;
  */
 public class TestProcessorContext extends TestProcessorSupplierContext implements Processor.Context {
 
+    private int localProcessorIndex;
     private int globalProcessorIndex;
     private ProcessingGuarantee processingGuarantee = ProcessingGuarantee.NONE;
 
@@ -35,7 +36,15 @@ public class TestProcessorContext extends TestProcessorSupplierContext implement
      * Constructor with default values.
      */
     public TestProcessorContext() {
+        localProcessorIndex = 0;
         globalProcessorIndex = 0;
+    }
+
+    @Override
+    public int localProcessorIndex() {
+        assert localProcessorIndex >= 0 && localProcessorIndex < localParallelism()
+                : "localProcessorIndex should be in range 0.." + (localParallelism() - 1);
+        return localProcessorIndex;
     }
 
     @Override
@@ -43,6 +52,14 @@ public class TestProcessorContext extends TestProcessorSupplierContext implement
         assert globalProcessorIndex >= 0 && globalProcessorIndex < totalParallelism()
                 : "globalProcessorIndex should be in range 0.." + (totalParallelism() - 1);
         return globalProcessorIndex;
+    }
+
+    /**
+     * Set the local processor index
+     */
+    public TestProcessorContext setLocalProcessorIndex(int localProcessorIndex) {
+        this.localProcessorIndex = localProcessorIndex;
+        return this;
     }
 
     /**

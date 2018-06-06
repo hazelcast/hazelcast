@@ -101,22 +101,30 @@ public final class Contexts {
 
     public static class ProcCtx extends ProcSupplierCtx implements Processor.Context {
 
-        private final int index;
+        private final int localProcessorIndex;
+        private final int globalProcessorIndex;
         private final SerializationService serService;
         private final ProcessingGuarantee processingGuarantee;
 
         public ProcCtx(JetInstance instance, SerializationService serService, ILogger logger, String vertexName,
-                       int index, ProcessingGuarantee processingGuarantee, int localParallelism, int totalParallelism,
-                       int memberIndex, int memberCount) {
-            super(instance, logger, vertexName, localParallelism, totalParallelism, memberIndex, memberCount);
+                       int localProcessorIndex, int globalProcessorIndex, ProcessingGuarantee processingGuarantee,
+                       int localParallelism, int memberIndex, int memberCount) {
+            super(instance, logger, vertexName, localParallelism, memberCount * localParallelism,
+                    memberIndex, memberCount);
             this.serService = serService;
-            this.index = index;
+            this.localProcessorIndex = localProcessorIndex;
+            this.globalProcessorIndex = globalProcessorIndex;
             this.processingGuarantee = processingGuarantee;
         }
 
         @Override
+        public int localProcessorIndex() {
+            return localProcessorIndex;
+        }
+
+        @Override
         public int globalProcessorIndex() {
-            return index;
+            return globalProcessorIndex;
         }
 
         @Override

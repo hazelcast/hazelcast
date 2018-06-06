@@ -63,8 +63,8 @@ public class ProcessorTaskletTest_Blocking {
     public void setUp() {
         this.processor = new PassThroughProcessor();
         this.context = new ProcCtx(
-                null, new DefaultSerializationServiceBuilder().build(), null,
-                null, 0, NONE, 1, 1, 0, 1
+                null, new DefaultSerializationServiceBuilder().build(), null, null,
+                0, 0, NONE, 1,  0, 1
         );
         this.mockInput = IntStream.range(0, MOCK_INPUT_SIZE).boxed().collect(toList());
         this.instreams = new ArrayList<>();
