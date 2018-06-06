@@ -569,6 +569,10 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
         } else if ("queue-full-behavior".equals(targetChildName)) {
             String queueFullBehavior = getTextContent(targetChild);
             publisherConfig.setQueueFullBehavior(WANQueueFullBehavior.valueOf(upperCaseInternal(queueFullBehavior)));
+        } else if ("initial-publisher-state".equals(targetChildName)) {
+            String initialPublisherState = getTextContent(targetChild);
+            publisherConfig.setInitialPublisherState(
+                    WanPublisherState.valueOf(upperCaseInternal(initialPublisherState)));
         } else if ("queue-capacity".equals(targetChildName)) {
             int queueCapacity = getIntegerValue("queue-capacity", getTextContent(targetChild));
             publisherConfig.setQueueCapacity(queueCapacity);

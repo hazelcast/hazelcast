@@ -16,7 +16,6 @@
 
 package com.hazelcast.spring;
 
-import com.hazelcast.config.MemberAddressProviderConfig;
 import com.hazelcast.config.AwsConfig;
 import com.hazelcast.config.CachePartitionLostListenerConfig;
 import com.hazelcast.config.CacheSimpleConfig;
@@ -53,6 +52,7 @@ import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.MapPartitionLostListenerConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.MaxSizeConfig;
+import com.hazelcast.config.MemberAddressProviderConfig;
 import com.hazelcast.config.MemberAttributeConfig;
 import com.hazelcast.config.MemberGroupConfig;
 import com.hazelcast.config.MultiMapConfig;
@@ -1018,9 +1018,9 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                         final String nodeName = cleanNodeName(child);
                         if ("properties".equals(nodeName)) {
                             handleProperties(child, publisherBuilder);
-                        } else if ("queue-full-behavior".equals(nodeName)) {
-                            publisherBuilder.addPropertyValue(xmlToJavaName(nodeName), getTextContent(child));
-                        } else if ("queue-capacity".equals(nodeName)) {
+                        } else if ("queue-full-behavior".equals(nodeName)
+                                || "initial-publisher-state".equals(nodeName)
+                                || "queue-capacity".equals(nodeName)) {
                             publisherBuilder.addPropertyValue(xmlToJavaName(nodeName), getTextContent(child));
                         } else if ("aws".equals(nodeName)) {
                             handleAws(child, publisherBuilder);

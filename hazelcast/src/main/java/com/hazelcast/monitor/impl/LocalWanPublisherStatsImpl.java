@@ -18,6 +18,7 @@
 package com.hazelcast.monitor.impl;
 
 import com.eclipsesource.json.JsonObject;
+import com.hazelcast.config.WanPublisherState;
 import com.hazelcast.monitor.LocalWanPublisherStats;
 import com.hazelcast.wan.impl.WanEventCounter.EventCounter;
 
@@ -37,7 +38,7 @@ public class LocalWanPublisherStatsImpl implements LocalWanPublisherStats {
             newUpdater(LocalWanPublisherStatsImpl.class, "totalPublishedEventCount");
 
     private volatile boolean connected;
-    private volatile boolean paused;
+    private volatile WanPublisherState state;
     private volatile int outboundQueueSize;
     private volatile long totalPublishLatency;
     private volatile long totalPublishedEventCount;
@@ -63,12 +64,12 @@ public class LocalWanPublisherStatsImpl implements LocalWanPublisherStats {
     }
 
     @Override
-    public boolean isPaused() {
-        return paused;
+    public WanPublisherState getPublisherState() {
+        return state;
     }
 
-    public void setPaused(boolean paused) {
-        this.paused = paused;
+    public void setState(WanPublisherState state) {
+        this.state = state;
     }
 
     @Override
@@ -111,7 +112,8 @@ public class LocalWanPublisherStatsImpl implements LocalWanPublisherStats {
         root.add("totalPublishLatencies", totalPublishLatency);
         root.add("totalPublishedEventCount", totalPublishedEventCount);
         root.add("outboundQueueSize", outboundQueueSize);
-        root.add("paused", paused);
+        root.add("paused", !state.isReplicateEnqueuedEvents());
+        root.add("stopped", !state.isEnqueueNewEvents());
         return root;
     }
 
@@ -121,7 +123,15 @@ public class LocalWanPublisherStatsImpl implements LocalWanPublisherStats {
         totalPublishLatency = getLong(json, "totalPublishLatencies", -1);
         totalPublishedEventCount = getLong(json, "totalPublishedEventCount", -1);
         outboundQueueSize = getInt(json, "outboundQueueSize", -1);
-        paused = getBoolean(json, "paused");
+        final boolean paused = getBoolean(json, "paused");
+        final boolean stopped = getBoolean(json, "stopped");
+        if (stopped) {
+            state = WanPublisherState.STOPPED;
+        } else if (paused) {
+            state = WanPublisherState.PAUSED;
+        } else {
+            state = WanPublisherState.REPLICATING;
+        }
     }
 
     @Override
@@ -131,7 +141,7 @@ public class LocalWanPublisherStatsImpl implements LocalWanPublisherStats {
                 + ", totalPublishLatency=" + totalPublishLatency
                 + ", totalPublishedEventCount=" + totalPublishedEventCount
                 + ", outboundQueueSize=" + outboundQueueSize
-                + ", paused=" + paused
+                + ", state=" + state
                 + '}';
     }
 }

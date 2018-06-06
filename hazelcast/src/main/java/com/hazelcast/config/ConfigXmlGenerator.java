@@ -482,6 +482,7 @@ public class ConfigXmlGenerator {
                 gen.open("wan-publisher", "group-name", p.getGroupName())
                    .node("class-name", p.getClassName())
                    .node("queue-full-behavior", p.getQueueFullBehavior())
+                   .node("initial-publisher-state", p.getInitialPublisherState())
                    .node("queue-capacity", p.getQueueCapacity())
                    .appendProperties(p.getProperties());
                 awsConfigXmlGenerator(gen, p.getAwsConfig());

@@ -152,6 +152,18 @@ https://hazelcast.org/documentation/.
         - THROW_EXCEPTION:
             The WAN queue size is checked before each supported mutating operation. If one of the queues of the target
             cluster is full, WANReplicationQueueFullException is thrown and the operation is not allowed.
+        * <initial-publisher-state>:
+        Defines the initial state in which a WAN publisher is started.
+        - REPLICATING (default):
+            State where both enqueuing new events is allowed, enqueued events are replicated to the target cluster
+            and WAN sync is enabled.
+        - PAUSED:
+            State where new events are enqueued but they are dequeued. Some events which have been dequeued before
+            the state was switched may still be replicated to the target cluster but further events will not be
+            replicated. WAN sync is enabled.
+        - STOPPED:
+            State where neither new events are enqueued nor dequeued. As with the PAUSED state, some events might
+            still be replicated after the publisher has switched to this state. WAN sync is enabled.
         * <aws>:
             Set its "enabled" attribute to true for discovery within Amazon EC2. It has the following sub-elements:
             - <access-key>:
@@ -203,6 +215,7 @@ https://hazelcast.org/documentation/.
             <class-name>com.hazelcast.enterprise.wan.replication.WanBatchReplication</class-name>
             <queue-capacity>15000</queue-capacity>
             <queue-full-behavior>DISCARD_AFTER_MUTATION</queue-full-behavior>
+            <initial-publisher-state>REPLICATING</initial-publisher-state>
             <properties>
                 <property name="endpoints">10.3.5.1:5701,10.3.5.2:5701</property>
                 <property name="batch.size">1000</property>

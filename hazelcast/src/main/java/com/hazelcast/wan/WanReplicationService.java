@@ -52,20 +52,34 @@ public interface WanReplicationService extends CoreService, StatisticsAwareServi
     void shutdown();
 
     /**
-     * Pauses wan replication to target group for the called node
+     * Pauses WAN replication for the given {@code wanReplicationName} and
+     * {@code targetGroupName} on this hazelcast instance.
      *
-     * @param name name of WAN replication configuration
-     * @param targetGroupName name of wan target cluster config
+     * @param wanReplicationName name of WAN replication configuration
+     * @param targetGroupName    WAN target cluster group name
+     * @throws UnsupportedOperationException if called on an OS instance
      */
-    void pause(String name, String targetGroupName);
+    void pause(String wanReplicationName, String targetGroupName);
 
     /**
-     * Resumes wan replication to target group for the called node.
+     * Stops WAN replication for the given {@code wanReplicationName} and
+     * {@code targetGroupName} on this hazelcast instance.
      *
-     * @param name name of WAN replication configuration
-     * @param targetGroupName name of wan target cluster config
+     * @param wanReplicationName name of WAN replication configuration
+     * @param targetGroupName    WAN target cluster group name
+     * @throws UnsupportedOperationException if called on an OS instance
      */
-    void resume(String name, String targetGroupName);
+    void stop(String wanReplicationName, String targetGroupName);
+
+    /**
+     * Resumes WAN replication for the given {@code wanReplicationName} and
+     * {@code targetGroupName} on this hazelcast instance.
+     *
+     * @param wanReplicationName name of WAN replication configuration
+     * @param targetGroupName    WAN target cluster group name
+     * @throws UnsupportedOperationException if called on an OS instance
+     */
+    void resume(String wanReplicationName, String targetGroupName);
 
     void checkWanReplicationQueues(String name);
 

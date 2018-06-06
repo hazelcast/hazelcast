@@ -837,6 +837,7 @@ class ConfigCompatibilityChecker {
                     && nullSafeEqual(c1.getGroupName(), c2.getGroupName())
                     && nullSafeEqual(c1.getQueueCapacity(), c2.getQueueCapacity())
                     && nullSafeEqual(c1.getQueueFullBehavior(), c2.getQueueFullBehavior())
+                    && nullSafeEqual(c1.getInitialPublisherState(), c2.getInitialPublisherState())
                     && new AwsConfigChecker().check(c1.getAwsConfig(), c2.getAwsConfig())
                     && new DiscoveryConfigChecker().check(c1.getDiscoveryConfig(), c2.getDiscoveryConfig())
                     && nullSafeEqual(c1.getClassName(), c2.getClassName())
