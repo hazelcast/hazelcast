@@ -25,7 +25,10 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.File;
+
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(NightlyTest.class)
@@ -55,5 +58,16 @@ public class HazelcastStarterTest {
 
         assertEquals(alwaysRunningMember.getName(), "test-name");
         alwaysRunningMember.shutdown();
+    }
+
+    @Test
+    public void testGetOrCreateWorkingDir() {
+        String versionSpec = "3.10-EE-test";
+        File dir = HazelcastStarter.getOrCreateVersionDirectory(versionSpec);
+        assertTrue("Temporary directory should have been created", dir.exists());
+        String path = dir.getAbsolutePath();
+        // ensure no exception is thrown when attempting to recreate an existing version directory
+        dir = HazelcastStarter.getOrCreateVersionDirectory(versionSpec);
+        assertEquals(path, dir.getAbsolutePath());
     }
 }

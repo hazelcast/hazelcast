@@ -37,12 +37,6 @@ import static java.lang.Thread.currentThread;
 public class HazelcastStarter {
 
     /**
-     * Caches downloaded files & classloader used to load their classes per version string.
-     */
-    private static final ConcurrentMap<String, HazelcastVersionClassloaderFuture> LOADED_VERSIONS =
-            new ConcurrentHashMap<String, HazelcastVersionClassloaderFuture>();
-
-    /**
      * Starts a new open source {@link HazelcastInstance} of the given version.
      *
      * @param version the version string e.g. "3.8". Must correspond to a released version available either in the
@@ -52,6 +46,14 @@ public class HazelcastStarter {
     public static HazelcastInstance newHazelcastInstance(String version) {
         return newHazelcastInstance(version, null, false);
     }
+
+    /**
+     * Caches downloaded files & classloader used to load their classes per version string.
+     */
+    private static final ConcurrentMap<String, HazelcastVersionClassloaderFuture> LOADED_VERSIONS =
+            new ConcurrentHashMap<String, HazelcastVersionClassloaderFuture>();
+
+    private static final File WORKING_DIRECTORY = Files.createTempDir();
 
     /**
      * Starts a new open source or enterprise edition {@link HazelcastInstance} of the given version. Since no
@@ -182,8 +184,6 @@ public class HazelcastStarter {
 
     private static class HazelcastVersionClassloaderFuture {
 
-        private static final File WORKING_DIRECTORY = Files.createTempDir();
-
         private final String version;
         private final boolean enterprise;
         private final ClassLoader configClassLoader;
@@ -212,25 +212,6 @@ public class HazelcastStarter {
             }
         }
 
-        /**
-         * Creates a temporary directory for downloaded artifacts.
-         *
-         * @param versionSpec the version specification, which should include both version and enterprise edition indication,
-         *                    e.g. "3.8-EE", "3.8.1"
-         */
-        private static File getOrCreateVersionDirectory(String versionSpec) {
-            File workingDir = WORKING_DIRECTORY;
-            if (!workingDir.isDirectory() || !workingDir.exists()) {
-                throw new GuardianException("Working directory " + workingDir.getAbsolutePath() + " does not exist.");
-            }
-
-            File versionDir = new File(WORKING_DIRECTORY, versionSpec);
-            if (!versionDir.mkdir()) {
-                throw new GuardianException("Version directory " + versionDir.getAbsolutePath() + " could not be created.");
-            }
-            return versionDir;
-        }
-
         private static URL[] fileIntoUrls(File[] files) {
             URL[] urls = new URL[files.length];
             for (int i = 0; i < files.length; i++) {
@@ -242,5 +223,25 @@ public class HazelcastStarter {
             }
             return urls;
         }
+    }
+
+    /**
+     * Creates a temporary directory for downloaded artifacts.
+     *
+     * @param versionSpec the version specification, which should include both version and enterprise edition indication,
+     *                    e.g. "3.8-EE", "3.8.1"
+     */
+    public static File getOrCreateVersionDirectory(String versionSpec) {
+        File workingDir = WORKING_DIRECTORY;
+        if (!workingDir.isDirectory() || !workingDir.exists()) {
+            throw new GuardianException("Working directory " + workingDir.getAbsolutePath() + " does not exist.");
+        }
+
+        File versionDir = new File(WORKING_DIRECTORY, versionSpec);
+        // the versionDir may already exist when the same Hazelcast version artifacts were previously downloaded
+        if (!versionDir.exists() && !versionDir.mkdir()) {
+            throw new GuardianException("Version directory " + versionDir.getAbsolutePath() + " could not be created.");
+        }
+        return versionDir;
     }
 }
