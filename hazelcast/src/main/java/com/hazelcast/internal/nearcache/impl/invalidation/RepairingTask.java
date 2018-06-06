@@ -54,15 +54,15 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  */
 public final class RepairingTask implements Runnable {
 
-    static final HazelcastProperty MAX_TOLERATED_MISS_COUNT
+    public static final HazelcastProperty MAX_TOLERATED_MISS_COUNT
             = new HazelcastProperty("hazelcast.invalidation.max.tolerated.miss.count", 10);
-    static final HazelcastProperty RECONCILIATION_INTERVAL_SECONDS
+    public static final HazelcastProperty RECONCILIATION_INTERVAL_SECONDS
             = new HazelcastProperty("hazelcast.invalidation.reconciliation.interval.seconds", 60, SECONDS);
     // only used for testing
-    static final HazelcastProperty MIN_RECONCILIATION_INTERVAL_SECONDS
+    public static final HazelcastProperty MIN_RECONCILIATION_INTERVAL_SECONDS
             = new HazelcastProperty("hazelcast.invalidation.min.reconciliation.interval.seconds", 30, SECONDS);
 
-    static final long RESCHEDULE_FAILED_INITIALIZATION_AFTER_MILLIS = 500;
+    private static final long RESCHEDULE_FAILED_INITIALIZATION_AFTER_MILLIS = 500;
 
     final int maxToleratedMissCount;
     final long reconciliationIntervalNanos;
