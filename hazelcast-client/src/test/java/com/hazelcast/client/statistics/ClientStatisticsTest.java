@@ -71,7 +71,7 @@ public class ClientStatisticsTest extends ClientTestSupport {
     private static final long STATS_PERIOD_MILLIS = TimeUnit.SECONDS.toMillis(STATS_PERIOD_SECONDS);
 
     private static final String MAP_NAME = "StatTestMapFirst.First";
-    private static final String CACHE_NAME = "StatTestICache,First";
+    private static final String CACHE_NAME = "StatTestICache.First";
     private static final String MAP_HITS_KEY = "nc." + MAP_NAME + ".hits";
     private static final String CACHE_HITS_KEY = "nc.hz/" + CACHE_NAME + ".hits";
 
@@ -83,7 +83,7 @@ public class ClientStatisticsTest extends ClientTestSupport {
     }
 
     @Test
-    public void testStatisticsCollectionNonDefaultPeriod() throws InterruptedException {
+    public void testStatisticsCollectionNonDefaultPeriod() {
         HazelcastInstance hazelcastInstance = hazelcastFactory.newHazelcastInstance();
         final HazelcastClientInstanceImpl client = createHazelcastClient();
         final ClientEngineImpl clientEngine = getClientEngineImpl(hazelcastInstance);
@@ -129,7 +129,7 @@ public class ClientStatisticsTest extends ClientTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 Map<String, String> stats = getStats(client, clientEngine);
                 String mapHits = stats.get(MAP_HITS_KEY);
                 assertNotNull(format("%s should not be null (%s)", MAP_HITS_KEY, stats), mapHits);
@@ -147,7 +147,7 @@ public class ClientStatisticsTest extends ClientTestSupport {
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 Map<String, String> stats = getStats(client, clientEngine);
                 String mapHits = stats.get(MAP_HITS_KEY);
                 assertNotNull(format("%s should not be null (%s)", MAP_HITS_KEY, stats), mapHits);
@@ -157,7 +157,6 @@ public class ClientStatisticsTest extends ClientTestSupport {
                 assertEquals(format("Expected 1 cache hits (%s)", stats), "1", cacheHits);
             }
         });
-
     }
 
     @Test
@@ -248,8 +247,7 @@ public class ClientStatisticsTest extends ClientTestSupport {
 
         assertTrueAllTheTime(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 Map<String, String> statistics = clientEngine.getClientStatistics();
                 assertEquals(0, statistics.size());
             }
@@ -342,8 +340,7 @@ public class ClientStatisticsTest extends ClientTestSupport {
                                                          final ClientEngineImpl clientEngine) {
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 getStats(client, clientEngine);
             }
         }, STATS_PERIOD_SECONDS * 3);
@@ -353,24 +350,21 @@ public class ClientStatisticsTest extends ClientTestSupport {
                                                    final String lastStatisticsCollectionTime) {
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run()
-                    throws Exception {
+            public void run() {
                 Map<String, String> stats = getStats(client, clientEngine);
                 assertNotEquals(lastStatisticsCollectionTime, stats.get("lastStatisticsCollectionTime"));
             }
         });
     }
 
-    private static String verifyThatCollectionIsPeriodic(Map<String, String> stats, long lastCollectionTime) {
+    private static void verifyThatCollectionIsPeriodic(Map<String, String> stats, long lastCollectionTime) {
         String lastStatisticsCollectionTime = stats.get("lastStatisticsCollectionTime");
         long newCollectionTime = Long.parseLong(lastStatisticsCollectionTime);
         long timeDifferenceMillis = newCollectionTime - lastCollectionTime;
 
+        // it's seen during the tests that the collection time may be much larger (up to 9 seconds),
+        // hence we will keep the upperThreshold a lot higher
         double lowerThreshold = STATS_PERIOD_MILLIS * 0.9;
-        /**
-         * It is seen during the tests that the collection time may be much larger, up to 9 seconds is seen, hence we will keep
-         * the max threshold a lot higher
-         */
         double upperThreshold = STATS_PERIOD_MILLIS * 20.0;
         assertTrue("Time difference between two collections is " + timeDifferenceMillis
                         + " ms but, but it should be greater than " + lowerThreshold + " ms",
@@ -378,7 +372,5 @@ public class ClientStatisticsTest extends ClientTestSupport {
         assertTrue("Time difference between two collections is " + timeDifferenceMillis
                         + " ms, but it should be less than " + upperThreshold + " ms",
                 timeDifferenceMillis <= upperThreshold);
-
-        return lastStatisticsCollectionTime;
     }
 }
