@@ -191,7 +191,7 @@ public class ClientInvocation implements Runnable {
         try {
             invokeOnSelection();
         } catch (Throwable e) {
-            clientInvocationFuture.complete(e);
+            clientInvocationFuture.completeExceptionally(e);
         }
     }
 
@@ -206,12 +206,13 @@ public class ClientInvocation implements Runnable {
         logException(exception);
 
         if (!lifecycleService.isRunning()) {
-            clientInvocationFuture.complete(new HazelcastClientNotActiveException("Client is shutting down", exception));
+            clientInvocationFuture.completeExceptionally(
+                    new HazelcastClientNotActiveException("Client is shutting down", exception));
             return;
         }
 
         if (isNotAllowedToRetryOnSelection(exception)) {
-            clientInvocationFuture.complete(exception);
+            clientInvocationFuture.completeExceptionally(exception);
             return;
         }
 
@@ -219,7 +220,7 @@ public class ClientInvocation implements Runnable {
                 || invocationService.isRedoOperation()
                 || (exception instanceof TargetDisconnectedException && clientMessage.isRetryable());
         if (!retry) {
-            clientInvocationFuture.complete(exception);
+            clientInvocationFuture.completeExceptionally(exception);
             return;
         }
 
@@ -229,14 +230,14 @@ public class ClientInvocation implements Runnable {
                 logger.finest("Exception will not be retried because invocation timed out", exception);
             }
 
-            clientInvocationFuture.complete(newOperationTimeoutException(exception));
+            clientInvocationFuture.completeExceptionally(newOperationTimeoutException(exception));
             return;
         }
 
         try {
             execute();
         } catch (RejectedExecutionException e) {
-            clientInvocationFuture.complete(exception);
+            clientInvocationFuture.completeExceptionally(exception);
         }
 
     }
@@ -315,7 +316,7 @@ public class ClientInvocation implements Runnable {
         return executionService.getUserExecutor();
     }
 
-    private Object newOperationTimeoutException(Throwable e) {
+    private Exception newOperationTimeoutException(Throwable e) {
         StringBuilder sb = new StringBuilder();
         sb.append(this);
         sb.append(" timed out because exception occurred after client invocation timeout ");

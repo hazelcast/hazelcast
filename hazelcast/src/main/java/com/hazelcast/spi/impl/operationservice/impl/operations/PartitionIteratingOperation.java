@@ -292,7 +292,7 @@ public final class PartitionIteratingOperation extends Operation implements Iden
             this.results = results;
         }
 
-        public void addResults(Map<Integer, Object> partitionResults) {
+        public void drainTo(Map<Integer, Object> partitionResults) {
             if (results == null) {
                 return;
             }
