@@ -27,7 +27,7 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ReplicationSupportingService;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.wan.WanReplicationEvent;
-import com.hazelcast.wan.WanReplicationService;
+import com.hazelcast.wan.impl.DistributedServiceWanEventCounters;
 
 import java.util.concurrent.Future;
 
@@ -36,12 +36,13 @@ import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 class MapReplicationSupportingService implements ReplicationSupportingService {
     private final MapServiceContext mapServiceContext;
     private final NodeEngine nodeEngine;
-    private final WanReplicationService wanService;
+    private final DistributedServiceWanEventCounters wanEventTypeCounters;
 
     MapReplicationSupportingService(MapServiceContext mapServiceContext) {
         this.mapServiceContext = mapServiceContext;
         this.nodeEngine = mapServiceContext.getNodeEngine();
-        this.wanService = nodeEngine.getWanReplicationService();
+        this.wanEventTypeCounters = nodeEngine.getWanReplicationService()
+                                              .getReceivedEventCounters(MapService.SERVICE_NAME);
     }
 
     @Override
@@ -65,7 +66,7 @@ class MapReplicationSupportingService implements ReplicationSupportingService {
             Future f = nodeEngine.getOperationService()
                     .invokeOnPartition(SERVICE_NAME, operation, partitionId);
             f.get();
-            wanService.getReceivedEventCounter(MapService.SERVICE_NAME).incrementRemove(mapName);
+            wanEventTypeCounters.incrementRemove(mapName);
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
@@ -84,7 +85,7 @@ class MapReplicationSupportingService implements ReplicationSupportingService {
             Future f = nodeEngine.getOperationService()
                     .invokeOnPartition(SERVICE_NAME, operation, partitionId);
             f.get();
-            wanService.getReceivedEventCounter(MapService.SERVICE_NAME).incrementUpdate(mapName);
+            wanEventTypeCounters.incrementUpdate(mapName);
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }

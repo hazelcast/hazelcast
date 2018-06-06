@@ -33,8 +33,21 @@ public final class MapUtil {
      * to minimize rehash operations
      */
     public static <K, V> Map<K, V> createHashMap(int expectedMapSize) {
-        int initialCapacity = (int) (expectedMapSize / HASHMAP_DEFAULT_LOAD_FACTOR) + 1;
+        int initialCapacity = calculateInitialCapacity(expectedMapSize);
         return new HashMap<K, V>(initialCapacity);
+    }
+
+    /**
+     * Returns the initial hash map capacity needed for the expected map size.
+     * To avoid resizing the map, the initial capacity should be different than
+     * the expected size, depending on the load factor.
+     *
+     * @param expectedMapSize the expected map size
+     * @return the necessary initial capacity
+     * @see HashMap
+     */
+    public static int calculateInitialCapacity(int expectedMapSize) {
+        return (int) (expectedMapSize / HASHMAP_DEFAULT_LOAD_FACTOR) + 1;
     }
 
     /**

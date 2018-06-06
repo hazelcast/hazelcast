@@ -21,7 +21,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.wan.ReplicationEventObject;
-import com.hazelcast.wan.impl.WanEventCounter;
+import com.hazelcast.wan.impl.DistributedServiceWanEventCounters;
 import com.hazelcast.wan.impl.WanDataSerializerHook;
 
 import java.io.IOException;
@@ -90,7 +90,7 @@ public class MapReplicationRemove implements ReplicationEventObject, IdentifiedD
     }
 
     @Override
-    public void incrementEventCount(WanEventCounter eventCounter) {
-        eventCounter.incrementRemove(mapName);
+    public void incrementEventCount(DistributedServiceWanEventCounters counters) {
+        counters.incrementRemove(mapName);
     }
 }

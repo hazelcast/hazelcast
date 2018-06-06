@@ -20,7 +20,7 @@ package com.hazelcast.monitor.impl;
 import com.eclipsesource.json.JsonObject;
 import com.hazelcast.config.WanPublisherState;
 import com.hazelcast.monitor.LocalWanPublisherStats;
-import com.hazelcast.wan.impl.WanEventCounter.EventCounter;
+import com.hazelcast.wan.impl.DistributedServiceWanEventCounters.DistributedObjectWanEventCounters;
 
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
@@ -42,8 +42,8 @@ public class LocalWanPublisherStatsImpl implements LocalWanPublisherStats {
     private volatile int outboundQueueSize;
     private volatile long totalPublishLatency;
     private volatile long totalPublishedEventCount;
-    private volatile Map<String, EventCounter> sentMapEventCounter;
-    private volatile Map<String, EventCounter> sentCacheEventCounter;
+    private volatile Map<String, DistributedObjectWanEventCounters> sentMapEventCounter;
+    private volatile Map<String, DistributedObjectWanEventCounters> sentCacheEventCounter;
 
     @Override
     public boolean isConnected() {
@@ -83,20 +83,20 @@ public class LocalWanPublisherStatsImpl implements LocalWanPublisherStats {
     }
 
     @Override
-    public Map<String, EventCounter> getSentMapEventCounter() {
+    public Map<String, DistributedObjectWanEventCounters> getSentMapEventCounter() {
         return sentMapEventCounter;
     }
 
-    @Override
-    public Map<String, EventCounter> getSentCacheEventCounter() {
-        return sentCacheEventCounter;
-    }
-
-    public void setSentMapEventCounter(Map<String, EventCounter> sentMapEventCounter) {
+    public void setSentMapEventCounter(Map<String, DistributedObjectWanEventCounters> sentMapEventCounter) {
         this.sentMapEventCounter = sentMapEventCounter;
     }
 
-    public void setSentCacheEventCounter(Map<String, EventCounter> sentCacheEventCounter) {
+    @Override
+    public Map<String, DistributedObjectWanEventCounters> getSentCacheEventCounter() {
+        return sentCacheEventCounter;
+    }
+
+    public void setSentCacheEventCounter(Map<String, DistributedObjectWanEventCounters> sentCacheEventCounter) {
         this.sentCacheEventCounter = sentCacheEventCounter;
     }
 

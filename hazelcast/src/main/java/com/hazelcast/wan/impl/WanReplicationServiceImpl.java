@@ -42,10 +42,10 @@ public class WanReplicationServiceImpl implements WanReplicationService {
     private final Node node;
 
     /** WAN event counters for all services and only received events */
-    private final WanEventCounterContainer receivedWanEventCounters = new WanEventCounterContainer();
+    private final WanEventCounters receivedWanEventCounters = new WanEventCounters();
 
     /** WAN event counters for all services and only sent events */
-    private final WanEventCounterContainer sentWanEventCounters = new WanEventCounterContainer();
+    private final WanEventCounters sentWanEventCounters = new WanEventCounters();
 
     private final ConcurrentHashMap<String, WanReplicationPublisherDelegate> wanReplications
             = initializeWanReplicationPublisherMapping();
@@ -161,18 +161,20 @@ public class WanReplicationServiceImpl implements WanReplicationService {
     }
 
     @Override
-    public WanEventCounter getReceivedEventCounter(String serviceName) {
-        return receivedWanEventCounters.getWanEventCounter(serviceName);
+    public DistributedServiceWanEventCounters getReceivedEventCounters(String serviceName) {
+        return receivedWanEventCounters.getWanEventCounter("", "", serviceName);
     }
 
     @Override
-    public WanEventCounter getSentEventCounter(String serviceName) {
-        return sentWanEventCounters.getWanEventCounter(serviceName);
+    public DistributedServiceWanEventCounters getSentEventCounters(String wanReplicationName,
+                                                                   String targetGroupName,
+                                                                   String serviceName) {
+        return sentWanEventCounters.getWanEventCounter(wanReplicationName, targetGroupName, serviceName);
     }
 
     @Override
-    public void removeWanEventCounters(String serviceName, String dataStructureName) {
-        receivedWanEventCounters.removeCounter(serviceName, dataStructureName);
-        sentWanEventCounters.removeCounter(serviceName, dataStructureName);
+    public void removeWanEventCounters(String serviceName, String objectName) {
+        receivedWanEventCounters.removeCounter(serviceName, objectName);
+        sentWanEventCounters.removeCounter(serviceName, objectName);
     }
 }
