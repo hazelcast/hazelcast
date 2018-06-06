@@ -370,6 +370,26 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
     }
 
     /**
+     * Decodes HTTP post params contained in {@link HttpPostCommand#getData()}. The data
+     * should be encoded in UTF-8 and joined together with an ampersand (&).
+     *
+     * @param command    the HTTP post command
+     * @param paramCount the number of parameters expected in the command
+     * @return the decoded params
+     * @throws UnsupportedEncodingException If character encoding needs to be consulted, but
+     *                                      named character encoding is not supported
+     */
+    private static String[] decodeParams(HttpPostCommand command, int paramCount) throws UnsupportedEncodingException {
+        final byte[] data = command.getData();
+        final String[] encoded = bytesToString(data).split("&");
+        final String[] decoded = new String[encoded.length];
+        for (int i = 0; i < encoded.length && i < paramCount; i++) {
+            decoded[i] = URLDecoder.decode(encoded[i], "UTF-8");
+        }
+        return decoded;
+    }
+
+    /**
      * Initiates a WAN sync for a single map and the wan replication name and target group defined
      * by the command parameters.
      *
@@ -379,38 +399,30 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
      */
     private void handleWanSyncMap(HttpPostCommand command) throws UnsupportedEncodingException {
         String res;
-        final String[] params = decodeParams(command, 3);
+        final String[] params = decodeParams(command, 5);
         final String wanRepName = params[0];
         final String targetGroup = params[1];
         final String mapName = params[2];
+        final int fromTimestampIndex = 3;
+        final int toTimestampIndex = 4;
+        final long fromTimestamp =
+                params.length > fromTimestampIndex && params[fromTimestampIndex] != null
+                        ? Long.parseLong(params[fromTimestampIndex])
+                        : Long.MIN_VALUE;
+        final long toTimestamp =
+                params.length > toTimestampIndex && params[toTimestampIndex] != null
+                        ? Long.parseLong(params[toTimestampIndex])
+                        : Long.MAX_VALUE;
+        final WanReplicationService service = textCommandService.getNode().getNodeEngine().getWanReplicationService();
         try {
-            textCommandService.getNode().getNodeEngine().getWanReplicationService().syncMap(wanRepName, targetGroup, mapName);
+            if (fromTimestamp == Long.MIN_VALUE && toTimestamp == Long.MAX_VALUE) {
+                service.syncMap(wanRepName, targetGroup, mapName);
+            } else {
+                service.syncMap(wanRepName, targetGroup, mapName, fromTimestamp, toTimestamp);
+            }
             res = response(ResponseType.SUCCESS, "message", "Sync initiated");
         } catch (Exception ex) {
             logger.warning("Error occurred while syncing map", ex);
-            res = exceptionResponse(ex);
-        }
-        sendResponse(command, res);
-    }
-
-    /**
-     * Initiates WAN sync for all maps and the wan replication name and target group defined
-     * by the command parameters.
-     *
-     * @param command the HTTP command
-     * @throws UnsupportedEncodingException If character encoding needs to be consulted, but
-     *                                      named character encoding is not supported
-     */
-    private void handleWanSyncAllMaps(HttpPostCommand command) throws UnsupportedEncodingException {
-        String res;
-        final String[] params = decodeParams(command, 2);
-        final String wanRepName = params[0];
-        final String targetGroup = params[1];
-        try {
-            textCommandService.getNode().getNodeEngine().getWanReplicationService().syncAllMaps(wanRepName, targetGroup);
-            res = response(ResponseType.SUCCESS, "message", "Sync initiated");
-        } catch (Exception ex) {
-            logger.warning("Error occurred while syncing maps", ex);
             res = exceptionResponse(ex);
         }
         sendResponse(command, res);
@@ -544,23 +556,39 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
     }
 
     /**
-     * Decodes HTTP post params contained in {@link HttpPostCommand#getData()}. The data
-     * should be encoded in UTF-8 and joined together with an ampersand (&).
+     * Initiates WAN sync for all maps and the wan replication name and target group defined
+     * by the command parameters.
      *
-     * @param command    the HTTP post command
-     * @param paramCount the number of parameters expected in the command
-     * @return the decoded params
+     * @param command the HTTP command
      * @throws UnsupportedEncodingException If character encoding needs to be consulted, but
      *                                      named character encoding is not supported
      */
-    private static String[] decodeParams(HttpPostCommand command, int paramCount) throws UnsupportedEncodingException {
-        final byte[] data = command.getData();
-        final String[] encoded = bytesToString(data).split("&");
-        final String[] decoded = new String[encoded.length];
-        for (int i = 0; i < paramCount; i++) {
-            decoded[i] = URLDecoder.decode(encoded[i], "UTF-8");
+    private void handleWanSyncAllMaps(HttpPostCommand command) throws UnsupportedEncodingException {
+        String res;
+        final String[] params = decodeParams(command, 4);
+        final String wanRepName = params[0];
+        final String targetGroup = params[1];
+        final long fromTimestamp =
+                params.length > 2 && params[2] != null
+                        ? Long.parseLong(params[2])
+                        : Long.MIN_VALUE;
+        final long toTimestamp =
+                params.length > 3 && params[3] != null
+                        ? Long.parseLong(params[3])
+                        : Long.MAX_VALUE;
+        final WanReplicationService service = textCommandService.getNode().getNodeEngine().getWanReplicationService();
+        try {
+            if (fromTimestamp == Long.MIN_VALUE && toTimestamp == Long.MAX_VALUE) {
+                service.syncAllMaps(wanRepName, targetGroup);
+            } else {
+                service.syncAllMaps(wanRepName, targetGroup, fromTimestamp, toTimestamp);
+            }
+            res = response(ResponseType.SUCCESS, "message", "Sync initiated");
+        } catch (Exception ex) {
+            logger.warning("Error occurred while syncing maps", ex);
+            res = exceptionResponse(ex);
         }
-        return decoded;
+        sendResponse(command, res);
     }
 
     private boolean checkCredentials(HttpPostCommand command) throws UnsupportedEncodingException {
