@@ -32,7 +32,7 @@ import javax.annotation.Nonnull;
 import static com.hazelcast.jet.function.DistributedFunctions.noopConsumer;
 
 /**
- * See {@link Sinks#builder(DistributedFunction)}.
+ * See {@link Sinks#builder(String, DistributedFunction)}.
  *
  * @param <W> type of the writer object
  * @param <T> type of the items the sink will accept
@@ -47,7 +47,7 @@ public final class SinkBuilder<W, T> {
     private int preferredLocalParallelism = 2;
 
     /**
-     * Use {@link Sinks#builder(DistributedFunction)}.
+     * Use {@link Sinks#builder(String, DistributedFunction)}.
      */
     SinkBuilder(@Nonnull String name, DistributedFunction<Processor.Context, ? extends W> createFn) {
         this.name = name;
