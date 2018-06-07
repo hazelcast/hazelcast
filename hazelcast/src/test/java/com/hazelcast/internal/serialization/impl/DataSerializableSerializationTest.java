@@ -26,6 +26,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.impl.VersionedDataSerializableFactory;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.version.Version;
@@ -36,17 +37,15 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 
-public class DataSerializableSerializationTest {
+public class DataSerializableSerializationTest extends HazelcastTestSupport {
 
-    private SerializationService ss = new DefaultSerializationServiceBuilder()
-            .setVersion(InternalSerializationService.VERSION_1)
-            .build();
+    private SerializationService ss = new DefaultSerializationServiceBuilder().setVersion(InternalSerializationService.VERSION_1)
+                                                                              .build();
 
     @Test
     public void serializeAndDeserialize_DataSerializable() {
@@ -61,11 +60,9 @@ public class DataSerializableSerializationTest {
     @Test
     public void serializeAndDeserialize_IdentifiedDataSerializable() {
         IDSPerson person = new IDSPerson("James Bond");
-        SerializationService ss = new DefaultSerializationServiceBuilder()
-                .addDataSerializableFactory(1, new IDSPersonFactory())
-                .setVersion(InternalSerializationService.VERSION_1)
-                .build();
-
+        SerializationService ss = new DefaultSerializationServiceBuilder().addDataSerializableFactory(1, new IDSPersonFactory())
+                                                                          .setVersion(InternalSerializationService.VERSION_1)
+                                                                          .build();
 
         IDSPerson deserialized = ss.toObject(ss.toData(person));
 
@@ -77,8 +74,7 @@ public class DataSerializableSerializationTest {
     public void serializeAndDeserialize_IdentifiedDataSerializable_versionedFactory() {
         IDSPerson person = new IDSPerson("James Bond");
         SerializationService ss = new DefaultSerializationServiceBuilder()
-                .addDataSerializableFactory(1, new IDSPersonFactoryVersioned())
-                .setVersion(InternalSerializationService.VERSION_1)
+                .addDataSerializableFactory(1, new IDSPersonFactoryVersioned()).setVersion(InternalSerializationService.VERSION_1)
                 .build();
 
         IDSPerson deserialized = ss.toObject(ss.toData(person));
@@ -115,24 +111,24 @@ public class DataSerializableSerializationTest {
             try {
                 ss.toObject(ss.toData(throwingInstance));
             } catch (HazelcastSerializationException e) {
-                assertTrue(e.getCause() instanceof NoSuchMethodException);
-                assertTrue(e.getCause().getMessage().contains("can't conform to DataSerializable"));
-                assertTrue(e.getCause().getCause() instanceof NoSuchMethodException);
+                assertInstanceOf(NoSuchMethodException.class, e.getCause());
+                assertContains(e.getCause().getMessage(), "can't conform to DataSerializable");
+                assertInstanceOf(NoSuchMethodException.class, e.getCause().getCause());
                 continue;
             }
-            fail("deserialization is expected to fail");
+            fail("deserialization of '" + throwingInstance.getClass() + "' is expected to fail");
         }
 
         for (DataSerializable throwingInstance : throwingInstances) {
             try {
                 ss.toObject(ss.toData(throwingInstance), throwingInstance.getClass());
             } catch (HazelcastSerializationException e) {
-                assertTrue(e.getCause() instanceof InstantiationException);
-                assertTrue(e.getCause().getMessage().contains("can't conform to DataSerializable"));
-                assertTrue(e.getCause().getCause() instanceof InstantiationException);
+                assertInstanceOf(InstantiationException.class, e.getCause());
+                assertContains(e.getCause().getMessage(), "can't conform to DataSerializable");
+                assertInstanceOf(InstantiationException.class, e.getCause().getCause());
                 continue;
             }
-            fail("deserialization is expected to fail");
+            fail("deserialization of '" + throwingInstance.getClass() + "' is expected to fail");
         }
     }
 
