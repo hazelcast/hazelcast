@@ -189,8 +189,8 @@ final class DataSerializableSerializer implements StreamSerializer<DataSerializa
                 + ", exception: " + e.getMessage(), e);
     }
 
-    private InstantiationException clarifyInstantiationException(Class class_, InstantiationException instantiationException) {
-        String message = tryGenerateClarifiedExceptionMessage(class_);
+    private InstantiationException clarifyInstantiationException(Class aClass, InstantiationException instantiationException) {
+        String message = tryGenerateClarifiedExceptionMessage(aClass);
         if (message == null) {
             return instantiationException;
         }
@@ -202,15 +202,15 @@ final class DataSerializableSerializer implements StreamSerializer<DataSerializa
 
     private NoSuchMethodException clarifyNoSuchMethodException(ClassLoader classLoader, String className,
                                                                NoSuchMethodException noSuchMethodException) {
-        Class class_;
+        Class aClass;
         try {
             ClassLoader effectiveClassLoader = classLoader == null ? ClassLoaderUtil.class.getClassLoader() : classLoader;
-            class_ = ClassLoaderUtil.loadClass(effectiveClassLoader, className);
+            aClass = ClassLoaderUtil.loadClass(effectiveClassLoader, className);
         } catch (Exception e) {
             return noSuchMethodException;
         }
 
-        String message = tryGenerateClarifiedExceptionMessage(class_);
+        String message = tryGenerateClarifiedExceptionMessage(aClass);
         if (message == null) {
             message = "Classes conforming to DataSerializable should provide a no-arguments constructor.";
         }
@@ -254,13 +254,13 @@ final class DataSerializableSerializer implements StreamSerializer<DataSerializa
         ((VersionedObjectDataInput) in).setVersion(version);
     }
 
-    private static String tryGenerateClarifiedExceptionMessage(Class class_) {
+    private static String tryGenerateClarifiedExceptionMessage(Class aClass) {
         String classType;
-        if (class_.isAnonymousClass()) {
+        if (aClass.isAnonymousClass()) {
             classType = "Anonymous";
-        } else if (class_.isLocalClass()) {
+        } else if (aClass.isLocalClass()) {
             classType = "Local";
-        } else if (class_.isMemberClass() && !Modifier.isStatic(class_.getModifiers())) {
+        } else if (aClass.isMemberClass() && !Modifier.isStatic(aClass.getModifiers())) {
             classType = "Non-static member";
         } else {
             return null;
