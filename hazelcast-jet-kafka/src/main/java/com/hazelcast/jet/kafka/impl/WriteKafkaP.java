@@ -19,6 +19,7 @@ package com.hazelcast.jet.kafka.impl;
 import com.hazelcast.jet.core.Inbox;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
+import com.hazelcast.jet.kafka.KafkaProcessors;
 import org.apache.kafka.clients.producer.Callback;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
@@ -34,10 +35,7 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static java.util.stream.Collectors.toList;
 
 /**
- * See {@link com.hazelcast.jet.kafka.KafkaProcessors#writeKafkaP(
- * Properties, String, com.hazelcast.jet.function.DistributedFunction,
- * com.hazelcast.jet.function.DistributedFunction)
- * KafkaProcessors.writeKafka()}.
+ * See {@link KafkaProcessors#writeKafkaP}.
  */
 public final class WriteKafkaP<T, K, V> implements Processor {
 

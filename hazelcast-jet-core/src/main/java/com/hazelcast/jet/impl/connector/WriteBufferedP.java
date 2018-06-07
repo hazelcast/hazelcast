@@ -20,6 +20,7 @@ import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.core.Inbox;
 import com.hazelcast.jet.core.Outbox;
 import com.hazelcast.jet.core.Processor;
+import com.hazelcast.jet.core.processor.SinkProcessors;
 import com.hazelcast.jet.function.DistributedBiConsumer;
 import com.hazelcast.jet.function.DistributedConsumer;
 import com.hazelcast.jet.function.DistributedFunction;
@@ -85,9 +86,7 @@ public final class WriteBufferedP<B, T> implements Processor {
     }
 
     /**
-     * This is private API. Call
-     * {@link com.hazelcast.jet.core.processor.SinkProcessors#writeBufferedP
-     * SinkProcessors.writeBuffered()} instead.
+     * This is private API. Call {@link SinkProcessors#writeBufferedP} instead.
      */
     @Nonnull
     public static <B, T> DistributedSupplier<Processor> supplier(

@@ -19,12 +19,13 @@ package com.hazelcast.jet.impl.connector;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.processor.DiagnosticProcessors;
+import com.hazelcast.jet.function.DistributedFunction;
 
 import javax.annotation.Nonnull;
 import java.util.function.Function;
 
 /**
- * See {@link DiagnosticProcessors#writeLoggerP(com.hazelcast.jet.function.DistributedFunction)}
+ * See {@link DiagnosticProcessors#writeLoggerP(DistributedFunction)}.
  */
 public class WriteLoggerP<T> extends AbstractProcessor {
 

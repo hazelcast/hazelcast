@@ -124,19 +124,19 @@ public abstract class AbstractProcessor implements Processor {
             switch (ordinal) {
                 case 0:
                     process0(inbox);
-                    return;
+                    break;
                 case 1:
                     process1(inbox);
-                    return;
+                    break;
                 case 2:
                     process2(inbox);
-                    return;
+                    break;
                 case 3:
                     process3(inbox);
-                    return;
+                    break;
                 case 4:
                     process4(inbox);
-                    return;
+                    break;
                 default:
                     processAny(ordinal, inbox);
             }

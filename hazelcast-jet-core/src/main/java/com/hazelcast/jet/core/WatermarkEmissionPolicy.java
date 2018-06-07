@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet.core;
 
+import com.hazelcast.jet.core.processor.Processors;
+
 import javax.annotation.Nonnull;
 import java.io.Serializable;
 
@@ -67,10 +69,8 @@ public interface WatermarkEmissionPolicy extends Serializable {
      * watermark's frame, as per the supplied {@code WindowDefinition}. This
      * emission policy should be employed to drive a downstream processor that
      * computes a sliding/tumbling window
-     * ({@link com.hazelcast.jet.core.processor.Processors#accumulateByFrameP
-     * accumulateByFrame()} or
-     * {@link com.hazelcast.jet.core.processor.Processors#aggregateToSlidingWindowP
-     * aggregateToSlidingWindow()}).
+     * ({@link Processors#accumulateByFrameP} or
+     * {@link Processors#aggregateToSlidingWindowP}).
      */
     @Nonnull
     static WatermarkEmissionPolicy emitByFrame(SlidingWindowPolicy wDef) {

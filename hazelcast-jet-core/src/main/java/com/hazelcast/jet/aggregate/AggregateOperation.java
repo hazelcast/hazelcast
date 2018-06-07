@@ -21,6 +21,7 @@ import com.hazelcast.jet.function.DistributedBiConsumer;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedSupplier;
 import com.hazelcast.jet.impl.aggregate.AggregateOperation1Impl;
+import com.hazelcast.jet.pipeline.StageWithGroupingAndWindow;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -72,7 +73,7 @@ import java.util.Objects;
  * builder.
  * <p>
  * If, on the other hand, you are calling one of the direct methods such
- * as {@link com.hazelcast.jet.pipeline.StageWithGroupingAndWindow#aggregate2
+ * as {@link StageWithGroupingAndWindow#aggregate2
  * stage.aggregate2()}, then you'll deal with specializations of this interface
  * such as {@link AggregateOperation2} and you'll identify the input stages by
  * their index; zero index corresponds to the stage you're calling the

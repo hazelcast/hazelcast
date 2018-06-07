@@ -29,6 +29,7 @@ import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.Member;
+import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JobStatus;
@@ -49,7 +50,7 @@ import static com.hazelcast.jet.impl.util.Util.idToString;
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 
 /**
- * {@link com.hazelcast.jet.Job} proxy on client.
+ * {@link Job} proxy on client.
  */
 public class ClientJobProxy extends AbstractJobProxy<HazelcastClientInstanceImpl> {
 

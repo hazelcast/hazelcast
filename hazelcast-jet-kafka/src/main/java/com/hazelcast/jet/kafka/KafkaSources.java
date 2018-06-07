@@ -19,6 +19,7 @@ package com.hazelcast.jet.kafka;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.pipeline.StreamSource;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
 
 import javax.annotation.Nonnull;
 import java.util.Map.Entry;
@@ -62,9 +63,8 @@ public final class KafkaSources {
      * After restart, the source emits the events from the same offset.
      * <p>
      * If snapshotting is disabled, the source commits the offsets to Kafka
-     * using {@link org.apache.kafka.clients.consumer.KafkaConsumer#commitSync()
-     * commitSync()}. Note however that offsets can be committed before or
-     * after the event is fully processed.
+     * using {@link KafkaConsumer#commitSync()}. Note however that offsets can
+     * be committed before or after the event is fully processed.
      * <p>
      * If you add Kafka partitions at run-time, consumption from them will
      * start after a delay, based on the {@code metadata.max.age.ms} Kafka

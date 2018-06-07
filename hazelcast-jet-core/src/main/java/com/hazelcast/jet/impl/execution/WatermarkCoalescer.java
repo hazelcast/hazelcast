@@ -17,6 +17,7 @@
 package com.hazelcast.jet.impl.execution;
 
 import com.hazelcast.jet.JetException;
+import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.impl.util.TimestampHistory;
 
@@ -94,7 +95,7 @@ public abstract class WatermarkCoalescer {
     /**
      * Factory method.
      *
-     * @param maxWatermarkRetainMillis see {@link com.hazelcast.jet.config.JobConfig#setMaxWatermarkRetainMillis}
+     * @param maxWatermarkRetainMillis see {@link JobConfig#setMaxWatermarkRetainMillis}
      * @param queueCount number of queues
      */
     public static WatermarkCoalescer create(int maxWatermarkRetainMillis, int queueCount) {

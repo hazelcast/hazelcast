@@ -86,9 +86,6 @@
     </module>
 
     <module name="TreeWalker">
-        <!-- Activate comment suppression filters -->
-        <module name="FileContentsHolder"/>
-
         <!-- Needed for SuppressWarningsFilter to work -->
         <module name="SuppressWarningsHolder"/>
 
@@ -219,6 +216,7 @@
         </module>
         <module name="ReturnCount">
             <property name="max" value="8"/>
+            <property name="maxForVoid" value="4"/>
         </module>
         <module name="NestedIfDepth">
             <property name="max" value="2"/>

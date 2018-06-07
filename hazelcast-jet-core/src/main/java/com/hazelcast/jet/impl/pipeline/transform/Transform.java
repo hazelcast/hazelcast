@@ -17,14 +17,14 @@
 package com.hazelcast.jet.impl.pipeline.transform;
 
 import com.hazelcast.jet.impl.pipeline.Planner;
-import java.util.List;
+
 import javax.annotation.Nonnull;
+import java.util.List;
 
 /**
  * This is a pure data object and holds no implementation code for the
- * transformation it represents. {@link com.hazelcast.jet.impl.pipeline.Planner
- * Planner} is the implementation class that creates a Core API DAG for a
- * pipeline.
+ * transformation it represents. {@link Planner} is the implementation class
+ * that creates a Core API DAG for a pipeline.
  */
 public interface Transform {
     /**

@@ -16,11 +16,16 @@
 
 package com.hazelcast.jet.pipeline;
 
+import com.hazelcast.cache.CacheEventType;
 import com.hazelcast.cache.journal.EventJournalCacheEvent;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.core.EntryEventType;
+import com.hazelcast.jet.GenericPredicates;
 import com.hazelcast.jet.Util;
+import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.WatermarkGenerationParams;
+import com.hazelcast.jet.core.WatermarkSourceUtil;
 import com.hazelcast.jet.function.DistributedBiFunction;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedPredicate;
@@ -31,6 +36,7 @@ import com.hazelcast.map.journal.EventJournalMapEvent;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.projection.Projections;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.PredicateBuilder;
 
 import javax.annotation.Nonnull;
 import javax.jms.ConnectionFactory;
@@ -104,8 +110,8 @@ public final class Sources {
      * specify.
      * <p>
      * If you are implementing a custom source processor, be sure to check out
-     * the {@link com.hazelcast.jet.core.WatermarkSourceUtil} class that will
-     * help you correctly implement watermark item emission.
+     * the {@link WatermarkSourceUtil} class that will help you correctly
+     * implement watermark item emission.
      *
      * @param sourceName user-friendly source name
      * @param metaSupplierFn factory of processor meta-suppliers
@@ -168,10 +174,9 @@ public final class Sources {
      * Projections.singleAttribute()} and {@link
      *     com.hazelcast.projection.Projections#multiAttribute(String...)
      * Projections.multiAttribute()}) to create your projection instance and
-     * using the {@link com.hazelcast.jet.GenericPredicates} factory or
-     * {@link com.hazelcast.query.PredicateBuilder PredicateBuilder} to create
-     * the predicate. In this case Jet can test the predicate and apply the
-     * projection without deserializing the whole object.
+     * using the {@link GenericPredicates} factory or {@link PredicateBuilder}
+     * to create the predicate. In this case Jet can test the predicate and
+     * apply the projection without deserializing the whole object.
      * <p>
      * The source leverages data locality by making each of the underlying
      * processors fetch only those entries that are stored on the member where
@@ -192,7 +197,7 @@ public final class Sources {
      * The classes implementing {@code predicate} and {@code projection} need
      * to be available on the cluster's classpath, or loaded using
      * <em>Hazelcast User Code Deployment</em>. It's not enough to add them to
-     * job classpath in {@link com.hazelcast.jet.config.JobConfig}. Same is
+     * job classpath in {@link JobConfig}. Same is
      * true for the class of the objects stored in the map itself. If you
      * cannot fulfill these conditions, use {@link #map(String)} and add a
      * subsequent {@link GeneralStage#map map} or {@link GeneralStage#filter
@@ -259,7 +264,7 @@ public final class Sources {
      * The classes implementing {@code predicateFn} and {@code projectionFn}
      * need to be available on the cluster's classpath, or loaded using
      * <em>Hazelcast User Code Deployment</em>. It's not enough to add them to
-     * job classpath in {@link com.hazelcast.jet.config.JobConfig}. Same is
+     * job classpath in {@link JobConfig}. Same is
      * true for the class of the objects stored in the map itself. If you
      * cannot fulfill these conditions, use {@link #mapJournal(String,
      * JournalInitialPosition)} and add a subsequent {@link GeneralStage#map
@@ -290,8 +295,8 @@ public final class Sources {
     /**
      * Convenience for {@link #mapJournal(String, DistributedPredicate,
      * DistributedFunction, JournalInitialPosition)}
-     * which will pass only {@link com.hazelcast.core.EntryEventType#ADDED
-     * ADDED} and {@link com.hazelcast.core.EntryEventType#UPDATED UPDATED}
+     * which will pass only {@link EntryEventType#ADDED
+     * ADDED} and {@link EntryEventType#UPDATED UPDATED}
      * events and will project the event's key and new value into a {@code
      * Map.Entry}.
      */
@@ -340,8 +345,8 @@ public final class Sources {
      * Projections.singleAttribute()} and {@link
      *     com.hazelcast.projection.Projections#multiAttribute(String...)
      * Projections.multiAttribute()}) to create your projection instance and
-     * using the {@link com.hazelcast.jet.GenericPredicates} factory or
-     * {@link com.hazelcast.query.PredicateBuilder PredicateBuilder} to create
+     * using the {@link GenericPredicates} factory or
+     * {@link PredicateBuilder PredicateBuilder} to create
      * the predicate. In this case Jet can test the predicate and apply the
      * projection without deserializing the whole object.
      * <p>
@@ -359,7 +364,7 @@ public final class Sources {
      * The classes implementing {@code predicate} and {@code projection} need
      * to be available on the remote cluster's classpath, or loaded using
      * <em>Hazelcast User Code Deployment</em>. It's not enough to add them to
-     * job classpath in {@link com.hazelcast.jet.config.JobConfig}. Same is
+     * job classpath in {@link JobConfig}. Same is
      * true for the class of the objects stored in the map itself. If you
      * cannot fulfill these conditions, use {@link #remoteMap(String,
      * ClientConfig)} and add a subsequent {@link GeneralStage#map map} or
@@ -425,7 +430,7 @@ public final class Sources {
      * The classes implementing {@code predicateFn} and {@code projectionFn}
      * need to be available on the remote cluster's classpath, or loaded using
      * <em>Hazelcast User Code Deployment</em>. It's not enough to add them to
-     * job classpath in {@link com.hazelcast.jet.config.JobConfig}. Same is
+     * job classpath in {@link JobConfig}. Same is
      * true for the class of the objects stored in the map itself. If you
      * cannot fulfill these conditions, use {@link #remoteMapJournal(String,
      * ClientConfig, JournalInitialPosition)} and add a subsequent {@link
@@ -434,8 +439,8 @@ public final class Sources {
      * @param mapName the name of the map
      * @param clientConfig configuration for the client to connect to the remote cluster
      * @param predicateFn the predicate to filter the events. You may use {@link Util#mapPutEvents}
-     *                    to pass only {@link com.hazelcast.core.EntryEventType#ADDED
-     *                    ADDED} and {@link com.hazelcast.core.EntryEventType#UPDATED UPDATED}
+     *                    to pass only {@link EntryEventType#ADDED
+     *                    ADDED} and {@link EntryEventType#UPDATED UPDATED}
      *                    events.
      * @param projectionFn the projection to map the events. If the projection returns a {@code
      *                     null} for an item, that item will be filtered out. You may use {@link
@@ -460,8 +465,8 @@ public final class Sources {
     /**
      * Convenience for {@link #remoteMapJournal(String, ClientConfig,
      * DistributedPredicate, DistributedFunction, JournalInitialPosition)}
-     * which will pass only {@link com.hazelcast.core.EntryEventType#ADDED ADDED}
-     * and {@link com.hazelcast.core.EntryEventType#UPDATED UPDATED} events and will
+     * which will pass only {@link EntryEventType#ADDED ADDED}
+     * and {@link EntryEventType#UPDATED UPDATED} events and will
      * project the event's key and new value into a {@code Map.Entry}.
      */
     @Nonnull
@@ -524,7 +529,7 @@ public final class Sources {
      * The classes implementing {@code predicateFn} and {@code projectionFn}
      * need to be available on the cluster's classpath, or loaded using
      * <em>Hazelcast User Code Deployment</em>. It's not enough to add them to
-     * job classpath in {@link com.hazelcast.jet.config.JobConfig}. Same is
+     * job classpath in {@link JobConfig}. Same is
      * true for the class of the objects stored in the cache itself. If you
      * cannot fulfill these conditions, use {@link #cacheJournal(String,
      * JournalInitialPosition)} and add a subsequent {@link GeneralStage#map
@@ -556,8 +561,8 @@ public final class Sources {
     /**
      * Convenience for {@link #cacheJournal(String, DistributedPredicate,
      * DistributedFunction, JournalInitialPosition)}
-     * which will pass only {@link com.hazelcast.cache.CacheEventType#CREATED
-     * CREATED} and {@link com.hazelcast.cache.CacheEventType#UPDATED UPDATED}
+     * which will pass only {@link CacheEventType#CREATED
+     * CREATED} and {@link CacheEventType#UPDATED UPDATED}
      * events and will project the event's key and new value into a {@code
      * Map.Entry}.
      */
@@ -617,7 +622,7 @@ public final class Sources {
      * The classes implementing {@code predicateFn} and {@code projectionFn}
      * need to be available on the cluster's classpath, or loaded using
      * <em>Hazelcast User Code Deployment</em>. It's not enough to add them to
-     * job classpath in {@link com.hazelcast.jet.config.JobConfig}. Same is
+     * job classpath in {@link JobConfig}. Same is
      * true for the class of the objects stored in the cache itself. If you
      * cannot fulfill these conditions, use {@link #remoteCacheJournal(String,
      * ClientConfig, JournalInitialPosition)} and add a subsequent {@link
@@ -651,8 +656,8 @@ public final class Sources {
      * Convenience for {@link #remoteCacheJournal(String, ClientConfig,
      * DistributedPredicate, DistributedFunction, JournalInitialPosition)}
      * which will pass only
-     * {@link com.hazelcast.cache.CacheEventType#CREATED CREATED}
-     * and {@link com.hazelcast.cache.CacheEventType#UPDATED UPDATED}
+     * {@link CacheEventType#CREATED CREATED}
+     * and {@link CacheEventType#UPDATED UPDATED}
      * events and will project the event's key and new value
      * into a {@code Map.Entry}.
      */

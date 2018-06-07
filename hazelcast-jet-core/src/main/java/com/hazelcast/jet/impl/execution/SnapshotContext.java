@@ -17,6 +17,7 @@
 package com.hazelcast.jet.impl.execution;
 
 import com.hazelcast.jet.config.ProcessingGuarantee;
+import com.hazelcast.jet.impl.operation.SnapshotOperation;
 import com.hazelcast.logging.ILogger;
 
 import java.util.concurrent.CompletableFuture;
@@ -191,8 +192,7 @@ public class SnapshotContext {
      * This method can be called before the snapshot was started with {@link
      * #startNewSnapshot(long)}. This can happen, if the processor only has
      * input queues from remote members, from which it can possibly receive
-     * barriers before {@link com.hazelcast.jet.impl.operation.SnapshotOperation}
-     * is handled on this member.
+     * barriers before {@link SnapshotOperation} is handled on this member.
      */
     void snapshotDoneForTasklet() {
         // note that numRemainingTasklets can get negative values here.

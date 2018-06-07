@@ -20,6 +20,7 @@ import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.datamodel.ItemsByTag;
 import com.hazelcast.jet.datamodel.Tag;
 import com.hazelcast.jet.function.TriFunction;
+import com.hazelcast.jet.impl.pipeline.transform.HashJoinTransform;
 import com.hazelcast.jet.pipeline.BatchStage;
 
 import javax.annotation.Nonnull;
@@ -35,7 +36,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 
 /**
- * Implements the {@link com.hazelcast.jet.impl.pipeline.transform.HashJoinTransform
+ * Implements the {@linkplain HashJoinTransform
  * hash-join transform}. On all edges except 0 it will receive a single
  * item &mdash; the lookup table for that edge (a {@code Map}) and then it
  * will process edge 0 by joining to each item the data from lookup tables.

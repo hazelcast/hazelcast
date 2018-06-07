@@ -19,6 +19,7 @@ package com.hazelcast.jet.impl.connector;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
+import com.hazelcast.jet.core.processor.SinkProcessors;
 import com.hazelcast.jet.function.DistributedBiConsumer;
 import com.hazelcast.jet.function.DistributedBiFunction;
 import com.hazelcast.jet.function.DistributedConsumer;
@@ -39,9 +40,8 @@ import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static java.util.stream.Collectors.toList;
 
 /**
- * Private API. Access via {@link
- * com.hazelcast.jet.core.processor.SinkProcessors#writeJmsQueueP} or
- * {@link com.hazelcast.jet.core.processor.SinkProcessors#writeJmsTopicP}
+ * Private API. Access via {@link SinkProcessors#writeJmsQueueP} or {@link
+ * SinkProcessors#writeJmsTopicP}.
  */
 public final class WriteJmsP {
 
@@ -51,10 +51,8 @@ public final class WriteJmsP {
     }
 
     /**
-     * Private API. Use {@link
-     * com.hazelcast.jet.core.processor.SinkProcessors#writeJmsQueueP} or
-     * {@link com.hazelcast.jet.core.processor.SinkProcessors#writeJmsTopicP}
-     * instead
+     * Private API. Use {@link SinkProcessors#writeJmsQueueP} or {@link
+     * SinkProcessors#writeJmsTopicP} instead
      */
     public static <T> ProcessorMetaSupplier supplier(
             DistributedSupplier<Connection> connectionSupplier,

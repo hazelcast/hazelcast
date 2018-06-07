@@ -19,7 +19,6 @@ package com.hazelcast.jet.core.test;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.core.Outbox;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.Processor.Context;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
@@ -66,13 +65,11 @@ import static java.util.stream.Collectors.toMap;
  * <p>
  * The test process does the following:
  * <ul>
- *     <li>initializes the processor by calling
- *     {@link Processor#init(Outbox, Context) Processor.init()}
+ *     <li>initializes the processor by calling {@link Processor#init}
  *
  *     <li>does snapshot or snapshot+restore (optional, see below)
  *
- *     <li>calls {@link Processor#process(int, com.hazelcast.jet.core.Inbox)
- *     Processor.process(0, inbox)}. The inbox always contains one item
+ *     <li>calls {@link Processor#process}. The inbox always contains one item
  *     from {@code input} parameter
  *
  *     <li>every time the inbox gets empty does snapshot or snapshot+restore
@@ -251,7 +248,7 @@ public final class TestSupport {
     /**
      * Sets the input objects for processor.
      * <p>
-     * The {@code input} can contain {@link com.hazelcast.jet.core.Watermark}s;
+     * The {@code input} can contain {@link Watermark}s;
      * they will be delivered to the {@link Processor#tryProcessWatermark}
      * method.
      * <p>

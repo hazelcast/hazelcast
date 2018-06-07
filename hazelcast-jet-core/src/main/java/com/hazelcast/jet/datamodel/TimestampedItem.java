@@ -16,9 +16,11 @@
 
 package com.hazelcast.jet.datamodel;
 
+import com.hazelcast.jet.function.WindowResultFunction;
+
+import javax.annotation.Nonnull;
 import java.io.Serializable;
 import java.util.Objects;
-import javax.annotation.Nonnull;
 
 import static com.hazelcast.jet.impl.util.Util.toLocalTime;
 
@@ -44,8 +46,7 @@ public final class TimestampedItem<T> implements Serializable {
 
     /**
      * This constructor exists in order to match the shape of the functional
-     * interface {@link com.hazelcast.jet.function.WindowResultFunction
-     * WindowResultFunction}.
+     * interface {@link WindowResultFunction}.
      * <p>
      * Constructs a timestamped item with the supplied field values. Ignores
      * the first argument.

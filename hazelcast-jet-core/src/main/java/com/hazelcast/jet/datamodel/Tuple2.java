@@ -21,7 +21,7 @@ import java.util.Objects;
 
 /**
  * An immutable 2-tuple (pair) of statically typed fields. Also implements
- * {@link Map.Entry}.
+ * {@link java.util.Map.Entry}.
  *
  * @param <E0> the type of the field 0
  * @param <E1> the type of the field 1

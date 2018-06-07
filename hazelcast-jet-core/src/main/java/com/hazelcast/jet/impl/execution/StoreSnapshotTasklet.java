@@ -114,7 +114,7 @@ public class StoreSnapshotTasklet implements Tasklet {
                     state = FLUSH;
                     stateMachineStep();
                 }
-                return;
+                break;
 
             case FLUSH:
                 progTracker.notDone();
@@ -122,7 +122,7 @@ public class StoreSnapshotTasklet implements Tasklet {
                     progTracker.madeProgress();
                     state = REACHED_BARRIER;
                 }
-                return;
+                break;
 
             case REACHED_BARRIER:
                 if (ssWriter.hasPendingAsyncOps()) {
@@ -142,7 +142,7 @@ public class StoreSnapshotTasklet implements Tasklet {
                 hasReachedBarrier = false;
                 state = DRAIN;
                 progTracker.notDone();
-                return;
+                break;
 
             default:
                 // note State.DONE also goes here

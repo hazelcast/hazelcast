@@ -23,8 +23,9 @@ import java.io.Serializable;
 import java.util.List;
 
 /**
- * Serializable subset of the {@link com.hazelcast.client.config.ClientConfig} which contains address and authentication
- * information to be used to create a Hazelcast Client when the data needs to be fetched from remote cluster.
+ * Serializable subset of the {@link ClientConfig} which contains address and
+ * authentication information to be used to create a Hazelcast Client when the
+ * data needs to be fetched from remote cluster.
  */
 class SerializableClientConfig implements Serializable {
 

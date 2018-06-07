@@ -17,6 +17,7 @@
 package com.hazelcast.jet.impl.execution;
 
 import com.hazelcast.internal.util.concurrent.MPSCQueue;
+import com.hazelcast.jet.config.InstanceConfig;
 import com.hazelcast.jet.impl.util.LoggingUtil;
 import com.hazelcast.jet.impl.util.ObjectWithPartitionId;
 import com.hazelcast.jet.impl.util.ProgressState;
@@ -160,7 +161,7 @@ public class ReceiverTasklet implements Tasklet {
      *         measured in compressed seq units (see {@link #COMPRESSED_SEQ_UNIT_LOG2})
      *     </li><li>
      *         {@code seqsPerAckPeriod = (seqDelta / timeDelta) * }
-     *         {@link com.hazelcast.jet.config.InstanceConfig#setFlowControlPeriodMs(int)
+     *         {@link InstanceConfig#setFlowControlPeriodMs(int)
      *         flowControlPeriodMs}, projected amount of data processed by the receiver
      *         in one standard flow control period (called "ack period" for short)
      *     </li></ol>

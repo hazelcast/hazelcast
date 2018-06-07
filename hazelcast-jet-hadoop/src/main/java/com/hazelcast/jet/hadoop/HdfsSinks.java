@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.hadoop;
 
+import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.pipeline.Sink;
 import com.hazelcast.jet.pipeline.Sinks;
@@ -39,9 +40,8 @@ public final class HdfsSinks {
      * of the output format specified in {@code JobConf}.
      * <p>
      * The sink creates a number of files in the output path, identified by the
-     * cluster member ID and the {@link com.hazelcast.jet.core.Processor
-     * processor} ID. Unlike MapReduce, the data in the files is not sorted by
-     * key.
+     * cluster member ID and the {@link Processor} ID. Unlike MapReduce, the
+     * data in the files is not sorted by key.
      * <p>
      * The supplied {@code JobConf} must specify an {@code OutputFormat} with
      * a path.

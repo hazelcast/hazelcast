@@ -21,6 +21,7 @@ import com.hazelcast.jet.core.Inbox;
 import com.hazelcast.jet.core.Outbox;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.Watermark;
+import com.hazelcast.jet.core.processor.DiagnosticProcessors;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.impl.execution.init.Contexts.ProcCtx;
 import com.hazelcast.logging.ILogger;
@@ -35,8 +36,7 @@ import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.impl.execution.init.ExecutionPlan.createLoggerName;
 
 /**
- * Internal API, see
- * {@link com.hazelcast.jet.core.processor.DiagnosticProcessors}.
+ * Internal API, see {@link DiagnosticProcessors}.
  */
 public final class PeekWrappedP<T> extends ProcessorWrapper {
 

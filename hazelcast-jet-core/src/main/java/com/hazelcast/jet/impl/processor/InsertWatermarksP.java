@@ -21,6 +21,7 @@ import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.BroadcastKey;
 import com.hazelcast.jet.core.WatermarkGenerationParams;
 import com.hazelcast.jet.core.WatermarkSourceUtil;
+import com.hazelcast.jet.core.processor.Processors;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -29,7 +30,7 @@ import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 
 /**
- * See {@link com.hazelcast.jet.core.processor.Processors#insertWatermarksP}.
+ * See {@link Processors#insertWatermarksP}.
  *
  * @param <T> type of the stream item
  */

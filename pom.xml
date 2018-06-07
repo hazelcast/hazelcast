@@ -94,7 +94,7 @@
         <maven.enforcer.plugin.version>3.0.0-M1</maven.enforcer.plugin.version>
         <maven.surefire.plugin.version>2.20.1</maven.surefire.plugin.version>
         <maven.spotbuts.plugin.version>3.1.1</maven.spotbuts.plugin.version>
-        <maven.checkstyle.plugin.version>2.17</maven.checkstyle.plugin.version>
+        <maven.checkstyle.plugin.version>3.0.0</maven.checkstyle.plugin.version>
         <maven.sonar.plugin.version>3.3.0.603</maven.sonar.plugin.version>
         <maven.jacoco.plugin.version>0.7.9</maven.jacoco.plugin.version>
 
@@ -375,6 +375,13 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
                 <version>${maven.checkstyle.plugin.version}</version>
+                <dependencies>
+                    <dependency>
+                        <groupId>com.puppycrawl.tools</groupId>
+                        <artifactId>checkstyle</artifactId>
+                        <version>8.10.1</version>
+                    </dependency>
+                </dependencies>
                 <executions>
                     <execution>
                         <phase>validate</phase>

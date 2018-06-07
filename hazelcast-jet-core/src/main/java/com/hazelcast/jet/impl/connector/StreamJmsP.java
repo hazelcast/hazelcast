@@ -20,6 +20,7 @@ import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
+import com.hazelcast.jet.core.processor.SourceProcessors;
 import com.hazelcast.jet.function.DistributedConsumer;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.function.DistributedSupplier;
@@ -38,9 +39,8 @@ import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static java.util.stream.IntStream.range;
 
 /**
- * Private API. Access via {@link
- * com.hazelcast.jet.core.processor.SourceProcessors#streamJmsQueueP} or
- * {@link com.hazelcast.jet.core.processor.SourceProcessors#streamJmsTopicP}
+ * Private API. Access via {@link SourceProcessors#streamJmsQueueP} or {@link
+ * SourceProcessors#streamJmsTopicP}
  * <p>
  * Since we use a non-blocking version of JMS consumer API, the processor is
  * marked as cooperative.
@@ -73,10 +73,8 @@ public class StreamJmsP<T> extends AbstractProcessor {
     }
 
     /**
-     * Private API. Use {@link
-     * com.hazelcast.jet.core.processor.SourceProcessors#streamJmsQueueP} or
-     * {@link com.hazelcast.jet.core.processor.SourceProcessors#streamJmsTopicP}
-     * instead.
+     * Private API. Use {@link SourceProcessors#streamJmsQueueP} or {@link
+     * SourceProcessors#streamJmsTopicP} instead.
      */
     @Nonnull
     public static <T> ProcessorSupplier supplier(

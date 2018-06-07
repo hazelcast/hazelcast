@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet.datamodel;
 
+import com.hazelcast.jet.function.KeyedWindowResultFunction;
+
 import javax.annotation.Nonnull;
 import java.util.Map;
 
@@ -46,8 +48,7 @@ public final class TimestampedEntry<K, V> implements Map.Entry<K, V> {
 
     /**
      * This constructor exists in order to match the shape of the functional
-     * interface {@link com.hazelcast.jet.function.KeyedWindowResultFunction
-     * KeyedWindowResultFunction}.
+     * interface {@link KeyedWindowResultFunction}.
      * <p>
      * Constructs a timestamped entry with the supplied field values. Ignores
      * the first argument.

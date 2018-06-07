@@ -17,6 +17,7 @@
 package com.hazelcast.jet.impl;
 
 import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JobStatus;
@@ -41,7 +42,7 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 
 /**
- * {@link com.hazelcast.jet.Job} proxy on member.
+ * {@link Job} proxy on member.
  */
 public class JobProxy extends AbstractJobProxy<NodeEngineImpl> {
 

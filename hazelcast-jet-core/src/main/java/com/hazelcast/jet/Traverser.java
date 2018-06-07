@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet;
 
+import com.hazelcast.jet.core.AppendableTraverser;
 import com.hazelcast.jet.impl.util.FlatMappingTraverser;
 
 import javax.annotation.Nonnull;
@@ -143,8 +144,7 @@ public interface Traverser<T> {
      * <p>
      * Default implementations always returns a new traverser instance. If you
      * need to append multiple objects or use this method frequently,
-     * {@link com.hazelcast.jet.core.AppendableTraverser} might be a better
-     * choice.
+     * {@link AppendableTraverser} might be a better choice.
      */
     @Nonnull
     default Traverser<T> append(@Nonnull T item) {

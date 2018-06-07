@@ -25,6 +25,7 @@ import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.BroadcastKey;
 import com.hazelcast.jet.core.SlidingWindowPolicy;
 import com.hazelcast.jet.core.Watermark;
+import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.function.KeyedWindowResultFunction;
 import com.hazelcast.jet.impl.util.Util;
 
@@ -54,7 +55,7 @@ import static java.util.Objects.requireNonNull;
 
 /**
  * Handles various setups of sliding and tumbling window aggregation.
- * See {@link com.hazelcast.jet.core.processor.Processors} for more documentation.
+ * See {@link Processors} for more documentation.
  *
  * @param <A> type of the frame accumulator object
  * @param <R> type of the finished result

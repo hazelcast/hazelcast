@@ -22,6 +22,7 @@ import com.hazelcast.jet.accumulator.LongAccumulator;
 import com.hazelcast.jet.accumulator.LongDoubleAccumulator;
 import com.hazelcast.jet.accumulator.LongLongAccumulator;
 import com.hazelcast.jet.accumulator.MutableReference;
+import com.hazelcast.jet.datamodel.ItemsByTag;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.datamodel.Tuple3;
 import com.hazelcast.jet.function.DistributedBiConsumer;
@@ -374,8 +375,7 @@ public final class AggregateOperations {
      * Returns a builder object that helps you create a composite of multiple
      * aggregate operations. The resulting aggregate operation will perform all
      * of the constituent operations at the same time and you can retrieve each
-     * result from the {@link com.hazelcast.jet.datamodel.ItemsByTag} object
-     * you'll get in the output.
+     * result from the {@link ItemsByTag} object you'll get in the output.
      * <p>
      * The builder object is primarily intended to build a composite of four or more
      * aggregate operations. For up to three operations, prefer the explicit, more
@@ -391,8 +391,8 @@ public final class AggregateOperations {
      * AggregateOperation1<Long, ?, ItemsByTag> compositeAggrOp = builder.build();
      * }</pre>
      *
-     * When you receive the resulting {@link com.hazelcast.jet.datamodel.ItemsByTag
-     * ItemsByTag}, fetch the individual results using the tags as keys, for example:
+     * When you receive the resulting {@link ItemsByTag}, fetch the individual
+     * results using the tags as keys, for example:
      * <pre>{@code
      * batchStage.aggregate(compositeAggrOp).map((ItemsByTag result) -> {
      *     Long sum = result.get(tagSum);
@@ -412,8 +412,7 @@ public final class AggregateOperations {
      * Returns an aggregate operation that is a composite of two independent
      * aggregate operations, each one accepting its own input. You need this
      * kind of operation for a two-way co-aggregating pipeline stage:
-     * {@link com.hazelcast.jet.pipeline.StageWithWindow#aggregate2
-     * stage.aggregate2()}.
+     * {@link StageWithWindow#aggregate2 stage.aggregate2()}.
      * <p>
      * This method is suitable when you can express your computation as two
      * independent aggregate operations where you combine only their final
@@ -488,8 +487,7 @@ public final class AggregateOperations {
      * Returns an aggregate operation that is a composite of three independent
      * aggregate operations, each one accepting its own input. You need this
      * kind of operation for a three-way co-aggregating pipeline stage:
-     * {@link com.hazelcast.jet.pipeline.StageWithWindow#aggregate3
-     * stage.aggregate3()}.
+     * {@link StageWithWindow#aggregate3 stage.aggregate3()}.
      * <p>
      * This method is suitable when you can express your computation as three
      * independent aggregate operations where you combine only their final
@@ -752,7 +750,9 @@ public final class AggregateOperations {
             DistributedFunction<? super T, ? extends U> toValueFn
     ) {
         return toMap(toKeyFn, toValueFn,
-                (k, v) -> { throw new IllegalStateException("Duplicate key: " + k); },
+                (k, v) -> {
+                    throw new IllegalStateException("Duplicate key: " + k);
+                },
                 HashMap::new);
     }
 
@@ -999,8 +999,16 @@ public final class AggregateOperations {
                 .withCreate(MutableReference<T>::new)
                 // Result would be correct even without the acc.isNull() check, but that
                 // can cause more GC churn due to medium-lived objects.
-                .<T>andAccumulate((acc, item) -> { if (acc.isNull()) acc.set(item); })
-                .andCombine((acc1, acc2) -> { if (acc1.isNull()) acc1.set(acc2.get()); })
+                .<T>andAccumulate((acc, item) -> {
+                    if (acc.isNull()) {
+                        acc.set(item);
+                    }
+                })
+                .andCombine((acc1, acc2) -> {
+                    if (acc1.isNull()) {
+                        acc1.set(acc2.get());
+                    }
+                })
                 .andFinish(MutableReference::get);
     }
 
