@@ -160,6 +160,7 @@ public class ClientResponseHandlerSupplier implements Supplier<ClientResponseHan
                 try {
                     response = responseQueue.take();
                 } catch (InterruptedException e) {
+                    currentThread().interrupt();
                     continue;
                 }
                 process(response);

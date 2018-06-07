@@ -208,6 +208,7 @@ public final class StripedExecutor implements Executor {
                         Runnable task = workQueue.take();
                         process(task);
                     } catch (InterruptedException e) {
+                        currentThread().interrupt();
                         if (!live) {
                             return;
                         }

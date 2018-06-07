@@ -104,6 +104,7 @@ public abstract class OperationThread extends HazelcastManagedThread implements 
                 try {
                     task = queue.take(priority);
                 } catch (InterruptedException e) {
+                    currentThread().interrupt();
                     continue;
                 }
 
