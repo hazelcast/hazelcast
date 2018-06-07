@@ -21,6 +21,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
+import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.impl.VersionedDataSerializableFactory;
 import com.hazelcast.spi.serialization.SerializationService;
@@ -35,6 +36,8 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -84,6 +87,64 @@ public class DataSerializableSerializationTest {
         assertEquals(person.name, deserialized.name);
     }
 
+    @Test
+    public void testClarifiedExceptionsForUnsupportedClassTypes() {
+        class LocalClass implements DataSerializable {
+            @Override
+            public void writeData(ObjectDataOutput out) {
+            }
+
+            @Override
+            public void readData(ObjectDataInput in) {
+            }
+        }
+
+        DataSerializable anonymousInstance = new DataSerializable() {
+            @Override
+            public void writeData(ObjectDataOutput out) {
+            }
+
+            @Override
+            public void readData(ObjectDataInput in) {
+            }
+        };
+
+        DataSerializable[] throwingInstances = {new LocalClass(), anonymousInstance, new NonStaticMemberClass()};
+
+        for (DataSerializable throwingInstance : throwingInstances) {
+            try {
+                ss.toObject(ss.toData(throwingInstance));
+            } catch (HazelcastSerializationException e) {
+                assertTrue(e.getCause() instanceof NoSuchMethodException);
+                assertTrue(e.getCause().getMessage().contains("can't conform to DataSerializable"));
+                assertTrue(e.getCause().getCause() instanceof NoSuchMethodException);
+                continue;
+            }
+            fail("deserialization is expected to fail");
+        }
+
+        for (DataSerializable throwingInstance : throwingInstances) {
+            try {
+                ss.toObject(ss.toData(throwingInstance), throwingInstance.getClass());
+            } catch (HazelcastSerializationException e) {
+                assertTrue(e.getCause() instanceof InstantiationException);
+                assertTrue(e.getCause().getMessage().contains("can't conform to DataSerializable"));
+                assertTrue(e.getCause().getCause() instanceof InstantiationException);
+                continue;
+            }
+            fail("deserialization is expected to fail");
+        }
+    }
+
+    public class NonStaticMemberClass implements DataSerializable {
+        @Override
+        public void writeData(ObjectDataOutput out) {
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) {
+        }
+    }
 
     private static class DSPerson implements DataSerializable {
 

@@ -35,6 +35,7 @@ import com.hazelcast.util.collection.Int2ObjectHashMap;
 import com.hazelcast.version.Version;
 
 import java.io.IOException;
+import java.lang.reflect.Modifier;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -117,7 +118,11 @@ final class DataSerializableSerializer implements StreamSerializer<DataSerializa
         DataSerializable ds = null;
         if (null != aClass) {
             try {
-                ds = (DataSerializable) aClass.newInstance();
+                try {
+                    ds = (DataSerializable) aClass.newInstance();
+                } catch (InstantiationException e) {
+                    throw clarifyInstantiationException(aClass, e);
+                }
             } catch (Exception e) {
                 throw new HazelcastSerializationException("Requested class " + aClass + " could not be instantiated.", e);
             }
@@ -147,7 +152,11 @@ final class DataSerializableSerializer implements StreamSerializer<DataSerializa
             } else {
                 className = in.readUTF();
                 if (null == aClass) {
-                    ds = ClassLoaderUtil.newInstance(in.getClassLoader(), className);
+                    try {
+                        ds = ClassLoaderUtil.newInstance(in.getClassLoader(), className);
+                    } catch (NoSuchMethodException e) {
+                        throw clarifyNoSuchMethodException(in.getClassLoader(), className, e);
+                    }
                 }
             }
             if (isFlagSet(header, EE_FLAG)) {
@@ -178,6 +187,37 @@ final class DataSerializableSerializer implements StreamSerializer<DataSerializa
                 + ", ID: " + id
                 + ", class: '" + className + "'"
                 + ", exception: " + e.getMessage(), e);
+    }
+
+    private InstantiationException clarifyInstantiationException(Class class_, InstantiationException instantiationException) {
+        String message = tryGenerateClarifiedExceptionMessage(class_);
+        if (message == null) {
+            return instantiationException;
+        }
+
+        InstantiationException clarifiedException = new InstantiationException(message);
+        clarifiedException.initCause(instantiationException);
+        return clarifiedException;
+    }
+
+    private NoSuchMethodException clarifyNoSuchMethodException(ClassLoader classLoader, String className,
+                                                               NoSuchMethodException noSuchMethodException) {
+        Class class_;
+        try {
+            ClassLoader effectiveClassLoader = classLoader == null ? ClassLoaderUtil.class.getClassLoader() : classLoader;
+            class_ = ClassLoaderUtil.loadClass(effectiveClassLoader, className);
+        } catch (Exception e) {
+            return noSuchMethodException;
+        }
+
+        String message = tryGenerateClarifiedExceptionMessage(class_);
+        if (message == null) {
+            message = "Classes conforming to DataSerializable should provide a no-arguments constructor.";
+        }
+
+        NoSuchMethodException clarifiedException = new NoSuchMethodException(message);
+        clarifiedException.initCause(noSuchMethodException);
+        return clarifiedException;
     }
 
     @Override
@@ -213,4 +253,21 @@ final class DataSerializableSerializer implements StreamSerializer<DataSerializa
     private static void setInputVersion(ObjectDataInput in, Version version) {
         ((VersionedObjectDataInput) in).setVersion(version);
     }
+
+    private static String tryGenerateClarifiedExceptionMessage(Class class_) {
+        String classType;
+        if (class_.isAnonymousClass()) {
+            classType = "Anonymous";
+        } else if (class_.isLocalClass()) {
+            classType = "Local";
+        } else if (class_.isMemberClass() && !Modifier.isStatic(class_.getModifiers())) {
+            classType = "Non-static member";
+        } else {
+            return null;
+        }
+
+        return String.format("%s classes can't conform to DataSerializable since they can't "
+                + "provide an explicit no-arguments constructor.", classType);
+    }
+
 }
