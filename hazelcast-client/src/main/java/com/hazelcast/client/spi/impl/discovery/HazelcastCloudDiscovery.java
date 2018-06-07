@@ -22,12 +22,16 @@ import com.hazelcast.client.util.AddressHelper;
 import com.hazelcast.nio.Address;
 import com.hazelcast.util.AddressUtil;
 
+import javax.net.ssl.HttpsURLConnection;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -61,16 +65,27 @@ class HazelcastCloudDiscovery {
         }
     }
 
-    private Map<Address, Address> callService() throws IOException {
+    private Map<Address, Address> callService() throws IOException, CertificateException {
         URL url = new URL(endpointUrl);
-        HttpURLConnection httpConnection = (HttpURLConnection) url.openConnection();
-        httpConnection.setRequestMethod("GET");
-        httpConnection.setConnectTimeout(connectionTimeoutInMillis);
-        httpConnection.setReadTimeout(connectionTimeoutInMillis);
-        httpConnection.setRequestProperty("Accept-Charset", "UTF-8");
-        httpConnection.connect();
-        checkError(httpConnection);
-        return parseResponse(httpConnection.getInputStream());
+        HttpsURLConnection httpsConnection = (HttpsURLConnection) url.openConnection();
+        httpsConnection.setRequestMethod("GET");
+        httpsConnection.setConnectTimeout(connectionTimeoutInMillis);
+        httpsConnection.setReadTimeout(connectionTimeoutInMillis);
+        httpsConnection.setRequestProperty("Accept-Charset", "UTF-8");
+        httpsConnection.connect();
+        checkCertificate(httpsConnection);
+        checkError(httpsConnection);
+        return parseResponse(httpsConnection.getInputStream());
+    }
+
+    private void checkCertificate(HttpsURLConnection con) throws IOException, CertificateException {
+        for (Certificate cert : con.getServerCertificates()) {
+            if (cert instanceof X509Certificate) {
+                ((X509Certificate) cert).checkValidity();
+            } else {
+                throw new CertificateException("Invalid certificate from hazelcast.cloud endpoint");
+            }
+        }
     }
 
     private Map<Address, Address> parseResponse(InputStream is) throws IOException {
@@ -109,7 +124,7 @@ class HazelcastCloudDiscovery {
 
     private static void checkError(HttpURLConnection httpConnection) throws IOException {
         int responseCode = httpConnection.getResponseCode();
-        if (responseCode == HttpURLConnection.HTTP_OK) {
+        if (responseCode != HttpURLConnection.HTTP_OK) {
             String errorMessage = extractErrorMessage(httpConnection);
             throw new IOException(errorMessage);
         }
