@@ -120,7 +120,7 @@ public final class MemberVersion
     // this method is used when serializing the MemberVersion inside JSON response for Management Center
     @Override
     public String toString() {
-        return major + "." + minor + "." + patch;
+        return "3.9.4-c1";
     }
 
     @Override

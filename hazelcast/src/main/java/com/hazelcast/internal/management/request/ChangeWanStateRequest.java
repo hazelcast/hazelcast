@@ -37,14 +37,16 @@ public class ChangeWanStateRequest implements ConsoleRequest {
     private String schemeName;
     private String publisherName;
     private boolean start;
+    private boolean stop;
 
     public ChangeWanStateRequest() {
     }
 
-    public ChangeWanStateRequest(String schemeName, String publisherName, boolean start) {
+    public ChangeWanStateRequest(String schemeName, String publisherName, boolean start, boolean stop) {
         this.schemeName = schemeName;
         this.publisherName = publisherName;
         this.start = start;
+        this.stop = stop;
     }
 
     @Override
@@ -55,7 +57,7 @@ public class ChangeWanStateRequest implements ConsoleRequest {
     @Override
     public void writeResponse(ManagementCenterService mcs, JsonObject out) {
         Object operationResult = resolveFuture(
-                mcs.callOnThis(new ChangeWanStateOperation(schemeName, publisherName, start)));
+                mcs.callOnThis(new ChangeWanStateOperation(schemeName, publisherName, start, stop)));
         JsonObject result = new JsonObject();
         if (operationResult == null) {
             result.add("result", SUCCESS);
@@ -70,5 +72,6 @@ public class ChangeWanStateRequest implements ConsoleRequest {
         schemeName = getString(json, "schemeName");
         publisherName = getString(json, "publisherName");
         start = getBoolean(json, "start");
+        stop = getBoolean(json, "stop", false);
     }
 }
