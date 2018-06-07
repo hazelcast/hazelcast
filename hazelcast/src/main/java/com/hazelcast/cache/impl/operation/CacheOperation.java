@@ -182,10 +182,15 @@ public abstract class CacheOperation extends AbstractNamedOperation
         NodeEngine nodeEngine = getNodeEngine();
         SerializationService serializationService = nodeEngine.getSerializationService();
         Data dataValue = toHeapData(serializationService.toData(record.getValue()));
-        publishWanUpdate(dataKey, dataValue, record);
+        Data dataExpiryPolicy = toHeapData(serializationService.toData(record.getExpiryPolicy()));
+        publishWanUpdate(dataKey, dataValue, dataExpiryPolicy, record);
     }
 
     protected final void publishWanUpdate(Data dataKey, Data dataValue, CacheRecord record) {
+        publishWanUpdate(dataKey, dataValue, null, record);
+    }
+
+    protected final void publishWanUpdate(Data dataKey, Data dataValue, Data dataExpiryPolicy, CacheRecord record) {
         assert dataValue != null;
 
         if (!recordStore.isWanReplicationEnabled() || record == null) {
@@ -193,7 +198,7 @@ public abstract class CacheOperation extends AbstractNamedOperation
         }
 
         CacheEntryView<Data, Data> entryView = createDefaultEntryView(toHeapData(dataKey),
-                toHeapData(dataValue), record);
+                toHeapData(dataValue), toHeapData(dataExpiryPolicy), record);
         wanEventPublisher.publishWanUpdate(name, entryView);
     }
 

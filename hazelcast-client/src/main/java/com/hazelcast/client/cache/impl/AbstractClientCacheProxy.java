@@ -396,12 +396,12 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
     private void setExpiryPolicyAndWaitForCompletion(List<Data>[] keysByPartition, ExpiryPolicy expiryPolicy) {
         List<Future> futures = new ArrayList<Future>(keysByPartition.length);
 
-        Data expiryPolicyData = toData(expiryPolicy);
+        Data policyData = toData(expiryPolicy);
         for (int partitionId = 0; partitionId < keysByPartition.length; partitionId++) {
             List<Data> keys = keysByPartition[partitionId];
             if (keys != null) {
                 int completionId = nextCompletionId();
-                ClientMessage request = CacheSetExpiryPolicyCodec.encodeRequest(nameWithPrefix, keys, expiryPolicyData, completionId);
+                ClientMessage request = CacheSetExpiryPolicyCodec.encodeRequest(nameWithPrefix, keys, policyData, completionId);
                 futures.add(invoke(request, partitionId, completionId));
             }
         }

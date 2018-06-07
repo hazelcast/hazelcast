@@ -120,14 +120,14 @@ public abstract class CacheRecordStoreTestSupport
 
     protected void putAndSetExpiryPolicyFromRecordStore(ICacheRecordStore cacheRecordStore, InMemoryFormat inMemoryFormat) {
         SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
-        ExpiryPolicy expiryPolicy = TouchedExpiryPolicy.factoryOf(Duration.ETERNAL).create();
+        ExpiryPolicy expiryPolicy = new TouchedExpiryPolicy(Duration.ETERNAL);
         Data policyData = serializationService.toData(expiryPolicy);
 
         for (int i = 0; i < CACHE_RECORD_COUNT; i++) {
             Data keyData = serializationService.toData(i);
 
             cacheRecordStore.put(keyData, "value-" + i, null, null, -1);
-            cacheRecordStore.setExpiryPolicy(Collections.singleton(keyData), policyData, null, -1);
+            cacheRecordStore.setExpiryPolicy(Collections.singleton(keyData), policyData, null);
         }
 
         if (inMemoryFormat == InMemoryFormat.BINARY || inMemoryFormat == InMemoryFormat.NATIVE) {

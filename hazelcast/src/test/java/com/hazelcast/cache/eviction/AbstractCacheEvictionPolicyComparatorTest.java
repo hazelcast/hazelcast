@@ -18,6 +18,7 @@ package com.hazelcast.cache.eviction;
 
 import com.hazelcast.cache.CacheEntryView;
 import com.hazelcast.cache.CacheEvictionPolicyComparator;
+import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.Config;
@@ -28,7 +29,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 
 import javax.cache.Cache;
 import javax.cache.CacheManager;
-import javax.cache.expiry.ExpiryPolicy;
+import javax.cache.expiry.EternalExpiryPolicy;
 import javax.cache.spi.CachingProvider;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
@@ -62,9 +63,11 @@ public abstract class AbstractCacheEvictionPolicyComparatorTest extends Hazelcas
         CacheConfig<Integer, String> cacheConfig = createCacheConfig(CACHE_NAME);
         cacheConfig.setEvictionConfig(evictionConfig);
         Cache<Integer, String> cache = cacheManager.createCache(CACHE_NAME, cacheConfig);
+        ICache icache = cache.unwrap(ICache.class);
 
         for (int i = 0; i < iterationCount; i++) {
-            cache.put(i, "Value-" + i);
+            icache.put(i, "Value-" + i);
+            icache.setExpiryPolicy(i, new EternalExpiryPolicy());
         }
 
         AtomicLong callCounter = (AtomicLong) getUserContext(instance).get("callCounter");
@@ -88,6 +91,7 @@ public abstract class AbstractCacheEvictionPolicyComparatorTest extends Hazelcas
             assertTrue(e1.getCreationTime() > 0);
             assertEquals(CacheRecord.TIME_NOT_AVAILABLE, e1.getLastAccessTime());
             assertEquals(0, e1.getAccessHit());
+            assertInstanceOf(EternalExpiryPolicy.class, e1.getExpiryPolicy());
 
             Integer key2 = e2.getKey();
             String value2 = e2.getValue();
@@ -98,7 +102,7 @@ public abstract class AbstractCacheEvictionPolicyComparatorTest extends Hazelcas
             assertTrue(e2.getCreationTime() > 0);
             assertEquals(CacheRecord.TIME_NOT_AVAILABLE, e2.getLastAccessTime());
             assertEquals(0, e2.getAccessHit());
-            assertEquals(e1.getExpiryPolicy(), e2.getExpiryPolicy());
+            assertInstanceOf(EternalExpiryPolicy.class, e2.getExpiryPolicy());
 
             callCounter.incrementAndGet();
 

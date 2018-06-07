@@ -18,11 +18,12 @@ package com.hazelcast.cache.impl.merge.entry;
 
 import com.hazelcast.cache.CacheEntryView;
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.version.Version;
+import com.hazelcast.nio.serialization.impl.Versioned;
 
 import java.io.IOException;
 
@@ -30,7 +31,7 @@ import java.io.IOException;
  * Default heap based implementation of {@link com.hazelcast.cache.CacheEntryView}.
  */
 public class DefaultCacheEntryView
-        implements CacheEntryView<Data, Data>, IdentifiedDataSerializable {
+        implements CacheEntryView<Data, Data>, IdentifiedDataSerializable, Versioned {
 
     private Data key;
     private Data value;
@@ -85,6 +86,11 @@ public class DefaultCacheEntryView
         return accessHit;
     }
 
+    /**
+     * Gets the expiry policy associated with this entry if any
+     *
+     * @return expiry policy associated with this entry or {@code null}
+     */
     @Override
     public Data getExpiryPolicy() {
         return expiryPolicy;
@@ -98,7 +104,7 @@ public class DefaultCacheEntryView
         out.writeLong(accessHit);
         out.writeData(key);
         out.writeData(value);
-        if (out.getVersion().isGreaterOrEqual(Version.of("3.11"))) {
+        if (out.getVersion().isGreaterOrEqual(Versions.V3_11)) {
             out.writeData(expiryPolicy);
         }
     }
@@ -111,7 +117,7 @@ public class DefaultCacheEntryView
         accessHit = in.readLong();
         key = in.readData();
         value = in.readData();
-        if (in.getVersion().isGreaterOrEqual(Version.of("3.11"))) {
+        if (in.getVersion().isGreaterOrEqual(Versions.V3_11)) {
             expiryPolicy = in.readData();
         }
     }

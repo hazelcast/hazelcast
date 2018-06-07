@@ -24,7 +24,6 @@ import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.CachePermission;
 import com.hazelcast.spi.Operation;
 
-import javax.cache.expiry.ExpiryPolicy;
 import java.security.Permission;
 
 public class CacheSetExpiryPolicyMessageTask extends AbstractCacheMessageTask<CacheSetExpiryPolicyCodec.RequestParameters> {
@@ -36,7 +35,7 @@ public class CacheSetExpiryPolicyMessageTask extends AbstractCacheMessageTask<Ca
     @Override
     protected Operation prepareOperation() {
         return getOperationProvider(parameters.name)
-                .createSetExpiryPolicyOperation(parameters.keys, parameters.expiryPolicy, parameters.completionId);
+                .createSetExpiryPolicyOperation(parameters.keys, parameters.expiryPolicy);
     }
 
     @Override
@@ -66,6 +65,6 @@ public class CacheSetExpiryPolicyMessageTask extends AbstractCacheMessageTask<Ca
 
     @Override
     public Permission getRequiredPermission() {
-        return new CachePermission(parameters.name, ActionConstants.ACTION_MODIFY);
+        return new CachePermission(parameters.name, ActionConstants.ACTION_REMOVE);
     }
 }

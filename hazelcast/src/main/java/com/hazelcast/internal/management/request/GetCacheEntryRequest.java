@@ -30,6 +30,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
+import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.processor.EntryProcessor;
 import javax.cache.processor.EntryProcessorException;
 import javax.cache.processor.MutableEntry;
@@ -132,7 +133,7 @@ public class GetCacheEntryRequest implements ConsoleRequest {
         private long creationTime;
         private long lastAccessTime;
         private long accessHit;
-        private Object expiryPolicy;
+        private ExpiryPolicy expiryPolicy;
 
         public CacheBrowserEntryView() {
         }
@@ -140,7 +141,7 @@ public class GetCacheEntryRequest implements ConsoleRequest {
         CacheBrowserEntryView(CacheEntryProcessorEntry entry) {
             this.value = entry.getValue();
 
-            CacheRecord record = entry.getRecord();
+            CacheRecord<Object, ExpiryPolicy> record = entry.getRecord();
             this.expirationTime = record.getExpirationTime();
             this.creationTime = record.getCreationTime();
             this.lastAccessTime = record.getLastAccessTime();
@@ -179,7 +180,7 @@ public class GetCacheEntryRequest implements ConsoleRequest {
         }
 
         @Override
-        public Object getExpiryPolicy() {
+        public ExpiryPolicy getExpiryPolicy() {
             return expiryPolicy;
         }
 

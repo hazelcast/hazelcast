@@ -31,6 +31,7 @@ import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionConfig.MaxSizePolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.ManagedContext;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.diagnostics.StoreLatencyPlugin;
 import com.hazelcast.internal.eviction.EvictionChecker;
 import com.hazelcast.internal.eviction.EvictionListener;
@@ -628,7 +629,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
                                        Data oldDataValue, Throwable error) {
     }
 
-    protected void updateRecord(Data key, CacheRecord record, long expiryTime, long now, int completionId, String origin) {
+    protected void updateRecord(Data key, CacheRecord record, long expiryTime, long now, String origin) {
         record.setExpirationTime(expiryTime);
         invalidateEntry(key, origin);
     }
@@ -682,6 +683,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
                 Data eventDataKey = toEventData(key);
                 Data eventDataValue = toEventData(dataValue);
                 Data eventDataOldValue = toEventData(dataOldValue);
+                Data eventDataExpiryPolicy = toEventData(record.getExpiryPolicy());
 
                 updateRecordValue(record, recordValue);
                 onUpdateRecord(key, record, value, dataOldValue);
@@ -691,7 +693,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
                     publishEvent(createCacheUpdatedEvent(eventDataKey, eventDataValue, eventDataOldValue,
                             record.getCreationTime(), record.getExpirationTime(),
                             record.getLastAccessTime(), record.getAccessHit(),
-                            origin, completionId));
+                            origin, completionId, eventDataExpiryPolicy));
                 }
             }
         } catch (Throwable error) {
@@ -789,8 +791,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
                 disableWriteThrough, completionId, source, origin);
     }
 
-    protected void updateRecordWithExpiry(Data key, CacheRecord record, ExpiryPolicy expiryPolicy, long now, int completionId,
-                                             String source) {
+    protected void updateRecordWithExpiry(Data key, CacheRecord record, ExpiryPolicy expiryPolicy, long now, String source) {
         expiryPolicy = getExpiryPolicy(record, expiryPolicy);
         long expiryTime = CacheRecord.TIME_NOT_AVAILABLE;
         try {
@@ -801,7 +802,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         } catch (Exception e) {
             ignore(e);
         }
-        updateRecord(key, record, expiryTime, now, completionId, source);
+        updateRecord(key, record, expiryTime, now, source);
     }
 
     protected void onDeleteRecord(Data key, R record, Data dataValue, boolean deleted) {
@@ -1292,19 +1293,19 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     @Override
-    public void setExpiryPolicy(Collection<Data> keys, Object expiryPolicy, String source, int completionId) {
+    public void setExpiryPolicy(Collection<Data> keys, Object expiryPolicy, String source) {
+        if (nodeEngine.getClusterService().getClusterVersion().isLessThan(Versions.V3_11)) {
+            throw new UnsupportedOperationException("Modifying expiry policy is available when cluster version is at least 3.11");
+        }
         ExpiryPolicy expiryPolicyInstance = null;
         if (expiryPolicy instanceof Data) {
             expiryPolicyInstance = (ExpiryPolicy) toValue(expiryPolicy);
-        }
-        if (!(expiryPolicyInstance instanceof ExpiryPolicy)) {
-            throw new IllegalArgumentException("Expiry policy is not type of expiry policy");
         }
         for (Data key : keys) {
             CacheRecord record = getRecord(key);
             if (record != null) {
                 updateExpiryPolicyOfRecord(record, expiryPolicy);
-                updateRecordWithExpiry(key, record, expiryPolicyInstance, System.currentTimeMillis(), completionId, source);
+                updateRecordWithExpiry(key, record, expiryPolicyInstance, System.currentTimeMillis(), source);
             }
         }
     }
@@ -1583,6 +1584,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
                     cacheEntryView.getExpirationTime(),
                     cacheEntryView.getLastAccessTime(),
                     cacheEntryView.getAccessHit(),
+                    cacheEntryView.getExpiryPolicy(),
                     mergePolicy),
                     null);
             if (newValue != null) {
@@ -1599,6 +1601,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
                             cacheEntryView.getExpirationTime(),
                             cacheEntryView.getLastAccessTime(),
                             cacheEntryView.getAccessHit(),
+                            cacheEntryView.getExpiryPolicy(),
                             mergePolicy),
                     createCacheEntryView(
                             key,
@@ -1607,6 +1610,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
                             record.getExpirationTime(),
                             record.getLastAccessTime(),
                             record.getAccessHit(),
+                            record.getExpiryPolicy(),
                             mergePolicy));
             if (existingValue != newValue) {
                 merged = updateRecordWithExpiry(key, newValue, record, expiryTime, now, true, IGNORE_COMPLETION);
@@ -1622,12 +1626,13 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     private CacheEntryView createCacheEntryView(Object key, Object value, long creationTime, long expirationTime,
-                                                long lastAccessTime, long accessHit, CacheMergePolicy mergePolicy) {
+                                                long lastAccessTime, long accessHit, Object expiryPolicy,
+                                                CacheMergePolicy mergePolicy) {
         // null serialization service means that use as storage type without conversion,
         // non-null serialization service means that conversion is required
         SerializationService ss
                 = mergePolicy instanceof StorageTypeAwareCacheMergePolicy ? null : nodeEngine.getSerializationService();
-        return new LazyCacheEntryView(key, value, creationTime, expirationTime, lastAccessTime, accessHit, ss);
+        return new LazyCacheEntryView(key, value, creationTime, expirationTime, lastAccessTime, accessHit, expiryPolicy, ss);
     }
 
     @Override

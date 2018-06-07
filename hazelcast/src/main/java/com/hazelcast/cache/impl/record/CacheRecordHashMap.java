@@ -28,6 +28,7 @@ import com.hazelcast.nio.serialization.SerializableByConvention;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.SampleableConcurrentHashMap;
 
+import javax.cache.expiry.ExpiryPolicy;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.List;
@@ -148,7 +149,7 @@ public class CacheRecordHashMap
         }
 
         @Override
-        public Object getExpiryPolicy() {
+        public ExpiryPolicy getExpiryPolicy() {
             return serializationService.toObject(value.getExpiryPolicy());
         }
 
