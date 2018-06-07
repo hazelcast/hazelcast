@@ -258,6 +258,11 @@ public class ICacheDataStructureAdapter<K, V> implements DataStructureAdapter<K,
     }
 
     @Override
+    public void setExpiryPolicy(Set<K> keys, ExpiryPolicy expiryPolicy) {
+        cache.setExpiryPolicy(keys, expiryPolicy);
+    }
+
+    @Override
     @MethodNotAvailable
     public LocalMapStats getLocalMapStats() {
         throw new MethodNotAvailableException();

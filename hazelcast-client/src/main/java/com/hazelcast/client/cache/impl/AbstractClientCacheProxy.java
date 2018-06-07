@@ -287,8 +287,16 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
         if (keys.isEmpty()) {
             return;
         }
+        setExpiryPolicyInternal(keys, policy);
+    }
+
+    protected void setExpiryPolicyInternal(Set<? extends K> keys, ExpiryPolicy policy) {
+        setExpiryPolicyInternal(keys, policy, null);
+    }
+
+    protected void setExpiryPolicyInternal(Set<? extends K> keys, ExpiryPolicy policy, Set<Data> serializedKeys) {
         try {
-            List<Data>[] keysByPartition = groupKeysToPartitions(keys);
+            List<Data>[] keysByPartition = groupKeysToPartitions(keys, serializedKeys);
             setExpiryPolicyAndWaitForCompletion(keysByPartition, policy);
         } catch (Exception e) {
             throw rethrow(e);
@@ -331,11 +339,15 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
         }
     }
 
-    private List<Data>[] groupKeysToPartitions(Set<? extends K> keys) {
+    private List<Data>[] groupKeysToPartitions(Set<? extends K> keys, Set<Data> serializedKeys) {
         List<Data>[] keysByPartition = new List[partitionCount];
         ClientPartitionService partitionService = getContext().getPartitionService();
         for (K key: keys) {
             Data keyData = getSerializationService().toData(key);
+
+            if (serializedKeys != null) {
+                serializedKeys.add(keyData);
+            }
 
             int partitionId = partitionService.getPartitionId(keyData);
 
