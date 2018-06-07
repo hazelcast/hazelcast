@@ -34,6 +34,7 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Test;
 
+import javax.cache.expiry.EternalExpiryPolicy;
 import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.processor.EntryProcessorResult;
 import java.util.ArrayList;
@@ -467,6 +468,17 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
         assertNearCacheContent(context, DEFAULT_RECORD_COUNT);
     }
 
+    @Test
+    public void whenSetExpiryPolicyIsUsed_thenNearCacheShouldBeInvalidated_onDataAdapter() {
+        whenEntryIsChanged_thenNearCacheShouldBeInvalidated(true, DataStructureMethods.SET_EXPIRY_POLICY);
+    }
+
+
+    @Test
+    public void whenSetExpiryPolicyIsUsed_thenNearCacheShouldBeInvalidated_onNearCacheAdapter() {
+        whenEntryIsChanged_thenNearCacheShouldBeInvalidated(false, DataStructureMethods.SET_EXPIRY_POLICY);
+    }
+
     /**
      * Checks that the Near Cache is eventually invalidated when {@link DataStructureMethods#SET} is used.
      */
@@ -844,6 +856,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
                 case EXECUTE_ON_KEYS:
                 case PUT_ALL:
                 case INVOKE_ALL:
+                case SET_EXPIRY_POLICY:
                     invalidationMap.put(i, newValue);
                     break;
                 case EXECUTE_ON_ENTRIES:
@@ -856,6 +869,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
                     throw new IllegalArgumentException("Unexpected method: " + method);
             }
         }
+        String newValuePrefix = "newValue-";
         if (method == DataStructureMethods.EXECUTE_ON_KEYS) {
             Map<Integer, Object> resultMap = adapter.executeOnKeys(invalidationMap.keySet(), mapEntryProcessor);
             assertResultMap(resultMap);
@@ -874,6 +888,9 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
             for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
                 assertEquals("newValue-" + i, resultMap.get(i).get());
             }
+        } else if (method == DataStructureMethods.SET_EXPIRY_POLICY) {
+            adapter.setExpiryPolicy(invalidationMap.keySet(), expiryPolicy);
+            newValuePrefix = "value-";
         }
 
         assertNearCacheInvalidations(context, DEFAULT_RECORD_COUNT);

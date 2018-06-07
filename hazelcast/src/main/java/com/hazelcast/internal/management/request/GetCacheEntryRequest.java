@@ -200,6 +200,7 @@ public class GetCacheEntryRequest implements ConsoleRequest {
             out.writeLong(creationTime);
             out.writeLong(lastAccessTime);
             out.writeLong(accessHit);
+            out.writeObject(expiryPolicy);
         }
 
         @Override
@@ -209,6 +210,7 @@ public class GetCacheEntryRequest implements ConsoleRequest {
             creationTime = in.readLong();
             lastAccessTime = in.readLong();
             accessHit = in.readLong();
+            expiryPolicy = in.readObject();
         }
     }
 }

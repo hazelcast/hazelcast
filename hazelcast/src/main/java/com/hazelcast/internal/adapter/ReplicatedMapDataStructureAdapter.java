@@ -284,6 +284,12 @@ public class ReplicatedMapDataStructureAdapter<K, V> implements DataStructureAda
 
     @Override
     @MethodNotAvailable
+    public void setExpiryPolicy(Set<K> keys, ExpiryPolicy expiryPolicy) {
+        throw new MethodNotAvailableException();
+    }
+
+    @Override
+    @MethodNotAvailable
     public LocalMapStats getLocalMapStats() {
         throw new MethodNotAvailableException();
     }

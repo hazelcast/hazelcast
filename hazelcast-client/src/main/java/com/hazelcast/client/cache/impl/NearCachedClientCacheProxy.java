@@ -46,6 +46,7 @@ import com.hazelcast.util.executor.CompletedFuture;
 import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.integration.CompletionListener;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -311,6 +312,16 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
     }
 
     @Override
+    public void setExpiryPolicyInternal(Set<? extends K> keys, ExpiryPolicy expiryPolicy) {
+        Set<Data> serializedKeys = null;
+        if (serializeKeys) {
+            serializedKeys = new HashSet<Data>(keys.size());
+        }
+        super.setExpiryPolicyInternal(keys, expiryPolicy, serializedKeys);
+        invalidate(keys, serializedKeys);
+    }
+
+    @Override
     protected void putAllInternal(Map<? extends K, ? extends V> map, ExpiryPolicy expiryPolicy, Map<Object, Data> keyMap,
                                   List<Map.Entry<Data, Data>>[] entriesPerPartition, long startNanos) {
         try {
@@ -322,6 +333,18 @@ public class NearCachedClientCacheProxy<K, V> extends ClientCacheProxy<K, V> {
         } catch (Throwable t) {
             cacheOrInvalidate(map, keyMap, entriesPerPartition, false);
             throw rethrow(t);
+        }
+    }
+
+    private void invalidate(Set<? extends K> keys, Set<Data> keysData) {
+        if (serializeKeys) {
+            for (Data key: keysData) {
+                invalidateNearCache(key);
+            }
+        } else {
+            for (K key: keys) {
+                invalidateNearCache(key);
+            }
         }
     }
 

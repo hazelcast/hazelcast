@@ -119,6 +119,8 @@ public interface DataStructureAdapter<K, V> {
 
     void destroy();
 
+    void setExpiryPolicy(Set<K> keys, ExpiryPolicy expiryPolicy);
+
     LocalMapStats getLocalMapStats();
 
     /**
@@ -166,7 +168,8 @@ public interface DataStructureAdapter<K, V> {
         CLOSE("close"),
         DESTROY("destroy"),
         GET_LOCAL_MAP_STATS("getLocalMapStats"),
-        SET_TTL("setTTL", Object.class, long.class, TimeUnit.class);
+        SET_TTL("setTTL", Object.class, long.class, TimeUnit.class),
+        SET_EXPIRY_POLICY("setExpiryPolicy", Set.class, ExpiryPolicy.class);
 
         private final String methodName;
         private final Class<?>[] parameterTypes;
