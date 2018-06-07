@@ -19,6 +19,7 @@ package com.hazelcast.spring;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.config.ClientAwsConfig;
+import com.hazelcast.client.config.ClientCloudConfig;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientConnectionStrategyConfig;
 import com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode;
@@ -112,6 +113,9 @@ public class TestClientApplicationContext {
 
     @Resource(name = "client11-icmp-ping")
     private HazelcastClientProxy icmpPingTestClient;
+
+    @Resource(name = "client12-hazelcast-cloud")
+    private HazelcastClientProxy hazelcastCloudClient;
 
     @Resource(name = "instance")
     private HazelcastInstance instance;
@@ -399,6 +403,14 @@ public class TestClientApplicationContext {
         assertEquals(50, icmpPingConfig.getTtl());
         assertEquals(5, icmpPingConfig.getMaxAttempts());
         assertEquals(false, icmpPingConfig.isEchoFailFastOnStartup());
+    }
+
+    @Test
+    public void testCloudConfig() {
+        ClientCloudConfig cloudConfig = hazelcastCloudClient.getClientConfig()
+                .getNetworkConfig().getCloudConfig();
+        assertEquals(false, cloudConfig.isEnabled());
+        assertEquals("EXAMPLE_TOKEN", cloudConfig.getDiscoveryToken());
     }
 
     private static QueryCacheConfig getQueryCacheConfig(ClientConfig config) {

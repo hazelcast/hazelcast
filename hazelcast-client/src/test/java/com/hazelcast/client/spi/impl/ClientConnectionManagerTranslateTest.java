@@ -56,8 +56,7 @@ public class ClientConnectionManagerTranslateTest extends ClientTestSupport {
 
         TestAddressTranslator translator = new TestAddressTranslator();
         clientConnectionManager =
-                new ClientConnectionManagerImpl(getHazelcastClientInstanceImpl(client),
-                        translator, list);
+                new ClientConnectionManagerImpl(getHazelcastClientInstanceImpl(client), translator, list);
         clientConnectionManager.start(new ClientContext(getHazelcastClientInstanceImpl(client)));
         clientConnectionManager.connectToCluster();
 

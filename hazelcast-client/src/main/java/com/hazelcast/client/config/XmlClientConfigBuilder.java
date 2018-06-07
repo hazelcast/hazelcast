@@ -439,9 +439,27 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
                 handleOutboundPorts(child, clientNetworkConfig);
             } else if ("icmp-ping".equals(nodeName)) {
                 handleIcmpPing(child, clientNetworkConfig);
+            } else if ("hazelcast-cloud".equals(nodeName)) {
+                handleHazelcastCloud(child, clientNetworkConfig);
             }
         }
         clientConfig.setNetworkConfig(clientNetworkConfig);
+    }
+
+    private void handleHazelcastCloud(Node node, ClientNetworkConfig clientNetworkConfig) {
+        ClientCloudConfig cloudConfig = clientNetworkConfig.getCloudConfig();
+
+        NamedNodeMap atts = node.getAttributes();
+        Node enabledNode = atts.getNamedItem("enabled");
+        boolean enabled = enabledNode != null && getBooleanValue(getTextContent(enabledNode).trim());
+        cloudConfig.setEnabled(enabled);
+
+        for (Node child : childElements(node)) {
+            String nodeName = cleanNodeName(child);
+            if ("discovery-token".equals(nodeName)) {
+                cloudConfig.setDiscoveryToken(getTextContent(child));
+            }
+        }
     }
 
     private void handleIcmpPing(Node node, ClientNetworkConfig clientNetworkConfig) {
