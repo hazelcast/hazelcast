@@ -76,7 +76,7 @@ public class HazelcastCloudTranslatorTest {
     }
 
     @Test
-    public void testTranslate_whenAddressIsMapped_thenReturnPublicAddress() {
+    public void testTranslate() {
         Address actual = translator.translate(privateAddress);
 
         assertEquals(publicAddress.getHost(), actual.getHost());
@@ -84,7 +84,8 @@ public class HazelcastCloudTranslatorTest {
     }
 
     @Test
-    public void testTranslate_whenNotMapped_thenRefresh() {
+    public void testRefreshAndTranslate() {
+        translator.refresh();
         Address actual = translator.translate(privateAddress);
 
         assertEquals(publicAddress.getHost(), actual.getHost());

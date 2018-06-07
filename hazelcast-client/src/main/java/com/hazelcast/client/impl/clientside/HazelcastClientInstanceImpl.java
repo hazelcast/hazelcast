@@ -321,7 +321,8 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
     private HazelcastCloudAddressProvider initCloudAddressProvider(ClientCloudConfig cloudConfig) {
         if (cloudConfig.isEnabled()) {
-            return new HazelcastCloudAddressProvider(cloudConfig.getDiscoveryToken(), getConnectionTimeoutMillis(), loggingService);
+            String discoveryToken = cloudConfig.getDiscoveryToken();
+            return new HazelcastCloudAddressProvider(discoveryToken, getConnectionTimeoutMillis(), loggingService);
         }
 
         String cloudToken = properties.getString(ClientProperty.HAZELCAST_CLOUD_DISCOVERY_TOKEN);
@@ -356,7 +357,8 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         String cloudDiscoveryToken = properties.getString(HAZELCAST_CLOUD_DISCOVERY_TOKEN);
         if (cloudDiscoveryToken != null && cloudConfig.isEnabled()) {
             throw new IllegalStateException("Ambiguous hazelcast.cloud configuration. "
-                    + "Both property and configuration provided together. Use only one.");
+                    + "Both property based and client configuration based settings are provided for "
+                    + "Hazelcast cloud discovery together. Use only one.");
         }
         boolean hazelcastCloudEnabled = cloudDiscoveryToken != null || cloudConfig.isEnabled();
         isDiscoveryConfigurationConsistent(addressListProvided, awsDiscoveryEnabled,
