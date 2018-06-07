@@ -34,7 +34,6 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Test;
 
-import javax.cache.expiry.EternalExpiryPolicy;
 import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.processor.EntryProcessorResult;
 import java.util.ArrayList;
@@ -896,7 +895,6 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
         assertNearCacheInvalidations(context, DEFAULT_RECORD_COUNT);
         String message = format("Invalidation is not working on %s()", method.getMethodName());
         assertNearCacheSizeEventually(context, 0, message);
-        String newValuePrefix = "newValue-";
         if (method == DataStructureMethods.SET_TTL) {
             newValuePrefix = "value-";
         }

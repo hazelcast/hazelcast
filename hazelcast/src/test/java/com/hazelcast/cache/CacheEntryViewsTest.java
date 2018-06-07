@@ -29,6 +29,9 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import javax.cache.expiry.EternalExpiryPolicy;
+import javax.cache.expiry.ExpiryPolicy;
+
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -50,10 +53,13 @@ public class CacheEntryViewsTest extends HazelcastTestSupport {
     private void doCacheEntryViewTest(CacheEntryViews.CacheEntryViewType cacheEntryViewType) {
         String key = "testKey";
         String value = "testValue";
+        ExpiryPolicy expiryPolicy = new EternalExpiryPolicy();
         CacheObjectRecord record = new CacheObjectRecord(value, System.currentTimeMillis(), 1234L);
+        record.setExpiryPolicy(new EternalExpiryPolicy());
         CacheEntryView cacheEntryView =
                 CacheEntryViews.createEntryView(serializationService.toData(key),
                         serializationService.toData(value),
+                        serializationService.toData(expiryPolicy),
                         record,
                         cacheEntryViewType);
 
@@ -62,6 +68,7 @@ public class CacheEntryViewsTest extends HazelcastTestSupport {
         assertEquals(record.getAccessHit(), cacheEntryView.getAccessHit());
         assertEquals(record.getExpirationTime(), cacheEntryView.getExpirationTime());
         assertEquals(record.getLastAccessTime(), cacheEntryView.getLastAccessTime());
+        assertInstanceOf(EternalExpiryPolicy.class, serializationService.toObject(cacheEntryView.getExpiryPolicy()));
     }
 
     @Test

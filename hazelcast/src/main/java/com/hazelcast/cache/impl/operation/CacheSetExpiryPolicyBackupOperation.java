@@ -17,30 +17,22 @@
 package com.hazelcast.cache.impl.operation;
 
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
-import com.hazelcast.cache.impl.ICacheRecordStore;
-import com.hazelcast.cache.impl.ICacheService;
+import com.hazelcast.cache.impl.CacheEntryViews;
+import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.BackupOperation;
-import com.hazelcast.spi.ServiceNamespace;
 import com.hazelcast.spi.ServiceNamespaceAware;
-import com.hazelcast.spi.impl.AbstractNamedOperation;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.hazelcast.cache.impl.operation.MutableOperation.IGNORE_COMPLETION;
-
 public class CacheSetExpiryPolicyBackupOperation
-        extends AbstractNamedOperation
+        extends CacheOperation
         implements BackupOperation, IdentifiedDataSerializable, ServiceNamespaceAware {
-
-    private transient ICacheService service;
-    private transient int partitionId;
-    private transient ICacheRecordStore recordStore;
 
     private List<Data> keys;
     private Data expiryPolicy;
@@ -56,19 +48,22 @@ public class CacheSetExpiryPolicyBackupOperation
     }
 
     @Override
-    public void beforeRun() throws Exception {
-        super.beforeRun();
-        service = getService();
-        partitionId = getPartitionId();
-        recordStore = service.getRecordStore(name, partitionId);
-    }
-
-    @Override
     public void run() throws Exception {
         if (recordStore == null) {
             return;
         }
-        recordStore.setExpiryPolicy(keys, expiryPolicy, null, IGNORE_COMPLETION);
+        recordStore.setExpiryPolicy(keys, expiryPolicy, null);
+    }
+
+    @Override
+    public void afterRun() throws Exception {
+        super.afterRun();
+        if (recordStore.isWanReplicationEnabled()) {
+            for (Data key : keys) {
+                CacheRecord record = recordStore.getRecord(key);
+                wanEventPublisher.publishWanUpdate(name, CacheEntryViews.createEntryView(key, expiryPolicy, record));
+            }
+        }
     }
 
     @Override
@@ -79,16 +74,6 @@ public class CacheSetExpiryPolicyBackupOperation
     @Override
     public int getId() {
         return CacheDataSerializerHook.SET_EXPIRY_POLICY_BACKUP;
-    }
-
-    @Override
-    public ServiceNamespace getServiceNamespace() {
-        ICacheRecordStore store = recordStore;
-        if (store == null) {
-            ICacheService service = getService();
-            store = service.getOrCreateRecordStore(name, partitionId);
-        }
-        return store.getObjectNamespace();
     }
 
     @Override

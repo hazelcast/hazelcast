@@ -18,6 +18,7 @@ package com.hazelcast.cache.impl;
 
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.InternalCompletableFuture;
@@ -56,6 +57,7 @@ import static java.util.Collections.emptyMap;
  * @see com.hazelcast.cache.impl.CacheProxy
  * @see com.hazelcast.cache.ICache
  */
+@SuppressWarnings("checkstyle:methodcount")
 abstract class AbstractCacheProxy<K, V>
         extends AbstractInternalCacheProxy<K, V> {
 
@@ -231,6 +233,10 @@ abstract class AbstractCacheProxy<K, V>
 
     @Override
     public void setExpiryPolicy(Set<? extends K> keys, ExpiryPolicy expiryPolicy) {
+        if (isClusterVersionLessThan(Versions.V3_11)) {
+            throw new UnsupportedOperationException("setExpiryPolicy operation is available"
+                    + "when cluster version is 3.11 or higher");
+        }
         ensureOpen();
         validateNotNull(keys);
         validateNotNull(expiryPolicy);

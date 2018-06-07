@@ -26,11 +26,16 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import javax.cache.expiry.EternalExpiryPolicy;
 import javax.cache.expiry.ExpiryPolicy;
@@ -40,6 +45,8 @@ import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 
+@Category({QuickTest.class, ParallelTest.class})
+@RunWith(HazelcastSerialClassRunner.class)
 public class CacheExpiryPolicyBackupTest extends HazelcastTestSupport {
 
     private static final int NINSTANCES = 3;
@@ -64,11 +71,15 @@ public class CacheExpiryPolicyBackupTest extends HazelcastTestSupport {
     }
 
     @Override
-    public Config getConfig() {
+    protected Config getConfig() {
+        return new Config().addCacheConfig(getCacheConfig());
+    }
+
+    protected CacheSimpleConfig getCacheConfig() {
         CacheSimpleConfig cacheConfig = new CacheSimpleConfig();
         cacheConfig.setName(cacheName);
         cacheConfig.setBackupCount(NINSTANCES - 1);
-        return new Config().addCacheConfig(cacheConfig);
+        return cacheConfig;
     }
 
     private void assertExpiryPolicyInAllNodes(ExpiryPolicy expiryPolicy, Collection<String> keys) {
@@ -101,7 +112,7 @@ public class CacheExpiryPolicyBackupTest extends HazelcastTestSupport {
             keys.add("key" + i);
         }
 
-        ExpiryPolicy expiryPolicy = EternalExpiryPolicy.factoryOf().create();
+        ExpiryPolicy expiryPolicy = new EternalExpiryPolicy();
         cache.setExpiryPolicy(keys, expiryPolicy);
 
         assertExpiryPolicyInAllNodes(expiryPolicy, keys);

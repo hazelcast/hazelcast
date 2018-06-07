@@ -31,10 +31,8 @@ import javax.cache.CacheManager;
 import javax.cache.configuration.FactoryBuilder;
 import javax.cache.configuration.MutableCacheEntryListenerConfiguration;
 import javax.cache.configuration.MutableConfiguration;
-import javax.cache.expiry.AccessedExpiryPolicy;
 import javax.cache.expiry.CreatedExpiryPolicy;
 import javax.cache.expiry.Duration;
-import javax.cache.expiry.EternalExpiryPolicy;
 import javax.cache.expiry.ExpiryPolicy;
 import javax.cache.expiry.ModifiedExpiryPolicy;
 import javax.cache.expiry.TouchedExpiryPolicy;
@@ -870,14 +868,25 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
     public void testRecordExpiryPolicyTakesPrecedenceOverCachePolicy() {
         final int UPDATED_TTL = 1000;
 
-        Duration generalDuration = new Duration(TimeUnit.DAYS, 1);
-        Duration modifiedDuration = new Duration(TimeUnit.MILLISECONDS, UPDATED_TTL);
         CacheConfig<Integer, String> cacheConfig = new CacheConfig<Integer, String>();
-        cacheConfig.setExpiryPolicyFactory(TouchedExpiryPolicy.factoryOf(generalDuration));
+        cacheConfig.setExpiryPolicyFactory(TouchedExpiryPolicy.factoryOf(Duration.ONE_DAY));
 
         ICache<Integer, String> cache = createCache(cacheConfig);
         cache.put(1, "value");
-        cache.setExpiryPolicy(1, TouchedExpiryPolicy.factoryOf(modifiedDuration).create());
+        cache.setExpiryPolicy(1, new TouchedExpiryPolicy(new Duration(TimeUnit.MILLISECONDS, UPDATED_TTL)));
+
+        sleepAtLeastMillis(UPDATED_TTL + 1);
+
+        assertNull(cache.get(1));
+    }
+
+    @Test
+    public void testRecordExpiryPolicyTakesPrecedenceOverPolicyAtCreation() {
+        final int UPDATED_TTL = 1000;
+
+        ICache<Integer, String> cache = createCache();
+        cache.put(1, "value", new TouchedExpiryPolicy(Duration.ONE_DAY));
+        cache.setExpiryPolicy(1, new TouchedExpiryPolicy(new Duration(TimeUnit.MILLISECONDS, UPDATED_TTL)));
 
         sleepAtLeastMillis(UPDATED_TTL + 1);
 
@@ -904,16 +913,12 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
         final int TTL = 1000;
         ICache<Integer, String> cache = createCache();
         cache.put(1, "value");
-        Duration expiryDuration = new Duration(TimeUnit.MILLISECONDS, TTL);
-        cache.setExpiryPolicy(1, TouchedExpiryPolicy.factoryOf(expiryDuration).create());
-
-        cache.setExpiryPolicy(1, TouchedExpiryPolicy.factoryOf(Duration.ETERNAL).create());
-        cache.get(1);
+        cache.setExpiryPolicy(1, new TouchedExpiryPolicy(new Duration(TimeUnit.MILLISECONDS, TTL)));
+        cache.setExpiryPolicy(1, new TouchedExpiryPolicy(Duration.ETERNAL));
 
         sleepAtLeastMillis(TTL + 1);
 
         assertEquals("value", cache.get(1));
-
     }
 
     @Test

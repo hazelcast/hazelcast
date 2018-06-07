@@ -18,37 +18,23 @@ package com.hazelcast.cache.impl.operation;
 
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.impl.CacheEntryViews;
-import com.hazelcast.cache.impl.ICacheRecordStore;
-import com.hazelcast.cache.impl.ICacheService;
-import com.hazelcast.cache.impl.event.CacheWanEventPublisher;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.PartitionAwareOperation;
-import com.hazelcast.spi.ServiceNamespace;
-import com.hazelcast.spi.ServiceNamespaceAware;
-import com.hazelcast.spi.impl.AbstractNamedOperation;
 import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class CacheSetExpiryPolicyOperation extends AbstractNamedOperation
-        implements IdentifiedDataSerializable, PartitionAwareOperation, ServiceNamespaceAware, MutableOperation,
-        MutatingOperation, BackupAwareOperation {
-
-    private transient ICacheService service;
-    private transient ICacheRecordStore recordStore;
-    private transient int partitionId;
+public class CacheSetExpiryPolicyOperation extends CacheOperation
+        implements MutatingOperation, BackupAwareOperation {
 
     private List<Data> keys;
     private Data expiryPolicy;
-    private int completionId;
 
     public CacheSetExpiryPolicyOperation() {
 
@@ -60,35 +46,21 @@ public class CacheSetExpiryPolicyOperation extends AbstractNamedOperation
         this.expiryPolicy = expiryPolicy;
     }
 
-    public CacheSetExpiryPolicyOperation(String name, List<Data> keys, Data expiryPolicy, int completionId) {
-        this(name, keys, expiryPolicy);
-        this.completionId = completionId;
-    }
-
-    @Override
-    public void beforeRun() throws Exception {
-        super.beforeRun();
-        service = getService();
-        partitionId = getPartitionId();
-        recordStore = service.getRecordStore(name, partitionId);
-    }
-
     @Override
     public void run() throws Exception {
         if (recordStore == null) {
             return;
         }
-        recordStore.setExpiryPolicy(keys, expiryPolicy, getCallerUuid(), completionId);
+        recordStore.setExpiryPolicy(keys, expiryPolicy, getCallerUuid());
     }
 
     @Override
     public void afterRun() throws Exception {
         super.afterRun();
         if (recordStore.isWanReplicationEnabled()) {
-            CacheWanEventPublisher publisher = service.getCacheWanEventPublisher();
             for (Data key : keys) {
                 CacheRecord record = recordStore.getRecord(key);
-                publisher.publishWanReplicationUpdate(name, CacheEntryViews.createEntryView(key, record));
+                wanEventPublisher.publishWanUpdate(name, CacheEntryViews.createEntryView(key, expiryPolicy, record));
             }
         }
     }
@@ -104,32 +76,12 @@ public class CacheSetExpiryPolicyOperation extends AbstractNamedOperation
     }
 
     @Override
-    public int getCompletionId() {
-        return completionId;
-    }
-
-    @Override
-    public void setCompletionId(int completionId) {
-        this.completionId = completionId;
-    }
-
-    @Override
-    public ServiceNamespace getServiceNamespace() {
-        ICacheRecordStore store = recordStore;
-        if (store == null) {
-            store = service.getOrCreateRecordStore(name, partitionId);
-        }
-        return store.getObjectNamespace();
-    }
-
-    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeInt(keys.size());
         for (Data key: keys) {
             out.writeData(key);
         }
-        out.writeInt(completionId);
         out.writeData(expiryPolicy);
     }
 
@@ -141,23 +93,12 @@ public class CacheSetExpiryPolicyOperation extends AbstractNamedOperation
         while (s-- > 0) {
             keys.add(in.readData());
         }
-        completionId = in.readInt();
         expiryPolicy = in.readData();
     }
 
     @Override
     public boolean shouldBackup() {
         return recordStore.getConfig().getTotalBackupCount() > 0;
-    }
-
-    @Override
-    public int getSyncBackupCount() {
-        return recordStore.getConfig().getBackupCount();
-    }
-
-    @Override
-    public int getAsyncBackupCount() {
-        return recordStore.getConfig().getAsyncBackupCount();
     }
 
     @Override

@@ -19,8 +19,6 @@ package com.hazelcast.cache.impl.merge.entry;
 import com.hazelcast.cache.CacheEntryView;
 import com.hazelcast.spi.serialization.SerializationService;
 
-import javax.cache.expiry.ExpiryPolicy;
-
 /**
  * An implementation of {@link com.hazelcast.cache.CacheEntryView}
  * for converting key and value to object when they are touched as lazy.
@@ -75,11 +73,11 @@ public class LazyCacheEntryView<K, V>
     }
 
     @Override
-    public ExpiryPolicy getExpiryPolicy() {
+    public Object getExpiryPolicy() {
         if (serializationService != null) {
             expiryPolicy = serializationService.toObject(expiryPolicy);
         }
-        return (ExpiryPolicy) expiryPolicy;
+        return expiryPolicy;
     }
 
     @Override

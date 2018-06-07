@@ -18,8 +18,7 @@ package com.hazelcast.cache.impl.record;
 
 import com.hazelcast.internal.eviction.Evictable;
 import com.hazelcast.internal.eviction.Expirable;
-
-import javax.cache.expiry.ExpiryPolicy;
+import com.hazelcast.nio.serialization.impl.Versioned;
 
 /**
  * <p>
@@ -29,7 +28,7 @@ import javax.cache.expiry.ExpiryPolicy;
  *
  * @param <V> the type of the value stored by this {@link CacheRecord}
  */
-public interface CacheRecord<V, E> extends Expirable, Evictable<V> {
+public interface CacheRecord<V, E> extends Expirable, Evictable<V>, Versioned {
 
     /**
      * Represents invalid (not set) time for creation time, expiration time, access time, etc...
@@ -82,7 +81,6 @@ public interface CacheRecord<V, E> extends Expirable, Evictable<V> {
 
     /**
      * Gets the expiryPolicy associated with this record.
-     *
      * @return
      */
     E getExpiryPolicy();
