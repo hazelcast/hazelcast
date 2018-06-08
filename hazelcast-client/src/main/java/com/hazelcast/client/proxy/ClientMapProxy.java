@@ -1295,7 +1295,11 @@ public class ClientMapProxy<K, V> extends ClientProxy
     public void setTTL(K key, long ttl, TimeUnit timeunit) {
         checkNotNull(key);
         checkNotNull(timeunit);
-        long ttlMillis = timeunit.toMillis(ttl);
+        setTTLInternal(key, ttl, timeunit);
+    }
+
+    protected void setTTLInternal(Object key, long ttl, TimeUnit timeUnit) {
+        long ttlMillis = timeUnit.toMillis(ttl);
         Data keyData = toData(key);
         ClientMessage request = MapSetTTLCodec.encodeRequest(getName(), keyData, ttlMillis);
         invoke(request, keyData);

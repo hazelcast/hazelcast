@@ -557,6 +557,16 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
         whenEntryIsChanged_thenNearCacheShouldBeInvalidated(false, DataStructureMethods.PUT_ASYNC);
     }
 
+    @Test
+    public void whenSetTTLIsUsed_thenNearCacheShouldBeInvalidated_onDataAdapter() {
+        whenEntryIsChanged_thenNearCacheShouldBeInvalidated(true, DataStructureMethods.SET_TTL);
+    }
+
+    @Test
+    public void whenSetTTLIsUsed_thenNearCacheShouldBeInvalidated_onNearCacheAdapter() {
+        whenEntryIsChanged_thenNearCacheShouldBeInvalidated(false, DataStructureMethods.SET_TTL);
+    }
+
     /**
      * Checks that the Near Cache is eventually invalidated when {@link DataStructureMethods#PUT_ASYNC} is used.
      */
@@ -869,8 +879,12 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
         assertNearCacheInvalidations(context, DEFAULT_RECORD_COUNT);
         String message = format("Invalidation is not working on %s()", method.getMethodName());
         assertNearCacheSizeEventually(context, 0, message);
+        String newValuePrefix = "newValue-";
+        if (method == DataStructureMethods.SET_TTL) {
+            newValuePrefix = "value-";
+        }
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
-            assertEquals("newValue-" + i, context.dataAdapter.get(i));
+            assertEquals(newValuePrefix + i, context.dataAdapter.get(i));
         }
     }
 
@@ -1521,6 +1535,7 @@ public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSu
 
     @Test
     public void whenSetTTLIsCalled_thenAnotherNearCacheContextShouldBeInvalidated() {
+        assumeThatMethodIsAvailable(DataStructureMethods.SET_TTL);
         nearCacheConfig.setInvalidateOnChange(true);
         NearCacheTestContext<Integer, String, NK, NV> firstContext = createContext();
         NearCacheTestContext<Integer, String, NK, NV> secondContext = createNearCacheContext();
