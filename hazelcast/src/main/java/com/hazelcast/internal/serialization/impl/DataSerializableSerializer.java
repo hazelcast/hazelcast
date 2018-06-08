@@ -118,12 +118,9 @@ final class DataSerializableSerializer implements StreamSerializer<DataSerializa
         DataSerializable ds = null;
         if (null != aClass) {
             try {
-                try {
-                    ds = (DataSerializable) aClass.newInstance();
-                } catch (InstantiationException e) {
-                    throw clarifyInstantiationException(aClass, e);
-                }
+                ds = (DataSerializable) aClass.newInstance();
             } catch (Exception e) {
+                e = tryClarifyInstantiationException(aClass, e);
                 throw new HazelcastSerializationException("Requested class " + aClass + " could not be instantiated.", e);
             }
         }
@@ -152,11 +149,7 @@ final class DataSerializableSerializer implements StreamSerializer<DataSerializa
             } else {
                 className = in.readUTF();
                 if (null == aClass) {
-                    try {
-                        ds = ClassLoaderUtil.newInstance(in.getClassLoader(), className);
-                    } catch (NoSuchMethodException e) {
-                        throw clarifyNoSuchMethodException(in.getClassLoader(), className, e);
-                    }
+                    ds = ClassLoaderUtil.newInstance(in.getClassLoader(), className);
                 }
             }
             if (isFlagSet(header, EE_FLAG)) {
@@ -167,6 +160,7 @@ final class DataSerializableSerializer implements StreamSerializer<DataSerializa
             ds.readData(in);
             return ds;
         } catch (Exception e) {
+            e = tryClarifyNoSuchMethodException(in.getClassLoader(), className, e);
             throw rethrowReadException(id, factoryId, className, e);
         }
     }
@@ -189,7 +183,12 @@ final class DataSerializableSerializer implements StreamSerializer<DataSerializa
                 + ", exception: " + e.getMessage(), e);
     }
 
-    private InstantiationException clarifyInstantiationException(Class aClass, InstantiationException instantiationException) {
+    private Exception tryClarifyInstantiationException(Class aClass, Exception exception) {
+        if (!(exception instanceof InstantiationException)) {
+            return exception;
+        }
+        InstantiationException instantiationException = (InstantiationException) exception;
+
         String message = tryGenerateClarifiedExceptionMessage(aClass);
         if (message == null) {
             return instantiationException;
@@ -200,8 +199,12 @@ final class DataSerializableSerializer implements StreamSerializer<DataSerializa
         return clarifiedException;
     }
 
-    private NoSuchMethodException clarifyNoSuchMethodException(ClassLoader classLoader, String className,
-                                                               NoSuchMethodException noSuchMethodException) {
+    private Exception tryClarifyNoSuchMethodException(ClassLoader classLoader, String className, Exception exception) {
+        if (!(exception instanceof NoSuchMethodException)) {
+            return exception;
+        }
+        NoSuchMethodException noSuchMethodException = (NoSuchMethodException) exception;
+
         Class aClass;
         try {
             ClassLoader effectiveClassLoader = classLoader == null ? ClassLoaderUtil.class.getClassLoader() : classLoader;

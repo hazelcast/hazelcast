@@ -102,7 +102,7 @@ public class OperationServiceImpl_invokeOnPartitionsTest extends HazelcastTestSu
     private static class SlowOperationFactoryImpl extends AbstractOperationFactor {
         @Override
         public Operation createOperation() {
-            return new SlowOperationImpl();
+            return new SlowOperation();
         }
 
         @Override
@@ -147,7 +147,7 @@ public class OperationServiceImpl_invokeOnPartitionsTest extends HazelcastTestSu
         }
     }
 
-    private static class SlowOperationImpl extends Operation {
+    private static class SlowOperation extends Operation {
         private int response;
 
         @Override
