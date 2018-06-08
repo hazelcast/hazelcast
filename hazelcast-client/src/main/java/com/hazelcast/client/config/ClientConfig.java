@@ -815,6 +815,10 @@ public class ClientConfig {
         return licenseKey;
     }
 
+    /**
+     * @deprecated As of Hazelcast 3.10.3, enterprise license keys are required only for members, and not for clients
+     */
+    @Deprecated
     public ClientConfig setLicenseKey(final String licenseKey) {
         this.licenseKey = licenseKey;
         return this;
