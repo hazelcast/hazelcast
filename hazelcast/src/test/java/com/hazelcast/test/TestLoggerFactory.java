@@ -19,8 +19,13 @@ package com.hazelcast.test;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Log4j2Factory;
 import com.hazelcast.logging.LogEvent;
-import com.hazelcast.logging.LoggerFactory;
+import com.hazelcast.logging.LoggerFactorySupport;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.spi.LoggerContext;
 
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -33,15 +38,43 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
  * The real filtering is happening in the log4js once again.
  * Thus it covers branches guarded by is-level-enabled checks
  * yet the real logging is configurable via log4j2.xml
+ *
+ * It also supports changing logging configuration on-the-fly, see {@link TestLoggerFactory#changeConfigFile}
+ * and
  */
-public class TestLoggerFactory implements LoggerFactory {
+public class TestLoggerFactory extends LoggerFactorySupport {
 
-    private Log4j2Factory log4j2Factory = new Log4j2Factory();
+    /**
+     * Log4j XML configuration being currently used. Null indicated the default Log4j behavior.
+     */
+    private URI configFile = null;
 
-    @Override
-    public ILogger getLogger(String name) {
-        ILogger logger = log4j2Factory.getLogger(name);
-        return new DelegatingTestLogger(logger);
+    /**
+     * Store all the logging context being created, because we need to clear them in order to change the configuration
+     * to reload it.
+     */
+    private final List<LoggerContext> loggerContexts = new ArrayList<LoggerContext>();
+
+    /**
+     * Changes the configuration to be used.
+     *
+     * @param configName The Log4j XML configuration to be used, null for default behavior.
+     */
+    public void changeConfigFile(String configName) {
+        for (LoggerContext context: loggerContexts) {
+            LogManager.getFactory().removeContext(context);
+        }
+
+        configFile = configName != null ? URI.create(configName) : null;
+        clearLoadedLoggers();
+        loggerContexts.clear();
+    }
+
+    protected ILogger createLogger(String name) {
+        LoggerContext loggerContext = LogManager.getContext(null, false, configFile);
+        loggerContexts.add(loggerContext);
+
+        return new DelegatingTestLogger(new Log4j2Factory.Log4j2Logger(loggerContext.getLogger(name)));
     }
 
     private static class DelegatingTestLogger implements ILogger {
