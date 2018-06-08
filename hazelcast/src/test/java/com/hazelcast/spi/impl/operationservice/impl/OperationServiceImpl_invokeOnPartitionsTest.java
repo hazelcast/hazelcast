@@ -85,20 +85,7 @@ public class OperationServiceImpl_invokeOnPartitionsTest extends HazelcastTestSu
     private static class OperationFactoryImpl extends AbstractOperationFactor {
         @Override
         public Operation createOperation() {
-            return new Operation() {
-
-                private int response;
-
-                @Override
-                public void run() throws Exception {
-                    response = getPartitionId() * 2;
-                }
-
-                @Override
-                public Object getResponse() {
-                    return response;
-                }
-            };
+            return new OperationImpl();
         }
 
         @Override
@@ -115,21 +102,7 @@ public class OperationServiceImpl_invokeOnPartitionsTest extends HazelcastTestSu
     private static class SlowOperationFactoryImpl extends AbstractOperationFactor {
         @Override
         public Operation createOperation() {
-            return new Operation() {
-
-                private int response;
-
-                @Override
-                public void run() throws Exception {
-                    sleepSeconds(5);
-                    response = getPartitionId() * 2;
-                }
-
-                @Override
-                public Object getResponse() {
-                    return response;
-                }
-            };
+            return new SlowOperation();
         }
 
         @Override
@@ -159,4 +132,34 @@ public class OperationServiceImpl_invokeOnPartitionsTest extends HazelcastTestSu
         public void readData(ObjectDataInput in) throws IOException {
         }
     }
+
+    private static class OperationImpl extends Operation {
+        private int response;
+
+        @Override
+        public void run() {
+            response = getPartitionId() * 2;
+        }
+
+        @Override
+        public Object getResponse() {
+            return response;
+        }
+    }
+
+    private static class SlowOperation extends Operation {
+        private int response;
+
+        @Override
+        public void run() {
+            sleepSeconds(5);
+            response = getPartitionId() * 2;
+        }
+
+        @Override
+        public Object getResponse() {
+            return response;
+        }
+    }
+
 }
