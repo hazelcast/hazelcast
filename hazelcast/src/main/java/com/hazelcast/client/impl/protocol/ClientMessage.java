@@ -17,6 +17,7 @@
 package com.hazelcast.client.impl.protocol;
 
 import com.hazelcast.client.impl.protocol.exception.MaxMessageSizeExceeded;
+import com.hazelcast.client.impl.protocol.util.BufferBuilder;
 import com.hazelcast.client.impl.protocol.util.ClientProtocolBuffer;
 import com.hazelcast.client.impl.protocol.util.MessageFlyweight;
 import com.hazelcast.client.impl.protocol.util.SafeBuffer;
@@ -26,6 +27,7 @@ import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.Connection;
 
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 
 /**
  * <p>
@@ -398,6 +400,10 @@ public class ClientMessage
         this.operationName = operationName;
     }
 
+    public String getOperationName() {
+        return operationName;
+    }
+
     @Override
     public String toString() {
         int len = index();
@@ -443,6 +449,16 @@ public class ClientMessage
         ClientMessage clientMessage = new ClientMessage();
         clientMessage.wrapForDecode(buffer, offset);
         return clientMessage;
+    }
+
+    public ClientMessage copy() {
+        byte[] oldBinary = buffer().byteArray();
+        byte[] bytes = Arrays.copyOf(oldBinary, oldBinary.length);
+        ClientMessage newMessage = ClientMessage.createForDecode(BufferBuilder.createBuffer(bytes), 0);
+        newMessage.isRetryable = isRetryable;
+        newMessage.acquiresResource = acquiresResource;
+        newMessage.operationName = operationName;
+        return newMessage;
     }
 
     @Override

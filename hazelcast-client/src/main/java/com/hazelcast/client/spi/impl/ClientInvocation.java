@@ -20,7 +20,6 @@ import com.hazelcast.client.HazelcastClientNotActiveException;
 import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.util.BufferBuilder;
 import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.client.spi.EventHandler;
@@ -37,7 +36,6 @@ import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.sequence.CallIdSequence;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -182,7 +180,7 @@ public class ClientInvocation implements Runnable {
     private void retry() {
         // retry modifies the client message and should not reuse the client message.
         // It could be the case that it is in write queue of the connection.
-        clientMessage = copyMessage();
+        clientMessage = clientMessage.copy();
         // first we force a new invocation slot because we are going to return our old invocation slot immediately after
         // It is important that we first 'force' taking a new slot; otherwise it could be that a sneaky invocation gets
         // through that takes our slot!
@@ -195,12 +193,6 @@ public class ClientInvocation implements Runnable {
         } catch (Throwable e) {
             clientInvocationFuture.complete(e);
         }
-    }
-
-    private ClientMessage copyMessage() {
-        byte[] oldBinary = clientMessage.buffer().byteArray();
-        byte[] bytes = Arrays.copyOf(oldBinary, oldBinary.length);
-        return ClientMessage.createForDecode(BufferBuilder.createBuffer(bytes), 0);
     }
 
     public void notify(ClientMessage clientMessage) {
