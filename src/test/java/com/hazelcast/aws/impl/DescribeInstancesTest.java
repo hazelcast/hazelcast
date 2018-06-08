@@ -235,9 +235,7 @@ public class DescribeInstancesTest {
     public void test_DescribeInstances()
             throws Exception {
         // given
-        AwsConfig awsConfig = predefinedAwsConfigBuilder().setAccessKey(System.getenv("AWS_ACCESS_KEY_ID"))
-                                                          .setSecretKey(System.getenv("AWS_SECRET_ACCESS_KEY"))
-                                                          .setSecurityGroupName("launch-wizard-147").build();
+        AwsConfig awsConfig = predefinedAwsConfigBuilder().setAccessKey("dummyAccessKey").setSecretKey("dummySecretKey").build();
 
         DescribeInstances describeInstances = spy(new DescribeInstances(awsConfig, awsConfig.getHostHeader()));
         doReturn(stubDescribeInstancesResponse()).when(describeInstances).callService(HOST_HEADER);
