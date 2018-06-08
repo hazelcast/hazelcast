@@ -135,6 +135,16 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
     }
 
     @Override
+    protected void setTTLInternal(Object key, long ttl, TimeUnit timeUnit) {
+        key = toNearCacheKey(key);
+        try {
+            super.setTTLInternal(key, ttl, timeUnit);
+        } finally {
+            invalidateNearCache(key);
+        }
+    }
+
+    @Override
     public ICompletableFuture<V> getAsyncInternal(Object keyParameter) {
         final Object key = toNearCacheKey(keyParameter);
         Object value = getCachedValue(key, false);
