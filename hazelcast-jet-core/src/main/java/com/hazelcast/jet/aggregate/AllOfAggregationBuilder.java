@@ -21,6 +21,7 @@ import com.hazelcast.jet.datamodel.Tag;
 import com.hazelcast.jet.function.DistributedFunction;
 
 import javax.annotation.Nonnull;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,13 +29,12 @@ import static com.hazelcast.jet.datamodel.Tag.tag;
 import static com.hazelcast.jet.function.DistributedFunction.identity;
 
 /**
- * Offers a step-by-step API to create a composite of multiple
- * aggregate operations. To obtain it, call {@link
- * AggregateOperations#allOfBuilder()}.
+ * Offers a step-by-step API to create a composite of multiple aggregate
+ * operations. To obtain it, call {@link AggregateOperations#allOfBuilder()}.
  *
  * @param <T> the type of the input items
  */
-public final class AllOfAggregationBuilder<T> {
+public final class AllOfAggregationBuilder<T> implements Serializable {
 
     private final List<Tag> tags = new ArrayList<>();
     private final List<AggregateOperation1> operations = new ArrayList<>();
@@ -71,7 +71,8 @@ public final class AllOfAggregationBuilder<T> {
      * call the supplied {@code finishFn} to transform the {@link ItemsByTag}
      * it creates to the result type it emits as the actual result.
      *
-     * @param finishFn function to convert {@link ItemsByTag} to the target result type
+     * @param finishFn function to convert {@link ItemsByTag} to the target
+     *                result type
      */
     @Nonnull
     @SuppressWarnings({"unchecked", "ConstantConditions"})

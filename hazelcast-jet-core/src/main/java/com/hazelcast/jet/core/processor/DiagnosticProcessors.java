@@ -33,6 +33,7 @@ import java.util.Map.Entry;
 
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.preferLocalParallelismOne;
 import static com.hazelcast.jet.function.DistributedFunctions.alwaysTrue;
+import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 
 /**
  * Static utility class with factories of sinks and wrappers that log
@@ -63,6 +64,8 @@ public final class DiagnosticProcessors {
     public static <T> ProcessorMetaSupplier writeLoggerP(
             @Nonnull DistributedFunction<T, ? extends CharSequence> toStringFn
     ) {
+        checkSerializable(toStringFn, "toStringFn");
+
         return preferLocalParallelismOne(() -> new WriteLoggerP<>(toStringFn));
     }
 

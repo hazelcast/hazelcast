@@ -30,6 +30,7 @@ import com.hazelcast.util.Preconditions;
 import javax.annotation.Nonnull;
 
 import static com.hazelcast.jet.function.DistributedFunctions.noopConsumer;
+import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 
 /**
  * See {@link Sinks#builder(String, DistributedFunction)}.
@@ -50,6 +51,7 @@ public final class SinkBuilder<W, T> {
      * Use {@link Sinks#builder(String, DistributedFunction)}.
      */
     SinkBuilder(@Nonnull String name, DistributedFunction<Processor.Context, ? extends W> createFn) {
+        checkSerializable(createFn, "createFn");
         this.name = name;
         this.createFn = createFn;
     }
@@ -64,6 +66,7 @@ public final class SinkBuilder<W, T> {
      */
     @Nonnull
     public SinkBuilder<W, T> onReceiveFn(@Nonnull DistributedBiConsumer<? super W, ? super T> onReceiveFn) {
+        checkSerializable(onReceiveFn, "onReceiveFn");
         this.onReceiveFn = onReceiveFn;
         return this;
     }
@@ -81,6 +84,7 @@ public final class SinkBuilder<W, T> {
      */
     @Nonnull
     public SinkBuilder<W, T> flushFn(@Nonnull DistributedConsumer<? super W> flushFn) {
+        checkSerializable(flushFn, "flushFn");
         this.flushFn = flushFn;
         return this;
     }
@@ -98,6 +102,7 @@ public final class SinkBuilder<W, T> {
      */
     @Nonnull
     public SinkBuilder<W, T> destroyFn(@Nonnull DistributedConsumer<? super W> destroyFn) {
+        checkSerializable(destroyFn, "destroyFn");
         this.destroyFn = destroyFn;
         return this;
     }

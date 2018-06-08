@@ -29,6 +29,8 @@ import javax.annotation.Nonnull;
 import java.util.Map.Entry;
 import java.util.function.Function;
 
+import static com.hazelcast.jet.impl.util.Util.checkSerializable;
+
 /**
  * Represents an intermediate step when constructing a group-and-aggregate
  * pipeline stage. This is the base type for the batch and stream variants.
@@ -203,6 +205,7 @@ public interface GeneralStageWithGrouping<T, K> {
             @Nonnull AggregateOperation1<? super T, ?, ? extends R> aggrOp,
             @Nonnull DistributedBiFunction<K, R, OUT> mapToOutputFn
     ) {
+        checkSerializable(mapToOutputFn, "mapToOutputFn");
         // Early check for identity finish: tries to finish an empty accumulator, different instance
         // must be returned.
         Object emptyAcc = aggrOp.createFn().get();

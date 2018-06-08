@@ -47,6 +47,7 @@ import java.nio.charset.Charset;
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.preferLocalParallelismOne;
 import static com.hazelcast.jet.function.DistributedFunctions.noopConsumer;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -214,6 +215,8 @@ public final class SinkProcessors {
             @Nonnull DistributedFunction<T, String> toStringFn,
             @Nonnull Charset charset
     ) {
+        checkSerializable(toStringFn, "toStringFn");
+
         String charsetName = charset.name();
         return preferLocalParallelismOne(writeBufferedP(
                 index -> uncheckCall(
@@ -243,6 +246,8 @@ public final class SinkProcessors {
             @Nonnull Charset charset,
             boolean append
     ) {
+        checkSerializable(toStringFn, "toStringFn");
+
         return WriteFileP.metaSupplier(directoryName, toStringFn, charset.name(), append);
     }
 

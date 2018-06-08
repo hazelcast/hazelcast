@@ -55,7 +55,6 @@ public class StageWithGroupingImpl<T, K> extends StageWithGroupingBase<T, K> imp
             @Nonnull ContextFactory<C> contextFactory,
             @Nonnull DistributedBiFunction<? super C, ? super T, ? extends R> mapFn
     ) {
-        checkSerializable(mapFn, "mapFn");
         return computeStage.attachMapUsingKeyedContext(contextFactory, keyFn(), mapFn);
     }
 
@@ -64,7 +63,6 @@ public class StageWithGroupingImpl<T, K> extends StageWithGroupingBase<T, K> imp
             @Nonnull ContextFactory<C> contextFactory,
             @Nonnull DistributedBiPredicate<? super C, ? super T> filterFn
     ) {
-        checkSerializable(filterFn, "filterFn");
         return computeStage.attachFilterUsingKeyedContext(contextFactory, keyFn(), filterFn);
     }
 
@@ -73,7 +71,6 @@ public class StageWithGroupingImpl<T, K> extends StageWithGroupingBase<T, K> imp
             @Nonnull ContextFactory<C> contextFactory,
             @Nonnull DistributedBiFunction<? super C, ? super T, ? extends Traverser<? extends R>> flatMapFn
     ) {
-        checkSerializable(flatMapFn, "flatMapFn");
         return computeStage.attachFlatMapUsingKeyedContext(contextFactory, keyFn(), flatMapFn);
     }
 
@@ -82,6 +79,7 @@ public class StageWithGroupingImpl<T, K> extends StageWithGroupingBase<T, K> imp
             @Nonnull AggregateOperation1<? super T, A, ? extends R> aggrOp,
             @Nonnull DistributedBiFunction<? super K, ? super R, ? extends OUT> mapToOutputFn
     ) {
+        checkSerializable(mapToOutputFn, "mapToOutputFn");
         return computeStage.attach(new GroupTransform<>(
                         singletonList(computeStage.transform),
                         singletonList(keyFn()),
@@ -96,6 +94,7 @@ public class StageWithGroupingImpl<T, K> extends StageWithGroupingBase<T, K> imp
             @Nonnull AggregateOperation2<? super T, ? super T1, A, ? extends R> aggrOp,
             @Nonnull DistributedBiFunction<? super K, ? super R, ? extends OUT> mapToOutputFn
     ) {
+        checkSerializable(mapToOutputFn, "mapToOutputFn");
         return computeStage.attach(
                 new GroupTransform<>(
                         asList(computeStage.transform, transformOf(stage1)),
@@ -112,6 +111,7 @@ public class StageWithGroupingImpl<T, K> extends StageWithGroupingBase<T, K> imp
             @Nonnull AggregateOperation3<? super T, ? super T1, ? super T2, A, R> aggrOp,
             @Nonnull DistributedBiFunction<? super K, ? super R, ? extends OUT> mapToOutputFn
     ) {
+        checkSerializable(mapToOutputFn, "mapToOutputFn");
         return computeStage.attach(
                 new GroupTransform<>(
                         asList(computeStage.transform, transformOf(stage1), transformOf(stage2)),

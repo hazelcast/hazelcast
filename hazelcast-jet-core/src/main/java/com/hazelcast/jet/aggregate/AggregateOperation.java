@@ -28,6 +28,8 @@ import javax.annotation.Nullable;
 import java.io.Serializable;
 import java.util.Objects;
 
+import static com.hazelcast.jet.impl.util.Util.checkSerializable;
+
 /**
  * Contains primitives needed to compute an aggregated result of data
  * processing. Check out {@link AggregateOperations} to find the one
@@ -266,6 +268,7 @@ public interface AggregateOperation<A, R> extends Serializable {
      */
     @Nonnull
     static <A> AggregateOperationBuilder<A> withCreate(@Nonnull DistributedSupplier<A> createFn) {
+        checkSerializable(createFn, "createFn");
         return new AggregateOperationBuilder<>(createFn);
     }
 }

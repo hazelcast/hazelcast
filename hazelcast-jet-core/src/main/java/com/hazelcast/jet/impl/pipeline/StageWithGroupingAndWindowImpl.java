@@ -36,6 +36,7 @@ import static com.hazelcast.jet.impl.pipeline.ComputeStageImplBase.ensureJetEven
 import static com.hazelcast.jet.impl.pipeline.JetEventFunctionAdapter.adaptAggregateOperation1;
 import static com.hazelcast.jet.impl.pipeline.JetEventFunctionAdapter.adaptAggregateOperation2;
 import static com.hazelcast.jet.impl.pipeline.JetEventFunctionAdapter.adaptAggregateOperation3;
+import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 
@@ -64,6 +65,7 @@ public class StageWithGroupingAndWindowImpl<T, K>
     public <R> StreamStage<R> distinct(
             @Nonnull WindowResultFunction<? super T, ? extends R> mapToOutputFn
     ) {
+        checkSerializable(mapToOutputFn, "mapToOutputFn");
         return aggregate(pickAny(), (start, end, key, item) -> mapToOutputFn.apply(start, end, item));
     }
 
@@ -73,6 +75,7 @@ public class StageWithGroupingAndWindowImpl<T, K>
             @Nonnull AggregateOperation1<? super T, A, R> aggrOp,
             @Nonnull KeyedWindowResultFunction<? super K, ? super R, OUT> mapToOutputFn
     ) {
+        checkSerializable(mapToOutputFn, "mapToOutputFn");
         ensureJetEvents(computeStage, "This pipeline stage");
         JetEventFunctionAdapter fnAdapter = ADAPT_TO_JET_EVENT;
         return computeStage.attach(new WindowGroupTransform<K, A, R, JetEvent<OUT>>(
@@ -92,6 +95,7 @@ public class StageWithGroupingAndWindowImpl<T, K>
             @Nonnull AggregateOperation2<? super T, ? super T1, A, R> aggrOp,
             @Nonnull KeyedWindowResultFunction<? super K, ? super R, OUT> mapToOutputFn
     ) {
+        checkSerializable(mapToOutputFn, "mapToOutputFn");
         ComputeStageImplBase stageImpl1 = ((StageWithGroupingBase) stage1).computeStage;
         ensureJetEvents(computeStage, "This pipeline stage");
         ensureJetEvents(stageImpl1, "stage1");
@@ -114,6 +118,7 @@ public class StageWithGroupingAndWindowImpl<T, K>
             @Nonnull AggregateOperation3<? super T, ? super T1, ? super T2, A, R> aggrOp,
             @Nonnull KeyedWindowResultFunction<? super K, ? super R, OUT> mapToOutputFn
     ) {
+        checkSerializable(mapToOutputFn, "mapToOutputFn");
         ComputeStageImplBase stageImpl1 = ((StageWithGroupingBase) stage1).computeStage;
         ComputeStageImplBase stageImpl2 = ((StageWithGroupingBase) stage2).computeStage;
         ensureJetEvents(computeStage, "This pipeline stage");

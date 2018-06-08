@@ -32,6 +32,7 @@ import javax.jms.MessageConsumer;
 import javax.jms.Session;
 
 import static com.hazelcast.jet.function.DistributedFunctions.noopConsumer;
+import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
@@ -61,6 +62,7 @@ public final class JmsSourceBuilder<T> {
      * Use {@link Sources#jmsQueueBuilder} of {@link Sources#jmsTopicBuilder}.
      */
     JmsSourceBuilder(DistributedSupplier<ConnectionFactory> factorySupplier, boolean isTopic) {
+        checkSerializable(factorySupplier, "factorySupplier");
         this.factorySupplier = factorySupplier;
         this.isTopic = isTopic;
     }
@@ -86,6 +88,7 @@ public final class JmsSourceBuilder<T> {
      * connection. See {@link #connectionParams(String, String)}.
      */
     public JmsSourceBuilder<T> connectionFn(@Nonnull DistributedFunction<ConnectionFactory, Connection> connectionFn) {
+        checkSerializable(connectionFn, "connectionFn");
         this.connectionFn = connectionFn;
         return this;
     }
@@ -113,6 +116,7 @@ public final class JmsSourceBuilder<T> {
      * create the session. See {@link #sessionParams(boolean, int)}.
      */
     public JmsSourceBuilder<T> sessionFn(@Nonnull DistributedFunction<Connection, Session> sessionFn) {
+        checkSerializable(sessionFn, "sessionFn");
         this.sessionFn = sessionFn;
         return this;
     }
@@ -135,6 +139,7 @@ public final class JmsSourceBuilder<T> {
      * {@link #destinationName(String)}.
      */
     public JmsSourceBuilder<T> consumerFn(@Nonnull DistributedFunction<Session, MessageConsumer> consumerFn) {
+        checkSerializable(consumerFn, "consumerFn");
         this.consumerFn = consumerFn;
         return this;
     }
@@ -145,6 +150,7 @@ public final class JmsSourceBuilder<T> {
      * If not provided, the builder creates an identity function.
      */
     public JmsSourceBuilder<T> projectionFn(DistributedFunction<Message, T> projectionFn) {
+        checkSerializable(projectionFn, "projectionFn");
         this.projectionFn = projectionFn;
         return this;
     }
@@ -155,6 +161,7 @@ public final class JmsSourceBuilder<T> {
      * If not provided, the builder creates a no-op consumer.
      */
     public JmsSourceBuilder<T> flushFn(DistributedConsumer<Session> flushFn) {
+        checkSerializable(flushFn, "flushFn");
         this.flushFn = flushFn;
         return this;
     }

@@ -24,6 +24,7 @@ import com.hazelcast.jet.function.DistributedSupplier;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 public class AggregateOperationImpl<A, R> implements AggregateOperation<A, R> {
@@ -95,6 +96,7 @@ public class AggregateOperationImpl<A, R> implements AggregateOperation<A, R> {
     public <R1> AggregateOperation<A, R1> withFinishFn(
             @Nonnull DistributedFunction<? super A, R1> finishFn
     ) {
+        checkSerializable(finishFn, "finishFn");
         return new AggregateOperationImpl<>(createFn(), accumulateFns, combineFn(), deductFn(), finishFn);
     }
 

@@ -61,6 +61,7 @@ import static com.hazelcast.jet.core.ProcessorMetaSupplier.preferLocalParallelis
 import static com.hazelcast.jet.function.DistributedFunctions.noopConsumer;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.Util.callbackOf;
+import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 import static com.hazelcast.jet.impl.util.Util.tryIncrement;
 import static java.util.stream.Collectors.toList;
 
@@ -82,6 +83,10 @@ public final class HazelcastWriters {
             @Nonnull DistributedFunction<T, V> toValueFn,
             @Nonnull DistributedBinaryOperator<V> mergeFn
     ) {
+        checkSerializable(toKeyFn, "toKeyFn");
+        checkSerializable(toValueFn, "toValueFn");
+        checkSerializable(mergeFn, "mergeFn");
+
         return updateMapP(name, clientConfig, toKeyFn, (V oldValue, T item) -> {
             V newValue = toValueFn.apply(item);
             if (oldValue == null) {
@@ -99,6 +104,9 @@ public final class HazelcastWriters {
             @Nonnull DistributedFunction<T, K> toKeyFn,
             @Nonnull DistributedBiFunction<V, T, V> updateFn
     ) {
+        checkSerializable(toKeyFn, "toKeyFn");
+        checkSerializable(updateFn, "updateFn");
+
         boolean isLocal = clientConfig == null;
         return preferLocalParallelismOne(new HazelcastWriterSupplier<>(
                 serializableConfig(clientConfig),
@@ -144,6 +152,9 @@ public final class HazelcastWriters {
             @Nonnull DistributedFunction<T, K> toKeyFn,
             @Nonnull DistributedFunction<T, EntryProcessor<K, V>> toEntryProcessorFn
     ) {
+        checkSerializable(toKeyFn, "toKeyFn");
+        checkSerializable(toEntryProcessorFn, "toEntryProcessorFn");
+
         boolean isLocal = clientConfig == null;
         return preferLocalParallelismOne(new EntryProcessorWriterSupplier<>(
                         name,

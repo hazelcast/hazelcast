@@ -30,6 +30,7 @@ import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.IntStream.range;
@@ -66,6 +67,7 @@ public final class AggregateOperationBuilder<A> {
      */
     @Nonnull
     public <T> Arity1<T, A> andAccumulate(@Nonnull DistributedBiConsumer<? super A, T> accumulateFn) {
+        checkSerializable(accumulateFn, "accumulateFn");
         return new Arity1<>(createFn, accumulateFn);
     }
 
@@ -79,6 +81,7 @@ public final class AggregateOperationBuilder<A> {
      */
     @Nonnull
     public <T0> Arity1<T0, A> andAccumulate0(@Nonnull DistributedBiConsumer<? super A, T0> accumulateFn0) {
+        checkSerializable(accumulateFn0, "accumulateFn0");
         return new Arity1<>(createFn, accumulateFn0);
     }
 
@@ -107,6 +110,7 @@ public final class AggregateOperationBuilder<A> {
     public <T> VarArity<A> andAccumulate(
             @Nonnull Tag<T> tag, @Nonnull DistributedBiConsumer<? super A, T> accumulateFn
     ) {
+        checkSerializable(accumulateFn, "accumulateFn");
         return new VarArity<>(createFn, tag, accumulateFn);
     }
 
@@ -141,6 +145,7 @@ public final class AggregateOperationBuilder<A> {
          */
         @Nonnull
         public <T1> Arity2<T0, T1, A> andAccumulate1(@Nonnull DistributedBiConsumer<? super A, T1> accumulateFn1) {
+            checkSerializable(accumulateFn1, "accumulateFn1");
             return new Arity2<>(this, accumulateFn1);
         }
 
@@ -149,6 +154,7 @@ public final class AggregateOperationBuilder<A> {
          */
         @Nonnull
         public Arity1<T0, A> andCombine(@Nullable DistributedBiConsumer<? super A, ? super A> combineFn) {
+            checkSerializable(combineFn, "combineFn");
             this.combineFn = combineFn;
             return this;
         }
@@ -158,6 +164,7 @@ public final class AggregateOperationBuilder<A> {
          */
         @Nonnull
         public Arity1<T0, A> andDeduct(@Nullable DistributedBiConsumer<? super A, ? super A> deductFn) {
+            checkSerializable(deductFn, "deductFn");
             this.deductFn = deductFn;
             return this;
         }
@@ -168,6 +175,7 @@ public final class AggregateOperationBuilder<A> {
          */
         @Nonnull
         public <R> AggregateOperation1<T0, A, R> andFinish(@Nonnull DistributedFunction<? super A, R> finishFn) {
+            checkSerializable(finishFn, "finishFn");
             return new AggregateOperation1Impl<>(createFn, accumulateFn0, combineFn, deductFn, finishFn);
         }
 
@@ -218,6 +226,7 @@ public final class AggregateOperationBuilder<A> {
          */
         @Nonnull
         public <T2> Arity3<T0, T1, T2, A> andAccumulate2(@Nonnull DistributedBiConsumer<? super A, T2> accumulateFn2) {
+            checkSerializable(accumulateFn2, "accumulateFn2");
             return new Arity3<>(this, accumulateFn2);
         }
 
@@ -226,6 +235,7 @@ public final class AggregateOperationBuilder<A> {
          */
         @Nonnull
         public Arity2<T0, T1, A> andCombine(@Nullable DistributedBiConsumer<? super A, ? super A> combineFn) {
+            checkSerializable(combineFn, "combineFn");
             this.combineFn = combineFn;
             return this;
         }
@@ -235,6 +245,7 @@ public final class AggregateOperationBuilder<A> {
          */
         @Nonnull
         public Arity2<T0, T1, A> andDeduct(@Nullable DistributedBiConsumer<? super A, ? super A> deductFn) {
+            checkSerializable(deductFn, "deductFn");
             this.deductFn = deductFn;
             return this;
         }
@@ -245,6 +256,7 @@ public final class AggregateOperationBuilder<A> {
          */
         @Nonnull
         public <R> AggregateOperation2<T0, T1, A, R> andFinish(@Nonnull DistributedFunction<? super A, R> finishFn) {
+            checkSerializable(finishFn, "finishFn");
             return new AggregateOperation2Impl<>(createFn,
                     accumulateFn0, accumulateFn1,
                     combineFn, deductFn, finishFn);
@@ -297,6 +309,7 @@ public final class AggregateOperationBuilder<A> {
          */
         @Nonnull
         public Arity3<T0, T1, T2, A> andCombine(@Nullable DistributedBiConsumer<? super A, ? super A> combineFn) {
+            checkSerializable(combineFn, "combineFn");
             this.combineFn = combineFn;
             return this;
         }
@@ -306,6 +319,7 @@ public final class AggregateOperationBuilder<A> {
          */
         @Nonnull
         public Arity3<T0, T1, T2, A> andDeduct(@Nullable DistributedBiConsumer<? super A, ? super A> deductFn) {
+            checkSerializable(deductFn, "deductFn");
             this.deductFn = deductFn;
             return this;
         }
@@ -318,6 +332,7 @@ public final class AggregateOperationBuilder<A> {
         public <R> AggregateOperation3<T0, T1, T2, A, R> andFinish(
                 @Nonnull DistributedFunction<? super A, R> finishFn
         ) {
+            checkSerializable(finishFn, "finishFn");
             return new AggregateOperation3Impl<>(createFn,
                     accumulateFn0, accumulateFn1, accumulateFn2,
                     combineFn, deductFn, finishFn);
@@ -377,6 +392,7 @@ public final class AggregateOperationBuilder<A> {
         public <T> VarArity<A> andAccumulate(
                 @Nonnull Tag<T> tag, @Nonnull DistributedBiConsumer<? super A, T> accumulateFn
         ) {
+            checkSerializable(accumulateFn, "accumulateFn");
             if (accumulateFnsByTag.putIfAbsent(tag.index(), accumulateFn) != null) {
                 throw new IllegalArgumentException("Tag with index " + tag.index() + " already registered");
             }
@@ -388,6 +404,7 @@ public final class AggregateOperationBuilder<A> {
          */
         @Nonnull
         public VarArity<A> andCombine(@Nullable DistributedBiConsumer<? super A, ? super A> combineFn) {
+            checkSerializable(combineFn, "combineFn");
             this.combineFn = combineFn;
             return this;
         }
@@ -397,6 +414,7 @@ public final class AggregateOperationBuilder<A> {
          */
         @Nonnull
         public VarArity<A> andDeduct(@Nullable DistributedBiConsumer<? super A, ? super A> deductFn) {
+            checkSerializable(deductFn, "deductFn");
             this.deductFn = deductFn;
             return this;
         }

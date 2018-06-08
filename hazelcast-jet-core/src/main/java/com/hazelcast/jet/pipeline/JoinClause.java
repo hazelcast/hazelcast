@@ -21,6 +21,8 @@ import com.hazelcast.jet.function.DistributedFunction;
 import java.io.Serializable;
 import java.util.Map.Entry;
 
+import static com.hazelcast.jet.impl.util.Util.checkSerializable;
+
 /**
  * Specifies how to join an enriching stream to the primary stream in a
  * {@link BatchStage#hashJoin hash-join} operation. It holds three
@@ -57,6 +59,9 @@ public final class JoinClause<K, T0, T1, T1_OUT> implements Serializable {
             DistributedFunction<? super T1, ? extends K> rightKeyFn,
             DistributedFunction<? super T1, ? extends T1_OUT> rightProjectFn
     ) {
+        checkSerializable(leftKeyFn, "leftKeyFn");
+        checkSerializable(rightKeyFn, "rightKeyFn");
+        checkSerializable(rightProjectFn, "rightProjectFn");
         this.leftKeyFn = leftKeyFn;
         this.rightKeyFn = rightKeyFn;
         this.rightProjectFn = rightProjectFn;

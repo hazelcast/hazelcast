@@ -25,6 +25,8 @@ import com.hazelcast.jet.function.DistributedSupplier;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import static com.hazelcast.jet.impl.util.Util.checkSerializable;
+
 public class AggregateOperation2Impl<T0, T1, A, R>
         extends AggregateOperationImpl<A, R>
         implements AggregateOperation2<T0, T1, A, R> {
@@ -65,6 +67,7 @@ public class AggregateOperation2Impl<T0, T1, A, R>
     public <T0_NEW> AggregateOperation2<T0_NEW, T1, A, R> withAccumulateFn0(
             @Nonnull DistributedBiConsumer<? super A, ? super T0_NEW> newAccFn0
     ) {
+        checkSerializable(newAccFn0, "newAccFn0");
         return new AggregateOperation2Impl<>(
                 createFn(), newAccFn0, accumulateFn1(), combineFn(), deductFn(), finishFn());
     }
@@ -73,6 +76,7 @@ public class AggregateOperation2Impl<T0, T1, A, R>
     public <T1_NEW> AggregateOperation2<T0, T1_NEW, A, R> withAccumulateFn1(
             @Nonnull DistributedBiConsumer<? super A, ? super T1_NEW> newAccFn1
     ) {
+        checkSerializable(newAccFn1, "newAccFn1");
         return new AggregateOperation2Impl<>(
                 createFn(), accumulateFn0(), newAccFn1, combineFn(), deductFn(), finishFn());
     }
@@ -92,6 +96,7 @@ public class AggregateOperation2Impl<T0, T1, A, R>
     public <R1> AggregateOperation2<T0, T1, A, R1> withFinishFn(
             @Nonnull DistributedFunction<? super A, R1> finishFn
     ) {
+        checkSerializable(finishFn, "finishFn");
         return new AggregateOperation2Impl<>(createFn(), accumulateFns, combineFn(), deductFn(), finishFn);
     }
 }

@@ -22,6 +22,8 @@ import com.hazelcast.jet.pipeline.GeneralStageWithGrouping;
 
 import javax.annotation.Nonnull;
 
+import static com.hazelcast.jet.impl.util.Util.checkSerializable;
+
 class StageWithGroupingBase<T, K> {
 
     @Nonnull
@@ -33,6 +35,7 @@ class StageWithGroupingBase<T, K> {
             @Nonnull ComputeStageImplBase<T> computeStage,
             @Nonnull DistributedFunction<? super T, ? extends K> keyFn
     ) {
+        checkSerializable(keyFn, "keyFn");
         this.computeStage = computeStage;
         this.keyFn = keyFn;
     }

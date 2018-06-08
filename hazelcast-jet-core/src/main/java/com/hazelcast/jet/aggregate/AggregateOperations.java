@@ -48,6 +48,7 @@ import java.util.Set;
 
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.datamodel.Tuple3.tuple3;
+import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 
 /**
  * Utility class with factory methods for several useful aggregate
@@ -81,6 +82,7 @@ public final class AggregateOperations {
     public static <T> AggregateOperation1<T, LongAccumulator, Long> summingLong(
             @Nonnull DistributedToLongFunction<? super T> getLongValueFn
     ) {
+        checkSerializable(getLongValueFn, "getLongValueFn");
         return AggregateOperation
                 .withCreate(LongAccumulator::new)
                 .andAccumulate((LongAccumulator a, T item) -> a.add(getLongValueFn.applyAsLong(item)))
@@ -99,6 +101,7 @@ public final class AggregateOperations {
     public static <T> AggregateOperation1<T, DoubleAccumulator, Double> summingDouble(
             @Nonnull DistributedToDoubleFunction<? super T> getDoubleValueFn
     ) {
+        checkSerializable(getDoubleValueFn, "getDoubleValueFn");
         return AggregateOperation
                 .withCreate(DoubleAccumulator::new)
                 .andAccumulate((DoubleAccumulator a, T item) -> a.accumulate(getDoubleValueFn.applyAsDouble(item)))
@@ -120,6 +123,7 @@ public final class AggregateOperations {
     public static <T> AggregateOperation1<T, MutableReference<T>, T> minBy(
             @Nonnull DistributedComparator<? super T> comparator
     ) {
+        checkSerializable(comparator, "comparator");
         return maxBy(comparator.reversed());
     }
 
@@ -136,7 +140,8 @@ public final class AggregateOperations {
     public static <T> AggregateOperation1<T, MutableReference<T>, T> maxBy(
             @Nonnull DistributedComparator<? super T> comparator
     ) {
-        return AggregateOperation
+        checkSerializable(comparator, "comparator");
+                return AggregateOperation
                 .withCreate(MutableReference<T>::new)
                 .andAccumulate((MutableReference<T> a, T i) -> {
                     if (a.isNull() || comparator.compare(i, a.get()) > 0) {
@@ -162,6 +167,7 @@ public final class AggregateOperations {
     public static <T> AggregateOperation1<T, LongLongAccumulator, Double> averagingLong(
             @Nonnull DistributedToLongFunction<? super T> getLongValueFn
     ) {
+        checkSerializable(getLongValueFn, "getLongValueFn");
         // accumulator.value1 is count
         // accumulator.value2 is sum
         return AggregateOperation
@@ -196,6 +202,7 @@ public final class AggregateOperations {
     public static <T> AggregateOperation1<T, LongDoubleAccumulator, Double> averagingDouble(
             @Nonnull DistributedToDoubleFunction<? super T> getDoubleValueFn
     ) {
+        checkSerializable(getDoubleValueFn, "getDoubleValueFn");
         // accumulator.value1 is count
         // accumulator.value2 is sum
         return AggregateOperation
@@ -231,6 +238,7 @@ public final class AggregateOperations {
             @Nonnull DistributedToLongFunction<T> getXFn,
             @Nonnull DistributedToLongFunction<T> getYFn
     ) {
+        checkSerializable(getXFn, "getYFn");
         return AggregateOperation
                 .withCreate(LinTrendAccumulator::new)
                 .andAccumulate((LinTrendAccumulator a, T item) ->
@@ -275,6 +283,7 @@ public final class AggregateOperations {
             @Nonnull AggregateOperation1<? super T, A1, R1> op1,
             @Nonnull DistributedBiFunction<? super R0, ? super R1, R> finishFn
     ) {
+        checkSerializable(finishFn, "finishFn");
         DistributedBiConsumer<? super A0, ? super A0> combine0 = op0.combineFn();
         DistributedBiConsumer<? super A1, ? super A1> combine1 = op1.combineFn();
         DistributedBiConsumer<? super A0, ? super A0> deduct0 = op0.deductFn();
@@ -340,6 +349,7 @@ public final class AggregateOperations {
             @Nonnull AggregateOperation1<? super T, A2, ? extends R2> op2,
             @Nonnull DistributedTriFunction<? super R0, ? super R1, ? super R2, ? extends R> finishFn
     ) {
+        checkSerializable(finishFn, "finishFn");
         DistributedBiConsumer<? super A0, ? super A0> combine0 = op0.combineFn();
         DistributedBiConsumer<? super A1, ? super A1> combine1 = op1.combineFn();
         DistributedBiConsumer<? super A2, ? super A2> combine2 = op2.combineFn();
@@ -438,6 +448,7 @@ public final class AggregateOperations {
             @Nonnull AggregateOperation1<? super T1, A1, ? extends R1> op1,
             @Nonnull DistributedBiFunction<? super R0, ? super R1, ? extends R> finishFn
     ) {
+        checkSerializable(finishFn, "finishFn");
         DistributedBiConsumer<? super A0, ? super A0> combine0 = op0.combineFn();
         DistributedBiConsumer<? super A1, ? super A1> combine1 = op1.combineFn();
         DistributedBiConsumer<? super A0, ? super A0> deduct0 = op0.deductFn();
@@ -519,6 +530,7 @@ public final class AggregateOperations {
             @Nonnull AggregateOperation1<? super T2, A2, ? extends R2> op2,
             @Nonnull DistributedTriFunction<? super R0, ? super R1, ? super R2, ? extends R> finishFn
     ) {
+        checkSerializable(finishFn, "finishFn");
         DistributedBiConsumer<? super A0, ? super A0> combine0 = op0.combineFn();
         DistributedBiConsumer<? super A1, ? super A1> combine1 = op1.combineFn();
         DistributedBiConsumer<? super A2, ? super A2> combine2 = op2.combineFn();
@@ -668,6 +680,7 @@ public final class AggregateOperations {
             @Nonnull DistributedFunction<? super T, ? extends U> mapFn,
             @Nonnull AggregateOperation1<? super U, A, R> downstream
     ) {
+        checkSerializable(mapFn, "mapFn");
         DistributedBiConsumer<? super A, ? super U> downstreamAccumulateFn = downstream.accumulateFn();
         return AggregateOperation
                 .withCreate(downstream.createFn())
@@ -698,6 +711,7 @@ public final class AggregateOperations {
     public static <T, C extends Collection<T>> AggregateOperation1<T, C, C> toCollection(
             DistributedSupplier<C> createCollectionFn
     ) {
+        checkSerializable(createCollectionFn, "createCollectionFn");
         return AggregateOperation
                 .withCreate(createCollectionFn)
                 .<T>andAccumulate(Collection::add)
@@ -819,6 +833,11 @@ public final class AggregateOperations {
             DistributedBinaryOperator<U> mergeFn,
             DistributedSupplier<M> createMapFn
     ) {
+        checkSerializable(toKeyFn, "toKeyFn");
+        checkSerializable(toValueFn, "toValueFn");
+        checkSerializable(mergeFn, "mergeFn");
+        checkSerializable(createMapFn, "createMapFn");
+
         DistributedBiConsumer<M, T> accumulateFn =
                 (map, element) -> map.merge(toKeyFn.apply(element), toValueFn.apply(element), mergeFn);
         return AggregateOperation
@@ -904,6 +923,9 @@ public final class AggregateOperations {
             DistributedSupplier<M> createMapFn,
             AggregateOperation1<? super T, A, R> downstream
     ) {
+        checkSerializable(toKeyFn, "toKeyFn");
+        checkSerializable(createMapFn, "createMapFn");
+
         DistributedBiConsumer<? super Map<K, A>, T> accumulateFn = (m, t) -> {
             A acc = m.computeIfAbsent(toKeyFn.apply(t), k -> downstream.createFn().get());
             downstream.accumulateFn().accept(acc, t);
@@ -962,6 +984,11 @@ public final class AggregateOperations {
             @Nonnull DistributedBinaryOperator<A> combineAccValuesFn,
             @Nullable DistributedBinaryOperator<A> deductAccValueFn
     ) {
+        checkSerializable(emptyAccValue, "emptyAccValue");
+        checkSerializable(toAccValueFn, "toAccValueFn");
+        checkSerializable(combineAccValuesFn, "combineAccValuesFn");
+        checkSerializable(deductAccValueFn, "deductAccValueFn");
+
         // workaround for spotbugs issue: https://github.com/spotbugs/spotbugs/issues/552
         DistributedBinaryOperator<A> deductFn = deductAccValueFn;
         return AggregateOperation
@@ -1024,6 +1051,7 @@ public final class AggregateOperations {
     public static <T> AggregateOperation1<T, ArrayList<T>, List<T>> sorting(
             @Nonnull DistributedComparator<? super T> comparator
     ) {
+        checkSerializable(comparator, "comparator");
         return AggregateOperation
                 .withCreate(ArrayList<T>::new)
                 .<T>andAccumulate(ArrayList::add)

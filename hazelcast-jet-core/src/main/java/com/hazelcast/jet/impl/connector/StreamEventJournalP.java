@@ -65,6 +65,7 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFinest;
 import static com.hazelcast.jet.impl.util.Util.arrayIndexOf;
+import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 import static com.hazelcast.jet.impl.util.Util.processorToPartitions;
 import static com.hazelcast.jet.pipeline.JournalInitialPosition.START_FROM_CURRENT;
 import static java.util.stream.Collectors.groupingBy;
@@ -476,6 +477,9 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
             @Nonnull JournalInitialPosition initialPos,
             WatermarkGenerationParams<? super T> wmGenParams
     ) {
+        checkSerializable(predicate, "predicate");
+        checkSerializable(projection, "projection");
+
         return new ClusterMetaSupplier<>(null,
                 instance -> (EventJournalReader<EventJournalMapEvent<K, V>>) instance.getMap(mapName),
                 predicate, projection, initialPos, wmGenParams);
@@ -489,6 +493,9 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
             @Nonnull DistributedFunction<EventJournalMapEvent<K, V>, T> projection,
             @Nonnull JournalInitialPosition initialPos,
             @Nonnull WatermarkGenerationParams<T> wmGenParams) {
+        checkSerializable(predicate, "predicate");
+        checkSerializable(projection, "projection");
+
         return new ClusterMetaSupplier<>(clientConfig,
                 instance -> (EventJournalReader<EventJournalMapEvent<K, V>>) instance.getMap(mapName),
                 predicate, projection, initialPos, wmGenParams);
@@ -501,6 +508,9 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
             @Nonnull DistributedFunction<EventJournalCacheEvent<K, V>, T> projection,
             @Nonnull JournalInitialPosition initialPos,
             @Nonnull WatermarkGenerationParams<T> wmGenParams) {
+        checkSerializable(predicate, "predicate");
+        checkSerializable(projection, "projection");
+
         return new ClusterMetaSupplier<>(null,
                 inst -> (EventJournalReader<EventJournalCacheEvent<K, V>>) inst.getCacheManager().getCache(cacheName),
                 predicate, projection, initialPos, wmGenParams);
@@ -514,6 +524,9 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
             @Nonnull DistributedFunction<EventJournalCacheEvent<K, V>, T> projection,
             @Nonnull JournalInitialPosition initialPos,
             @Nonnull WatermarkGenerationParams<T> wmGenParams) {
+        checkSerializable(predicate, "predicate");
+        checkSerializable(projection, "projection");
+
         return new ClusterMetaSupplier<>(clientConfig,
                 inst -> (EventJournalReader<EventJournalCacheEvent<K, V>>) inst.getCacheManager().getCache(cacheName),
                 predicate, projection, initialPos, wmGenParams);

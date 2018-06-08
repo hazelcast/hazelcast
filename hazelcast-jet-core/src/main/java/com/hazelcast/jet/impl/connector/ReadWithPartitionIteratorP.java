@@ -47,6 +47,7 @@ import java.util.function.Function;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.client.HazelcastClient.newHazelcastClient;
+import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 import static com.hazelcast.jet.impl.util.Util.processorToPartitions;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.mapping;
@@ -108,6 +109,9 @@ public final class ReadWithPartitionIteratorP<T> extends AbstractProcessor {
             @Nonnull Predicate<K, V> predicate,
             @Nonnull Projection<Map.Entry<K, V>, T> projection
     ) {
+        checkSerializable(predicate, "predicate");
+        checkSerializable(projection, "projection");
+
         return new LocalClusterMetaSupplier<T>(
                 instance -> partition -> {
                     MapProxyImpl map = (MapProxyImpl) instance.<K, V>getMap(mapName);
@@ -121,6 +125,9 @@ public final class ReadWithPartitionIteratorP<T> extends AbstractProcessor {
             @Nonnull Projection<Entry<K, V>, T> projection,
             @Nonnull Predicate<K, V> predicate
     ) {
+        checkSerializable(projection, "projection");
+        checkSerializable(predicate, "predicate");
+
         return new RemoteClusterMetaSupplier<T>(clientConfig,
                 instance -> partition -> ((ClientMapProxy) instance.getMap(mapName))
                         .iterator(FETCH_SIZE, partition, projection, predicate));

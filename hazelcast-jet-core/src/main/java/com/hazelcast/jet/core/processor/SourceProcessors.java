@@ -51,6 +51,7 @@ import static com.hazelcast.jet.Util.cacheEventToEntry;
 import static com.hazelcast.jet.Util.cachePutEvents;
 import static com.hazelcast.jet.Util.mapEventToEntry;
 import static com.hazelcast.jet.Util.mapPutEvents;
+import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 
 /**
@@ -124,6 +125,9 @@ public final class SourceProcessors {
             @Nonnull JournalInitialPosition initialPos,
             WatermarkGenerationParams<? super T> wmGenParams
     ) {
+        checkSerializable(predicateFn, "predicateFn");
+        checkSerializable(projectionFn, "projectionFn");
+
         return StreamEventJournalP.streamMapP(mapName, predicateFn, projectionFn, initialPos, wmGenParams);
     }
 
@@ -322,6 +326,8 @@ public final class SourceProcessors {
             @Nonnull DistributedBiFunction<String, String, R> mapOutputFn,
             boolean sharedFileSystem
     ) {
+        checkSerializable(mapOutputFn, "mapOutputFn");
+
         String charsetName = charset.name();
         return ReadFilesP.metaSupplier(directory, glob,
                 path -> uncheckCall(() -> Files.lines(path, Charset.forName(charsetName))),
