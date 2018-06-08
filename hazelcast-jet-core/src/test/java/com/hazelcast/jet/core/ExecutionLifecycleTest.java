@@ -136,6 +136,26 @@ public class ExecutionLifecycleTest extends JetTestSupport {
     }
 
     @Test
+    public void when_oneOfTwoJobsFails_then_theOtherContinues() throws Exception {
+        // Given
+        RuntimeException e = new RuntimeException("mock error");
+        DAG dagFaulty = new DAG().vertex(new Vertex("faulty",
+                new MockPMS(() -> new MockPS(() -> new MockP().setCompleteError(e), NODE_COUNT))));
+        DAG dagGood = new DAG();
+        dagGood.newVertex("good", () -> new StuckProcessor());
+
+        // When
+        Job jobGood = instance.newJob(dagGood);
+        StuckProcessor.executionStarted.await();
+        runJobExpectFailure(dagFaulty, e);
+
+        // Then
+        assertTrueAllTheTime(() -> assertEquals(JobStatus.RUNNING, jobGood.getStatus()), 5);
+        StuckProcessor.proceedLatch.countDown();
+        jobGood.join();
+    }
+
+    @Test
     public void when_pmsGetThrows_then_jobFails() {
         // Given
         RuntimeException e = new RuntimeException("mock error");
