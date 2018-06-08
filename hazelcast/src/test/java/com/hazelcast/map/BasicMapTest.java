@@ -30,6 +30,7 @@ import com.hazelcast.core.MapEvent;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.test.AssertTask;
+import com.hazelcast.test.ChangeLoggingRule;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -38,6 +39,7 @@ import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.Preconditions;
 import org.junit.Before;
+import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -71,6 +73,12 @@ import static org.junit.Assert.fail;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class BasicMapTest extends HazelcastTestSupport {
+
+    /**
+     * This rule is here artificially just to test that ChangeLoggingRule is working (meaning not broken).
+     */
+    @ClassRule
+    public static ChangeLoggingRule changeLoggingRule = new ChangeLoggingRule("log4j2.xml");
 
     static final int INSTANCE_COUNT = 3;
     static final Random RANDOM = new Random();
