@@ -39,4 +39,8 @@ public abstract class LoggerFactorySupport implements LoggerFactory {
     }
 
     protected abstract ILogger createLogger(String name);
+
+    public void clearLoadedLoggers() {
+        mapLoggers.clear();
+    }
 }
