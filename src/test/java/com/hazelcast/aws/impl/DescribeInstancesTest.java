@@ -19,7 +19,6 @@ package com.hazelcast.aws.impl;
 import com.hazelcast.aws.AwsConfig;
 import com.hazelcast.aws.exception.AwsConnectionException;
 import com.hazelcast.aws.utility.Environment;
-import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -32,9 +31,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
-import java.net.SocketTimeoutException;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.aws.utility.MetadataUtil.IAM_SECURITY_CREDENTIALS_URI;
 import static com.hazelcast.aws.utility.MetadataUtil.INSTANCE_METADATA_URI;
@@ -51,18 +48,16 @@ import static org.mockito.Mockito.when;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class DescribeInstancesTest {
-
-    private static final int CALL_SERVICE_TIMEOUT = 1000; //in ms
-    private static final int TIMEOUT_FACTOR = 2;
-
-    private static InputStream toInputStream(String s)
-            throws Exception {
-        return new ByteArrayInputStream(s.getBytes("UTF-8"));
-    }
-
-    private static AwsConfig.Builder predefinedAwsConfigBuilder() {
-        return AwsConfig.builder().setHostHeader("ec2.amazonaws.com").setRegion("us-east-1").setConnectionTimeoutSeconds(5);
-    }
+    private static final String DUMMY_ACCESS_KEY = "DUMMY_ACCESS_KEY";
+    private static final String DUMMY_SECRET_KEY = "DUMMY_SECRET_ACCESS_KEY";
+    private static final String DUMMY_TOKEN = "DUMMY_TOKEN";
+    private static final String DUMMY_IAM_ROLE =
+            "        {\n" + "          \"Code\" : \"Success\",\n" + "          \"LastUpdated\" : \"2016-10-04T12:08:24Z\",\n"
+                    + "          \"Type\" : \"AWS-HMAC\",\n" + "          \"AccessKeyId\" : \"" + DUMMY_ACCESS_KEY + "\",\n"
+                    + "          \"SecretAccessKey\" : \"" + DUMMY_SECRET_KEY + "\",\n" + "          \"Token\" : \"" + DUMMY_TOKEN
+                    + "\",\n" + "          \"Expiration\" : \"2016-10-04T18:19:39Z\"\n" + "        }\n";
+    private static final String HOST_HEADER = "ec2.amazonaws.com";
+    public static final String DUMMY_PRIVATE_IP = "10.0.0.1";
 
     @Test(expected = IllegalArgumentException.class)
     public void test_whenAccessKey_And_IamRole_And_IamTaskRoleEnvVar_Null_With_No_DefaultRole()
@@ -88,59 +83,41 @@ public class DescribeInstancesTest {
         final String uri = INSTANCE_METADATA_URI + IAM_SECURITY_CREDENTIALS_URI;
 
         final String roleUri = INSTANCE_METADATA_URI + IAM_SECURITY_CREDENTIALS_URI + defaultIamRoleName;
-        // some dummy creds. Look real, but they aren't.
-        final String accessKeyId = "ASIAJDOR231233BVE7GQ";
-        final String secretAccessKey = "QU5mTd40xnAbC5Mz2T3Fy7afQVrow+/tYq5GXMf7";
-        final String token = "FQoDYXdzEKX//////////wEaDN2Xh+ekVbV1KJrCqCK3A"
-                + "/Quuw8xCdZZbOPjzKLNc89n72z61BLt96hzlxTV6Vx1hDXLQNWRIx07hZVgmgGzzyr0DzYAcqKq7s2GUznWlaXhGHxhyo4nJUeBFbLyYPjbDAcnl84HItjy5bvtQ6fbDM7h2ZGuJrHi51KAhxWN/uEHyBKAIJd5RdXxVH4UTNxJFiqEw8GdaXDGK07186TfqSFCdlG+rhL35bN7WcJZuykIpynbeQpPeY4rJ0WJGoSJwt/RSkGwP+JRcYmv8Y7L1uSD2spJWO6etFeyyU63y0BL42MXWL38SQypxjLz+s1PozSDrV7zxsp4DQONn+adbSyAoveskD3xtDYsip1Ra0UCSYNKzmmh2XXF4fBBb6EPRixc1fnCIVDp0rfyCGO0VMuIloF5nWP9XsaRcR1mbJ7K/TuWgugduRBgyV2s1KgJuPni5cZ6ptEkPBb2b+92DjxEdQCAi6+WAdWliFiJ/P3T+qSJGLaxAeu0P0yb8E2xfCjEH6qOH3EM0KfgyJM5WJbXlYZTOZZXHaj26rlhe2k3wdL+UXf4geAzczphyOyp4QIGqaxe0xj08BKvSqngQb5X44oVR40oi7fOvwU=";
-
-        final String someDummyIamRole =
-                "        {\n" + "          \"Code\" : \"Success\",\n" + "          \"LastUpdated\" : \"2016-10-04T12:08:24Z\",\n"
-                        + "          \"Type\" : \"AWS-HMAC\",\n" + "          \"AccessKeyId\" : \"" + accessKeyId + "\",\n"
-                        + "          \"SecretAccessKey\" : \"" + secretAccessKey + "\",\n" + "          \"Token\" : \"" + token
-                        + "\",\n" + "          \"Expiration\" : \"2016-10-04T18:19:39Z\"\n" + "        }\n";
 
         // test when <iam-role>DEFAULT</iam-role>
         AwsConfig awsConfig = predefinedAwsConfigBuilder().setIamRole("DEFAULT").build();
 
         DescribeInstances descriptor = spy(new DescribeInstances(awsConfig));
         doReturn(defaultIamRoleName).when(descriptor).retrieveRoleFromURI(uri);
-        doReturn(someDummyIamRole).when(descriptor).retrieveRoleFromURI(roleUri);
+        doReturn(DUMMY_IAM_ROLE).when(descriptor).retrieveRoleFromURI(roleUri);
         doReturn(mockedEnv).when(descriptor).getEnvironment();
         descriptor.fillKeysFromIamRoles();
 
-        assertEquals("Could not parse access key from IAM role", accessKeyId, awsConfig.getAccessKey());
-        assertEquals("Could not parse secret key from IAM role", secretAccessKey, awsConfig.getSecretKey());
+        assertEquals("Could not parse access key from IAM role", DUMMY_ACCESS_KEY, awsConfig.getAccessKey());
+        assertEquals("Could not parse secret key from IAM role", DUMMY_SECRET_KEY, awsConfig.getSecretKey());
 
         // test when <iam-role></iam-role>
         awsConfig = predefinedAwsConfigBuilder().setIamRole("").build();
 
         descriptor = spy(new DescribeInstances(awsConfig));
         doReturn(defaultIamRoleName).when(descriptor).retrieveRoleFromURI(uri);
-        doReturn(someDummyIamRole).when(descriptor).retrieveRoleFromURI(roleUri);
+        doReturn(DUMMY_IAM_ROLE).when(descriptor).retrieveRoleFromURI(roleUri);
         descriptor.fillKeysFromIamRoles();
 
-        assertEquals("Could not parse access key from IAM role", accessKeyId, awsConfig.getAccessKey());
-        assertEquals("Could not parse secret key from IAM role", secretAccessKey, awsConfig.getSecretKey());
+        assertEquals("Could not parse access key from IAM role", DUMMY_ACCESS_KEY, awsConfig.getAccessKey());
+        assertEquals("Could not parse secret key from IAM role", DUMMY_SECRET_KEY, awsConfig.getSecretKey());
 
         // test when no <iam-role></iam-role> defined, BUT default IAM role has been assigned
         awsConfig = predefinedAwsConfigBuilder().build();
 
         descriptor = spy(new DescribeInstances(awsConfig));
         doReturn(defaultIamRoleName).when(descriptor).retrieveRoleFromURI(uri);
-        doReturn(someDummyIamRole).when(descriptor).retrieveRoleFromURI(roleUri);
+        doReturn(DUMMY_IAM_ROLE).when(descriptor).retrieveRoleFromURI(roleUri);
         descriptor.fillKeysFromIamRoles();
 
-        assertEquals("Could not parse access key from IAM role", accessKeyId, awsConfig.getAccessKey());
-        assertEquals("Could not parse secret key from IAM role", secretAccessKey, awsConfig.getSecretKey());
+        assertEquals("Could not parse access key from IAM role", DUMMY_ACCESS_KEY, awsConfig.getAccessKey());
+        assertEquals("Could not parse secret key from IAM role", DUMMY_SECRET_KEY, awsConfig.getSecretKey());
 
-    }
-
-    @Test
-    public void test_whenAccessKeyExistsInConfig()
-            throws IOException {
-        AwsConfig awsConfig = predefinedAwsConfigBuilder().setAccessKey("accesskey").setSecretKey("secretkey").build();
-        new DescribeInstances(awsConfig, "endpoint");
     }
 
     @Test
@@ -149,49 +126,20 @@ public class DescribeInstancesTest {
         final String someRole = "someRole";
         final String uri = INSTANCE_METADATA_URI + IAM_SECURITY_CREDENTIALS_URI + someRole;
 
-        // some dummy creds. Look real, but they aren't.
-        final String accessKeyId = "ASIAJDOR231233BVE7GQ";
-        final String secretAccessKey = "QU5mTd40xnAbC5Mz2T3Fy7afQVrow+/tYq5GXMf7";
-        final String token = "FQoDYXdzEKX//////////wEaDN2Xh+ekVbV1KJrCqCK3A"
-                + "/Quuw8xCdZZbOPjzKLNc89n72z61BLt96hzlxTV6Vx1hDXLQNWRIx07hZVgmgGzzyr0DzYAcqKq7s2GUznWlaXhGHxhyo4nJUeBFbLyYPjbDAcnl84HItjy5bvtQ6fbDM7h2ZGuJrHi51KAhxWN/uEHyBKAIJd5RdXxVH4UTNxJFiqEw8GdaXDGK07186TfqSFCdlG+rhL35bN7WcJZuykIpynbeQpPeY4rJ0WJGoSJwt/RSkGwP+JRcYmv8Y7L1uSD2spJWO6etFeyyU63y0BL42MXWL38SQypxjLz+s1PozSDrV7zxsp4DQONn+adbSyAoveskD3xtDYsip1Ra0UCSYNKzmmh2XXF4fBBb6EPRixc1fnCIVDp0rfyCGO0VMuIloF5nWP9XsaRcR1mbJ7K/TuWgugduRBgyV2s1KgJuPni5cZ6ptEkPBb2b+92DjxEdQCAi6+WAdWliFiJ/P3T+qSJGLaxAeu0P0yb8E2xfCjEH6qOH3EM0KfgyJM5WJbXlYZTOZZXHaj26rlhe2k3wdL+UXf4geAzczphyOyp4QIGqaxe0xj08BKvSqngQb5X44oVR40oi7fOvwU=";
-
-        final String someDummyIamRole =
-                "        {\n" + "          \"Code\" : \"Success\",\n" + "          \"LastUpdated\" : \"2016-10-04T12:08:24Z\",\n"
-                        + "          \"Type\" : \"AWS-HMAC\",\n" + "          \"AccessKeyId\" : \"" + accessKeyId + "\",\n"
-                        + "          \"SecretAccessKey\" : \"" + secretAccessKey + "\",\n" + "          \"Token\" : \"" + token
-                        + "\",\n" + "          \"Expiration\" : \"2016-10-04T18:19:39Z\"\n" + "        }\n";
-
         AwsConfig awsConfig = predefinedAwsConfigBuilder().setIamRole(someRole).build();
 
         DescribeInstances descriptor = spy(new DescribeInstances(awsConfig));
-        doReturn(someDummyIamRole).when(descriptor).retrieveRoleFromURI(uri);
+        doReturn(DUMMY_IAM_ROLE).when(descriptor).retrieveRoleFromURI(uri);
         descriptor.fillKeysFromIamRoles();
 
-        assertEquals("Could not parse access key from IAM role", accessKeyId, awsConfig.getAccessKey());
-        assertEquals("Could not parse secret key from IAM role", secretAccessKey, awsConfig.getSecretKey());
+        assertEquals("Could not parse access key from IAM role", DUMMY_ACCESS_KEY, awsConfig.getAccessKey());
+        assertEquals("Could not parse secret key from IAM role", DUMMY_SECRET_KEY, awsConfig.getSecretKey());
 
     }
 
     @Test
     public void test_when_Empty_IamRole_And_DefaultIamRole_But_IamTaskRoleEnvVar_Exists()
             throws IOException {
-
-        final String accessKeyId = "ASIAJZ6Y3MXO7SRJ1234";
-        final String secretAccessKey = "p00VnhQ//HeT7W7V123f7BgYZaBlPZTxj9mcvSlc";
-        final String token = "FQoDYXdzEKX//////////wEaDDS1irrM7Wkt1VxNUyKoAxdXWEDQJUXpIGmBG4qCCiNLOXkF5mak8ZDVqS2PV"
-                + "+X7nsRF9C4mZwqMkGfRmxpZzGc+QTRfbncdZzEOeHcBea38mM7kJUJyNagWfNpwgzimgJzLqn5tNirs7+MXVw5rfblWCjngzjrovlsl6"
-                + "+q0K9LZM0W5OTRSKmEZQnJFjZh9w+BZHo5pair1ZqrxhfOcW6UaMpfOfRH/VI1n3u+De7YCqdq5jhmaDzWxewxccfH"
-                + "/BI2SRHaC1OEq0L3kMhwj1JrLjrOTJn4nBwjGZAlODFhoMec1cUW0GdIJN6+KZDbt8TuKlqDutKMDe1CNIH"
-                + "/697J0lLPMC8tgbgu3MrLSVxtQkMPdDMzJWNPXNQhQa+Nvw5w7gV7+27s9oat+dJBp3lLmTe4PZ810IQGa2NLZHKrv7kqGncLu5mURj"
-                + "+UVZHlueyYyPBWhVdHn4tCJ/cX2RaeqiVTbMILrduZePw7wTS8"
-                + "+19RnnPxA9wp45OZE5otSvNegJ9XhEJiU7RyJPhdSezMVoGsnzvgbCnBUAzHAe4ZuQZo7iIBWNXkcKBsCAU0MY8ym6NVn5VQohKrOvwU=";
-
-        // Note the below role is different from the regular IAM role, in that it doesn't contain new lines.
-        final String someDummyIamTaskRole =
-                "{" + "  \"RoleArn\":\"arn:aws:iam::123456789012:role/hazelcastIamTaskRole\"," + "  \"AccessKeyId\":\""
-                        + accessKeyId + "\"," + "  \"SecretAccessKey\":\"" + secretAccessKey + "\"," + "  \"Token\":\"" + token
-                        + "\"," + "  \"Expiration\":\"2016-10-04T17:39:48Z\"" + "  }";
-
         final String ecsEnvVarCredsUri = "someURL";
         final String uri = DescribeInstances.IAM_TASK_ROLE_ENDPOINT + ecsEnvVarCredsUri;
         final String defaultRoleUri = INSTANCE_METADATA_URI + IAM_SECURITY_CREDENTIALS_URI;
@@ -203,65 +151,14 @@ public class DescribeInstancesTest {
 
         // test when default role is null
         DescribeInstances descriptor = spy(new DescribeInstances(awsConfig));
-        doReturn(someDummyIamTaskRole).when(descriptor).retrieveRoleFromURI(uri);
+        doReturn(DUMMY_IAM_ROLE).when(descriptor).retrieveRoleFromURI(uri);
         doReturn("").when(descriptor).retrieveRoleFromURI(defaultRoleUri);
         doReturn(mockedEnv).when(descriptor).getEnvironment();
 
         descriptor.fillKeysFromIamRoles();
 
-        assertEquals("Could not parse access key from IAM task role", accessKeyId, awsConfig.getAccessKey());
-        assertEquals("Could not parse secret key from IAM task role", secretAccessKey, awsConfig.getSecretKey());
-
-    }
-
-    @Test
-    public void test_DescribeInstances_SecurityGroup()
-            throws Exception {
-        AwsConfig awsConfig = predefinedAwsConfigBuilder().setAccessKey(System.getenv("AWS_ACCESS_KEY_ID"))
-                                                          .setSecretKey(System.getenv("AWS_SECRET_ACCESS_KEY"))
-                                                          .setSecurityGroupName("launch-wizard-147").build();
-
-        getInstancesAndVerify(awsConfig);
-    }
-
-    @Test
-    public void test_DescribeInstances_when_Tag_and_Value_Set()
-            throws Exception {
-        AwsConfig awsConfig = predefinedAwsConfigBuilder().setAccessKey(System.getenv("AWS_ACCESS_KEY_ID"))
-                                                          .setSecretKey(System.getenv("AWS_SECRET_ACCESS_KEY"))
-                                                          .setTagKey("aws-test-tag").setTagValue("aws-tag-value-1").build();
-
-        getInstancesAndVerify(awsConfig);
-    }
-
-    @Test
-    public void test_DescribeInstances_when_Only_TagKey_Set()
-            throws Exception {
-        AwsConfig awsConfig = predefinedAwsConfigBuilder().setAccessKey(System.getenv("AWS_ACCESS_KEY_ID"))
-                                                          .setSecretKey(System.getenv("AWS_SECRET_ACCESS_KEY"))
-                                                          .setTagKey("aws-test-tag").build();
-
-        getInstancesAndVerify(awsConfig);
-    }
-
-    @Test
-    public void test_DescribeInstances_when_Only_TagValue_Set()
-            throws Exception {
-        AwsConfig awsConfig = predefinedAwsConfigBuilder().setAccessKey(System.getenv("AWS_ACCESS_KEY_ID"))
-                                                          .setSecretKey(System.getenv("AWS_SECRET_ACCESS_KEY"))
-                                                          .setTagValue("aws-tag-value-1").build();
-
-        getInstancesAndVerify(awsConfig);
-    }
-
-    @Test(timeout = TIMEOUT_FACTOR * CALL_SERVICE_TIMEOUT, expected = SocketTimeoutException.class)
-    public void test_CallService_Timeout()
-            throws Exception {
-        final String nonRoutable = "10.255.255.254";
-        AwsConfig awsConfig = predefinedAwsConfigBuilder()
-                .setConnectionTimeoutSeconds((int) TimeUnit.MILLISECONDS.toSeconds(CALL_SERVICE_TIMEOUT)).build();
-        DescribeInstances describeInstances = new DescribeInstances(awsConfig);
-        describeInstances.callService(nonRoutable);
+        assertEquals("Could not parse access key from IAM task role", DUMMY_ACCESS_KEY, awsConfig.getAccessKey());
+        assertEquals("Could not parse secret key from IAM task role", DUMMY_SECRET_KEY, awsConfig.getSecretKey());
     }
 
     @Test
@@ -334,24 +231,125 @@ public class DescribeInstancesTest {
         }
     }
 
-    @Test(timeout = TIMEOUT_FACTOR * CALL_SERVICE_TIMEOUT, expected = InvalidConfigurationException.class)
-    public void test_RetrieveMetaData_Timeout() {
-        final String nonRoutable = "http://10.255.255.254";
-        AwsConfig awsConfig = predefinedAwsConfigBuilder()
-                .setConnectionTimeoutSeconds((int) TimeUnit.MILLISECONDS.toSeconds(CALL_SERVICE_TIMEOUT)).build();
-
-        DescribeInstances describeInstances = new DescribeInstances(awsConfig);
-        describeInstances.retrieveRoleFromURI(nonRoutable);
-    }
-
-    private void getInstancesAndVerify(AwsConfig awsConfig)
+    @Test
+    public void test_DescribeInstances()
             throws Exception {
-        DescribeInstances describeInstances = new DescribeInstances(awsConfig, awsConfig.getHostHeader());
+        // given
+        AwsConfig awsConfig = predefinedAwsConfigBuilder().setAccessKey(System.getenv("AWS_ACCESS_KEY_ID"))
+                                                          .setSecretKey(System.getenv("AWS_SECRET_ACCESS_KEY"))
+                                                          .setSecurityGroupName("launch-wizard-147").build();
+
+        DescribeInstances describeInstances = spy(new DescribeInstances(awsConfig, awsConfig.getHostHeader()));
+        doReturn(stubDescribeInstancesResponse()).when(describeInstances).callService(HOST_HEADER);
+
+        // when
         Map<String, String> result = describeInstances.execute();
+
+        // then
         Assert.assertNotNull(result);
         assertEquals(1, result.size());
-        String expectedPrivateIp = System.getenv("HZ_TEST_AWS_INSTANCE_PRIVATE_IP");
-        Assert.assertNotNull(expectedPrivateIp);
-        Assert.assertNotNull(result.get(expectedPrivateIp));
+        Assert.assertNotNull(result.get(DUMMY_PRIVATE_IP));
+    }
+
+    private InputStream stubDescribeInstancesResponse() {
+        String response = String.format("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+                + "<DescribeInstancesResponse xmlns=\"http://ec2.amazonaws.com/doc/2016-11-15/\">\n"
+                + "    <requestId>02cc8d1a-a4c4-46d4-b8da-b82c38a443a1</requestId>\n" + "    <reservationSet>\n"
+                + "        <item>\n" + "            <reservationId>r-06667d2ad4b67d67d</reservationId>\n"
+                + "            <ownerId>665466731577</ownerId>\n" + "            <groupSet/>\n" + "            <instancesSet>\n"
+                + "                <item>\n" + "                    <instanceId>i-0d5215783d8c7ce4b</instanceId>\n"
+                + "                    <imageId>ami-bc4052c6</imageId>\n" + "                    <instanceState>\n"
+                + "                        <code>16</code>\n" + "                        <name>running</name>\n"
+                + "                    </instanceState>\n"
+                + "                    <privateDnsName>ip-172-30-0-135.ec2.internal</privateDnsName>\n"
+                + "                    <dnsName>ec2-34-229-19-19.compute-1.amazonaws.com</dnsName>\n"
+                + "                    <reason/>\n" + "                    <keyName>cpp-release</keyName>\n"
+                + "                    <amiLaunchIndex>0</amiLaunchIndex>\n" + "                    <productCodes/>\n"
+                + "                    <instanceType>t2.xlarge</instanceType>\n"
+                + "                    <launchTime>2018-05-14T11:15:47.000Z</launchTime>\n" + "                    <placement>\n"
+                + "                        <availabilityZone>us-east-1a</availabilityZone>\n"
+                + "                        <groupName/>\n" + "                        <tenancy>default</tenancy>\n"
+                + "                    </placement>\n" + "                    <platform>windows</platform>\n"
+                + "                    <monitoring>\n" + "                        <state>disabled</state>\n"
+                + "                    </monitoring>\n" + "                    <subnetId>subnet-89679cfe</subnetId>\n"
+                + "                    <vpcId>vpc-26c61c43</vpcId>\n"
+                + "                    <privateIpAddress>%s</privateIpAddress>\n"
+                + "                    <ipAddress>34.229.19.19</ipAddress>\n"
+                + "                    <sourceDestCheck>true</sourceDestCheck>\n" + "                    <groupSet>\n"
+                + "                        <item>\n" + "                            <groupId>sg-fddc2b82</groupId>\n"
+                + "                            <groupName>launch-wizard-147</groupName>\n" + "                        </item>\n"
+                + "                    </groupSet>\n" + "                    <architecture>x86_64</architecture>\n"
+                + "                    <rootDeviceType>ebs</rootDeviceType>\n"
+                + "                    <rootDeviceName>/dev/sda1</rootDeviceName>\n"
+                + "                    <blockDeviceMapping>\n" + "                        <item>\n"
+                + "                            <deviceName>/dev/sda1</deviceName>\n" + "                            <ebs>\n"
+                + "                                <volumeId>vol-0371f04cfabfee833</volumeId>\n"
+                + "                                <status>attached</status>\n"
+                + "                                <attachTime>2018-05-12T08:34:46.000Z</attachTime>\n"
+                + "                                <deleteOnTermination>false</deleteOnTermination>\n"
+                + "                            </ebs>\n" + "                        </item>\n"
+                + "                    </blockDeviceMapping>\n"
+                + "                    <virtualizationType>hvm</virtualizationType>\n" + "                    <clientToken/>\n"
+                + "                    <tagSet>\n" + "                        <item>\n"
+                + "                            <key>Name</key>\n"
+                + "                            <value>*windows-jenkins-cpp</value>\n" + "                        </item>\n"
+                + "                        <item>\n" + "                            <key>aws-test-tag</key>\n"
+                + "                            <value>aws-tag-value-1</value>\n" + "                        </item>\n"
+                + "                    </tagSet>\n" + "                    <hypervisor>xen</hypervisor>\n"
+                + "                    <networkInterfaceSet>\n" + "                        <item>\n"
+                + "                            <networkInterfaceId>eni-5f8420c1</networkInterfaceId>\n"
+                + "                            <subnetId>subnet-89679cfe</subnetId>\n"
+                + "                            <vpcId>vpc-26c61c43</vpcId>\n"
+                + "                            <description>Primary network interface</description>\n"
+                + "                            <ownerId>665466731577</ownerId>\n"
+                + "                            <status>in-use</status>\n"
+                + "                            <macAddress>0a:50:3a:ec:bf:26</macAddress>\n"
+                + "                            <privateIpAddress>%s</privateIpAddress>\n"
+                + "                            <privateDnsName>ip-172-30-0-135.ec2.internal</privateDnsName>\n"
+                + "                            <sourceDestCheck>true</sourceDestCheck>\n"
+                + "                            <groupSet>\n" + "                                <item>\n"
+                + "                                    <groupId>sg-fddc2b82</groupId>\n"
+                + "                                    <groupName>launch-wizard-147</groupName>\n"
+                + "                                </item>\n" + "                            </groupSet>\n"
+                + "                            <attachment>\n"
+                + "                                <attachmentId>eni-attach-92200632</attachmentId>\n"
+                + "                                <deviceIndex>0</deviceIndex>\n"
+                + "                                <status>attached</status>\n"
+                + "                                <attachTime>2018-05-12T08:34:46.000Z</attachTime>\n"
+                + "                                <deleteOnTermination>true</deleteOnTermination>\n"
+                + "                            </attachment>\n" + "                            <association>\n"
+                + "                                <publicIp>34.229.19.19</publicIp>\n"
+                + "                                <publicDnsName>ec2-34-229-19-19.compute-1.amazonaws.com</publicDnsName>\n"
+                + "                                <ipOwnerId>amazon</ipOwnerId>\n"
+                + "                            </association>\n" + "                            <privateIpAddressesSet>\n"
+                + "                                <item>\n"
+                + "                                    <privateIpAddress>%s</privateIpAddress>\n"
+                + "                                    <privateDnsName>ip-172-30-0-135.ec2.internal</privateDnsName>\n"
+                + "                                    <primary>true</primary>\n"
+                + "                                    <association>\n"
+                + "                                    <publicIp>34.229.19.19</publicIp>\n"
+                + "                                    <publicDnsName>ec2-34-229-19-19.compute-1.amazonaws.com</publicDnsName>\n"
+                + "                                    <ipOwnerId>amazon</ipOwnerId>\n"
+                + "                                    </association>\n" + "                                </item>\n"
+                + "                            </privateIpAddressesSet>\n" + "                            <ipv6AddressesSet/>\n"
+                + "                        </item>\n" + "                    </networkInterfaceSet>\n"
+                + "                    <iamInstanceProfile>\n"
+                + "                        <arn>arn:aws:iam::665466731577:instance-profile/cloudbees-role</arn>\n"
+                + "                        <id>AIPAIFCB7AIF75MJZDAOO</id>\n" + "                    </iamInstanceProfile>\n"
+                + "                    <ebsOptimized>false</ebsOptimized>\n" + "                    <cpuOptions>\n"
+                + "                        <coreCount>4</coreCount>\n"
+                + "                        <threadsPerCore>1</threadsPerCore>\n" + "                    </cpuOptions>\n"
+                + "                </item>\n" + "            </instancesSet>\n" + "        </item>\n" + "    </reservationSet>\n"
+                + "</DescribeInstancesResponse>", DUMMY_PRIVATE_IP, DUMMY_PRIVATE_IP, DUMMY_PRIVATE_IP);
+        return new ByteArrayInputStream(response.getBytes());
+    }
+
+    private static InputStream toInputStream(String s)
+            throws Exception {
+        return new ByteArrayInputStream(s.getBytes("UTF-8"));
+    }
+
+    private static AwsConfig.Builder predefinedAwsConfigBuilder() {
+        return AwsConfig.builder().setHostHeader(HOST_HEADER).setRegion("us-east-1").setConnectionTimeoutSeconds(5);
     }
 }
