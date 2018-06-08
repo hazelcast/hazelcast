@@ -21,6 +21,9 @@ import com.hazelcast.internal.management.JsonSerializable;
 import com.hazelcast.version.MemberVersion;
 import com.hazelcast.version.Version;
 
+/**
+ * Local node statistics to be used by {@link MemberState} implementations.
+ */
 public interface NodeState extends JsonSerializable {
 
     /**
@@ -42,5 +45,4 @@ public interface NodeState extends JsonSerializable {
      * @return the codebase version of the Node
      */
     MemberVersion getMemberVersion();
-
 }

@@ -17,17 +17,16 @@
 package com.hazelcast.monitor;
 
 /**
- * Local flake id statistics interface to be used
- * by {@link com.hazelcast.monitor.MemberState} implementations.
+ * local flake ID statistics to be used by {@link MemberState} implementations.
  */
 public interface LocalFlakeIdGeneratorStats extends LocalInstanceStats {
 
     /**
      * The average batch size can be calculated by dividing {@link #getIdCount()} by
-     * {@link #getBatchCount()}.
+     * {@code getBatchCount()}.
      *
      * @return the total number of times the ID generator has been used to generate
-     *         a new ID batch since its {@link #getCreationTime()}.
+     * a new ID batch since its {@link #getCreationTime()}.
      */
     long getBatchCount();
 
@@ -36,7 +35,7 @@ public interface LocalFlakeIdGeneratorStats extends LocalInstanceStats {
      * of consumed IDs.
      *
      * @return the total number of IDs generated (the sum of IDs for all batches)
-     *         since its {@link #getCreationTime()}.
+     * since its {@link #getCreationTime()}.
      */
     long getIdCount();
 }

@@ -21,12 +21,13 @@ import com.hazelcast.internal.management.JsonSerializable;
 import java.util.List;
 
 /**
- * Partition related statistics
+ * Partition related statistics to be used by {@link MemberState}
+ * implementations.
  */
 public interface MemberPartitionState extends JsonSerializable {
 
     /**
-     * Get list of owned partitions of the member
+     * Returns a list of owned partitions of the member.
      *
      * @return list of owned partitions of the member
      */
@@ -35,15 +36,14 @@ public interface MemberPartitionState extends JsonSerializable {
     /**
      * Returns whether member is safe for shutdown.
      *
-     * @return true if member is safe for shutdown, false otherwise
+     * @return {@code true} if member is safe for shutdown, {@code false} otherwise
      */
     boolean isMemberStateSafe();
 
     /**
-     * Returns Migration queue size (This statistic is valid only for master)
+     * Returns the migration queue size (this statistic is valid only for master).
      *
-     * @return Migration queue size (This statistic is valid only for master)
+     * @return migration queue size
      */
     long getMigrationQueueSize();
-
 }
