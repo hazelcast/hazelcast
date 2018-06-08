@@ -73,9 +73,9 @@ public class CacheBackupEntryProcessorOperation
             if (record != null) {
                 CacheEntryView<Data, Data> entryView = CacheEntryViews.createDefaultEntryView(key,
                         getNodeEngine().getSerializationService().toData(record.getValue()), record);
-                wanEventPublisher.publishWanReplicationUpdate(name, entryView);
+                wanEventPublisher.publishWanReplicationUpdateBackup(name, entryView);
             } else {
-                wanEventPublisher.publishWanReplicationRemove(name, key);
+                wanEventPublisher.publishWanReplicationRemoveBackup(name, key);
             }
         }
     }
