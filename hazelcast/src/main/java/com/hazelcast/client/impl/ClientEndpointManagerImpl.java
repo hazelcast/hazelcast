@@ -113,12 +113,6 @@ public class ClientEndpointManagerImpl implements ClientEndpointManager {
             return;
         }
 
-        ClientEvent event = new ClientEvent(endpoint.getUuid(),
-                ClientEventType.DISCONNECTED,
-                endpoint.getSocketAddress(),
-                endpoint.getClientType());
-        sendClientEvent(event);
-
         logger.info("Destroying " + endpoint);
         try {
             endpoint.destroy();
@@ -126,6 +120,11 @@ public class ClientEndpointManagerImpl implements ClientEndpointManager {
             logger.warning(e);
         }
 
+        ClientEvent event = new ClientEvent(endpoint.getUuid(),
+                ClientEventType.DISCONNECTED,
+                endpoint.getSocketAddress(),
+                endpoint.getClientType());
+        sendClientEvent(event);
     }
 
     private void sendClientEvent(ClientEvent event) {
