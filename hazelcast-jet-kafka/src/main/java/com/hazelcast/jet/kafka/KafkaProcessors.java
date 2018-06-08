@@ -27,7 +27,6 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 
 import javax.annotation.Nonnull;
 import java.util.Arrays;
-import java.util.Map.Entry;
 import java.util.Properties;
 
 /**
@@ -42,8 +41,8 @@ public final class KafkaProcessors {
     }
 
     /**
-     * Returns a supplier of processors for
-     * {@link KafkaSources#kafka(Properties, DistributedFunction, String...)}.
+     * Returns a supplier of processors for {@link
+     * KafkaSources#kafka(Properties, DistributedFunction, String, String...)}.
      */
     public static <K, V, T> ProcessorMetaSupplier streamKafkaP(
             @Nonnull Properties properties,
@@ -56,20 +55,6 @@ public final class KafkaProcessors {
         return ProcessorMetaSupplier.of(
                 StreamKafkaP.processorSupplier(properties, Arrays.asList(topics), projectionFn, wmGenParams),
                 PREFERRED_LOCAL_PARALLELISM
-        );
-    }
-
-    /**
-     * Returns a supplier of processors for
-     * {@link KafkaSources#kafka(Properties, String...)}.
-     */
-    public static <K, V> ProcessorMetaSupplier streamKafkaP(
-            @Nonnull Properties properties,
-            @Nonnull WatermarkGenerationParams<Entry<K, V>> wmGenParams,
-            @Nonnull String... topics
-    ) {
-        return KafkaProcessors.<K, V, Entry<K, V>>streamKafkaP(
-                properties, StreamKafkaP::recordToEntry, wmGenParams, topics
         );
     }
 

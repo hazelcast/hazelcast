@@ -45,17 +45,6 @@ public final class TimestampedItem<T> implements Serializable {
     }
 
     /**
-     * This constructor exists in order to match the shape of the functional
-     * interface {@link WindowResultFunction}.
-     * <p>
-     * Constructs a timestamped item with the supplied field values. Ignores
-     * the first argument.
-     */
-    public TimestampedItem(long ignored, long timestamp, @Nonnull T item) {
-        this(timestamp, item);
-    }
-
-    /**
      * Returns the timestamp associated with the item.
      */
     public long timestamp() {
@@ -90,5 +79,17 @@ public final class TimestampedItem<T> implements Serializable {
     public String toString() {
         return "TimestampedItem{ts=" + toLocalTime(timestamp)
                 + ", value='" + item + "'}";
+    }
+
+
+    /**
+     * This method matches the shape of the functional interface {@link
+     * WindowResultFunction}.
+     * <p>
+     * Constructs a {@code TimestampedItem} using the window end time as the
+     * timestamp.
+     */
+    public static <V> TimestampedItem<V> fromWindowResult(long winStart, long winEnd, @Nonnull V value) {
+        return new TimestampedItem<>(winEnd, value);
     }
 }

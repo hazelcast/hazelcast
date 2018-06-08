@@ -88,7 +88,7 @@ public interface StageWithGroupingAndWindow<T, K> {
      */
     @Nonnull
     default StreamStage<TimestampedItem<T>> distinct() {
-        return distinct(TimestampedItem::new);
+        return distinct(TimestampedItem::fromWindowResult);
     }
 
     /**
@@ -128,7 +128,7 @@ public interface StageWithGroupingAndWindow<T, K> {
      */
     @Nonnull
     default <A, R> StreamStage<TimestampedEntry<K, R>> aggregate(@Nonnull AggregateOperation1<? super T, A, R> aggrOp) {
-        return aggregate(aggrOp, TimestampedEntry::new);
+        return aggregate(aggrOp, TimestampedEntry::fromWindowResult);
     }
 
     /**
@@ -194,7 +194,7 @@ public interface StageWithGroupingAndWindow<T, K> {
             @Nonnull StreamStageWithGrouping<T1, ? extends K> stage1,
             @Nonnull AggregateOperation2<? super T, ? super T1, A, R> aggrOp
     ) {
-        return aggregate2(stage1, aggrOp, TimestampedEntry::new);
+        return aggregate2(stage1, aggrOp, TimestampedEntry::fromWindowResult);
     }
 
     /**
@@ -255,7 +255,8 @@ public interface StageWithGroupingAndWindow<T, K> {
             @Nonnull StreamStageWithGrouping<T1, ? extends K> stage1,
             @Nonnull AggregateOperation1<? super T1, ?, R1> aggrOp1
     ) {
-        return aggregate2(stage1, aggregateOperation2(aggrOp0, aggrOp1, Tuple2::tuple2), TimestampedEntry::new);
+        return aggregate2(stage1, aggregateOperation2(aggrOp0, aggrOp1, Tuple2::tuple2),
+                TimestampedEntry::fromWindowResult);
     }
 
     /**
@@ -331,7 +332,7 @@ public interface StageWithGroupingAndWindow<T, K> {
             @Nonnull StreamStageWithGrouping<T2, ? extends K> stage2,
             @Nonnull AggregateOperation3<? super T, ? super T1, ? super T2, A, R> aggrOp
     ) {
-        return aggregate3(stage1, stage2, aggrOp, TimestampedEntry::new);
+        return aggregate3(stage1, stage2, aggrOp, TimestampedEntry::fromWindowResult);
     }
 
     /**
@@ -406,7 +407,7 @@ public interface StageWithGroupingAndWindow<T, K> {
             @Nonnull AggregateOperation1<? super T2, ?, R2> aggrOp2
     ) {
         return aggregate3(stage1, stage2, aggregateOperation3(aggrOp0, aggrOp1, aggrOp2, Tuple3::tuple3),
-                TimestampedEntry::new);
+                TimestampedEntry::fromWindowResult);
     }
 
     /**

@@ -61,9 +61,9 @@ import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 
 /**
- * Static utility class with factory methods for Jet processors. These
- * are meant to implement the internal vertices of the DAG; for other
- * kinds of processors refer to the {@link com.hazelcast.jet.core.processor
+ * Static utility class with factory methods for Jet processors. These are
+ * meant to implement the internal vertices of the DAG; for other kinds of
+ * processors refer to the {@linkplain com.hazelcast.jet.core.processor
  * package-level documentation}.
  * <p>
  * Many of the processors deal with an aggregating operation over stream
@@ -468,7 +468,7 @@ public final class Processors {
                 timestampKind,
                 winPolicy.toTumblingByFrame(),
                 aggrOp.withFinishFn(identity()),
-                TimestampedEntry::new,
+                TimestampedEntry::fromWindowResult,
                 false
         );
     }

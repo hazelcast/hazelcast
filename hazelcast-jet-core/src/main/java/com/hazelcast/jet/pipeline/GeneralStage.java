@@ -285,8 +285,12 @@ public interface GeneralStage<T> extends Stage {
 
     /**
      * Specifies the function that will extract the grouping key from the items
-     * in the associated pipeline stage, as first step in the construction of a
+     * in the associated pipeline stage, as a first step in the construction of a
      * group-and-aggregate stage.
+     * <p>
+     * <b>Warning:</b> make sure the extracted key is not-null, it would fail the
+     * job. Also make sure that it implements {@code equals()} and {@code
+     * hashCode()}.
      *
      * @param keyFn function that extracts the grouping key
      * @param <K> type of the key
@@ -314,7 +318,7 @@ public interface GeneralStage<T> extends Stage {
     /**
      * Adds a timestamp to each item in the stream using the supplied function
      * and specifies the allowed amount of disorder between them. As the stream
-     * moves on the timestamps must increase, but you can tell Jet to accept
+     * moves on, the timestamps must increase, but you can tell Jet to accept
      * some items that "come in late", i.e., have a lower timestamp than the
      * items before them. The {@code allowedLag} parameter controls by how much
      * the timestamp can be lower than the highest one observed so far. If
@@ -339,9 +343,17 @@ public interface GeneralStage<T> extends Stage {
      * watermark without causing dropped events. If you add the timestamps
      * later on, events from different partitions may be mixed, increasing
      * the perceived event lag and causing more dropped events.
+     * <p>
+     * <b>Warning:</b> make sure the property you access in {@code timestampFn}
+     * isn't null, it would fail the job. Also that there are no nonsensical
+     * values such as -1, MIN_VALUE, 2100-01-01 etc - we'll treat those as real
+     * timestamps and they can cause unspecified behaviour.
      *
-     * @param timestampFn a function that returns the timestamp for each item
-     * @param allowedLag the allowed lag behind the top observed timestamp
+     * @param timestampFn a function that returns the timestamp for each item,
+     *                    typically in milliseconds
+     * @param allowedLag the allowed lag behind the top observed timestamp.
+     *                   Time unit is the same as the unit used by {@code
+     *                   timestampFn}
      *
      * @throws IllegalArgumentException if this stage already has timestamps
      */

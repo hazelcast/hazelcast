@@ -104,6 +104,6 @@ public class WindowGroupAggregateBuilder<K, R0> {
      */
     @Nonnull
     public StreamStage<TimestampedEntry<K, ItemsByTag>> build() {
-        return build(TimestampedEntry::new);
+        return build(TimestampedEntry::fromWindowResult);
     }
 }

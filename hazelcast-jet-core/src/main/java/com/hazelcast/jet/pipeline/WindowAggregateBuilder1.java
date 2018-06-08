@@ -99,6 +99,6 @@ public class WindowAggregateBuilder1<T0> {
      */
     @Nonnull
     public <A, R> StreamStage<TimestampedItem<R>> build(@Nonnull AggregateOperation<A, R> aggrOp) {
-        return build(aggrOp, TimestampedItem::new);
+        return build(aggrOp, TimestampedItem::fromWindowResult);
     }
 }

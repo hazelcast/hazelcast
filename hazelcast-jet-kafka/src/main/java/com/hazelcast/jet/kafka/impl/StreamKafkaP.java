@@ -311,9 +311,4 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor {
             return (startIndex + partition) % totalParallelism;
         }
     }
-
-    @Nonnull
-    public static <K, V> Entry<K, V> recordToEntry(ConsumerRecord<K, V> r) {
-        return entry(r.key(), r.value());
-    }
 }

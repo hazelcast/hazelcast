@@ -47,17 +47,6 @@ public final class TimestampedEntry<K, V> implements Map.Entry<K, V> {
     }
 
     /**
-     * This constructor exists in order to match the shape of the functional
-     * interface {@link KeyedWindowResultFunction}.
-     * <p>
-     * Constructs a timestamped entry with the supplied field values. Ignores
-     * the first argument.
-     */
-    public TimestampedEntry(long ignored, long timestamp, @Nonnull K key, @Nonnull V value) {
-        this(timestamp, key, value);
-    }
-
-    /**
      * Returns the timestamp of this entry.
      */
     public long getTimestamp() {
@@ -101,5 +90,17 @@ public final class TimestampedEntry<K, V> implements Map.Entry<K, V> {
     @Override
     public String toString() {
         return String.format("TimestampedEntry{ts=%s, key='%s', value='%s'}", toLocalTime(timestamp), key, value);
+    }
+
+    /**
+     * This method matches the shape of the functional interface {@link
+     * KeyedWindowResultFunction}.
+     * <p>
+     * Constructs a {@code TimestampedEntry} using the window end time as the
+     * timestamp.
+     */
+    public static <K, V> TimestampedEntry<K, V> fromWindowResult(long winStart, long winEnd, @Nonnull K key,
+                                                                 @Nonnull V value) {
+        return new TimestampedEntry<>(winEnd, key, value);
     }
 }

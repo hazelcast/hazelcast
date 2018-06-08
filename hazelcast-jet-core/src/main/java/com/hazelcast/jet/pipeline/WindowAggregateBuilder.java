@@ -111,6 +111,6 @@ public class WindowAggregateBuilder<R0> {
      */
     @Nonnull
     public StreamStage<TimestampedItem<ItemsByTag>> build() {
-        return build(TimestampedItem::new);
+        return build(TimestampedItem::fromWindowResult);
     }
 }

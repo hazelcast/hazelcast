@@ -98,6 +98,6 @@ public class WindowGroupAggregateBuilder1<T0, K> {
     public <A, R> StreamStage<TimestampedEntry<K, R>> build(
             @Nonnull AggregateOperation<A, R> aggrOp
     ) {
-        return grAggBuilder.buildStream(aggrOp, TimestampedEntry::new);
+        return grAggBuilder.buildStream(aggrOp, TimestampedEntry::fromWindowResult);
     }
 }

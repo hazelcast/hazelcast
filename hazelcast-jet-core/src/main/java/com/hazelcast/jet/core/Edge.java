@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.core;
 
+import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.config.EdgeConfig;
 import com.hazelcast.jet.function.DistributedFunction;
 import com.hazelcast.jet.impl.MasterContext;
@@ -249,7 +250,7 @@ public class Edge implements IdentifiedDataSerializable {
         checkSerializable(extractKeyFn, "extractKeyFn");
         checkSerializable(partitioner, "partitioner");
         this.routingPolicy = RoutingPolicy.PARTITIONED;
-        this.partitioner = new KeyPartitioner<>(extractKeyFn, partitioner);
+        this.partitioner = new KeyPartitioner<>(extractKeyFn, partitioner, toDebugString());
         return this;
     }
 
@@ -352,6 +353,10 @@ public class Edge implements IdentifiedDataSerializable {
 
     @Nonnull @Override
     public String toString() {
+        return toDebugString();
+    }
+
+    private String toDebugString() {
         final StringBuilder b = new StringBuilder();
         if (sourceOrdinal == 0 && destOrdinal == 0) {
             b.append("between(\"").append(sourceName).append("\", \"").append(destName).append("\")");
@@ -501,8 +506,8 @@ public class Edge implements IdentifiedDataSerializable {
         }
 
         @Override
-        public void init(DefaultPartitionStrategy strat) {
-            partition = strat.getPartition(key);
+        public void init(DefaultPartitionStrategy strategy) {
+            partition = strategy.getPartition(key);
         }
 
         @Override
@@ -517,20 +522,27 @@ public class Edge implements IdentifiedDataSerializable {
 
         private final DistributedFunction<T, K> keyExtractor;
         private final Partitioner<? super K> partitioner;
+        private final String edgeDebugName;
 
-        KeyPartitioner(@Nonnull DistributedFunction<T, K> keyExtractor, @Nonnull Partitioner<? super K> partitioner) {
+        KeyPartitioner(@Nonnull DistributedFunction<T, K> keyExtractor, @Nonnull Partitioner<? super K> partitioner,
+                       String edgeDebugName) {
             this.keyExtractor = keyExtractor;
             this.partitioner = partitioner;
+            this.edgeDebugName = edgeDebugName;
         }
 
         @Override
-        public void init(DefaultPartitionStrategy strat) {
-            partitioner.init(strat);
+        public void init(DefaultPartitionStrategy strategy) {
+            partitioner.init(strategy);
         }
 
         @Override
         public int getPartition(T item, int partitionCount) {
-            return partitioner.getPartition(keyExtractor.apply(item), partitionCount);
+            K key = keyExtractor.apply(item);
+            if (key == null) {
+                throw new JetException("Null key from key extractor, edge: " + edgeDebugName);
+            }
+            return partitioner.getPartition(key, partitionCount);
         }
     }
 }

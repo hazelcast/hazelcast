@@ -96,7 +96,8 @@ public class SlidingWindowP_twoStageSnapshotTest {
                 ((AggregateOperation1<? super Entry<Long, Long>, LongAccumulator, ?>) aggrOp).withFinishFn(identity())
         );
 
-        DistributedSupplier<Processor> procSupplier2 = combineToSlidingWindowP(windowDef, aggrOp, TimestampedEntry::new);
+        DistributedSupplier<Processor> procSupplier2 = combineToSlidingWindowP(windowDef, aggrOp,
+                TimestampedEntry::fromWindowResult);
 
         // new supplier to save the last supplied instance
         stage1Supplier = () -> lastSuppliedStage1Processor = (SlidingWindowP<?, ?, ?, ?>) procSupplier1.get();
