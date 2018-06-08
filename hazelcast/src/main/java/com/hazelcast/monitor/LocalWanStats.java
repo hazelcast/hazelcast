@@ -14,11 +14,13 @@
  * limitations under the License.
  */
 
-
 package com.hazelcast.monitor;
 
 import java.util.Map;
 
+/**
+ * Local WAN statistics to be used by {@link MemberState} implementations.
+ */
 public interface LocalWanStats extends LocalInstanceStats {
 
     /**
@@ -27,5 +29,4 @@ public interface LocalWanStats extends LocalInstanceStats {
      * @return statistics of different publisher clusters belongs the scheme on this member
      */
     Map<String, LocalWanPublisherStats> getLocalWanPublisherStats();
-
 }

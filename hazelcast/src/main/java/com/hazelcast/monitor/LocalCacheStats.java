@@ -17,8 +17,7 @@
 package com.hazelcast.monitor;
 
 /**
- * Local cache statistics interface to be used
- * by {@link com.hazelcast.monitor.MemberState} implementations.
+ * Local cache statistics to be used by {@link MemberState} implementations.
  */
 public interface LocalCacheStats extends LocalInstanceStats {
 

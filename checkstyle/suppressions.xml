@@ -148,7 +148,6 @@
     <suppress checks="MethodCount" files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]protocol[\\/]util[\\/]MessageFlyweight"/>
 
     <!-- Monitor -->
-    <suppress checks="Javadoc(Method|Type)" files="com[\\/]hazelcast[\\/]monitor[\\/]"/>
     <suppress checks="CyclomaticComplexity|NPathComplexity"
               files="com[\\/]hazelcast[\\/]monitor[\\/]impl[\\/]LocalCacheStatsImpl"/>
     <suppress checks="MethodCount|MethodLength|CyclomaticComplexity|NPathComplexity"
