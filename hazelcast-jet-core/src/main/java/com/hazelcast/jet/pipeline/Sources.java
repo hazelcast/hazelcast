@@ -880,7 +880,19 @@ public final class Sources {
 
     /**
      * Returns a builder object that offers a step-by-step fluent API to build
-     * a custom JMS {@link StreamSource} for the Pipeline API.
+     * a custom JMS {@link StreamSource} for the Pipeline API. See javadoc on
+     * {@link JmsSourceBuilder} methods for more details.
+     * <p>
+     * The source does not save any state to snapshot. The source starts
+     * emitting items where it left from.
+     * <p>
+     * IO failures should be handled by the JMS provider. If any JMS operation
+     * throws an exception, the job will fail. Most of the providers offer a
+     * configuration parameter to enable auto-reconnection, refer to provider
+     * documentation for details.
+     * <p>
+     * Default local parallelism for this processor is 4 (or less if less CPUs
+     * are available).
      *
      * @param <T> type of the items the source emits
      */
@@ -910,7 +922,26 @@ public final class Sources {
 
     /**
      * Returns a builder object that offers a step-by-step fluent API to build
-     * a custom JMS {@link StreamSource} for the Pipeline API.
+     * a custom JMS {@link StreamSource} for the Pipeline API. See javadoc on
+     * {@link JmsSourceBuilder} methods for more details.
+     * <p>
+     * Topic is a non-distributed source: if messages are consumed by multiple
+     * consumers, all of them will get the same messages. Therefore the source
+     * operates on a single member and with local parallelism of 1. Setting
+     * local parallelism to a value other than 1 causes an {@code
+     * IllegalArgumentException}.
+     * <p>
+     * The source does not save any state to snapshot. Behavior of job restart
+     * changes according to the consumer. If it is a durable consumer and a
+     * unique client identifier is set for the connection then JMS provider
+     * persists items during restart and the source starts where it left from.
+     * If the consumer is non-durable then source emits the items published
+     * after the restart.
+     * <p>
+     * IO failures should be handled by the JMS provider. If any JMS operation
+     * throws an exception, the job will fail. Most of the providers offer a
+     * configuration parameter to enable auto-reconnection, refer to provider
+     * documentation for details.
      *
      * @param <T> type of the items the source emits
      */

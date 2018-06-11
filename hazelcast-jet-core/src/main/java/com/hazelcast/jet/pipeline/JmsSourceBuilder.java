@@ -37,7 +37,7 @@ import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
- * See {@link Sources#jmsQueueBuilder} of {@link Sources#jmsTopicBuilder}.
+ * See {@link Sources#jmsQueueBuilder} or {@link Sources#jmsTopicBuilder}.
  *
  * @param <T> type of the items the source emits
  */

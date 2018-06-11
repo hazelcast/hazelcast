@@ -637,7 +637,20 @@ public final class Sinks {
 
     /**
      * Returns a builder object that offers a step-by-step fluent API to build
-     * a custom JMS queue sink for the Pipeline API.
+     * a custom JMS queue sink for the Pipeline API. See javadoc on {@link
+     * JmsSinkBuilder} methods for more details.
+     * <p>
+     * Behavior on job restart: the processor is stateless. If the job is
+     * restarted, duplicate events can occur. If you need exactly-once behavior,
+     * you must ensure idempotence on the application level.
+     * <p>
+     * IO failures should be handled by the JMS provider. If any JMS operation
+     * throws an exception, the job will fail. Most of the providers offer a
+     * configuration parameter to enable auto-reconnection, refer to provider
+     * documentation for details.
+     * <p>
+     * Default local parallelism for this processor is 4 (or less if less CPUs
+     * are available).
      *
      * @param <T> type of the items the sink accepts
      */
@@ -668,12 +681,25 @@ public final class Sinks {
 
     /**
      * Returns a builder object that offers a step-by-step fluent API to build
-     * a custom JMS topic sink for the Pipeline API.
+     * a custom JMS topic sink for the Pipeline API. See javadoc on {@link
+     * JmsSinkBuilder} methods for more details.
+     * <p>
+     * Behavior on job restart: the processor is stateless. If the job is
+     * restarted, duplicate events can occur. If you need exactly-once behavior,
+     * you must ensure idempotence on the application level.
+     * <p>
+     * IO failures should be handled by the JMS provider. If any JMS operation
+     * throws an exception, the job will fail. Most of the providers offer a
+     * configuration parameter to enable auto-reconnection, refer to provider
+     * documentation for details.
+     * <p>
+     * Default local parallelism for this processor is 4 (or less if less CPUs
+     * are available).
      *
      * @param <T> type of the items the sink accepts
      */
     @Nonnull
     public static <T> JmsSinkBuilder<T> jmsTopicBuilder(DistributedSupplier<ConnectionFactory> factorySupplier) {
-        return new JmsSinkBuilder<>(factorySupplier, true);
+        return new  JmsSinkBuilder<>(factorySupplier, true);
     }
 }
