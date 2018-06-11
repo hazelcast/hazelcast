@@ -41,7 +41,7 @@ import org.junit.runners.Parameterized;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 
 @Category({QuickTest.class, ParallelTest.class})
 @RunWith(Parameterized.class)
@@ -140,7 +140,7 @@ public class MapSetTTLBackupTest extends HazelcastTestSupport {
             Data dataKey = context.toData(i);
             int partitionId = partitionService.getPartitionId(dataKey);
             RecordStore recordStore = context.getPartitionContainer(partitionId).getRecordStore(mapName);
-            assertFalse(recordStore.containsKey(dataKey));
+            assertNull(recordStore.getRecordOrNull(dataKey));
         }
     }
 
@@ -153,7 +153,7 @@ public class MapSetTTLBackupTest extends HazelcastTestSupport {
             Data dataKey = context.toData(i);
             int partitionId = partitionService.getPartitionId(dataKey);
             RecordStore recordStore = context.getPartitionContainer(partitionId).getRecordStore(mapName);
-            assertEquals(i, context.toObject(recordStore.get(dataKey, true)));
+            assertEquals(i, context.toObject(recordStore.getRecord(dataKey).getValue()));
         }
     }
 }
