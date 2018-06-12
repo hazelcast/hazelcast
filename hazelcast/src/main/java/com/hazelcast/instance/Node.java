@@ -169,11 +169,11 @@ public class Node {
 
     @SuppressWarnings({"checkstyle:executablestatementcount", "checkstyle:methodlength"})
     public Node(HazelcastInstanceImpl hazelcastInstance, Config staticConfig, NodeContext nodeContext) {
-        DynamicConfigurationAwareConfig config = new DynamicConfigurationAwareConfig(staticConfig);
+        this.properties = new HazelcastProperties(staticConfig);
+        DynamicConfigurationAwareConfig config = new DynamicConfigurationAwareConfig(staticConfig, this.properties);
         this.hazelcastInstance = hazelcastInstance;
         this.config = config;
         this.configClassLoader = getConfigClassloader(config);
-        this.properties = new HazelcastProperties(config);
 
         String policy = properties.getString(SHUTDOWNHOOK_POLICY);
         this.shutdownHookThread = new NodeShutdownHookThread("hz.ShutdownThread", policy);
