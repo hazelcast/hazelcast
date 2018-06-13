@@ -87,7 +87,7 @@ public class OAHashSetBenchmark {
     @Benchmark
     public boolean add_hz_OAHashSet_withHash(OAHashSetContext context) {
         ObjectWithExpensiveHashCodeAndEquals anEntry = getAnEntry();
-        return context.set.add(anEntry.getHash(), anEntry);
+        return context.set.add(anEntry, anEntry.getHash());
     }
 
     @Benchmark
@@ -105,7 +105,7 @@ public class OAHashSetBenchmark {
     @Benchmark
     public boolean contains_hz_OAHashSet_withHash(PreFilledOAHashSetContext context) {
         ObjectWithExpensiveHashCodeAndEquals anEntry = getAnEntry(context.size);
-        return context.set.contains(anEntry.getHash(), anEntry);
+        return context.set.contains(anEntry, anEntry.getHash());
     }
 
     @Benchmark
@@ -123,7 +123,7 @@ public class OAHashSetBenchmark {
     @Benchmark
     public boolean remove_hz_OAHashSet_withHash(PreFilledOAHashSetContext context) {
         ObjectWithExpensiveHashCodeAndEquals anEntry = getAnEntry(context.size);
-        return context.set.remove(anEntry.getHash(), anEntry);
+        return context.set.remove(anEntry, anEntry.getHash());
     }
 
     private int getAnInt() {
@@ -178,7 +178,7 @@ public class OAHashSetBenchmark {
             super.setUp();
             for (int i = 0; set.size() < size * 0.8F; i++) {
                 int value = getValue(i);
-                set.add(value, new ObjectWithExpensiveHashCodeAndEquals(value, EQUALS_COST_FACTOR, HASHCODE_COST_FACTOR));
+                set.add(new ObjectWithExpensiveHashCodeAndEquals(value, EQUALS_COST_FACTOR, HASHCODE_COST_FACTOR), value);
             }
             //            System.out.println("Prefilled to size " + set.size() + " for initial capacity " + size);
         }

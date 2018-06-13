@@ -35,7 +35,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.Preconditions.checkTrue;
 
 /**
- * Not thread-safe open-addressing hash {@link Set}  implementation with linear
+ * Not thread-safe open-addressing hash {@link Set} implementation with linear
  * probing for CPU cache efficiency. This implementation caches the hashes
  * of the elements stored in the set. This caching enables avoiding
  * expensive {@link #hashCode()} calls when rehashing at the cost of the
@@ -44,7 +44,7 @@ import static com.hazelcast.util.Preconditions.checkTrue;
  * Besides avoiding {@link #hashCode()} calls on rehashing, this
  * implementation offers methods that accept the hash together with the
  * element if it is already known on the caller side.
- * See {@link #add(int, Object)}, {@link  #contains(int, Object)}, {@link #remove(int, Object)}.
+ * See {@link #add(Object, int)}, {@link  #contains(Object, int)}, {@link #remove(Object, int)}.
  * <p>
  * This {@link Set} implementation does not permit null elements.
  * <p>
@@ -53,7 +53,7 @@ import static com.hazelcast.util.Preconditions.checkTrue;
  *
  * @param <E> The type of the elements stored in the set
  */
-public class OAHashSet<E> extends AbstractSet<E> implements Set<E> {
+public class OAHashSet<E> extends AbstractSet<E> {
     private static final int DEFAULT_INITIAL_CAPACITY = 16;
     private static final float DEFAULT_LOAD_FACTOR = 0.6F;
 
@@ -114,7 +114,7 @@ public class OAHashSet<E> extends AbstractSet<E> implements Set<E> {
 
     @Override
     public boolean add(E element) {
-        return add(element.hashCode(), element);
+        return add(element, element.hashCode());
     }
 
     /**
@@ -124,13 +124,13 @@ public class OAHashSet<E> extends AbstractSet<E> implements Set<E> {
      * enable avoiding {@link #hashCode()} calls if the hash is already
      * known on the caller side.
      *
-     * @param hash         the hash of the element to be removed
      * @param elementToAdd object to be removed from this set, if present
+     * @param hash         the hash of the element to be removed
      * @return <tt>true</tt> if this set did not already contain the specified
      * element
      * @see #add(Object)
      */
-    public boolean add(int hash, E elementToAdd) {
+    public boolean add(E elementToAdd, int hash) {
         checkNotNull(elementToAdd);
 
         int index = hash & mask;
@@ -158,7 +158,7 @@ public class OAHashSet<E> extends AbstractSet<E> implements Set<E> {
 
     @Override
     public boolean contains(Object objectToCheck) {
-        return contains(objectToCheck.hashCode(), objectToCheck);
+        return contains(objectToCheck, objectToCheck.hashCode());
     }
 
     /**
@@ -169,12 +169,12 @@ public class OAHashSet<E> extends AbstractSet<E> implements Set<E> {
      * enable avoiding {@link #hashCode()} calls if the hash is already
      * known on the caller side.
      *
-     * @param hash          the hash of the element to be removed
      * @param objectToCheck object to be removed from this set, if present
+     * @param hash          the hash of the element to be removed
      * @return <tt>true</tt> if this set contains the specified element
      * @see #contains(Object)
      */
-    public boolean contains(int hash, Object objectToCheck) {
+    public boolean contains(Object objectToCheck, int hash) {
         checkNotNull(objectToCheck);
 
         int index = hash & mask;
@@ -192,7 +192,7 @@ public class OAHashSet<E> extends AbstractSet<E> implements Set<E> {
 
     @Override
     public boolean remove(Object objectToRemove) {
-        return remove(objectToRemove.hashCode(), objectToRemove);
+        return remove(objectToRemove, objectToRemove.hashCode());
     }
 
     /**
@@ -203,12 +203,12 @@ public class OAHashSet<E> extends AbstractSet<E> implements Set<E> {
      * enable avoiding {@link #hashCode()} calls if the hash is already
      * known on the caller side.
      *
-     * @param hash           the hash of the element to be removed
      * @param objectToRemove object to be removed from this set, if present
+     * @param hash           the hash of the element to be removed
      * @return <tt>true</tt> if this set contained the specified element
      * @see #remove(Object)
      */
-    public boolean remove(int hash, Object objectToRemove) {
+    public boolean remove(Object objectToRemove, int hash) {
         checkNotNull(objectToRemove);
 
         int index = hash & mask;
