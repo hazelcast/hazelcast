@@ -46,9 +46,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.unmodifiableCollection;
 
 public class TestHazelcastInstanceFactory {
-
     private static final int DEFAULT_INITIAL_PORT = 5000;
-    private static final AtomicInteger PORTS = new AtomicInteger(5000);
     private static final Set<Integer> OCCUPIED_PORTS
             = Collections.newSetFromMap(new ConcurrentHashMap<Integer, Boolean>());
 
@@ -188,6 +186,10 @@ public class TestHazelcastInstanceFactory {
     }
 
     public Address nextAddress() {
+        return nextAddress(DEFAULT_INITIAL_PORT);
+    }
+
+    private Address nextAddress(int initialPort) {
         int id = nodeIndex.getAndIncrement();
 
         Address currentAddress = addressMap.get(id);
@@ -195,9 +197,13 @@ public class TestHazelcastInstanceFactory {
             return currentAddress;
         }
 
-        Address newAddress = createAddress();
-        addressMap.put(id, newAddress);
-        return newAddress;
+
+        for (int port = initialPort; ; port = nextAvailablePort(port)) {
+            Address newAddress = createAddress("127.0.0.1", port);
+            if (addressMap.putIfAbsent(id, newAddress) == null) {
+                return newAddress;
+            }
+        }
     }
 
     public HazelcastInstance[] newInstances() {
@@ -290,7 +296,7 @@ public class TestHazelcastInstanceFactory {
         }
         List<Address> addresses = new ArrayList<Address>(count);
         for (int i = 0; i < count; i++) {
-            addresses.add(createAddress());
+            addresses.add(createAddress("127.0.0.1", nextAvailablePort(DEFAULT_INITIAL_PORT)));
         }
         return addresses;
     }
@@ -304,14 +310,10 @@ public class TestHazelcastInstanceFactory {
         int count = addressArray.length;
         List<Address> addresses = new ArrayList<Address>(count);
         for (String address : addressArray) {
-            int port = initialPort == -1 ? PORTS.incrementAndGet() : initialPort++;
+            int port = initialPort == -1 ? nextAvailablePort(DEFAULT_INITIAL_PORT) : initialPort++;
             addresses.add(createAddress(address, port));
         }
         return addresses;
-    }
-
-    private Address createAddress() {
-        return createAddress("127.0.0.1", PORTS.incrementAndGet());
     }
 
     public int nextAvailablePort(int port) {
