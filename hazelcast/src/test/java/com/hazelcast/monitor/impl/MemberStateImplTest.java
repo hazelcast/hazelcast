@@ -144,7 +144,7 @@ public class MemberStateImplTest extends HazelcastTestSupport {
         assertEquals(clusterState, deserializedState.getClusterState());
         assertEquals(nodeState, deserializedState.getNodeState());
         assertEquals(clusterVersion, deserializedState.getClusterVersion());
-        assertEquals(memberVersion, deserializedState.getMemberVersion());
+        assertEquals(memberVersion.toString(), deserializedState.getMemberVersion().toString());
 
         final HotRestartState deserializedHotRestartState = deserialized.getHotRestartState();
         assertEquals(backupTaskStatus, deserializedHotRestartState.getBackupTaskStatus());

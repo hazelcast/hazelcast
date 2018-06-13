@@ -47,7 +47,7 @@ public class NodeStateImplTest {
         assertEquals(clusterState, deserialized.getClusterState());
         assertEquals(nodeState, deserialized.getNodeState());
         assertEquals(clusterVersion, deserialized.getClusterVersion());
-        assertEquals(memberVersion, deserialized.getMemberVersion());
+        assertEquals(memberVersion.toString(), deserialized.getMemberVersion().toString());
     }
 
 }
